@@ -647,6 +647,157 @@ describe("runCli", () => {
     expect(result.stdout).toContain("confidence: medium");
   });
 
+  it("prints source claim reject help", async () => {
+    const result = await runCli(["source", "claim", "reject", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Usage: krn source claim reject");
+    expect(result.stdout).toContain("--rejected-because");
+  });
+
+  it("previews source claim reject without DB writes", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "claim",
+        "reject",
+        "--title",
+        "Decorative source example",
+        "--attempted-claim",
+        "Interesting AI engineering link",
+        "--rejected-because",
+        "decorative",
+        "--reason",
+        "No mechanism, consumer, falsifier, or decision support"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Source Claim Reject");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("rejectedBecause: decorative");
+    expect(result.stdout).toContain("No SourceClaim created");
+  });
+
+  it("requires database config for source claim reject --persist", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "claim",
+        "reject",
+        "--title",
+        "Decorative source example",
+        "--attempted-claim",
+        "Interesting AI engineering link",
+        "--rejected-because",
+        "decorative",
+        "--reason",
+        "No mechanism, consumer, falsifier, or decision support",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn source claim reject --persist");
+  });
+
+  it("persists source claim rejection without creating a SourceClaim", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const result = await runCli(
+      [
+        "source",
+        "claim",
+        "reject",
+        "--run-id",
+        "execution-run-1",
+        "--title",
+        "Decorative source example",
+        "--attempted-claim",
+        "Interesting AI engineering link",
+        "--rejected-because",
+        "decorative",
+        "--reason",
+        "No mechanism, consumer, falsifier, or decision support",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById() {
+              throw new Error("getSourceClaimById should not be called");
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection(input) {
+              return {
+                id: "source-rejection-1",
+                projectId: input.projectId,
+                executionRunId: input.executionRunId,
+                sourceArtifactId: input.sourceArtifactId,
+                sourceClaimId: input.sourceClaimId,
+                title: input.title,
+                attemptedClaim: input.attemptedClaim,
+                rejectedBecause: input.rejectedBecause,
+                reason: input.reason,
+                doesNotProve: input.doesNotProve,
+                consumer: input.consumer,
+                metadata: input.metadata ?? {},
+                rejectedAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("sourceRejection: source-rejection-1");
+    expect(result.stdout).toContain("rejectedBecause: decorative");
+    expect(result.stdout).toContain("No SourceClaim created");
+  });
+
   it("prints evidence capture without mutating memory", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},

@@ -42,6 +42,9 @@
   and the type hint is retained in metadata as `sourceType`.
 - Slice 07 verifies SourceClaim existence before creating a source decision
   edge, but it does not infer that the source proves the whole target.
+- Slice 08 writes rejected/decorative material only as SourceRejection and does
+  not create a SourceClaim, because rejected sources must not become trusted KRN
+  context by accident.
 
 Slice 00 skill record:
 
@@ -124,3 +127,14 @@ Slice 07 skill record:
   confidence, notes, and no automatic proof inference.
 - `superpowers:test-driven-development`: used for RED/GREEN source decision
   link CLI tests.
+
+Slice 08 skill record:
+
+- `typescript-type-safety`: used for CLI argument parsing and Zod rejection
+  input validation.
+- `brain-store-schema`: used to keep source rejection creation on
+  SourceRepository rather than direct SQL.
+- `source-to-decision`: used to preserve the difference between source claims
+  and rejected/decorative source material.
+- `superpowers:test-driven-development`: used for RED/GREEN source claim
+  rejection CLI tests.

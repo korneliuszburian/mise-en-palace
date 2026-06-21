@@ -55,6 +55,23 @@ export type CliCommand =
       metadata: Record<string, string>;
     }
   | {
+      kind: "sourceClaimRejectHelp";
+    }
+  | {
+      kind: "sourceClaimReject";
+      persist: boolean;
+      title?: string;
+      attemptedClaim?: string;
+      rejectedBecause?: string;
+      reason?: string;
+      doesNotProve?: string;
+      consumer?: string;
+      runId?: string;
+      sourceArtifactId?: string;
+      sourceClaimId?: string;
+      metadata: Record<string, string>;
+    }
+  | {
       kind: "help";
     };
 
@@ -71,6 +88,7 @@ const usage = [
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
+  "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]"
 ].join("\n");
@@ -114,6 +132,25 @@ export const formatSourceDecisionLinkUsage = (): string =>
     "--notes",
     "",
     "Optional:",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatSourceClaimRejectUsage = (): string =>
+  [
+    "Usage: krn source claim reject --title \"...\" --rejected-because <reason> [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
+    "",
+    "Required:",
+    "--title",
+    "--rejected-because",
+    "--attempted-claim or --reason",
+    "",
+    "Optional:",
+    "--does-not-prove <text>",
+    "--consumer <text>",
+    "--run-id <execution-run-id>",
+    "--source-artifact-id <id>",
+    "--source-claim-id <id>",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -382,6 +419,99 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
         return {
           error: formatSourceClaimAddUsage()
+        };
+      }
+
+      return {
+        command: sourceCommand
+      };
+    }
+
+    if (rest[0] === "claim" && rest[1] === "reject") {
+      if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+        return {
+          command: {
+            kind: "sourceClaimRejectHelp"
+          }
+        };
+      }
+
+      const sourceCommand: Extract<CliCommand, { kind: "sourceClaimReject" }> = {
+        kind: "sourceClaimReject",
+        persist: false,
+        metadata: {}
+      };
+
+      for (let index = 2; index < rest.length; index += 1) {
+        const arg = rest[index];
+
+        if (arg === "--persist") {
+          sourceCommand.persist = true;
+          continue;
+        }
+
+        if (arg === "--help" || arg === "-h") {
+          return {
+            command: {
+              kind: "sourceClaimRejectHelp"
+            }
+          };
+        }
+
+        const optionMap = {
+          "--title": "title",
+          "--attempted-claim": "attemptedClaim",
+          "--rejected-because": "rejectedBecause",
+          "--reason": "reason",
+          "--does-not-prove": "doesNotProve",
+          "--consumer": "consumer",
+          "--run-id": "runId",
+          "--source-artifact-id": "sourceArtifactId",
+          "--source-claim-id": "sourceClaimId"
+        } as const;
+        const option = Object.keys(optionMap).find((candidate) =>
+          arg === candidate || arg?.startsWith(`${candidate}=`) === true
+        );
+
+        if (option !== undefined) {
+          const valueResult = optionValue(rest, index, option);
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatSourceClaimRejectUsage()
+            };
+          }
+
+          sourceCommand[optionMap[option as keyof typeof optionMap]] =
+            valueResult.value.trim();
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+          const valueResult = optionValue(rest, index, "--metadata");
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatSourceClaimRejectUsage()
+            };
+          }
+
+          const entry = metadataEntry(valueResult.value);
+
+          if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
+            return {
+              error: entry.error ?? formatSourceClaimRejectUsage()
+            };
+          }
+
+          sourceCommand.metadata[entry.key] = entry.value;
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        return {
+          error: formatSourceClaimRejectUsage()
         };
       }
 

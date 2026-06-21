@@ -5,7 +5,7 @@ Persist SourceClaims and source-to-decision edges through the existing
 Postgres/Drizzle-backed KRN control plane.
 
 Last verified state:
-M22 Slice 07 source decision link CLI is complete. `GOAL.md` defines M22. Slice 00
+M22 Slice 08 source claim rejection CLI is complete. `GOAL.md` defines M22. Slice 00
 preflight passed `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`, live
 `pnpm db:ready`, live `pnpm db:smoke`, live `pnpm db:smoke:harness-plan`, and
 live `pnpm db:smoke:harness-evidence`. Slice 01 recorded the current source
@@ -17,7 +17,8 @@ mappers for source claim lookup/run listing, source decision edges, and source
 rejections. Slice 05 added and passed `pnpm db:smoke:source-graph` with cleanup
 remaining marker count `0`. Slice 06 added and live-verified
 `krn source claim add --persist`. Slice 07 added and live-verified
-`krn source decision link --persist`.
+`krn source decision link --persist`. Slice 08 added and live-verified
+`krn source claim reject --persist`.
 
 Changed files:
 
@@ -26,6 +27,7 @@ Changed files:
 - `packages/cli/src/parseArgs.ts`
 - `packages/cli/src/runCli.test.ts`
 - `packages/cli/src/runCli.ts`
+- `packages/cli/src/runSourceClaimRejectCommand.ts`
 - `packages/cli/src/runSourceDecisionLinkCommand.ts`
 - `docs/runs/2026-06-21-source-graph-persistence/PROGRESS.md`
 - `docs/runs/2026-06-21-source-graph-persistence/HANDOFF.md`
@@ -44,11 +46,12 @@ outbox events for decision-edge and rejection writes. Slice 05 makes
 `pnpm db:smoke:source-graph` the live persistence proof. Slice 06 keeps
 `--type project-decision` as metadata when it is not a physical artifact kind.
 Slice 07 verifies SourceClaim existence before creating typed source decision
-edges.
+edges. Slice 08 keeps rejected/decorative material as SourceRejection only and
+does not create a SourceClaim.
 
 Blockers/risks:
-No Slice 07 blocker. CLI source claim reject, evidence source candidates, and
-doctor readiness remain unproven.
+No Slice 08 blocker. Evidence source candidates and doctor source graph
+readiness remain unproven.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -58,7 +61,7 @@ schema/migrations/repositories, existing source/core/schema types, CLI
 `plan`/`doctor`/`evidence capture`, and M22 run ledger files.
 
 Next action:
-Slice 08: add CLI `krn source claim reject`.
+Slice 09: update evidence capture to surface source candidates.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

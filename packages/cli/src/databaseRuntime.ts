@@ -39,6 +39,7 @@ export interface DatabaseRuntime {
     | "createSourceClaim"
     | "getSourceClaimById"
     | "createSourceDecisionEdge"
+    | "createSourceRejection"
   >;
   close(): Promise<void>;
 }

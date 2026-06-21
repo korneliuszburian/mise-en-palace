@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 07 source decision link CLI complete.
+Current slice: Slice 08 source claim rejection CLI complete.
 
 Completed:
 
@@ -30,6 +30,10 @@ Completed:
   explicit `--persist`, SourceClaim existence verification, typed
   SourceDecisionEdge creation, target/support/confidence output, and notes
   output.
+- Slice 08 added `krn source claim reject`, including preview mode, `--help`,
+  explicit `--persist`, SourceRejection creation through SourceRepository,
+  rejection reason output, and an explicit guarantee that no SourceClaim is
+  created for rejected/decorative material.
 
 Verification:
 
@@ -110,6 +114,15 @@ Verification:
   edge `af03790e-2ad2-4536-846a-2a4f9720f726`.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 08 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn source claim reject` returned usage exit `2`.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source claim reject ... --persist`: passed with source rejection
+  `9735e09c-fd1e-4ce2-b627-226ce9c09d9b`.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -129,4 +142,4 @@ Skill gates:
 
 Next action:
 
-- Slice 08: add CLI `krn source claim reject`.
+- Slice 09: update evidence capture to surface source candidates.

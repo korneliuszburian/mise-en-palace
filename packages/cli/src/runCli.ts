@@ -1,5 +1,6 @@
 import {
   formatUsage,
+  formatSourceClaimRejectUsage,
   formatSourceDecisionLinkUsage,
   formatSourceClaimAddUsage,
   parseArgs
@@ -25,6 +26,9 @@ import {
 import {
   runSourceClaimAddCommand
 } from "./runSourceClaimAddCommand.js";
+import {
+  runSourceClaimRejectCommand
+} from "./runSourceClaimRejectCommand.js";
 import {
   runSourceDecisionLinkCommand
 } from "./runSourceDecisionLinkCommand.js";
@@ -93,6 +97,14 @@ export const runCli = async (
     };
   }
 
+  if (parsed.command.kind === "sourceClaimRejectHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatSourceClaimRejectUsage(),
+      stderr: ""
+    };
+  }
+
   if (parsed.command.kind === "sourceClaimAdd") {
     try {
       const result = await runSourceClaimAddCommand({
@@ -140,6 +152,34 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown source decision link error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "sourceClaimReject") {
+    try {
+      const result = await runSourceClaimRejectCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown source claim reject error";
 
       return {
         exitCode: 1,

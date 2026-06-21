@@ -2,11 +2,11 @@
 
 Hard blockers:
 
-- None through Slice 07.
+- None through Slice 08.
 
 Known unproven M22 behavior:
 
-- CLI command for `krn source claim reject` is not implemented yet.
+- `krn evidence capture` does not yet surface source candidates.
 - `krn doctor` does not yet report source graph readiness.
 
 Explicit non-blockers:
@@ -52,4 +52,11 @@ Closed in Slice 07:
 - `krn source decision link` exists, previews without DB writes, requires
   `KRN_DATABASE_URL` for `--persist`, verifies SourceClaim existence, writes a
   SourceDecisionEdge through SourceRepository, and passed live persistence
+  proof.
+
+Closed in Slice 08:
+
+- `krn source claim reject` exists, previews without DB writes, requires
+  `KRN_DATABASE_URL` for `--persist`, writes a SourceRejection through
+  SourceRepository, does not create a SourceClaim, and passed live persistence
   proof.

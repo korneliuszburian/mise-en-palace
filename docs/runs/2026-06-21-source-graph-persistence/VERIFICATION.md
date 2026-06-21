@@ -153,3 +153,20 @@ Slice 07 source decision link CLI:
   - Confidence: `medium`.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+
+Slice 08 source claim reject CLI:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn source claim reject` returned usage exit `2`.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed after adding
+  parser support, preview behavior, DB-required persist behavior, and fake
+  repository rejection creation that proves no SourceClaim write path is called.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source claim reject ... --persist`: passed.
+  - Source rejection: `9735e09c-fd1e-4ce2-b627-226ce9c09d9b`.
+  - Rejected because: `decorative`.
+  - Reason: `No mechanism, consumer, falsifier, or decision support`.
+  - Output confirmed: `No SourceClaim created`.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
