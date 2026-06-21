@@ -4,8 +4,7 @@
   `4b86738`.
 - Preserve the existing first-spine architecture: PostgreSQL with pgvector,
   Drizzle migrations, Zod IO boundaries, CLI as adapter, and no dashboard/API.
-- Use `KRN_DATABASE_URL` as the canonical runtime configuration variable unless
-  Slice 01 inventory proves a better existing contract.
+- Use `KRN_DATABASE_URL` as the canonical runtime configuration variable.
 - Keep run proof in `docs/runs/2026-06-21-brain-store-proof/`; do not create
   `.krn` runtime truth or markdown memory.
 - Correct `docs/handoff/HANDOFF.md` references to lowercase
@@ -20,3 +19,10 @@
   reachable DB.
 - Treat doctor migration status as incomplete until it checks more than the
   existence of `__drizzle_migrations`.
+- Adopt `compose.yaml` as the local-only Postgres/pgvector setup path. The
+  single service is `pgvector/pgvector:pg16`, exposed on host port `54329`.
+- Keep local DB credentials intentionally disposable in `.env.example` and
+  Docker Compose; do not add cloud config.
+- Let `packages/db/drizzle.config.ts` read `KRN_DATABASE_URL` only for Drizzle
+  commands that need a DB target. This keeps `db:check` usable without local DB
+  configuration and makes `drizzle-kit migrate` target the same canonical URL.

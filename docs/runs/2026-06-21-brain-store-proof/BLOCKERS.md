@@ -2,12 +2,10 @@
 
 Hard blockers:
 
-- None for Slice 00.
+- None for Slices 00-02.
 
 Open runtime residual:
 
-- No checked-in `.env.example` documents `KRN_DATABASE_URL`.
-- No repo-local Compose file starts a local pgvector Postgres.
 - Live Postgres reachability is unproven.
 - pgvector extension availability is represented in schema/migrations but
   unproven against a live DB.

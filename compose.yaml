@@ -1,0 +1,19 @@
+services:
+  krn-postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: krn
+      POSTGRES_USER: krn
+      POSTGRES_PASSWORD: krn
+    ports:
+      - "54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U krn -d krn"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - krn_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  krn_postgres_data:

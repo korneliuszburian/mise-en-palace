@@ -30,6 +30,20 @@ Slice 01 inventory checks:
   consistent with config.
 - `pnpm typecheck`: passed across workspace projects.
 
+Slice 02 local setup checks:
+
+- `pnpm --filter @krn/db exec drizzle-kit migrate --help`: passed; migrate
+  accepts `--config` and needs DB credentials through config.
+- `pnpm --filter @krn/db exec drizzle-kit --help`: passed; command surface
+  includes `generate`, `migrate`, `check`, and `up`.
+- `docker compose config`: passed for `compose.yaml`.
+- `pnpm --filter @krn/db db:check`: passed without `KRN_DATABASE_URL`.
+- `pnpm typecheck`: passed across workspace projects.
+- TypeScript boundary classification: config/env boundary in
+  `packages/db/drizzle.config.ts`; no public types changed, no `any`, no double
+  assertions, no weakened compiler settings.
+
 Next verification:
 
-- Slice 02 should run `pnpm typecheck` after local setup docs/config are added.
+- Slice 03 should prove migration command behavior without `KRN_DATABASE_URL`
+  and, if local DB is running, against the pgvector Postgres service.
