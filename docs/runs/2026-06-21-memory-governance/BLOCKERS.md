@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 00.
+- None through Slice 01.
 
 Known unproven M23 behavior:
 
-- Memory governance schema is not tightened for M23 promotion semantics yet.
 - There is no memory governance smoke path.
 - There is no CLI `krn memory candidate add`.
 - There is no CLI `krn memory candidate promote/reject`.
@@ -33,3 +32,10 @@ Closed in Slice 00:
 
 - Current memory governance schema/repository/type/CLI/evidence surface was
   inventoried in `MEMORY_GOVERNANCE_INVENTORY.md`.
+
+Closed in Slice 01:
+
+- Minimal memory governance schema fields now exist for M23 candidate
+  run/feedback/source lineage, review, validity, record current version,
+  version provenance, application outcome, feedback events, and anti-memory
+  rejected-claim/source/run linkage.

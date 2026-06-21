@@ -111,10 +111,12 @@ const memoryRecordKinds = new Set<MemoryCandidate["kind"]>([
   "risk"
 ]);
 const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
+  "proposed",
   "candidate",
   "accepted",
   "rejected",
-  "applied"
+  "applied",
+  "superseded"
 ]);
 const sourceDecisionStatuses = new Set<SourceDecision["status"]>([
   "adopt",

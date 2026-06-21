@@ -14,10 +14,14 @@ import {
 
 import {
   contextAssemblies,
+  executionRuns,
   feedbackDeltas,
   projects,
   taskContracts
 } from "./harness.js";
+import {
+  sourceClaims
+} from "./sources.js";
 
 type JsonObject = Record<string, unknown>;
 type JsonList = unknown[];
@@ -36,16 +40,19 @@ export const memoryRecordKind = pgEnum("memory_record_kind", [
 
 export const memoryRecordStatus = pgEnum("memory_record_status", [
   "active",
+  "deprecated",
   "stale",
   "invalidated",
   "superseded"
 ]);
 
 export const memoryCandidateStatus = pgEnum("memory_candidate_status", [
+  "proposed",
   "candidate",
   "accepted",
   "rejected",
-  "applied"
+  "applied",
+  "superseded"
 ]);
 
 export const memoryEdgeKind = pgEnum("memory_edge_kind", [
@@ -63,6 +70,21 @@ export const memoryFeedbackDirection = pgEnum("memory_feedback_direction", [
   "correction"
 ]);
 
+export const memoryApplicationOutcome = pgEnum("memory_application_outcome", [
+  "helped",
+  "hurt",
+  "neutral",
+  "stale"
+]);
+
+export const memoryFeedbackEventType = pgEnum("memory_feedback_event_type", [
+  "strengthened",
+  "demoted",
+  "invalidated",
+  "corrected",
+  "stale_detected"
+]);
+
 export const memoryActivationDecision = pgEnum("memory_activation_decision", [
   "included",
   "excluded",
@@ -76,6 +98,7 @@ export const memoryRecords = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    currentVersionId: uuid("current_version_id"),
     key: text("key").notNull(),
     kind: memoryRecordKind("kind").notNull(),
     status: memoryRecordStatus("status").notNull().default("active"),
@@ -84,6 +107,7 @@ export const memoryRecords = pgTable(
     owner: text("owner").notNull(),
     confidence: integer("confidence").notNull(),
     applicationGuidance: text("application_guidance").notNull(),
+    invalidationRule: text("invalidation_rule"),
     sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
@@ -98,6 +122,7 @@ export const memoryRecords = pgTable(
   },
   (table) => [
     uniqueIndex("memory_records_project_key_unique").on(table.projectId, table.key),
+    index("memory_records_current_version_id_idx").on(table.currentVersionId),
     index("memory_records_project_id_idx").on(table.projectId),
     index("memory_records_kind_idx").on(table.kind),
     index("memory_records_status_idx").on(table.status),
@@ -112,12 +137,18 @@ export const memoryRecordVersions = pgTable(
     memoryRecordId: uuid("memory_record_id")
       .notNull()
       .references(() => memoryRecords.id, { onDelete: "cascade" }),
+    createdFromCandidateId: uuid("created_from_candidate_id").references(() => memoryCandidates.id, {
+      onDelete: "set null"
+    }),
     version: integer("version").notNull(),
     summary: text("summary").notNull(),
     body: text("body").notNull(),
     owner: text("owner").notNull(),
     confidence: integer("confidence").notNull(),
     applicationGuidance: text("application_guidance").notNull(),
+    invalidationRule: text("invalidation_rule"),
+    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
     sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -126,6 +157,9 @@ export const memoryRecordVersions = pgTable(
     uniqueIndex("memory_record_versions_record_version_unique").on(
       table.memoryRecordId,
       table.version
+    ),
+    index("memory_record_versions_created_from_candidate_id_idx").on(
+      table.createdFromCandidateId
     ),
     index("memory_record_versions_memory_record_id_idx").on(table.memoryRecordId)
   ]
@@ -160,6 +194,12 @@ export const memoryCandidates = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
+    feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
+      onDelete: "set null"
+    }),
     proposedBy: text("proposed_by").notNull(),
     kind: memoryRecordKind("kind").notNull(),
     status: memoryCandidateStatus("status").notNull().default("candidate"),
@@ -168,17 +208,26 @@ export const memoryCandidates = pgTable(
     owner: text("owner").notNull(),
     confidence: integer("confidence").notNull(),
     applicationGuidance: text("application_guidance").notNull(),
+    invalidationRule: text("invalidation_rule"),
+    sourceClaimIds: jsonb("source_claim_ids").$type<JsonList>().notNull().default(emptyJsonList),
     sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
     isUserPreference: boolean("is_user_preference").notNull().default(false),
+    reviewer: text("reviewer"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     rejectionReason: text("rejection_reason"),
+    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
     index("memory_candidates_project_id_idx").on(table.projectId),
+    index("memory_candidates_execution_run_id_idx").on(table.executionRunId),
+    index("memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
     index("memory_candidates_status_idx").on(table.status),
-    index("memory_candidates_kind_idx").on(table.kind)
+    index("memory_candidates_kind_idx").on(table.kind),
+    index("memory_candidates_valid_until_idx").on(table.validUntil)
   ]
 );
 
@@ -189,6 +238,9 @@ export const memoryApplications = pgTable(
     memoryRecordId: uuid("memory_record_id")
       .notNull()
       .references(() => memoryRecords.id, { onDelete: "cascade" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
     taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
       onDelete: "set null"
     }),
@@ -196,12 +248,14 @@ export const memoryApplications = pgTable(
       onDelete: "set null"
     }),
     expectedUse: text("expected_use").notNull(),
-    outcome: text("outcome"),
+    outcome: memoryApplicationOutcome("outcome"),
+    notes: text("notes"),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
     index("memory_applications_memory_record_id_idx").on(table.memoryRecordId),
+    index("memory_applications_execution_run_id_idx").on(table.executionRunId),
     index("memory_applications_task_contract_id_idx").on(table.taskContractId),
     index("memory_applications_context_assembly_id_idx").on(table.contextAssemblyId)
   ]
@@ -214,17 +268,25 @@ export const memoryFeedbackEvents = pgTable(
     memoryRecordId: uuid("memory_record_id")
       .notNull()
       .references(() => memoryRecords.id, { onDelete: "cascade" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
     feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
       onDelete: "set null"
     }),
+    eventType: memoryFeedbackEventType("event_type"),
     direction: memoryFeedbackDirection("direction").notNull(),
     note: text("note").notNull(),
+    reason: text("reason"),
+    evidenceRef: text("evidence_ref"),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
     index("memory_feedback_events_memory_record_id_idx").on(table.memoryRecordId),
+    index("memory_feedback_events_execution_run_id_idx").on(table.executionRunId),
     index("memory_feedback_events_feedback_delta_id_idx").on(table.feedbackDeltaId),
+    index("memory_feedback_events_event_type_idx").on(table.eventType),
     index("memory_feedback_events_direction_idx").on(table.direction)
   ]
 );
@@ -236,7 +298,21 @@ export const antiMemoryRecords = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
     key: text("key").notNull(),
+    rejectedClaim: text("rejected_claim"),
+    reason: text("reason"),
+    invalidatedBySourceClaimIds: jsonb("invalidated_by_source_claim_ids")
+      .$type<JsonList>()
+      .notNull()
+      .default(emptyJsonList),
+    invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
+      onDelete: "set null"
+    }),
+    appliesTo: text("applies_to"),
+    mayRevisitWhen: text("may_revisit_when"),
     summary: text("summary").notNull(),
     body: text("body").notNull(),
     owner: text("owner").notNull(),
@@ -253,6 +329,10 @@ export const antiMemoryRecords = pgTable(
   (table) => [
     uniqueIndex("anti_memory_records_project_key_unique").on(table.projectId, table.key),
     index("anti_memory_records_project_id_idx").on(table.projectId),
+    index("anti_memory_records_execution_run_id_idx").on(table.executionRunId),
+    index("anti_memory_records_invalidated_by_source_claim_id_idx").on(
+      table.invalidatedBySourceClaimId
+    ),
     index("anti_memory_records_valid_until_idx").on(table.validUntil)
   ]
 );

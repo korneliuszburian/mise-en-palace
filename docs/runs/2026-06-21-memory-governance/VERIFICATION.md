@@ -36,3 +36,29 @@ Slice 00 preflight/inventory:
   - memory-governance smoke path is missing.
 - `pnpm typecheck`: passed across workspace projects.
 - `git diff --check`: passed.
+
+Slice 01 memory governance schema:
+
+- RED: `pnpm --filter @krn/db test -- memory.test.ts` failed because M23
+  memory governance enum values and schema fields were missing.
+- GREEN: `pnpm --filter @krn/db test -- memory.test.ts` passed after schema
+  updates.
+- `pnpm db:generate`: passed and generated
+  `packages/db/src/migrations/0004_cool_toro.sql`.
+- SQL inspection of `0004_cool_toro.sql`: passed. It adds
+  `memory_application_outcome`, `memory_feedback_event_type`, enum values
+  `proposed`, `superseded`, and `deprecated`, M23 candidate linkage/review/
+  validity fields, record current-version fields, version provenance/validity
+  fields, application run/outcome/notes fields, feedback event type/reason/
+  evidence fields, and anti-memory rejected-claim/source/run fields.
+- First live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:ready` attempt failed because the generated migration used newly added
+  enum value `proposed` as the `memory_candidates.status` default in the same
+  migration. Root cause was Postgres enum/default ordering, not TypeScript.
+- After keeping the DB default as `candidate` while allowing explicit
+  `proposed` values, `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn
+  pnpm db:ready`: passed with migrations expected/applied `5/5`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.

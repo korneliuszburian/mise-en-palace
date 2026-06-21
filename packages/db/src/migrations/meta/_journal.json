@@ -29,6 +29,13 @@
       "when": 1782074322353,
       "tag": "0003_mushy_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782079202004,
+      "tag": "0004_cool_toro",
+      "breakpoints": true
     }
   ]
 }

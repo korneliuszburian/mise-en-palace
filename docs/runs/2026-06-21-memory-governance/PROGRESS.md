@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 00 memory governance inventory complete.
+Current slice: Slice 01 memory governance schema complete.
 
 Completed:
 
@@ -13,6 +13,12 @@ Completed:
   `docs/runs/2026-06-21-memory-governance/`.
 - Slice 00 inventoried the current memory governance surface in
   `MEMORY_GOVERNANCE_INVENTORY.md`.
+- Slice 01 added/tightened Drizzle memory governance schema for M23:
+  candidate run/feedback linkage, source claim IDs, invalidation rule, validity
+  fields, review fields, record `currentVersionId`, version
+  `createdFromCandidateId`, version invalidation/validity fields, application
+  run linkage/outcome/notes, feedback event type/reason/evidence ref, and
+  anti-memory rejected-claim/run/source linkage.
 
 Verification:
 
@@ -24,6 +30,24 @@ Verification:
   memory repository port, Drizzle memory adapter, mappers, feedback delta
   schema, evidence capture, smoke scripts, and root package scripts: passed.
 - `pnpm typecheck`: passed.
+- `git diff --check`: passed.
+- Slice 01 RED: `pnpm --filter @krn/db test -- memory.test.ts` failed on
+  missing M23 memory governance vocabulary and schema fields.
+- `pnpm --filter @krn/db test -- memory.test.ts`: passed.
+- `pnpm db:generate`: passed and generated
+  `packages/db/src/migrations/0004_cool_toro.sql`.
+- SQL inspection of `0004_cool_toro.sql`: passed. It adds M23 memory outcome
+  and feedback event enums, extends candidate/record statuses, and adds
+  candidate, version, application, feedback, and anti-memory governance fields.
+- First live `pnpm db:ready` attempt exposed a Postgres enum/default ordering
+  issue when a newly added enum value was used as a default in the same
+  migration. The schema kept the old DB default `candidate` while accepting
+  `proposed` as an explicit value.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `5/5`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
 - `git diff --check`: passed.
 
 Skill gates:
@@ -38,4 +62,4 @@ Skill gates:
 
 Next action:
 
-- Slice 01: add or tighten memory governance schema.
+- Slice 02: add memory governance IO schemas.

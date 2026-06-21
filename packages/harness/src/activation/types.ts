@@ -3,6 +3,7 @@ import type {
   ContextSubjectType,
   HarnessPlanId,
   IsoTimestamp,
+  MemoryRecordStatus,
   SourceTrustTier
 } from "@krn/core";
 
@@ -36,7 +37,7 @@ export interface ActivationCandidate {
   reason: string;
   expectedUse: string;
   tokenEstimate: number;
-  status?: "active" | "stale" | "invalidated" | "superseded";
+  status?: MemoryRecordStatus;
   validFrom?: IsoTimestamp;
   validUntil?: IsoTimestamp;
   invalidatedAt?: IsoTimestamp;

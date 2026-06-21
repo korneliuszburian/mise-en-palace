@@ -17,8 +17,19 @@ export type MemoryRecordKind =
   | "pattern"
   | "risk";
 
-export type MemoryRecordStatus = "active" | "stale" | "invalidated" | "superseded";
-export type MemoryCandidateStatus = "candidate" | "accepted" | "rejected" | "applied";
+export type MemoryRecordStatus =
+  | "active"
+  | "deprecated"
+  | "stale"
+  | "invalidated"
+  | "superseded";
+export type MemoryCandidateStatus =
+  | "proposed"
+  | "candidate"
+  | "accepted"
+  | "rejected"
+  | "applied"
+  | "superseded";
 
 export interface SourceLineageRef {
   sourceId: string;

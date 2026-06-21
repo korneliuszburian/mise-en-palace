@@ -12,16 +12,26 @@
   `memory_record_versions`, `memory_candidates`, `memory_applications`,
   `memory_feedback_events`, `anti_memory_records`, and
   `memory_activation_traces` already exist.
-- Current tables do not yet satisfy the M23 governed promotion contract:
-  candidate review/promote/reject, `currentVersionId`, created-from-candidate
-  provenance, application outcome, feedback event type, and anti-memory
-  source/run linkage still need tightening.
+- Slice 00 found that current tables did not yet satisfy the M23 governed
+  promotion contract: candidate review/promote/reject, `currentVersionId`,
+  created-from-candidate provenance, application outcome, feedback event type,
+  and anti-memory source/run linkage still needed tightening.
 - `FeedbackDelta.memoryCandidates` remains a proposal surface. It must not
   create MemoryRecords automatically.
 - Markdown run docs remain audit/handoff material, not runtime Memory Core.
 - No dashboard, API, MCP server, memory crawler, vector embedding pipeline,
   broad memory worker, runtime markdown memory, `.krn` truth, or separate
   memory/vector/graph/search store is part of M23.00.
+- Slice 01 keeps the existing `memory_candidates.status` DB default as
+  `candidate` while adding `proposed` to the enum. This avoids using a newly
+  added Postgres enum value as a default in the same migration. Later CLI/repo
+  paths can still write `proposed` explicitly.
+- Slice 01 preserves older memory status values for compatibility while adding
+  M23 vocabulary. M23 command/repository behavior should use the stricter M23
+  semantics instead of relying on old defaults.
+- Slice 01 keeps `memory_records.currentVersionId` as a query/update field with
+  an index but no circular FK. Repository promotion paths should maintain this
+  pointer when Slice 03 implements candidate promotion.
 
 Slice 00 skill record:
 
@@ -35,3 +45,14 @@ Slice 00 skill record:
 - `target-infra-adr`: not used in Slice 00; inventory keeps M23 inside
   Postgres/Drizzle.
 - `activation-engine`: not used in Slice 00; no activation behavior changed.
+
+Slice 01 skill record:
+
+- `brain-store-schema`: used for Drizzle schema, generated SQL, migration
+  inspection, enum/default risk, indexes, and FK decisions.
+- `typescript-type-safety`: used for core memory status and activation
+  candidate status boundary updates.
+- `superpowers:test-driven-development`: used for RED/GREEN memory schema
+  tests.
+- `superpowers:systematic-debugging`: used after live `db:ready` exposed the
+  Postgres enum/default migration issue.
