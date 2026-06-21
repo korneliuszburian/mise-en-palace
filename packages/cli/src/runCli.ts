@@ -8,12 +8,16 @@ import {
 import {
   runDoctorCommand
 } from "./runDoctorCommand.js";
+import {
+  runEvidenceCaptureCommand
+} from "./runEvidenceCaptureCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
   cwd?: string;
   now?(): string;
   createId?(prefix: string): string;
+  readGitStatus?(): Promise<string>;
 }
 
 export interface CliResult {
@@ -93,6 +97,31 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown doctor error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "evidenceCapture") {
+    try {
+      const result = await runEvidenceCaptureCommand({
+        env: runtime.env,
+        cwd: runtime.cwd ?? process.cwd(),
+        now,
+        ...(runtime.readGitStatus === undefined ? {} : { readGitStatus: runtime.readGitStatus })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown evidence capture error";
 
       return {
         exitCode: 1,

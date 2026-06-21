@@ -55,4 +55,39 @@ describe("runCli", () => {
     expect(result.stdout).toContain("TypeScript strictness: enabled");
     expect(result.stdout).toContain("Forbidden surfaces: absent");
   });
+
+  it("prints evidence capture without mutating memory", async () => {
+    const result = await runCli(["evidence", "capture"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => " M packages/cli/src/runCli.ts\n?? notes.md\n"
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Evidence Capture");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("packages/cli/src/runCli.ts");
+    expect(result.stdout).toContain("notes.md");
+    expect(result.stdout).toContain("pnpm typecheck: skipped");
+    expect(result.stdout).toContain("pnpm test: skipped");
+    expect(result.stdout).toContain("git diff --check: skipped");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("Feedback candidates:");
+  });
+
+  it("prints clean evidence capture when there are no changed files", async () => {
+    const result = await runCli(["evidence", "capture"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ""
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("Changed files:\n- none");
+    expect(result.stdout).toContain("Diff risk: low");
+    expect(result.stdout).toContain("No changed files; no feedback candidate proposed.");
+  });
 });

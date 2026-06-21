@@ -4,6 +4,7 @@ import {
 
 export * from "./parseArgs.js";
 export * from "./runDoctorCommand.js";
+export * from "./runEvidenceCaptureCommand.js";
 export * from "./runCli.js";
 export * from "./runPlanCommand.js";
 

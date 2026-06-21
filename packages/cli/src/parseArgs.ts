@@ -7,6 +7,9 @@ export type CliCommand =
       kind: "doctor";
     }
   | {
+      kind: "evidenceCapture";
+    }
+  | {
       kind: "help";
     };
 
@@ -41,6 +44,20 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       command: {
         kind: "doctor"
       }
+    };
+  }
+
+  if (command === "evidence") {
+    if (rest.length === 1 && rest[0] === "capture") {
+      return {
+        command: {
+          kind: "evidenceCapture"
+        }
+      };
+    }
+
+    return {
+      error: "Usage: krn evidence capture"
     };
   }
 
