@@ -7,6 +7,7 @@ import {
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
   formatMemoryRecordApplyUsage,
+  formatMemoryAntiAddUsage,
   parseArgs
 } from "./parseArgs.js";
 import {
@@ -45,6 +46,9 @@ import {
 import {
   runMemoryRecordApplyCommand
 } from "./runMemoryRecordApplyCommand.js";
+import {
+  runMemoryAntiAddCommand
+} from "./runMemoryAntiAddCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -146,6 +150,14 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatMemoryRecordApplyUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryAntiAddHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryAntiAddUsage(),
       stderr: ""
     };
   }
@@ -314,6 +326,35 @@ export const runCli = async (
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown memory record apply error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "memoryAntiAdd") {
+    try {
+      const result = await runMemoryAntiAddCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown memory anti add error";
 
       return {
         exitCode: 1,

@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 07 CLI memory record apply complete.
+Current slice: Slice 08 CLI anti-memory add complete.
 
 Completed:
 
@@ -50,6 +50,10 @@ Completed:
   feedback without DB writes. Persist mode requires `KRN_DATABASE_URL`, verifies
   the MemoryRecord exists, records MemoryApplication through MemoryRepository,
   and records a MemoryFeedbackEvent for `hurt` or `stale` outcomes.
+- Slice 08 added `krn memory anti add`. Preview mode validates AntiMemory input
+  without DB writes. Persist mode requires `KRN_DATABASE_URL`, validates the
+  invalidating SourceClaim when provided, writes AntiMemoryRecord through
+  MemoryRepository, and never creates a positive MemoryRecord.
 
 Verification:
 
@@ -77,6 +81,23 @@ Verification:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
   passed with migrations expected/applied `5/5`.
 - `pnpm --filter @krn/db db:check`: passed.
+- Slice 08 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with
+  four invalid-args cases because `krn memory anti add` did not exist yet.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 48 tests.
+- First Slice 08 `pnpm typecheck` failed on exact optional typing for
+  `sourceLineage.note`; source lineage now strips undefined notes before
+  crossing into core `SourceLineageRef`.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn memory anti add --run-id execution-run-1
+  --rejected-claim "Markdown files are KRN runtime memory" --reason "Files can
+  be export/audit/seed/source bank, not Memory Core"
+  --invalidated-by-source-claim-id source-claim-1`: passed. The report showed
+  no DB writes, rejectedClaim, reason, invalidating source claim, confidence
+  `90`, no MemoryRecord created, and anti-memory not positive memory.
+- `pnpm --filter @krn/cli krn memory anti add --help`: passed.
+- `git diff --check`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed.
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
@@ -174,4 +195,4 @@ Skill gates:
 
 Next action:
 
-- Slice 08: add CLI `krn memory anti add`.
+- Slice 09: update `krn evidence capture` to emit memory candidates.

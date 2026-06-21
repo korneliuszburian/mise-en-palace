@@ -134,6 +134,31 @@ Slice 06 CLI memory candidate review:
 - `git diff --check`: passed.
 - `pnpm test`: passed across workspace projects.
 - `pnpm --filter @krn/db db:check`: passed.
+
+Slice 08 CLI anti-memory add:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with four
+  invalid-args cases because `krn memory anti add` was not routed yet.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 48
+  tests.
+- First `pnpm typecheck` failed because parsed source lineage carried
+  `note?: string | undefined` across the core `SourceLineageRef` boundary
+  under `exactOptionalPropertyTypes`.
+- After stripping undefined notes, `pnpm typecheck`: passed across workspace
+  projects.
+- Preview command passed:
+  `pnpm --filter @krn/cli krn memory anti add --run-id execution-run-1
+  --rejected-claim "Markdown files are KRN runtime memory" --reason "Files can
+  be export/audit/seed/source bank, not Memory Core"
+  --invalidated-by-source-claim-id source-claim-1`.
+- Preview report showed `Persistence: disabled`, `DB writes: none`,
+  rejectedClaim `Markdown files are KRN runtime memory`, the rejection reason,
+  invalidatedBySourceClaimId `source-claim-1`, confidence `90`, no MemoryRecord
+  created, and anti-memory not positive memory.
+- `pnpm --filter @krn/cli krn memory anti add --help`: passed.
+- `git diff --check`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed across workspace projects.
 - Promote preview passed:
   `pnpm --filter @krn/cli krn memory candidate promote --candidate-id
   memory-candidate-1 --reviewer operator --decision accepted`.

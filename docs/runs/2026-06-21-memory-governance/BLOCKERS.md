@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 07.
+- None through Slice 08.
 
 Known unproven M23 behavior:
 
-- There is no CLI `krn memory anti add`.
 - `krn evidence capture` does not yet emit memory candidates.
 - `krn doctor` does not yet report memory governance readiness.
 - M23 dogfood is not recorded yet.
@@ -75,3 +74,11 @@ Closed in Slice 07:
   and can persist MemoryApplication through MemoryRepository.
 - `hurt` and `stale` application outcomes now create MemoryFeedbackEvent
   records linked back to the MemoryApplication evidence ref.
+
+Closed in Slice 08:
+
+- `krn memory anti add` now previews AntiMemory input without DB writes and can
+  persist AntiMemoryRecord through MemoryRepository.
+- Anti-memory persist validates the invalidating SourceClaim when
+  `--invalidated-by-source-claim-id` is provided and does not create a positive
+  MemoryRecord.

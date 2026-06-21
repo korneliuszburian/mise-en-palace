@@ -37,6 +37,9 @@ export type CliCommand =
       kind: "memoryRecordApplyHelp";
     }
   | {
+      kind: "memoryAntiAddHelp";
+    }
+  | {
       kind: "memoryCandidateAdd";
       persist: boolean;
       runId?: string;
@@ -78,6 +81,21 @@ export type CliCommand =
       expectedUse?: string;
       taskContractId?: string;
       contextAssemblyId?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryAntiAdd";
+      persist: boolean;
+      runId?: string;
+      rejectedClaim?: string;
+      reason?: string;
+      invalidatedBySourceClaimId?: string;
+      sourceLineageIds: string[];
+      appliesTo?: string;
+      mayRevisitWhen?: string;
+      owner?: string;
+      confidence?: string;
+      key?: string;
       metadata: Record<string, string>;
     }
   | {
@@ -155,6 +173,7 @@ const usage = [
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--persist]",
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
+  "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]"
 ].join("\n");
 
@@ -282,6 +301,26 @@ export const formatMemoryRecordApplyUsage = (): string =>
     "--expected-use <text>",
     "--task-contract-id <id>",
     "--context-assembly-id <id>",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatMemoryAntiAddUsage = (): string =>
+  [
+    "Usage: krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" [--invalidated-by-source-claim-id <id>|--source-lineage <id>] [--persist]",
+    "",
+    "Required:",
+    "--run-id",
+    "--rejected-claim",
+    "--reason",
+    "--invalidated-by-source-claim-id or --source-lineage",
+    "",
+    "Optional:",
+    "--applies-to <text>",
+    "--may-revisit-when <text>",
+    "--owner <owner>",
+    "--confidence <low|medium|high|0-100>",
+    "--key <key>",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -1133,12 +1172,121 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest[0] === "anti" && rest[1] === "add") {
+      if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+        return {
+          command: {
+            kind: "memoryAntiAddHelp"
+          }
+        };
+      }
+
+      const memoryCommand: Extract<CliCommand, { kind: "memoryAntiAdd" }> = {
+        kind: "memoryAntiAdd",
+        persist: false,
+        sourceLineageIds: [],
+        metadata: {}
+      };
+
+      for (let index = 2; index < rest.length; index += 1) {
+        const arg = rest[index];
+
+        if (arg === "--persist") {
+          memoryCommand.persist = true;
+          continue;
+        }
+
+        if (arg === "--help" || arg === "-h") {
+          return {
+            command: {
+              kind: "memoryAntiAddHelp"
+            }
+          };
+        }
+
+        const optionMap = {
+          "--run-id": "runId",
+          "--rejected-claim": "rejectedClaim",
+          "--reason": "reason",
+          "--invalidated-by-source-claim-id": "invalidatedBySourceClaimId",
+          "--applies-to": "appliesTo",
+          "--may-revisit-when": "mayRevisitWhen",
+          "--owner": "owner",
+          "--confidence": "confidence",
+          "--key": "key"
+        } as const;
+        const option = Object.keys(optionMap).find((candidate) =>
+          arg === candidate || arg?.startsWith(`${candidate}=`) === true
+        );
+
+        if (option !== undefined) {
+          const valueResult = optionValue(rest, index, option);
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryAntiAddUsage()
+            };
+          }
+
+          memoryCommand[optionMap[option as keyof typeof optionMap]] =
+            valueResult.value.trim();
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        if (arg === "--source-lineage" || arg?.startsWith("--source-lineage=") === true) {
+          const valueResult = optionValue(rest, index, "--source-lineage");
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryAntiAddUsage()
+            };
+          }
+
+          memoryCommand.sourceLineageIds.push(valueResult.value.trim());
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+          const valueResult = optionValue(rest, index, "--metadata");
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryAntiAddUsage()
+            };
+          }
+
+          const entry = metadataEntry(valueResult.value);
+
+          if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
+            return {
+              error: entry.error ?? formatMemoryAntiAddUsage()
+            };
+          }
+
+          memoryCommand.metadata[entry.key] = entry.value;
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        return {
+          error: formatMemoryAntiAddUsage()
+        };
+      }
+
+      return {
+        command: memoryCommand
+      };
+    }
+
     return {
       error: [
         formatMemoryCandidateAddUsage().trim(),
         formatMemoryCandidatePromoteUsage().trim(),
         formatMemoryCandidateRejectUsage().trim(),
-        formatMemoryRecordApplyUsage().trim()
+        formatMemoryRecordApplyUsage().trim(),
+        formatMemoryAntiAddUsage().trim()
       ].join("\n\n")
     };
   }

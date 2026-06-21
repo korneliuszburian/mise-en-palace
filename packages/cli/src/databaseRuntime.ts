@@ -51,6 +51,7 @@ export interface DatabaseRuntime {
     | "getMemoryRecordById"
     | "recordMemoryApplication"
     | "createMemoryFeedbackEvent"
+    | "createAntiMemoryRecord"
   >;
   close(): Promise<void>;
 }

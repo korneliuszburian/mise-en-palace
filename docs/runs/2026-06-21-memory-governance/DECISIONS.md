@@ -90,6 +90,15 @@
 - Slice 07 keeps `--expected-use` optional because the GOAL target command does
   not include it. The CLI derives a bounded default while still requiring
   explicit `--run-id`, `--memory-id`, `--outcome`, and `--notes`.
+- Slice 08 keeps anti-memory separate from positive MemoryRecord creation.
+  `krn memory anti add` only writes AntiMemoryRecord and explicitly reports
+  that no MemoryRecord was created.
+- Slice 08 defaults anti-memory owner to `operator` and confidence to `90`
+  because the GOAL target command does not include those schema-required
+  fields. Operators may override with `--owner` and `--confidence`.
+- Slice 08 validates the invalidating SourceClaim before persist when
+  `--invalidated-by-source-claim-id` is provided and also stores that ID in
+  source lineage.
 
 Slice 00 skill record:
 
@@ -171,3 +180,15 @@ Slice 07 skill record:
   repository method tests.
 - `superpowers:verification-before-completion`: used before committing and
   pushing Slice 07.
+
+Slice 08 skill record:
+
+- `brain-store-schema`: used for AntiMemoryRecord CLI-to-repository persistence
+  and source-claim linkage checks.
+- `typescript-type-safety`: used for anti-memory CLI command unions,
+  DatabaseRuntime repository picks, schema-parsed anti-memory input, and exact
+  optional source lineage normalization.
+- `superpowers:test-driven-development`: used for RED/GREEN CLI anti-memory
+  tests.
+- `superpowers:verification-before-completion`: used before committing and
+  pushing Slice 08.

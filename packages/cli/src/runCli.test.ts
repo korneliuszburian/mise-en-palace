@@ -7,6 +7,7 @@ import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
 import type {
+  CreateAntiMemoryRecordInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
@@ -49,6 +50,9 @@ const unusedMemoryRepository = {
   },
   async createMemoryFeedbackEvent(_input: CreateMemoryFeedbackEventInput): Promise<never> {
     throw new Error("createMemoryFeedbackEvent should not be called");
+  },
+  async createAntiMemoryRecord(_input: CreateAntiMemoryRecordInput): Promise<never> {
+    throw new Error("createAntiMemoryRecord should not be called");
   }
 };
 
@@ -1184,6 +1188,212 @@ describe("runCli", () => {
       direction: "negative",
       reason: "Graph traversal now exceeds Postgres edge-table performance",
       evidenceRef: "memory-application:memory-application-1"
+    });
+  });
+
+  it("previews anti-memory add without DB writes", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "anti",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--rejected-claim",
+        "Markdown files are KRN runtime memory",
+        "--reason",
+        "Files can be export/audit/seed/source bank, not Memory Core",
+        "--invalidated-by-source-claim-id",
+        "source-claim-1"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Memory Anti Add");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("rejectedClaim: Markdown files are KRN runtime memory");
+    expect(result.stdout).toContain(
+      "reason: Files can be export/audit/seed/source bank, not Memory Core"
+    );
+    expect(result.stdout).toContain("invalidatedBySourceClaimId: source-claim-1");
+    expect(result.stdout).toContain("No MemoryRecord created");
+  });
+
+  it("requires reason for anti-memory add", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "anti",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--rejected-claim",
+        "Markdown files are KRN runtime memory",
+        "--invalidated-by-source-claim-id",
+        "source-claim-1"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("reason");
+  });
+
+  it("requires database config for anti-memory add --persist", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "anti",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--rejected-claim",
+        "Markdown files are KRN runtime memory",
+        "--reason",
+        "Files can be export/audit/seed/source bank, not Memory Core",
+        "--invalidated-by-source-claim-id",
+        "source-claim-1",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn memory anti add --persist"
+    );
+  });
+
+  it("persists anti-memory add and validates invalidating source claim", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedAntiMemory: CreateAntiMemoryRecordInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "anti",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--rejected-claim",
+        "Markdown files are KRN runtime memory",
+        "--reason",
+        "Files can be export/audit/seed/source bank, not Memory Core",
+        "--invalidated-by-source-claim-id",
+        "source-claim-1",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "Markdown files are audit artifacts, not runtime memory",
+                mechanism: "KRN runtime memory is store-backed in Postgres",
+                krnImplication: "Do not read markdown as Memory Core",
+                doesNotProve: "No markdown can ever be source material",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "M23",
+                status: "accepted",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async createAntiMemoryRecord(input) {
+              capturedAntiMemory = input;
+
+              return {
+                id: "anti-memory-1",
+                projectId: input.projectId,
+                executionRunId: input.executionRunId,
+                key: input.key,
+                rejectedClaim: input.rejectedClaim,
+                reason: input.reason,
+                invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+                invalidatedBySourceClaimId: input.invalidatedBySourceClaimId,
+                appliesTo: input.appliesTo,
+                mayRevisitWhen: input.mayRevisitWhen,
+                summary: input.summary,
+                body: input.body,
+                owner: input.owner,
+                confidence: input.confidence,
+                sourceLineage: input.sourceLineage,
+                metadata: input.metadata ?? {},
+                validFrom: now,
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("antiMemory: anti-memory-1");
+    expect(result.stdout).toContain("No MemoryRecord created");
+    expect(capturedAntiMemory).toMatchObject({
+      projectId: "project-1",
+      executionRunId: "execution-run-1",
+      rejectedClaim: "Markdown files are KRN runtime memory",
+      reason: "Files can be export/audit/seed/source bank, not Memory Core",
+      invalidatedBySourceClaimId: "source-claim-1",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1" }],
+      owner: "operator",
+      confidence: 90
     });
   });
 
