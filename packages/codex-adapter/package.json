@@ -4,6 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@krn/core": "workspace:*",
+    "@krn/harness": "workspace:*"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.9"
   }
 }
