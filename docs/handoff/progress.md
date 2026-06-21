@@ -1,46 +1,49 @@
 # Progress
 
-Current phase: M21 persisted harness spine complete.
+Current phase: M22 source graph persistence complete.
 
-Completed in M21 so far:
+Completed in M22:
 
 - Run ledger created under
-  `docs/runs/2026-06-21-persisted-harness-spine/`.
-- `GOAL.md` now requires repo-local skills as gates for matching slices.
-- Existing harness schema was inventoried; no new migration was needed for the
-  primary M21 spine.
-- Repository aggregate readback by `executionRunId` exists.
-- `krn plan --task "..." --persist` explicitly writes a persisted harness plan
-  run and prints IDs.
-- `pnpm db:smoke:harness-plan` proves persisted plan readback and cleanup.
-- `krn evidence capture --run-id <id> --persist` writes linked evidence,
-  review, and feedback candidate records.
-- `pnpm db:smoke:harness-evidence` proves marked plan/evidence/readback cleanup
-  with live Postgres.
-- `krn doctor` now reports harness persistence schema readiness, smoke command
-  availability, and overall harness persistence readiness without writing to
-  the database.
-- Persisted harness loop dogfood is recorded in
-  `docs/runs/2026-06-21-persisted-harness-spine/DOGFOOD.md`.
-- Anti-rot audit is recorded in
-  `docs/runs/2026-06-21-persisted-harness-spine/ANTI_ROT.md`.
-- Final handoff is recorded in
-  `docs/runs/2026-06-21-persisted-harness-spine/HANDOFF.md`.
+  `docs/runs/2026-06-21-source-graph-persistence/`.
+- Existing source graph schema/repository/type/CLI surface inventoried.
+- Source graph schema and migration tightened for M22 claim status/run links,
+  typed source decision edges, M22 support/trust vocabulary, and first-class
+  rejection fields.
+- Zod IO parsers added for source artifacts, claims, decision edges, and
+  rejections.
+- SourceRepository methods added for source claim lookup/run listing, source
+  decision edge creation/run listing, and source rejection creation.
+- `pnpm db:smoke:source-graph` proves live source artifact, SourceClaim,
+  SourceDecisionEdge, SourceRejection, outbox events, readback, and cleanup.
+- `krn source claim add` persists SourceArtifact and SourceClaim behind
+  explicit `--persist`.
+- `krn source decision link` persists typed SourceDecisionEdge behind explicit
+  `--persist`.
+- `krn source claim reject` persists SourceRejection behind explicit
+  `--persist` without creating a SourceClaim.
+- `krn evidence capture` surfaces proposal-only `sourceDecisionCandidates` and
+  persists them into `FeedbackDelta.sourceDecisions` when evidence capture is
+  persisted.
+- `krn doctor` reports source graph readiness read-only.
+- Source graph dogfood is recorded in
+  `docs/runs/2026-06-21-source-graph-persistence/DOGFOOD.md`.
+- Final anti-rot audit is recorded in
+  `docs/runs/2026-06-21-source-graph-persistence/ANTI_ROT.md`.
 
 Current runtime truth:
 
-- `krn plan --task "..."` remains no-store preview by default, even when DB is
-  configured.
-- DB writes require explicit `--persist` or explicit smoke commands.
-- With `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, the persisted
-  harness plan/evidence smoke paths and read-only doctor harness readiness are
-  proven.
-- Dogfood execution run `66626e90-0cf5-4803-9bc7-f477b28b47c4` has linked
-  evidence/review/feedback records and SQL readback proof.
-- Slice 10 re-verified typecheck, tests, no-env/live doctor, DB readiness,
-  project smoke, harness plan smoke, harness evidence smoke, cleanup, forbidden
-  surfaces, forbidden dependencies, core library safety, and no-`any` scans.
+- DB writes still require explicit `--persist` or explicit smoke commands.
+- `krn source claim add`, `krn source decision link`, and
+  `krn source claim reject` are the current source graph write surface.
+- `krn evidence capture` proposes source decision candidates but does not
+  create SourceClaims and does not mutate memory.
+- `krn doctor` is read-only and reports source graph readiness from schema,
+  repository reachability, smoke command availability, forbidden-infra absence,
+  and durable runtime proof markers.
+- With `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, source graph
+  doctor readiness and source graph smoke are proven.
 
 Next action:
 
-- M22: implement SourceClaim persistence plus source-to-decision edges.
+- M23: MemoryCandidate to reviewed MemoryRecord promotion.

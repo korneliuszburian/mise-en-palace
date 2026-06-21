@@ -2,53 +2,38 @@
 
 Hard blockers:
 
-- None for M21.
+- None for M22.
 
-Closed in M20:
+Closed in M22:
 
-- Local Postgres/pgvector setup path exists: `.env.example`, `compose.yaml`,
-  and `docs/runbooks/local-brain-store.md`.
-- Live local Postgres reachability proved with
-  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`.
-- Drizzle migrations proved against the local DB: expected `3`, applied `3`.
-- pgvector availability proved against the local DB.
-- `krn doctor` reports exact DB readiness while staying read-only.
-- Minimal persistence smoke path proved insert/read/cleanup through the Drizzle
-  project repository path.
-
-Out of M20 scope:
-
-- Full evidence, feedback, memory, source, and eval candidate persistence beyond
-  the minimal smoke path remains later product work.
-- Worker execution, leasing, retries, and background processing remain later
-  product work.
-
-Closed in M21 so far:
-
-- Persisted plan run creation exists behind explicit `krn plan --persist`.
-- Persisted plan readback/cleanup is proven by `pnpm db:smoke:harness-plan`.
-- Persisted evidence/review/feedback candidate writing exists behind explicit
-  `krn evidence capture --run-id --persist`.
-- Persisted evidence readback/cleanup is proven by
-  `pnpm db:smoke:harness-evidence`.
-- Harness persistence readiness is reported by read-only `krn doctor`.
-- Persisted harness loop dogfood is recorded with live DB proof.
-- Anti-rot audit is recorded with live DB and forbidden-surface proof.
+- Source artifacts persist through SourceRepository-backed CLI paths.
+- SourceClaims persist with mechanism, does-not-prove, trust tier, support
+  type, consumer, and optional run linkage.
+- SourceDecisionEdges persist as typed links from SourceClaim to target
+  harness artifacts.
+- SourceRejections persist without creating SourceClaims.
+- Source graph smoke proves artifact/claim/edge/rejection/outbox/readback and
+  cleanup.
+- `krn evidence capture` surfaces proposal-only source decision candidates.
+- `krn doctor` reports source graph readiness read-only.
+- M22 dogfood and anti-rot are recorded.
 
 Residual later scope:
 
-- SourceClaim/source-to-decision ingestion is not built.
-- Full Memory Core reviewed promotion is not built.
-- Activation over durable memory/source corpus is not built.
-- Worker execution, leasing, retries, and background processing are not built.
+- Reviewed MemoryRecord promotion is not built yet.
+- Anti-memory and memory invalidation workflows are not built yet.
+- Retrieval/search substrate quality is not built yet.
+- Durable activation over persisted memory/source records is not built yet.
+- Worker execution, leasing, retries, and background processing remain later
+  product work.
 
 Explicit non-blockers:
 
 - No dashboard UI exists by design.
 - No API exists by design.
 - No MCP server exists by design.
+- No source crawler or research layer exists by design.
 - No `.krn` runtime truth exists by design.
 - No separate vector, graph, search, or queue store exists by design.
 - No runtime markdown memory exists by design.
-- No full MemoryStore or SourceStore exists by design.
 - No broad eval suite exists by design.

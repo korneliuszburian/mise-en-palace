@@ -54,6 +54,8 @@
   rather than hidden doctor state.
 - Slice 11 records dogfood as audit evidence in `DOGFOOD.md`; it does not turn
   that markdown record into runtime memory.
+- Slice 12 closes M22 as source graph persistence only. Memory promotion,
+  retrieval ranking, and activation over durable source/memory remain M23+.
 
 Slice 00 skill record:
 
@@ -177,3 +179,11 @@ Slice 11 skill record:
 - `evidence-review-loop`: used to record persisted evidence, review, and
   feedback IDs for the dogfood run.
 - `handoff-compact`: used for restartable DOGFOOD/HANDOFF state.
+
+Slice 12 skill record:
+
+- `evidence-review-loop`: used for final anti-rot evidence and residual-risk
+  recording.
+- `handoff-compact`: used for final M22 handoff and next-action state.
+- `source-to-decision`: used to keep final M22 completion tied to persisted
+  source artifacts, claims, decision edges, rejections, and doctor proof.

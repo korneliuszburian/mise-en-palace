@@ -1,157 +1,61 @@
 # Verification
 
-M21 Slice 07 verification:
+Latest M22 final anti-rot:
 
-- RED `pnpm --filter @krn/cli test`: failed as expected before
-  `db smoke harness-evidence` parser support.
-- GREEN `pnpm --filter @krn/cli test`: passed with 16 tests.
+- `git status --short --branch`: passed with clean `## main...origin/main`
+  before final docs edits.
+- `git log --oneline -12`: passed and showed M22 ledger, schema, IO,
+  repository, smoke, CLI, doctor, and dogfood commits.
 - `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
+  source graph readiness as preview-only.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported:
+  - migrations `verified (4/4 applied)`;
+  - source graph schema `ready (8/8 tables present)`;
+  - SourceRepository read path `reachable`;
+  - source graph runtime proof `ready (claims 2, edges 2, rejections 2)`;
+  - source graph readiness `ready`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `4/4` and pgvector available.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed with project readback matched and cleanup completed.
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
-  db:smoke:harness-evidence`: passed. It created execution run
-  `8db14bdf-6390-485d-9736-89274c5affff`, evidence bundle
-  `1dbe1d1b-e537-4670-a6cb-2b878b44c7f2`, review assessment
-  `31fe636d-5d61-402b-82bc-64d225cd0c6d`, feedback delta
-  `7bc1b78f-4aeb-48cb-b9e5-2d8b456f1fe9`, verified linked counts `1/1/1`,
-  run events `2`, and cleanup remaining marker count `0`.
-- `pnpm test`: passed across workspace tests.
-- `pnpm --filter @krn/db db:check`: passed.
-- `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
-  packages/db/src packages/cli/src`: passed with no matches.
-- `git diff --check`: passed.
+  db:smoke:harness-plan`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with source artifact, SourceClaim,
+  SourceDecisionEdge, SourceRejection, outbox events `2`, and cleanup remaining
+  marker count `0`.
+- Forbidden surface scan for `apps`, `packages/api`, `packages/dashboard`,
+  `.krn`, `packages/source-crawler`, `packages/research`, `packages/graph-db`,
+  and `packages/neo4j`: passed with no output.
+- No-`any` scan over KRN source packages: passed with no output.
 
-M21 Slice 08 verification:
+M22 dogfood proof:
 
-- RED `pnpm --filter @krn/cli test`: failed before doctor harness persistence
-  readiness output existed.
-- GREEN `pnpm --filter @krn/cli test`: passed with 17 tests.
-- `pnpm typecheck`: passed across workspace projects.
-- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
-  harness persistence as preview-only.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
-  @krn/cli krn doctor`: passed and reported harness persistence schema
-  `ready (10/10 tables present)` plus readiness `ready (schema present; smoke
-  commands available)`.
-- Direct SQL counts before and after live doctor stayed unchanged at
-  `1,1,1,1,2` for
-  `execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`.
-- `pnpm test`: passed across workspace tests.
-- `pnpm --filter @krn/db db:check`: passed.
-- No-`any` scan over KRN source packages passed.
-- `git diff --check`: passed.
+- Execution run: `4370785f-b177-45d7-89d9-08053a3e640d`.
+- Source claim: `212815bc-477c-4985-8992-31825f5c5897`.
+- Source decision edge: `9869be50-642b-4ddf-b60b-60360f9ea8ce`.
+- Source rejection: `c35e59c2-587b-4875-b7b4-32118daf6966`.
+- Evidence bundle: `dfa38982-a410-451c-a9e4-473cfaa3ad64`.
+- Review assessment: `39476e2e-b5ee-46a2-9146-d2a33d09f4b9`.
+- Feedback delta: `600c8b44-2df7-4096-8a53-369411b19e50`.
 
-Latest M21 Slice 09 verification:
+M22 completion audit:
 
-- Live `krn plan --task "improve KRN doctor harness persistence readiness"
-  --persist`: passed and created execution run
-  `66626e90-0cf5-4803-9bc7-f477b28b47c4`.
-- Live `krn evidence capture --run-id
-  66626e90-0cf5-4803-9bc7-f477b28b47c4 --persist`: passed and created
-  evidence bundle `94cf92cf-a826-406f-bcad-9d9ebb7a0a8e`, review assessment
-  `630d46ec-e323-4974-a90e-4a1a03571499`, and feedback delta
-  `21c93ea7-2f2e-4e0c-8d80-ed07138e57f8`.
-- Live `krn doctor`, `pnpm db:smoke:harness-plan`, and
-  `pnpm db:smoke:harness-evidence`: passed.
-- `pnpm typecheck` and `pnpm test`: passed.
-- SQL dogfood readback showed evidence contract present, linked
-  evidence/review/feedback `1/1/1`, and run events `2`.
-- SQL smoke cleanup count for harness/evidence smoke workspaces returned `0,0`.
-- Forbidden directory scan passed with no output; forbidden store/runtime scan
-  found no KRN runtime dependency or implementation use.
+- Source artifacts persisted: proven.
+- Source claims persisted: proven.
+- Source-to-decision edges persisted: proven.
+- Source rejections persisted: proven.
+- Smoke cleanup proven: proven.
+- Doctor reports source graph readiness: proven.
+- No forbidden surfaces: proven.
 
-Latest M21 Slice 10 verification:
+Detailed evidence lives in:
 
-- `git status --short --branch`: passed; clean `main...origin/main`.
-- `git log --oneline -12`: passed and showed M21 Slice 00 through Slice 09.
-- `pnpm typecheck`: passed.
-- `pnpm test`: passed.
-- No-env `krn doctor`: passed.
-- Live `krn doctor`: passed and reported harness persistence readiness ready.
-- Live `pnpm db:ready`: passed with migrations `3/3` and pgvector available.
-- Live `pnpm db:smoke`: passed.
-- Live `pnpm db:smoke:harness-plan`: passed with cleanup marker count `0`.
-- Live `pnpm db:smoke:harness-evidence`: passed with cleanup marker count `0`.
-- `pnpm --filter @krn/db db:check`: passed.
-- SQL cleanup count for project/harness/evidence smoke workspaces returned
-  `0,0,0`.
-- Forbidden directory, direct forbidden dependency, eval/benchmark directory,
-  core library-safe, no-`any`, and `git diff --check` scans passed.
-
-Final M21 status:
-
-- M21 is complete through Slice 11 final handoff.
-- DB proof: local Postgres reachable, migrations `3/3`, pgvector available,
-  and `pnpm db:ready` passed.
-- Persisted harness proof: plan persisted, evidence persisted, linked feedback
-  delta persisted, and cleanup proven by both harness smoke scripts.
-- Residuals are later scope, not blockers: source ingestion, memory reviewed
-  promotion, durable activation, and worker execution.
-
-Current M21 scope checks:
-
-- No dashboard, API, MCP server, broad worker runtime, research layer, `.krn`,
-  runtime markdown memory, full MemoryStore/SourceStore, automatic memory
-  mutation, or separate vector/graph/search/queue store was added.
-- `krn plan --task "..."` remains preview/no-store unless `--persist` is
-  explicit.
-- Smoke commands are the explicit mutating proof surface.
-
-Latest M20 final verification:
-
-- `git status --short --branch`: passed; clean `main...origin/main` before
-  final handoff edits.
-- `git log --oneline -8`: passed; latest commits covered M20 Slices 00-05.
-- `docker compose ps krn-postgres`: passed; local pgvector Postgres was
-  healthy on host port `54329`.
-- `pnpm typecheck`: passed.
-- `pnpm test`: passed.
-- `pnpm --filter @krn/cli krn doctor`: passed without DB config; reported
-  preview-only persisted brain-store readiness.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
-  @krn/cli krn doctor`: passed; reported Postgres reachable, pgvector
-  available, migrations `verified (3/3 applied)`, and brain-store readiness
-  ready.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
-  passed; reported migrations expected `3`, applied `3`, pgvector available,
-  and brain-store readiness ready.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
-  passed; inserted and read back a smoke project, then cleaned it up.
-- `docker compose exec -T krn-postgres psql -U krn -d krn -tAc "select
-  count(*) from workspaces where slug like 'krn-smoke-%';"`: passed and
-  returned `0`.
-
-Scope checks:
-
-- No dashboard, API, MCP, broad worker runtime, research layer, `.krn`, runtime
-  markdown memory, or separate vector/graph/search/queue store was added.
-- The local DB proof uses PostgreSQL plus pgvector only.
-- `krn doctor` remains read-only; `pnpm db:ready` and `pnpm db:smoke` are the
-  mutating proof commands.
-- `git diff --check`: passed after final M20 handoff docs were updated.
-
-Completion audit refresh after stale-next-action cleanup:
-
-- `git status --short --branch`: passed; only docs handoff/progress cleanup was
-  dirty before this final docs-only commit.
-- `git log --oneline -8`: passed; newest commit at refresh start was
-  `17c2853 docs(handoff): update brain-store proof status`.
-- `docker compose ps krn-postgres`: passed; local pgvector Postgres was
-  healthy.
-- `pnpm typecheck`: passed.
-- `pnpm test`: passed.
-- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
-  preview-only persisted brain-store readiness.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
-  @krn/cli krn doctor`: passed with Postgres reachable, pgvector available,
-  migrations `verified (3/3 applied)`, and brain-store readiness ready.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
-  passed.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
-  passed.
-- Direct smoke cleanup count returned `0`.
-- No forbidden directories exist: `apps`, `packages/dashboard`, `packages/api`,
-  and `.krn` are absent.
-- No forbidden store dependency or runtime use exists in package manifests or
-  package source. The only `@upstash/redis` match is an optional Drizzle peer
-  dependency declaration in `pnpm-lock.yaml`, not a KRN dependency or runtime
-  store.
-- `git diff --check`: passed after the stale-next-action cleanup.
+- `docs/runs/2026-06-21-source-graph-persistence/VERIFICATION.md`
+- `docs/runs/2026-06-21-source-graph-persistence/DOGFOOD.md`
+- `docs/runs/2026-06-21-source-graph-persistence/ANTI_ROT.md`

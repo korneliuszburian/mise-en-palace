@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 11 source graph dogfood complete.
+Current slice: Slice 12 anti-rot and handoff complete.
 
 Completed:
 
@@ -45,6 +45,7 @@ Completed:
   derived source graph readiness.
 - Slice 11 dogfooded source graph on M22 itself and recorded the run in
   `DOGFOOD.md`.
+- Slice 12 completed the M22 anti-rot audit and final handoff update.
 
 Verification:
 
@@ -179,6 +180,25 @@ Verification:
   `ready (claims 2, edges 2, rejections 2)`.
 - Slice 11 live `pnpm db:smoke:source-graph`: passed with cleanup remaining
   marker count `0`.
+- Slice 12 `git status --short --branch`: passed with clean
+  `## main...origin/main` before final docs edits.
+- Slice 12 `git log --oneline -12`: passed.
+- Slice 12 `pnpm typecheck`: passed.
+- Slice 12 `pnpm test`: passed.
+- Slice 12 no-DB `krn doctor`: passed and reported source graph preview-only.
+- Slice 12 live DB `krn doctor`: passed and reported source graph readiness
+  ready.
+- Slice 12 `pnpm db:ready`: passed with migrations `4/4` and pgvector
+  available.
+- Slice 12 `pnpm db:smoke`: passed.
+- Slice 12 `pnpm db:smoke:harness-plan`: passed with cleanup remaining marker
+  count `0`.
+- Slice 12 `pnpm db:smoke:harness-evidence`: passed with cleanup remaining
+  marker count `0`.
+- Slice 12 `pnpm db:smoke:source-graph`: passed with cleanup remaining marker
+  count `0`.
+- Slice 12 forbidden surface scan: passed with no output.
+- Slice 12 no-`any` scan: passed with no output.
 
 Skill gates:
 
@@ -198,4 +218,4 @@ Skill gates:
 
 Next action:
 
-- Slice 12: M22 anti-rot and final handoff update.
+- M23: MemoryCandidate to reviewed MemoryRecord promotion.

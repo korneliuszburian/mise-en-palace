@@ -2,11 +2,11 @@
 
 Hard blockers:
 
-- None through Slice 11.
+- None for M22.
 
 Known unproven M22 behavior:
 
-- M22 final anti-rot and handoff update are not recorded yet.
+- None.
 
 Explicit non-blockers:
 
@@ -81,3 +81,9 @@ Closed in Slice 11:
   SourceClaim, SourceDecisionEdge, SourceRejection, EvidenceBundle,
   ReviewAssessment, FeedbackDelta, live doctor, live source graph smoke, what
   was proven, what was not proven, and the next safest action.
+
+Closed in Slice 12:
+
+- M22 anti-rot is recorded in `ANTI_ROT.md`; typecheck, tests, no-DB/live
+  doctor, DB readiness, project smoke, harness-plan smoke, harness-evidence
+  smoke, source-graph smoke, forbidden-surface scan, and no-`any` scan passed.

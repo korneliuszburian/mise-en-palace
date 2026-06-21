@@ -255,3 +255,40 @@ Slice 11 source graph dogfood:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
   db:smoke:source-graph`: passed with cleanup remaining marker count `0`.
 - Dogfood record written to `DOGFOOD.md`.
+
+Slice 12 anti-rot and final handoff:
+
+- `git status --short --branch`: passed with clean `## main...origin/main`
+  before final docs edits.
+- `git log --oneline -12`: passed and showed M22 commits from ledger creation
+  through dogfood.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
+  source graph readiness as preview-only.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported source graph readiness as ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `4/4` and pgvector available.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed with project readback matched and cleanup completed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed with execution run
+  `72a0b153-4303-40c8-9b2b-130a418b8375` and cleanup remaining marker count
+  `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with execution run
+  `2700d990-3556-45d2-b7ce-d20dadeb0796`, feedback delta
+  `ca383bcd-1779-4ad2-a7a7-03560578aeb6`, and cleanup remaining marker count
+  `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with execution run
+  `2e50659f-bba7-42f4-aa71-0bcc78525455`, source claim
+  `30dea17d-aca9-4033-a5ce-4cb85806364b`, source decision edge
+  `19f7b6c9-86e1-41c6-a191-596c9219ffb3`, source rejection
+  `fd75defb-a109-41e0-9a05-982e7887d2b0`, outbox events `2`, and cleanup
+  remaining marker count `0`.
+- Forbidden surface scan for `apps`, `packages/api`, `packages/dashboard`,
+  `.krn`, `packages/source-crawler`, `packages/research`, `packages/graph-db`,
+  and `packages/neo4j`: passed with no output.
+- No-`any` scan over KRN source packages: passed with no output.
