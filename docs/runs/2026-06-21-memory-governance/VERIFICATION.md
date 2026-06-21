@@ -84,3 +84,20 @@ Slice 03 MemoryRepository methods:
 - `pnpm --filter @krn/db db:check`: passed.
 - `pnpm test`: passed across workspace projects.
 - `git diff --check`: passed.
+
+Slice 04 memory governance smoke path:
+
+- RED: `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts` failed
+  because `runMemoryGovernanceSmokeCheck` was not exported.
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn db smoke memory-governance` returned invalid-args exit `2`.
+- GREEN: `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts` passed.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 33 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed. The report showed source claim,
+  memory candidate, accepted review status, memory record/version,
+  memory application, anti-memory record, outbox events `2`, and cleanup
+  remaining marker count `0`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed across workspace projects.

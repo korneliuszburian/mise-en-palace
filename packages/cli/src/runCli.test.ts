@@ -339,6 +339,22 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Source graph smoke: skipped (database not configured)");
   });
 
+  it("reports memory governance smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "memory-governance"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Memory Governance Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain(
+      "Memory governance smoke: skipped (database not configured)"
+    );
+  });
+
   it("prints source claim add help", async () => {
     const result = await runCli(["source", "claim", "add", "--help"], {
       env: {},

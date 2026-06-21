@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 03 MemoryRepository methods complete.
+Current slice: Slice 04 memory governance smoke path complete.
 
 Completed:
 
@@ -31,6 +31,11 @@ Completed:
   accepted candidates create a MemoryRecord, initial MemoryRecordVersion,
   `currentVersionId`, review metadata, and outbox event. Application feedback
   records `memory_applications` and updates positive/negative counters.
+- Slice 04 added `pnpm db:smoke:memory-governance`. The smoke requires DB,
+  creates a test project/run/source claim, creates and reads back a
+  MemoryCandidate, promotes it into a MemoryRecord and version, records
+  application feedback, creates AntiMemoryRecord, reads back linkage, and
+  cleans marker rows to zero.
 
 Verification:
 
@@ -72,6 +77,19 @@ Verification:
 - `pnpm --filter @krn/db db:check`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 04 RED: targeted DB/CLI tests failed on missing
+  `runMemoryGovernanceSmokeCheck` export and missing
+  `krn db smoke memory-governance` routing.
+- `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts`: passed.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 33 tests.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed. Runtime proof included candidate
+  readback `matched`, reviewed status `accepted`, memory record readback
+  `matched`, run anti-memory records `1`, project memory records `1`, outbox
+  events `2`, and cleanup remaining marker count `0`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed.
 
 Skill gates:
 
@@ -85,4 +103,4 @@ Skill gates:
 
 Next action:
 
-- Slice 04: add memory governance smoke path.
+- Slice 05: add CLI `krn memory candidate add`.

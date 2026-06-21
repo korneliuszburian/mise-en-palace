@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 03.
+- None through Slice 04.
 
 Known unproven M23 behavior:
 
-- There is no memory governance smoke path.
 - There is no CLI `krn memory candidate add`.
 - There is no CLI `krn memory candidate promote/reject`.
 - There is no CLI `krn memory record apply`.
@@ -52,3 +51,9 @@ Closed in Slice 03:
   feedback, anti-memory creation, and anti-memory list-by-run methods.
 - Mappers now return typed M23 memory read models instead of dropping
   run/source/review/invalidation fields.
+
+Closed in Slice 04:
+
+- `pnpm db:smoke:memory-governance` now proves candidate creation, explicit
+  promotion, record/version readback, application feedback, anti-memory
+  linkage, and cleanup to zero marker rows against the local DB.

@@ -12,7 +12,12 @@ export type CliCommand =
     }
   | {
       kind: "dbSmoke";
-      target: "project" | "harnessPlan" | "harnessEvidence" | "sourceGraph";
+      target:
+        | "project"
+        | "harnessPlan"
+        | "harnessEvidence"
+        | "sourceGraph"
+        | "memoryGovernance";
     }
   | {
       kind: "evidenceCapture";
@@ -86,7 +91,7 @@ const usage = [
   "Other commands:",
   "krn doctor",
   "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph]",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
@@ -281,8 +286,20 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "memory-governance") {
+      return {
+        command: {
+          kind: "dbSmoke",
+          target: "memoryGovernance"
+        }
+      };
+    }
+
     return {
-      error: "Usage: krn db readiness|smoke [harness-plan|harness-evidence|source-graph]"
+      error: [
+        "Usage: krn db readiness|smoke",
+        "[harness-plan|harness-evidence|source-graph|memory-governance]"
+      ].join(" ")
     };
   }
 

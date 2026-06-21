@@ -55,6 +55,11 @@
 - Slice 03 records application feedback in `memory_applications` and updates
   positive or negative counters on the memory record. It does not auto-create
   demotion candidates; later CLI/feedback slices can decide that behavior.
+- Slice 04 makes memory governance runtime proof a DB smoke command, not a
+  markdown assertion. The smoke uses existing harness/project/source/memory
+  repositories and requires `KRN_DATABASE_URL`.
+- Slice 04 cleanup uses a smoke marker in metadata/outbox payloads and proves
+  cleanup with a remaining marker count of zero.
 
 Slice 00 skill record:
 
@@ -95,3 +100,11 @@ Slice 03 skill record:
   unknown JSON narrowing in mappers.
 - `superpowers:test-driven-development`: used for RED/GREEN repository and
   mapper tests.
+
+Slice 04 skill record:
+
+- `brain-store-schema`: used for DB smoke lifecycle, linkage checks, cleanup
+  scope, and repository-backed persistence proof.
+- `typescript-type-safety`: used for the new smoke report and CLI target union.
+- `superpowers:test-driven-development`: used for RED/GREEN DB export and CLI
+  routing tests.

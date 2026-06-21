@@ -5,6 +5,7 @@ import path from "node:path";
 import {
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
+  runMemoryGovernanceSmokeCheck,
   runPersistenceSmokeCheck,
   runSourceGraphSmokeCheck
 } from "@krn/db";
@@ -13,7 +14,7 @@ export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
   createId(prefix: string): string;
-  target: "project" | "harnessPlan" | "harnessEvidence" | "sourceGraph";
+  target: "project" | "harnessPlan" | "harnessEvidence" | "sourceGraph" | "memoryGovernance";
 }
 
 export interface DbSmokeResult {
@@ -53,6 +54,66 @@ const findRepoRoot = async (startPath: string): Promise<string> => {
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : "unknown DB smoke error";
 
+const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
+  if (target === "harnessPlan") {
+    return "KRN Harness Plan Smoke";
+  }
+
+  if (target === "harnessEvidence") {
+    return "KRN Harness Evidence Smoke";
+  }
+
+  if (target === "sourceGraph") {
+    return "KRN Source Graph Smoke";
+  }
+
+  if (target === "memoryGovernance") {
+    return "KRN Memory Governance Smoke";
+  }
+
+  return "KRN DB Smoke";
+};
+
+const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
+  if (target === "harnessPlan") {
+    return "Harness plan smoke: skipped (database not configured)";
+  }
+
+  if (target === "harnessEvidence") {
+    return "Harness evidence smoke: skipped (database not configured)";
+  }
+
+  if (target === "sourceGraph") {
+    return "Source graph smoke: skipped (database not configured)";
+  }
+
+  if (target === "memoryGovernance") {
+    return "Memory governance smoke: skipped (database not configured)";
+  }
+
+  return "Persistence smoke: skipped (database not configured)";
+};
+
+const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
+  if (target === "harnessPlan") {
+    return "Harness plan smoke";
+  }
+
+  if (target === "harnessEvidence") {
+    return "Harness evidence smoke";
+  }
+
+  if (target === "sourceGraph") {
+    return "Source graph smoke";
+  }
+
+  if (target === "memoryGovernance") {
+    return "Memory governance smoke";
+  }
+
+  return "Persistence smoke";
+};
+
 export const runDbSmokeCommand = async (
   runtime: DbSmokeRuntime
 ): Promise<DbSmokeResult> => {
@@ -60,22 +121,8 @@ export const runDbSmokeCommand = async (
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-  const title =
-    runtime.target === "harnessPlan"
-      ? "KRN Harness Plan Smoke"
-      : runtime.target === "harnessEvidence"
-        ? "KRN Harness Evidence Smoke"
-        : runtime.target === "sourceGraph"
-          ? "KRN Source Graph Smoke"
-          : "KRN DB Smoke";
-  const skipped =
-    runtime.target === "harnessPlan"
-      ? "Harness plan smoke: skipped (database not configured)"
-      : runtime.target === "harnessEvidence"
-        ? "Harness evidence smoke: skipped (database not configured)"
-        : runtime.target === "sourceGraph"
-          ? "Source graph smoke: skipped (database not configured)"
-          : "Persistence smoke: skipped (database not configured)";
+  const title = titleForTarget(runtime.target);
+  const skipped = skippedLineForTarget(runtime.target);
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
@@ -185,6 +232,46 @@ export const runDbSmokeCommand = async (
       };
     }
 
+    if (runtime.target === "memoryGovernance") {
+      const report = await runMemoryGovernanceSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("memory-governance-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Memory Governance Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          `Workspace smoke row: ${report.workspaceSlug}`,
+          `Project smoke row: ${report.projectSlug}`,
+          `Execution run: ${report.executionRunId}`,
+          `Source claim: ${report.sourceClaimId}`,
+          `Memory candidate: ${report.memoryCandidateId}`,
+          `Memory candidate readback: ${
+            report.readBackMemoryCandidateId === report.memoryCandidateId ? "matched" : "mismatch"
+          }`,
+          `Memory candidate reviewed status: ${report.reviewedMemoryCandidateStatus}`,
+          `Memory record: ${report.memoryRecordId}`,
+          `Memory record readback: ${
+            report.readBackMemoryRecordId === report.memoryRecordId ? "matched" : "mismatch"
+          }`,
+          `Memory record version: ${report.memoryRecordVersionId}`,
+          `Memory application: ${report.memoryApplicationId}`,
+          `Anti-memory record: ${report.antiMemoryRecordId}`,
+          `Run anti-memory records: ${report.runAntiMemoryCount}`,
+          `Project memory records: ${report.projectMemoryRecordCount}`,
+          `Outbox events: ${report.outboxEventCount}`,
+          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+          `Memory governance smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
     const report = await runPersistenceSmokeCheck({
       databaseUrl,
       migrationsFolder,
@@ -213,15 +300,7 @@ export const runDbSmokeCommand = async (
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: configured",
-        `${
-          runtime.target === "harnessPlan"
-            ? "Harness plan smoke"
-            : runtime.target === "harnessEvidence"
-              ? "Harness evidence smoke"
-              : runtime.target === "sourceGraph"
-                ? "Source graph smoke"
-                : "Persistence smoke"
-        }: failed (${errorMessage(error)})`
+        `${failureLabelForTarget(runtime.target)}: failed (${errorMessage(error)})`
       ].join("\n") + "\n"
     };
   }
