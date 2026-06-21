@@ -41,6 +41,20 @@
 - Slice 02 treats an explicit user preference as `kind: "preference"` plus
   `isUserPreference: true`. Only that path may omit source grounding and
   invalidation rule.
+- Slice 03 extends `@krn/core` read models rather than returning DB rows from
+  the repository. M23 memory candidate, record, application, and anti-memory
+  readbacks now carry run/source/review/invalidation fields at the domain
+  boundary.
+- Slice 03 keeps promotion explicit. `promoteMemoryCandidate` accepts only an
+  accepted decision, rejects already reviewed candidates, creates the memory
+  record and initial version in one transaction, and marks the candidate as
+  reviewed.
+- Slice 03 uses optional `recordKey` for promotion. If absent, the repository
+  derives `memory:<candidateId>` so CLI can promote the target examples without
+  inventing a key argument in M23.06.
+- Slice 03 records application feedback in `memory_applications` and updates
+  positive or negative counters on the memory record. It does not auto-create
+  demotion candidates; later CLI/feedback slices can decide that behavior.
 
 Slice 00 skill record:
 
@@ -72,3 +86,12 @@ Slice 02 skill record:
   exported input types.
 - `superpowers:test-driven-development`: used for RED/GREEN memory governance
   IO parser tests.
+
+Slice 03 skill record:
+
+- `brain-store-schema`: used for repository adapter lifecycle, transactional
+  promotion, application feedback persistence, and mapper/read-model impact.
+- `typescript-type-safety`: used for public core/harness type expansion and
+  unknown JSON narrowing in mappers.
+- `superpowers:test-driven-development`: used for RED/GREEN repository and
+  mapper tests.

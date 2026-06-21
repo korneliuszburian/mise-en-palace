@@ -72,3 +72,15 @@ Slice 02 memory governance IO schemas:
   `proposed`.
 - GREEN: `pnpm --filter @krn/schema test` passed with 1 test file and 8 tests.
 - `pnpm typecheck`: passed across workspace projects.
+
+Slice 03 MemoryRepository methods:
+
+- RED: `pnpm --filter @krn/db test` failed because
+  `DrizzleMemoryRepository` did not expose M23 repository methods, mappers did
+  not return M23 candidate/record/anti-memory fields, and
+  `mapMemoryApplication` was missing.
+- GREEN: `pnpm --filter @krn/db test` passed with 5 test files and 15 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed across workspace projects.
+- `git diff --check`: passed.

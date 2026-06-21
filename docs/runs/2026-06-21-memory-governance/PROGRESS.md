@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 02 memory governance IO schemas complete.
+Current slice: Slice 03 MemoryRepository methods complete.
 
 Completed:
 
@@ -25,6 +25,12 @@ Completed:
   requires application guidance, requires invalidation/source grounding unless
   the candidate is an explicit user preference, and defaults candidate status
   to `proposed`.
+- Slice 03 added M23 MemoryRepository methods and typed read models:
+  candidate get/promote/reject, record get/list, application feedback, and
+  anti-memory list-by-run. Drizzle promotion is explicit and transactional:
+  accepted candidates create a MemoryRecord, initial MemoryRecordVersion,
+  `currentVersionId`, review metadata, and outbox event. Application feedback
+  records `memory_applications` and updates positive/negative counters.
 
 Verification:
 
@@ -59,6 +65,13 @@ Verification:
   exports and missing `proposed` candidate status default.
 - `pnpm --filter @krn/schema test`: passed with 8 tests.
 - `pnpm typecheck`: passed.
+- Slice 03 RED: `pnpm --filter @krn/db test` failed on missing M23 repository
+  methods, missing mapper fields, and missing `mapMemoryApplication`.
+- `pnpm --filter @krn/db test`: passed with 5 test files and 15 tests.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -72,4 +85,4 @@ Skill gates:
 
 Next action:
 
-- Slice 03: add MemoryRepository methods.
+- Slice 04: add memory governance smoke path.

@@ -10,6 +10,7 @@ import type {
   EvalCandidate,
   ExecutionRun,
   FeedbackDelta,
+  MemoryApplication,
   MemoryCandidate,
   MemoryRecord,
   OperatorIntent,
@@ -43,6 +44,7 @@ import type {
   contextAssemblies,
   executionRuns,
   harnessPlans,
+  memoryApplications,
   memoryCandidates,
   memoryRecords,
   operatorIntents,
@@ -79,6 +81,7 @@ type HarnessPlanRow = InferSelectModel<typeof harnessPlans>;
 type ContextAssemblyRow = InferSelectModel<typeof contextAssemblies>;
 type ExecutionRunRow = InferSelectModel<typeof executionRuns>;
 type MemoryRecordRow = InferSelectModel<typeof memoryRecords>;
+type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
 type MemoryCandidateRow = InferSelectModel<typeof memoryCandidates>;
 type AntiMemoryRecordRow = InferSelectModel<typeof antiMemoryRecords>;
 type SourceArtifactRow = InferSelectModel<typeof sourceArtifacts>;
@@ -233,6 +236,10 @@ const memoryCandidatesOrEmpty = (value: unknown): MemoryCandidate[] => {
     return [{
       id: item.id,
       projectId: item.projectId,
+      ...(typeof item.executionRunId === "string" ? { executionRunId: item.executionRunId } : {}),
+      ...(typeof item.feedbackDeltaId === "string"
+        ? { feedbackDeltaId: item.feedbackDeltaId }
+        : {}),
       proposedBy: item.proposedBy,
       kind: item.kind as MemoryCandidate["kind"],
       status: item.status as MemoryCandidate["status"],
@@ -241,11 +248,19 @@ const memoryCandidatesOrEmpty = (value: unknown): MemoryCandidate[] => {
       owner: item.owner,
       confidence: item.confidence,
       applicationGuidance: item.applicationGuidance,
+      ...(typeof item.invalidationRule === "string"
+        ? { invalidationRule: item.invalidationRule }
+        : {}),
+      sourceClaimIds: stringListOrEmpty(item.sourceClaimIds),
       sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
       isUserPreference: item.isUserPreference,
+      ...(typeof item.reviewer === "string" ? { reviewer: item.reviewer } : {}),
+      ...(typeof item.reviewedAt === "string" ? { reviewedAt: item.reviewedAt } : {}),
       ...(typeof item.rejectionReason === "string"
         ? { rejectionReason: item.rejectionReason }
         : {}),
+      validFrom: typeof item.validFrom === "string" ? item.validFrom : item.createdAt,
+      ...(typeof item.validUntil === "string" ? { validUntil: item.validUntil } : {}),
       metadata: metadataOrEmpty(item.metadata),
       createdAt: item.createdAt,
       updatedAt: item.updatedAt
@@ -542,6 +557,7 @@ export const mapMemoryRecord = (row: MemoryRecordRow): MemoryRecord => {
   return {
     id: row.id,
     projectId: row.projectId,
+    ...(row.currentVersionId === null ? {} : { currentVersionId: row.currentVersionId }),
     key: row.key,
     kind: row.kind,
     status: row.status,
@@ -550,6 +566,7 @@ export const mapMemoryRecord = (row: MemoryRecordRow): MemoryRecord => {
     owner: row.owner,
     confidence: row.confidence,
     applicationGuidance: row.applicationGuidance,
+    ...(row.invalidationRule === null ? {} : { invalidationRule: row.invalidationRule }),
     sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
     isUserPreference: row.isUserPreference,
     validFrom: toIsoTimestamp(row.validFrom),
@@ -564,23 +581,49 @@ export const mapMemoryRecord = (row: MemoryRecordRow): MemoryRecord => {
   };
 };
 
-export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => ({
+export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => {
+  const reviewedAt = optionalIsoTimestamp(row.reviewedAt);
+  const validUntil = optionalIsoTimestamp(row.validUntil);
+
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+    ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+    proposedBy: row.proposedBy,
+    kind: row.kind,
+    status: row.status,
+    summary: row.summary,
+    body: row.body,
+    owner: row.owner,
+    confidence: row.confidence,
+    applicationGuidance: row.applicationGuidance,
+    ...(row.invalidationRule === null ? {} : { invalidationRule: row.invalidationRule }),
+    sourceClaimIds: stringListOrEmpty(row.sourceClaimIds),
+    sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
+    isUserPreference: row.isUserPreference,
+    ...(row.reviewer === null ? {} : { reviewer: row.reviewer }),
+    ...(reviewedAt === undefined ? {} : { reviewedAt }),
+    ...(row.rejectionReason === null ? {} : { rejectionReason: row.rejectionReason }),
+    validFrom: toIsoTimestamp(row.validFrom),
+    ...(validUntil === undefined ? {} : { validUntil }),
+    metadata: metadataOrEmpty(row.metadata),
+    createdAt: toIsoTimestamp(row.createdAt),
+    updatedAt: toIsoTimestamp(row.updatedAt)
+  };
+};
+
+export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplication => ({
   id: row.id,
-  projectId: row.projectId,
-  proposedBy: row.proposedBy,
-  kind: row.kind,
-  status: row.status,
-  summary: row.summary,
-  body: row.body,
-  owner: row.owner,
-  confidence: row.confidence,
-  applicationGuidance: row.applicationGuidance,
-  sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
-  isUserPreference: row.isUserPreference,
-  ...(row.rejectionReason === null ? {} : { rejectionReason: row.rejectionReason }),
+  memoryRecordId: row.memoryRecordId,
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+  ...(row.taskContractId === null ? {} : { taskContractId: row.taskContractId }),
+  ...(row.contextAssemblyId === null ? {} : { contextAssemblyId: row.contextAssemblyId }),
+  expectedUse: row.expectedUse,
+  ...(row.outcome === null ? {} : { outcome: row.outcome }),
+  ...(row.notes === null ? {} : { notes: row.notes }),
   metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
+  createdAt: toIsoTimestamp(row.createdAt)
 });
 
 export const mapAntiMemoryRecord = (row: AntiMemoryRecordRow): AntiMemoryRecord => {
@@ -590,7 +633,16 @@ export const mapAntiMemoryRecord = (row: AntiMemoryRecordRow): AntiMemoryRecord 
   return {
     id: row.id,
     projectId: row.projectId,
+    ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
     key: row.key,
+    ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
+    ...(row.reason === null ? {} : { reason: row.reason }),
+    invalidatedBySourceClaimIds: stringListOrEmpty(row.invalidatedBySourceClaimIds),
+    ...(row.invalidatedBySourceClaimId === null
+      ? {}
+      : { invalidatedBySourceClaimId: row.invalidatedBySourceClaimId }),
+    ...(row.appliesTo === null ? {} : { appliesTo: row.appliesTo }),
+    ...(row.mayRevisitWhen === null ? {} : { mayRevisitWhen: row.mayRevisitWhen }),
     summary: row.summary,
     body: row.body,
     owner: row.owner,

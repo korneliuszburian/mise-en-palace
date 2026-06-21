@@ -34,8 +34,10 @@ const memoryCandidate: MemoryCandidate = {
   owner: "kernel",
   confidence: 90,
   applicationGuidance: "Use when implementing persisted evidence capture.",
+  sourceClaimIds: [],
   sourceLineage: [{ sourceId: "source-1" }],
   isUserPreference: false,
+  validFrom: createdAt.toISOString(),
   metadata: {},
   createdAt: createdAt.toISOString(),
   updatedAt: updatedAt.toISOString()
@@ -163,6 +165,145 @@ describe("source graph mappers", () => {
       executionRunId: "run-1",
       rejectedBecause: "decorative",
       attemptedClaim: "Interesting AI link should influence KRN."
+    });
+  });
+});
+
+describe("memory governance mappers", () => {
+  it("maps M23 memory candidate review and lineage fields", () => {
+    const mapMemoryCandidate = mapper("mapMemoryCandidate");
+
+    const result = mapMemoryCandidate({
+      id: "memory-candidate-1",
+      projectId: "project-1",
+      executionRunId: "run-1",
+      feedbackDeltaId: null,
+      proposedBy: "codex",
+      kind: "constraint",
+      status: "accepted",
+      summary: "Keep memory store-backed",
+      body: "Runtime Memory Core must be backed by the brain store.",
+      owner: "kernel",
+      confidence: 94,
+      applicationGuidance: "Apply when adding memory governance behavior.",
+      invalidationRule: "Revisit when runtime memory stops using Postgres.",
+      sourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-1" }],
+      isUserPreference: false,
+      reviewer: "operator",
+      reviewedAt: createdAt,
+      rejectionReason: null,
+      validFrom: createdAt,
+      validUntil: updatedAt,
+      metadata: { slice: "M23.03" },
+      createdAt,
+      updatedAt
+    });
+
+    expect(result).toMatchObject({
+      executionRunId: "run-1",
+      sourceClaimIds: ["source-claim-1"],
+      invalidationRule: "Revisit when runtime memory stops using Postgres.",
+      reviewer: "operator",
+      reviewedAt: createdAt.toISOString(),
+      validUntil: updatedAt.toISOString()
+    });
+  });
+
+  it("maps M23 memory records with current version and invalidation rule", () => {
+    const mapMemoryRecord = mapper("mapMemoryRecord");
+
+    const result = mapMemoryRecord({
+      id: "memory-record-1",
+      projectId: "project-1",
+      currentVersionId: "memory-version-1",
+      key: "memory:store-backed",
+      kind: "constraint",
+      status: "active",
+      summary: "Keep memory store-backed",
+      body: "Runtime Memory Core must be backed by the brain store.",
+      owner: "kernel",
+      confidence: 94,
+      applicationGuidance: "Apply when adding memory governance behavior.",
+      invalidationRule: "Revisit when runtime memory stops using Postgres.",
+      sourceLineage: [{ sourceId: "source-1" }],
+      isUserPreference: false,
+      validFrom: createdAt,
+      validUntil: null,
+      invalidatedAt: null,
+      invalidationReason: null,
+      positiveFeedbackCount: 1,
+      negativeFeedbackCount: 0,
+      metadata: {},
+      createdAt,
+      updatedAt
+    });
+
+    expect(result).toMatchObject({
+      currentVersionId: "memory-version-1",
+      invalidationRule: "Revisit when runtime memory stops using Postgres.",
+      positiveFeedbackCount: 1
+    });
+  });
+
+  it("maps M23 memory applications as typed read models", () => {
+    const mapMemoryApplication = mapper("mapMemoryApplication");
+
+    const result = mapMemoryApplication({
+      id: "memory-application-1",
+      memoryRecordId: "memory-record-1",
+      executionRunId: "run-1",
+      taskContractId: null,
+      contextAssemblyId: null,
+      expectedUse: "Guide storage decisions.",
+      outcome: "helped",
+      notes: "Prevented adding a separate memory store.",
+      metadata: {},
+      createdAt
+    });
+
+    expect(result).toMatchObject({
+      id: "memory-application-1",
+      memoryRecordId: "memory-record-1",
+      executionRunId: "run-1",
+      outcome: "helped"
+    });
+  });
+
+  it("maps M23 anti-memory source and run linkage", () => {
+    const mapAntiMemoryRecord = mapper("mapAntiMemoryRecord");
+
+    const result = mapAntiMemoryRecord({
+      id: "anti-memory-1",
+      projectId: "project-1",
+      executionRunId: "run-1",
+      key: "anti:markdown-runtime-memory",
+      rejectedClaim: "Markdown files are runtime memory.",
+      reason: "Markdown may be audit/source/export, not Memory Core.",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      invalidatedBySourceClaimId: "source-claim-1",
+      appliesTo: "memory governance",
+      mayRevisitWhen: "Brain store is removed.",
+      summary: "Markdown is not runtime memory",
+      body: "Do not treat markdown files as Memory Core.",
+      owner: "kernel",
+      confidence: 99,
+      sourceLineage: [{ sourceId: "source-1" }],
+      validFrom: createdAt,
+      validUntil: null,
+      invalidatedAt: null,
+      invalidationReason: null,
+      metadata: {},
+      createdAt,
+      updatedAt
+    });
+
+    expect(result).toMatchObject({
+      executionRunId: "run-1",
+      rejectedClaim: "Markdown files are runtime memory.",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      invalidatedBySourceClaimId: "source-claim-1",
+      appliesTo: "memory governance"
     });
   });
 });

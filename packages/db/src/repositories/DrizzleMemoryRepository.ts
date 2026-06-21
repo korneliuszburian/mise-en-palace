@@ -1,6 +1,8 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type {
   AntiMemoryRecord,
+  ExecutionRunId,
+  MemoryApplication,
   MemoryCandidate,
   MemoryRecord,
   ProjectId
@@ -9,23 +11,50 @@ import type {
   CreateAntiMemoryRecordInput,
   CreateMemoryCandidateInput,
   CreateMemoryRecordInput,
-  MemoryRepository
+  MemoryRepository,
+  PromoteMemoryCandidateInput,
+  RejectMemoryCandidateInput,
+  RecordMemoryApplicationInput
 } from "@krn/harness";
 
 import type { KrnDatabase } from "../database.js";
 import {
   antiMemoryRecords,
+  memoryApplications,
   memoryCandidates,
   memoryRecordVersions,
   memoryRecords,
   outboxEvents
 } from "../schema/index.js";
-import { requireReturnedRow } from "./common.js";
+import {
+  fromIsoTimestamp,
+  requireReturnedRow
+} from "./common.js";
 import {
   mapAntiMemoryRecord,
+  mapMemoryApplication,
   mapMemoryCandidate,
   mapMemoryRecord
 } from "./mappers.js";
+
+const smokePayload = (
+  metadata: Record<string, unknown> | undefined
+): Record<string, string> => {
+  const smokeId = metadata?.smokeId;
+
+  return typeof smokeId === "string" ? { smokeId } : {};
+};
+
+const memoryRecordKeyForCandidate = (input: PromoteMemoryCandidateInput): string =>
+  input.recordKey ?? `memory:${input.candidateId}`;
+
+const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
+  if (candidate.status !== "proposed" && candidate.status !== "candidate") {
+    throw new Error(
+      `Memory candidate ${candidate.id} cannot be promoted from ${candidate.status}`
+    );
+  }
+};
 
 export class DrizzleMemoryRepository implements MemoryRepository {
   constructor(private readonly db: KrnDatabase) {}
@@ -37,6 +66,9 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           .insert(memoryRecords)
           .values({
             projectId: input.projectId,
+            ...(input.currentVersionId === undefined
+              ? {}
+              : { currentVersionId: input.currentVersionId }),
             key: input.key,
             kind: input.kind,
             status: input.status ?? "active",
@@ -45,38 +77,90 @@ export class DrizzleMemoryRepository implements MemoryRepository {
             owner: input.owner,
             confidence: input.confidence,
             applicationGuidance: input.applicationGuidance,
+            ...(input.invalidationRule === undefined
+              ? {}
+              : { invalidationRule: input.invalidationRule }),
             sourceLineage: input.sourceLineage,
             isUserPreference: input.isUserPreference,
+            ...(input.validFrom === undefined
+              ? {}
+              : { validFrom: fromIsoTimestamp(input.validFrom) }),
+            ...(input.validUntil === undefined
+              ? {}
+              : { validUntil: fromIsoTimestamp(input.validUntil) }),
             metadata: input.metadata ?? {}
           })
           .returning(),
         "createMemoryRecord"
       );
 
-      await tx.insert(memoryRecordVersions).values({
-        memoryRecordId: row.id,
-        version: 1,
-        summary: input.summary,
-        body: input.body,
-        owner: input.owner,
-        confidence: input.confidence,
-        applicationGuidance: input.applicationGuidance,
-        sourceLineage: input.sourceLineage,
-        metadata: {
-          reason: "initial memory record version"
-        }
-      });
+      const versionRow = requireReturnedRow(
+        await tx
+          .insert(memoryRecordVersions)
+          .values({
+            memoryRecordId: row.id,
+            version: 1,
+            summary: input.summary,
+            body: input.body,
+            owner: input.owner,
+            confidence: input.confidence,
+            applicationGuidance: input.applicationGuidance,
+            ...(input.invalidationRule === undefined
+              ? {}
+              : { invalidationRule: input.invalidationRule }),
+            ...(input.validFrom === undefined
+              ? {}
+              : { validFrom: fromIsoTimestamp(input.validFrom) }),
+            ...(input.validUntil === undefined
+              ? {}
+              : { validUntil: fromIsoTimestamp(input.validUntil) }),
+            sourceLineage: input.sourceLineage,
+            metadata: {
+              reason: "initial memory record version"
+            }
+          })
+          .returning(),
+        "createMemoryRecordVersion"
+      );
+      const updatedRow = requireReturnedRow(
+        await tx
+          .update(memoryRecords)
+          .set({
+            currentVersionId: input.currentVersionId ?? versionRow.id,
+            updatedAt: new Date()
+          })
+          .where(eq(memoryRecords.id, row.id))
+          .returning(),
+        "createMemoryRecord.updateCurrentVersion"
+      );
 
-      return mapMemoryRecord(row);
+      return mapMemoryRecord(updatedRow);
     });
   }
 
   async getMemoryRecord(id: string): Promise<MemoryRecord | undefined> {
+    return this.getMemoryRecordById(id);
+  }
+
+  async getMemoryRecordById(id: string): Promise<MemoryRecord | undefined> {
     const row = await this.db.query.memoryRecords.findFirst({
       where: eq(memoryRecords.id, id)
     });
 
     return row === undefined ? undefined : mapMemoryRecord(row);
+  }
+
+  async listMemoryRecordsForProject(
+    projectId: ProjectId,
+    limit?: number
+  ): Promise<MemoryRecord[]> {
+    const rows = await this.db.query.memoryRecords.findMany({
+      where: eq(memoryRecords.projectId, projectId),
+      orderBy: asc(memoryRecords.updatedAt),
+      ...(limit === undefined ? {} : { limit })
+    });
+
+    return rows.map(mapMemoryRecord);
   }
 
   async listActiveMemory(projectId: ProjectId, limit: number): Promise<MemoryRecord[]> {
@@ -96,15 +180,32 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           .insert(memoryCandidates)
           .values({
             projectId: input.projectId,
+            ...(input.executionRunId === undefined
+              ? {}
+              : { executionRunId: input.executionRunId }),
+            ...(input.feedbackDeltaId === undefined
+              ? {}
+              : { feedbackDeltaId: input.feedbackDeltaId }),
             proposedBy: input.proposedBy,
             kind: input.kind,
+            status: input.status ?? "proposed",
             summary: input.summary,
             body: input.body,
             owner: input.owner,
             confidence: input.confidence,
             applicationGuidance: input.applicationGuidance,
+            ...(input.invalidationRule === undefined
+              ? {}
+              : { invalidationRule: input.invalidationRule }),
+            sourceClaimIds: input.sourceClaimIds ?? [],
             sourceLineage: input.sourceLineage,
             isUserPreference: input.isUserPreference,
+            ...(input.validFrom === undefined
+              ? {}
+              : { validFrom: fromIsoTimestamp(input.validFrom) }),
+            ...(input.validUntil === undefined
+              ? {}
+              : { validUntil: fromIsoTimestamp(input.validUntil) }),
             metadata: input.metadata ?? {}
           })
           .returning(),
@@ -114,6 +215,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       await tx.insert(outboxEvents).values({
         topic: "memory.candidate.created",
         payload: {
+          ...smokePayload(input.metadata),
           memoryCandidateId: row.id,
           projectId: row.projectId
         }
@@ -121,6 +223,142 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
       return mapMemoryCandidate(row);
     });
+  }
+
+  async getMemoryCandidateById(id: string): Promise<MemoryCandidate | undefined> {
+    const row = await this.db.query.memoryCandidates.findFirst({
+      where: eq(memoryCandidates.id, id)
+    });
+
+    return row === undefined ? undefined : mapMemoryCandidate(row);
+  }
+
+  async promoteMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord> {
+    return this.db.transaction(async (tx) => {
+      const candidateRow = await tx.query.memoryCandidates.findFirst({
+        where: eq(memoryCandidates.id, input.candidateId)
+      });
+
+      if (candidateRow === undefined) {
+        throw new Error(`Memory candidate ${input.candidateId} was not found`);
+      }
+
+      const candidate = mapMemoryCandidate(candidateRow);
+      ensurePromotableCandidate(candidate);
+
+      const now = new Date();
+      const memoryRecordRow = requireReturnedRow(
+        await tx
+          .insert(memoryRecords)
+          .values({
+            projectId: candidateRow.projectId,
+            key: memoryRecordKeyForCandidate(input),
+            kind: candidateRow.kind,
+            status: "active",
+            summary: candidateRow.summary,
+            body: candidateRow.body,
+            owner: candidateRow.owner,
+            confidence: candidateRow.confidence,
+            applicationGuidance: candidateRow.applicationGuidance,
+            ...(candidateRow.invalidationRule === null
+              ? {}
+              : { invalidationRule: candidateRow.invalidationRule }),
+            sourceLineage: candidateRow.sourceLineage,
+            isUserPreference: candidateRow.isUserPreference,
+            validFrom: candidateRow.validFrom,
+            ...(candidateRow.validUntil === null
+              ? {}
+              : { validUntil: candidateRow.validUntil }),
+            metadata: {
+              ...candidate.metadata,
+              createdFromCandidateId: candidateRow.id,
+              sourceClaimIds: candidate.sourceClaimIds
+            }
+          })
+          .returning(),
+        "promoteMemoryCandidate.insertMemoryRecord"
+      );
+      const versionRow = requireReturnedRow(
+        await tx
+          .insert(memoryRecordVersions)
+          .values({
+            memoryRecordId: memoryRecordRow.id,
+            createdFromCandidateId: candidateRow.id,
+            version: 1,
+            summary: candidateRow.summary,
+            body: candidateRow.body,
+            owner: candidateRow.owner,
+            confidence: candidateRow.confidence,
+            applicationGuidance: candidateRow.applicationGuidance,
+            ...(candidateRow.invalidationRule === null
+              ? {}
+              : { invalidationRule: candidateRow.invalidationRule }),
+            validFrom: candidateRow.validFrom,
+            ...(candidateRow.validUntil === null
+              ? {}
+              : { validUntil: candidateRow.validUntil }),
+            sourceLineage: candidateRow.sourceLineage,
+            metadata: {
+              ...candidate.metadata,
+              sourceClaimIds: candidate.sourceClaimIds
+            }
+          })
+          .returning(),
+        "promoteMemoryCandidate.insertMemoryRecordVersion"
+      );
+      const updatedRecordRow = requireReturnedRow(
+        await tx
+          .update(memoryRecords)
+          .set({
+            currentVersionId: versionRow.id,
+            updatedAt: now
+          })
+          .where(eq(memoryRecords.id, memoryRecordRow.id))
+          .returning(),
+        "promoteMemoryCandidate.updateMemoryRecord"
+      );
+      await tx
+        .update(memoryCandidates)
+        .set({
+          status: input.decision,
+          reviewer: input.reviewer,
+          reviewedAt: now,
+          updatedAt: now
+        })
+        .where(eq(memoryCandidates.id, candidateRow.id));
+      await tx.insert(outboxEvents).values({
+        topic: "memory.candidate.promoted",
+        payload: {
+          ...smokePayload(input.metadata),
+          memoryCandidateId: candidateRow.id,
+          memoryRecordId: updatedRecordRow.id,
+          memoryRecordVersionId: versionRow.id,
+          projectId: candidateRow.projectId
+        }
+      });
+
+      return mapMemoryRecord(updatedRecordRow);
+    });
+  }
+
+  async rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate> {
+    const now = new Date();
+    const row = requireReturnedRow(
+      await this.db
+        .update(memoryCandidates)
+        .set({
+          status: "rejected",
+          reviewer: input.reviewer,
+          reviewedAt: now,
+          rejectionReason: input.reason,
+          updatedAt: now
+        })
+        .where(eq(memoryCandidates.id, input.candidateId))
+        .returning(),
+      "rejectMemoryCandidate"
+    );
+
+    return mapMemoryCandidate(row);
   }
 
   async listMemoryCandidates(projectId: ProjectId, limit: number): Promise<MemoryCandidate[]> {
@@ -133,13 +371,77 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return rows.map(mapMemoryCandidate);
   }
 
+  async recordMemoryApplication(
+    input: RecordMemoryApplicationInput
+  ): Promise<MemoryApplication> {
+    return this.db.transaction(async (tx) => {
+      const row = requireReturnedRow(
+        await tx
+          .insert(memoryApplications)
+          .values({
+            memoryRecordId: input.memoryRecordId,
+            executionRunId: input.executionRunId,
+            ...(input.taskContractId === undefined
+              ? {}
+              : { taskContractId: input.taskContractId }),
+            ...(input.contextAssemblyId === undefined
+              ? {}
+              : { contextAssemblyId: input.contextAssemblyId }),
+            expectedUse: input.expectedUse,
+            outcome: input.outcome,
+            notes: input.notes,
+            metadata: input.metadata ?? {}
+          })
+          .returning(),
+        "recordMemoryApplication"
+      );
+
+      if (input.outcome === "helped") {
+        await tx
+          .update(memoryRecords)
+          .set({
+            positiveFeedbackCount: sql`${memoryRecords.positiveFeedbackCount} + 1`,
+            updatedAt: new Date()
+          })
+          .where(eq(memoryRecords.id, input.memoryRecordId));
+      }
+
+      if (input.outcome === "hurt" || input.outcome === "stale") {
+        await tx
+          .update(memoryRecords)
+          .set({
+            negativeFeedbackCount: sql`${memoryRecords.negativeFeedbackCount} + 1`,
+            updatedAt: new Date()
+          })
+          .where(eq(memoryRecords.id, input.memoryRecordId));
+      }
+
+      return mapMemoryApplication(row);
+    });
+  }
+
   async createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord> {
     const row = requireReturnedRow(
       await this.db
         .insert(antiMemoryRecords)
         .values({
           projectId: input.projectId,
+          ...(input.executionRunId === undefined
+            ? {}
+            : { executionRunId: input.executionRunId }),
           key: input.key,
+          ...(input.rejectedClaim === undefined
+            ? {}
+            : { rejectedClaim: input.rejectedClaim }),
+          ...(input.reason === undefined ? {} : { reason: input.reason }),
+          invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+          ...(input.invalidatedBySourceClaimId === undefined
+            ? {}
+            : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
+          ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
+          ...(input.mayRevisitWhen === undefined
+            ? {}
+            : { mayRevisitWhen: input.mayRevisitWhen }),
           summary: input.summary,
           body: input.body,
           owner: input.owner,
@@ -152,5 +454,14 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     );
 
     return mapAntiMemoryRecord(row);
+  }
+
+  async listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]> {
+    const rows = await this.db.query.antiMemoryRecords.findMany({
+      where: eq(antiMemoryRecords.executionRunId, executionRunId),
+      orderBy: asc(antiMemoryRecords.createdAt)
+    });
+
+    return rows.map(mapAntiMemoryRecord);
   }
 }

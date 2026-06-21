@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through Slice 02.
+- None through Slice 03.
 
 Known unproven M23 behavior:
 
@@ -44,3 +44,11 @@ Closed in Slice 02:
 
 - Memory governance IO schemas now exist for candidate, promotion,
   application, feedback event, and anti-memory inputs.
+
+Closed in Slice 03:
+
+- MemoryRepository and DrizzleMemoryRepository now expose M23 candidate
+  readback, promotion, rejection, record readback/listing, application
+  feedback, anti-memory creation, and anti-memory list-by-run methods.
+- Mappers now return typed M23 memory read models instead of dropping
+  run/source/review/invalidation fields.
