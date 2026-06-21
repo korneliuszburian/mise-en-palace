@@ -70,6 +70,16 @@
   them to numeric confidence values before schema parsing.
 - Slice 05 persist mode verifies referenced source-claim existence before
   writing a MemoryCandidate when `--source-claim-id` is provided.
+- Slice 06 keeps candidate review explicit. `krn memory candidate promote`
+  requires `--reviewer` and `--decision accepted`; `reject` requires
+  `--reviewer` and `--reason`.
+- Slice 06 preview mode remains no-store. Without `--persist`, promote/reject
+  validate and report review intent but create no MemoryRecord and record no
+  memory application.
+- Slice 06 persist promote reads the candidate first so the CLI can print
+  source-claim `doesNotProve` limits before creating the MemoryRecord.
+- Slice 06 does not add a `--record-key` argument. Repository promotion keeps
+  deriving `memory:<candidateId>` when no key is provided.
 
 Slice 00 skill record:
 
@@ -129,3 +139,14 @@ Slice 05 skill record:
   persist tests.
 - `superpowers:verification-before-completion`: used before committing and
   pushing Slice 05.
+
+Slice 06 skill record:
+
+- `brain-store-schema`: used for repository-backed candidate review and
+  source-claim limit readback.
+- `typescript-type-safety`: used for CLI review command unions,
+  DatabaseRuntime repository picks, and schema-parsed review input.
+- `superpowers:test-driven-development`: used for RED/GREEN CLI promote and
+  reject tests.
+- `superpowers:verification-before-completion`: used before committing and
+  pushing Slice 06.

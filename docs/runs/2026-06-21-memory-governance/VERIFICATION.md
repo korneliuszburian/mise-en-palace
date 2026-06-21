@@ -84,6 +84,23 @@ Slice 03 MemoryRepository methods:
 - `pnpm --filter @krn/db db:check`: passed.
 - `pnpm test`: passed across workspace projects.
 
+Slice 04 memory governance smoke path:
+
+- RED: `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts` failed
+  because `runMemoryGovernanceSmokeCheck` was not exported.
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn db smoke memory-governance` returned invalid-args exit `2`.
+- GREEN: `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts` passed.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 33 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed. The report showed source claim,
+  memory candidate, accepted review status, memory record/version,
+  memory application, anti-memory record, outbox events `2`, and cleanup
+  remaining marker count `0`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed across workspace projects.
+
 Slice 05 CLI memory candidate add:
 
 - RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with three
@@ -106,19 +123,29 @@ Slice 05 CLI memory candidate add:
 - `pnpm --filter @krn/db db:check`: passed.
 - `git diff --check`: passed.
 
-Slice 04 memory governance smoke path:
+Slice 06 CLI memory candidate review:
 
-- RED: `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts` failed
-  because `runMemoryGovernanceSmokeCheck` was not exported.
-- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
-  `krn db smoke memory-governance` returned invalid-args exit `2`.
-- GREEN: `pnpm --filter @krn/db test -- memoryGovernanceSmoke.test.ts` passed.
-- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 33 tests.
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with four
+  invalid-args cases because `krn memory candidate promote/reject` was not
+  routed yet.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 40
+  tests.
 - `pnpm typecheck`: passed across workspace projects.
-- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
-  db:smoke:memory-governance`: passed. The report showed source claim,
-  memory candidate, accepted review status, memory record/version,
-  memory application, anti-memory record, outbox events `2`, and cleanup
-  remaining marker count `0`.
-- `pnpm --filter @krn/db db:check`: passed.
+- `git diff --check`: passed.
 - `pnpm test`: passed across workspace projects.
+- `pnpm --filter @krn/db db:check`: passed.
+- Promote preview passed:
+  `pnpm --filter @krn/cli krn memory candidate promote --candidate-id
+  memory-candidate-1 --reviewer operator --decision accepted`.
+- Promote preview report showed `Persistence: disabled`, `DB writes: none`,
+  candidateId `memory-candidate-1`, reviewer `operator`, decision `accepted`,
+  no MemoryRecord created, and no memory application recorded.
+- Reject preview passed:
+  `pnpm --filter @krn/cli krn memory candidate reject --candidate-id
+  memory-candidate-1 --reviewer operator --reason "No source mechanism tied
+  the claim to a KRN decision"`.
+- Reject preview report showed `Persistence: disabled`, `DB writes: none`,
+  decision `rejected`, the rejection reason, no MemoryRecord created, and no
+  memory application recorded.
+- `pnpm --filter @krn/cli krn memory candidate promote --help`: passed.
+- `pnpm --filter @krn/cli krn memory candidate reject --help`: passed.

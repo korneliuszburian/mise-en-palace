@@ -11,6 +11,8 @@ import type {
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
   CreateMemoryCandidateInput,
+  PromoteMemoryCandidateInput,
+  RejectMemoryCandidateInput,
   CreateReviewAssessmentInput,
   HarnessRunAggregate
 } from "@krn/harness";
@@ -27,6 +29,15 @@ const now = "2026-06-21T12:00:00.000Z";
 const unusedMemoryRepository = {
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
     throw new Error("createMemoryCandidate should not be called");
+  },
+  async getMemoryCandidateById(_id: string): Promise<never> {
+    throw new Error("getMemoryCandidateById should not be called");
+  },
+  async promoteMemoryCandidate(_input: PromoteMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteMemoryCandidate should not be called");
+  },
+  async rejectMemoryCandidate(_input: RejectMemoryCandidateInput): Promise<never> {
+    throw new Error("rejectMemoryCandidate should not be called");
   }
 };
 
@@ -551,6 +562,315 @@ describe("runCli", () => {
       kind: "constraint",
       confidence: 70,
       sourceClaimIds: ["source-claim-1"]
+    });
+  });
+
+  it("previews memory candidate promote without DB writes", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "promote",
+        "--candidate-id",
+        "memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--decision",
+        "accepted"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Memory Candidate Promote");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("candidateId: memory-candidate-1");
+    expect(result.stdout).toContain("reviewer: operator");
+    expect(result.stdout).toContain("decision: accepted");
+    expect(result.stdout).toContain("No MemoryRecord created");
+    expect(result.stdout).toContain("No memory application recorded");
+  });
+
+  it("requires database config for memory candidate promote --persist", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "promote",
+        "--candidate-id",
+        "memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--decision",
+        "accepted",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn memory candidate promote --persist"
+    );
+  });
+
+  it("persists memory candidate promote and prints source limits", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedPromotion: PromoteMemoryCandidateInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "promote",
+        "--candidate-id",
+        "memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--decision",
+        "accepted",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "KRN should model source graph with relational edges first",
+                mechanism: "Postgres stores harness state transactionally",
+                krnImplication: "KRN can link promoted memory to source claims",
+                doesNotProve: "This does not prove graph retrieval quality",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "M23",
+                status: "accepted",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            async createMemoryCandidate() {
+              throw new Error("createMemoryCandidate should not be called");
+            },
+            async getMemoryCandidateById(id) {
+              return {
+                id,
+                projectId: "project-1",
+                executionRunId: "execution-run-1",
+                proposedBy: "cli",
+                kind: "constraint",
+                status: "proposed",
+                summary: "Source graph should use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceClaimIds: ["source-claim-1"],
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                validFrom: now,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async promoteMemoryCandidate(input) {
+              capturedPromotion = input;
+
+              return {
+                id: "memory-record-1",
+                projectId: "project-1",
+                currentVersionId: "memory-record-version-1",
+                key: "memory:memory-candidate-1",
+                kind: "constraint",
+                status: "active",
+                summary: "Source graph should use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                positiveFeedbackCount: 0,
+                negativeFeedbackCount: 0,
+                metadata: {
+                  sourceClaimIds: ["source-claim-1"]
+                },
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async rejectMemoryCandidate() {
+              throw new Error("rejectMemoryCandidate should not be called");
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("memoryCandidate: memory-candidate-1");
+    expect(result.stdout).toContain("memoryRecord: memory-record-1");
+    expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
+    expect(result.stdout).toContain("No memory application recorded");
+    expect(capturedPromotion).toMatchObject({
+      candidateId: "memory-candidate-1",
+      reviewer: "operator",
+      decision: "accepted"
+    });
+  });
+
+  it("persists memory candidate reject and stores reason", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedRejection: RejectMemoryCandidateInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "reject",
+        "--candidate-id",
+        "memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--reason",
+        "No source mechanism tied the claim to a KRN decision",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById() {
+              throw new Error("getSourceClaimById should not be called");
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            async createMemoryCandidate() {
+              throw new Error("createMemoryCandidate should not be called");
+            },
+            async getMemoryCandidateById() {
+              throw new Error("getMemoryCandidateById should not be called");
+            },
+            async promoteMemoryCandidate() {
+              throw new Error("promoteMemoryCandidate should not be called");
+            },
+            async rejectMemoryCandidate(input) {
+              capturedRejection = input;
+
+              return {
+                id: input.candidateId,
+                projectId: "project-1",
+                executionRunId: "execution-run-1",
+                proposedBy: "cli",
+                kind: "constraint",
+                status: "rejected",
+                summary: "Source graph should use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceClaimIds: ["source-claim-1"],
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                reviewer: input.reviewer,
+                reviewedAt: now,
+                rejectionReason: input.reason,
+                validFrom: now,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("memoryCandidate: memory-candidate-1");
+    expect(result.stdout).toContain("status: rejected");
+    expect(result.stdout).toContain(
+      "reason: No source mechanism tied the claim to a KRN decision"
+    );
+    expect(result.stdout).toContain("No MemoryRecord created");
+    expect(capturedRejection).toMatchObject({
+      candidateId: "memory-candidate-1",
+      reviewer: "operator",
+      reason: "No source mechanism tied the claim to a KRN decision"
     });
   });
 

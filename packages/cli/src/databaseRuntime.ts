@@ -42,7 +42,13 @@ export interface DatabaseRuntime {
     | "createSourceDecisionEdge"
     | "createSourceRejection"
   >;
-  memoryRepository: Pick<MemoryRepository, "createMemoryCandidate">;
+  memoryRepository: Pick<
+    MemoryRepository,
+    | "createMemoryCandidate"
+    | "getMemoryCandidateById"
+    | "promoteMemoryCandidate"
+    | "rejectMemoryCandidate"
+  >;
   close(): Promise<void>;
 }
 

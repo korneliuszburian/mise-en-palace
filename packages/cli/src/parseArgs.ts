@@ -28,6 +28,12 @@ export type CliCommand =
       kind: "memoryCandidateAddHelp";
     }
   | {
+      kind: "memoryCandidatePromoteHelp";
+    }
+  | {
+      kind: "memoryCandidateRejectHelp";
+    }
+  | {
       kind: "memoryCandidateAdd";
       persist: boolean;
       runId?: string;
@@ -41,6 +47,22 @@ export type CliCommand =
       invalidationRule?: string;
       owner?: string;
       proposedBy?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryCandidatePromote";
+      persist: boolean;
+      candidateId?: string;
+      reviewer?: string;
+      decision?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryCandidateReject";
+      persist: boolean;
+      candidateId?: string;
+      reviewer?: string;
+      reason?: string;
       metadata: Record<string, string>;
     }
   | {
@@ -115,6 +137,8 @@ const usage = [
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
+  "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--persist]",
+  "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]"
 ].join("\n");
 
@@ -196,6 +220,34 @@ export const formatMemoryCandidateAddUsage = (): string =>
     "Optional:",
     "--owner <owner>",
     "--proposed-by <name>",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatMemoryCandidatePromoteUsage = (): string =>
+  [
+    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--persist]",
+    "",
+    "Required:",
+    "--candidate-id",
+    "--reviewer",
+    "--decision accepted",
+    "",
+    "Optional:",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatMemoryCandidateRejectUsage = (): string =>
+  [
+    "Usage: krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
+    "",
+    "Required:",
+    "--candidate-id",
+    "--reviewer",
+    "--reason",
+    "",
+    "Optional:",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -782,8 +834,186 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest[0] === "candidate" && rest[1] === "promote") {
+      if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+        return {
+          command: {
+            kind: "memoryCandidatePromoteHelp"
+          }
+        };
+      }
+
+      const memoryCommand: Extract<CliCommand, { kind: "memoryCandidatePromote" }> = {
+        kind: "memoryCandidatePromote",
+        persist: false,
+        metadata: {}
+      };
+
+      for (let index = 2; index < rest.length; index += 1) {
+        const arg = rest[index];
+
+        if (arg === "--persist") {
+          memoryCommand.persist = true;
+          continue;
+        }
+
+        if (arg === "--help" || arg === "-h") {
+          return {
+            command: {
+              kind: "memoryCandidatePromoteHelp"
+            }
+          };
+        }
+
+        const optionMap = {
+          "--candidate-id": "candidateId",
+          "--reviewer": "reviewer",
+          "--decision": "decision"
+        } as const;
+        const option = Object.keys(optionMap).find((candidate) =>
+          arg === candidate || arg?.startsWith(`${candidate}=`) === true
+        );
+
+        if (option !== undefined) {
+          const valueResult = optionValue(rest, index, option);
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryCandidatePromoteUsage()
+            };
+          }
+
+          memoryCommand[optionMap[option as keyof typeof optionMap]] =
+            valueResult.value.trim();
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+          const valueResult = optionValue(rest, index, "--metadata");
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryCandidatePromoteUsage()
+            };
+          }
+
+          const entry = metadataEntry(valueResult.value);
+
+          if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
+            return {
+              error: entry.error ?? formatMemoryCandidatePromoteUsage()
+            };
+          }
+
+          memoryCommand.metadata[entry.key] = entry.value;
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        return {
+          error: formatMemoryCandidatePromoteUsage()
+        };
+      }
+
+      return {
+        command: memoryCommand
+      };
+    }
+
+    if (rest[0] === "candidate" && rest[1] === "reject") {
+      if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+        return {
+          command: {
+            kind: "memoryCandidateRejectHelp"
+          }
+        };
+      }
+
+      const memoryCommand: Extract<CliCommand, { kind: "memoryCandidateReject" }> = {
+        kind: "memoryCandidateReject",
+        persist: false,
+        metadata: {}
+      };
+
+      for (let index = 2; index < rest.length; index += 1) {
+        const arg = rest[index];
+
+        if (arg === "--persist") {
+          memoryCommand.persist = true;
+          continue;
+        }
+
+        if (arg === "--help" || arg === "-h") {
+          return {
+            command: {
+              kind: "memoryCandidateRejectHelp"
+            }
+          };
+        }
+
+        const optionMap = {
+          "--candidate-id": "candidateId",
+          "--reviewer": "reviewer",
+          "--reason": "reason"
+        } as const;
+        const option = Object.keys(optionMap).find((candidate) =>
+          arg === candidate || arg?.startsWith(`${candidate}=`) === true
+        );
+
+        if (option !== undefined) {
+          const valueResult = optionValue(rest, index, option);
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryCandidateRejectUsage()
+            };
+          }
+
+          memoryCommand[optionMap[option as keyof typeof optionMap]] =
+            valueResult.value.trim();
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+          const valueResult = optionValue(rest, index, "--metadata");
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryCandidateRejectUsage()
+            };
+          }
+
+          const entry = metadataEntry(valueResult.value);
+
+          if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
+            return {
+              error: entry.error ?? formatMemoryCandidateRejectUsage()
+            };
+          }
+
+          memoryCommand.metadata[entry.key] = entry.value;
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        return {
+          error: formatMemoryCandidateRejectUsage()
+        };
+      }
+
+      return {
+        command: memoryCommand
+      };
+    }
+
     return {
-      error: formatMemoryCandidateAddUsage()
+      error: [
+        formatMemoryCandidateAddUsage().trim(),
+        formatMemoryCandidatePromoteUsage().trim(),
+        formatMemoryCandidateRejectUsage().trim()
+      ].join("\n\n")
     };
   }
 

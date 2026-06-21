@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 05 CLI memory candidate add complete.
+Current slice: Slice 06 CLI memory candidate review complete.
 
 Completed:
 
@@ -40,6 +40,12 @@ Completed:
   input without DB writes. Persist mode requires `KRN_DATABASE_URL`, validates
   source claim existence when `--source-claim-id` is provided, parses input
   through the schema boundary, and writes through MemoryRepository.
+- Slice 06 added `krn memory candidate promote` and
+  `krn memory candidate reject`. Preview mode validates review input without
+  DB writes. Persist mode requires `KRN_DATABASE_URL`, promotes through
+  MemoryRepository, rejects with a stored reason, prints source-claim
+  `doesNotProve` limits when promoting sourced candidates, and records no
+  memory application.
 
 Verification:
 
@@ -109,6 +115,25 @@ Verification:
   inputKind `architecture-boundary`, status `proposed`, confidence `70`,
   runId `execution-run-1`, and sourceClaimId `source-claim-1`.
 - `pnpm --filter @krn/db db:check`: passed.
+- Slice 06 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with
+  four invalid-args cases because `krn memory candidate promote/reject` did
+  not exist yet.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 40 tests.
+- `pnpm typecheck`: passed.
+- `git diff --check`: passed.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm --filter @krn/cli krn memory candidate promote --candidate-id
+  memory-candidate-1 --reviewer operator --decision accepted`: passed. The
+  report showed no DB writes, accepted review, no MemoryRecord created, and no
+  memory application recorded.
+- `pnpm --filter @krn/cli krn memory candidate reject --candidate-id
+  memory-candidate-1 --reviewer operator --reason "No source mechanism tied
+  the claim to a KRN decision"`: passed. The report showed no DB writes,
+  rejected review, reason output, no MemoryRecord created, and no memory
+  application recorded.
+- `pnpm --filter @krn/cli krn memory candidate promote --help` and
+  `pnpm --filter @krn/cli krn memory candidate reject --help`: passed.
 
 Skill gates:
 
@@ -124,4 +149,4 @@ Skill gates:
 
 Next action:
 
-- Slice 06: add CLI `krn memory candidate promote/reject`.
+- Slice 07: add CLI `krn memory record apply`.

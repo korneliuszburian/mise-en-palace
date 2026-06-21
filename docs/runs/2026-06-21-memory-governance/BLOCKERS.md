@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 05.
+- None through Slice 06.
 
 Known unproven M23 behavior:
 
-- There is no CLI `krn memory candidate promote/reject`.
 - There is no CLI `krn memory record apply`.
 - There is no CLI `krn memory anti add`.
 - `krn evidence capture` does not yet emit memory candidates.
@@ -62,3 +61,11 @@ Closed in Slice 05:
 - `krn memory candidate add` now previews validated MemoryCandidate input
   without DB writes and can persist through MemoryRepository with source-claim
   existence validation.
+
+Closed in Slice 06:
+
+- `krn memory candidate promote` now previews accepted review input without DB
+  writes and can persist through MemoryRepository while surfacing source-claim
+  `doesNotProve` limits.
+- `krn memory candidate reject` now previews rejected review input without DB
+  writes and can persist rejection reviewer/reason through MemoryRepository.

@@ -4,6 +4,8 @@ import {
   formatSourceDecisionLinkUsage,
   formatSourceClaimAddUsage,
   formatMemoryCandidateAddUsage,
+  formatMemoryCandidatePromoteUsage,
+  formatMemoryCandidateRejectUsage,
   parseArgs
 } from "./parseArgs.js";
 import {
@@ -36,6 +38,9 @@ import {
 import {
   runMemoryCandidateAddCommand
 } from "./runMemoryCandidateAddCommand.js";
+import {
+  runMemoryCandidateReviewCommand
+} from "./runMemoryCandidateReviewCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -113,6 +118,22 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatMemoryCandidateAddUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryCandidatePromoteHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryCandidatePromoteUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryCandidateRejectHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryCandidateRejectUsage(),
       stderr: ""
     };
   }
@@ -220,6 +241,38 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown memory candidate add error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (
+    parsed.command.kind === "memoryCandidatePromote" ||
+    parsed.command.kind === "memoryCandidateReject"
+  ) {
+    try {
+      const result = await runMemoryCandidateReviewCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown memory candidate review error";
 
       return {
         exitCode: 1,
