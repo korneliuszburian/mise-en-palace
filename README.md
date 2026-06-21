@@ -19,7 +19,6 @@ future implementation work small, source-grounded, and reviewable.
 
 ## Not Built Yet
 
-- No TypeScript packages.
 - No CLI implementation.
 - No dashboard.
 - No benchmark lane.
@@ -30,12 +29,12 @@ future implementation work small, source-grounded, and reviewable.
 
 ## Current Phase
 
-This repo is in Commit 0/1 bootstrap:
+This repo is in Commit 2 bootstrap:
 
 - kernel docs;
 - raw onboarding material quarantine;
 - source map;
 - ADRs;
 - repo-local skills;
-- one TypeScript critic subagent.
-
+- one TypeScript critic subagent;
+- strict pnpm TypeScript workspace spine.

@@ -18,21 +18,20 @@ policy, skills, eval expectations, traces, review gates, and feedback.
 
 ## Current Scope
 
-Execute only Commit 0/1 in the first implementation run:
+Commit 0/1 is complete. The active implementation phase is Commit 2:
 
-- raw onboarding source quarantine;
-- thin kernel docs;
-- source map;
-- pattern selection;
-- TypeScript boundary standard;
-- initial ADRs;
-- repo-local skills;
-- one read-only/proposal-only `ts-type-critic`.
+- root `package.json`;
+- `pnpm-workspace.yaml`;
+- `tsconfig.base.json`;
+- `packages/core`;
+- `packages/cli`;
+- minimal package manifests;
+- minimal source entrypoints;
+- strict `typecheck`.
 
 ## Hard Non-Goals
 
-- Do not create TypeScript packages yet.
-- Do not create CLI code yet.
+- Do not implement CLI runtime behavior yet.
 - Do not create dashboard.
 - Do not create benchmark lane.
 - Do not create runtime memory in markdown.
@@ -45,6 +44,8 @@ Execute only Commit 0/1 in the first implementation run:
 ## Phase Contract
 
 ### Commit 0: Kernel Language And Hard Boundaries
+
+Status: complete.
 
 Outcome:
 
@@ -74,6 +75,8 @@ Stop condition:
 
 ### Commit 1: Codex-Native Surfaces
 
+Status: complete.
+
 Outcome:
 
 - repo-local skills under `.agents/skills/`;
@@ -92,16 +95,41 @@ Stop condition:
 
 - Codex has the initial engineering disciplines without an agent zoo.
 
+### Commit 2: Strict TypeScript Spine
+
+Status: active.
+
+Outcome:
+
+- root pnpm workspace;
+- strict shared TypeScript base config;
+- `packages/core` as library-safe package shell;
+- `packages/cli` as CLI package shell;
+- source entrypoints with no runtime behavior;
+- `typecheck` script.
+
+Evidence:
+
+- created file tree;
+- `pnpm typecheck` passes;
+- no `ts-reset`;
+- no dashboard/apps/benchmark/.krn/MCP/plugin surface;
+- `packages/core` has no global typing dependency.
+
+Stop condition:
+
+- repo can typecheck a strict two-package workspace without implementing KRN
+  runtime behavior.
+
 ## Later Phases
 
-These are planned but not part of the first implementation run:
+These are planned but not part of this implementation run:
 
-1. Commit 2: strict pnpm TypeScript spine.
-2. Commit 3: typed KRN primitives.
-3. Commit 4: proposal-only `krn init --dry-run`.
-4. Commit 5: `krn context build`.
-5. Commit 6: `krn review capture`.
-6. Dogfood: use KRN to add or improve `krn doctor`.
+1. Commit 3: typed KRN primitives.
+2. Commit 4: proposal-only `krn init --dry-run`.
+3. Commit 5: `krn context build`.
+4. Commit 6: `krn review capture`.
+5. Dogfood: use KRN to add or improve `krn doctor`.
 
 ## Bootstrap Rules
 
@@ -120,14 +148,15 @@ These are planned but not part of the first implementation run:
 
 ## Acceptance
 
-Commit 0/1 is accepted when:
+Commit 2 is accepted when:
 
-- `find . -maxdepth 4 -type f | sort` shows only docs, skills, and subagent
-  surfaces expected for the bootstrap;
+- `find . -maxdepth 4 -type f | sort` shows only docs, skills, subagent, and
+  TypeScript workspace spine surfaces expected for the bootstrap;
 - `AGENTS.md` is short;
 - `GOAL.md` is compact and phase-oriented;
-- no `packages/`, dashboard, benchmark lane, plugin, runtime markdown memory,
-  or CLI implementation exists;
+- no dashboard, benchmark lane, plugin, runtime markdown memory, MCP server, or
+  CLI runtime implementation exists;
+- `pnpm typecheck` passes;
+- `packages/core` does not depend on global `ts-reset`;
 - skill folders contain only essential `SKILL.md` files unless a future task
   explicitly adds resources.
-
