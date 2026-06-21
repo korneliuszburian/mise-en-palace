@@ -4,6 +4,15 @@ import {
   runCli
 } from "./runCli.js";
 import {
+  createNoStoreCompilerDependencies
+} from "./noStoreRepositories.js";
+import type {
+  CreateExecutionRunInput
+} from "@krn/harness";
+import type {
+  DatabaseRuntimeInput
+} from "./databaseRuntime.js";
+import {
   deriveBrainStoreReadiness
 } from "./runDoctorCommand.js";
 
@@ -27,6 +36,93 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Evidence expected: pnpm typecheck, pnpm test, git diff --check");
     expect(result.stdout).toContain("KRN Codex Execution Brief");
     expect(result.stdout).toContain("Context activation abstained");
+  });
+
+  it("keeps plan as no-store preview unless --persist is explicit", async () => {
+    const result = await runCli(["plan", "--task", "preview even with DB configured"], {
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@127.0.0.1:1/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("no-store preview");
+  });
+
+  it("requires database config for plan --persist", async () => {
+    const result = await runCli(
+      ["plan", "--task", "persist harness run", "--persist"],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn plan --persist");
+  });
+
+  it("prints persisted IDs for plan --persist", async () => {
+    const result = await runCli(
+      ["plan", "--task", "persist harness run", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                ...(runInput.startedAt === undefined ? {} : { startedAt: runInput.startedAt }),
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository
+            },
+            harnessRunRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("Persisted IDs:");
+    expect(result.stdout).toContain("operatorIntent: operator-intent-1");
+    expect(result.stdout).toContain("taskContract: task-contract-1");
+    expect(result.stdout).toContain("harnessPlan: harness-plan-1");
+    expect(result.stdout).toContain("contextAssembly: context-assembly-1");
+    expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 
   it("returns exit 2 for invalid plan args", async () => {

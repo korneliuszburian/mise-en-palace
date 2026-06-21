@@ -5,6 +5,9 @@ import {
 import {
   runPlanCommand
 } from "./runPlanCommand.js";
+import type {
+  CreateDatabaseRuntime
+} from "./runPlanCommand.js";
 import {
   runDoctorCommand
 } from "./runDoctorCommand.js";
@@ -24,6 +27,7 @@ export interface CliRuntime {
   now?(): string;
   createId?(prefix: string): string;
   readGitStatus?(): Promise<string>;
+  createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
 export interface CliResult {
@@ -70,7 +74,11 @@ export const runCli = async (
       const result = await runPlanCommand(parsed.command.task, {
         env: runtime.env,
         now,
-        createId
+        createId,
+        persist: parsed.command.persist,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
       });
 
       return {

@@ -8,7 +8,8 @@ import {
   DrizzleSourceRepository
 } from "@krn/db";
 import type {
-  HarnessCompilerDependencies
+  HarnessCompilerDependencies,
+  HarnessRunRepository
 } from "@krn/harness";
 
 export interface DatabaseRuntimeInput {
@@ -23,6 +24,10 @@ export interface DatabaseRuntime {
   workspaceId: string;
   projectId: string;
   compilerDependencies: HarnessCompilerDependencies;
+  harnessRunRepository: Pick<
+    HarnessRunRepository,
+    "createExecutionRun" | "getHarnessRunByExecutionRunId"
+  >;
   close(): Promise<void>;
 }
 
@@ -32,6 +37,7 @@ export const createDatabaseRuntime = async (
   const client = postgres(input.databaseUrl, { max: 1 });
   const db = createKrnDatabase(client);
   const projectRepository = new DrizzleProjectRepository(db);
+  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
   const existingWorkspace = await projectRepository.findWorkspaceBySlug(input.workspaceSlug);
   const workspace =
     existingWorkspace ??
@@ -55,13 +61,14 @@ export const createDatabaseRuntime = async (
     workspaceId: workspace.id,
     projectId: project.id,
     compilerDependencies: {
-      harnessRunRepository: new DrizzleHarnessRunRepository(db),
+      harnessRunRepository,
       memoryRepository: new DrizzleMemoryRepository(db),
       sourceRepository: new DrizzleSourceRepository(db),
       retrievalRepository: new DrizzleRetrievalRepository(db),
       now: input.now,
       createId: input.createId
     },
+    harnessRunRepository,
     async close(): Promise<void> {
       await client.end();
     }

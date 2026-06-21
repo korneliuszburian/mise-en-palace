@@ -2,6 +2,7 @@ export type CliCommand =
   | {
       kind: "plan";
       task: string;
+      persist: boolean;
     }
   | {
       kind: "doctor";
@@ -25,7 +26,7 @@ export interface ParseArgsResult {
 }
 
 const usage = [
-  "Usage: krn plan --task \"...\"",
+  "Usage: krn plan --task \"...\" [--persist]",
   "",
   "Other commands:",
   "krn doctor",
@@ -104,6 +105,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   let task: string | undefined;
+  let persist = false;
 
   for (let index = 0; index < rest.length; index += 1) {
     const arg = rest[index];
@@ -116,6 +118,11 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
     if (arg?.startsWith("--task=") === true) {
       task = arg.slice("--task=".length);
+      continue;
+    }
+
+    if (arg === "--persist") {
+      persist = true;
       continue;
     }
 
@@ -133,7 +140,8 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   return {
     command: {
       kind: "plan",
-      task: task.trim()
+      task: task.trim(),
+      persist
     }
   };
 };

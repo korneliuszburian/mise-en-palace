@@ -2,19 +2,15 @@
 
 Hard blockers:
 
-- None for Slice 00.
+- None through Slice 04.
 
 Known unproven M21 behavior:
 
-- Evidence contract persistence is decided but not implemented yet:
-  use typed `harness_plans.metadata.evidenceContract` unless repository/CLI
-  implementation falsifies that path.
-- `krn plan --persist` is not implemented or proven for persisted harness
-  identity output yet.
 - `krn evidence capture --run-id <id> --persist` is not implemented or proven
   for evidence bundle, review assessment, and feedback delta persistence yet.
-- Live persisted run aggregate readback is not proven yet because `krn plan`
-  does not create an execution run.
+- Live persisted run aggregate readback through the repository is not proven yet;
+  Slice 04 proved SQL linkage, execution run creation, and evidence contract
+  metadata persistence.
 - Linked cleanup/readback proof for the persisted harness loop is not recorded
   yet.
 

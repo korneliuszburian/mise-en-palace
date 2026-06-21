@@ -62,3 +62,29 @@ Slice 03 repository/readback:
   remain consistent.
 - `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
   packages/db/src`: passed with no matches.
+
+Slice 04 persisted plan:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because old `plan`
+  behavior tried to use DB automatically, `--persist` parsed as invalid usage,
+  and persisted IDs were absent.
+- GREEN `pnpm --filter @krn/cli test`: passed with 11 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle schema and migrations
+  remain consistent.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "persist harness run slice 04 proof" --persist`:
+  passed and printed persisted IDs:
+  `operatorIntent=b03aa0fa-2883-49c2-a73b-21bbb4bdb0be`,
+  `taskContract=d6e4c531-2bc6-4a3d-a183-c17f51ae64b7`,
+  `harnessPlan=82c8a1de-f4c0-421f-83e5-e44b6bcd9677`,
+  `contextAssembly=a203c448-0382-460e-903e-f96d86683760`,
+  `executionRun=b529e20e-b8ca-4cb5-9342-58578e880945`.
+- SQL proof for execution run `b529e20e-b8ca-4cb5-9342-58578e880945`: status
+  `planned`, `harness_plans.metadata ? 'evidenceContract' = true`, evidence
+  command count `3`, run event count `1`.
+- Live preview with DB configured but without `--persist`: passed; SQL
+  `execution_runs` count stayed `1` before and after.
+- `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
+  packages/db/src packages/cli/src`: passed with no matches.

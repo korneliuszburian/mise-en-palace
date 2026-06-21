@@ -35,6 +35,12 @@
   `--run-id` for future `krn evidence capture --run-id <id> --persist`.
 - Persisted feedback delta readback now narrows `memoryCandidates` and
   `sourceDecisions` from JSONB instead of dropping them.
+- Slice 04 implements the explicit write boundary: DB config alone no longer
+  makes `krn plan` write state.
+- Persisted plan output includes `operatorIntent`, `taskContract`,
+  `harnessPlan`, `contextAssembly`, and `executionRun` IDs.
+- `execution_runs` is the persisted identity handed to future
+  `evidence capture --run-id`.
 
 Slice 00 skill record:
 
@@ -76,3 +82,14 @@ Slice 03 skill record:
   passed after.
 - `evidence-review-loop`: used for command evidence and residual risk.
 - `target-infra-adr`: not used; no new runtime surface was added.
+
+Slice 04 skill record:
+
+- `codex-adapter-plan`: used for persisted ID output and Codex-facing plan
+  behavior.
+- `typescript-type-safety`: used for CLI args, env, and runtime dependency
+  injection boundaries.
+- `test-driven-development`: used; RED CLI tests failed before implementation
+  and passed after.
+- `brain-store-schema`: used for execution run and evidence contract
+  persistence behavior.

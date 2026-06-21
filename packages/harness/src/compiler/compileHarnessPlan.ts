@@ -117,13 +117,17 @@ export const compileHarnessPlan = async (
   const taskContract = await dependencies.harnessRunRepository.createTaskContract(
     createTaskContractInput(operatorIntent, input.taskContract)
   );
+  const evidenceContract = createEvidenceContract(taskContract);
   const harnessPlan = await dependencies.harnessRunRepository.createHarnessPlan({
     taskContractId: taskContract.id,
     version: 1,
     status: "ready",
     summary: `${taskContract.title}: ${taskContract.objective}`,
     nextAction: "Render Codex adapter brief.",
-    metadata: input.metadata ?? {}
+    metadata: {
+      ...(input.metadata ?? {}),
+      evidenceContract
+    }
   });
   const memoryQuery = buildMemoryQuery(taskContract);
   const sourceQuery = buildSourceQuery(taskContract);
@@ -262,7 +266,6 @@ export const compileHarnessPlan = async (
     },
     createdAt
   };
-  const evidenceContract = createEvidenceContract(taskContract);
   const nextAction =
     contextAssembly.status === "abstained"
       ? "Context activation abstained; review exclusions before execution."

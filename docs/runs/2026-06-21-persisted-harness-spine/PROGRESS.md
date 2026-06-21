@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 03 repository/readback methods complete.
+Current slice: Slice 04 persisted plan complete.
 
 Completed:
 
@@ -27,6 +27,12 @@ Completed:
   candidate arrays are narrowed from JSONB instead of being dropped.
 - Slice 03 added `@krn/db` Vitest coverage and included DB tests in root
   `pnpm test`.
+- Slice 04 made `krn plan --task "..."` preview/no-store by default even when
+  `KRN_DATABASE_URL` is configured.
+- Slice 04 added explicit `krn plan --task "..." --persist`, which requires DB
+  config, persists the harness plan, creates a planned execution run, stores the
+  evidence contract in `harness_plans.metadata.evidenceContract`, and prints
+  persisted IDs.
 
 Verification:
 
@@ -54,6 +60,20 @@ Verification:
 - `pnpm --filter @krn/db db:check`: passed during Slice 03.
 - No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
   and `packages/db/src`: passed.
+- RED `pnpm --filter @krn/cli test`: failed on old implicit DB write behavior
+  and missing `--persist` parsing/output.
+- GREEN `pnpm --filter @krn/cli test`: passed with 11 tests.
+- `pnpm typecheck`: passed during Slice 04.
+- `pnpm test`: passed during Slice 04.
+- `pnpm --filter @krn/db db:check`: passed during Slice 04.
+- Live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "persist harness run slice 04 proof" --persist`:
+  passed and printed persisted IDs.
+- SQL proof for execution run `b529e20e-b8ca-4cb5-9342-58578e880945`: status
+  `planned`, `metadata.evidenceContract` present, evidence command count `3`,
+  run event count `1`.
+- Live preview with DB configured but without `--persist`: passed and left
+  `execution_runs` count unchanged at `1`.
 
 Skill gates:
 
@@ -67,10 +87,12 @@ Skill gates:
 - Used: `typescript-type-safety` for Slice 03 JSONB narrowing and public
   repository type changes.
 - Used: `test-driven-development` for Slice 03 RED/GREEN tests.
+- Used: `codex-adapter-plan` for Slice 04 Codex-facing persisted ID output.
+- Used: `typescript-type-safety` for Slice 04 CLI/env/runtime boundary changes.
+- Used: `test-driven-development` for Slice 04 RED/GREEN CLI tests.
 - Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 04: implement explicit `krn plan --task "..." --persist`, create an
-  execution run identity, persist evidence contract metadata, and print
-  persisted IDs.
+- Slice 05: add persisted plan smoke/readback test or command that proves the
+  persisted run identity can be read back through the repository aggregate.

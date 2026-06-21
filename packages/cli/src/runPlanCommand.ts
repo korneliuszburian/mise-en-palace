@@ -5,7 +5,8 @@ import {
   compileHarnessPlan
 } from "@krn/harness";
 import type {
-  HarnessCompilerDependencies
+  HarnessCompilerDependencies,
+  HarnessRunRepository
 } from "@krn/harness";
 import {
   parseHarnessCompileInput,
@@ -15,6 +16,10 @@ import {
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
+import type {
+  DatabaseRuntime,
+  DatabaseRuntimeInput
+} from "./databaseRuntime.js";
 import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
@@ -23,10 +28,24 @@ export interface PlanCommandRuntime {
   env: Record<string, string | undefined>;
   now(): string;
   createId(prefix: string): string;
+  persist: boolean;
+  createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
 export interface PlanCommandResult {
   stdout: string;
+}
+
+export type CreateDatabaseRuntime = (
+  input: DatabaseRuntimeInput
+) => Promise<DatabaseRuntime>;
+
+interface PersistedPlanIdentity {
+  operatorIntentId: string;
+  taskContractId: string;
+  harnessPlanId: string;
+  contextAssemblyId: string;
+  executionRunId: string;
 }
 
 interface CompilerRuntimeResolution {
@@ -34,6 +53,7 @@ interface CompilerRuntimeResolution {
   projectId: string;
   persistenceLabel: string;
   compilerDependencies: HarnessCompilerDependencies;
+  harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun">;
   close(): Promise<void>;
 }
 
@@ -47,11 +67,11 @@ const resolveCompilerRuntime = async (
 ): Promise<CompilerRuntimeResolution> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL;
 
-  if (databaseUrl === undefined || databaseUrl.trim().length === 0) {
+  if (!runtime.persist) {
     return {
       workspaceId: `workspace:${workspaceSlug}`,
       projectId: `project:${projectSlug}`,
-      persistenceLabel: "disabled (KRN_DATABASE_URL not set; no-store preview)",
+      persistenceLabel: "disabled (explicit no-store preview; use --persist to write)",
       compilerDependencies: createNoStoreCompilerDependencies(runtime),
       async close(): Promise<void> {
         return undefined;
@@ -59,7 +79,12 @@ const resolveCompilerRuntime = async (
     };
   }
 
-  const databaseRuntime = await createDatabaseRuntime({
+  if (databaseUrl === undefined || databaseUrl.trim().length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for krn plan --persist");
+  }
+
+  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  const databaseRuntime = await createRuntime({
     databaseUrl,
     workspaceSlug,
     projectSlug,
@@ -70,8 +95,9 @@ const resolveCompilerRuntime = async (
   return {
     workspaceId: databaseRuntime.workspaceId,
     projectId: databaseRuntime.projectId,
-    persistenceLabel: "enabled (Postgres)",
+    persistenceLabel: "enabled (Postgres, explicit --persist)",
     compilerDependencies: databaseRuntime.compilerDependencies,
+    harnessRunRepository: databaseRuntime.harnessRunRepository,
     close: databaseRuntime.close
   };
 };
@@ -83,9 +109,10 @@ const formatPlanSummary = (
   excludedCount: number,
   evidenceCommands: readonly string[],
   nextAction: string,
-  executionBrief: string
-): string =>
-  [
+  executionBrief: string,
+  persistedIdentity?: PersistedPlanIdentity
+): string => {
+  const lines = [
     "KRN Plan",
     `Task: ${task}`,
     `Persistence: ${persistenceLabel}`,
@@ -95,7 +122,22 @@ const formatPlanSummary = (
     `Next action: ${nextAction}`,
     "",
     executionBrief
-  ].join("\n");
+  ];
+
+  if (persistedIdentity !== undefined) {
+    lines.push(
+      "",
+      "Persisted IDs:",
+      `operatorIntent: ${persistedIdentity.operatorIntentId}`,
+      `taskContract: ${persistedIdentity.taskContractId}`,
+      `harnessPlan: ${persistedIdentity.harnessPlanId}`,
+      `contextAssembly: ${persistedIdentity.contextAssemblyId}`,
+      `executionRun: ${persistedIdentity.executionRunId}`
+    );
+  }
+
+  return lines.join("\n");
+};
 
 export const runPlanCommand = async (
   task: string,
@@ -132,7 +174,7 @@ export const runPlanCommand = async (
     taskContract,
     tokenBudget: 1200,
     metadata: {
-      command: "krn plan"
+      command: runtime.persist ? "krn plan --persist" : "krn plan"
     }
   });
   const workspaceSlug = compileInput.operatorIntent.workspaceSlug ?? defaultWorkspaceSlug;
@@ -168,6 +210,41 @@ export const runPlanCommand = async (
       execPlanReference: "PLAN.md Milestone 13"
     });
     const evidenceCommands = result.evidenceContract.commands.map((command) => command.command);
+    const executionRun =
+      compilerRuntime.harnessRunRepository === undefined
+        ? undefined
+        : await compilerRuntime.harnessRunRepository.createExecutionRun({
+            harnessPlanId: result.harnessPlan.id,
+            adapter: "codex",
+            status: "planned",
+            initialEvent: {
+              sequence: 1,
+              type: "plan.persisted",
+              message: "Persisted harness plan created",
+              payload: {
+                operatorIntentId: result.operatorIntent.id,
+                taskContractId: result.taskContract.id,
+                harnessPlanId: result.harnessPlan.id,
+                contextAssemblyId: result.contextAssembly.id,
+                codexAdapterPlanRefId: result.codexAdapterPlanRef.id
+              }
+            },
+            metadata: {
+              command: "krn plan --persist",
+              evidenceContract: result.evidenceContract,
+              codexAdapterPlanRef: result.codexAdapterPlanRef
+            }
+          });
+    const persistedIdentity =
+      executionRun === undefined
+        ? undefined
+        : {
+            operatorIntentId: result.operatorIntent.id,
+            taskContractId: result.taskContract.id,
+            harnessPlanId: result.harnessPlan.id,
+            contextAssemblyId: result.contextAssembly.id,
+            executionRunId: executionRun.id
+          };
 
     return {
       stdout: formatPlanSummary(
@@ -177,7 +254,8 @@ export const runPlanCommand = async (
         result.contextAssembly.exclusions.length,
         evidenceCommands,
         result.nextAction,
-        executionBrief
+        executionBrief,
+        persistedIdentity
       )
     };
   } finally {
