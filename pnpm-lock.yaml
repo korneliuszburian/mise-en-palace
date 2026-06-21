@@ -42,6 +42,10 @@ importers:
       '@krn/core':
         specifier: workspace:*
         version: link:../core
+    devDependencies:
+      vitest:
+        specifier: ^4.1.9
+        version: 4.1.9(vite@8.0.16(esbuild@0.28.1)(tsx@4.22.4))
 
   packages/schema:
     dependencies:
