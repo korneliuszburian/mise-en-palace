@@ -18,7 +18,9 @@ import type {
   ReviewFinding,
   SourceClaim,
   SourceDecision,
+  SourceDecisionEdge,
   SourceLineageRef,
+  SourceRejection,
   SourceTrustTier,
   TaskContract
 } from "@krn/core";
@@ -54,7 +56,9 @@ import type {
   sourceArtifacts,
   sourceChunks,
   sourceClaims,
+  sourceDecisionEdges,
   sourceDecisions,
+  sourceRejections,
   taskContracts,
   workspaces
 } from "../schema/index.js";
@@ -81,6 +85,8 @@ type SourceArtifactRow = InferSelectModel<typeof sourceArtifacts>;
 type SourceChunkRow = InferSelectModel<typeof sourceChunks>;
 type SourceClaimRow = InferSelectModel<typeof sourceClaims>;
 type SourceDecisionRow = InferSelectModel<typeof sourceDecisions>;
+type SourceDecisionEdgeRow = InferSelectModel<typeof sourceDecisionEdges>;
+type SourceRejectionRow = InferSelectModel<typeof sourceRejections>;
 type RunEventRow = InferSelectModel<typeof runEvents>;
 type OutboxEventRow = InferSelectModel<typeof outboxEvents>;
 type RetrievalRunRow = InferSelectModel<typeof retrievalRuns>;
@@ -656,6 +662,36 @@ export const mapSourceDecision = (row: SourceDecisionRow): SourceDecision => ({
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt),
   updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
+export const mapSourceDecisionEdge = (
+  row: SourceDecisionEdgeRow
+): SourceDecisionEdge => ({
+  id: row.id,
+  sourceClaimId: row.sourceClaimId,
+  targetType: row.targetType,
+  targetId: row.targetId,
+  supportType: row.supportType,
+  confidence: row.confidence,
+  notes: row.notes,
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt)
+});
+
+export const mapSourceRejection = (row: SourceRejectionRow): SourceRejection => ({
+  id: row.id,
+  ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+  ...(row.sourceArtifactId === null ? {} : { sourceArtifactId: row.sourceArtifactId }),
+  ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
+  title: row.title,
+  attemptedClaim: row.attemptedClaim,
+  rejectedBecause: row.rejectedBecause,
+  reason: row.reason,
+  doesNotProve: row.doesNotProve,
+  consumer: row.consumer,
+  metadata: metadataOrEmpty(row.metadata),
+  rejectedAt: toIsoTimestamp(row.rejectedAt)
 });
 
 export const mapRunEvent = (row: RunEventRow): RunEventRecord => ({

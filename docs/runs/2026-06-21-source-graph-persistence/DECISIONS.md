@@ -32,6 +32,9 @@
   M22 values to flow without downcasting.
 - Slice 03 keeps DB compatibility with old source vocabulary, but new IO schemas
   accept only M22 trust/support values for source claims and decision edges.
+- Slice 04 repository writes for decision edges and rejections emit outbox
+  events (`source.decision_edge.created`, `source.rejection.created`) because
+  these are durable audit/work signals.
 
 Slice 00 skill record:
 
@@ -77,3 +80,10 @@ Slice 03 skill record:
 - `superpowers:test-driven-development`: used for RED/GREEN parser tests.
 - `brain-store-schema`: not used for new persistence in Slice 03; no DB schema
   changed.
+
+Slice 04 skill record:
+
+- `brain-store-schema`: used for repository adapter, mapper, and outbox-event
+  behavior.
+- `typescript-type-safety`: used for new repository input/read-model boundaries.
+- `superpowers:test-driven-development`: used for RED/GREEN mapper tests.

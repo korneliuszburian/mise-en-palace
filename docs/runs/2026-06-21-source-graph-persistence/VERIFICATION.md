@@ -79,3 +79,15 @@ Slice 03 IO schemas:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+
+Slice 04 repository methods:
+
+- RED: `pnpm --filter @krn/db test -- mappers.test.ts` failed because
+  `mapSourceDecisionEdge` and `mapSourceRejection` were missing.
+- GREEN: `pnpm --filter @krn/db test -- mappers.test.ts` passed after adding
+  new source graph mappers.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
+- Live write/read source graph proof is intentionally deferred to Slice 05
+  `pnpm db:smoke:source-graph`.

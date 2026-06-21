@@ -3,6 +3,8 @@ import type {
   ProjectId,
   SourceClaim,
   SourceDecision,
+  SourceDecisionEdge,
+  SourceRejection,
   SourceSupportType,
   SourceTrustTier
 } from "@krn/core";
@@ -42,10 +44,39 @@ export interface CreateSourceDecisionInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface CreateSourceDecisionEdgeInput {
+  sourceClaimId: SourceDecisionEdge["sourceClaimId"];
+  targetType: SourceDecisionEdge["targetType"];
+  targetId: SourceDecisionEdge["targetId"];
+  supportType: SourceDecisionEdge["supportType"];
+  confidence: SourceDecisionEdge["confidence"];
+  notes: SourceDecisionEdge["notes"];
+  metadata?: Record<string, unknown>;
+}
+
+export interface CreateSourceRejectionInput {
+  projectId?: ProjectId;
+  executionRunId?: ExecutionRunId;
+  sourceArtifactId?: string;
+  sourceClaimId?: string;
+  title: SourceRejection["title"];
+  attemptedClaim: SourceRejection["attemptedClaim"];
+  rejectedBecause: SourceRejection["rejectedBecause"];
+  reason: SourceRejection["reason"];
+  doesNotProve: SourceRejection["doesNotProve"];
+  consumer: SourceRejection["consumer"];
+  metadata?: Record<string, unknown>;
+}
+
 export interface SourceRepository {
   createSourceArtifact(input: CreateSourceArtifactInput): Promise<SourceArtifactRecord>;
   createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord>;
   createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim>;
+  getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined>;
   listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]>;
+  listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
+  createSourceDecisionEdge(input: CreateSourceDecisionEdgeInput): Promise<SourceDecisionEdge>;
+  listSourceDecisionEdgesForRun(executionRunId: ExecutionRunId): Promise<SourceDecisionEdge[]>;
+  createSourceRejection(input: CreateSourceRejectionInput): Promise<SourceRejection>;
 }

@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 03 source graph IO schemas complete.
+Current slice: Slice 04 SourceRepository methods complete.
 
 Completed:
 
@@ -18,6 +18,8 @@ Completed:
   `source_decision_edges`, and first-class rejection reason/title fields.
 - Slice 03 added source graph Zod input parsers for artifacts, claims,
   decision edges, and rejections.
+- Slice 04 added SourceRepository methods for claim lookup/run listing,
+  source decision edge creation/run listing, and source rejection creation.
 
 Verification:
 
@@ -62,6 +64,12 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 04 RED: `pnpm --filter @krn/db test -- mappers.test.ts` failed on
+  missing `mapSourceDecisionEdge` and `mapSourceRejection`.
+- `pnpm --filter @krn/db test -- mappers.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -79,4 +87,4 @@ Skill gates:
 
 Next action:
 
-- Slice 04: add SourceRepository methods.
+- Slice 05: add source graph persistence smoke path.

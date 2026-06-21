@@ -1,14 +1,19 @@
 import { eq } from "drizzle-orm";
 import type {
+  ExecutionRunId,
   ProjectId,
   SourceClaim,
-  SourceDecision
+  SourceDecision,
+  SourceDecisionEdge,
+  SourceRejection
 } from "@krn/core";
 import type {
   CreateSourceArtifactInput,
   CreateSourceChunkInput,
   CreateSourceClaimInput,
   CreateSourceDecisionInput,
+  CreateSourceDecisionEdgeInput,
+  CreateSourceRejectionInput,
   SourceArtifactRecord,
   SourceChunkRecord,
   SourceRepository
@@ -20,14 +25,18 @@ import {
   sourceArtifacts,
   sourceChunks,
   sourceClaims,
-  sourceDecisions
+  sourceDecisionEdges,
+  sourceDecisions,
+  sourceRejections
 } from "../schema/index.js";
 import { requireReturnedRow } from "./common.js";
 import {
   mapSourceArtifact,
   mapSourceChunk,
   mapSourceClaim,
-  mapSourceDecision
+  mapSourceDecision,
+  mapSourceDecisionEdge,
+  mapSourceRejection
 } from "./mappers.js";
 
 export class DrizzleSourceRepository implements SourceRepository {
@@ -100,6 +109,16 @@ export class DrizzleSourceRepository implements SourceRepository {
     return mapSourceClaim(row);
   }
 
+  async getSourceClaimById(id: SourceClaim["id"]): Promise<SourceClaim | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(sourceClaims)
+      .where(eq(sourceClaims.id, id))
+      .limit(1);
+
+    return row === undefined ? undefined : mapSourceClaim(row);
+  }
+
   async listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]> {
     const rows = await this.db
       .select({
@@ -125,6 +144,15 @@ export class DrizzleSourceRepository implements SourceRepository {
       .innerJoin(sourceArtifacts, eq(sourceClaims.sourceArtifactId, sourceArtifacts.id))
       .where(eq(sourceArtifacts.projectId, projectId))
       .limit(limit);
+
+    return rows.map(mapSourceClaim);
+  }
+
+  async listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]> {
+    const rows = await this.db
+      .select()
+      .from(sourceClaims)
+      .where(eq(sourceClaims.executionRunId, executionRunId));
 
     return rows.map(mapSourceClaim);
   }
@@ -158,6 +186,102 @@ export class DrizzleSourceRepository implements SourceRepository {
       });
 
       return mapSourceDecision(row);
+    });
+  }
+
+  async createSourceDecisionEdge(
+    input: CreateSourceDecisionEdgeInput
+  ): Promise<SourceDecisionEdge> {
+    return this.db.transaction(async (tx) => {
+      const row = requireReturnedRow(
+        await tx
+          .insert(sourceDecisionEdges)
+          .values({
+            sourceClaimId: input.sourceClaimId,
+            targetType: input.targetType,
+            targetId: input.targetId,
+            supportType: input.supportType,
+            confidence: input.confidence,
+            notes: input.notes,
+            metadata: input.metadata ?? {}
+          })
+          .returning(),
+        "createSourceDecisionEdge"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "source.decision_edge.created",
+        payload: {
+          sourceDecisionEdgeId: row.id,
+          sourceClaimId: row.sourceClaimId,
+          targetType: row.targetType,
+          targetId: row.targetId
+        }
+      });
+
+      return mapSourceDecisionEdge(row);
+    });
+  }
+
+  async listSourceDecisionEdgesForRun(
+    executionRunId: ExecutionRunId
+  ): Promise<SourceDecisionEdge[]> {
+    const rows = await this.db
+      .select({
+        id: sourceDecisionEdges.id,
+        sourceClaimId: sourceDecisionEdges.sourceClaimId,
+        targetType: sourceDecisionEdges.targetType,
+        targetId: sourceDecisionEdges.targetId,
+        supportType: sourceDecisionEdges.supportType,
+        confidence: sourceDecisionEdges.confidence,
+        notes: sourceDecisionEdges.notes,
+        metadata: sourceDecisionEdges.metadata,
+        createdAt: sourceDecisionEdges.createdAt
+      })
+      .from(sourceDecisionEdges)
+      .innerJoin(sourceClaims, eq(sourceDecisionEdges.sourceClaimId, sourceClaims.id))
+      .where(eq(sourceClaims.executionRunId, executionRunId));
+
+    return rows.map(mapSourceDecisionEdge);
+  }
+
+  async createSourceRejection(input: CreateSourceRejectionInput): Promise<SourceRejection> {
+    return this.db.transaction(async (tx) => {
+      const row = requireReturnedRow(
+        await tx
+          .insert(sourceRejections)
+          .values({
+            ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+            ...(input.executionRunId === undefined
+              ? {}
+              : { executionRunId: input.executionRunId }),
+            ...(input.sourceArtifactId === undefined
+              ? {}
+              : { sourceArtifactId: input.sourceArtifactId }),
+            ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
+            title: input.title,
+            attemptedClaim: input.attemptedClaim,
+            rejectedBecause: input.rejectedBecause,
+            reason: input.reason,
+            doesNotProve: input.doesNotProve,
+            consumer: input.consumer,
+            metadata: input.metadata ?? {}
+          })
+          .returning(),
+        "createSourceRejection"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "source.rejection.created",
+        payload: {
+          sourceRejectionId: row.id,
+          projectId: row.projectId,
+          executionRunId: row.executionRunId,
+          rejectedBecause: row.rejectedBecause
+        }
+      });
+
+      return mapSourceRejection(row);
     });
   }
 }

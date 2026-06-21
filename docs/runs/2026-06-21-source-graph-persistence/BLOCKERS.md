@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through Slice 02.
+- None through Slice 04.
 
 Known unproven M22 behavior:
 
@@ -33,3 +33,8 @@ Closed in Slice 02:
 - Minimal source graph schema now exists for M22 claim status/run linkage,
   typed decision edges, M22 source vocabulary, and first-class rejection
   fields.
+
+Closed in Slice 04:
+
+- Repository methods now exist for source claim lookup/run listing, decision
+  edge creation/run listing, and source rejection creation.
