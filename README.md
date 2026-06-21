@@ -14,8 +14,9 @@ future implementation work small, source-grounded, and reviewable.
 
 1. Read `AGENTS.md`.
 2. Read `docs/KRN_KERNEL.md`.
-3. Use `GOAL.md` only as the current bootstrap execution contract.
-4. Treat `docs/materials/` as raw source quarantine, not default context.
+3. Use `GOAL.md` as the compact activation contract.
+4. Use `PLAN.md` as the living execution map for complex implementation work.
+5. Treat `docs/materials/` as raw source quarantine, not default context.
 
 ## Not Built Yet
 
@@ -29,12 +30,12 @@ future implementation work small, source-grounded, and reviewable.
 
 ## Current Phase
 
-This repo is in Commit 2 bootstrap:
+Final Harness Spine planning is installed. The next slice is brain-store ADR
+and package boundaries.
 
-- kernel docs;
-- raw onboarding material quarantine;
-- source map;
-- ADRs;
-- repo-local skills;
-- one TypeScript critic subagent;
-- strict pnpm TypeScript workspace spine.
+The current foundation includes kernel docs, raw onboarding material
+quarantine, source map, ADRs, repo-local skills, one TypeScript critic
+subagent, and a strict pnpm TypeScript workspace spine.
+
+The next typed-model direction is governed by
+`docs/decisions/ADR-0009-canonical-harness-spine.md`.

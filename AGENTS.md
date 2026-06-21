@@ -30,4 +30,7 @@ For git history:
 - use Semantic/Conventional Commits only; see
   `docs/standards/git-commits.md`.
 
+For complex KRN implementation work, keep root `PLAN.md` current as the living
+ExecPlan.
+
 If the next step requires broad historical rereads, stop and re-scope.
