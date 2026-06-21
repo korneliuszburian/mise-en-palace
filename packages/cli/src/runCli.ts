@@ -1,5 +1,6 @@
 import {
   formatUsage,
+  formatSourceDecisionLinkUsage,
   formatSourceClaimAddUsage,
   parseArgs
 } from "./parseArgs.js";
@@ -24,6 +25,9 @@ import {
 import {
   runSourceClaimAddCommand
 } from "./runSourceClaimAddCommand.js";
+import {
+  runSourceDecisionLinkCommand
+} from "./runSourceDecisionLinkCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -81,6 +85,14 @@ export const runCli = async (
     };
   }
 
+  if (parsed.command.kind === "sourceDecisionLinkHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatSourceDecisionLinkUsage(),
+      stderr: ""
+    };
+  }
+
   if (parsed.command.kind === "sourceClaimAdd") {
     try {
       const result = await runSourceClaimAddCommand({
@@ -100,6 +112,34 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown source claim error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "sourceDecisionLink") {
+    try {
+      const result = await runSourceDecisionLinkCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown source decision link error";
 
       return {
         exitCode: 1,

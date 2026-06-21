@@ -40,6 +40,8 @@
 - Slice 06 keeps `--type` as a CLI source-type hint. If the value is not a
   physical `source_artifact_kind`, the artifact persists as `operator_input`
   and the type hint is retained in metadata as `sourceType`.
+- Slice 07 verifies SourceClaim existence before creating a source decision
+  edge, but it does not infer that the source proves the whole target.
 
 Slice 00 skill record:
 
@@ -111,3 +113,14 @@ Slice 06 skill record:
   tests.
 - `superpowers:systematic-debugging`: used for the typecheck export-name
   conflict.
+
+Slice 07 skill record:
+
+- `typescript-type-safety`: used for CLI argument parsing and Zod edge input
+  validation.
+- `brain-store-schema`: used to keep source decision edge creation on
+  SourceRepository and preserve source-claim FK behavior.
+- `source-to-decision`: used to keep link semantics explicit: support type,
+  confidence, notes, and no automatic proof inference.
+- `superpowers:test-driven-development`: used for RED/GREEN source decision
+  link CLI tests.

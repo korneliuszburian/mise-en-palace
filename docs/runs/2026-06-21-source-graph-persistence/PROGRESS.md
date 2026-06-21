@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 06 source claim add CLI complete.
+Current slice: Slice 07 source decision link CLI complete.
 
 Completed:
 
@@ -25,6 +25,10 @@ Completed:
 - Slice 06 added `krn source claim add`, including preview mode, `--help`,
   explicit `--persist`, Zod validation, SourceArtifact creation, SourceClaim
   creation, optional run linkage, persisted ID output, and `doesNotProve`
+  output.
+- Slice 07 added `krn source decision link`, including preview mode, `--help`,
+  explicit `--persist`, SourceClaim existence verification, typed
+  SourceDecisionEdge creation, target/support/confidence output, and notes
   output.
 
 Verification:
@@ -97,6 +101,15 @@ Verification:
   `2638beb8-aeaf-4fa1-90c3-af7d70cc52c4` and source claim
   `3b5540bc-2307-4578-9abb-5bee0805bbdd`.
 - `git diff --check`: passed.
+- Slice 07 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn source decision link` returned usage exit `2`.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source decision link ... --persist`: passed with source decision
+  edge `af03790e-2ad2-4536-846a-2a4f9720f726`.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -116,4 +129,4 @@ Skill gates:
 
 Next action:
 
-- Slice 07: add CLI `krn source decision link`.
+- Slice 08: add CLI `krn source claim reject`.

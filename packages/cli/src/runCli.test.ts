@@ -475,6 +475,178 @@ describe("runCli", () => {
     expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
   });
 
+  it("prints source decision link help", async () => {
+    const result = await runCli(["source", "decision", "link", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Usage: krn source decision link");
+    expect(result.stdout).toContain("--source-claim-id");
+  });
+
+  it("previews source decision link without DB writes", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "link",
+        "--source-claim-id",
+        "source-claim-1",
+        "--target-type",
+        "harness_run",
+        "--target-id",
+        "execution-run-1",
+        "--support-type",
+        "implementation-boundary",
+        "--confidence",
+        "medium",
+        "--notes",
+        "Used to justify M22 Postgres-backed source graph edge"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Source Decision Link");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("sourceClaimId: source-claim-1");
+    expect(result.stdout).toContain("target: harness_run/execution-run-1");
+  });
+
+  it("requires database config for source decision link --persist", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "link",
+        "--source-claim-id",
+        "source-claim-1",
+        "--target-type",
+        "harness_run",
+        "--target-id",
+        "execution-run-1",
+        "--support-type",
+        "implementation-boundary",
+        "--confidence",
+        "medium",
+        "--notes",
+        "Used to justify M22 Postgres-backed source graph edge",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn source decision link --persist"
+    );
+  });
+
+  it("persists source decision link and prints edge details", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const result = await runCli(
+      [
+        "source",
+        "decision",
+        "link",
+        "--source-claim-id",
+        "source-claim-1",
+        "--target-type",
+        "harness_run",
+        "--target-id",
+        "execution-run-1",
+        "--support-type",
+        "implementation-boundary",
+        "--confidence",
+        "medium",
+        "--notes",
+        "Used to justify M22 Postgres-backed source graph edge",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "KRN should model source graph with relational edges first",
+                mechanism: "Postgres stores harness state transactionally",
+                krnImplication: "KRN can link source decisions to runs",
+                doesNotProve: "This does not prove retrieval quality",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "M22",
+                status: "proposed",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge(input) {
+              return {
+                id: "source-decision-edge-1",
+                sourceClaimId: input.sourceClaimId,
+                targetType: input.targetType,
+                targetId: input.targetId,
+                supportType: input.supportType,
+                confidence: input.confidence,
+                notes: input.notes,
+                metadata: input.metadata ?? {},
+                createdAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("sourceDecisionEdge: source-decision-edge-1");
+    expect(result.stdout).toContain("sourceClaimId: source-claim-1");
+    expect(result.stdout).toContain("target: harness_run/execution-run-1");
+    expect(result.stdout).toContain("supportType: implementation-boundary");
+    expect(result.stdout).toContain("confidence: medium");
+  });
+
   it("prints evidence capture without mutating memory", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},

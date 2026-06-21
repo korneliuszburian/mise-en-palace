@@ -35,7 +35,10 @@ export interface DatabaseRuntime {
   >;
   sourceRepository: Pick<
     SourceRepository,
-    "createSourceArtifact" | "createSourceClaim"
+    | "createSourceArtifact"
+    | "createSourceClaim"
+    | "getSourceClaimById"
+    | "createSourceDecisionEdge"
   >;
   close(): Promise<void>;
 }

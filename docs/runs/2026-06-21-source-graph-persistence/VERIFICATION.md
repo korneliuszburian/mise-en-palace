@@ -135,3 +135,21 @@ Slice 06 source claim add CLI:
   - Source claim: `3b5540bc-2307-4578-9abb-5bee0805bbdd`.
   - `doesNotProve`: printed as
     `This does not prove source decision edge or rejection CLI behavior`.
+
+Slice 07 source decision link CLI:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn source decision link` returned usage exit `2`.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed after adding
+  parser support, preview behavior, DB-required persist behavior, SourceClaim
+  existence verification, and fake repository edge creation.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source decision link ... --persist`: passed.
+  - Source claim: `3b5540bc-2307-4578-9abb-5bee0805bbdd`.
+  - Source decision edge: `af03790e-2ad2-4536-846a-2a4f9720f726`.
+  - Target: `architecture_decision/M22.07-source-decision-link`.
+  - Support type: `implementation-boundary`.
+  - Confidence: `medium`.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
