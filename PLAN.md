@@ -151,7 +151,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [x] 2026-06-21: Added `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md` and `docs/architecture/package-boundaries.md`. Evidence: ADR includes source-to-decision mappings and `pnpm typecheck` passed.
 - [x] 2026-06-21: Expanded workspace shells for `schema`, `db`, `harness`, `codex-adapter`, and `workers` with empty module entrypoints and strict package tsconfigs. Evidence: `pnpm install --lockfile-only` recognized all 8 workspace projects and `pnpm typecheck` passed across 7 package projects.
 - [ ] Add test tooling and first contract tests only where they protect real boundaries.
-- [ ] Add Drizzle/Postgres schema foundation for harness runs, events, outbox, projects, and kernels.
+- [x] 2026-06-21: Added Drizzle/Postgres schema foundation for workspaces, projects, repo installations, project kernels, operator intents, task contracts, harness plans, context assemblies, execution runs, evidence bundles, review assessments, feedback deltas, run events, outbox events, and worker jobs. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, and `git diff --check` passed.
 - [ ] Add memory and source graph schema.
 - [ ] Add retrieval and activation schema.
 - [ ] Add Zod IO schemas.
@@ -174,6 +174,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - Observation: Existing skills are compact and useful, but they are still bootstrap-oriented. Evidence: `to-issues` and `source-to-decision` encode bounded outputs and forbidden behavior. Implication: keep their discipline, but add or refactor operational skills around final KRN spine: target-infra-design, brain-store-schema, activation-engine, codex-adapter-plan, evidence-review-loop.
 - Observation: `docs/decisions/ADR-0009-canonical-harness-spine.md` already existed in the worktree before the brain-store ADR was added. Evidence: `README.md` and `docs/KRN_KERNEL.md` reference the canonical harness spine. Implication: keep canonical harness spine as ADR-0009 and record the Postgres/pgvector brain-store decision as ADR-0010.
 - Observation: The worktree had a partial `codex-adapter` lockfile importer and a root TypeScript path alias before the package shells existed. Evidence: `pnpm-lock.yaml` named `packages/codex-adapter` while `packages/codex-adapter/` was absent. Implication: regenerate the lockfile from actual package manifests and avoid speculative path aliases until imports require them.
+- Observation: Drizzle ORM 0.45.2 type declarations pull optional non-Postgres dialect declarations under TypeScript 5.9 when `skipLibCheck` is false. Evidence: `@krn/db` typecheck failed on `gel`, MySQL, SingleStore, SQLite, `Buffer`, and `TextDecoder` declarations before any project-code error appeared. Implication: keep the root strict config unchanged, add a package-local `skipLibCheck` exception only in `packages/db`, and keep KRN code strict.
 
 ## Decision Log
 
@@ -201,11 +202,19 @@ Use this section as the single progress truth while executing the plan. Update e
   Rationale: The prior failure mode was artifact factory and dashboard/benchmark theater. The first proof must be a working harness path.
   Date/Author: 2026-06-21 / Codex planning pass.
 
+- Decision: Use `drizzle-orm` 0.45.2, `drizzle-kit` 0.31.10, and `postgres` 3.4.9 for the first DB schema slice.
+  Rationale: Drizzle's current PostgreSQL docs support both `pg` and `postgres.js` drivers, drizzle-kit owns migration generation/checking, and Drizzle documents pgvector support while requiring explicit extension migration setup. `postgres.js` keeps the first adapter dependency small; pgvector extension SQL is deferred until vector columns are introduced.
+  Date/Author: 2026-06-21 / Codex DB schema pass.
+
+- Decision: `packages/db` uses a package-local `skipLibCheck` exception.
+  Rationale: Drizzle 0.45.2 declaration files expose optional dialect and peer declarations that fail this repo's strict dependency declaration check under TypeScript 5.9. The exception is isolated to third-party declaration checking in the DB package; KRN source remains strict and the root `skipLibCheck: false` stays unchanged.
+  Date/Author: 2026-06-21 / Codex DB schema pass.
+
 ## Outcomes & Retrospective
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestone 4 added the first Drizzle/Postgres schema and generated SQL migration.
 
 Current gaps: no DB package, no schema package, no harness package, no Codex adapter package, no worker package, no domain model, no Drizzle schema, no Zod schemas, no repositories, no activation engine, no compiler, no CLI behavior, no tests beyond typecheck capability.
 

@@ -5,10 +5,11 @@
   "type": "module",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
+    "db:check": "pnpm --filter @krn/db db:check",
+    "db:generate": "pnpm --filter @krn/db db:generate",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"
   },
   "devDependencies": {
     "typescript": "5.9.3"
   }
 }
-
