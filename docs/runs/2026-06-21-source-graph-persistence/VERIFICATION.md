@@ -64,3 +64,18 @@ Slice 02 schema:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
   passed with project readback matched and cleanup completed.
 - `git diff --check`: passed.
+
+Slice 03 IO schemas:
+
+- RED: `pnpm --filter @krn/schema test -- index.test.ts` failed because
+  `parseSourceClaimInput` still accepted old `high/supports` vocabulary.
+- GREEN: `pnpm --filter @krn/schema test -- index.test.ts` passed after
+  SourceClaim input moved to M22 support/trust vocabulary.
+- RED: `pnpm --filter @krn/schema test -- index.test.ts` failed because
+  source artifact, decision edge, and rejection parser exports did not exist.
+- GREEN: `pnpm --filter @krn/schema test -- index.test.ts` passed after adding
+  `parseSourceArtifactInput`, `parseSourceDecisionEdgeInput`, and
+  `parseSourceRejectionInput`.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.

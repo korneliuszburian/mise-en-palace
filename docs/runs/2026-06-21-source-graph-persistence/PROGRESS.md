@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 02 source graph schema complete.
+Current slice: Slice 03 source graph IO schemas complete.
 
 Completed:
 
@@ -16,6 +16,8 @@ Completed:
 - Slice 02 added/tightened Drizzle source graph schema for M22:
   M22 trust/support enum values, claim status/run linkage, typed
   `source_decision_edges`, and first-class rejection reason/title fields.
+- Slice 03 added source graph Zod input parsers for artifacts, claims,
+  decision edges, and rejections.
 
 Verification:
 
@@ -52,6 +54,14 @@ Verification:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
   passed.
 - `git diff --check`: passed.
+- Slice 03 RED: `pnpm --filter @krn/schema test -- index.test.ts` failed on
+  old `high/supports` source claim input vocabulary.
+- Slice 03 RED: `pnpm --filter @krn/schema test -- index.test.ts` failed on
+  missing source artifact, decision edge, and rejection parser exports.
+- `pnpm --filter @krn/schema test -- index.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -69,4 +79,4 @@ Skill gates:
 
 Next action:
 
-- Slice 03: add source graph IO schemas.
+- Slice 04: add SourceRepository methods.

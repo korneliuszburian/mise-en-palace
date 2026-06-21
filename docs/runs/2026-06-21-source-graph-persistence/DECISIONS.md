@@ -30,6 +30,8 @@
 - New trust tiers are accepted by activation/retrieval read models with a
   conservative ranking, preserving old `high/medium/low` values while allowing
   M22 values to flow without downcasting.
+- Slice 03 keeps DB compatibility with old source vocabulary, but new IO schemas
+  accept only M22 trust/support values for source claims and decision edges.
 
 Slice 00 skill record:
 
@@ -67,3 +69,11 @@ Slice 02 skill record:
   existing Postgres/Drizzle boundary.
 - `activation-engine`: not used as an activation redesign; only trust-tier type
   compatibility was preserved.
+
+Slice 03 skill record:
+
+- `typescript-type-safety`: used for Zod parse boundaries over unknown
+  CLI/API-style input.
+- `superpowers:test-driven-development`: used for RED/GREEN parser tests.
+- `brain-store-schema`: not used for new persistence in Slice 03; no DB schema
+  changed.
