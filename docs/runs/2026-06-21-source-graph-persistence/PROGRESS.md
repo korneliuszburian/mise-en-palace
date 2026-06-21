@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 04 SourceRepository methods complete.
+Current slice: Slice 05 source graph persistence smoke complete.
 
 Completed:
 
@@ -20,6 +20,8 @@ Completed:
   decision edges, and rejections.
 - Slice 04 added SourceRepository methods for claim lookup/run listing,
   source decision edge creation/run listing, and source rejection creation.
+- Slice 05 added `pnpm db:smoke:source-graph` and proved live source artifact,
+  claim, decision edge, rejection, outbox, readback, and cleanup behavior.
 
 Verification:
 
@@ -64,6 +66,16 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 05 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn db smoke source-graph` was parsed as usage error.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with claim readback matched, run claims `1`,
+  run decision edges `1`, source rejections `1`, outbox events `2`, and cleanup
+  remaining marker count `0`.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 - Slice 04 RED: `pnpm --filter @krn/db test -- mappers.test.ts` failed on
   missing `mapSourceDecisionEdge` and `mapSourceRejection`.
 - `pnpm --filter @krn/db test -- mappers.test.ts`: passed.
@@ -87,4 +99,4 @@ Skill gates:
 
 Next action:
 
-- Slice 05: add source graph persistence smoke path.
+- Slice 06: add CLI `krn source claim add`.

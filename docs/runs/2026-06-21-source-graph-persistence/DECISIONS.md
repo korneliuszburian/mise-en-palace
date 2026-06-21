@@ -35,6 +35,8 @@
 - Slice 04 repository writes for decision edges and rejections emit outbox
   events (`source.decision_edge.created`, `source.rejection.created`) because
   these are durable audit/work signals.
+- Slice 05 source graph smoke is the live proof for M22 source persistence until
+  CLI source commands add user-facing write paths.
 
 Slice 00 skill record:
 
@@ -87,3 +89,9 @@ Slice 04 skill record:
   behavior.
 - `typescript-type-safety`: used for new repository input/read-model boundaries.
 - `superpowers:test-driven-development`: used for RED/GREEN mapper tests.
+
+Slice 05 skill record:
+
+- `brain-store-schema`: used for source graph smoke cleanup, linkage, and
+  outbox-marker proof.
+- `superpowers:test-driven-development`: used for RED/GREEN CLI target test.

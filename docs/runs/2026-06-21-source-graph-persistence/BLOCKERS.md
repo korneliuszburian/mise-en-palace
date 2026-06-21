@@ -2,13 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 04.
+- None through Slice 05.
 
 Known unproven M22 behavior:
 
-- SourceArtifact, SourceClaim, SourceDecisionEdge, and SourceRejection
-  persistence are not proven yet.
-- No source graph smoke command exists yet.
 - CLI commands for `krn source claim add`, `krn source decision link`, and
   `krn source claim reject` are not implemented yet.
 - `krn doctor` does not yet report source graph readiness.
@@ -38,3 +35,9 @@ Closed in Slice 04:
 
 - Repository methods now exist for source claim lookup/run listing, decision
   edge creation/run listing, and source rejection creation.
+
+Closed in Slice 05:
+
+- `pnpm db:smoke:source-graph` exists and passed live with SourceArtifact,
+  SourceClaim, SourceDecisionEdge, SourceRejection, outbox events, readback, and
+  cleanup remaining marker count `0`.

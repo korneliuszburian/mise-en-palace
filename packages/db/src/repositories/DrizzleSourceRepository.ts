@@ -39,6 +39,12 @@ import {
   mapSourceRejection
 } from "./mappers.js";
 
+const smokePayload = (metadata: Record<string, unknown> | undefined): Record<string, string> => {
+  const smokeId = metadata?.smokeId;
+
+  return typeof smokeId === "string" ? { smokeId } : {};
+};
+
 export class DrizzleSourceRepository implements SourceRepository {
   constructor(private readonly db: KrnDatabase) {}
 
@@ -212,6 +218,7 @@ export class DrizzleSourceRepository implements SourceRepository {
       await tx.insert(outboxEvents).values({
         topic: "source.decision_edge.created",
         payload: {
+          ...smokePayload(input.metadata),
           sourceDecisionEdgeId: row.id,
           sourceClaimId: row.sourceClaimId,
           targetType: row.targetType,
@@ -274,6 +281,7 @@ export class DrizzleSourceRepository implements SourceRepository {
       await tx.insert(outboxEvents).values({
         topic: "source.rejection.created",
         payload: {
+          ...smokePayload(input.metadata),
           sourceRejectionId: row.id,
           projectId: row.projectId,
           executionRunId: row.executionRunId,

@@ -5,14 +5,15 @@ import path from "node:path";
 import {
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
-  runPersistenceSmokeCheck
+  runPersistenceSmokeCheck,
+  runSourceGraphSmokeCheck
 } from "@krn/db";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
   createId(prefix: string): string;
-  target: "project" | "harnessPlan" | "harnessEvidence";
+  target: "project" | "harnessPlan" | "harnessEvidence" | "sourceGraph";
 }
 
 export interface DbSmokeResult {
@@ -64,13 +65,17 @@ export const runDbSmokeCommand = async (
       ? "KRN Harness Plan Smoke"
       : runtime.target === "harnessEvidence"
         ? "KRN Harness Evidence Smoke"
-        : "KRN DB Smoke";
+        : runtime.target === "sourceGraph"
+          ? "KRN Source Graph Smoke"
+          : "KRN DB Smoke";
   const skipped =
     runtime.target === "harnessPlan"
       ? "Harness plan smoke: skipped (database not configured)"
       : runtime.target === "harnessEvidence"
         ? "Harness evidence smoke: skipped (database not configured)"
-      : "Persistence smoke: skipped (database not configured)";
+        : runtime.target === "sourceGraph"
+          ? "Source graph smoke: skipped (database not configured)"
+          : "Persistence smoke: skipped (database not configured)";
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
@@ -145,6 +150,41 @@ export const runDbSmokeCommand = async (
       };
     }
 
+    if (runtime.target === "sourceGraph") {
+      const report = await runSourceGraphSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("source-graph-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Source Graph Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          `Workspace smoke row: ${report.workspaceSlug}`,
+          `Project smoke row: ${report.projectSlug}`,
+          `Execution run: ${report.executionRunId}`,
+          `Source artifact: ${report.sourceArtifactId}`,
+          `Source claim: ${report.sourceClaimId}`,
+          `Source claim readback: ${
+            report.readBackSourceClaimId === report.sourceClaimId ? "matched" : "mismatch"
+          }`,
+          `Source decision edge: ${report.sourceDecisionEdgeId}`,
+          `Source rejection: ${report.sourceRejectionId}`,
+          `Run source claims: ${report.runClaimCount}`,
+          `Run source decision edges: ${report.runDecisionEdgeCount}`,
+          `Source rejections: ${report.rejectionCount}`,
+          `Outbox events: ${report.outboxEventCount}`,
+          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+          `Source graph smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
     const report = await runPersistenceSmokeCheck({
       databaseUrl,
       migrationsFolder,
@@ -178,7 +218,9 @@ export const runDbSmokeCommand = async (
             ? "Harness plan smoke"
             : runtime.target === "harnessEvidence"
               ? "Harness evidence smoke"
-              : "Persistence smoke"
+              : runtime.target === "sourceGraph"
+                ? "Source graph smoke"
+                : "Persistence smoke"
         }: failed (${errorMessage(error)})`
       ].join("\n") + "\n"
     };

@@ -91,3 +91,25 @@ Slice 04 repository methods:
 - `git diff --check`: passed.
 - Live write/read source graph proof is intentionally deferred to Slice 05
   `pnpm db:smoke:source-graph`.
+
+Slice 05 source graph smoke:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn db smoke source-graph` returned usage exit `2`.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed after adding
+  the source graph smoke target and no-DB skip output.
+- `pnpm typecheck`: passed.
+- `git diff --check`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed.
+  - Execution run: `03fe1830-9448-46b5-9b54-eb79c0129a36`.
+  - Source artifact: `82887af0-494b-4290-8610-083d15007ea9`.
+  - Source claim: `82bcd2ca-1ff6-4d10-a764-581c4ee18774`.
+  - Source decision edge: `2eaca23f-9db7-4767-b649-9c30144575c6`.
+  - Source rejection: `44bbb1ae-d48a-4c73-8bd1-4f6732f4941a`.
+  - Readback: source claim matched.
+  - Counts: run source claims `1`, run source decision edges `1`, source
+    rejections `1`, outbox events `2`.
+  - Cleanup remaining marker count: `0`.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
