@@ -14,6 +14,10 @@ This file is the compact Codex Goal activation contract. The full living executi
 - Codex surfaces are adapters.
 - Core remains pure and Codex-agnostic.
 - CLI is an adapter, not the architecture.
+- For KRN implementation slices, use the matching repo-local operational skill
+  when its trigger applies: `target-infra-adr`, `brain-store-schema`,
+  `activation-engine`, `codex-adapter-plan`, `evidence-review-loop`,
+  `source-to-decision`, `typescript-type-safety`, and `handoff-compact`.
 - Do not create dashboard UI, broad eval/benchmark lane, `.krn` truth, runtime markdown memory, MCP server, broad subagent system, or separate vector/graph/queue stores in the first implementation spine.
 
 ## Stop Condition

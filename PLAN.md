@@ -166,7 +166,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [x] 2026-06-21: Added `packages/workers` maintenance job skeleton for `embed_source_chunk`, `compact_memory`, `detect_contradiction`, `expire_stale_memory`, and `promote_eval_candidate`, with typed payloads, job descriptions, enqueue ports, and `worker_job.queued` outbox emission. Evidence: TDD RED `pnpm --filter @krn/workers test` failed on missing worker exports, then GREEN `pnpm --filter @krn/workers test`, `pnpm typecheck`, `pnpm test`, no `.krn` directory, no `any` in KRN source packages, and no Redis/Kafka/background worker loop in `packages/workers`.
 - [x] 2026-06-21: Refactored repo-local skills to the final harness-spine operational set: `target-infra-adr`, `brain-store-schema`, `activation-engine`, `codex-adapter-plan`, `evidence-review-loop`, `source-to-decision`, `typescript-type-safety`, and `handoff-compact`. Evidence: RED skill-set audit failed on missing target skills and extra broad planning skills, then GREEN skill-set/section/frontmatter audit passed, system `quick_validate.py` passed for all 8 skills, and `pnpm typecheck` passed.
 - [x] 2026-06-21: Dogfooded KRN on KRN with `krn plan --task "improve KRN doctor brain store readiness"`, added doctor brain-store readiness status, refreshed Codex adapter skill hints after the skill refactor, and recorded the run in `docs/runs/2026-06-21-first-postgres-backed-harness-dogfood.md`. Evidence: dogfood `krn plan` ran in no-store preview with context abstention, TDD RED/GREEN covered doctor readiness and stale skill hints, `krn doctor` prints `Brain store readiness: preview only...`, and `krn evidence capture` printed feedback candidates without memory mutation.
-- [ ] Add final handoff docs and verify no forbidden surfaces were introduced.
+- [x] 2026-06-21: Added final handoff docs under `docs/handoff/`, updated `GOAL.md` to require matching repo-local operational skills when their triggers apply, then ran final verification and forbidden-surface checks. Evidence: `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"`, `pnpm --filter @krn/cli krn doctor`, `pnpm --filter @krn/cli krn evidence capture`, `find . -maxdepth 3 -type d | sort`, `grep -R "requiredSkills" packages/core && exit 1 || true`, targeted forbidden-directory/store/core-import/subagent/eval checks, and `git diff --check` passed.
 
 ## Surprises & Discoveries
 
@@ -190,6 +190,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - Observation: `packages/workers` inherited the early package-shell `rootDir: "src"` setting, which fails once the package imports `@krn/core` through workspace source exports. Evidence: the first full `pnpm typecheck` after adding worker types failed with TS6059 for `packages/core/src/*`; matching the dependent-package tsconfig pattern fixed the failure. Implication: packages with workspace source imports should not force a package-local `rootDir` unless declarations/build output require it.
 - Observation: The available multi-agent validation tool forbids spawning subagents unless the user explicitly asks for subagents or delegation. Evidence: tool metadata exposed the restriction during M17. Implication: M17 used deterministic skill-set audits and `quick_validate.py`; it does not claim subagent forward-testing.
 - Observation: The first KRN-on-KRN dogfood exposed stale Codex adapter skill hints after the M17 skill refactor. Evidence: initial dogfood output still referenced removed `select-kernel-patterns`. Implication: adapter hint maps must be updated with repo-local skill topology changes and covered by tests.
+- Observation: Final verification kept the bootstrap TypeScript critic but did not introduce a broad subagent system. Evidence: `.codex/agents` contains only `ts-type-critic.toml`. Implication: the original read-only critic remains allowed while broad agent sprawl stays out of the first spine.
 
 ## Decision Log
 
@@ -297,9 +298,9 @@ Use this section as the single progress truth while executing the plan. Update e
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model. Milestone 9 added harness repository ports and Drizzle-backed Postgres adapters with typed DB-to-domain mappers. Milestone 10 added the pure activation engine and tests for small high-signal selection, invalidated-memory exclusion, source safety, and explicit exclusion records. Milestone 11 added the harness compiler over repository ports with retrieval trace persistence, weak-context abstention, capability planning, Codex adapter plan references, and evidence contracts. Milestone 12 added the Codex adapter renderer as a pure text-rendering edge. Milestone 13 added the first CLI vertical path for `krn plan --task`. Milestone 14 added the read-only `krn doctor`. Milestone 15 added printed evidence capture with clean-tree behavior and no memory mutation. Milestone 16 added typed maintenance worker job skeletons with enqueue/outbox handoff and no background loop. Milestone 17 aligned repo-local skills with the final harness spine. Milestone 18 used the harness on KRN itself and recorded the first dogfood run.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model. Milestone 9 added harness repository ports and Drizzle-backed Postgres adapters with typed DB-to-domain mappers. Milestone 10 added the pure activation engine and tests for small high-signal selection, invalidated-memory exclusion, source safety, and explicit exclusion records. Milestone 11 added the harness compiler over repository ports with retrieval trace persistence, weak-context abstention, capability planning, Codex adapter plan references, and evidence contracts. Milestone 12 added the Codex adapter renderer as a pure text-rendering edge. Milestone 13 added the first CLI vertical path for `krn plan --task`. Milestone 14 added the read-only `krn doctor`. Milestone 15 added printed evidence capture with clean-tree behavior and no memory mutation. Milestone 16 added typed maintenance worker job skeletons with enqueue/outbox handoff and no background loop. Milestone 17 aligned repo-local skills with the final harness spine. Milestone 18 used the harness on KRN itself and recorded the first dogfood run. Milestone 19 added final handoff docs and verification evidence.
 
-Current gaps: final handoff docs and forbidden-surface verification.
+Current gaps: live Postgres/pgvector/migration persistence remains unproven in this local runtime because `KRN_DATABASE_URL` is absent; this is recorded as a known unproven runtime area, not a blocker for the no-store first spine.
 
 ## Plan of Work
 
@@ -1171,11 +1172,12 @@ Add handoff docs only after the dogfood run exists.
 
 Add or update:
 
-- `PROGRESS.md`
-- `HANDOFF.md`
-- `DECISIONS.md`
-- `BLOCKERS.md`
-- `VERIFICATION.md`
+- `docs/handoff/progress.md`
+- `docs/handoff/handoff.md`
+- `docs/handoff/decisions.md`
+- `docs/handoff/blockers.md`
+- `docs/handoff/verification.md`
+- `GOAL.md` operational skill-use constraints
 
 Each file must be short and action-oriented. Do not create a new artifact factory.
 
