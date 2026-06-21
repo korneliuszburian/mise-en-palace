@@ -46,6 +46,21 @@ read-only TypeScript critic.
 - Raw onboarding material is quarantined in `docs/materials/`.
 - Active context must be small, selected, and task-specific.
 
+## Canonical Harness Spine
+
+The accepted typed-model spine is:
+
+```text
+OperatorIntent -> TaskContract -> HarnessPlan -> ContextAssembly
+  -> ExecutionContract -> CodexAdapterPlan -> ExecutionRun
+  -> EvidenceBundle -> ReviewAssessment -> FeedbackDelta
+  -> MemoryCandidate / SourceDecision / EvalCandidate
+```
+
+`ContextPacket` is a rendered artifact from `ContextAssembly`, not the central
+domain model. Skill needs are `CapabilityRequirement` in core and
+`CodexSkillBinding` in the Codex adapter layer.
+
 ## Decision Rule
 
 Every retained source or pattern must pass:
@@ -57,4 +72,3 @@ source -> mechanism -> KRN implication -> decision/rejection -> falsifier
 If a next step requires broad historical reread, copying old topology, or
 building dashboard/evals before typed primitives and dogfood traces, stop and
 re-scope.
-

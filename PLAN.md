@@ -148,7 +148,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [x] 2026-06-21: Strict pnpm TypeScript workspace spine exists with `packages/core` and `packages/cli` shells.
 - [x] 2026-06-21: Root `package.json`, `pnpm-workspace.yaml`, and `tsconfig.base.json` exist.
 - [x] 2026-06-21: Added root `PLAN.md`, compacted `GOAL.md` to the activation contract, updated `README.md` current phase, and kept `AGENTS.md` short with a pointer to this living ExecPlan. Evidence: docs-only diff and `pnpm typecheck` for this milestone.
-- [ ] Add ADR for PostgreSQL + pgvector as the canonical KRN brain store.
+- [x] 2026-06-21: Added `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md` and `docs/architecture/package-boundaries.md`. Evidence: ADR includes source-to-decision mappings and `pnpm typecheck` passed.
 - [ ] Expand package boundaries to include `schema`, `db`, `harness`, `codex-adapter`, and `workers` shells without runtime overreach.
 - [ ] Add test tooling and first contract tests only where they protect real boundaries.
 - [ ] Add Drizzle/Postgres schema foundation for harness runs, events, outbox, projects, and kernels.
@@ -172,6 +172,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - Observation: The repository already has more than bootstrap docs; it also has a strict pnpm workspace and empty `core`/`cli` packages. Evidence: `package.json` has `pnpm -r --workspace-concurrency=1 typecheck`, and both packages have empty `src/index.ts` entrypoints. Implication: do not run an empty-repo bootstrap goal; continue from the TypeScript spine.
 - Observation: The current `GOAL.md` still declares Commit 2 as active and later phases as typed primitives, init dry-run, context build, and review capture. Evidence: `GOAL.md` names Commit 2 as active and lists later phases. Implication: update direction so target infra, DB schema, memory/source graph, and harness compiler start now.
 - Observation: Existing skills are compact and useful, but they are still bootstrap-oriented. Evidence: `to-issues` and `source-to-decision` encode bounded outputs and forbidden behavior. Implication: keep their discipline, but add or refactor operational skills around final KRN spine: target-infra-design, brain-store-schema, activation-engine, codex-adapter-plan, evidence-review-loop.
+- Observation: `docs/decisions/ADR-0009-canonical-harness-spine.md` already existed in the worktree before the brain-store ADR was added. Evidence: `README.md` and `docs/KRN_KERNEL.md` reference the canonical harness spine. Implication: keep canonical harness spine as ADR-0009 and record the Postgres/pgvector brain-store decision as ADR-0010.
 
 ## Decision Log
 
@@ -203,7 +204,7 @@ Use this section as the single progress truth while executing the plan. Update e
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. No runtime behavior has been added.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. No runtime behavior has been added.
 
 Current gaps: no DB package, no schema package, no harness package, no Codex adapter package, no worker package, no domain model, no Drizzle schema, no Zod schemas, no repositories, no activation engine, no compiler, no CLI behavior, no tests beyond typecheck capability.
 
@@ -248,10 +249,10 @@ Create a new ADR for the target data plane and a concise architecture note for p
 
 Add:
 
-- `docs/decisions/ADR-0009-brain-store-postgres-pgvector.md`
+- `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md`
 - `docs/architecture/package-boundaries.md`
 
-`ADR-0009-brain-store-postgres-pgvector.md` must decide:
+`ADR-0010-brain-store-postgres-pgvector.md` must decide:
 
 - PostgreSQL + pgvector is canonical KRN state.
 - Graph is relational edge tables first.

@@ -39,6 +39,7 @@ removal_condition:
 | Review / Repair / Validate Loop | dogfood loop later | Agent speed increases review burden. |
 | Evidence-Checked Continuous Goal | compact `GOAL.md` | Goal absorbs product brain. |
 | TypeScript Boundary Discipline | strict TS spine later | Type weakening makes implementation easier. |
+| Canonical Harness Spine | `OperatorIntent` through `FeedbackDelta` | `ContextPacket` becomes central domain model again. |
 
 ## Lab Or Later
 
@@ -59,4 +60,3 @@ removal_condition:
 - runtime memory in markdown;
 - old repo topology import;
 - open network plus powerful skills without allowlists.
-
