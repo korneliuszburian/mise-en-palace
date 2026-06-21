@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   runCli
 } from "./runCli.js";
+import {
+  deriveBrainStoreReadiness
+} from "./runDoctorCommand.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 
@@ -57,6 +60,30 @@ describe("runCli", () => {
     expect(result.stdout).toContain(".krn runtime truth: absent");
     expect(result.stdout).toContain("TypeScript strictness: enabled");
     expect(result.stdout).toContain("Forbidden surfaces: absent");
+  });
+
+  it("distinguishes doctor DB readiness blockers", () => {
+    expect(
+      deriveBrainStoreReadiness([
+        { label: "Postgres config", status: "configured and reachable" },
+        { label: "pgvector", status: "available" },
+        { label: "migrations", status: "unverified (2/3 applied)" }
+      ])
+    ).toEqual({
+      label: "Brain store readiness",
+      status: "blocked (migrations unverified)"
+    });
+
+    expect(
+      deriveBrainStoreReadiness([
+        { label: "Postgres config", status: "configured and reachable" },
+        { label: "pgvector", status: "missing" },
+        { label: "migrations", status: "verified (3/3 applied)" }
+      ])
+    ).toEqual({
+      label: "Brain store readiness",
+      status: "blocked (pgvector missing)"
+    });
   });
 
   it("reports DB readiness missing configuration", async () => {

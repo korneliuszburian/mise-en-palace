@@ -3,7 +3,9 @@ import {
   readFile
 } from "node:fs/promises";
 import path from "node:path";
-import postgres from "postgres";
+import {
+  inspectMigrationReadiness
+} from "@krn/db";
 
 export interface DoctorRuntime {
   env: Record<string, string | undefined>;
@@ -15,7 +17,7 @@ export interface DoctorResult {
   stdout: string;
 }
 
-interface DoctorCheck {
+export interface DoctorCheck {
   label: string;
   status: string;
 }
@@ -63,7 +65,8 @@ const readJsonObject = async (filePath: string): Promise<Record<string, unknown>
 };
 
 const checkPostgres = async (
-  databaseUrl: string | undefined
+  databaseUrl: string | undefined,
+  migrationsFolder: string
 ): Promise<DoctorCheck[]> => {
   if (databaseUrl === undefined || databaseUrl.trim().length === 0) {
     return [
@@ -82,26 +85,16 @@ const checkPostgres = async (
     ];
   }
 
-  const client = postgres(databaseUrl, { max: 1 });
-
   try {
-    await client`select 1`;
-    const vectorRows = await client<{ exists: boolean }[]>`
-      select exists (
-        select 1
-        from pg_extension
-        where extname = 'vector'
-      ) as exists
-    `;
-    const migrationRows = await client<{ exists: boolean }[]>`
-      select exists (
-        select 1
-        from information_schema.tables
-        where table_name = '__drizzle_migrations'
-      ) as exists
-    `;
-    const vectorAvailable = vectorRows[0]?.exists === true;
-    const migrationsPresent = migrationRows[0]?.exists === true;
+    const report = await inspectMigrationReadiness({
+      databaseUrl,
+      migrationsFolder
+    });
+    const migrationStatus = !report.migrationTablePresent
+      ? "migration table missing"
+      : report.migrationsVerified
+        ? `verified (${report.appliedMigrationCount}/${report.expectedMigrationCount} applied)`
+        : `unverified (${report.appliedMigrationCount}/${report.expectedMigrationCount} applied)`;
 
     return [
       {
@@ -110,11 +103,11 @@ const checkPostgres = async (
       },
       {
         label: "pgvector",
-        status: vectorAvailable ? "available" : "missing"
+        status: report.pgvectorAvailable ? "available" : "missing"
       },
       {
         label: "migrations",
-        status: migrationsPresent ? "table present" : "migration table missing"
+        status: migrationStatus
       }
     ];
   } catch (error) {
@@ -134,8 +127,6 @@ const checkPostgres = async (
         status: "skipped (Postgres unreachable)"
       }
     ];
-  } finally {
-    await client.end();
   }
 };
 
@@ -144,7 +135,7 @@ const findCheckStatus = (
   label: DoctorCheck["label"]
 ): string | undefined => checks.find((check) => check.label === label)?.status;
 
-const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]): DoctorCheck => {
+export const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]): DoctorCheck => {
   const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
   const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
   const migrationStatus = findCheckStatus(postgresChecks, "migrations");
@@ -163,10 +154,31 @@ const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]): Doct
     };
   }
 
-  if (pgvectorStatus === "available" && migrationStatus === "table present") {
+  if (pgvectorStatus === "available" && migrationStatus?.startsWith("verified") === true) {
     return {
       label: "Brain store readiness",
       status: "ready"
+    };
+  }
+
+  if (pgvectorStatus === "missing" && migrationStatus?.startsWith("verified") === true) {
+    return {
+      label: "Brain store readiness",
+      status: "blocked (pgvector missing)"
+    };
+  }
+
+  if (pgvectorStatus === "available" && migrationStatus === "migration table missing") {
+    return {
+      label: "Brain store readiness",
+      status: "blocked (migrations not applied)"
+    };
+  }
+
+  if (pgvectorStatus === "available" && migrationStatus?.startsWith("unverified") === true) {
+    return {
+      label: "Brain store readiness",
+      status: "blocked (migrations unverified)"
     };
   }
 
@@ -241,7 +253,8 @@ const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
 
 export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
-  const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL);
+  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
+  const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL, migrationsFolder);
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
@@ -267,6 +280,10 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
 
     if (check.label === "Postgres config") {
       return check.status.startsWith("configured but unreachable");
+    }
+
+    if (check.label === "Brain store readiness") {
+      return check.status.startsWith("blocked");
     }
 
     return false;

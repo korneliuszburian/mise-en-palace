@@ -3,7 +3,7 @@
 Goal: prove the local KRN brain-store runtime path without expanding product
 scope.
 
-Current slice: Slice 03 migration verification command complete and verified.
+Current slice: Slice 04 doctor DB readiness refinement complete and verified.
 
 Preflight state:
 
@@ -61,6 +61,17 @@ Migration readiness state:
 - Postgres notice output from long generated constraint names is suppressed in
   the readiness client so the report is deterministic.
 
+Doctor readiness state:
+
+- `krn doctor` remains read-only.
+- Without `KRN_DATABASE_URL`, doctor exits `0` and reports preview-only
+  persisted brain-store readiness.
+- With the local Compose DB and `KRN_DATABASE_URL`, doctor exits `0` and reports
+  Postgres reachable, pgvector available, migrations `verified (3/3 applied)`,
+  and brain-store readiness ready.
+- Doctor readiness logic now distinguishes migrations unverified from pgvector
+  missing.
+
 Next slice:
 
-- Slice 04 doctor DB readiness refinement.
+- Slice 05 minimal persistence smoke test.

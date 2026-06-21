@@ -61,6 +61,20 @@ Slice 03 migration readiness checks:
 - `pnpm test`: passed across workspace tests.
 - `pnpm typecheck`: passed across workspace projects.
 
+Slice 04 doctor readiness checks:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because
+  `deriveBrainStoreReadiness` was not exported yet.
+- GREEN `pnpm --filter @krn/cli test`: passed with 7 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm --filter @krn/cli krn doctor` without `KRN_DATABASE_URL`: passed with
+  preview-only brain-store readiness and exit `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with Postgres reachable, pgvector available,
+  migrations `verified (3/3 applied)`, and brain-store readiness ready.
+- `pnpm test`: passed across workspace tests.
+
 Next verification:
 
-- Slice 04 should verify `krn doctor` without DB and with the local DB.
+- Slice 05 should verify the persistence smoke command without DB and, if local
+  DB remains running, against the local pgvector Postgres.

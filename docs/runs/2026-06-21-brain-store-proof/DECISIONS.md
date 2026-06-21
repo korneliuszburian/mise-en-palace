@@ -37,3 +37,8 @@
 - Suppress Postgres NOTICE output in the readiness client because generated
   constraint names may exceed PostgreSQL identifier length and would otherwise
   pollute command output.
+- Keep `krn doctor` read-only. It may inspect migration readiness through
+  `@krn/db`, but it must not apply migrations.
+- Doctor exits `0` for missing `KRN_DATABASE_URL` because the no-store preview
+  spine remains valid. Doctor exits non-zero for configured DB states that are
+  blocked by unreachable Postgres, missing pgvector, or unverified migrations.

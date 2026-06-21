@@ -5,9 +5,8 @@ Prove local KRN brain-store runtime: DB config, migrations, pgvector, minimal
 persistence smoke path, and actionable `krn doctor` readiness.
 
 Last verified state:
-Slice 03 migration readiness passed: RED/GREEN CLI test, `pnpm test`, `pnpm
-typecheck`, missing-env `pnpm db:ready` failure, Docker Compose healthy local
-pgvector Postgres, and live `KRN_DATABASE_URL=... pnpm db:ready` success.
+Slice 04 doctor readiness passed: RED/GREEN CLI test, `pnpm typecheck`,
+missing-env `krn doctor`, live-DB `krn doctor`, and full `pnpm test`.
 
 Changed files:
 
@@ -53,9 +52,14 @@ Compose DB it applies/verifies migrations and reports pgvector availability.
 Live proof passed with migrations expected `3`, applied `3`, pgvector available,
 and brain-store readiness ready.
 
+Doctor readiness:
+`krn doctor` remains read-only and now reports exact migration verification
+against generated migration count. Missing DB config remains preview-only and
+exit `0`; local configured DB reports migrations `verified (3/3 applied)` and
+brain-store readiness ready.
+
 Blockers/risks:
-Doctor currently checks only for migration table presence, not exact migration
-readiness. Minimal persistence smoke proof is still absent.
+Minimal persistence smoke proof is still absent.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -63,7 +67,7 @@ Context selectors:
 and DB schema/migration files.
 
 Next action:
-Run Slice 04 and align `krn doctor` with the stronger DB readiness states.
+Run Slice 05 and add the minimal persistence smoke path.
 
 Do not reread:
 `docs/materials/` or broad historical docs.
