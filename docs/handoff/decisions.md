@@ -15,3 +15,10 @@
 - `pnpm db:smoke` is the minimal persistence smoke proof command.
 - Repo-local operational skills should be required in `GOAL.md` when their
   triggers apply.
+- M21 uses explicit `--persist` for user-facing plan/evidence writes.
+- M21 smoke commands live under `krn db smoke ...` and root
+  `pnpm db:smoke:*` scripts so persistence proof is explicit.
+- M21 stays inside the existing Postgres/Drizzle boundary unless a future slice
+  proves a new durable surface is required.
+- Persisted evidence capture creates feedback candidates only; it does not
+  auto-apply memory, source, policy, or eval updates.

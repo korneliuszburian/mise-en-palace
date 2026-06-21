@@ -1,5 +1,33 @@
 # Verification
 
+Latest M21 Slice 07 verification:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected before
+  `db smoke harness-evidence` parser support.
+- GREEN `pnpm --filter @krn/cli test`: passed with 16 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed. It created execution run
+  `8db14bdf-6390-485d-9736-89274c5affff`, evidence bundle
+  `1dbe1d1b-e537-4670-a6cb-2b878b44c7f2`, review assessment
+  `31fe636d-5d61-402b-82bc-64d225cd0c6d`, feedback delta
+  `7bc1b78f-4aeb-48cb-b9e5-2d8b456f1fe9`, verified linked counts `1/1/1`,
+  run events `2`, and cleanup remaining marker count `0`.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/db db:check`: passed.
+- `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
+  packages/db/src packages/cli/src`: passed with no matches.
+- `git diff --check`: passed.
+
+Current M21 scope checks:
+
+- No dashboard, API, MCP server, broad worker runtime, research layer, `.krn`,
+  runtime markdown memory, full MemoryStore/SourceStore, automatic memory
+  mutation, or separate vector/graph/search/queue store was added.
+- `krn plan --task "..."` remains preview/no-store unless `--persist` is
+  explicit.
+- Smoke commands are the explicit mutating proof surface.
+
 Latest M20 final verification:
 
 - `git status --short --branch`: passed; clean `main...origin/main` before

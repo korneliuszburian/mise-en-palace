@@ -3,6 +3,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import {
+  runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
   runPersistenceSmokeCheck
 } from "@krn/db";
@@ -11,7 +12,7 @@ export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
   createId(prefix: string): string;
-  target: "project" | "harnessPlan";
+  target: "project" | "harnessPlan" | "harnessEvidence";
 }
 
 export interface DbSmokeResult {
@@ -58,10 +59,17 @@ export const runDbSmokeCommand = async (
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-  const title = runtime.target === "harnessPlan" ? "KRN Harness Plan Smoke" : "KRN DB Smoke";
+  const title =
+    runtime.target === "harnessPlan"
+      ? "KRN Harness Plan Smoke"
+      : runtime.target === "harnessEvidence"
+        ? "KRN Harness Evidence Smoke"
+        : "KRN DB Smoke";
   const skipped =
     runtime.target === "harnessPlan"
       ? "Harness plan smoke: skipped (database not configured)"
+      : runtime.target === "harnessEvidence"
+        ? "Harness evidence smoke: skipped (database not configured)"
       : "Persistence smoke: skipped (database not configured)";
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
@@ -106,6 +114,37 @@ export const runDbSmokeCommand = async (
       };
     }
 
+    if (runtime.target === "harnessEvidence") {
+      const report = await runHarnessEvidenceSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("harness-evidence-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Harness Evidence Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          `Workspace smoke row: ${report.workspaceSlug}`,
+          `Project smoke row: ${report.projectSlug}`,
+          `Execution run: ${report.executionRunId}`,
+          `Evidence bundle: ${report.evidenceBundleId}`,
+          `Review assessment: ${report.reviewAssessmentId}`,
+          `Feedback delta: ${report.feedbackDeltaId}`,
+          `Evidence bundles: ${report.evidenceBundleCount}`,
+          `Review assessments: ${report.reviewAssessmentCount}`,
+          `Feedback deltas: ${report.feedbackDeltaCount}`,
+          `Run events: ${report.runEventCount}`,
+          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+          `Harness evidence smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
     const report = await runPersistenceSmokeCheck({
       databaseUrl,
       migrationsFolder,
@@ -134,7 +173,13 @@ export const runDbSmokeCommand = async (
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: configured",
-        `${runtime.target === "harnessPlan" ? "Harness plan smoke" : "Persistence smoke"}: failed (${errorMessage(error)})`
+        `${
+          runtime.target === "harnessPlan"
+            ? "Harness plan smoke"
+            : runtime.target === "harnessEvidence"
+              ? "Harness evidence smoke"
+              : "Persistence smoke"
+        }: failed (${errorMessage(error)})`
       ].join("\n") + "\n"
     };
   }

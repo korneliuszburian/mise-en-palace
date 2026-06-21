@@ -50,6 +50,12 @@
   write anchor and appends sequence `max(run_events.sequence) + 1`.
 - Persisted evidence capture creates candidate records only; it does not apply
   memory, source, or eval updates.
+- `pnpm db:smoke:harness-evidence` is the explicit live proof command for the
+  persisted evidence loop. It creates its own marked run, writes linked
+  evidence/review/feedback records, verifies counts through repository
+  readback, and cleans up marker rows.
+- Smoke cleanup remains marker-scoped. It must not delete earlier persisted
+  dogfood/proof rows such as the Slice 04/06 execution run.
 
 Slice 00 skill record:
 
@@ -120,3 +126,12 @@ Slice 06 skill record:
 - `test-driven-development`: used; RED CLI tests failed before implementation
   and passed after.
 - `brain-store-schema`: used for linked evidence/review/feedback persistence.
+
+Slice 07 skill record:
+
+- `brain-store-schema`: used for persisted smoke readback and cleanup behavior.
+- `evidence-review-loop`: used for evidence/review/feedback smoke proof.
+- `typescript-type-safety`: used for CLI parser and typed DB smoke report
+  boundaries.
+- `test-driven-development`: used; RED CLI test failed before parser support
+  and passed after.

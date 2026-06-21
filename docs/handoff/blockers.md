@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None for M20 local brain-store runtime proof.
+- None through M21 Slice 07.
 
 Closed in M20:
 
@@ -22,6 +22,21 @@ Out of M20 scope:
   the minimal smoke path remains later product work.
 - Worker execution, leasing, retries, and background processing remain later
   product work.
+
+Closed in M21 so far:
+
+- Persisted plan run creation exists behind explicit `krn plan --persist`.
+- Persisted plan readback/cleanup is proven by `pnpm db:smoke:harness-plan`.
+- Persisted evidence/review/feedback candidate writing exists behind explicit
+  `krn evidence capture --run-id --persist`.
+- Persisted evidence readback/cleanup is proven by
+  `pnpm db:smoke:harness-evidence`.
+
+Remaining M21 work:
+
+- `krn doctor` does not yet report harness persistence readiness.
+- Persisted harness loop dogfood is not recorded yet.
+- Final anti-rot audit is not complete yet.
 
 Explicit non-blockers:
 

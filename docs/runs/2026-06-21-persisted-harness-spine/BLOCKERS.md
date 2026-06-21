@@ -2,12 +2,16 @@
 
 Hard blockers:
 
-- None through Slice 04.
+- None through Slice 07.
 
 Known unproven M21 behavior:
 
-- Full persisted evidence loop cleanup is not recorded yet; Slice 06 proves
-  linked evidence/review/feedback persistence but not cleanup.
+- `krn doctor` does not yet report harness persistence readiness; Slice 08 owns
+  the read-only doctor checks.
+- Persisted harness loop dogfood is not recorded yet; Slice 09 owns the
+  operator-facing run record.
+- Final anti-rot audit is not complete yet; Slice 10 owns the broad no-forbidden
+  surface checks.
 
 Explicit non-blockers:
 

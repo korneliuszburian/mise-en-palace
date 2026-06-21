@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 06 persisted evidence capture complete.
+Current slice: Slice 07 persisted evidence smoke complete.
 
 Completed:
 
@@ -39,6 +39,9 @@ Completed:
 - Slice 06 added explicit `krn evidence capture --run-id <id> --persist`,
   which loads the persisted run, writes an evidence bundle, creates a review
   assessment, creates feedback delta candidates, and prints persisted IDs.
+- Slice 07 added `pnpm db:smoke:harness-evidence`, which creates a marked
+  persisted harness run, captures linked evidence/review/feedback records,
+  verifies readback counts, and cleans up marker rows.
 
 Verification:
 
@@ -104,6 +107,22 @@ Verification:
 - `pnpm --filter @krn/db db:check`: passed during Slice 06.
 - No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
   `packages/db/src`, and `packages/cli/src`: passed.
+- RED `pnpm --filter @krn/cli test`: failed on missing
+  `db smoke harness-evidence` parser support.
+- GREEN `pnpm --filter @krn/cli test`: passed with 16 tests.
+- `pnpm typecheck`: passed during Slice 07.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed. Execution run
+  `8db14bdf-6390-485d-9736-89274c5affff`, evidence bundle
+  `1dbe1d1b-e537-4670-a6cb-2b878b44c7f2`, review assessment
+  `31fe636d-5d61-402b-82bc-64d225cd0c6d`, feedback delta
+  `7bc1b78f-4aeb-48cb-b9e5-2d8b456f1fe9`, linked counts `1/1/1`, run events
+  `2`, cleanup remaining marker count `0`.
+- `pnpm test`: passed during Slice 07.
+- `pnpm --filter @krn/db db:check`: passed during Slice 07.
+- No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
+  `packages/db/src`, and `packages/cli/src`: passed.
+- `git diff --check`: passed during Slice 07.
 
 Skill gates:
 
@@ -128,9 +147,16 @@ Skill gates:
   persistence.
 - Used: `typescript-type-safety` for Slice 06 CLI arg/env/run-id boundaries.
 - Used: `test-driven-development` for Slice 06 RED/GREEN CLI tests.
+- Used: `brain-store-schema` for Slice 07 persisted smoke/readback/cleanup.
+- Used: `evidence-review-loop` for Slice 07 linked evidence/review/feedback
+  smoke proof.
+- Used: `typescript-type-safety` for Slice 07 DB smoke report and CLI parser
+  boundary.
+- Used: `test-driven-development` for Slice 07 RED/GREEN CLI parser test.
 - Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 07: add `pnpm db:smoke:harness-evidence` to prove persisted evidence
-  capture readback and cleanup.
+- Slice 08: update `krn doctor` so it reports harness persistence readiness,
+  including the persisted plan and evidence smoke capabilities, without
+  writing to the database.

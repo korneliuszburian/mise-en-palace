@@ -12,7 +12,7 @@ export type CliCommand =
     }
   | {
       kind: "dbSmoke";
-      target: "project" | "harnessPlan";
+      target: "project" | "harnessPlan" | "harnessEvidence";
     }
   | {
       kind: "evidenceCapture";
@@ -92,8 +92,17 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "harness-evidence") {
+      return {
+        command: {
+          kind: "dbSmoke",
+          target: "harnessEvidence"
+        }
+      };
+    }
+
     return {
-      error: "Usage: krn db readiness|smoke [harness-plan]"
+      error: "Usage: krn db readiness|smoke [harness-plan|harness-evidence]"
     };
   }
 
