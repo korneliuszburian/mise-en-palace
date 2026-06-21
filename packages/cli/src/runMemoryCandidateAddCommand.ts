@@ -1,0 +1,235 @@
+import {
+  MemoryRecordKindSchema,
+  parseMemoryCandidateInput
+} from "@krn/schema";
+import type {
+  SourceLineageRef
+} from "@krn/core";
+import {
+  createDatabaseRuntime
+} from "./databaseRuntime.js";
+import type {
+  DatabaseRuntime,
+  DatabaseRuntimeInput
+} from "./databaseRuntime.js";
+import type {
+  CliCommand
+} from "./parseArgs.js";
+
+export type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
+
+export interface MemoryCandidateAddCommandRuntime {
+  env: Record<string, string | undefined>;
+  now(): string;
+  createId(prefix: string): string;
+  command: MemoryCandidateAddCommand;
+  createDatabaseRuntime?: CreateMemoryCandidateAddDatabaseRuntime;
+}
+
+export interface MemoryCandidateAddCommandResult {
+  stdout: string;
+}
+
+export type CreateMemoryCandidateAddDatabaseRuntime = (
+  input: DatabaseRuntimeInput
+) => Promise<DatabaseRuntime>;
+
+const defaultWorkspaceSlug = "local";
+const defaultProjectSlug = "mise-en-palace";
+
+const kindAliases = new Map<string, string>([
+  ["architecture-boundary", "constraint"]
+]);
+
+const confidenceAliases = new Map<string, number>([
+  ["low", 40],
+  ["medium", 70],
+  ["high", 90]
+]);
+
+const normalizeKind = (kind: string | undefined): string | undefined => {
+  const candidate = kind?.trim();
+
+  if (candidate === undefined || candidate.length === 0) {
+    return undefined;
+  }
+
+  return kindAliases.get(candidate) ?? candidate;
+};
+
+const parseConfidence = (confidence: string | undefined): number | undefined => {
+  const candidate = confidence?.trim();
+
+  if (candidate === undefined || candidate.length === 0) {
+    return undefined;
+  }
+
+  const aliased = confidenceAliases.get(candidate);
+
+  if (aliased !== undefined) {
+    return aliased;
+  }
+
+  const numeric = Number(candidate);
+
+  return Number.isFinite(numeric) ? numeric : undefined;
+};
+
+const sourceLineage = (command: MemoryCandidateAddCommand): { sourceId: string }[] => [
+  ...(command.sourceClaimId === undefined ? [] : [{ sourceId: command.sourceClaimId }]),
+  ...command.sourceLineageIds.map((sourceId) => ({ sourceId }))
+];
+
+const toSourceLineageRefs = (
+  sourceLineageItems: ReturnType<typeof parseMemoryCandidateInput>["sourceLineage"]
+): SourceLineageRef[] =>
+  sourceLineageItems.map((item) => ({
+    sourceId: item.sourceId,
+    ...(item.note === undefined ? {} : { note: item.note })
+  }));
+
+const formatPreview = (
+  command: MemoryCandidateAddCommand,
+  candidate: ReturnType<typeof parseMemoryCandidateInput>,
+  normalizedKind: string
+): string =>
+  [
+    "KRN Memory Candidate Add",
+    "Persistence: disabled (no-store preview; use --persist to write)",
+    "DB writes: none",
+    "",
+    "Memory candidate preview:",
+    `kind: ${candidate.kind}`,
+    ...(command.memoryKind === normalizedKind ? [] : [`inputKind: ${command.memoryKind}`]),
+    `status: ${candidate.status}`,
+    `summary: ${candidate.summary}`,
+    `confidence: ${candidate.confidence}`,
+    `applicationGuidance: ${candidate.applicationGuidance}`,
+    ...(command.runId === undefined ? [] : [`runId: ${command.runId}`]),
+    ...(command.feedbackDeltaId === undefined
+      ? []
+      : [`feedbackDeltaId: ${command.feedbackDeltaId}`]),
+    ...(command.sourceClaimId === undefined
+      ? []
+      : [`sourceClaimId: ${command.sourceClaimId}`]),
+    `invalidationRule: ${candidate.invalidationRule ?? ""}`
+  ].join("\n");
+
+const formatPersisted = (
+  memoryCandidateId: string,
+  candidate: ReturnType<typeof parseMemoryCandidateInput>
+): string =>
+  [
+    "KRN Memory Candidate Add",
+    "Persistence: enabled (Postgres, explicit --persist)",
+    "",
+    "Persisted IDs:",
+    `memoryCandidate: ${memoryCandidateId}`,
+    ...(candidate.executionRunId === undefined ? [] : [`runId: ${candidate.executionRunId}`]),
+    ...(candidate.feedbackDeltaId === undefined
+      ? []
+      : [`feedbackDeltaId: ${candidate.feedbackDeltaId}`]),
+    `kind: ${candidate.kind}`,
+    `status: ${candidate.status}`,
+    `confidence: ${candidate.confidence}`,
+    `sourceClaimIds: ${candidate.sourceClaimIds.join(",")}`
+  ].join("\n");
+
+export const runMemoryCandidateAddCommand = async (
+  runtime: MemoryCandidateAddCommandRuntime
+): Promise<MemoryCandidateAddCommandResult> => {
+  const command = runtime.command;
+  const normalizedKind = normalizeKind(command.memoryKind);
+
+  if (normalizedKind !== undefined && !MemoryRecordKindSchema.safeParse(normalizedKind).success) {
+    throw new Error(`Unsupported memory kind: ${command.memoryKind}`);
+  }
+
+  const candidateInput = parseMemoryCandidateInput({
+    executionRunId: command.runId,
+    feedbackDeltaId: command.feedbackDeltaId,
+    proposedBy: command.proposedBy ?? "cli",
+    kind: normalizedKind,
+    summary: command.content,
+    body: command.content,
+    owner: command.owner ?? "operator",
+    confidence: parseConfidence(command.confidence),
+    applicationGuidance: command.applicationGuidance,
+    invalidationRule: command.invalidationRule,
+    sourceClaimIds: command.sourceClaimId === undefined ? [] : [command.sourceClaimId],
+    sourceLineage: sourceLineage(command),
+    isUserPreference: false,
+    metadata: {
+      ...command.metadata,
+      ...(command.memoryKind === normalizedKind ? {} : { inputKind: command.memoryKind })
+    }
+  });
+
+  if (!command.persist) {
+    return {
+      stdout: formatPreview(command, candidateInput, normalizedKind ?? "")
+    };
+  }
+
+  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for krn memory candidate add --persist");
+  }
+
+  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  const databaseRuntime = await createRuntime({
+    databaseUrl,
+    workspaceSlug: defaultWorkspaceSlug,
+    projectSlug: defaultProjectSlug,
+    now: runtime.now,
+    createId: runtime.createId
+  });
+
+  try {
+    if (candidateInput.sourceClaimIds.length > 0) {
+      const sourceClaimId = candidateInput.sourceClaimIds[0];
+
+      if (sourceClaimId === undefined) {
+        throw new Error("sourceClaimId is required");
+      }
+
+      const sourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
+
+      if (sourceClaim === undefined) {
+        throw new Error(`SourceClaim not found: ${sourceClaimId}`);
+      }
+    }
+
+    const memoryCandidate = await databaseRuntime.memoryRepository.createMemoryCandidate({
+      projectId: databaseRuntime.projectId,
+      ...(candidateInput.executionRunId === undefined
+        ? {}
+        : { executionRunId: candidateInput.executionRunId }),
+      ...(candidateInput.feedbackDeltaId === undefined
+        ? {}
+        : { feedbackDeltaId: candidateInput.feedbackDeltaId }),
+      proposedBy: candidateInput.proposedBy,
+      kind: candidateInput.kind,
+      status: candidateInput.status,
+      summary: candidateInput.summary,
+      body: candidateInput.body,
+      owner: candidateInput.owner,
+      confidence: candidateInput.confidence,
+      applicationGuidance: candidateInput.applicationGuidance,
+      ...(candidateInput.invalidationRule === undefined
+        ? {}
+        : { invalidationRule: candidateInput.invalidationRule }),
+      sourceClaimIds: candidateInput.sourceClaimIds,
+      sourceLineage: toSourceLineageRefs(candidateInput.sourceLineage),
+      isUserPreference: candidateInput.isUserPreference,
+      metadata: candidateInput.metadata
+    });
+
+    return {
+      stdout: formatPersisted(memoryCandidate.id, candidateInput)
+    };
+  } finally {
+    await databaseRuntime.close();
+  }
+};

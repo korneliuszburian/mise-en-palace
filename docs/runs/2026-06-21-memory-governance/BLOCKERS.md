@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 04.
+- None through Slice 05.
 
 Known unproven M23 behavior:
 
-- There is no CLI `krn memory candidate add`.
 - There is no CLI `krn memory candidate promote/reject`.
 - There is no CLI `krn memory record apply`.
 - There is no CLI `krn memory anti add`.
@@ -57,3 +56,9 @@ Closed in Slice 04:
 - `pnpm db:smoke:memory-governance` now proves candidate creation, explicit
   promotion, record/version readback, application feedback, anti-memory
   linkage, and cleanup to zero marker rows against the local DB.
+
+Closed in Slice 05:
+
+- `krn memory candidate add` now previews validated MemoryCandidate input
+  without DB writes and can persist through MemoryRepository with source-claim
+  existence validation.

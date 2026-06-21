@@ -83,6 +83,27 @@ Slice 03 MemoryRepository methods:
 - `pnpm typecheck`: passed across workspace projects.
 - `pnpm --filter @krn/db db:check`: passed.
 - `pnpm test`: passed across workspace projects.
+
+Slice 05 CLI memory candidate add:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with three
+  invalid-args cases because `krn memory candidate add` was not routed yet.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 36
+  tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace projects.
+- Preview command passed:
+  `pnpm --filter @krn/cli krn memory candidate add --run-id execution-run-1
+  --kind architecture-boundary --content "Source graph should use Postgres edge
+  tables first" --source-claim-id source-claim-1 --confidence medium
+  --application-guidance "Use when deciding whether to add a separate graph DB"
+  --invalidation-rule "Revisit when graph traversal exceeds Postgres edge-table
+  performance"`.
+- Preview report showed `Persistence: disabled`, `DB writes: none`, kind
+  `constraint`, inputKind `architecture-boundary`, status `proposed`,
+  confidence `70`, runId `execution-run-1`, and sourceClaimId
+  `source-claim-1`.
+- `pnpm --filter @krn/db db:check`: passed.
 - `git diff --check`: passed.
 
 Slice 04 memory governance smoke path:

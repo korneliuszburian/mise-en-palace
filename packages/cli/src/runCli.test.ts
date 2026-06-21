@@ -10,6 +10,7 @@ import type {
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
+  CreateMemoryCandidateInput,
   CreateReviewAssessmentInput,
   HarnessRunAggregate
 } from "@krn/harness";
@@ -23,6 +24,11 @@ import {
 } from "./runDoctorCommand.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+const unusedMemoryRepository = {
+  async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
+    throw new Error("createMemoryCandidate should not be called");
+  }
+};
 
 describe("runCli", () => {
   it("prints a bounded no-store plan for plan --task", async () => {
@@ -112,6 +118,7 @@ describe("runCli", () => {
               harnessRunRepository
             },
             harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
             async close() {
               return undefined;
             }
@@ -355,6 +362,198 @@ describe("runCli", () => {
     );
   });
 
+  it("previews memory candidate add without DB writes", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--kind",
+        "architecture-boundary",
+        "--content",
+        "Source graph should use Postgres edge tables first",
+        "--source-claim-id",
+        "source-claim-1",
+        "--confidence",
+        "medium",
+        "--application-guidance",
+        "Use when deciding whether to add a separate graph DB",
+        "--invalidation-rule",
+        "Revisit when graph traversal exceeds Postgres edge-table performance"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Memory Candidate Add");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("kind: constraint");
+    expect(result.stdout).toContain("inputKind: architecture-boundary");
+    expect(result.stdout).toContain("confidence: 70");
+    expect(result.stdout).toContain("sourceClaimId: source-claim-1");
+  });
+
+  it("requires database config for memory candidate add --persist", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--kind",
+        "constraint",
+        "--content",
+        "Source graph should use Postgres edge tables first",
+        "--source-claim-id",
+        "source-claim-1",
+        "--confidence",
+        "medium",
+        "--application-guidance",
+        "Use when deciding whether to add a separate graph DB",
+        "--invalidation-rule",
+        "Revisit when graph traversal exceeds Postgres edge-table performance",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn memory candidate add --persist"
+    );
+  });
+
+  it("persists memory candidate add and prints persisted ID", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedCandidate: CreateMemoryCandidateInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--kind",
+        "architecture-boundary",
+        "--content",
+        "Source graph should use Postgres edge tables first",
+        "--source-claim-id",
+        "source-claim-1",
+        "--confidence",
+        "medium",
+        "--application-guidance",
+        "Use when deciding whether to add a separate graph DB",
+        "--invalidation-rule",
+        "Revisit when graph traversal exceeds Postgres edge-table performance",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "Source graph should use Postgres edge tables first",
+                mechanism: "Postgres stores harness state transactionally",
+                krnImplication: "KRN can link memory to source claims",
+                doesNotProve: "This does not prove graph retrieval quality",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "M23",
+                status: "proposed",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            async createMemoryCandidate(input) {
+              capturedCandidate = input;
+
+              return {
+                id: "memory-candidate-1",
+                projectId: input.projectId,
+                executionRunId: input.executionRunId,
+                proposedBy: input.proposedBy,
+                kind: input.kind,
+                status: input.status ?? "proposed",
+                summary: input.summary,
+                body: input.body,
+                owner: input.owner,
+                confidence: input.confidence,
+                applicationGuidance: input.applicationGuidance,
+                invalidationRule: input.invalidationRule,
+                sourceClaimIds: input.sourceClaimIds ?? [],
+                sourceLineage: input.sourceLineage,
+                isUserPreference: input.isUserPreference,
+                validFrom: now,
+                metadata: input.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("memoryCandidate: memory-candidate-1");
+    expect(capturedCandidate).toMatchObject({
+      projectId: "project-1",
+      executionRunId: "execution-run-1",
+      proposedBy: "cli",
+      kind: "constraint",
+      confidence: 70,
+      sourceClaimIds: ["source-claim-1"]
+    });
+  });
+
   it("prints source claim add help", async () => {
     const result = await runCli(["source", "claim", "add", "--help"], {
       env: {},
@@ -513,6 +712,7 @@ describe("runCli", () => {
             }
           },
           harnessRunRepository: dependencies.harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
           }
@@ -685,6 +885,7 @@ describe("runCli", () => {
             }
           },
           harnessRunRepository: dependencies.harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
           }
@@ -1072,6 +1273,7 @@ describe("runCli", () => {
             harnessRunRepository
           },
           harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
           }

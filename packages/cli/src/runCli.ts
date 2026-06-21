@@ -3,6 +3,7 @@ import {
   formatSourceClaimRejectUsage,
   formatSourceDecisionLinkUsage,
   formatSourceClaimAddUsage,
+  formatMemoryCandidateAddUsage,
   parseArgs
 } from "./parseArgs.js";
 import {
@@ -32,6 +33,9 @@ import {
 import {
   runSourceDecisionLinkCommand
 } from "./runSourceDecisionLinkCommand.js";
+import {
+  runMemoryCandidateAddCommand
+} from "./runMemoryCandidateAddCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -101,6 +105,14 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatSourceClaimRejectUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryCandidateAddHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryCandidateAddUsage(),
       stderr: ""
     };
   }
@@ -180,6 +192,34 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown source claim reject error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "memoryCandidateAdd") {
+    try {
+      const result = await runMemoryCandidateAddCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown memory candidate add error";
 
       return {
         exitCode: 1,

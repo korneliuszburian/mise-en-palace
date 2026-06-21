@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 04 memory governance smoke path complete.
+Current slice: Slice 05 CLI memory candidate add complete.
 
 Completed:
 
@@ -36,6 +36,10 @@ Completed:
   MemoryCandidate, promotes it into a MemoryRecord and version, records
   application feedback, creates AntiMemoryRecord, reads back linkage, and
   cleans marker rows to zero.
+- Slice 05 added `krn memory candidate add`. Preview mode validates operator
+  input without DB writes. Persist mode requires `KRN_DATABASE_URL`, validates
+  source claim existence when `--source-claim-id` is provided, parses input
+  through the schema boundary, and writes through MemoryRepository.
 
 Verification:
 
@@ -90,6 +94,21 @@ Verification:
   events `2`, and cleanup remaining marker count `0`.
 - `pnpm --filter @krn/db db:check`: passed.
 - `pnpm test`: passed.
+- Slice 05 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with
+  three invalid-args cases because `krn memory candidate add` did not exist
+  yet.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 36 tests.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/cli krn memory candidate add --run-id execution-run-1
+  --kind architecture-boundary --content "Source graph should use Postgres
+  edge tables first" --source-claim-id source-claim-1 --confidence medium
+  --application-guidance "Use when deciding whether to add a separate graph DB"
+  --invalidation-rule "Revisit when graph traversal exceeds Postgres edge-table
+  performance"`: passed. The report showed no DB writes, kind `constraint`,
+  inputKind `architecture-boundary`, status `proposed`, confidence `70`,
+  runId `execution-run-1`, and sourceClaimId `source-claim-1`.
+- `pnpm --filter @krn/db db:check`: passed.
 
 Skill gates:
 
@@ -100,7 +119,9 @@ Skill gates:
   candidate boundaries.
 - Used: `superpowers:test-driven-development` because M23 implementation
   slices must use RED/GREEN.
+- Used: `superpowers:verification-before-completion` before committing Slice
+  05.
 
 Next action:
 
-- Slice 05: add CLI `krn memory candidate add`.
+- Slice 06: add CLI `krn memory candidate promote/reject`.

@@ -10,6 +10,7 @@ import {
 import type {
   HarnessCompilerDependencies,
   HarnessRunRepository,
+  MemoryRepository,
   SourceRepository
 } from "@krn/harness";
 
@@ -41,6 +42,7 @@ export interface DatabaseRuntime {
     | "createSourceDecisionEdge"
     | "createSourceRejection"
   >;
+  memoryRepository: Pick<MemoryRepository, "createMemoryCandidate">;
   close(): Promise<void>;
 }
 
@@ -52,6 +54,7 @@ export const createDatabaseRuntime = async (
   const projectRepository = new DrizzleProjectRepository(db);
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
   const sourceRepository = new DrizzleSourceRepository(db);
+  const memoryRepository = new DrizzleMemoryRepository(db);
   const existingWorkspace = await projectRepository.findWorkspaceBySlug(input.workspaceSlug);
   const workspace =
     existingWorkspace ??
@@ -76,7 +79,7 @@ export const createDatabaseRuntime = async (
     projectId: project.id,
     compilerDependencies: {
       harnessRunRepository,
-      memoryRepository: new DrizzleMemoryRepository(db),
+      memoryRepository,
       sourceRepository,
       retrievalRepository: new DrizzleRetrievalRepository(db),
       now: input.now,
@@ -84,6 +87,7 @@ export const createDatabaseRuntime = async (
     },
     harnessRunRepository,
     sourceRepository,
+    memoryRepository,
     async close(): Promise<void> {
       await client.end();
     }

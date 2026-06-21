@@ -60,6 +60,16 @@
   repositories and requires `KRN_DATABASE_URL`.
 - Slice 04 cleanup uses a smoke marker in metadata/outbox payloads and proves
   cleanup with a remaining marker count of zero.
+- Slice 05 keeps `krn memory candidate add` preview mode no-store. Without
+  `--persist`, the command validates and reports the candidate but performs no
+  DB writes.
+- Slice 05 maps the operator-facing example kind `architecture-boundary` to the
+  stored memory kind `constraint` and preserves the original value as
+  `inputKind` metadata/report output.
+- Slice 05 accepts confidence aliases `low`, `medium`, and `high`, then maps
+  them to numeric confidence values before schema parsing.
+- Slice 05 persist mode verifies referenced source-claim existence before
+  writing a MemoryCandidate when `--source-claim-id` is provided.
 
 Slice 00 skill record:
 
@@ -108,3 +118,14 @@ Slice 04 skill record:
 - `typescript-type-safety`: used for the new smoke report and CLI target union.
 - `superpowers:test-driven-development`: used for RED/GREEN DB export and CLI
   routing tests.
+
+Slice 05 skill record:
+
+- `brain-store-schema`: used for CLI-to-repository persistence boundaries and
+  source-claim linkage checks.
+- `typescript-type-safety`: used for strict CLI command parsing, source
+  lineage normalization, and DatabaseRuntime expansion.
+- `superpowers:test-driven-development`: used for RED/GREEN CLI preview and
+  persist tests.
+- `superpowers:verification-before-completion`: used before committing and
+  pushing Slice 05.
