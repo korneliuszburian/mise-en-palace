@@ -25,5 +25,9 @@ For TypeScript changes:
 - avoid `any` unless isolated and justified;
 - run typecheck before claiming completion.
 
-If the next step requires broad historical rereads, stop and re-scope.
+For git history:
 
+- use Semantic/Conventional Commits only; see
+  `docs/standards/git-commits.md`.
+
+If the next step requires broad historical rereads, stop and re-scope.
