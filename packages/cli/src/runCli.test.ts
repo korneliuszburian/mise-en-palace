@@ -59,6 +59,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Forbidden surfaces: absent");
   });
 
+  it("reports DB readiness missing configuration", async () => {
+    const result = await runCli(["db", "readiness"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN DB Readiness");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Brain store readiness: blocked (database not configured)");
+  });
+
   it("prints evidence capture without mutating memory", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},

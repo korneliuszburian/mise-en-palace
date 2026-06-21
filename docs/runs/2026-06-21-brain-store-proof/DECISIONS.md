@@ -26,3 +26,14 @@
 - Let `packages/db/drizzle.config.ts` read `KRN_DATABASE_URL` only for Drizzle
   commands that need a DB target. This keeps `db:check` usable without local DB
   configuration and makes `drizzle-kit migrate` target the same canonical URL.
+- Adopt `pnpm db:ready` as the canonical migration readiness command. It is
+  allowed to apply migrations, unlike read-only `krn doctor`.
+- Implement migration readiness in `@krn/db` over the existing
+  postgres-js/Drizzle runtime, with CLI responsible only for env/cwd/repo-root
+  adaptation and output formatting.
+- Verify migration readiness by comparing applied rows in
+  `drizzle.__drizzle_migrations` with the generated migration file count, then
+  checking pgvector in `pg_extension`.
+- Suppress Postgres NOTICE output in the readiness client because generated
+  constraint names may exceed PostgreSQL identifier length and would otherwise
+  pollute command output.

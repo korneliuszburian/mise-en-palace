@@ -5,8 +5,9 @@ Prove local KRN brain-store runtime: DB config, migrations, pgvector, minimal
 persistence smoke path, and actionable `krn doctor` readiness.
 
 Last verified state:
-Slice 02 local setup passed: `docker compose config`, `pnpm --filter @krn/db
-db:check`, and `pnpm typecheck`.
+Slice 03 migration readiness passed: RED/GREEN CLI test, `pnpm test`, `pnpm
+typecheck`, missing-env `pnpm db:ready` failure, Docker Compose healthy local
+pgvector Postgres, and live `KRN_DATABASE_URL=... pnpm db:ready` success.
 
 Changed files:
 
@@ -15,7 +16,15 @@ Changed files:
 - `.env.example`
 - `compose.yaml`
 - `docs/runbooks/local-brain-store.md`
+- `package.json`
+- `packages/cli/src/index.ts`
+- `packages/cli/src/parseArgs.ts`
+- `packages/cli/src/runCli.ts`
+- `packages/cli/src/runCli.test.ts`
+- `packages/cli/src/runDbReadinessCommand.ts`
+- `packages/db/src/index.ts`
 - `packages/db/drizzle.config.ts`
+- `packages/db/src/migrationReadiness.ts`
 - `docs/runs/2026-06-21-brain-store-proof/DB_RUNTIME_INVENTORY.md`
 - `docs/runs/2026-06-21-brain-store-proof/PROGRESS.md`
 - `docs/runs/2026-06-21-brain-store-proof/HANDOFF.md`
@@ -38,10 +47,15 @@ define a local Postgres/pgvector setup path. Drizzle config reads
 `KRN_DATABASE_URL` only when present so `drizzle-kit migrate` can target the
 canonical local URL while `db:check` remains usable without DB config.
 
+Migration readiness:
+`pnpm db:ready` now fails clearly without `KRN_DATABASE_URL`; with the local
+Compose DB it applies/verifies migrations and reports pgvector availability.
+Live proof passed with migrations expected `3`, applied `3`, pgvector available,
+and brain-store readiness ready.
+
 Blockers/risks:
-Live DB proof remains unproven until the local Postgres service is started and
-migration/smoke commands exist. Doctor currently checks only for migration table
-presence, not exact migration readiness.
+Doctor currently checks only for migration table presence, not exact migration
+readiness. Minimal persistence smoke proof is still absent.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -49,7 +63,7 @@ Context selectors:
 and DB schema/migration files.
 
 Next action:
-Run Slice 03 and add the migration verification command.
+Run Slice 04 and align `krn doctor` with the stronger DB readiness states.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

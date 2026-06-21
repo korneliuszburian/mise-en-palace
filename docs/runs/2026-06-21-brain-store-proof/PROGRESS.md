@@ -3,7 +3,7 @@
 Goal: prove the local KRN brain-store runtime path without expanding product
 scope.
 
-Current slice: Slice 02 local DB setup path complete and verified.
+Current slice: Slice 03 migration verification command complete and verified.
 
 Preflight state:
 
@@ -27,7 +27,8 @@ Inventory state:
 - Drizzle schema and migrations exist, including pgvector migration SQL.
 - `.env.example`, `compose.yaml`, and `docs/runbooks/local-brain-store.md`
   now define a local Postgres/pgvector setup path.
-- Migration readiness command and DB smoke command do not exist yet.
+- `pnpm db:ready` now applies/verifies migrations and checks pgvector.
+- DB smoke command does not exist yet.
 - `krn doctor` checks DB reachability, pgvector extension presence, and whether
   `__drizzle_migrations` exists, but not exact applied migration state.
 - `pnpm typecheck`: passed after inventory docs.
@@ -47,6 +48,19 @@ Local setup state:
 - `pnpm --filter @krn/db db:check`: passed after config change.
 - `pnpm typecheck`: passed after config/docs change.
 
+Migration readiness state:
+
+- Added `pnpm db:ready`, backed by `krn db readiness`.
+- Without `KRN_DATABASE_URL`, `pnpm db:ready` exits `1` with a clear blocked
+  report and next action.
+- With local Compose Postgres healthy and
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, `pnpm db:ready`
+  exits `0`.
+- Live local DB proof passed: Postgres reachable, migrations expected `3`,
+  migrations applied `3`, pgvector available, brain-store readiness ready.
+- Postgres notice output from long generated constraint names is suppressed in
+  the readiness client so the report is deterministic.
+
 Next slice:
 
-- Slice 03 migration verification command.
+- Slice 04 doctor DB readiness refinement.

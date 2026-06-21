@@ -7,6 +7,9 @@ export type CliCommand =
       kind: "doctor";
     }
   | {
+      kind: "dbReadiness";
+    }
+  | {
       kind: "evidenceCapture";
     }
   | {
@@ -18,7 +21,14 @@ export interface ParseArgsResult {
   error?: string;
 }
 
-const usage = "Usage: krn plan --task \"...\"";
+const usage = [
+  "Usage: krn plan --task \"...\"",
+  "",
+  "Other commands:",
+  "krn doctor",
+  "krn db readiness",
+  "krn evidence capture"
+].join("\n");
 
 export const formatUsage = (): string => `${usage}\n`;
 
@@ -47,6 +57,20 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     };
   }
 
+  if (command === "db") {
+    if (rest.length === 1 && rest[0] === "readiness") {
+      return {
+        command: {
+          kind: "dbReadiness"
+        }
+      };
+    }
+
+    return {
+      error: "Usage: krn db readiness"
+    };
+  }
+
   if (command === "evidence") {
     if (rest.length === 1 && rest[0] === "capture") {
       return {
@@ -63,7 +87,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   if (command !== "plan") {
     return {
-      error: usage
+      error: "Usage: krn plan --task \"...\""
     };
   }
 

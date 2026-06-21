@@ -9,6 +9,9 @@ import {
   runDoctorCommand
 } from "./runDoctorCommand.js";
 import {
+  runDbReadinessCommand
+} from "./runDbReadinessCommand.js";
+import {
   runEvidenceCaptureCommand
 } from "./runEvidenceCaptureCommand.js";
 
@@ -97,6 +100,29 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown doctor error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "dbReadiness") {
+    try {
+      const result = await runDbReadinessCommand({
+        env: runtime.env,
+        cwd: runtime.cwd ?? process.cwd()
+      });
+
+      return {
+        exitCode: result.exitCode,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown DB readiness error";
 
       return {
         exitCode: 1,

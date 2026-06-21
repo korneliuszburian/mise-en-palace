@@ -1,0 +1,108 @@
+import {
+  access
+} from "node:fs/promises";
+import path from "node:path";
+import {
+  runMigrationReadinessCheck
+} from "@krn/db";
+
+export interface DbReadinessRuntime {
+  env: Record<string, string | undefined>;
+  cwd: string;
+}
+
+export interface DbReadinessResult {
+  exitCode: number;
+  stdout: string;
+}
+
+const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
+
+const pathExists = async (targetPath: string): Promise<boolean> => {
+  try {
+    await access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const findRepoRoot = async (startPath: string): Promise<string> => {
+  let currentPath = startPath;
+
+  for (;;) {
+    if (await pathExists(path.join(currentPath, "pnpm-workspace.yaml"))) {
+      return currentPath;
+    }
+
+    const parentPath = path.dirname(currentPath);
+
+    if (parentPath === currentPath) {
+      return startPath;
+    }
+
+    currentPath = parentPath;
+  }
+};
+
+const errorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : "unknown DB readiness error";
+
+export const runDbReadinessCommand = async (
+  runtime: DbReadinessRuntime
+): Promise<DbReadinessResult> => {
+  const repoRoot = await findRepoRoot(runtime.cwd);
+  const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
+  const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
+  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    return {
+      exitCode: 1,
+      stdout: [
+        "KRN DB Readiness",
+        `Repo root: ${repoRoot}`,
+        `Migrations folder: ${relativeMigrationsFolder}`,
+        "Postgres config: missing KRN_DATABASE_URL",
+        `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and start docker compose up -d krn-postgres`,
+        "Brain store readiness: blocked (database not configured)"
+      ].join("\n") + "\n"
+    };
+  }
+
+  try {
+    const report = await runMigrationReadinessCheck({
+      databaseUrl,
+      migrationsFolder
+    });
+    const ready = report.migrationsVerified && report.pgvectorAvailable;
+
+    return {
+      exitCode: ready ? 0 : 1,
+      stdout: [
+        "KRN DB Readiness",
+        `Repo root: ${repoRoot}`,
+        `Migrations folder: ${relativeMigrationsFolder}`,
+        "Postgres config: configured",
+        "Postgres: reachable",
+        `Migrations expected: ${report.expectedMigrationCount}`,
+        `Migrations applied: ${report.appliedMigrationCount}`,
+        `Migrations: ${report.migrationsVerified ? "applied" : "incomplete"}`,
+        `pgvector: ${report.pgvectorAvailable ? "available" : "missing"}`,
+        `Brain store readiness: ${ready ? "ready" : "blocked (pgvector and migrations must be ready)"}`
+      ].join("\n") + "\n"
+    };
+  } catch (error) {
+    return {
+      exitCode: 1,
+      stdout: [
+        "KRN DB Readiness",
+        `Repo root: ${repoRoot}`,
+        `Migrations folder: ${relativeMigrationsFolder}`,
+        "Postgres config: configured",
+        `Postgres/migrations: failed (${errorMessage(error)})`,
+        "Brain store readiness: blocked (migration readiness failed)"
+      ].join("\n") + "\n"
+    };
+  }
+};

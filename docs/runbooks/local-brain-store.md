@@ -38,20 +38,21 @@ pnpm --filter @krn/db db:check
 This confirms generated Drizzle migration files are consistent with the current
 schema. It does not prove the migrations were applied to a live DB.
 
-## Apply Migrations
+## Apply and Verify Migrations
 
 With `KRN_DATABASE_URL` exported:
 
 ```sh
-pnpm --filter @krn/db exec drizzle-kit migrate --config drizzle.config.ts
+pnpm db:ready
 ```
 
-Slice 03 will add the dedicated migration readiness command that fails clearly
-without `KRN_DATABASE_URL`, checks DB reachability, verifies pgvector, and
-reports migration status.
+This command fails clearly without `KRN_DATABASE_URL`, checks DB reachability,
+applies Drizzle migrations, verifies the applied migration count, checks
+pgvector, and reports brain-store readiness.
 
 ## Current Proof Boundary
 
-After Slice 02, this runbook proves only that the repo has a local setup path.
-Live migration readiness and persistence smoke proof remain pending until the
-Slice 03 and Slice 05 commands exist and pass against a running DB.
+After Slice 03, this runbook proves local DB configuration, migration
+application/verification, and pgvector availability against a running local DB.
+Minimal persistence smoke proof remains pending until the Slice 05 command
+exists and passes.

@@ -43,7 +43,24 @@ Slice 02 local setup checks:
   `packages/db/drizzle.config.ts`; no public types changed, no `any`, no double
   assertions, no weakened compiler settings.
 
+Slice 03 migration readiness checks:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because
+  `krn db readiness` returned parser exit `2` before implementation.
+- GREEN `pnpm --filter @krn/cli test`: passed with 6 tests.
+- `pnpm typecheck`: passed after DB/CLI implementation.
+- `pnpm db:ready` without `KRN_DATABASE_URL`: exited `1` with missing-config
+  report and mechanical next action.
+- `docker compose up -d krn-postgres`: passed and started local pgvector
+  Postgres.
+- `docker compose ps krn-postgres`: passed; service was healthy on host port
+  `54329`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed. Output reported Postgres reachable, migrations expected `3`,
+  migrations applied `3`, pgvector available, and brain-store readiness ready.
+- `pnpm test`: passed across workspace tests.
+- `pnpm typecheck`: passed across workspace projects.
+
 Next verification:
 
-- Slice 03 should prove migration command behavior without `KRN_DATABASE_URL`
-  and, if local DB is running, against the pgvector Postgres service.
+- Slice 04 should verify `krn doctor` without DB and with the local DB.
