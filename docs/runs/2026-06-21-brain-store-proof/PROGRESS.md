@@ -30,8 +30,8 @@ Inventory state:
 - `pnpm db:ready` now applies/verifies migrations and checks pgvector.
 - `pnpm db:smoke` now proves insert/read/cleanup through the Drizzle project
   repository path.
-- `krn doctor` checks DB reachability, pgvector extension presence, and whether
-  `__drizzle_migrations` exists, but not exact applied migration state.
+- `krn doctor` checks DB reachability, pgvector extension presence, and exact
+  applied migration count against generated migrations.
 - `pnpm typecheck`: passed after inventory docs.
 - `pnpm --filter @krn/db db:check`: passed; Drizzle reported generated
   migrations consistent with config.

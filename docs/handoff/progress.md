@@ -1,7 +1,6 @@
 # Progress
 
-Current phase: M20 local brain-store runtime proof complete; final handoff
-commit and push are the remaining repository hygiene step.
+Current phase: M20 local brain-store runtime proof complete.
 
 Completed in M20:
 
@@ -22,4 +21,4 @@ Current runtime truth:
 
 Next action:
 
-- Commit and push the final M20 handoff update.
+- Wait for the next explicit product goal.

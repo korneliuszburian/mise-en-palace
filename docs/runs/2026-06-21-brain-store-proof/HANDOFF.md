@@ -5,10 +5,9 @@ Prove local KRN brain-store runtime: DB config, migrations, pgvector, minimal
 persistence smoke path, and actionable `krn doctor` readiness.
 
 Last verified state:
-Slice 06 final audit passed before handoff edits: clean `git status`, recent
-M20 commit log, healthy local Compose DB, `pnpm typecheck`, `pnpm test`,
-no-env doctor, live-DB doctor, `pnpm db:ready`, `pnpm db:smoke`, and direct
-smoke cleanup count `0`.
+Slice 06 final audit passed: clean `git status`, recent M20 commit log, healthy
+local Compose DB, `pnpm typecheck`, `pnpm test`, no-env doctor, live-DB doctor,
+`pnpm db:ready`, `pnpm db:smoke`, and direct smoke cleanup count `0`.
 
 Changed files:
 
@@ -83,8 +82,7 @@ Context selectors:
 and DB schema/migration files.
 
 Next action:
-Commit `docs(handoff): update brain-store proof status`, push, and return final
-M20 status.
+No M20 action remains. Wait for the next explicit product goal.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

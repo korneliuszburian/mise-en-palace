@@ -112,3 +112,31 @@ Slice 06 final audit:
 - `docker compose exec -T krn-postgres psql -U krn -d krn -tAc "select count(*)
   from workspaces where slug like 'krn-smoke-%';"`: passed and returned `0`.
 - `git diff --check`: passed after final handoff docs were updated.
+
+Completion audit refresh after stale-next-action cleanup:
+
+- `git status --short --branch`: passed; only docs handoff/progress cleanup was
+  dirty before this final docs-only commit.
+- `git log --oneline -8`: passed; latest pushed commit was
+  `17c2853 docs(handoff): update brain-store proof status`.
+- `docker compose ps krn-postgres`: passed; local pgvector Postgres was
+  healthy.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
+  preview-only persisted brain-store readiness.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with Postgres reachable, pgvector available,
+  migrations `verified (3/3 applied)`, and brain-store readiness ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed.
+- Direct smoke cleanup count returned `0`.
+- No forbidden directories exist: `apps`, `packages/dashboard`, `packages/api`,
+  and `.krn` are absent.
+- No forbidden store dependency or runtime use exists in package manifests or
+  package source. The only `@upstash/redis` match is an optional Drizzle peer
+  dependency declaration in `pnpm-lock.yaml`, not a KRN dependency or runtime
+  store.
+- `git diff --check`: passed after the stale-next-action cleanup.

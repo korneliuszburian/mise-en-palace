@@ -5,14 +5,14 @@ M20 proves the local KRN brain-store runtime path: config, local pgvector
 Postgres, migrations, doctor readiness, and minimal persistence smoke.
 
 Last verified state:
-M20 Slices 00-05 are committed and pushed through
-`ff2222c test(db): add brain-store persistence smoke path`. Final audit passed
-with `pnpm typecheck`, `pnpm test`, no-env doctor, live-DB doctor, `pnpm
-db:ready`, `pnpm db:smoke`, and direct smoke cleanup count `0`.
+M20 Slices 00-06 are committed and pushed. Final audit passed with `pnpm
+typecheck`, `pnpm test`, no-env doctor, live-DB doctor, `pnpm db:ready`,
+`pnpm db:smoke`, and direct smoke cleanup count `0`.
 
 Changed files:
-Current final slice changes are the handoff docs, `PLAN.md`, and the current run
-ledger under `docs/runs/2026-06-21-brain-store-proof/`.
+M20 changed the local DB setup, DB readiness/smoke commands, doctor readiness,
+runbook, `PLAN.md`, handoff docs, and the run ledger under
+`docs/runs/2026-06-21-brain-store-proof/`.
 
 Decisions:
 `KRN_DATABASE_URL` is canonical. `pnpm db:ready` is the mutating migration
@@ -29,8 +29,7 @@ Context selectors:
 `docs/runs/2026-06-21-brain-store-proof/`.
 
 Next action:
-Commit `docs(handoff): update brain-store proof status`, push, and return final
-M20 status.
+No M20 action remains. Wait for the next explicit product goal.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless a future task explicitly asks
