@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: M21 persisted harness spine in progress; Slice 07 complete.
+Current phase: M21 persisted harness spine in progress; Slice 08 complete.
 
 Completed in M21 so far:
 
@@ -17,6 +17,9 @@ Completed in M21 so far:
   review, and feedback candidate records.
 - `pnpm db:smoke:harness-evidence` proves marked plan/evidence/readback cleanup
   with live Postgres.
+- `krn doctor` now reports harness persistence schema readiness, smoke command
+  availability, and overall harness persistence readiness without writing to
+  the database.
 
 Current runtime truth:
 
@@ -24,9 +27,9 @@ Current runtime truth:
   configured.
 - DB writes require explicit `--persist` or explicit smoke commands.
 - With `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, the persisted
-  harness plan and evidence smoke paths are proven.
+  harness plan/evidence smoke paths and read-only doctor harness readiness are
+  proven.
 
 Next action:
 
-- Slice 08: update read-only `krn doctor` to report harness persistence
-  readiness.
+- Slice 09: dogfood the persisted harness loop with live DB and record the run.

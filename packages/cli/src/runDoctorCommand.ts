@@ -4,6 +4,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import {
+  inspectHarnessPersistenceReadiness,
   inspectMigrationReadiness
 } from "@krn/db";
 
@@ -188,6 +189,173 @@ export const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]
   };
 };
 
+const hasStatusPrefix = (
+  checks: readonly DoctorCheck[],
+  label: DoctorCheck["label"],
+  prefix: string
+): boolean => findCheckStatus(checks, label)?.startsWith(prefix) === true;
+
+export const deriveHarnessPersistenceReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  harnessChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const schemaStatus = findCheckStatus(harnessChecks, "Harness persistence schema");
+  const projectSmokeAvailable = hasStatusPrefix(harnessChecks, "Project repository smoke", "available");
+  const harnessPlanSmokeAvailable = hasStatusPrefix(harnessChecks, "Harness plan smoke", "available");
+  const evidenceSmokeAvailable = hasStatusPrefix(harnessChecks, "Evidence persistence smoke", "available");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Harness persistence readiness",
+      status: "preview only (set KRN_DATABASE_URL and run harness smoke commands for persistence proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Harness persistence readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Harness persistence readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  if (schemaStatus?.startsWith("ready") !== true) {
+    return {
+      label: "Harness persistence readiness",
+      status: "blocked (harness persistence schema missing)"
+    };
+  }
+
+  if (!projectSmokeAvailable || !harnessPlanSmokeAvailable || !evidenceSmokeAvailable) {
+    return {
+      label: "Harness persistence readiness",
+      status: "incomplete (smoke commands missing)"
+    };
+  }
+
+  return {
+    label: "Harness persistence readiness",
+    status: "ready (schema present; smoke commands available)"
+  };
+};
+
+const readScriptStatus = (
+  packageJson: Record<string, unknown> | undefined,
+  scriptName: string,
+  expectedCommand: string
+): DoctorCheck["status"] => {
+  const scripts =
+    typeof packageJson?.scripts === "object" &&
+    packageJson.scripts !== null &&
+    !Array.isArray(packageJson.scripts)
+      ? packageJson.scripts as Record<string, unknown>
+      : {};
+  const scriptValue = scripts[scriptName];
+
+  return typeof scriptValue === "string" && scriptValue.includes(expectedCommand)
+    ? `available (pnpm ${scriptName})`
+    : `missing (pnpm ${scriptName})`;
+};
+
+const checkHarnessPersistence = async (
+  repoRoot: string,
+  databaseUrl: string | undefined,
+  postgresChecks: readonly DoctorCheck[]
+): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const smokeChecks = [
+    {
+      label: "Project repository smoke",
+      status: readScriptStatus(packageJson, "db:smoke", "krn db smoke")
+    },
+    {
+      label: "Harness plan smoke",
+      status: readScriptStatus(packageJson, "db:smoke:harness-plan", "krn db smoke harness-plan")
+    },
+    {
+      label: "Evidence persistence smoke",
+      status: readScriptStatus(
+        packageJson,
+        "db:smoke:harness-evidence",
+        "krn db smoke harness-evidence"
+      )
+    }
+  ];
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return [
+      {
+        label: "Harness persistence schema",
+        status: "skipped (Postgres not configured)"
+      },
+      ...smokeChecks
+    ];
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return [
+      {
+        label: "Harness persistence schema",
+        status: "skipped (Postgres unreachable)"
+      },
+      ...smokeChecks
+    ];
+  }
+
+  if (
+    databaseUrl === undefined ||
+    databaseUrl.trim().length === 0 ||
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true
+  ) {
+    return [
+      {
+        label: "Harness persistence schema",
+        status: "skipped (brain store not ready)"
+      },
+      ...smokeChecks
+    ];
+  }
+
+  try {
+    const report = await inspectHarnessPersistenceReadiness({
+      databaseUrl
+    });
+
+    return [
+      {
+        label: "Harness persistence schema",
+        status: report.schemaReady
+          ? `ready (${report.presentTableCount}/${report.requiredTableCount} tables present)`
+          : `missing (${report.missingTables.join(", ")})`
+      },
+      ...smokeChecks
+    ];
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown harness schema error";
+
+    return [
+      {
+        label: "Harness persistence schema",
+        status: `failed (${message})`
+      },
+      ...smokeChecks
+    ];
+  }
+};
+
 const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const agentsPath = path.join(repoRoot, "AGENTS.md");
   const agentsPresent = await pathExists(agentsPath);
@@ -255,9 +423,16 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
   const repoRoot = await findRepoRoot(runtime.cwd);
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL, migrationsFolder);
+  const harnessPersistenceChecks = await checkHarnessPersistence(
+    repoRoot,
+    runtime.env.KRN_DATABASE_URL,
+    postgresChecks
+  );
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
+    ...harnessPersistenceChecks,
+    deriveHarnessPersistenceReadiness(postgresChecks, harnessPersistenceChecks),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [
@@ -283,6 +458,10 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     }
 
     if (check.label === "Brain store readiness") {
+      return check.status.startsWith("blocked");
+    }
+
+    if (check.label === "Harness persistence readiness") {
       return check.status.startsWith("blocked");
     }
 

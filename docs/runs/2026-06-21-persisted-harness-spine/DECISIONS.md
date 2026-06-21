@@ -56,6 +56,12 @@
   readback, and cleans up marker rows.
 - Smoke cleanup remains marker-scoped. It must not delete earlier persisted
   dogfood/proof rows such as the Slice 04/06 execution run.
+- `krn doctor` reports harness persistence readiness from read-only inspection
+  only. It checks table presence and root script availability, but it does not
+  execute smoke commands or write proof rows.
+- Doctor "ready" means required schema tables are present and smoke command
+  surfaces are available. It does not replace running the smoke commands during
+  dogfood or anti-rot audit.
 
 Slice 00 skill record:
 
@@ -135,3 +141,12 @@ Slice 07 skill record:
   boundaries.
 - `test-driven-development`: used; RED CLI test failed before parser support
   and passed after.
+
+Slice 08 skill record:
+
+- `brain-store-schema`: used for read-only harness persistence table checks.
+- `codex-adapter-plan`: used for operator-facing doctor readiness wording.
+- `typescript-type-safety`: used for exported DB report types and CLI readiness
+  derivation.
+- `test-driven-development`: used; RED CLI tests failed before doctor output
+  support and passed after.

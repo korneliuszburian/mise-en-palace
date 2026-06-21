@@ -22,3 +22,5 @@
   proves a new durable surface is required.
 - Persisted evidence capture creates feedback candidates only; it does not
   auto-apply memory, source, policy, or eval updates.
+- `krn doctor` reports harness persistence readiness from read-only inspection
+  only; it does not execute smoke commands or create proof rows.

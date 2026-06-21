@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 07 persisted evidence smoke complete.
+Current slice: Slice 08 doctor harness persistence readiness complete.
 
 Completed:
 
@@ -42,6 +42,9 @@ Completed:
 - Slice 07 added `pnpm db:smoke:harness-evidence`, which creates a marked
   persisted harness run, captures linked evidence/review/feedback records,
   verifies readback counts, and cleans up marker rows.
+- Slice 08 updated read-only `krn doctor` to report harness persistence schema
+  readiness, project/harness/evidence smoke command availability, and overall
+  harness persistence readiness.
 
 Verification:
 
@@ -123,6 +126,25 @@ Verification:
 - No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
   `packages/db/src`, and `packages/cli/src`: passed.
 - `git diff --check`: passed during Slice 07.
+- RED `pnpm --filter @krn/cli test`: failed on missing doctor harness
+  persistence readiness output and missing
+  `deriveHarnessPersistenceReadiness`.
+- GREEN `pnpm --filter @krn/cli test`: passed with 17 tests.
+- `pnpm typecheck`: passed during Slice 08.
+- No-env `pnpm --filter @krn/cli krn doctor`: passed and reported harness
+  persistence preview-only with all smoke commands available.
+- Live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported harness persistence schema
+  `ready (10/10 tables present)` and readiness
+  `ready (schema present; smoke commands available)`.
+- `pnpm test`: passed during Slice 08.
+- `pnpm --filter @krn/db db:check`: passed during Slice 08.
+- No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
+  `packages/db/src`, and `packages/cli/src`: passed.
+- `git diff --check`: passed during Slice 08.
+- Direct SQL read-only proof around live doctor kept
+  `execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`
+  counts unchanged at `1,1,1,1,2`.
 
 Skill gates:
 
@@ -153,10 +175,13 @@ Skill gates:
 - Used: `typescript-type-safety` for Slice 07 DB smoke report and CLI parser
   boundary.
 - Used: `test-driven-development` for Slice 07 RED/GREEN CLI parser test.
+- Used: `brain-store-schema` for Slice 08 read-only schema presence checks.
+- Used: `codex-adapter-plan` for Slice 08 operator-facing doctor output.
+- Used: `typescript-type-safety` for Slice 08 DB/CLI readiness boundaries.
+- Used: `test-driven-development` for Slice 08 RED/GREEN doctor tests.
 - Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 08: update `krn doctor` so it reports harness persistence readiness,
-  including the persisted plan and evidence smoke capabilities, without
-  writing to the database.
+- Slice 09: dogfood the persisted harness loop with live DB, record the run ID,
+  persisted entities, proof scope, and next missing capability.

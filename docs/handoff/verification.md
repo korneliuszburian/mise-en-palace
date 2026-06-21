@@ -1,6 +1,6 @@
 # Verification
 
-Latest M21 Slice 07 verification:
+M21 Slice 07 verification:
 
 - RED `pnpm --filter @krn/cli test`: failed as expected before
   `db smoke harness-evidence` parser support.
@@ -17,6 +17,26 @@ Latest M21 Slice 07 verification:
 - `pnpm --filter @krn/db db:check`: passed.
 - `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
   packages/db/src packages/cli/src`: passed with no matches.
+- `git diff --check`: passed.
+
+Latest M21 Slice 08 verification:
+
+- RED `pnpm --filter @krn/cli test`: failed before doctor harness persistence
+  readiness output existed.
+- GREEN `pnpm --filter @krn/cli test`: passed with 17 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
+  harness persistence as preview-only.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported harness persistence schema
+  `ready (10/10 tables present)` plus readiness `ready (schema present; smoke
+  commands available)`.
+- Direct SQL counts before and after live doctor stayed unchanged at
+  `1,1,1,1,2` for
+  `execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/db db:check`: passed.
+- No-`any` scan over KRN source packages passed.
 - `git diff --check`: passed.
 
 Current M21 scope checks:

@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through M21 Slice 07.
+- None through M21 Slice 08.
 
 Closed in M20:
 
@@ -31,10 +31,10 @@ Closed in M21 so far:
   `krn evidence capture --run-id --persist`.
 - Persisted evidence readback/cleanup is proven by
   `pnpm db:smoke:harness-evidence`.
+- Harness persistence readiness is reported by read-only `krn doctor`.
 
 Remaining M21 work:
 
-- `krn doctor` does not yet report harness persistence readiness.
 - Persisted harness loop dogfood is not recorded yet.
 - Final anti-rot audit is not complete yet.
 

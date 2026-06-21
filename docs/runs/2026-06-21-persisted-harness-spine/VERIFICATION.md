@@ -144,3 +144,29 @@ Slice 07 persisted evidence smoke:
 - `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
   packages/db/src packages/cli/src`: passed with no matches.
 - `git diff --check`: passed.
+
+Slice 08 doctor harness persistence readiness:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because doctor did not
+  report harness persistence schema/readiness and
+  `deriveHarnessPersistenceReadiness` was missing.
+- GREEN `pnpm --filter @krn/cli test`: passed with 17 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config. It reported
+  `Harness persistence schema: skipped (Postgres not configured)`, all three
+  smoke commands available, and harness persistence readiness as preview-only.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed. It reported Postgres reachable, pgvector
+  available, migrations `verified (3/3 applied)`, harness persistence schema
+  `ready (10/10 tables present)`, all three smoke commands available, and
+  harness persistence readiness `ready (schema present; smoke commands
+  available)`.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle schema and migrations
+  remain consistent.
+- `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
+  packages/db/src packages/cli/src`: passed with no matches.
+- `git diff --check`: passed.
+- Direct SQL counts before and after live doctor were unchanged:
+  `execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`
+  stayed `1,1,1,1,2`.
