@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: M21 persisted harness spine in progress; Slice 08 complete.
+Current phase: M21 persisted harness spine in progress; Slice 09 complete.
 
 Completed in M21 so far:
 
@@ -20,6 +20,8 @@ Completed in M21 so far:
 - `krn doctor` now reports harness persistence schema readiness, smoke command
   availability, and overall harness persistence readiness without writing to
   the database.
+- Persisted harness loop dogfood is recorded in
+  `docs/runs/2026-06-21-persisted-harness-spine/DOGFOOD.md`.
 
 Current runtime truth:
 
@@ -29,7 +31,10 @@ Current runtime truth:
 - With `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, the persisted
   harness plan/evidence smoke paths and read-only doctor harness readiness are
   proven.
+- Dogfood execution run `66626e90-0cf5-4803-9bc7-f477b28b47c4` has linked
+  evidence/review/feedback records and SQL readback proof.
 
 Next action:
 
-- Slice 09: dogfood the persisted harness loop with live DB and record the run.
+- Slice 10: run the anti-rot audit across tests, live DB proof commands, and
+  forbidden surface checks.

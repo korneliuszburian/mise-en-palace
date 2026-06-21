@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 08 doctor harness persistence readiness complete.
+Current slice: Slice 09 persisted harness loop dogfood complete.
 
 Completed:
 
@@ -45,6 +45,8 @@ Completed:
 - Slice 08 updated read-only `krn doctor` to report harness persistence schema
   readiness, project/harness/evidence smoke command availability, and overall
   harness persistence readiness.
+- Slice 09 dogfooded the persisted harness loop with live DB and recorded the
+  persisted run under `DOGFOOD.md`.
 
 Verification:
 
@@ -145,6 +147,29 @@ Verification:
 - Direct SQL read-only proof around live doctor kept
   `execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`
   counts unchanged at `1,1,1,1,2`.
+- Live `krn plan --task "improve KRN doctor harness persistence readiness"
+  --persist`: passed and created execution run
+  `66626e90-0cf5-4803-9bc7-f477b28b47c4`.
+- Live `krn evidence capture --run-id
+  66626e90-0cf5-4803-9bc7-f477b28b47c4 --persist`: passed and created
+  evidence bundle `94cf92cf-a826-406f-bcad-9d9ebb7a0a8e`, review assessment
+  `630d46ec-e323-4974-a90e-4a1a03571499`, and feedback delta
+  `21c93ea7-2f2e-4e0c-8d80-ed07138e57f8`.
+- Live `krn doctor`: passed and reported harness persistence readiness ready.
+- Live `pnpm db:smoke:harness-plan`: passed with cleanup remaining marker count
+  `0`.
+- Live `pnpm db:smoke:harness-evidence`: passed with cleanup remaining marker
+  count `0`.
+- `pnpm typecheck`: passed during Slice 09.
+- `pnpm test`: passed during Slice 09.
+- Direct SQL dogfood readback for execution run
+  `66626e90-0cf5-4803-9bc7-f477b28b47c4`: status `planned`, evidence contract
+  present, evidence bundles `1`, review assessments `1`, feedback deltas `1`,
+  run events `2`.
+- Direct SQL smoke cleanup count for `krn-harness-smoke-%` and
+  `krn-evidence-smoke-%` workspaces returned `0,0`.
+- Forbidden directory scan for `apps`, `dashboard`, `api`, and `.krn`: passed
+  with no output.
 
 Skill gates:
 
@@ -179,9 +204,11 @@ Skill gates:
 - Used: `codex-adapter-plan` for Slice 08 operator-facing doctor output.
 - Used: `typescript-type-safety` for Slice 08 DB/CLI readiness boundaries.
 - Used: `test-driven-development` for Slice 08 RED/GREEN doctor tests.
-- Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
+- Used: `evidence-review-loop` for Slice 09 persisted dogfood proof capture.
+- Used: `handoff-compact` for Slice 09 continuation state refresh.
+- Not used yet: `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 09: dogfood the persisted harness loop with live DB, record the run ID,
-  persisted entities, proof scope, and next missing capability.
+- Slice 10: anti-rot audit across tests, live DB proof commands, and forbidden
+  surface checks.

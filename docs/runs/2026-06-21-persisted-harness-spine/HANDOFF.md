@@ -5,21 +5,21 @@ Persist the first KRN harness run spine through the existing Postgres/Drizzle
 infrastructure.
 
 Last verified state:
-Slice 08 doctor harness persistence readiness is complete. `krn plan --task "..."
+Slice 09 persisted harness loop dogfood is complete. `krn plan --task "..."
 --persist` persists and prints run IDs; `pnpm db:smoke:harness-plan` proves plan
 readback/cleanup; `krn evidence capture --run-id <id> --persist` loads a
 persisted run and writes an evidence bundle, review assessment, and feedback
 delta candidates; `pnpm db:smoke:harness-evidence` now proves the full marked
 plan/evidence/readback/cleanup path; and `krn doctor` now reports harness
-persistence readiness read-only. Live doctor reports harness persistence schema
-`ready (10/10 tables present)`, all smoke commands available, and readiness
-`ready (schema present; smoke commands available)`. Direct SQL counts around
-live doctor stayed unchanged at `1,1,1,1,2` for
-`execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`.
-`pnpm typecheck`, `pnpm test`, no-DB `krn doctor`, live `krn doctor`,
-`pnpm --filter @krn/db db:check`, live `pnpm db:ready`, live `pnpm
-db:smoke:harness-plan`, and live `pnpm db:smoke:harness-evidence` passed during
-M21 so far.
+persistence readiness read-only. Dogfood execution run
+`66626e90-0cf5-4803-9bc7-f477b28b47c4` has linked evidence bundle
+`94cf92cf-a826-406f-bcad-9d9ebb7a0a8e`, review assessment
+`630d46ec-e323-4974-a90e-4a1a03571499`, and feedback delta
+`21c93ea7-2f2e-4e0c-8d80-ed07138e57f8`; SQL readback shows evidence contract
+present, evidence/review/feedback counts `1/1/1`, and run events `2`. `pnpm
+typecheck`, `pnpm test`, no-DB `krn doctor`, live `krn doctor`, `pnpm --filter
+@krn/db db:check`, live `pnpm db:ready`, live `pnpm db:smoke:harness-plan`, and
+live `pnpm db:smoke:harness-evidence` passed during M21 so far.
 
 Changed files:
 
@@ -55,6 +55,7 @@ Changed files:
 - `packages/cli/src/runEvidenceCaptureCommand.ts`
 - `packages/db/src/harnessEvidenceSmoke.ts`
 - `packages/db/src/harnessPersistenceReadiness.ts`
+- `docs/runs/2026-06-21-persisted-harness-spine/DOGFOOD.md`
 
 Decisions:
 M21 starts from the completed M20 local DB proof. The write path must be explicit
@@ -66,8 +67,7 @@ readback is keyed by `executionRunId`. Slice 04 makes writes explicit:
 configured DB alone does not make `krn plan` persist state.
 
 Blockers/risks:
-No Slice 08 blocker. Persisted loop dogfood and anti-rot audit remain later M21
-slices.
+No Slice 09 blocker. Anti-rot audit remains the next M21 slice.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -77,8 +77,8 @@ schema/migrations/repositories, CLI `plan`/`doctor`/`evidence capture`, and
 harness/core types directly touched by the next slice.
 
 Next action:
-Slice 09: dogfood the persisted harness loop with live DB, record the run ID,
-persisted entities, proof scope, review burden, and next missing capability.
+Slice 10: run anti-rot audit across tests, live DB proof commands, forbidden
+surface checks, and type-safety scans.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

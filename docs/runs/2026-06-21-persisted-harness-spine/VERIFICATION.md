@@ -170,3 +170,36 @@ Slice 08 doctor harness persistence readiness:
 - Direct SQL counts before and after live doctor were unchanged:
   `execution_runs,evidence_bundles,review_assessments,feedback_deltas,run_events`
   stayed `1,1,1,1,2`.
+
+Slice 09 persisted harness loop dogfood:
+
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "improve KRN doctor harness persistence readiness"
+  --persist`: passed and printed persisted IDs, including execution run
+  `66626e90-0cf5-4803-9bc7-f477b28b47c4`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn evidence capture --run-id
+  66626e90-0cf5-4803-9bc7-f477b28b47c4 --persist`: passed and printed
+  evidence bundle `94cf92cf-a826-406f-bcad-9d9ebb7a0a8e`, review assessment
+  `630d46ec-e323-4974-a90e-4a1a03571499`, and feedback delta
+  `21c93ea7-2f2e-4e0c-8d80-ed07138e57f8`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported harness persistence readiness
+  ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests.
+- Direct SQL readback for execution run
+  `66626e90-0cf5-4803-9bc7-f477b28b47c4`: status `planned`, evidence contract
+  present, evidence bundles `1`, review assessments `1`, feedback deltas `1`,
+  run events `2`.
+- Direct SQL smoke cleanup count for `krn-harness-smoke-%` and
+  `krn-evidence-smoke-%` workspaces returned `0,0`.
+- Forbidden directory scan for `apps`, `dashboard`, `api`, and `.krn`: passed
+  with no output.
+- Forbidden store/runtime scan found no KRN runtime dependency or implementation
+  use; the only external-store dependency hit remains optional Drizzle peer
+  metadata in `pnpm-lock.yaml`, and other matches are docs/non-goal text.

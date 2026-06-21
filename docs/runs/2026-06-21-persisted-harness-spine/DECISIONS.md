@@ -62,6 +62,8 @@
 - Doctor "ready" means required schema tables are present and smoke command
   surfaces are available. It does not replace running the smoke commands during
   dogfood or anti-rot audit.
+- Slice 09 dogfood rows are intentionally retained as local proof rows. Smoke
+  rows remain marker-scoped and cleaned up.
 
 Slice 00 skill record:
 
@@ -150,3 +152,10 @@ Slice 08 skill record:
   derivation.
 - `test-driven-development`: used; RED CLI tests failed before doctor output
   support and passed after.
+
+Slice 09 skill record:
+
+- `evidence-review-loop`: used for persisted run/evidence proof, command proof,
+  review burden, rollback path, and residual risk recording.
+- `handoff-compact`: used to refresh current state and next action without
+  broad historical reread.

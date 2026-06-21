@@ -24,3 +24,5 @@
   auto-apply memory, source, policy, or eval updates.
 - `krn doctor` reports harness persistence readiness from read-only inspection
   only; it does not execute smoke commands or create proof rows.
+- Slice 09 dogfood rows are retained as local proof rows; smoke rows remain
+  marker-scoped and cleaned up.

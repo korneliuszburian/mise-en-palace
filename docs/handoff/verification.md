@@ -19,7 +19,7 @@ M21 Slice 07 verification:
   packages/db/src packages/cli/src`: passed with no matches.
 - `git diff --check`: passed.
 
-Latest M21 Slice 08 verification:
+M21 Slice 08 verification:
 
 - RED `pnpm --filter @krn/cli test`: failed before doctor harness persistence
   readiness output existed.
@@ -38,6 +38,25 @@ Latest M21 Slice 08 verification:
 - `pnpm --filter @krn/db db:check`: passed.
 - No-`any` scan over KRN source packages passed.
 - `git diff --check`: passed.
+
+Latest M21 Slice 09 verification:
+
+- Live `krn plan --task "improve KRN doctor harness persistence readiness"
+  --persist`: passed and created execution run
+  `66626e90-0cf5-4803-9bc7-f477b28b47c4`.
+- Live `krn evidence capture --run-id
+  66626e90-0cf5-4803-9bc7-f477b28b47c4 --persist`: passed and created
+  evidence bundle `94cf92cf-a826-406f-bcad-9d9ebb7a0a8e`, review assessment
+  `630d46ec-e323-4974-a90e-4a1a03571499`, and feedback delta
+  `21c93ea7-2f2e-4e0c-8d80-ed07138e57f8`.
+- Live `krn doctor`, `pnpm db:smoke:harness-plan`, and
+  `pnpm db:smoke:harness-evidence`: passed.
+- `pnpm typecheck` and `pnpm test`: passed.
+- SQL dogfood readback showed evidence contract present, linked
+  evidence/review/feedback `1/1/1`, and run events `2`.
+- SQL smoke cleanup count for harness/evidence smoke workspaces returned `0,0`.
+- Forbidden directory scan passed with no output; forbidden store/runtime scan
+  found no KRN runtime dependency or implementation use.
 
 Current M21 scope checks:
 

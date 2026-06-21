@@ -2,14 +2,16 @@
 
 Hard blockers:
 
-- None through Slice 08.
+- None through Slice 09.
 
 Known unproven M21 behavior:
 
-- Persisted harness loop dogfood is not recorded yet; Slice 09 owns the
-  operator-facing run record.
 - Final anti-rot audit is not complete yet; Slice 10 owns the broad no-forbidden
   surface checks.
+
+Closed in Slice 09:
+
+- Persisted harness loop dogfood is recorded in `DOGFOOD.md`.
 
 Explicit non-blockers:
 
