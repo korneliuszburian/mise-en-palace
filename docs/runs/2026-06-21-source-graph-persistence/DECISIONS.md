@@ -14,6 +14,14 @@
 - M22 must not add crawler, research swarm, dashboard, API, MCP server, runtime
   markdown memory, `.krn` runtime truth, separate graph/vector/search store, or
   automatic memory mutation.
+- Existing source tables are the base for M22. `source_artifacts`,
+  `source_claims`, claim-to-claim edges, `source_decisions`, and
+  `source_rejections` already exist.
+- Current `source_decisions` is not the M22 typed `SourceDecisionEdge` target
+  model. M22 still needs a typed edge from source claim to harness artifact
+  target.
+- M22 support/trust/rejection vocabularies should be explicit rather than
+  overloading the older `supports/background/high/medium/low` vocabulary.
 
 Slice 00 skill record:
 
@@ -27,3 +35,12 @@ Slice 00 skill record:
 - `target-infra-adr`: not used in Slice 00; no new durable infrastructure was
   added.
 - `activation-engine`: not used in Slice 00; no activation behavior changed.
+
+Slice 01 skill record:
+
+- `source-to-decision`: used to map local source graph evidence into the schema
+  decision for Slice 02.
+- `brain-store-schema`: used to inventory source persistence tables,
+  migrations, repository ports, and missing durable fields.
+- `target-infra-adr`: not used; inventory keeps M22 inside Postgres/Drizzle.
+- `activation-engine`: not used; no activation behavior changed.

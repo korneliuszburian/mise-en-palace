@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 00 preflight and run ledger complete.
+Current slice: Slice 01 source graph inventory complete.
 
 Completed:
 
@@ -12,6 +12,7 @@ Completed:
   feedback loop is complete, dogfooded, anti-rot audited, and pushed.
 - M22 run ledger was created under
   `docs/runs/2026-06-21-source-graph-persistence/`.
+- Slice 01 inventory was recorded in `SOURCE_GRAPH_INVENTORY.md`.
 
 Verification:
 
@@ -32,6 +33,9 @@ Verification:
   db:smoke:harness-plan`: passed with cleanup remaining marker count `0`.
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
   db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- Slice 01 targeted source graph reads: schema, migrations, repository port,
+  Drizzle adapter, mappers, core source types, IO schema, CLI parser, database
+  runtime, and evidence capture source-decision behavior.
 
 Skill gates:
 
@@ -44,5 +48,4 @@ Skill gates:
 
 Next action:
 
-- Slice 01: inventory the current source graph surface across schema,
-  migrations, repositories, core/schema types, and CLI.
+- Slice 02: add or tighten the minimal source graph schema needed for M22.

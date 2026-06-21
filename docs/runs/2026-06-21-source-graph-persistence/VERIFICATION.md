@@ -31,3 +31,14 @@ Scope checks:
 - No dashboard, API, MCP server, crawler, research layer, worker runtime,
   runtime markdown memory, `.krn` runtime truth, separate store, full
   MemoryStore, full SourceStore, or automatic memory mutation was added.
+
+Slice 01 inventory:
+
+- `pnpm typecheck`: passed.
+- `git diff --check`: passed.
+- Targeted reads of `packages/db/src/schema/sources.ts`: passed.
+- Targeted reads of source graph migrations and migration snapshots: passed.
+- Targeted reads of `DrizzleSourceRepository`, source mappers, harness source
+  repository port, core source types, schema source-claim parser, CLI parser,
+  database runtime, and evidence capture behavior: passed.
+- Inventory recorded in `SOURCE_GRAPH_INVENTORY.md`.

@@ -6,7 +6,6 @@ Hard blockers:
 
 Known unproven M22 behavior:
 
-- Current source graph schema/repository/type surface is not inventoried yet.
 - SourceArtifact, SourceClaim, SourceDecisionEdge, and SourceRejection
   persistence are not proven yet.
 - No source graph smoke command exists yet.
@@ -23,3 +22,8 @@ Explicit non-blockers:
 - No `.krn` runtime truth exists by design.
 - No separate vector, graph, search, or queue store exists by design.
 - No runtime markdown memory exists by design.
+
+Closed in Slice 01:
+
+- Current source graph schema/repository/type/CLI surface was inventoried in
+  `SOURCE_GRAPH_INVENTORY.md`.
