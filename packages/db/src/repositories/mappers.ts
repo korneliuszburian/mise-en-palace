@@ -12,6 +12,7 @@ import type {
   FeedbackDelta,
   MemoryApplication,
   MemoryCandidate,
+  MemoryFeedbackEvent,
   MemoryRecord,
   OperatorIntent,
   OperatorIntentSource,
@@ -46,6 +47,7 @@ import type {
   harnessPlans,
   memoryApplications,
   memoryCandidates,
+  memoryFeedbackEvents,
   memoryRecords,
   operatorIntents,
   outboxEvents,
@@ -82,6 +84,7 @@ type ContextAssemblyRow = InferSelectModel<typeof contextAssemblies>;
 type ExecutionRunRow = InferSelectModel<typeof executionRuns>;
 type MemoryRecordRow = InferSelectModel<typeof memoryRecords>;
 type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
+type MemoryFeedbackEventRow = InferSelectModel<typeof memoryFeedbackEvents>;
 type MemoryCandidateRow = InferSelectModel<typeof memoryCandidates>;
 type AntiMemoryRecordRow = InferSelectModel<typeof antiMemoryRecords>;
 type SourceArtifactRow = InferSelectModel<typeof sourceArtifacts>;
@@ -622,6 +625,22 @@ export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplicati
   expectedUse: row.expectedUse,
   ...(row.outcome === null ? {} : { outcome: row.outcome }),
   ...(row.notes === null ? {} : { notes: row.notes }),
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt)
+});
+
+export const mapMemoryFeedbackEvent = (
+  row: MemoryFeedbackEventRow
+): MemoryFeedbackEvent => ({
+  id: row.id,
+  memoryRecordId: row.memoryRecordId,
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+  ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+  ...(row.eventType === null ? {} : { eventType: row.eventType }),
+  direction: row.direction,
+  note: row.note,
+  ...(row.reason === null ? {} : { reason: row.reason }),
+  ...(row.evidenceRef === null ? {} : { evidenceRef: row.evidenceRef }),
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt)
 });

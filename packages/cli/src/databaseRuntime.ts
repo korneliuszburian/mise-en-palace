@@ -48,6 +48,9 @@ export interface DatabaseRuntime {
     | "getMemoryCandidateById"
     | "promoteMemoryCandidate"
     | "rejectMemoryCandidate"
+    | "getMemoryRecordById"
+    | "recordMemoryApplication"
+    | "createMemoryFeedbackEvent"
   >;
   close(): Promise<void>;
 }

@@ -10,9 +10,11 @@ import type {
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
+  CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   PromoteMemoryCandidateInput,
   RejectMemoryCandidateInput,
+  RecordMemoryApplicationInput,
   CreateReviewAssessmentInput,
   HarnessRunAggregate
 } from "@krn/harness";
@@ -38,6 +40,15 @@ const unusedMemoryRepository = {
   },
   async rejectMemoryCandidate(_input: RejectMemoryCandidateInput): Promise<never> {
     throw new Error("rejectMemoryCandidate should not be called");
+  },
+  async getMemoryRecordById(_id: string): Promise<never> {
+    throw new Error("getMemoryRecordById should not be called");
+  },
+  async recordMemoryApplication(_input: RecordMemoryApplicationInput): Promise<never> {
+    throw new Error("recordMemoryApplication should not be called");
+  },
+  async createMemoryFeedbackEvent(_input: CreateMemoryFeedbackEventInput): Promise<never> {
+    throw new Error("createMemoryFeedbackEvent should not be called");
   }
 };
 
@@ -871,6 +882,308 @@ describe("runCli", () => {
       candidateId: "memory-candidate-1",
       reviewer: "operator",
       reason: "No source mechanism tied the claim to a KRN decision"
+    });
+  });
+
+  it("previews memory record apply without DB writes", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "record",
+        "apply",
+        "--run-id",
+        "execution-run-1",
+        "--memory-id",
+        "memory-record-1",
+        "--outcome",
+        "helped",
+        "--notes",
+        "Guided M23 decision to avoid a separate graph DB"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Memory Record Apply");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("memoryRecordId: memory-record-1");
+    expect(result.stdout).toContain("runId: execution-run-1");
+    expect(result.stdout).toContain("outcome: helped");
+    expect(result.stdout).toContain("Feedback event: none");
+  });
+
+  it("requires database config for memory record apply --persist", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "record",
+        "apply",
+        "--run-id",
+        "execution-run-1",
+        "--memory-id",
+        "memory-record-1",
+        "--outcome",
+        "helped",
+        "--notes",
+        "Guided M23 decision to avoid a separate graph DB",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn memory record apply --persist"
+    );
+  });
+
+  it("persists helped memory record apply without feedback event", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedApplication: RecordMemoryApplicationInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "record",
+        "apply",
+        "--run-id",
+        "execution-run-1",
+        "--memory-id",
+        "memory-record-1",
+        "--outcome",
+        "helped",
+        "--notes",
+        "Guided M23 decision to avoid a separate graph DB",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById() {
+              throw new Error("getSourceClaimById should not be called");
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async getMemoryRecordById(id) {
+              return {
+                id,
+                projectId: "project-1",
+                currentVersionId: "memory-record-version-1",
+                key: "memory:memory-candidate-1",
+                kind: "constraint",
+                status: "active",
+                summary: "Use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                positiveFeedbackCount: 0,
+                negativeFeedbackCount: 0,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async recordMemoryApplication(input) {
+              capturedApplication = input;
+
+              return {
+                id: "memory-application-1",
+                memoryRecordId: input.memoryRecordId,
+                executionRunId: input.executionRunId,
+                expectedUse: input.expectedUse,
+                outcome: input.outcome,
+                notes: input.notes,
+                metadata: input.metadata ?? {},
+                createdAt: now
+              };
+            },
+            async createMemoryFeedbackEvent() {
+              throw new Error("createMemoryFeedbackEvent should not be called");
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("memoryApplication: memory-application-1");
+    expect(result.stdout).toContain("memoryRecord: memory-record-1");
+    expect(result.stdout).toContain("outcome: helped");
+    expect(result.stdout).toContain("Feedback event: none");
+    expect(capturedApplication).toMatchObject({
+      memoryRecordId: "memory-record-1",
+      executionRunId: "execution-run-1",
+      outcome: "helped",
+      notes: "Guided M23 decision to avoid a separate graph DB"
+    });
+  });
+
+  it("persists stale memory record apply and creates feedback event", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedFeedbackEvent: CreateMemoryFeedbackEventInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "record",
+        "apply",
+        "--run-id",
+        "execution-run-1",
+        "--memory-id",
+        "memory-record-1",
+        "--outcome",
+        "stale",
+        "--notes",
+        "Graph traversal now exceeds Postgres edge-table performance",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById() {
+              throw new Error("getSourceClaimById should not be called");
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async getMemoryRecordById(id) {
+              return {
+                id,
+                projectId: "project-1",
+                currentVersionId: "memory-record-version-1",
+                key: "memory:memory-candidate-1",
+                kind: "constraint",
+                status: "active",
+                summary: "Use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                positiveFeedbackCount: 0,
+                negativeFeedbackCount: 0,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async recordMemoryApplication(input) {
+              return {
+                id: "memory-application-1",
+                memoryRecordId: input.memoryRecordId,
+                executionRunId: input.executionRunId,
+                expectedUse: input.expectedUse,
+                outcome: input.outcome,
+                notes: input.notes,
+                metadata: input.metadata ?? {},
+                createdAt: now
+              };
+            },
+            async createMemoryFeedbackEvent(input) {
+              capturedFeedbackEvent = input;
+
+              return {
+                id: "memory-feedback-event-1",
+                memoryRecordId: input.memoryRecordId,
+                executionRunId: input.executionRunId,
+                eventType: input.eventType,
+                direction: input.direction,
+                note: input.note,
+                reason: input.reason,
+                evidenceRef: input.evidenceRef,
+                metadata: input.metadata ?? {},
+                createdAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("memoryApplication: memory-application-1");
+    expect(result.stdout).toContain("memoryFeedbackEvent: memory-feedback-event-1");
+    expect(result.stdout).toContain("outcome: stale");
+    expect(capturedFeedbackEvent).toMatchObject({
+      memoryRecordId: "memory-record-1",
+      executionRunId: "execution-run-1",
+      eventType: "stale_detected",
+      direction: "negative",
+      reason: "Graph traversal now exceeds Postgres edge-table performance",
+      evidenceRef: "memory-application:memory-application-1"
     });
   });
 

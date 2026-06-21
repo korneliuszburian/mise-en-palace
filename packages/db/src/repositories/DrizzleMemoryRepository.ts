@@ -4,11 +4,13 @@ import type {
   ExecutionRunId,
   MemoryApplication,
   MemoryCandidate,
+  MemoryFeedbackEvent,
   MemoryRecord,
   ProjectId
 } from "@krn/core";
 import type {
   CreateAntiMemoryRecordInput,
+  CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   CreateMemoryRecordInput,
   MemoryRepository,
@@ -22,6 +24,7 @@ import {
   antiMemoryRecords,
   memoryApplications,
   memoryCandidates,
+  memoryFeedbackEvents,
   memoryRecordVersions,
   memoryRecords,
   outboxEvents
@@ -34,6 +37,7 @@ import {
   mapAntiMemoryRecord,
   mapMemoryApplication,
   mapMemoryCandidate,
+  mapMemoryFeedbackEvent,
   mapMemoryRecord
 } from "./mappers.js";
 
@@ -418,6 +422,34 @@ export class DrizzleMemoryRepository implements MemoryRepository {
 
       return mapMemoryApplication(row);
     });
+  }
+
+  async createMemoryFeedbackEvent(
+    input: CreateMemoryFeedbackEventInput
+  ): Promise<MemoryFeedbackEvent> {
+    const row = requireReturnedRow(
+      await this.db
+        .insert(memoryFeedbackEvents)
+        .values({
+          memoryRecordId: input.memoryRecordId,
+          ...(input.executionRunId === undefined
+            ? {}
+            : { executionRunId: input.executionRunId }),
+          ...(input.feedbackDeltaId === undefined
+            ? {}
+            : { feedbackDeltaId: input.feedbackDeltaId }),
+          ...(input.eventType === undefined ? {} : { eventType: input.eventType }),
+          direction: input.direction,
+          note: input.note,
+          ...(input.reason === undefined ? {} : { reason: input.reason }),
+          ...(input.evidenceRef === undefined ? {} : { evidenceRef: input.evidenceRef }),
+          metadata: input.metadata ?? {}
+        })
+        .returning(),
+      "createMemoryFeedbackEvent"
+    );
+
+    return mapMemoryFeedbackEvent(row);
   }
 
   async createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord> {

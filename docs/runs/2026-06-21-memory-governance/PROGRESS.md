@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 06 CLI memory candidate review complete.
+Current slice: Slice 07 CLI memory record apply complete.
 
 Completed:
 
@@ -46,6 +46,10 @@ Completed:
   MemoryRepository, rejects with a stored reason, prints source-claim
   `doesNotProve` limits when promoting sourced candidates, and records no
   memory application.
+- Slice 07 added `krn memory record apply`. Preview mode validates application
+  feedback without DB writes. Persist mode requires `KRN_DATABASE_URL`, verifies
+  the MemoryRecord exists, records MemoryApplication through MemoryRepository,
+  and records a MemoryFeedbackEvent for `hurt` or `stale` outcomes.
 
 Verification:
 
@@ -134,6 +138,27 @@ Verification:
   application recorded.
 - `pnpm --filter @krn/cli krn memory candidate promote --help` and
   `pnpm --filter @krn/cli krn memory candidate reject --help`: passed.
+- Slice 07 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with
+  four invalid-args cases because `krn memory record apply` did not exist yet.
+- Slice 07 RED: `pnpm --filter @krn/db test -- DrizzleMemoryRepository.test.ts`
+  failed because `DrizzleMemoryRepository.createMemoryFeedbackEvent` did not
+  exist yet.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 44 tests.
+- `pnpm --filter @krn/db test -- DrizzleMemoryRepository.test.ts`: passed with
+  6 test files and 16 tests.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn memory record apply --run-id execution-run-1
+  --memory-id memory-record-1 --outcome helped --notes "Guided M23 decision to
+  avoid a separate graph DB"`: passed. The report showed no DB writes and no
+  feedback event.
+- `pnpm --filter @krn/cli krn memory record apply --run-id execution-run-1
+  --memory-id memory-record-1 --outcome stale --notes "Graph traversal now
+  exceeds Postgres edge-table performance"`: passed. The report showed no DB
+  writes and that a feedback event would be recorded.
+- `pnpm --filter @krn/cli krn memory record apply --help`: passed.
+- `git diff --check`: passed.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
 
 Skill gates:
 
@@ -149,4 +174,4 @@ Skill gates:
 
 Next action:
 
-- Slice 07: add CLI `krn memory record apply`.
+- Slice 08: add CLI `krn memory anti add`.

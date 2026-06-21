@@ -6,6 +6,7 @@ import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
+  formatMemoryRecordApplyUsage,
   parseArgs
 } from "./parseArgs.js";
 import {
@@ -41,6 +42,9 @@ import {
 import {
   runMemoryCandidateReviewCommand
 } from "./runMemoryCandidateReviewCommand.js";
+import {
+  runMemoryRecordApplyCommand
+} from "./runMemoryRecordApplyCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -134,6 +138,14 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatMemoryCandidateRejectUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryRecordApplyHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryRecordApplyUsage(),
       stderr: ""
     };
   }
@@ -273,6 +285,35 @@ export const runCli = async (
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown memory candidate review error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "memoryRecordApply") {
+    try {
+      const result = await runMemoryRecordApplyCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown memory record apply error";
 
       return {
         exitCode: 1,

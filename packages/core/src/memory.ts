@@ -5,6 +5,7 @@ import type {
   FeedbackDeltaId,
   MemoryApplicationId,
   MemoryCandidateId,
+  MemoryFeedbackEventId,
   MemoryRecordId,
   MemoryRecordVersionId,
   ProjectId,
@@ -109,6 +110,20 @@ export interface MemoryApplication {
   expectedUse: string;
   outcome?: MemoryApplicationOutcome;
   notes?: string;
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+}
+
+export interface MemoryFeedbackEvent {
+  id: MemoryFeedbackEventId;
+  memoryRecordId: MemoryRecordId;
+  executionRunId?: ExecutionRunId;
+  feedbackDeltaId?: FeedbackDeltaId;
+  eventType?: MemoryFeedbackEventType;
+  direction: MemoryFeedbackDirection;
+  note: string;
+  reason?: string;
+  evidenceRef?: string;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
 }

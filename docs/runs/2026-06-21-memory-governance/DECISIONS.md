@@ -80,6 +80,16 @@
   source-claim `doesNotProve` limits before creating the MemoryRecord.
 - Slice 06 does not add a `--record-key` argument. Repository promotion keeps
   deriving `memory:<candidateId>` when no key is provided.
+- Slice 07 adds a typed `MemoryFeedbackEvent` core/read model and
+  `createMemoryFeedbackEvent` repository method because the table already
+  exists and M23.07 requires `hurt`/`stale` outcomes to create a feedback event
+  or demotion candidate.
+- Slice 07 chooses feedback event over demotion candidate for `hurt`/`stale`.
+  The CLI records the application first, then links the feedback event with
+  `evidenceRef: memory-application:<id>`.
+- Slice 07 keeps `--expected-use` optional because the GOAL target command does
+  not include it. The CLI derives a bounded default while still requiring
+  explicit `--run-id`, `--memory-id`, `--outcome`, and `--notes`.
 
 Slice 00 skill record:
 
@@ -150,3 +160,14 @@ Slice 06 skill record:
   reject tests.
 - `superpowers:verification-before-completion`: used before committing and
   pushing Slice 06.
+
+Slice 07 skill record:
+
+- `brain-store-schema`: used for MemoryFeedbackEvent repository insert and
+  mapper/read-model impact.
+- `typescript-type-safety`: used for core feedback-event type, repository port
+  expansion, CLI command union, and schema-parsed application/feedback input.
+- `superpowers:test-driven-development`: used for RED/GREEN CLI apply and
+  repository method tests.
+- `superpowers:verification-before-completion`: used before committing and
+  pushing Slice 07.

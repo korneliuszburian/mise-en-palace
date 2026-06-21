@@ -34,6 +34,9 @@ export type CliCommand =
       kind: "memoryCandidateRejectHelp";
     }
   | {
+      kind: "memoryRecordApplyHelp";
+    }
+  | {
       kind: "memoryCandidateAdd";
       persist: boolean;
       runId?: string;
@@ -63,6 +66,18 @@ export type CliCommand =
       candidateId?: string;
       reviewer?: string;
       reason?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryRecordApply";
+      persist: boolean;
+      runId?: string;
+      memoryId?: string;
+      outcome?: string;
+      notes?: string;
+      expectedUse?: string;
+      taskContractId?: string;
+      contextAssemblyId?: string;
       metadata: Record<string, string>;
     }
   | {
@@ -139,6 +154,7 @@ const usage = [
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",
   "krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted [--persist]",
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
+  "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]"
 ].join("\n");
 
@@ -248,6 +264,24 @@ export const formatMemoryCandidateRejectUsage = (): string =>
     "--reason",
     "",
     "Optional:",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatMemoryRecordApplyUsage = (): string =>
+  [
+    "Usage: krn memory record apply --run-id <id> --memory-id <id> --outcome <helped|hurt|neutral|stale> --notes \"...\" [--persist]",
+    "",
+    "Required:",
+    "--run-id",
+    "--memory-id",
+    "--outcome",
+    "--notes",
+    "",
+    "Optional:",
+    "--expected-use <text>",
+    "--task-contract-id <id>",
+    "--context-assembly-id <id>",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -1008,11 +1042,103 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest[0] === "record" && rest[1] === "apply") {
+      if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+        return {
+          command: {
+            kind: "memoryRecordApplyHelp"
+          }
+        };
+      }
+
+      const memoryCommand: Extract<CliCommand, { kind: "memoryRecordApply" }> = {
+        kind: "memoryRecordApply",
+        persist: false,
+        metadata: {}
+      };
+
+      for (let index = 2; index < rest.length; index += 1) {
+        const arg = rest[index];
+
+        if (arg === "--persist") {
+          memoryCommand.persist = true;
+          continue;
+        }
+
+        if (arg === "--help" || arg === "-h") {
+          return {
+            command: {
+              kind: "memoryRecordApplyHelp"
+            }
+          };
+        }
+
+        const optionMap = {
+          "--run-id": "runId",
+          "--memory-id": "memoryId",
+          "--outcome": "outcome",
+          "--notes": "notes",
+          "--expected-use": "expectedUse",
+          "--task-contract-id": "taskContractId",
+          "--context-assembly-id": "contextAssemblyId"
+        } as const;
+        const option = Object.keys(optionMap).find((candidate) =>
+          arg === candidate || arg?.startsWith(`${candidate}=`) === true
+        );
+
+        if (option !== undefined) {
+          const valueResult = optionValue(rest, index, option);
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryRecordApplyUsage()
+            };
+          }
+
+          memoryCommand[optionMap[option as keyof typeof optionMap]] =
+            valueResult.value.trim();
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+          const valueResult = optionValue(rest, index, "--metadata");
+
+          if (valueResult.error !== undefined || valueResult.value === undefined) {
+            return {
+              error: valueResult.error ?? formatMemoryRecordApplyUsage()
+            };
+          }
+
+          const entry = metadataEntry(valueResult.value);
+
+          if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
+            return {
+              error: entry.error ?? formatMemoryRecordApplyUsage()
+            };
+          }
+
+          memoryCommand.metadata[entry.key] = entry.value;
+          index = valueResult.nextIndex;
+          continue;
+        }
+
+        return {
+          error: formatMemoryRecordApplyUsage()
+        };
+      }
+
+      return {
+        command: memoryCommand
+      };
+    }
+
     return {
       error: [
         formatMemoryCandidateAddUsage().trim(),
         formatMemoryCandidatePromoteUsage().trim(),
-        formatMemoryCandidateRejectUsage().trim()
+        formatMemoryCandidateRejectUsage().trim(),
+        formatMemoryRecordApplyUsage().trim()
       ].join("\n\n")
     };
   }

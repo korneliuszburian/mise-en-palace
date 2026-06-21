@@ -6,6 +6,9 @@ import type {
   MemoryApplicationOutcome,
   MemoryCandidate,
   MemoryCandidateId,
+  MemoryFeedbackDirection,
+  MemoryFeedbackEvent,
+  MemoryFeedbackEventType,
   MemoryRecord,
   MemoryRecordKind,
   MemoryRecordStatus,
@@ -80,6 +83,17 @@ export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   notes: string;
 }
 
+export interface CreateMemoryFeedbackEventInput extends RepositoryMetadata {
+  memoryRecordId: MemoryRecord["id"];
+  executionRunId?: ExecutionRunId;
+  feedbackDeltaId?: FeedbackDeltaId;
+  eventType?: MemoryFeedbackEventType;
+  direction: MemoryFeedbackDirection;
+  note: string;
+  reason?: string;
+  evidenceRef?: string;
+}
+
 export interface CreateAntiMemoryRecordInput extends RepositoryMetadata {
   projectId: ProjectId;
   executionRunId?: ExecutionRunId;
@@ -109,6 +123,7 @@ export interface MemoryRepository {
   rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate>;
   listMemoryCandidates(projectId: ProjectId, limit: number): Promise<MemoryCandidate[]>;
   recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
+  createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord>;
   listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]>;
 }

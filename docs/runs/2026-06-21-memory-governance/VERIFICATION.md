@@ -149,3 +149,32 @@ Slice 06 CLI memory candidate review:
   memory application recorded.
 - `pnpm --filter @krn/cli krn memory candidate promote --help`: passed.
 - `pnpm --filter @krn/cli krn memory candidate reject --help`: passed.
+
+Slice 07 CLI memory record apply:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with four
+  invalid-args cases because `krn memory record apply` was not routed yet.
+- RED: `pnpm --filter @krn/db test -- DrizzleMemoryRepository.test.ts` failed
+  because `DrizzleMemoryRepository.createMemoryFeedbackEvent` was missing.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 44
+  tests.
+- GREEN: `pnpm --filter @krn/db test -- DrizzleMemoryRepository.test.ts`
+  passed with 6 test files and 16 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- Helped preview passed:
+  `pnpm --filter @krn/cli krn memory record apply --run-id execution-run-1
+  --memory-id memory-record-1 --outcome helped --notes "Guided M23 decision to
+  avoid a separate graph DB"`.
+- Helped preview report showed `Persistence: disabled`, `DB writes: none`,
+  memoryRecordId `memory-record-1`, runId `execution-run-1`, outcome `helped`,
+  and `Feedback event: none`.
+- Stale preview passed:
+  `pnpm --filter @krn/cli krn memory record apply --run-id execution-run-1
+  --memory-id memory-record-1 --outcome stale --notes "Graph traversal now
+  exceeds Postgres edge-table performance"`.
+- Stale preview report showed `Persistence: disabled`, `DB writes: none`,
+  outcome `stale`, and `Feedback event: would be recorded`.
+- `pnpm --filter @krn/cli krn memory record apply --help`: passed.
+- `git diff --check`: passed.
+- `pnpm test`: passed across workspace projects.
+- `pnpm --filter @krn/db db:check`: passed.

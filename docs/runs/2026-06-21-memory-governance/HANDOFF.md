@@ -6,7 +6,7 @@ them into MemoryRecord versions, record anti-memory, and link memory to
 source/evidence.
 
 Last verified state:
-M23 Slice 06 CLI memory candidate review is complete. M22 final state is the
+M23 Slice 07 CLI memory record apply is complete. M22 final state is the
 baseline: source graph persistence, source graph dogfood, doctor source graph
 readiness, anti-rot, and global handoff are complete. M23 ledger exists under
 `docs/runs/2026-06-21-memory-governance/`, Slice 00 inventory is recorded in
@@ -22,7 +22,9 @@ routing with schema validation, source-claim validation on persist, confidence
 aliases, and `architecture-boundary` to `constraint` mapping. Slice 06 added
 `krn memory candidate promote/reject` preview/persist routing, source-claim
 `doesNotProve` output on promotion, rejection reason persistence, and no
-auto-apply behavior.
+auto-apply behavior. Slice 07 added `krn memory record apply` preview/persist
+routing, typed MemoryFeedbackEvent persistence, and `hurt`/`stale` feedback
+event creation linked to the MemoryApplication evidence ref.
 
 Changed files:
 
@@ -50,6 +52,7 @@ Changed files:
 - `packages/cli/src/databaseRuntime.ts`
 - `packages/cli/src/runMemoryCandidateAddCommand.ts`
 - `packages/cli/src/runMemoryCandidateReviewCommand.ts`
+- `packages/cli/src/runMemoryRecordApplyCommand.ts`
 - `packages/cli/src/runCli.ts`
 - `packages/cli/src/runDbSmokeCommand.ts`
 - `packages/cli/src/runCli.test.ts`
@@ -76,12 +79,14 @@ maps `architecture-boundary` to stored kind `constraint`, accepts
 `low`/`medium`/`high` confidence aliases, and validates source-claim existence
 before persist. Slice 06 keeps review explicit, derives record keys in the
 repository, surfaces source-claim limits on promotion, and does not record
-memory applications during candidate review.
+memory applications during candidate review. Slice 07 records `hurt`/`stale`
+application outcomes as MemoryFeedbackEvent instead of creating demotion
+candidates.
 
 Blockers/risks:
-No hard blocker through Slice 06. Remaining behavior is unproven until later
-slices add record apply, anti-memory add, evidence capture candidates, doctor
-readiness, dogfood, and anti-rot.
+No hard blocker through Slice 07. Remaining behavior is unproven until later
+slices add anti-memory add, evidence capture candidates, doctor readiness,
+dogfood, and anti-rot.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/`, M22 run ledger, package manifests,
@@ -90,7 +95,7 @@ and Drizzle adapter, core memory types, memory IO schema, evidence capture,
 feedback delta schema, and DB smoke commands.
 
 Next action:
-Slice 07: add CLI `krn memory record apply`.
+Slice 08: add CLI `krn memory anti add`.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless a future task explicitly asks
