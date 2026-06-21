@@ -15,6 +15,13 @@
       "when": 1782057355742,
       "tag": "0001_superb_jetstream",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782057594590,
+      "tag": "0002_shocking_post",
+      "breakpoints": true
     }
   ]
 }

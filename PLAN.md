@@ -153,7 +153,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [ ] Add test tooling and first contract tests only where they protect real boundaries.
 - [x] 2026-06-21: Added Drizzle/Postgres schema foundation for workspaces, projects, repo installations, project kernels, operator intents, task contracts, harness plans, context assemblies, execution runs, evidence bundles, review assessments, feedback deltas, run events, outbox events, and worker jobs. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, and `git diff --check` passed.
 - [x] 2026-06-21: Added Memory Core and source graph schema, including memory records, versions, edges, candidates, applications, feedback events, anti-memory, activation traces, source artifacts, chunks, claims, claim edges, decisions, rejections, and snapshots. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, SQL inspection for `mechanism` / `krn_implication` / `does_not_prove`, and `git diff --check` passed.
-- [ ] Add retrieval and activation schema.
+- [x] 2026-06-21: Added retrieval and activation schema with embedding models, embeddings, search documents, retrieval runs, retrieval candidates, activation decisions, context items, and context exclusions. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, SQL inspection for `CREATE EXTENSION IF NOT EXISTS vector`, `vector(1536)`, HNSW vector index, `tsvector`, GIN search index, context inclusions, context exclusions, and `git diff --check` passed.
 - [ ] Add Zod IO schemas.
 - [ ] Add pure core domain model.
 - [ ] Add repository interfaces and Postgres adapters.
@@ -175,6 +175,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - Observation: `docs/decisions/ADR-0009-canonical-harness-spine.md` already existed in the worktree before the brain-store ADR was added. Evidence: `README.md` and `docs/KRN_KERNEL.md` reference the canonical harness spine. Implication: keep canonical harness spine as ADR-0009 and record the Postgres/pgvector brain-store decision as ADR-0010.
 - Observation: The worktree had a partial `codex-adapter` lockfile importer and a root TypeScript path alias before the package shells existed. Evidence: `pnpm-lock.yaml` named `packages/codex-adapter` while `packages/codex-adapter/` was absent. Implication: regenerate the lockfile from actual package manifests and avoid speculative path aliases until imports require them.
 - Observation: Drizzle ORM 0.45.2 type declarations pull optional non-Postgres dialect declarations under TypeScript 5.9 when `skipLibCheck` is false. Evidence: `@krn/db` typecheck failed on `gel`, MySQL, SingleStore, SQLite, `Buffer`, and `TextDecoder` declarations before any project-code error appeared. Implication: keep the root strict config unchanged, add a package-local `skipLibCheck` exception only in `packages/db`, and keep KRN code strict.
+- Observation: Drizzle generated the pgvector column and HNSW index but did not create the `vector` extension. Evidence: `0002_shocking_post.sql` initially contained `vector(1536)` and `USING hnsw` but no `CREATE EXTENSION`. Implication: keep `packages/db/src/sql/pgvector.ts` as the explicit helper and add `CREATE EXTENSION IF NOT EXISTS vector` manually to the migration that first introduces vector columns.
 
 ## Decision Log
 
@@ -210,11 +211,19 @@ Use this section as the single progress truth while executing the plan. Update e
   Rationale: Drizzle 0.45.2 declaration files expose optional dialect and peer declarations that fail this repo's strict dependency declaration check under TypeScript 5.9. The exception is isolated to third-party declaration checking in the DB package; KRN source remains strict and the root `skipLibCheck: false` stays unchanged.
   Date/Author: 2026-06-21 / Codex DB schema pass.
 
+- Decision: The first embeddings table uses a 1536-dimension pgvector column and records model dimensions separately.
+  Rationale: Drizzle's vector column requires a fixed dimension. The schema records provider/model/dimension metadata and can add a later migration if KRN standardizes on another embedding dimension.
+  Date/Author: 2026-06-21 / Codex retrieval schema pass.
+
+- Decision: Full-text search uses a custom Drizzle `tsvector` column helper plus a GIN index.
+  Rationale: Drizzle does not expose a native `tsvector` helper in this package version. A local helper keeps the PostgreSQL full-text plan explicit without adding a separate search store.
+  Date/Author: 2026-06-21 / Codex retrieval schema pass.
+
 ## Outcomes & Retrospective
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 and 5 added the first Drizzle/Postgres harness, memory, and source graph schemas with generated SQL migrations.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations.
 
 Current gaps: no DB package, no schema package, no harness package, no Codex adapter package, no worker package, no domain model, no Drizzle schema, no Zod schemas, no repositories, no activation engine, no compiler, no CLI behavior, no tests beyond typecheck capability.
 
