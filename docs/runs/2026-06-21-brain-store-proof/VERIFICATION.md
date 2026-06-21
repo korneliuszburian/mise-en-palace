@@ -117,7 +117,7 @@ Completion audit refresh after stale-next-action cleanup:
 
 - `git status --short --branch`: passed; only docs handoff/progress cleanup was
   dirty before this final docs-only commit.
-- `git log --oneline -8`: passed; latest pushed commit was
+- `git log --oneline -8`: passed; newest commit at refresh start was
   `17c2853 docs(handoff): update brain-store proof status`.
 - `docker compose ps krn-postgres`: passed; local pgvector Postgres was
   healthy.
