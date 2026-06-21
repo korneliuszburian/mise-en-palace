@@ -7,6 +7,7 @@
   "scripts": {
     "db:check": "pnpm --filter @krn/db db:check",
     "db:generate": "pnpm --filter @krn/db db:generate",
+    "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"
   },
   "devDependencies": {
