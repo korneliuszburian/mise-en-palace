@@ -1,0 +1,35 @@
+# Blockers
+
+Hard blockers:
+
+- None through Slice 00.
+
+Known unproven M23 behavior:
+
+- Memory governance schema is not tightened for M23 promotion semantics yet.
+- There is no memory governance smoke path.
+- There is no CLI `krn memory candidate add`.
+- There is no CLI `krn memory candidate promote/reject`.
+- There is no CLI `krn memory record apply`.
+- There is no CLI `krn memory anti add`.
+- `krn evidence capture` does not yet emit memory candidates.
+- `krn doctor` does not yet report memory governance readiness.
+- M23 dogfood is not recorded yet.
+- M23 final anti-rot and handoff are not recorded yet.
+
+Explicit non-blockers:
+
+- No dashboard UI exists by design.
+- No API exists by design.
+- No MCP server exists by design.
+- No memory crawler exists by design.
+- No broad memory worker exists by design.
+- No vector embedding pipeline exists yet by design.
+- No `.krn` runtime truth exists by design.
+- No separate vector, graph, search, or queue store exists by design.
+- No runtime markdown memory exists by design.
+
+Closed in Slice 00:
+
+- Current memory governance schema/repository/type/CLI/evidence surface was
+  inventoried in `MEMORY_GOVERNANCE_INVENTORY.md`.
