@@ -158,7 +158,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [x] 2026-06-21: Added pure core domain model types for IDs, time, operator intents, task contracts, harness plans, context assembly, capability plans, Codex adapter plan refs, execution runs, evidence bundles, review assessments, feedback deltas, memory, sources, policy, and eval candidates. Evidence: `pnpm typecheck`, `pnpm test`, `grep -R "requiredSkills" packages/core && exit 1 || true`, forbidden-import search, and `git diff --check` passed.
 - [x] 2026-06-21: Added repository interfaces in `packages/harness` and Drizzle/Postgres adapters in `packages/db` for projects, memory, sources, harness runs, event ledger, outbox, and retrieval. Evidence: `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness packages/db/src`, and no forbidden DB/runtime imports or `requiredSkills` in `packages/core`.
 - [x] 2026-06-21: Added pure harness activation engine with memory/source query builders, ranking, trust and temporal filters, context ROI budget filtering, and context assembly with explicit inclusions/exclusions. Evidence: TDD RED `pnpm --filter @krn/harness test` failed on missing activation module, then GREEN `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness/src packages/db/src`, and no forbidden DB/CLI/Codex imports in `packages/harness/src` or `packages/core`.
-- [ ] Add harness compiler.
+- [x] 2026-06-21: Added harness compiler that persists operator intent, task contract, harness plan, context assembly, retrieval candidates, activation decisions, and context selections through repository ports, then returns capability plan, Codex adapter plan reference, and evidence contract without invoking Codex. Evidence: TDD RED `pnpm --filter @krn/harness test` failed on missing compiler module, then GREEN `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness/src packages/db/src`, and no forbidden DB/CLI/Codex imports in `packages/harness/src` or `packages/core`.
 - [ ] Add Codex adapter renderer.
 - [ ] Add `krn plan --task` vertical path.
 - [ ] Add read-only `krn doctor`.
@@ -180,6 +180,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - Observation: Cross-package imports were first required by repository interfaces and DB adapters, not by empty package shells. Evidence: `packages/harness` now imports `@krn/core`, `packages/db` now imports `@krn/core` and `@krn/harness`, and root `tsconfig.base.json` now has package path aliases. Implication: keep aliases limited to real package boundaries and avoid speculative imports for future packages.
 - Observation: Several domain fields are stored as JSONB in the first schema, especially context selections, evidence commands, review findings, source lineage, and feedback candidates. Evidence: repository mappers in `packages/db/src/repositories/mappers.ts` narrow JSON values before returning domain types. Implication: adapters remain a trust boundary; harness/core must not consume raw DB JSON rows.
 - Observation: Adding a second package-local Vitest runner required a real `pnpm install`, not only `pnpm install --lockfile-only`. Evidence: the first harness RED run failed before imports with `vitest: not found`; after `pnpm install`, the intended RED failure was the missing activation module. Implication: when adding a new package-level executable dependency, refresh both lockfile and local workspace links before relying on test output.
+- Observation: Weak-context tests must avoid accidental term overlap with task non-goals and inherited fixture guidance. Evidence: an intended weak memory candidate was first activated because it contained `dashboard`, then because inherited `applicationGuidance` contained `doctor readiness`. Implication: activation/compiler tests need noisy fixtures that are explicitly unrelated across summary, body, and guidance.
 
 ## Decision Log
 
@@ -243,13 +244,21 @@ Use this section as the single progress truth while executing the plan. Update e
   Rationale: The kernel decision rule requires source -> mechanism -> KRN implication -> decision/rejection and explicit limits. A source claim without `doesNotProve` is not safe to activate even if it scores highly.
   Date/Author: 2026-06-21 / Codex activation engine pass.
 
+- Decision: The harness compiler accepts resolved workspace/project IDs; CLI slug resolution is deferred to the CLI slice.
+  Rationale: M11 should compile a harness plan through repository ports without becoming a CLI parser or project resolver. The schema layer already validates external operator input, while the CLI can later map workspace/project slugs to IDs before calling the compiler.
+  Date/Author: 2026-06-21 / Codex harness compiler pass.
+
+- Decision: Evidence contract is a harness artifact, not an `EvidenceBundle`.
+  Rationale: An `EvidenceBundle` records proof after execution. M11 needs pre-execution expectations for typecheck, tests, diff risk, review burden, and rollback path; execution capture remains a later CLI/evidence milestone.
+  Date/Author: 2026-06-21 / Codex harness compiler pass.
+
 ## Outcomes & Retrospective
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model. Milestone 9 added harness repository ports and Drizzle-backed Postgres adapters with typed DB-to-domain mappers. Milestone 10 added the pure activation engine and tests for small high-signal selection, invalidated-memory exclusion, source safety, and explicit exclusion records.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model. Milestone 9 added harness repository ports and Drizzle-backed Postgres adapters with typed DB-to-domain mappers. Milestone 10 added the pure activation engine and tests for small high-signal selection, invalidated-memory exclusion, source safety, and explicit exclusion records. Milestone 11 added the harness compiler over repository ports with retrieval trace persistence, weak-context abstention, capability planning, Codex adapter plan references, and evidence contracts.
 
-Current gaps: no harness compiler, no Codex adapter renderer, no CLI behavior, no read-only doctor, no evidence capture command, no worker skeleton behavior, and no recorded dogfood run.
+Current gaps: no Codex adapter renderer, no CLI behavior, no read-only doctor, no evidence capture command, no worker skeleton behavior, and no recorded dogfood run.
 
 ## Plan of Work
 
