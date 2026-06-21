@@ -32,6 +32,15 @@
 - Slice 01 keeps `memory_records.currentVersionId` as a query/update field with
   an index but no circular FK. Repository promotion paths should maintain this
   pointer when Slice 03 implements candidate promotion.
+- Slice 02 keeps memory governance input validation in `packages/schema`
+  rather than the CLI. CLI commands should parse unknown input through these
+  Zod schemas before calling repository methods.
+- Slice 02 defaults candidate IO status to `proposed` even though the DB
+  default remains `candidate`. This keeps the operator-facing contract aligned
+  with M23 while preserving the migration-safe DB default.
+- Slice 02 treats an explicit user preference as `kind: "preference"` plus
+  `isUserPreference: true`. Only that path may omit source grounding and
+  invalidation rule.
 
 Slice 00 skill record:
 
@@ -56,3 +65,10 @@ Slice 01 skill record:
   tests.
 - `superpowers:systematic-debugging`: used after live `db:ready` exposed the
   Postgres enum/default migration issue.
+
+Slice 02 skill record:
+
+- `typescript-type-safety`: used for schema package parse-boundary changes and
+  exported input types.
+- `superpowers:test-driven-development`: used for RED/GREEN memory governance
+  IO parser tests.

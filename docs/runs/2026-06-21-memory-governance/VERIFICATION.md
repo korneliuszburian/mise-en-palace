@@ -62,3 +62,13 @@ Slice 01 memory governance schema:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+
+Slice 02 memory governance IO schemas:
+
+- RED: `pnpm --filter @krn/schema test` failed because
+  `parseMemoryPromotionInput`, `parseMemoryApplicationInput`,
+  `parseMemoryFeedbackEventInput`, and `parseAntiMemoryInput` were not yet
+  exported, and `parseMemoryCandidateInput` did not default status to
+  `proposed`.
+- GREEN: `pnpm --filter @krn/schema test` passed with 1 test file and 8 tests.
+- `pnpm typecheck`: passed across workspace projects.

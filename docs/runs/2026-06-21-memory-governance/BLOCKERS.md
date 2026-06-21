@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through Slice 01.
+- None through Slice 02.
 
 Known unproven M23 behavior:
 
@@ -39,3 +39,8 @@ Closed in Slice 01:
   run/feedback/source lineage, review, validity, record current version,
   version provenance, application outcome, feedback events, and anti-memory
   rejected-claim/source/run linkage.
+
+Closed in Slice 02:
+
+- Memory governance IO schemas now exist for candidate, promotion,
+  application, feedback event, and anti-memory inputs.

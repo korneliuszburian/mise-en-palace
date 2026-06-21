@@ -151,18 +151,24 @@ describe("schema parse boundaries", () => {
     });
   });
 
-  test("memory candidates require source lineage unless explicitly user preference", () => {
+  test("memory candidates require source grounding unless explicitly user preference", () => {
     expect(() =>
       parseMemoryCandidateInput({
+        executionRunId: "run-1",
+        proposedBy: "codex",
+        kind: "pattern",
         summary: "Use PLAN.md as execution map",
         body: "Complex KRN implementation should keep PLAN.md current.",
         owner: "operator",
         confidence: 90,
-        applicationGuidance: "Apply during long-running KRN work"
+        applicationGuidance: "Apply during long-running KRN work",
+        invalidationRule: "Revisit when GOAL.md replaces PLAN.md"
       })
     ).toThrow();
 
     const preference = parseMemoryCandidateInput({
+      proposedBy: "operator",
+      kind: "preference",
       summary: "Keep Polish plans Polish",
       body: "Polish plans should keep prose Polish and commands in English.",
       owner: "operator",
@@ -171,7 +177,97 @@ describe("schema parse boundaries", () => {
       isUserPreference: true
     });
 
+    expect(preference.status).toBe("proposed");
     expect(preference.sourceLineage).toEqual([]);
+  });
+
+  test("memory governance inputs constrain review, application, feedback, and anti-memory", () => {
+    const parseMemoryPromotionInput = parser("parseMemoryPromotionInput");
+    const parseMemoryApplicationInput = parser("parseMemoryApplicationInput");
+    const parseMemoryFeedbackEventInput = parser("parseMemoryFeedbackEventInput");
+    const parseAntiMemoryInput = parser("parseAntiMemoryInput");
+
+    expect(() =>
+      parseMemoryPromotionInput({
+        candidateId: "candidate-1",
+        reviewer: "operator",
+        decision: "maybe"
+      })
+    ).toThrow();
+
+    expect(
+      parseMemoryPromotionInput({
+        candidateId: "candidate-1",
+        reviewer: "operator",
+        decision: "accepted"
+      })
+    ).toMatchObject({
+      candidateId: "candidate-1",
+      decision: "accepted",
+      metadata: {}
+    });
+
+    expect(() =>
+      parseMemoryApplicationInput({
+        memoryRecordId: "memory-1",
+        executionRunId: "run-1",
+        expectedUse: "Guide storage decisions",
+        outcome: "great"
+      })
+    ).toThrow();
+
+    expect(
+      parseMemoryApplicationInput({
+        memoryRecordId: "memory-1",
+        executionRunId: "run-1",
+        expectedUse: "Guide storage decisions",
+        outcome: "helped",
+        notes: "Prevented adding a separate memory store"
+      })
+    ).toMatchObject({
+      outcome: "helped",
+      metadata: {}
+    });
+
+    expect(
+      parseMemoryFeedbackEventInput({
+        memoryRecordId: "memory-1",
+        executionRunId: "run-1",
+        eventType: "invalidated",
+        direction: "negative",
+        note: "Course source contradicted this rule",
+        reason: "newer source with concrete mechanism",
+        evidenceRef: "source-claim-1"
+      })
+    ).toMatchObject({
+      eventType: "invalidated",
+      direction: "negative"
+    });
+
+    expect(() =>
+      parseAntiMemoryInput({
+        executionRunId: "run-1",
+        rejectedClaim: "Markdown files are runtime memory",
+        owner: "operator",
+        confidence: 95
+      })
+    ).toThrow();
+
+    expect(
+      parseAntiMemoryInput({
+        executionRunId: "run-1",
+        rejectedClaim: "Markdown files are runtime memory",
+        reason: "Files can be audit/source/export, but Memory Core is store-backed",
+        invalidatedBySourceClaimId: "source-claim-1",
+        owner: "operator",
+        confidence: 95
+      })
+    ).toMatchObject({
+      rejectedClaim: "Markdown files are runtime memory",
+      reason: "Files can be audit/source/export, but Memory Core is store-backed",
+      invalidatedBySourceClaimIds: [],
+      metadata: {}
+    });
   });
 
   test("harness compile and evidence capture inputs keep command evidence structured", () => {

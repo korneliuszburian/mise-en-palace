@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 01 memory governance schema complete.
+Current slice: Slice 02 memory governance IO schemas complete.
 
 Completed:
 
@@ -19,6 +19,12 @@ Completed:
   `createdFromCandidateId`, version invalidation/validity fields, application
   run linkage/outcome/notes, feedback event type/reason/evidence ref, and
   anti-memory rejected-claim/run/source linkage.
+- Slice 02 added Zod IO schemas and parse functions for memory candidate,
+  promotion, application, feedback event, and anti-memory inputs. Candidate
+  input now constrains kind/status, keeps external input unknown until parsed,
+  requires application guidance, requires invalidation/source grounding unless
+  the candidate is an explicit user preference, and defaults candidate status
+  to `proposed`.
 
 Verification:
 
@@ -49,6 +55,10 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 02 RED: `pnpm --filter @krn/schema test` failed on missing M23 parser
+  exports and missing `proposed` candidate status default.
+- `pnpm --filter @krn/schema test`: passed with 8 tests.
+- `pnpm typecheck`: passed.
 
 Skill gates:
 
@@ -62,4 +72,4 @@ Skill gates:
 
 Next action:
 
-- Slice 02: add memory governance IO schemas.
+- Slice 03: add MemoryRepository methods.
