@@ -139,6 +139,43 @@ const checkPostgres = async (
   }
 };
 
+const findCheckStatus = (
+  checks: readonly DoctorCheck[],
+  label: DoctorCheck["label"]
+): string | undefined => checks.find((check) => check.label === label)?.status;
+
+const deriveBrainStoreReadiness = (postgresChecks: readonly DoctorCheck[]): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Brain store readiness",
+      status: "preview only (set KRN_DATABASE_URL and run migrations for persisted harness state)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Brain store readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus === "available" && migrationStatus === "table present") {
+    return {
+      label: "Brain store readiness",
+      status: "ready"
+    };
+  }
+
+  return {
+    label: "Brain store readiness",
+    status: "incomplete (pgvector and migrations must be ready)"
+  };
+};
+
 const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const agentsPath = path.join(repoRoot, "AGENTS.md");
   const agentsPresent = await pathExists(agentsPath);
@@ -204,8 +241,10 @@ const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
 
 export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
+  const postgresChecks = await checkPostgres(runtime.env.KRN_DATABASE_URL);
   const checks = [
-    ...(await checkPostgres(runtime.env.KRN_DATABASE_URL)),
+    ...postgresChecks,
+    deriveBrainStoreReadiness(postgresChecks),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [

@@ -84,6 +84,11 @@ const capabilityPlan: CapabilityPlan = {
       kind: "evidence_capture",
       reason: "Keep execution reviewable.",
       requiredEvidence: ["git diff --check"]
+    },
+    {
+      kind: "policy_gate",
+      reason: "Weak context must abstain instead of expanding context.",
+      requiredEvidence: ["context abstention"]
     }
   ],
   toolBoundaries: ["Do not invoke Codex from the renderer."],
@@ -136,6 +141,8 @@ describe("renderExecutionBrief", () => {
     expect(brief).toContain("Capability Plan:");
     expect(brief).toContain("type_safety");
     expect(brief).toContain("Evidence Contract:");
+    expect(brief).toContain("- activation-engine");
+    expect(brief).not.toContain("select-kernel-patterns");
     expect(brief).toContain("pnpm typecheck");
     expect(brief).toContain("Diff risk: medium");
     expect(brief).toContain("Next Action: Implement the smallest missing doctor check.");

@@ -49,6 +49,9 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("KRN Doctor");
     expect(result.stdout).toContain("Postgres config: not configured");
+    expect(result.stdout).toContain(
+      "Brain store readiness: preview only (set KRN_DATABASE_URL and run migrations for persisted harness state)"
+    );
     expect(result.stdout).toContain("pgvector: skipped");
     expect(result.stdout).toContain("AGENTS.md: present");
     expect(result.stdout).toContain(".krn runtime truth: absent");
