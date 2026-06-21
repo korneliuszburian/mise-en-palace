@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 02 minimal schema path complete.
+Current slice: Slice 03 repository/readback methods complete.
 
 Completed:
 
@@ -21,6 +21,12 @@ Completed:
   Evidence contract persistence will use typed
   `harness_plans.metadata.evidenceContract` unless implementation falsifies
   that path.
+- Slice 03 added a persisted run aggregate readback port and Drizzle adapter
+  method by `executionRunId`.
+- Slice 03 fixed persisted `feedback_deltas` readback so memory and source
+  candidate arrays are narrowed from JSONB instead of being dropped.
+- Slice 03 added `@krn/db` Vitest coverage and included DB tests in root
+  `pnpm test`.
 
 Verification:
 
@@ -38,6 +44,16 @@ Verification:
 - `docker compose ps krn-postgres`: passed during Slice 02.
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
   passed during Slice 02.
+- RED `pnpm --filter @krn/db test`: failed on `mapFeedbackDelta` returning
+  empty `memoryCandidates`.
+- RED `pnpm --filter @krn/db test`: failed on missing
+  `getHarnessRunByExecutionRunId`.
+- GREEN `pnpm --filter @krn/db test`: passed with 2 tests.
+- `pnpm typecheck`: passed during Slice 03.
+- `pnpm test`: passed during Slice 03, including `@krn/db`.
+- `pnpm --filter @krn/db db:check`: passed during Slice 03.
+- No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
+  and `packages/db/src`: passed.
 
 Skill gates:
 
@@ -47,10 +63,14 @@ Skill gates:
 - Used: `source-to-decision` for Slice 01 local-code evidence decisions.
 - Used: `brain-store-schema` for Slice 02 schema decision.
 - Used: `source-to-decision` for Slice 02 no-migration decision.
-- Not used yet: `typescript-type-safety`, `handoff-compact`,
-  `target-infra-adr`, `activation-engine`.
+- Used: `brain-store-schema` for Slice 03 repository/readback changes.
+- Used: `typescript-type-safety` for Slice 03 JSONB narrowing and public
+  repository type changes.
+- Used: `test-driven-development` for Slice 03 RED/GREEN tests.
+- Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 03: add repository/readback methods for the persisted harness run
-  aggregate and fix feedback delta readback.
+- Slice 04: implement explicit `krn plan --task "..." --persist`, create an
+  execution run identity, persist evidence contract metadata, and print
+  persisted IDs.

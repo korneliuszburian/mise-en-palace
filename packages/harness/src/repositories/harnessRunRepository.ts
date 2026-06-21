@@ -5,6 +5,7 @@ import type {
   EvidenceBundle,
   EvidenceCommand,
   ExecutionRun,
+  ExecutionRunId,
   ExecutionRunStatus,
   FeedbackDelta,
   HarnessPlan,
@@ -19,7 +20,8 @@ import type {
   CreateOperatorIntentInput,
   CreateTaskContractInput,
   NewRunEvent,
-  RepositoryMetadata
+  RepositoryMetadata,
+  RunEventRecord
 } from "./types.js";
 
 export interface CreateContextAssemblyInput extends RepositoryMetadata {
@@ -73,6 +75,18 @@ export interface CreateFeedbackDeltaInput extends RepositoryMetadata {
   evalCandidates: FeedbackDelta["evalCandidates"];
 }
 
+export interface HarnessRunAggregate {
+  operatorIntent: OperatorIntent;
+  taskContract: TaskContract;
+  harnessPlan: HarnessPlan;
+  contextAssembly?: ContextAssembly;
+  executionRun: ExecutionRun;
+  evidenceBundles: EvidenceBundle[];
+  reviewAssessments: ReviewAssessment[];
+  feedbackDeltas: FeedbackDelta[];
+  runEvents: RunEventRecord[];
+}
+
 export interface HarnessRunRepository {
   createOperatorIntent(input: CreateOperatorIntentInput): Promise<OperatorIntent>;
   createTaskContract(input: CreateTaskContractInput): Promise<TaskContract>;
@@ -83,4 +97,7 @@ export interface HarnessRunRepository {
   createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle>;
   createReviewAssessment(input: CreateReviewAssessmentInput): Promise<ReviewAssessment>;
   createFeedbackDelta(input: CreateFeedbackDeltaInput): Promise<FeedbackDelta>;
+  getHarnessRunByExecutionRunId(
+    executionRunId: ExecutionRunId
+  ): Promise<HarnessRunAggregate | undefined>;
 }

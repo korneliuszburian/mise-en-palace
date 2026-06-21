@@ -95,6 +95,26 @@ const operatorIntentSources = new Set<OperatorIntentSource>([
 ]);
 
 const diffRisks = new Set<DiffRisk>(["low", "medium", "high"]);
+const memoryRecordKinds = new Set<MemoryCandidate["kind"]>([
+  "fact",
+  "preference",
+  "constraint",
+  "procedure",
+  "pattern",
+  "risk"
+]);
+const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
+  "candidate",
+  "accepted",
+  "rejected",
+  "applied"
+]);
+const sourceDecisionStatuses = new Set<SourceDecisionEdge["status"]>([
+  "adopt",
+  "reject",
+  "defer",
+  "lab_test"
+]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -154,6 +174,96 @@ const reviewFindingsOrEmpty = (value: unknown): ReviewFinding[] => {
     }
 
     return item.severity === "low" || item.severity === "medium" || item.severity === "high";
+  });
+};
+
+const memoryCandidatesOrEmpty = (value: unknown): MemoryCandidate[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): MemoryCandidate[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    if (
+      typeof item.id !== "string" ||
+      typeof item.projectId !== "string" ||
+      typeof item.proposedBy !== "string" ||
+      !memoryRecordKinds.has(item.kind as MemoryCandidate["kind"]) ||
+      !memoryCandidateStatuses.has(item.status as MemoryCandidate["status"]) ||
+      typeof item.summary !== "string" ||
+      typeof item.body !== "string" ||
+      typeof item.owner !== "string" ||
+      typeof item.confidence !== "number" ||
+      typeof item.applicationGuidance !== "string" ||
+      typeof item.isUserPreference !== "boolean" ||
+      typeof item.createdAt !== "string" ||
+      typeof item.updatedAt !== "string"
+    ) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      projectId: item.projectId,
+      proposedBy: item.proposedBy,
+      kind: item.kind as MemoryCandidate["kind"],
+      status: item.status as MemoryCandidate["status"],
+      summary: item.summary,
+      body: item.body,
+      owner: item.owner,
+      confidence: item.confidence,
+      applicationGuidance: item.applicationGuidance,
+      sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
+      isUserPreference: item.isUserPreference,
+      ...(typeof item.rejectionReason === "string"
+        ? { rejectionReason: item.rejectionReason }
+        : {}),
+      metadata: metadataOrEmpty(item.metadata),
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }];
+  });
+};
+
+const sourceDecisionsOrEmpty = (value: unknown): SourceDecisionEdge[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): SourceDecisionEdge[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    if (
+      typeof item.id !== "string" ||
+      !sourceDecisionStatuses.has(item.status as SourceDecisionEdge["status"]) ||
+      typeof item.decision !== "string" ||
+      typeof item.rationale !== "string" ||
+      typeof item.falsifier !== "string" ||
+      typeof item.consumer !== "string" ||
+      typeof item.createdAt !== "string" ||
+      typeof item.updatedAt !== "string"
+    ) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
+      ...(typeof item.sourceClaimId === "string" ? { sourceClaimId: item.sourceClaimId } : {}),
+      status: item.status as SourceDecisionEdge["status"],
+      decision: item.decision,
+      rationale: item.rationale,
+      falsifier: item.falsifier,
+      consumer: item.consumer,
+      metadata: metadataOrEmpty(item.metadata),
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt
+    }];
   });
 };
 
@@ -392,8 +502,8 @@ export const mapFeedbackDelta = (
   id: row.id,
   reviewAssessmentId: row.reviewAssessmentId,
   status: row.status,
-  memoryCandidates: [],
-  sourceDecisions: [],
+  memoryCandidates: memoryCandidatesOrEmpty(row.memoryCandidates),
+  sourceDecisions: sourceDecisionsOrEmpty(row.sourceDecisions),
   evalCandidates: evalCandidatesOrEmpty(row.evalCandidates),
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt),

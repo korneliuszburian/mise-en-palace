@@ -13,9 +13,8 @@ Known unproven M21 behavior:
   identity output yet.
 - `krn evidence capture --run-id <id> --persist` is not implemented or proven
   for evidence bundle, review assessment, and feedback delta persistence yet.
-- No readback method exists for a full persisted harness run aggregate yet.
-- Persisted feedback delta readback would currently drop memory and source
-  candidate arrays.
+- Live persisted run aggregate readback is not proven yet because `krn plan`
+  does not create an execution run.
 - Linked cleanup/readback proof for the persisted harness loop is not recorded
   yet.
 

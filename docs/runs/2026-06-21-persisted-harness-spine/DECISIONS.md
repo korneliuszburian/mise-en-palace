@@ -31,9 +31,10 @@
   should be the explicit DB write path.
 - Add readback repository surface for a persisted run aggregate before claiming
   M21 proof.
-- Fix persisted feedback delta readback before relying on it:
-  `mapFeedbackDelta` currently drops `memoryCandidates` and `sourceDecisions`
-  from stored rows.
+- Readback identity is keyed by `executionRunId`, because this is the natural
+  `--run-id` for future `krn evidence capture --run-id <id> --persist`.
+- Persisted feedback delta readback now narrows `memoryCandidates` and
+  `sourceDecisions` from JSONB instead of dropping them.
 
 Slice 00 skill record:
 
@@ -65,3 +66,13 @@ Slice 02 skill record:
 - `target-infra-adr`: not used; no new storage, queue, worker, package, or
   runtime authority was added.
 - `activation-engine`: not used; no activation behavior change in Slice 02.
+
+Slice 03 skill record:
+
+- `brain-store-schema`: used for repository aggregate and mapper changes.
+- `typescript-type-safety`: used for public repository type changes and JSONB
+  narrowing.
+- `test-driven-development`: used; RED tests failed before implementation and
+  passed after.
+- `evidence-review-loop`: used for command evidence and residual risk.
+- `target-infra-adr`: not used; no new runtime surface was added.

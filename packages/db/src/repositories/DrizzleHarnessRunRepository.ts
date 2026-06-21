@@ -1,4 +1,8 @@
-import { eq } from "drizzle-orm";
+import {
+  asc,
+  eq,
+  inArray
+} from "drizzle-orm";
 import type {
   ContextAssembly,
   EvidenceBundle,
@@ -18,6 +22,7 @@ import type {
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
   CreateTaskContractInput,
+  HarnessRunAggregate,
   HarnessRunRepository,
   UpdateExecutionRunStatusInput
 } from "@krn/harness";
@@ -46,9 +51,18 @@ import {
   mapFeedbackDelta,
   mapHarnessPlan,
   mapOperatorIntent,
+  mapRunEvent,
   mapReviewAssessment,
   mapTaskContract
 } from "./mappers.js";
+
+const requireLinkedRow = <T>(row: T | undefined, operation: string): T => {
+  if (row === undefined) {
+    throw new Error(`${operation} did not find a linked row`);
+  }
+
+  return row;
+};
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(private readonly db: KrnDatabase) {}
@@ -284,5 +298,74 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
         evalCandidates: input.evalCandidates
       };
     });
+  }
+
+  async getHarnessRunByExecutionRunId(
+    executionRunId: string
+  ): Promise<HarnessRunAggregate | undefined> {
+    const executionRunRow = await this.db.query.executionRuns.findFirst({
+      where: eq(executionRuns.id, executionRunId)
+    });
+
+    if (executionRunRow === undefined) {
+      return undefined;
+    }
+
+    const harnessPlanRow = requireLinkedRow(
+      await this.db.query.harnessPlans.findFirst({
+        where: eq(harnessPlans.id, executionRunRow.harnessPlanId)
+      }),
+      "getHarnessRunByExecutionRunId.harnessPlan"
+    );
+    const taskContractRow = requireLinkedRow(
+      await this.db.query.taskContracts.findFirst({
+        where: eq(taskContracts.id, harnessPlanRow.taskContractId)
+      }),
+      "getHarnessRunByExecutionRunId.taskContract"
+    );
+    const operatorIntentRow = requireLinkedRow(
+      await this.db.query.operatorIntents.findFirst({
+        where: eq(operatorIntents.id, taskContractRow.operatorIntentId)
+      }),
+      "getHarnessRunByExecutionRunId.operatorIntent"
+    );
+    const contextAssemblyRow = await this.db.query.contextAssemblies.findFirst({
+      where: eq(contextAssemblies.harnessPlanId, harnessPlanRow.id)
+    });
+    const evidenceBundleRows = await this.db.query.evidenceBundles.findMany({
+      where: eq(evidenceBundles.executionRunId, executionRunId)
+    });
+    const evidenceBundleIds = evidenceBundleRows.map((row) => row.id);
+    const reviewAssessmentRows =
+      evidenceBundleIds.length === 0
+        ? []
+        : await this.db.query.reviewAssessments.findMany({
+            where: inArray(reviewAssessments.evidenceBundleId, evidenceBundleIds)
+          });
+    const reviewAssessmentIds = reviewAssessmentRows.map((row) => row.id);
+    const feedbackDeltaRows =
+      reviewAssessmentIds.length === 0
+        ? []
+        : await this.db.query.feedbackDeltas.findMany({
+            where: inArray(feedbackDeltas.reviewAssessmentId, reviewAssessmentIds)
+          });
+    const runEventRows = await this.db.query.runEvents.findMany({
+      where: eq(runEvents.executionRunId, executionRunId),
+      orderBy: asc(runEvents.sequence)
+    });
+    const contextAssembly =
+      contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
+
+    return {
+      operatorIntent: mapOperatorIntent(operatorIntentRow),
+      taskContract: mapTaskContract(taskContractRow),
+      harnessPlan: mapHarnessPlan(harnessPlanRow),
+      ...(contextAssembly === undefined ? {} : { contextAssembly }),
+      executionRun: mapExecutionRun(executionRunRow),
+      evidenceBundles: evidenceBundleRows.map(mapEvidenceBundle),
+      reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
+      feedbackDeltas: feedbackDeltaRows.map(mapFeedbackDelta),
+      runEvents: runEventRows.map(mapRunEvent)
+    };
   }
 }

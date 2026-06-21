@@ -161,6 +161,10 @@ class FakeHarnessRunRepository implements HarnessRunRepository {
   async createFeedbackDelta(_input: CreateFeedbackDeltaInput): Promise<FeedbackDelta> {
     throw new Error("not used by compiler");
   }
+
+  async getHarnessRunByExecutionRunId(): Promise<never> {
+    throw new Error("not used by compiler");
+  }
 }
 
 class FakeMemoryRepository implements MemoryRepository {

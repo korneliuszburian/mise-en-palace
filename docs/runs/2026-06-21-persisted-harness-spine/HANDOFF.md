@@ -5,12 +5,12 @@ Persist the first KRN harness run spine through the existing Postgres/Drizzle
 infrastructure.
 
 Last verified state:
-Slice 02 minimal schema path is complete. Slice 01 confirmed existing
-tables/repository writes and current CLI/readback gaps. Slice 02 decided no new
-migration is needed now; evidence contract expectations should be persisted as
-typed `harness_plans.metadata.evidenceContract` unless implementation falsifies
-that path. `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`, `pnpm --filter
-@krn/db db:check`, and live `pnpm db:ready` passed during M21 so far.
+Slice 03 repository/readback is complete. The harness repository port now has a
+persisted run aggregate readback by `executionRunId`, the Drizzle adapter
+implements it, and `mapFeedbackDelta` preserves memory/source/eval candidates
+from persisted JSONB. `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`,
+`pnpm --filter @krn/db db:check`, and live `pnpm db:ready` passed during M21 so
+far.
 
 Changed files:
 
@@ -24,18 +24,28 @@ Changed files:
 - `docs/runs/2026-06-21-persisted-harness-spine/VERIFICATION.md`
 - `docs/runs/2026-06-21-persisted-harness-spine/HARNESS_PERSISTENCE_INVENTORY.md`
 - `docs/runs/2026-06-21-persisted-harness-spine/SCHEMA_DECISION.md`
+- `packages/harness/src/repositories/harnessRunRepository.ts`
+- `packages/harness/src/compiler/index.test.ts`
+- `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`
+- `packages/db/src/repositories/DrizzleHarnessRunRepository.test.ts`
+- `packages/db/src/repositories/mappers.ts`
+- `packages/db/src/repositories/mappers.test.ts`
+- `packages/db/package.json`
+- `packages/db/tsconfig.json`
+- `pnpm-lock.yaml`
 
 Decisions:
 M21 starts from the completed M20 local DB proof. The write path must be explicit
 through `--persist`; preview/no-store behavior remains valid without DB config.
 Repo-local skills are gates for matching work, not decorative references.
 The primary harness spine tables already exist. No new migration is needed for
-Slice 02; use typed `harness_plans.metadata.evidenceContract` first.
+Slice 02; use typed `harness_plans.metadata.evidenceContract` first. Repository
+readback is keyed by `executionRunId`.
 
 Blockers/risks:
-No Slice 01 blocker. Persisted plan/evidence/review/feedback behavior is not
-implemented yet. Readback by run ID and persisted feedback delta mapper behavior
-are known gaps.
+No Slice 03 blocker. Persisted plan/evidence/review/feedback CLI behavior is
+not implemented yet. Live run aggregate readback remains unproven until
+`krn plan --persist` creates an execution run.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -45,8 +55,9 @@ schema/migrations/repositories, CLI `plan`/`doctor`/`evidence capture`, and
 harness/core types directly touched by the next slice.
 
 Next action:
-Slice 03: add repository/readback methods for the persisted harness run
-aggregate and fix feedback delta readback.
+Slice 04: implement explicit `krn plan --task "..." --persist`, create an
+execution run identity, persist evidence contract metadata, and print persisted
+IDs.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

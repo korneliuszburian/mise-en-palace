@@ -44,3 +44,21 @@ Slice 02 schema decision:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
   passed with migrations expected `3`, applied `3`, pgvector available, and
   brain-store readiness ready.
+
+Slice 03 repository/readback:
+
+- Initial `pnpm --filter @krn/db test`: failed because the new DB package test
+  script needed workspace links after adding `vitest`.
+- `pnpm install`: passed and refreshed workspace links.
+- RED `pnpm --filter @krn/db test`: failed as expected because
+  `mapFeedbackDelta` returned empty `memoryCandidates`.
+- RED `pnpm --filter @krn/db test`: failed as expected because
+  `DrizzleHarnessRunRepository.prototype.getHarnessRunByExecutionRunId` was
+  missing.
+- GREEN `pnpm --filter @krn/db test`: passed with 2 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests, now including `@krn/db`.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle schema and migrations
+  remain consistent.
+- `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
+  packages/db/src`: passed with no matches.
