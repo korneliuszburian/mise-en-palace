@@ -13,3 +13,10 @@
 - Require the matching repo-local operational skills in `GOAL.md` for this
   goal: `brain-store-schema`, `target-infra-adr`, `typescript-type-safety`, and
   `handoff-compact`.
+- Keep `KRN_DATABASE_URL` as the canonical DB runtime variable. Current code
+  already uses it in `krn plan`, `krn doctor`, and `krn evidence capture`.
+- Treat existing migrations as generated schema artifacts, not live runtime
+  proof. M20 still needs a command that applies or verifies them against a
+  reachable DB.
+- Treat doctor migration status as incomplete until it checks more than the
+  existence of `__drizzle_migrations`.
