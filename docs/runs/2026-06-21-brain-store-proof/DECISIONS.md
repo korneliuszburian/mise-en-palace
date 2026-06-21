@@ -49,3 +49,6 @@
   the repository adapter path, not only raw SQL.
 - Cleanup deletes the smoke workspace and relies on existing cascade behavior
   to remove the smoke project.
+- Close the M20 runtime residual in `docs/handoff/blockers.md`; remaining full
+  evidence/memory/source/eval persistence and worker execution are later scope,
+  not blockers for this local brain-store proof.

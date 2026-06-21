@@ -1,33 +1,37 @@
 # Handoff
 
 Objective:
-Finish `GOAL.md` by completing M19 final handoff and verification.
+M20 proves the local KRN brain-store runtime path: config, local pgvector
+Postgres, migrations, doctor readiness, and minimal persistence smoke.
 
 Last verified state:
-M19 final verification passed after these handoff docs were added:
-`pnpm typecheck`, `pnpm test`, `krn plan`, `krn doctor`,
-`krn evidence capture`, directory scan, `requiredSkills` search, and targeted
-forbidden-surface checks.
+M20 Slices 00-05 are committed and pushed through
+`ff2222c test(db): add brain-store persistence smoke path`. Final audit passed
+with `pnpm typecheck`, `pnpm test`, no-env doctor, live-DB doctor, `pnpm
+db:ready`, `pnpm db:smoke`, and direct smoke cleanup count `0`.
 
 Changed files:
-`docs/handoff/progress.md`, `docs/handoff/handoff.md`,
-`docs/handoff/decisions.md`, `docs/handoff/blockers.md`,
-`docs/handoff/verification.md`, `GOAL.md`, and `PLAN.md`.
+Current final slice changes are the handoff docs, `PLAN.md`, and the current run
+ledger under `docs/runs/2026-06-21-brain-store-proof/`.
 
 Decisions:
-Keep this handoff set short. `PLAN.md` remains the living execution map.
+`KRN_DATABASE_URL` is canonical. `pnpm db:ready` is the mutating migration
+readiness proof. `pnpm db:smoke` is the minimal persistence proof. `krn doctor`
+stays read-only and reports exact readiness from inspection only.
 
 Blockers/risks:
-No hard blocker. Live Postgres persistence is not proven because
-`KRN_DATABASE_URL` is absent in this local runtime.
+No M20 local DB runtime proof blocker remains. Full evidence/memory/source/eval
+persistence and worker execution are later scope, not M20 blockers.
 
 Context selectors:
-`PLAN.md` M19, `GOAL.md`, `docs/KRN_KERNEL.md`,
-`docs/runs/2026-06-21-first-postgres-backed-harness-dogfood.md`.
+`GOAL.md`, `PLAN.md`, `docs/handoff/verification.md`,
+`docs/handoff/blockers.md`, `docs/runbooks/local-brain-store.md`, and
+`docs/runs/2026-06-21-brain-store-proof/`.
 
 Next action:
-Commit `docs(run): add final KRN infra handoff`, push, then mark the active
-goal complete if the completion audit still passes.
+Commit `docs(handoff): update brain-store proof status`, push, and return final
+M20 status.
 
 Do not reread:
-`docs/materials/` unless a future task asks for raw source/audit material.
+`docs/materials/` or broad historical docs unless a future task explicitly asks
+for raw source/audit material.

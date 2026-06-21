@@ -5,9 +5,10 @@ Prove local KRN brain-store runtime: DB config, migrations, pgvector, minimal
 persistence smoke path, and actionable `krn doctor` readiness.
 
 Last verified state:
-Slice 05 persistence smoke passed: RED/GREEN CLI test, `pnpm typecheck`,
-missing-env `pnpm db:smoke`, live-DB `pnpm db:smoke`, direct cleanup check, and
-full `pnpm test`.
+Slice 06 final audit passed before handoff edits: clean `git status`, recent
+M20 commit log, healthy local Compose DB, `pnpm typecheck`, `pnpm test`,
+no-env doctor, live-DB doctor, `pnpm db:ready`, `pnpm db:smoke`, and direct
+smoke cleanup count `0`.
 
 Changed files:
 
@@ -28,6 +29,11 @@ Changed files:
 - `packages/db/src/migrationReadiness.ts`
 - `packages/db/src/persistenceSmoke.ts`
 - `docs/runs/2026-06-21-brain-store-proof/DB_RUNTIME_INVENTORY.md`
+- `docs/handoff/blockers.md`
+- `docs/handoff/verification.md`
+- `docs/handoff/handoff.md`
+- `docs/handoff/progress.md`
+- `docs/handoff/decisions.md`
 - `docs/runs/2026-06-21-brain-store-proof/PROGRESS.md`
 - `docs/runs/2026-06-21-brain-store-proof/HANDOFF.md`
 - `docs/runs/2026-06-21-brain-store-proof/DECISIONS.md`
@@ -68,8 +74,8 @@ and reports cleanup completed. Direct DB check confirmed zero `krn-smoke-%`
 workspaces remained after the live smoke run.
 
 Blockers/risks:
-No local DB runtime proof blocker remains after Slice 05. Slice 06 still needs
-handoff/blocker docs closure.
+No local DB runtime proof blocker remains. Full evidence/memory/source/eval
+persistence and worker execution remain later scope.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -77,7 +83,8 @@ Context selectors:
 and DB schema/migration files.
 
 Next action:
-Run Slice 06 and close handoff/blocker status.
+Commit `docs(handoff): update brain-store proof status`, push, and return final
+M20 status.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

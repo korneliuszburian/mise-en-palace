@@ -89,6 +89,26 @@ Slice 05 persistence smoke checks:
   from workspaces where slug like 'krn-smoke-%';"`: passed and returned `0`.
 - `pnpm test`: passed across workspace tests.
 
-Next verification:
+Slice 06 final audit:
 
-- Slice 06 should run final audit commands and update handoff docs.
+- `git status --short --branch`: passed; clean `main...origin/main` before
+  final handoff edits.
+- `git log --oneline -8`: passed; latest commits covered M20 Slices 00-05.
+- `docker compose ps krn-postgres`: passed; local pgvector Postgres was
+  healthy on host port `54329`.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
+  preview-only persisted brain-store readiness.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with Postgres reachable, pgvector available,
+  migrations `verified (3/3 applied)`, and brain-store readiness ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected `3`, applied `3`, pgvector available, and
+  brain-store readiness ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed with project readback matched, cleanup completed, and persistence
+  smoke passed.
+- `docker compose exec -T krn-postgres psql -U krn -d krn -tAc "select count(*)
+  from workspaces where slug like 'krn-smoke-%';"`: passed and returned `0`.
+- `git diff --check`: passed after final handoff docs were updated.

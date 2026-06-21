@@ -18,6 +18,7 @@ Closed in Slice 03:
   applying migrations.
 - Minimal runtime persistence smoke path proved insert/read/cleanup through the
   Drizzle project repository path.
+- Final handoff docs now record the M20 blocker closure.
 
 Explicit non-blockers:
 

@@ -3,7 +3,7 @@
 Goal: prove the local KRN brain-store runtime path without expanding product
 scope.
 
-Current slice: Slice 05 minimal persistence smoke path complete and verified.
+Current slice: Slice 06 handoff and blocker closure complete and verified.
 
 Preflight state:
 
@@ -86,6 +86,15 @@ Persistence smoke state:
   completed.
 - Direct DB cleanup check returned `0` rows for `krn-smoke-%` workspaces.
 
+Final handoff state:
+
+- `docs/handoff/blockers.md` marks the M20 local DB runtime proof blockers
+  closed.
+- `docs/handoff/verification.md` records the final audit and live DB proof.
+- `docs/handoff/handoff.md` records compact continuation state.
+- `docs/handoff/progress.md` and `docs/handoff/decisions.md` were refreshed to
+  the current M20 runtime truth.
+
 Next slice:
 
-- Slice 06 handoff and blocker closure.
+- Commit and push final M20 handoff update.

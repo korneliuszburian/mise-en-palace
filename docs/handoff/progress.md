@@ -1,34 +1,25 @@
 # Progress
 
-Current phase: final KRN harness spine complete pending commit/push.
+Current phase: M20 local brain-store runtime proof complete; final handoff
+commit and push are the remaining repository hygiene step.
 
-Completed:
+Completed in M20:
 
-- Postgres/pgvector Drizzle schema and migrations for harness, memory, source,
-  retrieval, run events, outbox, and worker jobs.
-- Zod IO schemas for unknown-input boundaries.
-- Pure core domain model with Codex kept at the adapter edge.
-- Harness repository ports, activation engine, context assembly, compiler, and
-  evidence contract.
-- Codex execution brief renderer.
-- CLI vertical path: `krn plan --task`, `krn doctor`, and `krn evidence capture`.
-- Maintenance worker job skeleton with enqueue/outbox handoff.
-- Repo-local operational skills aligned to the harness spine.
-- First KRN-on-KRN dogfood run recorded in
-  `docs/runs/2026-06-21-first-postgres-backed-harness-dogfood.md`.
+- Run ledger created under `docs/runs/2026-06-21-brain-store-proof/`.
+- DB runtime inventory recorded.
+- Local Postgres/pgvector setup path added.
+- `pnpm db:ready` added for migration readiness and pgvector proof.
+- `krn doctor` refined to report exact read-only brain-store readiness.
+- `pnpm db:smoke` added for minimal insert/read/cleanup persistence proof.
+- Local live DB proof passed with migrations expected/applied `3/3`, pgvector
+  available, doctor ready, and smoke cleanup verified.
 
 Current runtime truth:
 
-- `KRN_DATABASE_URL` is not configured locally, so CLI runtime proof is
-  no-store preview, not persisted harness state.
-- `krn doctor` reports brain-store readiness as preview-only until Postgres,
-  pgvector, and migrations are live.
-
-Final verification:
-
-- `pnpm typecheck`, `pnpm test`, `krn plan`, `krn doctor`, `krn evidence
-  capture`, and forbidden-surface checks passed on 2026-06-21.
+- No-store CLI preview remains valid when `KRN_DATABASE_URL` is absent.
+- With `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn` and Compose
+  Postgres running, the local brain-store runtime path is proven.
 
 Next action:
 
-- Commit and push M19, then run goal completion audit.
+- Commit and push the final M20 handoff update.
