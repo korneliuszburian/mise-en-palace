@@ -6,9 +6,9 @@ Hard blockers:
 
 Known unproven M21 behavior:
 
-- Evidence contract persistence has no first-class table or field yet; Slice 02
-  must decide whether typed `harness_plans.metadata.evidenceContract` is enough
-  or whether a migration is required.
+- Evidence contract persistence is decided but not implemented yet:
+  use typed `harness_plans.metadata.evidenceContract` unless repository/CLI
+  implementation falsifies that path.
 - `krn plan --persist` is not implemented or proven for persisted harness
   identity output yet.
 - `krn evidence capture --run-id <id> --persist` is not implemented or proven

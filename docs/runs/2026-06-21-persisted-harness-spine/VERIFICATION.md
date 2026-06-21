@@ -31,3 +31,16 @@ Slice 01 inventory:
 - `pnpm --filter @krn/db db:check`: passed; Drizzle reported schema and
   migrations are consistent.
 - `pnpm typecheck`: passed across workspace projects.
+
+Slice 02 schema decision:
+
+- `git status --short --branch`: passed; clean `main...origin/main` at
+  `7b04a6c docs(run): record harness persistence inventory` before docs edits.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle schema and migrations
+  remain consistent.
+- `pnpm typecheck`: passed across workspace projects.
+- `docker compose ps krn-postgres`: passed; local `krn-postgres` was healthy on
+  host port `54329`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected `3`, applied `3`, pgvector available, and
+  brain-store readiness ready.

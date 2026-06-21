@@ -5,11 +5,12 @@ Persist the first KRN harness run spine through the existing Postgres/Drizzle
 infrastructure.
 
 Last verified state:
-Slice 01 inventory is complete. Slice 00 preflight passed from clean
-`main...origin/main` at `a312afe docs(goal): define persisted harness spine`.
-Slice 01 confirmed existing tables/repository writes and current CLI/readback
-gaps. `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`, and `pnpm --filter
-@krn/db db:check` passed during M21 so far.
+Slice 02 minimal schema path is complete. Slice 01 confirmed existing
+tables/repository writes and current CLI/readback gaps. Slice 02 decided no new
+migration is needed now; evidence contract expectations should be persisted as
+typed `harness_plans.metadata.evidenceContract` unless implementation falsifies
+that path. `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`, `pnpm --filter
+@krn/db db:check`, and live `pnpm db:ready` passed during M21 so far.
 
 Changed files:
 
@@ -22,13 +23,14 @@ Changed files:
 - `docs/runs/2026-06-21-persisted-harness-spine/BLOCKERS.md`
 - `docs/runs/2026-06-21-persisted-harness-spine/VERIFICATION.md`
 - `docs/runs/2026-06-21-persisted-harness-spine/HARNESS_PERSISTENCE_INVENTORY.md`
+- `docs/runs/2026-06-21-persisted-harness-spine/SCHEMA_DECISION.md`
 
 Decisions:
 M21 starts from the completed M20 local DB proof. The write path must be explicit
 through `--persist`; preview/no-store behavior remains valid without DB config.
 Repo-local skills are gates for matching work, not decorative references.
-The primary harness spine tables already exist; the remaining schema question is
-where to persist the evidence contract.
+The primary harness spine tables already exist. No new migration is needed for
+Slice 02; use typed `harness_plans.metadata.evidenceContract` first.
 
 Blockers/risks:
 No Slice 01 blocker. Persisted plan/evidence/review/feedback behavior is not
@@ -43,8 +45,8 @@ schema/migrations/repositories, CLI `plan`/`doctor`/`evidence capture`, and
 harness/core types directly touched by the next slice.
 
 Next action:
-Slice 02: decide the minimal evidence contract persistence path and add only the
-missing schema/migration if the typed metadata path is not sufficient.
+Slice 03: add repository/readback methods for the persisted harness run
+aggregate and fix feedback delta readback.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

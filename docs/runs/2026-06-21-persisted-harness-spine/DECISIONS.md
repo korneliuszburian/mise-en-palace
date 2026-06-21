@@ -23,6 +23,9 @@
 - Treat evidence contract persistence as the only schema question. The default
   minimal path is a typed `harness_plans.metadata.evidenceContract` field; add a
   dedicated table only if independent lifecycle/querying becomes necessary.
+- Slice 02 adopted that default: no new migration now; persist evidence
+  contract expectations through typed `harness_plans.metadata.evidenceContract`
+  during the `--persist` implementation.
 - Change CLI write semantics in implementation: `krn plan --task "..."` should
   remain preview/no-store by default, and `krn plan --task "..." --persist`
   should be the explicit DB write path.
@@ -53,3 +56,12 @@ Slice 01 skill record:
 - `target-infra-adr`: not used; inventory reuses the existing Postgres/Drizzle
   boundary.
 - `activation-engine`: not used; no activation behavior change in Slice 01.
+
+Slice 02 skill record:
+
+- `brain-store-schema`: used for the no-migration schema decision.
+- `source-to-decision`: used to map local inventory and DB verification into a
+  decision.
+- `target-infra-adr`: not used; no new storage, queue, worker, package, or
+  runtime authority was added.
+- `activation-engine`: not used; no activation behavior change in Slice 02.

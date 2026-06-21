@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 01 harness persistence inventory complete.
+Current slice: Slice 02 minimal schema path complete.
 
 Completed:
 
@@ -17,6 +17,10 @@ Completed:
 - Slice 01 inventory recorded current DB tables, repository methods, CLI gaps,
   migration need, and source-to-decision mappings in
   `HARNESS_PERSISTENCE_INVENTORY.md`.
+- Slice 02 decided no new migration is needed for the primary M21 spine.
+  Evidence contract persistence will use typed
+  `harness_plans.metadata.evidenceContract` unless implementation falsifies
+  that path.
 
 Verification:
 
@@ -29,6 +33,11 @@ Verification:
   preview-only brain-store readiness.
 - `pnpm --filter @krn/db db:check`: passed during Slice 01.
 - `pnpm typecheck`: passed again during Slice 01.
+- `pnpm --filter @krn/db db:check`: passed during Slice 02.
+- `pnpm typecheck`: passed during Slice 02.
+- `docker compose ps krn-postgres`: passed during Slice 02.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed during Slice 02.
 
 Skill gates:
 
@@ -36,10 +45,12 @@ Skill gates:
 - Used: `evidence-review-loop` for Slice 00 command evidence and ledger shape.
 - Used: `brain-store-schema` for Slice 01 schema/repository inventory.
 - Used: `source-to-decision` for Slice 01 local-code evidence decisions.
+- Used: `brain-store-schema` for Slice 02 schema decision.
+- Used: `source-to-decision` for Slice 02 no-migration decision.
 - Not used yet: `typescript-type-safety`, `handoff-compact`,
   `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 02: decide and apply the minimal schema path for evidence contract
-  persistence, if any migration is needed.
+- Slice 03: add repository/readback methods for the persisted harness run
+  aggregate and fix feedback delta readback.
