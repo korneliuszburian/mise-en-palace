@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 08.
+- None through Slice 09.
 
 Known unproven M23 behavior:
 
-- `krn evidence capture` does not yet emit memory candidates.
 - `krn doctor` does not yet report memory governance readiness.
 - M23 dogfood is not recorded yet.
 - M23 final anti-rot and handoff are not recorded yet.
@@ -81,4 +80,14 @@ Closed in Slice 08:
   persist AntiMemoryRecord through MemoryRepository.
 - Anti-memory persist validates the invalidating SourceClaim when
   `--invalidated-by-source-claim-id` is provided and does not create a positive
+  MemoryRecord.
+
+Closed in Slice 09:
+
+- `krn evidence capture` now emits `memoryCandidates`.
+- Evidence-derived memory candidates are proposal-only and marked incomplete
+  when `applicationGuidance`, `sourceLineage`, or `invalidationRule` are
+  missing.
+- Persisted evidence capture stores the proposal in `FeedbackDelta` but does
+  not create a MemoryCandidate row, promote a candidate, or create a
   MemoryRecord.

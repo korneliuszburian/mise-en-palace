@@ -99,6 +99,15 @@
 - Slice 08 validates the invalidating SourceClaim before persist when
   `--invalidated-by-source-claim-id` is provided and also stores that ID in
   source lineage.
+- Slice 09 keeps `krn evidence capture` proposal-only for memory. Changed-file
+  evidence can create an incomplete FeedbackDelta memory candidate proposal,
+  but evidence capture does not call MemoryRepository, does not create a
+  `memory_candidates` row, does not promote, and does not create a
+  MemoryRecord.
+- Slice 09 marks evidence-derived memory proposals incomplete when
+  `applicationGuidance`, `sourceLineage`, or `invalidationRule` are not
+  available. This preserves the M23 source-grounding contract instead of
+  inventing source lineage from git status.
 
 Slice 00 skill record:
 
@@ -192,3 +201,16 @@ Slice 08 skill record:
   tests.
 - `superpowers:verification-before-completion`: used before committing and
   pushing Slice 08.
+
+Slice 09 skill record:
+
+- `evidence-review-loop`: used for evidence capture, FeedbackDelta proposal
+  behavior, and no automatic memory mutation.
+- `brain-store-schema`: used for the Postgres-backed FeedbackDelta persistence
+  boundary and to keep MemoryRepository untouched.
+- `typescript-type-safety`: used for the internal memory proposal type and
+  strict `MemoryCandidate` materialization at the feedback delta boundary.
+- `superpowers:test-driven-development`: used for RED/GREEN CLI evidence
+  capture tests.
+- `superpowers:verification-before-completion`: used before committing and
+  pushing Slice 09.

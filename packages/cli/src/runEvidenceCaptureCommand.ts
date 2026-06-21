@@ -7,6 +7,7 @@ import {
 import type {
   DiffRisk,
   EvidenceCommand,
+  MemoryCandidate,
   SourceDecision
 } from "@krn/core";
 import {
@@ -42,6 +43,21 @@ interface PersistedEvidenceIdentity {
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
+}
+
+interface MemoryCandidateProposal {
+  id: string;
+  kind: MemoryCandidate["kind"];
+  status: MemoryCandidate["status"];
+  summary: string;
+  body: string;
+  owner: string;
+  confidence: number;
+  sourceLineage: MemoryCandidate["sourceLineage"];
+  missingFields: string[];
+  createdAt: string;
+  updatedAt: string;
+  metadata: Record<string, unknown>;
 }
 
 const defaultWorkspaceSlug = "local";
@@ -127,6 +143,42 @@ const buildSourceDecisionCandidates = (
   }];
 };
 
+const buildMemoryCandidateProposals = (
+  runtime: Pick<EvidenceCaptureRuntime, "createId" | "now">,
+  changedFiles: readonly ChangedFile[]
+): MemoryCandidateProposal[] => {
+  if (changedFiles.length === 0) {
+    return [];
+  }
+
+  const timestamp = runtime.now();
+  const changedFilePaths = changedFiles.map((file) => file.path);
+  const missingFields = ["applicationGuidance", "sourceLineage", "invalidationRule"];
+
+  return [{
+    id: runtime.createId("memory-candidate-proposal"),
+    kind: "pattern",
+    status: "proposed",
+    summary: "Review changed files for reusable memory.",
+    body: `Changed files may contain reusable KRN operating knowledge: ${changedFilePaths.join(", ")}`,
+    owner: "krn-cli",
+    confidence: 50,
+    sourceLineage: [],
+    missingFields,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    metadata: {
+      candidateType: "memoryCandidateProposal",
+      changedFiles: changedFilePaths,
+      changedFileCount: changedFilePaths.length,
+      completeness: "incomplete",
+      missingFields,
+      persistence: "feedback-delta-proposal-only",
+      promotion: "manual-only"
+    }
+  }];
+};
+
 const defaultCommands = (): EvidenceCommand[] => [
   {
     command: "pnpm typecheck",
@@ -171,12 +223,57 @@ const renderSourceDecisionCandidates = (
   ]);
 };
 
+const renderMemoryCandidateProposals = (
+  proposals: readonly MemoryCandidateProposal[]
+): string[] => {
+  if (proposals.length === 0) {
+    return ["- none"];
+  }
+
+  return proposals.flatMap((proposal) => [
+    `- ${proposal.id}: ${proposal.summary}`,
+    `  status: ${proposal.status}`,
+    `  kind: ${proposal.kind}`,
+    "  completeness: incomplete",
+    `  missing: ${proposal.missingFields.join(", ")}`,
+    "  No MemoryCandidate row created",
+    "  No MemoryRecord created"
+  ]);
+};
+
+const materializeFeedbackDeltaMemoryCandidate = (
+  proposal: MemoryCandidateProposal,
+  projectId: string,
+  executionRunId: string
+): MemoryCandidate => ({
+  id: proposal.id,
+  projectId,
+  executionRunId,
+  proposedBy: "krn evidence capture",
+  kind: proposal.kind,
+  status: proposal.status,
+  summary: proposal.summary,
+  body: proposal.body,
+  owner: proposal.owner,
+  confidence: proposal.confidence,
+  applicationGuidance:
+    "Incomplete proposal: define concrete application guidance before creating a MemoryCandidate row.",
+  sourceClaimIds: [],
+  sourceLineage: proposal.sourceLineage,
+  isUserPreference: false,
+  validFrom: proposal.createdAt,
+  metadata: proposal.metadata,
+  createdAt: proposal.createdAt,
+  updatedAt: proposal.updatedAt
+});
+
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
   commands: EvidenceCommand[],
   diffRisk: DiffRisk,
-  sourceDecisionCandidates: readonly SourceDecision[]
+  sourceDecisionCandidates: readonly SourceDecision[],
+  memoryCandidateProposals: readonly MemoryCandidateProposal[]
 ): Promise<PersistedEvidenceIdentity> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
   const runId = runtime.runId?.trim();
@@ -243,15 +340,24 @@ const persistEvidenceCapture = async (
         changedFileCount: changedFiles.length
       }
     });
+    const memoryCandidates = memoryCandidateProposals.map((proposal) =>
+      materializeFeedbackDeltaMemoryCandidate(
+        proposal,
+        databaseRuntime.projectId,
+        runId
+      )
+    );
     const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta({
       reviewAssessmentId: reviewAssessment.id,
       status: "candidate",
-      memoryCandidates: [],
+      memoryCandidates,
       sourceDecisions: [...sourceDecisionCandidates],
       evalCandidates: [],
       metadata: {
         runId,
         changedFileCount: changedFiles.length,
+        memoryCandidateProposalCount: memoryCandidates.length,
+        memoryCandidateRowCount: 0,
         sourceDecisionCandidateCount: sourceDecisionCandidates.length
       }
     });
@@ -274,13 +380,15 @@ export const runEvidenceCaptureCommand = async (
   const commands = defaultCommands();
   const diffRisk = diffRiskFromChangedFiles(changedFiles);
   const sourceDecisionCandidates = buildSourceDecisionCandidates(runtime, changedFiles);
+  const memoryCandidateProposals = buildMemoryCandidateProposals(runtime, changedFiles);
   const persistedIdentity = runtime.persist
     ? await persistEvidenceCapture(
       runtime,
       changedFiles,
       commands,
       diffRisk,
-      sourceDecisionCandidates
+      sourceDecisionCandidates,
+      memoryCandidateProposals
     )
     : undefined;
   const feedbackCandidate =
@@ -302,6 +410,8 @@ export const runEvidenceCaptureCommand = async (
     "Memory mutation: none",
     "Feedback candidates:",
     `- ${feedbackCandidate}`,
+    "memoryCandidates:",
+    ...renderMemoryCandidateProposals(memoryCandidateProposals),
     "sourceDecisionCandidates:",
     ...renderSourceDecisionCandidates(sourceDecisionCandidates)
   ];

@@ -175,6 +175,36 @@ Slice 08 CLI anti-memory add:
 - `pnpm --filter @krn/cli krn memory candidate promote --help`: passed.
 - `pnpm --filter @krn/cli krn memory candidate reject --help`: passed.
 
+Slice 09 evidence capture memory candidates:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn evidence capture` did not print `memoryCandidates`, persisted
+  `FeedbackDelta.memoryCandidates` was empty, and clean captures did not print
+  `memoryCandidates: - none`.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 48
+  tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace projects.
+- First `pnpm db:smoke:harness-evidence` failed because `KRN_DATABASE_URL`
+  was not configured. This was a configuration miss, not a smoke failure.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed. Runtime proof included evidence bundle,
+  review assessment, feedback delta, run events `2`, cleanup remaining marker
+  count `0`, and `Harness evidence smoke: passed`.
+- Runtime plan persist passed:
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "M23.09 evidence capture memory candidate
+  verification" --persist`.
+- Runtime evidence capture persist passed:
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn evidence capture --run-id
+  14af107b-f3c9-4d7e-a97a-83a1326f8f56 --persist`.
+- Runtime evidence capture report showed `memoryCandidates`, proposed pattern
+  candidate, `completeness: incomplete`, missing `applicationGuidance,
+  sourceLineage, invalidationRule`, no MemoryCandidate row created, no
+  MemoryRecord created, and persisted evidence/review/feedback IDs.
+- `git diff --check`: passed.
+
 Slice 07 CLI memory record apply:
 
 - RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with four

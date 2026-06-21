@@ -1916,6 +1916,12 @@ describe("runCli", () => {
     expect(result.stdout).toContain("git diff --check: skipped");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Feedback candidates:");
+    expect(result.stdout).toContain("memoryCandidates:");
+    expect(result.stdout).toContain("memory-candidate-proposal-1");
+    expect(result.stdout).toContain("status: proposed");
+    expect(result.stdout).toContain("completeness: incomplete");
+    expect(result.stdout).toContain("missing: applicationGuidance, sourceLineage, invalidationRule");
+    expect(result.stdout).toContain("No MemoryCandidate row created");
     expect(result.stdout).toContain("sourceDecisionCandidates:\n- none");
   });
 
@@ -1980,6 +1986,7 @@ describe("runCli", () => {
       createId: (prefix) => `${prefix}-1`
     });
     let capturedSourceDecisions: CreateFeedbackDeltaInput["sourceDecisions"] | undefined;
+    let capturedMemoryCandidates: CreateFeedbackDeltaInput["memoryCandidates"] | undefined;
     const aggregate: HarnessRunAggregate = {
       operatorIntent: {
         id: "operator-intent-1",
@@ -2083,6 +2090,7 @@ describe("runCli", () => {
         };
       },
       async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
+        capturedMemoryCandidates = input.memoryCandidates;
         capturedSourceDecisions = input.sourceDecisions;
 
         return {
@@ -2133,7 +2141,21 @@ describe("runCli", () => {
     expect(result.stdout).toContain("reviewAssessment: review-assessment-1");
     expect(result.stdout).toContain("feedbackDelta: feedback-delta-1");
     expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("memoryCandidates:");
+    expect(result.stdout).toContain("memory-candidate-proposal-1");
+    expect(result.stdout).toContain("No MemoryCandidate row created");
     expect(result.stdout).toContain("sourceDecisionCandidates:");
+    expect(capturedMemoryCandidates).toHaveLength(1);
+    expect(capturedMemoryCandidates?.[0]?.projectId).toBe("project-1");
+    expect(capturedMemoryCandidates?.[0]?.executionRunId).toBe("execution-run-1");
+    expect(capturedMemoryCandidates?.[0]?.status).toBe("proposed");
+    expect(capturedMemoryCandidates?.[0]?.sourceLineage).toEqual([]);
+    expect(capturedMemoryCandidates?.[0]?.invalidationRule).toBeUndefined();
+    expect(capturedMemoryCandidates?.[0]?.applicationGuidance).toContain("Incomplete");
+    expect(capturedMemoryCandidates?.[0]?.metadata).toMatchObject({
+      completeness: "incomplete",
+      persistence: "feedback-delta-proposal-only"
+    });
     expect(capturedSourceDecisions).toHaveLength(1);
     expect(capturedSourceDecisions?.[0]?.status).toBe("defer");
     expect(capturedSourceDecisions?.[0]?.consumer).toBe("krn evidence capture");
@@ -2150,6 +2172,7 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Changed files:\n- none");
     expect(result.stdout).toContain("Diff risk: low");
+    expect(result.stdout).toContain("memoryCandidates:\n- none");
     expect(result.stdout).toContain("No changed files; no feedback candidate proposed.");
   });
 });

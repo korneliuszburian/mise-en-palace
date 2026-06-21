@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 08 CLI anti-memory add complete.
+Current slice: Slice 09 evidence capture memory candidates complete.
 
 Completed:
 
@@ -54,6 +54,11 @@ Completed:
   without DB writes. Persist mode requires `KRN_DATABASE_URL`, validates the
   invalidating SourceClaim when provided, writes AntiMemoryRecord through
   MemoryRepository, and never creates a positive MemoryRecord.
+- Slice 09 updated `krn evidence capture` to emit `memoryCandidates`.
+  Changed-file evidence now produces an incomplete proposal in the
+  FeedbackDelta proposal surface, marks missing `applicationGuidance`,
+  `sourceLineage`, and `invalidationRule`, records no MemoryCandidate row, and
+  never creates a MemoryRecord automatically.
 
 Verification:
 
@@ -180,6 +185,30 @@ Verification:
 - `git diff --check`: passed.
 - `pnpm test`: passed.
 - `pnpm --filter @krn/db db:check`: passed.
+- Slice 09 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed on
+  missing `memoryCandidates` output and empty persisted
+  `FeedbackDelta.memoryCandidates`.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 48 tests.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- First `pnpm db:smoke:harness-evidence` attempt failed because
+  `KRN_DATABASE_URL` was not configured.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed. The report showed evidence bundle,
+  review assessment, feedback delta, run events `2`, cleanup remaining marker
+  count `0`, and `Harness evidence smoke: passed`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "M23.09 evidence capture memory candidate
+  verification" --persist`: passed and created execution run
+  `14af107b-f3c9-4d7e-a97a-83a1326f8f56`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn evidence capture --run-id
+  14af107b-f3c9-4d7e-a97a-83a1326f8f56 --persist`: passed. The report showed
+  `memoryCandidates`, incomplete status, missing
+  `applicationGuidance, sourceLineage, invalidationRule`, no MemoryCandidate
+  row created, no MemoryRecord created, and persisted evidence/review/feedback
+  IDs.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -192,7 +221,9 @@ Skill gates:
   slices must use RED/GREEN.
 - Used: `superpowers:verification-before-completion` before committing Slice
   05.
+- Used: `superpowers:verification-before-completion` before completing Slice
+  09 verification and commit.
 
 Next action:
 
-- Slice 09: update `krn evidence capture` to emit memory candidates.
+- Slice 10: update `krn doctor` to report memory governance readiness.
