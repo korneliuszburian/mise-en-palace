@@ -42,3 +42,25 @@ Slice 01 inventory:
   repository port, core source types, schema source-claim parser, CLI parser,
   database runtime, and evidence capture behavior: passed.
 - Inventory recorded in `SOURCE_GRAPH_INVENTORY.md`.
+
+Slice 02 schema:
+
+- RED: `pnpm --filter @krn/db test -- sources.test.ts` failed because
+  `source_trust_tier` exposed only `high`, `medium`, and `low`.
+- GREEN: `pnpm --filter @krn/db test -- sources.test.ts`: passed after schema
+  updates.
+- `pnpm db:generate`: passed and generated
+  `packages/db/src/migrations/0003_mushy_shinko_yamashiro.sql`.
+- SQL inspection of `0003_mushy_shinko_yamashiro.sql`: passed. It creates M22
+  enums, extends source support/trust enums, creates `source_decision_edges`,
+  adds claim run/status/falsifier/revisit fields, and adds rejection
+  title/attempted-claim/reason fields.
+- `pnpm --filter @krn/db test -- sources.test.ts mappers.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `pnpm db:check`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `4/4`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed with project readback matched and cleanup completed.
+- `git diff --check`: passed.

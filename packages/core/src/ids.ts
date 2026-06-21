@@ -19,5 +19,7 @@ export type SourceArtifactId = string;
 export type SourceChunkId = string;
 export type SourceClaimId = string;
 export type SourceDecisionId = string;
+export type SourceDecisionEdgeId = string;
+export type SourceRejectionId = string;
 export type PolicyGateId = string;
 export type EvalCandidateId = string;

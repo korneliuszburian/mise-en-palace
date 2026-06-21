@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type {
   EvalCandidate,
   MemoryCandidate,
-  SourceDecisionEdge
+  SourceDecision
 } from "@krn/core";
 
 import { mapFeedbackDelta } from "./mappers.js";
@@ -28,7 +28,7 @@ const memoryCandidate: MemoryCandidate = {
   updatedAt: updatedAt.toISOString()
 };
 
-const sourceDecision: SourceDecisionEdge = {
+const sourceDecision: SourceDecision = {
   id: "source-decision-1",
   projectId: "project-1",
   sourceClaimId: "source-claim-1",

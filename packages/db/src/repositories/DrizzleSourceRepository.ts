@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type {
   ProjectId,
   SourceClaim,
-  SourceDecisionEdge
+  SourceDecision
 } from "@krn/core";
 import type {
   CreateSourceArtifactInput,
@@ -80,6 +80,7 @@ export class DrizzleSourceRepository implements SourceRepository {
         .values({
           sourceArtifactId: input.sourceArtifactId,
           ...(input.sourceChunkId === undefined ? {} : { sourceChunkId: input.sourceChunkId }),
+          ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
           claim: input.claim,
           mechanism: input.mechanism,
           krnImplication: input.krnImplication,
@@ -87,6 +88,9 @@ export class DrizzleSourceRepository implements SourceRepository {
           trustTier: input.trustTier,
           supportType: input.supportType,
           consumer: input.consumer,
+          ...(input.falsifier === undefined ? {} : { falsifier: input.falsifier }),
+          ...(input.revisitWhen === undefined ? {} : { revisitWhen: input.revisitWhen }),
+          ...(input.status === undefined ? {} : { status: input.status }),
           metadata: input.metadata ?? {}
         })
         .returning(),
@@ -102,6 +106,7 @@ export class DrizzleSourceRepository implements SourceRepository {
         id: sourceClaims.id,
         sourceArtifactId: sourceClaims.sourceArtifactId,
         sourceChunkId: sourceClaims.sourceChunkId,
+        executionRunId: sourceClaims.executionRunId,
         claim: sourceClaims.claim,
         mechanism: sourceClaims.mechanism,
         krnImplication: sourceClaims.krnImplication,
@@ -109,6 +114,9 @@ export class DrizzleSourceRepository implements SourceRepository {
         trustTier: sourceClaims.trustTier,
         supportType: sourceClaims.supportType,
         consumer: sourceClaims.consumer,
+        falsifier: sourceClaims.falsifier,
+        revisitWhen: sourceClaims.revisitWhen,
+        status: sourceClaims.status,
         metadata: sourceClaims.metadata,
         createdAt: sourceClaims.createdAt,
         updatedAt: sourceClaims.updatedAt
@@ -121,7 +129,7 @@ export class DrizzleSourceRepository implements SourceRepository {
     return rows.map(mapSourceClaim);
   }
 
-  async createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecisionEdge> {
+  async createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision> {
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx

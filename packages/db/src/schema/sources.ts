@@ -11,7 +11,10 @@ import {
   uuid
 } from "drizzle-orm/pg-core";
 
-import { projects } from "./harness.js";
+import {
+  executionRuns,
+  projects
+} from "./harness.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -30,7 +33,15 @@ export const sourceArtifactKind = pgEnum("source_artifact_kind", [
 export const sourceTrustTier = pgEnum("source_trust_tier", [
   "high",
   "medium",
-  "low"
+  "low",
+  "primary",
+  "official",
+  "project-decision",
+  "source-code",
+  "paper",
+  "practitioner",
+  "secondary",
+  "hypothesis"
 ]);
 
 export const sourceSupportType = pgEnum("source_support_type", [
@@ -38,7 +49,20 @@ export const sourceSupportType = pgEnum("source_support_type", [
   "contradicts",
   "qualifies",
   "background",
-  "does_not_support"
+  "does_not_support",
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary"
+]);
+
+export const sourceClaimStatus = pgEnum("source_claim_status", [
+  "proposed",
+  "accepted",
+  "rejected",
+  "deprecated"
 ]);
 
 export const sourceClaimEdgeKind = pgEnum("source_claim_edge_kind", [
@@ -55,6 +79,35 @@ export const sourceDecisionStatus = pgEnum("source_decision_status", [
   "reject",
   "defer",
   "lab_test"
+]);
+
+export const sourceDecisionTargetType = pgEnum("source_decision_target_type", [
+  "harness_run",
+  "task_contract",
+  "harness_plan",
+  "context_assembly",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "architecture_decision",
+  "memory_record",
+  "eval_candidate"
+]);
+
+export const sourceDecisionEdgeConfidence = pgEnum("source_decision_edge_confidence", [
+  "low",
+  "medium",
+  "high"
+]);
+
+export const sourceRejectionReason = pgEnum("source_rejection_reason", [
+  "no_mechanism",
+  "no_consumer",
+  "decorative",
+  "stale",
+  "conflicting",
+  "unsupported",
+  "duplicate"
 ]);
 
 export const sourceArtifacts = pgTable(
@@ -115,6 +168,9 @@ export const sourceClaims = pgTable(
     sourceChunkId: uuid("source_chunk_id").references(() => sourceChunks.id, {
       onDelete: "set null"
     }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
     claim: text("claim").notNull(),
     mechanism: text("mechanism").notNull(),
     krnImplication: text("krn_implication").notNull(),
@@ -122,6 +178,9 @@ export const sourceClaims = pgTable(
     trustTier: sourceTrustTier("trust_tier").notNull(),
     supportType: sourceSupportType("support_type").notNull(),
     consumer: text("consumer").notNull(),
+    falsifier: text("falsifier"),
+    revisitWhen: text("revisit_when"),
+    status: sourceClaimStatus("status").notNull().default("proposed"),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
@@ -129,9 +188,11 @@ export const sourceClaims = pgTable(
   (table) => [
     index("source_claims_source_artifact_id_idx").on(table.sourceArtifactId),
     index("source_claims_source_chunk_id_idx").on(table.sourceChunkId),
+    index("source_claims_execution_run_id_idx").on(table.executionRunId),
     index("source_claims_trust_tier_idx").on(table.trustTier),
     index("source_claims_support_type_idx").on(table.supportType),
-    index("source_claims_consumer_idx").on(table.consumer)
+    index("source_claims_consumer_idx").on(table.consumer),
+    index("source_claims_status_idx").on(table.status)
   ]
 );
 
@@ -181,17 +242,46 @@ export const sourceDecisions = pgTable(
   ]
 );
 
+export const sourceDecisionEdges = pgTable(
+  "source_decision_edges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceClaimId: uuid("source_claim_id")
+      .notNull()
+      .references(() => sourceClaims.id, { onDelete: "cascade" }),
+    targetType: sourceDecisionTargetType("target_type").notNull(),
+    targetId: text("target_id").notNull(),
+    supportType: sourceSupportType("support_type").notNull(),
+    confidence: sourceDecisionEdgeConfidence("confidence").notNull(),
+    notes: text("notes").notNull(),
+    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index("source_decision_edges_source_claim_id_idx").on(table.sourceClaimId),
+    index("source_decision_edges_target_idx").on(table.targetType, table.targetId),
+    index("source_decision_edges_support_type_idx").on(table.supportType),
+    index("source_decision_edges_confidence_idx").on(table.confidence)
+  ]
+);
+
 export const sourceRejections = pgTable(
   "source_rejections",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
     sourceArtifactId: uuid("source_artifact_id").references(() => sourceArtifacts.id, {
       onDelete: "set null"
     }),
     sourceClaimId: uuid("source_claim_id").references(() => sourceClaims.id, {
       onDelete: "set null"
     }),
+    title: text("title").notNull().default("untitled source rejection"),
+    attemptedClaim: text("attempted_claim").notNull().default("unspecified attempted claim"),
+    rejectedBecause: sourceRejectionReason("rejected_because").notNull().default("unsupported"),
     reason: text("reason").notNull(),
     doesNotProve: text("does_not_prove").notNull(),
     consumer: text("consumer").notNull(),
@@ -200,9 +290,11 @@ export const sourceRejections = pgTable(
   },
   (table) => [
     index("source_rejections_project_id_idx").on(table.projectId),
+    index("source_rejections_execution_run_id_idx").on(table.executionRunId),
     index("source_rejections_source_artifact_id_idx").on(table.sourceArtifactId),
     index("source_rejections_source_claim_id_idx").on(table.sourceClaimId),
-    index("source_rejections_consumer_idx").on(table.consumer)
+    index("source_rejections_consumer_idx").on(table.consumer),
+    index("source_rejections_rejected_because_idx").on(table.rejectedBecause)
   ]
 );
 

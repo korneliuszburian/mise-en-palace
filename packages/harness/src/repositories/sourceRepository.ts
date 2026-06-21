@@ -1,7 +1,8 @@
 import type {
+  ExecutionRunId,
   ProjectId,
   SourceClaim,
-  SourceDecisionEdge,
+  SourceDecision,
   SourceSupportType,
   SourceTrustTier
 } from "@krn/core";
@@ -16,6 +17,7 @@ import type {
 export interface CreateSourceClaimInput {
   sourceArtifactId: string;
   sourceChunkId?: string;
+  executionRunId?: ExecutionRunId;
   claim: string;
   mechanism: string;
   krnImplication: string;
@@ -23,13 +25,16 @@ export interface CreateSourceClaimInput {
   trustTier: SourceTrustTier;
   supportType: SourceSupportType;
   consumer: string;
+  falsifier?: string;
+  revisitWhen?: string;
+  status?: SourceClaim["status"];
   metadata?: Record<string, unknown>;
 }
 
 export interface CreateSourceDecisionInput {
   projectId?: ProjectId;
   sourceClaimId?: string;
-  status: SourceDecisionEdge["status"];
+  status: SourceDecision["status"];
   decision: string;
   rationale: string;
   falsifier: string;
@@ -42,5 +47,5 @@ export interface SourceRepository {
   createSourceChunk(input: CreateSourceChunkInput): Promise<SourceChunkRecord>;
   createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim>;
   listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]>;
-  createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecisionEdge>;
+  createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
 }

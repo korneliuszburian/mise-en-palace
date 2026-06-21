@@ -17,8 +17,9 @@ import type {
   ReviewAssessment,
   ReviewFinding,
   SourceClaim,
-  SourceDecisionEdge,
+  SourceDecision,
   SourceLineageRef,
+  SourceTrustTier,
   TaskContract
 } from "@krn/core";
 import type {
@@ -109,11 +110,24 @@ const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
   "rejected",
   "applied"
 ]);
-const sourceDecisionStatuses = new Set<SourceDecisionEdge["status"]>([
+const sourceDecisionStatuses = new Set<SourceDecision["status"]>([
   "adopt",
   "reject",
   "defer",
   "lab_test"
+]);
+const sourceTrustTiers = new Set<SourceTrustTier>([
+  "high",
+  "medium",
+  "low",
+  "primary",
+  "official",
+  "project-decision",
+  "source-code",
+  "paper",
+  "practitioner",
+  "secondary",
+  "hypothesis"
 ]);
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -134,6 +148,9 @@ const asDiffRisk = (value: string): DiffRisk => {
 
   throw new Error(`Unknown evidence diff risk: ${value}`);
 };
+
+const isSourceTrustTier = (value: unknown): value is SourceTrustTier =>
+  typeof value === "string" && sourceTrustTiers.has(value as SourceTrustTier);
 
 const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   if (!Array.isArray(value)) {
@@ -228,19 +245,19 @@ const memoryCandidatesOrEmpty = (value: unknown): MemoryCandidate[] => {
   });
 };
 
-const sourceDecisionsOrEmpty = (value: unknown): SourceDecisionEdge[] => {
+const sourceDecisionsOrEmpty = (value: unknown): SourceDecision[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((item): SourceDecisionEdge[] => {
+  return value.flatMap((item): SourceDecision[] => {
     if (!isRecord(item)) {
       return [];
     }
 
     if (
       typeof item.id !== "string" ||
-      !sourceDecisionStatuses.has(item.status as SourceDecisionEdge["status"]) ||
+      !sourceDecisionStatuses.has(item.status as SourceDecision["status"]) ||
       typeof item.decision !== "string" ||
       typeof item.rationale !== "string" ||
       typeof item.falsifier !== "string" ||
@@ -255,7 +272,7 @@ const sourceDecisionsOrEmpty = (value: unknown): SourceDecisionEdge[] => {
       id: item.id,
       ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
       ...(typeof item.sourceClaimId === "string" ? { sourceClaimId: item.sourceClaimId } : {}),
-      status: item.status as SourceDecisionEdge["status"],
+      status: item.status as SourceDecision["status"],
       decision: item.decision,
       rationale: item.rationale,
       falsifier: item.falsifier,
@@ -284,7 +301,7 @@ const contextInclusionsOrEmpty = (value: unknown): ContextInclusion[] => {
       typeof item.subjectId === "string" &&
       typeof item.reason === "string" &&
       typeof item.expectedUse === "string" &&
-      (item.trustTier === "high" || item.trustTier === "medium" || item.trustTier === "low")
+      isSourceTrustTier(item.trustTier)
     );
   });
 };
@@ -306,7 +323,7 @@ const contextExclusionsOrEmpty = (value: unknown): ContextExclusion[] => {
       typeof item.subjectId === "string" &&
       typeof item.reason === "string" &&
       typeof item.explanation === "string" &&
-      (item.trustTier === "high" || item.trustTier === "medium" || item.trustTier === "low")
+      isSourceTrustTier(item.trustTier)
     );
   });
 };
@@ -610,6 +627,8 @@ export const mapSourceChunk = (row: SourceChunkRow): SourceChunkRecord => ({
 export const mapSourceClaim = (row: SourceClaimRow): SourceClaim => ({
   id: row.id,
   sourceArtifactId: row.sourceArtifactId,
+  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
   claim: row.claim,
   mechanism: row.mechanism,
   krnImplication: row.krnImplication,
@@ -617,12 +636,15 @@ export const mapSourceClaim = (row: SourceClaimRow): SourceClaim => ({
   trustTier: row.trustTier,
   supportType: row.supportType,
   consumer: row.consumer,
+  ...(row.falsifier === null ? {} : { falsifier: row.falsifier }),
+  ...(row.revisitWhen === null ? {} : { revisitWhen: row.revisitWhen }),
+  status: row.status,
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt),
   updatedAt: toIsoTimestamp(row.updatedAt)
 });
 
-export const mapSourceDecision = (row: SourceDecisionRow): SourceDecisionEdge => ({
+export const mapSourceDecision = (row: SourceDecisionRow): SourceDecision => ({
   id: row.id,
   ...(row.projectId === null ? {} : { projectId: row.projectId }),
   ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),

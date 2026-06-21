@@ -22,6 +22,14 @@
   target.
 - M22 support/trust/rejection vocabularies should be explicit rather than
   overloading the older `supports/background/high/medium/low` vocabulary.
+- Slice 02 keeps existing `source_decisions` as legacy decision/adoption
+  records and introduces `source_decision_edges` for the M22 source-claim to
+  harness-artifact target edge.
+- Core naming was corrected accordingly: the old decision/adoption read model is
+  `SourceDecision`; `SourceDecisionEdge` now means the typed M22 edge.
+- New trust tiers are accepted by activation/retrieval read models with a
+  conservative ranking, preserving old `high/medium/low` values while allowing
+  M22 values to flow without downcasting.
 
 Slice 00 skill record:
 
@@ -44,3 +52,18 @@ Slice 01 skill record:
   migrations, repository ports, and missing durable fields.
 - `target-infra-adr`: not used; inventory keeps M22 inside Postgres/Drizzle.
 - `activation-engine`: not used; no activation behavior changed.
+
+Slice 02 skill record:
+
+- `brain-store-schema`: used for Drizzle schema, migration, indexes, FK, and
+  SQL inspection.
+- `typescript-type-safety`: used for core/source/domain boundary updates after
+  enum expansion.
+- `superpowers:test-driven-development`: used for RED/GREEN schema test before
+  production schema edits.
+- `superpowers:systematic-debugging`: used after typecheck exposed stale
+  assumptions in domain/repository/context trust tiers.
+- `target-infra-adr`: not used; Slice 02 adds no new infrastructure beyond the
+  existing Postgres/Drizzle boundary.
+- `activation-engine`: not used as an activation redesign; only trust-tier type
+  compatibility was preserved.

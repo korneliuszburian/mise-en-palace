@@ -6,6 +6,7 @@ import type {
   RepoInstallationId,
   SourceArtifactId,
   SourceChunkId,
+  SourceTrustTier,
   TaskContractId,
   WorkspaceId
 } from "@krn/core";
@@ -104,7 +105,7 @@ export interface SourceArtifactRecord {
   id: SourceArtifactId;
   projectId?: ProjectId;
   kind: "doc" | "file" | "url" | "paper" | "run" | "operator_input" | "external_doc";
-  trustTier: "high" | "medium" | "low";
+  trustTier: SourceTrustTier;
   uri: string;
   title: string;
   contentHash: string;
@@ -160,7 +161,7 @@ export interface RetrievalCandidateRecord {
   status: RetrievalCandidateStatus;
   subjectType: RetrievalSubjectType;
   subjectId: string;
-  trustTier: "high" | "medium" | "low";
+  trustTier: SourceTrustTier;
   lexicalScore?: number;
   vectorScore?: number;
   graphScore?: number;

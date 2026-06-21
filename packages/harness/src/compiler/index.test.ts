@@ -11,7 +11,6 @@ import type {
   OperatorIntent,
   ReviewAssessment,
   SourceClaim,
-  SourceDecisionEdge,
   TaskContract
 } from "@krn/core";
 import type {
@@ -73,6 +72,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   trustTier: "high",
   supportType: "supports",
   consumer: "compiler-test",
+  status: "proposed",
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",

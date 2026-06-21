@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through Slice 00.
+- None through Slice 02.
 
 Known unproven M22 behavior:
 
@@ -27,3 +27,9 @@ Closed in Slice 01:
 
 - Current source graph schema/repository/type/CLI surface was inventoried in
   `SOURCE_GRAPH_INVENTORY.md`.
+
+Closed in Slice 02:
+
+- Minimal source graph schema now exists for M22 claim status/run linkage,
+  typed decision edges, M22 source vocabulary, and first-class rejection
+  fields.

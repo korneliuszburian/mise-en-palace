@@ -2,6 +2,7 @@ import type {
   ContextAssemblyId,
   HarnessPlanId
 } from "./ids.js";
+import type { SourceTrustTier } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 
 export type ContextAssemblyStatus = "assembled" | "abstained" | "stale" | "superseded";
@@ -21,7 +22,7 @@ export interface ContextInclusion {
   reason: string;
   expectedUse: string;
   tokenEstimate?: number;
-  trustTier: "high" | "medium" | "low";
+  trustTier: SourceTrustTier;
 }
 
 export interface ContextExclusion {
@@ -30,7 +31,7 @@ export interface ContextExclusion {
   reason: string;
   explanation: string;
   score?: number;
-  trustTier: "high" | "medium" | "low";
+  trustTier: SourceTrustTier;
 }
 
 export interface ContextAssembly {

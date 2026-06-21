@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 01 source graph inventory complete.
+Current slice: Slice 02 source graph schema complete.
 
 Completed:
 
@@ -13,6 +13,9 @@ Completed:
 - M22 run ledger was created under
   `docs/runs/2026-06-21-source-graph-persistence/`.
 - Slice 01 inventory was recorded in `SOURCE_GRAPH_INVENTORY.md`.
+- Slice 02 added/tightened Drizzle source graph schema for M22:
+  M22 trust/support enum values, claim status/run linkage, typed
+  `source_decision_edges`, and first-class rejection reason/title fields.
 
 Verification:
 
@@ -36,6 +39,19 @@ Verification:
 - Slice 01 targeted source graph reads: schema, migrations, repository port,
   Drizzle adapter, mappers, core source types, IO schema, CLI parser, database
   runtime, and evidence capture source-decision behavior.
+- Slice 02 RED: `pnpm --filter @krn/db test -- sources.test.ts` failed on the
+  missing M22 source vocabulary.
+- `pnpm db:generate`: passed and generated
+  `packages/db/src/migrations/0003_mushy_shinko_yamashiro.sql`.
+- `pnpm --filter @krn/db test -- sources.test.ts mappers.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `pnpm db:check`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `4/4`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed.
+- `git diff --check`: passed.
 
 Skill gates:
 
@@ -43,9 +59,14 @@ Skill gates:
 - Used: `brain-store-schema` for upcoming source graph persistence boundaries.
 - Used: `evidence-review-loop` for Slice 00 command evidence and ledger shape.
 - Used: `handoff-compact` for Slice 00 continuation state.
-- Not used yet in M22: `typescript-type-safety`, `codex-adapter-plan`,
-  `activation-engine`, `target-infra-adr`.
+- Used: `typescript-type-safety` for SourceClaim/SourceDecisionEdge/domain
+  boundary updates.
+- Used: `superpowers:test-driven-development` for the RED/GREEN schema test.
+- Used: `superpowers:systematic-debugging` after the expected typecheck
+  failure exposed stale domain/repository assumptions.
+- Not used yet in M22: `codex-adapter-plan`, `activation-engine`,
+  `target-infra-adr`.
 
 Next action:
 
-- Slice 02: add or tighten the minimal source graph schema needed for M22.
+- Slice 03: add source graph IO schemas.

@@ -2,6 +2,7 @@ import type {
   ContextExclusion,
   ContextInclusion,
   ProjectId,
+  SourceTrustTier,
   TaskContractId
 } from "@krn/core";
 
@@ -36,7 +37,7 @@ export interface AddRetrievalCandidateInput {
   status?: RetrievalCandidateStatus;
   subjectType: RetrievalSubjectType;
   subjectId: string;
-  trustTier: "high" | "medium" | "low";
+  trustTier: SourceTrustTier;
   lexicalScore?: number;
   vectorScore?: number;
   graphScore?: number;

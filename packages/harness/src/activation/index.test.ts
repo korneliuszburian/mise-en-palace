@@ -66,6 +66,7 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   trustTier: "high",
   supportType: "supports",
   consumer: "activation-engine-test",
+  status: "proposed",
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
