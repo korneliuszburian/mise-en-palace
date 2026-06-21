@@ -45,6 +45,9 @@
 - Slice 08 writes rejected/decorative material only as SourceRejection and does
   not create a SourceClaim, because rejected sources must not become trusted KRN
   context by accident.
+- Slice 09 keeps evidence-derived source decisions as FeedbackDelta candidates,
+  not SourceClaims, because evidence capture observes changed files but does
+  not have the mechanism/does-not-prove/consumer proof needed to trust a claim.
 
 Slice 00 skill record:
 
@@ -138,3 +141,14 @@ Slice 08 skill record:
   and rejected/decorative source material.
 - `superpowers:test-driven-development`: used for RED/GREEN source claim
   rejection CLI tests.
+
+Slice 09 skill record:
+
+- `typescript-type-safety`: used for `SourceDecision` candidate construction
+  and persisted feedback-delta boundaries.
+- `source-to-decision`: used to keep evidence-derived candidates as explicit
+  decisions with rationale/falsifier/consumer instead of automatic claims.
+- `evidence-review-loop`: used because the slice changes evidence capture and
+  feedback candidate behavior.
+- `superpowers:test-driven-development`: used for RED/GREEN evidence capture
+  tests.

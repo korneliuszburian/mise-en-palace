@@ -817,6 +817,26 @@ describe("runCli", () => {
     expect(result.stdout).toContain("git diff --check: skipped");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Feedback candidates:");
+    expect(result.stdout).toContain("sourceDecisionCandidates:\n- none");
+  });
+
+  it("surfaces proposal-only source decision candidates from source evidence", async () => {
+    const result = await runCli(["evidence", "capture"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () =>
+        " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n" +
+        " M packages/cli/src/runSourceClaimAddCommand.ts\n"
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("sourceDecisionCandidates:");
+    expect(result.stdout).toContain("source-decision-candidate-1");
+    expect(result.stdout).toContain("status: defer");
+    expect(result.stdout).toContain("consumer: krn evidence capture");
+    expect(result.stdout).toContain("No SourceClaim created");
   });
 
   it("requires database config for evidence capture --persist", async () => {
@@ -860,6 +880,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    let capturedSourceDecisions: CreateFeedbackDeltaInput["sourceDecisions"] | undefined;
     const aggregate: HarnessRunAggregate = {
       operatorIntent: {
         id: "operator-intent-1",
@@ -963,6 +984,8 @@ describe("runCli", () => {
         };
       },
       async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
+        capturedSourceDecisions = input.sourceDecisions;
+
         return {
           id: "feedback-delta-1",
           reviewAssessmentId: input.reviewAssessmentId,
@@ -984,7 +1007,8 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        readGitStatus: async () => " M packages/cli/src/runCli.ts\n",
+        readGitStatus: async () =>
+          " M docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md\n",
         createDatabaseRuntime: async () => ({
           workspaceId: "workspace-1",
           projectId: "project-1",
@@ -1009,6 +1033,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("reviewAssessment: review-assessment-1");
     expect(result.stdout).toContain("feedbackDelta: feedback-delta-1");
     expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("sourceDecisionCandidates:");
+    expect(capturedSourceDecisions).toHaveLength(1);
+    expect(capturedSourceDecisions?.[0]?.status).toBe("defer");
+    expect(capturedSourceDecisions?.[0]?.consumer).toBe("krn evidence capture");
   });
 
   it("prints clean evidence capture when there are no changed files", async () => {

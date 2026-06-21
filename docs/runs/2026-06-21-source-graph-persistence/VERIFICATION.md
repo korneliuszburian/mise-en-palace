@@ -170,3 +170,25 @@ Slice 08 source claim reject CLI:
   - Output confirmed: `No SourceClaim created`.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+
+Slice 09 evidence source candidates:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn evidence capture` did not output `sourceDecisionCandidates` and did not
+  pass source decision candidates into persisted `FeedbackDelta.sourceDecisions`.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed after adding a
+  source-decision candidate derivation step for source/decision-like changed
+  files and explicit `sourceDecisionCandidates` output.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn evidence capture`: passed and printed
+  `sourceDecisionCandidates`.
+- Root-cwd `./packages/cli/node_modules/.bin/tsx packages/cli/src/index.ts
+  evidence capture`: passed before ledger updates and printed
+  `sourceDecisionCandidates` with `- none` for code-only changed files.
+- Root-cwd `./packages/cli/node_modules/.bin/tsx packages/cli/src/index.ts
+  evidence capture`: passed after ledger updates and printed source decision
+  candidate `source-decision-candidate-1782077575396-1` with status `defer`,
+  consumer `krn evidence capture`, a falsifier, and `No SourceClaim created`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- `pnpm test`: passed.

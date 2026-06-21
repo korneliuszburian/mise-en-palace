@@ -6,7 +6,8 @@ import {
 } from "node:util";
 import type {
   DiffRisk,
-  EvidenceCommand
+  EvidenceCommand,
+  SourceDecision
 } from "@krn/core";
 import {
   createDatabaseRuntime
@@ -81,6 +82,51 @@ const diffRiskFromChangedFiles = (changedFiles: readonly ChangedFile[]): DiffRis
   return "high";
 };
 
+const sourceDecisionSignal = (file: ChangedFile): boolean => {
+  const path = file.path.toLowerCase();
+
+  return (
+    path === "goal.md" ||
+    path === "plan.md" ||
+    path.startsWith("docs/decisions/") ||
+    path.startsWith("docs/runs/") ||
+    path.startsWith(".agents/skills/") ||
+    path.includes("source")
+  );
+};
+
+const buildSourceDecisionCandidates = (
+  runtime: Pick<EvidenceCaptureRuntime, "createId" | "now">,
+  changedFiles: readonly ChangedFile[]
+): SourceDecision[] => {
+  const candidateFiles = changedFiles.filter(sourceDecisionSignal);
+
+  if (candidateFiles.length === 0) {
+    return [];
+  }
+
+  const timestamp = runtime.now();
+  const changedFilePaths = candidateFiles.map((file) => file.path);
+
+  return [{
+    id: runtime.createId("source-decision-candidate"),
+    status: "defer",
+    decision: "Review changed files for source graph decision updates.",
+    rationale: `Changed files imply a possible source decision: ${changedFilePaths.join(", ")}`,
+    falsifier:
+      "Do not promote unless a SourceClaim with mechanism, doesNotProve, and consumer exists.",
+    consumer: "krn evidence capture",
+    metadata: {
+      candidateType: "sourceDecisionCandidate",
+      changedFiles: changedFilePaths,
+      changedFileCount: changedFilePaths.length,
+      promotion: "proposal-only"
+    },
+    createdAt: timestamp,
+    updatedAt: timestamp
+  }];
+};
+
 const defaultCommands = (): EvidenceCommand[] => [
   {
     command: "pnpm typecheck",
@@ -109,11 +155,28 @@ const renderChangedFiles = (changedFiles: readonly ChangedFile[]): string[] => {
   return changedFiles.map((file) => `- ${file.status} ${file.path}`);
 };
 
+const renderSourceDecisionCandidates = (
+  candidates: readonly SourceDecision[]
+): string[] => {
+  if (candidates.length === 0) {
+    return ["- none"];
+  }
+
+  return candidates.flatMap((candidate) => [
+    `- ${candidate.id}: ${candidate.decision}`,
+    `  status: ${candidate.status}`,
+    `  consumer: ${candidate.consumer}`,
+    `  falsifier: ${candidate.falsifier}`,
+    "  No SourceClaim created"
+  ]);
+};
+
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
   commands: EvidenceCommand[],
-  diffRisk: DiffRisk
+  diffRisk: DiffRisk,
+  sourceDecisionCandidates: readonly SourceDecision[]
 ): Promise<PersistedEvidenceIdentity> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
   const runId = runtime.runId?.trim();
@@ -184,11 +247,12 @@ const persistEvidenceCapture = async (
       reviewAssessmentId: reviewAssessment.id,
       status: "candidate",
       memoryCandidates: [],
-      sourceDecisions: [],
+      sourceDecisions: [...sourceDecisionCandidates],
       evalCandidates: [],
       metadata: {
         runId,
-        changedFileCount: changedFiles.length
+        changedFileCount: changedFiles.length,
+        sourceDecisionCandidateCount: sourceDecisionCandidates.length
       }
     });
 
@@ -209,8 +273,15 @@ export const runEvidenceCaptureCommand = async (
   const changedFiles = parseChangedFiles(statusOutput);
   const commands = defaultCommands();
   const diffRisk = diffRiskFromChangedFiles(changedFiles);
+  const sourceDecisionCandidates = buildSourceDecisionCandidates(runtime, changedFiles);
   const persistedIdentity = runtime.persist
-    ? await persistEvidenceCapture(runtime, changedFiles, commands, diffRisk)
+    ? await persistEvidenceCapture(
+      runtime,
+      changedFiles,
+      commands,
+      diffRisk,
+      sourceDecisionCandidates
+    )
     : undefined;
   const feedbackCandidate =
     changedFiles.length === 0
@@ -230,7 +301,9 @@ export const runEvidenceCaptureCommand = async (
     "Rollback path: revert the focused implementation commit or discard uncommitted changes.",
     "Memory mutation: none",
     "Feedback candidates:",
-    `- ${feedbackCandidate}`
+    `- ${feedbackCandidate}`,
+    "sourceDecisionCandidates:",
+    ...renderSourceDecisionCandidates(sourceDecisionCandidates)
   ];
 
   if (persistedIdentity !== undefined) {

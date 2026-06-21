@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 08.
+- None through Slice 09.
 
 Known unproven M22 behavior:
 
-- `krn evidence capture` does not yet surface source candidates.
 - `krn doctor` does not yet report source graph readiness.
 
 Explicit non-blockers:
@@ -60,3 +59,10 @@ Closed in Slice 08:
   `KRN_DATABASE_URL` for `--persist`, writes a SourceRejection through
   SourceRepository, does not create a SourceClaim, and passed live persistence
   proof.
+
+Closed in Slice 09:
+
+- `krn evidence capture` prints `sourceDecisionCandidates`, derives
+  proposal-only source decision candidates from source/decision-like changed
+  files, persists them in `FeedbackDelta.sourceDecisions` when evidence capture
+  is persisted, and still does not create SourceClaims or mutate memory.

@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 08 source claim rejection CLI complete.
+Current slice: Slice 09 evidence source candidates complete.
 
 Completed:
 
@@ -34,6 +34,11 @@ Completed:
   explicit `--persist`, SourceRejection creation through SourceRepository,
   rejection reason output, and an explicit guarantee that no SourceClaim is
   created for rejected/decorative material.
+- Slice 09 updated `krn evidence capture` to print explicit
+  `sourceDecisionCandidates`, derive proposal-only source decision candidates
+  from source/decision-like changed files, persist those candidates in
+  `FeedbackDelta.sourceDecisions` when `--persist --run-id` is used, and keep
+  SourceClaim creation out of evidence capture.
 
 Verification:
 
@@ -123,6 +128,16 @@ Verification:
   `9735e09c-fd1e-4ce2-b627-226ce9c09d9b`.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 09 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn evidence capture` did not output `sourceDecisionCandidates` and did not
+  persist candidate source decisions.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn evidence capture`: passed and printed
+  `sourceDecisionCandidates`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- `pnpm test`: passed.
 
 Skill gates:
 
@@ -142,4 +157,4 @@ Skill gates:
 
 Next action:
 
-- Slice 09: update evidence capture to surface source candidates.
+- Slice 10: add `krn doctor` source graph readiness.
