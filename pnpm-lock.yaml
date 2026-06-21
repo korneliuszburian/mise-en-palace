@@ -20,6 +20,12 @@ importers:
 
   packages/db:
     dependencies:
+      '@krn/core':
+        specifier: workspace:*
+        version: link:../core
+      '@krn/harness':
+        specifier: workspace:*
+        version: link:../harness
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(postgres@3.4.9)
@@ -31,7 +37,11 @@ importers:
         specifier: ^0.31.10
         version: 0.31.10
 
-  packages/harness: {}
+  packages/harness:
+    dependencies:
+      '@krn/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/schema:
     dependencies:

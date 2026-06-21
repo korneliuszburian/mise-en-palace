@@ -4,6 +4,12 @@
     "lib": ["ES2022"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "baseUrl": ".",
+    "paths": {
+      "@krn/core": ["packages/core/src/index.ts"],
+      "@krn/harness": ["packages/harness/src/index.ts"],
+      "@krn/schema": ["packages/schema/src/index.ts"]
+    },
     "strict": true,
     "exactOptionalPropertyTypes": true,
     "noFallthroughCasesInSwitch": true,

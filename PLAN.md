@@ -156,7 +156,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [x] 2026-06-21: Added retrieval and activation schema with embedding models, embeddings, search documents, retrieval runs, retrieval candidates, activation decisions, context items, and context exclusions. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, SQL inspection for `CREATE EXTENSION IF NOT EXISTS vector`, `vector(1536)`, HNSW vector index, `tsvector`, GIN search index, context inclusions, context exclusions, and `git diff --check` passed.
 - [x] 2026-06-21: Added Zod IO schemas and public parse functions for operator intents, task contracts, memory candidates, source claims, harness compile inputs, and evidence capture inputs. Evidence: `pnpm typecheck`, `pnpm test`, and `git diff --check` passed.
 - [x] 2026-06-21: Added pure core domain model types for IDs, time, operator intents, task contracts, harness plans, context assembly, capability plans, Codex adapter plan refs, execution runs, evidence bundles, review assessments, feedback deltas, memory, sources, policy, and eval candidates. Evidence: `pnpm typecheck`, `pnpm test`, `grep -R "requiredSkills" packages/core && exit 1 || true`, forbidden-import search, and `git diff --check` passed.
-- [ ] Add repository interfaces and Postgres adapters.
+- [x] 2026-06-21: Added repository interfaces in `packages/harness` and Drizzle/Postgres adapters in `packages/db` for projects, memory, sources, harness runs, event ledger, outbox, and retrieval. Evidence: `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness packages/db/src`, and no forbidden DB/runtime imports or `requiredSkills` in `packages/core`.
 - [ ] Add activation engine.
 - [ ] Add harness compiler.
 - [ ] Add Codex adapter renderer.
@@ -177,6 +177,8 @@ Use this section as the single progress truth while executing the plan. Update e
 - Observation: Drizzle ORM 0.45.2 type declarations pull optional non-Postgres dialect declarations under TypeScript 5.9 when `skipLibCheck` is false. Evidence: `@krn/db` typecheck failed on `gel`, MySQL, SingleStore, SQLite, `Buffer`, and `TextDecoder` declarations before any project-code error appeared. Implication: keep the root strict config unchanged, add a package-local `skipLibCheck` exception only in `packages/db`, and keep KRN code strict.
 - Observation: Drizzle generated the pgvector column and HNSW index but did not create the `vector` extension. Evidence: `0002_shocking_post.sql` initially contained `vector(1536)` and `USING hnsw` but no `CREATE EXTENSION`. Implication: keep `packages/db/src/sql/pgvector.ts` as the explicit helper and add `CREATE EXTENSION IF NOT EXISTS vector` manually to the migration that first introduces vector columns.
 - Observation: Including Vitest test files in the production schema `tsc` pass pulled Vite/Vitest browser and timer declarations into a library package. Evidence: root `pnpm typecheck` failed on `AbortSignal`, timers, `EventTarget`, and `WebSocket` after tests were added, while `pnpm test` passed. Implication: exclude `*.test.ts` from production typecheck and keep test verification in Vitest.
+- Observation: Cross-package imports were first required by repository interfaces and DB adapters, not by empty package shells. Evidence: `packages/harness` now imports `@krn/core`, `packages/db` now imports `@krn/core` and `@krn/harness`, and root `tsconfig.base.json` now has package path aliases. Implication: keep aliases limited to real package boundaries and avoid speculative imports for future packages.
+- Observation: Several domain fields are stored as JSONB in the first schema, especially context selections, evidence commands, review findings, source lineage, and feedback candidates. Evidence: repository mappers in `packages/db/src/repositories/mappers.ts` narrow JSON values before returning domain types. Implication: adapters remain a trust boundary; harness/core must not consume raw DB JSON rows.
 
 ## Decision Log
 
@@ -224,13 +226,21 @@ Use this section as the single progress truth while executing the plan. Update e
   Rationale: The package `typecheck` script should protect exported library code without importing Vitest/Vite runtime declarations into production compiler settings. Boundary behavior remains covered by `pnpm test`.
   Date/Author: 2026-06-21 / Codex schema validation pass.
 
+- Decision: Repository ports live in `packages/harness`; Postgres adapters live in `packages/db`.
+  Rationale: The repository contracts are harness-facing capabilities, while Drizzle schema, transactions, mappers, and Postgres details belong to the DB package. This preserves `packages/core` as pure domain types and keeps CLI/Codex surfaces out of state access.
+  Date/Author: 2026-06-21 / Codex repository adapter pass.
+
+- Decision: State writes that pair with version, run-event, or outbox records are implemented as DB transactions.
+  Rationale: Memory record creation must preserve its initial version, execution/evidence status changes must preserve run ledger evidence, and review feedback/source-memory candidate creation must preserve outbox visibility. The first spine should not create state without its audit/work signal when both are part of the same operation.
+  Date/Author: 2026-06-21 / Codex repository adapter pass.
+
 ## Outcomes & Retrospective
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model. Milestone 9 added harness repository ports and Drizzle-backed Postgres adapters with typed DB-to-domain mappers.
 
-Current gaps: no DB package, no schema package, no harness package, no Codex adapter package, no worker package, no domain model, no Drizzle schema, no Zod schemas, no repositories, no activation engine, no compiler, no CLI behavior, no tests beyond typecheck capability.
+Current gaps: no activation engine, no harness compiler, no Codex adapter renderer, no CLI behavior, no read-only doctor, no evidence capture command, no worker skeleton behavior, and no recorded dogfood run.
 
 ## Plan of Work
 
