@@ -152,7 +152,7 @@ Use this section as the single progress truth while executing the plan. Update e
 - [x] 2026-06-21: Expanded workspace shells for `schema`, `db`, `harness`, `codex-adapter`, and `workers` with empty module entrypoints and strict package tsconfigs. Evidence: `pnpm install --lockfile-only` recognized all 8 workspace projects and `pnpm typecheck` passed across 7 package projects.
 - [ ] Add test tooling and first contract tests only where they protect real boundaries.
 - [x] 2026-06-21: Added Drizzle/Postgres schema foundation for workspaces, projects, repo installations, project kernels, operator intents, task contracts, harness plans, context assemblies, execution runs, evidence bundles, review assessments, feedback deltas, run events, outbox events, and worker jobs. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, and `git diff --check` passed.
-- [ ] Add memory and source graph schema.
+- [x] 2026-06-21: Added Memory Core and source graph schema, including memory records, versions, edges, candidates, applications, feedback events, anti-memory, activation traces, source artifacts, chunks, claims, claim edges, decisions, rejections, and snapshots. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, SQL inspection for `mechanism` / `krn_implication` / `does_not_prove`, and `git diff --check` passed.
 - [ ] Add retrieval and activation schema.
 - [ ] Add Zod IO schemas.
 - [ ] Add pure core domain model.
@@ -214,7 +214,7 @@ Use this section as the single progress truth while executing the plan. Update e
 
 Update this section after each major milestone.
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestone 4 added the first Drizzle/Postgres schema and generated SQL migration.
+Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 and 5 added the first Drizzle/Postgres harness, memory, and source graph schemas with generated SQL migrations.
 
 Current gaps: no DB package, no schema package, no harness package, no Codex adapter package, no worker package, no domain model, no Drizzle schema, no Zod schemas, no repositories, no activation engine, no compiler, no CLI behavior, no tests beyond typecheck capability.
 
