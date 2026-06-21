@@ -9,6 +9,7 @@ export * from "./runDoctorCommand.js";
 export * from "./runEvidenceCaptureCommand.js";
 export * from "./runCli.js";
 export * from "./runPlanCommand.js";
+export * from "./runSourceClaimAddCommand.js";
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const result = await runCli(process.argv.slice(2), {

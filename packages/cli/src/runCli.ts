@@ -1,5 +1,6 @@
 import {
   formatUsage,
+  formatSourceClaimAddUsage,
   parseArgs
 } from "./parseArgs.js";
 import {
@@ -20,6 +21,9 @@ import {
 import {
   runEvidenceCaptureCommand
 } from "./runEvidenceCaptureCommand.js";
+import {
+  runSourceClaimAddCommand
+} from "./runSourceClaimAddCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -67,6 +71,42 @@ export const runCli = async (
       stdout: formatUsage(),
       stderr: ""
     };
+  }
+
+  if (parsed.command.kind === "sourceClaimAddHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatSourceClaimAddUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "sourceClaimAdd") {
+    try {
+      const result = await runSourceClaimAddCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown source claim error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
   }
 
   if (parsed.command.kind === "plan") {

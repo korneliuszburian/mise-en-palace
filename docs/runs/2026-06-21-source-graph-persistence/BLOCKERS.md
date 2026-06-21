@@ -2,12 +2,12 @@
 
 Hard blockers:
 
-- None through Slice 05.
+- None through Slice 06.
 
 Known unproven M22 behavior:
 
-- CLI commands for `krn source claim add`, `krn source decision link`, and
-  `krn source claim reject` are not implemented yet.
+- CLI commands for `krn source decision link` and `krn source claim reject` are
+  not implemented yet.
 - `krn doctor` does not yet report source graph readiness.
 
 Explicit non-blockers:
@@ -41,3 +41,9 @@ Closed in Slice 05:
 - `pnpm db:smoke:source-graph` exists and passed live with SourceArtifact,
   SourceClaim, SourceDecisionEdge, SourceRejection, outbox events, readback, and
   cleanup remaining marker count `0`.
+
+Closed in Slice 06:
+
+- `krn source claim add` exists, previews without DB writes, requires
+  `KRN_DATABASE_URL` for `--persist`, writes SourceArtifact and SourceClaim
+  through SourceRepository, and passed live persistence proof.

@@ -113,3 +113,25 @@ Slice 05 source graph smoke:
   - Cleanup remaining marker count: `0`.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+
+Slice 06 source claim add CLI:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn source claim add` returned usage exit `2`.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed after adding
+  parser support, preview behavior, DB-required persist behavior, and fake
+  repository persist behavior.
+- `pnpm typecheck`: initially failed because `runSourceClaimAddCommand.ts`
+  exported `CreateDatabaseRuntime`, conflicting with the existing
+  `runPlanCommand.ts` export. Renamed the new type to
+  `CreateSourceClaimAddDatabaseRuntime`.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
+- `pnpm --filter @krn/cli krn source claim add --help`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source claim add ... --persist`: passed.
+  - Source artifact: `2638beb8-aeaf-4fa1-90c3-af7d70cc52c4`.
+  - Source claim: `3b5540bc-2307-4578-9abb-5bee0805bbdd`.
+  - `doesNotProve`: printed as
+    `This does not prove source decision edge or rejection CLI behavior`.

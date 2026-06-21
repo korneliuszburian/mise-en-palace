@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 05 source graph persistence smoke complete.
+Current slice: Slice 06 source claim add CLI complete.
 
 Completed:
 
@@ -22,6 +22,10 @@ Completed:
   source decision edge creation/run listing, and source rejection creation.
 - Slice 05 added `pnpm db:smoke:source-graph` and proved live source artifact,
   claim, decision edge, rejection, outbox, readback, and cleanup behavior.
+- Slice 06 added `krn source claim add`, including preview mode, `--help`,
+  explicit `--persist`, Zod validation, SourceArtifact creation, SourceClaim
+  creation, optional run linkage, persisted ID output, and `doesNotProve`
+  output.
 
 Verification:
 
@@ -66,6 +70,12 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 04 RED: `pnpm --filter @krn/db test -- mappers.test.ts` failed on
+  missing `mapSourceDecisionEdge` and `mapSourceRejection`.
+- `pnpm --filter @krn/db test -- mappers.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 - Slice 05 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
   `krn db smoke source-graph` was parsed as usage error.
 - `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
@@ -76,11 +86,16 @@ Verification:
   remaining marker count `0`.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
-- Slice 04 RED: `pnpm --filter @krn/db test -- mappers.test.ts` failed on
-  missing `mapSourceDecisionEdge` and `mapSourceRejection`.
-- `pnpm --filter @krn/db test -- mappers.test.ts`: passed.
+- Slice 06 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn source claim add` returned usage exit `2`.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
+- `pnpm --filter @krn/cli krn source claim add --help`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source claim add ... --persist`: passed with source artifact
+  `2638beb8-aeaf-4fa1-90c3-af7d70cc52c4` and source claim
+  `3b5540bc-2307-4578-9abb-5bee0805bbdd`.
 - `git diff --check`: passed.
 
 Skill gates:
@@ -94,9 +109,11 @@ Skill gates:
 - Used: `superpowers:test-driven-development` for the RED/GREEN schema test.
 - Used: `superpowers:systematic-debugging` after the expected typecheck
   failure exposed stale domain/repository assumptions.
+- Used: `superpowers:systematic-debugging` after the Slice 06 typecheck export
+  name conflict.
 - Not used yet in M22: `codex-adapter-plan`, `activation-engine`,
   `target-infra-adr`.
 
 Next action:
 
-- Slice 06: add CLI `krn source claim add`.
+- Slice 07: add CLI `krn source decision link`.

@@ -9,7 +9,8 @@ import {
 } from "@krn/db";
 import type {
   HarnessCompilerDependencies,
-  HarnessRunRepository
+  HarnessRunRepository,
+  SourceRepository
 } from "@krn/harness";
 
 export interface DatabaseRuntimeInput {
@@ -32,6 +33,10 @@ export interface DatabaseRuntime {
     | "createReviewAssessment"
     | "createFeedbackDelta"
   >;
+  sourceRepository: Pick<
+    SourceRepository,
+    "createSourceArtifact" | "createSourceClaim"
+  >;
   close(): Promise<void>;
 }
 
@@ -42,6 +47,7 @@ export const createDatabaseRuntime = async (
   const db = createKrnDatabase(client);
   const projectRepository = new DrizzleProjectRepository(db);
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+  const sourceRepository = new DrizzleSourceRepository(db);
   const existingWorkspace = await projectRepository.findWorkspaceBySlug(input.workspaceSlug);
   const workspace =
     existingWorkspace ??
@@ -67,12 +73,13 @@ export const createDatabaseRuntime = async (
     compilerDependencies: {
       harnessRunRepository,
       memoryRepository: new DrizzleMemoryRepository(db),
-      sourceRepository: new DrizzleSourceRepository(db),
+      sourceRepository,
       retrievalRepository: new DrizzleRetrievalRepository(db),
       now: input.now,
       createId: input.createId
     },
     harnessRunRepository,
+    sourceRepository,
     async close(): Promise<void> {
       await client.end();
     }

@@ -300,6 +300,181 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Source graph smoke: skipped (database not configured)");
   });
 
+  it("prints source claim add help", async () => {
+    const result = await runCli(["source", "claim", "add", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Usage: krn source claim add");
+    expect(result.stdout).toContain("--does-not-prove");
+  });
+
+  it("previews source claim add without DB writes", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "claim",
+        "add",
+        "--title",
+        "Postgres edge table decision",
+        "--claim",
+        "KRN should model source graph with relational edges first",
+        "--mechanism",
+        "Postgres already stores canonical harness state transactionally",
+        "--does-not-prove",
+        "This does not prove graph retrieval quality",
+        "--support-type",
+        "implementation-boundary",
+        "--trust-tier",
+        "project-decision",
+        "--consumer",
+        "M22 source graph persistence"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Source Claim Add");
+    expect(result.stdout).toContain("Persistence: disabled");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("Source claim preview");
+    expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
+  });
+
+  it("requires database config for source claim add --persist", async () => {
+    const result = await runCli(
+      [
+        "source",
+        "claim",
+        "add",
+        "--title",
+        "Postgres edge table decision",
+        "--claim",
+        "KRN should model source graph with relational edges first",
+        "--mechanism",
+        "Postgres already stores canonical harness state transactionally",
+        "--does-not-prove",
+        "This does not prove graph retrieval quality",
+        "--support-type",
+        "implementation-boundary",
+        "--trust-tier",
+        "project-decision",
+        "--consumer",
+        "M22 source graph persistence",
+        "--persist"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn source claim add --persist");
+  });
+
+  it("persists source claim add and prints persisted IDs", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const result = await runCli(
+      [
+        "source",
+        "claim",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--title",
+        "Postgres edge table decision",
+        "--claim",
+        "KRN should model source graph with relational edges first",
+        "--mechanism",
+        "Postgres already stores canonical harness state transactionally",
+        "--does-not-prove",
+        "This does not prove graph retrieval quality",
+        "--support-type",
+        "implementation-boundary",
+        "--trust-tier",
+        "project-decision",
+        "--consumer",
+        "M22 source graph persistence",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact(input) {
+              return {
+                id: "source-artifact-1",
+                projectId: input.projectId,
+                kind: input.kind,
+                trustTier: input.trustTier,
+                uri: input.uri,
+                title: input.title,
+                contentHash: input.contentHash,
+                capturedAt: now,
+                metadata: input.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceClaim(input) {
+              return {
+                id: "source-claim-1",
+                sourceArtifactId: input.sourceArtifactId,
+                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+                claim: input.claim,
+                mechanism: input.mechanism,
+                krnImplication: input.krnImplication,
+                doesNotProve: input.doesNotProve,
+                trustTier: input.trustTier,
+                supportType: input.supportType,
+                consumer: input.consumer,
+                status: input.status ?? "proposed",
+                metadata: input.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("Persisted IDs:");
+    expect(result.stdout).toContain("sourceArtifact: source-artifact-1");
+    expect(result.stdout).toContain("sourceClaim: source-claim-1");
+    expect(result.stdout).toContain("runId: execution-run-1");
+    expect(result.stdout).toContain("doesNotProve: This does not prove graph retrieval quality");
+  });
+
   it("prints evidence capture without mutating memory", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},

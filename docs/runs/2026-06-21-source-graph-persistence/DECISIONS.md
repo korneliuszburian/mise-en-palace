@@ -37,6 +37,9 @@
   these are durable audit/work signals.
 - Slice 05 source graph smoke is the live proof for M22 source persistence until
   CLI source commands add user-facing write paths.
+- Slice 06 keeps `--type` as a CLI source-type hint. If the value is not a
+  physical `source_artifact_kind`, the artifact persists as `operator_input`
+  and the type hint is retained in metadata as `sourceType`.
 
 Slice 00 skill record:
 
@@ -95,3 +98,16 @@ Slice 05 skill record:
 - `brain-store-schema`: used for source graph smoke cleanup, linkage, and
   outbox-marker proof.
 - `superpowers:test-driven-development`: used for RED/GREEN CLI target test.
+
+Slice 06 skill record:
+
+- `typescript-type-safety`: used for CLI argument parsing, Zod input
+  validation, and runtime/repository boundaries.
+- `brain-store-schema`: used to keep CLI persistence on SourceRepository rather
+  than direct SQL.
+- `source-to-decision`: used to preserve mechanism/does-not-prove semantics in
+  the user-facing claim command.
+- `superpowers:test-driven-development`: used for RED/GREEN source claim CLI
+  tests.
+- `superpowers:systematic-debugging`: used for the typecheck export-name
+  conflict.
