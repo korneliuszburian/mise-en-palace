@@ -14,7 +14,17 @@ importers:
 
   packages/cli: {}
 
+  packages/codex-adapter: {}
+
   packages/core: {}
+
+  packages/db: {}
+
+  packages/harness: {}
+
+  packages/schema: {}
+
+  packages/workers: {}
 
 packages:
 
