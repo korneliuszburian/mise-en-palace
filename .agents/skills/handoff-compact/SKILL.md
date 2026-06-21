@@ -1,11 +1,16 @@
 ---
 name: handoff-compact
-description: Produce a first-screen KRN handoff or resume packet after meaningful work, before compaction, or before transferring a Codex task. Use when Codex must preserve current objective, verified state, decisions, changed files, blockers, context selectors, and next action without dumping history, raw materials, source lists, or memory notes.
+description: Use when Codex must preserve current objective, verified state, decisions, changed files, blockers, context selectors, and next action after meaningful work, before compaction, or before transferring a KRN task.
 ---
 
 # Handoff Compact
 
 Use this skill to keep continuation state small and useful.
+
+## Trigger
+
+- Meaningful work has changed repo state, decisions, blockers, or next action.
+- A task may compact, transfer, pause, or resume later.
 
 ## Workflow
 
@@ -45,4 +50,3 @@ Do not reread:
 
 A new Codex thread should be able to continue the next action without broad
 reread.
-

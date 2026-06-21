@@ -1,11 +1,17 @@
 ---
 name: source-to-decision
-description: Map sources into mechanisms, KRN implications, decisions, rejections, and falsifiers. Use whenever Codex cites OpenAI docs, Cookbook examples, papers, practitioner writing, competitor docs, local repo evidence, or user-provided material to justify KRN architecture, policy, skill, memory, context, eval, MCP, hook, subagent, or TypeScript decisions.
+description: Use when Codex cites OpenAI docs, Cookbook examples, papers, practitioner writing, competitor docs, local repo evidence, or user-provided material to justify KRN architecture, policy, skill, memory, context, eval, MCP, hook, subagent, or TypeScript decisions.
 ---
 
 # Source To Decision
 
 Use this skill to prevent source hoarding.
+
+## Trigger
+
+- A decision depends on external docs, papers, competitor/practitioner writing,
+  local repo evidence, or user-provided material.
+- A source might otherwise become decorative context.
 
 ## Workflow
 
@@ -45,4 +51,3 @@ falsifier:
 
 The mapped source must change a decision, reject a path, define a risk, create a
 testable hypothesis, or constrain implementation.
-

@@ -7,6 +7,12 @@ description: Enforce KRN TypeScript boundary discipline. Use for TypeScript sour
 
 Use this skill before or during TypeScript changes.
 
+## Trigger
+
+- A change touches TypeScript source, tsconfig, validators, public exports,
+  CLI/env/file/JSON boundaries, generics, casts, or dependency declarations.
+- A shortcut would weaken strictness to move faster.
+
 ## Workflow
 
 1. Classify the boundary: public API, external input, internal domain type,
@@ -18,6 +24,14 @@ Use this skill before or during TypeScript changes.
 6. Put runtime validation near external boundaries.
 7. Decide whether `ts-type-critic` should review.
 8. Run typecheck before completion.
+
+## Output
+
+- Boundary classification.
+- Validation or narrowing location.
+- Public type changes.
+- Any justified type-safety exception.
+- Typecheck result.
 
 ## `ts-reset`
 
@@ -37,4 +51,3 @@ Use this skill before or during TypeScript changes.
 
 The final diff should preserve strict boundaries and include a typecheck result
 or an explicit reason typecheck is unavailable.
-
