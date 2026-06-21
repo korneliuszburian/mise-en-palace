@@ -26,7 +26,11 @@ export interface DatabaseRuntime {
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository: Pick<
     HarnessRunRepository,
-    "createExecutionRun" | "getHarnessRunByExecutionRunId"
+    | "createExecutionRun"
+    | "getHarnessRunByExecutionRunId"
+    | "createEvidenceBundle"
+    | "createReviewAssessment"
+    | "createFeedbackDelta"
   >;
   close(): Promise<void>;
 }

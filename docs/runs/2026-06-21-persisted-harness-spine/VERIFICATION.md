@@ -103,3 +103,23 @@ Slice 05 persisted harness plan smoke:
   `7fc256ef-2868-483c-bd3a-c3283df4b761`, readback `matched`, evidence
   contract commands `3`, run events `1`, cleanup remaining marker count `0`,
   and harness plan smoke `passed`.
+
+Slice 06 persisted evidence capture:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because
+  `evidence capture --run-id --persist` parsed as invalid usage.
+- GREEN `pnpm --filter @krn/cli test`: passed with 15 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn evidence capture --run-id
+  b529e20e-b8ca-4cb5-9342-58578e880945 --persist`: passed and printed
+  `evidenceBundle=41b27f25-efb7-48ed-92ad-00fb88cdf7c4`,
+  `reviewAssessment=384bb648-dcf4-43f6-a60e-9003acff047e`,
+  `feedbackDelta=975e26bf-6eae-4fb8-a0ae-80352977331c`.
+- SQL proof for execution run `b529e20e-b8ca-4cb5-9342-58578e880945`: evidence
+  bundles `1`, review assessments `1`, feedback deltas `1`, run events `2`.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle schema and migrations
+  remain consistent.
+- `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
+  packages/db/src packages/cli/src`: passed with no matches.

@@ -6,10 +6,8 @@ Hard blockers:
 
 Known unproven M21 behavior:
 
-- `krn evidence capture --run-id <id> --persist` is not implemented or proven
-  for evidence bundle, review assessment, and feedback delta persistence yet.
-- Full persisted evidence loop cleanup is not recorded yet; Slice 05 proves
-  persisted plan readback and cleanup only.
+- Full persisted evidence loop cleanup is not recorded yet; Slice 06 proves
+  linked evidence/review/feedback persistence but not cleanup.
 
 Explicit non-blockers:
 

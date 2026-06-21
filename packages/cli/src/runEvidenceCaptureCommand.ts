@@ -8,6 +8,12 @@ import type {
   DiffRisk,
   EvidenceCommand
 } from "@krn/core";
+import {
+  createDatabaseRuntime
+} from "./databaseRuntime.js";
+import type {
+  CreateDatabaseRuntime
+} from "./runPlanCommand.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -15,7 +21,11 @@ export interface EvidenceCaptureRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
   now(): string;
+  createId(prefix: string): string;
+  persist: boolean;
+  runId?: string;
   readGitStatus?(): Promise<string>;
+  createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
 export interface EvidenceCaptureResult {
@@ -26,6 +36,15 @@ interface ChangedFile {
   status: string;
   path: string;
 }
+
+interface PersistedEvidenceIdentity {
+  evidenceBundleId: string;
+  reviewAssessmentId: string;
+  feedbackDeltaId: string;
+}
+
+const defaultWorkspaceSlug = "local";
+const defaultProjectSlug = "mise-en-palace";
 
 const readGitStatus = async (runtime: EvidenceCaptureRuntime): Promise<string> => {
   if (runtime.readGitStatus !== undefined) {
@@ -77,20 +96,10 @@ const defaultCommands = (): EvidenceCommand[] => [
   }
 ];
 
-const persistenceLabel = (runtime: EvidenceCaptureRuntime): string => {
-  if (runtime.env.KRN_DATABASE_URL === undefined || runtime.env.KRN_DATABASE_URL.trim().length === 0) {
-    return "disabled (KRN_DATABASE_URL not set; printed only)";
-  }
-
-  if (
-    runtime.env.KRN_EXECUTION_RUN_ID === undefined ||
-    runtime.env.KRN_EXECUTION_RUN_ID.trim().length === 0
-  ) {
-    return "skipped (KRN_EXECUTION_RUN_ID missing; printed only)";
-  }
-
-  return "ready (execution run id configured; persistence adapter pending evidence bundle write)";
-};
+const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
+  runtime.persist
+    ? "enabled (Postgres, explicit --persist)"
+    : "disabled (explicit printed-only preview; use --persist to write)";
 
 const renderChangedFiles = (changedFiles: readonly ChangedFile[]): string[] => {
   if (changedFiles.length === 0) {
@@ -100,6 +109,99 @@ const renderChangedFiles = (changedFiles: readonly ChangedFile[]): string[] => {
   return changedFiles.map((file) => `- ${file.status} ${file.path}`);
 };
 
+const persistEvidenceCapture = async (
+  runtime: EvidenceCaptureRuntime,
+  changedFiles: readonly ChangedFile[],
+  commands: EvidenceCommand[],
+  diffRisk: DiffRisk
+): Promise<PersistedEvidenceIdentity> => {
+  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
+  const runId = runtime.runId?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for krn evidence capture --persist");
+  }
+
+  if (runId === undefined || runId.length === 0) {
+    throw new Error("--run-id is required for krn evidence capture --persist");
+  }
+
+  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  const databaseRuntime = await createRuntime({
+    databaseUrl,
+    workspaceSlug: defaultWorkspaceSlug,
+    projectSlug: defaultProjectSlug,
+    now: runtime.now,
+    createId: runtime.createId
+  });
+
+  try {
+    const aggregate = await databaseRuntime.harnessRunRepository.getHarnessRunByExecutionRunId(runId);
+
+    if (aggregate === undefined) {
+      throw new Error(`No persisted harness run found for --run-id ${runId}`);
+    }
+
+    const nextSequence =
+      aggregate.runEvents.reduce(
+        (max, event) => Math.max(max, event.sequence),
+        0
+      ) + 1;
+    const evidenceBundle = await databaseRuntime.harnessRunRepository.createEvidenceBundle({
+      executionRunId: runId,
+      status: "captured",
+      changedFiles: changedFiles.map((file) => file.path),
+      commands,
+      diffRisk,
+      reviewBurden: "Review changed files, command evidence, residual risk, and rollback path.",
+      rollbackPath: "Revert the focused implementation commit or discard uncommitted changes.",
+      event: {
+        sequence: nextSequence,
+        type: "evidence.captured",
+        message: "Evidence captured from CLI",
+        payload: {
+          changedFileCount: changedFiles.length,
+          commandCount: commands.length
+        }
+      },
+      metadata: {
+        command: "krn evidence capture --persist",
+        runId
+      }
+    });
+    const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment({
+      evidenceBundleId: evidenceBundle.id,
+      status: "pending",
+      reviewer: "krn-cli",
+      summary: "Evidence captured; human review still required.",
+      findings: [],
+      metadata: {
+        runId,
+        changedFileCount: changedFiles.length
+      }
+    });
+    const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta({
+      reviewAssessmentId: reviewAssessment.id,
+      status: "candidate",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [],
+      metadata: {
+        runId,
+        changedFileCount: changedFiles.length
+      }
+    });
+
+    return {
+      evidenceBundleId: evidenceBundle.id,
+      reviewAssessmentId: reviewAssessment.id,
+      feedbackDeltaId: feedbackDelta.id
+    };
+  } finally {
+    await databaseRuntime.close();
+  }
+};
+
 export const runEvidenceCaptureCommand = async (
   runtime: EvidenceCaptureRuntime
 ): Promise<EvidenceCaptureResult> => {
@@ -107,6 +209,9 @@ export const runEvidenceCaptureCommand = async (
   const changedFiles = parseChangedFiles(statusOutput);
   const commands = defaultCommands();
   const diffRisk = diffRiskFromChangedFiles(changedFiles);
+  const persistedIdentity = runtime.persist
+    ? await persistEvidenceCapture(runtime, changedFiles, commands, diffRisk)
+    : undefined;
   const feedbackCandidate =
     changedFiles.length === 0
       ? "No changed files; no feedback candidate proposed."
@@ -115,6 +220,7 @@ export const runEvidenceCaptureCommand = async (
     "KRN Evidence Capture",
     `Captured at: ${runtime.now()}`,
     `Persistence: ${persistenceLabel(runtime)}`,
+    ...(runtime.runId === undefined ? [] : [`Run ID: ${runtime.runId}`]),
     "Changed files:",
     ...renderChangedFiles(changedFiles),
     "Commands:",
@@ -126,6 +232,15 @@ export const runEvidenceCaptureCommand = async (
     "Feedback candidates:",
     `- ${feedbackCandidate}`
   ];
+
+  if (persistedIdentity !== undefined) {
+    lines.push(
+      "Persisted IDs:",
+      `evidenceBundle: ${persistedIdentity.evidenceBundleId}`,
+      `reviewAssessment: ${persistedIdentity.reviewAssessmentId}`,
+      `feedbackDelta: ${persistedIdentity.feedbackDeltaId}`
+    );
+  }
 
   return {
     stdout: `${lines.join("\n")}\n`

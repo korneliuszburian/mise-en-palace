@@ -174,6 +174,12 @@ export const runCli = async (
         env: runtime.env,
         cwd: runtime.cwd ?? process.cwd(),
         now,
+        createId,
+        persist: parsed.command.persist,
+        ...(parsed.command.runId === undefined ? {} : { runId: parsed.command.runId }),
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
         ...(runtime.readGitStatus === undefined ? {} : { readGitStatus: runtime.readGitStatus })
       });
 

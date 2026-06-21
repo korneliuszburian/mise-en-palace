@@ -46,6 +46,10 @@
 - `pnpm db:smoke:harness-plan` must use deterministic markers and cleanup,
   because local proof runs should not leave smoke workspace rows or marked run
   events behind.
+- `krn evidence capture --run-id <id> --persist` uses `executionRunId` as the
+  write anchor and appends sequence `max(run_events.sequence) + 1`.
+- Persisted evidence capture creates candidate records only; it does not apply
+  memory, source, or eval updates.
 
 Slice 00 skill record:
 
@@ -106,3 +110,13 @@ Slice 05 skill record:
 - `test-driven-development`: used; RED CLI test failed before parser support
   and passed after.
 - `evidence-review-loop`: used for smoke proof and cleanup evidence.
+
+Slice 06 skill record:
+
+- `evidence-review-loop`: used for evidence bundle, review assessment, feedback
+  delta, command proof, and residual-risk handling.
+- `typescript-type-safety`: used for CLI parser/run-id/env boundaries and DB
+  runtime injection.
+- `test-driven-development`: used; RED CLI tests failed before implementation
+  and passed after.
+- `brain-store-schema`: used for linked evidence/review/feedback persistence.

@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 05 persisted plan smoke complete.
+Current slice: Slice 06 persisted evidence capture complete.
 
 Completed:
 
@@ -36,6 +36,9 @@ Completed:
 - Slice 05 added `pnpm db:smoke:harness-plan`, which creates a marked persisted
   harness plan run, reads it back through the repository aggregate, verifies
   core fields, and cleans up the marker.
+- Slice 06 added explicit `krn evidence capture --run-id <id> --persist`,
+  which loads the persisted run, writes an evidence bundle, creates a review
+  assessment, creates feedback delta candidates, and prints persisted IDs.
 
 Verification:
 
@@ -87,6 +90,20 @@ Verification:
   db:smoke:harness-plan`: passed. Execution run
   `7fc256ef-2868-483c-bd3a-c3283df4b761`, readback matched, evidence command
   count `3`, run events `1`, cleanup remaining marker count `0`.
+- RED `pnpm --filter @krn/cli test`: failed on missing
+  `evidence capture --run-id --persist` parser/implementation.
+- GREEN `pnpm --filter @krn/cli test`: passed with 15 tests.
+- `pnpm typecheck`: passed during Slice 06.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn evidence capture --run-id
+  b529e20e-b8ca-4cb5-9342-58578e880945 --persist`: passed and printed
+  persisted IDs.
+- SQL proof for execution run `b529e20e-b8ca-4cb5-9342-58578e880945`: evidence
+  bundles `1`, review assessments `1`, feedback deltas `1`, run events `2`.
+- `pnpm test`: passed during Slice 06.
+- `pnpm --filter @krn/db db:check`: passed during Slice 06.
+- No `any` / double-assertion scan over `packages/core`, `packages/harness/src`,
+  `packages/db/src`, and `packages/cli/src`: passed.
 
 Skill gates:
 
@@ -107,8 +124,13 @@ Skill gates:
 - Used: `typescript-type-safety` for Slice 05 DB smoke report and cleanup
   boundary.
 - Used: `test-driven-development` for Slice 05 RED/GREEN CLI parser test.
+- Used: `evidence-review-loop` for Slice 06 evidence/review/feedback
+  persistence.
+- Used: `typescript-type-safety` for Slice 06 CLI arg/env/run-id boundaries.
+- Used: `test-driven-development` for Slice 06 RED/GREEN CLI tests.
 - Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 06: implement `krn evidence capture --run-id <id> --persist`.
+- Slice 07: add `pnpm db:smoke:harness-evidence` to prove persisted evidence
+  capture readback and cleanup.

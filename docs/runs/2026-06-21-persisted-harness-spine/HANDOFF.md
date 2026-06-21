@@ -5,14 +5,18 @@ Persist the first KRN harness run spine through the existing Postgres/Drizzle
 infrastructure.
 
 Last verified state:
-Slice 05 persisted plan smoke is complete. `krn plan --task "..." --persist`
-persists and prints run IDs, and `pnpm db:smoke:harness-plan` creates a marked
-persisted harness run, reads it back through the repository aggregate, verifies
-core fields, and cleans up marker rows. Live smoke execution run
-`7fc256ef-2868-483c-bd3a-c3283df4b761` read back as matched with three evidence
-commands, one run event, and cleanup remaining marker count `0`. `pnpm
-typecheck`, `pnpm test`, no-DB `krn doctor`, `pnpm --filter @krn/db db:check`,
-and live `pnpm db:ready` passed during M21 so far.
+Slice 06 persisted evidence capture is complete. `krn plan --task "..."
+--persist` persists and prints run IDs; `pnpm db:smoke:harness-plan` proves plan
+readback/cleanup; `krn evidence capture --run-id <id> --persist` now loads a
+persisted run and writes an evidence bundle, review assessment, and feedback
+delta candidates. Live capture against execution run
+`b529e20e-b8ca-4cb5-9342-58578e880945` produced evidence bundle
+`41b27f25-efb7-48ed-92ad-00fb88cdf7c4`, review assessment
+`384bb648-dcf4-43f6-a60e-9003acff047e`, feedback delta
+`975e26bf-6eae-4fb8-a0ae-80352977331c`, and SQL proof showed 1/1/1 linked
+records with 2 run events. `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`,
+`pnpm --filter @krn/db db:check`, and live `pnpm db:ready` passed during M21 so
+far.
 
 Changed files:
 
@@ -45,6 +49,7 @@ Changed files:
 - `packages/db/src/harnessPlanSmoke.ts`
 - `packages/db/src/index.ts`
 - `packages/cli/src/runDbSmokeCommand.ts`
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
 
 Decisions:
 M21 starts from the completed M20 local DB proof. The write path must be explicit
@@ -56,8 +61,7 @@ readback is keyed by `executionRunId`. Slice 04 makes writes explicit:
 configured DB alone does not make `krn plan` persist state.
 
 Blockers/risks:
-No Slice 05 blocker. Persisted evidence/review/feedback CLI behavior is not
-implemented yet.
+No Slice 06 blocker. Persisted evidence cleanup smoke is not implemented yet.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -67,9 +71,8 @@ schema/migrations/repositories, CLI `plan`/`doctor`/`evidence capture`, and
 harness/core types directly touched by the next slice.
 
 Next action:
-Slice 06: implement `krn evidence capture --run-id <id> --persist`, loading the
-persisted run and writing evidence bundle, review assessment, and feedback delta
-candidates.
+Slice 07: add `pnpm db:smoke:harness-evidence` to create a marked persisted run,
+capture evidence, verify readback of evidence/review/feedback, and prove cleanup.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

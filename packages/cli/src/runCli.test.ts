@@ -7,7 +7,11 @@ import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
 import type {
-  CreateExecutionRunInput
+  CreateEvidenceBundleInput,
+  CreateExecutionRunInput,
+  CreateFeedbackDeltaInput,
+  CreateReviewAssessmentInput,
+  HarnessRunAggregate
 } from "@krn/harness";
 import type {
   DatabaseRuntimeInput
@@ -243,6 +247,198 @@ describe("runCli", () => {
     expect(result.stdout).toContain("git diff --check: skipped");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Feedback candidates:");
+  });
+
+  it("requires database config for evidence capture --persist", async () => {
+    const result = await runCli(
+      ["evidence", "capture", "--run-id", "execution-run-1", "--persist"],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn evidence capture --persist"
+    );
+  });
+
+  it("requires run id for evidence capture --persist", async () => {
+    const result = await runCli(
+      ["evidence", "capture", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("--run-id is required for krn evidence capture --persist");
+  });
+
+  it("persists evidence capture for a run id", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        source: "cli",
+        rawIntent: "persist harness run",
+        metadata: {},
+        createdAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-1",
+        title: "persist harness run",
+        objective: "persist harness run",
+        constraints: [],
+        nonGoals: [],
+        acceptance: [],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "persist harness run",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      contextAssembly: {
+        id: "context-assembly-1",
+        harnessPlanId: "harness-plan-1",
+        status: "assembled",
+        inclusions: [],
+        exclusions: [],
+        metadata: {},
+        createdAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "planned",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: [{
+        id: "run-event-1",
+        executionRunId: "execution-run-1",
+        sequence: 1,
+        type: "plan.persisted",
+        severity: "info",
+        message: "plan persisted",
+        payload: {},
+        occurredAt: now
+      }]
+    };
+    const harnessRunRepository = {
+      ...dependencies.harnessRunRepository,
+      async createExecutionRun(_input: CreateExecutionRunInput) {
+        return aggregate.executionRun;
+      },
+      async getHarnessRunByExecutionRunId() {
+        return aggregate;
+      },
+      async createEvidenceBundle(input: CreateEvidenceBundleInput) {
+        return {
+          id: "evidence-bundle-1",
+          executionRunId: input.executionRunId,
+          status: input.status ?? "captured",
+          changedFiles: input.changedFiles,
+          commands: input.commands,
+          diffRisk: input.diffRisk,
+          reviewBurden: input.reviewBurden,
+          rollbackPath: input.rollbackPath,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      async createReviewAssessment(input: CreateReviewAssessmentInput) {
+        return {
+          id: "review-assessment-1",
+          evidenceBundleId: input.evidenceBundleId,
+          status: input.status ?? "pending",
+          reviewer: input.reviewer,
+          summary: input.summary,
+          findings: input.findings,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
+        return {
+          id: "feedback-delta-1",
+          reviewAssessmentId: input.reviewAssessmentId,
+          status: input.status ?? "candidate",
+          memoryCandidates: input.memoryCandidates,
+          sourceDecisions: input.sourceDecisions,
+          evalCandidates: input.evalCandidates,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      }
+    };
+    const result = await runCli(
+      ["evidence", "capture", "--run-id", "execution-run-1", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => " M packages/cli/src/runCli.ts\n",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("Run ID: execution-run-1");
+    expect(result.stdout).toContain("Persisted IDs:");
+    expect(result.stdout).toContain("evidenceBundle: evidence-bundle-1");
+    expect(result.stdout).toContain("reviewAssessment: review-assessment-1");
+    expect(result.stdout).toContain("feedbackDelta: feedback-delta-1");
+    expect(result.stdout).toContain("Memory mutation: none");
   });
 
   it("prints clean evidence capture when there are no changed files", async () => {
