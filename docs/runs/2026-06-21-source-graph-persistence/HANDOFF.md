@@ -5,7 +5,7 @@ Persist SourceClaims and source-to-decision edges through the existing
 Postgres/Drizzle-backed KRN control plane.
 
 Last verified state:
-M22 Slice 09 evidence source candidates is complete. `GOAL.md` defines M22. Slice 00
+M22 Slice 10 doctor source graph readiness is complete. `GOAL.md` defines M22. Slice 00
 preflight passed `pnpm typecheck`, `pnpm test`, no-DB `krn doctor`, live
 `pnpm db:ready`, live `pnpm db:smoke`, live `pnpm db:smoke:harness-plan`, and
 live `pnpm db:smoke:harness-evidence`. Slice 01 recorded the current source
@@ -21,6 +21,8 @@ remaining marker count `0`. Slice 06 added and live-verified
 `krn source claim reject --persist`. Slice 09 updated `krn evidence capture` to
 surface proposal-only source decision candidates and persist them in
 `FeedbackDelta.sourceDecisions` when evidence capture itself is persisted.
+Slice 10 updated `krn doctor` to report source graph readiness and live-verified
+both no-DB preview-only and DB-backed ready states.
 
 Changed files:
 
@@ -32,6 +34,9 @@ Changed files:
 - `packages/cli/src/runCli.ts`
 - `packages/cli/src/runSourceClaimRejectCommand.ts`
 - `packages/cli/src/runSourceDecisionLinkCommand.ts`
+- `packages/cli/src/runDoctorCommand.ts`
+- `packages/db/src/index.ts`
+- `packages/db/src/sourceGraphReadiness.ts`
 - `docs/runs/2026-06-21-source-graph-persistence/PROGRESS.md`
 - `docs/runs/2026-06-21-source-graph-persistence/HANDOFF.md`
 - `docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md`
@@ -52,9 +57,12 @@ Slice 07 verifies SourceClaim existence before creating typed source decision
 edges. Slice 08 keeps rejected/decorative material as SourceRejection only and
 does not create a SourceClaim. Slice 09 keeps evidence-derived source decisions
 as FeedbackDelta candidates and does not create SourceClaims from changed files.
+Slice 10 keeps doctor read-only and derives source graph readiness from schema,
+SourceRepository read reachability, smoke command availability, forbidden-infra
+absence, and durable runtime proof markers.
 
 Blockers/risks:
-No Slice 09 blocker. Doctor source graph readiness remains unproven.
+No Slice 10 blocker. M22 dogfood and final anti-rot/handoff remain.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -64,7 +72,7 @@ schema/migrations/repositories, existing source/core/schema types, CLI
 `plan`/`doctor`/`evidence capture`, and M22 run ledger files.
 
 Next action:
-Slice 10: add `krn doctor` source graph readiness.
+Slice 11: dogfood source graph on M22.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

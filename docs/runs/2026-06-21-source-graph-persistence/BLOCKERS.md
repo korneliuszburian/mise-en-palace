@@ -2,11 +2,12 @@
 
 Hard blockers:
 
-- None through Slice 09.
+- None through Slice 10.
 
 Known unproven M22 behavior:
 
-- `krn doctor` does not yet report source graph readiness.
+- M22 source graph dogfood is not recorded yet.
+- M22 final anti-rot and handoff update are not recorded yet.
 
 Explicit non-blockers:
 
@@ -66,3 +67,11 @@ Closed in Slice 09:
   proposal-only source decision candidates from source/decision-like changed
   files, persists them in `FeedbackDelta.sourceDecisions` when evidence capture
   is persisted, and still does not create SourceClaims or mutate memory.
+
+Closed in Slice 10:
+
+- `krn doctor` reports source graph schema readiness, SourceRepository read
+  path reachability, source graph smoke command availability, source graph
+  runtime proof markers, forbidden source crawler/research layer absence,
+  separate graph DB absence, and derived source graph readiness. No-DB and live
+  DB doctor paths passed.

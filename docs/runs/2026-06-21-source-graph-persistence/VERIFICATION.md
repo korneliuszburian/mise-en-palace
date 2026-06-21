@@ -192,3 +192,35 @@ Slice 09 evidence source candidates:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
   db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
 - `pnpm test`: passed.
+
+Slice 10 doctor source graph readiness:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn doctor` did not report source graph checks and
+  `deriveSourceGraphReadiness` was not exported.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed after adding
+  source graph doctor checks, readiness derivation, and a read-only
+  `inspectSourceGraphReadiness` DB helper.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config.
+  - Source graph schema: skipped (Postgres not configured).
+  - Source graph smoke: available (`pnpm db:smoke:source-graph`).
+  - Source crawler/research layer: absent.
+  - Separate graph DB: absent.
+  - Source graph readiness: preview-only.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed.
+  - Execution run: `18d51573-6ee6-4626-8fa3-3b2c60a20cc7`.
+  - Source artifact: `06b41a98-acf0-493a-bd6f-11e21e7e0845`.
+  - Source claim: `d93ec392-f199-4641-b7c3-7b83f6955683`.
+  - Source decision edge: `d2f9e63d-0a34-41d3-9274-bd839f819281`.
+  - Source rejection: `bd005c99-9088-4546-8251-c45acb5d973e`.
+  - Outbox events: `2`.
+  - Cleanup remaining marker count: `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed.
+  - Source graph schema: ready (8/8 tables present).
+  - SourceRepository read path: reachable.
+  - Source graph runtime proof: ready (claims 1, edges 1, rejections 1).
+  - Source graph readiness: ready.
+- `pnpm test`: passed.

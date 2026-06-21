@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 09 evidence source candidates complete.
+Current slice: Slice 10 doctor source graph readiness complete.
 
 Completed:
 
@@ -39,6 +39,10 @@ Completed:
   from source/decision-like changed files, persist those candidates in
   `FeedbackDelta.sourceDecisions` when `--persist --run-id` is used, and keep
   SourceClaim creation out of evidence capture.
+- Slice 10 updated `krn doctor` to report source graph schema readiness,
+  SourceRepository read-path reachability, source graph smoke availability,
+  runtime proof markers, forbidden source crawler/research infrastructure, and
+  derived source graph readiness.
 
 Verification:
 
@@ -138,6 +142,23 @@ Verification:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
   db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
 - `pnpm test`: passed.
+- Slice 10 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn doctor` did not output source graph readiness and
+  `deriveSourceGraphReadiness` did not exist.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config and reported
+  source graph readiness as preview-only.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with execution run
+  `18d51573-6ee6-4626-8fa3-3b2c60a20cc7`, source claim
+  `d93ec392-f199-4641-b7c3-7b83f6955683`, source decision edge
+  `d2f9e63d-0a34-41d3-9274-bd839f819281`, source rejection
+  `bd005c99-9088-4546-8251-c45acb5d973e`, outbox events `2`, and cleanup
+  remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported `Source graph readiness: ready`.
+- `pnpm test`: passed.
 
 Skill gates:
 
@@ -157,4 +178,4 @@ Skill gates:
 
 Next action:
 
-- Slice 10: add `krn doctor` source graph readiness.
+- Slice 11: dogfood source graph on M22.

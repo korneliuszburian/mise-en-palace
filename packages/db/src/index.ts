@@ -5,5 +5,6 @@ export * from "./harnessPlanSmoke.js";
 export * from "./migrationReadiness.js";
 export * from "./persistenceSmoke.js";
 export * from "./sourceGraphSmoke.js";
+export * from "./sourceGraphReadiness.js";
 export * from "./repositories/index.js";
 export * from "./schema/index.js";

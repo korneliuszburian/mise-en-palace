@@ -48,6 +48,10 @@
 - Slice 09 keeps evidence-derived source decisions as FeedbackDelta candidates,
   not SourceClaims, because evidence capture observes changed files but does
   not have the mechanism/does-not-prove/consumer proof needed to trust a claim.
+- Slice 10 keeps `krn doctor` read-only. Source graph readiness is derived from
+  schema presence, SourceRepository read-path reachability, smoke command
+  availability, forbidden-infra absence, and durable runtime proof markers
+  rather than hidden doctor state.
 
 Slice 00 skill record:
 
@@ -151,4 +155,15 @@ Slice 09 skill record:
 - `evidence-review-loop`: used because the slice changes evidence capture and
   feedback candidate behavior.
 - `superpowers:test-driven-development`: used for RED/GREEN evidence capture
+  tests.
+
+Slice 10 skill record:
+
+- `brain-store-schema`: used for the read-only source graph schema/proof helper
+  and DB table checks.
+- `typescript-type-safety`: used for exported readiness report types and doctor
+  readiness derivation.
+- `source-to-decision`: used to keep source graph readiness tied to claim,
+  decision edge, and rejection proof rather than decorative source presence.
+- `superpowers:test-driven-development`: used for RED/GREEN doctor readiness
   tests.

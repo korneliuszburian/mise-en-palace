@@ -18,7 +18,8 @@ import type {
 } from "./databaseRuntime.js";
 import {
   deriveBrainStoreReadiness,
-  deriveHarnessPersistenceReadiness
+  deriveHarnessPersistenceReadiness,
+  deriveSourceGraphReadiness
 } from "./runDoctorCommand.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -166,6 +167,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Harness persistence readiness: preview only (set KRN_DATABASE_URL and run harness smoke commands for persistence proof)"
     );
+    expect(result.stdout).toContain("Source graph smoke: available (pnpm db:smoke:source-graph)");
+    expect(result.stdout).toContain(
+      "Source graph readiness: preview only (set KRN_DATABASE_URL and run source graph smoke for persistence proof)"
+    );
     expect(result.stdout).toContain("AGENTS.md: present");
     expect(result.stdout).toContain(".krn runtime truth: absent");
     expect(result.stdout).toContain("TypeScript strictness: enabled");
@@ -227,6 +232,40 @@ describe("runCli", () => {
     ).toEqual({
       label: "Harness persistence readiness",
       status: "blocked (harness persistence schema missing)"
+    });
+  });
+
+  it("distinguishes doctor source graph readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (4/4 applied)" }
+    ];
+    const sourceGraphReady = [
+      { label: "Source graph schema", status: "ready (8/8 tables present)" },
+      { label: "SourceRepository read path", status: "reachable" },
+      { label: "Source graph smoke", status: "available (pnpm db:smoke:source-graph)" },
+      { label: "Source graph runtime proof", status: "ready (claims 1, edges 1, rejections 1)" },
+      { label: "Source crawler/research layer", status: "absent" },
+      { label: "Separate graph DB", status: "absent" }
+    ];
+
+    expect(
+      deriveSourceGraphReadiness(postgresReady, sourceGraphReady)
+    ).toEqual({
+      label: "Source graph readiness",
+      status: "ready (schema present; repository reachable; runtime proof present)"
+    });
+
+    expect(
+      deriveSourceGraphReadiness(postgresReady, [
+        ...sourceGraphReady.slice(0, 3),
+        { label: "Source graph runtime proof", status: "unverified (run pnpm db:smoke:source-graph)" },
+        ...sourceGraphReady.slice(4)
+      ])
+    ).toEqual({
+      label: "Source graph readiness",
+      status: "runtime unverified (run pnpm db:smoke:source-graph)"
     });
   });
 
