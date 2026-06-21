@@ -5,7 +5,7 @@ Persist the first KRN harness run spine through the existing Postgres/Drizzle
 infrastructure.
 
 Last verified state:
-Slice 09 persisted harness loop dogfood is complete. `krn plan --task "..."
+Slice 10 anti-rot audit is complete. `krn plan --task "..."
 --persist` persists and prints run IDs; `pnpm db:smoke:harness-plan` proves plan
 readback/cleanup; `krn evidence capture --run-id <id> --persist` loads a
 persisted run and writes an evidence bundle, review assessment, and feedback
@@ -20,6 +20,9 @@ present, evidence/review/feedback counts `1/1/1`, and run events `2`. `pnpm
 typecheck`, `pnpm test`, no-DB `krn doctor`, live `krn doctor`, `pnpm --filter
 @krn/db db:check`, live `pnpm db:ready`, live `pnpm db:smoke:harness-plan`, and
 live `pnpm db:smoke:harness-evidence` passed during M21 so far.
+Slice 10 also re-ran the full anti-rot command set, live DB smoke paths,
+cleanup proof, forbidden surface scans, direct forbidden dependency scan, core
+library-safe scan, no-`any` scan, and `git diff --check`; see `ANTI_ROT.md`.
 
 Changed files:
 
@@ -56,6 +59,7 @@ Changed files:
 - `packages/db/src/harnessEvidenceSmoke.ts`
 - `packages/db/src/harnessPersistenceReadiness.ts`
 - `docs/runs/2026-06-21-persisted-harness-spine/DOGFOOD.md`
+- `docs/runs/2026-06-21-persisted-harness-spine/ANTI_ROT.md`
 
 Decisions:
 M21 starts from the completed M20 local DB proof. The write path must be explicit
@@ -67,7 +71,7 @@ readback is keyed by `executionRunId`. Slice 04 makes writes explicit:
 configured DB alone does not make `krn plan` persist state.
 
 Blockers/risks:
-No Slice 09 blocker. Anti-rot audit remains the next M21 slice.
+No Slice 10 blocker. Final handoff remains.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -77,8 +81,7 @@ schema/migrations/repositories, CLI `plan`/`doctor`/`evidence capture`, and
 harness/core types directly touched by the next slice.
 
 Next action:
-Slice 10: run anti-rot audit across tests, live DB proof commands, forbidden
-surface checks, and type-safety scans.
+Slice 11: update final handoff and completion status.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

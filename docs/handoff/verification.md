@@ -58,6 +58,24 @@ Latest M21 Slice 09 verification:
 - Forbidden directory scan passed with no output; forbidden store/runtime scan
   found no KRN runtime dependency or implementation use.
 
+Latest M21 Slice 10 verification:
+
+- `git status --short --branch`: passed; clean `main...origin/main`.
+- `git log --oneline -12`: passed and showed M21 Slice 00 through Slice 09.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- No-env `krn doctor`: passed.
+- Live `krn doctor`: passed and reported harness persistence readiness ready.
+- Live `pnpm db:ready`: passed with migrations `3/3` and pgvector available.
+- Live `pnpm db:smoke`: passed.
+- Live `pnpm db:smoke:harness-plan`: passed with cleanup marker count `0`.
+- Live `pnpm db:smoke:harness-evidence`: passed with cleanup marker count `0`.
+- `pnpm --filter @krn/db db:check`: passed.
+- SQL cleanup count for project/harness/evidence smoke workspaces returned
+  `0,0,0`.
+- Forbidden directory, direct forbidden dependency, eval/benchmark directory,
+  core library-safe, no-`any`, and `git diff --check` scans passed.
+
 Current M21 scope checks:
 
 - No dashboard, API, MCP server, broad worker runtime, research layer, `.krn`,

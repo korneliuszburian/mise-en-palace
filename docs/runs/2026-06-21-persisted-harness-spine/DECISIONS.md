@@ -64,6 +64,8 @@
   dogfood or anti-rot audit.
 - Slice 09 dogfood rows are intentionally retained as local proof rows. Smoke
   rows remain marker-scoped and cleaned up.
+- Slice 10 anti-rot does not add product behavior; it records the current proof
+  surface and forbidden-surface checks before final handoff.
 
 Slice 00 skill record:
 
@@ -159,3 +161,9 @@ Slice 09 skill record:
   review burden, rollback path, and residual risk recording.
 - `handoff-compact`: used to refresh current state and next action without
   broad historical reread.
+
+Slice 10 skill record:
+
+- `evidence-review-loop`: used for anti-rot command evidence, scope checks, and
+  residual risk recording.
+- `verification-before-completion`: used before claiming the audit passed.

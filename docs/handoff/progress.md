@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: M21 persisted harness spine in progress; Slice 09 complete.
+Current phase: M21 persisted harness spine in progress; Slice 10 complete.
 
 Completed in M21 so far:
 
@@ -22,6 +22,8 @@ Completed in M21 so far:
   the database.
 - Persisted harness loop dogfood is recorded in
   `docs/runs/2026-06-21-persisted-harness-spine/DOGFOOD.md`.
+- Anti-rot audit is recorded in
+  `docs/runs/2026-06-21-persisted-harness-spine/ANTI_ROT.md`.
 
 Current runtime truth:
 
@@ -33,8 +35,10 @@ Current runtime truth:
   proven.
 - Dogfood execution run `66626e90-0cf5-4803-9bc7-f477b28b47c4` has linked
   evidence/review/feedback records and SQL readback proof.
+- Slice 10 re-verified typecheck, tests, no-env/live doctor, DB readiness,
+  project smoke, harness plan smoke, harness evidence smoke, cleanup, forbidden
+  surfaces, forbidden dependencies, core library safety, and no-`any` scans.
 
 Next action:
 
-- Slice 10: run the anti-rot audit across tests, live DB proof commands, and
-  forbidden surface checks.
+- Slice 11: update final M21 handoff and completion status.

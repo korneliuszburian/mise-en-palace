@@ -5,7 +5,7 @@ M21 persists the first KRN harness run spine through the existing
 Postgres/Drizzle infrastructure.
 
 Last verified state:
-M21 Slices 00-09 are complete through the current working tree. `krn plan
+M21 Slices 00-10 are complete through the current working tree. `krn plan
 --task "..." --persist` writes a persisted harness plan run; `pnpm
 db:smoke:harness-plan` proves plan readback and cleanup; `krn evidence capture
 --run-id <id> --persist` writes linked evidence/review/feedback candidates; and
@@ -20,6 +20,10 @@ live DB reported schema `ready (10/10 tables present)` and readiness
 feedback counts `1/1/1` and run events `2`. Latest verification passed `pnpm
 typecheck`, `pnpm test`, live doctor, both harness smoke scripts, SQL dogfood
 readback, smoke cleanup count `0,0`, and forbidden surface checks.
+Slice 10 anti-rot also re-verified no-env/live doctor, DB readiness, project
+smoke, both harness smoke scripts, cleanup count `0,0,0`, no forbidden
+directories, no direct forbidden store dependency, core library safety, and
+no-`any` scans.
 
 Changed files:
 M21 changed `GOAL.md`, `PLAN.md`, root handoff docs, the run ledger under
@@ -35,7 +39,7 @@ runtime markdown memory, full MemoryStore/SourceStore, workers, or separate
 stores.
 
 Blockers/risks:
-No Slice 09 blocker. Anti-rot audit remains the next M21 slice.
+No Slice 10 blocker. Final handoff remains.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/verification.md`,
@@ -45,8 +49,7 @@ schema/migrations/repositories, CLI `plan`/`doctor`/`evidence capture`/`db
 smoke`, and harness/core types touched by M21.
 
 Next action:
-Slice 10: run anti-rot audit across tests, live DB proof commands, forbidden
-surface checks, and type-safety scans.
+Slice 11: update final M21 handoff and completion status.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless a future task explicitly asks

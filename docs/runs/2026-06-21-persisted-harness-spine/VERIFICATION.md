@@ -203,3 +203,36 @@ Slice 09 persisted harness loop dogfood:
 - Forbidden store/runtime scan found no KRN runtime dependency or implementation
   use; the only external-store dependency hit remains optional Drizzle peer
   metadata in `pnpm-lock.yaml`, and other matches are docs/non-goal text.
+
+Slice 10 anti-rot audit:
+
+- `git status --short --branch`: passed; clean `main...origin/main`.
+- `git log --oneline -12`: passed; newest commits covered M21 Slice 00 through
+  Slice 09.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB config.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported harness persistence readiness
+  ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations `3/3` and pgvector available.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- `pnpm --filter @krn/db db:check`: passed.
+- Direct SQL cleanup count for `krn-smoke-%`, `krn-harness-smoke-%`, and
+  `krn-evidence-smoke-%` workspaces returned `0,0,0`.
+- Forbidden directory scan for `apps`, `packages/dashboard`, `packages/api`,
+  `packages/mcp`, `packages/research`, and `.krn`: passed with no output.
+- Direct package-manifest dependency scan for Redis, Kafka, Qdrant, LanceDB,
+  Neo4j, Elasticsearch, and OpenSearch: passed with no matches.
+- Eval/benchmark directory scan: passed with no output.
+- Core library-safe scan: passed with no forbidden imports or runtime APIs.
+- No `any` / double-assertion scan over `packages/core`,
+  `packages/harness/src`, `packages/db/src`, and `packages/cli/src`: passed
+  with no matches.
+- `git diff --check`: passed.

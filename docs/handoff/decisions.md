@@ -26,3 +26,5 @@
   only; it does not execute smoke commands or create proof rows.
 - Slice 09 dogfood rows are retained as local proof rows; smoke rows remain
   marker-scoped and cleaned up.
+- Slice 10 anti-rot is proof-only; it records current behavior and forbidden
+  surfaces without adding product behavior.

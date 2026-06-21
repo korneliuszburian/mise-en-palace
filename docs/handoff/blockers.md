@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through M21 Slice 09.
+- None through M21 Slice 10.
 
 Closed in M20:
 
@@ -33,10 +33,11 @@ Closed in M21 so far:
   `pnpm db:smoke:harness-evidence`.
 - Harness persistence readiness is reported by read-only `krn doctor`.
 - Persisted harness loop dogfood is recorded with live DB proof.
+- Anti-rot audit is recorded with live DB and forbidden-surface proof.
 
 Remaining M21 work:
 
-- Final anti-rot audit is not complete yet.
+- Final handoff is not updated yet.
 
 Explicit non-blockers:
 

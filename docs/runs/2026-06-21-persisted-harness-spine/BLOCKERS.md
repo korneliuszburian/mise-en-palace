@@ -2,16 +2,17 @@
 
 Hard blockers:
 
-- None through Slice 09.
+- None through Slice 10.
 
 Known unproven M21 behavior:
 
-- Final anti-rot audit is not complete yet; Slice 10 owns the broad no-forbidden
-  surface checks.
+- Final handoff is not updated yet; Slice 11 owns completion status and next
+  action.
 
 Closed in Slice 09:
 
 - Persisted harness loop dogfood is recorded in `DOGFOOD.md`.
+- Anti-rot audit is recorded in `ANTI_ROT.md`.
 
 Explicit non-blockers:
 

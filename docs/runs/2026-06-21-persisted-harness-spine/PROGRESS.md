@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 09 persisted harness loop dogfood complete.
+Current slice: Slice 10 anti-rot audit complete.
 
 Completed:
 
@@ -47,6 +47,7 @@ Completed:
   harness persistence readiness.
 - Slice 09 dogfooded the persisted harness loop with live DB and recorded the
   persisted run under `DOGFOOD.md`.
+- Slice 10 recorded the anti-rot audit under `ANTI_ROT.md`.
 
 Verification:
 
@@ -170,6 +171,26 @@ Verification:
   `krn-evidence-smoke-%` workspaces returned `0,0`.
 - Forbidden directory scan for `apps`, `dashboard`, `api`, and `.krn`: passed
   with no output.
+- Slice 10 `git status --short --branch`: passed; clean `main...origin/main`.
+- Slice 10 `git log --oneline -12`: passed and showed M21 Slice 00 through
+  Slice 09 commits.
+- Slice 10 `pnpm typecheck`: passed.
+- Slice 10 `pnpm test`: passed.
+- Slice 10 no-env `krn doctor`: passed.
+- Slice 10 live `krn doctor`: passed and reported harness persistence
+  readiness ready.
+- Slice 10 live `pnpm db:ready`: passed with migrations `3/3` and pgvector
+  available.
+- Slice 10 live `pnpm db:smoke`: passed.
+- Slice 10 live `pnpm db:smoke:harness-plan`: passed with cleanup marker count
+  `0`.
+- Slice 10 live `pnpm db:smoke:harness-evidence`: passed with cleanup marker
+  count `0`.
+- Slice 10 `pnpm --filter @krn/db db:check`: passed.
+- Slice 10 direct SQL smoke cleanup counts returned `0,0,0`.
+- Slice 10 forbidden surface, dependency, eval/benchmark, core library-safe, and
+  no-`any` scans passed.
+- Slice 10 `git diff --check`: passed.
 
 Skill gates:
 
@@ -206,9 +227,10 @@ Skill gates:
 - Used: `test-driven-development` for Slice 08 RED/GREEN doctor tests.
 - Used: `evidence-review-loop` for Slice 09 persisted dogfood proof capture.
 - Used: `handoff-compact` for Slice 09 continuation state refresh.
+- Used: `evidence-review-loop` for Slice 10 anti-rot command proof and residual
+  risk recording.
 - Not used yet: `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 10: anti-rot audit across tests, live DB proof commands, and forbidden
-  surface checks.
+- Slice 11: final handoff for M21 completion status.
