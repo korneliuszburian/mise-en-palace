@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 10.
+- None through Slice 11.
 
 Known unproven M22 behavior:
 
-- M22 source graph dogfood is not recorded yet.
 - M22 final anti-rot and handoff update are not recorded yet.
 
 Explicit non-blockers:
@@ -75,3 +74,10 @@ Closed in Slice 10:
   runtime proof markers, forbidden source crawler/research layer absence,
   separate graph DB absence, and derived source graph readiness. No-DB and live
   DB doctor paths passed.
+
+Closed in Slice 11:
+
+- M22 source graph dogfood is recorded in `DOGFOOD.md` with persisted run,
+  SourceClaim, SourceDecisionEdge, SourceRejection, EvidenceBundle,
+  ReviewAssessment, FeedbackDelta, live doctor, live source graph smoke, what
+  was proven, what was not proven, and the next safest action.

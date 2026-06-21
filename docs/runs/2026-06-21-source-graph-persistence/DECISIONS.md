@@ -52,6 +52,8 @@
   schema presence, SourceRepository read-path reachability, smoke command
   availability, forbidden-infra absence, and durable runtime proof markers
   rather than hidden doctor state.
+- Slice 11 records dogfood as audit evidence in `DOGFOOD.md`; it does not turn
+  that markdown record into runtime memory.
 
 Slice 00 skill record:
 
@@ -167,3 +169,11 @@ Slice 10 skill record:
   decision edge, and rejection proof rather than decorative source presence.
 - `superpowers:test-driven-development`: used for RED/GREEN doctor readiness
   tests.
+
+Slice 11 skill record:
+
+- `source-to-decision`: used to keep the dogfood record explicit about claim,
+  mechanism, decision edge, rejection, and does-not-prove boundaries.
+- `evidence-review-loop`: used to record persisted evidence, review, and
+  feedback IDs for the dogfood run.
+- `handoff-compact`: used for restartable DOGFOOD/HANDOFF state.

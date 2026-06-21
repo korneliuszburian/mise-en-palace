@@ -2,7 +2,7 @@
 
 Goal: M22 - persist SourceClaims and source-to-decision edges.
 
-Current slice: Slice 10 doctor source graph readiness complete.
+Current slice: Slice 11 source graph dogfood complete.
 
 Completed:
 
@@ -43,6 +43,8 @@ Completed:
   SourceRepository read-path reachability, source graph smoke availability,
   runtime proof markers, forbidden source crawler/research infrastructure, and
   derived source graph readiness.
+- Slice 11 dogfooded source graph on M22 itself and recorded the run in
+  `DOGFOOD.md`.
 
 Verification:
 
@@ -159,6 +161,24 @@ Verification:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
   @krn/cli krn doctor`: passed and reported `Source graph readiness: ready`.
 - `pnpm test`: passed.
+- Slice 11 live `krn plan --task "persist SourceClaims and source-to-decision
+  edges" --persist`: passed with execution run
+  `4370785f-b177-45d7-89d9-08053a3e640d`.
+- Slice 11 live `krn source claim add --run-id ... --persist`: passed with
+  source artifact `4e7d2c27-3a50-4c1e-9d69-25dca221fdb5` and source claim
+  `212815bc-477c-4985-8992-31825f5c5897`.
+- Slice 11 live `krn source decision link ... --persist`: passed with source
+  decision edge `9869be50-642b-4ddf-b60b-60360f9ea8ce`.
+- Slice 11 live `krn source claim reject --run-id ... --persist`: passed with
+  source rejection `c35e59c2-587b-4875-b7b4-32118daf6966`.
+- Slice 11 live `krn evidence capture --run-id ... --persist`: passed with
+  evidence bundle `dfa38982-a410-451c-a9e4-473cfaa3ad64`, review assessment
+  `39476e2e-b5ee-46a2-9146-d2a33d09f4b9`, and feedback delta
+  `600c8b44-2df7-4096-8a53-369411b19e50`.
+- Slice 11 live DB `krn doctor`: passed and reported source graph runtime proof
+  `ready (claims 2, edges 2, rejections 2)`.
+- Slice 11 live `pnpm db:smoke:source-graph`: passed with cleanup remaining
+  marker count `0`.
 
 Skill gates:
 
@@ -178,4 +198,4 @@ Skill gates:
 
 Next action:
 
-- Slice 11: dogfood source graph on M22.
+- Slice 12: M22 anti-rot and final handoff update.

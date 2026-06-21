@@ -224,3 +224,34 @@ Slice 10 doctor source graph readiness:
   - Source graph runtime proof: ready (claims 1, edges 1, rejections 1).
   - Source graph readiness: ready.
 - `pnpm test`: passed.
+
+Slice 11 source graph dogfood:
+
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "persist SourceClaims and source-to-decision edges"
+  --persist`: passed.
+  - Execution run: `4370785f-b177-45d7-89d9-08053a3e640d`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source claim add ... --persist`: passed.
+  - Source artifact: `4e7d2c27-3a50-4c1e-9d69-25dca221fdb5`.
+  - Source claim: `212815bc-477c-4985-8992-31825f5c5897`.
+  - Linked run: `4370785f-b177-45d7-89d9-08053a3e640d`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source decision link ... --persist`: passed.
+  - Source decision edge: `9869be50-642b-4ddf-b60b-60360f9ea8ce`.
+  - Target: `harness_run/4370785f-b177-45d7-89d9-08053a3e640d`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn source claim reject ... --persist`: passed.
+  - Source rejection: `c35e59c2-587b-4875-b7b4-32118daf6966`.
+  - Output confirmed: `No SourceClaim created`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn evidence capture --run-id ... --persist`: passed.
+  - Evidence bundle: `dfa38982-a410-451c-a9e4-473cfaa3ad64`.
+  - Review assessment: `39476e2e-b5ee-46a2-9146-d2a33d09f4b9`.
+  - Feedback delta: `600c8b44-2df7-4096-8a53-369411b19e50`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported source graph runtime proof
+  `ready (claims 2, edges 2, rejections 2)`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with cleanup remaining marker count `0`.
+- Dogfood record written to `DOGFOOD.md`.
