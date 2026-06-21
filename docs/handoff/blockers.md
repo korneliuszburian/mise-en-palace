@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None through M21 Slice 10.
+- None for M21.
 
 Closed in M20:
 
@@ -35,13 +35,20 @@ Closed in M21 so far:
 - Persisted harness loop dogfood is recorded with live DB proof.
 - Anti-rot audit is recorded with live DB and forbidden-surface proof.
 
-Remaining M21 work:
+Residual later scope:
 
-- Final handoff is not updated yet.
+- SourceClaim/source-to-decision ingestion is not built.
+- Full Memory Core reviewed promotion is not built.
+- Activation over durable memory/source corpus is not built.
+- Worker execution, leasing, retries, and background processing are not built.
 
 Explicit non-blockers:
 
 - No dashboard UI exists by design.
+- No API exists by design.
 - No MCP server exists by design.
 - No `.krn` runtime truth exists by design.
 - No separate vector, graph, search, or queue store exists by design.
+- No runtime markdown memory exists by design.
+- No full MemoryStore or SourceStore exists by design.
+- No broad eval suite exists by design.

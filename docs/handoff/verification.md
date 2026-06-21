@@ -76,6 +76,16 @@ Latest M21 Slice 10 verification:
 - Forbidden directory, direct forbidden dependency, eval/benchmark directory,
   core library-safe, no-`any`, and `git diff --check` scans passed.
 
+Final M21 status:
+
+- M21 is complete through Slice 11 final handoff.
+- DB proof: local Postgres reachable, migrations `3/3`, pgvector available,
+  and `pnpm db:ready` passed.
+- Persisted harness proof: plan persisted, evidence persisted, linked feedback
+  delta persisted, and cleanup proven by both harness smoke scripts.
+- Residuals are later scope, not blockers: source ingestion, memory reviewed
+  promotion, durable activation, and worker execution.
+
 Current M21 scope checks:
 
 - No dashboard, API, MCP server, broad worker runtime, research layer, `.krn`,

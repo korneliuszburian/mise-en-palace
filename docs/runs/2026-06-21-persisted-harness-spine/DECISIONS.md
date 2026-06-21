@@ -66,6 +66,8 @@
   rows remain marker-scoped and cleaned up.
 - Slice 10 anti-rot does not add product behavior; it records the current proof
   surface and forbidden-surface checks before final handoff.
+- Slice 11 closes M21 as complete. Remaining work is later scope, not an M21
+  blocker.
 
 Slice 00 skill record:
 
@@ -167,3 +169,12 @@ Slice 10 skill record:
 - `evidence-review-loop`: used for anti-rot command evidence, scope checks, and
   residual risk recording.
 - `verification-before-completion`: used before claiming the audit passed.
+
+Slice 11 skill record:
+
+- `handoff-compact`: used for final objective, verified state, blockers,
+  context selectors, and next action.
+- `verification-before-completion`: used before claiming M21 completion.
+- `target-infra-adr`: not used; M21 added no new durable infrastructure beyond
+  existing Postgres/Drizzle.
+- `activation-engine`: not used; M21 did not change activation behavior.

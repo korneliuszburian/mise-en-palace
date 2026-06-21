@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: M21 persisted harness spine in progress; Slice 10 complete.
+Current phase: M21 persisted harness spine complete.
 
 Completed in M21 so far:
 
@@ -24,6 +24,8 @@ Completed in M21 so far:
   `docs/runs/2026-06-21-persisted-harness-spine/DOGFOOD.md`.
 - Anti-rot audit is recorded in
   `docs/runs/2026-06-21-persisted-harness-spine/ANTI_ROT.md`.
+- Final handoff is recorded in
+  `docs/runs/2026-06-21-persisted-harness-spine/HANDOFF.md`.
 
 Current runtime truth:
 
@@ -41,4 +43,4 @@ Current runtime truth:
 
 Next action:
 
-- Slice 11: update final M21 handoff and completion status.
+- M22: implement SourceClaim persistence plus source-to-decision edges.

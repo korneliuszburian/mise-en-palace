@@ -28,3 +28,5 @@
   marker-scoped and cleaned up.
 - Slice 10 anti-rot is proof-only; it records current behavior and forbidden
   surfaces without adding product behavior.
+- M21 is complete. Next product capability should start with SourceClaim
+  persistence plus source-to-decision edges.

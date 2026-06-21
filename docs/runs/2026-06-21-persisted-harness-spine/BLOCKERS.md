@@ -2,17 +2,21 @@
 
 Hard blockers:
 
-- None through Slice 10.
+- None. M21 is complete.
 
-Known unproven M21 behavior:
+Residual later scope:
 
-- Final handoff is not updated yet; Slice 11 owns completion status and next
-  action.
+- Full Memory Core reviewed promotion is not built.
+- SourceClaim/source-to-decision ingestion is not built.
+- Activation over a durable source/memory corpus is not built.
+- Worker execution, leasing, retries, and background processing are not built.
+- Production/external deployment proof is not built.
 
 Closed in Slice 09:
 
 - Persisted harness loop dogfood is recorded in `DOGFOOD.md`.
 - Anti-rot audit is recorded in `ANTI_ROT.md`.
+- Final handoff is updated in Slice 11.
 
 Explicit non-blockers:
 

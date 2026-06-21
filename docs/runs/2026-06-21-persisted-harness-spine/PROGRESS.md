@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 10 anti-rot audit complete.
+Current slice: Slice 11 final handoff complete. M21 is complete.
 
 Completed:
 
@@ -48,6 +48,7 @@ Completed:
 - Slice 09 dogfooded the persisted harness loop with live DB and recorded the
   persisted run under `DOGFOOD.md`.
 - Slice 10 recorded the anti-rot audit under `ANTI_ROT.md`.
+- Slice 11 updated final handoff and completion status.
 
 Verification:
 
@@ -191,6 +192,10 @@ Verification:
 - Slice 10 forbidden surface, dependency, eval/benchmark, core library-safe, and
   no-`any` scans passed.
 - Slice 10 `git diff --check`: passed.
+- Slice 11 `git status --short --branch`: passed before final handoff edits;
+  clean `main...origin/main`.
+- Slice 11 `git log --oneline -14`: passed and showed M21 commits through
+  `2984d01 docs(run): record persisted harness anti-rot audit`.
 
 Skill gates:
 
@@ -229,8 +234,11 @@ Skill gates:
 - Used: `handoff-compact` for Slice 09 continuation state refresh.
 - Used: `evidence-review-loop` for Slice 10 anti-rot command proof and residual
   risk recording.
+- Used: `handoff-compact` for Slice 11 final continuation state.
+- Used: `verification-before-completion` for Slice 11 final proof discipline.
 - Not used yet: `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 11: final handoff for M21 completion status.
+- M22: implement SourceClaim persistence plus source-to-decision edges as the
+  next product capability.

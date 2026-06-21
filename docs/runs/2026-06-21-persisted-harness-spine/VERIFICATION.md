@@ -236,3 +236,12 @@ Slice 10 anti-rot audit:
   `packages/harness/src`, `packages/db/src`, and `packages/cli/src`: passed
   with no matches.
 - `git diff --check`: passed.
+
+Slice 11 final handoff:
+
+- `git status --short --branch`: passed before final handoff edits; clean
+  `main...origin/main`.
+- `git log --oneline -14`: passed and showed M21 commits through
+  `2984d01 docs(run): record persisted harness anti-rot audit`.
+- Final handoff is docs-only and references the Slice 10 full anti-rot audit as
+  the completion proof.
