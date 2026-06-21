@@ -20,3 +20,14 @@ Scope checks:
 - Required repo-local skill gates are now explicit in `GOAL.md`.
 - Slice 00 is docs/ledger work only; persisted harness behavior remains
   unimplemented until later slices.
+
+Slice 01 inventory:
+
+- Targeted reads of DB harness/events schema, migration SQL, harness repository
+  ports, Drizzle repository adapters, DB mappers, compiler, CLI parser, plan
+  command, evidence capture command, and database runtime: passed.
+- Targeted search for `--persist`, `run-id`, execution run methods, evidence
+  persistence methods, and migration table names: passed.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle reported schema and
+  migrations are consistent.
+- `pnpm typecheck`: passed across workspace projects.
