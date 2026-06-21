@@ -5,9 +5,13 @@ import {
 import {
   runPlanCommand
 } from "./runPlanCommand.js";
+import {
+  runDoctorCommand
+} from "./runDoctorCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
+  cwd?: string;
   now?(): string;
   createId?(prefix: string): string;
 }
@@ -66,6 +70,29 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown CLI error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "doctor") {
+    try {
+      const result = await runDoctorCommand({
+        env: runtime.env,
+        cwd: runtime.cwd ?? process.cwd()
+      });
+
+      return {
+        exitCode: result.exitCode,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown doctor error";
 
       return {
         exitCode: 1,

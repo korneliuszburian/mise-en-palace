@@ -4,6 +4,9 @@ export type CliCommand =
       task: string;
     }
   | {
+      kind: "doctor";
+    }
+  | {
       kind: "help";
     };
 
@@ -23,6 +26,20 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     return {
       command: {
         kind: "help"
+      }
+    };
+  }
+
+  if (command === "doctor") {
+    if (rest.length > 0) {
+      return {
+        error: "Usage: krn doctor"
+      };
+    }
+
+    return {
+      command: {
+        kind: "doctor"
       }
     };
   }

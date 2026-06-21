@@ -3,6 +3,7 @@ import {
 } from "./runCli.js";
 
 export * from "./parseArgs.js";
+export * from "./runDoctorCommand.js";
 export * from "./runCli.js";
 export * from "./runPlanCommand.js";
 

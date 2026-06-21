@@ -37,4 +37,22 @@ describe("runCli", () => {
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("Usage: krn plan --task");
   });
+
+  it("prints a read-only doctor report", async () => {
+    const result = await runCli(["doctor"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Doctor");
+    expect(result.stdout).toContain("Postgres config: not configured");
+    expect(result.stdout).toContain("pgvector: skipped");
+    expect(result.stdout).toContain("AGENTS.md: present");
+    expect(result.stdout).toContain(".krn runtime truth: absent");
+    expect(result.stdout).toContain("TypeScript strictness: enabled");
+    expect(result.stdout).toContain("Forbidden surfaces: absent");
+  });
 });
