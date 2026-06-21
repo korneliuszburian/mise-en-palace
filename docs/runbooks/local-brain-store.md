@@ -50,9 +50,20 @@ This command fails clearly without `KRN_DATABASE_URL`, checks DB reachability,
 applies Drizzle migrations, verifies the applied migration count, checks
 pgvector, and reports brain-store readiness.
 
+## Run Persistence Smoke
+
+With `KRN_DATABASE_URL` exported:
+
+```sh
+pnpm db:smoke
+```
+
+This command ensures migration readiness, inserts a smoke workspace/project
+through the Drizzle project repository, reads the project back, and deletes the
+smoke workspace so cascade cleanup removes the smoke project.
+
 ## Current Proof Boundary
 
-After Slice 03, this runbook proves local DB configuration, migration
-application/verification, and pgvector availability against a running local DB.
-Minimal persistence smoke proof remains pending until the Slice 05 command
-exists and passes.
+After Slice 05, this runbook proves local DB configuration, migration
+application/verification, pgvector availability, and a minimal runtime
+persistence insert/read/cleanup path against a running local DB.

@@ -10,6 +10,9 @@ export type CliCommand =
       kind: "dbReadiness";
     }
   | {
+      kind: "dbSmoke";
+    }
+  | {
       kind: "evidenceCapture";
     }
   | {
@@ -27,6 +30,7 @@ const usage = [
   "Other commands:",
   "krn doctor",
   "krn db readiness",
+  "krn db smoke",
   "krn evidence capture"
 ].join("\n");
 
@@ -66,8 +70,16 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest.length === 1 && rest[0] === "smoke") {
+      return {
+        command: {
+          kind: "dbSmoke"
+        }
+      };
+    }
+
     return {
-      error: "Usage: krn db readiness"
+      error: "Usage: krn db readiness|smoke"
     };
   }
 

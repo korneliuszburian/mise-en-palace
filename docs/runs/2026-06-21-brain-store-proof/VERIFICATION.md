@@ -74,7 +74,21 @@ Slice 04 doctor readiness checks:
   migrations `verified (3/3 applied)`, and brain-store readiness ready.
 - `pnpm test`: passed across workspace tests.
 
+Slice 05 persistence smoke checks:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because `krn db smoke`
+  returned parser exit `2` before implementation.
+- GREEN `pnpm --filter @krn/cli test`: passed with 8 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm db:smoke` without `KRN_DATABASE_URL`: exited `1` with skipped
+  missing-config report and mechanical next action.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed. Output reported configured DB, smoke workspace row, smoke project row,
+  project readback matched, cleanup completed, and persistence smoke passed.
+- `docker compose exec -T krn-postgres psql -U krn -d krn -tAc "select count(*)
+  from workspaces where slug like 'krn-smoke-%';"`: passed and returned `0`.
+- `pnpm test`: passed across workspace tests.
+
 Next verification:
 
-- Slice 05 should verify the persistence smoke command without DB and, if local
-  DB remains running, against the local pgvector Postgres.
+- Slice 06 should run final audit commands and update handoff docs.

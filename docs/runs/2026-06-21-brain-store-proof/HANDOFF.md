@@ -5,8 +5,9 @@ Prove local KRN brain-store runtime: DB config, migrations, pgvector, minimal
 persistence smoke path, and actionable `krn doctor` readiness.
 
 Last verified state:
-Slice 04 doctor readiness passed: RED/GREEN CLI test, `pnpm typecheck`,
-missing-env `krn doctor`, live-DB `krn doctor`, and full `pnpm test`.
+Slice 05 persistence smoke passed: RED/GREEN CLI test, `pnpm typecheck`,
+missing-env `pnpm db:smoke`, live-DB `pnpm db:smoke`, direct cleanup check, and
+full `pnpm test`.
 
 Changed files:
 
@@ -21,9 +22,11 @@ Changed files:
 - `packages/cli/src/runCli.ts`
 - `packages/cli/src/runCli.test.ts`
 - `packages/cli/src/runDbReadinessCommand.ts`
+- `packages/cli/src/runDbSmokeCommand.ts`
 - `packages/db/src/index.ts`
 - `packages/db/drizzle.config.ts`
 - `packages/db/src/migrationReadiness.ts`
+- `packages/db/src/persistenceSmoke.ts`
 - `docs/runs/2026-06-21-brain-store-proof/DB_RUNTIME_INVENTORY.md`
 - `docs/runs/2026-06-21-brain-store-proof/PROGRESS.md`
 - `docs/runs/2026-06-21-brain-store-proof/HANDOFF.md`
@@ -58,8 +61,15 @@ against generated migration count. Missing DB config remains preview-only and
 exit `0`; local configured DB reports migrations `verified (3/3 applied)` and
 brain-store readiness ready.
 
+Persistence smoke:
+`pnpm db:smoke` now ensures readiness, inserts a smoke workspace/project through
+`DrizzleProjectRepository`, reads the project back, deletes the smoke workspace,
+and reports cleanup completed. Direct DB check confirmed zero `krn-smoke-%`
+workspaces remained after the live smoke run.
+
 Blockers/risks:
-Minimal persistence smoke proof is still absent.
+No local DB runtime proof blocker remains after Slice 05. Slice 06 still needs
+handoff/blocker docs closure.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/handoff.md`,
@@ -67,7 +77,7 @@ Context selectors:
 and DB schema/migration files.
 
 Next action:
-Run Slice 05 and add the minimal persistence smoke path.
+Run Slice 06 and close handoff/blocker status.
 
 Do not reread:
 `docs/materials/` or broad historical docs.

@@ -6,7 +6,7 @@ Hard blockers:
 
 Open runtime residual:
 
-- Minimal runtime persistence smoke path does not exist yet.
+- None for the local DB runtime proof after Slice 05.
 
 Closed in Slice 03:
 
@@ -16,6 +16,8 @@ Closed in Slice 03:
   expected `3`, applied `3`.
 - Doctor now verifies applied migration count and pgvector readiness without
   applying migrations.
+- Minimal runtime persistence smoke path proved insert/read/cleanup through the
+  Drizzle project repository path.
 
 Explicit non-blockers:
 

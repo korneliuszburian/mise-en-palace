@@ -12,6 +12,9 @@ import {
   runDbReadinessCommand
 } from "./runDbReadinessCommand.js";
 import {
+  runDbSmokeCommand
+} from "./runDbSmokeCommand.js";
+import {
   runEvidenceCaptureCommand
 } from "./runEvidenceCaptureCommand.js";
 
@@ -123,6 +126,30 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown DB readiness error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "dbSmoke") {
+    try {
+      const result = await runDbSmokeCommand({
+        env: runtime.env,
+        cwd: runtime.cwd ?? process.cwd(),
+        createId
+      });
+
+      return {
+        exitCode: result.exitCode,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown DB smoke error";
 
       return {
         exitCode: 1,

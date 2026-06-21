@@ -3,7 +3,7 @@
 Goal: prove the local KRN brain-store runtime path without expanding product
 scope.
 
-Current slice: Slice 04 doctor DB readiness refinement complete and verified.
+Current slice: Slice 05 minimal persistence smoke path complete and verified.
 
 Preflight state:
 
@@ -28,7 +28,8 @@ Inventory state:
 - `.env.example`, `compose.yaml`, and `docs/runbooks/local-brain-store.md`
   now define a local Postgres/pgvector setup path.
 - `pnpm db:ready` now applies/verifies migrations and checks pgvector.
-- DB smoke command does not exist yet.
+- `pnpm db:smoke` now proves insert/read/cleanup through the Drizzle project
+  repository path.
 - `krn doctor` checks DB reachability, pgvector extension presence, and whether
   `__drizzle_migrations` exists, but not exact applied migration state.
 - `pnpm typecheck`: passed after inventory docs.
@@ -72,6 +73,19 @@ Doctor readiness state:
 - Doctor readiness logic now distinguishes migrations unverified from pgvector
   missing.
 
+Persistence smoke state:
+
+- Added `pnpm db:smoke`, backed by `krn db smoke`.
+- Without `KRN_DATABASE_URL`, `pnpm db:smoke` exits `1` with a clear skipped
+  report and next action.
+- With local Compose Postgres healthy and
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, `pnpm db:smoke`
+  exits `0`.
+- Live smoke passed: migration readiness ensured, smoke workspace/project
+  inserted through `DrizzleProjectRepository`, project read back, cleanup
+  completed.
+- Direct DB cleanup check returned `0` rows for `krn-smoke-%` workspaces.
+
 Next slice:
 
-- Slice 05 minimal persistence smoke test.
+- Slice 06 handoff and blocker closure.

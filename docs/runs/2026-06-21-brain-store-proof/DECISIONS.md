@@ -42,3 +42,10 @@
 - Doctor exits `0` for missing `KRN_DATABASE_URL` because the no-store preview
   spine remains valid. Doctor exits non-zero for configured DB states that are
   blocked by unreachable Postgres, missing pgvector, or unverified migrations.
+- Adopt `pnpm db:smoke` as the minimal persistence proof command. It may apply
+  migrations through readiness check, then writes only a temporary smoke
+  workspace/project.
+- Use `DrizzleProjectRepository` for smoke insert/read so the proof exercises
+  the repository adapter path, not only raw SQL.
+- Cleanup deletes the smoke workspace and relies on existing cascade behavior
+  to remove the smoke project.
