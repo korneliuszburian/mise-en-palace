@@ -210,6 +210,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence smoke: skipped (database not configured)");
   });
 
+  it("reports harness plan smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "harness-plan"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Harness Plan Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Harness plan smoke: skipped (database not configured)");
+  });
+
   it("prints evidence capture without mutating memory", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},

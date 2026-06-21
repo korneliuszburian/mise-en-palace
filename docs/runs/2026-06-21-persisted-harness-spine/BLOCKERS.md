@@ -8,11 +8,8 @@ Known unproven M21 behavior:
 
 - `krn evidence capture --run-id <id> --persist` is not implemented or proven
   for evidence bundle, review assessment, and feedback delta persistence yet.
-- Live persisted run aggregate readback through the repository is not proven yet;
-  Slice 04 proved SQL linkage, execution run creation, and evidence contract
-  metadata persistence.
-- Linked cleanup/readback proof for the persisted harness loop is not recorded
-  yet.
+- Full persisted evidence loop cleanup is not recorded yet; Slice 05 proves
+  persisted plan readback and cleanup only.
 
 Explicit non-blockers:
 

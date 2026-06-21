@@ -9,6 +9,7 @@
     "db:generate": "pnpm --filter @krn/db db:generate",
     "db:ready": "pnpm --filter @krn/cli krn db readiness",
     "db:smoke": "pnpm --filter @krn/cli krn db smoke",
+    "db:smoke:harness-plan": "pnpm --filter @krn/cli krn db smoke harness-plan",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"
   },

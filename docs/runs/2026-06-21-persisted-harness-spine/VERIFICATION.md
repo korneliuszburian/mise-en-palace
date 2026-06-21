@@ -88,3 +88,18 @@ Slice 04 persisted plan:
   `execution_runs` count stayed `1` before and after.
 - `rg -n "as unknown as|as any|\bany\b" packages/core packages/harness/src
   packages/db/src packages/cli/src`: passed with no matches.
+
+Slice 05 persisted harness plan smoke:
+
+- RED `pnpm --filter @krn/cli test`: failed as expected because
+  `db smoke harness-plan` parsed as invalid usage.
+- GREEN `pnpm --filter @krn/cli test`: passed with 12 tests.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace tests.
+- `pnpm --filter @krn/db db:check`: passed; Drizzle schema and migrations
+  remain consistent.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed. Output reported execution run
+  `7fc256ef-2868-483c-bd3a-c3283df4b761`, readback `matched`, evidence
+  contract commands `3`, run events `1`, cleanup remaining marker count `0`,
+  and harness plan smoke `passed`.

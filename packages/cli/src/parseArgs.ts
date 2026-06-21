@@ -12,6 +12,7 @@ export type CliCommand =
     }
   | {
       kind: "dbSmoke";
+      target: "project" | "harnessPlan";
     }
   | {
       kind: "evidenceCapture";
@@ -74,13 +75,23 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     if (rest.length === 1 && rest[0] === "smoke") {
       return {
         command: {
-          kind: "dbSmoke"
+          kind: "dbSmoke",
+          target: "project"
+        }
+      };
+    }
+
+    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "harness-plan") {
+      return {
+        command: {
+          kind: "dbSmoke",
+          target: "harnessPlan"
         }
       };
     }
 
     return {
-      error: "Usage: krn db readiness|smoke"
+      error: "Usage: krn db readiness|smoke [harness-plan]"
     };
   }
 

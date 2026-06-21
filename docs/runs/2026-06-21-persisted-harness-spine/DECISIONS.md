@@ -41,6 +41,11 @@
   `harnessPlan`, `contextAssembly`, and `executionRun` IDs.
 - `execution_runs` is the persisted identity handed to future
   `evidence capture --run-id`.
+- Add smoke commands under `krn db smoke ...` and root `pnpm db:smoke:*`
+  scripts, keeping read/write proof explicit and operator-invoked.
+- `pnpm db:smoke:harness-plan` must use deterministic markers and cleanup,
+  because local proof runs should not leave smoke workspace rows or marked run
+  events behind.
 
 Slice 00 skill record:
 
@@ -93,3 +98,11 @@ Slice 04 skill record:
   and passed after.
 - `brain-store-schema`: used for execution run and evidence contract
   persistence behavior.
+
+Slice 05 skill record:
+
+- `brain-store-schema`: used for persisted harness plan smoke/readback/cleanup.
+- `typescript-type-safety`: used for DB smoke IO and typed report boundary.
+- `test-driven-development`: used; RED CLI test failed before parser support
+  and passed after.
+- `evidence-review-loop`: used for smoke proof and cleanup evidence.

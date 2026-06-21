@@ -2,7 +2,7 @@
 
 Goal: M21 - persist the first KRN harness run spine.
 
-Current slice: Slice 04 persisted plan complete.
+Current slice: Slice 05 persisted plan smoke complete.
 
 Completed:
 
@@ -33,6 +33,9 @@ Completed:
   config, persists the harness plan, creates a planned execution run, stores the
   evidence contract in `harness_plans.metadata.evidenceContract`, and prints
   persisted IDs.
+- Slice 05 added `pnpm db:smoke:harness-plan`, which creates a marked persisted
+  harness plan run, reads it back through the repository aggregate, verifies
+  core fields, and cleans up the marker.
 
 Verification:
 
@@ -74,6 +77,16 @@ Verification:
   run event count `1`.
 - Live preview with DB configured but without `--persist`: passed and left
   `execution_runs` count unchanged at `1`.
+- RED `pnpm --filter @krn/cli test`: failed on missing `db smoke harness-plan`
+  parser support.
+- GREEN `pnpm --filter @krn/cli test`: passed with 12 tests.
+- `pnpm typecheck`: passed during Slice 05.
+- `pnpm test`: passed during Slice 05.
+- `pnpm --filter @krn/db db:check`: passed during Slice 05.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed. Execution run
+  `7fc256ef-2868-483c-bd3a-c3283df4b761`, readback matched, evidence command
+  count `3`, run events `1`, cleanup remaining marker count `0`.
 
 Skill gates:
 
@@ -90,9 +103,12 @@ Skill gates:
 - Used: `codex-adapter-plan` for Slice 04 Codex-facing persisted ID output.
 - Used: `typescript-type-safety` for Slice 04 CLI/env/runtime boundary changes.
 - Used: `test-driven-development` for Slice 04 RED/GREEN CLI tests.
+- Used: `brain-store-schema` for Slice 05 persisted smoke/readback/cleanup.
+- Used: `typescript-type-safety` for Slice 05 DB smoke report and cleanup
+  boundary.
+- Used: `test-driven-development` for Slice 05 RED/GREEN CLI parser test.
 - Not used yet: `handoff-compact`, `target-infra-adr`, `activation-engine`.
 
 Next action:
 
-- Slice 05: add persisted plan smoke/readback test or command that proves the
-  persisted run identity can be read back through the repository aggregate.
+- Slice 06: implement `krn evidence capture --run-id <id> --persist`.

@@ -148,7 +148,8 @@ export const runCli = async (
       const result = await runDbSmokeCommand({
         env: runtime.env,
         cwd: runtime.cwd ?? process.cwd(),
-        createId
+        createId,
+        target: parsed.command.target
       });
 
       return {
