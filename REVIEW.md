@@ -22,16 +22,16 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Last pushed implementation head before MM-16 closeout:
+Current pushed implementation head for this review request:
 
 ```txt
-023a365 feat(cli): add manual observe-run command
+86344af feat(harness): add observation prefix selector
 ```
 
-Current expected branch after MM-16 closeout:
+Current branch state expected for review:
 
 ```txt
-main == origin/main after `feat(harness): add observation prefix selector` is pushed
+main == origin/main
 ```
 
 Known local untracked quarry that is not accepted as truth:
@@ -151,6 +151,7 @@ MM-17  Observation dogfood
 Recent pushed commits:
 
 ```txt
+86344af feat(harness): add observation prefix selector
 023a365 feat(cli): add manual observe-run command
 03e31db feat(core): add observation source-range policy matrix
 ec77c57 feat(harness): add deterministic observer input builder
@@ -169,6 +170,27 @@ d2d0a4a feat(core): add audit bundle domain contract
 4c944e8 docs(memory): record audit baseline
 c38eaff docs(memory): add controlled memory brain execution plan
 ```
+
+## Current Pause Point
+
+The operator is intentionally pausing after MM-16 for a harsh external audit
+before continuing MM-17.
+
+MM-17 is next and is not complete:
+
+```txt
+MM-17 Observation dogfood
+```
+
+Local DB tooling note:
+
+- local `psql` is now available;
+- KRN Postgres is reachable at `postgres://krn:krn@localhost:54329/krn`;
+- recent persisted `execution_runs` exist in the local DB;
+- no MM-17 dogfood doc has been committed yet.
+
+The reviewer should treat MM-17 and every later slice as planned work unless
+the repository head proves otherwise.
 
 ## MM-16 Closeout Note
 
@@ -480,8 +502,6 @@ Do not confuse planned slices with implemented behavior.
 
 Not built yet:
 
-- observe-run CLI;
-- observer input builder;
 - observer worker;
 - reflector worker;
 - reflection contracts/persistence/repository;
@@ -490,13 +510,23 @@ Not built yet:
 - MemoryReviewGate;
 - memory invalidation/versioning/demotion;
 - anti-memory retrieval enforcement;
-- activation prefix selector;
 - ActivationEngine v2;
 - CapabilityCompiler v1;
 - golden memory behavior runner;
 - macro behavior reports;
 - API/MCP boundary;
 - dashboard/read models.
+
+Built but not fully integrated yet:
+
+- manual `krn observe --run <id> [--persist]` exists, but MM-17 dogfood is not
+  committed yet;
+- deterministic observer input builder exists, but there is no model-backed
+  observer and no worker;
+- pure observation prefix selector exists, but it is not wired into context
+  assembly or activation runtime;
+- observation persistence exists, but observations do not yet flow into
+  reflection, MemoryCandidate creation, promotion, or anti-memory enforcement.
 
 ## Known Advisory Findings
 
@@ -535,6 +565,9 @@ packages/core/src/observations/
 packages/schema/src/observation.ts
 packages/db/src/schema/observations.ts
 packages/db/src/repositories/DrizzleObservationRepository.ts
+packages/harness/src/observations/observerInput.ts
+packages/harness/src/observations/observationPrefix.ts
+packages/cli/src/runObserveCommand.ts
 packages/core/src/auditBundle.ts
 packages/schema/src/auditBundle.ts
 packages/db/src/schema/audit.ts
@@ -585,9 +618,31 @@ rg -n "research-foundry|pattern-vault|runResearch|pattern inspect|pattern promot
 find . -maxdepth 3 -type d \( -name dashboard -o -name api -o -name mcp -o -name server -o -name plugin -o -name source-crawler -o -name research-foundry -o -name pattern-vault -o -name .krn \)
 ```
 
+Optional local DB inspection if Postgres is running:
+
+```sh
+psql "postgres://krn:krn@localhost:54329/krn" -c "select id, status, adapter, created_at from execution_runs order by created_at desc limit 10;"
+psql "postgres://krn:krn@localhost:54329/krn" -c "select count(*) from observation_groups;"
+psql "postgres://krn:krn@localhost:54329/krn" -c "select count(*) from observation_items;"
+```
+
 ## Review Objectives
 
 Produce a full anti-slop review of current state.
+
+This review should be adversarial. The goal is not to validate progress; the
+goal is to find what is weak, fake, over-documented, under-proven, poorly
+sequenced, or likely to collapse into slop. Be harsh. Assume the current repo
+is wrong until file/line evidence and command output prove otherwise.
+
+The reviewer should explicitly insult the architecture quality where warranted
+in technical terms: call out shallow tests, paper-thin abstractions, fake
+dogfood, misleading docs, premature interfaces, accidental theater, weak
+runtime proof, and any place where the repo pretends to have a memory system
+but only has tables, types, or slogans.
+
+The reviewer must condense all useful critique into actionable PLAN.md
+insertions, not just commentary.
 
 Required questions:
 
@@ -613,6 +668,12 @@ Required questions:
 ## Anti-Slop Rules For Reviewer
 
 Do not write a motivational summary.
+
+Do not be polite at the cost of precision.
+
+Do not spare the current design because it is incremental.
+
+Do not assume previous agents made good calls.
 
 Do not say "looks good" without evidence.
 
