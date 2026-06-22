@@ -37,6 +37,7 @@ export const workerJobStatus = pgEnum("worker_job_status", [
   "running",
   "succeeded",
   "failed",
+  "skipped",
   "dead_letter",
   "cancelled"
 ]);
@@ -88,12 +89,12 @@ export const workerJobs = pgTable(
   "worker_jobs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    type: text("type").notNull(),
+    jobType: text("type").notNull(),
     status: workerJobStatus("status").notNull().default("queued"),
     payload: jsonb("payload").$type<JsonObject>().notNull().default(emptyJsonObject),
     attempts: integer("attempts").notNull().default(0),
     maxAttempts: integer("max_attempts").notNull().default(3),
-    availableAt: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
+    runAfter: timestamp("available_at", { withTimezone: true }).notNull().defaultNow(),
     lockedAt: timestamp("locked_at", { withTimezone: true }),
     lockedBy: text("locked_by"),
     lastError: text("last_error"),
@@ -101,7 +102,7 @@ export const workerJobs = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
-    index("worker_jobs_type_idx").on(table.type),
-    index("worker_jobs_status_available_at_idx").on(table.status, table.availableAt)
+    index("worker_jobs_type_idx").on(table.jobType),
+    index("worker_jobs_status_available_at_idx").on(table.status, table.runAfter)
   ]
 );

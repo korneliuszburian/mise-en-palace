@@ -2,8 +2,8 @@
 
 Objective:
 Continue M26 Codex Adapter Execution Brief + Hook Expectations + Worker Job
-Skeleton. M26.05 Codex adapter smoke path is complete; next implementation
-slice is M26.06 worker job schema alignment.
+Skeleton. M26.06 worker job schema alignment is complete; next implementation
+slice is M26.07 WorkerJobRepository methods.
 
 Last verified state:
 M25 activation engine is complete and pushed. M26.00 found an existing
@@ -54,7 +54,16 @@ objective/non-goals/exclusions/evidence/source/memory/hook proof, verifies zero
 Codex invocation events, and cleans up marker rows to zero. Live DB smoke
 passed after local `krn-postgres` was started. Full `pnpm typecheck` passed
 across 7 workspace packages and full `pnpm test` passed with 21 test files and
-109 tests after M26.05.
+109 tests after M26.05. M26.06 added `embed_memory_record`, changed the public
+worker skeleton contract to `jobType` and `runAfter`, added target worker
+status `skipped`, mapped Drizzle `workerJobs.jobType` to SQL `type`, mapped
+Drizzle `workerJobs.runAfter` to SQL `available_at`, and generated migration
+`0006_lucky_ken_ellis.sql` to add `skipped` to `worker_job_status`. RED worker
+and DB schema tests failed on the missing M26 worker contract. GREEN targeted
+tests passed, `pnpm --filter @krn/db db:check` passed, full `pnpm typecheck`
+passed across 7 workspace packages, full `pnpm test` passed with 22 test files
+and 112 tests, and live `pnpm db:ready` passed with 7 expected/applied
+migrations and pgvector available.
 
 Changed files:
 `packages/codex-adapter/src/contracts.ts`,
@@ -73,6 +82,14 @@ Changed files:
 `packages/cli/src/index.ts`,
 `packages/cli/src/runCli.test.ts`, and
 `packages/cli/src/runDbSmokeCommand.ts`,
+`packages/db/src/schema/events.ts`,
+`packages/db/src/schema/events.test.ts`,
+`packages/db/src/migrations/0006_lucky_ken_ellis.sql`,
+`packages/db/src/migrations/meta/0006_snapshot.json`,
+`packages/db/src/migrations/meta/_journal.json`,
+`packages/workers/src/jobTypes.ts`,
+`packages/workers/src/enqueueMaintenanceJob.ts`,
+`packages/workers/src/index.test.ts`,
 `package.json`, and
 `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
@@ -90,13 +107,17 @@ invocation, and no memory mutation. M26.05 keeps Codex adapter smoke
 orchestration in `packages/cli`, not `packages/db`, because DB must not render
 Codex-specific adapter surfaces. Use existing Postgres `worker_jobs` and
 `outbox_events` for worker skeleton proof; do not add Redis/Kafka or a daemon.
-Treat `embed_memory_record`, `skipped`, and `availableAt` versus `runAfter` as
-explicit M26.06/M26.07 alignment work.
+M26.06 aligns the public worker contract with `jobType`, `runAfter`,
+`embed_memory_record`, and `skipped`. It keeps SQL columns `type` and
+`available_at` stable through Drizzle property aliases, and retains legacy DB
+enum values `dead_letter` / `cancelled` as inert compatibility values while
+the public worker lifecycle uses `queued`, `running`, `succeeded`, `failed`,
+and `skipped`.
 
 Blockers/risks:
-No hard blocker. M26 is incomplete until adapter contracts, persisted brief
-readback, Codex adapter smoke, worker repository/smoke, doctor readiness,
-dogfood, and final anti-rot are complete.
+No hard blocker. M26 is incomplete until WorkerJobRepository methods, worker
+job smoke, doctor readiness, dogfood, final anti-rot, and final handoff are
+complete.
 
 Context selectors:
 `GOAL.md` M26 section, `docs/KRN_KERNEL.md`,
@@ -121,7 +142,7 @@ Context selectors:
 `packages/cli/src/runDoctorCommand.ts`.
 
 Next action:
-Start M26.06 worker job schema alignment.
+Start M26.07 WorkerJobRepository methods.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

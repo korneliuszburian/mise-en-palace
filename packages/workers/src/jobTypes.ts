@@ -9,6 +9,7 @@ import type { IsoTimestamp } from "@krn/core";
 
 export const maintenanceJobTypes = [
   "embed_source_chunk",
+  "embed_memory_record",
   "compact_memory",
   "detect_contradiction",
   "expire_stale_memory",
@@ -19,6 +20,12 @@ export type MaintenanceJobType = (typeof maintenanceJobTypes)[number];
 
 export interface EmbedSourceChunkPayload {
   sourceChunkId: SourceChunkId;
+  reason: string;
+  embeddingModelId?: string;
+}
+
+export interface EmbedMemoryRecordPayload {
+  memoryRecordId: MemoryRecordId;
   reason: string;
   embeddingModelId?: string;
 }
@@ -51,6 +58,7 @@ export interface PromoteEvalCandidatePayload {
 
 export type MaintenanceJobPayloadByType = {
   embed_source_chunk: EmbedSourceChunkPayload;
+  embed_memory_record: EmbedMemoryRecordPayload;
   compact_memory: CompactMemoryPayload;
   detect_contradiction: DetectContradictionPayload;
   expire_stale_memory: ExpireStaleMemoryPayload;
@@ -59,13 +67,13 @@ export type MaintenanceJobPayloadByType = {
 
 export type MaintenanceJob<TType extends MaintenanceJobType = MaintenanceJobType> = {
   [K in TType]: {
-    type: K;
+    jobType: K;
     payload: MaintenanceJobPayloadByType[K];
   };
 }[TType];
 
 export interface MaintenanceJobDescription {
-  type: MaintenanceJobType;
+  jobType: MaintenanceJobType;
   label: string;
   workerTable: "worker_jobs";
   outboxTable: "outbox_events";
@@ -75,6 +83,7 @@ export interface MaintenanceJobDescription {
 
 const labels: Record<MaintenanceJobType, string> = {
   embed_source_chunk: "Embed source chunk",
+  embed_memory_record: "Embed memory record",
   compact_memory: "Compact memory",
   detect_contradiction: "Detect contradiction",
   expire_stale_memory: "Expire stale memory",
@@ -82,10 +91,10 @@ const labels: Record<MaintenanceJobType, string> = {
 };
 
 export const describeMaintenanceJob = (
-  type: MaintenanceJobType
+  jobType: MaintenanceJobType
 ): MaintenanceJobDescription => ({
-  type,
-  label: labels[type],
+  jobType,
+  label: labels[jobType],
   workerTable: "worker_jobs",
   outboxTable: "outbox_events",
   outboxTopic: "worker_job.queued",

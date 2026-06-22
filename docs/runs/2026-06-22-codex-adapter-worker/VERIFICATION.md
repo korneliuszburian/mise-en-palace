@@ -301,3 +301,63 @@ Results:
   explicit zero-invocation event-type guard.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed with 21 test files and 109 tests.
+
+## Slice 06
+
+Commands run:
+
+```sh
+pnpm --filter @krn/workers test -- index.test.ts
+pnpm --filter @krn/db test -- events.test.ts
+pnpm --filter @krn/workers test -- index.test.ts
+pnpm --filter @krn/db test -- events.test.ts
+pnpm --filter @krn/db db:generate
+sed -n '1,220p' packages/db/src/migrations/0006_lucky_ken_ellis.sql
+rg -n "worker_job_status|worker_jobs|available_at|skipped|dead_letter|cancelled" packages/db/src/migrations/meta/0006_snapshot.json packages/db/src/migrations/meta/_journal.json
+pnpm --filter @krn/workers typecheck
+pnpm --filter @krn/db typecheck
+pnpm --filter @krn/workers test
+pnpm --filter @krn/db test
+pnpm --filter @krn/db db:check
+pnpm typecheck
+pnpm test
+git diff --check
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/workers/src packages/db/src/schema/events.ts packages/db/src/schema/events.test.ts
+rg -n "Redis|Kafka|setInterval|while \(|for \(;;\)|spawn|exec\(" packages/workers/src packages/db/src/schema/events.ts packages/db/src/migrations/0006_lucky_ken_ellis.sql
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+```
+
+Results:
+
+- RED worker test failed because the skeleton lacked `embed_memory_record`,
+  still used `type` / `availableAt`, and did not expose `skipped`.
+- RED DB schema test failed because `worker_job_status` lacked `skipped` and
+  `workerJobs` had no `jobType` / `runAfter` properties.
+- Added `embed_memory_record` with a typed memory-record payload.
+- Changed the public worker contract to `jobType` and `runAfter`.
+- Added `workerJobStatuses` with `queued`, `running`, `succeeded`, `failed`,
+  and `skipped`.
+- Changed Drizzle worker job property names to `jobType` and `runAfter` while
+  preserving SQL columns `type` and `available_at`.
+- GREEN worker test passed with 1 test file and 3 tests.
+- GREEN DB schema test passed with 11 test files and 27 tests.
+- `pnpm --filter @krn/db db:generate` generated
+  `0006_lucky_ken_ellis.sql`.
+- SQL inspection showed the migration only adds `skipped`:
+  `ALTER TYPE "public"."worker_job_status" ADD VALUE 'skipped' BEFORE 'dead_letter';`.
+- Migration snapshot inspection showed `skipped` in `worker_job_status`, with
+  existing `available_at` SQL column and existing worker job indexes preserved.
+- `pnpm --filter @krn/workers typecheck` passed.
+- `pnpm --filter @krn/db typecheck` passed.
+- `pnpm --filter @krn/workers test` passed with 1 test file and 3 tests.
+- `pnpm --filter @krn/db test` passed with 11 test files and 27 tests.
+- `pnpm --filter @krn/db db:check` passed.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 22 test files and 112 tests.
+- `git diff --check` passed.
+- TypeScript hygiene scan returned no matches for `any`, double assertions, or
+  TypeScript suppressions.
+- Worker forbidden-runtime scan returned no matches for Redis/Kafka, background
+  loops, process spawn, or `exec(` in the changed worker/schema surfaces.
+- Live `pnpm db:ready` passed with Postgres reachable, 7 expected/applied
+  migrations, and pgvector available.

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."worker_job_status" ADD VALUE 'skipped' BEFORE 'dead_letter';

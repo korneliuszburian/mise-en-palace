@@ -14,9 +14,9 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 04 it still lacks Codex
-adapter DB smoke, worker-job DB smoke, doctor readiness for adapter/worker
-surfaces, and several worker target contracts named in `GOAL.md`.
+The current surface is not M26-complete. After Slice 06 it still lacks
+DB-backed worker-job repository methods, worker-job DB smoke, and doctor
+readiness for adapter/worker surfaces.
 
 ## Files Inspected
 
@@ -127,17 +127,17 @@ Gaps:
 
 | M26 concept | Current surface | Status | Notes |
 | --- | --- | --- | --- |
-| `worker_jobs` table | `packages/db/src/schema/events.ts` | exists | Has id, type, status, payload, attempts, maxAttempts, availableAt, lockedAt, lockedBy, lastError, createdAt, updatedAt. |
+| `worker_jobs` table | `packages/db/src/schema/events.ts` | exists | Has id, `jobType`, status, payload, attempts, maxAttempts, `runAfter`, lockedAt, lockedBy, lastError, createdAt, updatedAt. Drizzle maps `jobType` to SQL `type` and `runAfter` to SQL `available_at`. |
 | `outbox_events` table | `packages/db/src/schema/events.ts` | exists | Available for queued worker job event emission. |
 | Worker package | `packages/workers` | exists | Owns typed maintenance job definitions and enqueue ports. |
 | `embed_source_chunk` | `maintenanceJobTypes` | exists | Payload points to source chunk. |
-| `embed_memory_record` | none | missing | Required by `GOAL.md` M26 worker semantics. |
+| `embed_memory_record` | `maintenanceJobTypes` | exists | Payload points to memory record and optional embedding model. |
 | `compact_memory` | `maintenanceJobTypes` | exists | Payload points to project and optional memory record. |
 | `detect_contradiction` | `maintenanceJobTypes` | exists | Payload points to project and optional memory/source claim. |
 | `expire_stale_memory` | `maintenanceJobTypes` | exists | Payload includes stale cutoff. |
 | `promote_eval_candidate` | `maintenanceJobTypes` | exists | Payload points to eval candidate. |
-| Worker job statuses | DB and worker types | partial mismatch | Current values include `dead_letter` and `cancelled`; `GOAL.md` names `skipped`. |
-| Run scheduling field | `availableAt` | partial mismatch | `GOAL.md` names `runAfter`. The existing field is semantically close but should be decided deliberately. |
+| Worker job statuses | DB and worker types | aligned with compatibility note | Public worker lifecycle is `queued`, `running`, `succeeded`, `failed`, `skipped`. DB enum also retains legacy `dead_letter` and `cancelled` values as inert compatibility. |
+| Run scheduling field | `runAfter` | aligned | Drizzle and worker package expose `runAfter`; SQL keeps existing `available_at` column. |
 | WorkerJobRepository | `packages/workers` interface only | partial | Only `enqueue` exists. M26.07 needs enqueue/read/list/transition/cleanup methods. |
 | Drizzle worker repository | none | missing | DB schema exists, but no DB-backed repository adapter found. |
 | Worker smoke | none | missing | No `pnpm db:smoke:worker-jobs` or CLI target. |
@@ -171,9 +171,6 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Add MCP refs and subagent probes as references/hints only.
-- Add `embed_memory_record` to worker job types.
-- Reconcile worker job status vocabulary with `GOAL.md`.
 - Add DB-backed WorkerJobRepository methods and smoke proof.
 - Add doctor readiness for adapter and worker surfaces.
 
@@ -269,3 +266,19 @@ M26.05 resolved Codex adapter DB smoke proof:
 
 Remaining M26 work is worker job schema/repository/smoke, doctor readiness,
 dogfood, anti-rot, and final handoff.
+
+## Slice 06 Update
+
+M26.06 resolved worker schema/type alignment:
+
+- `maintenanceJobTypes` includes `embed_memory_record`;
+- `MaintenanceJob`, `CreateWorkerJobInput`, `WorkerJobRecord`, and the queued
+  worker outbox payload use `jobType`;
+- worker scheduling uses `runAfter`;
+- `workerJobStatuses` exposes the target lifecycle including `skipped`;
+- Drizzle `workerJobs.jobType` maps to SQL `type`;
+- Drizzle `workerJobs.runAfter` maps to SQL `available_at`;
+- migration `0006_lucky_ken_ellis.sql` only adds `skipped` to
+  `worker_job_status`.
+
+Remaining worker work is DB-backed repository methods and smoke proof.

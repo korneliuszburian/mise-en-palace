@@ -6,30 +6,32 @@ import type {
   MaintenanceJobType
 } from "./jobTypes.js";
 
-export type WorkerJobStatus =
-  | "queued"
-  | "running"
-  | "succeeded"
-  | "failed"
-  | "dead_letter"
-  | "cancelled";
+export const workerJobStatuses = [
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "skipped"
+] as const;
+
+export type WorkerJobStatus = (typeof workerJobStatuses)[number];
 
 export interface CreateWorkerJobInput<TType extends MaintenanceJobType = MaintenanceJobType> {
-  type: TType;
+  jobType: TType;
   payload: MaintenanceJobPayloadByType[TType];
-  availableAt?: IsoTimestamp;
+  runAfter?: IsoTimestamp;
   maxAttempts?: number;
 }
 
 export type WorkerJobRecord<TType extends MaintenanceJobType = MaintenanceJobType> = {
   [K in TType]: {
     id: string;
-    type: K;
+    jobType: K;
     status: WorkerJobStatus;
     payload: MaintenanceJobPayloadByType[K];
     attempts: number;
     maxAttempts: number;
-    availableAt: IsoTimestamp;
+    runAfter: IsoTimestamp;
     lockedAt?: IsoTimestamp;
     lockedBy?: string;
     lastError?: string;
@@ -48,10 +50,10 @@ export interface CreateWorkerOutboxEventInput {
   topic: "worker_job.queued";
   payload: {
     workerJobId: string;
-    type: MaintenanceJobType;
+    jobType: MaintenanceJobType;
     payload: MaintenanceJob["payload"];
   };
-  availableAt?: IsoTimestamp;
+  runAfter?: IsoTimestamp;
 }
 
 export interface WorkerOutboxEventReceipt {
@@ -69,7 +71,7 @@ export interface EnqueueMaintenanceJobInput<TType extends MaintenanceJobType = M
     workerJobs: WorkerJobRepository;
     outbox: WorkerOutboxRepository;
   };
-  availableAt?: IsoTimestamp;
+  runAfter?: IsoTimestamp;
   maxAttempts?: number;
 }
 
@@ -82,9 +84,9 @@ export const enqueueMaintenanceJob = async <TType extends MaintenanceJobType>(
   input: EnqueueMaintenanceJobInput<TType>
 ): Promise<EnqueueMaintenanceJobResult<TType>> => {
   const workerJob = await input.repositories.workerJobs.enqueue({
-    type: input.job.type,
+    jobType: input.job.jobType,
     payload: input.job.payload,
-    ...(input.availableAt === undefined ? {} : { availableAt: input.availableAt }),
+    ...(input.runAfter === undefined ? {} : { runAfter: input.runAfter }),
     ...(input.maxAttempts === undefined ? {} : { maxAttempts: input.maxAttempts })
   });
 
@@ -92,10 +94,10 @@ export const enqueueMaintenanceJob = async <TType extends MaintenanceJobType>(
     topic: "worker_job.queued",
     payload: {
       workerJobId: workerJob.id,
-      type: workerJob.type,
+      jobType: workerJob.jobType,
       payload: workerJob.payload
     },
-    ...(input.availableAt === undefined ? {} : { availableAt: input.availableAt })
+    ...(input.runAfter === undefined ? {} : { runAfter: input.runAfter })
   });
 
   return {

@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 05 Codex adapter smoke path complete.
+Current slice: Slice 06 worker job schema alignment complete.
 
 Completed:
 
@@ -58,6 +58,16 @@ Completed:
   verifies no Codex invocation event occurred, and cleans marker rows to zero.
 - Slice 05 keeps Codex adapter smoke orchestration in `packages/cli` because
   `packages/db` must not render Codex-specific surfaces.
+- Slice 06 added the missing `embed_memory_record` maintenance job type.
+- Slice 06 changed the public worker skeleton contract from `type` /
+  `availableAt` to `jobType` / `runAfter`.
+- Slice 06 added target worker statuses through `workerJobStatuses`, including
+  `skipped`, while keeping the worker package free of daemon behavior.
+- Slice 06 mapped Drizzle `workerJobs.jobType` to the existing SQL `type`
+  column and `workerJobs.runAfter` to the existing SQL `available_at` column,
+  avoiding a risky column rename.
+- Slice 06 generated migration `0006_lucky_ken_ellis.sql`, which only adds
+  `skipped` to the existing Postgres `worker_job_status` enum.
 
 Verification:
 
@@ -172,7 +182,33 @@ Verification:
   `packages/db` or `packages/core`.
 - `pnpm typecheck`: passed across 7 workspace packages.
 - `pnpm test`: passed with 21 test files and 109 tests.
+- Slice 06 RED: `pnpm --filter @krn/workers test -- index.test.ts` failed
+  because `embed_memory_record`, `jobType`, `runAfter`, and `skipped` were
+  missing.
+- Slice 06 RED: `pnpm --filter @krn/db test -- events.test.ts` failed because
+  `worker_job_status` lacked `skipped` and `workerJobs` exposed no
+  `jobType` / `runAfter` properties.
+- Slice 06 GREEN: targeted worker and DB tests passed after the schema/type
+  alignment.
+- `pnpm --filter @krn/db db:generate`: passed and generated
+  `0006_lucky_ken_ellis.sql`.
+- Migration SQL inspection showed only
+  `ALTER TYPE "public"."worker_job_status" ADD VALUE 'skipped' BEFORE 'dead_letter';`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm --filter @krn/workers typecheck`: passed.
+- `pnpm --filter @krn/db typecheck`: passed.
+- `pnpm --filter @krn/workers test`: passed with 1 test file and 3 tests.
+- `pnpm --filter @krn/db test`: passed with 11 test files and 27 tests.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed with 22 test files and 112 tests.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with 7 expected/applied migrations and pgvector available.
+- `git diff --check`: passed.
+- Slice 06 TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Slice 06 forbidden worker runtime scan returned no Redis/Kafka, process
+  spawn, or loop matches in the changed worker/schema surfaces.
 
 Next:
 
-- Start M26.06 worker job schema alignment.
+- Start M26.07 WorkerJobRepository methods.

@@ -23,12 +23,12 @@ class InMemoryWorkerJobRepository implements WorkerJobRepository {
 
     return {
       id: "worker-job-1",
-      type: input.type,
+      jobType: input.jobType,
       status: "queued",
       payload: input.payload,
       attempts: 0,
       maxAttempts: input.maxAttempts ?? 3,
-      availableAt: input.availableAt ?? isoNow,
+      runAfter: input.runAfter ?? isoNow,
       createdAt: isoNow,
       updatedAt: isoNow
     };
@@ -52,6 +52,7 @@ describe("maintenance worker skeleton", () => {
   test("describes the supported KRN maintenance jobs without daemon behavior", () => {
     expect(maintenanceJobTypes).toEqual([
       "embed_source_chunk",
+      "embed_memory_record",
       "compact_memory",
       "detect_contradiction",
       "expire_stale_memory",
@@ -63,7 +64,7 @@ describe("maintenance worker skeleton", () => {
     expect(descriptions).toEqual(
       maintenanceJobTypes.map((type) =>
         expect.objectContaining({
-          type,
+          jobType: type,
           workerTable: "worker_jobs",
           outboxTable: "outbox_events",
           requiresBackgroundLoop: false
@@ -76,7 +77,7 @@ describe("maintenance worker skeleton", () => {
     const workerJobs = new InMemoryWorkerJobRepository();
     const outbox = new InMemoryOutboxRepository();
     const job: MaintenanceJob = {
-      type: "compact_memory",
+      jobType: "compact_memory",
       payload: {
         projectId: "project-1",
         memoryRecordId: "memory-1",
@@ -90,15 +91,15 @@ describe("maintenance worker skeleton", () => {
         workerJobs,
         outbox
       },
-      availableAt: "2026-06-21T18:00:00.000Z",
+      runAfter: "2026-06-21T18:00:00.000Z",
       maxAttempts: 2
     });
 
     expect(workerJobs.inputs).toEqual([
       {
-        type: "compact_memory",
+        jobType: "compact_memory",
         payload: job.payload,
-        availableAt: "2026-06-21T18:00:00.000Z",
+        runAfter: "2026-06-21T18:00:00.000Z",
         maxAttempts: 2
       }
     ]);
@@ -107,16 +108,16 @@ describe("maintenance worker skeleton", () => {
         topic: "worker_job.queued",
         payload: {
           workerJobId: "worker-job-1",
-          type: "compact_memory",
+          jobType: "compact_memory",
           payload: job.payload
         },
-        availableAt: "2026-06-21T18:00:00.000Z"
+        runAfter: "2026-06-21T18:00:00.000Z"
       }
     ]);
     expect(result).toEqual({
       workerJob: expect.objectContaining({
         id: "worker-job-1",
-        type: "compact_memory",
+        jobType: "compact_memory",
         status: "queued"
       }),
       outboxEvent: {
@@ -124,5 +125,38 @@ describe("maintenance worker skeleton", () => {
         topic: "worker_job.queued"
       }
     });
+  });
+
+  test("describes embed memory record jobs and skipped lifecycle status", () => {
+    const job: MaintenanceJob<"embed_memory_record"> = {
+      jobType: "embed_memory_record",
+      payload: {
+        memoryRecordId: "memory-1",
+        reason: "refresh stale memory embedding",
+        embeddingModelId: "text-embedding-3-small"
+      }
+    };
+
+    expect(describeMaintenanceJob(job.jobType)).toEqual(
+      expect.objectContaining({
+        jobType: "embed_memory_record",
+        label: "Embed memory record",
+        requiresBackgroundLoop: false
+      })
+    );
+
+    const skippedRecord: WorkerJobRecord<"embed_memory_record"> = {
+      id: "worker-job-2",
+      jobType: job.jobType,
+      status: "skipped",
+      payload: job.payload,
+      attempts: 0,
+      maxAttempts: 3,
+      runAfter: isoNow,
+      createdAt: isoNow,
+      updatedAt: isoNow
+    };
+
+    expect(skippedRecord.status).toBe("skipped");
   });
 });

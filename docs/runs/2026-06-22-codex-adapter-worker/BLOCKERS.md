@@ -4,8 +4,6 @@ No hard blocker for M26.00.
 
 Known gaps for later M26 slices:
 
-- worker job types are missing `embed_memory_record`;
-- worker status vocabulary is not aligned with `GOAL.md` `skipped`;
 - no DB-backed WorkerJobRepository transition methods;
 - no `pnpm db:smoke:worker-jobs`;
 - doctor does not yet report Codex adapter or worker readiness.
@@ -51,6 +49,16 @@ Resolved in M26.05:
 - smoke verifies objective, non-goals, explicit exclusions, evidence contract,
   bounded source/memory references, hook expectations, zero Codex invocations,
   and cleanup remaining marker count zero.
+
+Resolved in M26.06:
+
+- worker job types include `embed_memory_record`;
+- the public worker skeleton contract uses `jobType` and `runAfter`;
+- public worker lifecycle statuses include `skipped`;
+- Drizzle `workerJobs.jobType` and `workerJobs.runAfter` map to the existing
+  SQL `type` and `available_at` columns;
+- migration `0006_lucky_ken_ellis.sql` adds `skipped` to
+  `worker_job_status` without renaming or dropping worker job columns.
 
 Non-goals that remain intentionally blocked:
 

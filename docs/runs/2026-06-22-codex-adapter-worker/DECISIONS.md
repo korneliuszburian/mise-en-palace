@@ -83,6 +83,9 @@
   Decision: M26.06/M26.07 must explicitly reconcile `embed_memory_record`,
   `skipped`, and `availableAt` vs `runAfter` rather than silently accepting the
   older worker vocabulary.
+  Status after Slice 06: worker package and Drizzle schema vocabulary are
+  reconciled; DB-backed repository methods and smoke proof remain for
+  M26.07/M26.08.
   Rejection/falsifier: if `pnpm db:smoke:worker-jobs` cannot enqueue and
   transition every required job type, worker skeleton proof is incomplete.
 
@@ -370,5 +373,73 @@
   fallback uses `createEvidenceContract`.
 - Public type changes: `DbSmokeRuntime["target"]` now includes `codexAdapter`;
   CLI exports a new internal smoke report formatter/check module.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.
+
+## Slice 06 Decisions
+
+- Source: `GOAL.md` M26.06.
+  Mechanism: the worker skeleton must expose job records for
+  `embed_source_chunk`, `embed_memory_record`, `compact_memory`,
+  `detect_contradiction`, `expire_stale_memory`, and
+  `promote_eval_candidate`; target statuses include `skipped`; scheduling is
+  named `runAfter`.
+  KRN implication: the public worker contract should use the M26 vocabulary
+  before DB repository methods and smoke proof are added.
+  Decision: add `embed_memory_record`, `workerJobStatuses`, `jobType`, and
+  `runAfter` to `packages/workers`.
+  Rejection/falsifier: if M26.07 repository methods need to translate from
+  older `type` / `availableAt` worker inputs, Slice 06 did not align the
+  worker boundary.
+
+- Source: `packages/db/src/schema/events.ts` and generated migration
+  `packages/db/src/migrations/0006_lucky_ken_ellis.sql`.
+  Mechanism: existing SQL columns are already `type` and `available_at`, and
+  Drizzle can expose different TypeScript property names without renaming SQL
+  columns; adding `skipped` to the enum is an additive migration.
+  KRN implication: M26.06 can align the Drizzle/schema contract with
+  `jobType` / `runAfter` while avoiding a destructive or noisy column rename.
+  Decision: map `workerJobs.jobType` to SQL `type`, map
+  `workerJobs.runAfter` to SQL `available_at`, and add only enum value
+  `skipped` in migration SQL.
+  Rejection/falsifier: if future smoke proof cannot enqueue/list by
+  `jobType` and `runAfter`, or if the migration contains drop/rename behavior,
+  this alignment is insufficient.
+
+- Source: existing Postgres enum values in `worker_job_status`.
+  Mechanism: removing enum values such as `dead_letter` and `cancelled` is not
+  an additive Postgres migration and is not required for job record proof.
+  KRN implication: the target worker package lifecycle can be exact without
+  risking historical enum-value removal in the DB during M26.06.
+  Decision: keep legacy DB enum values inert for compatibility, but expose the
+  public worker package lifecycle as `queued`, `running`, `succeeded`,
+  `failed`, and `skipped`.
+  Rejection/falsifier: if M26.07 or M26.08 uses `dead_letter` or `cancelled`
+  as target worker lifecycle states, the worker semantics have drifted from
+  `GOAL.md`.
+
+## Slice 06 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN worker contract
+  and DB schema coverage before implementation.
+- `brain-store-schema`: used for Drizzle worker job schema, enum migration,
+  SQL inspection, and migration risk assessment.
+- `source-to-decision`: used to map GOAL/schema/migration evidence into
+  decisions and falsifiers.
+- `typescript-type-safety`: used for worker public types, generic payload
+  boundaries, and no-`any` verification.
+- `superpowers:verification-before-completion`: used before claiming package
+  tests, typecheck, migration checks, or live DB readiness passed.
+
+## Slice 06 Type-Safety Notes
+
+- Boundary classification: public worker package API and DB schema property
+  names over existing SQL columns.
+- Validation/narrowing: no new external input parser is added in this slice;
+  M26.07 repository adapters must narrow DB JSON payloads before returning
+  typed worker records.
+- Public type changes: `MaintenanceJob` now uses `jobType`; worker scheduling
+  now uses `runAfter`; `WorkerJobStatus` is exported from the
+  `workerJobStatuses` target lifecycle.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
