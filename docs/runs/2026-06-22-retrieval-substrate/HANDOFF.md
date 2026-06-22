@@ -38,6 +38,13 @@ marker cleanup. DrizzleRetrievalRepository implements them, with FTS SQL kept in
 the DB adapter. A one-off live check inserted a SearchDocument, found it through
 `searchLexical`, and cleaned the marker row.
 
+M24 Slice 04 is complete. `pnpm db:smoke:retrieval-substrate` now routes through
+`krn db smoke retrieval-substrate` and proves SearchDocument persistence,
+lexical search, pgvector placeholder embedding storage, RetrievalRun,
+RetrievalCandidate, ActivationDecision, ContextItem, ContextExclusion, and
+cleanup count zero. The smoke also indexes SourceClaim, MemoryRecord,
+EvidenceBundle, and SourceDecision as search documents.
+
 Changed files:
 
 - `docs/runs/2026-06-22-retrieval-substrate/RETRIEVAL_SUBSTRATE_INVENTORY.md`
@@ -63,6 +70,13 @@ Changed files:
 - `packages/db/src/repositories/DrizzleRetrievalRepository.test.ts`
 - `packages/db/src/repositories/mappers.ts`
 - `packages/db/src/repositories/mappers.test.ts`
+- `packages/db/src/retrievalSubstrateSmoke.ts`
+- `packages/db/src/retrievalSubstrateSmoke.test.ts`
+- `packages/db/src/index.ts`
+- `packages/cli/src/runDbSmokeCommand.ts`
+- `packages/cli/src/parseArgs.ts`
+- `packages/cli/src/runCli.test.ts`
+- `package.json`
 
 Decisions:
 Reuse the existing Postgres/Drizzle retrieval schema. Keep FTS/vector raw SQL
@@ -74,8 +88,8 @@ then expands the enum and adds concrete FKs where first-class tables already
 exist.
 
 Blockers/risks:
-No hard blocker for M24.03. The main implementation gap is now the
-self-cleaning `db:smoke:retrieval-substrate` command and later doctor readiness.
+No hard blocker for M24.04. The main implementation gap is now doctor retrieval
+readiness.
 
 Context selectors:
 `GOAL.md`, `docs/KRN_KERNEL.md`, `packages/db/src/schema/retrieval.ts`,
@@ -87,10 +101,10 @@ Context selectors:
 and `package.json`.
 
 Next action:
-M24.04 should add `pnpm db:smoke:retrieval-substrate` and prove the full chain:
-search document insert, lexical retrieval, embedding placeholder/vector row,
-retrieval run, candidate, activation decision, context inclusion/exclusion, and
-cleanup count zero.
+M24.05 should add doctor retrieval readiness, including schema/migration
+availability, FTS/search document readiness, pgvector availability, retrieval
+smoke command availability, runtime proof ready/unverified status, and absence
+of separate vector/search DB or naive RAG dump command.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless the next task explicitly

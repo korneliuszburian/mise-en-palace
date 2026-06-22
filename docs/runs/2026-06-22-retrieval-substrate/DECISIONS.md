@@ -99,6 +99,16 @@
   receive typed read models and scores only.
   Decision: lexical FTS SQL lives in `DrizzleRetrievalRepository`.
   Rejection/falsifier: CLI/harness code should not construct FTS SQL directly.
+- Source: `GOAL.md` M24.04.
+  Mechanism: a smoke command must prove the retrieval chain and cleanup rather
+  than only expose repository methods.
+  KRN implication: retrieval substrate proof must include search docs, lexical
+  hit, vector-ready embedding row, retrieval run, candidates, activation
+  decisions, context inclusion/exclusion, and zero remaining marker rows.
+  Decision: add `pnpm db:smoke:retrieval-substrate` as a DB-required,
+  self-cleaning smoke command.
+  Rejection/falsifier: if cleanup marker count is non-zero or lexical search
+  cannot find the inserted source document, M24.04 fails.
 
 Slice 00 skill record:
 
@@ -145,3 +155,13 @@ Slice 03 skill record:
   and context exclusion persistence explicit.
 - `superpowers:systematic-debugging`: used for the one-off runtime check when
   `tsx -e` first failed on top-level await rather than repository behavior.
+
+Slice 04 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN smoke export and
+  CLI missing-config tests.
+- `brain-store-schema`: used for smoke row lifecycle, marker cleanup order, and
+  persisted source/memory/evidence/decision/search/retrieval records.
+- `typescript-type-safety`: used for smoke report and CLI target union changes.
+- `activation-engine`: used to ensure candidates, activation decisions, context
+  inclusion, and context exclusion are all first-class proof rows.

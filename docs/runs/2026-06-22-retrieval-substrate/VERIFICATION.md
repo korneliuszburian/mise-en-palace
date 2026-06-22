@@ -109,3 +109,28 @@ Results:
   `searchLexical` can find the inserted document and marker cleanup can delete
   it. This is a narrow repository proof; M24.04 still needs the full smoke
   chain.
+
+## Slice 04
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- retrievalSubstrateSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:retrieval-substrate
+pnpm test
+pnpm --filter @krn/db db:check
+git diff --check
+```
+
+Results:
+
+- RED DB export test failed before `runRetrievalSubstrateSmokeCheck` existed.
+- RED CLI test failed before `krn db smoke retrieval-substrate` routing existed.
+- Typecheck caught the missing CLI target union value and passed after the
+  union was widened.
+- Live retrieval substrate smoke passed with SearchDocument count `4`, lexical
+  results `1`, retrieval candidates `2`, activation decisions `2`, context
+  items `1`, context exclusions `1`, and cleanup remaining marker count `0`.
+- Final full test suite, DB schema check, and diff hygiene passed.

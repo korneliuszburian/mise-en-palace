@@ -4,10 +4,7 @@ No hard blocker for M24.00.
 
 Known gaps for later M24 slices:
 
-- no `pnpm db:smoke:retrieval-substrate` yet;
 - no doctor retrieval/search substrate readiness yet;
-- no live smoke proof that cleanup count is zero after the full retrieval
-  substrate chain.
 
 Resolved in M24.01:
 
@@ -20,6 +17,8 @@ Resolved in M24.01:
 - typed retrieval repository methods now exist for search document creation,
   lexical search, embedding model creation, embedding row storage, retrieval
   run/candidate/activation aliases, list-by-run readback, and marker cleanup.
+- `pnpm db:smoke:retrieval-substrate` now proves the full retrieval substrate
+  chain and cleanup count zero.
 
 Non-goals that remain intentionally blocked:
 

@@ -7,6 +7,7 @@ import {
   runHarnessPlanSmokeCheck,
   runMemoryGovernanceSmokeCheck,
   runPersistenceSmokeCheck,
+  runRetrievalSubstrateSmokeCheck,
   runSourceGraphSmokeCheck
 } from "@krn/db";
 
@@ -14,7 +15,13 @@ export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
   cwd: string;
   createId(prefix: string): string;
-  target: "project" | "harnessPlan" | "harnessEvidence" | "sourceGraph" | "memoryGovernance";
+  target:
+    | "project"
+    | "harnessPlan"
+    | "harnessEvidence"
+    | "sourceGraph"
+    | "memoryGovernance"
+    | "retrievalSubstrate";
 }
 
 export interface DbSmokeResult {
@@ -71,6 +78,10 @@ const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "KRN Memory Governance Smoke";
   }
 
+  if (target === "retrievalSubstrate") {
+    return "KRN Retrieval Substrate Smoke";
+  }
+
   return "KRN DB Smoke";
 };
 
@@ -91,6 +102,10 @@ const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "Memory governance smoke: skipped (database not configured)";
   }
 
+  if (target === "retrievalSubstrate") {
+    return "Retrieval substrate smoke: skipped (database not configured)";
+  }
+
   return "Persistence smoke: skipped (database not configured)";
 };
 
@@ -109,6 +124,10 @@ const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
 
   if (target === "memoryGovernance") {
     return "Memory governance smoke";
+  }
+
+  if (target === "retrievalSubstrate") {
+    return "Retrieval substrate smoke";
   }
 
   return "Persistence smoke";
@@ -268,6 +287,43 @@ export const runDbSmokeCommand = async (
           `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
           `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
           `Memory governance smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
+    if (runtime.target === "retrievalSubstrate") {
+      const report = await runRetrievalSubstrateSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("retrieval-substrate-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Retrieval Substrate Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          `Workspace smoke row: ${report.workspaceSlug}`,
+          `Project smoke row: ${report.projectSlug}`,
+          `Execution run: ${report.executionRunId}`,
+          `Source claim: ${report.sourceClaimId}`,
+          `Memory record: ${report.memoryRecordId}`,
+          `Evidence bundle: ${report.evidenceBundleId}`,
+          `Source decision: ${report.sourceDecisionId}`,
+          `Search documents: ${report.searchDocumentCount}`,
+          `Lexical results: ${report.lexicalResultCount}`,
+          `Embedding model: ${report.embeddingModelId}`,
+          `Embedding row: ${report.embeddingId}`,
+          `Retrieval run: ${report.retrievalRunId}`,
+          `Retrieval candidates: ${report.retrievalCandidateCount}`,
+          `Activation decisions: ${report.activationDecisionCount}`,
+          `Context items: ${report.contextItemCount}`,
+          `Context exclusions: ${report.contextExclusionCount}`,
+          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+          `Retrieval substrate smoke: ${report.cleanedUp ? "passed" : "failed"}`
         ].join("\n") + "\n"
       };
     }

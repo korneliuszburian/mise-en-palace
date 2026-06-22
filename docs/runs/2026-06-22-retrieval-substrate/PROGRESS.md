@@ -2,7 +2,7 @@
 
 Goal: M24 - Retrieval/search substrate plus activation trace persistence.
 
-Current slice: Slice 03 retrieval repository methods complete.
+Current slice: Slice 04 retrieval substrate smoke complete.
 
 Completed:
 
@@ -41,6 +41,13 @@ Completed:
   Embedding, and the new retrieval run/candidate/activation fields.
 - Slice 03 kept existing compiler-facing retrieval methods compatible and
   updated no-store/fake repositories to satisfy the widened contract.
+- Slice 04 added `pnpm db:smoke:retrieval-substrate` and
+  `krn db smoke retrieval-substrate`.
+- Slice 04 smoke creates a workspace/project/plan/execution run, source claim,
+  MemoryRecord, EvidenceBundle, SourceDecision, four SearchDocuments,
+  placeholder pgvector embedding row, RetrievalRun, two RetrievalCandidates,
+  two ActivationDecisions, one ContextItem, one ContextExclusion, readback
+  counts, and cleanup proof.
 
 Verification:
 
@@ -87,7 +94,35 @@ Verification:
 - One-off live lexical repository check with `KRN_DATABASE_URL` inserted a
   SearchDocument, found it through `searchLexical`, and cleaned marker rows;
   output was `{"found":true,"cleanup":{"deletedCount":1}}`.
+- Slice 04 RED: `pnpm --filter @krn/db test -- retrievalSubstrateSmoke.test.ts`
+  failed on missing `runRetrievalSubstrateSmokeCheck` export.
+- Slice 04 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn db smoke retrieval-substrate` was not routed yet.
+- `pnpm --filter @krn/db test -- retrievalSubstrateSmoke.test.ts`: passed.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 50 tests.
+- First Slice 04 `pnpm typecheck` failed because `parseArgs` DB smoke target
+  union did not include `retrievalSubstrate`.
+- `pnpm typecheck`: passed after extending the CLI union.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:retrieval-substrate`: passed. Runtime proof:
+  - execution run `564372e1-9840-479f-a896-4a3949836c2f`;
+  - source claim `11b29e58-80eb-40ec-ad28-0bda3cd7e30b`;
+  - memory record `d509b938-81b2-4a69-9fcc-a0b87398c6e7`;
+  - evidence bundle `cabe936e-b0aa-48ca-b7ec-5d5866790c93`;
+  - source decision `2275d03c-0241-45e4-941b-23585dc028d8`;
+  - search documents `4`;
+  - lexical results `1`;
+  - embedding row `681874bb-63cd-4bfd-9f51-13edd54637a5`;
+  - retrieval run `16fb5a3c-7716-4a53-9089-a8aa50102177`;
+  - retrieval candidates `2`;
+  - activation decisions `2`;
+  - context items `1`;
+  - context exclusions `1`;
+  - cleanup remaining marker count `0`.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `git diff --check`: passed.
 
 Next:
 
-- M24.04: add self-cleaning `pnpm db:smoke:retrieval-substrate`.
+- M24.05: add doctor retrieval readiness.

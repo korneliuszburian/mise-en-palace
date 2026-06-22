@@ -12,6 +12,7 @@
     "db:smoke:harness-evidence": "pnpm --filter @krn/cli krn db smoke harness-evidence",
     "db:smoke:harness-plan": "pnpm --filter @krn/cli krn db smoke harness-plan",
     "db:smoke:memory-governance": "pnpm --filter @krn/cli krn db smoke memory-governance",
+    "db:smoke:retrieval-substrate": "pnpm --filter @krn/cli krn db smoke retrieval-substrate",
     "db:smoke:source-graph": "pnpm --filter @krn/cli krn db smoke source-graph",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"

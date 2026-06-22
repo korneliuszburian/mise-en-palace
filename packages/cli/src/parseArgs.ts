@@ -17,7 +17,8 @@ export type CliCommand =
         | "harnessPlan"
         | "harnessEvidence"
         | "sourceGraph"
-        | "memoryGovernance";
+        | "memoryGovernance"
+        | "retrievalSubstrate";
     }
   | {
       kind: "evidenceCapture";
@@ -460,10 +461,19 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "retrieval-substrate") {
+      return {
+        command: {
+          kind: "dbSmoke",
+          target: "retrievalSubstrate"
+        }
+      };
+    }
+
     return {
       error: [
         "Usage: krn db readiness|smoke",
-        "[harness-plan|harness-evidence|source-graph|memory-governance]"
+        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate]"
       ].join(" ")
     };
   }
