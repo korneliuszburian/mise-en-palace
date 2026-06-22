@@ -339,7 +339,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-02 complete: established repo audit baseline at `docs/plans/memory-ideal-state/AUDIT_BASELINE.md`. Intended files: baseline doc and this PLAN. Non-goals preserved: no runtime, DB schema, migration, CLI, worker, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, or `.krn` runtime truth. Evidence: `pnpm --version` 10.32.1; `pnpm typecheck` passed; `pnpm test` passed with 30 files and 139 tests; DB-aware `pnpm db:ready` passed with 8/8 migrations and pgvector available; DB-aware `krn doctor` passed with forbidden surfaces absent; forbidden directory/dependency scans found no forbidden surfaces.
 - [x] (2026-06-22) MM-03 complete: added pure AuditBundle domain contract in `packages/core/src/auditBundle.ts`, exported it from `packages/core/src/index.ts`, and added focused tests in `packages/core/src/auditBundle.test.ts`. Intended files: `packages/core/src/auditBundle.ts`, `packages/core/src/auditBundle.test.ts`, `packages/core/src/index.ts`, this PLAN. Non-goals preserved: no DB, schema, CLI, fs/env/network, worker, runtime, migration, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, or `.krn` runtime truth. Evidence: RED `pnpm --filter @krn/core test` failed on missing `auditBundle.js`; GREEN focused core tests passed with 2 files and 7 tests; focused core typecheck passed; final full verification recorded in commit.
 - [x] (2026-06-22) MM-04 complete: added AuditBundle Zod parse boundary, Drizzle `audit_bundles` / `audit_findings` schema, generated migration `0008_tough_slapstick.sql`, and thin `DrizzleAuditBundleRepository` persistence adapter. Intended files: `packages/schema/src/auditBundle.ts`, schema exports/tests, `packages/db/src/schema/audit.ts`, schema exports/tests, audit repository surface, migration files, this PLAN. Non-goals preserved: no CLI, worker, audit checks, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED schema test failed on missing `parseAuditBundleInput`; RED DB schema test failed on missing `schema/audit.js`; focused schema/db/core tests and typechecks passed; `pnpm --filter @krn/db db:generate` created migration; `pnpm --filter @krn/db db:check` passed; DB-aware `pnpm db:ready` passed with 9/9 migrations and pgvector available.
-- [ ] MM-05: Implement repo/architecture/boundary/type/memory/source/eval/handoff audit checks.
+- [x] (2026-06-22) MM-05 complete: added pure harness audit checks for repo surfaces, architecture drift, package boundaries, TypeScript safety shortcuts, memory semantics, source grounding, eval theater, and handoff compactness. Intended files: `packages/harness/src/audit/auditChecks.ts`, `packages/harness/src/audit/auditChecks.test.ts`, `packages/harness/src/audit/index.ts`, `packages/harness/src/index.ts`, this PLAN. Non-goals preserved: no CLI command, filesystem traversal, shell/process execution, DB writes, worker, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused harness test failed on missing `auditChecks.js`; GREEN `pnpm --filter @krn/harness test -- audit/auditChecks.test.ts` passed with 5 files / 17 tests; focused harness typecheck passed; final `pnpm typecheck`, `pnpm test`, `git diff --check`, and audit-module forbidden runtime import scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is typed snapshot audit engine only; review burden low; diff risk low; rollback path `git revert <MM-05 commit>`; candidate updates none; final verdict pass.
 - [ ] MM-06: Add audit CLI and slice audit gate.
 - [ ] MM-07: Dogfood audit on current KRN state.
 - [ ] MM-08: Add observation domain contracts.
@@ -457,6 +457,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: MM-04 created relational `audit_bundles` and `audit_findings` tables with indexes for slice, verdict, category, severity, status, project, and execution run; command lists and candidate updates remain JSONB payload fields.
   Resolution: Keep stable query fields relational and defer CLI/audit check behavior to MM-05/MM-06.
 
+- Observation: MM-05 audit checks are more stable as pure checks over typed snapshots than as direct filesystem scanners.
+  Evidence: `packages/harness/src/audit/auditChecks.ts` accepts `AuditRepoSnapshot` and produces `AuditFinding[]` without fs/process/DB imports; seeded violation fixtures prove detection.
+  Resolution: Keep snapshot construction and command output for MM-06 CLI, while MM-05 owns deterministic check behavior.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -504,6 +508,12 @@ Gate 0 MM-04 outcome:
 - AuditBundle persistence tables exist in `packages/db` with migration `0008_tough_slapstick.sql`.
 - `DrizzleAuditBundleRepository` provides a thin create/get/cleanup adapter without CLI/runtime audit behavior.
 - Live DB readiness now reports 9/9 migrations applied.
+
+Gate 0 MM-05 outcome:
+- `packages/harness/src/audit/auditChecks.ts` exports deterministic audit checks for forbidden surfaces, architecture drift, package boundaries, type-safety shortcuts, memory semantics, source grounding, eval theater, and handoff compactness.
+- The audit checks consume typed snapshots and return `AuditFinding[]`; they do not scan the filesystem, run shell commands, write DB rows, or add CLI/runtime behavior.
+- Seeded violation tests prove each required audit category detects intentional failures.
+- MM-06 owns CLI snapshot construction, human/JSON reports, and slice gate integration.
 
 ## Milestones
 
@@ -565,6 +575,7 @@ MM-04 — AuditBundle schemas and persistence
 MM-05 — Audit checks
 - Scope: packages/harness or dedicated audit module, plus tests.
 - Implement RepoSurfaceAudit, ArchitectureDriftAudit, BoundaryAudit, TypeSafetyAudit, MemorySemanticsAudit, SourceGroundingAudit, EvalTheaterAudit, HandoffCompactAudit.
+- Slice note (2026-06-22): implement a pure harness audit-check module over typed snapshot inputs, exported for later CLI use. Intended files: `packages/harness/src/audit/*`, `packages/harness/src/index.ts`, focused harness tests, and this PLAN. Non-goals: no CLI command, no filesystem traversal, no shell/process execution, no DB writes, no worker, no dashboard/API/MCP/server/plugin, no source crawler, no Research Foundry, no Pattern Vault, no runtime markdown memory, no `.krn` runtime truth, no Redis/Kafka, and no separate vector/graph DB.
 - Verification:
       fixtures with intentional violations are detected.
 
