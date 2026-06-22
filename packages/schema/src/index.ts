@@ -4,6 +4,7 @@ export * from "./harnessCompile.js";
 export * from "./memoryCandidate.js";
 export * from "./observation.js";
 export * from "./operatorIntent.js";
+export * from "./reflection.js";
 export * from "./retrieval.js";
 export * from "./sourceClaim.js";
 export * from "./taskContract.js";

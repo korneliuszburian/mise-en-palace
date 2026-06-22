@@ -14,6 +14,7 @@ import {
   parseObservationGroupInput,
   parseObservationItemInput,
   parseOperatorIntentInput,
+  parseReflectionRecordInput,
   parseSourceClaimInput,
   parseTaskContractInput
 } from "./index.js";
@@ -261,6 +262,128 @@ describe("schema parse boundaries", () => {
     expect(group.metadata).toEqual({});
     expect(group.createdAt).toBeDefined();
     expect(group.updatedAt).toBeDefined();
+  });
+
+  test("reflection record inputs parse candidate-only outputs", () => {
+    const reflection = parseReflectionRecordInput({
+      projectId: "project-1",
+      executionRunId: "run-1",
+      taskContractId: "task-1",
+      summary: "Reflection generated candidate-only output.",
+      scope: {
+        projectId: "project-1",
+        executionRunId: "run-1",
+        taskContractId: "task-1"
+      },
+      input: {
+        scope: {
+          projectId: "project-1",
+          executionRunId: "run-1",
+          taskContractId: "task-1"
+        },
+        observationItemIds: ["observation-1"],
+        sourceClaimIds: [],
+        antiMemoryKeys: [],
+        generatedAt: "2026-06-22T20:00:00.000Z",
+        metadata: {}
+      },
+      output: {
+        id: "reflection-1",
+        scope: {
+          projectId: "project-1",
+          executionRunId: "run-1",
+          taskContractId: "task-1"
+        },
+        status: "candidate",
+        summary: "Reflection output remains candidate-only.",
+        candidateLinks: [{
+          targetType: "memory_candidate",
+          targetId: "candidate-1",
+          summary: "Candidate requires review.",
+          evidenceRefs: ["observation-1"]
+        }],
+        metadata: {},
+        createdAt: "2026-06-22T20:00:00.000Z",
+        updatedAt: "2026-06-22T20:00:00.000Z"
+      },
+      metadata: {}
+    });
+
+    expect(reflection.output.candidateLinks[0]?.targetType).toBe("memory_candidate");
+    expect(reflection.output.findings).toEqual([]);
+  });
+
+  test("reflection schemas reject final-truth targets and mutation metadata", () => {
+    expect(() =>
+      parseReflectionRecordInput({
+        projectId: "project-1",
+        summary: "Invalid reflection output.",
+        scope: {
+          projectId: "project-1"
+        },
+        input: {
+          scope: {
+            projectId: "project-1"
+          },
+          observationItemIds: [],
+          sourceClaimIds: [],
+          antiMemoryKeys: [],
+          generatedAt: "2026-06-22T20:00:00.000Z",
+          metadata: {}
+        },
+        output: {
+          id: "reflection-1",
+          scope: {
+            projectId: "project-1"
+          },
+          status: "candidate",
+          summary: "This should fail.",
+          candidateLinks: [{
+            targetType: "memory_record",
+            summary: "This would bypass review.",
+            evidenceRefs: []
+          }],
+          metadata: {},
+          createdAt: "2026-06-22T20:00:00.000Z",
+          updatedAt: "2026-06-22T20:00:00.000Z"
+        },
+        metadata: {}
+      })
+    ).toThrow();
+
+    expect(() =>
+      parseReflectionRecordInput({
+        projectId: "project-1",
+        summary: "Invalid reflection metadata.",
+        scope: {
+          projectId: "project-1"
+        },
+        input: {
+          scope: {
+            projectId: "project-1"
+          },
+          observationItemIds: [],
+          sourceClaimIds: [],
+          antiMemoryKeys: [],
+          generatedAt: "2026-06-22T20:00:00.000Z",
+          metadata: {}
+        },
+        output: {
+          id: "reflection-1",
+          scope: {
+            projectId: "project-1"
+          },
+          status: "candidate",
+          summary: "This should fail.",
+          metadata: {
+            createActiveMemory: true
+          },
+          createdAt: "2026-06-22T20:00:00.000Z",
+          updatedAt: "2026-06-22T20:00:00.000Z"
+        },
+        metadata: {}
+      })
+    ).toThrow();
   });
 
   test("audit bundle inputs parse compact review evidence and reject private reasoning keys", () => {
