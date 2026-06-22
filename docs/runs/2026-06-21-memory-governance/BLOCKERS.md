@@ -2,11 +2,11 @@
 
 Hard blockers:
 
-- None through Slice 11.
+- None through Slice 12.
 
 Known unproven M23 behavior:
 
-- M23 final anti-rot and handoff are not recorded yet.
+- None for M23 acceptance.
 
 Explicit non-blockers:
 
@@ -109,7 +109,15 @@ Closed in Slice 11:
 - `DOGFOOD.md` records IDs, the source-to-decision mapping, what was proven,
   and what remains unproven.
 
-Known after Slice 11:
+Closed in Slice 12:
+
+- Final M23 anti-rot command set passed.
+- `ANTI_ROT.md` records the proof commands, M23 complete evidence, and residual
+  risks.
+- Handoff now points to M24 retrieval/search substrate work.
+
+Known after Slice 12:
 
 - Retrieval quality, ranking quality, long-term graph traversal performance,
-  and future context activation are not proven by M23.11.
+  and activation into future context assemblies remain M24/M25+ concerns, not
+  M23 blockers.

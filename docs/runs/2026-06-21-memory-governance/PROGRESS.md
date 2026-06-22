@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 11 memory governance dogfood complete.
+Current slice: Slice 12 anti-rot and handoff complete.
 
 Completed:
 
@@ -69,6 +69,8 @@ Completed:
   MemoryRecord and version, MemoryApplication, AntiMemoryRecord, persisted
   evidence/review/feedback records, and a dogfood ledger artifact in
   `DOGFOOD.md`.
+- Slice 12 ran the M23 anti-rot command set and recorded final status in
+  `ANTI_ROT.md`.
 
 Verification:
 
@@ -270,6 +272,26 @@ Verification:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
   @krn/cli krn doctor`: passed with memory governance runtime proof and
   readiness `ready`.
+- Slice 12 `git status --short --branch`: passed with clean
+  `## main...origin/main` before docs updates.
+- Slice 12 `git log --oneline -12`: passed and showed M23 commits from
+  inventory through dogfood.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with memory governance readiness ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `5/5` and pgvector available.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed with cleanup remaining marker count `0`.
 
 Skill gates:
 
@@ -295,7 +317,9 @@ Skill gates:
   `doesNotProve` clause.
 - Used: `evidence-review-loop` to record evidence, review, feedback, and the
   proof/not-proven split without automatic memory mutation.
+- Used: `evidence-review-loop` for Slice 12 anti-rot evidence and handoff
+  status.
 
 Next action:
 
-- Slice 12: M23 anti-rot and handoff.
+- M24: retrieval/search substrate and activation trace persistence.

@@ -285,6 +285,47 @@ Slice 11 memory governance dogfood:
 - `DOGFOOD.md` records the IDs, source-to-decision mapping, what was proven,
   and what was not proven.
 
+Slice 12 M23 anti-rot and handoff:
+
+- `git status --short --branch`: passed with clean `## main...origin/main`
+  before Slice 12 docs updates.
+- `git log --oneline -12`: passed and showed:
+  `docs(run): record memory governance dogfood pass`,
+  `feat(cli): report memory governance readiness in doctor`,
+  `feat(cli): surface memory candidates in evidence capture`,
+  `feat(cli): add anti-memory command`,
+  `feat(cli): add memory application feedback command`,
+  `feat(cli): add memory candidate review commands`,
+  `feat(cli): add memory candidate command`,
+  `test(db): add memory governance smoke path`,
+  `feat(db): add memory governance repository methods`,
+  `feat(schema): add memory governance IO schemas`,
+  `feat(db): add memory governance schema`,
+  and `docs(run): record memory governance inventory`.
+- `pnpm typecheck`: passed across workspace projects.
+- `pnpm test`: passed across workspace projects.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with memory governance readiness ready.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with migrations expected/applied `5/5` and pgvector available.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke`:
+  passed with project readback matched and cleanup completed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-plan`: passed with readback matched and cleanup remaining
+  marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:harness-evidence`: passed with evidence/review/feedback counts `1`
+  and cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:source-graph`: passed with source claim readback matched, outbox
+  events `2`, and cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed with memory candidate readback matched,
+  reviewed status `accepted`, memory record readback matched, memory
+  application, anti-memory record, outbox events `2`, and cleanup remaining
+  marker count `0`.
+- `ANTI_ROT.md` records the M23 complete evidence and residual risk.
+
 Slice 07 CLI memory record apply:
 
 - RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with four

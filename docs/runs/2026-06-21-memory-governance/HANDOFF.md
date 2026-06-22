@@ -6,7 +6,7 @@ them into MemoryRecord versions, record anti-memory, and link memory to
 source/evidence.
 
 Last verified state:
-M23 Slice 11 memory governance dogfood is complete. M22 final state is the
+M23 Slice 12 anti-rot and handoff is complete. M22 final state is the
 baseline: source graph persistence, source graph dogfood, doctor source graph
 readiness, anti-rot, and global handoff are complete. M23 ledger exists under
 `docs/runs/2026-06-21-memory-governance/`, Slice 00 inventory is recorded in
@@ -37,12 +37,14 @@ memory mutation absence. Slice 11 created live DB dogfood records for a
 source-grounded MemoryCandidate, reviewed MemoryRecord/Version,
 MemoryApplication, AntiMemoryRecord, EvidenceBundle, ReviewAssessment, and
 FeedbackDelta, then proved doctor memory governance readiness as ready.
+Slice 12 ran the final M23 anti-rot command set and recorded `ANTI_ROT.md`.
 
 Changed files:
 
 - `docs/runs/2026-06-21-memory-governance/PROGRESS.md`
 - `docs/runs/2026-06-21-memory-governance/MEMORY_GOVERNANCE_INVENTORY.md`
 - `docs/runs/2026-06-21-memory-governance/DOGFOOD.md`
+- `docs/runs/2026-06-21-memory-governance/ANTI_ROT.md`
 - `docs/runs/2026-06-21-memory-governance/DECISIONS.md`
 - `docs/runs/2026-06-21-memory-governance/BLOCKERS.md`
 - `docs/runs/2026-06-21-memory-governance/VERIFICATION.md`
@@ -108,12 +110,14 @@ read-only. It does not run smoke or write proof records; it reports memory
 governance runtime proof as unverified until durable dogfood memory records
 exist. Slice 11 uses durable dogfood records as the runtime proof doctor reads;
 the self-cleaning smoke remains a verification command, not the proof ledger.
+Slice 12 proves the whole M23 acceptance set with typecheck, tests, doctor, DB
+readiness, base smoke, harness plan/evidence smoke, source graph smoke, and
+memory governance smoke.
 
 Blockers/risks:
-No hard blocker through Slice 11. Remaining behavior is unproven until Slice 12
-runs final anti-rot and handoff. Retrieval quality, ranking quality, long-term
-graph traversal performance, and future context activation remain outside
-Slice 11 proof.
+No hard blocker through Slice 12. M23 acceptance is complete. Retrieval quality,
+ranking quality, long-term graph traversal performance, and activation into
+future context assemblies remain M24/M25+ concerns.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/`, M22 run ledger, package manifests,
@@ -122,7 +126,7 @@ and Drizzle adapter, core memory types, memory IO schema, evidence capture,
 feedback delta schema, and DB smoke commands.
 
 Next action:
-Slice 12: M23 anti-rot and handoff.
+M24: retrieval/search substrate and activation trace persistence.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless a future task explicitly asks

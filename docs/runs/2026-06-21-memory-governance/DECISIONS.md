@@ -123,6 +123,9 @@
   the live source graph did not yet contain that claim, the anti-memory record
   cites `docs/KRN_KERNEL.md#runtime-truth` as source lineage and leaves source
   claim creation to a future explicit source-graph step.
+- Slice 12 treats M23 as complete when the actual runtime/CLI behavior is
+  proven, not when docs merely describe it. The final anti-rot uses live DB
+  readiness and all smoke commands with cleanup proof.
 
 Slice 00 skill record:
 
@@ -250,3 +253,10 @@ Slice 11 skill record:
   proof, and not-proven boundaries without automatic memory mutation.
 - `brain-store-schema`: used to keep all dogfood runtime proof in Postgres
   MemoryRepository/HarnessRepository state.
+
+Slice 12 skill record:
+
+- `evidence-review-loop`: used to record anti-rot command evidence, remaining
+  risk, and handoff state.
+- `brain-store-schema`: used to verify DB readiness, smoke cleanup, and
+  store-backed Memory Core proof.
