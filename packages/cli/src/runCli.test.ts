@@ -918,6 +918,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Activation smoke: skipped (database not configured)");
   });
 
+  it("reports Codex adapter smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "codex-adapter"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Codex Adapter Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Codex adapter smoke: skipped (database not configured)");
+  });
+
   it("previews memory candidate add without DB writes", async () => {
     const result = await runCli(
       [

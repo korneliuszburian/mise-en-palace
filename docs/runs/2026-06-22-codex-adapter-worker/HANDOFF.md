@@ -2,8 +2,8 @@
 
 Objective:
 Continue M26 Codex Adapter Execution Brief + Hook Expectations + Worker Job
-Skeleton. M26.04 hook expectation projection is complete; next implementation
-slice is M26.05 Codex adapter smoke path.
+Skeleton. M26.05 Codex adapter smoke path is complete; next implementation
+slice is M26.06 worker job schema alignment.
 
 Last verified state:
 M25 activation engine is complete and pushed. M26.00 found an existing
@@ -45,7 +45,16 @@ failed on the missing projection function; GREEN adapter tests passed with 3
 test files and 6 tests, adapter typecheck passed, full `pnpm typecheck`
 passed across 7 workspace packages, and full `pnpm test` passed with 20 test
 files and 107 tests. Slice 04 was committed and pushed as
-`97154a0 feat(codex): add hook expectation projection`.
+`97154a0 feat(codex): add hook expectation projection`. M26.05 added
+`pnpm db:smoke:codex-adapter` and `krn db smoke codex-adapter`. The smoke path
+creates marker-scoped source, memory, search, anti-memory, harness, and
+execution-run records, reads the persisted run aggregate back through
+`getHarnessRunByExecutionRunId`, renders the Codex execution brief, verifies
+objective/non-goals/exclusions/evidence/source/memory/hook proof, verifies zero
+Codex invocation events, and cleans up marker rows to zero. Live DB smoke
+passed after local `krn-postgres` was started. Full `pnpm typecheck` passed
+across 7 workspace packages and full `pnpm test` passed with 21 test files and
+109 tests after M26.05.
 
 Changed files:
 `packages/codex-adapter/src/contracts.ts`,
@@ -56,11 +65,15 @@ Changed files:
 `packages/codex-adapter/src/renderHookExpectations.ts`,
 `packages/codex-adapter/src/renderHookExpectations.test.ts`,
 `packages/codex-adapter/src/renderSkillHints.ts`, and
+`packages/cli/src/codexAdapterSmoke.ts`,
+`packages/cli/src/codexAdapterSmoke.test.ts`,
 `packages/cli/src/runCodexBriefCommand.ts`,
 `packages/cli/src/parseArgs.ts`,
 `packages/cli/src/runCli.ts`,
 `packages/cli/src/index.ts`,
 `packages/cli/src/runCli.test.ts`, and
+`packages/cli/src/runDbSmokeCommand.ts`,
+`package.json`, and
 `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
 Decisions:
@@ -73,7 +86,9 @@ arguments or reimplementing policy in CLI. M26.03 loads persisted harness run
 state, validates evidence-contract metadata, creates the typed brief, and
 prints without writes or Codex invocation. M26.04 models hook behavior as a
 typed projection only: no hook scripts, no hidden semantic decisions, no Codex
-invocation, and no memory mutation. Use existing Postgres `worker_jobs` and
+invocation, and no memory mutation. M26.05 keeps Codex adapter smoke
+orchestration in `packages/cli`, not `packages/db`, because DB must not render
+Codex-specific adapter surfaces. Use existing Postgres `worker_jobs` and
 `outbox_events` for worker skeleton proof; do not add Redis/Kafka or a daemon.
 Treat `embed_memory_record`, `skipped`, and `availableAt` versus `runAfter` as
 explicit M26.06/M26.07 alignment work.
@@ -96,15 +111,17 @@ Context selectors:
 `packages/harness/src/compiler/createCapabilityPlan.ts`,
 `packages/harness/src/compiler/createEvidenceContract.ts`,
 `packages/db/src/schema/events.ts`,
+`packages/db/src/schema/retrieval.ts`,
 `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`,
 `packages/workers/src/*`,
 `packages/cli/src/runPlanCommand.ts`,
 `packages/cli/src/parseArgs.ts`,
 `packages/cli/src/runDbSmokeCommand.ts`, and
+`packages/cli/src/codexAdapterSmoke.ts`,
 `packages/cli/src/runDoctorCommand.ts`.
 
 Next action:
-Start M26.05 Codex adapter smoke path.
+Start M26.06 worker job schema alignment.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

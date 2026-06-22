@@ -14,6 +14,7 @@
     "db:smoke:memory-governance": "pnpm --filter @krn/cli krn db smoke memory-governance",
     "db:smoke:retrieval-substrate": "pnpm --filter @krn/cli krn db smoke retrieval-substrate",
     "db:smoke:activation": "pnpm --filter @krn/cli krn db smoke activation",
+    "db:smoke:codex-adapter": "pnpm --filter @krn/cli krn db smoke codex-adapter",
     "db:smoke:source-graph": "pnpm --filter @krn/cli krn db smoke source-graph",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"

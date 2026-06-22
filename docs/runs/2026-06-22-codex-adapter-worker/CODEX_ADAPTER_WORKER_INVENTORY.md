@@ -155,10 +155,10 @@ Existing root scripts:
 - `pnpm db:smoke:memory-governance`
 - `pnpm db:smoke:retrieval-substrate`
 - `pnpm db:smoke:activation`
+- `pnpm db:smoke:codex-adapter`
 
 Missing for M26:
 
-- `pnpm db:smoke:codex-adapter`;
 - `pnpm db:smoke:worker-jobs`;
 - `krn plan --task "..." --persist --brief` integrated mode;
 - doctor Codex adapter readiness section;
@@ -175,7 +175,6 @@ runtime/Redis/Kafka surfaces.
 - Add `embed_memory_record` to worker job types.
 - Reconcile worker job status vocabulary with `GOAL.md`.
 - Add DB-backed WorkerJobRepository methods and smoke proof.
-- Add Codex adapter DB smoke proof.
 - Add doctor readiness for adapter and worker surfaces.
 
 ## Non-Gaps
@@ -248,4 +247,25 @@ M26.04 resolved dedicated hook projection coverage:
   expectations only, with no hook scripts, no hidden semantic decisions, no
   Codex invocation, and no memory mutation.
 
-Remaining adapter work is now DB smoke proof and doctor readiness.
+Remaining adapter work is now doctor readiness.
+
+## Slice 05 Update
+
+M26.05 resolved Codex adapter DB smoke proof:
+
+- root script `pnpm db:smoke:codex-adapter` calls
+  `krn db smoke codex-adapter`;
+- smoke orchestration lives in `packages/cli`, not `packages/db`, because the
+  DB package must not render Codex-specific adapter surfaces;
+- smoke creates marker-scoped source, memory, search, anti-memory, harness, and
+  execution-run records;
+- smoke reads the persisted run aggregate back through
+  `getHarnessRunByExecutionRunId`;
+- smoke renders the Codex execution brief from persisted readback;
+- smoke verifies objective, non-goals, explicit exclusions, evidence contract,
+  bounded source and memory references, hook expectations, zero Codex
+  invocation events, and cleanup count zero;
+- live DB-backed smoke passed after local `krn-postgres` was started.
+
+Remaining M26 work is worker job schema/repository/smoke, doctor readiness,
+dogfood, anti-rot, and final handoff.

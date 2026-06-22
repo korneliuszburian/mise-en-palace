@@ -308,3 +308,67 @@
   `renderHookExpectationProjection`.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
+
+## Slice 05 Decisions
+
+- Source: `GOAL.md` M26.05.
+  Mechanism: Codex adapter readiness must be proven by a DB smoke command that
+  creates or reuses a persisted run with activated context, renders the
+  execution brief, verifies required sections and bounded references, verifies
+  no Codex execution happened, and cleans up created rows.
+  KRN implication: the smoke path must cross DB readback and adapter rendering,
+  not only unit-test the renderer.
+  Decision: add `pnpm db:smoke:codex-adapter` and `krn db smoke
+  codex-adapter`.
+  Rejection/falsifier: if the smoke can pass without persisted readback,
+  context exclusions, hook expectations, or cleanup count zero, it does not
+  satisfy M26.05.
+
+- Source: `docs/architecture/package-boundaries.md`.
+  Mechanism: `packages/db` owns Drizzle schema, SQL helpers, and repositories;
+  `packages/codex-adapter` owns Codex-facing rendering; `packages/cli` may call
+  both as an adapter.
+  KRN implication: a DB package smoke helper must not import
+  `@krn/codex-adapter` or render Codex-specific surfaces.
+  Decision: keep Codex adapter smoke orchestration in `packages/cli` while
+  using DB repositories for persistence and readback.
+  Rejection/falsifier: if `packages/db` imports `@krn/codex-adapter`, the
+  package boundary has regressed.
+
+- Source: `packages/db/src/schema/retrieval.ts` and existing smoke cleanup
+  patterns.
+  Mechanism: several retrieval/source tables use `onDelete: set null`, so
+  deleting a workspace alone does not prove cleanup.
+  KRN implication: Codex adapter smoke must clean marker rows explicitly and
+  count them after cleanup.
+  Decision: cleanup deletes marker `run_events`, the known `retrieval_run`,
+  marker `search_documents`, marker `source_artifacts`, and the smoke
+  workspace, then counts remaining marker/context rows.
+  Rejection/falsifier: if cleanup remaining marker count is non-zero, the smoke
+  fails.
+
+## Slice 05 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN smoke formatter and
+  CLI target coverage before implementation.
+- `codex-adapter-plan`: used to keep smoke output focused on adapter brief
+  rendering and proof, not Codex execution.
+- `brain-store-schema`: used for marker cleanup and Postgres table lifecycle.
+- `source-to-decision`: used to map GOAL/package-boundary/schema evidence into
+  implementation decisions and falsifiers.
+- `typescript-type-safety`: used for CLI target union, metadata narrowing, and
+  smoke report boundaries.
+- `superpowers:verification-before-completion`: used before claiming tests,
+  typecheck, or live DB smoke passed.
+
+## Slice 05 Type-Safety Notes
+
+- Boundary classification: CLI target parsing, DB persistence/readback, DB JSON
+  evidence-contract metadata, and Codex adapter rendering boundary.
+- Validation/narrowing: persisted `harnessPlan.metadata.evidenceContract` is
+  treated as `unknown` and narrowed before creating an `EvidenceContract`;
+  fallback uses `createEvidenceContract`.
+- Public type changes: `DbSmokeRuntime["target"]` now includes `codexAdapter`;
+  CLI exports a new internal smoke report formatter/check module.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.

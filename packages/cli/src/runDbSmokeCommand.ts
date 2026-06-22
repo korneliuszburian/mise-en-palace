@@ -11,6 +11,10 @@ import {
   runRetrievalSubstrateSmokeCheck,
   runSourceGraphSmokeCheck
 } from "@krn/db";
+import {
+  formatCodexAdapterSmokeReportLines,
+  runCodexAdapterSmokeCheck
+} from "./codexAdapterSmoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -23,7 +27,8 @@ export interface DbSmokeRuntime {
     | "sourceGraph"
     | "memoryGovernance"
     | "retrievalSubstrate"
-    | "activation";
+    | "activation"
+    | "codexAdapter";
 }
 
 export interface DbSmokeResult {
@@ -88,6 +93,10 @@ const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "KRN Activation Smoke";
   }
 
+  if (target === "codexAdapter") {
+    return "KRN Codex Adapter Smoke";
+  }
+
   return "KRN DB Smoke";
 };
 
@@ -116,6 +125,10 @@ const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "Activation smoke: skipped (database not configured)";
   }
 
+  if (target === "codexAdapter") {
+    return "Codex adapter smoke: skipped (database not configured)";
+  }
+
   return "Persistence smoke: skipped (database not configured)";
 };
 
@@ -142,6 +155,10 @@ const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
 
   if (target === "activation") {
     return "Activation smoke";
+  }
+
+  if (target === "codexAdapter") {
+    return "Codex adapter smoke";
   }
 
   return "Persistence smoke";
@@ -385,6 +402,25 @@ export const runDbSmokeCommand = async (
           `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
           `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
           `Activation smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
+    if (runtime.target === "codexAdapter") {
+      const report = await runCodexAdapterSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("codex-adapter-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Codex Adapter Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          ...formatCodexAdapterSmokeReportLines(report)
         ].join("\n") + "\n"
       };
     }

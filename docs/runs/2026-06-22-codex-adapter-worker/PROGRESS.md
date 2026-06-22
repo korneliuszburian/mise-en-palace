@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 04 hook expectation projection complete.
+Current slice: Slice 05 Codex adapter smoke path complete.
 
 Completed:
 
@@ -50,6 +50,14 @@ Completed:
   brief text.
 - Slice 04 was committed and pushed as
   `97154a0 feat(codex): add hook expectation projection`.
+- Slice 05 added `pnpm db:smoke:codex-adapter`.
+- Slice 05 smoke creates a marker-scoped persisted harness run with activated
+  source, memory, search, and exclusion context, reads it back from Postgres,
+  renders the Codex execution brief, verifies required brief sections, verifies
+  source/memory refs are bounded, verifies hook expectations are present,
+  verifies no Codex invocation event occurred, and cleans marker rows to zero.
+- Slice 05 keeps Codex adapter smoke orchestration in `packages/cli` because
+  `packages/db` must not render Codex-specific surfaces.
 
 Verification:
 
@@ -135,7 +143,36 @@ Verification:
   `.codex/agents/ts-type-critic.toml` exists.
 - `pnpm typecheck`: passed across 7 workspace packages.
 - `pnpm test`: passed with 20 test files and 107 tests.
+- Slice 05 RED: `pnpm --filter @krn/cli test --
+  codexAdapterSmoke.test.ts` failed because `./codexAdapterSmoke.js` did not
+  exist, and the new `runCli` test failed because `db smoke codex-adapter`
+  returned usage exit code `2`.
+- Slice 05 GREEN: `pnpm --filter @krn/cli test --
+  codexAdapterSmoke.test.ts` passed with 2 test files and 58 tests.
+- Slice 05 GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
+  2 test files and 58 tests.
+- `pnpm --filter @krn/cli typecheck`: passed.
+- Initial live `pnpm db:smoke:codex-adapter` and `pnpm db:ready` failed with
+  `CONNECT_TIMEOUT` because local `krn-postgres` was not responding.
+- `docker compose up -d krn-postgres`: passed and started the local pgvector
+  Postgres service.
+- `docker compose ps krn-postgres`: passed; service was healthy on host port
+  `54329`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
+  passed with Postgres reachable, 6 expected/applied migrations, and pgvector
+  available.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:codex-adapter`: passed. It rendered objective, non-goals, explicit
+  exclusions, evidence contract, 1 source claim, 1 memory record, 5 hook
+  expectations, 0 Codex invocations, and cleanup remaining marker count `0`.
+- `git diff --check`: passed.
+- Slice 05 CLI TypeScript hygiene scan found no `any`, no `as unknown as`, no
+  `@ts-ignore`, and no `@ts-expect-error`.
+- Slice 05 package-boundary scan found no `@krn/codex-adapter` import in
+  `packages/db` or `packages/core`.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed with 21 test files and 109 tests.
 
 Next:
 
-- Start M26.05 Codex adapter smoke path.
+- Start M26.06 worker job schema alignment.

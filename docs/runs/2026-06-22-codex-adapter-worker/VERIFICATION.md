@@ -234,3 +234,70 @@ Results:
   scripts were created.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed with 20 test files and 107 tests.
+
+## Slice 05
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- codexAdapterSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- codexAdapterSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:codex-adapter
+KRN_DATABASE_URL=postgres://krn:krn@127.0.0.1:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@127.0.0.1:54329/krn pnpm db:smoke:codex-adapter
+docker compose up -d krn-postgres
+docker compose ps krn-postgres
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:codex-adapter
+git diff --check
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/cli/src/codexAdapterSmoke.ts packages/cli/src/runDbSmokeCommand.ts packages/cli/src/parseArgs.ts
+rg -n "@krn/codex-adapter" packages/db/src packages/db/package.json packages/core/src packages/core/package.json
+rg -n "codex\.invoked|codex\.executed|codex\.execution\.started|invoke Codex|Codex invocation" packages/cli/src/codexAdapterSmoke.ts packages/cli/src/runDbSmokeCommand.ts
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- RED formatter test failed because `./codexAdapterSmoke.js` did not exist.
+- RED CLI test failed because `krn db smoke codex-adapter` returned usage exit
+  code `2`.
+- Added `packages/cli/src/codexAdapterSmoke.ts`.
+- Added root script `pnpm db:smoke:codex-adapter`.
+- Added CLI target `krn db smoke codex-adapter`.
+- Smoke orchestration lives in `packages/cli` to preserve package boundaries:
+  DB repositories persist/read state, Codex adapter renders the brief, and CLI
+  composes the two.
+- GREEN formatter/CLI tests passed with 2 test files and 58 tests.
+- `pnpm --filter @krn/cli typecheck` passed.
+- Initial live smoke/readiness attempts failed with `CONNECT_TIMEOUT` because
+  local `krn-postgres` was not responding on `localhost` or `127.0.0.1`.
+- `docker compose up -d krn-postgres` started the local pgvector Postgres
+  service.
+- `docker compose ps krn-postgres` reported the service healthy on host port
+  `54329`.
+- `pnpm db:ready` passed with Postgres reachable, 6 expected/applied
+  migrations, and pgvector available.
+- Live `pnpm db:smoke:codex-adapter` passed:
+  - readback matched execution run
+    `b2fe593f-76e7-4620-bf6b-ac363f330195`;
+  - context assembly was `9b038fa2-9827-445d-a444-e13305e49e69`;
+  - objective, non-goals, explicit exclusions, and evidence contract were
+    present;
+  - source claims used: 1;
+  - memory records used: 1;
+  - hook expectations: 5;
+  - Codex invocations: 0;
+  - cleanup remaining marker count: 0.
+- `git diff --check` passed.
+- CLI TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Package-boundary scan returned no `@krn/codex-adapter` import in
+  `packages/db` or `packages/core`.
+- Codex invocation surface scan only found expected non-goal text and the
+  explicit zero-invocation event-type guard.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 21 test files and 109 tests.

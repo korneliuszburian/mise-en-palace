@@ -4,7 +4,6 @@ No hard blocker for M26.00.
 
 Known gaps for later M26 slices:
 
-- no `pnpm db:smoke:codex-adapter`;
 - worker job types are missing `embed_memory_record`;
 - worker status vocabulary is not aligned with `GOAL.md` `skipped`;
 - no DB-backed WorkerJobRepository transition methods;
@@ -44,6 +43,14 @@ Resolved in M26.04:
   `PreCompact`, and `Stop`;
 - projection explicitly remains expectations-only and does not create hook
   scripts, execute hooks, invoke Codex, or mutate memory.
+
+Resolved in M26.05:
+
+- `pnpm db:smoke:codex-adapter` exists;
+- smoke creates and reads back a persisted harness run with activated context;
+- smoke verifies objective, non-goals, explicit exclusions, evidence contract,
+  bounded source/memory references, hook expectations, zero Codex invocations,
+  and cleanup remaining marker count zero.
 
 Non-goals that remain intentionally blocked:
 
