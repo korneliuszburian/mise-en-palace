@@ -297,10 +297,21 @@ export const createReflectDatabaseRuntime = async (
     async projectExists(projectId: string): Promise<boolean> {
       return (await projectRepository.getProject(projectId)) !== undefined;
     },
-    observationRepository,
-    sourceRepository,
-    memoryRepository,
-    reflectionRepository,
+    observationRepository: {
+      findByRun: (...args) => observationRepository.findByRun(...args),
+      findByScope: (...args) => observationRepository.findByScope(...args)
+    },
+    sourceRepository: {
+      listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
+      listSourceClaimsForRun: (...args) => sourceRepository.listSourceClaimsForRun(...args)
+    },
+    memoryRepository: {
+      listAntiMemoryForProject: (...args) => memoryRepository.listAntiMemoryForProject(...args),
+      listAntiMemoryForRun: (...args) => memoryRepository.listAntiMemoryForRun(...args)
+    },
+    reflectionRepository: {
+      createReflectionRecord: (...args) => reflectionRepository.createReflectionRecord(...args)
+    },
     async close(): Promise<void> {
       await client.end();
     }

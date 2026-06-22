@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 
 import type {
   ObservationItem,
@@ -207,5 +208,25 @@ describe("runReflectCommand", () => {
     expect(result.stdout).toContain("Candidate rows written: no");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Reflection record: reflection-record-1");
+  });
+
+  it("keeps the reflect runtime memory surface read-only", async () => {
+    const runtime = createRuntime({
+      observations: []
+    });
+
+    expect(Object.keys(runtime.memoryRepository).sort()).toEqual([
+      "listAntiMemoryForProject",
+      "listAntiMemoryForRun"
+    ]);
+  });
+
+  it("does not contain direct Memory Core promotion calls", () => {
+    const source = readFileSync(new URL("./runReflectCommand.ts", import.meta.url), "utf8");
+
+    expect(source).not.toMatch(/createMemoryRecord/u);
+    expect(source).not.toMatch(/promoteMemoryCandidate/u);
+    expect(source).not.toMatch(/rejectMemoryCandidate/u);
+    expect(source).not.toMatch(/createMemoryCandidate/u);
   });
 });

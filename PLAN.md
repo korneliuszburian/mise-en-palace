@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-23 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-24 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -32,7 +32,8 @@ Current public state:
   observations, missing source ranges, stale observations, duplicates, and
   unsupported decisions. MM-23 added manual `krn reflect --scope ...`
   preview/persist CLI that writes ReflectionRecord only and does not create
-  candidate or Memory Core rows.
+  candidate or Memory Core rows. MM-24 sealed the reflect runtime memory
+  surface to read-only anti-memory listing and added promotion-call guard tests.
 - Not built: governed
   MemoryReviewGate promotion path, memory invalidation/demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
