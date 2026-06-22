@@ -2,27 +2,30 @@
 
 Hard blockers:
 
-- None for M22-M26.
+- None for M27.
 
-Closed in M22-M26:
+Closed in M27:
 
-- M22 source artifacts, SourceClaims, SourceDecisionEdges, SourceRejections,
-  source graph smoke, doctor readiness, and dogfood are proven.
-- M23 memory candidates, reviewed promotion, memory records/versions,
-  application feedback, anti-memory, memory governance smoke, doctor readiness,
-  and dogfood are proven.
-- M24 search documents, lexical search, pgvector readiness, retrieval
-  candidates, activation decision persistence, retrieval smoke, doctor
-  readiness, and dogfood are proven.
-- M25 activation domain contracts, noisy fixture, persisted ContextAssembly
-  inclusions/exclusions, `krn plan` activation use, activation smoke, doctor
-  readiness, and dogfood are proven.
-- M26 typed Codex adapter contracts, execution brief renderer, read-only
-  `krn codex brief`, hook expectation projection, Codex adapter smoke, worker
-  schema/repository/smoke, doctor readiness, dogfood, and anti-rot are proven.
+- Target repo fixture exists and has no forbidden KRN runtime surfaces.
+- `krn init --dry-run --repo <fixture>` is proven read-only.
+- `krn init --connect --repo <fixture> --persist` is proven with Project,
+  RepoInstallation, and ProjectKernel create/reuse behavior.
+- `pnpm db:smoke:init-connect` is proven with readback, idempotency, and
+  cleanup count `0`.
+- `krn plan --project <project-id> --task "improve test script readiness" --persist`
+  is proven with explicit Project lookup, ProjectKernel loading, repo
+  installation metadata, and no fallback to the default project when explicit
+  project lookup fails.
+- `pnpm db:smoke:target-repo-harness` is proven with project-scoped persisted
+  plan, Codex brief rendering, evidence/review/feedback persistence, target
+  project linkage, and cleanup count `0`.
+- `krn doctor` target repo readiness is proven.
+- M27 anti-rot is proven.
 
 Residual later scope:
 
+- Real external repo mutation is not built.
+- Fixture overlay apply mode is not built.
 - Production worker leasing/claim/retry execution is not built.
 - Actual maintenance jobs are not executed.
 - Codex is not invoked by KRN.
@@ -31,6 +34,8 @@ Residual later scope:
 - Source crawler/research layer is not built.
 - Broad eval/benchmark suite is not built.
 - Plugin packaging is not built.
+- Observational memory/reflection layer is not built yet; this is planned for
+  the required post-M27 memory ideal-state goal.
 
 Explicit non-blockers:
 
@@ -42,3 +47,5 @@ Explicit non-blockers:
 - No separate vector, graph, search, or queue store exists by design.
 - No runtime markdown memory exists by design.
 - No broad eval suite exists by design.
+- Direct dogfood activation abstained for the empty fixture context. This is
+  expected gap-aware behavior, not a blocker.

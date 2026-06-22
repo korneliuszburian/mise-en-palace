@@ -492,3 +492,13 @@ Summary:
 - Forbidden directory, forbidden dependency, and core library-safety scans
   printed no matches.
 - `git diff --check` passed.
+
+## Slice 13
+
+Docs-only handoff update:
+
+- Updated `docs/handoff/handoff.md`.
+- Updated `docs/handoff/blockers.md`.
+- Updated `docs/handoff/verification.md`.
+- Updated current M27 run ledger handoff/progress/blockers.
+- `git diff --check` passed before commit.

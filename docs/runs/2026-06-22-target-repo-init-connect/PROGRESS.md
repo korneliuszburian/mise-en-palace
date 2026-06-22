@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 12 anti-rot audit complete.
+Current slice: Slice 13 final handoff complete.
 
 Completed:
 
@@ -128,7 +128,10 @@ Completed:
   runtime, research layer, source crawler, runtime markdown memory, `.krn`,
   separate vector/graph/search store, Redis/Kafka, broad eval suite, or
   forbidden dependency.
+- Slice 13 updated global handoff docs with M27 completed/proven status,
+  commit spine, verification, DB proof, target repo status, residual later
+  scope, not-built list, and next safest action.
 
 Next action:
 
-- Slice 13 final handoff.
+- Slice 14 memory research gap analysis and next-goal plan.

@@ -1367,3 +1367,7 @@ ExecutionRun: `eb16411b-d304-420e-adc7-1fdb86857c1d`.
 2026-06-22: M27 Slice 12 anti-rot passed: typecheck, tests, DB-aware doctor,
 DB readiness, all M22-M27 DB smokes, forbidden surface/dependency scans, core
 library-safety scan, and `git diff --check`.
+
+2026-06-22: M27 Slice 13 updated final handoff docs. M27 is complete through
+target repo dry-run, connect, project-scoped plan, Codex brief readback,
+evidence capture, doctor readiness, full target-repo smoke, and anti-rot.

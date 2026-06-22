@@ -13,7 +13,8 @@ Observed setup issue:
 
 Residual later scope:
 
-- Final handoff is not complete yet.
+- Memory ideal-state plan is not complete yet; this is Slice 14 post-M27
+  planning scope, not an M27 target repo blocker.
 
 Explicit non-blockers:
 
@@ -36,3 +37,4 @@ Explicit non-blockers:
 - Anti-rot passed across typecheck, tests, doctor, DB readiness, all smokes,
   forbidden surface scans, forbidden dependency scan, core library-safety scan,
   and `git diff --check`.
+- Global final handoff docs are updated for M27 status.
