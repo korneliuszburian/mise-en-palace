@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-24A and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-25 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -36,6 +36,8 @@ Current public state:
   surface to read-only anti-memory listing and added promotion-call guard tests.
   MM-24A recorded live before/after DB proof that reflect persist changes
   `reflection_records` without changing `memory_records` or `memory_candidates`.
+  MM-25 dogfooded reflection on the MM-17 observation project and recorded that
+  current observations produce zero findings/candidate proposals.
 - Not built: governed
   MemoryReviewGate promotion path, memory invalidation/demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
