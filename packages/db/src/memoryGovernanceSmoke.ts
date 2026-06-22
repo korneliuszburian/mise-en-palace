@@ -44,6 +44,8 @@ export interface MemoryGovernanceSmokeReport {
   memoryRecordId: string;
   readBackMemoryRecordId: string;
   memoryRecordVersionId: string;
+  invalidatedMemoryRecordStatus: string;
+  activeMemoryAfterInvalidationCount: number;
   memoryApplicationId: string;
   antiMemoryRecordId: string;
   runAntiMemoryCount: number;
@@ -339,6 +341,16 @@ export const runMemoryGovernanceSmokeCheck = async (
     });
     const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
     const projectMemoryRecords = await memoryRepository.listMemoryRecordsForProject(project.id);
+    const invalidatedMemoryRecord = await memoryRepository.invalidateMemoryRecord({
+      memoryRecordId: memoryRecord.id,
+      reviewer: "memory-governance-smoke",
+      reason: "MM-28 smoke proves invalidated memory is excluded from active memory.",
+      invalidatedAt: new Date().toISOString(),
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const activeMemoryAfterInvalidation = await memoryRepository.listActiveMemory(project.id, 10);
     const antiMemoryRecord = await memoryRepository.createAntiMemoryRecord({
       projectId: project.id,
       executionRunId: executionRun.id,
@@ -379,6 +391,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       readBackMemoryRecord?.id !== memoryRecord.id ||
       readBackMemoryRecord.currentVersionId === undefined ||
       !projectMemoryRecords.some((record) => record.id === memoryRecord.id) ||
+      invalidatedMemoryRecord.status !== "invalidated" ||
+      activeMemoryAfterInvalidation.some((record) => record.id === memoryRecord.id) ||
       versionRows.length !== 1 ||
       versionRows[0]?.createdFromCandidateId !== memoryCandidate.id ||
       applicationRows.length !== 1 ||
@@ -402,6 +416,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       memoryRecordId: memoryRecord.id,
       readBackMemoryRecordId: readBackMemoryRecord.id,
       memoryRecordVersionId: versionRows[0].id,
+      invalidatedMemoryRecordStatus: invalidatedMemoryRecord.status,
+      activeMemoryAfterInvalidationCount: activeMemoryAfterInvalidation.length,
       memoryApplicationId: memoryApplication.id,
       antiMemoryRecordId: antiMemoryRecord.id,
       runAntiMemoryCount: runAntiMemory.length,

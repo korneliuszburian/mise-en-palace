@@ -73,6 +73,13 @@ export interface RejectMemoryCandidateInput extends RepositoryMetadata {
   reason: string;
 }
 
+export interface InvalidateMemoryRecordInput extends RepositoryMetadata {
+  memoryRecordId: MemoryRecord["id"];
+  reviewer: string;
+  reason: string;
+  invalidatedAt?: string;
+}
+
 export interface RecordMemoryApplicationInput extends RepositoryMetadata {
   memoryRecordId: MemoryRecord["id"];
   executionRunId: ExecutionRunId;
@@ -122,6 +129,7 @@ export interface MemoryRepository {
   promoteMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord>;
   rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate>;
   listMemoryCandidates(projectId: ProjectId, limit: number): Promise<MemoryCandidate[]>;
+  invalidateMemoryRecord(input: InvalidateMemoryRecordInput): Promise<MemoryRecord>;
   recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord>;

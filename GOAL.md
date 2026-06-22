@@ -11,13 +11,13 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-27 and MM-16R are complete.
+- MM-00 through MM-28 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
   range linkage, deterministic observer input builder, manual observe-run CLI,
   source-range policy matrix, and pure observation prefix selector.
-- Observational memory is not proven end-to-end yet: invalidation/demotion,
+- Observational memory is not proven end-to-end yet: feedback-driven demotion,
   activation integration, broad anti-memory, and golden behavior proof are next.
 - Observation is still staging, not Memory Core.
 - Reflection runtime exists as manual preview/persist CLI and writes
@@ -27,6 +27,9 @@ Current known status:
 - Public `krn memory candidate promote --persist` now requires
   MemoryReviewGate via `--evidence-reviewed-ref`; low-level repository
   promotion remains internal DB/smoke infrastructure.
+- Memory invalidation exists at repository/runtime smoke level:
+  `invalidateMemoryRecord` marks records invalidated, active-memory listing
+  excludes them, and existing versions remain auditable.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -106,7 +109,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-28 — Add memory invalidation/versioning behavior.
+MM-29 — Add memory feedback application and demotion behavior.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

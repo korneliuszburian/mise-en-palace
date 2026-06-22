@@ -68,6 +68,7 @@ export interface DatabaseRuntime {
     | "promoteMemoryCandidate"
     | "rejectMemoryCandidate"
     | "getMemoryRecordById"
+    | "invalidateMemoryRecord"
     | "recordMemoryApplication"
     | "createMemoryFeedbackEvent"
     | "createAntiMemoryRecord"

@@ -13,6 +13,7 @@ import type {
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   CreateMemoryRecordInput,
+  InvalidateMemoryRecordInput,
   MemoryRepository,
   PromoteMemoryCandidateInput,
   RejectMemoryCandidateInput,
@@ -459,6 +460,58 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
 
     return rows.map(mapMemoryCandidate);
+  }
+
+  async invalidateMemoryRecord(input: InvalidateMemoryRecordInput): Promise<MemoryRecord> {
+    const reviewer = input.reviewer.trim();
+    const reason = input.reason.trim();
+
+    if (reviewer.length === 0) {
+      throw new Error("invalidateMemoryRecord requires reviewer");
+    }
+
+    if (reason.length === 0) {
+      throw new Error("invalidateMemoryRecord requires reason");
+    }
+
+    return this.db.transaction(async (tx) => {
+      const currentRow = await tx.query.memoryRecords.findFirst({
+        where: eq(memoryRecords.id, input.memoryRecordId)
+      });
+
+      if (currentRow === undefined) {
+        throw new Error(`MemoryRecord not found: ${input.memoryRecordId}`);
+      }
+
+      const invalidatedAt =
+        input.invalidatedAt === undefined
+          ? new Date()
+          : fromIsoTimestamp(input.invalidatedAt);
+      const row = requireReturnedRow(
+        await tx
+          .update(memoryRecords)
+          .set({
+            status: "invalidated",
+            invalidatedAt,
+            invalidationReason: reason,
+            metadata: {
+              ...currentRow.metadata,
+              ...(input.metadata ?? {}),
+              invalidationReview: {
+                reviewer,
+                reason,
+                invalidatedAt: invalidatedAt.toISOString()
+              }
+            },
+            updatedAt: new Date()
+          })
+          .where(eq(memoryRecords.id, input.memoryRecordId))
+          .returning(),
+        "invalidateMemoryRecord"
+      );
+
+      return mapMemoryRecord(row);
+    });
   }
 
   async recordMemoryApplication(

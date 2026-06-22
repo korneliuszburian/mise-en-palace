@@ -19,6 +19,7 @@ import type {
   CreateFeedbackDeltaInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
+  InvalidateMemoryRecordInput,
   PromoteMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
@@ -54,6 +55,9 @@ const unusedMemoryRepository = {
   },
   async rejectMemoryCandidate(_input: RejectMemoryCandidateInput): Promise<never> {
     throw new Error("rejectMemoryCandidate should not be called");
+  },
+  async invalidateMemoryRecord(_input: InvalidateMemoryRecordInput): Promise<never> {
+    throw new Error("invalidateMemoryRecord should not be called");
   },
   async getMemoryRecordById(_id: string): Promise<never> {
     throw new Error("getMemoryRecordById should not be called");

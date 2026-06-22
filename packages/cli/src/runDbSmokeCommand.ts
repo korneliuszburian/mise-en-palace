@@ -358,6 +358,8 @@ export const runDbSmokeCommand = async (
             report.readBackMemoryRecordId === report.memoryRecordId ? "matched" : "mismatch"
           }`,
           `Memory record version: ${report.memoryRecordVersionId}`,
+          `Memory record invalidated status: ${report.invalidatedMemoryRecordStatus}`,
+          `Active memory after invalidation: ${report.activeMemoryAfterInvalidationCount}`,
           `Memory application: ${report.memoryApplicationId}`,
           `Anti-memory record: ${report.antiMemoryRecordId}`,
           `Run anti-memory records: ${report.runAntiMemoryCount}`,

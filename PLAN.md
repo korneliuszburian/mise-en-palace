@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-27 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-28 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -43,9 +43,11 @@ Current public state:
   write surface until MM-27 MemoryReviewGate existed. MM-27 added the
   harness MemoryReviewGate and reopened public promotion only with
   `--evidence-reviewed-ref`, while leaving low-level repository promotion
-  as internal DB/smoke infrastructure.
+  as internal DB/smoke infrastructure. MM-28 added repository invalidation
+  and live smoke proof that invalidated memory is excluded from active memory
+  while the previous MemoryRecordVersion remains auditable.
 - Not built:
-  memory invalidation/demotion, broad
+  feedback-driven demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
   plugin package, source crawler, and broad benchmark suite.
 

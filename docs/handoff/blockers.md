@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-28.
+- None for MM-29.
+
+Closed in MM-28:
+
+- `invalidateMemoryRecord` exists at repository boundary.
+- Live memory-governance smoke proves invalidated memory is excluded from active
+  memory.
+- Live memory-governance smoke proves the MemoryRecordVersion remains present
+  after invalidation.
 
 Closed in MM-27:
 
@@ -52,8 +60,8 @@ Residual later scope:
 - Observational memory staging is built and dogfooded through MM-17F.
 - Reflection staging is built through MM-25.
 - Governed promotion via MemoryReviewGate is built through MM-27.
-- Invalidation/demotion, anti-memory expansion, and golden proof remain planned
-  later work in
+- Feedback-driven demotion/invalidation, anti-memory expansion, and golden proof
+  remain planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is
   intentionally blocked.

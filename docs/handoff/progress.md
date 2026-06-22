@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-27 and MM-16R in
+- MM-00 through MM-28 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -80,10 +80,13 @@ Current runtime truth:
   `--evidence-reviewed-ref`; the gate checks reviewer, candidate invariants,
   raw evidence review reference, and linked SourceClaim availability before
   calling low-level repository promotion.
+- MM-28 adds `invalidateMemoryRecord`; live memory-governance smoke proves
+  invalidated memory is excluded from active memory while its
+  MemoryRecordVersion remains auditable.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-28 memory invalidation/versioning behavior.
+- Continue with MM-29 memory feedback application and demotion behavior.
