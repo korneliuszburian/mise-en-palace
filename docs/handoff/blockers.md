@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-31.
+- None for MM-32.
+
+Closed in MM-31:
+
+- Context assembly now records `activationAbstention` metadata when it abstains.
+- Weak low-trust memory support produces `reason: weak_context` instead of only
+  a bare `status: abstained`.
+- Abstention metadata remains a review/audit signal and does not mutate Memory
+  Core or pad context with weak candidates.
 
 Closed in MM-30A:
 
@@ -90,7 +98,7 @@ Residual later scope:
 - Governed promotion via MemoryReviewGate is built through MM-27.
 - Explicit anti-memory blocking is built for source claims, memory records,
   linked search documents, and observation prefix items.
-- Memory abstain behavior and golden proof remain planned later work in
+- Golden proof remains planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is
   intentionally blocked.

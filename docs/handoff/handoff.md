@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-30A. KRN has
+The memory ideal-state execution track is implemented through MM-31. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -11,13 +11,15 @@ their MemoryRecordVersion audit trail. Memory application feedback now affects
 activation ranking through feedback scores/penalties, and repeated negative
 feedback surfaces a blocking memory health finding. Anti-memory now blocks
 explicit memory-record activation candidates, linked search-document
-candidates, and observation prefix items by explicit IDs/keys.
+candidates, and observation prefix items by explicit IDs/keys. Context assembly
+now records explicit abstention metadata when available context is absent,
+weak, unsafe, stale, over budget, or fully excluded.
 
 Last verified state:
-MM-30A verification passed with focused activation conflict tests, focused
-observation-prefix tests, focused harness typecheck, full `pnpm typecheck`,
-full `pnpm test`, and DB-aware `pnpm db:ready`. Full tests pass across 45 files
-and 227 tests. Live DB readiness proves 11/11 migrations and pgvector.
+MM-31 verification passed with focused activation abstention test, focused
+harness typecheck, full `pnpm typecheck`, full `pnpm test`, and DB-aware
+`pnpm db:ready`. Full tests pass across 45 files and 228 tests. Live DB
+readiness proves 11/11 migrations and pgvector.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -32,11 +34,11 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-30A memory ideal-state slices: complete through governed
+- MM-00 through MM-31 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
-  blocking across source claims, memory records, linked search documents, and
-  observation prefix items.
+  blocking across source claims, memory records, linked search documents,
+  observation prefix items, and explicit activation abstention metadata.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -81,6 +83,9 @@ Runtime proof status:
 - anti-memory: explicit source-claim, memory-record, linked search-document,
   and observation-prefix candidates/items are blocked by subject id, memory
   key, anti-memory key, `appliesTo`, or explicit source/memory metadata links.
+- activation abstention: context assembly records `activationAbstention`
+  metadata with reason, explanation, candidate count, exclusion count, and
+  exclusion reasons.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -92,19 +97,18 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-30A blocker remains. Search-document and observation-prefix anti-memory
-expansion are implemented for explicit IDs/keys.
+No MM-31 blocker remains. Memory abstain behavior is implemented as explicit
+context metadata, not as context padding or Memory Core mutation.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
 mutation, actual Codex execution, automatic memory promotion, fuzzy
-anti-memory matching, memory abstain behavior, golden proof, and production
-worker throughput.
+anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-31 and add memory abstain behavior.
+Run MM-32 and add the broader memory health audit.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

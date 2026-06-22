@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-30A.
+Current phase: Memory ideal-state execution track after MM-31.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-30A and MM-16R in
+- MM-00 through MM-31 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -90,10 +90,12 @@ Current runtime truth:
   by subject id, memory key, anti-memory key, or `appliesTo`.
 - MM-30A makes anti-memory block linked search-document candidates and
   observation prefix items through explicit IDs/keys.
+- MM-31 records explicit activation abstention metadata when candidate context
+  is absent, weak, unsafe, stale, over budget, or fully excluded.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-31 memory abstain behavior.
+- Continue with MM-32 memory health audit.

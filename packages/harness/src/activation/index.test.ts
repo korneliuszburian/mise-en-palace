@@ -197,6 +197,38 @@ describe("activation engine", () => {
     });
   });
 
+  it("abstains with a weak-context warning when memory support is below policy", () => {
+    const query = buildMemoryQuery(task);
+    const ranked = rankCandidates(
+      [
+        toMemoryCandidate(
+          memoryRecord({
+            id: "weak-memory",
+            summary: "Doctor checks Postgres brain store readiness",
+            confidence: 35
+          })
+        )
+      ],
+      query
+    );
+    const context = assembleContext({
+      id: "context-weak",
+      harnessPlanId: "plan-1",
+      candidates: applyTrustFilter(ranked, { minimumTrustTier: "medium" }),
+      createdAt: now
+    });
+
+    expect(context.status).toBe("abstained");
+    expect(context.metadata.activationAbstention).toMatchObject({
+      reason: "weak_context",
+      explanation: expect.stringContaining("weak"),
+      metadata: expect.objectContaining({
+        candidateCount: 1,
+        exclusionReasons: ["low_trust"]
+      })
+    });
+  });
+
   it("penalizes memory records with negative application feedback during ranking", () => {
     const query = buildMemoryQuery(task);
     const ranked = rankCandidates(
