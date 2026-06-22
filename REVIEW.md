@@ -22,16 +22,16 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Last pushed implementation head before MM-13 closeout:
+Last pushed implementation head before MM-14 closeout:
 
 ```txt
-f7dbc6e feat(db): link observations to raw evidence
+ec77c57 feat(harness): add deterministic observer input builder
 ```
 
-Current expected branch after MM-13 closeout:
+Current expected branch after MM-14 closeout:
 
 ```txt
-main == origin/main after `feat(harness): add deterministic observer input builder` is pushed
+main == origin/main after `feat(core): add observation source-range policy matrix` is pushed
 ```
 
 Known local untracked quarry that is not accepted as truth:
@@ -137,17 +137,19 @@ MM-10  observation DB schema and migration
 MM-11  observation repository adapter
 MM-12  evidence/source range linkage
 MM-13  observer input builder
+MM-14  observation source-range policy matrix
 ```
 
-First unchecked slice after MM-13:
+First unchecked slice after MM-14:
 
 ```txt
-MM-14  Observation source-range policy matrix
+MM-15  Manual observe-run CLI
 ```
 
 Recent pushed commits:
 
 ```txt
+ec77c57 feat(harness): add deterministic observer input builder
 f7dbc6e feat(db): link observations to raw evidence
 d28431d docs(review): expand anti-slop reviewer request
 3c62597 feat(db): add observation repository adapter
@@ -163,6 +165,52 @@ d2d0a4a feat(core): add audit bundle domain contract
 4c944e8 docs(memory): record audit baseline
 c38eaff docs(memory): add controlled memory brain execution plan
 ```
+
+## MM-14 Closeout Note
+
+MM-14 is intended to be complete in the repository head that includes:
+
+```txt
+feat(core): add observation source-range policy matrix
+```
+
+That slice touched:
+
+```txt
+packages/core/src/observations/observationPolicy.ts
+packages/core/src/observations/index.test.ts
+docs/plans/memory-ideal-state/PLAN.md
+REVIEW.md
+```
+
+Implemented intent:
+
+- make the observation source-range policy explicit as
+  `OBSERVATION_SOURCE_RANGE_POLICY`;
+- cover every current `ObservationKind` and `ObservationProvenanceKind`;
+- route `requiresObservationSourceRange(kind, provenanceKind)` through the
+  matrix;
+- keep source-range exemptions narrow: only `user_preference` and
+  `local_operator_note` provenance may omit source ranges.
+
+Important limitation:
+
+- this is a pure core policy matrix;
+- this does not add schema, DB, repository, CLI, runtime, worker, reflection,
+  activation, or Memory Core mutation behavior.
+
+Verification expected for the MM-14 head:
+
+```txt
+pnpm --filter @krn/core test -- observations/index.test.ts
+pnpm --filter @krn/core typecheck
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
+```
+
+The reviewer should rerun these commands against the exact checkout being
+reviewed. Do not treat this note as a substitute for current command output.
 
 ## MM-13 Closeout Note
 
@@ -287,6 +335,8 @@ Observation layer:
   source ranges.
 - deterministic observer input builder in
   `packages/harness/src/observations/observerInput.ts`.
+- explicit source-range policy matrix in
+  `packages/core/src/observations/observationPolicy.ts`.
 
 Observation tables:
 

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  OBSERVATION_SOURCE_RANGE_POLICY,
   requiresObservationSourceRange,
   validateObservationContract,
   type ObservationItem,
@@ -141,7 +142,7 @@ describe("observation domain contracts", () => {
   });
 
   test("source-range requirement matrix covers every observation kind", () => {
-    const requiredKinds: ObservationKind[] = [
+    const allKinds: ObservationKind[] = [
       "fact",
       "decision",
       "correction",
@@ -149,22 +150,32 @@ describe("observation domain contracts", () => {
       "procedure",
       "conflict",
       "slang",
-      "gap"
+      "gap",
+      "preference",
+      "operator_note"
     ];
 
-    const optionalKinds: ObservationKind[] = ["preference", "operator_note"];
-    const regularProvenance: ObservationProvenanceKind = "run_event";
+    const allProvenanceKinds: ObservationProvenanceKind[] = [
+      "run_event",
+      "source_chunk",
+      "tool_trace",
+      "diff",
+      "evidence_bundle",
+      "review_assessment",
+      "feedback_delta",
+      "user_correction",
+      "user_preference",
+      "local_operator_note"
+    ];
 
-    for (const kind of requiredKinds) {
-      expect(requiresObservationSourceRange(kind, regularProvenance)).toBe(true);
-      expect(requiresObservationSourceRange(kind, "user_preference")).toBe(false);
-      expect(requiresObservationSourceRange(kind, "local_operator_note")).toBe(false);
-    }
+    expect(Object.keys(OBSERVATION_SOURCE_RANGE_POLICY).sort()).toEqual([...allKinds].sort());
 
-    for (const kind of optionalKinds) {
-      expect(requiresObservationSourceRange(kind, regularProvenance)).toBe(true);
-      expect(requiresObservationSourceRange(kind, "user_preference")).toBe(false);
-      expect(requiresObservationSourceRange(kind, "local_operator_note")).toBe(false);
+    for (const kind of allKinds) {
+      for (const provenanceKind of allProvenanceKinds) {
+        const expected = OBSERVATION_SOURCE_RANGE_POLICY[kind][provenanceKind];
+
+        expect(requiresObservationSourceRange(kind, provenanceKind)).toBe(expected);
+      }
     }
   });
 });
