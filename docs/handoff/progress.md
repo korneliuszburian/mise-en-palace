@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-17D and MM-16R in
+- MM-00 through MM-17E and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -38,10 +38,12 @@ Current runtime truth:
   integration.
 - Typed observation source-range lineage is enforced at the repository boundary
   for truth-bearing observations.
+- Observation schema datetime validation and schema/core policy parity tests are
+  in place.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-17E observation schema/core parity and timestamp validation.
+- Continue with MM-17F observer payload redaction hardening.

@@ -3,7 +3,19 @@ import { z } from "zod";
 const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
 const RequiredTextSchema = z.string().trim().min(1);
 const OptionalTextSchema = z.string().trim().min(1).optional();
-const IsoTextSchema = RequiredTextSchema;
+const isoDateTimeWithZonePattern =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/u;
+const normalizeIsoDateTime = (value: string): string => (
+  new Date(Date.parse(value)).toISOString()
+);
+const isIsoDateTime = (value: string): boolean => (
+  isoDateTimeWithZonePattern.test(value) &&
+  !Number.isNaN(Date.parse(value))
+);
+const IsoTextSchema = RequiredTextSchema
+  .refine(isIsoDateTime, { message: "invalid_iso_datetime" })
+  .transform(normalizeIsoDateTime);
+const OptionalIsoTextSchema = IsoTextSchema.optional();
 
 const nowIso = (): string => new Date().toISOString();
 
@@ -117,15 +129,15 @@ export const ObservationScopeSchema = z.object({
 
 export const ObservationTemporalScopeSchema = z.object({
   observedAt: IsoTextSchema,
-  eventTime: OptionalTextSchema,
+  eventTime: OptionalIsoTextSchema,
   ingestedAt: IsoTextSchema,
-  referencedAt: OptionalTextSchema,
-  referenceTime: OptionalTextSchema,
-  relativeTimeBase: OptionalTextSchema,
-  validFrom: OptionalTextSchema,
-  validUntil: OptionalTextSchema,
-  invalidatedAt: OptionalTextSchema,
-  supersededAt: OptionalTextSchema
+  referencedAt: OptionalIsoTextSchema,
+  referenceTime: OptionalIsoTextSchema,
+  relativeTimeBase: OptionalIsoTextSchema,
+  validFrom: OptionalIsoTextSchema,
+  validUntil: OptionalIsoTextSchema,
+  invalidatedAt: OptionalIsoTextSchema,
+  supersededAt: OptionalIsoTextSchema
 });
 
 export const ObservationSourceRangeSchema = z.object({
@@ -158,8 +170,8 @@ export const ObservationGroupInputSchema = z
     summary: RequiredTextSchema,
     source: RequiredTextSchema,
     metadata: MetadataSchema,
-    createdAt: OptionalTextSchema,
-    updatedAt: OptionalTextSchema
+    createdAt: OptionalIsoTextSchema,
+    updatedAt: OptionalIsoTextSchema
   })
   .superRefine((value, context) => {
     rejectPrivateReasoningMetadata(value.metadata, context);
@@ -193,8 +205,8 @@ export const ObservationItemInputSchema = z
     entityLinks: z.array(ObservationEntityLinkSchema).default([]),
     claimLinks: z.array(ObservationClaimLinkSchema).default([]),
     metadata: MetadataSchema,
-    createdAt: OptionalTextSchema,
-    updatedAt: OptionalTextSchema
+    createdAt: OptionalIsoTextSchema,
+    updatedAt: OptionalIsoTextSchema
   })
   .superRefine((value, context) => {
     rejectPrivateReasoningMetadata(value.metadata, context);

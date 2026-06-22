@@ -1,7 +1,12 @@
 import { describe, expect, test } from "vitest";
+import {
+  OBSERVATION_SOURCE_RANGE_POLICY
+} from "../../core/src/observations/observationPolicy.js";
 
 import {
   type ObservationItem,
+  ObservationKindSchema,
+  ObservationProvenanceKindSchema,
   parseAuditBundleInput,
   parseEvidenceCaptureInput,
   parseHarnessCompileInput,
@@ -125,6 +130,121 @@ describe("schema parse boundaries", () => {
         }
       })
     ).toThrow();
+  });
+
+  test("observation schemas reject invalid datetimes and normalize valid offsets", () => {
+    expect(() =>
+      parseObservationItemInput({
+        id: "observation-1",
+        groupId: "group-1",
+        scope: {
+          projectId: "project-1"
+        },
+        kind: "fact",
+        status: "observed",
+        priority: "medium",
+        confidence: "medium",
+        provenanceKind: "run_event",
+        subject: "invalid temporal anchor",
+        summary: "Invalid temporal anchors must fail.",
+        body: "Temporal memory needs parseable datetimes.",
+        temporalScope: {
+          observedAt: "not-a-date",
+          ingestedAt: "2026-06-22T18:21:00.000Z"
+        },
+        sourceRanges: [{
+          id: "range-1",
+          sourceType: "run_event",
+          sourceId: "run-event-1",
+          locator: "run_events.sequence:1",
+          capturedAt: "2026-06-22T18:21:00.000Z"
+        }]
+      })
+    ).toThrow();
+
+    const observation = parseObservationItemInput({
+      id: "observation-1",
+      groupId: "group-1",
+      scope: {
+        projectId: "project-1"
+      },
+      kind: "fact",
+      status: "observed",
+      priority: "medium",
+      confidence: "medium",
+      provenanceKind: "run_event",
+      subject: "normalized temporal anchor",
+      summary: "Offset datetimes normalize to UTC.",
+      body: "Temporal memory should compare normalized timestamps.",
+      temporalScope: {
+        observedAt: "2026-06-22T20:20:00+02:00",
+        ingestedAt: "2026-06-22T18:21:00Z",
+        validUntil: "2026-06-22T21:20:00+02:00"
+      },
+      sourceRanges: [{
+        id: "range-1",
+        sourceType: "run_event",
+        sourceId: "run-event-1",
+        locator: "run_events.sequence:1",
+        capturedAt: "2026-06-22T20:21:00+02:00"
+      }]
+    });
+
+    expect(observation.temporalScope.observedAt).toBe("2026-06-22T18:20:00.000Z");
+    expect(observation.temporalScope.ingestedAt).toBe("2026-06-22T18:21:00.000Z");
+    expect(observation.temporalScope.validUntil).toBe("2026-06-22T19:20:00.000Z");
+    expect(observation.sourceRanges[0]?.capturedAt).toBe("2026-06-22T18:21:00.000Z");
+  });
+
+  test("observation schema enum coverage matches core source-range policy", () => {
+    const coreKinds = Object.keys(OBSERVATION_SOURCE_RANGE_POLICY).sort();
+    const schemaKinds = [...ObservationKindSchema.options].sort();
+
+    expect(schemaKinds).toEqual(coreKinds);
+
+    for (const kind of coreKinds) {
+      const coreProvenanceKinds = Object.keys(
+        OBSERVATION_SOURCE_RANGE_POLICY[
+          kind as keyof typeof OBSERVATION_SOURCE_RANGE_POLICY
+        ]
+      ).sort();
+
+      expect([...ObservationProvenanceKindSchema.options].sort()).toEqual(coreProvenanceKinds);
+    }
+  });
+
+  test("observation schema source-range requirement matches core policy", () => {
+    for (const [kind, policyByProvenance] of Object.entries(OBSERVATION_SOURCE_RANGE_POLICY)) {
+      for (const [provenanceKind, requiresSourceRange] of Object.entries(policyByProvenance)) {
+        const parse = () =>
+          parseObservationItemInput({
+            id: "observation-1",
+            groupId: "group-1",
+            scope: {
+              projectId: "project-1"
+            },
+            kind,
+            status: "observed",
+            priority: "medium",
+            confidence: "medium",
+            provenanceKind,
+            subject: "policy parity",
+            summary: "Schema must match core source-range policy.",
+            body: "Policy drift should fail this test.",
+            temporalScope: {
+              observedAt: "2026-06-22T18:20:00.000Z",
+              ingestedAt: "2026-06-22T18:21:00.000Z"
+            },
+            sourceRanges: []
+          });
+
+        if (requiresSourceRange) {
+          expect(parse, `${kind}/${provenanceKind} should require source ranges`).toThrow();
+        } else {
+          expect(parse, `${kind}/${provenanceKind} should allow source-less input`).not.toThrow();
+        }
+      }
+    }
   });
 
   test("observation group inputs default metadata and timestamps", () => {

@@ -16,14 +16,15 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-17D and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-17E and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
   pure observation prefix selector.
 - Built but not proven end-to-end: observation runtime and prefix selection.
-  MM-17E-MM-17F repair slices must validate timestamps and harden redaction
-  before reflection. MM-17D removed hardcoded observe project scope.
+  MM-17F must harden redaction before reflection. MM-17D removed hardcoded
+  observe project scope, and MM-17E added datetime validation plus schema/core
+  parity tests.
 - Not built: reflection, candidate generation from reflection, governed
   MemoryReviewGate promotion path, memory invalidation/demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,

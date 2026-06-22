@@ -103,10 +103,27 @@ const matchedTerms = (
   return [...terms].filter((term) => observedTerms.has(term)).sort();
 };
 
+const epochMs = (timestamp: string): number | undefined => {
+  const parsed = Date.parse(timestamp);
+
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
 const isStale = (observation: ObservationItem, now: string): boolean => {
   const validUntil = observation.temporalScope.validUntil;
 
-  return validUntil !== undefined && validUntil < now;
+  if (validUntil === undefined) {
+    return false;
+  }
+
+  const validUntilEpoch = epochMs(validUntil);
+  const nowEpoch = epochMs(now);
+
+  if (validUntilEpoch === undefined || nowEpoch === undefined) {
+    return true;
+  }
+
+  return validUntilEpoch < nowEpoch;
 };
 
 const warningFor = (observation: ObservationItem): ObservationPrefixWarning | undefined => {

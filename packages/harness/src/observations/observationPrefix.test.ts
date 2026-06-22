@@ -164,4 +164,28 @@ describe("observation prefix selector", () => {
       "project_mismatch"
     ]);
   });
+
+  it("uses parsed datetime values for stale comparisons", () => {
+    const prefix = selectObservationPrefix({
+      task,
+      projectId: "project-1",
+      observations: [
+        observation({
+          id: "offset-stale",
+          temporalScope: {
+            observedAt: now,
+            ingestedAt: now,
+            validUntil: "2026-06-22T09:00:00+02:00"
+          }
+        })
+      ],
+      now: "2026-06-22T08:00:00.000Z"
+    });
+
+    expect(prefix.items).toHaveLength(0);
+    expect(prefix.exclusions).toEqual([expect.objectContaining({
+      observationId: "offset-stale",
+      reason: "stale"
+    })]);
+  });
 });
