@@ -2,6 +2,7 @@ export * from "./auditBundle.js";
 export * from "./evidenceCapture.js";
 export * from "./harnessCompile.js";
 export * from "./memoryCandidate.js";
+export * from "./observation.js";
 export * from "./operatorIntent.js";
 export * from "./retrieval.js";
 export * from "./sourceClaim.js";

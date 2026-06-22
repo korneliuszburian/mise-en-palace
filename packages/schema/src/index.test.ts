@@ -1,10 +1,13 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  type ObservationItem,
   parseAuditBundleInput,
   parseEvidenceCaptureInput,
   parseHarnessCompileInput,
   parseMemoryCandidateInput,
+  parseObservationGroupInput,
+  parseObservationItemInput,
   parseOperatorIntentInput,
   parseSourceClaimInput,
   parseTaskContractInput
@@ -21,6 +24,125 @@ const parser = (name: string): ((input: unknown) => unknown) => {
 };
 
 describe("schema parse boundaries", () => {
+  test("observation item inputs parse source-ranged staging records into core-compatible shape", () => {
+    const observation: ObservationItem = parseObservationItemInput({
+      id: "observation-1",
+      groupId: "group-1",
+      scope: {
+        projectId: "project-1",
+        workspaceId: "workspace-1",
+        executionRunId: "run-1"
+      },
+      kind: "fact",
+      status: "observed",
+      priority: "medium",
+      confidence: "high",
+      provenanceKind: "run_event",
+      subject: "memory brain audit",
+      summary: "Audit CLI found advisory findings only.",
+      body: "The observation is sourced to a dogfood audit run.",
+      temporalScope: {
+        observedAt: "2026-06-22T18:20:00.000Z",
+        ingestedAt: "2026-06-22T18:21:00.000Z",
+        referencedAt: "2026-06-22T18:19:22.000Z",
+        relativeTimeBase: "2026-06-22T18:20:00.000Z"
+      },
+      sourceRanges: [
+        {
+          id: "range-1",
+          sourceType: "evidence_bundle",
+          sourceId: "evidence-1",
+          locator: "docs/runs/2026-06-22-memory-brain-audit-dogfood.md#results",
+          excerpt: "Repo audit verdict: advisory",
+          capturedAt: "2026-06-22T18:21:00.000Z"
+        }
+      ],
+      entityLinks: [
+        {
+          entityKind: "project",
+          entityId: "project-1",
+          relation: "observed_in"
+        }
+      ],
+      claimLinks: [],
+      metadata: {
+        source: "dogfood"
+      }
+    });
+
+    expect(observation.sourceRanges).toHaveLength(1);
+    expect(observation.entityLinks[0]?.entityKind).toBe("project");
+    expect(observation.createdAt).toBeDefined();
+    expect(observation.updatedAt).toBeDefined();
+  });
+
+  test("observation schemas reject unsourced factual claims and private reasoning metadata", () => {
+    expect(() =>
+      parseObservationItemInput({
+        id: "observation-1",
+        groupId: "group-1",
+        scope: {
+          projectId: "project-1"
+        },
+        kind: "fact",
+        status: "observed",
+        priority: "medium",
+        confidence: "medium",
+        provenanceKind: "run_event",
+        subject: "unsupported claim",
+        summary: "Unsupported factual observation.",
+        body: "This should fail because it lacks source ranges.",
+        temporalScope: {
+          observedAt: "2026-06-22T18:20:00.000Z",
+          ingestedAt: "2026-06-22T18:21:00.000Z"
+        },
+        sourceRanges: []
+      })
+    ).toThrow();
+
+    expect(() =>
+      parseObservationItemInput({
+        id: "observation-1",
+        groupId: "group-1",
+        scope: {
+          projectId: "project-1"
+        },
+        kind: "preference",
+        status: "observed",
+        priority: "low",
+        confidence: "medium",
+        provenanceKind: "user_preference",
+        subject: "operator preference",
+        summary: "Preference can omit source ranges.",
+        body: "But private reasoning metadata is forbidden.",
+        temporalScope: {
+          observedAt: "2026-06-22T18:20:00.000Z",
+          ingestedAt: "2026-06-22T18:21:00.000Z"
+        },
+        sourceRanges: [],
+        metadata: {
+          chainOfThought: "private reasoning"
+        }
+      })
+    ).toThrow();
+  });
+
+  test("observation group inputs default metadata and timestamps", () => {
+    const group = parseObservationGroupInput({
+      id: "group-1",
+      scope: {
+        projectId: "project-1"
+      },
+      title: "MM-09 observation schema",
+      summary: "Schema boundary for observation IO.",
+      source: "manual-test"
+    });
+
+    expect(group.metadata).toEqual({});
+    expect(group.createdAt).toBeDefined();
+    expect(group.updatedAt).toBeDefined();
+  });
+
   test("audit bundle inputs parse compact review evidence and reject private reasoning keys", () => {
     expect(() =>
       parseAuditBundleInput({
