@@ -1353,3 +1353,8 @@ Not expected yet:
 ## Change Notes
 
 2026-06-21: Initial PLAN.md drafted from current repository state, project doctrine, user-provided final infra direction, and Codex Goal/ExecPlan patterns. The plan begins from the existing kernel workspace rather than an empty repository and makes PostgreSQL + pgvector the first implementation spine.
+
+2026-06-22: M27 Slice 10 added read-only target repo readiness to `krn doctor`.
+No-env doctor reports preview-only target repo readiness; DB-aware doctor reports
+`ready (init-connect smoke proven; target repo harness smoke proven)` after
+live `db:smoke:init-connect` and `db:smoke:target-repo-harness` proof.

@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 09 full target repo harness smoke complete.
+Current slice: Slice 10 doctor target repo readiness complete.
 
 Completed:
 
@@ -70,7 +70,30 @@ Completed:
   `b7bd5876-0fa3-4daf-833b-4d7b145c47dc`, FeedbackDelta
   `d253e142-2f1f-4cc1-b661-4d3b7a33f033`, target project linked `yes`, and
   cleanup remaining marker count `0`.
+- Slice 10 added target repo readiness to `krn doctor`.
+- Slice 10 doctor reports target init command availability, target fixture
+  availability, Project/RepoInstallation/ProjectKernel schema presence,
+  init-connect smoke proof, target-repo-harness smoke proof,
+  cross-project leakage proof status, forbidden target surfaces, and derived
+  target repo readiness.
+- Slice 10 no-env doctor reports target repo readiness as `preview only`.
+- Slice 10 DB-aware doctor reports target repo readiness as
+  `ready (init-connect smoke proven; target repo harness smoke proven)`.
+- Slice 10 re-ran live smokes. Init-connect smoke passed with Project
+  `83dc9748-df97-45f5-893f-4b7bee6fe3ba`, RepoInstallation
+  `ccc307bb-2f8d-4f6e-8db4-1eeaaaa2f96f`, ProjectKernel
+  `b4f01d52-a660-4ac3-83c7-6c0448536b41`, and cleanup remaining marker count
+  `0`.
+- Slice 10 target repo harness smoke passed with Project
+  `6e7eee1f-9481-4c0b-9929-0f6493919cad`, RepoInstallation
+  `91273dd1-ded2-446f-a851-d2cc0004557e`, ProjectKernel
+  `8baf670f-6d10-4a23-b604-ffb091449da8`, ExecutionRun
+  `eb26785c-27e1-444e-bbf2-2469c9ba38dd`, EvidenceBundle
+  `7d672f4b-b4d8-4040-8631-ca6c2908cee3`, ReviewAssessment
+  `924cd281-090b-41ae-9a18-863d1d61c065`, FeedbackDelta
+  `275bdc28-fa69-4803-b92a-f8919fdecd31`, target project linked `yes`, and
+  cleanup remaining marker count `0`.
 
 Next action:
 
-- Slice 10 update `krn doctor` target repo readiness.
+- Slice 11 final target repo dogfood and anti-rot audit.

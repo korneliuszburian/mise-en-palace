@@ -767,6 +767,106 @@ export const deriveWorkerJobReadiness = (
   };
 };
 
+export const deriveTargetRepoReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  targetRepoChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const initCommandAvailable = hasStatusPrefix(
+    targetRepoChecks,
+    "Target repo init command",
+    "available"
+  );
+  const fixtureAvailable = hasStatusPrefix(
+    targetRepoChecks,
+    "Target repo fixture smoke",
+    "available"
+  );
+  const projectSchemaStatus = findCheckStatus(targetRepoChecks, "Project registration schema");
+  const initConnectSmokeStatus = findCheckStatus(targetRepoChecks, "Init-connect smoke");
+  const targetHarnessSmokeStatus = findCheckStatus(targetRepoChecks, "Target repo harness smoke");
+  const leakageProofStatus = findCheckStatus(targetRepoChecks, "Cross-project leakage proof");
+  const forbiddenStatus = findCheckStatus(targetRepoChecks, "Target repo forbidden surfaces");
+
+  if (forbiddenStatus === "present") {
+    return {
+      label: "Target repo readiness",
+      status: "blocked (forbidden target repo surface present)"
+    };
+  }
+
+  if (!initCommandAvailable) {
+    return {
+      label: "Target repo readiness",
+      status: "incomplete (init-connect command missing)"
+    };
+  }
+
+  if (!fixtureAvailable) {
+    return {
+      label: "Target repo readiness",
+      status: "incomplete (target repo fixture missing)"
+    };
+  }
+
+  if (projectSchemaStatus?.startsWith("present") !== true) {
+    return {
+      label: "Target repo readiness",
+      status: "blocked (project registration schema missing)"
+    };
+  }
+
+  if (leakageProofStatus !== "known") {
+    return {
+      label: "Target repo readiness",
+      status: "runtime unverified (cross-project leakage proof missing)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Target repo readiness",
+      status:
+        "preview only (set KRN_DATABASE_URL and run init-connect and target repo harness smokes for proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Target repo readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Target repo readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  if (initConnectSmokeStatus?.startsWith("proven") !== true) {
+    return {
+      label: "Target repo readiness",
+      status: "unverified (init-connect smoke missing)"
+    };
+  }
+
+  if (targetHarnessSmokeStatus?.startsWith("proven") !== true) {
+    return {
+      label: "Target repo readiness",
+      status: "partially ready (init-connect smoke proven; target repo harness smoke missing)"
+    };
+  }
+
+  return {
+    label: "Target repo readiness",
+    status: "ready (init-connect smoke proven; target repo harness smoke proven)"
+  };
+};
+
 const readScriptStatus = (
   packageJson: Record<string, unknown> | undefined,
   scriptName: string,
@@ -945,6 +1045,135 @@ const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> => {
     {
       label: "Broad worker daemon",
       status: broadWorkerDaemonPresent ? "present" : "absent"
+    }
+  ];
+};
+
+const checkTargetRepoReadiness = async (repoRoot: string): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const parseArgsText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "parseArgs.ts")
+  );
+  const runCliText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "runCli.ts")
+  );
+  const runInitText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "runInitCommand.ts")
+  );
+  const runPlanText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "runPlanCommand.ts")
+  );
+  const databaseRuntimeText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "databaseRuntime.ts")
+  );
+  const targetHarnessSmokeText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "targetRepoHarnessSmoke.ts")
+  );
+  const initConnectSmokeText = await readOptionalText(
+    path.join(repoRoot, "packages", "db", "src", "initConnectSmoke.ts")
+  );
+  const harnessSchemaText = await readOptionalText(
+    path.join(repoRoot, "packages", "db", "src", "schema", "harness.ts")
+  );
+  const verificationText = await readOptionalText(
+    path.join(repoRoot, "docs", "runs", "2026-06-22-target-repo-init-connect", "VERIFICATION.md")
+  );
+  const fixturePath = path.join(
+    repoRoot,
+    "tests",
+    "fixtures",
+    "target-repos",
+    "typescript-basic"
+  );
+  const initCommandAvailable =
+    parseArgsText.includes("--connect") &&
+    runCliText.includes("runInitCommand") &&
+    runInitText.includes("connect") &&
+    runInitText.includes("createRepoInstallation") &&
+    runInitText.includes("createProjectKernel");
+  const fixtureAvailable =
+    await pathExists(path.join(fixturePath, "package.json")) &&
+    await pathExists(path.join(fixturePath, "src"));
+  const projectRegistrationSchemaPresent =
+    harnessSchemaText.includes("projects") &&
+    harnessSchemaText.includes("repoInstallations") &&
+    harnessSchemaText.includes("projectKernels") &&
+    harnessSchemaText.includes("repoFingerprint") &&
+    harnessSchemaText.includes("localPathHint");
+  const initConnectSmokeProven =
+    readScriptStatus(
+      packageJson,
+      "db:smoke:init-connect",
+      "krn db smoke init-connect"
+    ).startsWith("available") &&
+    parseArgsText.includes("init-connect") &&
+    initConnectSmokeText.includes("runInitConnectSmokeCheck") &&
+    initConnectSmokeText.includes("cleanupFixtureProjectRecords") &&
+    verificationText.includes("Live `pnpm db:smoke:init-connect` passed");
+  const targetHarnessSmokeProven =
+    readScriptStatus(
+      packageJson,
+      "db:smoke:target-repo-harness",
+      "krn db smoke target-repo-harness"
+    ).startsWith("available") &&
+    parseArgsText.includes("target-repo-harness") &&
+    targetHarnessSmokeText.includes("runTargetRepoHarnessSmokeCheck") &&
+    targetHarnessSmokeText.includes("targetProjectLinked") &&
+    targetHarnessSmokeText.includes("cleanupMarkerRows") &&
+    verificationText.includes("Live `pnpm db:smoke:target-repo-harness` passed");
+  const crossProjectLeakageProofKnown =
+    runPlanText.includes("projectId") &&
+    runPlanText.includes("ProjectKernel") &&
+    databaseRuntimeText.includes("getLatestProjectKernel") &&
+    databaseRuntimeText.includes("listRepoInstallationsForProject") &&
+    targetHarnessSmokeText.includes("targetProjectLinked") &&
+    verificationText.includes("Target project linkage was verified as `yes`");
+  const forbiddenSurfacePresent =
+    await pathExists(path.join(fixturePath, ".krn")) ||
+    await pathExists(path.join(fixturePath, "apps")) ||
+    await pathExists(path.join(fixturePath, "packages", "dashboard")) ||
+    await pathExists(path.join(fixturePath, "packages", "api")) ||
+    await pathExists(path.join(fixturePath, "memory.md")) ||
+    await pathExists(path.join(fixturePath, "MEMORY.md"));
+
+  return [
+    {
+      label: "Target repo init command",
+      status: initCommandAvailable
+        ? "available (krn init --connect --repo <path> --persist)"
+        : "missing (krn init --connect --repo <path> --persist)"
+    },
+    {
+      label: "Target repo fixture smoke",
+      status: fixtureAvailable
+        ? "available (tests/fixtures/target-repos/typescript-basic)"
+        : "missing (tests/fixtures/target-repos/typescript-basic)"
+    },
+    {
+      label: "Project registration schema",
+      status: projectRegistrationSchemaPresent
+        ? "present (Project, RepoInstallation, ProjectKernel)"
+        : "missing (Project, RepoInstallation, ProjectKernel)"
+    },
+    {
+      label: "Init-connect smoke",
+      status: initConnectSmokeProven
+        ? "proven (pnpm db:smoke:init-connect)"
+        : "unverified (pnpm db:smoke:init-connect missing)"
+    },
+    {
+      label: "Target repo harness smoke",
+      status: targetHarnessSmokeProven
+        ? "proven (pnpm db:smoke:target-repo-harness)"
+        : "unverified (pnpm db:smoke:target-repo-harness missing)"
+    },
+    {
+      label: "Cross-project leakage proof",
+      status: crossProjectLeakageProofKnown ? "known" : "unproven"
+    },
+    {
+      label: "Target repo forbidden surfaces",
+      status: forbiddenSurfacePresent ? "present" : "absent"
     }
   ];
 };
@@ -1775,6 +2004,7 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
   );
   const codexAdapterChecks = await checkCodexAdapter(repoRoot);
   const workerJobChecks = await checkWorkerJobs(repoRoot);
+  const targetRepoChecks = await checkTargetRepoReadiness(repoRoot);
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
@@ -1798,6 +2028,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     deriveCodexAdapterReadiness(postgresChecks, codexAdapterChecks),
     ...workerJobChecks,
     deriveWorkerJobReadiness(postgresChecks, workerJobChecks),
+    ...targetRepoChecks,
+    deriveTargetRepoReadiness(postgresChecks, targetRepoChecks),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [
@@ -1854,6 +2086,10 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
       return check.status.startsWith("blocked");
     }
 
+    if (check.label === "Target repo readiness") {
+      return check.status.startsWith("blocked");
+    }
+
     if (check.label === "Codex execution runner" || check.label === "KRN MCP server") {
       return check.status === "present";
     }
@@ -1871,6 +2107,10 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     }
 
     if (check.label === "Broad context dump" || check.label === "Core requiredSkills field") {
+      return check.status === "present";
+    }
+
+    if (check.label === "Target repo forbidden surfaces") {
       return check.status === "present";
     }
 

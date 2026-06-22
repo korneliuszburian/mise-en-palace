@@ -13,7 +13,6 @@ Observed setup issue:
 
 Residual later scope:
 
-- Doctor target repo readiness is not implemented yet.
 - Full M27 dogfood and final anti-rot audit are not complete yet.
 
 Explicit non-blockers:
@@ -27,3 +26,5 @@ Explicit non-blockers:
   by ExecutionRun `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
 - Target-repo Codex brief rendering and evidence capture are now proven by
   `pnpm db:smoke:target-repo-harness` with cleanup remaining marker count `0`.
+- Doctor target repo readiness is now proven by DB-aware `krn doctor` reporting
+  `Target repo readiness: ready (init-connect smoke proven; target repo harness smoke proven)`.

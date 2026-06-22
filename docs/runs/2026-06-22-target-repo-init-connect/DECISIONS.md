@@ -219,3 +219,36 @@ Intentionally not built:
   retrieval/run-event IDs.
   Rejection/falsifier: cleanup remaining marker count greater than zero blocks
   the smoke.
+
+## Slice 10 Decisions
+
+- Source: `GOAL.md` Slice 10 and the existing `runDoctorCommand.ts` readiness
+  pattern.
+  Mechanism: `krn doctor` is read-only and already composes static repo checks,
+  DB readiness checks, smoke command availability, forbidden-surface checks,
+  and a derived readiness line.
+  KRN implication: target repo readiness should be another doctor block, not a
+  new write path or smoke execution inside doctor.
+  Decision: add static target repo checks plus `deriveTargetRepoReadiness`.
+  Rejection/falsifier: if `krn doctor` writes rows, runs the target repo smokes,
+  or treats command availability as a substitute for DB readiness, the slice
+  fails.
+
+- Source: Slice 08 and Slice 09 verification ledger plus target smoke helpers.
+  Mechanism: project-scoped planning resolves an explicit Project, ProjectKernel
+  and repo installations, while target-repo-harness smoke verifies
+  `operatorIntent.projectId` and `taskContract.projectId` match the target
+  project.
+  KRN implication: doctor can report cross-project leakage proof as `known`
+  only when code and ledger evidence both exist.
+  Decision: derive `Cross-project leakage proof: known` from the project-scoped
+  plan path, database runtime project lookup, target harness linkage check, and
+  Slice 09 verification note.
+  Rejection/falsifier: if the ledger does not include target-project linkage
+  proof or the code stops checking `targetProjectLinked`, doctor must report
+  `unproven`.
+
+- Type-safety boundary: doctor reads package JSON, TypeScript source files, and
+  docs as external file input. JSON remains narrowed through `readJsonObject`,
+  string probes remain local to read-only checks, and no `any` or type
+  strictness relaxation was introduced.

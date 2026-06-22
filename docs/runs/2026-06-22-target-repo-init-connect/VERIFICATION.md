@@ -359,3 +359,53 @@ Results:
 - Cleanup remaining marker count was `0`.
 - `pnpm test` passed across 29 files and 133 tests.
 - `git diff --check` passed.
+
+## Slice 10
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:init-connect
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:target-repo-harness
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- RED focused CLI tests failed because `Target repo readiness` was absent from
+  `krn doctor` and `deriveTargetRepoReadiness` was not exported.
+- Added target repo doctor checks for init/connect command availability,
+  fixture availability, Project/RepoInstallation/ProjectKernel schema,
+  init-connect smoke proof, target-repo-harness smoke proof, cross-project
+  leakage proof, and forbidden target surfaces.
+- Added `deriveTargetRepoReadiness` states:
+  `preview only`, `unverified (init-connect smoke missing)`,
+  `partially ready`, `ready`, and blocked states for forbidden target surfaces,
+  missing schema, missing fixture/command, Postgres unreachable, and brain
+  store not ready.
+- Focused CLI test passed with 74 tests.
+- No-env `krn doctor` passed and reported:
+  `Target repo readiness: preview only (set KRN_DATABASE_URL and run init-connect and target repo harness smokes for proof)`.
+- Live `pnpm db:smoke:init-connect` passed with Project
+  `83dc9748-df97-45f5-893f-4b7bee6fe3ba`, RepoInstallation
+  `ccc307bb-2f8d-4f6e-8db4-1eeaaaa2f96f`, ProjectKernel
+  `b4f01d52-a660-4ac3-83c7-6c0448536b41`, and cleanup remaining marker count
+  `0`.
+- Live `pnpm db:smoke:target-repo-harness` passed with Project
+  `6e7eee1f-9481-4c0b-9929-0f6493919cad`, RepoInstallation
+  `91273dd1-ded2-446f-a851-d2cc0004557e`, ProjectKernel
+  `8baf670f-6d10-4a23-b604-ffb091449da8`, ExecutionRun
+  `eb26785c-27e1-444e-bbf2-2469c9ba38dd`, EvidenceBundle
+  `7d672f4b-b4d8-4040-8631-ca6c2908cee3`, ReviewAssessment
+  `924cd281-090b-41ae-9a18-863d1d61c065`, FeedbackDelta
+  `275bdc28-fa69-4803-b92a-f8919fdecd31`, target project linked `yes`, and
+  cleanup remaining marker count `0`.
+- DB-aware `krn doctor` passed and reported:
+  `Target repo readiness: ready (init-connect smoke proven; target repo harness smoke proven)`.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 29 files and 134 tests.

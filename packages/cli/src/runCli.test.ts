@@ -37,6 +37,7 @@ import {
   deriveMemoryGovernanceReadiness,
   deriveRetrievalSubstrateReadiness,
   deriveSourceGraphReadiness,
+  deriveTargetRepoReadiness,
   deriveWorkerJobReadiness
 } from "./runDoctorCommand.js";
 
@@ -909,6 +910,24 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Worker job readiness: preview only (set KRN_DATABASE_URL and run worker job smoke for proof)"
     );
+    expect(result.stdout).toContain(
+      "Target repo init command: available (krn init --connect --repo <path> --persist)"
+    );
+    expect(result.stdout).toContain(
+      "Target repo fixture smoke: available (tests/fixtures/target-repos/typescript-basic)"
+    );
+    expect(result.stdout).toContain(
+      "Project registration schema: present (Project, RepoInstallation, ProjectKernel)"
+    );
+    expect(result.stdout).toContain("Init-connect smoke: proven (pnpm db:smoke:init-connect)");
+    expect(result.stdout).toContain(
+      "Target repo harness smoke: proven (pnpm db:smoke:target-repo-harness)"
+    );
+    expect(result.stdout).toContain("Cross-project leakage proof: known");
+    expect(result.stdout).toContain("Target repo forbidden surfaces: absent");
+    expect(result.stdout).toContain(
+      "Target repo readiness: preview only (set KRN_DATABASE_URL and run init-connect and target repo harness smokes for proof)"
+    );
     expect(result.stdout).toContain("Broad context dump: absent");
     expect(result.stdout).toContain("Core requiredSkills field: absent");
     expect(result.stdout).toContain("Separate vector/search DB: absent");
@@ -1233,6 +1252,77 @@ describe("runCli", () => {
     ).toEqual({
       label: "Worker job readiness",
       status: "blocked (forbidden worker runtime present)"
+    });
+  });
+
+  it("distinguishes doctor target repo readiness states", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (8/8 applied)" }
+    ];
+    const targetRepoReady = [
+      {
+        label: "Target repo init command",
+        status: "available (krn init --connect --repo <path> --persist)"
+      },
+      {
+        label: "Target repo fixture smoke",
+        status: "available (tests/fixtures/target-repos/typescript-basic)"
+      },
+      {
+        label: "Project registration schema",
+        status: "present (Project, RepoInstallation, ProjectKernel)"
+      },
+      { label: "Init-connect smoke", status: "proven (pnpm db:smoke:init-connect)" },
+      {
+        label: "Target repo harness smoke",
+        status: "proven (pnpm db:smoke:target-repo-harness)"
+      },
+      { label: "Cross-project leakage proof", status: "known" },
+      { label: "Target repo forbidden surfaces", status: "absent" }
+    ];
+
+    expect(
+      deriveTargetRepoReadiness(postgresReady, targetRepoReady)
+    ).toEqual({
+      label: "Target repo readiness",
+      status: "ready (init-connect smoke proven; target repo harness smoke proven)"
+    });
+
+    expect(
+      deriveTargetRepoReadiness(postgresReady, [
+        ...targetRepoReady.slice(0, 3),
+        { label: "Init-connect smoke", status: "unverified (pnpm db:smoke:init-connect missing)" },
+        ...targetRepoReady.slice(4)
+      ])
+    ).toEqual({
+      label: "Target repo readiness",
+      status: "unverified (init-connect smoke missing)"
+    });
+
+    expect(
+      deriveTargetRepoReadiness(postgresReady, [
+        ...targetRepoReady.slice(0, 4),
+        {
+          label: "Target repo harness smoke",
+          status: "unverified (pnpm db:smoke:target-repo-harness missing)"
+        },
+        ...targetRepoReady.slice(5)
+      ])
+    ).toEqual({
+      label: "Target repo readiness",
+      status: "partially ready (init-connect smoke proven; target repo harness smoke missing)"
+    });
+
+    expect(
+      deriveTargetRepoReadiness(postgresReady, [
+        ...targetRepoReady.slice(0, 6),
+        { label: "Target repo forbidden surfaces", status: "present" }
+      ])
+    ).toEqual({
+      label: "Target repo readiness",
+      status: "blocked (forbidden target repo surface present)"
     });
   });
 
