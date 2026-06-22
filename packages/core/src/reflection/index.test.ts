@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   REFLECTION_CANDIDATE_OUTPUT_TARGETS,
+  assessReflectionOutputContract,
   isReflectionOutputCandidateOnly,
   type ReflectionOutput
 } from "./index.js";
@@ -116,7 +117,7 @@ describe("reflection contracts", () => {
   });
 
   it("rejects outputs that link to final truth targets", () => {
-    expect(isReflectionOutputCandidateOnly({
+    const assessment = assessReflectionOutputContract({
       ...output,
       candidateLinks: [{
         targetType: "memory_record",
@@ -124,9 +125,18 @@ describe("reflection contracts", () => {
         summary: "This would bypass review.",
         evidenceRefs: []
       }]
-    })).toBe(false);
+    });
 
-    expect(isReflectionOutputCandidateOnly({
+    expect(assessment).toEqual({
+      candidateOnly: false,
+      violations: [{
+        path: "candidateLinks.0.targetType",
+        reason: "final_truth_target",
+        value: "memory_record"
+      }]
+    });
+
+    expect(assessReflectionOutputContract({
       ...output,
       candidateLinks: [{
         targetType: "source_decision",
@@ -134,6 +144,37 @@ describe("reflection contracts", () => {
         summary: "This would bypass source review.",
         evidenceRefs: []
       }]
+    }).candidateOnly).toBe(false);
+  });
+
+  it("rejects promotion semantics hidden in metadata", () => {
+    const assessment = assessReflectionOutputContract({
+      ...output,
+      metadata: {
+        createActiveMemory: true,
+        nested: {
+          source_decision: "decision-1"
+        }
+      }
+    });
+
+    expect(isReflectionOutputCandidateOnly({
+      ...output,
+      metadata: {
+        createActiveMemory: true
+      }
     })).toBe(false);
+    expect(assessment.violations).toEqual([
+      {
+        path: "metadata.createActiveMemory",
+        reason: "final_truth_metadata",
+        value: "createActiveMemory"
+      },
+      {
+        path: "metadata.nested.source_decision",
+        reason: "final_truth_metadata",
+        value: "source_decision"
+      }
+    ]);
   });
 });

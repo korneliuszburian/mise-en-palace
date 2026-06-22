@@ -190,9 +190,95 @@ export interface ReflectionRecord {
 }
 
 const candidateTargetSet = new Set<string>(REFLECTION_CANDIDATE_OUTPUT_TARGETS);
+const forbiddenMetadataKeys = new Set([
+  "memory_record",
+  "memory_record_id",
+  "source_decision",
+  "source_decision_id",
+  "promote_memory_candidate",
+  "create_active_memory"
+]);
+
+export type ReflectionOutputContractViolationReason =
+  | "final_truth_target"
+  | "final_truth_metadata";
+
+export interface ReflectionOutputContractViolation {
+  path: string;
+  reason: ReflectionOutputContractViolationReason;
+  value: string;
+}
+
+export interface ReflectionOutputContractAssessment {
+  candidateOnly: boolean;
+  violations: ReflectionOutputContractViolation[];
+}
+
+const normalizedKey = (key: string): string => (
+  key
+    .replace(/([a-z0-9])([A-Z])/gu, "$1_$2")
+    .replace(/[-\s]+/gu, "_")
+    .toLowerCase()
+);
+
+const collectForbiddenMetadata = (
+  value: unknown,
+  path: string[],
+  violations: ReflectionOutputContractViolation[]
+): void => {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectForbiddenMetadata(item, [...path, String(index)], violations));
+    return;
+  }
+
+  if (typeof value !== "object" || value === null) {
+    return;
+  }
+
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const nextPath = [...path, key];
+
+    if (forbiddenMetadataKeys.has(normalizedKey(key))) {
+      violations.push({
+        path: nextPath.join("."),
+        reason: "final_truth_metadata",
+        value: key
+      });
+    }
+
+    collectForbiddenMetadata(child, nextPath, violations);
+  }
+};
+
+export const assessReflectionOutputContract = (output: {
+  candidateLinks: readonly { targetType: string }[];
+  metadata?: Record<string, unknown>;
+}): ReflectionOutputContractAssessment => {
+  const violations: ReflectionOutputContractViolation[] = [];
+
+  output.candidateLinks.forEach((link, index) => {
+    if (!candidateTargetSet.has(link.targetType)) {
+      violations.push({
+        path: `candidateLinks.${index}.targetType`,
+        reason: "final_truth_target",
+        value: link.targetType
+      });
+    }
+  });
+
+  if (output.metadata !== undefined) {
+    collectForbiddenMetadata(output.metadata, ["metadata"], violations);
+  }
+
+  return {
+    candidateOnly: violations.length === 0,
+    violations
+  };
+};
 
 export const isReflectionOutputCandidateOnly = (output: {
   candidateLinks: readonly { targetType: string }[];
+  metadata?: Record<string, unknown>;
 }): boolean => (
-  output.candidateLinks.every((link) => candidateTargetSet.has(link.targetType))
+  assessReflectionOutputContract(output).candidateOnly
 );
