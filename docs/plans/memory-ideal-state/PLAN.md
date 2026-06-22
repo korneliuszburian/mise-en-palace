@@ -151,8 +151,7 @@ Known target repo readiness:
 - latest target readiness: ready
 
 Known not built:
-- observational memory implementation
-- observation DB/runtime/CLI/repository implementation
+- MM-17 dogfood evidence for observation runtime
 - reflection/dreaming implementation
 - MemoryEval/golden memory behavior runner
 - dashboard
@@ -163,6 +162,13 @@ Known not built:
 - broad eval suite
 - plugin package
 - research/pattern subsystem
+
+Known built but not fully integrated:
+- observation core contracts, IO schemas, DB schema, repository adapter, evidence linkage, manual observe CLI, observer input builder, and pure observation prefix selector
+- observation prefix selector is not wired into context assembly or activation runtime
+- manual `krn observe --run <id> [--persist]` is not yet dogfooded on a committed KRN run
+- observations do not yet flow into reflection, MemoryCandidate creation, MemoryReviewGate, anti-memory, or golden eval behavior
+- MemoryRepository has low-level create/promote methods, but the governed MemoryReviewGate product path is not complete yet
 
 Known untracked quarry may exist:
 - docs/materials/2026-06-22-big-brain.md
@@ -351,22 +357,35 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-14 complete: made the observation source-range requirement matrix explicit and exhaustively typed for every `ObservationKind` x `ObservationProvenanceKind`, with table-driven tests proving `requiresObservationSourceRange` follows the matrix. Intended files: `packages/core/src/observations/observationPolicy.ts`, `packages/core/src/observations/index.test.ts`, and this PLAN. Non-goals preserved: no schema, DB, migrations, repository changes, CLI, observe runtime, LLM call, worker, reflection, activation prefix selector, Memory Core mutation, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused core test failed because `OBSERVATION_SOURCE_RANGE_POLICY` was missing; GREEN focused core observation test passed with 2 files / 9 tests; focused core typecheck passed; final `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden dependency/research-surface scans, and forbidden directory scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is explicit pure core policy only; review burden low; diff risk low; rollback path `git revert <MM-14 commit>`; candidate updates none; final verdict pass.
 - [x] (2026-06-22) MM-15 complete: added manual `krn observe --run <id> [--persist]` CLI routing that loads a persisted run, builds deterministic observer input, and creates an observation group/items only when `--persist` is explicit. Intended files: `packages/cli/src/runObserveCommand.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runCli.ts`, `packages/cli/src/index.ts`, `packages/cli/src/databaseRuntime.ts`, `packages/cli/src/runCli.test.ts`, and this PLAN. Non-goals preserved: no LLM call, observer worker, reflection, activation prefix selector, Memory Core mutation, MemoryRecord creation, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused CLI test failed with exit 2 before parser/command support; GREEN focused CLI test passed with 5 files / 78 tests; focused CLI typecheck passed; final `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden dependency/research-surface scans, and forbidden directory scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is manual observe CLI orchestration only; review burden medium; diff risk medium; rollback path `git revert <MM-15 commit>`; candidate updates none; final verdict pass.
 - [x] (2026-06-22) MM-16 complete: added a pure harness `selectObservationPrefix` selector that ranks observations against a task, returns a small prefix with reasons, warnings, exclusions, and excludes invalidated/stale/cross-project observations. Intended files: `packages/harness/src/observations/observationPrefix.ts`, `packages/harness/src/observations/observationPrefix.test.ts`, `packages/harness/src/observations/index.ts`, and this PLAN. Non-goals preserved: no DB/repository changes, CLI integration, context assembly integration, observer worker, LLM call, reflection, Memory Core mutation, MemoryRecord creation, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused harness test failed on missing `./observationPrefix.js`; GREEN focused harness observation-prefix test passed with 7 files / 21 tests; focused harness typecheck passed; final `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden dependency/research-surface scans, and forbidden directory scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is pure observation prefix selection only; review burden medium; diff risk medium; rollback path `git revert <MM-16 commit>`; candidate updates none; final verdict pass.
-- [ ] MM-17: Dogfood observations from a KRN run.
+- [x] (2026-06-22) MM-16/17 review-gate complete: integrated the two external harsh review reports into this PLAN as an explicit repair layer before MM-17 dogfood and later governance gates. Intended files: this PLAN. Non-goals preserved: no code, DB schema, runtime, CLI, worker, reflection, memory promotion, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: reviewers converged on PASS_WITH_RISKS and called out doc drift, weak dogfood, prefix relevance, source-range typed lineage, project scoping, redaction, timestamp validation, audit shallowness, MemoryReviewGate bypass, anti-memory narrowness, and premature confidence; `pnpm typecheck` passed; `pnpm test` passed with 39 files / 178 tests; `git diff --check` passed; scope check showed only this PLAN changed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces. This line records the planning repair only; implementation starts with MM-17A.
+- [ ] MM-17A: Reconcile public current-state docs before dogfood.
+- [ ] MM-16R: Harden observation prefix relevance and project-scope selection.
+- [ ] MM-17B: Dogfood observations from a real KRN persisted run with raw evidence recall and no MemoryRecord delta.
+- [ ] MM-17C: Enforce typed source-range lineage invariants for truth-bearing observations.
+- [ ] MM-17D: Remove hardcoded observe project scope and prove project isolation.
+- [ ] MM-17E: Add observation schema/core parity and timestamp validation.
+- [ ] MM-17F: Harden observer payload redaction for secret-shaped values.
 - [ ] MM-18: Add reflection domain contracts.
+- [ ] MM-18A: Seal reflection as candidate-only before any manual reflect runtime.
 - [ ] MM-19: Add reflection schemas and DB persistence.
 - [ ] MM-20: Add reflection repositories and input selector.
 - [ ] MM-21: Generate memory/source/anti-memory/eval candidates from reflection.
 - [ ] MM-22: Add contradiction and gap reports.
 - [ ] MM-23: Add manual reflect CLI.
 - [ ] MM-24: Prove reflection cannot mutate Memory Core.
+- [ ] MM-24A: Prove reflection cannot mutate Memory Core at repository/runtime boundaries.
 - [ ] MM-25: Dogfood reflection on KRN observations.
 - [ ] MM-26: Harden MemoryRecord invariants.
+- [ ] MM-26A: Add Memory Core write-surface guard before promotion paths.
 - [ ] MM-27: Add MemoryReviewGate and promotion path.
 - [ ] MM-28: Add memory invalidation/versioning behavior.
 - [ ] MM-29: Add memory feedback application and demotion.
+- [ ] MM-29A: Convert hurt/stale feedback into review-required demotion/invalidation candidates.
 - [ ] MM-30: Enforce anti-memory in retrieval/context.
+- [ ] MM-30A: Expand anti-memory enforcement beyond source_claim candidates.
 - [ ] MM-31: Add memory abstain behavior.
 - [ ] MM-32: Add memory health audit.
+- [ ] MM-32B: Make audit CLI consume real AuditBundle/verification and semantic DB snapshots.
 - [ ] MM-33: Dogfood promotion of one review lesson.
 - [ ] MM-34: Harden SourceClaim and SourceDecisionEdge.
 - [ ] MM-35: Add source rejection and doesNotProve enforcement.
@@ -379,6 +398,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [ ] MM-42: ContextROI, diversity, dedup, inclusions, and exclusions.
 - [ ] MM-43: Activation traces and raw evidence recall trigger.
 - [ ] MM-44: Observation prefix integration.
+- [ ] MM-44A: Integrate observation prefix only after relevance/project-scope hardening.
 - [ ] MM-45: Dogfood activation before/after observations.
 - [ ] MM-46: CapabilityRequirement and CapabilityPlan hardening.
 - [ ] MM-47: CapabilityCompiler v1.
@@ -396,6 +416,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [ ] MM-59: GoldenTask domain model.
 - [ ] MM-60: GoldenTask storage or fixture strategy.
 - [ ] MM-61: memory behavior golden cases.
+- [ ] MM-61-lite: Add early golden smoke cases for stale memory abstain, anti-memory block, and unsupported source decision rejection.
 - [ ] MM-62: context/source/audit/type boundary golden cases.
 - [ ] MM-63: observation/reflection/anti-memory golden cases.
 - [ ] MM-64: golden eval runner.
@@ -501,6 +522,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: `selectObservationPrefix` consumes `TaskContract` and already-loaded `ObservationItem[]`, returns selected items, warnings, and exclusions without repository or runtime imports.
   Resolution: Keep prefix policy pure and testable; later integration can call it from context assembly or CLI without hiding selection policy in adapters.
 
+- Observation: Two external harsh reviews converged on PASS_WITH_RISKS and identified the same near-term failure mode: KRN has real observation/memory substrate now, but can still confuse staging tables, adapters, and green tests with governed Memory Core behavior.
+  Evidence: Both reports flagged stale current-state docs, weak MM-17 dogfood, prefix relevance/scope risk, typed lineage gaps, hardcoded observe project scope, redaction gaps, loose timestamp validation, shallow audit snapshots, MemoryReviewGate bypass risk, narrow anti-memory enforcement, and premature confidence.
+  Resolution: Insert MM-17A/MM-16R/MM-17B-MM-17F plus later governance/audit/eval repair slices before moving into reflection or promotion work.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -518,6 +543,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
 - Decision: Every implementation slice must be auditable and independently verifiable.
   Rationale: The user cannot supervise every slice; KRN must create compact evidence, scope checks, rollback paths, and handoffs without storing chain-of-thought.
   Date/Author: 2026-06-22 / planning pass.
+
+- Decision: Treat the two harsh review reports as a blocking repair layer, not advisory notes.
+  Rationale: Both reports independently found that continuing directly into reflection/worker/promotion work would amplify unproven observation semantics and governance bypasses. The next slices must first reconcile docs, prove observe dogfood, harden prefix relevance/scope, enforce typed lineage, close redaction/timestamp drift, and add later MemoryReviewGate/audit/anti-memory/eval safeguards.
+  Date/Author: 2026-06-22 / external review integration.
 
 ## Outcomes & Retrospective
 
@@ -794,12 +823,113 @@ MM-16 — Observation prefix selector
       noisy fixture returns small prefix
       stale/invalidated observations excluded.
 
+MM-17A — Current-state reconciliation gate
+- Objective: reconcile public current-state truth before dogfood. README, root PLAN/GOAL if present, this memory PLAN current-state section, REVIEW, and handoff/audit docs must not claim “no CLI,” “observation DB not built,” or “observation repository/runtime not built” after MM-16.
+- Source: both harsh review reports independently flagged documentation drift as a critical risk.
+- Intended files: `README.md`, root `PLAN.md`/`GOAL.md` if they contain stale state, `docs/plans/memory-ideal-state/PLAN.md`, `REVIEW.md`, and any current handoff/status doc that contradicts MM-16.
+- Verification:
+      grep proves stale phrases are gone or scoped as historical evidence only
+      docs identify current head, completed MM-16, and MM-17 as next
+      no code/runtime/schema changes
+      pnpm typecheck
+      pnpm test
+      git diff --check
+      staged docs-only scope check.
+- Non-goals: no observe dogfood, no DB write, no reflection, no Memory Core mutation, no dashboard/API/MCP/server/plugin, no source crawler, no Research Foundry, no Pattern Vault.
+- Falsifier: a fresh agent can still read a canonical current-state doc and believe observation DB/CLI/repository are not built.
+
+MM-16R — Observation prefix relevance and scope hardening
+- Objective: priority/confidence may boost relevant observations, but must not make unrelated observations relevant. Unscoped observations must not enter a project-scoped prefix by default.
+- Source: both harsh review reports flagged priority/confidence-only selection and project-scope looseness.
+- Intended files: `packages/harness/src/observations/observationPrefix.ts`, `packages/harness/src/observations/observationPrefix.test.ts`, this PLAN.
+- Verification:
+      high-priority/high-confidence observation with zero task/entity/source/run relation is excluded
+      relevant lower-priority observation can be included when it matches task terms or run/task scope
+      observation with different projectId is excluded
+      observation without projectId is excluded or explicitly quarantined in project-scoped selection
+      warnings/exclusions explain the reason.
+- Non-goals: no vector search, no activation v2, no DB/repository changes, no context assembly integration, no Memory Core mutation.
+- Falsifier: unrelated observation appears in prefix because it is high priority or high confidence.
+
 MM-17 — Observation dogfood
 - Observe one KRN evidence run.
 - Capture resulting observation group and handoff.
 - Verification:
       observations have source ranges
       observation prefix can be selected for a follow-up task.
+
+MM-17B — Observation dogfood with raw recall matrix
+- Objective: run real DB-backed `krn observe --run <persisted KRN run> --persist`, commit dogfood evidence, and prove observation rows/source ranges/raw evidence recall/no MemoryRecord mutation.
+- Source: both harsh review reports said MM-17 must be behavioral proof, not a docs laurel.
+- Intended files: `docs/runs/<date>-observation-dogfood.md`, this PLAN, and only tests/code if dogfood exposes a defect that blocks proof.
+- Verification:
+      `psql` before/after counts for observation_groups, observation_items, observation_source_ranges, memory_records
+      `krn observe --run <id>` preview output captured
+      `krn observe --run <id> --persist` output captured
+      persisted observation group id and item ids captured
+      source ranges have typed evidence FKs where expected
+      `recallRawEvidence` sample proves raw evidence can be reconstructed
+      `selectObservationPrefix` sample proves a follow-up task can select a small prefix
+      memory_records count is unchanged
+      pnpm typecheck
+      pnpm test
+      pnpm db:ready
+      git diff --check
+      forbidden scans.
+- Non-goals: no LLM observer, no observer worker, no reflection, no MemoryRecord, no promotion, no dashboard/API/MCP/server/plugin.
+- Falsifier: dogfood doc only says command ran, but does not prove persisted observations, raw recall, prefix selection, and no memory delta.
+
+MM-17C — Typed source-range lineage invariants
+- Objective: enforce sourceType to typed-FK consistency and typed raw-evidence linkage for truth-bearing observations.
+- Source: both reports flagged adapter-level lineage, missing typed FK checks for non-fact truth-bearing kinds, and inconsistent sourceType/FK combinations.
+- Intended files: `packages/db/src/repositories/DrizzleObservationRepository.ts`, repository tests, schema tests if IO create input is extended, this PLAN.
+- Verification:
+      `sourceType: "run_event"` requires `runEventId`
+      `sourceType: "source_chunk"` requires `sourceChunkId`
+      `sourceType: "evidence_bundle"` requires `evidenceBundleId`
+      `sourceType: "review_assessment"` requires `reviewAssessmentId`
+      `sourceType: "feedback_delta"` requires `feedbackDeltaId`
+      multiple canonical typed FKs on one range are rejected
+      truth-bearing kinds fact/decision/correction/risk/procedure/conflict require at least one typed evidence-linked range unless provenance is explicit user_preference/local_operator_note
+      `linkSourceRange` validates combined existing + new ranges so auxiliary ranges do not break an already evidenced fact.
+- Non-goals: no new source crawler, no broad evidence model, no reflection, no Memory Core mutation.
+- Falsifier: a truth-bearing observation can be persisted with only decorative sourceId and no recallable raw evidence FK.
+
+MM-17D — Project-scoped observe runtime
+- Objective: remove hardcoded observe project assumptions and prove observe writes under the project associated with the persisted run or an explicit project argument.
+- Source: both reports flagged hardcoded `local` / `mise-en-palace` and cross-project leakage risk.
+- Intended files: `packages/cli/src/runObserveCommand.ts`, `packages/cli/src/databaseRuntime.ts` if needed, CLI tests, this PLAN.
+- Verification:
+      observe derives project/workspace from persisted run aggregate when available
+      or command requires explicit `--project` when project cannot be resolved
+      two-project test proves observing project A run does not create/select project B observations
+      prefix selector excludes unscoped observations in project-scoped mode.
+- Non-goals: no multi-project dashboard, no API/MCP, no broad project registry rewrite unless current runtime cannot resolve scope.
+- Falsifier: `krn observe --run` still writes to hardcoded local/mise-en-palace scope.
+
+MM-17E — Observation schema/core parity and timestamp validation
+- Objective: prevent core/schema observation policy drift and make temporal comparisons valid.
+- Source: both reports flagged schema/core policy duplication and loose ISO timestamp validation.
+- Intended files: `packages/schema/src/observation.ts`, schema tests, core/schema parity tests or shared fixtures, this PLAN.
+- Verification:
+      schema rejects invalid datetime strings for observedAt/ingestedAt/validUntil/reference fields
+      stale comparison uses normalized datetime or parsed epoch, not arbitrary string ordering
+      test fails when core ObservationKind/ObservationProvenanceKind differs from schema enum coverage
+      test fails when source-range exemption policy diverges between core and schema.
+- Non-goals: no package topology refactor unless required, no DB migration unless schema behavior cannot be represented otherwise.
+- Falsifier: adding a new observation kind/provenance changes core behavior without schema test failure.
+
+MM-17F — Observer payload redaction hardening
+- Objective: prevent secret-shaped values from being persisted in observer payloads, not only secret-looking keys.
+- Source: harsh review flagged key-only redaction as insufficient before dogfood persists payloads.
+- Intended files: `packages/harness/src/observations/observerInput.ts`, `packages/harness/src/observations/observerInput.test.ts`, this PLAN.
+- Verification:
+      key-based secrets are redacted
+      neutral key containing `Bearer ...`, token-like strings, API-key-like strings, cookies, or private-key blocks is redacted
+      redaction report lists paths
+      truncated payload cannot expose unredacted secret suffix/prefix.
+- Non-goals: no external secret scanner unless already accepted, no source crawler, no LLM.
+- Falsifier: secret-shaped value survives into `ObserverInputItem.payload`.
 
 ### Gate 2 — Reflection / dreaming as candidate generation
 
@@ -820,6 +950,18 @@ MM-18 — Reflection domain contracts
 - Verification:
       pure tests
       no DB imports in core.
+
+MM-18A — Reflection candidate-only contract guard
+- Objective: make reflection outputs candidate-only before any manual reflect runtime exists. Reflection may produce findings, gaps, contradictions, SourceClaimCandidate, MemoryCandidate, AntiMemoryCandidate, PolicyCandidate, and EvalCandidate records, but cannot create MemoryRecord or SourceDecision truth directly.
+- Source: both harsh reports warned that reflection would amplify weak observation semantics unless mutation paths are sealed first.
+- Intended files: `packages/core/src/reflection/*`, reflection tests, import/audit tests if the module exists, this PLAN.
+- Verification:
+      reflection contracts expose candidate/proposal outputs only
+      no reflection type imports MemoryRecord write commands or repository adapters
+      tests assert reflection output cannot contain promotion-to-memory semantics
+      forbidden import scan proves reflection core has no DB/Drizzle/fs/process/network imports.
+- Non-goals: no reflection DB tables, no CLI, no worker, no LLM call, no Memory Core mutation.
+- Falsifier: a reflection output type or helper can create or imply an active MemoryRecord.
 
 MM-19 — Reflection schemas and DB
 - Add schemas and DB tables for reflection_records and reflection_inputs/outputs if needed.
@@ -862,6 +1004,18 @@ MM-24 — Mutation guard
 - Verification:
       attempted direct promotion path fails.
 
+MM-24A — Reflection no-Memory-Core mutation proof
+- Objective: turn “reflection cannot mutate Memory Core” into a repository/runtime invariant, not a documentation statement.
+- Source: both reports flagged MemoryRepository promotion paths as dangerous once reflection and CLI paths arrive.
+- Intended files: reflection repository/tests, manual reflect CLI tests if MM-23 exists, memory repository boundary tests, audit checks if available, this PLAN.
+- Verification:
+      running reflection leaves `memory_records` row count unchanged
+      reflection runtime path has no direct call to `createMemoryRecord` or `promoteMemoryCandidate`
+      import scan blocks reflection modules from depending on low-level memory promotion APIs
+      audit finding exists for forbidden reflection-to-memory mutation.
+- Non-goals: no MemoryReviewGate implementation in this slice unless needed to block mutation, no auto-promotion, no dashboard/API/MCP.
+- Falsifier: `krn reflect` or reflection repository code can change `memory_records`.
+
 MM-25 — Reflection dogfood
 - Reflect over the observation group from MM-17.
 - Capture memory/source/anti-memory/eval candidates.
@@ -887,6 +1041,18 @@ MM-26 — MemoryRecord invariant hardening
 - Verification:
       invalid memory fixtures rejected.
 
+MM-26A — Memory write-surface guard
+- Objective: make MemoryReviewGate or a dedicated promotion service the only product/runtime path from candidate to active MemoryRecord, while keeping low-level repository methods internal/test-only.
+- Source: both harsh reports found `MemoryRepository.createMemoryRecord` and `promoteMemoryCandidate` before the review gate and called it the highest-risk governance bypass.
+- Intended files: `packages/core/src/memory*`, `packages/harness/src/memory*` or equivalent gate module, `packages/db/src/repositories/DrizzleMemoryRepository.ts`, CLI tests when promotion commands exist, audit checks, this PLAN.
+- Verification:
+      candidate promotion requires reviewer identity, source lineage, raw evidence inspection reference, application guidance, invalidation strategy for temporal memory, and bounded confidence
+      normal CLI/worker/harness paths cannot call low-level `createMemoryRecord` directly
+      direct repository promotion is allowed only behind gate/internal smoke tests and is flagged by audit elsewhere
+      confidence is constrained to the accepted scale.
+- Non-goals: no auto-promotion, no dashboard/API/MCP, no LLM decision-making.
+- Falsifier: a candidate becomes active memory through a status check or direct repository call without review gate evidence.
+
 MM-27 — MemoryReviewGate and promotion
 - Add review gate for MemoryCandidate -> MemoryRecordVersion.
 - CLI may be `krn memory review` and `krn memory promote` if consistent with existing CLI.
@@ -905,10 +1071,34 @@ MM-29 — Feedback application
 - Verification:
       hurt/stale feedback changes ranking or status.
 
+MM-29A — Feedback demotion and invalidation candidates
+- Objective: convert repeated `hurt`/`stale` feedback into review-required demotion or invalidation candidates instead of counters that never affect active memory.
+- Source: harsh review flagged memory feedback counters without demotion/invalidation as slow memory poisoning.
+- Intended files: memory feedback policy module, memory repository tests, memory health audit tests, this PLAN.
+- Verification:
+      repeated hurt/stale feedback creates review-required demotion/invalidation candidate or health finding
+      active memory is not silently trusted after negative feedback threshold
+      no automatic invalidation happens without review unless an explicit policy says so
+      activation can surface warning or abstain when memory has unresolved negative feedback.
+- Non-goals: no automatic destructive memory deletion, no dashboard, no broad eval suite.
+- Falsifier: stale/hurt feedback increments counters indefinitely with no candidate, status, warning, or audit finding.
+
 MM-30 — Anti-memory enforcement
 - Ensure AntiMemoryRecord blocks stale/rejected/harmful patterns during activation.
 - Verification:
       anti-memory fixture excludes tempting stale memory.
+
+MM-30A — Anti-memory enforcement expansion
+- Objective: apply anti-memory to memory records, source claims, search documents, and observation prefixes using explicit IDs/keys before considering fuzzy matching.
+- Source: both reports found current anti-memory enforcement too narrow, blocking only source_claim candidates by invalidated source claim id.
+- Intended files: `packages/harness/src/activation/conflictFilter.ts`, activation tests, observation prefix integration tests when present, memory/retrieval models if needed, this PLAN.
+- Verification:
+      anti-memory referencing a memory key excludes matching memory_record candidate with trace reason
+      anti-memory referencing a source claim excludes source_claim and derived search_document candidates where link is explicit
+      anti-memory can block an observation prefix item before context assembly
+      activation trace persists exclusion reason.
+- Non-goals: no fuzzy semantic blocker, no separate graph/vector DB, no broad crawler.
+- Falsifier: stale/rejected material enters context through memory_record, search_document, or observation prefix despite active anti-memory.
 
 MM-31 — Memory abstain behavior
 - Retrieval can explicitly abstain when confidence/source/temporal support is weak.
@@ -919,6 +1109,19 @@ MM-32 — Memory health audit
 - Audit stale high-confidence memory, missing application feedback, unsupported memory, high hurt count, and no lineage.
 - Verification:
       seeded bad memory records produce findings.
+
+MM-32B — Audit CLI consumes real AuditBundle and semantic DB snapshots
+- Objective: upgrade audit from useful file/snapshot smoke alarm to a slice gate that can inspect intended files, verification evidence, and DB-backed memory/source/eval/observation state.
+- Source: both reports flagged `intendedFiles: []`, empty verification command state, and missing semantic memory/source/eval snapshots.
+- Intended files: `packages/cli/src/runAuditCommand.ts`, audit snapshot builders, audit tests, DB snapshot readers if available, this PLAN.
+- Verification:
+      audit can ingest intended files from AuditBundle or explicit CLI options
+      missing verification output produces finding
+      DB-backed snapshot readers cover MemoryCandidate, MemoryRecord, SourceClaim, SourceDecision, EvalCandidate, ObservationGroup, and ActivationDecision where tables exist
+      audit distinguishes file-scan proof from semantic memory governance proof
+      optional `--fail-on warning` exists for CI/slice gate usage.
+- Non-goals: no dashboard, no CI service, no broad benchmark suite.
+- Falsifier: audit can report pass/advisory for an implementation slice while intended files, verification commands, and semantic DB snapshots are all empty.
 
 MM-33 — Memory dogfood
 - Promote one reviewed KRN lesson.
@@ -1006,6 +1209,19 @@ MM-44 — Observation prefix integration
 - Include small observation prefix when it improves context.
 - Verification:
       prefix is small and source-ranged.
+
+MM-44A — Observation prefix integration gate
+- Objective: wire observation prefix into activation/context assembly only after relevance, project-scope, typed-lineage, and anti-memory hardening are complete.
+- Source: both reports warned that prefix integration before hardening would reintroduce context bloat through a new channel.
+- Intended files: `packages/harness/src/activation/*`, `packages/harness/src/observations/observationPrefix.ts`, context assembly tests, this PLAN.
+- Verification:
+      irrelevant high-priority observation is excluded from activation context
+      unscoped observation is excluded from project-scoped context
+      valid project-scoped observation appears as a small rendered prefix with source-range reason
+      anti-memory can exclude observation prefix items
+      prefix remains a rendered activation artifact, not MemoryRecord truth.
+- Non-goals: no reflection, no memory promotion, no broad vector search rewrite.
+- Falsifier: activation/context assembly includes a broad observation dump or unrelated high-priority note.
 
 MM-45 — Activation dogfood
 - Compare one KRN memory task before/after observation prefix.
@@ -1134,6 +1350,18 @@ MM-61 — Memory behavior cases
       uses application guidance
 - Verification:
       runner or fixture tests fail before behavior and pass after implementation.
+
+MM-61-lite — Early golden memory smoke cases
+- Objective: add a tiny behavior smoke set before the broad golden runner so the most dangerous memory failures have regression pressure early.
+- Source: harsh review recommended early golden cases for stale memory abstain, anti-memory block, and unsupported source decision rejection before broader eval infrastructure.
+- Intended files: existing test/fixture location for activation/source/memory behavior, this PLAN, and only minimal runner glue if no suitable test harness exists.
+- Verification:
+      stale memory case expects abstain or exclusion, not confident use
+      active anti-memory blocks a tempting stale/rejected pattern
+      unsupported SourceDecision is rejected or flagged
+      each case fails against intentionally bad behavior and passes against desired behavior.
+- Non-goals: no broad benchmark suite, no Promptfoo export, no research eval theater.
+- Falsifier: the smoke cases only validate schema shape and do not protect behavior.
 
 MM-62 — Context/source/audit/TS boundary cases
 - Cases:
