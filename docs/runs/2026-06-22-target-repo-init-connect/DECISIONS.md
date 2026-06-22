@@ -52,3 +52,111 @@
   code slices must write and run failing tests before production code.
 - `typescript-type-safety`: used for upcoming TypeScript/CLI boundary work.
 - `brain-store-schema`: used for upcoming Postgres repository/schema checks.
+
+## Slice 01 Inventory
+
+Exists:
+
+- `workspaces`, `projects`, `repo_installations`, and `project_kernels` tables
+  exist in `packages/db/src/schema/harness.ts`.
+- `repo_installations` has `project_id`, `provider`, `repo_url`,
+  `default_branch`, `local_path_hint`, metadata, `created_at`, and
+  `updated_at`.
+- `project_kernels` has `project_id`, `version`, `summary`,
+  `active_context_rule`, metadata, `created_at`, and `updated_at`.
+- `DrizzleProjectRepository` supports `createWorkspace`,
+  `findWorkspaceBySlug`, `createProject`, `findProjectBySlug`, `getProject`,
+  `createRepoInstallation`, `createProjectKernel`, and
+  `getLatestProjectKernel`.
+- `compileHarnessPlan` already accepts a resolved `projectId`, persists the
+  project ID through operator intent/task contract, and starts retrieval with
+  project scope.
+- Existing DB smokes show the pattern for fixture-scoped workspace/project
+  creation, persisted harness run creation, readback, and cleanup.
+- `krn codex brief --run-id <id>` can render a read-only brief from a persisted
+  execution run.
+- `krn evidence capture --run-id <id> --persist` can persist evidence for an
+  existing execution run.
+
+Missing:
+
+- No `krn init` command exists.
+- No target repo fixture exists under `tests/fixtures/target-repos/`.
+- No explicit target repo detection module exists for package manager,
+  TypeScript presence, scripts, existing `AGENTS.md`, `.codex`,
+  `.agents/skills`, or forbidden surfaces.
+- No AGENTS.md/Codex overlay proposal renderer exists.
+- No repo installation first-class fingerprint column or lookup method exists.
+  `local_path_hint` can carry a path hint, but repo fingerprint is stable query
+  state and should not be hidden only in JSON metadata.
+- No `getProjectByRepoFingerprint/path`, no
+  `listRepoInstallationsForProject`, and no fixture cleanup helper exist.
+- No `krn plan --project <project-id>` parser/runtime path exists; the current
+  command hardcodes workspace `local` and project `mise-en-palace`.
+- No `pnpm db:smoke:init-connect` or
+  `pnpm db:smoke:target-repo-harness` script exists.
+- `krn doctor` has no target repo readiness section yet.
+
+Command shape for M27:
+
+```sh
+krn init --dry-run --repo tests/fixtures/target-repos/typescript-basic
+krn init --connect --repo tests/fixtures/target-repos/typescript-basic --persist
+krn plan --project <project-id> --task "improve test script readiness" --persist
+krn codex brief --run-id <run-id>
+krn evidence capture --run-id <run-id> --persist
+```
+
+Flag decision:
+
+- `--persist` matches existing CLI write semantics and should remain the write
+  gate for `init --connect` and `plan`.
+- `--repo <path>` is the explicit target-repo selector for both dry-run and
+  connect.
+- `--dry-run` is the no-write init mode and must print `No files written`.
+- `--connect` is the smallest honest final-compatible init mode for creating or
+  reusing Project, RepoInstallation, and ProjectKernel.
+- `--project <project-id>` should select an already connected project by ID.
+  If the project is missing, the persisted plan must fail instead of falling
+  back to the default project.
+
+Intentionally not built:
+
+- Dashboard, `apps/`, public API, MCP server, plugin package, broad worker
+  daemon, research layer, source crawler, runtime markdown memory, `.krn`
+  runtime truth, separate vector/graph/search store, Redis/Kafka, broad eval
+  suite, and real external repo mutation.
+
+## Slice 01 Decisions
+
+- Source: `packages/db/src/schema/harness.ts` and
+  `packages/harness/src/repositories/projectRepository.ts`.
+  Mechanism: Project, RepoInstallation, and ProjectKernel already have durable
+  tables and create/read repository methods, but repo fingerprint is not a
+  first-class query field.
+  KRN implication: M27 can reuse the existing project model, but connect
+  idempotency needs an indexed fingerprint or equivalent relational lookup.
+  Decision: add only the minimal repo fingerprint/path lookup support required
+  by init/connect instead of adding a broader ProjectRegistry.
+  Rejection/falsifier: if M27 stores fingerprint only in metadata and then
+  searches JSON ad hoc, it violates the brain-store schema boundary.
+
+- Source: `packages/cli/src/parseArgs.ts` and live unsupported-command probes.
+  Mechanism: parser supports `plan --task [--persist]`, `doctor`, DB smokes,
+  evidence capture, and Codex brief, but rejects `init` and `plan --project`.
+  KRN implication: CLI work should extend the existing manual parser and
+  dispatcher, not add a parser dependency for this slice.
+  Decision: implement `init` and `plan --project` in the current parser style.
+  Rejection/falsifier: adding a broad CLI framework before more command
+  complexity exists would be overbuilt for M27.
+
+- Source: `packages/db/src/harnessPlanSmoke.ts`,
+  `packages/cli/src/codexAdapterSmoke.ts`, and
+  `packages/cli/src/runDbSmokeCommand.ts`.
+  Mechanism: smokes already use marker-scoped rows, readback checks, explicit
+  cleanup, and cleanup-count reporting.
+  KRN implication: M27 smokes should follow the same marker and cleanup pattern.
+  Decision: add `db:smoke:init-connect` and `db:smoke:target-repo-harness`
+  using the existing smoke conventions.
+  Rejection/falsifier: smoke rows left behind or shared unmarked state would
+  make the target repo proof unsafe.

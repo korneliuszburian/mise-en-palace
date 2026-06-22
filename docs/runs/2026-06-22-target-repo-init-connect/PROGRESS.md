@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 00 preflight and run ledger complete.
+Current slice: Slice 01 inventory complete.
 
 Completed:
 
@@ -22,9 +22,14 @@ Completed:
   all M22-M26 DB smokes.
 - Noted a pre-existing modified `GOAL.md` in the worktree. This run will leave
   it unstaged unless a later slice explicitly changes the goal contract.
+- Slice 01 inventoried current support for CLI `init`, repo detection, project
+  creation, repo installation persistence, project kernel persistence,
+  AGENTS/Codex overlay proposal, fixture repos, and DB smoke helpers.
+- Slice 01 confirmed the DB has Project, RepoInstallation, and ProjectKernel
+  tables plus create/read methods for the existing harness path, but missing
+  first-class repo fingerprint lookup/idempotency support.
+- Slice 01 confirmed `krn init` and `krn plan --project` are not supported yet.
 
 Next action:
 
-- Slice 01 inventory current init/connect/project model support across CLI,
-  DB repositories, schema, fixtures, and smoke helpers, then record exact M27
-  command shape in `DECISIONS.md`.
+- Slice 02 add the minimal disposable TypeScript target repo fixture.
