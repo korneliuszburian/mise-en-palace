@@ -42,6 +42,16 @@ Resolved in M25.04:
   activation decisions;
 - activation smoke cleanup proved remaining marker count `0`.
 
+Resolved in M25.05:
+
+- `krn plan` preview prints context status, inclusions, exclusions, and
+  abstention;
+- `krn plan --persist` prints bounded activation inclusions and explicit
+  exclusions in the top-level KRN Plan summary;
+- current real persisted plan has zero exclusions because of the live corpus,
+  but it now prints `Context exclusions: - none` explicitly while
+  `pnpm db:smoke:activation` proves the exclusion/conflict/stale path.
+
 Non-goals that remain intentionally blocked:
 
 - LLM-based ranking;

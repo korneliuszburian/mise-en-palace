@@ -7,6 +7,11 @@ import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
 import type {
+  AntiMemoryRecord,
+  MemoryRecord,
+  SourceClaim
+} from "@krn/core";
+import type {
   CreateAntiMemoryRecordInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
@@ -17,7 +22,8 @@ import type {
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
   CreateReviewAssessmentInput,
-  HarnessRunAggregate
+  HarnessRunAggregate,
+  SearchDocumentSearchResult
 } from "@krn/harness";
 import type {
   DatabaseRuntimeInput
@@ -164,6 +170,153 @@ describe("runCli", () => {
     expect(result.stdout).toContain("harnessPlan: harness-plan-1");
     expect(result.stdout).toContain("contextAssembly: context-assembly-1");
     expect(result.stdout).toContain("executionRun: execution-run-1");
+  });
+
+  it("prints bounded activation inclusions and explicit exclusions for plan --persist", async () => {
+    const activeMemory: MemoryRecord = {
+      id: "11111111-1111-4111-8111-111111111111",
+      projectId: "project-1",
+      key: "activation-output",
+      kind: "constraint",
+      status: "active",
+      summary: "Activation output should be explicit",
+      body: "Persisted plan output should show selected context and rejected context.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Use when formatting persisted activation summaries.",
+      sourceLineage: [{ sourceId: "22222222-2222-4222-8222-222222222222" }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {},
+      validFrom: now,
+      createdAt: now,
+      updatedAt: now
+    };
+    const rejectedClaim: SourceClaim = {
+      id: "33333333-3333-4333-8333-333333333333",
+      sourceArtifactId: "44444444-4444-4444-8444-444444444444",
+      claim: "Persisted plan output should hide activation exclusions.",
+      mechanism: "",
+      krnImplication: "Operators would miss rejected context.",
+      doesNotProve: "The claim has a mechanism.",
+      trustTier: "high",
+      supportType: "background",
+      consumer: "M25.05 CLI output",
+      status: "proposed",
+      metadata: {},
+      createdAt: now,
+      updatedAt: now
+    };
+    const antiMemory: AntiMemoryRecord = {
+      id: "55555555-5555-4555-8555-555555555555",
+      projectId: "project-1",
+      key: "activation-output-anti",
+      rejectedClaim: "Persisted plan output should hide activation exclusions.",
+      reason: "Exclusions must be visible in M25.05 output.",
+      invalidatedBySourceClaimIds: [rejectedClaim.id],
+      invalidatedBySourceClaimId: rejectedClaim.id,
+      summary: "Do not hide activation exclusions",
+      body: "Persisted plan output must show explicit exclusions.",
+      owner: "kernel",
+      confidence: 95,
+      sourceLineage: [{ sourceId: rejectedClaim.id }],
+      metadata: {},
+      validFrom: now,
+      createdAt: now,
+      updatedAt: now
+    };
+    const searchResult: SearchDocumentSearchResult = {
+      id: "66666666-6666-4666-8666-666666666666",
+      projectId: "project-1",
+      subjectType: "search_document",
+      subjectId: "66666666-6666-4666-8666-666666666666",
+      trustTier: "project-decision",
+      validityStatus: "active",
+      language: "english",
+      title: "Activation output search result",
+      body: "Persisted plan output includes activation inclusions exclusions and abstentions.",
+      searchText: "persisted plan output activation inclusions exclusions abstentions",
+      metadataFilters: {},
+      metadata: {},
+      validFrom: now,
+      createdAt: now,
+      updatedAt: now,
+      lexicalScore: 200
+    };
+    const result = await runCli(
+      ["plan", "--task", "persist activation output", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository,
+              memoryRepository: {
+                async listActiveMemory() {
+                  return [activeMemory];
+                },
+                async listAntiMemoryForProject() {
+                  return [antiMemory];
+                }
+              },
+              sourceRepository: {
+                async listClaimsForProject() {
+                  return [rejectedClaim];
+                }
+              },
+              retrievalRepository: {
+                ...dependencies.retrievalRepository,
+                async searchLexical() {
+                  return [searchResult];
+                }
+              }
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Context status: assembled");
+    expect(result.stdout).toContain("Context inclusions:");
+    expect(result.stdout).toContain("search_document:66666666-6666-4666-8666-666666666666");
+    expect(result.stdout).toContain("memory_record:11111111-1111-4111-8111-111111111111");
+    expect(result.stdout).toContain("Context exclusions:");
+    expect(result.stdout).toContain("source_claim:33333333-3333-4333-8333-333333333333");
+    expect(result.stdout).toContain("anti-memory");
   });
 
   it("returns exit 2 for invalid plan args", async () => {

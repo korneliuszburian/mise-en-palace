@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 04 activation DB smoke path complete.
+Current slice: Slice 05 persisted plan activation output complete.
 
 Completed:
 
@@ -50,6 +50,9 @@ Completed:
   activation engine, persists retrieval candidates, activation decisions,
   context inclusions/exclusions, reads back context/retrieval linkage, and
   cleans marker rows to zero.
+- Slice 05 updated `krn plan` output to print context status, bounded
+  inclusions, explicit exclusions, and abstention status in the top-level plan
+  summary before the Codex execution brief.
 
 Verification:
 
@@ -139,10 +142,29 @@ Verification:
   decisions `1`, stale decisions `1`, context items `2`, context exclusions
   `4`, and cleanup remaining marker count `0`.
 - `pnpm test`: passed with 18 test files and 98 tests.
+- Slice 05 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed
+  because persisted plan output did not include `Context status: assembled` in
+  the top-level KRN Plan summary.
+- Slice 05 GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
+  53 tests after adding activation summary formatting.
+- `pnpm --filter @krn/cli krn plan --task "improve KRN doctor source graph
+  readiness"`: passed with preview abstention, `Context status: abstained`,
+  `Context inclusions: - none`, `Context exclusions: - none`, and no writes.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "improve KRN doctor source graph readiness"
+  --persist`: passed with context included `3`, context excluded `0`, context
+  status `assembled`, explicit inclusion lines, explicit `Context exclusions:
+  - none`, and persisted execution run `f522815d-3056-4815-88ba-ff225771bd1a`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:activation`: passed again with retrieval candidates `6`, activation
+  decisions `6`, included decisions `2`, excluded decisions `2`, conflict
+  decisions `1`, stale decisions `1`, context items `2`, context exclusions
+  `4`, and cleanup remaining marker count `0`.
+- `pnpm test`: passed with 18 test files and 99 tests.
 
 Next:
 
 - Run `git diff --check`.
-- Commit Slice 04 as `test(db): add activation engine smoke path`.
-- Start M25.05 by hardening `krn plan --persist` output around bounded
-  inclusions, explicit exclusions, and abstentions.
+- Commit Slice 05 as `feat(cli): apply activation in persisted harness plan`.
+- Start M25.06 by adding doctor activation readiness.

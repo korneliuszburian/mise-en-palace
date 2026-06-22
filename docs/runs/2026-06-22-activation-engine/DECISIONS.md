@@ -203,3 +203,33 @@ Slice 04 type-safety notes:
   report/input types.
 - Type-safety exceptions: none; no `any`, no double assertions, and no schema
   weakening.
+
+Slice 05 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN CLI output coverage
+  before changing the formatter.
+- `activation-engine`: used to keep output centered on context status,
+  inclusions, exclusions, and abstention rather than broad context dumps.
+- `typescript-type-safety`: used for `ContextAssembly`, `ContextInclusion`, and
+  `ContextExclusion` formatter types.
+
+Slice 05 decisions:
+
+- Source: `packages/cli/src/runPlanCommand.ts`.
+  Mechanism: `krn plan` already receives a `ContextAssembly` from the harness
+  compiler but previously surfaced only included/excluded counts before the
+  Codex execution brief.
+  KRN implication: operators need the activation result at the top of the plan
+  output, especially in persisted mode where context decisions are durable.
+  Decision: print a compact activation summary before the execution brief:
+  status, inclusion lines, exclusion lines, and abstention reason.
+  Rejection/falsifier: if plan output only prints counts or hides exclusions in
+  a later artifact, M25.05 is incomplete.
+
+Slice 05 type-safety notes:
+
+- Boundary classification: CLI output formatter over core `ContextAssembly`
+  domain types.
+- Validation/narrowing: no new external input boundary.
+- Public type changes: none.
+- Type-safety exceptions: none; no `any` or double assertions.

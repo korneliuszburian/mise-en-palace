@@ -198,3 +198,39 @@ Results:
   - context items `2`, context exclusions `4`;
   - cleanup remaining marker count `0`.
 - Full `pnpm test` passed with 18 test files and 98 tests.
+
+## Slice 05
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli krn plan --task "improve KRN doctor source graph readiness"
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "improve KRN doctor source graph readiness" --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:activation
+pnpm test
+```
+
+Results:
+
+- RED CLI test failed because the top-level `KRN Plan` output did not include
+  `Context status: assembled`; inclusions/exclusions only appeared later in the
+  Codex execution brief.
+- Added top-level activation summary formatting in
+  `packages/cli/src/runPlanCommand.ts`:
+  `Context status`, `Context inclusions`, `Context exclusions`, and
+  `Context abstention` when the context assembly abstains.
+- GREEN CLI test passed with 53 tests.
+- Preview `krn plan` passed without writes and printed `Context status:
+  abstained`, explicit empty inclusion/exclusion sections, and the abstention
+  reason.
+- `pnpm typecheck` passed.
+- Live `krn plan --persist` passed and printed context included `3`, context
+  excluded `0`, context status `assembled`, explicit inclusion lines, explicit
+  `Context exclusions: - none`, and persisted execution run
+  `f522815d-3056-4815-88ba-ff225771bd1a`.
+- Live activation smoke still passed with included/excluded/conflict/stale
+  activation decisions and cleanup remaining marker count `0`.
+- Full `pnpm test` passed with 18 test files and 99 tests.

@@ -1,9 +1,8 @@
 # Handoff
 
 Objective:
-Continue M25 Activation Engine V1. M25.04 activation DB smoke path is
-implemented; next implementation slice is M25.05 `krn plan --persist` output
-hardening.
+Continue M25 Activation Engine V1. M25.05 persisted plan activation output is
+implemented; next implementation slice is M25.06 doctor activation readiness.
 
 Last verified state:
 M24 is complete and pushed. M25 inventory found an existing deterministic
@@ -20,7 +19,10 @@ after M25.03. M25.04 added `pnpm db:smoke:activation`; live smoke passed with
 retrieval candidates `6`, activation decisions `6`, included decisions `2`,
 excluded decisions `2`, conflict decisions `1`, stale decisions `1`, context
 items `2`, context exclusions `4`, and cleanup remaining marker count `0`.
-Typecheck and full tests passed after M25.04.
+M25.05 added top-level activation summary output to `krn plan`, including
+context status, bounded inclusions, explicit exclusions, and abstention reason.
+Live preview, live persisted plan, activation smoke, typecheck, and full tests
+passed after M25.05.
 
 Changed files:
 `packages/core/src/activation.ts`, `packages/core/src/index.ts`,
@@ -39,6 +41,7 @@ Changed files:
 `packages/db/src/activationSmoke.test.ts`,
 `packages/db/src/index.ts`,
 `packages/cli/src/parseArgs.ts`,
+`packages/cli/src/runPlanCommand.ts`,
 `packages/cli/src/runDbSmokeCommand.ts`,
 `packages/cli/src/runCli.test.ts`,
 `package.json`, and
@@ -51,11 +54,12 @@ source/memory/search. Keep core contracts pure: no DB, CLI, Codex skill IDs, or
 `requiredSkills` in core. Source-claim safety can override budget/low-ROI
 exclusions, but preserves trust, temporal, and anti-memory unsafe reasons.
 Activation smoke uses harness activation functions directly and keeps CLI as
-dispatch/formatting only.
+dispatch/formatting only. Plan output can format `ContextAssembly`, but must
+not reimplement ranking/filtering policy in CLI.
 
 Blockers/risks:
-No hard blocker. M25 is incomplete until plan output hardening, doctor
-readiness, dogfood, and anti-rot are complete.
+No hard blocker. M25 is incomplete until doctor readiness, dogfood, and
+anti-rot are complete.
 
 Context selectors:
 `GOAL.md` M25 section, `docs/KRN_KERNEL.md`,
@@ -73,9 +77,8 @@ Context selectors:
 
 Next action:
 Run `git diff --check`, commit
-`test(db): add activation engine smoke path`, push, then start M25.05 by
-hardening `krn plan --persist` output to print bounded inclusions, explicit
-exclusions, and abstentions.
+`feat(cli): apply activation in persisted harness plan`, push, then start
+M25.06 by adding doctor activation readiness.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

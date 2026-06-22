@@ -1,6 +1,11 @@
 import {
   renderExecutionBrief
 } from "@krn/codex-adapter";
+import type {
+  ContextAssembly,
+  ContextExclusion,
+  ContextInclusion
+} from "@krn/core";
 import {
   compileHarnessPlan
 } from "@krn/harness";
@@ -60,6 +65,41 @@ interface CompilerRuntimeResolution {
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
+const subjectRef = (item: { subjectType: string; subjectId: string }): string =>
+  `${item.subjectType}:${item.subjectId}`;
+
+const formatInclusionLine = (inclusion: ContextInclusion): string =>
+  [
+    `- ${subjectRef(inclusion)}`,
+    `reason=${inclusion.reason}`,
+    `expected_use=${inclusion.expectedUse}`,
+    `trust=${inclusion.trustTier}`
+  ].join(" | ");
+
+const formatExclusionLine = (exclusion: ContextExclusion): string =>
+  [
+    `- ${subjectRef(exclusion)}`,
+    `reason=${exclusion.reason}`,
+    `explanation=${exclusion.explanation}`,
+    `trust=${exclusion.trustTier}`
+  ].join(" | ");
+
+const formatActivationSummary = (
+  contextAssembly: ContextAssembly,
+  nextAction: string
+): string[] => [
+  `Context status: ${contextAssembly.status}`,
+  "Context inclusions:",
+  ...(contextAssembly.inclusions.length === 0
+    ? ["- none"]
+    : contextAssembly.inclusions.map(formatInclusionLine)),
+  "Context exclusions:",
+  ...(contextAssembly.exclusions.length === 0
+    ? ["- none"]
+    : contextAssembly.exclusions.map(formatExclusionLine)),
+  ...(contextAssembly.status === "abstained" ? [`Context abstention: ${nextAction}`] : [])
+];
+
 const resolveCompilerRuntime = async (
   runtime: PlanCommandRuntime,
   workspaceSlug: string,
@@ -105,8 +145,7 @@ const resolveCompilerRuntime = async (
 const formatPlanSummary = (
   task: string,
   persistenceLabel: string,
-  includedCount: number,
-  excludedCount: number,
+  contextAssembly: ContextAssembly,
   evidenceCommands: readonly string[],
   nextAction: string,
   executionBrief: string,
@@ -116,8 +155,9 @@ const formatPlanSummary = (
     "KRN Plan",
     `Task: ${task}`,
     `Persistence: ${persistenceLabel}`,
-    `Context included: ${includedCount}`,
-    `Context excluded: ${excludedCount}`,
+    `Context included: ${contextAssembly.inclusions.length}`,
+    `Context excluded: ${contextAssembly.exclusions.length}`,
+    ...formatActivationSummary(contextAssembly, nextAction),
     `Evidence expected: ${evidenceCommands.join(", ")}`,
     `Next action: ${nextAction}`,
     "",
@@ -250,8 +290,7 @@ export const runPlanCommand = async (
       stdout: formatPlanSummary(
         task,
         compilerRuntime.persistenceLabel,
-        result.contextAssembly.inclusions.length,
-        result.contextAssembly.exclusions.length,
+        result.contextAssembly,
         evidenceCommands,
         result.nextAction,
         executionBrief,
