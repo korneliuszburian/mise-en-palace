@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 09 evidence capture memory candidates complete.
+Current slice: Slice 10 doctor memory governance readiness complete.
 
 Completed:
 
@@ -59,6 +59,11 @@ Completed:
   FeedbackDelta proposal surface, marks missing `applicationGuidance`,
   `sourceLineage`, and `invalidationRule`, records no MemoryCandidate row, and
   never creates a MemoryRecord automatically.
+- Slice 10 updated `krn doctor` to report memory governance readiness. Doctor
+  now checks memory governance schema tables, MemoryRepository read-path
+  reachability when DB is configured, memory governance smoke command
+  availability, runtime proof ready/unverified status, absence of runtime
+  markdown memory, and absence of automatic memory mutation.
 
 Verification:
 
@@ -209,6 +214,30 @@ Verification:
   row created, no MemoryRecord created, and persisted evidence/review/feedback
   IDs.
 - `git diff --check`: passed.
+- Slice 10 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn doctor` did not report memory governance checks and
+  `deriveMemoryGovernanceReadiness` was missing.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 49 tests.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn doctor`: passed. The report showed memory
+  governance schema/read path skipped because DB was not configured, memory
+  governance smoke available, runtime markdown memory absent, automatic memory
+  mutation absent, and memory governance readiness preview-only.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed with memory candidate readback matched,
+  reviewed status `accepted`, memory record readback matched, application,
+  anti-memory, outbox events `2`, cleanup remaining marker count `0`, and
+  `Memory governance smoke: passed`.
+- `pnpm --filter @krn/db db:check`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed. The report showed memory governance schema
+  `ready (7/7 tables present)`, MemoryRepository read path `reachable`, smoke
+  command available, runtime markdown memory absent, automatic memory mutation
+  absent, and memory governance runtime proof `unverified`. This is expected
+  until Slice 11 dogfoods durable memory records because the smoke cleans its
+  marker rows to zero.
 
 Skill gates:
 
@@ -223,7 +252,13 @@ Skill gates:
   05.
 - Used: `superpowers:verification-before-completion` before completing Slice
   09 verification and commit.
+- Used: `brain-store-schema` for memory governance readiness table and
+  repository read-path checks.
+- Used: `typescript-type-safety` for the new readiness report and doctor
+  derivation boundaries.
+- Used: `superpowers:test-driven-development` for RED/GREEN doctor tests in
+  Slice 10.
 
 Next action:
 
-- Slice 10: update `krn doctor` to report memory governance readiness.
+- Slice 11: dogfood memory governance with live DB.

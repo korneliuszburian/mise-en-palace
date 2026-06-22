@@ -108,6 +108,14 @@
   `applicationGuidance`, `sourceLineage`, or `invalidationRule` are not
   available. This preserves the M23 source-grounding contract instead of
   inventing source lineage from git status.
+- Slice 10 keeps `krn doctor` read-only. It can inspect memory governance
+  schema tables, MemoryRepository read paths, package scripts, and forbidden
+  runtime surfaces, but it must not run smoke commands or create memory proof
+  records itself.
+- Slice 10 reports memory governance runtime proof as `unverified` until there
+  are durable MemoryCandidate, MemoryRecord, MemoryApplication, and AntiMemory
+  records in the DB. The memory governance smoke remains self-cleaning and does
+  not leave marker rows behind as runtime proof.
 
 Slice 00 skill record:
 
@@ -214,3 +222,14 @@ Slice 09 skill record:
   capture tests.
 - `superpowers:verification-before-completion`: used before committing and
   pushing Slice 09.
+
+Slice 10 skill record:
+
+- `brain-store-schema`: used for memory governance readiness table checks and
+  MemoryRepository read-path verification.
+- `typescript-type-safety`: used for the new readiness report type, doctor
+  check composition, and no-`any` CLI derivation.
+- `superpowers:test-driven-development`: used for RED/GREEN doctor readiness
+  tests.
+- `superpowers:verification-before-completion`: used before committing and
+  pushing Slice 10.

@@ -3,6 +3,7 @@ export * from "./harnessEvidenceSmoke.js";
 export * from "./harnessPersistenceReadiness.js";
 export * from "./harnessPlanSmoke.js";
 export * from "./memoryGovernanceSmoke.js";
+export * from "./memoryGovernanceReadiness.js";
 export * from "./migrationReadiness.js";
 export * from "./persistenceSmoke.js";
 export * from "./sourceGraphSmoke.js";

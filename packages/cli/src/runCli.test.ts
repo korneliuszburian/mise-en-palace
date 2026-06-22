@@ -25,6 +25,7 @@ import type {
 import {
   deriveBrainStoreReadiness,
   deriveHarnessPersistenceReadiness,
+  deriveMemoryGovernanceReadiness,
   deriveSourceGraphReadiness
 } from "./runDoctorCommand.js";
 
@@ -204,6 +205,16 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Source graph readiness: preview only (set KRN_DATABASE_URL and run source graph smoke for persistence proof)"
     );
+    expect(result.stdout).toContain("Memory governance schema: skipped (Postgres not configured)");
+    expect(result.stdout).toContain("MemoryRepository read path: skipped (Postgres not configured)");
+    expect(result.stdout).toContain(
+      "Memory governance smoke: available (pnpm db:smoke:memory-governance)"
+    );
+    expect(result.stdout).toContain(
+      "Memory governance readiness: preview only (set KRN_DATABASE_URL and run memory governance smoke for persistence proof)"
+    );
+    expect(result.stdout).toContain("Runtime markdown memory: absent");
+    expect(result.stdout).toContain("Automatic memory mutation: absent");
     expect(result.stdout).toContain("AGENTS.md: present");
     expect(result.stdout).toContain(".krn runtime truth: absent");
     expect(result.stdout).toContain("TypeScript strictness: enabled");
@@ -299,6 +310,57 @@ describe("runCli", () => {
     ).toEqual({
       label: "Source graph readiness",
       status: "runtime unverified (run pnpm db:smoke:source-graph)"
+    });
+  });
+
+  it("distinguishes doctor memory governance readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (5/5 applied)" }
+    ];
+    const memoryGovernanceReady = [
+      { label: "Memory governance schema", status: "ready (7/7 tables present)" },
+      { label: "MemoryRepository read path", status: "reachable" },
+      { label: "Memory governance smoke", status: "available (pnpm db:smoke:memory-governance)" },
+      {
+        label: "Memory governance runtime proof",
+        status: "ready (candidates 1, records 1, applications 1, anti-memory 1)"
+      },
+      { label: "Runtime markdown memory", status: "absent" },
+      { label: "Automatic memory mutation", status: "absent" }
+    ];
+
+    expect(
+      deriveMemoryGovernanceReadiness(postgresReady, memoryGovernanceReady)
+    ).toEqual({
+      label: "Memory governance readiness",
+      status: "ready (schema present; repository reachable; runtime proof present)"
+    });
+
+    expect(
+      deriveMemoryGovernanceReadiness(postgresReady, [
+        ...memoryGovernanceReady.slice(0, 3),
+        {
+          label: "Memory governance runtime proof",
+          status: "unverified (run pnpm db:smoke:memory-governance)"
+        },
+        ...memoryGovernanceReady.slice(4)
+      ])
+    ).toEqual({
+      label: "Memory governance readiness",
+      status: "runtime unverified (run pnpm db:smoke:memory-governance)"
+    });
+
+    expect(
+      deriveMemoryGovernanceReadiness(postgresReady, [
+        ...memoryGovernanceReady.slice(0, 4),
+        { label: "Runtime markdown memory", status: "present" },
+        { label: "Automatic memory mutation", status: "absent" }
+      ])
+    ).toEqual({
+      label: "Memory governance readiness",
+      status: "blocked (forbidden memory runtime present)"
     });
   });
 

@@ -205,6 +205,43 @@ Slice 09 evidence capture memory candidates:
   MemoryRecord created, and persisted evidence/review/feedback IDs.
 - `git diff --check`: passed.
 
+Slice 10 doctor memory governance readiness:
+
+- RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
+  `krn doctor` did not print memory governance readiness lines and
+  `deriveMemoryGovernanceReadiness` was not exported.
+- GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 49
+  tests.
+- `pnpm typecheck`: passed across workspace projects.
+- Preview doctor passed:
+  `pnpm --filter @krn/cli krn doctor`.
+- Preview doctor report showed memory governance schema and MemoryRepository
+  read path skipped because Postgres was not configured, memory governance
+  smoke available, memory governance runtime proof skipped, runtime markdown
+  memory absent, automatic memory mutation absent, and memory governance
+  readiness preview-only.
+- `pnpm test`: passed across workspace projects.
+- `git diff --check`: passed.
+- Live memory governance smoke passed:
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`.
+- Smoke report showed memory candidate readback matched, reviewed status
+  `accepted`, memory record readback matched, memory record version,
+  memory application, anti-memory record, run anti-memory records `1`, project
+  memory records `1`, outbox events `2`, cleanup remaining marker count `0`,
+  and `Memory governance smoke: passed`.
+- `pnpm --filter @krn/db db:check`: passed.
+- DB-backed doctor passed:
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`.
+- DB-backed doctor report showed memory governance schema
+  `ready (7/7 tables present)`, MemoryRepository read path `reachable`, memory
+  governance smoke available, runtime markdown memory absent, automatic memory
+  mutation absent, and runtime proof `unverified`.
+- Runtime proof remains unverified by design until Slice 11 creates durable
+  dogfood MemoryCandidate/MemoryRecord/Application/AntiMemory records. The
+  smoke itself cleans its marker rows to zero.
+
 Slice 07 CLI memory record apply:
 
 - RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with four

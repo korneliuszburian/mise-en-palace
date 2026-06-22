@@ -5,6 +5,7 @@ import {
 import path from "node:path";
 import {
   inspectHarnessPersistenceReadiness,
+  inspectMemoryGovernanceReadiness,
   inspectMigrationReadiness,
   inspectSourceGraphReadiness
 } from "@krn/db";
@@ -329,6 +330,102 @@ export const deriveSourceGraphReadiness = (
   };
 };
 
+export const deriveMemoryGovernanceReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  memoryGovernanceChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const schemaStatus = findCheckStatus(memoryGovernanceChecks, "Memory governance schema");
+  const memoryRepositoryStatus = findCheckStatus(
+    memoryGovernanceChecks,
+    "MemoryRepository read path"
+  );
+  const memorySmokeAvailable = hasStatusPrefix(
+    memoryGovernanceChecks,
+    "Memory governance smoke",
+    "available"
+  );
+  const runtimeProofStatus = findCheckStatus(
+    memoryGovernanceChecks,
+    "Memory governance runtime proof"
+  );
+  const runtimeMarkdownMemoryStatus = findCheckStatus(
+    memoryGovernanceChecks,
+    "Runtime markdown memory"
+  );
+  const automaticMemoryMutationStatus = findCheckStatus(
+    memoryGovernanceChecks,
+    "Automatic memory mutation"
+  );
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Memory governance readiness",
+      status:
+        "preview only (set KRN_DATABASE_URL and run memory governance smoke for persistence proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Memory governance readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Memory governance readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  if (
+    runtimeMarkdownMemoryStatus === "present" ||
+    automaticMemoryMutationStatus === "present"
+  ) {
+    return {
+      label: "Memory governance readiness",
+      status: "blocked (forbidden memory runtime present)"
+    };
+  }
+
+  if (schemaStatus?.startsWith("ready") !== true) {
+    return {
+      label: "Memory governance readiness",
+      status: "blocked (memory governance schema missing)"
+    };
+  }
+
+  if (memoryRepositoryStatus !== "reachable") {
+    return {
+      label: "Memory governance readiness",
+      status: "blocked (MemoryRepository read path unavailable)"
+    };
+  }
+
+  if (!memorySmokeAvailable) {
+    return {
+      label: "Memory governance readiness",
+      status: "incomplete (memory governance smoke command missing)"
+    };
+  }
+
+  if (runtimeProofStatus?.startsWith("ready") !== true) {
+    return {
+      label: "Memory governance readiness",
+      status: "runtime unverified (run pnpm db:smoke:memory-governance)"
+    };
+  }
+
+  return {
+    label: "Memory governance readiness",
+    status: "ready (schema present; repository reachable; runtime proof present)"
+  };
+};
+
 const readScriptStatus = (
   packageJson: Record<string, unknown> | undefined,
   scriptName: string,
@@ -579,6 +676,172 @@ const checkSourceGraph = async (
   }
 };
 
+const readOptionalText = async (filePath: string): Promise<string> => {
+  try {
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+};
+
+const checkMemoryGovernance = async (
+  repoRoot: string,
+  databaseUrl: string | undefined,
+  postgresChecks: readonly DoctorCheck[]
+): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const smokeCheck = {
+    label: "Memory governance smoke",
+    status: readScriptStatus(
+      packageJson,
+      "db:smoke:memory-governance",
+      "krn db smoke memory-governance"
+    )
+  };
+  const runtimeMarkdownMemoryPresent =
+    await pathExists(path.join(repoRoot, "memory.md")) ||
+    await pathExists(path.join(repoRoot, "MEMORY.md")) ||
+    await pathExists(path.join(repoRoot, "runtime-memory.md")) ||
+    await pathExists(path.join(repoRoot, "memory")) ||
+    await pathExists(path.join(repoRoot, "memories")) ||
+    await pathExists(path.join(repoRoot, ".memory")) ||
+    await pathExists(path.join(repoRoot, "docs", "memory")) ||
+    await pathExists(path.join(repoRoot, "docs", "runtime-memory"));
+  const evidenceCaptureText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "runEvidenceCaptureCommand.ts")
+  );
+  const automaticMemoryMutationPresent =
+    evidenceCaptureText.includes("createMemoryCandidate(") ||
+    evidenceCaptureText.includes("promoteMemoryCandidate(") ||
+    evidenceCaptureText.includes("createMemoryRecord(") ||
+    (await pathExists(path.join(repoRoot, "packages", "memory-crawler"))) ||
+    (await pathExists(path.join(repoRoot, "packages", "memory-worker"))) ||
+    (await pathExists(path.join(repoRoot, "packages", "memory-auto-promoter")));
+  const forbiddenChecks = [
+    {
+      label: "Runtime markdown memory",
+      status: runtimeMarkdownMemoryPresent ? "present" : "absent"
+    },
+    {
+      label: "Automatic memory mutation",
+      status: automaticMemoryMutationPresent ? "present" : "absent"
+    }
+  ];
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return [
+      {
+        label: "Memory governance schema",
+        status: "skipped (Postgres not configured)"
+      },
+      {
+        label: "MemoryRepository read path",
+        status: "skipped (Postgres not configured)"
+      },
+      smokeCheck,
+      {
+        label: "Memory governance runtime proof",
+        status: "skipped (Postgres not configured)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return [
+      {
+        label: "Memory governance schema",
+        status: "skipped (Postgres unreachable)"
+      },
+      {
+        label: "MemoryRepository read path",
+        status: "skipped (Postgres unreachable)"
+      },
+      smokeCheck,
+      {
+        label: "Memory governance runtime proof",
+        status: "skipped (Postgres unreachable)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  if (
+    databaseUrl === undefined ||
+    databaseUrl.trim().length === 0 ||
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true
+  ) {
+    return [
+      {
+        label: "Memory governance schema",
+        status: "skipped (brain store not ready)"
+      },
+      {
+        label: "MemoryRepository read path",
+        status: "skipped (brain store not ready)"
+      },
+      smokeCheck,
+      {
+        label: "Memory governance runtime proof",
+        status: "skipped (brain store not ready)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  try {
+    const report = await inspectMemoryGovernanceReadiness({
+      databaseUrl
+    });
+
+    return [
+      {
+        label: "Memory governance schema",
+        status: report.schemaReady
+          ? `ready (${report.presentTableCount}/${report.requiredTableCount} tables present)`
+          : `missing (${report.missingTables.join(", ")})`
+      },
+      {
+        label: "MemoryRepository read path",
+        status: report.memoryRepositoryReachable
+          ? "reachable"
+          : `failed (${report.memoryRepositoryError ?? "unknown memory repository error"})`
+      },
+      smokeCheck,
+      {
+        label: "Memory governance runtime proof",
+        status: report.runtimeProofReady
+          ? `ready (candidates ${report.memoryCandidateCount}, records ${report.memoryRecordCount}, applications ${report.memoryApplicationCount}, anti-memory ${report.antiMemoryRecordCount})`
+          : "unverified (run pnpm db:smoke:memory-governance)"
+      },
+      ...forbiddenChecks
+    ];
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown memory governance schema error";
+
+    return [
+      {
+        label: "Memory governance schema",
+        status: `failed (${message})`
+      },
+      {
+        label: "MemoryRepository read path",
+        status: "skipped (memory governance schema check failed)"
+      },
+      smokeCheck,
+      {
+        label: "Memory governance runtime proof",
+        status: "skipped (memory governance schema check failed)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+};
+
 const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const agentsPath = path.join(repoRoot, "AGENTS.md");
   const agentsPresent = await pathExists(agentsPath);
@@ -656,6 +919,11 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     runtime.env.KRN_DATABASE_URL,
     postgresChecks
   );
+  const memoryGovernanceChecks = await checkMemoryGovernance(
+    repoRoot,
+    runtime.env.KRN_DATABASE_URL,
+    postgresChecks
+  );
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
@@ -663,6 +931,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     deriveHarnessPersistenceReadiness(postgresChecks, harnessPersistenceChecks),
     ...sourceGraphChecks,
     deriveSourceGraphReadiness(postgresChecks, sourceGraphChecks),
+    ...memoryGovernanceChecks,
+    deriveMemoryGovernanceReadiness(postgresChecks, memoryGovernanceChecks),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [
@@ -697,6 +967,14 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
 
     if (check.label === "Source graph readiness") {
       return check.status.startsWith("blocked");
+    }
+
+    if (check.label === "Memory governance readiness") {
+      return check.status.startsWith("blocked");
+    }
+
+    if (check.label === "Runtime markdown memory" || check.label === "Automatic memory mutation") {
+      return check.status === "present";
     }
 
     return false;

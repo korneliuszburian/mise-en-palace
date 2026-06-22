@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 09.
+- None through Slice 10.
 
 Known unproven M23 behavior:
 
-- `krn doctor` does not yet report memory governance readiness.
 - M23 dogfood is not recorded yet.
 - M23 final anti-rot and handoff are not recorded yet.
 
@@ -91,3 +90,19 @@ Closed in Slice 09:
 - Persisted evidence capture stores the proposal in `FeedbackDelta` but does
   not create a MemoryCandidate row, promote a candidate, or create a
   MemoryRecord.
+
+Closed in Slice 10:
+
+- `krn doctor` now reports memory governance schema readiness,
+  MemoryRepository read-path reachability, memory governance smoke command
+  availability, runtime proof ready/unverified status, runtime markdown memory
+  absence, and automatic memory mutation absence.
+- With DB configured, doctor proves memory governance schema `7/7` and
+  MemoryRepository `reachable`.
+
+Known after Slice 10:
+
+- Memory governance runtime proof is still `unverified` until Slice 11 creates
+  durable dogfood MemoryCandidate, MemoryRecord, MemoryApplication, and
+  AntiMemory records. The memory governance smoke is passing but cleans marker
+  rows to zero.

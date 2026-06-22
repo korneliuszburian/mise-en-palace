@@ -6,7 +6,7 @@ them into MemoryRecord versions, record anti-memory, and link memory to
 source/evidence.
 
 Last verified state:
-M23 Slice 09 evidence capture memory candidates is complete. M22 final state is the
+M23 Slice 10 doctor memory governance readiness is complete. M22 final state is the
 baseline: source graph persistence, source graph dogfood, doctor source graph
 readiness, anti-rot, and global handoff are complete. M23 ledger exists under
 `docs/runs/2026-06-21-memory-governance/`, Slice 00 inventory is recorded in
@@ -30,6 +30,10 @@ validation, and AntiMemoryRecord persistence without positive MemoryRecord
 creation. Slice 09 updated `krn evidence capture` to emit incomplete
 proposal-only `memoryCandidates`, persist those proposals in FeedbackDelta,
 and avoid creating MemoryCandidate rows or MemoryRecords automatically.
+Slice 10 updated `krn doctor` to report memory governance schema readiness,
+MemoryRepository reachability, memory governance smoke availability, runtime
+proof ready/unverified status, runtime markdown memory absence, and automatic
+memory mutation absence.
 
 Changed files:
 
@@ -51,6 +55,7 @@ Changed files:
 - `packages/db/src/repositories/DrizzleMemoryRepository.test.ts`
 - `packages/harness/src/repositories/memoryRepository.ts`
 - `packages/db/src/memoryGovernanceSmoke.ts`
+- `packages/db/src/memoryGovernanceReadiness.ts`
 - `packages/db/src/memoryGovernanceSmoke.test.ts`
 - `packages/db/src/index.ts`
 - `packages/cli/src/parseArgs.ts`
@@ -62,6 +67,7 @@ Changed files:
 - `packages/cli/src/runEvidenceCaptureCommand.ts`
 - `packages/cli/src/runCli.ts`
 - `packages/cli/src/runDbSmokeCommand.ts`
+- `packages/cli/src/runDoctorCommand.ts`
 - `packages/cli/src/runCli.test.ts`
 - `package.json`
 - `packages/db/src/migrations/0004_cool_toro.sql`
@@ -93,11 +99,16 @@ creation, defaults owner/confidence for the GOAL target command, and validates
 invalidating source claims before persist. Slice 09 keeps evidence capture
 proposal-only for memory: changed-file evidence may become an incomplete
 FeedbackDelta memory proposal, but capture does not call MemoryRepository,
-does not promote, and does not create MemoryRecords.
+does not promote, and does not create MemoryRecords. Slice 10 keeps doctor
+read-only. It does not run smoke or write proof records; it reports memory
+governance runtime proof as unverified until durable dogfood memory records
+exist.
 
 Blockers/risks:
-No hard blocker through Slice 09. Remaining behavior is unproven until later
-slices add doctor readiness, dogfood, and anti-rot.
+No hard blocker through Slice 10. Remaining behavior is unproven until later
+slices add dogfood and anti-rot. Memory governance runtime proof remains
+`unverified` until Slice 11 creates durable MemoryCandidate, MemoryRecord,
+MemoryApplication, and AntiMemory records.
 
 Context selectors:
 `GOAL.md`, `PLAN.md`, `docs/handoff/`, M22 run ledger, package manifests,
@@ -106,7 +117,7 @@ and Drizzle adapter, core memory types, memory IO schema, evidence capture,
 feedback delta schema, and DB smoke commands.
 
 Next action:
-Slice 10: update `krn doctor` to report memory governance readiness.
+Slice 11: dogfood memory governance with live DB.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless a future task explicitly asks
