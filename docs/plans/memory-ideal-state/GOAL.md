@@ -234,11 +234,33 @@ Write ADR: Observational Memory is an event-derived layer, not Memory Core.
 Include this source-to-decision ledger, out-of-scope list, falsifiers, and
 schema direction.
 
+Canonical MM-00 artifacts:
+
+- `docs/decisions/ADR-0011-observational-memory-as-staging-layer.md`
+- `docs/plans/memory-ideal-state/SOURCE_LEDGER.md`
+- `docs/plans/memory-ideal-state/DECISIONS.md`
+- `docs/plans/memory-ideal-state/REJECTIONS.md`
+- `docs/plans/memory-ideal-state/FALSIFIERS.md`
+- `docs/plans/memory-ideal-state/MM-ROADMAP.md`
+
+MM-00 is docs/decision only. It must not add DB tables, repositories, CLI
+runtime, observer workers, reflector workers, source crawlers, dashboard/API/MCP
+surfaces, plugins, broad eval suites, or runtime markdown memory.
+
 Verification:
 
 ```sh
-test -f docs/decisions/ADR-0011-observational-memory-layer.md
-rg "source -> mechanism -> KRN implication" docs/decisions/ADR-0011-observational-memory-layer.md
+test -f docs/decisions/ADR-0011-observational-memory-as-staging-layer.md
+test -f docs/plans/memory-ideal-state/SOURCE_LEDGER.md
+test -f docs/plans/memory-ideal-state/DECISIONS.md
+test -f docs/plans/memory-ideal-state/REJECTIONS.md
+test -f docs/plans/memory-ideal-state/FALSIFIERS.md
+test -f docs/plans/memory-ideal-state/MM-ROADMAP.md
+rg "source -> mechanism -> KRN implication" docs/decisions/ADR-0011-observational-memory-as-staging-layer.md
+rg "Observational Memory is not Memory Core" docs/plans/memory-ideal-state/DECISIONS.md
+rg "MM-24" docs/plans/memory-ideal-state/MM-ROADMAP.md
+pnpm typecheck
+pnpm test
 git diff --check
 ```
 
