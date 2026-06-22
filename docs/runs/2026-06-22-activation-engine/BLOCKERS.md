@@ -4,8 +4,6 @@ No hard blocker for M25.00.
 
 Known gaps for later M25 slices:
 
-- activation domain contracts named in `GOAL.md` are not yet stable exported
-  core/harness contracts;
 - current activation uses memory/source candidates, but not lexical
   SearchDocument candidates;
 - current activation does not consult anti-memory;
@@ -14,6 +12,15 @@ Known gaps for later M25 slices:
 - no noisy-brain activation fixture exists;
 - no `pnpm db:smoke:activation` path exists;
 - doctor does not report activation readiness.
+
+Resolved in M25.01:
+
+- activation domain contracts named in `GOAL.md` are now exported from
+  `@krn/core`;
+- harness activation candidate kind and exclusion reason aliases now derive
+  from core vocabulary;
+- core activation contracts have no DB/CLI/Codex imports and no
+  `requiredSkills` field.
 
 Non-goals that remain intentionally blocked:
 

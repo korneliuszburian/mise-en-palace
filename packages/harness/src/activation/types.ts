@@ -1,4 +1,6 @@
 import type {
+  ActivationCandidateKind as CoreActivationCandidateKind,
+  ActivationExclusionReason as CoreActivationExclusionReason,
   ContextAssemblyId,
   ContextSubjectType,
   HarnessPlanId,
@@ -7,18 +9,9 @@ import type {
   SourceTrustTier
 } from "@krn/core";
 
-export type ActivationCandidateKind = "memory" | "anti_memory" | "source" | "search";
+export type ActivationCandidateKind = CoreActivationCandidateKind;
 
-export type ActivationExclusionReason =
-  | "stale"
-  | "invalidated"
-  | "low_trust"
-  | "low_context_roi"
-  | "over_budget"
-  | "duplicate"
-  | "irrelevant"
-  | "unsafe"
-  | "superseded";
+export type ActivationExclusionReason = CoreActivationExclusionReason;
 
 export interface ActivationQuery {
   taskContractId: string;

@@ -48,3 +48,35 @@ Results:
   compiler path.
 - `pnpm typecheck` passed.
 - `git diff --check` passed.
+
+## Slice 01
+
+Commands run:
+
+```sh
+pnpm --filter @krn/harness test -- domainContracts.test.ts
+pnpm --filter @krn/harness test -- domainContracts.test.ts
+pnpm typecheck
+rg -n "@krn/db|@krn/cli|@krn/codex-adapter|requiredSkills|CodexSkill|skillId" packages/core/src packages/core/package.json
+pnpm test
+git diff --check
+```
+
+Results:
+
+- RED harness contract test failed because activation core exports were absent;
+  the observed failure was `createActivationAbstention is not a function`.
+- Added `packages/core/src/activation.ts` with
+  `ActivationPolicy`, `TrustAssessment`, `ContextROI`, `ActivationTrace`,
+  `ActivationInput`, `ActivationResult`, `ActivationAbstention`, `ConflictSet`,
+  `ContextBudget`, activation vocabulary constants, and
+  `createActivationAbstention`.
+- Exported activation contracts from `packages/core/src/index.ts`.
+- Updated harness activation type aliases for candidate kind and exclusion
+  reason to derive from core vocabulary.
+- GREEN harness contract test passed with 3 test files and 7 tests.
+- `pnpm typecheck` passed.
+- Boundary scan returned no matches for DB/CLI/Codex imports, `requiredSkills`,
+  or skill ID fields in core.
+- Full `pnpm test` passed with 16 test files and 94 tests.
+- `git diff --check` passed.

@@ -73,3 +73,22 @@ Slice 00 skill record:
   the core-vs-harness boundary for upcoming TS changes.
 - `source-to-decision`: used to convert local code evidence into decisions and
   falsifiers.
+
+Slice 01 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN activation domain
+  contract coverage before production code.
+- `typescript-type-safety`: used to keep activation contracts in core pure and
+  exported without weakening strictness or adding `any`.
+- `activation-engine`: used to keep the vocabulary aligned with candidate
+  kinds, decisions, exclusions, abstention, conflict, and context budget.
+
+Slice 01 type-safety notes:
+
+- Boundary classification: public core domain API consumed by harness.
+- Validation/narrowing: no external input parsing added in this slice; runtime
+  parsing remains later schema/CLI work.
+- Public type changes: `@krn/core` now exports activation contracts and
+  vocabulary constants.
+- Type-safety exceptions: none; no `any`, no double assertions, no DB/CLI/Codex
+  imports into core, and no `requiredSkills` field.
