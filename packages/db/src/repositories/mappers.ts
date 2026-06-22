@@ -28,6 +28,8 @@ import type {
 } from "@krn/core";
 import type {
   ActivationDecisionRecord,
+  EmbeddingModelRecord,
+  EmbeddingRecord,
   OutboxEventRecord,
   ProjectKernelRecord,
   ProjectRecord,
@@ -35,6 +37,7 @@ import type {
   RetrievalCandidateRecord,
   RetrievalRunRecord,
   RunEventRecord,
+  SearchDocumentRecord,
   SourceArtifactRecord,
   SourceChunkRecord,
   WorkspaceRecord
@@ -43,6 +46,8 @@ import type {
   activationDecisions,
   antiMemoryRecords,
   contextAssemblies,
+  embeddingModels,
+  embeddings,
   executionRuns,
   harnessPlans,
   memoryApplications,
@@ -57,6 +62,7 @@ import type {
   retrievalCandidates,
   retrievalRuns,
   runEvents,
+  searchDocuments,
   sourceArtifacts,
   sourceChunks,
   sourceClaims,
@@ -95,6 +101,9 @@ type SourceDecisionEdgeRow = InferSelectModel<typeof sourceDecisionEdges>;
 type SourceRejectionRow = InferSelectModel<typeof sourceRejections>;
 type RunEventRow = InferSelectModel<typeof runEvents>;
 type OutboxEventRow = InferSelectModel<typeof outboxEvents>;
+type SearchDocumentRow = InferSelectModel<typeof searchDocuments>;
+type EmbeddingModelRow = InferSelectModel<typeof embeddingModels>;
+type EmbeddingRow = InferSelectModel<typeof embeddings>;
 type RetrievalRunRow = InferSelectModel<typeof retrievalRuns>;
 type RetrievalCandidateRow = InferSelectModel<typeof retrievalCandidates>;
 type ActivationDecisionRow = InferSelectModel<typeof activationDecisions>;
@@ -352,6 +361,14 @@ const contextExclusionsOrEmpty = (value: unknown): ContextExclusion[] => {
       isSourceTrustTier(item.trustTier)
     );
   });
+};
+
+const vectorOrEmpty = (value: unknown): number[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is number => typeof item === "number");
 };
 
 const evalCandidatesOrEmpty = (value: unknown): EvalCandidate[] => {
@@ -792,17 +809,87 @@ export const mapOutboxEvent = (row: OutboxEventRow): OutboxEventRecord => ({
   updatedAt: toIsoTimestamp(row.updatedAt)
 });
 
+export const mapSearchDocument = (row: SearchDocumentRow): SearchDocumentRecord => ({
+  id: row.id,
+  ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  subjectType: row.subjectType,
+  subjectId: row.subjectId,
+  ...(row.sourceArtifactId === null ? {} : { sourceArtifactId: row.sourceArtifactId }),
+  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
+  ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
+  ...(row.memoryRecordId === null ? {} : { memoryRecordId: row.memoryRecordId }),
+  ...(row.antiMemoryRecordId === null ? {} : { antiMemoryRecordId: row.antiMemoryRecordId }),
+  ...(row.evidenceBundleId === null ? {} : { evidenceBundleId: row.evidenceBundleId }),
+  ...(row.reviewAssessmentId === null ? {} : { reviewAssessmentId: row.reviewAssessmentId }),
+  ...(row.sourceDecisionId === null ? {} : { sourceDecisionId: row.sourceDecisionId }),
+  ...(row.runEventId === null ? {} : { runEventId: row.runEventId }),
+  trustTier: row.trustTier,
+  validityStatus: row.validityStatus,
+  language: row.language,
+  title: row.title,
+  body: row.body,
+  searchText: row.searchText,
+  metadataFilters: metadataOrEmpty(row.metadataFilters),
+  validFrom: toIsoTimestamp(row.validFrom),
+  ...(row.validUntil === null ? {} : { validUntil: toIsoTimestamp(row.validUntil) }),
+  ...(row.invalidatedAt === null ? {} : { invalidatedAt: toIsoTimestamp(row.invalidatedAt) }),
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt),
+  updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
+export const mapEmbeddingModel = (row: EmbeddingModelRow): EmbeddingModelRecord => ({
+  id: row.id,
+  provider: row.provider,
+  model: row.model,
+  dimensions: row.dimensions,
+  distanceMetric: row.distanceMetric,
+  status: row.status,
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt),
+  updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
+export const mapEmbedding = (row: EmbeddingRow): EmbeddingRecord => ({
+  id: row.id,
+  ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  embeddingModelId: row.embeddingModelId,
+  subjectType: row.subjectType,
+  subjectId: row.subjectId,
+  ...(row.sourceArtifactId === null ? {} : { sourceArtifactId: row.sourceArtifactId }),
+  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
+  ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
+  ...(row.memoryRecordId === null ? {} : { memoryRecordId: row.memoryRecordId }),
+  ...(row.antiMemoryRecordId === null ? {} : { antiMemoryRecordId: row.antiMemoryRecordId }),
+  ...(row.searchDocumentId === null ? {} : { searchDocumentId: row.searchDocumentId }),
+  embedding: vectorOrEmpty(row.embedding),
+  contentHash: row.contentHash,
+  trustTier: row.trustTier,
+  validityStatus: row.validityStatus,
+  metadataFilters: metadataOrEmpty(row.metadataFilters),
+  validFrom: toIsoTimestamp(row.validFrom),
+  ...(row.validUntil === null ? {} : { validUntil: toIsoTimestamp(row.validUntil) }),
+  ...(row.invalidatedAt === null ? {} : { invalidatedAt: toIsoTimestamp(row.invalidatedAt) }),
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt),
+  updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
 export const mapRetrievalRun = (row: RetrievalRunRow): RetrievalRunRecord => ({
   id: row.id,
   ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
   ...(row.taskContractId === null ? {} : { taskContractId: row.taskContractId }),
   status: row.status,
   query: row.query,
+  mode: row.mode,
+  ...(row.budget === null ? {} : { budget: row.budget }),
   ...(row.tokenBudget === null ? {} : { tokenBudget: row.tokenBudget }),
   metadataFilters: metadataOrEmpty(row.metadataFilters),
   startedAt: toIsoTimestamp(row.startedAt),
   ...(row.completedAt === null ? {} : { completedAt: toIsoTimestamp(row.completedAt) }),
-  metadata: metadataOrEmpty(row.metadata)
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt)
 });
 
 export const mapRetrievalCandidate = (
@@ -814,6 +901,7 @@ export const mapRetrievalCandidate = (
   status: row.status,
   subjectType: row.subjectType,
   subjectId: row.subjectId,
+  ...(row.searchDocumentId === null ? {} : { searchDocumentId: row.searchDocumentId }),
   trustTier: row.trustTier,
   ...(row.lexicalScore === null ? {} : { lexicalScore: row.lexicalScore }),
   ...(row.vectorScore === null ? {} : { vectorScore: row.vectorScore }),
@@ -821,6 +909,7 @@ export const mapRetrievalCandidate = (
   ...(row.temporalScore === null ? {} : { temporalScore: row.temporalScore }),
   ...(row.contextRoiScore === null ? {} : { contextRoiScore: row.contextRoiScore }),
   ...(row.totalScore === null ? {} : { totalScore: row.totalScore }),
+  ...(row.score === null ? {} : { score: row.score }),
   reason: row.reason,
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt)
@@ -831,12 +920,19 @@ export const mapActivationDecision = (
 ): ActivationDecisionRecord => ({
   id: row.id,
   retrievalRunId: row.retrievalRunId,
+  ...(row.retrievalCandidateId === null
+    ? {}
+    : { retrievalCandidateId: row.retrievalCandidateId }),
   ...(row.contextAssemblyId === null ? {} : { contextAssemblyId: row.contextAssemblyId }),
   subjectType: row.subjectType,
   subjectId: row.subjectId,
   decision: row.decision,
   reason: row.reason,
   ...(row.score === null ? {} : { score: row.score }),
+  ...(row.contextBudgetCost === null ? {} : { contextBudgetCost: row.contextBudgetCost }),
+  ...(row.expectedDecisionImpact === null
+    ? {}
+    : { expectedDecisionImpact: row.expectedDecisionImpact }),
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt)
 });

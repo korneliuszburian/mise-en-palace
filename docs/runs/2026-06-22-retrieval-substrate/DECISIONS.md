@@ -82,6 +82,23 @@
   bound numeric scores to `0..1000`.
   Rejection/falsifier: repository or CLI code accepting raw retrieval input
   without these parsers would violate the M24.02 boundary.
+- Source: `GOAL.md` M24.03 and current `RetrievalRepository` port.
+  Mechanism: compiler/runtime code already depends on retrieval run,
+  candidate, activation decision, and context selection methods.
+  KRN implication: M24 should extend that port instead of creating a parallel
+  search adapter.
+  Decision: keep existing methods for compatibility, add M24 method names and
+  read models for SearchDocument, EmbeddingModel, Embedding, lexical search,
+  list-by-run readback, and marker cleanup.
+  Rejection/falsifier: if M24.04 smoke cannot prove the full chain through this
+  repository, the repository contract is insufficient.
+- Source: Postgres FTS behavior needed by M24.03.
+  Mechanism: `searchLexical` uses `websearch_to_tsquery` and rank calculation
+  inside the DB adapter.
+  KRN implication: raw SQL remains contained in `packages/db`; higher layers
+  receive typed read models and scores only.
+  Decision: lexical FTS SQL lives in `DrizzleRetrievalRepository`.
+  Rejection/falsifier: CLI/harness code should not construct FTS SQL directly.
 
 Slice 00 skill record:
 
@@ -115,3 +132,16 @@ Slice 02 skill record:
   exports, bounded numeric score types, and no-`any` implementation.
 - `activation-engine`: used to constrain retrieval mode, activation decision,
   context inclusion, and explicit exclusion inputs.
+
+Slice 03 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN repository surface
+  and mapper tests.
+- `brain-store-schema`: used for repository adapter behavior, read models,
+  raw SQL containment, and marker cleanup ordering.
+- `typescript-type-safety`: used to widen public harness read models without
+  casts or `any`.
+- `activation-engine`: used to keep candidate readback, activation decisions,
+  and context exclusion persistence explicit.
+- `superpowers:systematic-debugging`: used for the one-off runtime check when
+  `tsx -e` first failed on top-level await rather than repository behavior.

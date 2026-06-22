@@ -141,8 +141,11 @@ export type RetrievalSubjectType =
   | "run_event";
 
 export type RetrievalRunStatus = "running" | "completed" | "abstained" | "failed";
+export type RetrievalRunMode = "lexical" | "vector" | "hybrid" | "graph" | "mixed";
 export type RetrievalCandidateKind = "memory" | "anti_memory" | "source" | "search";
 export type RetrievalCandidateStatus = "candidate" | "included" | "excluded";
+export type RetrievalValidityStatus = "active" | "expired" | "invalidated";
+export type EmbeddingModelStatus = "active" | "deprecated" | "disabled";
 export type ActivationDecisionStatus =
   | "included"
   | "excluded"
@@ -151,17 +154,91 @@ export type ActivationDecisionStatus =
   | "conflict"
   | "stale";
 
+export interface SearchDocumentRecord {
+  id: string;
+  projectId?: ProjectId;
+  subjectType: RetrievalSubjectType;
+  subjectId: string;
+  sourceArtifactId?: string;
+  sourceChunkId?: string;
+  sourceClaimId?: string;
+  memoryRecordId?: string;
+  antiMemoryRecordId?: string;
+  evidenceBundleId?: string;
+  reviewAssessmentId?: string;
+  sourceDecisionId?: string;
+  runEventId?: string;
+  trustTier: SourceTrustTier;
+  validityStatus: RetrievalValidityStatus;
+  language: string;
+  title: string;
+  body: string;
+  searchText: string;
+  metadataFilters: Record<string, unknown>;
+  validFrom: IsoTimestamp;
+  validUntil?: IsoTimestamp;
+  invalidatedAt?: IsoTimestamp;
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface SearchDocumentSearchResult extends SearchDocumentRecord {
+  lexicalScore: number;
+}
+
+export interface EmbeddingModelRecord {
+  id: string;
+  provider: string;
+  model: string;
+  dimensions: number;
+  distanceMetric: string;
+  status: EmbeddingModelStatus;
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface EmbeddingRecord {
+  id: string;
+  projectId?: ProjectId;
+  embeddingModelId: string;
+  subjectType: RetrievalSubjectType;
+  subjectId: string;
+  sourceArtifactId?: string;
+  sourceChunkId?: string;
+  sourceClaimId?: string;
+  memoryRecordId?: string;
+  antiMemoryRecordId?: string;
+  searchDocumentId?: string;
+  embedding: number[];
+  contentHash: string;
+  trustTier: SourceTrustTier;
+  validityStatus: RetrievalValidityStatus;
+  metadataFilters: Record<string, unknown>;
+  validFrom: IsoTimestamp;
+  validUntil?: IsoTimestamp;
+  invalidatedAt?: IsoTimestamp;
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
 export interface RetrievalRunRecord {
   id: string;
   projectId?: ProjectId;
+  executionRunId?: ExecutionRunId;
   taskContractId?: TaskContractId;
   status: RetrievalRunStatus;
   query: string;
+  mode: RetrievalRunMode;
+  budget?: number;
   tokenBudget?: number;
   metadataFilters: Record<string, unknown>;
   startedAt: IsoTimestamp;
   completedAt?: IsoTimestamp;
   metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
 }
 
 export interface RetrievalCandidateRecord {
@@ -171,6 +248,7 @@ export interface RetrievalCandidateRecord {
   status: RetrievalCandidateStatus;
   subjectType: RetrievalSubjectType;
   subjectId: string;
+  searchDocumentId?: string;
   trustTier: SourceTrustTier;
   lexicalScore?: number;
   vectorScore?: number;
@@ -178,6 +256,7 @@ export interface RetrievalCandidateRecord {
   temporalScore?: number;
   contextRoiScore?: number;
   totalScore?: number;
+  score?: number;
   reason: string;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
@@ -186,12 +265,15 @@ export interface RetrievalCandidateRecord {
 export interface ActivationDecisionRecord {
   id: string;
   retrievalRunId: string;
+  retrievalCandidateId?: string;
   contextAssemblyId?: ContextAssemblyId;
   subjectType: RetrievalSubjectType;
   subjectId: string;
   decision: ActivationDecisionStatus;
   reason: string;
   score?: number;
+  contextBudgetCost?: number;
+  expectedDecisionImpact?: string;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
 }

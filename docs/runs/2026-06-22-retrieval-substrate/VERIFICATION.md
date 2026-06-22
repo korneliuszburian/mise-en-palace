@@ -84,3 +84,28 @@ Results:
   enums, constrain context exclusion reasons, and bound numeric scores.
 - Final targeted schema tests, typecheck, full test suite, and diff hygiene
   passed.
+
+## Slice 03
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- DrizzleRetrievalRepository.test.ts mappers.test.ts
+pnpm typecheck
+pnpm test
+pnpm --filter @krn/db db:check
+git diff --check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/db exec tsx -e '<one-off lexical repository check>'
+```
+
+Results:
+
+- RED DB tests failed on missing M24 repository methods and mapper read models.
+- SearchDocument, EmbeddingModel, Embedding, retrieval run/candidate, and
+  activation decision mapper tests passed after implementation.
+- DrizzleRetrievalRepository now exposes the M24 method surface.
+- Final typecheck, full test suite, DB schema check, and diff hygiene passed.
+- One-off live repository check proved `createSearchDocument` plus
+  `searchLexical` can find the inserted document and marker cleanup can delete
+  it. This is a narrow repository proof; M24.04 still needs the full smoke
+  chain.

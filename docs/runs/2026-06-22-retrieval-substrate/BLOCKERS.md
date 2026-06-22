@@ -5,9 +5,6 @@ No hard blocker for M24.00.
 Known gaps for later M24 slices:
 
 - no `pnpm db:smoke:retrieval-substrate` yet;
-- no typed repository methods for search document creation or lexical search;
-- no typed repository methods for embedding model or placeholder/vector row
-  storage;
 - no doctor retrieval/search substrate readiness yet;
 - no live smoke proof that cleanup count is zero after the full retrieval
   substrate chain.
@@ -20,6 +17,9 @@ Resolved in M24.01:
   trace fields.
 - retrieval IO parsers now exist for search documents, retrieval runs,
   candidates, activation decisions, context items, and context exclusions.
+- typed retrieval repository methods now exist for search document creation,
+  lexical search, embedding model creation, embedding row storage, retrieval
+  run/candidate/activation aliases, list-by-run readback, and marker cleanup.
 
 Non-goals that remain intentionally blocked:
 

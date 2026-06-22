@@ -138,17 +138,41 @@ export const createNoStoreCompilerDependencies = (
     }
   };
   const retrievalRepository = {
+    async createSearchDocument() {
+      return notUsed("createSearchDocument");
+    },
+
+    async searchLexical() {
+      return notUsed("searchLexical");
+    },
+
+    async createEmbeddingModel() {
+      return notUsed("createEmbeddingModel");
+    },
+
+    async createEmbedding() {
+      return notUsed("createEmbedding");
+    },
+
+    async createRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
+      return this.startRetrievalRun(input);
+    },
+
     async startRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
       return {
         id: runtime.createId("retrieval-run"),
         ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+        ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
         ...(input.taskContractId === undefined ? {} : { taskContractId: input.taskContractId }),
         status: "running",
         query: input.query,
+        mode: input.mode ?? "mixed",
+        ...(input.budget === undefined ? {} : { budget: input.budget }),
         ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
         metadataFilters: input.metadataFilters ?? {},
         startedAt: runtime.now(),
-        metadata: input.metadata ?? {}
+        metadata: input.metadata ?? {},
+        createdAt: runtime.now()
       };
     },
 
@@ -162,11 +186,17 @@ export const createNoStoreCompilerDependencies = (
         id: input.retrievalRunId,
         status: input.status,
         query: "no-store preview",
+        mode: "mixed",
         startedAt: runtime.now(),
         completedAt: input.completedAt,
         metadataFilters: {},
-        metadata: input.metadata ?? {}
+        metadata: input.metadata ?? {},
+        createdAt: runtime.now()
       };
+    },
+
+    async createRetrievalCandidate(input: AddRetrievalCandidateInput) {
+      return this.addCandidate(input);
     },
 
     async addCandidate(input: AddRetrievalCandidateInput) {
@@ -177,6 +207,9 @@ export const createNoStoreCompilerDependencies = (
         status: input.status ?? "candidate",
         subjectType: input.subjectType,
         subjectId: input.subjectId,
+        ...(input.searchDocumentId === undefined
+          ? {}
+          : { searchDocumentId: input.searchDocumentId }),
         trustTier: input.trustTier,
         ...(input.lexicalScore === undefined ? {} : { lexicalScore: input.lexicalScore }),
         ...(input.vectorScore === undefined ? {} : { vectorScore: input.vectorScore }),
@@ -184,16 +217,24 @@ export const createNoStoreCompilerDependencies = (
         ...(input.temporalScore === undefined ? {} : { temporalScore: input.temporalScore }),
         ...(input.contextRoiScore === undefined ? {} : { contextRoiScore: input.contextRoiScore }),
         ...(input.totalScore === undefined ? {} : { totalScore: input.totalScore }),
+        ...(input.score === undefined ? {} : { score: input.score }),
         reason: input.reason,
         metadata: input.metadata ?? {},
         createdAt: runtime.now()
       };
     },
 
+    async createActivationDecision(input: RecordActivationDecisionInput) {
+      return this.recordActivationDecision(input);
+    },
+
     async recordActivationDecision(input: RecordActivationDecisionInput) {
       return {
         id: runtime.createId("activation-decision"),
         retrievalRunId: input.retrievalRunId,
+        ...(input.retrievalCandidateId === undefined
+          ? {}
+          : { retrievalCandidateId: input.retrievalCandidateId }),
         ...(input.contextAssemblyId === undefined
           ? {}
           : { contextAssemblyId: input.contextAssemblyId }),
@@ -202,9 +243,27 @@ export const createNoStoreCompilerDependencies = (
         decision: input.decision,
         reason: input.reason,
         ...(input.score === undefined ? {} : { score: input.score }),
+        ...(input.contextBudgetCost === undefined
+          ? {}
+          : { contextBudgetCost: input.contextBudgetCost }),
+        ...(input.expectedDecisionImpact === undefined
+          ? {}
+          : { expectedDecisionImpact: input.expectedDecisionImpact }),
         metadata: input.metadata ?? {},
         createdAt: runtime.now()
       };
+    },
+
+    async listCandidatesForRetrievalRun() {
+      return [];
+    },
+
+    async listActivationDecisionsForRun() {
+      return [];
+    },
+
+    async cleanupTestRetrievalRecords() {
+      return { deletedCount: 0 };
     },
 
     async storeContextSelection(): Promise<void> {

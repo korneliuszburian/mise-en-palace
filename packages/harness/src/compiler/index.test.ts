@@ -208,17 +208,41 @@ class FakeRetrievalRepository implements RetrievalRepository {
   readonly decisions: RecordActivationDecisionInput[] = [];
   storedSelection: ContextAssembly | undefined;
 
+  async createSearchDocument() {
+    throw new Error("not used by compiler");
+  }
+
+  async searchLexical() {
+    throw new Error("not used by compiler");
+  }
+
+  async createEmbeddingModel() {
+    throw new Error("not used by compiler");
+  }
+
+  async createEmbedding() {
+    throw new Error("not used by compiler");
+  }
+
+  async createRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
+    return this.startRetrievalRun(input);
+  }
+
   async startRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
     return {
       id: "retrieval-1",
       ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+      ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
       ...(input.taskContractId === undefined ? {} : { taskContractId: input.taskContractId }),
       status: "running",
       query: input.query,
+      mode: input.mode ?? "mixed",
+      ...(input.budget === undefined ? {} : { budget: input.budget }),
       ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
       metadataFilters: input.metadataFilters ?? {},
       startedAt: now,
-      metadata: input.metadata ?? {}
+      metadata: input.metadata ?? {},
+      createdAt: now
     };
   }
 
@@ -229,11 +253,17 @@ class FakeRetrievalRepository implements RetrievalRepository {
       taskContractId: "task-1",
       status: "completed",
       query: "doctor readiness",
+      mode: "mixed",
       startedAt: now,
       completedAt: now,
       metadataFilters: {},
-      metadata: {}
+      metadata: {},
+      createdAt: now
     };
+  }
+
+  async createRetrievalCandidate(input: AddRetrievalCandidateInput) {
+    return this.addCandidate(input);
   }
 
   async addCandidate(input: AddRetrievalCandidateInput) {
@@ -246,6 +276,7 @@ class FakeRetrievalRepository implements RetrievalRepository {
       status: input.status ?? "candidate",
       subjectType: input.subjectType,
       subjectId: input.subjectId,
+      ...(input.searchDocumentId === undefined ? {} : { searchDocumentId: input.searchDocumentId }),
       trustTier: input.trustTier,
       ...(input.lexicalScore === undefined ? {} : { lexicalScore: input.lexicalScore }),
       ...(input.vectorScore === undefined ? {} : { vectorScore: input.vectorScore }),
@@ -253,10 +284,15 @@ class FakeRetrievalRepository implements RetrievalRepository {
       ...(input.temporalScore === undefined ? {} : { temporalScore: input.temporalScore }),
       ...(input.contextRoiScore === undefined ? {} : { contextRoiScore: input.contextRoiScore }),
       ...(input.totalScore === undefined ? {} : { totalScore: input.totalScore }),
+      ...(input.score === undefined ? {} : { score: input.score }),
       reason: input.reason,
       metadata: input.metadata ?? {},
       createdAt: now
     };
+  }
+
+  async createActivationDecision(input: RecordActivationDecisionInput) {
+    return this.recordActivationDecision(input);
   }
 
   async recordActivationDecision(input: RecordActivationDecisionInput) {
@@ -265,15 +301,36 @@ class FakeRetrievalRepository implements RetrievalRepository {
     return {
       id: `decision-${this.decisions.length}`,
       retrievalRunId: input.retrievalRunId,
+      ...(input.retrievalCandidateId === undefined
+        ? {}
+        : { retrievalCandidateId: input.retrievalCandidateId }),
       ...(input.contextAssemblyId === undefined ? {} : { contextAssemblyId: input.contextAssemblyId }),
       subjectType: input.subjectType,
       subjectId: input.subjectId,
       decision: input.decision,
       reason: input.reason,
       ...(input.score === undefined ? {} : { score: input.score }),
+      ...(input.contextBudgetCost === undefined
+        ? {}
+        : { contextBudgetCost: input.contextBudgetCost }),
+      ...(input.expectedDecisionImpact === undefined
+        ? {}
+        : { expectedDecisionImpact: input.expectedDecisionImpact }),
       metadata: input.metadata ?? {},
       createdAt: now
     };
+  }
+
+  async listCandidatesForRetrievalRun() {
+    return [];
+  }
+
+  async listActivationDecisionsForRun() {
+    return [];
+  }
+
+  async cleanupTestRetrievalRecords() {
+    return { deletedCount: 0 };
   }
 
   async storeContextSelection(input: {

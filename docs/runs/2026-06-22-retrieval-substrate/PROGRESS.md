@@ -2,7 +2,7 @@
 
 Goal: M24 - Retrieval/search substrate plus activation trace persistence.
 
-Current slice: Slice 02 retrieval IO schemas complete.
+Current slice: Slice 03 retrieval repository methods complete.
 
 Completed:
 
@@ -33,6 +33,14 @@ Completed:
   retrieval mode and activation decision vocabulary, constrains context
   exclusion reasons, bounds numeric scores to `0..1000`, and defaults metadata
   objects at the parser boundary.
+- Slice 03 added M24 retrieval read models and repository methods for
+  SearchDocument creation, lexical search, EmbeddingModel creation, Embedding
+  storage, create aliases for retrieval runs/candidates/activation decisions,
+  list-by-run readback, and marker cleanup.
+- Slice 03 updated Drizzle mappers for SearchDocument, EmbeddingModel,
+  Embedding, and the new retrieval run/candidate/activation fields.
+- Slice 03 kept existing compiler-facing retrieval methods compatible and
+  updated no-store/fake repositories to satisfy the widened contract.
 
 Verification:
 
@@ -67,10 +75,19 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed.
 - `git diff --check`: passed.
+- Slice 03 RED: `pnpm --filter @krn/db test --
+  DrizzleRetrievalRepository.test.ts mappers.test.ts` failed on missing M24
+  repository methods, missing search/embedding mappers, and missing mapped
+  retrieval run fields.
+- `pnpm --filter @krn/db test -- DrizzleRetrievalRepository.test.ts
+  mappers.test.ts`: passed.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- One-off live lexical repository check with `KRN_DATABASE_URL` inserted a
+  SearchDocument, found it through `searchLexical`, and cleaned marker rows;
+  output was `{"found":true,"cleanup":{"deletedCount":1}}`.
 
 Next:
 
-- M24.03: add typed repository methods and Drizzle methods for
-  `SearchDocument`, lexical search, `EmbeddingModel`, and placeholder/vector
-  `Embedding` storage.
 - M24.04: add self-cleaning `pnpm db:smoke:retrieval-substrate`.

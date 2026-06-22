@@ -169,6 +169,178 @@ describe("source graph mappers", () => {
   });
 });
 
+describe("retrieval substrate mappers", () => {
+  it("maps M24 search document and embedding read models", () => {
+    const mapSearchDocument = mapper("mapSearchDocument");
+    const mapEmbeddingModel = mapper("mapEmbeddingModel");
+    const mapEmbedding = mapper("mapEmbedding");
+
+    expect(
+      mapSearchDocument({
+        id: "search-document-1",
+        projectId: "project-1",
+        subjectType: "source_claim",
+        subjectId: "source-claim-1",
+        sourceArtifactId: null,
+        sourceChunkId: null,
+        sourceClaimId: "source-claim-1",
+        memoryRecordId: null,
+        antiMemoryRecordId: null,
+        evidenceBundleId: null,
+        reviewAssessmentId: null,
+        sourceDecisionId: null,
+        runEventId: null,
+        trustTier: "project-decision",
+        validityStatus: "active",
+        language: "english",
+        title: "Source graph Postgres edge tables",
+        body: "Use Postgres source decision edges before adding a separate graph DB.",
+        searchText:
+          "Source graph Postgres edge tables\nUse Postgres source decision edges before adding a separate graph DB.",
+        searchVector: null,
+        metadataFilters: { consumer: "M24" },
+        validFrom: createdAt,
+        validUntil: null,
+        invalidatedAt: null,
+        metadata: { smokeId: "retrieval-smoke" },
+        createdAt,
+        updatedAt
+      })
+    ).toMatchObject({
+      sourceClaimId: "source-claim-1",
+      searchText:
+        "Source graph Postgres edge tables\nUse Postgres source decision edges before adding a separate graph DB.",
+      metadataFilters: { consumer: "M24" }
+    });
+
+    expect(
+      mapEmbeddingModel({
+        id: "embedding-model-1",
+        provider: "local-placeholder",
+        model: "placeholder-1536",
+        dimensions: 1536,
+        distanceMetric: "cosine",
+        status: "active",
+        metadata: {},
+        createdAt,
+        updatedAt
+      })
+    ).toMatchObject({
+      provider: "local-placeholder",
+      dimensions: 1536
+    });
+
+    expect(
+      mapEmbedding({
+        id: "embedding-1",
+        projectId: "project-1",
+        embeddingModelId: "embedding-model-1",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        sourceArtifactId: null,
+        sourceChunkId: null,
+        sourceClaimId: null,
+        memoryRecordId: null,
+        antiMemoryRecordId: null,
+        searchDocumentId: "search-document-1",
+        embedding: [0, 1, 0],
+        contentHash: "placeholder-hash",
+        trustTier: "project-decision",
+        validityStatus: "active",
+        metadataFilters: {},
+        validFrom: createdAt,
+        validUntil: null,
+        invalidatedAt: null,
+        metadata: {},
+        createdAt,
+        updatedAt
+      })
+    ).toMatchObject({
+      searchDocumentId: "search-document-1",
+      embedding: [0, 1, 0],
+      contentHash: "placeholder-hash"
+    });
+  });
+
+  it("maps M24 retrieval run, candidate, and activation fields", () => {
+    const mapRetrievalRun = mapper("mapRetrievalRun");
+    const mapRetrievalCandidate = mapper("mapRetrievalCandidate");
+    const mapActivationDecision = mapper("mapActivationDecision");
+
+    expect(
+      mapRetrievalRun({
+        id: "retrieval-run-1",
+        projectId: "project-1",
+        executionRunId: "execution-run-1",
+        taskContractId: null,
+        status: "running",
+        query: "source graph postgres edge tables",
+        mode: "hybrid",
+        budget: 4000,
+        tokenBudget: null,
+        metadataFilters: {},
+        startedAt: createdAt,
+        completedAt: null,
+        metadata: {},
+        createdAt
+      })
+    ).toMatchObject({
+      executionRunId: "execution-run-1",
+      mode: "hybrid",
+      budget: 4000,
+      createdAt: createdAt.toISOString()
+    });
+
+    expect(
+      mapRetrievalCandidate({
+        id: "candidate-1",
+        retrievalRunId: "retrieval-run-1",
+        kind: "search",
+        status: "candidate",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        searchDocumentId: "search-document-1",
+        trustTier: "project-decision",
+        lexicalScore: 90,
+        vectorScore: null,
+        graphScore: null,
+        temporalScore: null,
+        contextRoiScore: null,
+        totalScore: null,
+        score: 95,
+        reason: "Lexical match plus trusted source metadata.",
+        metadata: {},
+        createdAt
+      })
+    ).toMatchObject({
+      searchDocumentId: "search-document-1",
+      score: 95
+    });
+
+    expect(
+      mapActivationDecision({
+        id: "activation-decision-1",
+        retrievalRunId: "retrieval-run-1",
+        retrievalCandidateId: "candidate-1",
+        contextAssemblyId: null,
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        decision: "included",
+        reason: "High trust and directly relevant.",
+        score: 95,
+        contextBudgetCost: 240,
+        expectedDecisionImpact: "Supports choosing Postgres edge tables.",
+        metadata: {},
+        createdAt
+      })
+    ).toMatchObject({
+      retrievalCandidateId: "candidate-1",
+      contextBudgetCost: 240,
+      expectedDecisionImpact: "Supports choosing Postgres edge tables."
+    });
+  });
+});
+
 describe("memory governance mappers", () => {
   it("maps M23 memory candidate review and lineage fields", () => {
     const mapMemoryCandidate = mapper("mapMemoryCandidate");
