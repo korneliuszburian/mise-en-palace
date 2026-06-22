@@ -474,3 +474,21 @@ Results:
   `fffe2d44-96cd-4d43-ae21-1a88420f4093`, FeedbackDelta
   `94166a2b-1f0d-4ee4-b58c-ae8bfb071dec`, target project linked `yes`, and
   cleanup remaining marker count `0`.
+
+## Slice 12
+
+Anti-rot audit details are recorded in `ANTI_ROT.md`.
+
+Summary:
+
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 29 files and 134 tests.
+- DB-aware `krn doctor` passed with target repo readiness `ready`.
+- `pnpm db:ready` passed with 8/8 migrations and pgvector available.
+- All M22-M27 DB smokes passed.
+- Latest target repo harness smoke persisted ExecutionRun
+  `ece37032-cb48-477d-bc41-07eb2e742a99`, verified target project linked
+  `yes`, and cleanup remaining marker count `0`.
+- Forbidden directory, forbidden dependency, and core library-safety scans
+  printed no matches.
+- `git diff --check` passed.

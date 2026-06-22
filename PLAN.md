@@ -1363,3 +1363,7 @@ live `db:smoke:init-connect` and `db:smoke:target-repo-harness` proof.
 connect, project-scoped persisted plan, Codex brief readback, persisted
 evidence capture, DB-aware doctor, and both target repo smokes. Direct dogfood
 ExecutionRun: `eb16411b-d304-420e-adc7-1fdb86857c1d`.
+
+2026-06-22: M27 Slice 12 anti-rot passed: typecheck, tests, DB-aware doctor,
+DB readiness, all M22-M27 DB smokes, forbidden surface/dependency scans, core
+library-safety scan, and `git diff --check`.

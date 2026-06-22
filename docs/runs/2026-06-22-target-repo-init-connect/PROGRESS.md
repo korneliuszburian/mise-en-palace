@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 11 fixture dogfood complete.
+Current slice: Slice 12 anti-rot audit complete.
 
 Completed:
 
@@ -117,7 +117,18 @@ Completed:
   `ae8b0c69-4202-4250-ae7d-4ab9155f97d9` and target-harness ExecutionRun
   `c0720c89-4a7c-4607-bf91-1afaf420c01b`; both cleanup remaining marker counts
   were `0`.
+- Slice 12 anti-rot audit passed. `pnpm typecheck`, `pnpm test`, DB-aware
+  `krn doctor`, `pnpm db:ready`, all M22-M27 DB smokes, forbidden directory
+  scan, forbidden dependency scan, core library-safety scan, and
+  `git diff --check` passed.
+- Slice 12 latest target repo harness smoke passed with ExecutionRun
+  `ece37032-cb48-477d-bc41-07eb2e742a99`, target project linked `yes`, and
+  cleanup remaining marker count `0`.
+- Slice 12 confirmed no dashboard, `apps/`, API, MCP server, broad worker
+  runtime, research layer, source crawler, runtime markdown memory, `.krn`,
+  separate vector/graph/search store, Redis/Kafka, broad eval suite, or
+  forbidden dependency.
 
 Next action:
 
-- Slice 12 anti-rot audit.
+- Slice 13 final handoff.

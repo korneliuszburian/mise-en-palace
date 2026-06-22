@@ -13,7 +13,7 @@ Observed setup issue:
 
 Residual later scope:
 
-- Full M27 dogfood and final anti-rot audit are not complete yet.
+- Final handoff is not complete yet.
 
 Explicit non-blockers:
 
@@ -33,3 +33,6 @@ Explicit non-blockers:
   target repo smokes.
 - The direct dogfood plan abstained because the fixture has no project-scoped
   context. This is honest gap behavior, not a blocker.
+- Anti-rot passed across typecheck, tests, doctor, DB readiness, all smokes,
+  forbidden surface scans, forbidden dependency scan, core library-safety scan,
+  and `git diff --check`.
