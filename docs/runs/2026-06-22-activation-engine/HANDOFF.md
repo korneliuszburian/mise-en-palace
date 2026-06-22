@@ -1,9 +1,8 @@
 # Handoff
 
 Objective:
-Continue M25 Activation Engine V1. M25.06 doctor activation readiness is
-implemented; next implementation slice is M25.07 activation dogfood on the real
-next task.
+Continue M25 Activation Engine V1. M25.07 activation dogfood is recorded; next
+implementation slice is M25.08 anti-rot and handoff.
 
 Last verified state:
 M24 is complete and pushed. M25 inventory found an existing deterministic
@@ -26,7 +25,10 @@ Live preview, live persisted plan, activation smoke, typecheck, and full tests
 passed after M25.05. M25.06 added doctor activation checks and activation
 readiness derivation. No-DB doctor reports activation preview; DB-backed doctor
 reports activation runtime proof ready with decisions `22`, inclusions `21`,
-exclusions `1`, and activation readiness ready.
+exclusions `1`, and activation readiness ready. M25.07 dogfooded activation on
+`improve KRN doctor activation readiness`, captured evidence for execution run
+`bb33bd3d-02df-4ff3-839b-6f545de88b4c`, and recorded dogfood limitations in
+`DOGFOOD.md`.
 
 Changed files:
 `packages/core/src/activation.ts`, `packages/core/src/index.ts`,
@@ -51,6 +53,7 @@ Changed files:
 `packages/cli/src/runCli.test.ts`,
 `package.json`, and
 `packages/db/src/activationReadiness.ts`,
+`docs/runs/2026-06-22-activation-engine/DOGFOOD.md`,
 `docs/runs/2026-06-22-activation-engine/*`.
 
 Decisions:
@@ -65,7 +68,7 @@ not reimplement ranking/filtering policy in CLI. Doctor activation readiness is
 read-only and must not execute smoke itself.
 
 Blockers/risks:
-No hard blocker. M25 is incomplete until dogfood and anti-rot are complete.
+No hard blocker. M25 is incomplete until anti-rot is complete.
 
 Context selectors:
 `GOAL.md` M25 section, `docs/KRN_KERNEL.md`,
@@ -85,8 +88,8 @@ Context selectors:
 
 Next action:
 Run `git diff --check`, commit
-`feat(cli): report activation readiness in doctor`, push, then start M25.07 by
-dogfooding activation on the real next task.
+`docs(run): record activation dogfood pass`, push, then start M25.08 anti-rot
+and handoff.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

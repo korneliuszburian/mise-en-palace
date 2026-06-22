@@ -61,6 +61,16 @@ Resolved in M25.06:
 - DB-backed doctor reports activation readiness ready in the current local
   store.
 
+Resolved in M25.07:
+
+- activation was dogfooded on the real next task;
+- dogfood evidence was captured for execution run
+  `bb33bd3d-02df-4ff3-839b-6f545de88b4c`;
+- dogfood readback recorded retrieval run
+  `d15b1b47-0e0f-48eb-b385-bfaaffa9c0a7`, candidates, decisions, inclusions,
+  and exclusions;
+- dogfood limitations are explicitly recorded in `DOGFOOD.md`.
+
 Non-goals that remain intentionally blocked:
 
 - LLM-based ranking;

@@ -271,3 +271,35 @@ Results:
   `(decisions 22, inclusions 21, exclusions 1)` plus activation readiness
   `ready (domain contracts, dependencies, and runtime proof present)`.
 - Full `pnpm test` passed with 18 test files and 100 tests.
+
+## Slice 07
+
+Commands run:
+
+```sh
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "improve KRN doctor activation readiness" --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn evidence capture --run-id bb33bd3d-02df-4ff3-839b-6f545de88b4c --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli exec tsx - <<'TS'
+# context assembly activation readback
+TS
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:activation
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+```
+
+Results:
+
+- Persisted plan passed for task `improve KRN doctor activation readiness`.
+- Plan output showed context included `3`, context excluded `0`, context status
+  `assembled`, and explicit `Context exclusions: - none`.
+- Persisted execution run: `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
+- Evidence capture passed and persisted evidence bundle
+  `4bf9c4f4-684e-4a4d-972d-f1def2d80620`.
+- DB readback found retrieval run
+  `d15b1b47-0e0f-48eb-b385-bfaaffa9c0a7` with retrieval candidates `3`,
+  activation decisions `3`, included decisions `3`, excluded decisions `0`,
+  conflict decisions `0`, stale decisions `0`, context items `3`, and context
+  exclusions `0`.
+- Activation smoke passed after dogfood with cleanup remaining marker count
+  `0`.
+- Doctor passed after dogfood and reported activation readiness ready with
+  decisions `25`, inclusions `24`, and exclusions `1`.

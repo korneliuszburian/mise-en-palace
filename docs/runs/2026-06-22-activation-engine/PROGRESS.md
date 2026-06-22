@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 06 doctor activation readiness complete.
+Current slice: Slice 07 activation dogfood complete.
 
 Completed:
 
@@ -59,6 +59,12 @@ Completed:
   surface, activation smoke command availability, activation runtime proof,
   broad context dump absence, core `requiredSkills` absence, and derived
   activation readiness.
+- Slice 07 dogfooded activation on the real next task:
+  `improve KRN doctor activation readiness`.
+- Slice 07 captured persisted evidence for execution run
+  `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
+- Slice 07 recorded run IDs, retrieval counts, activation counts, evidence IDs,
+  what helped, and what was not proven in `DOGFOOD.md`.
 
 Verification:
 
@@ -186,9 +192,28 @@ Verification:
   with decisions `22`, inclusions `21`, exclusions `1`, and activation
   readiness ready.
 - `pnpm test`: passed with 18 test files and 100 tests.
+- Slice 07 `krn plan --task "improve KRN doctor activation readiness"
+  --persist`: passed with context included `3`, context excluded `0`, context
+  status `assembled`, context assembly
+  `bb8ad48a-b675-4c79-ac71-edaa665129c9`, and execution run
+  `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
+- Slice 07 evidence capture for run
+  `bb33bd3d-02df-4ff3-839b-6f545de88b4c`: passed and persisted evidence bundle
+  `4bf9c4f4-684e-4a4d-972d-f1def2d80620`.
+- Slice 07 DB readback for context assembly
+  `bb8ad48a-b675-4c79-ac71-edaa665129c9`: passed with retrieval run
+  `d15b1b47-0e0f-48eb-b385-bfaaffa9c0a7`, retrieval candidates `3`,
+  activation decisions `3`, included decisions `3`, excluded decisions `0`,
+  context items `3`, and context exclusions `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:activation`: passed after dogfood with cleanup remaining marker
+  count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed after dogfood and reported activation readiness
+  ready with decisions `25`, inclusions `24`, and exclusions `1`.
 
 Next:
 
 - Run `git diff --check`.
-- Commit Slice 06 as `feat(cli): report activation readiness in doctor`.
-- Start M25.07 by dogfooding activation on the real next task.
+- Commit Slice 07 as `docs(run): record activation dogfood pass`.
+- Start M25.08 anti-rot and handoff.
