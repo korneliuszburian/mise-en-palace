@@ -28,3 +28,8 @@ Explicit non-blockers:
   `pnpm db:smoke:target-repo-harness` with cleanup remaining marker count `0`.
 - Doctor target repo readiness is now proven by DB-aware `krn doctor` reporting
   `Target repo readiness: ready (init-connect smoke proven; target repo harness smoke proven)`.
+- Direct fixture dogfood is now proven through dry-run, connect, project-scoped
+  plan, Codex brief readback, persisted evidence capture, doctor, and both
+  target repo smokes.
+- The direct dogfood plan abstained because the fixture has no project-scoped
+  context. This is honest gap behavior, not a blocker.

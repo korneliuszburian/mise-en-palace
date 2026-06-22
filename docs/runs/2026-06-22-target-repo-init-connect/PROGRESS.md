@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 10 doctor target repo readiness complete.
+Current slice: Slice 11 fixture dogfood complete.
 
 Completed:
 
@@ -93,7 +93,31 @@ Completed:
   `924cd281-090b-41ae-9a18-863d1d61c065`, FeedbackDelta
   `275bdc28-fa69-4803-b92a-f8919fdecd31`, target project linked `yes`, and
   cleanup remaining marker count `0`.
+- Slice 11 dogfooded the fixture flow end to end:
+  `init --dry-run`, `init --connect --persist`, `plan --project --persist`,
+  `codex brief --run-id`, `evidence capture --run-id --persist`, DB-aware
+  `doctor`, and both target repo smokes.
+- Slice 11 connect reused Project `9da67341-0124-407e-b3fa-197f7f850a57`,
+  RepoInstallation `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel
+  `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`.
+- Slice 11 project-scoped plan persisted ExecutionRun
+  `eb16411b-d304-420e-adc7-1fdb86857c1d`. Activation abstained with no
+  inclusions/exclusions, which is expected for the empty fixture context and
+  proves gap-aware behavior rather than broad context dumping.
+- Slice 11 Codex brief read the run from Postgres in read-only mode with Codex
+  invocation `none` and memory mutation `none`.
+- Slice 11 evidence capture persisted EvidenceBundle
+  `6c85abdd-7b6d-468a-833e-0e12a445b6a6`, ReviewAssessment
+  `e6e20c8b-11bd-41a5-adbb-18eadd1cbec0`, and FeedbackDelta
+  `500f4cf0-3b03-449d-9993-65287808c6d6`; it reported memory mutation `none`
+  and no MemoryCandidate or MemoryRecord row creation.
+- Slice 11 review burden is medium because the worktree intentionally contains
+  user-owned dirty `GOAL.md` plus untracked memory research materials.
+- Slice 11 final smoke rerun passed with init-connect Project
+  `ae8b0c69-4202-4250-ae7d-4ab9155f97d9` and target-harness ExecutionRun
+  `c0720c89-4a7c-4607-bf91-1afaf420c01b`; both cleanup remaining marker counts
+  were `0`.
 
 Next action:
 
-- Slice 11 final target repo dogfood and anti-rot audit.
+- Slice 12 anti-rot audit.

@@ -409,3 +409,68 @@ Results:
   `Target repo readiness: ready (init-connect smoke proven; target repo harness smoke proven)`.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed across 29 files and 134 tests.
+
+## Slice 11
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli krn init --dry-run --repo tests/fixtures/target-repos/typescript-basic
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn init --connect --repo tests/fixtures/target-repos/typescript-basic --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --project 9da67341-0124-407e-b3fa-197f7f850a57 --task "improve test script readiness" --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn codex brief --run-id eb16411b-d304-420e-adc7-1fdb86857c1d
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn evidence capture --run-id eb16411b-d304-420e-adc7-1fdb86857c1d --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:init-connect
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:target-repo-harness
+```
+
+Results:
+
+- Dry-run target repo init passed for
+  `tests/fixtures/target-repos/typescript-basic`.
+- Dry-run output detected repo fingerprint `sha256:055f1087253b102b`,
+  package manager `package-json`, TypeScript `present`, scripts `build, test`,
+  no existing AGENTS/.codex/.agents surface, forbidden surfaces `absent`, and
+  `No files written`.
+- Connect persisted/reused Project `9da67341-0124-407e-b3fa-197f7f850a57`,
+  RepoInstallation `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel
+  `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`.
+- Project-scoped plan persisted OperatorIntent
+  `8252bd88-0dc1-4cf8-8be6-bd23126bea4f`, TaskContract
+  `e07cd43c-ad91-42a4-a537-b44b0428f01b`, HarnessPlan
+  `df37ecb3-5d25-4532-ba58-a910e41f17da`, ContextAssembly
+  `deefab35-1da8-4e3e-9298-1a20d1cb1256`, and ExecutionRun
+  `eb16411b-d304-420e-adc7-1fdb86857c1d`.
+- Activation context status was `abstained` with zero inclusions and exclusions.
+  This is expected for the empty fixture and is recorded as honest gap behavior,
+  not a failure.
+- `krn codex brief --run-id eb16411b-d304-420e-adc7-1fdb86857c1d` read the
+  persisted run from Postgres in read-only mode. Codex invocation was `none`;
+  memory mutation was `none`.
+- `krn evidence capture --run-id eb16411b-d304-420e-adc7-1fdb86857c1d --persist`
+  persisted EvidenceBundle `6c85abdd-7b6d-468a-833e-0e12a445b6a6`,
+  ReviewAssessment `e6e20c8b-11bd-41a5-adbb-18eadd1cbec0`, and FeedbackDelta
+  `500f4cf0-3b03-449d-9993-65287808c6d6`.
+- Evidence capture reported changed files from pre-existing user context:
+  modified `GOAL.md` and untracked `docs/materials/2026-06-22-big-brain*.md`.
+  Diff risk was `medium`; review burden was to summarize changed files,
+  command proof, residual risk, and rollback path.
+- Evidence capture reported memory mutation `none`, no MemoryCandidate row, and
+  no MemoryRecord row.
+- DB-aware `krn doctor` passed and reported:
+  `Target repo readiness: ready (init-connect smoke proven; target repo harness smoke proven)`.
+- Final init-connect smoke passed with Project
+  `ae8b0c69-4202-4250-ae7d-4ab9155f97d9`, RepoInstallation
+  `ccf625ac-67ca-4d69-a860-08e9c3aeba01`, ProjectKernel
+  `4ccc76d0-3992-4ac6-ba64-bf9435ead246`, and cleanup remaining marker count
+  `0`.
+- Final target repo harness smoke passed with Project
+  `76b82d6c-2a4b-41da-a47d-0d6b79969e49`, RepoInstallation
+  `7f8388be-213f-4ecb-a846-e942a3ab4cfc`, ProjectKernel
+  `0b52fa7f-43f7-4f90-b735-77b7047528c9`, ExecutionRun
+  `c0720c89-4a7c-4607-bf91-1afaf420c01b`, EvidenceBundle
+  `94511fb9-b12e-4037-8682-637176bcd7d6`, ReviewAssessment
+  `fffe2d44-96cd-4d43-ae21-1a88420f4093`, FeedbackDelta
+  `94166a2b-1f0d-4ee4-b58c-ae8bfb071dec`, target project linked `yes`, and
+  cleanup remaining marker count `0`.

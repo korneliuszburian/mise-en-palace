@@ -1358,3 +1358,8 @@ Not expected yet:
 No-env doctor reports preview-only target repo readiness; DB-aware doctor reports
 `ready (init-connect smoke proven; target repo harness smoke proven)` after
 live `db:smoke:init-connect` and `db:smoke:target-repo-harness` proof.
+
+2026-06-22: M27 Slice 11 dogfooded the fixture flow end to end: dry-run,
+connect, project-scoped persisted plan, Codex brief readback, persisted
+evidence capture, DB-aware doctor, and both target repo smokes. Direct dogfood
+ExecutionRun: `eb16411b-d304-420e-adc7-1fdb86857c1d`.

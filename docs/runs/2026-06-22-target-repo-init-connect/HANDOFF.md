@@ -13,17 +13,18 @@ M22-M26 brain spine handoff`. Baseline M27 preflight passed after exporting
 smokes from M22-M26.
 
 Current M27 state:
-Slices 00-10 are complete. Target repo fixture dry-run, connect persistence,
-init-connect smoke, project-scoped persisted planning, full target repo harness
-smoke, and doctor target repo readiness are proven. The latest target harness
-smoke connected Project `6e7eee1f-9481-4c0b-9929-0f6493919cad`,
-RepoInstallation `91273dd1-ded2-446f-a851-d2cc0004557e`, ProjectKernel
-`8baf670f-6d10-4a23-b604-ffb091449da8`, persisted ExecutionRun
-`eb26785c-27e1-444e-bbf2-2469c9ba38dd`, rendered a Codex brief, persisted
-EvidenceBundle `7d672f4b-b4d8-4040-8631-ca6c2908cee3`, ReviewAssessment
-`924cd281-090b-41ae-9a18-863d1d61c065`, FeedbackDelta
-`275bdc28-fa69-4803-b92a-f8919fdecd31`, verified target project linkage, and
-cleaned marker rows to `0`. DB-aware `krn doctor` now reports
+Slices 00-11 are complete. Target repo fixture dry-run, connect persistence,
+init-connect smoke, project-scoped persisted planning, Codex brief readback,
+evidence capture, full target repo harness smoke, and doctor target repo
+readiness are proven. The latest direct dogfood reused Project
+`9da67341-0124-407e-b3fa-197f7f850a57`, RepoInstallation
+`e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel
+`db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`, persisted ExecutionRun
+`eb16411b-d304-420e-adc7-1fdb86857c1d`, rendered a Codex brief read-only,
+persisted EvidenceBundle `6c85abdd-7b6d-468a-833e-0e12a445b6a6`,
+ReviewAssessment `e6e20c8b-11bd-41a5-adbb-18eadd1cbec0`, and FeedbackDelta
+`500f4cf0-3b03-449d-9993-65287808c6d6`. Evidence capture created no
+MemoryCandidate or MemoryRecord row. DB-aware `krn doctor` reports
 `Target repo readiness: ready (init-connect smoke proven; target repo harness smoke proven)`.
 
 Boundaries:
@@ -33,12 +34,12 @@ crawler, runtime markdown memory, `.krn` runtime truth, separate vector/graph
 store, Redis/Kafka, or broad eval suite.
 
 Changed files:
-Slice 10 adds target repo readiness checks to `packages/cli/src/runDoctorCommand.ts`,
-updates CLI tests, then updates the M27 run ledger and root `PLAN.md` progress.
+Slice 11 is docs-only. It records the fixture dogfood proof in the M27 run
+ledger and root `PLAN.md`.
 
 Blockers/risks:
 No hard blocker. `GOAL.md` remains modified user-owned context and is not part
 of the Slice 08 implementation commit.
 
 Next action:
-Slice 11: final target repo dogfood and anti-rot audit.
+Slice 12: anti-rot audit.
