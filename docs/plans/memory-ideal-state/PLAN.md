@@ -364,7 +364,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-17C complete: enforced typed source-range lineage invariants for truth-bearing observations at the repository boundary. Intended files: `packages/db/src/repositories/DrizzleObservationRepository.ts`, repository tests, current-state pointers, and this PLAN. Non-goals preserved: no migrations, no source crawler, no broad evidence model, no reflection, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB repository tests failed because mismatched `sourceType`/typed FK combinations were treated as evidence-linked, truth-bearing `risk` observations could persist with decorative source ranges, and `linkSourceRange` validated only the new auxiliary range; GREEN focused DB repository test passed with 20 files / 51 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 39 files / 181 tests; DB-aware `pnpm db:ready` passed with 10/10 migrations and pgvector available; `git diff --check` passed. Next: MM-17D project-scoped observe runtime.
 - [x] (2026-06-22) MM-17D complete: removed hardcoded `local` / `mise-en-palace` observe write scope by adding an observe-specific DB runtime that reads persisted runs without creating a default project, then resolves the project from the persisted run or explicit `--project`. Intended files: `packages/cli/src/databaseRuntime.ts`, `packages/cli/src/runObserveCommand.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runCli.ts`, CLI tests, and this PLAN. Non-goals preserved: no project registry rewrite, no DB schema/migration, no worker, no reflection, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: focused CLI test passed with 5 files / 80 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 39 files / 181 tests; DB-aware `pnpm db:ready` passed with 10/10 migrations and pgvector available; `git diff --check` passed. Tests prove `krn observe --run` resolves `project-from-run`, writes the observation group under that project, and fails before project resolution when a persisted run has no project scope and no explicit `--project`. Next: MM-17E observation schema/core parity and timestamp validation.
 - [x] (2026-06-22) MM-17E complete: hardened observation schema datetime validation and added schema/core parity tests for observation enum coverage and source-range policy. Intended files: `packages/schema/src/observation.ts`, schema tests, `packages/harness/src/observations/observationPrefix.ts`, harness prefix tests, and this PLAN. Non-goals preserved: no package topology refactor, no DB migration, no runtime reflection, no Memory Core mutation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED schema test failed because `not-a-date` was accepted; RED harness test failed because offset `validUntil` was compared lexically instead of by parsed time; GREEN focused schema test passed with 1 file / 16 tests; GREEN focused harness test passed with 7 files / 23 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 39 files / 184 tests; DB-aware `pnpm db:ready` passed with 10/10 migrations and pgvector available; `git diff --check` passed. Next: MM-17F observer payload redaction hardening.
-- [ ] MM-17F: Harden observer payload redaction for secret-shaped values.
+- [x] (2026-06-22) MM-17F complete: hardened observer payload redaction so secret-shaped values are redacted even when keys look neutral, before payload truncation. Intended files: `packages/harness/src/observations/observerInput.ts`, observer input tests, and this PLAN. Non-goals preserved: no external secret scanner, no source crawler, no LLM, no observe runtime rewrite, no DB schema/migration, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused harness test failed because Bearer/API-key/cookie/private-key/GitHub-token-like values under neutral keys survived; GREEN focused harness observer input test passed with 7 files / 25 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 39 files / 186 tests; DB-aware `pnpm db:ready` passed with 10/10 migrations and pgvector available; `git diff --check` passed. Tests prove redaction reports value paths and truncation runs only after redaction. Next: MM-18 reflection contracts.
 - [ ] MM-18: Add reflection domain contracts.
 - [ ] MM-18A: Seal reflection as candidate-only before any manual reflect runtime.
 - [ ] MM-19: Add reflection schemas and DB persistence.
@@ -534,6 +534,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: MM-17E added a test-only relative import from schema tests to the core observation policy source after a package import failed without a declared `@krn/core` dependency.
   Resolution: Keep production schema free of core runtime imports for now, but let tests fail when core observation kinds/provenance policy drift from schema IO coverage.
 
+- Observation: Observer payload redaction must inspect values before truncation.
+  Evidence: MM-17F RED tests showed neutral keys containing Bearer/API-key/cookie/private-key/token-like values survived key-only redaction.
+  Resolution: Redact secret-shaped string values recursively and record the exact paths before JSON stringify/truncation.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -677,6 +681,12 @@ Gate 1 MM-17E outcome:
 - Schema tests compare observation kind/provenance enum coverage and source-range requirement behavior against the core observation policy source.
 - Observation prefix stale checks use parsed datetime values rather than string ordering, so offset timestamps cannot bypass stale exclusion.
 - No DB schema, repository, worker, reflection, or Memory Core behavior changed.
+
+Gate 1 MM-17F outcome:
+- Observer input redacts secret-looking string values as well as secret-looking keys.
+- Redaction covers Bearer/JWT-like values, API-key-like values, GitHub-token-like values, cookie/session strings, and private-key blocks.
+- Redaction records source paths before payload truncation, so truncated observer payloads cannot preserve an unredacted secret suffix or prefix.
+- No external scanner, LLM, worker, DB, observe runtime, reflection, or Memory Core behavior changed.
 
 ## Milestones
 

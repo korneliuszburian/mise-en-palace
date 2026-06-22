@@ -70,6 +70,16 @@ export interface ObserverInput {
 const defaultMaxPayloadCharacters = 1_200;
 const redactedValue = "[REDACTED]";
 const secretKeyPattern = /(?:password|secret|token|api[-_]?key|authorization|cookie|private[-_]?key)/i;
+const secretValuePatterns = [
+  /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/u,
+  /\bBearer\s+[A-Za-z0-9._~+/-]{16,}={0,2}\b/iu,
+  /\b[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/u,
+  /\b(?:Api[-_ ]?Key|x-api-key|api_key)\s*[:=]?\s*[A-Za-z0-9._-]{16,}\b/iu,
+  /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/u,
+  /\bgh[opsru]_[A-Za-z0-9_]{20,}\b/u,
+  /\bCookie:\s*[^=\s;]+=[^;\s]{8,}/iu,
+  /\b(?:sessionid|session|sid|auth|token)=[^;\s]{8,}/iu
+] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -87,6 +97,10 @@ const sortByCreatedAt = <T extends { id: string; createdAt: IsoTimestamp }>(
   ))
 );
 
+const isSecretShapedString = (value: string): boolean => (
+  secretValuePatterns.some((pattern) => pattern.test(value))
+);
+
 const sanitizeValue = (
   value: unknown,
   path: string[],
@@ -94,6 +108,11 @@ const sanitizeValue = (
 ): unknown => {
   if (Array.isArray(value)) {
     return value.map((item, index) => sanitizeValue(item, [...path, String(index)], redactedPaths));
+  }
+
+  if (typeof value === "string" && isSecretShapedString(value)) {
+    redactedPaths.push(path.join("."));
+    return redactedValue;
   }
 
   if (!isRecord(value)) {

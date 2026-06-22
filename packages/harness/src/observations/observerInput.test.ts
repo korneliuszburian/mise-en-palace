@@ -119,4 +119,87 @@ describe("observer input builder", () => {
       retainedCharacters: 80
     }]);
   });
+
+  it("redacts secret-shaped values even when keys look neutral", () => {
+    const input = buildObserverInput({
+      executionRunId: "run-1",
+      generatedAt: capturedAt,
+      events: [{
+        id: "event-1",
+        sequence: 1,
+        type: "tool.result",
+        severity: "warning",
+        message: "tool emitted neutral secret values",
+        payload: {
+          value: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.secret.signature",
+          line: "Authorization: Api-Key key_live_1234567890abcdef1234567890abcdef",
+          header: "Cookie: sessionid=abcdef1234567890abcdef1234567890; path=/",
+          block: "-----BEGIN PRIVATE KEY-----\nsecret\n-----END PRIVATE KEY-----",
+          nested: {
+            output: "ghp_1234567890abcdef1234567890abcdef123456"
+          }
+        },
+        occurredAt: capturedAt
+      }],
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: []
+    });
+
+    const payload = input.items[0]?.payload ?? "";
+
+    expect(payload).toContain("[REDACTED]");
+    expect(payload).not.toContain("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9");
+    expect(payload).not.toContain("key_live_1234567890abcdef");
+    expect(payload).not.toContain("sessionid=abcdef");
+    expect(payload).not.toContain("BEGIN PRIVATE KEY");
+    expect(payload).not.toContain("ghp_1234567890abcdef");
+    expect(input.redactions).toEqual([{
+      sourceId: "event-1",
+      paths: [
+        "payload.block",
+        "payload.header",
+        "payload.line",
+        "payload.nested.output",
+        "payload.value"
+      ]
+    }]);
+  });
+
+  it("redacts before truncating so hidden secret suffixes cannot survive", () => {
+    const input = buildObserverInput({
+      executionRunId: "run-1",
+      generatedAt: capturedAt,
+      maxPayloadCharacters: 120,
+      events: [{
+        id: "event-1",
+        sequence: 1,
+        type: "tool.result",
+        severity: "warning",
+        message: "tool emitted long payload with delayed secret",
+        payload: {
+          output: "x".repeat(400),
+          secretSuffix: `${"x".repeat(120)} Bearer delayed-secret-token-1234567890abcdef`
+        },
+        occurredAt: capturedAt
+      }],
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: []
+    });
+
+    const payload = input.items[0]?.payload ?? "";
+
+    expect(payload).not.toContain("delayed-secret-token");
+    expect(input.redactions).toEqual([{
+      sourceId: "event-1",
+      paths: ["payload.secretSuffix"]
+    }]);
+    expect(input.truncations).toEqual([{
+      sourceId: "event-1",
+      field: "payload",
+      originalCharacters: expect.any(Number),
+      retainedCharacters: 120
+    }]);
+  });
 });
