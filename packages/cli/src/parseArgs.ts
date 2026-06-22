@@ -56,6 +56,11 @@ export type CliCommand =
       runId?: string;
     }
   | {
+      kind: "observeRun";
+      runId: string;
+      persist: boolean;
+    }
+  | {
       kind: "codexBrief";
       runId: string;
     }
@@ -216,6 +221,7 @@ const usage = [
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]",
+  "krn observe --run <id> [--persist]",
   "krn codex brief --run-id <id>"
 ].join("\n");
 
@@ -766,6 +772,52 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
     return {
       error: "Usage: krn evidence capture [--run-id <id>] [--persist]"
+    };
+  }
+
+  if (command === "observe") {
+    let persist = false;
+    let runId: string | undefined;
+
+    for (let index = 0; index < rest.length; index += 1) {
+      const arg = rest[index];
+
+      if (arg === "--persist") {
+        persist = true;
+        continue;
+      }
+
+      if (arg === "--run" || arg?.startsWith("--run=") === true) {
+        const valueResult = optionValue(rest, index, "--run");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn observe --run <id> [--persist]"
+          };
+        }
+
+        runId = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      return {
+        error: "Usage: krn observe --run <id> [--persist]"
+      };
+    }
+
+    if (runId === undefined || runId.length === 0) {
+      return {
+        error: "Usage: krn observe --run <id> [--persist]"
+      };
+    }
+
+    return {
+      command: {
+        kind: "observeRun",
+        runId,
+        persist
+      }
     };
   }
 

@@ -8,6 +8,7 @@ export * from "./runDbSmokeCommand.js";
 export * from "./runCodexBriefCommand.js";
 export * from "./runDoctorCommand.js";
 export * from "./runEvidenceCaptureCommand.js";
+export * from "./runObserveCommand.js";
 export * from "./runCli.js";
 export * from "./runInitCommand.js";
 export * from "./runPlanCommand.js";

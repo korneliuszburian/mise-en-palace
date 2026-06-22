@@ -35,6 +35,9 @@ import {
   runEvidenceCaptureCommand
 } from "./runEvidenceCaptureCommand.js";
 import {
+  runObserveCommand
+} from "./runObserveCommand.js";
+import {
   runCodexBriefCommand
 } from "./runCodexBriefCommand.js";
 import {
@@ -584,6 +587,33 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown evidence capture error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "observeRun") {
+    try {
+      const result = await runObserveCommand({
+        env: runtime.env,
+        now,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown observe error";
 
       return {
         exitCode: 1,

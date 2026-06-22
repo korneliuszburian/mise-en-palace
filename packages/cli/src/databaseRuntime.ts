@@ -3,9 +3,14 @@ import {
   createKrnDatabase,
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
+  DrizzleObservationRepository,
   DrizzleProjectRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
+} from "@krn/db";
+import type {
+  CreateObservationGroupInput,
+  CreateObservationItemInput
 } from "@krn/db";
 import type {
   HarnessCompilerDependencies,
@@ -15,6 +20,10 @@ import type {
   RepoInstallationRecord,
   SourceRepository
 } from "@krn/harness";
+import type {
+  ObservationGroup,
+  ObservationItem
+} from "@krn/core";
 
 export interface DatabaseRuntimeInput {
   databaseUrl: string;
@@ -58,6 +67,13 @@ export interface DatabaseRuntime {
     | "createMemoryFeedbackEvent"
     | "createAntiMemoryRecord"
   >;
+  observationRepository?: {
+    createGroup(input: CreateObservationGroupInput): Promise<ObservationGroup>;
+    addItems(
+      groupId: string,
+      inputs: CreateObservationItemInput[]
+    ): Promise<ObservationItem[]>;
+  };
   close(): Promise<void>;
 }
 
@@ -70,6 +86,7 @@ export const createDatabaseRuntime = async (
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
   const sourceRepository = new DrizzleSourceRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
+  const observationRepository = new DrizzleObservationRepository(db);
   const explicitProjectId = input.projectId?.trim();
   const project =
     explicitProjectId === undefined || explicitProjectId.length === 0
@@ -139,6 +156,7 @@ export const createDatabaseRuntime = async (
     harnessRunRepository,
     sourceRepository,
     memoryRepository,
+    observationRepository,
     async close(): Promise<void> {
       await client.end();
     }

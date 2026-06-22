@@ -22,16 +22,16 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Last pushed implementation head before MM-14 closeout:
+Last pushed implementation head before MM-15 closeout:
 
 ```txt
-ec77c57 feat(harness): add deterministic observer input builder
+03e31db feat(core): add observation source-range policy matrix
 ```
 
-Current expected branch after MM-14 closeout:
+Current expected branch after MM-15 closeout:
 
 ```txt
-main == origin/main after `feat(core): add observation source-range policy matrix` is pushed
+main == origin/main after `feat(cli): add manual observe-run command` is pushed
 ```
 
 Known local untracked quarry that is not accepted as truth:
@@ -138,17 +138,19 @@ MM-11  observation repository adapter
 MM-12  evidence/source range linkage
 MM-13  observer input builder
 MM-14  observation source-range policy matrix
+MM-15  manual observe-run CLI
 ```
 
-First unchecked slice after MM-14:
+First unchecked slice after MM-15:
 
 ```txt
-MM-15  Manual observe-run CLI
+MM-16  Observation prefix selector
 ```
 
 Recent pushed commits:
 
 ```txt
+03e31db feat(core): add observation source-range policy matrix
 ec77c57 feat(harness): add deterministic observer input builder
 f7dbc6e feat(db): link observations to raw evidence
 d28431d docs(review): expand anti-slop reviewer request
@@ -165,6 +167,59 @@ d2d0a4a feat(core): add audit bundle domain contract
 4c944e8 docs(memory): record audit baseline
 c38eaff docs(memory): add controlled memory brain execution plan
 ```
+
+## MM-15 Closeout Note
+
+MM-15 is intended to be complete in the repository head that includes:
+
+```txt
+feat(cli): add manual observe-run command
+```
+
+That slice touched:
+
+```txt
+packages/cli/src/runObserveCommand.ts
+packages/cli/src/parseArgs.ts
+packages/cli/src/runCli.ts
+packages/cli/src/index.ts
+packages/cli/src/databaseRuntime.ts
+packages/cli/src/runCli.test.ts
+docs/plans/memory-ideal-state/PLAN.md
+REVIEW.md
+```
+
+Implemented intent:
+
+- add `krn observe --run <id> [--persist]`;
+- load a persisted harness run from the DB runtime;
+- build deterministic observer input through the MM-13 harness builder;
+- preview by default and write observation group/items only with explicit
+  `--persist`;
+- create candidate fact observations with source ranges back to run evidence;
+- report `Memory mutation: none` and avoid MemoryRecord creation.
+
+Important limitation:
+
+- this is still manual operator-triggered CLI behavior;
+- this is not an observer worker;
+- this performs no LLM call;
+- this performs no reflection;
+- this performs no activation prefix selection;
+- this does not promote anything into Memory Core.
+
+Verification expected for the MM-15 head:
+
+```txt
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli typecheck
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
+```
+
+The reviewer should rerun these commands against the exact checkout being
+reviewed. Do not treat this note as a substitute for current command output.
 
 ## MM-14 Closeout Note
 
@@ -337,6 +392,7 @@ Observation layer:
   `packages/harness/src/observations/observerInput.ts`.
 - explicit source-range policy matrix in
   `packages/core/src/observations/observationPolicy.ts`.
+- manual observe-run CLI in `packages/cli/src/runObserveCommand.ts`.
 
 Observation tables:
 
