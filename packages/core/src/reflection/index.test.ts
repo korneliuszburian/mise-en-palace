@@ -4,9 +4,11 @@ import {
   REFLECTION_CANDIDATE_OUTPUT_TARGETS,
   assessReflectionOutputContract,
   buildReflectionCandidateGenerationPlan,
+  buildReflectionIssueReports,
   isReflectionOutputCandidateOnly,
   type ReflectionOutput
 } from "./index.js";
+import type { ObservationItem } from "../observations/index.js";
 
 const output: ReflectionOutput = {
   id: "reflection-1",
@@ -99,6 +101,41 @@ const output: ReflectionOutput = {
   createdAt: "2026-06-22T00:00:00.000Z",
   updatedAt: "2026-06-22T00:00:00.000Z"
 };
+
+const sourcedRange = {
+  id: "range-1",
+  sourceType: "run_event",
+  sourceId: "run-1",
+  locator: "run_events:1",
+  capturedAt: "2026-06-22T00:00:00.000Z"
+} as const;
+
+const observation = (overrides: Partial<ObservationItem>): ObservationItem => ({
+  id: "observation-1",
+  groupId: "group-1",
+  scope: {
+    projectId: "project-1"
+  },
+  kind: "fact",
+  status: "candidate",
+  priority: "medium",
+  confidence: "medium",
+  provenanceKind: "run_event",
+  subject: "source policy",
+  summary: "Source ranges are required.",
+  body: "Source-ranged observations preserve raw recall.",
+  temporalScope: {
+    observedAt: "2026-06-22T00:00:00.000Z",
+    ingestedAt: "2026-06-22T00:00:00.000Z"
+  },
+  sourceRanges: [sourcedRange],
+  entityLinks: [],
+  claimLinks: [],
+  metadata: {},
+  createdAt: "2026-06-22T00:00:00.000Z",
+  updatedAt: "2026-06-22T00:00:00.000Z",
+  ...overrides
+});
 
 describe("reflection contracts", () => {
   it("exposes candidate output targets only", () => {
@@ -208,5 +245,108 @@ describe("reflection contracts", () => {
     expect(plan.blockedReasons).toEqual([
       "metadata.createActiveMemory:final_truth_metadata"
     ]);
+  });
+
+  it("reports contested and conflict observations as contradictions", () => {
+    const reports = buildReflectionIssueReports({
+      now: "2026-06-22T01:00:00.000Z",
+      observations: [
+        observation({
+          id: "observation-contested",
+          status: "contested",
+          summary: "Observation source policy is disputed."
+        }),
+        observation({
+          id: "observation-conflict",
+          kind: "conflict",
+          summary: "Two observations disagree."
+        })
+      ]
+    });
+
+    expect(reports.contradictions.map((report) => report.metadata.reason)).toEqual([
+      "conflict_observation",
+      "contested_observation"
+    ]);
+    expect(reports.findings.filter((finding) => finding.kind === "contradiction")).toHaveLength(2);
+  });
+
+  it("reports observations that require but lack source ranges", () => {
+    const reports = buildReflectionIssueReports({
+      now: "2026-06-22T01:00:00.000Z",
+      observations: [
+        observation({
+          id: "observation-unsourced",
+          sourceRanges: []
+        }),
+        observation({
+          id: "observation-local-note",
+          kind: "operator_note",
+          provenanceKind: "local_operator_note",
+          subject: "local operator note",
+          summary: "Local operator note may omit source range.",
+          sourceRanges: []
+        })
+      ]
+    });
+
+    expect(reports.gaps).toEqual([expect.objectContaining({
+      id: "gap-missing-source-range-observation-unsourced",
+      missingEvidence: "source range",
+      metadata: expect.objectContaining({
+        reason: "missing_source_range"
+      })
+    })]);
+  });
+
+  it("reports stale and duplicate observations as gaps", () => {
+    const reports = buildReflectionIssueReports({
+      now: "2026-06-22T01:00:00.000Z",
+      observations: [
+        observation({
+          id: "observation-a",
+          summary: "Same repeated observation.",
+          temporalScope: {
+            observedAt: "2026-06-22T00:00:00.000Z",
+            ingestedAt: "2026-06-22T00:00:00.000Z",
+            validUntil: "2026-06-22T00:30:00.000Z"
+          }
+        }),
+        observation({
+          id: "observation-b",
+          summary: "Same repeated observation."
+        })
+      ]
+    });
+
+    expect(reports.gaps.map((gap) => gap.metadata.reason)).toEqual([
+      "duplicate_observations",
+      "stale_observation"
+    ]);
+  });
+
+  it("reports unsupported decisions without source claim links", () => {
+    const reports = buildReflectionIssueReports({
+      now: "2026-06-22T01:00:00.000Z",
+      observations: [],
+      decisions: [{
+        id: "decision-1",
+        status: "adopt",
+        decision: "Adopt observation source policy."
+      }, {
+        id: "decision-2",
+        sourceClaimId: "source-claim-1",
+        status: "adopt",
+        decision: "Adopt sourced policy."
+      }]
+    });
+
+    expect(reports.gaps).toEqual([expect.objectContaining({
+      id: "gap-unsupported-decision-decision-1",
+      severity: "high",
+      metadata: expect.objectContaining({
+        reason: "unsupported_decision"
+      })
+    })]);
   });
 });

@@ -18,6 +18,12 @@ import type {
 import type {
   IsoTimestamp
 } from "../time.js";
+import type {
+  ObservationItem
+} from "../observations/index.js";
+import {
+  requiresObservationSourceRange
+} from "../observations/index.js";
 
 export type ReflectionStatus = "candidate" | "reviewed" | "rejected" | "superseded";
 export type ReflectionFindingKind =
@@ -231,6 +237,25 @@ export interface ReflectionCandidateGenerationPlan {
   blockedReasons: string[];
 }
 
+export interface ReflectionDecisionSnapshot {
+  id: string;
+  sourceClaimId?: SourceClaimId;
+  status: "adopt" | "reject" | "defer" | "lab_test";
+  decision: string;
+}
+
+export interface ReflectionIssueReportInput {
+  observations: readonly ObservationItem[];
+  decisions?: readonly ReflectionDecisionSnapshot[];
+  now: IsoTimestamp;
+}
+
+export interface ReflectionIssueReports {
+  findings: ReflectionFinding[];
+  contradictions: ContradictionReport[];
+  gaps: GapReport[];
+}
+
 const normalizedKey = (key: string): string => (
   key
     .replace(/([a-z0-9])([A-Z])/gu, "$1_$2")
@@ -265,6 +290,161 @@ const collectForbiddenMetadata = (
 
     collectForbiddenMetadata(child, nextPath, violations);
   }
+};
+
+const normalizeReportText = (value: string): string => (
+  value.trim().replace(/\s+/gu, " ").toLowerCase()
+);
+
+const evidenceRefsForObservation = (observation: ObservationItem): string[] => (
+  observation.sourceRanges.map((range) => `${observation.id}:${range.id}`)
+);
+
+const parseTimestamp = (value: IsoTimestamp): number | undefined => {
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
+const findingFromContradiction = (report: ContradictionReport): ReflectionFinding => ({
+  id: `finding-${report.id}`,
+  kind: "contradiction",
+  severity: report.severity,
+  summary: report.summary,
+  observationItemIds: report.observationItemIds,
+  evidenceRefs: report.evidenceRefs,
+  metadata: report.metadata
+});
+
+const findingFromGap = (report: GapReport): ReflectionFinding => ({
+  id: `finding-${report.id}`,
+  kind: "gap",
+  severity: report.severity,
+  summary: report.summary,
+  observationItemIds: report.observationItemIds,
+  evidenceRefs: [],
+  metadata: report.metadata
+});
+
+export const buildReflectionIssueReports = (
+  input: ReflectionIssueReportInput
+): ReflectionIssueReports => {
+  const contradictions: ContradictionReport[] = [];
+  const gaps: GapReport[] = [];
+  const now = parseTimestamp(input.now);
+
+  for (const observation of input.observations) {
+    const evidenceRefs = evidenceRefsForObservation(observation);
+
+    if (observation.status === "contested" || observation.kind === "conflict") {
+      contradictions.push({
+        id: `contradiction-${observation.id}`,
+        summary: `Observation ${observation.id} is contested or conflict-marked.`,
+        observationItemIds: [observation.id],
+        conflictingClaims: [observation.summary],
+        evidenceRefs,
+        severity: observation.priority === "critical" ? "critical" : "high",
+        metadata: {
+          reason: observation.status === "contested" ? "contested_observation" : "conflict_observation",
+          observationKind: observation.kind,
+          observationStatus: observation.status
+        }
+      });
+    }
+
+    if (
+      requiresObservationSourceRange(observation.kind, observation.provenanceKind) &&
+      observation.sourceRanges.length === 0
+    ) {
+      gaps.push({
+        id: `gap-missing-source-range-${observation.id}`,
+        summary: `Observation ${observation.id} requires a source range but has none.`,
+        missingEvidence: "source range",
+        observationItemIds: [observation.id],
+        severity: "high",
+        metadata: {
+          reason: "missing_source_range",
+          observationKind: observation.kind,
+          provenanceKind: observation.provenanceKind
+        }
+      });
+    }
+
+    const validUntil = observation.temporalScope.validUntil === undefined
+      ? undefined
+      : parseTimestamp(observation.temporalScope.validUntil);
+
+    if (now !== undefined && validUntil !== undefined && validUntil < now) {
+      gaps.push({
+        id: `gap-stale-observation-${observation.id}`,
+        summary: `Observation ${observation.id} is stale for the reflection timestamp.`,
+        missingEvidence: "fresh observation or invalidation review",
+        observationItemIds: [observation.id],
+        severity: "medium",
+        metadata: {
+          reason: "stale_observation",
+          validUntil: observation.temporalScope.validUntil
+        }
+      });
+    }
+  }
+
+  const duplicateGroups = new Map<string, ObservationItem[]>();
+  for (const observation of input.observations) {
+    const duplicateKey = normalizeReportText(`${observation.subject}\n${observation.summary}`);
+    const group = duplicateGroups.get(duplicateKey) ?? [];
+    group.push(observation);
+    duplicateGroups.set(duplicateKey, group);
+  }
+
+  for (const group of duplicateGroups.values()) {
+    if (group.length < 2) {
+      continue;
+    }
+
+    const sortedGroup = [...group].sort((left, right) => left.id.localeCompare(right.id));
+    gaps.push({
+      id: `gap-duplicate-observations-${sortedGroup.map((item) => item.id).join("-")}`,
+      summary: "Duplicate observations require consolidation before reflection promotion.",
+      missingEvidence: "deduplicated observation or reviewer consolidation note",
+      observationItemIds: sortedGroup.map((item) => item.id),
+      severity: "low",
+      metadata: {
+        reason: "duplicate_observations",
+        duplicateKey: normalizeReportText(sortedGroup[0]?.summary ?? "")
+      }
+    });
+  }
+
+  for (const decision of input.decisions ?? []) {
+    if (decision.sourceClaimId !== undefined) {
+      continue;
+    }
+
+    gaps.push({
+      id: `gap-unsupported-decision-${decision.id}`,
+      summary: `Decision ${decision.id} has no source claim link.`,
+      missingEvidence: "source claim link",
+      observationItemIds: [],
+      severity: decision.status === "adopt" ? "high" : "medium",
+      metadata: {
+        reason: "unsupported_decision",
+        decisionId: decision.id,
+        decisionStatus: decision.status
+      }
+    });
+  }
+
+  const sortedContradictions = contradictions.sort((left, right) => left.id.localeCompare(right.id));
+  const sortedGaps = gaps.sort((left, right) => left.id.localeCompare(right.id));
+
+  return {
+    findings: [
+      ...sortedContradictions.map(findingFromContradiction),
+      ...sortedGaps.map(findingFromGap)
+    ].sort((left, right) => left.id.localeCompare(right.id)),
+    contradictions: sortedContradictions,
+    gaps: sortedGaps
+  };
 };
 
 export const assessReflectionOutputContract = (output: {

@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-21 and MM-16R in
+- MM-00 through MM-22 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -51,10 +51,13 @@ Current runtime truth:
   contradiction/gap observations visible and enforces project isolation.
 - Reflection candidate-generation plan counts proposal arrays and blocks on
   candidate-only guard violations without writing candidate or memory rows.
+- Reflection contradiction/gap report builder exists in pure core and reports
+  contested/conflict observations, missing source ranges, stale observations,
+  duplicates, and unsupported decisions.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-22 contradiction and gap report hardening.
+- Continue with MM-23 manual reflect CLI.
