@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-32.
+- None for MM-32B.
+
+Closed in MM-32:
+
+- Memory health audit flags stale high-confidence memory.
+- Memory health audit flags active memory without lineage/source-claim support.
+- Memory health audit flags active memory with no application feedback.
+- Memory health audit flags missing application guidance and temporal memory
+  without invalidation strategy.
+- The audit remains snapshot-level; DB-backed audit ingestion is intentionally
+  MM-32B.
 
 Closed in MM-31:
 
@@ -98,6 +108,8 @@ Residual later scope:
 - Governed promotion via MemoryReviewGate is built through MM-27.
 - Explicit anti-memory blocking is built for source claims, memory records,
   linked search documents, and observation prefix items.
+- Snapshot-level memory health audit is built for unhealthy Memory Core
+  records.
 - Golden proof remains planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is

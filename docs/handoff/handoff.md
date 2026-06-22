@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-31. KRN has
+The memory ideal-state execution track is implemented through MM-32. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -13,12 +13,15 @@ feedback surfaces a blocking memory health finding. Anti-memory now blocks
 explicit memory-record activation candidates, linked search-document
 candidates, and observation prefix items by explicit IDs/keys. Context assembly
 now records explicit abstention metadata when available context is absent,
-weak, unsafe, stale, over budget, or fully excluded.
+weak, unsafe, stale, over budget, or fully excluded. Memory health audit now
+flags stale high-confidence records, active records without lineage/source
+support, no application feedback, missing guidance, temporal records without
+invalidation strategy, and high negative feedback.
 
 Last verified state:
-MM-31 verification passed with focused activation abstention test, focused
+MM-32 verification passed with focused memory-health audit test, focused
 harness typecheck, full `pnpm typecheck`, full `pnpm test`, and DB-aware
-`pnpm db:ready`. Full tests pass across 45 files and 228 tests. Live DB
+`pnpm db:ready`. Full tests pass across 45 files and 229 tests. Live DB
 readiness proves 11/11 migrations and pgvector.
 
 Current dirty context:
@@ -34,11 +37,12 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-31 memory ideal-state slices: complete through governed
+- MM-00 through MM-32 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
-  observation prefix items, and explicit activation abstention metadata.
+  observation prefix items, explicit activation abstention metadata, and
+  broader snapshot-level memory health audit findings.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -86,6 +90,9 @@ Runtime proof status:
 - activation abstention: context assembly records `activationAbstention`
   metadata with reason, explanation, candidate count, exclusion count, and
   exclusion reasons.
+- memory health audit: supplied memory snapshots flag stale high-confidence
+  memory, no lineage/source-claim support, no application feedback, missing
+  guidance, missing temporal invalidation strategy, and high negative feedback.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -97,18 +104,20 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-31 blocker remains. Memory abstain behavior is implemented as explicit
-context metadata, not as context padding or Memory Core mutation.
+No MM-32 blocker remains. Memory health audit is snapshot-level only; MM-32B
+owns DB/AuditBundle/verification ingestion.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
 mutation, actual Codex execution, automatic memory promotion, fuzzy
-anti-memory matching, golden proof, and production worker throughput.
+anti-memory matching, DB-backed audit semantic snapshot ingestion, golden
+proof, and production worker throughput.
 
 Next safest action:
-Run MM-32 and add the broader memory health audit.
+Run MM-32B and make the audit CLI consume real AuditBundle/verification and
+semantic DB snapshots.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

@@ -30,9 +30,14 @@ export interface AuditMemoryRecordSnapshot {
   id: string;
   summary: string;
   status: "active" | "deprecated" | "stale" | "invalidated" | "superseded";
+  confidence?: number;
   positiveFeedbackCount: number;
   negativeFeedbackCount: number;
+  sourceLineageCount?: number;
+  sourceClaimCount?: number;
+  hasApplicationGuidance?: boolean;
   hasInvalidationStrategy: boolean;
+  isTemporal?: boolean;
 }
 
 export interface AuditSourceClaimSnapshot {
@@ -449,6 +454,40 @@ export const runMemorySemanticsAudit = (snapshot: AuditRepoSnapshot): AuditFindi
   }
 
   for (const memoryRecord of snapshot.memoryRecords ?? []) {
+    if (
+      memoryRecord.status === "stale" &&
+      memoryRecord.confidence !== undefined &&
+      memoryRecord.confidence >= 85
+    ) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:memory:stale-high-confidence:${memoryRecord.id}`,
+        category: "memory_semantics",
+        severity: "blocking",
+        title: "Stale high-confidence memory remains reviewable",
+        summary: "High-confidence stale memory must be reviewed, invalidated, or demoted instead of remaining an ambiguous trusted record.",
+        evidenceRefs: [memoryRecord.id],
+        recommendation: "Route the stale memory through review and update its validity, invalidation status, or confidence before activation.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (
+      memoryRecord.status === "active" &&
+      memoryRecord.sourceLineageCount === 0 &&
+      memoryRecord.sourceClaimCount === 0
+    ) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:memory:record-lineage:${memoryRecord.id}`,
+        category: "memory_semantics",
+        severity: "blocking",
+        title: "Active memory lacks lineage",
+        summary: "Active Memory Core records need source lineage or source claims unless they are explicitly modeled as allowed operator/user preference notes.",
+        evidenceRefs: [memoryRecord.id],
+        recommendation: "Attach source lineage/source claims or demote the record for review before it can be activated.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
     if (memoryRecord.status === "active" && memoryRecord.negativeFeedbackCount >= 3) {
       findings.push(makeFinding({
         id: `${snapshot.sliceId}:memory:negative-feedback:${memoryRecord.id}`,
@@ -458,6 +497,49 @@ export const runMemorySemanticsAudit = (snapshot: AuditRepoSnapshot): AuditFindi
         summary: "Repeated hurt/stale feedback must surface a review-required demotion or invalidation action instead of remaining a passive counter.",
         evidenceRefs: [memoryRecord.id],
         recommendation: "Create a review-required demotion/invalidation candidate or invalidate the memory through the governed review path.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (
+      memoryRecord.status === "active" &&
+      memoryRecord.positiveFeedbackCount === 0 &&
+      memoryRecord.negativeFeedbackCount === 0
+    ) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:memory:no-application-feedback:${memoryRecord.id}`,
+        category: "memory_semantics",
+        severity: "warning",
+        title: "Active memory has no application feedback",
+        summary: "Active memory without application feedback has not yet proven usefulness in KRN runs.",
+        evidenceRefs: [memoryRecord.id],
+        recommendation: "Capture application feedback during activation or treat the record as lower-confidence until it is proven useful.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (memoryRecord.hasApplicationGuidance === false) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:memory:record-guidance:${memoryRecord.id}`,
+        category: "memory_semantics",
+        severity: "warning",
+        title: "Memory record lacks application guidance",
+        summary: "Memory records must explain when Codex should apply them, not only store a fact.",
+        evidenceRefs: [memoryRecord.id],
+        recommendation: "Add concise application guidance or demote the record for review.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (memoryRecord.isTemporal === true && !memoryRecord.hasInvalidationStrategy) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:memory:record-invalidation:${memoryRecord.id}`,
+        category: "memory_semantics",
+        severity: "warning",
+        title: "Temporal memory record lacks invalidation strategy",
+        summary: "Temporal Memory Core records need validity or invalidation behavior to avoid stale activation.",
+        evidenceRefs: [memoryRecord.id],
+        recommendation: "Add validUntil, revisitWhen, or an invalidation rule before activation depends on this record.",
         createdAt: snapshot.capturedAt
       }));
     }

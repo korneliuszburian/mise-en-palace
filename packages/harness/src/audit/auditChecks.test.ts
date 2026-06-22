@@ -176,6 +176,67 @@ describe("audit checks", () => {
     })]);
   });
 
+  it("detects unhealthy memory records", () => {
+    const findings = runMemorySemanticsAudit(baseSnapshot({
+      memoryRecords: [
+        {
+          id: "memory-stale",
+          summary: "Use the old markdown memory folder",
+          status: "stale",
+          confidence: 95,
+          positiveFeedbackCount: 0,
+          negativeFeedbackCount: 0,
+          hasInvalidationStrategy: false,
+          hasApplicationGuidance: false,
+          isTemporal: true,
+          sourceLineageCount: 0,
+          sourceClaimCount: 0
+        },
+        {
+          id: "memory-unproven",
+          summary: "Always use a separate vector DB",
+          status: "active",
+          confidence: 80,
+          positiveFeedbackCount: 0,
+          negativeFeedbackCount: 0,
+          hasInvalidationStrategy: true,
+          hasApplicationGuidance: true,
+          isTemporal: false,
+          sourceLineageCount: 0,
+          sourceClaimCount: 0
+        }
+      ]
+    }));
+
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        category: "memory_semantics",
+        severity: "blocking",
+        title: "Stale high-confidence memory remains reviewable"
+      }),
+      expect.objectContaining({
+        category: "memory_semantics",
+        severity: "blocking",
+        title: "Active memory lacks lineage"
+      }),
+      expect.objectContaining({
+        category: "memory_semantics",
+        severity: "warning",
+        title: "Active memory has no application feedback"
+      }),
+      expect.objectContaining({
+        category: "memory_semantics",
+        severity: "warning",
+        title: "Memory record lacks application guidance"
+      }),
+      expect.objectContaining({
+        category: "memory_semantics",
+        severity: "warning",
+        title: "Temporal memory record lacks invalidation strategy"
+      })
+    ]));
+  });
+
   it("detects weak source grounding", () => {
     const findings = runSourceGroundingAudit(baseSnapshot({
       sourceClaims: [
