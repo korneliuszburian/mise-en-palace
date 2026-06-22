@@ -5,7 +5,8 @@ import {
   validateObservationContract,
   type ObservationItem,
   type ObservationKind,
-  type ObservationProvenanceKind
+  type ObservationProvenanceKind,
+  type ObservationTemporalScope
 } from "./index.js";
 
 const now = "2026-06-22T12:00:00.000Z";
@@ -40,7 +41,9 @@ const validObservation = (
     observedAt: now,
     eventTime: now,
     ingestedAt: now,
+    referencedAt: now,
     referenceTime: now,
+    relativeTimeBase: now,
     validFrom: now
   },
   sourceRanges: [sourceRange],
@@ -53,6 +56,20 @@ const validObservation = (
 });
 
 describe("observation domain contracts", () => {
+  test("supports relative and referenced temporal anchors", () => {
+    const temporalScope: ObservationTemporalScope = {
+      observedAt: now,
+      ingestedAt: now,
+      referencedAt: now,
+      relativeTimeBase: now
+    };
+
+    expect(temporalScope).toMatchObject({
+      referencedAt: now,
+      relativeTimeBase: now
+    });
+  });
+
   test("rejects factual observations without a source range", () => {
     const observation = validObservation({
       kind: "fact",
@@ -108,6 +125,19 @@ describe("observation domain contracts", () => {
         })
       )
     ).toEqual({ ok: false, errors: ["chain_of_thought_forbidden"] });
+  });
+
+  test("rejects observations without required temporal anchors", () => {
+    expect(
+      validateObservationContract(
+        validObservation({
+          temporalScope: {
+            observedAt: "",
+            ingestedAt: ""
+          }
+        })
+      )
+    ).toEqual({ ok: false, errors: ["temporal_anchor_required"] });
   });
 
   test("source-range requirement matrix covers every observation kind", () => {
