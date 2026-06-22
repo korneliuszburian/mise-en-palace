@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-29A. KRN has
+The memory ideal-state execution track is implemented through MM-30. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -9,13 +9,14 @@ promote --persist` only with `--evidence-reviewed-ref`. Memory invalidation now
 marks records invalidated and excludes them from active memory while preserving
 their MemoryRecordVersion audit trail. Memory application feedback now affects
 activation ranking through feedback scores/penalties, and repeated negative
-feedback surfaces a blocking memory health finding.
+feedback surfaces a blocking memory health finding. Anti-memory now blocks
+explicit memory-record activation candidates by key/appliesTo.
 
 Last verified state:
-MM-29A verification passed with focused audit health tests, focused harness
+MM-30 verification passed with focused activation conflict tests, focused harness
 typecheck, full `pnpm typecheck`, full `pnpm test`, DB-aware `pnpm db:ready`,
 forbidden surface scans, and `git diff --check`. Full tests pass across 45
-files and 224 tests. Live DB readiness proves 11/11 migrations and pgvector.
+files and 225 tests. Live DB readiness proves 11/11 migrations and pgvector.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -30,9 +31,10 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-29A memory ideal-state slices: complete through governed
+- MM-00 through MM-30 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
-  ranking, and negative-feedback health findings.
+  ranking, negative-feedback health findings, and explicit memory anti-memory
+  blocking.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -74,6 +76,8 @@ Runtime proof status:
   candidates and is exposed in candidate metadata.
 - memory health audit: active memory with repeated negative feedback is a
   blocking finding requiring review action.
+- anti-memory: explicit memory-record candidates are blocked by subject id,
+  memory key, anti-memory key, or `appliesTo`.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -85,18 +89,19 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-29A blocker remains. Broad anti-memory enforcement is intentionally
-future MM-30/MM-30A behavior.
+No MM-30 blocker remains. Search-document and observation-prefix anti-memory
+expansion are intentionally future MM-30A behavior.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
-mutation, actual Codex execution, automatic memory promotion, broad anti-memory
-enforcement, and production worker throughput.
+mutation, actual Codex execution, automatic memory promotion, search-document
+anti-memory expansion, observation-prefix anti-memory expansion, and production
+worker throughput.
 
 Next safest action:
-Run MM-30 and enforce anti-memory in retrieval/context.
+Run MM-30A and expand anti-memory enforcement beyond memory/source candidates.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

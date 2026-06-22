@@ -33,6 +33,50 @@ const sourceClaimIdsBlockedByAntiMemory = (
   return blocked;
 };
 
+const antiMemoryTargetsMemory = (
+  antiMemory: AntiMemoryRecord,
+  candidate: RankedActivationCandidate
+): boolean => {
+  if (candidate.subjectType !== "memory_record") {
+    return false;
+  }
+
+  const candidateKey = candidate.metadata.key;
+  const appliesTo = antiMemory.appliesTo?.trim();
+
+  return (
+    antiMemory.key === candidate.subjectId ||
+    appliesTo === candidate.subjectId ||
+    (typeof candidateKey === "string" &&
+      (antiMemory.key === candidateKey || appliesTo === candidateKey))
+  );
+};
+
+const antiMemoryForMemoryCandidate = (
+  antiMemoryRecords: readonly AntiMemoryRecord[],
+  candidate: RankedActivationCandidate
+): AntiMemoryRecord | undefined =>
+  antiMemoryRecords.find((antiMemory) => antiMemoryTargetsMemory(antiMemory, candidate));
+
+const blockCandidateWithAntiMemory = (
+  candidate: RankedActivationCandidate,
+  antiMemory: AntiMemoryRecord
+): RankedActivationCandidate =>
+  markExcluded(
+    {
+      ...candidate,
+      metadata: {
+        ...candidate.metadata,
+        conflictReason: "anti_memory_block",
+        antiMemoryRecordId: antiMemory.id
+      }
+    },
+    {
+      reason: "unsafe",
+      explanation: `Blocked by anti-memory ${antiMemory.id}: ${antiMemory.reason ?? antiMemory.summary}`
+    }
+  );
+
 export const detectConflicts = (
   candidates: readonly RankedActivationCandidate[],
   antiMemoryRecords: readonly AntiMemoryRecord[]
@@ -41,11 +85,14 @@ export const detectConflicts = (
   const conflictSets: ConflictSet[] = [];
 
   const resolvedCandidates = candidates.map((candidate) => {
-    if (candidate.exclusion !== undefined || candidate.subjectType !== "source_claim") {
+    if (candidate.exclusion !== undefined) {
       return candidate;
     }
 
-    const antiMemory = blockedSourceClaims.get(candidate.subjectId);
+    const antiMemory =
+      candidate.subjectType === "source_claim"
+        ? blockedSourceClaims.get(candidate.subjectId)
+        : antiMemoryForMemoryCandidate(antiMemoryRecords, candidate);
 
     if (antiMemory === undefined) {
       return candidate;
@@ -59,20 +106,7 @@ export const detectConflicts = (
       explanation: antiMemory.reason ?? antiMemory.summary
     });
 
-    return markExcluded(
-      {
-        ...candidate,
-        metadata: {
-          ...candidate.metadata,
-          conflictReason: "anti_memory_block",
-          antiMemoryRecordId: antiMemory.id
-        }
-      },
-      {
-        reason: "unsafe",
-        explanation: `Blocked by anti-memory ${antiMemory.id}: ${antiMemory.reason ?? antiMemory.summary}`
-      }
-    );
+    return blockCandidateWithAntiMemory(candidate, antiMemory);
   });
 
   return {

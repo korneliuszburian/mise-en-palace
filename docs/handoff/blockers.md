@@ -2,7 +2,14 @@
 
 Hard blockers:
 
-- None for MM-30.
+- None for MM-30A.
+
+Closed in MM-30:
+
+- Anti-memory blocks explicit memory-record candidates by subject id, memory
+  key, anti-memory key, or `appliesTo`.
+- Blocked memory candidates carry anti-memory conflict metadata and conflict
+  sets.
 
 Closed in MM-29A:
 
@@ -72,7 +79,8 @@ Residual later scope:
 - Observational memory staging is built and dogfooded through MM-17F.
 - Reflection staging is built through MM-25.
 - Governed promotion via MemoryReviewGate is built through MM-27.
-- Anti-memory expansion and golden proof remain planned later work in
+- Search-document anti-memory expansion, observation-prefix anti-memory
+  expansion, and golden proof remain planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is
   intentionally blocked.

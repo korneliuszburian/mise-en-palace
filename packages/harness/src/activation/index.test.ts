@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type {
+  AntiMemoryRecord,
   MemoryRecord,
   SourceClaim,
   TaskContract
@@ -12,6 +13,7 @@ import {
   assembleContext,
   buildMemoryQuery,
   buildSourceQuery,
+  detectConflicts,
   rankCandidates,
   toMemoryCandidate,
   toSourceClaimCandidate
@@ -70,6 +72,26 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
+  id: "anti-memory-1",
+  projectId: "project-1",
+  key: "anti:brain-store",
+  rejectedClaim: "Brain store guidance should use dashboard markdown as runtime memory.",
+  reason: "Runtime memory must be store-backed.",
+  invalidatedBySourceClaimIds: [],
+  appliesTo: "brain-store",
+  summary: "Block stale brain-store memory",
+  body: "Do not activate memory matching the stale brain-store key.",
+  owner: "operator",
+  confidence: 90,
+  sourceLineage: [{ sourceId: "source-claim-1" }],
+  metadata: {},
+  validFrom: now,
+  createdAt: now,
+  updatedAt: now,
   ...overrides
 });
 
@@ -177,6 +199,40 @@ describe("activation engine", () => {
       feedbackPenalty: -60,
       negativeFeedbackCount: 4
     });
+  });
+
+  it("blocks memory records by explicit anti-memory key", () => {
+    const query = buildMemoryQuery(task);
+    const ranked = rankCandidates(
+      [
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-blocked",
+            key: "brain-store"
+          })
+        )
+      ],
+      query
+    );
+    const result = detectConflicts(ranked, [antiMemoryRecord({ id: "anti-memory-1" })]);
+
+    expect(result.candidates[0]).toMatchObject({
+      subjectId: "memory-blocked",
+      exclusion: {
+        reason: "unsafe",
+        explanation: expect.stringContaining("anti-memory")
+      },
+      metadata: {
+        conflictReason: "anti_memory_block",
+        antiMemoryRecordId: "anti-memory-1"
+      }
+    });
+    expect(result.conflictSets).toEqual([
+      expect.objectContaining({
+        reason: "anti_memory_block",
+        candidateIds: expect.arrayContaining(["memory-blocked", "anti-memory-1"])
+      })
+    ]);
   });
 
   it("excludes source claims without doesNotProve", () => {
