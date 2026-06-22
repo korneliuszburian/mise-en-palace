@@ -42,7 +42,10 @@ condition, rollback expectation, and what-this-does-not-prove. M26.04 added a
 typed `CodexHookExpectationProjection`, projection-backed helper functions, and
 hook `applies_to` rendering in the execution brief. RED hook projection test
 failed on the missing projection function; GREEN adapter tests passed with 3
-test files and 6 tests, and adapter typecheck passed.
+test files and 6 tests, adapter typecheck passed, full `pnpm typecheck`
+passed across 7 workspace packages, and full `pnpm test` passed with 20 test
+files and 107 tests. Slice 04 was committed and pushed as
+`97154a0 feat(codex): add hook expectation projection`.
 
 Changed files:
 `packages/codex-adapter/src/contracts.ts`,
@@ -101,9 +104,7 @@ Context selectors:
 `packages/cli/src/runDoctorCommand.ts`.
 
 Next action:
-Run full verification, commit
-`feat(codex): add hook expectation projection`, push, then start M26.05 Codex
-adapter smoke path.
+Start M26.05 Codex adapter smoke path.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

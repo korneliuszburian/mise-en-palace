@@ -48,6 +48,8 @@ Completed:
   memory mutation.
 - Slice 04 renders `applies_to` details for hook expectations in the execution
   brief text.
+- Slice 04 was committed and pushed as
+  `97154a0 feat(codex): add hook expectation projection`.
 
 Verification:
 
@@ -136,5 +138,4 @@ Verification:
 
 Next:
 
-- Commit Slice 04 as `feat(codex): add hook expectation projection`.
 - Start M26.05 Codex adapter smoke path.
