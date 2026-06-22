@@ -26,6 +26,15 @@ export interface AuditMemoryCandidateSnapshot {
   autoPromotesToMemory: boolean;
 }
 
+export interface AuditMemoryRecordSnapshot {
+  id: string;
+  summary: string;
+  status: "active" | "deprecated" | "stale" | "invalidated" | "superseded";
+  positiveFeedbackCount: number;
+  negativeFeedbackCount: number;
+  hasInvalidationStrategy: boolean;
+}
+
 export interface AuditSourceClaimSnapshot {
   id: string;
   claim: string;
@@ -69,6 +78,7 @@ export interface AuditRepoSnapshot {
   intendedFiles: readonly string[];
   verificationCommands: readonly AuditVerificationCommandSnapshot[];
   memoryCandidates?: readonly AuditMemoryCandidateSnapshot[];
+  memoryRecords?: readonly AuditMemoryRecordSnapshot[];
   sourceClaims?: readonly AuditSourceClaimSnapshot[];
   sourceDecisions?: readonly AuditSourceDecisionSnapshot[];
   evalCandidates?: readonly AuditEvalCandidateSnapshot[];
@@ -433,6 +443,21 @@ export const runMemorySemanticsAudit = (snapshot: AuditRepoSnapshot): AuditFindi
         summary: "Temporal memory needs validity or invalidation behavior to avoid stale activation.",
         evidenceRefs: [candidate.id],
         recommendation: "Add validUntil, revisitWhen, or an invalidation rule before promotion review.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+  }
+
+  for (const memoryRecord of snapshot.memoryRecords ?? []) {
+    if (memoryRecord.status === "active" && memoryRecord.negativeFeedbackCount >= 3) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:memory:negative-feedback:${memoryRecord.id}`,
+        category: "memory_semantics",
+        severity: "blocking",
+        title: "Active memory has unresolved negative feedback",
+        summary: "Repeated hurt/stale feedback must surface a review-required demotion or invalidation action instead of remaining a passive counter.",
+        evidenceRefs: [memoryRecord.id],
+        recommendation: "Create a review-required demotion/invalidation candidate or invalidate the memory through the governed review path.",
         createdAt: snapshot.capturedAt
       }));
     }

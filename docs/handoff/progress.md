@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-29 and MM-16R in
+- MM-00 through MM-29A and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -86,10 +86,12 @@ Current runtime truth:
 - MM-29 makes memory application feedback affect activation ranking through
   `feedbackScore` and `feedbackPenalty`; negative feedback is no longer a
   passive counter.
+- MM-29A surfaces active memory with repeated negative feedback as a blocking
+  audit health finding, without automatic invalidation.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-29A feedback demotion and invalidation candidates.
+- Continue with MM-30 anti-memory enforcement in retrieval/context.

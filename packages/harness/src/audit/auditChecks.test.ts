@@ -155,6 +155,27 @@ describe("audit checks", () => {
     ]));
   });
 
+  it("detects active memory with unresolved negative feedback", () => {
+    const findings = runMemorySemanticsAudit(baseSnapshot({
+      memoryRecords: [
+        {
+          id: "memory-1",
+          summary: "Use stale graph DB guidance",
+          status: "active",
+          positiveFeedbackCount: 0,
+          negativeFeedbackCount: 3,
+          hasInvalidationStrategy: true
+        }
+      ]
+    }));
+
+    expect(findings).toEqual([expect.objectContaining({
+      category: "memory_semantics",
+      severity: "blocking",
+      title: "Active memory has unresolved negative feedback"
+    })]);
+  });
+
   it("detects weak source grounding", () => {
     const findings = runSourceGroundingAudit(baseSnapshot({
       sourceClaims: [

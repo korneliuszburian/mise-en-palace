@@ -1,35 +1,34 @@
 # Verification
 
-Latest verified slice: MM-29 memory feedback application and ranking.
+Latest verified slice: MM-29A feedback demotion/invalidation health signal.
 
 Passed:
 
-- Focused RED activation test failed because memory with
-  `negativeFeedbackCount: 4` still ranked above clean memory.
-- Focused GREEN activation test passed with 9 files and 31 tests.
+- Focused RED audit test failed because active memory with
+  `negativeFeedbackCount: 3` produced no finding.
+- Focused GREEN audit test passed with 9 files and 32 tests.
 - Focused harness typecheck passed.
 - `pnpm typecheck` passed across all workspace packages.
-- `pnpm test` passed across 45 files and 223 tests.
+- `pnpm test` passed across 45 files and 224 tests.
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
   passed with 11/11 migrations and pgvector available.
 - `git diff --check` passed.
 - Forbidden directory scan found no added dashboard/API/MCP/research/pattern
   surfaces.
 
-MM-29 behavior proof:
+MM-29A behavior proof:
 
-- Memory activation candidates now carry `feedbackScore`.
-- Positive feedback adds a small ranking boost.
-- Negative feedback applies a larger ranking penalty.
-- Candidate metadata exposes `positiveFeedbackCount`, `negativeFeedbackCount`,
-  and `feedbackPenalty`.
-- A memory record with repeated negative feedback ranks below a clean memory
-  record with the same task match.
+- `AuditMemoryRecordSnapshot` can represent active MemoryRecord feedback health.
+- Active memory with repeated negative feedback creates a blocking
+  `memory_semantics` finding.
+- The finding recommendation requires review action rather than automatic
+  destructive invalidation.
+- This closes the failure mode where hurt/stale feedback increments counters
+  indefinitely with no surfaced action.
 
-Not proven by MM-29:
+Not proven by MM-29A:
 
-- Review-required demotion/invalidation candidates.
-- Automatic status changes from feedback.
+- DB-backed audit snapshot readers for memory records.
 - Broad anti-memory enforcement.
 - Golden memory behavior runner.
 - API/MCP/dashboard readiness.

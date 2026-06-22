@@ -2,7 +2,13 @@
 
 Hard blockers:
 
-- None for MM-29A.
+- None for MM-30.
+
+Closed in MM-29A:
+
+- Active memory with repeated negative feedback now creates a blocking audit
+  health finding.
+- The finding requires review action and does not auto-invalidate memory.
 
 Closed in MM-29:
 
@@ -66,8 +72,7 @@ Residual later scope:
 - Observational memory staging is built and dogfooded through MM-17F.
 - Reflection staging is built through MM-25.
 - Governed promotion via MemoryReviewGate is built through MM-27.
-- Review-required demotion/invalidation candidates, anti-memory expansion, and
-  golden proof remain planned later work in
+- Anti-memory expansion and golden proof remain planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is
   intentionally blocked.

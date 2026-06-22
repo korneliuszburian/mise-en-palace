@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-29 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-29A and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -47,10 +47,10 @@ Current public state:
   and live smoke proof that invalidated memory is excluded from active memory
   while the previous MemoryRecordVersion remains auditable. MM-29 made memory
   application feedback affect activation ranking through explicit feedback
-  score/penalty.
+  score/penalty. MM-29A added an audit health finding for active memory with
+  repeated negative feedback.
 - Not built:
-  feedback-driven demotion/invalidation candidates, broad
-  anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
+  broad anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
   plugin package, source crawler, and broad benchmark suite.
 
 Do not use older orientation text in this file to infer that the repo has no
