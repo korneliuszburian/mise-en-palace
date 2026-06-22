@@ -152,3 +152,24 @@ Results:
 - `pnpm --filter @krn/db db:check` passed.
 - `pnpm typecheck` passed across 7 workspace packages.
 - Live `pnpm db:ready` passed with 8/8 migrations and pgvector available.
+
+## Slice 04
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- repositories/DrizzleProjectRepository.test.ts
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- Added `getProjectByRepoFingerprint`.
+- Added `getProjectByRepoPath`.
+- Added `listRepoInstallationsForProject`.
+- Added `cleanupFixtureProjectRecords`.
+- `createRepoInstallation` now persists optional `repoFingerprint`.
+- Targeted repository test passed.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 28 test files and 122 tests.

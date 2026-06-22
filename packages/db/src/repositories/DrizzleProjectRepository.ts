@@ -1,4 +1,4 @@
-import { desc, eq, and } from "drizzle-orm";
+import { desc, eq, and, sql } from "drizzle-orm";
 import type {
   CreateProjectInput,
   CreateProjectKernelInput,
@@ -91,6 +91,30 @@ export class DrizzleProjectRepository implements ProjectRepository {
     return row === undefined ? undefined : mapProject(row);
   }
 
+  async getProjectByRepoFingerprint(repoFingerprint: string): Promise<ProjectRecord | undefined> {
+    const row = await this.db
+      .select({ project: projects })
+      .from(repoInstallations)
+      .innerJoin(projects, eq(repoInstallations.projectId, projects.id))
+      .where(eq(repoInstallations.repoFingerprint, repoFingerprint))
+      .limit(1);
+    const project = row[0]?.project;
+
+    return project === undefined ? undefined : mapProject(project);
+  }
+
+  async getProjectByRepoPath(localPathHint: string): Promise<ProjectRecord | undefined> {
+    const row = await this.db
+      .select({ project: projects })
+      .from(repoInstallations)
+      .innerJoin(projects, eq(repoInstallations.projectId, projects.id))
+      .where(eq(repoInstallations.localPathHint, localPathHint))
+      .limit(1);
+    const project = row[0]?.project;
+
+    return project === undefined ? undefined : mapProject(project);
+  }
+
   async createRepoInstallation(
     input: CreateRepoInstallationInput
   ): Promise<RepoInstallationRecord> {
@@ -102,6 +126,7 @@ export class DrizzleProjectRepository implements ProjectRepository {
           provider: input.provider,
           repoUrl: input.repoUrl,
           defaultBranch: input.defaultBranch,
+          ...(input.repoFingerprint === undefined ? {} : { repoFingerprint: input.repoFingerprint }),
           ...(input.localPathHint === undefined ? {} : { localPathHint: input.localPathHint }),
           metadata: input.metadata ?? {}
         })
@@ -110,6 +135,17 @@ export class DrizzleProjectRepository implements ProjectRepository {
     );
 
     return mapRepoInstallation(row);
+  }
+
+  async listRepoInstallationsForProject(
+    projectId: ProjectId
+  ): Promise<RepoInstallationRecord[]> {
+    const rows = await this.db.query.repoInstallations.findMany({
+      where: eq(repoInstallations.projectId, projectId),
+      orderBy: desc(repoInstallations.createdAt)
+    });
+
+    return rows.map(mapRepoInstallation);
   }
 
   async createProjectKernel(input: CreateProjectKernelInput): Promise<ProjectKernelRecord> {
@@ -137,5 +173,14 @@ export class DrizzleProjectRepository implements ProjectRepository {
     });
 
     return row === undefined ? undefined : mapProjectKernel(row);
+  }
+
+  async cleanupFixtureProjectRecords(marker: string): Promise<number> {
+    const rows = await this.db
+      .delete(workspaces)
+      .where(sql`${workspaces.metadata}->>'fixtureMarker' = ${marker}`)
+      .returning({ id: workspaces.id });
+
+    return rows.length;
   }
 }

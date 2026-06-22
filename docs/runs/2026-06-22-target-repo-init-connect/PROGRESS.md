@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 03 init/connect schema support complete.
+Current slice: Slice 04 repository methods complete.
 
 Completed:
 
@@ -34,8 +34,10 @@ Completed:
   signals and TypeScript source.
 - Slice 03 added first-class repo fingerprint schema support on
   `repo_installations`, with generated migration `0007_conscious_scarlet_witch`.
+- Slice 04 added project repository methods for repo fingerprint lookup, repo
+  path lookup, repo installation listing, and fixture cleanup.
 
 Next action:
 
-- Slice 04 finish and commit repository methods for init/connect idempotency,
-  listing, and fixture cleanup.
+- Slice 05 implement `krn init --dry-run --repo <path>` with no writes and a
+  thin overlay proposal.
