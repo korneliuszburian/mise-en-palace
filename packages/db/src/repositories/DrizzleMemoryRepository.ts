@@ -52,18 +52,96 @@ const smokePayload = (
 const memoryRecordKeyForCandidate = (input: PromoteMemoryCandidateInput): string =>
   input.recordKey ?? `memory:${input.candidateId}`;
 
+interface MemoryCoreInvariantInput {
+  summary: string;
+  body: string;
+  owner: string;
+  confidence: number;
+  applicationGuidance: string;
+  invalidationRule?: string;
+  sourceLineage: readonly { sourceId: string }[];
+  validFrom?: string;
+  validUntil?: string;
+}
+
+const hasText = (value: string | undefined): boolean =>
+  value !== undefined && value.trim().length > 0;
+
+const timestampValue = (value: string | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const parsed = Date.parse(value);
+
+  return Number.isNaN(parsed) ? undefined : parsed;
+};
+
+export const assertMemoryCoreInvariants = (
+  input: MemoryCoreInvariantInput,
+  subject: string
+): void => {
+  if (!hasText(input.summary)) {
+    throw new Error(`${subject} requires summary`);
+  }
+
+  if (!hasText(input.body)) {
+    throw new Error(`${subject} requires body`);
+  }
+
+  if (!hasText(input.owner)) {
+    throw new Error(`${subject} requires owner`);
+  }
+
+  if (!Number.isInteger(input.confidence) || input.confidence < 0 || input.confidence > 100) {
+    throw new Error(`${subject} confidence must be an integer from 0 to 100`);
+  }
+
+  if (!hasText(input.applicationGuidance)) {
+    throw new Error(`${subject} requires application guidance`);
+  }
+
+  if (
+    input.sourceLineage.length === 0 ||
+    input.sourceLineage.some((lineage) => !hasText(lineage.sourceId))
+  ) {
+    throw new Error(`${subject} requires source lineage`);
+  }
+
+  if (input.validUntil !== undefined) {
+    if (!hasText(input.validFrom)) {
+      throw new Error(`${subject} with validUntil requires validFrom`);
+    }
+
+    if (!hasText(input.invalidationRule)) {
+      throw new Error(`${subject} with validUntil requires invalidation rule`);
+    }
+
+    const validFrom = timestampValue(input.validFrom);
+    const validUntil = timestampValue(input.validUntil);
+
+    if (validFrom !== undefined && validUntil !== undefined && validUntil <= validFrom) {
+      throw new Error(`${subject} validUntil must be after validFrom`);
+    }
+  }
+};
+
 const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
   if (candidate.status !== "proposed" && candidate.status !== "candidate") {
     throw new Error(
       `Memory candidate ${candidate.id} cannot be promoted from ${candidate.status}`
     );
   }
+
+  assertMemoryCoreInvariants(candidate, `Memory candidate ${candidate.id}`);
 };
 
 export class DrizzleMemoryRepository implements MemoryRepository {
   constructor(private readonly db: KrnDatabase) {}
 
   async createMemoryRecord(input: CreateMemoryRecordInput): Promise<MemoryRecord> {
+    assertMemoryCoreInvariants(input, "Memory record");
+
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx
@@ -178,6 +256,8 @@ export class DrizzleMemoryRepository implements MemoryRepository {
   }
 
   async createMemoryCandidate(input: CreateMemoryCandidateInput): Promise<MemoryCandidate> {
+    assertMemoryCoreInvariants(input, "Memory candidate");
+
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx

@@ -11,14 +11,14 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-25 and MM-16R are complete.
+- MM-00 through MM-26 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
   range linkage, deterministic observer input builder, manual observe-run CLI,
   source-range policy matrix, and pure observation prefix selector.
-- Observational memory is not proven end-to-end yet: MemoryRecord invariants,
-  review gates, and activation integration are next.
+- Observational memory is not proven end-to-end yet: MemoryReviewGate,
+  invalidation/demotion, and activation integration are next.
 - Observation is still staging, not Memory Core.
 - Reflection runtime exists as manual preview/persist CLI and writes
   ReflectionRecord only; candidate row creation, governed MemoryReviewGate promotion,
@@ -103,7 +103,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-26 — Harden MemoryRecord invariants.
+MM-26A — Add Memory Core write-surface guard before promotion paths.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;
