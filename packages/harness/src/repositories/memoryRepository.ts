@@ -125,5 +125,6 @@ export interface MemoryRepository {
   recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
   createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord>;
+  listAntiMemoryForProject(projectId: ProjectId, limit: number): Promise<AntiMemoryRecord[]>;
   listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]>;
 }

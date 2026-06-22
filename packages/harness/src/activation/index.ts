@@ -1,4 +1,6 @@
 export * from "./assembleContext.js";
+export * from "./activationEngine.js";
+export * from "./conflictFilter.js";
 export * from "./contextRoi.js";
 export * from "./memoryQuery.js";
 export * from "./rankCandidates.js";

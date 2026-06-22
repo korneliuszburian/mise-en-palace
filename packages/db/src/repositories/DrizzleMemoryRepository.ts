@@ -488,6 +488,16 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     return mapAntiMemoryRecord(row);
   }
 
+  async listAntiMemoryForProject(projectId: ProjectId, limit: number): Promise<AntiMemoryRecord[]> {
+    const rows = await this.db.query.antiMemoryRecords.findMany({
+      where: eq(antiMemoryRecords.projectId, projectId),
+      orderBy: asc(antiMemoryRecords.createdAt),
+      limit
+    });
+
+    return rows.map(mapAntiMemoryRecord);
+  }
+
   async listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]> {
     const rows = await this.db.query.antiMemoryRecords.findMany({
       where: eq(antiMemoryRecords.executionRunId, executionRunId),

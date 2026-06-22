@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 01 activation domain contracts complete.
+Current slice: Slice 02 activation engine v1 complete.
 
 Completed:
 
@@ -19,6 +19,17 @@ Completed:
   `packages/harness/src/activation/domainContracts.test.ts`.
 - Slice 01 tied harness activation candidate kind and exclusion reason aliases
   to core vocabulary to avoid drift.
+- Slice 02 added named activation engine v1 functions:
+  `retrieveActivationCandidates`, `detectConflicts`, `scoreContextROI`,
+  `assembleActivatedContext`, and `persistActivationTrace`.
+- Slice 02 extended activation candidate retrieval to include lexical
+  SearchDocument results and project anti-memory.
+- Slice 02 added anti-memory conflict detection that excludes blocked source
+  claims and records conflict activation decisions.
+- Slice 02 refactored `compileHarnessPlan` to use activation engine helpers
+  instead of inline candidate persistence.
+- Slice 02 added `MemoryRepository.listAntiMemoryForProject` and the Drizzle
+  implementation.
 
 Verification:
 
@@ -54,9 +65,29 @@ Verification:
   no matches.
 - `pnpm test`: passed with 16 test files and 94 tests.
 - `git diff --check`: passed.
+- Slice 02 RED: `pnpm --filter @krn/harness test -- index.test.ts` failed
+  because the compiler did not include search candidates.
+- Slice 02 GREEN: `pnpm --filter @krn/harness test -- index.test.ts` passed
+  with 3 test files and 8 tests.
+- First full `pnpm test` after Slice 02 implementation failed in CLI plan tests
+  because no-store preview called unavailable `searchLexical`.
+- Root cause: no-store preview should return an empty search corpus, matching
+  empty source/memory preview repositories, not throw.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed after fixing
+  no-store `searchLexical`.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed with 16 test files and 95 tests.
+- `pnpm --filter @krn/cli krn plan --task "improve KRN doctor activation
+  readiness"`: passed with preview abstention.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "improve KRN doctor activation readiness"
+  --persist`: passed with context included `3`, context excluded `0`, and
+  persisted execution run `c44204c0-be61-4839-b765-5002024f4c3e`.
+- `git diff --check`: passed.
 
 Next:
 
-- Commit Slice 01 as `feat(core): add activation domain contracts`.
-- Start M25.02 by extending activation engine v1 for search candidates,
-  anti-memory, conflict sets, and richer activation result/trace behavior.
+- Commit Slice 02 as `feat(harness): add activation engine v1`.
+- Start M25.03 by adding the noisy-brain activation fixture that forces bounded
+  inclusions, explicit exclusions, stale/unsafe filtering, anti-memory blocking,
+  and conflict flags.

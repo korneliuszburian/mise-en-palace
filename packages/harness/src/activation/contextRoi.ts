@@ -56,3 +56,5 @@ export const applyContextROI = (
       return candidate;
     });
 };
+
+export const scoreContextROI = applyContextROI;

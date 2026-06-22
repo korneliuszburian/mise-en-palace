@@ -80,3 +80,46 @@ Results:
   or skill ID fields in core.
 - Full `pnpm test` passed with 16 test files and 94 tests.
 - `git diff --check` passed.
+
+## Slice 02
+
+Commands run:
+
+```sh
+pnpm --filter @krn/harness test -- index.test.ts
+pnpm --filter @krn/harness test -- index.test.ts
+pnpm typecheck
+pnpm test
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm typecheck
+pnpm test
+pnpm --filter @krn/cli krn plan --task "improve KRN doctor activation readiness"
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "improve KRN doctor activation readiness" --persist
+git diff --check
+```
+
+Results:
+
+- RED compiler test failed because search candidate `search-activation` was not
+  included by the current compiler path.
+- Added `toSearchCandidate`, `detectConflicts`, `scoreContextROI`,
+  `assembleActivatedContext`, `retrieveActivationCandidates`, and
+  `persistActivationTrace`.
+- Added project-level anti-memory read path
+  `MemoryRepository.listAntiMemoryForProject` with Drizzle and no-store
+  implementations.
+- `compileHarnessPlan` now retrieves memory/source/search candidates, detects
+  anti-memory conflicts, persists retrieval candidates, activation decisions,
+  context selection, and conflict metadata through activation helpers.
+- GREEN compiler test passed with 3 test files and 8 tests.
+- First full `pnpm test` failed in CLI no-store plan tests because no-store
+  preview threw on `searchLexical`.
+- Fixed no-store `searchLexical` to return an empty corpus; targeted CLI tests
+  then passed with 51 tests.
+- `pnpm typecheck` passed.
+- Full `pnpm test` passed with 16 test files and 95 tests.
+- Preview `krn plan` passed and still abstains without DB corpus.
+- Live `krn plan --persist` passed. Current real corpus still produced
+  included `3` and excluded `0`, which is expected until M25.03/M25.04 seed a
+  noisy activation fixture/smoke with search hits and anti-memory conflicts.
+- `git diff --check` passed.

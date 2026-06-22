@@ -30,6 +30,7 @@ import type {
   RecordActivationDecisionInput,
   RetrievalRepository,
   RetrievalRunRecord,
+  SearchDocumentSearchResult,
   SourceRepository,
   StartRetrievalRunInput,
   UpdateExecutionRunStatusInput
@@ -76,6 +77,48 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   metadata: {},
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
+  id: "anti-memory-1",
+  projectId: "project-1",
+  key: "anti-source-crawler",
+  executionRunId: "run-1",
+  rejectedClaim: "KRN should add a source crawler for activation.",
+  reason: "Source crawler is out of scope for M25 activation.",
+  invalidatedBySourceClaimIds: [],
+  summary: "Do not add crawler for activation",
+  body: "Activation should use the existing source, memory, and search substrate.",
+  owner: "kernel",
+  confidence: 95,
+  sourceLineage: [{ sourceId: "source-1" }],
+  metadata: {},
+  validFrom: "2026-06-01T00:00:00.000Z",
+  createdAt: "2026-06-01T00:00:00.000Z",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const searchDocument = (
+  overrides: Partial<SearchDocumentSearchResult>
+): SearchDocumentSearchResult => ({
+  id: "search-doc-1",
+  projectId: "project-1",
+  subjectType: "search_document",
+  subjectId: "search-doc-1",
+  trustTier: "project-decision",
+  validityStatus: "active",
+  language: "english",
+  title: "Activation readiness smoke",
+  body: "Activation smoke should prove search candidates and explicit exclusions.",
+  searchText: "Activation readiness smoke search candidates explicit exclusions.",
+  metadataFilters: {},
+  validFrom: "2026-06-01T00:00:00.000Z",
+  metadata: {},
+  createdAt: "2026-06-01T00:00:00.000Z",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  lexicalScore: 100,
   ...overrides
 });
 
@@ -168,7 +211,10 @@ class FakeHarnessRunRepository implements HarnessRunRepository {
 }
 
 class FakeMemoryRepository implements MemoryRepository {
-  constructor(private readonly records: readonly MemoryRecord[]) {}
+  constructor(
+    private readonly records: readonly MemoryRecord[],
+    private readonly antiMemoryRecords: readonly AntiMemoryRecord[] = []
+  ) {}
 
   async createMemoryRecord(_input: CreateMemoryRecordInput): Promise<MemoryRecord> {
     throw new Error("not used by compiler");
@@ -193,6 +239,14 @@ class FakeMemoryRepository implements MemoryRepository {
   async createAntiMemoryRecord(): Promise<AntiMemoryRecord> {
     throw new Error("not used by compiler");
   }
+
+  async listAntiMemoryForProject(): Promise<AntiMemoryRecord[]> {
+    return [...this.antiMemoryRecords];
+  }
+
+  async listAntiMemoryForRun(): Promise<AntiMemoryRecord[]> {
+    return [...this.antiMemoryRecords];
+  }
 }
 
 class FakeSourceRepository implements Pick<SourceRepository, "listClaimsForProject"> {
@@ -208,12 +262,14 @@ class FakeRetrievalRepository implements RetrievalRepository {
   readonly decisions: RecordActivationDecisionInput[] = [];
   storedSelection: ContextAssembly | undefined;
 
+  constructor(private readonly searchResults: readonly SearchDocumentSearchResult[] = []) {}
+
   async createSearchDocument() {
     throw new Error("not used by compiler");
   }
 
   async searchLexical() {
-    throw new Error("not used by compiler");
+    return [...this.searchResults];
   }
 
   async createEmbeddingModel() {
@@ -435,6 +491,84 @@ describe("compileHarnessPlan", () => {
     );
     expect(result.nextAction).toContain("abstained");
     expect(retrievalRepository.decisions.every((item) => item.decision !== "included")).toBe(true);
+  });
+
+  it("activates search candidates and records anti-memory conflicts as explicit exclusions", async () => {
+    const retrievalRepository = new FakeRetrievalRepository([
+      searchDocument({
+        id: "search-activation",
+        subjectId: "search-activation",
+        title: "KRN doctor activation readiness",
+        body: "Doctor activation readiness should use search candidates and context exclusions."
+      })
+    ]);
+    const blockedClaim = sourceClaim({
+      id: "claim-crawler",
+      claim: "KRN should add a source crawler for activation readiness.",
+      mechanism: "A crawler would gather more source material.",
+      krnImplication: "Activation would have more context.",
+      doesNotProve: "That crawler scope is allowed.",
+      trustTier: "project-decision"
+    });
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Improve KRN doctor activation readiness",
+          objective: "Use search candidates and reject crawler scope through anti-memory"
+        },
+        tokenBudget: 500
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository(
+          [memoryRecord({ id: "memory-activation" })],
+          [
+            antiMemoryRecord({
+              id: "anti-crawler",
+              invalidatedBySourceClaimIds: ["claim-crawler"],
+              invalidatedBySourceClaimId: "claim-crawler"
+            })
+          ]
+        ),
+        sourceRepository: new FakeSourceRepository([blockedClaim]),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-activation`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions.map((item) => item.subjectId)).toContain(
+      "search-activation"
+    );
+    expect(result.contextAssembly.exclusions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subjectId: "claim-crawler",
+          reason: "unsafe",
+          explanation: expect.stringContaining("anti-memory")
+        })
+      ])
+    );
+    expect(retrievalRepository.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          searchDocumentId: "search-activation"
+        })
+      ])
+    );
+    expect(retrievalRepository.decisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          decision: "conflict",
+          subjectId: "claim-crawler"
+        })
+      ])
+    );
   });
 
   it("creates evidence expectations for reviewable engineering work", async () => {

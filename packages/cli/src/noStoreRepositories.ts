@@ -127,8 +127,12 @@ export const createNoStoreCompilerDependencies = (
       return notUsed("createFeedbackDelta");
     }
   };
-  const memoryRepository: Pick<MemoryRepository, "listActiveMemory"> = {
+  const memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject"> = {
     async listActiveMemory(): Promise<MemoryRecord[]> {
+      return [];
+    },
+
+    async listAntiMemoryForProject(): Promise<AntiMemoryRecord[]> {
       return [];
     }
   };
@@ -143,7 +147,7 @@ export const createNoStoreCompilerDependencies = (
     },
 
     async searchLexical() {
-      return notUsed("searchLexical");
+      return [];
     },
 
     async createEmbeddingModel() {

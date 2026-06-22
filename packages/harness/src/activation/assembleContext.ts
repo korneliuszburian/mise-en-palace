@@ -74,3 +74,5 @@ export const assembleContext = (input: AssembleContextInput): ContextAssembly =>
     createdAt: input.createdAt
   };
 };
+
+export const assembleActivatedContext = assembleContext;

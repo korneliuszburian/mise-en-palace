@@ -13,11 +13,9 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
-  buildMemoryQuery,
-  buildSourceQuery,
-  rankCandidates,
-  toMemoryCandidate,
-  toSourceClaimCandidate
+  detectConflicts,
+  persistActivationTrace,
+  retrieveActivationCandidates
 } from "../activation/index.js";
 import type {
   HarnessRunRepository,
@@ -62,7 +60,7 @@ export interface HarnessCompilerRepositories {
     HarnessRunRepository,
     "createOperatorIntent" | "createTaskContract" | "createHarnessPlan" | "createContextAssembly"
   >;
-  memoryRepository: Pick<MemoryRepository, "listActiveMemory">;
+  memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject">;
   sourceRepository: Pick<SourceRepository, "listClaimsForProject">;
   retrievalRepository: Pick<
     RetrievalRepository,
@@ -71,6 +69,7 @@ export interface HarnessCompilerRepositories {
     | "addCandidate"
     | "recordActivationDecision"
     | "storeContextSelection"
+    | "searchLexical"
   >;
 }
 
@@ -96,6 +95,8 @@ export interface HarnessCompileResult {
 
 const defaultMemoryLimit = 25;
 const defaultSourceLimit = 25;
+const defaultSearchLimit = 25;
+const defaultAntiMemoryLimit = 25;
 const maxContextInclusions = 6;
 const minimumTrustTier = "medium";
 
@@ -129,36 +130,33 @@ export const compileHarnessPlan = async (
       evidenceContract
     }
   });
-  const memoryQuery = buildMemoryQuery(taskContract);
-  const sourceQuery = buildSourceQuery(taskContract);
+  const retrieved = await retrieveActivationCandidates({
+    taskContract,
+    limits: {
+      memory: defaultMemoryLimit,
+      source: defaultSourceLimit,
+      search: defaultSearchLimit,
+      antiMemory: defaultAntiMemoryLimit
+    },
+    repositories: {
+      memoryRepository: dependencies.memoryRepository,
+      sourceRepository: dependencies.sourceRepository,
+      retrievalRepository: dependencies.retrievalRepository
+    }
+  });
   const retrievalRun = await dependencies.retrievalRepository.startRetrievalRun({
     ...(taskContract.projectId === undefined ? {} : { projectId: taskContract.projectId }),
     taskContractId: taskContract.id,
-    query: memoryQuery.text,
+    query: retrieved.memoryQuery.text,
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     metadata: {
-      sourceQuery: sourceQuery.text
+      sourceQuery: retrieved.sourceQuery.text
     }
   });
-  const memoryRecords =
-    taskContract.projectId === undefined
-      ? []
-      : await dependencies.memoryRepository.listActiveMemory(taskContract.projectId, defaultMemoryLimit);
-  const sourceClaims =
-    taskContract.projectId === undefined
-      ? []
-      : await dependencies.sourceRepository.listClaimsForProject(
-          taskContract.projectId,
-          defaultSourceLimit
-        );
-  const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
-  const sourceCandidates = rankCandidates(sourceClaims.map(toSourceClaimCandidate), sourceQuery);
-  const rankedCandidates = [...memoryCandidates, ...sourceCandidates].sort(
-    (left, right) => right.totalScore - left.totalScore
-  );
+  const conflictResult = detectConflicts(retrieved.candidates, retrieved.antiMemoryRecords);
   const filteredCandidates = applyContextROI(
     applyTemporalFilter(
-      applyTrustFilter(rankedCandidates, { minimumTrustTier }),
+      applyTrustFilter(conflictResult.candidates, { minimumTrustTier }),
       createdAt
     ),
     {
@@ -173,7 +171,8 @@ export const compileHarnessPlan = async (
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     createdAt,
     metadata: {
-      retrievalRunId: retrievalRun.id
+      retrievalRunId: retrievalRun.id,
+      conflictSets: conflictResult.conflictSets
     }
   });
   const contextAssembly = await dependencies.harnessRunRepository.createContextAssembly({
@@ -184,69 +183,14 @@ export const compileHarnessPlan = async (
     exclusions: draftContext.exclusions,
     metadata: draftContext.metadata
   });
-  const includedIds = new Set(contextAssembly.inclusions.map((inclusion) => inclusion.subjectId));
-
-  for (const candidate of filteredCandidates) {
-    const included = includedIds.has(candidate.subjectId);
-    await dependencies.retrievalRepository.addCandidate({
-      retrievalRunId: retrievalRun.id,
-      kind: candidate.kind,
-      status: included ? "included" : "excluded",
-      subjectType: candidate.subjectType,
-      subjectId: candidate.subjectId,
-      trustTier: candidate.trustTier,
-      lexicalScore: candidate.lexicalScore,
-      vectorScore: candidate.vectorScore,
-      graphScore: candidate.graphScore,
-      temporalScore: candidate.temporalScore,
-      contextRoiScore: candidate.contextRoiScore,
-      totalScore: candidate.totalScore,
-      reason: candidate.exclusion?.explanation ?? candidate.reason,
-      metadata: candidate.metadata
-    });
-  }
-
-  for (const inclusion of contextAssembly.inclusions) {
-    await dependencies.retrievalRepository.recordActivationDecision({
-      retrievalRunId: retrievalRun.id,
-      contextAssemblyId: contextAssembly.id,
-      subjectType: inclusion.subjectType,
-      subjectId: inclusion.subjectId,
-      decision: "included",
-      reason: inclusion.reason,
-      metadata: {
-        expectedUse: inclusion.expectedUse
-      }
-    });
-  }
-
-  for (const exclusion of contextAssembly.exclusions) {
-    await dependencies.retrievalRepository.recordActivationDecision({
-      retrievalRunId: retrievalRun.id,
-      contextAssemblyId: contextAssembly.id,
-      subjectType: exclusion.subjectType,
-      subjectId: exclusion.subjectId,
-      decision: "excluded",
-      reason: exclusion.reason,
-      ...(exclusion.score === undefined ? {} : { score: exclusion.score }),
-      metadata: {
-        explanation: exclusion.explanation
-      }
-    });
-  }
-
-  await dependencies.retrievalRepository.storeContextSelection({
-    contextAssemblyId: contextAssembly.id,
-    inclusions: contextAssembly.inclusions,
-    exclusions: contextAssembly.exclusions
-  });
-  await dependencies.retrievalRepository.completeRetrievalRun({
+  await persistActivationTrace({
     retrievalRunId: retrievalRun.id,
-    status: contextAssembly.status === "abstained" ? "abstained" : "completed",
+    candidates: filteredCandidates,
+    contextAssembly,
     completedAt: dependencies.now(),
+    retrievalRepository: dependencies.retrievalRepository,
     metadata: {
-      inclusionCount: contextAssembly.inclusions.length,
-      exclusionCount: contextAssembly.exclusions.length
+      conflictCount: conflictResult.conflictSets.length
     }
   });
 

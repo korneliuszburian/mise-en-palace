@@ -1,4 +1,7 @@
 import type {
+  SearchDocumentSearchResult,
+} from "../repositories/types.js";
+import type {
   MemoryRecord,
   SourceClaim
 } from "@krn/core";
@@ -73,6 +76,32 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
     sourceArtifactId: claim.sourceArtifactId,
     supportType: claim.supportType,
     consumer: claim.consumer
+  }
+});
+
+export const toSearchCandidate = (document: SearchDocumentSearchResult): ActivationCandidate => ({
+  id: document.id,
+  kind: "search",
+  subjectType: "search_document",
+  subjectId: document.id,
+  text: [document.title, document.body, document.searchText].join(" "),
+  trustTier: document.trustTier,
+  reason: `Search document: ${document.title}`,
+  expectedUse: "Use when the search document directly matches the task query.",
+  tokenEstimate: estimateTokens([document.title, document.body].join(" ")),
+  validFrom: document.validFrom,
+  ...(document.validUntil === undefined ? {} : { validUntil: document.validUntil }),
+  ...(document.invalidatedAt === undefined ? {} : { invalidatedAt: document.invalidatedAt }),
+  lexicalScore: document.lexicalScore,
+  metadata: {
+    searchDocumentId: document.id,
+    subjectType: document.subjectType,
+    subjectId: document.subjectId,
+    ...(document.sourceClaimId === undefined ? {} : { sourceClaimId: document.sourceClaimId }),
+    ...(document.memoryRecordId === undefined ? {} : { memoryRecordId: document.memoryRecordId }),
+    ...(document.antiMemoryRecordId === undefined
+      ? {}
+      : { antiMemoryRecordId: document.antiMemoryRecordId })
   }
 });
 

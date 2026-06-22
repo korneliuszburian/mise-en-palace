@@ -4,10 +4,6 @@ No hard blocker for M25.00.
 
 Known gaps for later M25 slices:
 
-- current activation uses memory/source candidates, but not lexical
-  SearchDocument candidates;
-- current activation does not consult anti-memory;
-- current activation does not model conflict sets;
 - current persisted live probe had zero context exclusions;
 - no noisy-brain activation fixture exists;
 - no `pnpm db:smoke:activation` path exists;
@@ -21,6 +17,14 @@ Resolved in M25.01:
   from core vocabulary;
 - core activation contracts have no DB/CLI/Codex imports and no
   `requiredSkills` field.
+
+Resolved in M25.02:
+
+- activation can retrieve lexical SearchDocument candidates;
+- activation can consult project-level anti-memory;
+- anti-memory can exclude blocked source claims and persist conflict activation
+  decisions;
+- compiler activation trace persistence is named and no longer inline-only.
 
 Non-goals that remain intentionally blocked:
 

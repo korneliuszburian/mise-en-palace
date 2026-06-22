@@ -12,6 +12,7 @@ const methodNames = [
   "recordMemoryApplication",
   "createMemoryFeedbackEvent",
   "createAntiMemoryRecord",
+  "listAntiMemoryForProject",
   "listAntiMemoryForRun"
 ] as const;
 

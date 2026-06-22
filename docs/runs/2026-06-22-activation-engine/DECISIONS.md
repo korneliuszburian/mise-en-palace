@@ -92,3 +92,26 @@ Slice 01 type-safety notes:
   vocabulary constants.
 - Type-safety exceptions: none; no `any`, no double assertions, no DB/CLI/Codex
   imports into core, and no `requiredSkills` field.
+
+Slice 02 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN compiler behavior
+  covering search candidates and anti-memory conflict exclusions.
+- `activation-engine`: used to keep search retrieval, anti-memory blocking,
+  conflict decisions, context ROI, inclusions, exclusions, and abstention
+  explicit.
+- `brain-store-schema`: used for the project-level anti-memory repository read
+  path and retrieval/context trace persistence.
+- `typescript-type-safety`: used to preserve strict repository ports and avoid
+  weakening no-store preview types.
+- `superpowers:systematic-debugging`: used when full tests revealed the
+  no-store preview `searchLexical` regression.
+
+Slice 02 type-safety notes:
+
+- Boundary classification: harness domain/runtime orchestration plus repository
+  port extension.
+- Validation/narrowing: no new external input boundary; repository data remains
+  typed read models.
+- Public type changes: `MemoryRepository.listAntiMemoryForProject` added.
+- Type-safety exceptions: none; no `any` or double assertions.
