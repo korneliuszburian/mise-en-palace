@@ -58,6 +58,25 @@ export type CliCommand =
   | {
       kind: "observeRun";
       runId: string;
+      projectId?: string;
+      persist: boolean;
+    }
+  | {
+      kind: "reflect";
+      scope:
+        | {
+            kind: "run";
+            id: string;
+          }
+        | {
+            kind: "project";
+            id: string;
+          }
+        | {
+            kind: "topic";
+            name: string;
+            projectId: string;
+          };
       persist: boolean;
     }
   | {
@@ -222,6 +241,7 @@ const usage = [
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]",
   "krn observe --run <id> [--project <id>] [--persist]",
+  "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn codex brief --run-id <id>"
 ].join("\n");
 
@@ -834,6 +854,129 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
         ...(projectId === undefined || projectId.length === 0 ? {} : { projectId }),
         persist
       }
+    };
+  }
+
+  if (command === "reflect") {
+    let persist = false;
+    let scopeValue: string | undefined;
+    let projectId: string | undefined;
+
+    for (let index = 0; index < rest.length; index += 1) {
+      const arg = rest[index];
+
+      if (arg === "--persist") {
+        persist = true;
+        continue;
+      }
+
+      if (arg === "--scope" || arg?.startsWith("--scope=") === true) {
+        const valueResult = optionValue(rest, index, "--scope");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ??
+              "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
+          };
+        }
+
+        scopeValue = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      if (arg === "--project" || arg?.startsWith("--project=") === true) {
+        const valueResult = optionValue(rest, index, "--project");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ??
+              "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
+          };
+        }
+
+        projectId = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      return {
+        error: "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
+      };
+    }
+
+    if (scopeValue === undefined || scopeValue.length === 0) {
+      return {
+        error: "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
+      };
+    }
+
+    if (scopeValue.startsWith("run:")) {
+      const id = scopeValue.slice("run:".length).trim();
+
+      if (id.length === 0) {
+        return {
+          error: "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
+        };
+      }
+
+      return {
+        command: {
+          kind: "reflect",
+          scope: {
+            kind: "run",
+            id
+          },
+          persist
+        }
+      };
+    }
+
+    if (scopeValue.startsWith("project:")) {
+      const id = scopeValue.slice("project:".length).trim();
+
+      if (id.length === 0) {
+        return {
+          error: "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
+        };
+      }
+
+      return {
+        command: {
+          kind: "reflect",
+          scope: {
+            kind: "project",
+            id
+          },
+          persist
+        }
+      };
+    }
+
+    if (scopeValue.startsWith("topic:")) {
+      const name = scopeValue.slice("topic:".length).trim();
+
+      if (name.length === 0 || projectId === undefined || projectId.length === 0) {
+        return {
+          error: "Usage: krn reflect --scope topic:<name> --project <id> [--persist]"
+        };
+      }
+
+      return {
+        command: {
+          kind: "reflect",
+          scope: {
+            kind: "topic",
+            name,
+            projectId
+          },
+          persist
+        }
+      };
+    }
+
+    return {
+      error: "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]"
     };
   }
 

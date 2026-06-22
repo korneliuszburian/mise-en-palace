@@ -5,12 +5,14 @@ import {
   DrizzleMemoryRepository,
   DrizzleObservationRepository,
   DrizzleProjectRepository,
+  DrizzleReflectionRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
 } from "@krn/db";
 import type {
   CreateObservationGroupInput,
-  CreateObservationItemInput
+  CreateObservationItemInput,
+  CreateReflectionRecordInput
 } from "@krn/db";
 import type {
   HarnessCompilerDependencies,
@@ -22,7 +24,10 @@ import type {
 } from "@krn/harness";
 import type {
   ObservationGroup,
-  ObservationItem
+  ObservationItem,
+  ReflectionRecord,
+  SourceClaim,
+  AntiMemoryRecord
 } from "@krn/core";
 
 export interface DatabaseRuntimeInput {
@@ -99,6 +104,37 @@ export interface ObserveDatabaseRuntime {
     "getHarnessRunByExecutionRunId"
   >;
   resolveProjectRuntime(input: { projectId: string }): Promise<ObserveProjectRuntime>;
+  close(): Promise<void>;
+}
+
+export interface ReflectDatabaseRuntimeInput {
+  databaseUrl: string;
+}
+
+export interface ReflectRunSnapshot {
+  executionRunId: string;
+  projectId: string;
+  taskContractId?: string;
+}
+
+export interface ReflectDatabaseRuntime {
+  getRunSnapshot(executionRunId: string): Promise<ReflectRunSnapshot | undefined>;
+  projectExists(projectId: string): Promise<boolean>;
+  observationRepository: {
+    findByRun(executionRunId: string, options?: { projectId?: string; limit?: number }): Promise<ObservationItem[]>;
+    findByScope(input: { projectId?: string; executionRunId?: string; taskContractId?: string; limit?: number }): Promise<ObservationItem[]>;
+  };
+  sourceRepository: {
+    listClaimsForProject(projectId: string, limit: number): Promise<SourceClaim[]>;
+    listSourceClaimsForRun(executionRunId: string): Promise<SourceClaim[]>;
+  };
+  memoryRepository: {
+    listAntiMemoryForProject(projectId: string, limit: number): Promise<AntiMemoryRecord[]>;
+    listAntiMemoryForRun(executionRunId: string): Promise<AntiMemoryRecord[]>;
+  };
+  reflectionRepository: {
+    createReflectionRecord(input: CreateReflectionRecordInput): Promise<ReflectionRecord>;
+  };
   close(): Promise<void>;
 }
 
@@ -218,6 +254,53 @@ export const createObserveDatabaseRuntime = async (
         observationRepository
       };
     },
+    async close(): Promise<void> {
+      await client.end();
+    }
+  };
+};
+
+export const createReflectDatabaseRuntime = async (
+  input: ReflectDatabaseRuntimeInput
+): Promise<ReflectDatabaseRuntime> => {
+  const client = postgres(input.databaseUrl, { max: 1 });
+  const db = createKrnDatabase(client);
+  const projectRepository = new DrizzleProjectRepository(db);
+  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+  const observationRepository = new DrizzleObservationRepository(db);
+  const sourceRepository = new DrizzleSourceRepository(db);
+  const memoryRepository = new DrizzleMemoryRepository(db);
+  const reflectionRepository = new DrizzleReflectionRepository(db);
+
+  return {
+    async getRunSnapshot(executionRunId: string): Promise<ReflectRunSnapshot | undefined> {
+      const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRunId);
+
+      if (aggregate === undefined) {
+        return undefined;
+      }
+
+      const projectId = aggregate.taskContract.projectId ?? aggregate.operatorIntent.projectId;
+
+      if (projectId === undefined) {
+        throw new Error(
+          `Persisted run ${executionRunId} has no project scope; use project:<project-id> reflect scope`
+        );
+      }
+
+      return {
+        executionRunId: aggregate.executionRun.id,
+        projectId,
+        taskContractId: aggregate.taskContract.id
+      };
+    },
+    async projectExists(projectId: string): Promise<boolean> {
+      return (await projectRepository.getProject(projectId)) !== undefined;
+    },
+    observationRepository,
+    sourceRepository,
+    memoryRepository,
+    reflectionRepository,
     async close(): Promise<void> {
       await client.end();
     }

@@ -17,6 +17,9 @@ importers:
       '@krn/codex-adapter':
         specifier: workspace:*
         version: link:../codex-adapter
+      '@krn/core':
+        specifier: workspace:*
+        version: link:../core
       '@krn/db':
         specifier: workspace:*
         version: link:../db

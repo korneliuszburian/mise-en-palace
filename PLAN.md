@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-22 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-23 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -30,8 +30,10 @@ Current public state:
   MM-21 added deterministic reflection candidate-generation planning. MM-22
   added pure contradiction/gap report generation for contested/conflict
   observations, missing source ranges, stale observations, duplicates, and
-  unsupported decisions.
-- Not built: reflection, candidate generation from reflection, governed
+  unsupported decisions. MM-23 added manual `krn reflect --scope ...`
+  preview/persist CLI that writes ReflectionRecord only and does not create
+  candidate or Memory Core rows.
+- Not built: governed
   MemoryReviewGate promotion path, memory invalidation/demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
   plugin package, source crawler, and broad benchmark suite.

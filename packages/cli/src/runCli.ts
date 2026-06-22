@@ -41,6 +41,12 @@ import type {
   CreateObserveDatabaseRuntime
 } from "./runObserveCommand.js";
 import {
+  runReflectCommand
+} from "./runReflectCommand.js";
+import type {
+  CreateReflectDatabaseRuntime
+} from "./runReflectCommand.js";
+import {
   runCodexBriefCommand
 } from "./runCodexBriefCommand.js";
 import {
@@ -77,6 +83,7 @@ export interface CliRuntime {
   readGitChangedFiles?(since: string, repoPath: string): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
   createObserveDatabaseRuntime?: CreateObserveDatabaseRuntime;
+  createReflectDatabaseRuntime?: CreateReflectDatabaseRuntime;
   createInitConnectRuntime?: CreateInitConnectRuntime;
 }
 
@@ -618,6 +625,34 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown observe error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "reflect") {
+    try {
+      const result = await runReflectCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createReflectDatabaseRuntime === undefined
+          ? {}
+          : { createReflectDatabaseRuntime: runtime.createReflectDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown reflect error";
 
       return {
         exitCode: 1,

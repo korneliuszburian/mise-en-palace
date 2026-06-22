@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-22 and MM-16R in
+- MM-00 through MM-23 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -54,10 +54,14 @@ Current runtime truth:
 - Reflection contradiction/gap report builder exists in pure core and reports
   contested/conflict observations, missing source ranges, stale observations,
   duplicates, and unsupported decisions.
+- Manual `krn reflect --scope run:<id>|project:<id>|topic:<name>` exists;
+  preview is default, `--persist` writes only a ReflectionRecord, and command
+  output explicitly reports no candidate rows, no MemoryRecord, and no Memory
+  Core mutation.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-23 manual reflect CLI.
+- Continue with MM-24 reflection mutation guard.

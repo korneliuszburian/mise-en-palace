@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@krn/codex-adapter": "workspace:*",
+    "@krn/core": "workspace:*",
     "@krn/db": "workspace:*",
     "@krn/harness": "workspace:*",
     "@krn/schema": "workspace:*",

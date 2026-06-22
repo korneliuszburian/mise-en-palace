@@ -160,6 +160,19 @@ describe("runCli", () => {
     );
   });
 
+  it("routes reflect scope commands through the CLI parser", async () => {
+    const result = await runCli(["reflect", "--scope", "run:run-1"], {
+      env: {},
+      cwd: path.resolve(process.cwd(), "../.."),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn reflect");
+  });
+
   it("prints missing DB guidance for target repo init-connect smoke", async () => {
     const result = await runCli(["db", "smoke", "init-connect"], {
       env: {},
