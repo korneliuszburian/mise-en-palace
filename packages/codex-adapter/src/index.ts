@@ -1,3 +1,4 @@
+export * from "./contracts.js";
 export * from "./renderExecPlanReference.js";
 export * from "./renderExecutionBrief.js";
 export * from "./renderGoalReference.js";

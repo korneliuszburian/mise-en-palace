@@ -75,3 +75,29 @@ Results:
   API, or broad worker daemon was found in the inspected surfaces.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `git diff --check` passed.
+
+## Slice 01
+
+Commands run:
+
+```sh
+pnpm --filter @krn/codex-adapter test -- contracts.test.ts
+pnpm --filter @krn/codex-adapter test -- contracts.test.ts
+pnpm typecheck
+pnpm test
+rg -n "@krn/codex-adapter|CodexSkillBindingHint|CodexHookExpectation|CodexMcpResourceRef|CodexSubagentProbeHint|CodexAdapterPlan" packages/core/src packages/core/package.json
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/codex-adapter/src --glob '*.ts'
+```
+
+Results:
+
+- RED adapter test failed because `./contracts.js` did not exist.
+- Added `packages/codex-adapter/src/contracts.ts`.
+- Exported adapter contracts from `packages/codex-adapter/src/index.ts`.
+- GREEN adapter test passed with 2 test files and 2 tests.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 19 test files and 101 tests.
+- Core boundary scan found no adapter import and no new full Codex binding
+  contracts in `packages/core`; only existing `CodexAdapterPlanRef` remains.
+- Adapter TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.

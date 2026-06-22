@@ -173,11 +173,6 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Add typed Codex adapter contracts:
-  `CodexAdapterPlan`, `ExecutionBrief`, `CodexSkillBindingHint`,
-  `CodexHookExpectation`, `CodexMcpResourceRef`, `CodexGoalRef`,
-  `CodexExecPlanRef`, and `CodexSubagentProbeHint`.
-- Keep Codex types out of `packages/core`.
 - Render a typed bounded brief before flattening to text.
 - Load persisted run/context/evidence data for `krn codex brief --run-id`.
 - Add hook expectation phases rather than only command strings.
@@ -196,3 +191,18 @@ runtime/Redis/Kafka surfaces.
 - Do not build a dashboard or public API.
 - Do not add Redis/Kafka or a broad worker daemon.
 - Do not make markdown or `.krn` runtime truth.
+
+## Slice 01 Update
+
+M26.01 resolved the typed contract gap:
+
+- `packages/codex-adapter/src/contracts.ts` now exports
+  `CodexAdapterPlan`, `ExecutionBrief`, `CodexSkillBindingHint`,
+  `CodexHookExpectation`, `CodexMcpResourceRef`, `CodexGoalRef`,
+  `CodexExecPlanRef`, and `CodexSubagentProbeHint`;
+- `packages/codex-adapter/src/index.ts` exports the contracts publicly;
+- full Codex contracts remain out of `packages/core`.
+
+Remaining adapter gaps now start at rendering from the typed brief artifact,
+persisted `krn codex brief --run-id` readback, adapter DB smoke, phase-aware
+hook projection behavior, and doctor readiness.

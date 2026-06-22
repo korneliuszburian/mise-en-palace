@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 00 Codex adapter and worker inventory complete.
+Current slice: Slice 01 Codex adapter contracts complete.
 
 Completed:
 
@@ -16,6 +16,14 @@ Completed:
   renderers, worker package, `worker_jobs`/`outbox_events` schema, CLI smoke
   routing, doctor routing, and package scripts.
 - Slice 00 recorded source-to-decision implications in `DECISIONS.md`.
+- Slice 01 added public Codex adapter contract types in
+  `packages/codex-adapter/src/contracts.ts`.
+- Slice 01 exported `CodexAdapterPlan`, `ExecutionBrief`,
+  `CodexSkillBindingHint`, `CodexHookExpectation`, `CodexMcpResourceRef`,
+  `CodexGoalRef`, `CodexExecPlanRef`, and `CodexSubagentProbeHint` from
+  `@krn/codex-adapter`.
+- Slice 01 kept full Codex contracts out of `packages/core`; core still only
+  has the existing `CodexAdapterPlanRef`.
 
 Verification:
 
@@ -34,9 +42,20 @@ Verification:
   no Codex adapter or worker readiness section yet.
 - `pnpm typecheck`: passed across 7 workspace packages.
 - `git diff --check`: passed.
+- Slice 01 RED: `pnpm --filter @krn/codex-adapter test --
+  contracts.test.ts` failed because `./contracts.js` did not exist.
+- Slice 01 GREEN: `pnpm --filter @krn/codex-adapter test --
+  contracts.test.ts` passed with 2 test files and 2 tests.
+- `pnpm typecheck`: passed across 7 workspace packages after adding contracts.
+- `pnpm test`: passed with 19 test files and 101 tests.
+- Core boundary scan found no `@krn/codex-adapter` import and no new Codex
+  binding contracts in `packages/core`; only the existing `CodexAdapterPlanRef`
+  remains.
+- Adapter TypeScript hygiene scan found no `any`, no `as unknown as`, no
+  `@ts-ignore`, and no `@ts-expect-error`.
 
 Next:
 
-- Commit Slice 00 as
-  `docs(run): record Codex adapter and worker inventory`.
-- Start M26.01 Codex adapter contracts.
+- Run `git diff --check`.
+- Commit Slice 01 as `feat(codex): add Codex adapter contracts`.
+- Start M26.02 execution brief renderer.

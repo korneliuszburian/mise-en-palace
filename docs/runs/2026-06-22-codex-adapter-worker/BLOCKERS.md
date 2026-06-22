@@ -4,7 +4,6 @@ No hard blocker for M26.00.
 
 Known gaps for later M26 slices:
 
-- missing typed Codex adapter contracts named in `GOAL.md`;
 - hook expectations are currently command hints, not phase-aware projections;
 - no standalone `krn codex brief --run-id <id>`;
 - no `pnpm db:smoke:codex-adapter`;
@@ -13,6 +12,15 @@ Known gaps for later M26 slices:
 - no DB-backed WorkerJobRepository transition methods;
 - no `pnpm db:smoke:worker-jobs`;
 - doctor does not yet report Codex adapter or worker readiness.
+
+Resolved in M26.01:
+
+- typed Codex adapter contracts named in `GOAL.md` are exported from
+  `@krn/codex-adapter`;
+- full Codex adapter contracts remain out of `packages/core`;
+- adapter contracts include explicit does-not-prove, stop condition, rollback,
+  skill hint, hook expectation, MCP ref, goal/ExecPlan ref, and subagent probe
+  shapes.
 
 Non-goals that remain intentionally blocked:
 

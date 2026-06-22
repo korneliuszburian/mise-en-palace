@@ -94,3 +94,54 @@
   missing DB-backed worker repository/smoke behavior.
 - `source-to-decision`: used to convert local code/docs evidence into
   decisions, rejections, and falsifiers.
+
+## Slice 01 Decisions
+
+- Source: `GOAL.md` M26.01 and
+  `docs/architecture/package-boundaries.md`.
+  Mechanism: M26 needs Codex-specific adapter contracts, while core must remain
+  Codex-agnostic.
+  KRN implication: adapter contracts are public `@krn/codex-adapter` exports,
+  not core domain fields.
+  Decision: add `contracts.ts` in `packages/codex-adapter` and export
+  `CodexAdapterPlan`, `ExecutionBrief`, skill binding hints, hook
+  expectations, MCP refs, goal refs, ExecPlan refs, and subagent probe hints
+  from the adapter package.
+  Rejection/falsifier: if core imports `@krn/codex-adapter` or owns full Codex
+  hook/skill/MCP contracts, the boundary is wrong.
+
+- Source: `packages/codex-adapter/src/contracts.test.ts`.
+  Mechanism: the contract test constructs a bounded adapter plan that contains
+  execution brief, explicit inclusions/exclusions, skill hints, hook
+  expectations, MCP refs, goal/ExecPlan refs, subagent probe hints, stop
+  condition, rollback expectation, and does-not-prove statements.
+  KRN implication: M26.02 can render from a typed intermediate artifact rather
+  than raw formatter arguments.
+  Decision: keep the contract object explicit and inspectable; do not add a
+  renderer-side Codex invocation or mutation API.
+  Rejection/falsifier: if later renderer code cannot consume this typed
+  artifact without widening to `any`, the contract is insufficient.
+
+## Slice 01 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN contract coverage
+  before adding production exports.
+- `codex-adapter-plan`: used to keep contract vocabulary at the Codex adapter
+  boundary.
+- `typescript-type-safety`: used for public adapter API shape, core boundary
+  scan, and no-`any` implementation.
+- `superpowers:verification-before-completion`: used before claiming tests or
+  typecheck passed.
+
+## Slice 01 Type-Safety Notes
+
+- Boundary classification: public Codex adapter API.
+- Validation/narrowing: no external input boundary added in this slice; later
+  CLI/DB metadata parsing must validate `unknown` before creating these
+  contracts.
+- Public type changes: `@krn/codex-adapter` now exports
+  `CodexAdapterPlan`, `ExecutionBrief`, `CodexSkillBindingHint`,
+  `CodexHookExpectation`, `CodexMcpResourceRef`, `CodexGoalRef`,
+  `CodexExecPlanRef`, `CodexSubagentProbeHint`, and related unions.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions, and no `@krn/codex-adapter` import in core.
