@@ -101,3 +101,47 @@ Results:
   contracts in `packages/core`; only existing `CodexAdapterPlanRef` remains.
 - Adapter TypeScript hygiene scan returned no matches for `any`, double
   assertions, or TypeScript suppressions.
+
+## Slice 02
+
+Commands run:
+
+```sh
+pnpm --filter @krn/codex-adapter test -- renderExecutionBrief.test.ts
+pnpm --filter @krn/codex-adapter test -- renderExecutionBrief.test.ts
+pnpm --filter @krn/codex-adapter typecheck
+pnpm --filter @krn/codex-adapter typecheck
+pnpm typecheck
+pnpm test
+rg -n "@krn/codex-adapter|CodexSkillBindingHint|CodexHookExpectation|CodexMcpResourceRef|CodexSubagentProbeHint|CodexAdapterPlan" packages/core/src packages/core/package.json
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/codex-adapter/src --glob '*.ts'
+pnpm --filter @krn/cli krn plan --task "render Codex execution brief for activated harness run"
+```
+
+Results:
+
+- RED renderer test failed because `createExecutionBrief` was not a function
+  and the existing wrapper did not render `What This Does Not Prove`.
+- Added typed `createExecutionBrief(input): ExecutionBrief`.
+- Added `renderExecutionBriefText(brief): string`.
+- Kept `renderExecutionBrief(input): string` as a compatibility wrapper.
+- Added typed skill binding hint creation and phase-aware hook expectation
+  creation.
+- GREEN renderer test passed with 2 test files and 4 tests.
+- First package typecheck failed on stale refactor code: unused
+  `renderHookExpectations`, unused `renderCapabilityPlan`, then missing
+  `CapabilityPlan` type import. The stale helper/import were removed and the
+  required type import was restored.
+- Package typecheck then passed.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 19 test files and 103 tests.
+- Core boundary scan found no adapter import and no new full Codex contracts in
+  `packages/core`; only existing `CodexAdapterPlanRef` remains.
+- Adapter TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Live `krn plan` preview passed without DB writes and rendered current task
+  contract, explicit exclusions, source claims used, memory records used,
+  anti-memory warnings, tool boundaries, evidence contract, phase-aware hook
+  expectations, skill binding hints, MCP refs, subagent hints, goal/ExecPlan
+  refs, stop condition, rollback expectation, next action, and
+  what-this-does-not-prove.

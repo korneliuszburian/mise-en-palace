@@ -4,7 +4,6 @@ No hard blocker for M26.00.
 
 Known gaps for later M26 slices:
 
-- hook expectations are currently command hints, not phase-aware projections;
 - no standalone `krn codex brief --run-id <id>`;
 - no `pnpm db:smoke:codex-adapter`;
 - worker job types are missing `embed_memory_record`;
@@ -21,6 +20,20 @@ Resolved in M26.01:
 - adapter contracts include explicit does-not-prove, stop condition, rollback,
   skill hint, hook expectation, MCP ref, goal/ExecPlan ref, and subagent probe
   shapes.
+
+Resolved in M26.02:
+
+- execution brief rendering now starts from a typed `ExecutionBrief` artifact;
+- rendered brief includes explicit source claims used, memory records used,
+  anti-memory warnings, stop condition, rollback expectation, next action, and
+  what-this-does-not-prove;
+- hook expectations are phase-aware in the brief output, while still remaining
+  expectations rather than hook scripts.
+
+Remaining hook work:
+
+- M26.04 still needs a dedicated hook expectation projection slice before
+  doctor/smoke readiness can claim hook projection coverage.
 
 Non-goals that remain intentionally blocked:
 

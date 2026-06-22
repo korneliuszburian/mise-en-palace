@@ -7,11 +7,18 @@ import type {
 import type {
   EvidenceContract
 } from "@krn/harness";
+import type {
+  CodexExecPlanRef,
+  CodexGoalRef,
+  ExecutionBrief,
+  ExecutionBriefContextExclusion,
+  ExecutionBriefContextInclusion
+} from "./contracts.js";
 import {
-  renderHookExpectations
+  createCodexHookExpectations
 } from "./renderHookExpectations.js";
 import {
-  renderSkillHints
+  createCodexSkillBindingHints
 } from "./renderSkillHints.js";
 
 export interface RenderExecutionBriefInput {
@@ -28,12 +35,14 @@ export interface RenderExecutionBriefInput {
 const renderList = (items: readonly string[]): string[] =>
   items.length === 0 ? ["- none"] : items.map((item) => `- ${item}`);
 
-const renderContextInclusions = (contextAssembly: ContextAssembly): string[] => {
-  if (contextAssembly.inclusions.length === 0) {
+const renderContextInclusions = (
+  inclusions: readonly ExecutionBriefContextInclusion[]
+): string[] => {
+  if (inclusions.length === 0) {
     return ["- none"];
   }
 
-  return contextAssembly.inclusions.map((item) =>
+  return inclusions.map((item) =>
     [
       `- ${item.subjectType}:${item.subjectId}`,
       `reason=${item.reason}`,
@@ -43,12 +52,14 @@ const renderContextInclusions = (contextAssembly: ContextAssembly): string[] => 
   );
 };
 
-const renderContextExclusions = (contextAssembly: ContextAssembly): string[] => {
-  if (contextAssembly.exclusions.length === 0) {
+const renderContextExclusions = (
+  exclusions: readonly ExecutionBriefContextExclusion[]
+): string[] => {
+  if (exclusions.length === 0) {
     return ["- none"];
   }
 
-  return contextAssembly.exclusions.map((item) =>
+  return exclusions.map((item) =>
     [
       `- ${item.subjectType}:${item.subjectId}`,
       `reason=${item.reason}`,
@@ -58,70 +69,250 @@ const renderContextExclusions = (contextAssembly: ContextAssembly): string[] => 
   );
 };
 
-const renderCapabilityPlan = (capabilityPlan: CapabilityPlan): string[] => [
-  ...capabilityPlan.requirements.map((requirement) =>
-    [
-      `- ${requirement.kind}`,
-      `reason=${requirement.reason}`,
-      `evidence=${requirement.requiredEvidence.join(", ")}`
-    ].join(" | ")
-  ),
+const renderSkillBindingHints = (brief: ExecutionBrief): string[] =>
+  brief.skillBindingHints.length === 0
+    ? ["- none"]
+    : brief.skillBindingHints.map((hint) =>
+        [
+          `- ${hint.skillName}`,
+          `capability=${hint.capabilityKind}`,
+          `priority=${hint.priority}`,
+          `reason=${hint.reason}`,
+          `evidence=${hint.requiredEvidence.join(", ")}`
+        ].join(" | ")
+      );
+
+const renderToolBoundaries = (brief: ExecutionBrief): string[] => [
   "Tool Boundaries:",
-  ...renderList(capabilityPlan.toolBoundaries),
-  "Skill Hints:",
-  ...renderList(renderSkillHints(capabilityPlan))
+  ...renderList(brief.toolBoundaries)
 ];
 
-const renderEvidenceContract = (evidenceContract: EvidenceContract): string[] => [
-  ...evidenceContract.commands.map((command) =>
-    `- ${command.command}${command.required ? " (required)" : ""}`
-  ),
-  `Diff risk: ${evidenceContract.diffRisk}`,
-  `Review burden: ${evidenceContract.reviewBurden}`,
-  `Rollback path: ${evidenceContract.rollbackPath}`,
+const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
+  ...brief.evidenceContract.commands.map((command) => `- ${command}`),
+  `Diff risk: ${brief.evidenceContract.diffRisk}`,
+  `Rollback path: ${brief.evidenceContract.rollbackPath}`,
   "Hook Expectations:",
-  ...renderList(renderHookExpectations(evidenceContract))
+  ...renderList(
+    brief.hookExpectations.map((expectation) =>
+      [
+        expectation.phase,
+        `action=${expectation.action}`,
+        `required=${String(expectation.required)}`,
+        `reason=${expectation.reason}`
+      ].join(" | ")
+    )
+  )
 ];
 
-export const renderExecutionBrief = (input: RenderExecutionBriefInput): string => {
+const toGoalRef = (goalReference: string | undefined): CodexGoalRef[] =>
+  goalReference === undefined
+    ? []
+    : [
+        {
+          source: goalReference,
+          objective: goalReference,
+          status: "active"
+        }
+      ];
+
+const toExecPlanRef = (execPlanReference: string | undefined): CodexExecPlanRef[] =>
+  execPlanReference === undefined
+    ? []
+    : [
+        {
+          source: execPlanReference,
+          section: execPlanReference,
+          status: "active"
+        }
+      ];
+
+const toContextInclusions = (
+  contextAssembly: ContextAssembly
+): ExecutionBriefContextInclusion[] =>
+  contextAssembly.inclusions.map((inclusion) => ({
+    subjectType: inclusion.subjectType,
+    subjectId: inclusion.subjectId,
+    reason: inclusion.reason,
+    expectedUse: inclusion.expectedUse,
+    trustTier: inclusion.trustTier
+  }));
+
+const toContextExclusions = (
+  contextAssembly: ContextAssembly
+): ExecutionBriefContextExclusion[] =>
+  contextAssembly.exclusions.map((exclusion) => ({
+    subjectType: exclusion.subjectType,
+    subjectId: exclusion.subjectId,
+    reason: exclusion.reason,
+    explanation: exclusion.explanation,
+    trustTier: exclusion.trustTier
+  }));
+
+const sourceClaimsUsed = (
+  inclusions: readonly ExecutionBriefContextInclusion[]
+): string[] =>
+  inclusions
+    .filter((inclusion) => inclusion.subjectType === "source_claim")
+    .map((inclusion) => inclusion.subjectId);
+
+const memoryRecordsUsed = (
+  inclusions: readonly ExecutionBriefContextInclusion[]
+): string[] =>
+  inclusions
+    .filter((inclusion) => inclusion.subjectType === "memory_record")
+    .map((inclusion) => inclusion.subjectId);
+
+const antiMemoryWarnings = (
+  exclusions: readonly ExecutionBriefContextExclusion[]
+): string[] =>
+  exclusions
+    .filter((exclusion) => exclusion.subjectType === "anti_memory_record")
+    .map((exclusion) =>
+      [
+        `${exclusion.subjectType}:${exclusion.subjectId}`,
+        exclusion.reason,
+        exclusion.explanation
+      ].join(" | ")
+    );
+
+export const createExecutionBrief = (input: RenderExecutionBriefInput): ExecutionBrief => {
+  const includedContext = toContextInclusions(input.contextAssembly);
+  const explicitExclusions = toContextExclusions(input.contextAssembly);
+
+  return {
+    title: "KRN Codex Execution Brief",
+    objective: input.taskContract.objective,
+    nonGoals: input.taskContract.nonGoals,
+    currentTaskContract: {
+      id: input.taskContract.id,
+      title: input.taskContract.title,
+      objective: input.taskContract.objective
+    },
+    includedContext,
+    explicitExclusions,
+    sourceClaimsUsed: sourceClaimsUsed(includedContext),
+    memoryRecordsUsed: memoryRecordsUsed(includedContext),
+    antiMemoryWarnings: antiMemoryWarnings(explicitExclusions),
+    toolBoundaries: input.capabilityPlan.toolBoundaries,
+    evidenceContract: {
+      commands: input.evidenceContract.commands.map((command) =>
+        command.required ? `${command.command} (required)` : command.command
+      ),
+      diffRisk: input.evidenceContract.diffRisk,
+      rollbackPath: input.evidenceContract.rollbackPath
+    },
+    hookExpectations: createCodexHookExpectations(input.evidenceContract),
+    skillBindingHints: createCodexSkillBindingHints(input.capabilityPlan),
+    mcpResourceRefs: [],
+    goalRefs: toGoalRef(input.goalReference),
+    execPlanRefs: toExecPlanRef(input.execPlanReference),
+    subagentProbeHints: [],
+    stopCondition: "Stop before Codex execution or hidden state mutation.",
+    rollbackExpectation: input.evidenceContract.rollbackPath,
+    nextAction: input.nextAction,
+    doesNotProve: [
+      "Codex executed the work.",
+      "MCP resources exist.",
+      "Memory was mutated.",
+      "Worker jobs executed."
+    ]
+  };
+};
+
+const renderRefs = (
+  label: string,
+  refs: readonly { source: string; status: string; objective?: string; section?: string }[]
+): string[] =>
+  refs.length === 0
+    ? [label, "- none"]
+    : [
+        label,
+        ...refs.map((ref) =>
+          [
+            `- ${ref.source}`,
+            ...(ref.objective === undefined ? [] : [`objective=${ref.objective}`]),
+            ...(ref.section === undefined ? [] : [`section=${ref.section}`]),
+            `status=${ref.status}`
+          ].join(" | ")
+        )
+      ];
+
+export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const lines = [
-    "KRN Codex Execution Brief",
+    brief.title,
     "",
-    `Task: ${input.taskContract.title}`,
-    `Objective: ${input.taskContract.objective}`,
-    `Harness Plan: ${input.harnessPlan.summary}`,
-    "",
-    "Constraints:",
-    ...renderList(input.taskContract.constraints),
+    `Objective: ${brief.objective}`,
     "",
     "Non-goals:",
-    ...renderList(input.taskContract.nonGoals),
+    ...renderList(brief.nonGoals),
     "",
-    "Acceptance:",
-    ...renderList(input.taskContract.acceptance),
+    "Current Task Contract:",
+    `- id=${brief.currentTaskContract.id}`,
+    `- title=${brief.currentTaskContract.title}`,
+    `- objective=${brief.currentTaskContract.objective}`,
     "",
     "Context Inclusions:",
-    ...renderContextInclusions(input.contextAssembly),
+    ...renderContextInclusions(brief.includedContext),
     "",
-    "Context Exclusions:",
-    ...renderContextExclusions(input.contextAssembly),
+    "Explicit Exclusions:",
+    ...renderContextExclusions(brief.explicitExclusions),
     "",
-    "Capability Plan:",
-    ...renderCapabilityPlan(input.capabilityPlan),
+    "Source Claims Used:",
+    ...renderList(brief.sourceClaimsUsed),
+    "",
+    "Memory Records Used:",
+    ...renderList(brief.memoryRecordsUsed),
+    "",
+    "Anti-memory Warnings:",
+    ...renderList(brief.antiMemoryWarnings),
+    "",
+    ...renderToolBoundaries(brief),
     "",
     "Evidence Contract:",
-    ...renderEvidenceContract(input.evidenceContract),
+    ...renderEvidenceContract(brief),
     "",
-    `Next Action: ${input.nextAction}`
+    "Skill Binding Hints:",
+    ...renderSkillBindingHints(brief),
+    "",
+    "MCP Resource Refs:",
+    ...renderList(
+      brief.mcpResourceRefs.map((ref) =>
+        [
+          ref.name,
+          `access=${ref.access}`,
+          `purpose=${ref.purpose}`,
+          `does_not_grant=${ref.doesNotGrant.join(", ")}`
+        ].join(" | ")
+      )
+    ),
+    "",
+    "Subagent Probe Hints:",
+    ...renderList(
+      brief.subagentProbeHints.map((hint) =>
+        [
+          hint.name,
+          `mode=${hint.mode}`,
+          `purpose=${hint.purpose}`,
+          `trigger=${hint.trigger}`,
+          `allowed=${hint.allowedActions.join(", ")}`
+        ].join(" | ")
+      )
+    ),
+    "",
+    ...renderRefs("Goal References:", brief.goalRefs),
+    "",
+    ...renderRefs("ExecPlan References:", brief.execPlanRefs),
+    "",
+    `Stop Condition: ${brief.stopCondition}`,
+    `Rollback Expectation: ${brief.rollbackExpectation}`,
+    `Next Action: ${brief.nextAction}`,
+    "",
+    "What This Does Not Prove:",
+    ...renderList(brief.doesNotProve)
   ];
-
-  if (input.goalReference !== undefined) {
-    lines.push("", "Goal Reference:", input.goalReference);
-  }
-
-  if (input.execPlanReference !== undefined) {
-    lines.push("", "ExecPlan Reference:", input.execPlanReference);
-  }
 
   return `${lines.join("\n")}\n`;
 };
+
+export const renderExecutionBrief = (input: RenderExecutionBriefInput): string =>
+  renderExecutionBriefText(createExecutionBrief(input));

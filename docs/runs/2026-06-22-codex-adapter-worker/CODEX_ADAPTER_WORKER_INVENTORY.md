@@ -173,9 +173,7 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Render a typed bounded brief before flattening to text.
 - Load persisted run/context/evidence data for `krn codex brief --run-id`.
-- Add hook expectation phases rather than only command strings.
 - Add MCP refs and subagent probes as references/hints only.
 - Add `embed_memory_record` to worker job types.
 - Reconcile worker job status vocabulary with `GOAL.md`.
@@ -203,6 +201,22 @@ M26.01 resolved the typed contract gap:
 - `packages/codex-adapter/src/index.ts` exports the contracts publicly;
 - full Codex contracts remain out of `packages/core`.
 
-Remaining adapter gaps now start at rendering from the typed brief artifact,
-persisted `krn codex brief --run-id` readback, adapter DB smoke, phase-aware
-hook projection behavior, and doctor readiness.
+Remaining adapter gaps now start at persisted `krn codex brief --run-id`
+readback, adapter DB smoke, dedicated hook projection coverage, and doctor
+readiness.
+
+## Slice 02 Update
+
+M26.02 resolved the typed renderer gap:
+
+- `createExecutionBrief` creates a typed `ExecutionBrief`;
+- `renderExecutionBriefText` renders text from the typed artifact;
+- `renderExecutionBrief` remains as the compatibility wrapper used by
+  `krn plan`;
+- live no-store `krn plan` preview renders source claims used, memory records
+  used, anti-memory warnings, phase-aware hook expectations, stop condition,
+  rollback expectation, next action, and what-this-does-not-prove.
+
+Remaining renderer-related work is persisted readback through
+`krn codex brief --run-id`, JSON output if supported by CLI style, DB smoke
+proof, and doctor readiness.

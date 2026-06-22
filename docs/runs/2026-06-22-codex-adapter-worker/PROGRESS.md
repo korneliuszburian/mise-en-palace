@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 01 Codex adapter contracts complete.
+Current slice: Slice 02 execution brief renderer complete.
 
 Completed:
 
@@ -24,6 +24,15 @@ Completed:
   `@krn/codex-adapter`.
 - Slice 01 kept full Codex contracts out of `packages/core`; core still only
   has the existing `CodexAdapterPlanRef`.
+- Slice 02 added `createExecutionBrief` and `renderExecutionBriefText` so the
+  Codex adapter renders from a typed `ExecutionBrief` artifact before text.
+- Slice 02 upgraded the brief text with current task contract, explicit
+  exclusions, source claims used, memory records used, anti-memory warnings,
+  tool boundaries, typed skill binding hints, phase-aware hook expectations,
+  MCP refs, subagent hints, stop condition, rollback expectation, next action,
+  and what-this-does-not-prove.
+- Slice 02 kept the existing `renderExecutionBrief(input)` wrapper stable for
+  `krn plan`.
 
 Verification:
 
@@ -53,9 +62,28 @@ Verification:
   remains.
 - Adapter TypeScript hygiene scan found no `any`, no `as unknown as`, no
   `@ts-ignore`, and no `@ts-expect-error`.
+- Slice 02 RED: `pnpm --filter @krn/codex-adapter test --
+  renderExecutionBrief.test.ts` failed because `createExecutionBrief` was not a
+  function and the old wrapper did not render `What This Does Not Prove`.
+- Slice 02 GREEN: `pnpm --filter @krn/codex-adapter test --
+  renderExecutionBrief.test.ts` passed with 2 test files and 4 tests.
+- Initial Slice 02 package typecheck failed on stale refactor code:
+  unused `renderHookExpectations`, unused `renderCapabilityPlan`, then missing
+  `CapabilityPlan` type import.
+- `pnpm --filter @krn/codex-adapter typecheck`: passed after the cleanup.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed with 19 test files and 103 tests.
+- Slice 02 core boundary scan found no adapter import and no new full Codex
+  binding contracts in `packages/core`; only existing `CodexAdapterPlanRef`
+  remains.
+- Slice 02 adapter TypeScript hygiene scan found no `any`, no `as unknown as`,
+  no `@ts-ignore`, and no `@ts-expect-error`.
+- `pnpm --filter @krn/cli krn plan --task "render Codex execution brief for
+  activated harness run"`: passed and rendered the new typed brief sections in
+  no-store preview mode.
 
 Next:
 
 - Run `git diff --check`.
-- Commit Slice 01 as `feat(codex): add Codex adapter contracts`.
-- Start M26.02 execution brief renderer.
+- Commit Slice 02 as `feat(codex): add execution brief renderer`.
+- Start M26.03 CLI `krn codex brief`.

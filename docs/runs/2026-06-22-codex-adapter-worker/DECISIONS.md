@@ -145,3 +145,52 @@
   `CodexExecPlanRef`, `CodexSubagentProbeHint`, and related unions.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions, and no `@krn/codex-adapter` import in core.
+
+## Slice 02 Decisions
+
+- Source: `GOAL.md` M26.02 and `packages/codex-adapter/src/contracts.ts`.
+  Mechanism: M26 requires a bounded execution brief with explicit included and
+  excluded context, evidence contract, tool boundaries, stop condition,
+  rollback expectation, next action, and what-this-does-not-prove.
+  KRN implication: renderer should operate on a typed artifact before
+  flattening to text so CLI and later JSON output do not reimplement policy.
+  Decision: add `createExecutionBrief(input): ExecutionBrief` and
+  `renderExecutionBriefText(brief): string`, then keep
+  `renderExecutionBrief(input)` as a compatibility wrapper.
+  Rejection/falsifier: if CLI needs to inspect formatter internals or rebuild
+  brief sections itself, M26.02 did not create the right adapter boundary.
+
+- Source: `packages/codex-adapter/src/renderHookExpectations.ts`.
+  Mechanism: previous hook expectations were only required command strings.
+  KRN implication: the brief should at least expose phase-aware expectations
+  before M26.04 adds the dedicated projection slice.
+  Decision: add typed `createCodexHookExpectations` with `SessionStart`,
+  `PreToolUse`, `PostToolUse`, `PreCompact`, and `Stop` phases, while keeping
+  hook behavior as expectations only.
+  Rejection/falsifier: if hook code starts making semantic decisions or running
+  hidden scripts, M26 has crossed the adapter boundary.
+
+## Slice 02 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN renderer coverage
+  before changing production code.
+- `codex-adapter-plan`: used to keep the renderer bounded to Codex-facing
+  instructions, references, hints, and evidence expectations.
+- `typescript-type-safety`: used for typed `ExecutionBrief` creation and
+  adapter public exports without weakening core.
+- `superpowers:systematic-debugging`: used when package typecheck exposed
+  stale refactor code after the GREEN test.
+- `superpowers:verification-before-completion`: used before claiming typecheck,
+  tests, and live preview passed.
+
+## Slice 02 Type-Safety Notes
+
+- Boundary classification: adapter renderer public API and compatibility
+  wrapper used by CLI.
+- Validation/narrowing: no new external input boundary; M26.03 must validate
+  persisted metadata before creating the typed brief from DB rows.
+- Public type changes: `createExecutionBrief`, `renderExecutionBriefText`,
+  `createCodexSkillBindingHints`, and `createCodexHookExpectations` are now
+  exported through existing package exports.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions, and no full Codex contracts in core.

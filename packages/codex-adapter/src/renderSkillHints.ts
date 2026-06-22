@@ -1,6 +1,9 @@
 import type {
   CapabilityPlan
 } from "@krn/core";
+import type {
+  CodexSkillBindingHint
+} from "./contracts.js";
 
 const skillByRequirement = {
   source_grounding: "source-to-decision",
@@ -13,11 +16,23 @@ const skillByRequirement = {
   policy_gate: "activation-engine"
 } as const satisfies Record<CapabilityPlan["requirements"][number]["kind"], string>;
 
+export const createCodexSkillBindingHints = (
+  capabilityPlan: CapabilityPlan
+): CodexSkillBindingHint[] =>
+  capabilityPlan.requirements.map((requirement) => ({
+    skillName: skillByRequirement[requirement.kind],
+    capabilityKind: requirement.kind,
+    reason: requirement.reason,
+    requiredEvidence: requirement.requiredEvidence,
+    priority: "required",
+    source: "capability_plan"
+  }));
+
 export const renderSkillHints = (capabilityPlan: CapabilityPlan): string[] => {
   const hints = new Set<string>();
 
-  for (const requirement of capabilityPlan.requirements) {
-    hints.add(skillByRequirement[requirement.kind]);
+  for (const hint of createCodexSkillBindingHints(capabilityPlan)) {
+    hints.add(hint.skillName);
   }
 
   return [...hints];
