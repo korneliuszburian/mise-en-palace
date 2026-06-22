@@ -1,11 +1,10 @@
 # Blockers
 
-No hard blocker for M24.00.
+No hard blocker for M24.06.
 
 Known gaps for later M24 slices:
 
-- no durable retrieval dogfood proof rows yet, so doctor runtime proof remains
-  `unverified`;
+- M24.07 still needs anti-rot verification and final handoff refresh.
 
 Resolved in M24.01:
 
@@ -21,6 +20,8 @@ Resolved in M24.01:
 - `pnpm db:smoke:retrieval-substrate` now proves the full retrieval substrate
   chain and cleanup count zero.
 - `krn doctor` now reports retrieval substrate readiness read-only.
+- durable retrieval dogfood proof rows now exist, so doctor reports retrieval
+  runtime proof as `ready`.
 
 Non-goals that remain intentionally blocked:
 

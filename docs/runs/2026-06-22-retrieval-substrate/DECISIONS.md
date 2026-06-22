@@ -118,6 +118,18 @@
   marks runtime proof `unverified` until durable retrieval dogfood rows exist.
   Rejection/falsifier: doctor must not report retrieval runtime proof as ready
   merely because a self-cleaning smoke ran.
+- Source: `GOAL.md` M24.06 and the persisted dogfood plan/run.
+  Mechanism: durable runtime proof requires persisted retrieval rows linked to
+  an actual KRN execution context, while self-cleaning smoke proves command
+  behavior only.
+  KRN implication: doctor should become ready only after store-backed
+  SearchDocument, Embedding, RetrievalRun, RetrievalCandidate,
+  ActivationDecision, ContextItem, and ContextExclusion rows exist.
+  Decision: keep M24.06 dogfood rows durable under
+  `m24-retrieval-dogfood-2026-06-22` and record exact IDs in `DOGFOOD.md`.
+  Rejection/falsifier: if doctor reports runtime proof `ready` with no durable
+  search, embedding, candidate, activation, and exclusion rows, the readiness
+  signal is not tied to store truth.
 
 Slice 00 skill record:
 
@@ -185,3 +197,15 @@ Slice 05 skill record:
   report types.
 - `activation-engine`: used to keep doctor readiness tied to candidate,
   activation decision, context exclusion, and forbidden broad retrieval checks.
+
+Slice 06 skill record:
+
+- `brain-store-schema`: used to create durable dogfood rows in Postgres without
+  treating markdown as runtime memory.
+- `activation-engine`: used to select one high-signal source candidate and one
+  explicit lower-ROI exclusion.
+- `source-to-decision`: used to keep durable dogfood proof tied to a decision
+  and falsifier rather than a decorative status note.
+- `superpowers:systematic-debugging`: used when the first lexical dogfood query
+  failed before inserts; root cause was a query term absent from the indexed
+  SearchDocument.

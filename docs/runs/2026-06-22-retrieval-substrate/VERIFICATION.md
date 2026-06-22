@@ -163,3 +163,60 @@ Results:
   runtime proof. This is intentional; M24.06 dogfood should create durable proof
   rows.
 - Final typecheck, full test suite, DB schema check, and diff hygiene passed.
+
+## Slice 06
+
+Commands run:
+
+```sh
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "prove retrieval substrate for KRN activation engine" --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/db exec tsx - <<'TS'
+# dogfood marker audit
+TS
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/db exec tsx - <<'TS'
+# lexical query diagnosis
+TS
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/db exec tsx - <<'TS'
+# durable dogfood retrieval proof creation
+TS
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:retrieval-substrate
+pnpm typecheck
+pnpm --filter @krn/db db:check
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/db exec tsx - <<'TS'
+# post-smoke dogfood marker audit
+TS
+```
+
+Results:
+
+- Persisted plan/run command passed and created operator intent
+  `d1f92b0a-6a7b-4b02-bc81-07b4b26bb720`, task contract
+  `26a9e961-f462-4e29-b97d-0705309fe93f`, harness plan
+  `fb01f089-9640-4881-913e-a276be0891c0`, context assembly
+  `b3aba586-5158-4149-aee6-ef58a5cacaa6`, and execution run
+  `83722c20-f897-4335-a7b1-d1d64046b3cf`.
+- Initial dogfood DB audit found SearchDocuments `2`, EmbeddingModels `0`,
+  Embeddings `0`, RetrievalRuns `0`, RetrievalCandidates `0`,
+  ActivationDecisions `0`, ContextItems `3`, and ContextExclusions `0`.
+- The first durable proof attempt failed before inserts because lexical query
+  `source graph postgres edge tables` did not match the existing source
+  SearchDocument. Diagnosis showed the document matched
+  `Postgres backed relational edges`, so the proof query was narrowed to the
+  actual retained source text.
+- Durable dogfood creation passed. It created embedding model
+  `6d57fc7b-4922-4a6c-9ac5-fa25fd6957cc`, embedding row
+  `ebc314e9-f5f7-4daa-99e3-0a1139832f9b`, retrieval run
+  `76d529b2-2a3e-45bf-b710-e94ee074a539`, two candidates, two activation
+  decisions, one context item, and one context exclusion.
+- Dogfood marker counts after creation were SearchDocuments `2`,
+  EmbeddingModels `1`, Embeddings `1`, RetrievalRuns `1`,
+  RetrievalCandidates `2`, ActivationDecisions `2`, ContextItems `4`, and
+  ContextExclusions `1`.
+- Live doctor passed and now reports retrieval substrate readiness as
+  `ready (schema present; repository reachable; runtime proof present)`.
+- Retrieval substrate smoke passed after durable dogfood creation and still
+  cleaned its marker rows to `0`.
+- Post-smoke dogfood marker audit proved durable dogfood rows remained present.
+- Final typecheck, full test suite, and DB schema check passed.

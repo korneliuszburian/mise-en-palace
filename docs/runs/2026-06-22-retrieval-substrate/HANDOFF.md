@@ -4,17 +4,11 @@ Objective:
 Make retrieval/search substrate real enough to support M25 activation.
 
 Last verified state:
-M23 memory governance is complete and pushed. M24 Slice 00 inventoried the
-existing retrieval/search substrate. The DB schema and migration already
-include `embedding_models`, `embeddings`, `search_documents`,
-`retrieval_runs`, `retrieval_candidates`, `activation_decisions`,
-`context_items`, and `context_exclusions`. The current repository port/adapter
-persists retrieval runs, candidates, activation decisions, and context
-selection. It does not yet expose typed search document, lexical search,
-embedding model, or embedding storage methods. There is no
-`db:smoke:retrieval-substrate` script or doctor retrieval readiness section yet.
-`pnpm typecheck` and `git diff --check` passed after the M24 Slice 00 ledger
-was created.
+M23 memory governance is complete and pushed. M24 Slices 00-06 are complete.
+The DB schema, typed parser boundary, retrieval repository methods, smoke
+command, doctor readiness check, and durable dogfood proof rows now exist.
+Doctor reports retrieval substrate readiness as ready because durable runtime
+proof rows exist in Postgres.
 
 M24 Slice 01 is complete. The retrieval schema now has M24 source vocabulary,
 `retrieval_run_mode`, search document search text and evidence/review/decision
@@ -52,6 +46,19 @@ vector/search DB, and absence of a naive RAG dump command. Doctor remains
 read-only: after self-cleaning smoke, retrieval runtime proof remains
 `unverified` until M24.06 creates durable dogfood rows.
 
+M24 Slice 06 is complete. A persisted KRN plan/run created operator intent
+`d1f92b0a-6a7b-4b02-bc81-07b4b26bb720`, task contract
+`26a9e961-f462-4e29-b97d-0705309fe93f`, harness plan
+`fb01f089-9640-4881-913e-a276be0891c0`, context assembly
+`b3aba586-5158-4149-aee6-ef58a5cacaa6`, and execution run
+`83722c20-f897-4335-a7b1-d1d64046b3cf`. Dogfood rows under
+`m24-retrieval-dogfood-2026-06-22` now include two SearchDocuments, one
+EmbeddingModel, one Embedding, one completed RetrievalRun, two
+RetrievalCandidates, two ActivationDecisions, one dogfood ContextItem, and one
+ContextExclusion. `DOGFOOD.md` records the exact durable IDs. `krn doctor`
+now reports retrieval runtime proof as ready. `pnpm db:smoke:retrieval-substrate`
+still passes and cleans marker rows to zero.
+
 Changed files:
 
 - `docs/runs/2026-06-22-retrieval-substrate/RETRIEVAL_SUBSTRATE_INVENTORY.md`
@@ -60,6 +67,7 @@ Changed files:
 - `docs/runs/2026-06-22-retrieval-substrate/VERIFICATION.md`
 - `docs/runs/2026-06-22-retrieval-substrate/BLOCKERS.md`
 - `docs/runs/2026-06-22-retrieval-substrate/HANDOFF.md`
+- `docs/runs/2026-06-22-retrieval-substrate/DOGFOOD.md`
 - `packages/db/src/schema/retrieval.ts`
 - `packages/db/src/schema/retrieval.test.ts`
 - `packages/harness/src/repositories/types.ts`
@@ -97,8 +105,8 @@ then expands the enum and adds concrete FKs where first-class tables already
 exist.
 
 Blockers/risks:
-No hard blocker for M24.05. The main implementation gap is now M24.06 durable
-dogfood proof rows so doctor can report retrieval runtime proof as ready.
+No hard blocker for M24.06. M24.07 still needs anti-rot verification and final
+handoff refresh.
 
 Context selectors:
 `GOAL.md`, `docs/KRN_KERNEL.md`, `packages/db/src/schema/retrieval.ts`,
@@ -110,10 +118,8 @@ Context selectors:
 and `package.json`.
 
 Next action:
-M24.06 should create a persisted dogfood run for retrieval substrate, record
-search doc IDs, retrieval run ID, candidate IDs, activation decision IDs, what
-was proven, and what remains unproven. That durable proof should make doctor
-retrieval runtime proof ready.
+M24.07 should run the full anti-rot pass, refresh final retrieval substrate
+handoff status, commit the ledger update, and push.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless the next task explicitly

@@ -2,7 +2,7 @@
 
 Goal: M24 - Retrieval/search substrate plus activation trace persistence.
 
-Current slice: Slice 05 doctor retrieval readiness complete.
+Current slice: Slice 06 retrieval substrate dogfood complete.
 
 Completed:
 
@@ -52,6 +52,11 @@ Completed:
   output. Doctor checks retrieval tables, RetrievalRepository read paths,
   smoke command availability, runtime proof readiness/unverified state, absence
   of separate vector/search DB, and absence of naive RAG dump commands.
+- Slice 06 created durable retrieval dogfood proof rows from a persisted KRN
+  plan/run, recorded in `DOGFOOD.md`.
+- Slice 06 kept the self-cleaning retrieval smoke separate from durable runtime
+  proof: smoke still cleans marker rows to zero, while doctor now sees persisted
+  retrieval runtime proof as ready.
 
 Verification:
 
@@ -146,7 +151,37 @@ Verification:
 - `pnpm test`: passed.
 - `pnpm --filter @krn/db db:check`: passed.
 - `git diff --check`: passed.
+- Slice 06 persisted plan/run command passed and created operator intent
+  `d1f92b0a-6a7b-4b02-bc81-07b4b26bb720`, task contract
+  `26a9e961-f462-4e29-b97d-0705309fe93f`, harness plan
+  `fb01f089-9640-4881-913e-a276be0891c0`, context assembly
+  `b3aba586-5158-4149-aee6-ef58a5cacaa6`, and execution run
+  `83722c20-f897-4335-a7b1-d1d64046b3cf`.
+- Slice 06 dogfood DB audit found two existing dogfood SearchDocuments and no
+  dogfood embedding, retrieval run, candidate, activation, or exclusion rows.
+- Slice 06 first dogfood lexical attempt failed before inserts because
+  `source graph postgres edge tables` required a term not present in the
+  SearchDocument. Query evidence showed `Postgres backed relational edges`
+  matched the source document.
+- Slice 06 durable dogfood creation passed with SearchDocuments `2`,
+  EmbeddingModels `1`, Embeddings `1`, RetrievalRuns `1`,
+  RetrievalCandidates `2`, ActivationDecisions `2`, ContextItems `4`, and
+  ContextExclusions `1` for the persisted context assembly.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed. Retrieval substrate runtime proof is now
+  `ready (search documents 2, candidates 10, activation decisions 10,
+  exclusions 1)`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:retrieval-substrate`: passed with cleanup remaining marker count
+  `0`.
+- Post-smoke dogfood marker audit still reported SearchDocuments `2`,
+  EmbeddingModels `1`, Embeddings `1`, RetrievalRuns `1`,
+  RetrievalCandidates `2`, ActivationDecisions `2`, ContextItems `4`, and
+  ContextExclusions `1`.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm test`: passed.
 
 Next:
 
-- M24.06: dogfood retrieval substrate with durable proof rows.
+- M24.07: anti-rot, final retrieval substrate handoff, commit, and push.
