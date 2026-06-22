@@ -337,7 +337,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-00 complete: observational memory ADR and source-to-decision ledger.
 - [x] (2026-06-22) MM-01 complete: moved the clean Memory Brain plan into `docs/plans/memory-ideal-state/PLAN.md`, restored root `PLAN.md` as repo-wide ExecPlan, aligned controlled GOAL/roadmap/decisions/rejections/falsifiers, kept scope docs-only, and preserved no Research Foundry/Pattern Vault/research CLI/pattern CLI/product meta-researcher surfaces.
 - [x] (2026-06-22) MM-02 complete: established repo audit baseline at `docs/plans/memory-ideal-state/AUDIT_BASELINE.md`. Intended files: baseline doc and this PLAN. Non-goals preserved: no runtime, DB schema, migration, CLI, worker, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, or `.krn` runtime truth. Evidence: `pnpm --version` 10.32.1; `pnpm typecheck` passed; `pnpm test` passed with 30 files and 139 tests; DB-aware `pnpm db:ready` passed with 8/8 migrations and pgvector available; DB-aware `krn doctor` passed with forbidden surfaces absent; forbidden directory/dependency scans found no forbidden surfaces.
-- [ ] MM-03: Implement AuditBundle core domain contract.
+- [x] (2026-06-22) MM-03 complete: added pure AuditBundle domain contract in `packages/core/src/auditBundle.ts`, exported it from `packages/core/src/index.ts`, and added focused tests in `packages/core/src/auditBundle.test.ts`. Intended files: `packages/core/src/auditBundle.ts`, `packages/core/src/auditBundle.test.ts`, `packages/core/src/index.ts`, this PLAN. Non-goals preserved: no DB, schema, CLI, fs/env/network, worker, runtime, migration, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, or `.krn` runtime truth. Evidence: RED `pnpm --filter @krn/core test` failed on missing `auditBundle.js`; GREEN focused core tests passed with 2 files and 7 tests; focused core typecheck passed; final full verification recorded in commit.
 - [ ] MM-04: Implement AuditBundle schemas and persistence.
 - [ ] MM-05: Implement repo/architecture/boundary/type/memory/source/eval/handoff audit checks.
 - [ ] MM-06: Add audit CLI and slice audit gate.
@@ -449,6 +449,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: boundary scan found `packages/harness/src/activation/noisyBrainFixture.test.ts` importing `node:fs`.
   Resolution: Accept as a test fixture read. Future automated audits should classify test-only fixture imports separately from production package-boundary violations.
 
+- Observation: AuditBundle starts as a pure domain contract before schema or persistence.
+  Evidence: MM-03 added only `packages/core/src/auditBundle.ts`, its focused test, and a root core export.
+  Resolution: Keep IO validation and DB persistence for MM-04.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -485,6 +489,11 @@ Gate 0 MM-01 outcome:
 Gate 0 MM-02 outcome:
 - `docs/plans/memory-ideal-state/AUDIT_BASELINE.md` records the current package boundaries, DB readiness, doctor status, forbidden surface checks, not-built list, and raw quarry status.
 - The baseline is manual and documentation-only; MM-03 starts the pure AuditBundle domain contract that will later automate this shape.
+
+Gate 0 MM-03 outcome:
+- `AuditBundle`, `AuditFinding`, verification command results, candidate updates, risk estimates, and final verdict types exist in `packages/core`.
+- `resolveAuditFinalVerdict` and `getHighestAuditFindingSeverity` provide conservative pure helpers for audit summaries.
+- No schema, persistence, CLI, or runtime audit behavior exists yet; MM-04 owns schemas and persistence.
 
 ## Milestones
 
