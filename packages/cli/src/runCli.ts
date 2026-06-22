@@ -37,6 +37,9 @@ import {
 import {
   runObserveCommand
 } from "./runObserveCommand.js";
+import type {
+  CreateObserveDatabaseRuntime
+} from "./runObserveCommand.js";
 import {
   runCodexBriefCommand
 } from "./runCodexBriefCommand.js";
@@ -73,6 +76,7 @@ export interface CliRuntime {
   readGitStatus?(): Promise<string>;
   readGitChangedFiles?(since: string, repoPath: string): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
+  createObserveDatabaseRuntime?: CreateObserveDatabaseRuntime;
   createInitConnectRuntime?: CreateInitConnectRuntime;
 }
 
@@ -602,9 +606,9 @@ export const runCli = async (
         env: runtime.env,
         now,
         command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
+        ...(runtime.createObserveDatabaseRuntime === undefined
           ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+          : { createObserveDatabaseRuntime: runtime.createObserveDatabaseRuntime })
       });
 
       return {

@@ -3359,18 +3359,22 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: dependencies,
+        createObserveDatabaseRuntime: async () => ({
           harnessRunRepository: {
             ...dependencies.harnessRunRepository,
             async getHarnessRunByExecutionRunId() {
               return aggregate;
             }
           },
-          observationRepository,
-          memoryRepository: unusedMemoryRepository,
+          async resolveProjectRuntime(input: { projectId: string }) {
+            expect(input.projectId).toBe("project-1");
+
+            return {
+              workspaceId: "workspace-1",
+              projectId: input.projectId,
+              observationRepository
+            };
+          },
           async close() {
             return undefined;
           }
@@ -3389,5 +3393,214 @@ describe("runCli", () => {
     expect(result.stdout).toContain("MemoryRecord created: no");
     expect(createdGroupTitle).toContain("execution-run-1");
     expect(createdItemCount).toBe(1);
+  });
+
+  it("uses the persisted run project when observing a run", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-from-run",
+        source: "cli",
+        rawIntent: "observe run",
+        metadata: {},
+        createdAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-from-run",
+        title: "observe run",
+        objective: "observe run",
+        constraints: [],
+        nonGoals: [],
+        acceptance: [],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "observe run",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "succeeded",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: [{
+        id: "run-event-1",
+        executionRunId: "execution-run-1",
+        sequence: 1,
+        type: "tool.result",
+        severity: "info",
+        message: "tests passed",
+        payload: {},
+        occurredAt: now
+      }]
+    };
+    const resolvedProjectIds: string[] = [];
+    let createdGroupProjectId: string | undefined;
+
+    const result = await runCli(
+      ["observe", "--run", "execution-run-1", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createObserveDatabaseRuntime: async () => ({
+          harnessRunRepository: {
+            ...dependencies.harnessRunRepository,
+            async getHarnessRunByExecutionRunId() {
+              return aggregate;
+            }
+          },
+          async resolveProjectRuntime(input: { projectId: string }) {
+            resolvedProjectIds.push(input.projectId);
+
+            return {
+              workspaceId: "workspace-1",
+              projectId: input.projectId,
+              observationRepository: {
+                async createGroup(input: { scope: { projectId?: string }; title: string }) {
+                  createdGroupProjectId = input.scope.projectId;
+
+                  return {
+                    id: "observation-group-1",
+                    projectId: input.scope.projectId,
+                    executionRunId: "execution-run-1",
+                    scope: input.scope,
+                    title: input.title,
+                    summary: "summary",
+                    source: "krn observe",
+                    metadata: {},
+                    createdAt: now,
+                    updatedAt: now
+                  };
+                },
+                async addItems(_groupId: string, inputs: readonly unknown[]) {
+                  return inputs.map((_input, index) => ({
+                    id: `observation-item-${index + 1}`
+                  }));
+                }
+              }
+            };
+          },
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(resolvedProjectIds).toEqual(["project-from-run"]);
+    expect(createdGroupProjectId).toBe("project-from-run");
+  });
+
+  it("requires an explicit project when the persisted run has no project scope", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "",
+        source: "cli",
+        rawIntent: "observe run",
+        metadata: {},
+        createdAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "",
+        title: "observe run",
+        objective: "observe run",
+        constraints: [],
+        nonGoals: [],
+        acceptance: [],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "observe run",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "succeeded",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: []
+    };
+    let resolveProjectCalled = false;
+
+    const result = await runCli(
+      ["observe", "--run", "execution-run-1"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createObserveDatabaseRuntime: async () => ({
+          harnessRunRepository: {
+            ...dependencies.harnessRunRepository,
+            async getHarnessRunByExecutionRunId() {
+              return aggregate;
+            }
+          },
+          async resolveProjectRuntime() {
+            resolveProjectCalled = true;
+            throw new Error("should not resolve project");
+          },
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("requires --project <project-id>");
+    expect(resolveProjectCalled).toBe(false);
   });
 });

@@ -221,7 +221,7 @@ const usage = [
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
   "krn evidence capture [--run-id <id>] [--persist]",
-  "krn observe --run <id> [--persist]",
+  "krn observe --run <id> [--project <id>] [--persist]",
   "krn codex brief --run-id <id>"
 ].join("\n");
 
@@ -778,6 +778,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   if (command === "observe") {
     let persist = false;
     let runId: string | undefined;
+    let projectId: string | undefined;
 
     for (let index = 0; index < rest.length; index += 1) {
       const arg = rest[index];
@@ -792,7 +793,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
         if (valueResult.error !== undefined || valueResult.value === undefined) {
           return {
-            error: valueResult.error ?? "Usage: krn observe --run <id> [--persist]"
+            error: valueResult.error ?? "Usage: krn observe --run <id> [--project <id>] [--persist]"
           };
         }
 
@@ -801,14 +802,28 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
         continue;
       }
 
+      if (arg === "--project" || arg?.startsWith("--project=") === true) {
+        const valueResult = optionValue(rest, index, "--project");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn observe --run <id> [--project <id>] [--persist]"
+          };
+        }
+
+        projectId = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
       return {
-        error: "Usage: krn observe --run <id> [--persist]"
+        error: "Usage: krn observe --run <id> [--project <id>] [--persist]"
       };
     }
 
     if (runId === undefined || runId.length === 0) {
       return {
-        error: "Usage: krn observe --run <id> [--persist]"
+        error: "Usage: krn observe --run <id> [--project <id>] [--persist]"
       };
     }
 
@@ -816,6 +831,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       command: {
         kind: "observeRun",
         runId,
+        ...(projectId === undefined || projectId.length === 0 ? {} : { projectId }),
         persist
       }
     };

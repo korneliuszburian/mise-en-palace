@@ -77,6 +77,31 @@ export interface DatabaseRuntime {
   close(): Promise<void>;
 }
 
+export interface ObserveDatabaseRuntimeInput {
+  databaseUrl: string;
+}
+
+export interface ObserveProjectRuntime {
+  workspaceId: string;
+  projectId: string;
+  observationRepository: {
+    createGroup(input: CreateObservationGroupInput): Promise<ObservationGroup>;
+    addItems(
+      groupId: string,
+      inputs: CreateObservationItemInput[]
+    ): Promise<ObservationItem[]>;
+  };
+}
+
+export interface ObserveDatabaseRuntime {
+  harnessRunRepository: Pick<
+    HarnessRunRepository,
+    "getHarnessRunByExecutionRunId"
+  >;
+  resolveProjectRuntime(input: { projectId: string }): Promise<ObserveProjectRuntime>;
+  close(): Promise<void>;
+}
+
 export const createDatabaseRuntime = async (
   input: DatabaseRuntimeInput
 ): Promise<DatabaseRuntime> => {
@@ -157,6 +182,42 @@ export const createDatabaseRuntime = async (
     sourceRepository,
     memoryRepository,
     observationRepository,
+    async close(): Promise<void> {
+      await client.end();
+    }
+  };
+};
+
+export const createObserveDatabaseRuntime = async (
+  input: ObserveDatabaseRuntimeInput
+): Promise<ObserveDatabaseRuntime> => {
+  const client = postgres(input.databaseUrl, { max: 1 });
+  const db = createKrnDatabase(client);
+  const projectRepository = new DrizzleProjectRepository(db);
+  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+  const observationRepository = new DrizzleObservationRepository(db);
+
+  return {
+    harnessRunRepository,
+    async resolveProjectRuntime(projectInput: { projectId: string }): Promise<ObserveProjectRuntime> {
+      const projectId = projectInput.projectId.trim();
+
+      if (projectId.length === 0) {
+        throw new Error("Project ID is required for krn observe --run");
+      }
+
+      const project = await projectRepository.getProject(projectId);
+
+      if (project === undefined) {
+        throw new Error(`Project not found for --project ${projectId}`);
+      }
+
+      return {
+        workspaceId: project.workspaceId,
+        projectId: project.id,
+        observationRepository
+      };
+    },
     async close(): Promise<void> {
       await client.end();
     }

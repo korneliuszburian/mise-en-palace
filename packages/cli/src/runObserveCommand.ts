@@ -6,31 +6,34 @@ import {
   buildObserverInput
 } from "@krn/harness";
 import {
-  createDatabaseRuntime
+  createObserveDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
-  CreateDatabaseRuntime
-} from "./runPlanCommand.js";
+  ObserveDatabaseRuntime,
+  ObserveDatabaseRuntimeInput
+} from "./databaseRuntime.js";
 
 export interface ObserveCliCommand {
   kind: "observeRun";
   runId: string;
+  projectId?: string;
   persist: boolean;
 }
+
+export type CreateObserveDatabaseRuntime = (
+  input: ObserveDatabaseRuntimeInput
+) => Promise<ObserveDatabaseRuntime>;
 
 export interface ObserveCommandRuntime {
   env: Record<string, string | undefined>;
   now(): string;
   command: ObserveCliCommand;
-  createDatabaseRuntime?: CreateDatabaseRuntime;
+  createObserveDatabaseRuntime?: CreateObserveDatabaseRuntime;
 }
 
 export interface ObserveCommandResult {
   stdout: string;
 }
-
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const persistenceLabel = (persist: boolean): string =>
   persist
@@ -47,6 +50,39 @@ const sourceTypeToProvenance = (
   return sourceType;
 };
 
+const resolveObservedProjectId = (input: {
+  explicitProjectId: string | undefined;
+  runProjectId: string | undefined;
+}): string => {
+  const explicitProjectId = input.explicitProjectId?.trim();
+  const runProjectId = input.runProjectId?.trim();
+
+  if (
+    explicitProjectId !== undefined &&
+    explicitProjectId.length > 0 &&
+    runProjectId !== undefined &&
+    runProjectId.length > 0 &&
+    explicitProjectId !== runProjectId
+  ) {
+    throw new Error(
+      `--project ${explicitProjectId} does not match persisted run project ${runProjectId}`
+    );
+  }
+
+  const projectId =
+    explicitProjectId !== undefined && explicitProjectId.length > 0
+      ? explicitProjectId
+      : runProjectId;
+
+  if (projectId === undefined || projectId.length === 0) {
+    throw new Error(
+      "krn observe --run requires --project <project-id> because the persisted run has no project scope"
+    );
+  }
+
+  return projectId;
+};
+
 export const runObserveCommand = async (
   runtime: ObserveCommandRuntime
 ): Promise<ObserveCommandResult> => {
@@ -56,14 +92,8 @@ export const runObserveCommand = async (
     throw new Error("KRN_DATABASE_URL is required for krn observe --run");
   }
 
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const databaseRuntime = await createRuntime({
-    databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    now: runtime.now,
-    createId: () => ""
-  });
+  const createRuntime = runtime.createObserveDatabaseRuntime ?? createObserveDatabaseRuntime;
+  const databaseRuntime = await createRuntime({ databaseUrl });
 
   try {
     const aggregate = await databaseRuntime.harnessRunRepository
@@ -73,6 +103,11 @@ export const runObserveCommand = async (
       throw new Error(`No persisted harness run found for --run ${runtime.command.runId}`);
     }
 
+    const projectId = resolveObservedProjectId({
+      explicitProjectId: runtime.command.projectId,
+      runProjectId: aggregate.taskContract.projectId ?? aggregate.operatorIntent.projectId
+    });
+    const projectRuntime = await databaseRuntime.resolveProjectRuntime({ projectId });
     const observerInput = buildObserverInput({
       executionRunId: aggregate.executionRun.id,
       generatedAt: runtime.now(),
@@ -86,6 +121,7 @@ export const runObserveCommand = async (
       `Generated at: ${observerInput.generatedAt}`,
       `Persistence: ${persistenceLabel(runtime.command.persist)}`,
       `Run ID: ${aggregate.executionRun.id}`,
+      `Project ID: ${projectRuntime.projectId}`,
       `Observer input items: ${observerInput.items.length}`,
       `Redactions: ${observerInput.redactions.length}`,
       `Truncations: ${observerInput.truncations.length}`,
@@ -101,17 +137,13 @@ export const runObserveCommand = async (
       };
     }
 
-    if (databaseRuntime.observationRepository === undefined) {
-      throw new Error("Observation repository is required for krn observe --run --persist");
-    }
-
     const scope = {
-      workspaceId: databaseRuntime.workspaceId,
-      projectId: databaseRuntime.projectId,
+      workspaceId: projectRuntime.workspaceId,
+      projectId: projectRuntime.projectId,
       executionRunId: aggregate.executionRun.id,
       taskContractId: aggregate.taskContract.id
     };
-    const group = await databaseRuntime.observationRepository.createGroup({
+    const group = await projectRuntime.observationRepository.createGroup({
       scope,
       title: `Observed run ${aggregate.executionRun.id}`,
       summary: `Deterministic observation staging for ${observerInput.items.length} run evidence items.`,
@@ -126,7 +158,7 @@ export const runObserveCommand = async (
         memoryMutation: "none"
       }
     });
-    const items = await databaseRuntime.observationRepository.addItems(
+    const items = await projectRuntime.observationRepository.addItems(
       group.id,
       observerInput.items.map((item) => {
         const sourceRange = {
