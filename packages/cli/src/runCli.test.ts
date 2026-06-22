@@ -1707,7 +1707,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("No memory application recorded");
   });
 
-  it("blocks memory candidate promote --persist before requiring database config", async () => {
+  it("requires evidence review reference before memory candidate promote --persist", async () => {
     const result = await runCli(
       [
         "memory",
@@ -1730,11 +1730,11 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("MemoryReviewGate is required before promoting memory candidates");
+    expect(result.stderr).toContain("evidenceReviewedRef is required before promoting memory candidates");
     expect(result.stderr).toContain("No MemoryRecord created");
   });
 
-  it("blocks memory candidate promote --persist until MemoryReviewGate exists", async () => {
+  it("requires evidence review reference before opening DB runtime for memory candidate promote", async () => {
     let createRuntimeCalled = false;
     const result = await runCli(
       [
@@ -1764,9 +1764,158 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("MemoryReviewGate is required before promoting memory candidates");
+    expect(result.stderr).toContain("evidenceReviewedRef is required before promoting memory candidates");
     expect(result.stderr).toContain("No MemoryRecord created");
     expect(createRuntimeCalled).toBe(false);
+  });
+
+  it("persists memory candidate promote through MemoryReviewGate", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedPromotion: PromoteMemoryCandidateInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "promote",
+        "--candidate-id",
+        "memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--decision",
+        "accepted",
+        "--evidence-reviewed-ref",
+        "raw-evidence:run-event-1",
+        "--metadata",
+        "reviewNote=inspected raw run event",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "KRN should model source graph with relational edges first",
+                mechanism: "Postgres stores harness state transactionally",
+                krnImplication: "KRN can link promoted memory to source claims",
+                doesNotProve: "This does not prove graph retrieval quality",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "MM-27",
+                status: "accepted",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            async createMemoryCandidate() {
+              throw new Error("createMemoryCandidate should not be called");
+            },
+            async getMemoryCandidateById(id) {
+              return {
+                id,
+                projectId: "project-1",
+                executionRunId: "execution-run-1",
+                proposedBy: "cli",
+                kind: "constraint",
+                status: "candidate",
+                summary: "Source graph should use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceClaimIds: ["source-claim-1"],
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                validFrom: now,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async promoteMemoryCandidate(input) {
+              capturedPromotion = input;
+
+              return {
+                id: "memory-record-1",
+                projectId: "project-1",
+                currentVersionId: "memory-record-version-1",
+                key: "memory:memory-candidate-1",
+                kind: "constraint",
+                status: "active",
+                summary: "Source graph should use Postgres edge tables first",
+                body: "Source graph should use Postgres edge tables first",
+                owner: "operator",
+                confidence: 70,
+                applicationGuidance: "Use when deciding whether to add a separate graph DB",
+                invalidationRule: "Revisit when graph traversal exceeds Postgres limits",
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                isUserPreference: false,
+                positiveFeedbackCount: 0,
+                negativeFeedbackCount: 0,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async rejectMemoryCandidate() {
+              throw new Error("rejectMemoryCandidate should not be called");
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Review gate: passed");
+    expect(result.stdout).toContain("memoryRecord: memory-record-1");
+    expect(result.stdout).toContain("evidenceReviewedRef: raw-evidence:run-event-1");
+    expect(result.stdout).toContain("sourceClaimId: source-claim-1");
+    expect(capturedPromotion).toMatchObject({
+      candidateId: "memory-candidate-1",
+      reviewer: "operator",
+      decision: "accepted",
+      metadata: {
+        reviewNote: "inspected raw run event",
+        reviewGate: {
+          evidenceReviewedRef: "raw-evidence:run-event-1",
+          sourceClaimIds: ["source-claim-1"],
+          reviewedSourceClaimIds: ["source-claim-1"]
+        }
+      }
+    });
   });
 
   it("persists memory candidate reject and stores reason", async () => {

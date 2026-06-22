@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-27.
+- None for MM-28.
+
+Closed in MM-27:
+
+- MemoryReviewGate exists in harness.
+- Public `krn memory candidate promote --persist` requires
+  `--evidence-reviewed-ref` and passes through MemoryReviewGate.
+- Missing raw evidence review reference and missing linked SourceClaim block
+  promotion before low-level repository promotion.
 
 Closed in MM-26A:
 
@@ -43,10 +51,12 @@ Residual later scope:
 - Plugin packaging is not built.
 - Observational memory staging is built and dogfooded through MM-17F.
 - Reflection staging is built through MM-25.
-- Governed promotion via MemoryReviewGate, invalidation/demotion, anti-memory
-  expansion, and golden proof remain planned later work in
+- Governed promotion via MemoryReviewGate is built through MM-27.
+- Invalidation/demotion, anti-memory expansion, and golden proof remain planned
+  later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
-- Public memory promotion before MemoryReviewGate is intentionally blocked.
+- Public memory promotion without MemoryReviewGate/evidence review reference is
+  intentionally blocked.
 
 Explicit non-blockers:
 

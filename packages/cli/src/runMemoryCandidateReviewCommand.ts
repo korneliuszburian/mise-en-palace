@@ -2,6 +2,9 @@ import {
   parseMemoryPromotionInput
 } from "@krn/schema";
 import {
+  promoteMemoryCandidateThroughGate
+} from "@krn/harness";
+import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -101,6 +104,32 @@ const formatRejected = (
     "No memory application recorded"
   ].join("\n");
 
+const formatPromoted = (input: {
+  candidateId: string;
+  memoryRecordId: string;
+  reviewer: string;
+  evidenceReviewedRef: string;
+  sourceClaimIds: string[];
+}): string =>
+  [
+    "KRN Memory Candidate Promote",
+    "Persistence: enabled (Postgres, explicit --persist)",
+    "Review gate: passed",
+    "",
+    "Persisted IDs:",
+    `memoryCandidate: ${input.candidateId}`,
+    `memoryRecord: ${input.memoryRecordId}`,
+    `reviewer: ${input.reviewer}`,
+    `evidenceReviewedRef: ${input.evidenceReviewedRef}`,
+    ...(input.sourceClaimIds.length === 0
+      ? []
+      : [
+          "Reviewed source claims:",
+          ...input.sourceClaimIds.map((sourceClaimId) => `sourceClaimId: ${sourceClaimId}`)
+        ]),
+    "No memory application recorded"
+  ].join("\n");
+
 const createRuntime = async (
   runtime: MemoryCandidateReviewCommandRuntime,
   persistCommandName: string
@@ -123,7 +152,7 @@ const createRuntime = async (
 };
 
 const runPromote = async (
-  _runtime: MemoryCandidateReviewCommandRuntime,
+  runtime: MemoryCandidateReviewCommandRuntime,
   command: MemoryCandidatePromoteCommand
 ): Promise<MemoryCandidateReviewCommandResult> => {
   const reviewInput = parseMemoryPromotionInput({
@@ -143,13 +172,40 @@ const runPromote = async (
     };
   }
 
-  throw new Error(
-    [
-      "MemoryReviewGate is required before promoting memory candidates.",
-      "Use krn memory candidate reject for negative review decisions.",
-      "No MemoryRecord created."
-    ].join(" ")
-  );
+  const evidenceReviewedRef = command.evidenceReviewedRef?.trim();
+
+  if (evidenceReviewedRef === undefined || evidenceReviewedRef.length === 0) {
+    throw new Error(
+      "evidenceReviewedRef is required before promoting memory candidates. No MemoryRecord created."
+    );
+  }
+
+  const databaseRuntime = await createRuntime(runtime, "krn memory candidate promote");
+
+  try {
+    const result = await promoteMemoryCandidateThroughGate({
+      memoryRepository: databaseRuntime.memoryRepository,
+      sourceRepository: databaseRuntime.sourceRepository,
+      review: {
+        candidateId: reviewInput.candidateId,
+        reviewer: reviewInput.reviewer,
+        evidenceReviewedRef,
+        metadata: reviewInput.metadata
+      }
+    });
+
+    return {
+      stdout: formatPromoted({
+        candidateId: reviewInput.candidateId,
+        memoryRecordId: result.memoryRecord.id,
+        reviewer: reviewInput.reviewer,
+        evidenceReviewedRef,
+        sourceClaimIds: result.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id)
+      })
+    };
+  } finally {
+    await databaseRuntime.close();
+  }
 };
 
 const runReject = async (

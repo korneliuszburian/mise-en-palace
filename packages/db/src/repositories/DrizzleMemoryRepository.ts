@@ -52,6 +52,16 @@ const smokePayload = (
 const memoryRecordKeyForCandidate = (input: PromoteMemoryCandidateInput): string =>
   input.recordKey ?? `memory:${input.candidateId}`;
 
+export const memoryPromotionMetadata = (
+  candidate: MemoryCandidate,
+  input: PromoteMemoryCandidateInput
+): Record<string, unknown> => ({
+  ...candidate.metadata,
+  ...(input.metadata ?? {}),
+  createdFromCandidateId: candidate.id,
+  sourceClaimIds: candidate.sourceClaimIds
+});
+
 interface MemoryCoreInvariantInput {
   summary: string;
   body: string;
@@ -354,9 +364,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
               ? {}
               : { validUntil: candidateRow.validUntil }),
             metadata: {
-              ...candidate.metadata,
-              createdFromCandidateId: candidateRow.id,
-              sourceClaimIds: candidate.sourceClaimIds
+              ...memoryPromotionMetadata(candidate, input)
             }
           })
           .returning(),
@@ -382,10 +390,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
               ? {}
               : { validUntil: candidateRow.validUntil }),
             sourceLineage: candidateRow.sourceLineage,
-            metadata: {
-              ...candidate.metadata,
-              sourceClaimIds: candidate.sourceClaimIds
-            }
+            metadata: memoryPromotionMetadata(candidate, input)
           })
           .returning(),
         "promoteMemoryCandidate.insertMemoryRecordVersion"
@@ -407,6 +412,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
           status: input.decision,
           reviewer: input.reviewer,
           reviewedAt: now,
+          metadata: memoryPromotionMetadata(candidate, input),
           updatedAt: now
         })
         .where(eq(memoryCandidates.id, candidateRow.id));

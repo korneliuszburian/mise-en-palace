@@ -11,22 +11,22 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-26A and MM-16R are complete.
+- MM-00 through MM-27 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
   range linkage, deterministic observer input builder, manual observe-run CLI,
   source-range policy matrix, and pure observation prefix selector.
-- Observational memory is not proven end-to-end yet: MemoryReviewGate,
-  invalidation/demotion, and activation integration are next.
+- Observational memory is not proven end-to-end yet: invalidation/demotion,
+  activation integration, broad anti-memory, and golden behavior proof are next.
 - Observation is still staging, not Memory Core.
 - Reflection runtime exists as manual preview/persist CLI and writes
-  ReflectionRecord only; candidate row creation, governed MemoryReviewGate promotion,
-  memory invalidation/demotion, broad anti-memory enforcement, and golden memory
-  behavior proof are not built yet.
-- Public `krn memory candidate promote --persist` is intentionally blocked until
-  MM-27 adds MemoryReviewGate; low-level repository promotion remains internal
-  DB/smoke infrastructure only.
+  ReflectionRecord only; candidate row creation, memory invalidation/demotion,
+  broad anti-memory enforcement, and golden memory behavior proof are not built
+  yet.
+- Public `krn memory candidate promote --persist` now requires
+  MemoryReviewGate via `--evidence-reviewed-ref`; low-level repository
+  promotion remains internal DB/smoke infrastructure.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -106,7 +106,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-27 — Add MemoryReviewGate and promotion path.
+MM-28 — Add memory invalidation/versioning behavior.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

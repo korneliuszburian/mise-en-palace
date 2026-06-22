@@ -1,17 +1,18 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-26A. KRN has
+The memory ideal-state execution track is implemented through MM-27. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
-invariants, and a public Memory Core write-surface guard that blocks `krn
-memory candidate promote --persist` until MM-27 MemoryReviewGate exists.
+invariants, and a MemoryReviewGate that permits public `krn memory candidate
+promote --persist` only with `--evidence-reviewed-ref`.
 
 Last verified state:
-MM-26A verification passed with focused CLI promote tests, full `pnpm
-typecheck`, full `pnpm test`, DB-aware `pnpm db:ready`, forbidden surface
-scans, product CLI/harness promotion-call scan, and `git diff --check`. Full
-tests pass across 44 files and 217 tests. Live DB readiness proves 11/11
+MM-27 verification passed with focused harness MemoryReviewGate tests, focused
+CLI promote tests, focused DB metadata tests, full `pnpm typecheck`, full
+`pnpm test`, DB-aware `pnpm db:ready`, live `pnpm
+db:smoke:memory-governance`, forbidden surface scans, and `git diff --check`.
+Full tests pass across 45 files and 222 tests. Live DB readiness proves 11/11
 migrations and pgvector.
 
 Current dirty context:
@@ -27,8 +28,8 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-26A memory ideal-state slices: complete through the Memory
-  Core write-surface guard.
+- MM-00 through MM-27 memory ideal-state slices: complete through governed
+  MemoryReviewGate promotion.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -61,8 +62,9 @@ Runtime proof status:
 - cleanup: proven with marker counts `0` where emitted.
 - doctor target repo readiness: proven as
   `ready (init-connect smoke proven; target repo harness smoke proven)`.
-- public `krn memory candidate promote --persist`: blocked before DB runtime
-  until MemoryReviewGate exists; no MemoryRecord is created through that path.
+- public `krn memory candidate promote --persist`: requires
+  `--evidence-reviewed-ref` and passes through MemoryReviewGate before low-level
+  repository promotion.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -74,19 +76,19 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-26A blocker remains. Memory candidate promotion is intentionally blocked
-from public CLI until MM-27 provides governed MemoryReviewGate promotion.
+No MM-27 blocker remains. Memory invalidation/versioning is intentionally still
+future MM-28 behavior.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
-mutation, actual Codex execution, automatic memory promotion, public memory
-promotion before MemoryReviewGate, and production worker throughput.
+mutation, actual Codex execution, automatic memory promotion, memory
+invalidation/demotion, broad anti-memory enforcement, and production worker
+throughput.
 
 Next safest action:
-Run MM-27 and add MemoryReviewGate as the only governed product path from
-MemoryCandidate to active MemoryRecord.
+Run MM-28 and add memory invalidation/versioning behavior.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

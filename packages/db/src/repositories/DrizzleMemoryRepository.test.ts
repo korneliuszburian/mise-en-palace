@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DrizzleMemoryRepository,
-  assertMemoryCoreInvariants
+  assertMemoryCoreInvariants,
+  memoryPromotionMetadata
 } from "./DrizzleMemoryRepository.js";
 
 const methodNames = [
@@ -90,5 +91,49 @@ describe("DrizzleMemoryRepository", () => {
       validFrom: "2026-06-23T00:00:00.000Z",
       invalidationRule: "Revisit when stale."
     }, "Memory record")).toThrow("Memory record validUntil must be after validFrom");
+  });
+
+  it("preserves review gate metadata when promoting a candidate", () => {
+    const metadata = memoryPromotionMetadata({
+      id: "memory-candidate-1",
+      projectId: "project-1",
+      executionRunId: "execution-run-1",
+      proposedBy: "reflection",
+      kind: "constraint",
+      status: "candidate",
+      summary: "Use Postgres edge tables first",
+      body: "Use Postgres edge tables first.",
+      owner: "operator",
+      confidence: 80,
+      applicationGuidance: "Use when evaluating graph DB proposals.",
+      invalidationRule: "Revisit when graph traversal exceeds Postgres limits.",
+      sourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1" }],
+      isUserPreference: false,
+      validFrom: "2026-06-23T00:00:00.000Z",
+      metadata: {
+        candidateNote: "from reflection"
+      },
+      createdAt: "2026-06-23T00:00:00.000Z",
+      updatedAt: "2026-06-23T00:00:00.000Z"
+    }, {
+      candidateId: "memory-candidate-1",
+      reviewer: "operator",
+      decision: "accepted",
+      metadata: {
+        reviewGate: {
+          evidenceReviewedRef: "raw-evidence:run-event-1"
+        }
+      }
+    });
+
+    expect(metadata).toMatchObject({
+      candidateNote: "from reflection",
+      createdFromCandidateId: "memory-candidate-1",
+      sourceClaimIds: ["source-claim-1"],
+      reviewGate: {
+        evidenceReviewedRef: "raw-evidence:run-event-1"
+      }
+    });
   });
 });

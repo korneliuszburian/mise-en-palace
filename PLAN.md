@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-26A and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-27 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -40,10 +40,12 @@ Current public state:
   current observations produce zero findings/candidate proposals.
 - MM-26 hardened MemoryRecord/MemoryCandidate repository invariants.
   MM-26A blocked the public CLI `krn memory candidate promote --persist`
-  write surface until MM-27 MemoryReviewGate exists, while leaving low-level
-  repository promotion available only for internal DB/smoke infrastructure.
-- Not built: governed
-  MemoryReviewGate promotion path, memory invalidation/demotion, broad
+  write surface until MM-27 MemoryReviewGate existed. MM-27 added the
+  harness MemoryReviewGate and reopened public promotion only with
+  `--evidence-reviewed-ref`, while leaving low-level repository promotion
+  as internal DB/smoke infrastructure.
+- Not built:
+  memory invalidation/demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
   plugin package, source crawler, and broad benchmark suite.
 
