@@ -4,7 +4,6 @@ No hard blocker for M26.
 
 Known gaps for later M26 slices:
 
-- M26.11 final anti-rot audit not yet run;
 - final M22-M26 handoff not yet written.
 
 Resolved in M26.01:
@@ -108,6 +107,25 @@ Resolved in M26.10:
   the dogfood run;
 - live doctor still reports adapter and worker readiness ready with forbidden
   surfaces absent.
+
+Resolved in M26.11:
+
+- full typecheck and test suite passed after M26.10;
+- no-env doctor passed with DB-dependent readiness preview-only and forbidden
+  surfaces absent;
+- live DB readiness passed with 7/7 migrations and pgvector available;
+- Drizzle migration check passed;
+- all DB smoke commands named in `GOAL.md` M26.11 passed;
+- all smoke commands that report cleanup counts reported cleanup remaining
+  marker count zero;
+- live DB doctor passed with every readiness section ready and forbidden
+  surfaces absent;
+- directory gates confirmed no `apps`, `dashboard`, `.krn`, `packages/api`, or
+  `packages/dashboard`;
+- bounded scans found no MCP server entrypoints, Codex execution runner,
+  broad worker runtime, Redis/Kafka queue, separate vector/graph/search DB
+  dependencies, `@krn/workers` import in `packages/db`, core `requiredSkills`,
+  core runtime imports, or TypeScript hygiene regressions.
 
 Non-goals that remain intentionally blocked:
 

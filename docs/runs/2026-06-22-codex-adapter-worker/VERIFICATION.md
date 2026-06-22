@@ -579,3 +579,104 @@ Results:
 - Final `git diff --check` passed.
 - Final changed-file scope is docs-only: `PLAN.md` plus
   `docs/runs/2026-06-22-codex-adapter-worker/*`.
+
+## Slice 11
+
+Commands run:
+
+```sh
+git status --short --branch
+git log --oneline -20
+docker compose ps krn-postgres
+pnpm typecheck
+pnpm test
+pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+pnpm --filter @krn/db db:check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-plan
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-evidence
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:source-graph
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:memory-governance
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:retrieval-substrate
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:activation
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:codex-adapter
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:worker-jobs
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+test ! -d apps
+test ! -d dashboard
+test ! -d .krn
+test ! -d packages/api
+test ! -d packages/dashboard
+rg -n "requiredSkills" packages/core
+rg -n "@krn/db|from .*packages/db|node:fs|node:child_process|postgres|drizzle|process\\.env|fetch\\(" packages/core/src
+rg -n "\\bany\\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/core/src packages/harness/src packages/codex-adapter/src packages/db/src packages/cli/src packages/workers/src
+rg -n '"redis"|redis@|ioredis|@upstash/redis|"kafka"|kafka@|kafkajs|neo4j|qdrant|lancedb|opensearch|elasticsearch' package.json packages/*/package.json compose.yaml
+rg -n "createMcpServer|startMcpServer|@modelcontextprotocol|McpServer|mcpServer" packages/cli/src/parseArgs.ts packages/cli/src/runCli.ts packages/cli/src/runCodexBriefCommand.ts packages/codex-adapter/src packages/core/src packages/harness/src packages/workers/src packages/db/src --glob '*.ts'
+rg -n "@krn/workers" packages/db/src packages/db/package.json
+find packages -maxdepth 1 -mindepth 1 -type d | sort
+find . -maxdepth 2 -type d \( -name apps -o -name dashboard -o -name api -o -name evals -o -name benchmarks -o -name source-crawler -o -name crawler -o -name research -o -name '.krn' -o -name qdrant -o -name neo4j -o -name redis -o -name kafka \)
+git diff --check
+```
+
+Results:
+
+- Initial `git status --short --branch` was clean at `## main...origin/main`.
+- `git log --oneline -20` showed latest commit
+  `c5a7490 docs(run): record Codex adapter and worker dogfood pass`.
+- `docker compose ps krn-postgres` reported local pgvector Postgres healthy on
+  host port `54329`.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across package outputs totaling 26 test files and 120
+  tests.
+- No-env `krn doctor` passed with DB-backed readiness reported as preview-only
+  and forbidden surfaces absent.
+- Live `pnpm db:ready` passed with Postgres reachable, migrations 7/7 applied,
+  pgvector available, and brain-store readiness ready.
+- `pnpm --filter @krn/db db:check` passed.
+- Live `pnpm db:smoke` passed with project readback matched and cleanup
+  completed.
+- Live `pnpm db:smoke:harness-plan` passed with execution run
+  `f25ed9c9-f2de-482b-b049-45afecdbffc3`, evidence contract commands `3`,
+  run events `1`, and cleanup remaining marker count `0`.
+- Live `pnpm db:smoke:harness-evidence` passed with evidence/review/feedback
+  counts `1/1/1`, run events `2`, and cleanup remaining marker count `0`.
+- Live `pnpm db:smoke:source-graph` passed with run source claims `1`,
+  decision edges `1`, rejections `1`, outbox events `2`, and cleanup remaining
+  marker count `0`.
+- Live `pnpm db:smoke:memory-governance` passed with run anti-memory records
+  `1`, project memory records `1`, outbox events `2`, and cleanup remaining
+  marker count `0`.
+- Live `pnpm db:smoke:retrieval-substrate` passed with search documents `4`,
+  retrieval candidates `2`, activation decisions `2`, context item/exclusion
+  counts `1/1`, and cleanup remaining marker count `0`.
+- Live `pnpm db:smoke:activation` passed with retrieval candidates `6`,
+  activation decisions `6`, included/excluded decisions `2/2`,
+  conflict/stale decisions `1/1`, context items `2`, context exclusions `4`,
+  and cleanup remaining marker count `0`.
+- Live `pnpm db:smoke:codex-adapter` passed with execution run
+  `1d0a1a7b-d6b7-4240-967f-d16f64224136`, readback matched, 5 hook
+  expectations, 0 Codex invocations, and cleanup remaining marker count `0`.
+- Live `pnpm db:smoke:worker-jobs` passed with 6 jobs
+  enqueued/read/running, 2 succeeded, 2 skipped, 2 failed, 6 deleted, and
+  cleanup remaining marker count `0`.
+- Live DB `krn doctor` passed with every readiness section ready and forbidden
+  surfaces absent.
+- Directory gates passed for absent `apps`, `dashboard`, `.krn`,
+  `packages/api`, and `packages/dashboard`.
+- Core scan found no `requiredSkills`.
+- Core library-safety scan found no DB/runtime imports in `packages/core/src`.
+- TypeScript hygiene scan found no `any`, double assertions, or TS
+  suppressions in source packages.
+- Dependency scan found no Redis, Kafka, Neo4j, Qdrant, LanceDB, OpenSearch,
+  or Elasticsearch dependency in project manifests or Compose.
+- Bounded MCP scan found no server entrypoints in CLI/adapter/core/harness/db
+  or worker source surfaces.
+- DB boundary scan found no `@krn/workers` import in `packages/db`.
+- Package directory listing contains only `cli`, `codex-adapter`, `core`, `db`,
+  `harness`, `schema`, and `workers`.
+- Forbidden top-level/package directory scan returned no matches.
+- Broad scans for MCP/source-crawler/runtime-memory text only matched doctor
+  guard strings and negative fixtures; bounded runtime-surface checks above are
+  the authoritative anti-rot evidence.
+- `git diff --check` passed before audit docs edits.

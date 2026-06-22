@@ -14,8 +14,8 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 10 it still lacks the
-final anti-rot audit and final handoff.
+The current surface is not M26-complete. After Slice 11 it still lacks only the
+final handoff.
 
 ## Files Inspected
 
@@ -42,14 +42,14 @@ final anti-rot audit and final handoff.
 - `packages/cli/src/runDoctorCommand.ts`
 - `package.json`
 
-## Existing Codex Adapter Surface
+## Slice 00 Codex Adapter Surface
 
-| M26 concept | Current surface | Status | Notes |
+| M26 concept | Slice 00 surface | Status | Notes |
 | --- | --- | --- | --- |
 | Execution brief renderer | `renderExecutionBrief(input): string` | partial | Renders objective, non-goals, context inclusions/exclusions, capability plan, evidence contract, hook expectations, goal ref, and ExecPlan ref. It is plain and non-mutating. |
 | Codex adapter package | `packages/codex-adapter` | exists | Correct boundary: imports `@krn/core` and `@krn/harness`; core does not import adapter. |
-| `CodexAdapterPlan` | none | missing | Core only has `CodexAdapterPlanRef`; adapter package does not yet export a full adapter plan contract. |
-| `ExecutionBrief` type | none | missing | Current renderer returns a string directly. M26.01/M26.02 should add a typed brief artifact before CLI/DB smoke rely on it. |
+| `CodexAdapterPlan` | none | missing at Slice 00 | Core only had `CodexAdapterPlanRef`; adapter package did not yet export a full adapter plan contract. |
+| `ExecutionBrief` type | none | missing at Slice 00 | The renderer returned a string directly. M26.01/M26.02 added a typed brief artifact before CLI/DB smoke relied on it. |
 | Skill binding hints | `renderSkillHints(CapabilityPlan)` | partial | Maps capability requirement kinds to skill names. No typed `CodexSkillBindingHint` contract yet. |
 | Hook expectations | `createCodexHookExpectationProjection(EvidenceContract)` | available | Projects `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact`, and `Stop` as expectations only. It does not create hook scripts or make hidden semantic decisions. |
 | MCP refs | none | missing | M26 should model refs only; no MCP server. |
@@ -157,20 +157,20 @@ Existing root scripts:
 - `pnpm db:smoke:codex-adapter`
 - `pnpm db:smoke:worker-jobs`
 
-Missing for M26:
+Missing at Slice 00 inventory time:
 
 - `krn plan --task "..." --persist --brief` integrated mode;
 - doctor Codex adapter readiness section;
 - doctor worker job readiness section.
 
-Current DB-backed doctor passed and reports readiness through activation. It
-does not yet inspect Codex adapter renderer availability, hook expectation
-projection, worker job schema, worker smoke availability, or forbidden worker
-runtime/Redis/Kafka surfaces.
+At Slice 00, DB-backed doctor passed and reported readiness through
+activation. It did not yet inspect Codex adapter renderer availability, hook
+expectation projection, worker job schema, worker smoke availability, or
+forbidden worker runtime/Redis/Kafka surfaces. Later slice updates below record
+the resolved state.
 
 ## M26 Gaps
 
-- Run and record M26.11 final anti-rot audit.
 - Write final M22-M26 handoff.
 
 ## Non-Gaps
@@ -209,7 +209,8 @@ M26.02 resolved the typed renderer gap:
   used, anti-memory warnings, phase-aware hook expectations, stop condition,
   rollback expectation, next action, and what-this-does-not-prove.
 
-Remaining renderer-related work is DB smoke proof and doctor readiness.
+After Slice 02, remaining renderer-related work was DB smoke proof and doctor
+readiness.
 
 ## Slice 03 Update
 
@@ -243,7 +244,7 @@ M26.04 resolved dedicated hook projection coverage:
   expectations only, with no hook scripts, no hidden semantic decisions, no
   Codex invocation, and no memory mutation.
 
-Remaining adapter work is now doctor readiness.
+After Slice 04, remaining adapter work was doctor readiness.
 
 ## Slice 05 Update
 
@@ -263,8 +264,8 @@ M26.05 resolved Codex adapter DB smoke proof:
   invocation events, and cleanup count zero;
 - live DB-backed smoke passed after local `krn-postgres` was started.
 
-Remaining M26 work is worker job schema/repository/smoke, doctor readiness,
-dogfood, anti-rot, and final handoff.
+After Slice 05, remaining M26 work was worker job schema/repository/smoke,
+doctor readiness, dogfood, anti-rot, and final handoff.
 
 ## Slice 06 Update
 
@@ -280,7 +281,7 @@ M26.06 resolved worker schema/type alignment:
 - migration `0006_lucky_ken_ellis.sql` only adds `skipped` to
   `worker_job_status`.
 
-Remaining worker work is smoke proof.
+After Slice 06, remaining worker work was smoke proof.
 
 ## Slice 07 Update
 
@@ -354,4 +355,25 @@ job persistence lifecycle, evidence ledger persistence, and doctor readiness.
 It does not prove Codex execution, MCP availability, memory mutation, worker job
 execution, or production worker throughput.
 
-Remaining M26 work is anti-rot and final handoff.
+## Slice 11 Update
+
+M26.11 recorded the final anti-rot audit:
+
+- status/log, local Postgres health, `pnpm typecheck`, `pnpm test`, no-env
+  doctor, live DB readiness, Drizzle `db:check`, all M26.11 DB smokes, live
+  doctor, and `git diff --check` passed;
+- all smoke commands that report cleanup counts reported cleanup remaining
+  marker count zero;
+- no-env doctor preserved preview-only status for DB-dependent readiness;
+- live DB doctor reported every readiness section ready and forbidden surfaces
+  absent;
+- directory gates found no `apps`, `dashboard`, `.krn`, `packages/api`, or
+  `packages/dashboard`;
+- bounded scans found no MCP server entrypoints, Codex execution runner,
+  broad worker runtime, Redis/Kafka queue, separate vector/graph/search DB
+  dependencies, source crawler/research package, broad eval/benchmark package,
+  runtime markdown memory package, core `requiredSkills`, core runtime imports,
+  or `@krn/workers` import in `packages/db`;
+- broad guard scans only matched doctor guard strings and negative fixtures.
+
+Remaining M26 work is final handoff.

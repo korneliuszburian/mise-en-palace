@@ -2,52 +2,43 @@
 
 Objective:
 Continue M26 Codex Adapter Execution Brief + Hook Expectations + Worker Job
-Skeleton. M26.10 dogfood Codex adapter and worker skeleton is complete; next
-implementation slice is M26.11 final M22-M26 anti-rot audit.
+Skeleton. M26.11 final M22-M26 anti-rot audit is complete; next
+implementation slice is M26.12 final handoff.
 
 Last verified state:
 Latest pushed commit before this slice was
-`9748fce feat(cli): report Codex adapter and worker readiness in doctor`.
-M26.10 used live Postgres at
-`postgres://krn:krn@localhost:54329/krn`. `pnpm db:ready` passed with 7/7
-migrations and pgvector available. Persisted `krn plan --task "render Codex
-execution brief for activated harness run" --persist` created execution run
-`e6b02685-63ed-48a2-a5cd-07b1a9a64fab` with 3 context inclusions and 0
-exclusions. `krn codex brief --run-id
-e6b02685-63ed-48a2-a5cd-07b1a9a64fab` rendered the persisted run read-only
-from Postgres with `Codex invocation: none`, `Memory mutation: none`, source
-and memory refs, skill hints, 5 hook expectations, and `What This Does Not
-Prove`. `pnpm db:smoke:codex-adapter` passed with execution run
-`6339a33d-12ad-4927-b8e5-82bbb2bc3055`, readback matched, 5 hook
-expectations, 0 Codex invocations, and cleanup count 0. `pnpm
-db:smoke:worker-jobs` passed with 6 jobs enqueued/read/running, 2 succeeded, 2
-skipped, 2 failed, 6 deleted, and cleanup count 0. `krn evidence capture
---run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab --persist` created evidence
-bundle `3ccbf304-fb5a-482a-a30e-8dff95d2a160`, review assessment
-`7cbc61c2-b4c1-4056-a890-21fe5e89c873`, and feedback delta
-`a1f834b7-b3fd-4a81-945e-309451d93cf7`. Live DB `krn doctor` passed with
-Codex adapter readiness and worker job readiness ready.
+`c5a7490 docs(run): record Codex adapter and worker dogfood pass`. M26.11 ran
+the final anti-rot audit from `GOAL.md`: clean status/log, local Postgres
+healthy, `pnpm typecheck`, `pnpm test`, no-env `krn doctor`, live
+`pnpm db:ready`, `pnpm --filter @krn/db db:check`, all DB smokes named in
+M26.11, live DB `krn doctor`, forbidden directory checks, bounded runtime
+surface scans, and `git diff --check`. Typecheck passed across 7 packages.
+Tests passed across 26 files and 120 tests. Live DB readiness passed with 7/7
+migrations and pgvector available. Every DB smoke passed. Smoke commands that
+report cleanup counts reported cleanup count 0. Live DB doctor reported every
+readiness section ready and forbidden surfaces absent. Bounded scans found no
+dashboard/API/MCP server/Codex runner/broad worker/runtime markdown memory/
+source crawler/broad eval/separate store/Redis/Kafka/core runtime-import drift.
 
 Changed files:
 Docs only for this slice so far: root `PLAN.md` and
 `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
 Decisions:
-M26.10 is a dogfood proof, not a runtime expansion. It proves persisted
-adapter readback, hook expectation rendering, worker job persistence
-lifecycle, evidence ledger persistence, and doctor readiness. It does not
-prove Codex execution, MCP availability, memory mutation, worker job execution,
-or production worker throughput. Evidence capture persists review records but
-does not execute quality commands; final verification commands must be run
-separately before the Slice 10 commit.
+M26.11 is verification and anti-rot, not new runtime scope. Broad scans may
+match doctor guard strings and negative fixtures; bounded entrypoint,
+manifest, package directory, and source-surface checks are the authoritative
+forbidden-surface evidence. M26 still does not prove Codex execution, MCP
+availability, memory auto-mutation, dashboard/API readiness, worker job
+execution, or production worker throughput.
 
 Blockers/risks:
-No hard blocker. M26 is incomplete until M26.11 final anti-rot and final
-handoff are complete. Direct `tsx` CLI commands may need unsandboxed execution
-because sandboxed `tsx` IPC can fail with `listen EPERM`.
+No hard blocker. M26 is incomplete until M26.12 final handoff is complete.
+Direct `tsx` CLI commands may need unsandboxed execution because sandboxed
+`tsx` IPC can fail with `listen EPERM`.
 
 Context selectors:
-`AGENTS.md`, `docs/KRN_KERNEL.md`, `GOAL.md` M26.11,
+`AGENTS.md`, `docs/KRN_KERNEL.md`, `GOAL.md` M26.12,
 `docs/runs/2026-06-22-codex-adapter-worker/PROGRESS.md`,
 `docs/runs/2026-06-22-codex-adapter-worker/VERIFICATION.md`,
 `docs/runs/2026-06-22-codex-adapter-worker/BLOCKERS.md`,
@@ -58,10 +49,12 @@ Context selectors:
 `packages/db/src/workerJobSmoke.ts`.
 
 Next action:
-Run M26.11 final anti-rot audit: status/log, full typecheck/test, no-env and
-live doctor, all DB smokes named in `GOAL.md` M26.11, migration check,
-forbidden-surface scans, cleanup checks, then record results.
+Write M26.12 final handoff: summarize M22-M26 status, source graph status,
+memory governance status, retrieval/activation status, Codex adapter / worker
+skeleton status, runtime proof commands, residual non-goals, next safest
+milestone, and final verification status without overstating unsupported
+surfaces.
 
 Do not reread:
-`docs/materials/`, broad historical docs, or old repo topology unless M26.11
+`docs/materials/`, broad historical docs, or old repo topology unless M26.12
 explicitly needs raw source/audit material.

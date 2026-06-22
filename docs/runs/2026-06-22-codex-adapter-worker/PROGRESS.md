@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 10 dogfood Codex adapter and worker skeleton complete.
+Current slice: Slice 11 final M22-M26 anti-rot audit complete.
 
 Completed:
 
@@ -114,6 +114,17 @@ Completed:
   `a1f834b7-b3fd-4a81-945e-309451d93cf7`.
 - Slice 10 did not add runtime code. It records dogfood proof and keeps Codex
   execution, MCP, memory mutation, and worker execution out of scope.
+- Slice 11 ran the final M22-M26 anti-rot audit over status/log, typecheck,
+  tests, no-env doctor, live DB readiness, Drizzle migration check, every DB
+  smoke named in `GOAL.md`, live doctor, forbidden directory checks, bounded
+  runtime-surface scans, and `git diff --check`.
+- Slice 11 found no dashboard, API, MCP server, broad worker runtime, source
+  crawler/research layer, runtime markdown memory, separate vector/graph/search
+  DB, Redis/Kafka queue, broad eval/benchmark suite, or forbidden core runtime
+  dependency.
+- Slice 11 recorded that broad guard scans may match doctor guard strings and
+  negative fixtures, but bounded entrypoint/package/manifest checks remain
+  clean.
 
 Verification:
 
@@ -361,7 +372,60 @@ Verification:
 - Final `git diff --check`: passed.
 - Final changed-file scope is docs-only: root `PLAN.md` and
   `docs/runs/2026-06-22-codex-adapter-worker/*`.
+- M26.11 `git status --short --branch`: passed with clean
+  `## main...origin/main` before audit docs edits.
+- M26.11 `git log --oneline -20`: passed with latest commit
+  `c5a7490 docs(run): record Codex adapter and worker dogfood pass`.
+- M26.11 `docker compose ps krn-postgres`: passed with local pgvector
+  Postgres healthy on host port `54329`.
+- M26.11 `pnpm typecheck`: passed across 7 workspace packages.
+- M26.11 `pnpm test`: passed across package outputs totaling 26 test files and
+  120 tests.
+- M26.11 no-env `krn doctor`: passed with preview-only DB-dependent readiness
+  and forbidden surfaces absent.
+- M26.11 live `pnpm db:ready`: passed with Postgres reachable, 7/7 migrations
+  applied, pgvector available, and brain-store readiness ready.
+- M26.11 `pnpm --filter @krn/db db:check`: passed.
+- M26.11 `pnpm db:smoke`: passed with project readback matched and cleanup
+  completed.
+- M26.11 `pnpm db:smoke:harness-plan`: passed with execution run
+  `f25ed9c9-f2de-482b-b049-45afecdbffc3`, evidence commands `3`, run events
+  `1`, and cleanup count `0`.
+- M26.11 `pnpm db:smoke:harness-evidence`: passed with execution run
+  `df77e5db-8555-43de-9e34-42eae6041896`, evidence/review/feedback counts
+  `1/1/1`, run events `2`, and cleanup count `0`.
+- M26.11 `pnpm db:smoke:source-graph`: passed with run source claims `1`,
+  decision edges `1`, rejections `1`, outbox events `2`, and cleanup count
+  `0`.
+- M26.11 `pnpm db:smoke:memory-governance`: passed with run anti-memory
+  records `1`, project memory records `1`, outbox events `2`, and cleanup
+  count `0`.
+- M26.11 `pnpm db:smoke:retrieval-substrate`: passed with search documents
+  `4`, retrieval candidates `2`, activation decisions `2`, context
+  item/exclusion counts `1/1`, and cleanup count `0`.
+- M26.11 `pnpm db:smoke:activation`: passed with retrieval candidates `6`,
+  activation decisions `6`, included/excluded decisions `2/2`,
+  conflict/stale decisions `1/1`, context items `2`, context exclusions `4`,
+  and cleanup count `0`.
+- M26.11 `pnpm db:smoke:codex-adapter`: passed with execution run
+  `1d0a1a7b-d6b7-4240-967f-d16f64224136`, readback matched, 5 hook
+  expectations, 0 Codex invocations, and cleanup count `0`.
+- M26.11 `pnpm db:smoke:worker-jobs`: passed with 6 jobs
+  enqueued/read/running, 2 succeeded, 2 skipped, 2 failed, 6 deleted, and
+  cleanup count `0`.
+- M26.11 live DB `krn doctor`: passed with every readiness section ready and
+  forbidden surfaces absent.
+- M26.11 directory gates passed for no `apps`, no `dashboard`, no `.krn`, no
+  `packages/api`, and no `packages/dashboard`.
+- M26.11 bounded scans found no `requiredSkills` in `packages/core`, no DB or
+  runtime imports in `packages/core/src`, no TypeScript `any`/double
+  assertion/suppression matches in source packages, no Redis/Kafka or separate
+  vector/graph/search DB dependencies in manifests, no MCP server entrypoints,
+  no Codex execution runner entrypoints, no broad worker loop/spawn/exec in
+  worker surfaces, no `@krn/workers` import in `packages/db`, and no forbidden
+  package/top-level directories.
+- M26.11 `git diff --check`: passed before audit docs edits.
 
 Next:
 
-- Start M26.11 final M22-M26 anti-rot audit.
+- Start M26.12 final handoff.

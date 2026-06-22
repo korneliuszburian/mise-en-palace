@@ -693,3 +693,68 @@
 - Public type changes: none.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions introduced.
+
+## Slice 11 Decisions
+
+- Source: `GOAL.md` M26.11.
+  Mechanism: final anti-rot requires status/log, typecheck, tests, no-env
+  doctor, live DB readiness, all named DB smokes, diff check, forbidden
+  directory checks, core safety checks, and explicit no-overreach verification.
+  KRN implication: M26 should only advance to final handoff when the complete
+  smoke/readiness surface still works after the Codex adapter and worker
+  skeleton slices.
+  Decision: treat M26.11 as a docs-recorded verification slice; do not add
+  runtime code or widen scope while auditing.
+  Rejection/falsifier: any failed smoke, nonzero cleanup count, forbidden
+  surface, core runtime import, or unreviewed TypeScript hygiene regression
+  blocks final handoff.
+
+- Source: M26.11 broad and bounded scan output.
+  Mechanism: broad text scans can match doctor guard labels and negative test
+  fixtures for source crawlers/runtime-memory warnings; bounded scans over
+  entrypoints, package manifests, package directories, and runtime surfaces
+  determine whether a forbidden implementation exists.
+  KRN implication: anti-rot should not treat guard strings as product runtime,
+  but must still prove actual entrypoints and dependencies are absent.
+  Decision: record broad scan matches as non-runtime guard/fixture evidence and
+  rely on bounded checks for MCP, Codex runner, worker runtime, source crawler,
+  runtime markdown memory, separate stores, API/dashboard, and forbidden deps.
+  Rejection/falsifier: if a forbidden package, manifest dependency, runtime
+  entrypoint, process loop, or DB/core import appears, the broad-match
+  explanation is insufficient.
+
+- Source: `docs/KRN_KERNEL.md`.
+  Mechanism: KRN supplies bounded context, store-backed memory, grounding,
+  traces, review gates, and feedback while avoiding dashboard-first, MCP-first,
+  broad worker, broad eval, file-backed memory, and alternative-executor scope.
+  KRN implication: green anti-rot proof is a readiness gate for final handoff,
+  not permission to start UI/API/MCP/workers.
+  Decision: keep remaining work to M26.12 final handoff and preserve the
+  blocked non-goals list for later milestones.
+  Rejection/falsifier: if final handoff claims production worker throughput,
+  Codex execution, MCP availability, memory auto-mutation, or dashboard/API
+  readiness, it overstates M22-M26.
+
+## Slice 11 Skill Record
+
+- `evidence-review-loop`: used to capture command proof, risk, review burden,
+  rollback surface, and proof-vs-interpretation boundaries.
+- `source-to-decision`: used to separate guard/fixture matches from actual
+  forbidden runtime surfaces.
+- `typescript-type-safety`: used to audit core safety and source-package
+  hygiene without weakening strictness.
+- `handoff-compact`: used to keep the next restart point focused on final
+  handoff.
+- `superpowers:verification-before-completion`: used before claiming anti-rot
+  commands, smokes, scans, and cleanup checks passed.
+
+## Slice 11 Type-Safety Notes
+
+- Boundary classification: docs-only audit record over existing CLI/env/DB
+  commands and static source scans.
+- Validation/narrowing: no new external input path; existing smoke/doctor
+  commands exercised current env parsing, DB readiness, repository readback,
+  and persisted metadata parsing.
+- Public type changes: none.
+- Type-safety exceptions: none; source-package hygiene scan found no `any`, no
+  double assertions, and no TypeScript suppressions.
