@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 09 doctor Codex adapter / worker readiness complete.
+Current slice: Slice 10 dogfood Codex adapter and worker skeleton complete.
 
 Completed:
 
@@ -99,6 +99,21 @@ Completed:
 - Slice 09 keeps doctor read-only. It reports smoke command availability and
   readiness surfaces; the actual runtime proof remains the explicit
   `pnpm db:smoke:codex-adapter` and `pnpm db:smoke:worker-jobs` commands.
+- Slice 10 dogfooded the persisted Codex adapter path on KRN with
+  `krn plan --task "render Codex execution brief for activated harness run"
+  --persist`.
+- Slice 10 rendered the persisted run back through
+  `krn codex brief --run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab`, proving
+  read-only adapter output from Postgres.
+- Slice 10 reran both live DB smokes:
+  `pnpm db:smoke:codex-adapter` and `pnpm db:smoke:worker-jobs`.
+- Slice 10 persisted evidence capture for execution run
+  `e6b02685-63ed-48a2-a5cd-07b1a9a64fab`, creating evidence bundle
+  `3ccbf304-fb5a-482a-a30e-8dff95d2a160`, review assessment
+  `7cbc61c2-b4c1-4056-a890-21fe5e89c873`, and feedback delta
+  `a1f834b7-b3fd-4a81-945e-309451d93cf7`.
+- Slice 10 did not add runtime code. It records dogfood proof and keeps Codex
+  execution, MCP, memory mutation, and worker execution out of scope.
 
 Verification:
 
@@ -313,7 +328,40 @@ Verification:
   entrypoint, no Redis/Kafka dependency in project package manifests, no broad
   worker loop/spawn/exec in worker surfaces, and no `@krn/workers` import in
   `packages/db`.
+- `docker compose ps krn-postgres`: passed with local pgvector Postgres
+  healthy on host port `54329`.
+- Live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:ready`: passed with Postgres reachable, 7 expected/applied migrations,
+  pgvector available, and brain-store readiness ready.
+- Live persisted `krn plan --task "render Codex execution brief for activated
+  harness run" --persist`: passed with context status `assembled`, 3 context
+  inclusions, 0 exclusions, and execution run
+  `e6b02685-63ed-48a2-a5cd-07b1a9a64fab`.
+- Live `krn codex brief --run-id
+  e6b02685-63ed-48a2-a5cd-07b1a9a64fab`: passed with read-only Postgres
+  output, `Codex invocation: none`, `Memory mutation: none`, 5 hook
+  expectations, source/memory refs used, and `What This Does Not Prove`.
+- Live `pnpm db:smoke:codex-adapter`: passed with execution run
+  `6339a33d-12ad-4927-b8e5-82bbb2bc3055`, readback matched, 5 hook
+  expectations, 0 Codex invocations, and cleanup count `0`.
+- Live `pnpm db:smoke:worker-jobs`: passed with 6 jobs enqueued/read
+  back/running, 2 succeeded, 2 skipped, 2 failed, 6 deleted, and cleanup count
+  `0`.
+- Live `krn evidence capture --run-id
+  e6b02685-63ed-48a2-a5cd-07b1a9a64fab --persist`: passed and persisted
+  evidence bundle `3ccbf304-fb5a-482a-a30e-8dff95d2a160`, review assessment
+  `7cbc61c2-b4c1-4056-a890-21fe5e89c873`, and feedback delta
+  `a1f834b7-b3fd-4a81-945e-309451d93cf7`.
+- Live DB `krn doctor`: passed with Codex adapter readiness ready, worker job
+  readiness ready, forbidden surfaces absent, no Codex execution runner, no
+  KRN MCP server, no Redis/Kafka queue, and no broad worker daemon.
+- Final `pnpm typecheck`: passed across 7 workspace packages.
+- Final `pnpm test`: passed across package outputs totaling 26 test files and
+  120 tests.
+- Final `git diff --check`: passed.
+- Final changed-file scope is docs-only: root `PLAN.md` and
+  `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
 Next:
 
-- Start M26.10 dogfood Codex adapter and worker skeleton.
+- Start M26.11 final M22-M26 anti-rot audit.

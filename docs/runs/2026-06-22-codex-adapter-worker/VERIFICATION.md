@@ -524,3 +524,58 @@ Results:
   no Redis/Kafka dependency in project package manifests, no broad worker
   loop/spawn/exec in worker surfaces, and no `@krn/workers` import in
   `packages/db`.
+
+## Slice 10
+
+Commands run:
+
+```sh
+docker compose ps krn-postgres
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "render Codex execution brief for activated harness run" --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn codex brief --run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:codex-adapter
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:worker-jobs
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn evidence capture --run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Results:
+
+- `docker compose ps krn-postgres` reported the local `pgvector/pgvector:pg16`
+  service healthy on host port `54329`.
+- Live `pnpm db:ready` passed with Postgres reachable, 7 expected/applied
+  migrations, pgvector available, and brain-store readiness ready.
+- Live persisted `krn plan` passed and created execution run
+  `e6b02685-63ed-48a2-a5cd-07b1a9a64fab`.
+- The persisted plan assembled 3 context inclusions and 0 exclusions.
+- `krn codex brief --run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab` read the
+  run back from Postgres and rendered `KRN Codex Brief` with
+  `Codex invocation: none`, `Memory mutation: none`, source claims used,
+  memory records used, 5 hook expectations, skill hints, and
+  `What This Does Not Prove`.
+- Live `pnpm db:smoke:codex-adapter` passed with execution run
+  `6339a33d-12ad-4927-b8e5-82bbb2bc3055`, readback matched, evidence
+  contract present, 5 hook expectations, 0 Codex invocations, and cleanup
+  remaining marker count `0`.
+- Live `pnpm db:smoke:worker-jobs` passed with 6 jobs enqueued, 6 queued jobs
+  read back, 6 running transitions, 2 succeeded, 2 skipped, 2 failed, 6
+  deleted, and cleanup remaining marker count `0`.
+- Live persisted evidence capture created evidence bundle
+  `3ccbf304-fb5a-482a-a30e-8dff95d2a160`, review assessment
+  `7cbc61c2-b4c1-4056-a890-21fe5e89c873`, and feedback delta
+  `a1f834b7-b3fd-4a81-945e-309451d93cf7`.
+- Evidence capture correctly recorded quality commands as `skipped`; final
+  verification commands are run separately before the Slice 10 commit.
+- Live DB `krn doctor` passed with Codex adapter readiness ready, worker job
+  readiness ready, forbidden surfaces absent, no Codex execution runner, no
+  KRN MCP server, no Redis/Kafka queue, and no broad worker daemon.
+- Final `pnpm typecheck` passed across 7 workspace packages.
+- Final `pnpm test` passed across package outputs totaling 26 test files and
+  120 tests.
+- Final `git diff --check` passed.
+- Final changed-file scope is docs-only: `PLAN.md` plus
+  `docs/runs/2026-06-22-codex-adapter-worker/*`.

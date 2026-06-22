@@ -14,8 +14,8 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 09 it still lacks dogfood,
-anti-rot, and final handoff.
+The current surface is not M26-complete. After Slice 10 it still lacks the
+final anti-rot audit and final handoff.
 
 ## Files Inspected
 
@@ -170,7 +170,6 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Run and record M26.10 dogfood.
 - Run and record M26.11 final anti-rot audit.
 - Write final M22-M26 handoff.
 
@@ -329,4 +328,30 @@ M26.09 resolved doctor readiness for adapter and worker surfaces:
 - live DB doctor reports Codex adapter readiness and worker job readiness as
   ready, without invoking smoke commands itself.
 
-Remaining M26 work is dogfood, anti-rot, and final handoff.
+## Slice 10 Update
+
+M26.10 recorded the Codex adapter and worker skeleton dogfood pass:
+
+- live persisted `krn plan --task "render Codex execution brief for activated
+  harness run" --persist` created execution run
+  `e6b02685-63ed-48a2-a5cd-07b1a9a64fab`;
+- read-only `krn codex brief --run-id
+  e6b02685-63ed-48a2-a5cd-07b1a9a64fab` rendered the persisted run with
+  source/memory refs, hook expectations, skill hints, no Codex invocation, no
+  memory mutation, and `What This Does Not Prove`;
+- `pnpm db:smoke:codex-adapter` passed with readback matched, 5 hook
+  expectations, 0 Codex invocations, and cleanup count zero;
+- `pnpm db:smoke:worker-jobs` passed with 6 jobs enqueued/read/running, a
+  controlled succeeded/skipped/failed split, and cleanup count zero;
+- `krn evidence capture --run-id
+  e6b02685-63ed-48a2-a5cd-07b1a9a64fab --persist` created evidence, review,
+  and feedback records for the dogfood run;
+- live `krn doctor` still reports Codex adapter readiness and worker job
+  readiness as ready with forbidden surfaces absent.
+
+This dogfood pass proves adapter readback, hook expectation rendering, worker
+job persistence lifecycle, evidence ledger persistence, and doctor readiness.
+It does not prove Codex execution, MCP availability, memory mutation, worker job
+execution, or production worker throughput.
+
+Remaining M26 work is anti-rot and final handoff.

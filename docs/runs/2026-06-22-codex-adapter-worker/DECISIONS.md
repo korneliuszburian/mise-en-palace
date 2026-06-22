@@ -626,3 +626,70 @@
   tests.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
+
+## Slice 10 Decisions
+
+- Source: `GOAL.md` M26.10.
+  Mechanism: M26.10 requires a live persisted `krn plan`, read-only
+  `krn codex brief`, Codex adapter smoke, worker job smoke, persisted
+  evidence capture, and live doctor proof.
+  KRN implication: dogfood should use KRN's own persisted harness and adapter
+  surfaces to inspect KRN, not rely on chat memory or docs-only assertions.
+  Decision: record execution run
+  `e6b02685-63ed-48a2-a5cd-07b1a9a64fab` as the M26.10 dogfood run and keep
+  the proof in the M26 run ledger.
+  Rejection/falsifier: if the run cannot be read back through
+  `krn codex brief`, or if evidence capture cannot persist records for the
+  run, M26.10 dogfood is incomplete.
+
+- Source: `docs/KRN_KERNEL.md` kernel law and runtime truth.
+  Mechanism: KRN supplies bounded context, service/store-backed memory,
+  source grounding, traces, review gates, and feedback; Codex executes, and
+  KRN must not become an alternative executor.
+  KRN implication: dogfood may prove adapter rendering and worker job
+  persistence, but it must not invoke Codex, mutate memory automatically,
+  start MCP, or execute worker jobs.
+  Decision: treat M26.10 as evidence of adapter/readiness/skeleton behavior
+  only. The recorded proof explicitly preserves `Codex invocation: none`,
+  `Memory mutation: none`, worker job smoke transitions, and cleanup counts.
+  Rejection/falsifier: if the dogfood path invokes Codex, starts a server,
+  adds a worker daemon, or treats worker jobs as executed maintenance work,
+  it violates the kernel boundary.
+
+- Source: `krn evidence capture` behavior and M26.10 live output.
+  Mechanism: evidence capture records changed files, skipped command
+  placeholders, diff risk, review burden, rollback path, and feedback
+  candidates, then persists evidence/review/feedback records when configured.
+  KRN implication: persisted capture is evidence ledgering, not test
+  execution.
+  Decision: record the persisted evidence bundle
+  `3ccbf304-fb5a-482a-a30e-8dff95d2a160`, review assessment
+  `7cbc61c2-b4c1-4056-a890-21fe5e89c873`, and feedback delta
+  `a1f834b7-b3fd-4a81-945e-309451d93cf7`; run final typecheck/test/diff
+  separately before commit.
+  Rejection/falsifier: if evidence capture claims skipped commands passed,
+  the review loop evidence is misleading.
+
+## Slice 10 Skill Record
+
+- `codex-adapter-plan`: used for persisted Codex brief readback and adapter
+  boundary checks.
+- `evidence-review-loop`: used to record run ID, command proof, diff risk,
+  review burden, rollback, and feedback-candidate persistence status.
+- `source-to-decision`: used to map GOAL/kernel evidence into decisions and
+  non-proof boundaries.
+- `typescript-type-safety`: used to classify this as docs-only plus CLI/DB
+  boundary verification; no TypeScript source changed in the dogfood slice.
+- `superpowers:verification-before-completion`: used before claiming live DB
+  readiness, smokes, doctor, or final quality gates passed.
+
+## Slice 10 Type-Safety Notes
+
+- Boundary classification: docs-only ledger update after CLI/env/DB command
+  execution; no TypeScript source changed.
+- Validation/narrowing: live commands exercised existing CLI env parsing,
+  persisted run readback, evidence-contract metadata parsing, and DB repository
+  readback paths.
+- Public type changes: none.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions introduced.

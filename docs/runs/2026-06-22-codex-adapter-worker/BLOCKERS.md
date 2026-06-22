@@ -4,7 +4,6 @@ No hard blocker for M26.
 
 Known gaps for later M26 slices:
 
-- M26.10 dogfood run not yet recorded;
 - M26.11 final anti-rot audit not yet run;
 - final M22-M26 handoff not yet written.
 
@@ -93,6 +92,22 @@ Resolved in M26.09:
   ready;
 - doctor remains read-only and does not invoke smoke commands, Codex, MCP, or
   worker runtime.
+
+Resolved in M26.10:
+
+- live persisted KRN-on-KRN plan run created execution run
+  `e6b02685-63ed-48a2-a5cd-07b1a9a64fab`;
+- `krn codex brief --run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab` read the
+  run back from Postgres and rendered the Codex brief with hook expectations,
+  source/memory refs, `Codex invocation: none`, and `Memory mutation: none`;
+- live Codex adapter smoke passed with 5 hook expectations, 0 Codex
+  invocations, and cleanup count zero;
+- live worker job smoke passed with all 6 M26 job types enqueued/read/running,
+  controlled succeeded/skipped/failed transitions, and cleanup count zero;
+- live evidence capture persisted evidence, review, and feedback records for
+  the dogfood run;
+- live doctor still reports adapter and worker readiness ready with forbidden
+  surfaces absent.
 
 Non-goals that remain intentionally blocked:
 
