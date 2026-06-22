@@ -209,3 +209,12 @@ Slice 06 skill record:
 - `superpowers:systematic-debugging`: used when the first lexical dogfood query
   failed before inserts; root cause was a query term absent from the indexed
   SearchDocument.
+
+Slice 07 skill record:
+
+- `superpowers:verification-before-completion`: used to run fresh M24 anti-rot
+  verification before claiming the milestone complete.
+- `handoff-compact`: used to rewrite `HANDOFF.md` into a first-screen
+  continuation artifact for M25.
+- `activation-engine`: used to keep the next action scoped to M25 activation
+  inventory rather than expanding retrieval into broad context dumping.

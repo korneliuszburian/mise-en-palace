@@ -2,7 +2,7 @@
 
 Goal: M24 - Retrieval/search substrate plus activation trace persistence.
 
-Current slice: Slice 06 retrieval substrate dogfood complete.
+Current slice: Slice 07 anti-rot and handoff complete.
 
 Completed:
 
@@ -57,6 +57,8 @@ Completed:
 - Slice 06 kept the self-cleaning retrieval smoke separate from durable runtime
   proof: smoke still cleans marker rows to zero, while doctor now sees persisted
   retrieval runtime proof as ready.
+- Slice 07 ran the full M24 anti-rot suite and rewrote `HANDOFF.md` into the
+  compact first-screen continuation format for M25.
 
 Verification:
 
@@ -181,7 +183,36 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm --filter @krn/db db:check`: passed.
 - `pnpm test`: passed.
+- Slice 07 `git status --short --branch`: passed with clean
+  `## main...origin/main`.
+- Slice 07 `git log --oneline -12`: passed with latest commit
+  `66ade03 docs(run): record retrieval substrate dogfood pass`.
+- Slice 07 `pnpm typecheck`: passed.
+- Slice 07 `pnpm test`: passed with 15 test files and 93 tests.
+- Slice 07 `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  --filter @krn/cli krn doctor`: passed with retrieval substrate readiness
+  `ready (schema present; repository reachable; runtime proof present)`.
+- Slice 07 `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:ready`: passed with migrations expected/applied `6/6` and pgvector
+  available.
+- Slice 07 `pnpm db:smoke`: passed.
+- Slice 07 `pnpm db:smoke:harness-plan`: passed with cleanup remaining marker
+  count `0`.
+- Slice 07 `pnpm db:smoke:harness-evidence`: passed with cleanup remaining
+  marker count `0`.
+- Slice 07 `pnpm db:smoke:source-graph`: passed with cleanup remaining marker
+  count `0`.
+- Slice 07 `pnpm db:smoke:memory-governance`: passed with cleanup remaining
+  marker count `0`.
+- Slice 07 `pnpm db:smoke:retrieval-substrate`: passed with cleanup remaining
+  marker count `0`.
+- Slice 07 `pnpm --filter @krn/db db:check`: passed.
+- Slice 07 dogfood marker audit after all smokes still reported
+  SearchDocuments `2`, EmbeddingModels `1`, Embeddings `1`,
+  RetrievalRuns `1`, RetrievalCandidates `2`, ActivationDecisions `2`,
+  ContextItems `4`, and ContextExclusions `1`.
 
 Next:
 
-- M24.07: anti-rot, final retrieval substrate handoff, commit, and push.
+- M25.00: inventory activation engine surface before wiring activation into
+  persisted `krn plan --persist`.

@@ -220,3 +220,53 @@ Results:
   cleaned its marker rows to `0`.
 - Post-smoke dogfood marker audit proved durable dogfood rows remained present.
 - Final typecheck, full test suite, and DB schema check passed.
+
+## Slice 07
+
+Commands run:
+
+```sh
+git status --short --branch
+git log --oneline -12
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-plan
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-evidence
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:source-graph
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:memory-governance
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:retrieval-substrate
+pnpm --filter @krn/db db:check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/db exec tsx - <<'TS'
+# post-anti-rot dogfood marker audit
+TS
+```
+
+Results:
+
+- `git status --short --branch` passed with clean `## main...origin/main`.
+- `git log --oneline -12` showed latest commit
+  `66ade03 docs(run): record retrieval substrate dogfood pass`.
+- `pnpm typecheck` passed.
+- `pnpm test` passed with 15 test files and 93 tests.
+- Live doctor passed. Retrieval substrate schema, repository read path, smoke
+  command, runtime proof, and derived readiness all reported ready; forbidden
+  separate vector/search DB and naive RAG dump command were absent.
+- `pnpm db:ready` passed with migrations expected/applied `6/6`, pgvector
+  available, and brain store readiness `ready`.
+- `pnpm db:smoke` passed.
+- `pnpm db:smoke:harness-plan` passed with cleanup remaining marker count `0`.
+- `pnpm db:smoke:harness-evidence` passed with cleanup remaining marker count
+  `0`.
+- `pnpm db:smoke:source-graph` passed with cleanup remaining marker count `0`.
+- `pnpm db:smoke:memory-governance` passed with cleanup remaining marker count
+  `0`.
+- `pnpm db:smoke:retrieval-substrate` passed with cleanup remaining marker
+  count `0`.
+- `pnpm --filter @krn/db db:check` passed.
+- Post-anti-rot dogfood marker audit still reported SearchDocuments `2`,
+  EmbeddingModels `1`, Embeddings `1`, RetrievalRuns `1`,
+  RetrievalCandidates `2`, ActivationDecisions `2`, ContextItems `4`, and
+  ContextExclusions `1`.

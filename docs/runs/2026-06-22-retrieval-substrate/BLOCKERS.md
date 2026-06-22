@@ -1,10 +1,17 @@
 # Blockers
 
-No hard blocker for M24.06.
+No hard blocker for M24.
 
 Known gaps for later M24 slices:
 
-- M24.07 still needs anti-rot verification and final handoff refresh.
+- none.
+
+Known risks for M25:
+
+- M24 proves substrate persistence and auditability, not final activation
+  ranking quality.
+- external embedding provider behavior remains out of scope.
+- background embedding worker behavior remains out of scope.
 
 Resolved in M24.01:
 
@@ -22,6 +29,8 @@ Resolved in M24.01:
 - `krn doctor` now reports retrieval substrate readiness read-only.
 - durable retrieval dogfood proof rows now exist, so doctor reports retrieval
   runtime proof as `ready`.
+- M24 anti-rot passed across typecheck, tests, doctor, DB readiness, all DB
+  smoke commands, DB schema check, and dogfood marker audit.
 
 Non-goals that remain intentionally blocked:
 
