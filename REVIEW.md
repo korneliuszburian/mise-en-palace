@@ -144,13 +144,14 @@ MM-16  observation prefix selector
 MM-16/17 review-gate repair layer from external harsh reviews
 MM-17A current-state reconciliation gate
 MM-16R observation prefix relevance and project-scope hardening
+MM-17B observation dogfood with raw recall matrix
 ```
 
-First unchecked execution slices after MM-16R:
+First unchecked execution slices after MM-17B:
 
 ```txt
-MM-17B  Observation dogfood with raw recall matrix
 MM-17C  Typed source-range lineage invariants
+MM-17D  Project-scoped observe runtime
 ```
 
 Recent pushed commits:
@@ -185,10 +186,10 @@ returned PASS_WITH_RISKS and their findings are now folded into
 `docs/plans/memory-ideal-state/PLAN.md` as a blocking repair layer before
 reflection, promotion, worker, API/MCP, dashboard, or broad eval work.
 
-The next execution slice after current-state and prefix hardening is MM-17B:
+The next execution slice after observation dogfood is MM-17C:
 
 ```txt
-MM-17B Observation dogfood with raw recall matrix
+MM-17C Typed source-range lineage invariants
 ```
 
 Local DB tooling note:
@@ -198,7 +199,7 @@ Local DB tooling note:
 - recent persisted `execution_runs` exist in the local DB;
 - no MM-17 dogfood doc has been committed yet.
 
-The reviewer should treat MM-17B and every later slice as planned work unless
+The reviewer should treat MM-17C and every later slice as planned work unless
 the repository head proves otherwise.
 
 ## MM-16 Closeout Note

@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-17A and MM-16R in
+- MM-00 through MM-17B and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -29,8 +29,8 @@ Current runtime truth:
 - PostgreSQL with pgvector is the canonical local brain-store proof path.
 - DB writes require explicit `--persist` or explicit smoke commands.
 - `krn doctor` is read-only.
-- Manual `krn observe --run <id> [--persist]` exists, but the observation
-  runtime still needs MM-17B dogfood proof before it is treated as proven.
+- Manual `krn observe --run <id> [--persist]` exists and MM-17B dogfood proof
+  is recorded at `docs/runs/2026-06-22-observation-dogfood.md`.
 - Observation prefix selector exists as pure harness logic and MM-16R hardened
   relevance/project scoping. It still needs later activation/context
   integration.
@@ -40,4 +40,4 @@ Current runtime truth:
 
 Next action:
 
-- Continue with MM-17B observation dogfood with raw recall matrix.
+- Continue with MM-17C typed source-range lineage invariants.
