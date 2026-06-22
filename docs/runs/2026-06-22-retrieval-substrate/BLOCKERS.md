@@ -4,7 +4,8 @@ No hard blocker for M24.00.
 
 Known gaps for later M24 slices:
 
-- no doctor retrieval/search substrate readiness yet;
+- no durable retrieval dogfood proof rows yet, so doctor runtime proof remains
+  `unverified`;
 
 Resolved in M24.01:
 
@@ -19,6 +20,7 @@ Resolved in M24.01:
   run/candidate/activation aliases, list-by-run readback, and marker cleanup.
 - `pnpm db:smoke:retrieval-substrate` now proves the full retrieval substrate
   chain and cleanup count zero.
+- `krn doctor` now reports retrieval substrate readiness read-only.
 
 Non-goals that remain intentionally blocked:
 

@@ -2,7 +2,7 @@
 
 Goal: M24 - Retrieval/search substrate plus activation trace persistence.
 
-Current slice: Slice 04 retrieval substrate smoke complete.
+Current slice: Slice 05 doctor retrieval readiness complete.
 
 Completed:
 
@@ -48,6 +48,10 @@ Completed:
   placeholder pgvector embedding row, RetrievalRun, two RetrievalCandidates,
   two ActivationDecisions, one ContextItem, one ContextExclusion, readback
   counts, and cleanup proof.
+- Slice 05 added read-only retrieval substrate readiness inspection and doctor
+  output. Doctor checks retrieval tables, RetrievalRepository read paths,
+  smoke command availability, runtime proof readiness/unverified state, absence
+  of separate vector/search DB, and absence of naive RAG dump commands.
 
 Verification:
 
@@ -73,6 +77,26 @@ Verification:
 - `pnpm typecheck`: passed after expanding those public unions.
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`:
   passed with migrations expected/applied `6/6` and pgvector available.
+- `pnpm test`: passed.
+- `pnpm --filter @krn/db db:check`: passed.
+- `git diff --check`: passed.
+- Slice 05 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed on
+  missing retrieval doctor section and missing
+  `deriveRetrievalSubstrateReadiness`.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 51 tests.
+- `pnpm typecheck`: passed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed. Retrieval substrate schema was
+  `ready (8/8 tables present)`, RetrievalRepository read path was `reachable`,
+  smoke command was available, forbidden vector/search DB and naive RAG dump
+  command were absent, and runtime proof was honestly `unverified`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:retrieval-substrate`: passed again with cleanup remaining marker
+  count `0`.
+- Second `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with the same retrieval readiness status,
+  proving doctor stayed read-only and did not treat self-cleaning smoke as
+  durable runtime proof.
 - `pnpm test`: passed.
 - `pnpm --filter @krn/db db:check`: passed.
 - `git diff --check`: passed.
@@ -125,4 +149,4 @@ Verification:
 
 Next:
 
-- M24.05: add doctor retrieval readiness.
+- M24.06: dogfood retrieval substrate with durable proof rows.

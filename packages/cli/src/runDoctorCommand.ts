@@ -7,6 +7,7 @@ import {
   inspectHarnessPersistenceReadiness,
   inspectMemoryGovernanceReadiness,
   inspectMigrationReadiness,
+  inspectRetrievalSubstrateReadiness,
   inspectSourceGraphReadiness
 } from "@krn/db";
 
@@ -422,6 +423,93 @@ export const deriveMemoryGovernanceReadiness = (
 
   return {
     label: "Memory governance readiness",
+    status: "ready (schema present; repository reachable; runtime proof present)"
+  };
+};
+
+export const deriveRetrievalSubstrateReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  retrievalChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const schemaStatus = findCheckStatus(retrievalChecks, "Retrieval substrate schema");
+  const repositoryStatus = findCheckStatus(
+    retrievalChecks,
+    "RetrievalRepository read path"
+  );
+  const smokeAvailable = hasStatusPrefix(
+    retrievalChecks,
+    "Retrieval substrate smoke",
+    "available"
+  );
+  const runtimeProofStatus = findCheckStatus(
+    retrievalChecks,
+    "Retrieval substrate runtime proof"
+  );
+  const separateDbStatus = findCheckStatus(retrievalChecks, "Separate vector/search DB");
+  const ragDumpStatus = findCheckStatus(retrievalChecks, "Naive RAG dump command");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Retrieval substrate readiness",
+      status:
+        "preview only (set KRN_DATABASE_URL and run retrieval substrate smoke for persistence proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  if (separateDbStatus === "present" || ragDumpStatus === "present") {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "blocked (forbidden retrieval infrastructure present)"
+    };
+  }
+
+  if (schemaStatus?.startsWith("ready") !== true) {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "blocked (retrieval substrate schema missing)"
+    };
+  }
+
+  if (repositoryStatus !== "reachable") {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "blocked (RetrievalRepository read path unavailable)"
+    };
+  }
+
+  if (!smokeAvailable) {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "incomplete (retrieval substrate smoke command missing)"
+    };
+  }
+
+  if (runtimeProofStatus?.startsWith("ready") !== true) {
+    return {
+      label: "Retrieval substrate readiness",
+      status: "runtime unverified (run pnpm db:smoke:retrieval-substrate)"
+    };
+  }
+
+  return {
+    label: "Retrieval substrate readiness",
     status: "ready (schema present; repository reachable; runtime proof present)"
   };
 };
@@ -842,6 +930,157 @@ const checkMemoryGovernance = async (
   }
 };
 
+const checkRetrievalSubstrate = async (
+  repoRoot: string,
+  databaseUrl: string | undefined,
+  postgresChecks: readonly DoctorCheck[]
+): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const smokeCheck = {
+    label: "Retrieval substrate smoke",
+    status: readScriptStatus(
+      packageJson,
+      "db:smoke:retrieval-substrate",
+      "krn db smoke retrieval-substrate"
+    )
+  };
+  const separateVectorSearchDbPresent =
+    await pathExists(path.join(repoRoot, "packages", "vector-db")) ||
+    await pathExists(path.join(repoRoot, "packages", "qdrant")) ||
+    await pathExists(path.join(repoRoot, "packages", "search-engine")) ||
+    await pathExists(path.join(repoRoot, "packages", "opensearch")) ||
+    await pathExists(path.join(repoRoot, "packages", "elastic"));
+  const cliText = await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "parseArgs.ts"));
+  const naiveRagDumpCommandPresent =
+    cliText.includes("rag-dump") ||
+    cliText.includes("rag dump") ||
+    cliText.includes("dump-context") ||
+    cliText.includes("context-dump");
+  const forbiddenChecks = [
+    {
+      label: "Separate vector/search DB",
+      status: separateVectorSearchDbPresent ? "present" : "absent"
+    },
+    {
+      label: "Naive RAG dump command",
+      status: naiveRagDumpCommandPresent ? "present" : "absent"
+    }
+  ];
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return [
+      {
+        label: "Retrieval substrate schema",
+        status: "skipped (Postgres not configured)"
+      },
+      {
+        label: "RetrievalRepository read path",
+        status: "skipped (Postgres not configured)"
+      },
+      smokeCheck,
+      {
+        label: "Retrieval substrate runtime proof",
+        status: "skipped (Postgres not configured)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return [
+      {
+        label: "Retrieval substrate schema",
+        status: "skipped (Postgres unreachable)"
+      },
+      {
+        label: "RetrievalRepository read path",
+        status: "skipped (Postgres unreachable)"
+      },
+      smokeCheck,
+      {
+        label: "Retrieval substrate runtime proof",
+        status: "skipped (Postgres unreachable)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  if (
+    databaseUrl === undefined ||
+    databaseUrl.trim().length === 0 ||
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true
+  ) {
+    return [
+      {
+        label: "Retrieval substrate schema",
+        status: "skipped (brain store not ready)"
+      },
+      {
+        label: "RetrievalRepository read path",
+        status: "skipped (brain store not ready)"
+      },
+      smokeCheck,
+      {
+        label: "Retrieval substrate runtime proof",
+        status: "skipped (brain store not ready)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  try {
+    const report = await inspectRetrievalSubstrateReadiness({
+      databaseUrl
+    });
+
+    return [
+      {
+        label: "Retrieval substrate schema",
+        status: report.schemaReady
+          ? `ready (${report.presentTableCount}/${report.requiredTableCount} tables present)`
+          : `missing (${report.missingTables.join(", ")})`
+      },
+      {
+        label: "RetrievalRepository read path",
+        status: report.retrievalRepositoryReachable
+          ? "reachable"
+          : `failed (${report.retrievalRepositoryError ?? "unknown retrieval repository error"})`
+      },
+      smokeCheck,
+      {
+        label: "Retrieval substrate runtime proof",
+        status: report.runtimeProofReady
+          ? `ready (search documents ${report.searchDocumentCount}, candidates ${report.retrievalCandidateCount}, activation decisions ${report.activationDecisionCount}, exclusions ${report.contextExclusionCount})`
+          : "unverified (run pnpm db:smoke:retrieval-substrate)"
+      },
+      ...forbiddenChecks
+    ];
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown retrieval substrate schema error";
+
+    return [
+      {
+        label: "Retrieval substrate schema",
+        status: `failed (${message})`
+      },
+      {
+        label: "RetrievalRepository read path",
+        status: "skipped (retrieval substrate schema check failed)"
+      },
+      smokeCheck,
+      {
+        label: "Retrieval substrate runtime proof",
+        status: "skipped (retrieval substrate schema check failed)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+};
+
 const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const agentsPath = path.join(repoRoot, "AGENTS.md");
   const agentsPresent = await pathExists(agentsPath);
@@ -924,6 +1163,11 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     runtime.env.KRN_DATABASE_URL,
     postgresChecks
   );
+  const retrievalSubstrateChecks = await checkRetrievalSubstrate(
+    repoRoot,
+    runtime.env.KRN_DATABASE_URL,
+    postgresChecks
+  );
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
@@ -933,6 +1177,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     deriveSourceGraphReadiness(postgresChecks, sourceGraphChecks),
     ...memoryGovernanceChecks,
     deriveMemoryGovernanceReadiness(postgresChecks, memoryGovernanceChecks),
+    ...retrievalSubstrateChecks,
+    deriveRetrievalSubstrateReadiness(postgresChecks, retrievalSubstrateChecks),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [
@@ -973,7 +1219,15 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
       return check.status.startsWith("blocked");
     }
 
+    if (check.label === "Retrieval substrate readiness") {
+      return check.status.startsWith("blocked");
+    }
+
     if (check.label === "Runtime markdown memory" || check.label === "Automatic memory mutation") {
+      return check.status === "present";
+    }
+
+    if (check.label === "Separate vector/search DB" || check.label === "Naive RAG dump command") {
       return check.status === "present";
     }
 

@@ -7,6 +7,7 @@ export * from "./memoryGovernanceReadiness.js";
 export * from "./migrationReadiness.js";
 export * from "./persistenceSmoke.js";
 export * from "./retrievalSubstrateSmoke.js";
+export * from "./retrievalSubstrateReadiness.js";
 export * from "./sourceGraphSmoke.js";
 export * from "./sourceGraphReadiness.js";
 export * from "./repositories/index.js";

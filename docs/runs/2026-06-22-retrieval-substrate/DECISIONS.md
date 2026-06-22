@@ -109,6 +109,15 @@
   self-cleaning smoke command.
   Rejection/falsifier: if cleanup marker count is non-zero or lexical search
   cannot find the inserted source document, M24.04 fails.
+- Source: `GOAL.md` M24.05 and existing doctor readiness pattern.
+  Mechanism: `krn doctor` reports readiness read-only; it does not create proof
+  rows or run smoke commands.
+  KRN implication: self-cleaning smoke can prove command behavior, but durable
+  runtime proof for doctor must come from dogfood records.
+  Decision: doctor reports retrieval schema/repository/smoke availability and
+  marks runtime proof `unverified` until durable retrieval dogfood rows exist.
+  Rejection/falsifier: doctor must not report retrieval runtime proof as ready
+  merely because a self-cleaning smoke ran.
 
 Slice 00 skill record:
 
@@ -165,3 +174,14 @@ Slice 04 skill record:
 - `typescript-type-safety`: used for smoke report and CLI target union changes.
 - `activation-engine`: used to ensure candidates, activation decisions, context
   inclusion, and context exclusion are all first-class proof rows.
+
+Slice 05 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN doctor readiness
+  tests.
+- `brain-store-schema`: used for read-only retrieval readiness table/count
+  inspection.
+- `typescript-type-safety`: used for doctor check/status unions and readiness
+  report types.
+- `activation-engine`: used to keep doctor readiness tied to candidate,
+  activation decision, context exclusion, and forbidden broad retrieval checks.

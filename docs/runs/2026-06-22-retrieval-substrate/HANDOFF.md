@@ -45,6 +45,13 @@ RetrievalCandidate, ActivationDecision, ContextItem, ContextExclusion, and
 cleanup count zero. The smoke also indexes SourceClaim, MemoryRecord,
 EvidenceBundle, and SourceDecision as search documents.
 
+M24 Slice 05 is complete. `krn doctor` now reports retrieval substrate schema
+readiness, RetrievalRepository read path reachability, retrieval smoke command
+availability, runtime proof ready/unverified status, absence of separate
+vector/search DB, and absence of a naive RAG dump command. Doctor remains
+read-only: after self-cleaning smoke, retrieval runtime proof remains
+`unverified` until M24.06 creates durable dogfood rows.
+
 Changed files:
 
 - `docs/runs/2026-06-22-retrieval-substrate/RETRIEVAL_SUBSTRATE_INVENTORY.md`
@@ -77,6 +84,8 @@ Changed files:
 - `packages/cli/src/parseArgs.ts`
 - `packages/cli/src/runCli.test.ts`
 - `package.json`
+- `packages/db/src/retrievalSubstrateReadiness.ts`
+- `packages/cli/src/runDoctorCommand.ts`
 
 Decisions:
 Reuse the existing Postgres/Drizzle retrieval schema. Keep FTS/vector raw SQL
@@ -88,8 +97,8 @@ then expands the enum and adds concrete FKs where first-class tables already
 exist.
 
 Blockers/risks:
-No hard blocker for M24.04. The main implementation gap is now doctor retrieval
-readiness.
+No hard blocker for M24.05. The main implementation gap is now M24.06 durable
+dogfood proof rows so doctor can report retrieval runtime proof as ready.
 
 Context selectors:
 `GOAL.md`, `docs/KRN_KERNEL.md`, `packages/db/src/schema/retrieval.ts`,
@@ -101,10 +110,10 @@ Context selectors:
 and `package.json`.
 
 Next action:
-M24.05 should add doctor retrieval readiness, including schema/migration
-availability, FTS/search document readiness, pgvector availability, retrieval
-smoke command availability, runtime proof ready/unverified status, and absence
-of separate vector/search DB or naive RAG dump command.
+M24.06 should create a persisted dogfood run for retrieval substrate, record
+search doc IDs, retrieval run ID, candidate IDs, activation decision IDs, what
+was proven, and what remains unproven. That durable proof should make doctor
+retrieval runtime proof ready.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless the next task explicitly

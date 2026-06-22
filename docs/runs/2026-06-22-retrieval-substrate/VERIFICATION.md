@@ -134,3 +134,32 @@ Results:
   results `1`, retrieval candidates `2`, activation decisions `2`, context
   items `1`, context exclusions `1`, and cleanup remaining marker count `0`.
 - Final full test suite, DB schema check, and diff hygiene passed.
+
+## Slice 05
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:retrieval-substrate
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+pnpm test
+pnpm --filter @krn/db db:check
+git diff --check
+```
+
+Results:
+
+- RED CLI test failed before retrieval doctor readiness existed.
+- Doctor preview output now includes retrieval schema, repository read path,
+  smoke availability, runtime proof, forbidden vector/search DB, naive RAG dump
+  command, and derived retrieval readiness.
+- Live doctor with DB configured reports retrieval schema ready, repository
+  reachable, smoke available, forbidden infrastructure absent, and runtime
+  proof unverified.
+- Running the self-cleaning retrieval smoke does not make doctor claim durable
+  runtime proof. This is intentional; M24.06 dogfood should create durable proof
+  rows.
+- Final typecheck, full test suite, DB schema check, and diff hygiene passed.

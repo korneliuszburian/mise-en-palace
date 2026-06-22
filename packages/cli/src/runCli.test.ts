@@ -26,6 +26,7 @@ import {
   deriveBrainStoreReadiness,
   deriveHarnessPersistenceReadiness,
   deriveMemoryGovernanceReadiness,
+  deriveRetrievalSubstrateReadiness,
   deriveSourceGraphReadiness
 } from "./runDoctorCommand.js";
 
@@ -213,6 +214,18 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Memory governance readiness: preview only (set KRN_DATABASE_URL and run memory governance smoke for persistence proof)"
     );
+    expect(result.stdout).toContain("Retrieval substrate schema: skipped (Postgres not configured)");
+    expect(result.stdout).toContain(
+      "RetrievalRepository read path: skipped (Postgres not configured)"
+    );
+    expect(result.stdout).toContain(
+      "Retrieval substrate smoke: available (pnpm db:smoke:retrieval-substrate)"
+    );
+    expect(result.stdout).toContain(
+      "Retrieval substrate readiness: preview only (set KRN_DATABASE_URL and run retrieval substrate smoke for persistence proof)"
+    );
+    expect(result.stdout).toContain("Separate vector/search DB: absent");
+    expect(result.stdout).toContain("Naive RAG dump command: absent");
     expect(result.stdout).toContain("Runtime markdown memory: absent");
     expect(result.stdout).toContain("Automatic memory mutation: absent");
     expect(result.stdout).toContain("AGENTS.md: present");
@@ -361,6 +374,60 @@ describe("runCli", () => {
     ).toEqual({
       label: "Memory governance readiness",
       status: "blocked (forbidden memory runtime present)"
+    });
+  });
+
+  it("distinguishes doctor retrieval substrate readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (6/6 applied)" }
+    ];
+    const retrievalReady = [
+      { label: "Retrieval substrate schema", status: "ready (8/8 tables present)" },
+      { label: "RetrievalRepository read path", status: "reachable" },
+      {
+        label: "Retrieval substrate smoke",
+        status: "available (pnpm db:smoke:retrieval-substrate)"
+      },
+      {
+        label: "Retrieval substrate runtime proof",
+        status: "ready (search documents 4, candidates 2, activation decisions 2, exclusions 1)"
+      },
+      { label: "Separate vector/search DB", status: "absent" },
+      { label: "Naive RAG dump command", status: "absent" }
+    ];
+
+    expect(
+      deriveRetrievalSubstrateReadiness(postgresReady, retrievalReady)
+    ).toEqual({
+      label: "Retrieval substrate readiness",
+      status: "ready (schema present; repository reachable; runtime proof present)"
+    });
+
+    expect(
+      deriveRetrievalSubstrateReadiness(postgresReady, [
+        ...retrievalReady.slice(0, 3),
+        {
+          label: "Retrieval substrate runtime proof",
+          status: "unverified (run pnpm db:smoke:retrieval-substrate)"
+        },
+        ...retrievalReady.slice(4)
+      ])
+    ).toEqual({
+      label: "Retrieval substrate readiness",
+      status: "runtime unverified (run pnpm db:smoke:retrieval-substrate)"
+    });
+
+    expect(
+      deriveRetrievalSubstrateReadiness(postgresReady, [
+        ...retrievalReady.slice(0, 4),
+        { label: "Separate vector/search DB", status: "present" },
+        { label: "Naive RAG dump command", status: "absent" }
+      ])
+    ).toEqual({
+      label: "Retrieval substrate readiness",
+      status: "blocked (forbidden retrieval infrastructure present)"
     });
   });
 
