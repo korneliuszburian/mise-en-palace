@@ -2,8 +2,8 @@
 
 Objective:
 Continue M26 Codex Adapter Execution Brief + Hook Expectations + Worker Job
-Skeleton. M26.02 execution brief renderer is complete; next implementation
-slice is M26.03 CLI `krn codex brief`.
+Skeleton. M26.03 CLI `krn codex brief` is complete; next implementation slice
+is M26.04 hook expectation projection.
 
 Last verified state:
 M25 activation engine is complete and pushed. M26.00 found an existing
@@ -31,6 +31,14 @@ phase-aware hook expectations, stop condition, rollback expectation, and
 what-this-does-not-prove. Full `pnpm typecheck` passed across 7 workspace
 packages and full `pnpm test` passed with 19 test files and 103 tests after
 M26.02. Live no-store `krn plan` preview passed with the new brief sections.
+M26.03 added `krn codex brief --run-id <id>` as a read-only Postgres command.
+CLI tests passed with 56 tests, full `pnpm typecheck` passed across 7 workspace
+packages, and full `pnpm test` passed with 19 test files and 105 tests. Live
+DB-backed brief rendering passed for execution run
+`bb33bd3d-02df-4ff3-839b-6f545de88b4c`, with read-only Postgres output, no
+Codex invocation, no memory mutation, source claims used, memory records used,
+tool boundaries, evidence contract, hook expectations, skill hints, stop
+condition, rollback expectation, and what-this-does-not-prove.
 
 Changed files:
 `packages/codex-adapter/src/contracts.ts`,
@@ -40,6 +48,11 @@ Changed files:
 `packages/codex-adapter/src/renderExecutionBrief.test.ts`,
 `packages/codex-adapter/src/renderHookExpectations.ts`,
 `packages/codex-adapter/src/renderSkillHints.ts`, and
+`packages/cli/src/runCodexBriefCommand.ts`,
+`packages/cli/src/parseArgs.ts`,
+`packages/cli/src/runCli.ts`,
+`packages/cli/src/index.ts`,
+`packages/cli/src/runCli.test.ts`, and
 `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
 Decisions:
@@ -48,12 +61,12 @@ contracts before broadening CLI/DB smoke behavior. Keep full Codex adapter
 types in `packages/codex-adapter`; keep core Codex-agnostic except for
 `CodexAdapterPlanRef`. M26.02 should render from the new typed
 `ExecutionBrief`/`CodexAdapterPlan` artifact instead of widening formatter
-arguments or reimplementing policy in CLI. M26.03 should load persisted
-harness run state, validate metadata, create the typed brief, and print without
-writes or Codex invocation. Use existing Postgres `worker_jobs` and
-`outbox_events` for worker skeleton proof; do not add Redis/Kafka or a daemon.
-Treat `embed_memory_record`, `skipped`, and `availableAt` versus `runAfter` as
-explicit M26.06/M26.07 alignment work.
+arguments or reimplementing policy in CLI. M26.03 loads persisted harness run
+state, validates evidence-contract metadata, creates the typed brief, and
+prints without writes or Codex invocation. Use existing Postgres `worker_jobs`
+and `outbox_events` for worker skeleton proof; do not add Redis/Kafka or a
+daemon. Treat `embed_memory_record`, `skipped`, and `availableAt` versus
+`runAfter` as explicit M26.06/M26.07 alignment work.
 
 Blockers/risks:
 No hard blocker. M26 is incomplete until adapter contracts, persisted brief
@@ -81,8 +94,8 @@ Context selectors:
 
 Next action:
 Run `git diff --check`, commit
-`feat(codex): add execution brief renderer`, push, then start M26.03 CLI
-`krn codex brief`.
+`feat(cli): add Codex brief command`, push, then start M26.04 hook expectation
+projection.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

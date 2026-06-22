@@ -4,7 +4,6 @@ No hard blocker for M26.00.
 
 Known gaps for later M26 slices:
 
-- no standalone `krn codex brief --run-id <id>`;
 - no `pnpm db:smoke:codex-adapter`;
 - worker job types are missing `embed_memory_record`;
 - worker status vocabulary is not aligned with `GOAL.md` `skipped`;
@@ -34,6 +33,14 @@ Remaining hook work:
 
 - M26.04 still needs a dedicated hook expectation projection slice before
   doctor/smoke readiness can claim hook projection coverage.
+
+Resolved in M26.03:
+
+- standalone `krn codex brief --run-id <id>` exists;
+- command uses persisted harness run readback and renders the typed execution
+  brief without writes;
+- live DB-backed brief rendering passed for M25 dogfood run
+  `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
 
 Non-goals that remain intentionally blocked:
 

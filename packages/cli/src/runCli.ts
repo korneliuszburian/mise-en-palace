@@ -29,6 +29,9 @@ import {
   runEvidenceCaptureCommand
 } from "./runEvidenceCaptureCommand.js";
 import {
+  runCodexBriefCommand
+} from "./runCodexBriefCommand.js";
+import {
   runSourceClaimAddCommand
 } from "./runSourceClaimAddCommand.js";
 import {
@@ -454,6 +457,34 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown DB smoke error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "codexBrief") {
+    try {
+      const result = await runCodexBriefCommand({
+        env: runtime.env,
+        now,
+        createId,
+        runId: parsed.command.runId,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown Codex brief error";
 
       return {
         exitCode: 1,

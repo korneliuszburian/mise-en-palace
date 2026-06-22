@@ -194,3 +194,61 @@
   exported through existing package exports.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions, and no full Codex contracts in core.
+
+## Slice 03 Decisions
+
+- Source: `GOAL.md` M26.03 and
+  `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`.
+  Mechanism: persisted run aggregate readback already returns task contract,
+  harness plan, context assembly, execution run, evidence bundles, review
+  assessments, feedback deltas, and run events by execution run ID.
+  KRN implication: `krn codex brief --run-id` can render from persisted state
+  without recompiling a plan or writing new rows.
+  Decision: use `getHarnessRunByExecutionRunId` as the read path for the CLI
+  command.
+  Rejection/falsifier: if the command creates execution runs, evidence bundles,
+  memory records, or source decisions, it violates M26.03.
+
+- Source: `packages/cli/src/databaseRuntime.ts`.
+  Mechanism: existing `createDatabaseRuntime` ensures workspace/project rows
+  and is appropriate for write paths, but not for read-only brief rendering.
+  KRN implication: the default M26.03 runtime must not create workspace/project
+  rows just to read a run.
+  Decision: add a read-only DB runtime path inside `runCodexBriefCommand` that
+  opens Postgres and constructs `DrizzleHarnessRunRepository` directly.
+  Rejection/falsifier: if a default `krn codex brief` run writes rows, the
+  command is not read-only.
+
+- Source: `GOAL.md` M26.03 output mode note and current CLI style.
+  Mechanism: this CLI does not have a general output mode pattern yet.
+  KRN implication: adding JSON output here would create a local special case
+  before the CLI style exists.
+  Decision: implement text output only for M26.03; revisit JSON output when the
+  CLI has a shared output-mode convention.
+  Rejection/falsifier: if later CLI commands standardize `--output json`, this
+  command should join that pattern.
+
+## Slice 03 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN CLI command
+  coverage before implementation.
+- `codex-adapter-plan`: used to keep the command read-only and focused on
+  rendering the adapter brief.
+- `typescript-type-safety`: used for CLI parsing, metadata narrowing, and
+  read-only repository boundaries.
+- `superpowers:systematic-debugging`: used when CLI typecheck exposed the
+  wrong type import.
+- `superpowers:verification-before-completion`: used before claiming CLI tests,
+  typecheck, full tests, and live DB proof passed.
+
+## Slice 03 Type-Safety Notes
+
+- Boundary classification: CLI input, persisted metadata readback, and
+  read-only DB adapter boundary.
+- Validation/narrowing: `runCodexBriefCommand` treats harness plan metadata as
+  `unknown` and narrows the optional evidence contract shape before use; it
+  falls back to `createEvidenceContract` if metadata is absent or invalid.
+- Public type changes: `CliCommand` now includes `codexBrief`; CLI exports
+  `runCodexBriefCommand`.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.

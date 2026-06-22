@@ -161,7 +161,6 @@ Missing for M26:
 
 - `pnpm db:smoke:codex-adapter`;
 - `pnpm db:smoke:worker-jobs`;
-- `krn codex brief --run-id <id>`;
 - `krn plan --task "..." --persist --brief` integrated mode;
 - doctor Codex adapter readiness section;
 - doctor worker job readiness section.
@@ -217,6 +216,21 @@ M26.02 resolved the typed renderer gap:
   used, anti-memory warnings, phase-aware hook expectations, stop condition,
   rollback expectation, next action, and what-this-does-not-prove.
 
-Remaining renderer-related work is persisted readback through
-`krn codex brief --run-id`, JSON output if supported by CLI style, DB smoke
-proof, and doctor readiness.
+Remaining renderer-related work is DB smoke proof and doctor readiness.
+
+## Slice 03 Update
+
+M26.03 resolved the standalone CLI brief gap:
+
+- `krn codex brief --run-id <id>` renders from persisted harness run readback;
+- command output is read-only Postgres text output;
+- the default runtime path opens a read-only harness repository and does not
+  create workspace/project rows;
+- harness plan metadata evidence contracts are narrowed from `unknown` before
+  use, with fallback evidence-contract creation when metadata is absent or
+  invalid;
+- live DB-backed rendering passed for M25 dogfood run
+  `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
+
+JSON output remains deferred because the current CLI has no shared output-mode
+style.

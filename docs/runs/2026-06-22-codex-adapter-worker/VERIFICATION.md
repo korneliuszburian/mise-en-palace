@@ -145,3 +145,43 @@ Results:
   expectations, skill binding hints, MCP refs, subagent hints, goal/ExecPlan
   refs, stop condition, rollback expectation, next action, and
   what-this-does-not-prove.
+
+## Slice 03
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli typecheck
+pnpm --filter @krn/cli typecheck
+pnpm typecheck
+pnpm test
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/cli/src/runCodexBriefCommand.ts packages/cli/src/parseArgs.ts packages/cli/src/runCli.ts
+rg -n "createExecutionRun|createEvidenceBundle|createMemory|promoteMemory|recordMemory|spawn|Codex invocation" packages/cli/src/runCodexBriefCommand.ts
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn codex brief --run-id bb33bd3d-02df-4ff3-839b-6f545de88b4c
+```
+
+Results:
+
+- RED CLI test failed for `krn codex brief --run-id` because the command did
+  not exist and returned exit code `2`.
+- Added parser support for `krn codex brief --run-id <id>`.
+- Added `runCodexBriefCommand`.
+- Added CLI dispatcher and package export.
+- GREEN CLI test passed with 56 tests.
+- Initial CLI typecheck failed because `CreateDatabaseRuntime` was imported
+  from `databaseRuntime` instead of `runPlanCommand`; fixing the type import
+  made package typecheck pass.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 19 test files and 105 tests.
+- CLI TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Write-surface scan found no write methods in `runCodexBriefCommand`; only
+  the output line `Codex invocation: none` matched.
+- Live DB-backed `krn codex brief --run-id
+  bb33bd3d-02df-4ff3-839b-6f545de88b4c` passed. It rendered read-only
+  Postgres output with no Codex invocation, no memory mutation, persisted
+  source claims used, persisted memory records used, tool boundaries, evidence
+  contract, hook expectations, skill binding hints, stop condition, rollback
+  expectation, and what-this-does-not-prove.

@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 02 execution brief renderer complete.
+Current slice: Slice 03 CLI `krn codex brief` complete.
 
 Completed:
 
@@ -33,6 +33,13 @@ Completed:
   and what-this-does-not-prove.
 - Slice 02 kept the existing `renderExecutionBrief(input)` wrapper stable for
   `krn plan`.
+- Slice 03 added read-only CLI command `krn codex brief --run-id <id>`.
+- Slice 03 loads persisted harness run aggregates by execution run ID, validates
+  evidence contract metadata when present, reconstructs a transient capability
+  plan, and renders the typed Codex execution brief without writes.
+- Slice 03 uses a default read-only DB connection path instead of
+  `createDatabaseRuntime`, avoiding workspace/project creation for brief
+  readback.
 
 Verification:
 
@@ -81,9 +88,28 @@ Verification:
 - `pnpm --filter @krn/cli krn plan --task "render Codex execution brief for
   activated harness run"`: passed and rendered the new typed brief sections in
   no-store preview mode.
+- Slice 03 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed for the
+  new `codex brief` tests with exit code `2` because the command did not
+  exist.
+- Slice 03 GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
+  56 tests.
+- Initial Slice 03 CLI typecheck failed because `CreateDatabaseRuntime` was
+  imported from the wrong module; the import was moved to `runPlanCommand`.
+- `pnpm --filter @krn/cli typecheck`: passed.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed with 19 test files and 105 tests.
+- Slice 03 CLI hygiene scan found no `any`, no `as unknown as`, no
+  `@ts-ignore`, and no `@ts-expect-error`.
+- Slice 03 write-surface scan found no write methods in
+  `runCodexBriefCommand`; only the output line `Codex invocation: none`
+  matched.
+- DB-backed `krn codex brief --run-id
+  bb33bd3d-02df-4ff3-839b-6f545de88b4c`: passed and rendered the M25 dogfood
+  run with read-only Postgres, no Codex invocation, no memory mutation, source
+  claims used, memory records used, and evidence expectations.
 
 Next:
 
 - Run `git diff --check`.
-- Commit Slice 02 as `feat(codex): add execution brief renderer`.
-- Start M26.03 CLI `krn codex brief`.
+- Commit Slice 03 as `feat(cli): add Codex brief command`.
+- Start M26.04 hook expectation projection.

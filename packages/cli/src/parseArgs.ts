@@ -27,6 +27,10 @@ export type CliCommand =
       runId?: string;
     }
   | {
+      kind: "codexBrief";
+      runId: string;
+    }
+  | {
       kind: "memoryCandidateAddHelp";
     }
   | {
@@ -176,7 +180,8 @@ const usage = [
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
-  "krn evidence capture [--run-id <id>] [--persist]"
+  "krn evidence capture [--run-id <id>] [--persist]",
+  "krn codex brief --run-id <id>"
 ].join("\n");
 
 export const formatUsage = (): string => `${usage}\n`;
@@ -528,6 +533,48 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
     return {
       error: "Usage: krn evidence capture [--run-id <id>] [--persist]"
+    };
+  }
+
+  if (command === "codex") {
+    if (rest[0] === "brief") {
+      let runId: string | undefined;
+
+      for (let index = 1; index < rest.length; index += 1) {
+        const arg = rest[index];
+
+        if (arg === "--run-id") {
+          runId = rest[index + 1];
+          index += 1;
+          continue;
+        }
+
+        if (arg?.startsWith("--run-id=") === true) {
+          runId = arg.slice("--run-id=".length);
+          continue;
+        }
+
+        return {
+          error: "Usage: krn codex brief --run-id <id>"
+        };
+      }
+
+      if (runId === undefined || runId.trim().length === 0) {
+        return {
+          error: "Usage: krn codex brief --run-id <id>"
+        };
+      }
+
+      return {
+        command: {
+          kind: "codexBrief",
+          runId: runId.trim()
+        }
+      };
+    }
+
+    return {
+      error: "Usage: krn codex brief --run-id <id>"
     };
   }
 

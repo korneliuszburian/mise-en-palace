@@ -173,6 +173,163 @@ describe("runCli", () => {
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 
+  it("renders a read-only Codex brief for a persisted execution run", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        source: "cli",
+        rawIntent: "render Codex execution brief",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-1",
+        title: "Render Codex execution brief",
+        objective: "Render persisted activated context for Codex.",
+        constraints: ["do not invoke Codex"],
+        nonGoals: ["do not mutate memory", "do not spawn agents"],
+        acceptance: ["brief renders from persisted run"],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "render persisted Codex brief",
+        metadata: {
+          evidenceContract: {
+            commands: [
+              {
+                command: "pnpm typecheck",
+                required: true
+              }
+            ],
+            diffRisk: "medium",
+            reviewBurden: "Review the CLI output only.",
+            rollbackPath: "Revert the CLI brief command.",
+            metadata: {}
+          }
+        },
+        createdAt: now,
+        updatedAt: now
+      },
+      contextAssembly: {
+        id: "context-assembly-1",
+        harnessPlanId: "harness-plan-1",
+        status: "assembled",
+        inclusions: [
+          {
+            subjectType: "source_claim",
+            subjectId: "source-claim-1",
+            reason: "Source claim grounds adapter boundary.",
+            expectedUse: "Use in the execution brief.",
+            trustTier: "project-decision"
+          },
+          {
+            subjectType: "memory_record",
+            subjectId: "memory-record-1",
+            reason: "Memory records prior adapter decision.",
+            expectedUse: "Keep output bounded.",
+            trustTier: "high"
+          }
+        ],
+        exclusions: [
+          {
+            subjectType: "anti_memory_record",
+            subjectId: "anti-memory-1",
+            reason: "unsafe",
+            explanation: "Do not mutate memory while rendering a brief.",
+            trustTier: "high"
+          }
+        ],
+        metadata: {},
+        createdAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "planned",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: []
+    };
+    const harnessRunRepository = {
+      ...dependencies.harnessRunRepository,
+      async createExecutionRun(_input: CreateExecutionRunInput) {
+        throw new Error("codex brief must not create execution runs");
+      },
+      async getHarnessRunByExecutionRunId(runId: string) {
+        return runId === "execution-run-1" ? aggregate : undefined;
+      }
+    };
+    const result = await runCli(["codex", "brief", "--run-id", "execution-run-1"], {
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {
+          ...dependencies,
+          harnessRunRepository
+        },
+        harnessRunRepository,
+        memoryRepository: unusedMemoryRepository,
+        async close() {
+          return undefined;
+        }
+      })
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Codex Brief");
+    expect(result.stdout).toContain("Run ID: execution-run-1");
+    expect(result.stdout).toContain("Persistence: read-only (Postgres)");
+    expect(result.stdout).toContain("Codex invocation: none");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("KRN Codex Execution Brief");
+    expect(result.stdout).toContain("Source Claims Used:");
+    expect(result.stdout).toContain("- source-claim-1");
+    expect(result.stdout).toContain("Memory Records Used:");
+    expect(result.stdout).toContain("- memory-record-1");
+    expect(result.stdout).toContain("Anti-memory Warnings:");
+    expect(result.stdout).toContain("anti_memory_record:anti-memory-1");
+  });
+
+  it("requires database config for codex brief", async () => {
+    const result = await runCli(["codex", "brief", "--run-id", "execution-run-1"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("KRN_DATABASE_URL is required for krn codex brief");
+  });
+
   it("prints bounded activation inclusions and explicit exclusions for plan --persist", async () => {
     const activeMemory: MemoryRecord = {
       id: "11111111-1111-4111-8111-111111111111",
