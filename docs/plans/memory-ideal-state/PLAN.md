@@ -336,7 +336,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) M27 complete: target repo readiness, DB smokes, doctor, evidence capture, anti-rot audit, memory ideal-state GOAL.
 - [x] (2026-06-22) MM-00 complete: observational memory ADR and source-to-decision ledger.
 - [x] (2026-06-22) MM-01 complete: moved the clean Memory Brain plan into `docs/plans/memory-ideal-state/PLAN.md`, restored root `PLAN.md` as repo-wide ExecPlan, aligned controlled GOAL/roadmap/decisions/rejections/falsifiers, kept scope docs-only, and preserved no Research Foundry/Pattern Vault/research CLI/pattern CLI/product meta-researcher surfaces.
-- [ ] MM-02: Establish repo audit baseline.
+- [x] (2026-06-22) MM-02 complete: established repo audit baseline at `docs/plans/memory-ideal-state/AUDIT_BASELINE.md`. Intended files: baseline doc and this PLAN. Non-goals preserved: no runtime, DB schema, migration, CLI, worker, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, or `.krn` runtime truth. Evidence: `pnpm --version` 10.32.1; `pnpm typecheck` passed; `pnpm test` passed with 30 files and 139 tests; DB-aware `pnpm db:ready` passed with 8/8 migrations and pgvector available; DB-aware `krn doctor` passed with forbidden surfaces absent; forbidden directory/dependency scans found no forbidden surfaces.
 - [ ] MM-03: Implement AuditBundle core domain contract.
 - [ ] MM-04: Implement AuditBundle schemas and persistence.
 - [ ] MM-05: Implement repo/architecture/boundary/type/memory/source/eval/handoff audit checks.
@@ -445,6 +445,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: `packages/core/src/observations/*` exists and root history contains `acca6d2 feat(core): add observational memory domain contracts`.
   Resolution: Leave controlled MM-08 unchecked until the slice audits and reconciles those contracts against this plan.
 
+- Observation: MM-02 baseline found one filesystem import in a test fixture, not production code.
+  Evidence: boundary scan found `packages/harness/src/activation/noisyBrainFixture.test.ts` importing `node:fs`.
+  Resolution: Accept as a test fixture read. Future automated audits should classify test-only fixture imports separately from production package-boundary violations.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -477,6 +481,10 @@ Gate 0 MM-01 outcome:
 - Root `PLAN.md` remains the repo-wide KRN ExecPlan.
 - Research Foundry, Pattern Vault, research DB/CLI, pattern CLI, and meta-researcher runtime are rejected as product architecture.
 - Golden memory behavior tests remain allowed only inside the normal eval lane.
+
+Gate 0 MM-02 outcome:
+- `docs/plans/memory-ideal-state/AUDIT_BASELINE.md` records the current package boundaries, DB readiness, doctor status, forbidden surface checks, not-built list, and raw quarry status.
+- The baseline is manual and documentation-only; MM-03 starts the pure AuditBundle domain contract that will later automate this shape.
 
 ## Milestones
 
