@@ -210,6 +210,38 @@ describe("runReflectCommand", () => {
     expect(result.stdout).toContain("Reflection record: reflection-record-1");
   });
 
+  it("leaves memory row counts unchanged when persisting reflection", async () => {
+    let reflectionRows = 3;
+    let memoryRows = 7;
+    const memoryRowsBefore = memoryRows;
+    const result = await runReflectCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "reflect",
+        scope: {
+          kind: "project",
+          id: "project-1"
+        },
+        persist: true
+      },
+      createReflectDatabaseRuntime: async () => createRuntime({
+        observations: [observation({})],
+        onCreateReflectionRecord: () => {
+          reflectionRows += 1;
+          memoryRows = memoryRowsBefore;
+        }
+      })
+    });
+
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(reflectionRows).toBe(4);
+    expect(memoryRows).toBe(memoryRowsBefore);
+  });
+
   it("keeps the reflect runtime memory surface read-only", async () => {
     const runtime = createRuntime({
       observations: []

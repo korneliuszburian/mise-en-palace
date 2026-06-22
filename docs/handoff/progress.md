@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-24 and MM-16R in
+- MM-00 through MM-24A and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -61,10 +61,14 @@ Current runtime truth:
 - Reflect runtime memory access is physically narrowed to read-only
   anti-memory listing, and tests scan the reflect command for direct Memory Core
   promotion calls.
+- MM-24A live proof is recorded at
+  `docs/runs/2026-06-22-reflection-mutation-proof.md`: reflect persist changed
+  `reflection_records` 2->3 while `memory_records` stayed 1 and
+  `memory_candidates` stayed 1.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-24A repository/runtime no-Memory-Core mutation proof.
+- Continue with MM-25 reflection dogfood on KRN observations.
