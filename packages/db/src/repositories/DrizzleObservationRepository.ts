@@ -159,15 +159,85 @@ const unknownListOrEmpty = (value: unknown): unknown[] => (
   Array.isArray(value) ? value : []
 );
 
+const truthBearingObservationKinds = new Set<ObservationKind>([
+  "fact",
+  "decision",
+  "correction",
+  "risk",
+  "procedure",
+  "conflict"
+]);
+
+const typedEvidenceKeys = [
+  "runEventId",
+  "sourceChunkId",
+  "evidenceBundleId",
+  "reviewAssessmentId",
+  "feedbackDeltaId"
+] as const;
+
+type TypedEvidenceKey = (typeof typedEvidenceKeys)[number];
+
+const requiredEvidenceKeyBySourceType: Partial<Record<ObservationSourceRangeType, TypedEvidenceKey>> = {
+  run_event: "runEventId",
+  source_chunk: "sourceChunkId",
+  evidence_bundle: "evidenceBundleId",
+  review_assessment: "reviewAssessmentId",
+  feedback_delta: "feedbackDeltaId"
+};
+
+const presentTypedEvidenceKeys = (
+  input: CreateObservationSourceRangeInput
+): TypedEvidenceKey[] => typedEvidenceKeys.filter((key) => input[key] !== undefined);
+
+const assertObservationSourceRangeTypedLinkage = (
+  input: CreateObservationSourceRangeInput
+): void => {
+  const presentKeys = presentTypedEvidenceKeys(input);
+
+  if (presentKeys.length === 0) {
+    return;
+  }
+
+  if (presentKeys.length !== 1) {
+    throw new Error("Observation source range must contain exactly one typed evidence link");
+  }
+
+  const requiredKey = requiredEvidenceKeyBySourceType[input.sourceType];
+
+  if (requiredKey !== undefined && presentKeys[0] !== requiredKey) {
+    throw new Error(`Observation source range ${input.sourceType} requires ${requiredKey}`);
+  }
+};
+
+const sourceRangeRowToCreateInput = (
+  row: ObservationSourceRangeRow
+): CreateObservationSourceRangeInput => ({
+  sourceType: row.sourceType,
+  sourceId: row.sourceId,
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+  ...(row.runEventId === null ? {} : { runEventId: row.runEventId }),
+  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
+  ...(row.evidenceBundleId === null ? {} : { evidenceBundleId: row.evidenceBundleId }),
+  ...(row.reviewAssessmentId === null ? {} : { reviewAssessmentId: row.reviewAssessmentId }),
+  ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+  locator: row.locator,
+  ...(row.excerpt === null ? {} : { excerpt: row.excerpt }),
+  capturedAt: toIsoTimestamp(row.capturedAt),
+  metadata: metadataOrEmpty(row.metadata)
+});
+
 export const isEvidenceLinkedObservationSourceRangeInput = (
   input: CreateObservationSourceRangeInput
-): boolean => (
-  input.runEventId !== undefined ||
-  input.sourceChunkId !== undefined ||
-  input.evidenceBundleId !== undefined ||
-  input.reviewAssessmentId !== undefined ||
-  input.feedbackDeltaId !== undefined
-);
+): boolean => {
+  try {
+    assertObservationSourceRangeTypedLinkage(input);
+  } catch {
+    return false;
+  }
+
+  return presentTypedEvidenceKeys(input).length === 1;
+};
 
 export const assertObservationItemEvidenceLinkage = (
   input: ObservationEvidenceLinkageInput
@@ -180,11 +250,15 @@ export const assertObservationItemEvidenceLinkage = (
     throw new Error("Observation item requires source ranges");
   }
 
+  for (const sourceRange of input.sourceRanges) {
+    assertObservationSourceRangeTypedLinkage(sourceRange);
+  }
+
   if (
-    input.kind === "fact" &&
+    truthBearingObservationKinds.has(input.kind) &&
     !input.sourceRanges.some(isEvidenceLinkedObservationSourceRangeInput)
   ) {
-    throw new Error("Factual observation requires an evidence-linked source range");
+    throw new Error("Truth-bearing observation requires an evidence-linked source range");
   }
 };
 
@@ -524,10 +598,17 @@ export class DrizzleObservationRepository {
       throw new Error(`Observation item ${observationItemId} was not found`);
     }
 
+    const existingSourceRangeRows = await this.db.query.observationSourceRanges.findMany({
+      where: eq(observationSourceRanges.observationItemId, observationItemId)
+    });
+
     assertObservationItemEvidenceLinkage({
       kind: itemRow.kind,
       provenanceKind: itemRow.provenanceKind,
-      sourceRanges: [input]
+      sourceRanges: [
+        ...existingSourceRangeRows.map(sourceRangeRowToCreateInput),
+        input
+      ]
     });
 
     const row = requireReturnedRow(

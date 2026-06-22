@@ -58,11 +58,12 @@ The memory ideal-state plan is the active execution track:
 docs/plans/memory-ideal-state/PLAN.md
 ```
 
-MM-00 through MM-17B and MM-16R are complete. The latest planning repair layer
+MM-00 through MM-17C and MM-16R are complete. The latest planning repair layer
 from the external harsh reviews is committed, public current-state docs are
 reconciled, prefix relevance/project-scope hardening is done, observation
-dogfood evidence is committed, and the next execution slice is MM-17C: typed
-source-range lineage invariants.
+dogfood evidence is committed, typed source-range lineage is enforced at the
+repository boundary, and the next execution slice is MM-17D: project-scoped
+observe runtime.
 
 Raw onboarding/research material remains quarantined in `docs/materials/` and is
 not runtime truth.
