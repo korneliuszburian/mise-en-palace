@@ -42,6 +42,7 @@ export interface ActivationCandidate {
   graphScore?: number;
   temporalScore?: number;
   contextRoiScore?: number;
+  feedbackScore?: number;
   metadata: Record<string, unknown>;
 }
 
@@ -56,6 +57,7 @@ export interface RankedActivationCandidate extends ActivationCandidate {
   graphScore: number;
   temporalScore: number;
   contextRoiScore: number;
+  feedbackScore: number;
   totalScore: number;
   exclusion?: ActivationExclusion;
 }

@@ -148,6 +148,37 @@ describe("activation engine", () => {
     });
   });
 
+  it("penalizes memory records with negative application feedback during ranking", () => {
+    const query = buildMemoryQuery(task);
+    const ranked = rankCandidates(
+      [
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-negative",
+            summary: "Doctor checks Postgres brain store readiness",
+            negativeFeedbackCount: 4
+          })
+        ),
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-clean",
+            summary: "Doctor checks Postgres brain store readiness"
+          })
+        )
+      ],
+      query
+    );
+
+    expect(ranked.map((candidate) => candidate.subjectId)).toEqual([
+      "memory-clean",
+      "memory-negative"
+    ]);
+    expect(ranked[1]?.metadata).toMatchObject({
+      feedbackPenalty: -60,
+      negativeFeedbackCount: 4
+    });
+  });
+
   it("excludes source claims without doesNotProve", () => {
     const query = buildSourceQuery(task);
     const ranked = rankCandidates(

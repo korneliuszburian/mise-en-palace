@@ -2,7 +2,13 @@
 
 Hard blockers:
 
-- None for MM-29.
+- None for MM-29A.
+
+Closed in MM-29:
+
+- Negative memory application feedback affects activation ranking.
+- Activation candidate metadata exposes feedback counters and penalty.
+- Feedback is no longer only a passive DB counter.
 
 Closed in MM-28:
 
@@ -60,8 +66,8 @@ Residual later scope:
 - Observational memory staging is built and dogfooded through MM-17F.
 - Reflection staging is built through MM-25.
 - Governed promotion via MemoryReviewGate is built through MM-27.
-- Feedback-driven demotion/invalidation, anti-memory expansion, and golden proof
-  remain planned later work in
+- Review-required demotion/invalidation candidates, anti-memory expansion, and
+  golden proof remain planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is
   intentionally blocked.

@@ -37,6 +37,9 @@ const lexicalScore = (candidateText: string, query: ActivationQuery): number => 
   return hits * 20;
 };
 
+const memoryFeedbackScore = (record: MemoryRecord): number =>
+  record.positiveFeedbackCount * 2 - record.negativeFeedbackCount * 15;
+
 export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => ({
   id: record.id,
   kind: "memory",
@@ -54,10 +57,14 @@ export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => 
   ...(record.invalidationReason === undefined
     ? {}
     : { invalidationReason: record.invalidationReason }),
+  feedbackScore: memoryFeedbackScore(record),
   metadata: {
     key: record.key,
     kind: record.kind,
-    confidence: record.confidence
+    confidence: record.confidence,
+    positiveFeedbackCount: record.positiveFeedbackCount,
+    negativeFeedbackCount: record.negativeFeedbackCount,
+    feedbackPenalty: Math.min(0, memoryFeedbackScore(record))
   }
 });
 
@@ -117,6 +124,7 @@ export const rankCandidates = (
       const graph = candidate.graphScore ?? 0;
       const temporal = candidate.temporalScore ?? 0;
       const contextRoi = candidate.contextRoiScore ?? 0;
+      const feedback = candidate.feedbackScore ?? 0;
       const trust = trustRank[candidate.trustTier] * 10;
 
       return {
@@ -126,7 +134,8 @@ export const rankCandidates = (
         graphScore: graph,
         temporalScore: temporal,
         contextRoiScore: contextRoi,
-        totalScore: lexical + vector + graph + temporal + contextRoi + trust
+        feedbackScore: feedback,
+        totalScore: lexical + vector + graph + temporal + contextRoi + feedback + trust
       };
     })
     .sort((left, right) => right.totalScore - left.totalScore);
