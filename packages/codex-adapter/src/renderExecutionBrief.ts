@@ -98,6 +98,9 @@ const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
         expectation.phase,
         `action=${expectation.action}`,
         `required=${String(expectation.required)}`,
+        ...(expectation.appliesTo === undefined
+          ? []
+          : [`applies_to=${expectation.appliesTo.join(", ")}`]),
         `reason=${expectation.reason}`
       ].join(" | ")
     )

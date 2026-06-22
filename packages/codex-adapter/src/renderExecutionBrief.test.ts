@@ -199,6 +199,9 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- activation-engine");
     expect(rendered).not.toContain("select-kernel-patterns");
     expect(rendered).toContain("Hook Expectations:");
+    expect(rendered).toContain(
+      "PreToolUse | action=warn_or_deny | required=true | applies_to=destructive paths, generated files, destructive/write approval, tool boundary notes"
+    );
     expect(rendered).toContain("Stop Condition: Stop before Codex execution or hidden state mutation.");
     expect(rendered).toContain(`Rollback Expectation: ${evidenceContract.rollbackPath}`);
     expect(rendered).toContain("Next Action: Implement the smallest missing doctor check.");

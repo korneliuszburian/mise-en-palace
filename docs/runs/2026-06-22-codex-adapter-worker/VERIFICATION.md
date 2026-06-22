@@ -185,3 +185,52 @@ Results:
   source claims used, persisted memory records used, tool boundaries, evidence
   contract, hook expectations, skill binding hints, stop condition, rollback
   expectation, and what-this-does-not-prove.
+
+## Slice 04
+
+Commands run:
+
+```sh
+pnpm --filter @krn/codex-adapter test -- renderHookExpectations.test.ts
+pnpm --filter @krn/codex-adapter test -- renderHookExpectations.test.ts
+pnpm --filter @krn/codex-adapter test
+pnpm --filter @krn/codex-adapter typecheck
+git diff --check
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/codex-adapter/src --glob '*.ts'
+rg -n "@krn/codex-adapter|CodexHookExpectationProjection|CodexHookExpectation|CodexAdapterPlan" packages/core/src packages/core/package.json
+find .codex -maxdepth 3 -type f | sort
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- RED hook projection test failed because
+  `createCodexHookExpectationProjection` was not a function.
+- Added `CodexHookExpectationProjection`.
+- Added `createCodexHookExpectationProjection`.
+- Added `renderHookExpectationProjection`.
+- Kept `createCodexHookExpectations` and `renderHookExpectations` as
+  projection-backed compatibility helpers.
+- Hook expectations now project `applies_to` details for compact pointers,
+  destructive paths, generated files, write approval, tool boundary notes,
+  command evidence, failure/success signals, compact handoff, and evidence
+  capture suggestion.
+- Projection rules explicitly say expectations/projections only, no hidden
+  semantic decisions, and no hook scripts unless conventional and
+  decision-recorded.
+- Projection does-not-do entries include no hook script creation, no hook
+  execution, no hidden semantic decisions, no Codex invocation, and no memory
+  mutation.
+- GREEN hook projection test passed with 3 test files and 6 tests.
+- Full `@krn/codex-adapter` test passed with 3 test files and 6 tests.
+- `pnpm --filter @krn/codex-adapter typecheck` passed.
+- `git diff --check` passed.
+- Adapter TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Core boundary scan found only the existing `CodexAdapterPlanRef`; no
+  `@krn/codex-adapter` import or full hook projection contract entered core.
+- `.codex` scan found only `.codex/agents/ts-type-critic.toml`; no hook
+  scripts were created.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 20 test files and 107 tests.

@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 03 CLI `krn codex brief` complete.
+Current slice: Slice 04 hook expectation projection complete.
 
 Completed:
 
@@ -40,6 +40,14 @@ Completed:
 - Slice 03 uses a default read-only DB connection path instead of
   `createDatabaseRuntime`, avoiding workspace/project creation for brief
   readback.
+- Slice 04 added typed `CodexHookExpectationProjection`.
+- Slice 04 projects the M26.04 hook phases and expectations:
+  `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact`, and `Stop`.
+- Slice 04 keeps hook behavior as expectations/projections only: no generated
+  hook scripts, no hidden semantic decisions, no Codex invocation, and no
+  memory mutation.
+- Slice 04 renders `applies_to` details for hook expectations in the execution
+  brief text.
 
 Verification:
 
@@ -107,9 +115,26 @@ Verification:
   bb33bd3d-02df-4ff3-839b-6f545de88b4c`: passed and rendered the M25 dogfood
   run with read-only Postgres, no Codex invocation, no memory mutation, source
   claims used, memory records used, and evidence expectations.
+- Slice 04 RED: `pnpm --filter @krn/codex-adapter test --
+  renderHookExpectations.test.ts` failed because
+  `createCodexHookExpectationProjection` did not exist.
+- Slice 04 GREEN: `pnpm --filter @krn/codex-adapter test --
+  renderHookExpectations.test.ts` passed with 3 test files and 6 tests.
+- `pnpm --filter @krn/codex-adapter test`: passed with 3 test files and
+  6 tests.
+- `pnpm --filter @krn/codex-adapter typecheck`: passed.
+- `git diff --check`: passed.
+- Slice 04 adapter TypeScript hygiene scan found no `any`, no `as unknown as`,
+  no `@ts-ignore`, and no `@ts-expect-error`.
+- Slice 04 core boundary scan found no adapter import and no new full Codex
+  binding contracts in `packages/core`; only the existing
+  `CodexAdapterPlanRef` remains.
+- Slice 04 `.codex` scan found no hook scripts; only
+  `.codex/agents/ts-type-critic.toml` exists.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed with 20 test files and 107 tests.
 
 Next:
 
-- Run `git diff --check`.
-- Commit Slice 03 as `feat(cli): add Codex brief command`.
-- Start M26.04 hook expectation projection.
+- Commit Slice 04 as `feat(codex): add hook expectation projection`.
+- Start M26.05 Codex adapter smoke path.

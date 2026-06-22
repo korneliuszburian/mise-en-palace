@@ -48,6 +48,13 @@ export interface CodexHookExpectation {
   appliesTo?: string[];
 }
 
+export interface CodexHookExpectationProjection {
+  title: string;
+  expectations: CodexHookExpectation[];
+  rules: string[];
+  doesNotDo: string[];
+}
+
 export type CodexMcpResourceAccess = "read_only" | "future_reference";
 
 export interface CodexMcpResourceRef {

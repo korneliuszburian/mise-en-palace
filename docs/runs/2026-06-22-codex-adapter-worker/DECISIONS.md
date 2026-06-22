@@ -252,3 +252,59 @@
   `runCodexBriefCommand`.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
+
+## Slice 04 Decisions
+
+- Source: `GOAL.md` M26.04.
+  Mechanism: hook expectations must cover `SessionStart`, `PreToolUse`,
+  `PostToolUse`, `PreCompact`, and `Stop`, while remaining projections only.
+  KRN implication: the adapter needs a typed hook expectation projection that
+  downstream smoke/doctor checks can inspect without relying on real hook
+  scripts.
+  Decision: add `CodexHookExpectationProjection` and
+  `createCodexHookExpectationProjection(evidenceContract)` in
+  `packages/codex-adapter`.
+  Rejection/falsifier: if projection proof requires files under `.codex/hooks`
+  or hidden hook behavior, M26.04 crossed the boundary.
+
+- Source: `packages/codex-adapter/src/renderHookExpectations.ts`.
+  Mechanism: Slice 02 already produced phase-aware expectations but did not
+  expose the projection rules or what the projection refuses to do.
+  KRN implication: M26.04 should preserve the existing helper surface while
+  making the stronger projection explicit.
+  Decision: keep `createCodexHookExpectations` and `renderHookExpectations` as
+  compatibility helpers backed by the projection artifact.
+  Rejection/falsifier: if execution brief rendering and direct hook rendering
+  diverge on phase/action semantics, the helpers are not projection-backed.
+
+- Source: `GOAL.md` M26.04 `PostToolUse` expectation and
+  `EvidenceContract.commands`.
+  Mechanism: command evidence comes from required evidence commands.
+  KRN implication: hook projection should reference evidence expectations but
+  not run commands or record evidence itself.
+  Decision: project required commands as `appliesTo` entries such as
+  `command evidence: pnpm typecheck`, plus failure/success signal notes.
+  Rejection/falsifier: if this code executes commands or writes evidence
+  bundles, it is no longer an adapter projection.
+
+## Slice 04 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN hook projection
+  coverage before implementation.
+- `codex-adapter-plan`: used to keep hook behavior as Codex-facing
+  expectations instead of hook scripts.
+- `typescript-type-safety`: used for the public projection contract and
+  compatibility helper shape.
+- `superpowers:verification-before-completion`: used before claiming adapter
+  tests or typecheck passed.
+
+## Slice 04 Type-Safety Notes
+
+- Boundary classification: public Codex adapter projection API.
+- Validation/narrowing: no new external input boundary; the projection consumes
+  typed `EvidenceContract`.
+- Public type changes: `CodexHookExpectationProjection`,
+  `createCodexHookExpectationProjection`, and
+  `renderHookExpectationProjection`.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.

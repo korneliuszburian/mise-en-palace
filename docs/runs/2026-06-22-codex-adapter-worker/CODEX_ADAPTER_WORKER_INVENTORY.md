@@ -14,10 +14,9 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. It lacks standalone
-`krn codex brief --run-id <id>`, Codex adapter DB smoke, worker-job DB smoke,
-doctor readiness for adapter/worker surfaces, and several target contracts
-named in `GOAL.md`.
+The current surface is not M26-complete. After Slice 04 it still lacks Codex
+adapter DB smoke, worker-job DB smoke, doctor readiness for adapter/worker
+surfaces, and several worker target contracts named in `GOAL.md`.
 
 ## Files Inspected
 
@@ -53,7 +52,7 @@ named in `GOAL.md`.
 | `CodexAdapterPlan` | none | missing | Core only has `CodexAdapterPlanRef`; adapter package does not yet export a full adapter plan contract. |
 | `ExecutionBrief` type | none | missing | Current renderer returns a string directly. M26.01/M26.02 should add a typed brief artifact before CLI/DB smoke rely on it. |
 | Skill binding hints | `renderSkillHints(CapabilityPlan)` | partial | Maps capability requirement kinds to skill names. No typed `CodexSkillBindingHint` contract yet. |
-| Hook expectations | `renderHookExpectations(EvidenceContract)` | weak partial | Currently returns required evidence commands only. It does not model `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact`, or `Stop`. |
+| Hook expectations | `createCodexHookExpectationProjection(EvidenceContract)` | available | Projects `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact`, and `Stop` as expectations only. It does not create hook scripts or make hidden semantic decisions. |
 | MCP refs | none | missing | M26 should model refs only; no MCP server. |
 | Goal ref | `renderGoalReference` | partial | String renderer exists, but no typed `CodexGoalRef` contract yet. |
 | ExecPlan ref | `renderExecPlanReference` | partial | String renderer exists, but no typed `CodexExecPlanRef` contract yet. |
@@ -172,7 +171,6 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Load persisted run/context/evidence data for `krn codex brief --run-id`.
 - Add MCP refs and subagent probes as references/hints only.
 - Add `embed_memory_record` to worker job types.
 - Reconcile worker job status vocabulary with `GOAL.md`.
@@ -234,3 +232,20 @@ M26.03 resolved the standalone CLI brief gap:
 
 JSON output remains deferred because the current CLI has no shared output-mode
 style.
+
+## Slice 04 Update
+
+M26.04 resolved dedicated hook projection coverage:
+
+- `CodexHookExpectationProjection` is exported from the adapter contracts;
+- `createCodexHookExpectationProjection` creates the typed projection from an
+  `EvidenceContract`;
+- `renderHookExpectationProjection` renders the projection text;
+- `createCodexHookExpectations` and `renderHookExpectations` remain as
+  projection-backed compatibility helpers;
+- execution brief hook lines now include `applies_to` details;
+- projection rules and does-not-do entries explicitly keep the surface to
+  expectations only, with no hook scripts, no hidden semantic decisions, no
+  Codex invocation, and no memory mutation.
+
+Remaining adapter work is now DB smoke proof and doctor readiness.

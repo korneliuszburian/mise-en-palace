@@ -29,11 +29,6 @@ Resolved in M26.02:
 - hook expectations are phase-aware in the brief output, while still remaining
   expectations rather than hook scripts.
 
-Remaining hook work:
-
-- M26.04 still needs a dedicated hook expectation projection slice before
-  doctor/smoke readiness can claim hook projection coverage.
-
 Resolved in M26.03:
 
 - standalone `krn codex brief --run-id <id>` exists;
@@ -41,6 +36,14 @@ Resolved in M26.03:
   brief without writes;
 - live DB-backed brief rendering passed for M25 dogfood run
   `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
+
+Resolved in M26.04:
+
+- dedicated hook expectation projection exists in `@krn/codex-adapter`;
+- projection covers `SessionStart`, `PreToolUse`, `PostToolUse`,
+  `PreCompact`, and `Stop`;
+- projection explicitly remains expectations-only and does not create hook
+  scripts, execute hooks, invoke Codex, or mutate memory.
 
 Non-goals that remain intentionally blocked:
 
