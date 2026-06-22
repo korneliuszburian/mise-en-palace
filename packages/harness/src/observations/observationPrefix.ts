@@ -1,4 +1,5 @@
 import type {
+  AntiMemoryRecord,
   ObservationConfidence,
   ObservationItem,
   ObservationPriority,
@@ -12,6 +13,7 @@ export type ObservationPrefixExclusionReason =
   | "invalidated"
   | "stale"
   | "low_relevance"
+  | "anti_memory"
   | "budget_exceeded";
 
 export interface ObservationPrefixItem {
@@ -40,6 +42,7 @@ export interface SelectObservationPrefixInput {
   task: TaskContract;
   projectId: ProjectId;
   observations: readonly ObservationItem[];
+  antiMemoryRecords?: readonly AntiMemoryRecord[];
   maxItems?: number;
   now: string;
 }
@@ -126,6 +129,28 @@ const isStale = (observation: ObservationItem, now: string): boolean => {
   return validUntilEpoch < nowEpoch;
 };
 
+const antiMemoryTargetsObservation = (
+  antiMemory: AntiMemoryRecord,
+  observation: ObservationItem
+): boolean => {
+  const appliesTo = antiMemory.appliesTo?.trim();
+
+  return (
+    antiMemory.key === observation.id ||
+    antiMemory.key === observation.subject ||
+    appliesTo === observation.id ||
+    appliesTo === observation.subject
+  );
+};
+
+const antiMemoryForObservation = (
+  antiMemoryRecords: readonly AntiMemoryRecord[],
+  observation: ObservationItem
+): AntiMemoryRecord | undefined =>
+  antiMemoryRecords.find((antiMemory) =>
+    antiMemoryTargetsObservation(antiMemory, observation)
+  );
+
 const warningFor = (observation: ObservationItem): ObservationPrefixWarning | undefined => {
   if (observation.status === "contested") {
     return {
@@ -163,6 +188,7 @@ export const selectObservationPrefix = (
 ): ObservationPrefix => {
   const terms = taskTerms(input.task);
   const maxItems = input.maxItems ?? defaultMaxItems;
+  const antiMemoryRecords = input.antiMemoryRecords ?? [];
   const exclusions: ObservationPrefixExclusion[] = [];
   const candidates: Array<{
     observation: ObservationItem;
@@ -203,6 +229,16 @@ export const selectObservationPrefix = (
         observationId: observation.id,
         reason: "stale",
         explanation: `Observation expired at ${observation.temporalScope.validUntil}.`
+      });
+      continue;
+    }
+
+    const antiMemory = antiMemoryForObservation(antiMemoryRecords, observation);
+    if (antiMemory !== undefined) {
+      exclusions.push({
+        observationId: observation.id,
+        reason: "anti_memory",
+        explanation: `Blocked by anti-memory ${antiMemory.id}: ${antiMemory.reason ?? antiMemory.summary}`
       });
       continue;
     }

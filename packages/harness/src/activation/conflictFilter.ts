@@ -58,6 +58,38 @@ const antiMemoryForMemoryCandidate = (
 ): AntiMemoryRecord | undefined =>
   antiMemoryRecords.find((antiMemory) => antiMemoryTargetsMemory(antiMemory, candidate));
 
+const antiMemoryTargetsSearch = (
+  antiMemory: AntiMemoryRecord,
+  candidate: RankedActivationCandidate,
+  blockedSourceClaims: ReadonlyMap<string, AntiMemoryRecord>
+): boolean => {
+  if (candidate.subjectType !== "search_document") {
+    return false;
+  }
+
+  const sourceClaimId = candidate.metadata.sourceClaimId;
+  if (typeof sourceClaimId === "string" && blockedSourceClaims.get(sourceClaimId)?.id === antiMemory.id) {
+    return true;
+  }
+
+  const memoryRecordId = candidate.metadata.memoryRecordId;
+  const appliesTo = antiMemory.appliesTo?.trim();
+
+  return (
+    typeof memoryRecordId === "string" &&
+    (antiMemory.key === memoryRecordId || appliesTo === memoryRecordId)
+  );
+};
+
+const antiMemoryForSearchCandidate = (
+  antiMemoryRecords: readonly AntiMemoryRecord[],
+  candidate: RankedActivationCandidate,
+  blockedSourceClaims: ReadonlyMap<string, AntiMemoryRecord>
+): AntiMemoryRecord | undefined =>
+  antiMemoryRecords.find((antiMemory) =>
+    antiMemoryTargetsSearch(antiMemory, candidate, blockedSourceClaims)
+  );
+
 const blockCandidateWithAntiMemory = (
   candidate: RankedActivationCandidate,
   antiMemory: AntiMemoryRecord
@@ -92,7 +124,9 @@ export const detectConflicts = (
     const antiMemory =
       candidate.subjectType === "source_claim"
         ? blockedSourceClaims.get(candidate.subjectId)
-        : antiMemoryForMemoryCandidate(antiMemoryRecords, candidate);
+        : candidate.subjectType === "memory_record"
+          ? antiMemoryForMemoryCandidate(antiMemoryRecords, candidate)
+          : antiMemoryForSearchCandidate(antiMemoryRecords, candidate, blockedSourceClaims);
 
     if (antiMemory === undefined) {
       return candidate;

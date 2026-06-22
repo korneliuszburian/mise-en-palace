@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type {
+  AntiMemoryRecord,
   ObservationItem,
   TaskContract
 } from "@krn/core";
@@ -54,6 +55,26 @@ const observation = (
   entityLinks: [],
   claimLinks: [],
   metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
+const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
+  id: "anti-observation-1",
+  projectId: "project-1",
+  key: "observe-run",
+  rejectedClaim: "Observe run observation should be hidden.",
+  reason: "Observation was superseded by anti-memory.",
+  invalidatedBySourceClaimIds: [],
+  appliesTo: "observe-run",
+  summary: "Block observe run observation",
+  body: "Do not activate observations matching observe-run.",
+  owner: "operator",
+  confidence: 90,
+  sourceLineage: [{ sourceId: "source-claim-1" }],
+  metadata: {},
+  validFrom: now,
   createdAt: now,
   updatedAt: now,
   ...overrides
@@ -186,6 +207,29 @@ describe("observation prefix selector", () => {
     expect(prefix.exclusions).toEqual([expect.objectContaining({
       observationId: "offset-stale",
       reason: "stale"
+    })]);
+  });
+
+  it("blocks observation prefix items with explicit anti-memory", () => {
+    const prefix = selectObservationPrefix({
+      task,
+      projectId: "project-1",
+      observations: [
+        observation({
+          id: "blocked-observation",
+          subject: "observe-run",
+          summary: "Observe run command creates observation staging records."
+        })
+      ],
+      antiMemoryRecords: [antiMemoryRecord({ id: "anti-observe-run" })],
+      now
+    });
+
+    expect(prefix.items).toHaveLength(0);
+    expect(prefix.exclusions).toEqual([expect.objectContaining({
+      observationId: "blocked-observation",
+      reason: "anti_memory",
+      explanation: expect.stringContaining("anti-memory")
     })]);
   });
 });

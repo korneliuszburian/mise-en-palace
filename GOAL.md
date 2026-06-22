@@ -11,14 +11,14 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-30 and MM-16R are complete.
+- MM-00 through MM-30A and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
   range linkage, deterministic observer input builder, manual observe-run CLI,
   source-range policy matrix, and pure observation prefix selector.
-- Observational memory is not proven end-to-end yet: broad anti-memory
-  expansion, activation integration, and golden behavior proof are next.
+- Observational memory is not proven end-to-end yet: memory abstain behavior,
+  activation integration, and golden behavior proof are next.
 - Observation is still staging, not Memory Core.
 - Reflection runtime exists as manual preview/persist CLI and writes
   ReflectionRecord only; candidate row creation, memory invalidation/demotion,
@@ -36,6 +36,8 @@ Current known status:
   finding instead of silently remaining trusted.
 - Anti-memory enforcement now blocks explicit memory-record candidates by
   memory key/appliesTo as well as source claims.
+- Anti-memory expansion now blocks linked search documents and observation
+  prefix items through explicit IDs/keys.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -115,7 +117,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-30A — Expand anti-memory enforcement beyond source_claim candidates.
+MM-31 — Add memory abstain behavior.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

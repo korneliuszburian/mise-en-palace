@@ -2,7 +2,16 @@
 
 Hard blockers:
 
-- None for MM-30A.
+- None for MM-31.
+
+Closed in MM-30A:
+
+- Anti-memory now blocks linked search-document candidates when metadata carries
+  explicit `sourceClaimId` or `memoryRecordId` matches.
+- Anti-memory now blocks observation prefix items when the observation id or
+  subject matches anti-memory `key` or `appliesTo`.
+- The expansion remains explicit-ID/key based; fuzzy matching is intentionally
+  not built.
 
 Closed in MM-30:
 
@@ -79,8 +88,9 @@ Residual later scope:
 - Observational memory staging is built and dogfooded through MM-17F.
 - Reflection staging is built through MM-25.
 - Governed promotion via MemoryReviewGate is built through MM-27.
-- Search-document anti-memory expansion, observation-prefix anti-memory
-  expansion, and golden proof remain planned later work in
+- Explicit anti-memory blocking is built for source claims, memory records,
+  linked search documents, and observation prefix items.
+- Memory abstain behavior and golden proof remain planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - Public memory promotion without MemoryReviewGate/evidence review reference is
   intentionally blocked.

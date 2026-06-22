@@ -1,13 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-16 and external
-harsh-review repair planning.
+Current phase: Memory ideal-state execution track after MM-30A.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-30 and MM-16R in
+- MM-00 through MM-30A and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -34,17 +33,16 @@ Current runtime truth:
   `docs/runs/2026-06-22-observation-dogfood.md`, and MM-17D removed hardcoded
   observe project scope.
 - Observation prefix selector exists as pure harness logic and MM-16R hardened
-  relevance/project scoping. It still needs later activation/context
-  integration.
+  relevance/project scoping. MM-30A added explicit anti-memory exclusions for
+  prefix items; later activation/context integration is still pending.
 - Typed observation source-range lineage is enforced at the repository boundary
   for truth-bearing observations.
 - Observation schema datetime validation and schema/core policy parity tests are
   in place.
 - Observer input redacts secret-shaped values before truncation.
-- Pure reflection contracts exist in `packages/core/src/reflection`; no
-  reflection persistence/runtime exists yet.
+- Pure reflection contracts exist in `packages/core/src/reflection`.
 - Reflection candidate-only guard rejects final-truth targets and promotion
-  metadata before runtime exists.
+  metadata.
 - Reflection IO schemas and `reflection_records` DB table exist; DB readiness
   now applies 11/11 migrations.
 - Reflection repository and pure input selector exist; selector keeps
@@ -90,10 +88,12 @@ Current runtime truth:
   audit health finding, without automatic invalidation.
 - MM-30 makes anti-memory block explicit memory-record activation candidates
   by subject id, memory key, anti-memory key, or `appliesTo`.
+- MM-30A makes anti-memory block linked search-document candidates and
+  observation prefix items through explicit IDs/keys.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-30A anti-memory enforcement expansion.
+- Continue with MM-31 memory abstain behavior.

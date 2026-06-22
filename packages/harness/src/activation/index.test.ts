@@ -5,6 +5,9 @@ import type {
   SourceClaim,
   TaskContract
 } from "@krn/core";
+import type {
+  SearchDocumentSearchResult
+} from "../repositories/types.js";
 
 import {
   applyContextROI,
@@ -16,6 +19,7 @@ import {
   detectConflicts,
   rankCandidates,
   toMemoryCandidate,
+  toSearchCandidate,
   toSourceClaimCandidate
 } from "./index.js";
 
@@ -92,6 +96,29 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
   validFrom: now,
   createdAt: now,
   updatedAt: now,
+  ...overrides
+});
+
+const searchDocument = (
+  overrides: Partial<SearchDocumentSearchResult>
+): SearchDocumentSearchResult => ({
+  id: "search-document-1",
+  projectId: "project-1",
+  subjectType: "source_claim",
+  subjectId: "source-claim-1",
+  sourceClaimId: "source-claim-1",
+  trustTier: "project-decision",
+  validityStatus: "active",
+  language: "en",
+  title: "Source graph crawler guidance",
+  body: "Crawler guidance was rejected by anti-memory.",
+  searchText: "source graph crawler guidance",
+  metadataFilters: {},
+  validFrom: now,
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  lexicalScore: 50,
   ...overrides
 });
 
@@ -233,6 +260,61 @@ describe("activation engine", () => {
         candidateIds: expect.arrayContaining(["memory-blocked", "anti-memory-1"])
       })
     ]);
+  });
+
+  it("blocks search documents linked to anti-memory source or memory ids", () => {
+    const query = buildSourceQuery(task);
+    const ranked = rankCandidates(
+      [
+        toSearchCandidate(
+          searchDocument({
+            id: "search-from-source",
+            sourceClaimId: "source-claim-1",
+            subjectId: "source-claim-1"
+          })
+        ),
+        toSearchCandidate(
+          searchDocument({
+            id: "search-from-memory",
+            subjectType: "memory_record",
+            subjectId: "memory-blocked",
+            sourceClaimId: undefined,
+            memoryRecordId: "memory-blocked"
+          })
+        )
+      ],
+      query
+    );
+    const result = detectConflicts(ranked, [
+      antiMemoryRecord({
+        id: "anti-source",
+        invalidatedBySourceClaimIds: ["source-claim-1"]
+      }),
+      antiMemoryRecord({
+        id: "anti-memory",
+        key: "memory-blocked",
+        appliesTo: "memory-blocked"
+      })
+    ]);
+
+    expect(result.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "search-from-source",
+        exclusion: expect.objectContaining({ reason: "unsafe" }),
+        metadata: expect.objectContaining({
+          antiMemoryRecordId: "anti-source",
+          conflictReason: "anti_memory_block"
+        })
+      }),
+      expect.objectContaining({
+        subjectId: "search-from-memory",
+        exclusion: expect.objectContaining({ reason: "unsafe" }),
+        metadata: expect.objectContaining({
+          antiMemoryRecordId: "anti-memory",
+          conflictReason: "anti_memory_block"
+        })
+      })
+    ]));
   });
 
   it("excludes source claims without doesNotProve", () => {
