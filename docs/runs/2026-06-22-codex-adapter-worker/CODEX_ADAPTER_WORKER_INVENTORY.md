@@ -14,9 +14,8 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 06 it still lacks
-DB-backed worker-job repository methods, worker-job DB smoke, and doctor
-readiness for adapter/worker surfaces.
+The current surface is not M26-complete. After Slice 07 it still lacks
+worker-job DB smoke and doctor readiness for adapter/worker surfaces.
 
 ## Files Inspected
 
@@ -138,8 +137,8 @@ Gaps:
 | `promote_eval_candidate` | `maintenanceJobTypes` | exists | Payload points to eval candidate. |
 | Worker job statuses | DB and worker types | aligned with compatibility note | Public worker lifecycle is `queued`, `running`, `succeeded`, `failed`, `skipped`. DB enum also retains legacy `dead_letter` and `cancelled` values as inert compatibility. |
 | Run scheduling field | `runAfter` | aligned | Drizzle and worker package expose `runAfter`; SQL keeps existing `available_at` column. |
-| WorkerJobRepository | `packages/workers` interface only | partial | Only `enqueue` exists. M26.07 needs enqueue/read/list/transition/cleanup methods. |
-| Drizzle worker repository | none | missing | DB schema exists, but no DB-backed repository adapter found. |
+| WorkerJobRepository | `packages/db/src/repositories/DrizzleWorkerJobRepository.ts` | exists | Supports enqueue, read by id, queued listing, running/succeeded/failed/skipped transitions, and cleanup by test IDs. |
+| Drizzle worker repository | `DrizzleWorkerJobRepository` | exists | DB-backed adapter over `worker_jobs`; no daemon, no execution, no external queue. |
 | Worker smoke | none | missing | No `pnpm db:smoke:worker-jobs` or CLI target. |
 | Daemon / loop | absent | correct | No broad worker runtime or infinite loop found. |
 | Redis/Kafka | absent | correct | No separate queue infrastructure found. |
@@ -171,7 +170,7 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Add DB-backed WorkerJobRepository methods and smoke proof.
+- Add worker job smoke proof.
 - Add doctor readiness for adapter and worker surfaces.
 
 ## Non-Gaps
@@ -281,4 +280,20 @@ M26.06 resolved worker schema/type alignment:
 - migration `0006_lucky_ken_ellis.sql` only adds `skipped` to
   `worker_job_status`.
 
-Remaining worker work is DB-backed repository methods and smoke proof.
+Remaining worker work is smoke proof.
+
+## Slice 07 Update
+
+M26.07 resolved DB-backed worker repository methods:
+
+- `DrizzleWorkerJobRepository` is exported from `@krn/db`;
+- DB-local worker job input/record/result types are exported from `@krn/db`;
+- `mapWorkerJob` narrows DB rows before returning typed worker job records;
+- repository methods cover enqueue, read by ID, due queued listing, running,
+  succeeded, failed, skipped, and cleanup transitions;
+- the repository adds an `enqueue` alias for the existing worker enqueue port
+  shape without importing `@krn/workers`;
+- legacy DB statuses `dead_letter` and `cancelled` are rejected by the mapper
+  instead of being returned as target lifecycle records.
+
+Remaining worker work is `pnpm db:smoke:worker-jobs`.

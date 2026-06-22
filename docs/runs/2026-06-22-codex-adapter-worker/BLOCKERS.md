@@ -4,7 +4,6 @@ No hard blocker for M26.00.
 
 Known gaps for later M26 slices:
 
-- no DB-backed WorkerJobRepository transition methods;
 - no `pnpm db:smoke:worker-jobs`;
 - doctor does not yet report Codex adapter or worker readiness.
 
@@ -59,6 +58,16 @@ Resolved in M26.06:
   SQL `type` and `available_at` columns;
 - migration `0006_lucky_ken_ellis.sql` adds `skipped` to
   `worker_job_status` without renaming or dropping worker job columns.
+
+Resolved in M26.07:
+
+- `DrizzleWorkerJobRepository` exists in `@krn/db`;
+- repository methods cover enqueue, read by id, queued listing, running,
+  succeeded, failed, skipped, and cleanup transitions;
+- worker job readback narrows `jobType`, target lifecycle status, JSONB
+  payload, and timestamps before returning typed records;
+- repository code does not import `@krn/workers`, add Redis/Kafka, create a
+  daemon, execute jobs, or call embeddings.
 
 Non-goals that remain intentionally blocked:
 

@@ -2,8 +2,8 @@
 
 Objective:
 Continue M26 Codex Adapter Execution Brief + Hook Expectations + Worker Job
-Skeleton. M26.06 worker job schema alignment is complete; next implementation
-slice is M26.07 WorkerJobRepository methods.
+Skeleton. M26.07 WorkerJobRepository methods are complete; next
+implementation slice is M26.08 worker job smoke path.
 
 Last verified state:
 M25 activation engine is complete and pushed. M26.00 found an existing
@@ -63,7 +63,18 @@ and DB schema tests failed on the missing M26 worker contract. GREEN targeted
 tests passed, `pnpm --filter @krn/db db:check` passed, full `pnpm typecheck`
 passed across 7 workspace packages, full `pnpm test` passed with 22 test files
 and 112 tests, and live `pnpm db:ready` passed with 7 expected/applied
-migrations and pgvector available.
+migrations and pgvector available. M26.07 added `DrizzleWorkerJobRepository`,
+DB-local worker job input/record/result types, and `mapWorkerJob` narrowing.
+Repository methods now cover enqueue, read by ID, due queued listing, running,
+succeeded, failed, skipped, and cleanup transitions. RED DB tests failed on
+missing repository/mapper modules. GREEN targeted DB tests passed with 13 test
+files and 30 tests. Initial DB typecheck caught an `exactOptionalPropertyTypes`
+mapper issue, which was fixed without weakening types. Full `pnpm typecheck`
+passed across 7 workspace packages, full `pnpm test` passed across package
+outputs totaling 24 test files and 115 tests, `pnpm --filter @krn/db db:check`
+passed, and scans found no `any`, double assertions, TypeScript suppressions,
+`@krn/workers` import in `packages/db`, Redis/Kafka, loops, process spawn, or
+job execution surface in the new worker repository code.
 
 Changed files:
 `packages/codex-adapter/src/contracts.ts`,
@@ -90,6 +101,12 @@ Changed files:
 `packages/workers/src/jobTypes.ts`,
 `packages/workers/src/enqueueMaintenanceJob.ts`,
 `packages/workers/src/index.test.ts`,
+`packages/db/src/repositories/DrizzleWorkerJobRepository.ts`,
+`packages/db/src/repositories/DrizzleWorkerJobRepository.test.ts`,
+`packages/db/src/repositories/workerJobMappers.ts`,
+`packages/db/src/repositories/workerJobMappers.test.ts`,
+`packages/db/src/repositories/workerJobTypes.ts`,
+`packages/db/src/repositories/index.ts`,
 `package.json`, and
 `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
@@ -112,12 +129,13 @@ M26.06 aligns the public worker contract with `jobType`, `runAfter`,
 `available_at` stable through Drizzle property aliases, and retains legacy DB
 enum values `dead_letter` / `cancelled` as inert compatibility values while
 the public worker lifecycle uses `queued`, `running`, `succeeded`, `failed`,
-and `skipped`.
+and `skipped`. M26.07 keeps the DB-backed repository in `packages/db`, exports
+DB-local worker job repository types, avoids importing `@krn/workers` into
+`packages/db`, and rejects legacy DB-only statuses during mapper readback.
 
 Blockers/risks:
-No hard blocker. M26 is incomplete until WorkerJobRepository methods, worker
-job smoke, doctor readiness, dogfood, final anti-rot, and final handoff are
-complete.
+No hard blocker. M26 is incomplete until worker job smoke, doctor readiness,
+dogfood, final anti-rot, and final handoff are complete.
 
 Context selectors:
 `GOAL.md` M26 section, `docs/KRN_KERNEL.md`,
@@ -142,7 +160,7 @@ Context selectors:
 `packages/cli/src/runDoctorCommand.ts`.
 
 Next action:
-Start M26.07 WorkerJobRepository methods.
+Start M26.08 worker job smoke path.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

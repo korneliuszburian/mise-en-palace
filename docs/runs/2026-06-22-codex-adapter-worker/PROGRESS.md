@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 06 worker job schema alignment complete.
+Current slice: Slice 07 WorkerJobRepository methods complete.
 
 Completed:
 
@@ -68,6 +68,16 @@ Completed:
   avoiding a risky column rename.
 - Slice 06 generated migration `0006_lucky_ken_ellis.sql`, which only adds
   `skipped` to the existing Postgres `worker_job_status` enum.
+- Slice 07 added DB-backed `DrizzleWorkerJobRepository` methods:
+  `enqueueWorkerJob`, `getWorkerJobById`, `listQueuedWorkerJobs`,
+  `markWorkerJobRunning`, `markWorkerJobSucceeded`, `markWorkerJobFailed`,
+  `markWorkerJobSkipped`, and `cleanupTestWorkerJobs`.
+- Slice 07 added a repository `enqueue` alias so the DB adapter can satisfy the
+  existing worker enqueue port structurally without importing `@krn/workers`.
+- Slice 07 added DB-local worker job record types and mapper narrowing for
+  `jobType`, target lifecycle status, JSONB payload, and `runAfter`.
+- Slice 07 keeps actual job execution out of scope: no daemon, no loop, no
+  external queue, and no embedding call.
 
 Verification:
 
@@ -208,7 +218,27 @@ Verification:
   assertions, or TypeScript suppressions.
 - Slice 06 forbidden worker runtime scan returned no Redis/Kafka, process
   spawn, or loop matches in the changed worker/schema surfaces.
+- Slice 07 RED: `pnpm --filter @krn/db test --
+  DrizzleWorkerJobRepository.test.ts workerJobMappers.test.ts` failed because
+  `./DrizzleWorkerJobRepository.js` and `./workerJobMappers.js` did not exist.
+- Slice 07 GREEN: the same targeted test passed with 13 test files and 30
+  tests.
+- Initial Slice 07 `pnpm --filter @krn/db typecheck` failed on an
+  `exactOptionalPropertyTypes` issue in `workerJobMappers.ts`; the mapper was
+  fixed to only emit `lockedAt` when it has a concrete timestamp.
+- `pnpm --filter @krn/db typecheck`: passed.
+- `pnpm --filter @krn/db test`: passed with 13 test files and 30 tests.
+- `pnpm --filter @krn/db db:check`: passed.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed across package outputs totaling 24 test files and 115
+  tests.
+- `git diff --check`: passed.
+- Slice 07 TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Slice 07 boundary/runtime scan returned no `@krn/workers` import in
+  `packages/db` and no Redis/Kafka/background-loop/process-spawn matches in
+  the new worker repository surfaces.
 
 Next:
 
-- Start M26.07 WorkerJobRepository methods.
+- Start M26.08 worker job smoke path.

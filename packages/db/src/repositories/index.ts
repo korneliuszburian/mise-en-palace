@@ -5,3 +5,5 @@ export * from "./DrizzleOutboxRepository.js";
 export * from "./DrizzleProjectRepository.js";
 export * from "./DrizzleRetrievalRepository.js";
 export * from "./DrizzleSourceRepository.js";
+export * from "./DrizzleWorkerJobRepository.js";
+export * from "./workerJobTypes.js";

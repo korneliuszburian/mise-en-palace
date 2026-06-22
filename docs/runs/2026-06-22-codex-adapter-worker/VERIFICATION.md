@@ -361,3 +361,52 @@ Results:
   loops, process spawn, or `exec(` in the changed worker/schema surfaces.
 - Live `pnpm db:ready` passed with Postgres reachable, 7 expected/applied
   migrations, and pgvector available.
+
+## Slice 07
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- DrizzleWorkerJobRepository.test.ts workerJobMappers.test.ts
+pnpm --filter @krn/db test -- DrizzleWorkerJobRepository.test.ts workerJobMappers.test.ts
+pnpm --filter @krn/db typecheck
+pnpm --filter @krn/db typecheck
+pnpm --filter @krn/db test
+pnpm --filter @krn/db db:check
+pnpm typecheck
+pnpm test
+git diff --check
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/db/src/repositories/DrizzleWorkerJobRepository.ts packages/db/src/repositories/workerJobMappers.ts packages/db/src/repositories/workerJobTypes.ts packages/db/src/repositories/DrizzleWorkerJobRepository.test.ts packages/db/src/repositories/workerJobMappers.test.ts
+rg -n "@krn/workers|Redis|Kafka|setInterval|while \(|for \(;;\)|spawn|exec\(" packages/db/src/repositories/DrizzleWorkerJobRepository.ts packages/db/src/repositories/workerJobMappers.ts packages/db/src/repositories/workerJobTypes.ts packages/db/package.json
+```
+
+Results:
+
+- RED DB tests failed because `./DrizzleWorkerJobRepository.js` and
+  `./workerJobMappers.js` did not exist.
+- Added DB-local worker job repository types for inputs, records, lifecycle
+  statuses, cleanup input/result, and the repository interface.
+- Added `mapWorkerJob`, which narrows SQL `jobType`, target lifecycle status,
+  JSONB payload, and timestamps before returning a worker job record.
+- Added `DrizzleWorkerJobRepository` with `enqueueWorkerJob`, `enqueue`,
+  `getWorkerJobById`, `listQueuedWorkerJobs`, `markWorkerJobRunning`,
+  `markWorkerJobSucceeded`, `markWorkerJobFailed`, `markWorkerJobSkipped`, and
+  `cleanupTestWorkerJobs`.
+- GREEN targeted DB tests passed with 13 test files and 30 tests.
+- Initial `pnpm --filter @krn/db typecheck` failed on
+  `exactOptionalPropertyTypes` because `mapWorkerJob` could emit
+  `lockedAt?: string | undefined`.
+- The mapper was corrected to emit `lockedAt` only when `row.lockedAt` is a
+  concrete timestamp.
+- `pnpm --filter @krn/db typecheck` passed.
+- `pnpm --filter @krn/db test` passed with 13 test files and 30 tests.
+- `pnpm --filter @krn/db db:check` passed.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across package outputs totaling 24 test files and 115
+  tests.
+- `git diff --check` passed.
+- TypeScript hygiene scan returned no matches for `any`, double assertions, or
+  TypeScript suppressions.
+- Boundary/runtime scan returned no `@krn/workers` import in `packages/db` and
+  no Redis/Kafka, background loop, process spawn, or `exec(` matches in the new
+  worker repository surfaces.

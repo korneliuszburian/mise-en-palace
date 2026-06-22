@@ -443,3 +443,73 @@
   `workerJobStatuses` target lifecycle.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
+
+## Slice 07 Decisions
+
+- Source: `GOAL.md` M26.07.
+  Mechanism: M26.07 requires repository methods for enqueue, read, queued
+  listing, status transitions, and cleanup, while forbidding daemon behavior,
+  external side effects, and job execution.
+  KRN implication: the worker job proof should add a DB persistence adapter,
+  not a worker runtime.
+  Decision: add `DrizzleWorkerJobRepository` in `packages/db` with
+  `enqueueWorkerJob`, `getWorkerJobById`, `listQueuedWorkerJobs`,
+  `markWorkerJobRunning`, `markWorkerJobSucceeded`, `markWorkerJobFailed`,
+  `markWorkerJobSkipped`, and `cleanupTestWorkerJobs`.
+  Rejection/falsifier: if repository methods execute jobs, call embeddings, or
+  require a background loop, M26.07 has crossed into worker runtime scope.
+
+- Source: `docs/architecture/package-boundaries.md` and existing DB repository
+  layout.
+  Mechanism: `packages/db` owns Drizzle schema and repository
+  implementations; `packages/workers` owns worker job definitions and thin
+  execution boundaries.
+  KRN implication: DB can implement the Postgres adapter while avoiding a new
+  package dependency from `packages/db` to `packages/workers`.
+  Decision: define DB-local repository record/input types using the same M26
+  `jobType` / `runAfter` vocabulary, and add an `enqueue` alias so the adapter
+  can structurally satisfy the existing worker enqueue port later without a
+  direct import.
+  Rejection/falsifier: if future code has to translate from older
+  `type` / `availableAt` names or import `@krn/workers` into `packages/db`,
+  the boundary is drifting.
+
+- Source: `packages/db/src/schema/events.ts` and Slice 06 decision on legacy
+  DB enum values.
+  Mechanism: the DB enum still contains inert legacy values
+  `dead_letter` and `cancelled`, but the target worker lifecycle is
+  `queued`, `running`, `succeeded`, `failed`, and `skipped`.
+  KRN implication: repository readback must not silently normalize legacy
+  states into target states.
+  Decision: `mapWorkerJob` rejects DB-only legacy statuses and unsupported job
+  types instead of returning them as target worker records.
+  Rejection/falsifier: if worker smoke can pass while reading `dead_letter` or
+  `cancelled` as a target lifecycle state, the repository boundary is too
+  loose.
+
+## Slice 07 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN repository method
+  and mapper coverage before implementation.
+- `brain-store-schema`: used for worker job lifecycle persistence and cleanup
+  boundaries over `worker_jobs`.
+- `source-to-decision`: used to record DB/worker package boundary and legacy
+  status decisions.
+- `typescript-type-safety`: used for DB JSONB payload narrowing, target status
+  narrowing, and `exactOptionalPropertyTypes` correction.
+- `superpowers:systematic-debugging`: used when package typecheck exposed the
+  optional-property mapper issue.
+- `superpowers:verification-before-completion`: used before claiming package
+  tests, typecheck, root gates, or scans passed.
+
+## Slice 07 Type-Safety Notes
+
+- Boundary classification: DB row to repository record adapter and public DB
+  repository API.
+- Validation/narrowing: `mapWorkerJob` narrows SQL `jobType`, target status,
+  and JSONB payload before returning `WorkerJobRecord`; unsupported target
+  values throw instead of being trusted.
+- Public type changes: `@krn/db` repository exports now include worker job
+  input/record/result types and `DrizzleWorkerJobRepository`.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.
