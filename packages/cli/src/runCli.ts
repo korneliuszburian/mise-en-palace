@@ -19,6 +19,9 @@ import type {
 import {
   runInitCommand
 } from "./runInitCommand.js";
+import type {
+  CreateInitConnectRuntime
+} from "./runInitCommand.js";
 import {
   runDoctorCommand
 } from "./runDoctorCommand.js";
@@ -63,6 +66,7 @@ export interface CliRuntime {
   createId?(prefix: string): string;
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
+  createInitConnectRuntime?: CreateInitConnectRuntime;
 }
 
 export interface CliResult {
@@ -116,8 +120,13 @@ export const runCli = async (
     try {
       const result = await runInitCommand({
         cwd: runtime.cwd ?? process.cwd(),
+        env: runtime.env,
         mode: parsed.command.mode,
-        repo: parsed.command.repo
+        repo: parsed.command.repo,
+        ...(parsed.command.mode === "connect" ? { persist: parsed.command.persist } : {}),
+        ...(runtime.createInitConnectRuntime === undefined
+          ? {}
+          : { createInitConnectRuntime: runtime.createInitConnectRuntime })
       });
 
       return {

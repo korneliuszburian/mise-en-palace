@@ -134,6 +134,111 @@ describe("runCli", () => {
     );
   });
 
+  it("requires database config for init --connect --persist", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const result = await runCli(
+      [
+        "init",
+        "--connect",
+        "--repo",
+        "tests/fixtures/target-repos/typescript-basic",
+        "--persist"
+      ],
+      {
+        env: {},
+        cwd: repoRoot,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain(
+      "KRN_DATABASE_URL is required for krn init --connect --persist"
+    );
+  });
+
+  it("connects a target repo to the brain store with persisted IDs", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const fixtureRepo = path.join(
+      repoRoot,
+      "tests",
+      "fixtures",
+      "target-repos",
+      "typescript-basic"
+    );
+    const result = await runCli(
+      ["init", "--connect", "--repo", fixtureRepo, "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        cwd: repoRoot,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createInitConnectRuntime: async () => ({
+          async connectTargetRepo(input) {
+            expect(input.repoPath).toBe(fixtureRepo);
+            expect(input.repoFingerprint).toMatch(/^sha256:/);
+
+            return {
+              project: {
+                id: "project-target-1",
+                workspaceId: "workspace-1",
+                slug: "krn-fixture-typescript-basic",
+                displayName: "krn-fixture-typescript-basic",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              },
+              projectCreated: true,
+              repoInstallation: {
+                id: "repo-installation-1",
+                projectId: "project-target-1",
+                provider: "local",
+                repoUrl: `file://${fixtureRepo}`,
+                defaultBranch: "main",
+                repoFingerprint: input.repoFingerprint,
+                localPathHint: fixtureRepo,
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              },
+              repoInstallationCreated: true,
+              projectKernel: {
+                id: "project-kernel-1",
+                projectId: "project-target-1",
+                version: 1,
+                summary: "kernel",
+                activeContextRule: "project scoped",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              },
+              projectKernelCreated: true
+            };
+          },
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Init Connect");
+    expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
+    expect(result.stdout).toContain("Project ID: project-target-1 (created)");
+    expect(result.stdout).toContain("Repo installation ID: repo-installation-1 (created)");
+    expect(result.stdout).toContain("ProjectKernel ID: project-kernel-1 (created)");
+    expect(result.stdout).toContain("Files written: none");
+    expect(result.stdout).toContain(
+      "Next command: krn plan --project project-target-1 --task \"improve test script readiness\" --persist"
+    );
+  });
+
   it("prints a bounded no-store plan for plan --task", async () => {
     const result = await runCli(["plan", "--task", "improve KRN doctor brain store readiness"], {
       env: {},

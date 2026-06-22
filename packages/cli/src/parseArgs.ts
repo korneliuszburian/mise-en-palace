@@ -5,6 +5,12 @@ export type CliCommand =
       repo: string;
     }
   | {
+      kind: "init";
+      mode: "connect";
+      repo: string;
+      persist: boolean;
+    }
+  | {
       kind: "plan";
       task: string;
       persist: boolean;
@@ -174,10 +180,12 @@ export interface ParseArgsResult {
 
 const usage = [
   "Usage: krn init --dry-run --repo <path>",
+  "Usage: krn init --connect --repo <path> --persist",
   "Usage: krn plan --task \"...\" [--persist]",
   "",
   "Other commands:",
   "krn init --dry-run --repo <path>",
+  "krn init --connect --repo <path> --persist",
   "krn doctor",
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs]",
@@ -195,7 +203,7 @@ const usage = [
 
 export const formatUsage = (): string => `${usage}\n`;
 
-const initUsage = "Usage: krn init --dry-run --repo <path>";
+const initUsage = "Usage: krn init --dry-run --repo <path>|krn init --connect --repo <path> --persist";
 
 export const formatSourceClaimAddUsage = (): string =>
   [
@@ -426,6 +434,8 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   if (command === "init") {
     let dryRun = false;
+    let connect = false;
+    let persist = false;
     let repo: string | undefined;
 
     for (let index = 0; index < rest.length; index += 1) {
@@ -433,6 +443,16 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
       if (arg === "--dry-run") {
         dryRun = true;
+        continue;
+      }
+
+      if (arg === "--connect") {
+        connect = true;
+        continue;
+      }
+
+      if (arg === "--persist") {
+        persist = true;
         continue;
       }
 
@@ -452,9 +472,26 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
-    if (!dryRun || repo === undefined || repo.trim().length === 0) {
+    if (repo === undefined || repo.trim().length === 0 || dryRun === connect) {
       return {
         error: initUsage
+      };
+    }
+
+    if (connect && !persist) {
+      return {
+        error: initUsage
+      };
+    }
+
+    if (connect) {
+      return {
+        command: {
+          kind: "init",
+          mode: "connect",
+          repo: repo.trim(),
+          persist
+        }
       };
     }
 

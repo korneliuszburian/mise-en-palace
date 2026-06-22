@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 05 init dry-run complete.
+Current slice: Slice 06 init connect complete.
 
 Completed:
 
@@ -39,7 +39,13 @@ Completed:
 - Slice 05 added `krn init --dry-run --repo <path>` with read-only target repo
   detection, ProjectKernel proposal, Codex overlay proposal, `No files written`
   output, and a next connect command.
+- Slice 06 added `krn init --connect --repo <path> --persist` with DB-backed
+  Project, RepoInstallation, and ProjectKernel create/reuse behavior.
+- Slice 06 connected the fixture repo and proved idempotency by reusing Project
+  `9da67341-0124-407e-b3fa-197f7f850a57`, RepoInstallation
+  `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel
+  `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6` on the second run.
 
 Next action:
 
-- Slice 06 implement `krn init --connect --repo <path> --persist`.
+- Slice 07 add `pnpm db:smoke:init-connect`.

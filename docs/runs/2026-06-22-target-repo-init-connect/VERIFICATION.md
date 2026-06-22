@@ -205,3 +205,35 @@ Results:
   pre-existing modified `GOAL.md`; the fixture repo was not mutated.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed across 28 test files and 124 tests.
+
+## Slice 06
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn init --connect --repo tests/fixtures/target-repos/typescript-basic --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn init --connect --repo tests/fixtures/target-repos/typescript-basic --persist
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- RED CLI tests failed because `init --connect` was unsupported.
+- Added `krn init --connect --repo <path> --persist` parser and dispatcher
+  support.
+- Added missing DB guard:
+  `KRN_DATABASE_URL is required for krn init --connect --persist`.
+- Added DB-backed connect runtime using `DrizzleProjectRepository`.
+- Connect creates or reuses workspace `local`, a target project, repo
+  installation, and ProjectKernel.
+- Connect writes no files.
+- First fixture connect created Project
+  `9da67341-0124-407e-b3fa-197f7f850a57`, RepoInstallation
+  `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel
+  `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`.
+- Second fixture connect reused the same Project, RepoInstallation, and
+  ProjectKernel IDs.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 28 test files and 126 tests.
