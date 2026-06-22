@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 01 inventory complete.
+Current slice: Slice 02 target repo fixture complete.
 
 Completed:
 
@@ -29,7 +29,11 @@ Completed:
   tables plus create/read methods for the existing harness path, but missing
   first-class repo fingerprint lookup/idempotency support.
 - Slice 01 confirmed `krn init` and `krn plan --project` are not supported yet.
+- Slice 02 added disposable fixture repo
+  `tests/fixtures/target-repos/typescript-basic/` with package manager/script
+  signals and TypeScript source.
 
 Next action:
 
-- Slice 02 add the minimal disposable TypeScript target repo fixture.
+- Slice 03 add the minimal repo fingerprint schema/repository support needed
+  for init/connect idempotency.

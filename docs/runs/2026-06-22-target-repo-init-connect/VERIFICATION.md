@@ -103,3 +103,24 @@ Results:
 - Existing smoke helpers provide reusable marker, readback, and cleanup
   patterns.
 - `pnpm typecheck` passed after inventory docs were updated.
+
+## Slice 02
+
+Commands run:
+
+```sh
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- Added `tests/fixtures/target-repos/typescript-basic/package.json`.
+- Added `tests/fixtures/target-repos/typescript-basic/tsconfig.json`.
+- Added `tests/fixtures/target-repos/typescript-basic/src/index.ts`.
+- Fixture contains package manager/script signals, TypeScript config, and
+  TypeScript source.
+- Fixture does not contain `.krn`, `.codex`, `.agents`, dashboard, `apps/`, or
+  runtime markdown memory.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 26 test files and 120 tests.
