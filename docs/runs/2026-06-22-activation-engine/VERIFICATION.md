@@ -303,3 +303,69 @@ Results:
   `0`.
 - Doctor passed after dogfood and reported activation readiness ready with
   decisions `25`, inclusions `24`, and exclusions `1`.
+
+## Slice 08
+
+Commands run:
+
+```sh
+git status --short --branch
+git log --oneline -12
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages --glob '*.ts'
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-plan
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-evidence
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:source-graph
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:memory-governance
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:retrieval-substrate
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:activation
+```
+
+Results:
+
+- `git status --short --branch` passed with clean `## main...origin/main`
+  before handoff doc edits.
+- `git log --oneline -12` passed and showed M25 history through
+  `f5c0ba2 docs(run): record activation dogfood pass`.
+- TypeScript hygiene scan returned no matches for `any`, double assertions, or
+  TypeScript suppressions in `packages/**/*.ts`.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed with 18 test files and 100 tests.
+- DB-backed `krn doctor` passed with Postgres reachable, 6/6 migrations
+  applied, source graph ready, memory governance ready, retrieval substrate
+  ready, activation smoke available, activation runtime proof ready
+  `(decisions 25, inclusions 24, exclusions 1)`, activation readiness ready,
+  broad context dump absent, core `requiredSkills` absent, and forbidden
+  surfaces absent.
+- `pnpm db:ready` passed with Postgres reachable, migrations applied, pgvector
+  available, and brain store readiness ready.
+- `pnpm db:smoke` passed with project readback matched and cleanup completed.
+- `pnpm db:smoke:harness-plan` passed with evidence contract commands `3`, run
+  events `1`, and cleanup remaining marker count `0`.
+- `pnpm db:smoke:harness-evidence` passed with one evidence bundle, one review
+  assessment, one feedback delta, run events `2`, and cleanup remaining marker
+  count `0`.
+- `pnpm db:smoke:source-graph` passed with one source claim, one source
+  decision edge, one source rejection, outbox events `2`, and cleanup remaining
+  marker count `0`.
+- `pnpm db:smoke:memory-governance` passed with one reviewed memory candidate,
+  one memory record, one memory record version, one memory application, one
+  anti-memory record, outbox events `2`, and cleanup remaining marker count
+  `0`.
+- `pnpm db:smoke:retrieval-substrate` passed with search documents `4`,
+  lexical results `1`, retrieval candidates `2`, activation decisions `2`,
+  context items `1`, context exclusions `1`, and cleanup remaining marker
+  count `0`.
+- `pnpm db:smoke:activation` passed with source claims `3`, memory records `2`,
+  anti-memory records `1`, search documents `1`, search candidates `1`,
+  retrieval candidates `6`, activation decisions `6`, included decisions `2`,
+  excluded decisions `2`, conflict decisions `1`, stale decisions `1`, context
+  items `2`, context exclusions `4`, and cleanup remaining marker count `0`.
+- M25 completion criteria are met: deterministic activation exists, noisy brain
+  fixture passes, activation smoke passes, `krn plan --persist` uses
+  activation, inclusions/exclusions are persisted, doctor reports activation
+  readiness, and doctor reports broad context dump absent.

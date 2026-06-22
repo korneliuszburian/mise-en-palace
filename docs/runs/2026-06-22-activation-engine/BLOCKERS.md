@@ -1,10 +1,6 @@
 # Blockers
 
-No hard blocker for M25.00.
-
-Known gaps for later M25 slices:
-
-- current persisted live probe had zero context exclusions;
+No hard blocker for M25.
 
 Resolved in M25.01:
 
@@ -70,6 +66,16 @@ Resolved in M25.07:
   `d15b1b47-0e0f-48eb-b385-bfaaffa9c0a7`, candidates, decisions, inclusions,
   and exclusions;
 - dogfood limitations are explicitly recorded in `DOGFOOD.md`.
+
+Resolved in M25.08:
+
+- full anti-rot verification passed through typecheck, tests, DB-backed
+  doctor, DB readiness, and every DB smoke path through activation;
+- current TypeScript package surface has no `any`, double assertions, or
+  TypeScript suppressions in `packages/**/*.ts`;
+- DB-backed doctor reports activation readiness ready, broad context dump
+  absent, core `requiredSkills` absent, and forbidden surfaces absent;
+- M25 completion criteria are met.
 
 Non-goals that remain intentionally blocked:
 

@@ -1,8 +1,8 @@
 # Handoff
 
 Objective:
-Continue M25 Activation Engine V1. M25.07 activation dogfood is recorded; next
-implementation slice is M25.08 anti-rot and handoff.
+M25 Activation Engine V1 is complete. Next implementation slice is M26.00:
+inventory Codex adapter and worker surfaces.
 
 Last verified state:
 M24 is complete and pushed. M25 inventory found an existing deterministic
@@ -28,7 +28,19 @@ reports activation runtime proof ready with decisions `22`, inclusions `21`,
 exclusions `1`, and activation readiness ready. M25.07 dogfooded activation on
 `improve KRN doctor activation readiness`, captured evidence for execution run
 `bb33bd3d-02df-4ff3-839b-6f545de88b4c`, and recorded dogfood limitations in
-`DOGFOOD.md`.
+`DOGFOOD.md`. M25.08 reran the full anti-rot suite: clean git status/log
+baseline, TypeScript hygiene scan, `pnpm typecheck`, `pnpm test`, DB-backed
+`krn doctor`, `pnpm db:ready`, and all DB smoke paths through activation. The
+fresh activation smoke passed with retrieval candidates `6`, activation
+decisions `6`, included decisions `2`, excluded decisions `2`, conflict
+decisions `1`, stale decisions `1`, context items `2`, context exclusions `4`,
+and cleanup remaining marker count `0`. DB-backed doctor reports activation
+runtime proof ready with decisions `25`, inclusions `24`, exclusions `1`,
+activation readiness ready, broad context dump absent, core `requiredSkills`
+absent, and forbidden surfaces absent. `pnpm test` passed with 18 test files
+and 100 tests. `pnpm typecheck` passed across 7 workspace packages. A
+TypeScript hygiene scan found no `any`, no double assertions, and no
+TypeScript suppressions in `packages/**/*.ts`.
 
 Changed files:
 `packages/core/src/activation.ts`, `packages/core/src/index.ts`,
@@ -68,7 +80,10 @@ not reimplement ranking/filtering policy in CLI. Doctor activation readiness is
 read-only and must not execute smoke itself.
 
 Blockers/risks:
-No hard blocker. M25 is incomplete until anti-rot is complete.
+No hard blocker for M25. M26 must stay inside the plan boundary: render Codex
+adapter instructions and worker job skeletons without executing Codex, building
+a public API, broad worker runtime, dashboard, MCP server, or runtime markdown
+memory.
 
 Context selectors:
 `GOAL.md` M25 section, `docs/KRN_KERNEL.md`,
@@ -88,8 +103,8 @@ Context selectors:
 
 Next action:
 Run `git diff --check`, commit
-`docs(run): record activation dogfood pass`, push, then start M25.08 anti-rot
-and handoff.
+`docs(handoff): update activation engine status`, push, then start M26.00
+Codex adapter and worker surface inventory.
 
 Do not reread:
 `docs/materials/`, broad historical docs, or old repo topology unless a later

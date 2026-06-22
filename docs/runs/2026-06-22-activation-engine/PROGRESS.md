@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 07 activation dogfood complete.
+Current slice: Slice 08 anti-rot and handoff complete.
 
 Completed:
 
@@ -65,6 +65,14 @@ Completed:
   `bb33bd3d-02df-4ff3-839b-6f545de88b4c`.
 - Slice 07 recorded run IDs, retrieval counts, activation counts, evidence IDs,
   what helped, and what was not proven in `DOGFOOD.md`.
+- Slice 08 reran the full M25 anti-rot suite against the local DB-backed
+  runtime: typecheck, full tests, doctor, DB readiness, all persistence smokes,
+  retrieval substrate smoke, and activation smoke.
+- Slice 08 confirmed the TypeScript surface keeps the current boundary
+  discipline: no `any`, double assertions, or TypeScript suppressions were
+  found in `packages/**/*.ts`.
+- Slice 08 updated `HANDOFF.md`, `BLOCKERS.md`, and this run ledger to mark
+  M25 complete and point the next implementation slice at M26.00.
 
 Verification:
 
@@ -211,9 +219,45 @@ Verification:
 - `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
   @krn/cli krn doctor`: passed after dogfood and reported activation readiness
   ready with decisions `25`, inclusions `24`, and exclusions `1`.
+- Slice 08 `git status --short --branch`: passed with clean
+  `## main...origin/main` before handoff doc edits.
+- Slice 08 `git log --oneline -12`: passed and showed the M25 commits through
+  `f5c0ba2 docs(run): record activation dogfood pass`.
+- Slice 08 TypeScript hygiene scan over `packages/**/*.ts`: passed with no
+  `any`, no `as unknown as`, no `@ts-ignore`, and no `@ts-expect-error`
+  matches.
+- Slice 08 `pnpm typecheck`: passed across 7 workspace packages.
+- Slice 08 `pnpm test`: passed with 18 test files and 100 tests.
+- Slice 08 DB-backed `krn doctor`: passed and reported activation readiness
+  ready with decisions `25`, inclusions `24`, exclusions `1`, broad context
+  dump absent, core `requiredSkills` absent, and forbidden surfaces absent.
+- Slice 08 `pnpm db:ready`: passed with Postgres reachable, 6/6 migrations
+  applied, pgvector available, and brain store readiness ready.
+- Slice 08 `pnpm db:smoke`: passed with project readback matched and cleanup
+  completed.
+- Slice 08 `pnpm db:smoke:harness-plan`: passed with evidence contract
+  commands `3`, run events `1`, and cleanup remaining marker count `0`.
+- Slice 08 `pnpm db:smoke:harness-evidence`: passed with one evidence bundle,
+  review assessment, feedback delta, run events `2`, and cleanup remaining
+  marker count `0`.
+- Slice 08 `pnpm db:smoke:source-graph`: passed with one source claim, one
+  source decision edge, one rejection, outbox events `2`, and cleanup remaining
+  marker count `0`.
+- Slice 08 `pnpm db:smoke:memory-governance`: passed with one reviewed memory
+  candidate, memory record/version/application, one anti-memory record, outbox
+  events `2`, and cleanup remaining marker count `0`.
+- Slice 08 `pnpm db:smoke:retrieval-substrate`: passed with search documents
+  `4`, lexical results `1`, retrieval candidates `2`, activation decisions
+  `2`, context items `1`, context exclusions `1`, and cleanup remaining marker
+  count `0`.
+- Slice 08 `pnpm db:smoke:activation`: passed with source claims `3`, memory
+  records `2`, anti-memory records `1`, search documents `1`, retrieval
+  candidates `6`, activation decisions `6`, included decisions `2`, excluded
+  decisions `2`, conflict decisions `1`, stale decisions `1`, context items
+  `2`, context exclusions `4`, and cleanup remaining marker count `0`.
 
 Next:
 
 - Run `git diff --check`.
-- Commit Slice 07 as `docs(run): record activation dogfood pass`.
-- Start M25.08 anti-rot and handoff.
+- Commit Slice 08 as `docs(handoff): update activation engine status`.
+- Start M26.00 Codex adapter and worker surface inventory.
