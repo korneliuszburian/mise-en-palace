@@ -5,7 +5,6 @@ No hard blocker for M25.00.
 Known gaps for later M25 slices:
 
 - current persisted live probe had zero context exclusions;
-- doctor does not report activation readiness.
 
 Resolved in M25.01:
 
@@ -51,6 +50,16 @@ Resolved in M25.05:
 - current real persisted plan has zero exclusions because of the live corpus,
   but it now prints `Context exclusions: - none` explicitly while
   `pnpm db:smoke:activation` proves the exclusion/conflict/stale path.
+
+Resolved in M25.06:
+
+- doctor reports activation domain contract presence;
+- doctor reports activation smoke command availability;
+- doctor reports activation runtime proof ready/unverified from durable
+  activation/context rows;
+- doctor reports broad context dump absence and core `requiredSkills` absence;
+- DB-backed doctor reports activation readiness ready in the current local
+  store.
 
 Non-goals that remain intentionally blocked:
 

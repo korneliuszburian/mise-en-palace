@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 05 persisted plan activation output complete.
+Current slice: Slice 06 doctor activation readiness complete.
 
 Completed:
 
@@ -53,6 +53,12 @@ Completed:
 - Slice 05 updated `krn plan` output to print context status, bounded
   inclusions, explicit exclusions, and abstention status in the top-level plan
   summary before the Codex execution brief.
+- Slice 06 added activation readiness inspection in `@krn/db` and doctor
+  reporting in `@krn/cli`.
+- Slice 06 doctor now reports activation domain contracts, activation engine
+  surface, activation smoke command availability, activation runtime proof,
+  broad context dump absence, core `requiredSkills` absence, and derived
+  activation readiness.
 
 Verification:
 
@@ -162,9 +168,27 @@ Verification:
   decisions `1`, stale decisions `1`, context items `2`, context exclusions
   `4`, and cleanup remaining marker count `0`.
 - `pnpm test`: passed with 18 test files and 99 tests.
+- Slice 06 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed
+  because doctor did not print activation checks and
+  `deriveActivationReadiness` was not exported.
+- Slice 06 GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
+  54 tests.
+- `pnpm --filter @krn/db test -- activationSmoke.test.ts`: passed with 10 test
+  files and 25 tests.
+- `pnpm typecheck`: passed.
+- `pnpm --filter @krn/cli krn doctor`: passed without DB and reported
+  activation preview, activation smoke command availability, broad context dump
+  absence, and core `requiredSkills` absence.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:activation`: passed with cleanup remaining marker count `0`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed and reported activation runtime proof ready
+  with decisions `22`, inclusions `21`, exclusions `1`, and activation
+  readiness ready.
+- `pnpm test`: passed with 18 test files and 100 tests.
 
 Next:
 
 - Run `git diff --check`.
-- Commit Slice 05 as `feat(cli): apply activation in persisted harness plan`.
-- Start M25.06 by adding doctor activation readiness.
+- Commit Slice 06 as `feat(cli): report activation readiness in doctor`.
+- Start M25.07 by dogfooding activation on the real next task.

@@ -234,3 +234,40 @@ Results:
 - Live activation smoke still passed with included/excluded/conflict/stale
   activation decisions and cleanup remaining marker count `0`.
 - Full `pnpm test` passed with 18 test files and 99 tests.
+
+## Slice 06
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/db test -- activationSmoke.test.ts
+pnpm typecheck
+pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:activation
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+pnpm test
+```
+
+Results:
+
+- RED CLI test failed because doctor did not print activation checks and
+  `deriveActivationReadiness` was not exported.
+- Added `packages/db/src/activationReadiness.ts` with activation runtime
+  readiness counts over search documents, retrieval candidates, activation
+  decisions, context items, and context exclusions.
+- Added doctor checks for activation domain contracts, activation engine
+  surface, activation smoke command availability, activation runtime proof,
+  broad context dump absence, and core `requiredSkills` absence.
+- GREEN CLI test passed with 54 tests.
+- Targeted DB test passed with 10 test files and 25 tests.
+- `pnpm typecheck` passed.
+- No-DB doctor passed and reported activation preview, smoke command available,
+  runtime proof skipped, broad context dump absent, and core `requiredSkills`
+  absent.
+- Live activation smoke passed with cleanup remaining marker count `0`.
+- DB-backed doctor passed and reported activation runtime proof ready
+  `(decisions 22, inclusions 21, exclusions 1)` plus activation readiness
+  `ready (domain contracts, dependencies, and runtime proof present)`.
+- Full `pnpm test` passed with 18 test files and 100 tests.

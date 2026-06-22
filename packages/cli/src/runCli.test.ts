@@ -31,6 +31,7 @@ import type {
 import {
   deriveBrainStoreReadiness,
   deriveHarnessPersistenceReadiness,
+  deriveActivationReadiness,
   deriveMemoryGovernanceReadiness,
   deriveRetrievalSubstrateReadiness,
   deriveSourceGraphReadiness
@@ -377,6 +378,14 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Retrieval substrate readiness: preview only (set KRN_DATABASE_URL and run retrieval substrate smoke for persistence proof)"
     );
+    expect(result.stdout).toContain("Activation domain contracts: present");
+    expect(result.stdout).toContain("Activation smoke: available (pnpm db:smoke:activation)");
+    expect(result.stdout).toContain("Activation smoke runtime proof: skipped (Postgres not configured)");
+    expect(result.stdout).toContain(
+      "Activation readiness: preview only (set KRN_DATABASE_URL and run activation smoke for runtime proof)"
+    );
+    expect(result.stdout).toContain("Broad context dump: absent");
+    expect(result.stdout).toContain("Core requiredSkills field: absent");
     expect(result.stdout).toContain("Separate vector/search DB: absent");
     expect(result.stdout).toContain("Naive RAG dump command: absent");
     expect(result.stdout).toContain("Runtime markdown memory: absent");
@@ -581,6 +590,58 @@ describe("runCli", () => {
     ).toEqual({
       label: "Retrieval substrate readiness",
       status: "blocked (forbidden retrieval infrastructure present)"
+    });
+  });
+
+  it("distinguishes doctor activation readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (3/3 applied)" }
+    ];
+    const activationReady = [
+      { label: "Activation domain contracts", status: "present" },
+      { label: "Activation engine surface", status: "present" },
+      { label: "Activation smoke", status: "available (pnpm db:smoke:activation)" },
+      {
+        label: "Activation smoke runtime proof",
+        status: "ready (decisions 6, inclusions 2, exclusions 4)"
+      },
+      { label: "Broad context dump", status: "absent" },
+      { label: "Core requiredSkills field", status: "absent" }
+    ];
+
+    expect(
+      deriveActivationReadiness(
+        postgresReady,
+        { label: "Source graph readiness", status: "ready (schema present)" },
+        { label: "Memory governance readiness", status: "ready (schema present)" },
+        { label: "Retrieval substrate readiness", status: "ready (schema present)" },
+        activationReady
+      )
+    ).toEqual({
+      label: "Activation readiness",
+      status: "ready (domain contracts, dependencies, and runtime proof present)"
+    });
+
+    expect(
+      deriveActivationReadiness(
+        postgresReady,
+        { label: "Source graph readiness", status: "ready (schema present)" },
+        { label: "Memory governance readiness", status: "ready (schema present)" },
+        { label: "Retrieval substrate readiness", status: "ready (schema present)" },
+        [
+          ...activationReady.slice(0, 3),
+          {
+            label: "Activation smoke runtime proof",
+            status: "unverified (run pnpm db:smoke:activation)"
+          },
+          ...activationReady.slice(4)
+        ]
+      )
+    ).toEqual({
+      label: "Activation readiness",
+      status: "runtime unverified (run pnpm db:smoke:activation)"
     });
   });
 

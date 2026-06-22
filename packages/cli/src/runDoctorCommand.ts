@@ -1,10 +1,12 @@
 import {
   access,
+  readdir,
   readFile
 } from "node:fs/promises";
 import path from "node:path";
 import {
   inspectHarnessPersistenceReadiness,
+  inspectActivationReadiness,
   inspectMemoryGovernanceReadiness,
   inspectMigrationReadiness,
   inspectRetrievalSubstrateReadiness,
@@ -514,6 +516,114 @@ export const deriveRetrievalSubstrateReadiness = (
   };
 };
 
+export const deriveActivationReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  sourceGraphReadiness: DoctorCheck,
+  memoryGovernanceReadiness: DoctorCheck,
+  retrievalSubstrateReadiness: DoctorCheck,
+  activationChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const domainStatus = findCheckStatus(activationChecks, "Activation domain contracts");
+  const engineStatus = findCheckStatus(activationChecks, "Activation engine surface");
+  const smokeAvailable = hasStatusPrefix(
+    activationChecks,
+    "Activation smoke",
+    "available"
+  );
+  const runtimeProofStatus = findCheckStatus(
+    activationChecks,
+    "Activation smoke runtime proof"
+  );
+  const broadDumpStatus = findCheckStatus(activationChecks, "Broad context dump");
+  const requiredSkillsStatus = findCheckStatus(activationChecks, "Core requiredSkills field");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Activation readiness",
+      status: "preview only (set KRN_DATABASE_URL and run activation smoke for runtime proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Activation readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Activation readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  if (broadDumpStatus === "present" || requiredSkillsStatus === "present") {
+    return {
+      label: "Activation readiness",
+      status: "blocked (forbidden activation surface present)"
+    };
+  }
+
+  if (domainStatus !== "present") {
+    return {
+      label: "Activation readiness",
+      status: "incomplete (activation domain contracts missing)"
+    };
+  }
+
+  if (engineStatus !== "present") {
+    return {
+      label: "Activation readiness",
+      status: "incomplete (activation engine surface missing)"
+    };
+  }
+
+  if (!smokeAvailable) {
+    return {
+      label: "Activation readiness",
+      status: "incomplete (activation smoke command missing)"
+    };
+  }
+
+  if (
+    sourceGraphReadiness.status.startsWith("blocked") ||
+    memoryGovernanceReadiness.status.startsWith("blocked") ||
+    retrievalSubstrateReadiness.status.startsWith("blocked")
+  ) {
+    return {
+      label: "Activation readiness",
+      status: "blocked (activation dependency blocked)"
+    };
+  }
+
+  if (
+    sourceGraphReadiness.status.startsWith("ready") !== true ||
+    memoryGovernanceReadiness.status.startsWith("ready") !== true ||
+    retrievalSubstrateReadiness.status.startsWith("ready") !== true
+  ) {
+    return {
+      label: "Activation readiness",
+      status: "runtime unverified (source, memory, or retrieval readiness incomplete)"
+    };
+  }
+
+  if (runtimeProofStatus?.startsWith("ready") !== true) {
+    return {
+      label: "Activation readiness",
+      status: "runtime unverified (run pnpm db:smoke:activation)"
+    };
+  }
+
+  return {
+    label: "Activation readiness",
+    status: "ready (domain contracts, dependencies, and runtime proof present)"
+  };
+};
+
 const readScriptStatus = (
   packageJson: Record<string, unknown> | undefined,
   scriptName: string,
@@ -767,6 +877,31 @@ const checkSourceGraph = async (
 const readOptionalText = async (filePath: string): Promise<string> => {
   try {
     return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+};
+
+const readTreeText = async (targetPath: string): Promise<string> => {
+  try {
+    const entries = await readdir(targetPath, { withFileTypes: true });
+    const texts = await Promise.all(
+      entries.map(async (entry) => {
+        const entryPath = path.join(targetPath, entry.name);
+
+        if (entry.isDirectory()) {
+          return readTreeText(entryPath);
+        }
+
+        if (!entry.name.endsWith(".ts")) {
+          return "";
+        }
+
+        return readOptionalText(entryPath);
+      })
+    );
+
+    return texts.join("\n");
   } catch {
     return "";
   }
@@ -1081,6 +1216,155 @@ const checkRetrievalSubstrate = async (
   }
 };
 
+const checkActivation = async (
+  repoRoot: string,
+  databaseUrl: string | undefined,
+  postgresChecks: readonly DoctorCheck[]
+): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const smokeCheck = {
+    label: "Activation smoke",
+    status: readScriptStatus(packageJson, "db:smoke:activation", "krn db smoke activation")
+  };
+  const coreActivationText = await readOptionalText(
+    path.join(repoRoot, "packages", "core", "src", "activation.ts")
+  );
+  const coreIndexText = await readOptionalText(
+    path.join(repoRoot, "packages", "core", "src", "index.ts")
+  );
+  const coreText = await readTreeText(path.join(repoRoot, "packages", "core", "src"));
+  const activationEngineText = await readOptionalText(
+    path.join(repoRoot, "packages", "harness", "src", "activation", "activationEngine.ts")
+  );
+  const activationIndexText = await readOptionalText(
+    path.join(repoRoot, "packages", "harness", "src", "activation", "index.ts")
+  );
+  const cliText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "parseArgs.ts")
+  );
+  const planText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "runPlanCommand.ts")
+  );
+  const requiredContracts = [
+    "ActivationPolicy",
+    "TrustAssessment",
+    "ContextROI",
+    "ActivationTrace",
+    "ActivationInput",
+    "ActivationResult",
+    "ActivationAbstention",
+    "ConflictSet",
+    "ContextBudget"
+  ];
+  const activationDomainPresent =
+    requiredContracts.every((contract) => coreActivationText.includes(contract)) &&
+    coreIndexText.includes("./activation");
+  const activationEnginePresent =
+    activationEngineText.includes("retrieveActivationCandidates") &&
+    activationEngineText.includes("persistActivationTrace") &&
+    activationIndexText.includes("./conflictFilter") &&
+    activationIndexText.includes("./contextRoi") &&
+    activationIndexText.includes("./assembleContext");
+  const broadContextDumpPresent =
+    cliText.includes("rag-dump") ||
+    cliText.includes("rag dump") ||
+    cliText.includes("dump-context") ||
+    cliText.includes("context-dump") ||
+    planText.includes("raw onboarding") ||
+    await pathExists(path.join(repoRoot, "packages", "context-dump"));
+  const requiredSkillsPresent = coreText.includes("requiredSkills");
+  const forbiddenChecks = [
+    {
+      label: "Broad context dump",
+      status: broadContextDumpPresent ? "present" : "absent"
+    },
+    {
+      label: "Core requiredSkills field",
+      status: requiredSkillsPresent ? "present" : "absent"
+    }
+  ];
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const baseChecks = [
+    {
+      label: "Activation domain contracts",
+      status: activationDomainPresent ? "present" : "missing"
+    },
+    {
+      label: "Activation engine surface",
+      status: activationEnginePresent ? "present" : "missing"
+    },
+    smokeCheck
+  ];
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return [
+      ...baseChecks,
+      {
+        label: "Activation smoke runtime proof",
+        status: "skipped (Postgres not configured)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return [
+      ...baseChecks,
+      {
+        label: "Activation smoke runtime proof",
+        status: "skipped (Postgres unreachable)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  if (
+    databaseUrl === undefined ||
+    databaseUrl.trim().length === 0 ||
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true
+  ) {
+    return [
+      ...baseChecks,
+      {
+        label: "Activation smoke runtime proof",
+        status: "skipped (brain store not ready)"
+      },
+      ...forbiddenChecks
+    ];
+  }
+
+  try {
+    const report = await inspectActivationReadiness({
+      databaseUrl
+    });
+
+    return [
+      ...baseChecks,
+      {
+        label: "Activation smoke runtime proof",
+        status: report.runtimeProofReady
+          ? `ready (decisions ${report.activationDecisionCount}, inclusions ${report.contextItemCount}, exclusions ${report.contextExclusionCount})`
+          : "unverified (run pnpm db:smoke:activation)"
+      },
+      ...forbiddenChecks
+    ];
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown activation readiness error";
+
+    return [
+      ...baseChecks,
+      {
+        label: "Activation smoke runtime proof",
+        status: `failed (${message})`
+      },
+      ...forbiddenChecks
+    ];
+  }
+};
+
 const checkRepoFiles = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const agentsPath = path.join(repoRoot, "AGENTS.md");
   const agentsPresent = await pathExists(agentsPath);
@@ -1168,17 +1452,39 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     runtime.env.KRN_DATABASE_URL,
     postgresChecks
   );
+  const sourceGraphReadiness = deriveSourceGraphReadiness(postgresChecks, sourceGraphChecks);
+  const memoryGovernanceReadiness = deriveMemoryGovernanceReadiness(
+    postgresChecks,
+    memoryGovernanceChecks
+  );
+  const retrievalSubstrateReadiness = deriveRetrievalSubstrateReadiness(
+    postgresChecks,
+    retrievalSubstrateChecks
+  );
+  const activationChecks = await checkActivation(
+    repoRoot,
+    runtime.env.KRN_DATABASE_URL,
+    postgresChecks
+  );
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
     ...harnessPersistenceChecks,
     deriveHarnessPersistenceReadiness(postgresChecks, harnessPersistenceChecks),
     ...sourceGraphChecks,
-    deriveSourceGraphReadiness(postgresChecks, sourceGraphChecks),
+    sourceGraphReadiness,
     ...memoryGovernanceChecks,
-    deriveMemoryGovernanceReadiness(postgresChecks, memoryGovernanceChecks),
+    memoryGovernanceReadiness,
     ...retrievalSubstrateChecks,
-    deriveRetrievalSubstrateReadiness(postgresChecks, retrievalSubstrateChecks),
+    retrievalSubstrateReadiness,
+    ...activationChecks,
+    deriveActivationReadiness(
+      postgresChecks,
+      sourceGraphReadiness,
+      memoryGovernanceReadiness,
+      retrievalSubstrateReadiness,
+      activationChecks
+    ),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [
@@ -1223,11 +1529,19 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
       return check.status.startsWith("blocked");
     }
 
+    if (check.label === "Activation readiness") {
+      return check.status.startsWith("blocked");
+    }
+
     if (check.label === "Runtime markdown memory" || check.label === "Automatic memory mutation") {
       return check.status === "present";
     }
 
     if (check.label === "Separate vector/search DB" || check.label === "Naive RAG dump command") {
+      return check.status === "present";
+    }
+
+    if (check.label === "Broad context dump" || check.label === "Core requiredSkills field") {
       return check.status === "present";
     }
 

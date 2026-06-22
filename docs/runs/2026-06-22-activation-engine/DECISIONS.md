@@ -233,3 +233,47 @@ Slice 05 type-safety notes:
 - Validation/narrowing: no new external input boundary.
 - Public type changes: none.
 - Type-safety exceptions: none; no `any` or double assertions.
+
+Slice 06 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN doctor activation
+  readiness coverage.
+- `activation-engine`: used to keep doctor checks focused on activation
+  contracts, engine surface, smoke proof, forbidden broad context dump, and
+  context decision persistence.
+- `brain-store-schema`: used for activation runtime proof counts over
+  retrieval/context tables.
+- `typescript-type-safety`: used for typed activation readiness reports and
+  doctor check derivation.
+
+Slice 06 decisions:
+
+- Source: `packages/db/src/schema/retrieval.ts` and
+  `packages/db/src/activationReadiness.ts`.
+  Mechanism: activation proof is observable through persisted activation
+  decisions plus context items/exclusions.
+  KRN implication: doctor can report activation runtime proof without running
+  smoke itself.
+  Decision: doctor reads durable activation/context counts and treats the
+  self-cleaning smoke as an explicit separate proof command.
+  Rejection/falsifier: if doctor has to execute smoke or mutate DB state to
+  report readiness, the check is not read-only.
+- Source: `packages/core/src/activation.ts` and `packages/core/src`.
+  Mechanism: activation contracts live in core, while skill IDs and
+  `requiredSkills` must not become core fields.
+  KRN implication: doctor should report contract presence and `requiredSkills`
+  absence as separate checks.
+  Decision: add read-only file checks for activation contracts and forbidden
+  core `requiredSkills`.
+  Rejection/falsifier: if `requiredSkills` appears in core, activation
+  readiness is blocked.
+
+Slice 06 type-safety notes:
+
+- Boundary classification: DB readiness report, doctor check derivation, and
+  read-only filesystem checks.
+- Validation/narrowing: JSON package reads remain behind `readJsonObject`;
+  DB rows stay behind typed SQL result interfaces.
+- Public type changes: `@krn/db` exports `inspectActivationReadiness`;
+  `@krn/cli` exports `deriveActivationReadiness`.
+- Type-safety exceptions: none; no `any` or double assertions.
