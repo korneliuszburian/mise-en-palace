@@ -14,8 +14,8 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 08 it still lacks doctor
-readiness for adapter/worker surfaces.
+The current surface is not M26-complete. After Slice 09 it still lacks dogfood,
+anti-rot, and final handoff.
 
 ## Files Inspected
 
@@ -170,7 +170,9 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Add doctor readiness for adapter and worker surfaces.
+- Run and record M26.10 dogfood.
+- Run and record M26.11 final anti-rot audit.
+- Write final M22-M26 handoff.
 
 ## Non-Gaps
 
@@ -312,4 +314,19 @@ M26.08 resolved worker smoke proof:
 - smoke does not add Redis/Kafka, a daemon, actual job execution, embeddings,
   or a dependency from `packages/db` to `@krn/workers`.
 
-Remaining M26 work is doctor readiness, dogfood, anti-rot, and final handoff.
+## Slice 09 Update
+
+M26.09 resolved doctor readiness for adapter and worker surfaces:
+
+- `krn doctor` reports Codex adapter renderer availability;
+- `krn doctor` reports execution brief smoke command availability;
+- `krn doctor` reports hook expectation projection availability;
+- `krn doctor` reports absence of a Codex execution runner and KRN MCP server;
+- `krn doctor` reports worker job schema and repository availability;
+- `krn doctor` reports worker job smoke command availability;
+- `krn doctor` reports absence of Redis/Kafka queue infrastructure and a broad
+  worker daemon;
+- live DB doctor reports Codex adapter readiness and worker job readiness as
+  ready, without invoking smoke commands itself.
+
+Remaining M26 work is dogfood, anti-rot, and final handoff.

@@ -2,53 +2,51 @@
 
 Objective:
 Continue M26 Codex Adapter Execution Brief + Hook Expectations + Worker Job
-Skeleton. M26.08 worker job smoke path is complete; next implementation slice
-is M26.09 doctor Codex adapter / worker readiness.
+Skeleton. M26.09 doctor Codex adapter / worker readiness is complete; next
+implementation slice is M26.10 dogfood Codex adapter and worker skeleton.
 
 Last verified state:
 Latest pushed commit before this slice was
-`a43d965 feat(db): add worker job repository methods`. This slice added
-`pnpm db:smoke:worker-jobs`, `krn db smoke worker-jobs`, CLI report
-formatting, and `runWorkerJobSmokeCheck` in `@krn/db`. RED CLI tests failed on
-missing `./workerJobSmoke.js` and parser exit code `2`; RED DB tests failed on
-missing `./workerJobSmoke.js`. GREEN focused tests passed. Live escalated
-`KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
-db:smoke:worker-jobs` passed: enqueued `6`, queued readback `6`, running `6`,
-succeeded `2`, skipped `2`, failed `2`, cleanup deleted `6`, remaining marker
-count `0`. Full `pnpm typecheck`, `pnpm test`, and `git diff --check` passed.
+`a752943 test(db): add worker job skeleton smoke path`. This slice added
+read-only `krn doctor` checks for Codex adapter renderer, execution brief smoke
+command, hook expectation projection, Codex execution runner absence, KRN MCP
+server absence, worker job schema, worker job repository, worker job smoke
+command, Redis/Kafka queue absence, broad worker daemon absence, and aggregate
+adapter/worker readiness. RED CLI tests failed on missing doctor output and
+missing derive helpers. GREEN focused CLI test passed with 62 tests. Live DB
+doctor passed before and after smokes with Codex adapter readiness and worker
+job readiness ready. Live `pnpm db:smoke:codex-adapter` and
+`pnpm db:smoke:worker-jobs` passed. Full `pnpm typecheck`, `pnpm test`, and
+`git diff --check` passed.
 
 Changed files:
-`package.json`, `packages/cli/src/parseArgs.ts`,
-`packages/cli/src/runCli.test.ts`, `packages/cli/src/runDbSmokeCommand.ts`,
-`packages/cli/src/workerJobSmoke.ts`, `packages/cli/src/workerJobSmoke.test.ts`,
-`packages/db/src/index.ts`, `packages/db/src/workerJobSmoke.ts`,
-`packages/db/src/workerJobSmoke.test.ts`, root `PLAN.md`, and
-`docs/runs/2026-06-22-codex-adapter-worker/*`.
+`packages/cli/src/runDoctorCommand.ts`, `packages/cli/src/runCli.test.ts`,
+root `PLAN.md`, and `docs/runs/2026-06-22-codex-adapter-worker/*`.
 
 Decisions:
-Worker job smoke proves the DB skeleton lifecycle only. It enqueues one job per
-M26 type, verifies queued readback, marks all jobs running, then proves a
-controlled succeeded/skipped/failed split. It does not execute maintenance
-work, call embeddings, add Redis/Kafka, start a daemon, spawn processes, or
-import `@krn/workers` into `packages/db`.
+Doctor remains read-only. It reports surface availability and forbidden
+runtime checks but does not invoke Codex, MCP, smoke commands, or worker
+runtimes. Smoke proof remains explicit operator-run evidence from
+`pnpm db:smoke:codex-adapter` and `pnpm db:smoke:worker-jobs`.
 
 Blockers/risks:
-No hard blocker. M26 is incomplete until doctor readiness, dogfood, final
-anti-rot, and final handoff are complete. The sandboxed live smoke attempt hit
-`tsx` IPC `listen EPERM`; the same command passed outside sandbox.
+No hard blocker. M26 is incomplete until M26.10 dogfood, M26.11 final anti-rot,
+and final handoff are complete. Direct `tsx` CLI commands may need unsandboxed
+execution because sandboxed `tsx` IPC can fail with `listen EPERM`.
 
 Context selectors:
-`AGENTS.md`, `docs/KRN_KERNEL.md`, `GOAL.md` M26.09,
+`AGENTS.md`, `docs/KRN_KERNEL.md`, `GOAL.md` M26.10,
 `docs/runs/2026-06-22-codex-adapter-worker/PROGRESS.md`,
 `docs/runs/2026-06-22-codex-adapter-worker/VERIFICATION.md`,
-`packages/cli/src/runDoctorCommand.ts`, `packages/cli/src/runDbSmokeCommand.ts`,
-`packages/cli/src/parseArgs.ts`, `packages/db/src/workerJobSmoke.ts`,
-`packages/cli/src/codexAdapterSmoke.ts`, and
-`packages/db/src/repositories/DrizzleWorkerJobRepository.ts`.
+`packages/cli/src/runDoctorCommand.ts`, `packages/cli/src/runPlanCommand.ts`,
+`packages/cli/src/runCodexBriefCommand.ts`,
+`packages/cli/src/runEvidenceCaptureCommand.ts`,
+`packages/cli/src/runDbSmokeCommand.ts`, and
+`packages/db/src/workerJobSmoke.ts`.
 
 Next action:
-Start M26.09 doctor Codex adapter / worker readiness.
+Start M26.10 dogfood Codex adapter and worker skeleton.
 
 Do not reread:
-`docs/materials/`, broad historical docs, or old repo topology unless a later
-M26 slice explicitly needs raw source/audit material.
+`docs/materials/`, broad historical docs, or old repo topology unless M26.10
+explicitly needs raw source/audit material.

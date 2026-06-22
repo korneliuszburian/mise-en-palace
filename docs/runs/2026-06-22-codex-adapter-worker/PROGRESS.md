@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 08 worker job smoke path complete.
+Current slice: Slice 09 doctor Codex adapter / worker readiness complete.
 
 Completed:
 
@@ -89,6 +89,16 @@ Completed:
 - Slice 08 remains a skeleton proof: no daemon, no loop, no Redis/Kafka, no
   job execution, no embedding calls, and no `@krn/workers` import into
   `packages/db`.
+- Slice 09 added Codex adapter readiness reporting to `krn doctor`:
+  renderer, execution brief smoke command, hook expectation projection,
+  forbidden Codex execution runner, forbidden KRN MCP server, and aggregate
+  readiness.
+- Slice 09 added worker job readiness reporting to `krn doctor`: worker job
+  schema, worker job repository, worker job smoke command, forbidden
+  Redis/Kafka queue, forbidden broad worker daemon, and aggregate readiness.
+- Slice 09 keeps doctor read-only. It reports smoke command availability and
+  readiness surfaces; the actual runtime proof remains the explicit
+  `pnpm db:smoke:codex-adapter` and `pnpm db:smoke:worker-jobs` commands.
 
 Verification:
 
@@ -277,7 +287,33 @@ Verification:
   `packages/db`. The Redis/Kafka/background-loop scan only matched the existing
   `for (;;)` repo-root search in `runDbSmokeCommand.ts`, not worker runtime
   code.
+- Slice 09 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed with
+  missing Codex adapter / worker doctor output and missing
+  `deriveCodexAdapterReadiness` / `deriveWorkerJobReadiness`.
+- Slice 09 GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
+  3 test files and 62 tests.
+- No-env `pnpm --filter @krn/cli krn doctor` passed outside sandbox and reports
+  Codex adapter / worker readiness as preview-only with forbidden surfaces
+  absent.
+- Live DB `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  --filter @krn/cli krn doctor` passed before and after smokes with Codex
+  adapter readiness and worker job readiness `ready`.
+- Live `pnpm db:smoke:codex-adapter` passed with objective/non-goals,
+  explicit exclusions, evidence contract, 1 source claim, 1 memory record,
+  5 hook expectations, 0 Codex invocations, and cleanup count `0`.
+- Live `pnpm db:smoke:worker-jobs` passed with 6 enqueued/read-back/running
+  jobs, 2 succeeded, 2 skipped, 2 failed, 6 deleted, and cleanup count `0`.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed across package outputs totaling 26 test files and 120
+  tests.
+- `git diff --check`: passed.
+- Slice 09 TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Slice 09 bounded forbidden scans returned no Codex execution command/server
+  entrypoint, no Redis/Kafka dependency in project package manifests, no broad
+  worker loop/spawn/exec in worker surfaces, and no `@krn/workers` import in
+  `packages/db`.
 
 Next:
 
-- Start M26.09 doctor Codex adapter / worker readiness.
+- Start M26.10 dogfood Codex adapter and worker skeleton.

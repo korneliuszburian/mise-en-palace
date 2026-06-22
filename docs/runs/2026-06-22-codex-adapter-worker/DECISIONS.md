@@ -569,3 +569,60 @@
   `WorkerJobSmokeReport`, and `runWorkerJobSmokeCheck`.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
+
+## Slice 09 Decisions
+
+- Source: `GOAL.md` M26.09.
+  Mechanism: M26.09 requires doctor checks for Codex adapter renderer,
+  execution brief smoke, hook expectation projection, no Codex execution
+  runner, no MCP server, worker job schema, worker job smoke, no Redis/Kafka,
+  and no broad worker daemon.
+  KRN implication: `krn doctor` should report adapter/worker readiness and
+  forbidden surfaces, while remaining a read-only diagnostic command.
+  Decision: add `deriveCodexAdapterReadiness`,
+  `deriveWorkerJobReadiness`, `checkCodexAdapter`, and `checkWorkerJobs` to the
+  CLI doctor path. Doctor reports command availability and surface readiness;
+  runtime proof stays in explicit smoke commands run by the operator.
+  Rejection/falsifier: if doctor invokes Codex, starts MCP, runs smoke commands,
+  starts worker loops, or treats markdown docs as runtime proof, the boundary is
+  broken.
+
+- Source: `docs/KRN_KERNEL.md` and `AGENTS.md`.
+  Mechanism: KRN should build machinery that verifies context/application
+  surfaces without adding dashboard, benchmark, broad multi-agent, file-backed
+  memory, MCP, or broad worker runtime in this phase.
+  KRN implication: readiness checks can inspect package manifests and concrete
+  source entrypoints, but must not scan raw docs as truth or depend on lockfile
+  optional peers as runtime infrastructure.
+  Decision: narrow forbidden Redis/Kafka detection to project package manifests
+  and forbidden Codex/MCP detection to command entrypoints and package paths,
+  excluding doctor guard strings and tests.
+  Rejection/falsifier: if doctor flags its own labels or optional peer metadata
+  as runtime infrastructure, the check is too broad.
+
+## Slice 09 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN doctor output and
+  derive-readiness coverage.
+- `superpowers:systematic-debugging`: used to trace false-positive doctor
+  blocker output before narrowing scans.
+- `source-to-decision`: used to record the read-only doctor boundary and
+  forbidden-surface scan scope.
+- `typescript-type-safety`: used for exported doctor derive helpers and strict
+  file/JSON boundary handling.
+- `brain-store-schema`: used to keep worker job readiness tied to existing
+  Postgres schema/repository surfaces without schema changes.
+- `superpowers:verification-before-completion`: used before claiming live
+  doctor, smoke commands, typecheck, tests, or scans passed.
+
+## Slice 09 Type-Safety Notes
+
+- Boundary classification: CLI doctor output, repo file reads, package manifest
+  JSON parsing, and static source-surface scans.
+- Validation/narrowing: existing `readJsonObject` keeps package JSON as
+  `Record<string, unknown>` until script checks narrow string values.
+- Public type changes: `runDoctorCommand.ts` now exports
+  `deriveCodexAdapterReadiness` and `deriveWorkerJobReadiness` for focused
+  tests.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.

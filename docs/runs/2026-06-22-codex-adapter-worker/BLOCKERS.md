@@ -4,7 +4,9 @@ No hard blocker for M26.
 
 Known gaps for later M26 slices:
 
-- doctor does not yet report Codex adapter or worker readiness.
+- M26.10 dogfood run not yet recorded;
+- M26.11 final anti-rot audit not yet run;
+- final M22-M26 handoff not yet written.
 
 Resolved in M26.01:
 
@@ -78,6 +80,19 @@ Resolved in M26.08:
 - smoke cleanup deletes all marker jobs and proves remaining marker count zero;
 - smoke code does not add Redis/Kafka, a daemon, actual job execution, or a
   `packages/db` dependency on `@krn/workers`.
+
+Resolved in M26.09:
+
+- `krn doctor` reports Codex adapter renderer, execution brief smoke command,
+  hook expectation projection, Codex execution runner absence, KRN MCP server
+  absence, and aggregate Codex adapter readiness;
+- `krn doctor` reports worker job schema, worker job repository, worker job
+  smoke command, Redis/Kafka queue absence, broad worker daemon absence, and
+  aggregate worker job readiness;
+- live DB doctor reports Codex adapter readiness and worker job readiness as
+  ready;
+- doctor remains read-only and does not invoke smoke commands, Codex, MCP, or
+  worker runtime.
 
 Non-goals that remain intentionally blocked:
 

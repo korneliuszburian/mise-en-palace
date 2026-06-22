@@ -463,3 +463,64 @@ Results:
 - Redis/Kafka/background-loop scan returned only the existing
   `packages/cli/src/runDbSmokeCommand.ts:58` repo-root `for (;;)` search, not
   worker runtime or daemon code.
+
+## Slice 09
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:codex-adapter
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:worker-jobs
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor
+pnpm typecheck
+pnpm test
+git diff --check
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/cli/src/runDoctorCommand.ts packages/cli/src/runCli.test.ts
+rg -n "codex execute|codex run|codex exec|runCodexExecution|invokeCodex\(|createMcpServer|startMcpServer|spawn\(\"codex\"|spawn\('codex'|exec\(\"codex\"|exec\('codex'" packages/cli/src/parseArgs.ts packages/cli/src/runCli.ts packages/cli/src/runCodexBriefCommand.ts packages/codex-adapter/src --glob '*.ts'
+rg -n '"redis"|redis@|ioredis|@upstash/redis|"kafka"|kafka@|kafkajs' package.json packages/*/package.json
+rg -n "setInterval|while \(|for \(;;\)|spawn\(|exec\(|requiresBackgroundLoop: true" packages/workers/src packages/db/src/repositories packages/db/src/workerJobSmoke.ts --glob '*.ts'
+rg -n "@krn/workers" packages/db/src packages/db/package.json
+```
+
+Results:
+
+- RED CLI test failed because `krn doctor` did not print Codex adapter /
+  worker readiness and `deriveCodexAdapterReadiness` /
+  `deriveWorkerJobReadiness` were missing.
+- Added read-only Codex adapter doctor checks for renderer, execution brief
+  smoke command, hook expectation projection, forbidden Codex execution runner,
+  and forbidden KRN MCP server.
+- Added read-only worker job doctor checks for worker job schema, worker job
+  repository, worker job smoke command, forbidden Redis/Kafka queue, and
+  forbidden broad worker daemon.
+- Initial GREEN attempt failed because broad static scans read
+  `runDoctorCommand.ts` itself and the lockfile optional peer
+  `@upstash/redis`. The scans were narrowed to project package manifests and
+  real command entrypoints.
+- GREEN `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 3 test
+  files and 62 tests.
+- No-env `krn doctor` passed outside sandbox and reported Codex adapter /
+  worker readiness preview-only, with forbidden surfaces absent.
+- Live DB `krn doctor` passed before smokes and reported Codex adapter
+  readiness and worker job readiness ready.
+- Live `pnpm db:smoke:codex-adapter` passed with 5 hook expectations,
+  0 Codex invocations, and cleanup remaining marker count `0`.
+- Live `pnpm db:smoke:worker-jobs` passed with 6 enqueued/read-back/running
+  jobs, 2 succeeded, 2 skipped, 2 failed, 6 deleted, and cleanup remaining
+  marker count `0`.
+- Live DB `krn doctor` passed again after smokes with Codex adapter readiness
+  and worker job readiness still ready.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across package outputs totaling 26 test files and 120
+  tests.
+- `git diff --check` passed.
+- TypeScript hygiene scan returned no matches for `any`, double assertions, or
+  TypeScript suppressions.
+- Bounded forbidden scans returned no Codex execution command/server entrypoint,
+  no Redis/Kafka dependency in project package manifests, no broad worker
+  loop/spawn/exec in worker surfaces, and no `@krn/workers` import in
+  `packages/db`.

@@ -624,6 +624,149 @@ export const deriveActivationReadiness = (
   };
 };
 
+export const deriveCodexAdapterReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  codexAdapterChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const rendererStatus = findCheckStatus(codexAdapterChecks, "Codex adapter renderer");
+  const smokeAvailable = hasStatusPrefix(
+    codexAdapterChecks,
+    "Execution brief smoke",
+    "available"
+  );
+  const hookProjectionStatus = findCheckStatus(
+    codexAdapterChecks,
+    "Hook expectation projection"
+  );
+  const codexRunnerStatus = findCheckStatus(codexAdapterChecks, "Codex execution runner");
+  const mcpServerStatus = findCheckStatus(codexAdapterChecks, "KRN MCP server");
+
+  if (codexRunnerStatus === "present" || mcpServerStatus === "present") {
+    return {
+      label: "Codex adapter readiness",
+      status: "blocked (forbidden Codex execution or MCP server present)"
+    };
+  }
+
+  if (rendererStatus !== "present") {
+    return {
+      label: "Codex adapter readiness",
+      status: "incomplete (Codex adapter renderer missing)"
+    };
+  }
+
+  if (hookProjectionStatus !== "present") {
+    return {
+      label: "Codex adapter readiness",
+      status: "incomplete (hook expectation projection missing)"
+    };
+  }
+
+  if (!smokeAvailable) {
+    return {
+      label: "Codex adapter readiness",
+      status: "incomplete (Codex adapter smoke command missing)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Codex adapter readiness",
+      status: "preview only (set KRN_DATABASE_URL and run codex adapter smoke for proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Codex adapter readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Codex adapter readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  return {
+    label: "Codex adapter readiness",
+    status: "ready (renderer, hook projection, smoke command, and forbidden surfaces checked)"
+  };
+};
+
+export const deriveWorkerJobReadiness = (
+  postgresChecks: readonly DoctorCheck[],
+  workerJobChecks: readonly DoctorCheck[]
+): DoctorCheck => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const schemaStatus = findCheckStatus(workerJobChecks, "Worker job schema");
+  const repositoryStatus = findCheckStatus(workerJobChecks, "Worker job repository");
+  const smokeAvailable = hasStatusPrefix(workerJobChecks, "Worker job smoke", "available");
+  const redisKafkaStatus = findCheckStatus(workerJobChecks, "Redis/Kafka queue");
+  const daemonStatus = findCheckStatus(workerJobChecks, "Broad worker daemon");
+
+  if (redisKafkaStatus === "present" || daemonStatus === "present") {
+    return {
+      label: "Worker job readiness",
+      status: "blocked (forbidden worker runtime present)"
+    };
+  }
+
+  if (schemaStatus !== "present") {
+    return {
+      label: "Worker job readiness",
+      status: "incomplete (worker job schema missing)"
+    };
+  }
+
+  if (repositoryStatus !== "present") {
+    return {
+      label: "Worker job readiness",
+      status: "incomplete (worker job repository missing)"
+    };
+  }
+
+  if (!smokeAvailable) {
+    return {
+      label: "Worker job readiness",
+      status: "incomplete (worker job smoke command missing)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      label: "Worker job readiness",
+      status: "preview only (set KRN_DATABASE_URL and run worker job smoke for proof)"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      label: "Worker job readiness",
+      status: "blocked (Postgres unreachable)"
+    };
+  }
+
+  if (pgvectorStatus !== "available" || migrationStatus?.startsWith("verified") !== true) {
+    return {
+      label: "Worker job readiness",
+      status: "blocked (brain store not ready)"
+    };
+  }
+
+  return {
+    label: "Worker job readiness",
+    status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
+  };
+};
+
 const readScriptStatus = (
   packageJson: Record<string, unknown> | undefined,
   scriptName: string,
@@ -640,6 +783,170 @@ const readScriptStatus = (
   return typeof scriptValue === "string" && scriptValue.includes(expectedCommand)
     ? `available (pnpm ${scriptName})`
     : `missing (pnpm ${scriptName})`;
+};
+
+const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const adapterIndexText = await readOptionalText(
+    path.join(repoRoot, "packages", "codex-adapter", "src", "index.ts")
+  );
+  const renderExecutionBriefText = await readOptionalText(
+    path.join(repoRoot, "packages", "codex-adapter", "src", "renderExecutionBrief.ts")
+  );
+  const renderHookExpectationsText = await readOptionalText(
+    path.join(repoRoot, "packages", "codex-adapter", "src", "renderHookExpectations.ts")
+  );
+  const contractsText = await readOptionalText(
+    path.join(repoRoot, "packages", "codex-adapter", "src", "contracts.ts")
+  );
+  const cliText = [
+    await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "parseArgs.ts")),
+    await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "runCli.ts")),
+    await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "runCodexBriefCommand.ts"))
+  ].join("\n");
+  const adapterText = await readTreeText(
+    path.join(repoRoot, "packages", "codex-adapter", "src")
+  );
+  const rendererPresent =
+    adapterIndexText.includes("./renderExecutionBrief") &&
+    renderExecutionBriefText.includes("createExecutionBrief") &&
+    renderExecutionBriefText.includes("renderExecutionBriefText");
+  const hookProjectionPresent =
+    contractsText.includes("CodexHookExpectationProjection") &&
+    renderHookExpectationsText.includes("createCodexHookExpectationProjection");
+  const codexRunnerPresent =
+    await pathExists(path.join(repoRoot, "packages", "codex-runner")) ||
+    await pathExists(path.join(repoRoot, "packages", "codex-executor")) ||
+    await pathExists(path.join(repoRoot, "packages", "codex-execution")) ||
+    cliText.includes("runCodexExecution") ||
+    cliText.includes("invokeCodex(") ||
+    cliText.includes("codex execute") ||
+    cliText.includes("codex run") ||
+    cliText.includes("codex exec") ||
+    adapterText.includes("spawn(\"codex\"") ||
+    adapterText.includes("spawn('codex'") ||
+    adapterText.includes("exec(\"codex\"") ||
+    adapterText.includes("exec('codex'");
+  const mcpServerPresent =
+    await pathExists(path.join(repoRoot, "packages", "mcp-server")) ||
+    await pathExists(path.join(repoRoot, "packages", "krn-mcp-server")) ||
+    await pathExists(path.join(repoRoot, "packages", "mcp")) ||
+    cliText.includes("createMcpServer") ||
+    cliText.includes("startMcpServer") ||
+    adapterText.includes("createMcpServer") ||
+    adapterText.includes("startMcpServer");
+
+  return [
+    {
+      label: "Codex adapter renderer",
+      status: rendererPresent ? "present" : "missing"
+    },
+    {
+      label: "Execution brief smoke",
+      status: readScriptStatus(
+        packageJson,
+        "db:smoke:codex-adapter",
+        "krn db smoke codex-adapter"
+      )
+    },
+    {
+      label: "Hook expectation projection",
+      status: hookProjectionPresent ? "present" : "missing"
+    },
+    {
+      label: "Codex execution runner",
+      status: codexRunnerPresent ? "present" : "absent"
+    },
+    {
+      label: "KRN MCP server",
+      status: mcpServerPresent ? "present" : "absent"
+    }
+  ];
+};
+
+const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> => {
+  const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
+  const rootPackageText = await readOptionalText(path.join(repoRoot, "package.json"));
+  const packageManifestTexts = await Promise.all([
+    readOptionalText(path.join(repoRoot, "packages", "cli", "package.json")),
+    readOptionalText(path.join(repoRoot, "packages", "codex-adapter", "package.json")),
+    readOptionalText(path.join(repoRoot, "packages", "core", "package.json")),
+    readOptionalText(path.join(repoRoot, "packages", "db", "package.json")),
+    readOptionalText(path.join(repoRoot, "packages", "harness", "package.json")),
+    readOptionalText(path.join(repoRoot, "packages", "schema", "package.json")),
+    readOptionalText(path.join(repoRoot, "packages", "workers", "package.json"))
+  ]);
+  const schemaText = await readOptionalText(
+    path.join(repoRoot, "packages", "db", "src", "schema", "events.ts")
+  );
+  const repositoryText = await readOptionalText(
+    path.join(repoRoot, "packages", "db", "src", "repositories", "DrizzleWorkerJobRepository.ts")
+  );
+  const workersText = await readTreeText(path.join(repoRoot, "packages", "workers", "src"));
+  const workerRepositoryText = await readTreeText(
+    path.join(repoRoot, "packages", "db", "src", "repositories")
+  );
+  const dependencyText = `${rootPackageText}\n${packageManifestTexts.join("\n")}`.toLowerCase();
+  const schemaPresent =
+    schemaText.includes("workerJobs") &&
+    schemaText.includes("outboxEvents") &&
+    schemaText.includes("workerJobStatus") &&
+    schemaText.includes("skipped");
+  const repositoryPresent =
+    repositoryText.includes("DrizzleWorkerJobRepository") &&
+    repositoryText.includes("enqueueWorkerJob") &&
+    repositoryText.includes("listQueuedWorkerJobs") &&
+    repositoryText.includes("markWorkerJobRunning") &&
+    repositoryText.includes("markWorkerJobSucceeded") &&
+    repositoryText.includes("markWorkerJobSkipped") &&
+    repositoryText.includes("markWorkerJobFailed") &&
+    repositoryText.includes("cleanupTestWorkerJobs");
+  const redisKafkaPresent =
+    dependencyText.includes("\"redis\"") ||
+    dependencyText.includes("redis@") ||
+    dependencyText.includes("ioredis") ||
+    dependencyText.includes("@upstash/redis") ||
+    dependencyText.includes("\"kafka\"") ||
+    dependencyText.includes("kafka@") ||
+    dependencyText.includes("kafkajs");
+  const broadWorkerDaemonPresent =
+    await pathExists(path.join(repoRoot, "packages", "worker-daemon")) ||
+    await pathExists(path.join(repoRoot, "packages", "workers-daemon")) ||
+    await pathExists(path.join(repoRoot, "packages", "job-runner")) ||
+    workersText.includes("setInterval") ||
+    workersText.includes("while (") ||
+    workersText.includes("for (;;)") ||
+    workersText.includes("spawn(") ||
+    workersText.includes("exec(") ||
+    workersText.includes("requiresBackgroundLoop: true") ||
+    workerRepositoryText.includes("requiresBackgroundLoop: true");
+
+  return [
+    {
+      label: "Worker job schema",
+      status: schemaPresent ? "present" : "missing"
+    },
+    {
+      label: "Worker job repository",
+      status: repositoryPresent ? "present" : "missing"
+    },
+    {
+      label: "Worker job smoke",
+      status: readScriptStatus(
+        packageJson,
+        "db:smoke:worker-jobs",
+        "krn db smoke worker-jobs"
+      )
+    },
+    {
+      label: "Redis/Kafka queue",
+      status: redisKafkaPresent ? "present" : "absent"
+    },
+    {
+      label: "Broad worker daemon",
+      status: broadWorkerDaemonPresent ? "present" : "absent"
+    }
+  ];
 };
 
 const checkHarnessPersistence = async (
@@ -1466,6 +1773,8 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     runtime.env.KRN_DATABASE_URL,
     postgresChecks
   );
+  const codexAdapterChecks = await checkCodexAdapter(repoRoot);
+  const workerJobChecks = await checkWorkerJobs(repoRoot);
   const checks = [
     ...postgresChecks,
     deriveBrainStoreReadiness(postgresChecks),
@@ -1485,6 +1794,10 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
       retrievalSubstrateReadiness,
       activationChecks
     ),
+    ...codexAdapterChecks,
+    deriveCodexAdapterReadiness(postgresChecks, codexAdapterChecks),
+    ...workerJobChecks,
+    deriveWorkerJobReadiness(postgresChecks, workerJobChecks),
     ...(await checkRepoFiles(repoRoot))
   ];
   const stdout = [
@@ -1531,6 +1844,22 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
 
     if (check.label === "Activation readiness") {
       return check.status.startsWith("blocked");
+    }
+
+    if (check.label === "Codex adapter readiness") {
+      return check.status.startsWith("blocked");
+    }
+
+    if (check.label === "Worker job readiness") {
+      return check.status.startsWith("blocked");
+    }
+
+    if (check.label === "Codex execution runner" || check.label === "KRN MCP server") {
+      return check.status === "present";
+    }
+
+    if (check.label === "Redis/Kafka queue" || check.label === "Broad worker daemon") {
+      return check.status === "present";
     }
 
     if (check.label === "Runtime markdown memory" || check.label === "Automatic memory mutation") {

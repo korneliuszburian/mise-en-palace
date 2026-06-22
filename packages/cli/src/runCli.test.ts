@@ -32,9 +32,11 @@ import {
   deriveBrainStoreReadiness,
   deriveHarnessPersistenceReadiness,
   deriveActivationReadiness,
+  deriveCodexAdapterReadiness,
   deriveMemoryGovernanceReadiness,
   deriveRetrievalSubstrateReadiness,
-  deriveSourceGraphReadiness
+  deriveSourceGraphReadiness,
+  deriveWorkerJobReadiness
 } from "./runDoctorCommand.js";
 
 const now = "2026-06-21T12:00:00.000Z";
@@ -541,6 +543,24 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "Activation readiness: preview only (set KRN_DATABASE_URL and run activation smoke for runtime proof)"
     );
+    expect(result.stdout).toContain("Codex adapter renderer: present");
+    expect(result.stdout).toContain(
+      "Execution brief smoke: available (pnpm db:smoke:codex-adapter)"
+    );
+    expect(result.stdout).toContain("Hook expectation projection: present");
+    expect(result.stdout).toContain("Codex execution runner: absent");
+    expect(result.stdout).toContain("KRN MCP server: absent");
+    expect(result.stdout).toContain(
+      "Codex adapter readiness: preview only (set KRN_DATABASE_URL and run codex adapter smoke for proof)"
+    );
+    expect(result.stdout).toContain("Worker job schema: present");
+    expect(result.stdout).toContain("Worker job repository: present");
+    expect(result.stdout).toContain("Worker job smoke: available (pnpm db:smoke:worker-jobs)");
+    expect(result.stdout).toContain("Redis/Kafka queue: absent");
+    expect(result.stdout).toContain("Broad worker daemon: absent");
+    expect(result.stdout).toContain(
+      "Worker job readiness: preview only (set KRN_DATABASE_URL and run worker job smoke for proof)"
+    );
     expect(result.stdout).toContain("Broad context dump: absent");
     expect(result.stdout).toContain("Core requiredSkills field: absent");
     expect(result.stdout).toContain("Separate vector/search DB: absent");
@@ -799,6 +819,72 @@ describe("runCli", () => {
     ).toEqual({
       label: "Activation readiness",
       status: "runtime unverified (run pnpm db:smoke:activation)"
+    });
+  });
+
+  it("distinguishes doctor Codex adapter readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (7/7 applied)" }
+    ];
+    const codexAdapterReady = [
+      { label: "Codex adapter renderer", status: "present" },
+      { label: "Execution brief smoke", status: "available (pnpm db:smoke:codex-adapter)" },
+      { label: "Hook expectation projection", status: "present" },
+      { label: "Codex execution runner", status: "absent" },
+      { label: "KRN MCP server", status: "absent" }
+    ];
+
+    expect(
+      deriveCodexAdapterReadiness(postgresReady, codexAdapterReady)
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "ready (renderer, hook projection, smoke command, and forbidden surfaces checked)"
+    });
+
+    expect(
+      deriveCodexAdapterReadiness(postgresReady, [
+        ...codexAdapterReady.slice(0, 3),
+        { label: "Codex execution runner", status: "present" },
+        { label: "KRN MCP server", status: "absent" }
+      ])
+    ).toEqual({
+      label: "Codex adapter readiness",
+      status: "blocked (forbidden Codex execution or MCP server present)"
+    });
+  });
+
+  it("distinguishes doctor worker job readiness blockers", () => {
+    const postgresReady = [
+      { label: "Postgres config", status: "configured and reachable" },
+      { label: "pgvector", status: "available" },
+      { label: "migrations", status: "verified (7/7 applied)" }
+    ];
+    const workerJobReady = [
+      { label: "Worker job schema", status: "present" },
+      { label: "Worker job repository", status: "present" },
+      { label: "Worker job smoke", status: "available (pnpm db:smoke:worker-jobs)" },
+      { label: "Redis/Kafka queue", status: "absent" },
+      { label: "Broad worker daemon", status: "absent" }
+    ];
+
+    expect(
+      deriveWorkerJobReadiness(postgresReady, workerJobReady)
+    ).toEqual({
+      label: "Worker job readiness",
+      status: "ready (schema, repository, smoke command, and forbidden runtime checks present)"
+    });
+
+    expect(
+      deriveWorkerJobReadiness(postgresReady, [
+        ...workerJobReady.slice(0, 3),
+        { label: "Redis/Kafka queue", status: "present" },
+        { label: "Broad worker daemon", status: "absent" }
+      ])
+    ).toEqual({
+      label: "Worker job readiness",
+      status: "blocked (forbidden worker runtime present)"
     });
   });
 
