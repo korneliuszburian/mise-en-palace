@@ -6,6 +6,7 @@ import {
   runActivationSmokeCheck,
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
+  runInitConnectSmokeCheck,
   runMemoryGovernanceSmokeCheck,
   runPersistenceSmokeCheck,
   runRetrievalSubstrateSmokeCheck,
@@ -33,7 +34,8 @@ export interface DbSmokeRuntime {
     | "retrievalSubstrate"
     | "activation"
     | "codexAdapter"
-    | "workerJobs";
+    | "workerJobs"
+    | "initConnect";
 }
 
 export interface DbSmokeResult {
@@ -106,6 +108,10 @@ const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "KRN Worker Job Smoke";
   }
 
+  if (target === "initConnect") {
+    return "KRN Target Repo Init-Connect Smoke";
+  }
+
   return "KRN DB Smoke";
 };
 
@@ -142,6 +148,10 @@ const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "Worker job smoke: skipped (database not configured)";
   }
 
+  if (target === "initConnect") {
+    return "Init-connect smoke: skipped (database not configured)";
+  }
+
   return "Persistence smoke: skipped (database not configured)";
 };
 
@@ -176,6 +186,10 @@ const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
 
   if (target === "workerJobs") {
     return "Worker job smoke";
+  }
+
+  if (target === "initConnect") {
+    return "Init-connect smoke";
   }
 
   return "Persistence smoke";
@@ -457,6 +471,52 @@ export const runDbSmokeCommand = async (
           `Migrations folder: ${relativeMigrationsFolder}`,
           "Postgres config: configured",
           ...formatWorkerJobSmokeReportLines(report)
+        ].join("\n") + "\n"
+      };
+    }
+
+    if (runtime.target === "initConnect") {
+      const report = await runInitConnectSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("init-connect-smoke"),
+        targetRepoPath: path.join(repoRoot, "tests", "fixtures", "target-repos", "typescript-basic")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Target Repo Init-Connect Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          `Workspace smoke row: ${report.workspaceSlug}`,
+          `Project: ${report.projectId}`,
+          `Project readback by fingerprint: ${
+            report.readBackProjectIdByFingerprint === report.projectId ? "matched" : "mismatch"
+          }`,
+          `Project readback by path: ${
+            report.readBackProjectIdByPath === report.projectId ? "matched" : "mismatch"
+          }`,
+          `Repo installation: ${report.repoInstallationId}`,
+          `Repo installation readback: ${
+            report.readBackRepoInstallationId === report.repoInstallationId ? "matched" : "mismatch"
+          }`,
+          `ProjectKernel: ${report.projectKernelId}`,
+          `ProjectKernel readback: ${
+            report.readBackProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
+          }`,
+          `Idempotent project reuse: ${report.reusedProjectId === report.projectId ? "matched" : "mismatch"}`,
+          `Idempotent repo installation reuse: ${
+            report.reusedRepoInstallationId === report.repoInstallationId ? "matched" : "mismatch"
+          }`,
+          `Idempotent ProjectKernel reuse: ${
+            report.reusedProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
+          }`,
+          `Repo installations listed: ${report.repoInstallationCount}`,
+          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+          `Init-connect smoke: ${report.cleanedUp ? "passed" : "failed"}`
         ].join("\n") + "\n"
       };
     }

@@ -4,6 +4,7 @@ export * from "./activationSmoke.js";
 export * from "./harnessEvidenceSmoke.js";
 export * from "./harnessPersistenceReadiness.js";
 export * from "./harnessPlanSmoke.js";
+export * from "./initConnectSmoke.js";
 export * from "./memoryGovernanceSmoke.js";
 export * from "./memoryGovernanceReadiness.js";
 export * from "./migrationReadiness.js";

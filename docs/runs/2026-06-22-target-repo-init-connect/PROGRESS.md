@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 06 init connect complete.
+Current slice: Slice 07 init-connect smoke complete.
 
 Completed:
 
@@ -45,7 +45,10 @@ Completed:
   `9da67341-0124-407e-b3fa-197f7f850a57`, RepoInstallation
   `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel
   `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6` on the second run.
+- Slice 07 added `pnpm db:smoke:init-connect`.
+- Slice 07 smoke persists and reads back Project, RepoInstallation, and
+  ProjectKernel, verifies idempotent reuse, and cleans marker rows to zero.
 
 Next action:
 
-- Slice 07 add `pnpm db:smoke:init-connect`.
+- Slice 08 implement project-scoped `krn plan --project <project-id> --persist`.

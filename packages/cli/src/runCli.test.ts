@@ -159,6 +159,33 @@ describe("runCli", () => {
     );
   });
 
+  it("prints missing DB guidance for target repo init-connect smoke", async () => {
+    const result = await runCli(["db", "smoke", "init-connect"], {
+      env: {},
+      cwd: path.resolve(process.cwd(), "../.."),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("KRN Target Repo Init-Connect Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Init-connect smoke: skipped (database not configured)");
+  });
+
+  it("exposes the target repo init-connect smoke script", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = JSON.parse(
+      await import("node:fs/promises").then((fs) =>
+        fs.readFile(path.join(repoRoot, "package.json"), "utf8")
+      )
+    ) as { scripts?: Record<string, string> };
+
+    expect(packageJson.scripts?.["db:smoke:init-connect"]).toBe(
+      "pnpm --filter @krn/cli krn db smoke init-connect"
+    );
+  });
+
   it("connects a target repo to the brain store with persisted IDs", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const fixtureRepo = path.join(

@@ -32,7 +32,8 @@ export type CliCommand =
         | "retrievalSubstrate"
         | "activation"
         | "codexAdapter"
-        | "workerJobs";
+        | "workerJobs"
+        | "initConnect";
     }
   | {
       kind: "evidenceCapture";
@@ -188,7 +189,7 @@ const usage = [
   "krn init --connect --repo <path> --persist",
   "krn doctor",
   "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs]",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
@@ -594,10 +595,19 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "init-connect") {
+      return {
+        command: {
+          kind: "dbSmoke",
+          target: "initConnect"
+        }
+      };
+    }
+
     return {
       error: [
         "Usage: krn db readiness|smoke",
-        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs]"
+        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect]"
       ].join(" ")
     };
   }

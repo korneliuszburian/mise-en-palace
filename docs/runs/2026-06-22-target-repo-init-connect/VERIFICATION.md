@@ -237,3 +237,38 @@ Results:
   ProjectKernel IDs.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed across 28 test files and 126 tests.
+
+## Slice 07
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:init-connect
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:init-connect
+pnpm test
+```
+
+Results:
+
+- RED CLI tests failed because `db:smoke:init-connect` script and parser target
+  were missing.
+- Added root script `pnpm db:smoke:init-connect`.
+- Added `krn db smoke init-connect` parser/CLI smoke routing.
+- Added `runInitConnectSmokeCheck` in `@krn/db`.
+- Smoke persists marker-scoped Project, RepoInstallation, and ProjectKernel.
+- Smoke reads project back by repo fingerprint and path, lists repo
+  installations, reads latest ProjectKernel, verifies idempotent reuse, and
+  cleans marker rows.
+- First live smoke failed because the smoke used the same `local_path_hint` as
+  the earlier manual fixture connect. The smoke was updated to use a
+  marker-scoped path hint so it remains isolated from existing fixture
+  registration rows.
+- Live `pnpm db:smoke:init-connect` passed with Project
+  `f82ac45f-8b68-493c-9c4b-f594aa843b5c`, RepoInstallation
+  `b6c30792-904a-4077-8f86-b3eda770ff73`, ProjectKernel
+  `55e43209-6101-49b1-9c46-564e3d2abaec`, idempotency matches, and cleanup
+  remaining marker count `0`.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 28 test files and 128 tests.
