@@ -272,3 +272,49 @@ Results:
   remaining marker count `0`.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed across 28 test files and 128 tests.
+
+## Slice 08
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --project 9da67341-0124-407e-b3fa-197f7f850a57 --task "improve test script readiness" --persist
+pnpm test
+git diff --check
+```
+
+Results:
+
+- RED CLI tests failed because `plan --project ... --persist` exited with
+  status `2`; the parser rejected `--project` before runtime resolution.
+- Added `--project <project-id>` and `--project=<project-id>` parser support
+  for `krn plan`.
+- Added plan runtime `projectId` plumbing from parser to `runPlanCommand` and
+  `createDatabaseRuntime`.
+- Added explicit DB runtime project resolution:
+  `getProject`, `getLatestProjectKernel`, and
+  `listRepoInstallationsForProject`.
+- Missing explicit Project fails as
+  `Project not found for --project <id>`; it does not fallback to the default
+  project.
+- Missing explicit ProjectKernel fails as
+  `ProjectKernel not found for --project <id>`.
+- Project-scoped plan output prints Project ID, ProjectKernel ID, and
+  RepoInstallation IDs before persisted run IDs.
+- Focused CLI test passed with 70 tests.
+- First `pnpm typecheck` caught an `exactOptionalPropertyTypes` issue where an
+  optional `projectScopedMetadata` property was set to `undefined`; fixed with
+  conditional object spreads.
+- Second `pnpm typecheck` passed across 7 workspace packages.
+- Live DB project-scoped plan passed for connected fixture Project
+  `9da67341-0124-407e-b3fa-197f7f850a57`.
+- Live DB project-scoped plan loaded ProjectKernel
+  `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6` and RepoInstallation
+  `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`.
+- Live DB project-scoped plan persisted ExecutionRun
+  `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
+- `pnpm test` passed across 28 files and 130 tests.
+- `git diff --check` passed.

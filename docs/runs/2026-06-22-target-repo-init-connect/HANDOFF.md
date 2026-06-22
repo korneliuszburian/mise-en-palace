@@ -13,8 +13,13 @@ M22-M26 brain spine handoff`. Baseline M27 preflight passed after exporting
 smokes from M22-M26.
 
 Current M27 state:
-Slice 00 run ledger is created. No runtime code has changed yet. The next
-slice is inventory only.
+Slices 00-08 are complete. Target repo fixture dry-run, connect persistence,
+init-connect smoke, and project-scoped persisted planning are proven. The
+latest real project-scoped plan used Project
+`9da67341-0124-407e-b3fa-197f7f850a57`, ProjectKernel
+`db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`, RepoInstallation
+`e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and persisted ExecutionRun
+`d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
 
 Boundaries:
 Use a fixture target repo by default. Do not build dashboard, `apps/`, public
@@ -23,15 +28,14 @@ crawler, runtime markdown memory, `.krn` runtime truth, separate vector/graph
 store, Redis/Kafka, or broad eval suite.
 
 Changed files:
-This slice adds only the M27 run ledger and updates root `PLAN.md` progress.
+Slice 08 changes CLI plan parsing/runtime and DB runtime project resolution,
+then updates the M27 run ledger and root `PLAN.md` progress.
 
 Blockers/risks:
-No hard blocker. `KRN_DATABASE_URL` was not exported in the initial shell, so
-the first plain `pnpm db:ready` failed as expected; live DB proof passed with
-the local URL.
+No hard blocker. `GOAL.md` remains modified user-owned context and is not part
+of the Slice 08 implementation commit.
 
 Next action:
-Inventory `krn init`, repo detection, project/repo installation/kernel
-persistence, AGENTS/Codex overlay proposal support, fixture repos, and smoke
-helpers. Record what exists, what is missing, and the exact M27 command shape
-before adding behavior.
+Slice 09: add `pnpm db:smoke:target-repo-harness` to connect the fixture,
+create a project-scoped persisted plan, render Codex brief, persist evidence
+capture, verify target-project linkage, and cleanup marker rows to zero.

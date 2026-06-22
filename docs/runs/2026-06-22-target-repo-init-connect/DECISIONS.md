@@ -160,3 +160,37 @@ Intentionally not built:
   using the existing smoke conventions.
   Rejection/falsifier: smoke rows left behind or shared unmarked state would
   make the target repo proof unsafe.
+
+## Slice 08 Decisions
+
+- Source: `GOAL.md` Slice 08 and Slice 06 connected fixture output.
+  Mechanism: `krn init --connect --repo <fixture> --persist` creates or reuses
+  a Project, RepoInstallation, and ProjectKernel; project-scoped planning must
+  consume that explicit Project identity.
+  KRN implication: `krn plan --project <project-id> --persist` must resolve the
+  project by ID, load its ProjectKernel and repo metadata, and pass the resolved
+  project ID into `compileHarnessPlan`.
+  Decision: extend the existing manual parser/runtime path with optional
+  `projectId` instead of introducing a new command family.
+  Rejection/falsifier: if `--project` is supplied and missing but the command
+  silently creates or uses the default `local/mise-en-palace` project, the
+  slice fails.
+
+- Source: `packages/cli/src/databaseRuntime.ts` and
+  `packages/harness/src/repositories/projectRepository.ts`.
+  Mechanism: the database runtime already creates default workspace/project for
+  generic persisted planning, while the project repository can read projects,
+  latest ProjectKernel, and repo installations by project ID.
+  KRN implication: default project creation remains valid only when no explicit
+  `--project` is supplied.
+  Decision: explicit project planning uses `getProject`,
+  `getLatestProjectKernel`, and `listRepoInstallationsForProject`; missing
+  Project or ProjectKernel fails clearly.
+  Rejection/falsifier: hiding ProjectKernel absence or repo metadata absence in
+  JSON metadata would weaken target-repo readiness proof.
+
+- Type-safety boundary: CLI args and env are external input; parser trims
+  `--project`, runtime passes it as an optional string, and DB runtime narrows
+  missing/blank values before repository calls.
+  Exception record: no `any`, no relaxed strictness, and the only
+  `exactOptionalPropertyTypes` issue was fixed with conditional object spreads.

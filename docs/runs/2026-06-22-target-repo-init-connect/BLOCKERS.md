@@ -13,16 +13,15 @@ Observed setup issue:
 
 Residual later scope:
 
-- Target repo fixture does not exist yet.
-- `krn init --dry-run --repo <fixture>` support is not proven yet.
-- `krn init --connect --repo <fixture> --persist` support is not proven yet.
-- Project-scoped persisted planning from an init/connect project is not proven
-  yet.
 - Target-repo Codex brief readback and evidence capture are not proven yet.
-- Init/connect and target-repo-harness DB smokes do not exist yet.
+- Target-repo-harness DB smoke does not exist yet.
 
 Explicit non-blockers:
 
 - No dashboard/API/MCP/plugin/runtime markdown memory exists by design.
 - The pre-existing modified `GOAL.md` is user-owned context and is not a
   blocker for M27 work as long as commits stage only intentional files.
+- Target repo fixture, init dry-run, connect persistence, init-connect smoke,
+  and project-scoped persisted planning are now proven.
+- Project-scoped persisted planning from an init/connect project is now proven
+  by ExecutionRun `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.

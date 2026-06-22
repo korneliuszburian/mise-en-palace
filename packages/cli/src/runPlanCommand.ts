@@ -11,7 +11,9 @@ import {
 } from "@krn/harness";
 import type {
   HarnessCompilerDependencies,
-  HarnessRunRepository
+  HarnessRunRepository,
+  ProjectKernelRecord,
+  RepoInstallationRecord
 } from "@krn/harness";
 import {
   parseHarnessCompileInput,
@@ -34,6 +36,7 @@ export interface PlanCommandRuntime {
   now(): string;
   createId(prefix: string): string;
   persist: boolean;
+  projectId?: string;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
 
@@ -53,12 +56,18 @@ interface PersistedPlanIdentity {
   executionRunId: string;
 }
 
+interface ProjectScopedPlanMetadata {
+  projectKernel?: ProjectKernelRecord;
+  repoInstallations?: readonly RepoInstallationRecord[];
+}
+
 interface CompilerRuntimeResolution {
   workspaceId: string;
   projectId: string;
   persistenceLabel: string;
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun">;
+  projectScopedMetadata?: ProjectScopedPlanMetadata;
   close(): Promise<void>;
 }
 
@@ -107,6 +116,10 @@ const resolveCompilerRuntime = async (
 ): Promise<CompilerRuntimeResolution> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL;
 
+  if (runtime.projectId !== undefined && !runtime.persist) {
+    throw new Error("krn plan --project requires --persist");
+  }
+
   if (!runtime.persist) {
     return {
       workspaceId: `workspace:${workspaceSlug}`,
@@ -128,6 +141,7 @@ const resolveCompilerRuntime = async (
     databaseUrl,
     workspaceSlug,
     projectSlug,
+    ...(runtime.projectId === undefined ? {} : { projectId: runtime.projectId }),
     now: runtime.now,
     createId: runtime.createId
   });
@@ -138,23 +152,52 @@ const resolveCompilerRuntime = async (
     persistenceLabel: "enabled (Postgres, explicit --persist)",
     compilerDependencies: databaseRuntime.compilerDependencies,
     harnessRunRepository: databaseRuntime.harnessRunRepository,
+    ...(databaseRuntime.projectKernel === undefined && databaseRuntime.repoInstallations === undefined
+      ? {}
+      : {
+          projectScopedMetadata: {
+            ...(databaseRuntime.projectKernel === undefined
+              ? {}
+              : { projectKernel: databaseRuntime.projectKernel }),
+            ...(databaseRuntime.repoInstallations === undefined
+              ? {}
+              : { repoInstallations: databaseRuntime.repoInstallations })
+          }
+        }),
     close: databaseRuntime.close
   };
 };
 
 const formatPlanSummary = (
   task: string,
+  projectId: string,
   persistenceLabel: string,
   contextAssembly: ContextAssembly,
   evidenceCommands: readonly string[],
   nextAction: string,
   executionBrief: string,
+  projectScopedMetadata?: ProjectScopedPlanMetadata,
   persistedIdentity?: PersistedPlanIdentity
 ): string => {
   const lines = [
     "KRN Plan",
     `Task: ${task}`,
+    `Project ID: ${projectId}`,
     `Persistence: ${persistenceLabel}`,
+    ...(projectScopedMetadata?.projectKernel === undefined
+      ? []
+      : [`ProjectKernel: ${projectScopedMetadata.projectKernel.id}`]),
+    ...(projectScopedMetadata?.repoInstallations === undefined
+      ? []
+      : [
+          `Repo installations: ${
+            projectScopedMetadata.repoInstallations.length === 0
+              ? "none"
+              : projectScopedMetadata.repoInstallations
+                  .map((repoInstallation) => repoInstallation.id)
+                  .join(", ")
+          }`
+        ]),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
     ...formatActivationSummary(contextAssembly, nextAction),
@@ -214,7 +257,12 @@ export const runPlanCommand = async (
     taskContract,
     tokenBudget: 1200,
     metadata: {
-      command: runtime.persist ? "krn plan --persist" : "krn plan"
+      command:
+        runtime.projectId === undefined
+          ? runtime.persist
+            ? "krn plan --persist"
+            : "krn plan"
+          : "krn plan --project --persist"
     }
   });
   const workspaceSlug = compileInput.operatorIntent.workspaceSlug ?? defaultWorkspaceSlug;
@@ -270,7 +318,21 @@ export const runPlanCommand = async (
               }
             },
             metadata: {
-              command: "krn plan --persist",
+              command:
+                runtime.projectId === undefined
+                  ? "krn plan --persist"
+                  : "krn plan --project --persist",
+              ...(compilerRuntime.projectScopedMetadata?.projectKernel === undefined
+                ? {}
+                : { projectKernelId: compilerRuntime.projectScopedMetadata.projectKernel.id }),
+              ...(compilerRuntime.projectScopedMetadata?.repoInstallations === undefined
+                ? {}
+                : {
+                    repoInstallationIds:
+                      compilerRuntime.projectScopedMetadata.repoInstallations.map(
+                        (repoInstallation) => repoInstallation.id
+                      )
+                  }),
               evidenceContract: result.evidenceContract,
               codexAdapterPlanRef: result.codexAdapterPlanRef
             }
@@ -289,11 +351,13 @@ export const runPlanCommand = async (
     return {
       stdout: formatPlanSummary(
         task,
+        compilerRuntime.projectId,
         compilerRuntime.persistenceLabel,
         result.contextAssembly,
         evidenceCommands,
         result.nextAction,
         executionBrief,
+        compilerRuntime.projectScopedMetadata,
         persistedIdentity
       )
     };

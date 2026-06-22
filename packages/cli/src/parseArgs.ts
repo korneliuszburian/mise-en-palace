@@ -14,6 +14,7 @@ export type CliCommand =
       kind: "plan";
       task: string;
       persist: boolean;
+      projectId?: string;
     }
   | {
       kind: "doctor";
@@ -182,7 +183,7 @@ export interface ParseArgsResult {
 const usage = [
   "Usage: krn init --dry-run --repo <path>",
   "Usage: krn init --connect --repo <path> --persist",
-  "Usage: krn plan --task \"...\" [--persist]",
+  "Usage: krn plan [--project <project-id>] --task \"...\" [--persist]",
   "",
   "Other commands:",
   "krn init --dry-run --repo <path>",
@@ -1485,9 +1486,21 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   let task: string | undefined;
   let persist = false;
+  let projectId: string | undefined;
 
   for (let index = 0; index < rest.length; index += 1) {
     const arg = rest[index];
+
+    if (arg === "--project") {
+      projectId = rest[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--project=") === true) {
+      projectId = arg.slice("--project=".length);
+      continue;
+    }
 
     if (arg === "--task") {
       task = rest[index + 1];
@@ -1520,7 +1533,10 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     command: {
       kind: "plan",
       task: task.trim(),
-      persist
+      persist,
+      ...(projectId === undefined || projectId.trim().length === 0
+        ? {}
+        : { projectId: projectId.trim() })
     }
   };
 };

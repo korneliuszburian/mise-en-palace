@@ -11,6 +11,8 @@ import type {
   HarnessCompilerDependencies,
   HarnessRunRepository,
   MemoryRepository,
+  ProjectKernelRecord,
+  RepoInstallationRecord,
   SourceRepository
 } from "@krn/harness";
 
@@ -18,6 +20,7 @@ export interface DatabaseRuntimeInput {
   databaseUrl: string;
   workspaceSlug: string;
   projectSlug: string;
+  projectId?: string;
   now(): string;
   createId(prefix: string): string;
 }
@@ -25,6 +28,8 @@ export interface DatabaseRuntimeInput {
 export interface DatabaseRuntime {
   workspaceId: string;
   projectId: string;
+  projectKernel?: ProjectKernelRecord;
+  repoInstallations?: RepoInstallationRecord[];
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository: Pick<
     HarnessRunRepository,
@@ -65,28 +70,64 @@ export const createDatabaseRuntime = async (
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
   const sourceRepository = new DrizzleSourceRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
-  const existingWorkspace = await projectRepository.findWorkspaceBySlug(input.workspaceSlug);
-  const workspace =
-    existingWorkspace ??
-    (await projectRepository.createWorkspace({
-      slug: input.workspaceSlug,
-      displayName: input.workspaceSlug
-    }));
-  const existingProject = await projectRepository.findProjectBySlug(
-    workspace.id,
-    input.projectSlug
-  );
+  const explicitProjectId = input.projectId?.trim();
   const project =
-    existingProject ??
-    (await projectRepository.createProject({
-      workspaceId: workspace.id,
-      slug: input.projectSlug,
-      displayName: input.projectSlug
-    }));
+    explicitProjectId === undefined || explicitProjectId.length === 0
+      ? undefined
+      : await projectRepository.getProject(explicitProjectId);
+
+  if (explicitProjectId !== undefined && explicitProjectId.length > 0 && project === undefined) {
+    await client.end();
+    throw new Error(`Project not found for --project ${explicitProjectId}`);
+  }
+
+  const existingWorkspace =
+    project === undefined
+      ? await projectRepository.findWorkspaceBySlug(input.workspaceSlug)
+      : undefined;
+  const workspace =
+    project === undefined
+      ? existingWorkspace ??
+        (await projectRepository.createWorkspace({
+          slug: input.workspaceSlug,
+          displayName: input.workspaceSlug
+        }))
+      : undefined;
+  const defaultProject =
+    project === undefined && workspace !== undefined
+      ? (await projectRepository.findProjectBySlug(workspace.id, input.projectSlug)) ??
+        (await projectRepository.createProject({
+          workspaceId: workspace.id,
+          slug: input.projectSlug,
+          displayName: input.projectSlug
+        }))
+      : project;
+
+  if (defaultProject === undefined) {
+    await client.end();
+    throw new Error("Unable to resolve project for database runtime");
+  }
+
+  const projectKernel =
+    explicitProjectId === undefined || explicitProjectId.length === 0
+      ? undefined
+      : await projectRepository.getLatestProjectKernel(defaultProject.id);
+
+  if (explicitProjectId !== undefined && explicitProjectId.length > 0 && projectKernel === undefined) {
+    await client.end();
+    throw new Error(`ProjectKernel not found for --project ${explicitProjectId}`);
+  }
+
+  const repoInstallations =
+    explicitProjectId === undefined || explicitProjectId.length === 0
+      ? undefined
+      : await projectRepository.listRepoInstallationsForProject(defaultProject.id);
 
   return {
-    workspaceId: workspace.id,
-    projectId: project.id,
+    workspaceId: defaultProject.workspaceId,
+    projectId: defaultProject.id,
+    ...(projectKernel === undefined ? {} : { projectKernel }),
+    ...(repoInstallations === undefined ? {} : { repoInstallations }),
     compilerDependencies: {
       harnessRunRepository,
       memoryRepository,

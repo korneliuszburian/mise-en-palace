@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 07 init-connect smoke complete.
+Current slice: Slice 08 project-scoped persisted planning complete.
 
 Completed:
 
@@ -48,7 +48,16 @@ Completed:
 - Slice 07 added `pnpm db:smoke:init-connect`.
 - Slice 07 smoke persists and reads back Project, RepoInstallation, and
   ProjectKernel, verifies idempotent reuse, and cleans marker rows to zero.
+- Slice 08 added `krn plan --project <project-id> --task "..." --persist`.
+- Slice 08 loads an existing Project, ProjectKernel, and RepoInstallation list
+  by explicit project ID; missing explicit projects fail without fallback to the
+  default `mise-en-palace` project.
+- Slice 08 proved a real project-scoped persisted plan for connected fixture
+  Project `9da67341-0124-407e-b3fa-197f7f850a57`, ProjectKernel
+  `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`, RepoInstallation
+  `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ExecutionRun
+  `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
 
 Next action:
 
-- Slice 08 implement project-scoped `krn plan --project <project-id> --persist`.
+- Slice 09 add full target repo harness smoke.

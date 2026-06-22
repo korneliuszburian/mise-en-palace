@@ -373,6 +373,127 @@ describe("runCli", () => {
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 
+  it("uses explicit project identity for persisted planning", async () => {
+    let observedProjectId: string | undefined;
+
+    const result = await runCli(
+      [
+        "plan",
+        "--project",
+        "project-target-1",
+        "--task",
+        "improve test script readiness",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          observedProjectId = input.projectId;
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-target-1",
+            projectId: "project-target-1",
+            projectKernel: {
+              id: "project-kernel-1",
+              projectId: "project-target-1",
+              version: 1,
+              summary: "Target repo kernel",
+              activeContextRule: "Use target repo context only.",
+              metadata: {},
+              createdAt: now,
+              updatedAt: now
+            },
+            repoInstallations: [
+              {
+                id: "repo-installation-1",
+                projectId: "project-target-1",
+                provider: "local",
+                repoUrl: "file:///tmp/target-repo",
+                defaultBranch: "main",
+                repoFingerprint: "sha256:fixture",
+                localPathHint: "/tmp/target-repo",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              }
+            ],
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(observedProjectId).toBe("project-target-1");
+    expect(result.stdout).toContain("Project ID: project-target-1");
+    expect(result.stdout).toContain("ProjectKernel: project-kernel-1");
+    expect(result.stdout).toContain("Repo installations: repo-installation-1");
+    expect(result.stdout).toContain("executionRun: execution-run-1");
+  });
+
+  it("does not fallback to the default project when an explicit project is missing", async () => {
+    const result = await runCli(
+      [
+        "plan",
+        "--project",
+        "missing-project",
+        "--task",
+        "improve test script readiness",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          if (input.projectId === "missing-project") {
+            throw new Error("Project not found for --project missing-project");
+          }
+
+          throw new Error("unexpected fallback to default project");
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("Project not found for --project missing-project");
+    expect(result.stderr).not.toContain("unexpected fallback");
+  });
+
   it("renders a read-only Codex brief for a persisted execution run", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
@@ -686,7 +807,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toContain("Usage: krn plan --task");
+    expect(result.stderr).toContain("Usage: krn plan [--project <project-id>] --task");
   });
 
   it("prints a read-only doctor report", async () => {
