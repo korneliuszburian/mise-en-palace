@@ -214,6 +214,23 @@ export interface ReflectionOutputContractAssessment {
   violations: ReflectionOutputContractViolation[];
 }
 
+export type ReflectionCandidateGenerationStatus = "ready" | "blocked";
+
+export interface ReflectionCandidateGenerationCounts {
+  memoryCandidates: number;
+  sourceClaimCandidates: number;
+  antiMemoryCandidates: number;
+  policyCandidates: number;
+  evalCandidates: number;
+}
+
+export interface ReflectionCandidateGenerationPlan {
+  status: ReflectionCandidateGenerationStatus;
+  counts: ReflectionCandidateGenerationCounts;
+  candidateLinks: ReflectionCandidateLink[];
+  blockedReasons: string[];
+}
+
 const normalizedKey = (key: string): string => (
   key
     .replace(/([a-z0-9])([A-Z])/gu, "$1_$2")
@@ -282,3 +299,27 @@ export const isReflectionOutputCandidateOnly = (output: {
 }): boolean => (
   assessReflectionOutputContract(output).candidateOnly
 );
+
+export const buildReflectionCandidateGenerationPlan = (
+  output: ReflectionOutput
+): ReflectionCandidateGenerationPlan => {
+  const assessment = assessReflectionOutputContract(output);
+
+  return {
+    status: assessment.candidateOnly ? "ready" : "blocked",
+    counts: {
+      memoryCandidates: output.memoryCandidates.length,
+      sourceClaimCandidates: output.sourceClaimCandidates.length,
+      antiMemoryCandidates: output.antiMemoryCandidates.length,
+      policyCandidates: output.policyCandidates.length,
+      evalCandidates: output.evalCandidates.length
+    },
+    candidateLinks: [...output.candidateLinks].sort((left, right) => (
+      left.targetType.localeCompare(right.targetType) ||
+      (left.targetId ?? "").localeCompare(right.targetId ?? "") ||
+      left.summary.localeCompare(right.summary)
+    )),
+    blockedReasons: assessment.violations.map((violation) =>
+      `${violation.path}:${violation.reason}`)
+  };
+};

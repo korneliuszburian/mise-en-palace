@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   REFLECTION_CANDIDATE_OUTPUT_TARGETS,
   assessReflectionOutputContract,
+  buildReflectionCandidateGenerationPlan,
   isReflectionOutputCandidateOnly,
   type ReflectionOutput
 } from "./index.js";
@@ -175,6 +176,37 @@ describe("reflection contracts", () => {
         reason: "final_truth_metadata",
         value: "source_decision"
       }
+    ]);
+  });
+
+  it("builds a deterministic candidate generation plan without final truth writes", () => {
+    const plan = buildReflectionCandidateGenerationPlan(output);
+
+    expect(plan).toEqual({
+      status: "ready",
+      counts: {
+        memoryCandidates: 1,
+        sourceClaimCandidates: 1,
+        antiMemoryCandidates: 1,
+        policyCandidates: 1,
+        evalCandidates: 1
+      },
+      candidateLinks: output.candidateLinks,
+      blockedReasons: []
+    });
+  });
+
+  it("blocks candidate generation when output violates candidate-only contract", () => {
+    const plan = buildReflectionCandidateGenerationPlan({
+      ...output,
+      metadata: {
+        createActiveMemory: true
+      }
+    });
+
+    expect(plan.status).toBe("blocked");
+    expect(plan.blockedReasons).toEqual([
+      "metadata.createActiveMemory:final_truth_metadata"
     ]);
   });
 });
