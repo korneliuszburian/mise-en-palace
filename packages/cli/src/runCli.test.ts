@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import path from "node:path";
 
 import {
   runCli
@@ -68,6 +69,71 @@ const unusedMemoryRepository = {
 };
 
 describe("runCli", () => {
+  it("prints a target repo init dry-run without writing files", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const fixtureRepo = path.join(
+      repoRoot,
+      "tests",
+      "fixtures",
+      "target-repos",
+      "typescript-basic"
+    );
+    const result = await runCli(
+      ["init", "--dry-run", "--repo", fixtureRepo],
+      {
+        env: {},
+        cwd: repoRoot,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Init Dry Run");
+    expect(result.stdout).toContain(`Repo path: ${fixtureRepo}`);
+    expect(result.stdout).toContain("Package manager: package-json");
+    expect(result.stdout).toContain("TypeScript: present");
+    expect(result.stdout).toContain("Scripts: build, test");
+    expect(result.stdout).toContain("Existing AGENTS.md: absent");
+    expect(result.stdout).toContain("Existing .codex: absent");
+    expect(result.stdout).toContain("Existing .agents/skills: absent");
+    expect(result.stdout).toContain("Forbidden surfaces: absent");
+    expect(result.stdout).toContain("ProjectKernel proposal:");
+    expect(result.stdout).toContain("Codex overlay proposal:");
+    expect(result.stdout).toContain("No files written");
+    expect(result.stdout).toContain(
+      `Next command: krn init --connect --repo ${fixtureRepo} --persist`
+    );
+  });
+
+  it("resolves init --repo relative to the workspace root when run through a package cwd", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const fixtureRepo = path.join(
+      repoRoot,
+      "tests",
+      "fixtures",
+      "target-repos",
+      "typescript-basic"
+    );
+    const result = await runCli(
+      ["init", "--dry-run", "--repo", "tests/fixtures/target-repos/typescript-basic"],
+      {
+        env: {},
+        cwd: path.join(repoRoot, "packages", "cli"),
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(`Repo path: ${fixtureRepo}`);
+    expect(result.stdout).toContain(
+      `Next command: krn init --connect --repo ${fixtureRepo} --persist`
+    );
+  });
+
   it("prints a bounded no-store plan for plan --task", async () => {
     const result = await runCli(["plan", "--task", "improve KRN doctor brain store readiness"], {
       env: {},

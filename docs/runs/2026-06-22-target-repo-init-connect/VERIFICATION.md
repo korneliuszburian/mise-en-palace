@@ -173,3 +173,35 @@ Results:
 - Targeted repository test passed.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed across 28 test files and 122 tests.
+
+## Slice 05
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/cli krn init --dry-run --repo tests/fixtures/target-repos/typescript-basic
+git status --short --branch
+pnpm typecheck
+pnpm test
+```
+
+Results:
+
+- RED CLI test failed because `init` was unsupported.
+- Added `krn init --dry-run --repo <path>` parser and dispatcher support.
+- Added read-only target repo detection for absolute path, package manager,
+  TypeScript presence, package scripts, existing `AGENTS.md`, existing
+  `.codex`, existing `.agents/skills`, forbidden surfaces, and repo
+  fingerprint.
+- Added ProjectKernel proposal and Codex overlay proposal output.
+- Added `No files written` output and next connect command.
+- Real fixture dry-run passed and printed `No files written`.
+- Initial real command exposed package-cwd path resolution under
+  `pnpm --filter`; added a regression test and fixed repo-root fallback via
+  `pnpm-workspace.yaml` discovery.
+- Git status after dry-run showed only intended source changes and the
+  pre-existing modified `GOAL.md`; the fixture repo was not mutated.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across 28 test files and 124 tests.

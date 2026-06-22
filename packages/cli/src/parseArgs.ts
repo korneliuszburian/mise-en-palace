@@ -1,5 +1,10 @@
 export type CliCommand =
   | {
+      kind: "init";
+      mode: "dryRun";
+      repo: string;
+    }
+  | {
       kind: "plan";
       task: string;
       persist: boolean;
@@ -168,9 +173,11 @@ export interface ParseArgsResult {
 }
 
 const usage = [
+  "Usage: krn init --dry-run --repo <path>",
   "Usage: krn plan --task \"...\" [--persist]",
   "",
   "Other commands:",
+  "krn init --dry-run --repo <path>",
   "krn doctor",
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs]",
@@ -187,6 +194,8 @@ const usage = [
 ].join("\n");
 
 export const formatUsage = (): string => `${usage}\n`;
+
+const initUsage = "Usage: krn init --dry-run --repo <path>";
 
 export const formatSourceClaimAddUsage = (): string =>
   [
@@ -411,6 +420,49 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     return {
       command: {
         kind: "doctor"
+      }
+    };
+  }
+
+  if (command === "init") {
+    let dryRun = false;
+    let repo: string | undefined;
+
+    for (let index = 0; index < rest.length; index += 1) {
+      const arg = rest[index];
+
+      if (arg === "--dry-run") {
+        dryRun = true;
+        continue;
+      }
+
+      if (arg === "--repo") {
+        repo = rest[index + 1];
+        index += 1;
+        continue;
+      }
+
+      if (arg?.startsWith("--repo=") === true) {
+        repo = arg.slice("--repo=".length);
+        continue;
+      }
+
+      return {
+        error: initUsage
+      };
+    }
+
+    if (!dryRun || repo === undefined || repo.trim().length === 0) {
+      return {
+        error: initUsage
+      };
+    }
+
+    return {
+      command: {
+        kind: "init",
+        mode: "dryRun",
+        repo: repo.trim()
       }
     };
   }

@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 04 repository methods complete.
+Current slice: Slice 05 init dry-run complete.
 
 Completed:
 
@@ -36,8 +36,10 @@ Completed:
   `repo_installations`, with generated migration `0007_conscious_scarlet_witch`.
 - Slice 04 added project repository methods for repo fingerprint lookup, repo
   path lookup, repo installation listing, and fixture cleanup.
+- Slice 05 added `krn init --dry-run --repo <path>` with read-only target repo
+  detection, ProjectKernel proposal, Codex overlay proposal, `No files written`
+  output, and a next connect command.
 
 Next action:
 
-- Slice 05 implement `krn init --dry-run --repo <path>` with no writes and a
-  thin overlay proposal.
+- Slice 06 implement `krn init --connect --repo <path> --persist`.

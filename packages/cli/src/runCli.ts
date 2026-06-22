@@ -17,6 +17,9 @@ import type {
   CreateDatabaseRuntime
 } from "./runPlanCommand.js";
 import {
+  runInitCommand
+} from "./runInitCommand.js";
+import {
   runDoctorCommand
 } from "./runDoctorCommand.js";
 import {
@@ -107,6 +110,30 @@ export const runCli = async (
       stdout: formatSourceClaimAddUsage(),
       stderr: ""
     };
+  }
+
+  if (parsed.command.kind === "init") {
+    try {
+      const result = await runInitCommand({
+        cwd: runtime.cwd ?? process.cwd(),
+        mode: parsed.command.mode,
+        repo: parsed.command.repo
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown init error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
   }
 
   if (parsed.command.kind === "sourceDecisionLinkHelp") {
