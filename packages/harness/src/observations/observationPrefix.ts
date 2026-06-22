@@ -154,7 +154,16 @@ export const selectObservationPrefix = (
   }> = [];
 
   for (const observation of input.observations) {
-    if (observation.scope.projectId !== undefined && observation.scope.projectId !== input.projectId) {
+    if (observation.scope.projectId === undefined) {
+      exclusions.push({
+        observationId: observation.id,
+        reason: "project_mismatch",
+        explanation: "Observation is unscoped and cannot enter a project-scoped prefix."
+      });
+      continue;
+    }
+
+    if (observation.scope.projectId !== input.projectId) {
       exclusions.push({
         observationId: observation.id,
         reason: "project_mismatch",
@@ -182,19 +191,19 @@ export const selectObservationPrefix = (
     }
 
     const matches = matchedTerms(terms, observation);
+    if (matches.length === 0) {
+      exclusions.push({
+        observationId: observation.id,
+        reason: "low_relevance",
+        explanation: "Observation did not match task terms; priority/confidence alone cannot activate it."
+      });
+      continue;
+    }
+
     const score =
       matches.length * 3 +
       priorityScore[observation.priority] +
       confidenceScore[observation.confidence];
-
-    if (score === 0) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "low_relevance",
-        explanation: "Observation did not match the task terms or priority/confidence threshold."
-      });
-      continue;
-    }
 
     candidates.push({
       observation,
@@ -227,9 +236,7 @@ export const selectObservationPrefix = (
     confidence: candidate.observation.confidence,
     priority: candidate.observation.priority,
     summary: candidate.observation.summary,
-    reason: candidate.matches.length === 0
-      ? "selected by priority and confidence"
-      : `matched task terms: ${candidate.matches.join(", ")}`,
+    reason: `matched task terms: ${candidate.matches.join(", ")}`,
     score: candidate.score
   }));
   const warnings = selected

@@ -7,7 +7,8 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-17A in `docs/plans/memory-ideal-state/PLAN.md`.
+- MM-00 through MM-17A and MM-16R in
+  `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
   `88cbbba docs(memory): add harsh review repair layer`.
@@ -30,12 +31,13 @@ Current runtime truth:
 - `krn doctor` is read-only.
 - Manual `krn observe --run <id> [--persist]` exists, but the observation
   runtime still needs MM-17B dogfood proof before it is treated as proven.
-- Observation prefix selector exists as pure harness logic, but it still needs
-  MM-16R hardening and later activation/context integration.
+- Observation prefix selector exists as pure harness logic and MM-16R hardened
+  relevance/project scoping. It still needs later activation/context
+  integration.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-16R observation prefix relevance/project-scope hardening.
+- Continue with MM-17B observation dogfood with raw recall matrix.

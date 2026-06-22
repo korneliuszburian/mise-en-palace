@@ -67,7 +67,8 @@ describe("observation prefix selector", () => {
       observations: [
         observation({
           id: "low",
-          summary: "Dashboard color note",
+          subject: "navbar color",
+          summary: "Navbar color note",
           body: "Unrelated visual detail.",
           priority: "low",
           confidence: "low"
@@ -88,9 +89,43 @@ describe("observation prefix selector", () => {
     })]);
     expect(prefix.exclusions).toEqual([expect.objectContaining({
       observationId: "low",
-      reason: "budget_exceeded"
+      reason: "low_relevance"
     })]);
     expect(prefix.text).toContain("Observe run command creates observation staging records.");
+  });
+
+  it("excludes high priority high confidence observations with no task relation", () => {
+    const prefix = selectObservationPrefix({
+      task,
+      projectId: "project-1",
+      observations: [
+        observation({
+          id: "urgent-unrelated",
+          priority: "critical",
+          confidence: "high",
+          subject: "deployment outage",
+          summary: "Production deploy requires incident commander approval.",
+          body: "Release operations require incident commander approval."
+        }),
+        observation({
+          id: "relevant-low-priority",
+          priority: "low",
+          confidence: "low",
+          subject: "observe run",
+          summary: "Observation group is created by observe run.",
+          body: "The command creates source-ranged observation staging records."
+        })
+      ],
+      now
+    });
+
+    expect(prefix.items).toEqual([expect.objectContaining({
+      observationId: "relevant-low-priority"
+    })]);
+    expect(prefix.exclusions).toEqual([expect.objectContaining({
+      observationId: "urgent-unrelated",
+      reason: "low_relevance"
+    })]);
   });
 
   it("excludes invalidated stale and cross-project observations", () => {
@@ -112,6 +147,10 @@ describe("observation prefix selector", () => {
           scope: {
             projectId: "project-2"
           }
+        }),
+        observation({
+          id: "unscoped",
+          scope: {}
         })
       ],
       now
@@ -121,6 +160,7 @@ describe("observation prefix selector", () => {
     expect(prefix.exclusions.map((exclusion) => exclusion.reason)).toEqual([
       "invalidated",
       "stale",
+      "project_mismatch",
       "project_mismatch"
     ]);
   });
