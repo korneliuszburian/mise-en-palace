@@ -71,6 +71,7 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
   reason: `Source claim: ${claim.claim}`,
   expectedUse: claim.krnImplication,
   tokenEstimate: estimateTokens([claim.claim, claim.mechanism, claim.krnImplication].join(" ")),
+  hasMechanism: claim.mechanism.trim().length > 0,
   doesNotProve: claim.doesNotProve,
   metadata: {
     sourceArtifactId: claim.sourceArtifactId,

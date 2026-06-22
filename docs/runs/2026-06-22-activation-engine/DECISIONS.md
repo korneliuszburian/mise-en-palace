@@ -115,3 +115,44 @@ Slice 02 type-safety notes:
   typed read models.
 - Public type changes: `MemoryRepository.listAntiMemoryForProject` added.
 - Type-safety exceptions: none; no `any` or double assertions.
+
+Slice 03 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN noisy fixture
+  coverage before changing activation safety behavior.
+- `activation-engine`: used to prove bounded inclusions, stale exclusion,
+  anti-memory conflict exclusion, source safety, and budget behavior.
+- `typescript-type-safety`: used for JSON fixture boundary narrowing and the
+  source-candidate `hasMechanism` contract.
+
+Slice 03 decisions:
+
+- Source: `tests/fixtures/activation/noisy-brain-selection.json`.
+  Mechanism: one noisy task includes memory, stale memory, source claims,
+  search, anti-memory, and a small inclusion budget.
+  KRN implication: activation can now prove it compresses context rather than
+  merely retrieving nearby records.
+  Decision: keep the noisy corpus as a JSON fixture under `tests/fixtures`
+  and drive harness behavior through a focused test.
+  Rejection/falsifier: if the fixture can pass without explicit exclusions or
+  conflict flags, it is too weak for M25.
+- Source: `packages/harness/src/activation/assembleContext.ts`.
+  Mechanism: source claims require `doesNotProve`; Slice 03 adds explicit
+  mechanism safety.
+  KRN implication: decorative source claims without a source-to-mechanism link
+  must not enter active context.
+  Decision: source safety can override `over_budget` and `low_context_roi`, but
+  must preserve stronger trust, temporal, and anti-memory unsafe exclusions.
+  Rejection/falsifier: if low-trust or anti-memory exclusions are rewritten into
+  generic source-safety reasons, the audit trail loses the real cause.
+
+Slice 03 type-safety notes:
+
+- Boundary classification: test JSON fixture plus harness-internal activation
+  candidate contract.
+- Validation/narrowing: `JSON.parse` is assigned to `unknown` and narrowed by a
+  small fixture-shape assertion before use.
+- Public type changes: `RankedActivationCandidate` now carries optional
+  `hasMechanism` through `ActivationCandidate`.
+- Type-safety exceptions: one narrowed test-fixture assertion remains after the
+  runtime shape check; no `any` or double assertions were added.

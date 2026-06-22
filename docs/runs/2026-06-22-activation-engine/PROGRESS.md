@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 02 activation engine v1 complete.
+Current slice: Slice 03 noisy-brain activation fixture complete.
 
 Completed:
 
@@ -30,6 +30,17 @@ Completed:
   instead of inline candidate persistence.
 - Slice 02 added `MemoryRepository.listAntiMemoryForProject` and the Drizzle
   implementation.
+- Slice 03 added
+  `tests/fixtures/activation/noisy-brain-selection.json` with one activation
+  task, high-signal memory, stale memory, source claims, a search document, and
+  anti-memory.
+- Slice 03 added
+  `packages/harness/src/activation/noisyBrainFixture.test.ts` to prove bounded
+  inclusions, explicit exclusions, stale rejection, anti-memory blocking, and
+  conflict flags.
+- Slice 03 added `hasMechanism` to source activation candidates and made
+  source safety override budget/low-ROI exclusions without overriding
+  low-trust, stale, invalidated, superseded, or anti-memory unsafe decisions.
 
 Verification:
 
@@ -84,10 +95,27 @@ Verification:
   --persist`: passed with context included `3`, context excluded `0`, and
   persisted execution run `c44204c0-be61-4839-b765-5002024f4c3e`.
 - `git diff --check`: passed.
+- Slice 03 RED-1: `pnpm --filter @krn/harness test --
+  noisyBrainFixture.test.ts` failed because the bounded fixture selected
+  source claim `claim-activation-smoke` instead of search document
+  `search-activation-smoke`.
+- Slice 03 RED-2: after correcting the fixture search score and adding
+  `unknown` JSON fixture narrowing, `pnpm --filter @krn/harness test --
+  noisyBrainFixture.test.ts` failed because source claim
+  `claim-no-mechanism` was excluded as `over_budget` instead of `unsafe`.
+- Slice 03 GREEN-1: after adding source mechanism safety,
+  `pnpm --filter @krn/harness test -- noisyBrainFixture.test.ts` exposed an
+  existing compiler regression where a low-trust source claim was incorrectly
+  rewritten from `low_trust` to `unsafe`.
+- Slice 03 GREEN-2: after preserving hard trust/temporal/anti-memory exclusion
+  reasons, `pnpm --filter @krn/harness test -- noisyBrainFixture.test.ts`
+  passed with 4 test files and 9 tests.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed with 17 test files and 96 tests.
+- `git diff --check`: passed.
 
 Next:
 
-- Commit Slice 02 as `feat(harness): add activation engine v1`.
-- Start M25.03 by adding the noisy-brain activation fixture that forces bounded
-  inclusions, explicit exclusions, stale/unsafe filtering, anti-memory blocking,
-  and conflict flags.
+- Commit Slice 03 as `test(harness): add noisy brain activation fixture`.
+- Start M25.04 by adding an activation smoke path that uses the fixture/DB path
+  to prove included and excluded activation decisions.

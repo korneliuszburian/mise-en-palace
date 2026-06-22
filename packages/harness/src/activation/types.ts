@@ -35,6 +35,7 @@ export interface ActivationCandidate {
   validUntil?: IsoTimestamp;
   invalidatedAt?: IsoTimestamp;
   invalidationReason?: string;
+  hasMechanism?: boolean;
   doesNotProve?: string;
   lexicalScore?: number;
   vectorScore?: number;

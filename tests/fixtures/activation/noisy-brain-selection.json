@@ -1,0 +1,151 @@
+{
+  "now": "2026-06-22T04:55:00.000Z",
+  "policy": {
+    "tokenBudget": 420,
+    "maxInclusions": 2
+  },
+  "task": {
+    "id": "task-activation-fixture",
+    "operatorIntentId": "intent-activation-fixture",
+    "projectId": "project-activation-fixture",
+    "title": "Improve KRN doctor activation readiness",
+    "objective": "Use activation smoke, search candidates, anti-memory, and explicit exclusions.",
+    "constraints": ["no source crawler", "no dashboard", "persist activation decisions"],
+    "nonGoals": ["do not add broad research", "do not mutate memory automatically"],
+    "acceptance": ["bounded context", "explicit exclusions", "conflict flagged"],
+    "status": "active",
+    "metadata": {},
+    "createdAt": "2026-06-22T04:55:00.000Z",
+    "updatedAt": "2026-06-22T04:55:00.000Z"
+  },
+  "memoryRecords": [
+    {
+      "id": "memory-activation-high",
+      "projectId": "project-activation-fixture",
+      "key": "activation-smoke",
+      "kind": "constraint",
+      "status": "active",
+      "summary": "Activation smoke must prove explicit exclusions",
+      "body": "M25 activation readiness depends on bounded context, anti-memory blocking, and persisted decisions.",
+      "owner": "kernel",
+      "confidence": 95,
+      "applicationGuidance": "Use when implementing activation smoke and doctor readiness.",
+      "sourceLineage": [{ "sourceId": "source-activation" }],
+      "isUserPreference": false,
+      "positiveFeedbackCount": 0,
+      "negativeFeedbackCount": 0,
+      "metadata": {},
+      "validFrom": "2026-06-01T00:00:00.000Z",
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    },
+    {
+      "id": "memory-stale-dashboard",
+      "projectId": "project-activation-fixture",
+      "key": "stale-dashboard",
+      "kind": "preference",
+      "status": "stale",
+      "summary": "Dashboard-first activation view",
+      "body": "Old dashboard planning note that should not enter activation context.",
+      "owner": "kernel",
+      "confidence": 90,
+      "applicationGuidance": "Do not use for activation engine implementation.",
+      "sourceLineage": [{ "sourceId": "source-stale" }],
+      "isUserPreference": false,
+      "positiveFeedbackCount": 0,
+      "negativeFeedbackCount": 0,
+      "metadata": {},
+      "validFrom": "2026-06-01T00:00:00.000Z",
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    }
+  ],
+  "sourceClaims": [
+    {
+      "id": "claim-activation-smoke",
+      "sourceArtifactId": "artifact-activation",
+      "claim": "Activation smoke should prove bounded context and explicit exclusions.",
+      "mechanism": "A noisy fixture forces the engine to include only high-signal context and record exclusions.",
+      "krnImplication": "M25 should add an activation smoke path before doctor readiness can be claimed.",
+      "doesNotProve": "This does not prove production ranking quality.",
+      "trustTier": "project-decision",
+      "supportType": "implementation-boundary",
+      "consumer": "M25 activation fixture",
+      "status": "proposed",
+      "metadata": {},
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    },
+    {
+      "id": "claim-crawler",
+      "sourceArtifactId": "artifact-crawler",
+      "claim": "Activation readiness should add a source crawler.",
+      "mechanism": "A crawler would gather more source material.",
+      "krnImplication": "Activation could inspect more documents.",
+      "doesNotProve": "The crawler is within M25 scope.",
+      "trustTier": "project-decision",
+      "supportType": "supports",
+      "consumer": "M25 activation fixture",
+      "status": "proposed",
+      "metadata": {},
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    },
+    {
+      "id": "claim-no-mechanism",
+      "sourceArtifactId": "artifact-no-mechanism",
+      "claim": "Activation can rely on broad context because more is safer.",
+      "mechanism": "",
+      "krnImplication": "This would encourage broad context dumping.",
+      "doesNotProve": "The claim has a working mechanism.",
+      "trustTier": "high",
+      "supportType": "background",
+      "consumer": "M25 activation fixture",
+      "status": "proposed",
+      "metadata": {},
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    }
+  ],
+  "searchDocuments": [
+    {
+      "id": "search-activation-smoke",
+      "projectId": "project-activation-fixture",
+      "subjectType": "search_document",
+      "subjectId": "search-activation-smoke",
+      "trustTier": "project-decision",
+      "validityStatus": "active",
+      "language": "english",
+      "title": "Activation smoke search document",
+      "body": "Activation readiness uses search candidates, explicit exclusions, and anti-memory conflict handling.",
+      "searchText": "activation readiness search candidates explicit exclusions anti-memory conflict",
+      "metadataFilters": {},
+      "validFrom": "2026-06-01T00:00:00.000Z",
+      "metadata": {},
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z",
+      "lexicalScore": 260
+    }
+  ],
+  "antiMemoryRecords": [
+    {
+      "id": "anti-crawler",
+      "projectId": "project-activation-fixture",
+      "executionRunId": "run-activation-fixture",
+      "key": "anti-crawler",
+      "rejectedClaim": "Activation readiness should add a source crawler.",
+      "reason": "Source crawler is out of scope for M25.",
+      "invalidatedBySourceClaimIds": ["claim-crawler"],
+      "invalidatedBySourceClaimId": "claim-crawler",
+      "summary": "Do not add crawler for M25 activation",
+      "body": "Use existing source, memory, and search substrate before adding crawler scope.",
+      "owner": "kernel",
+      "confidence": 95,
+      "sourceLineage": [{ "sourceId": "source-activation" }],
+      "metadata": {},
+      "validFrom": "2026-06-01T00:00:00.000Z",
+      "createdAt": "2026-06-01T00:00:00.000Z",
+      "updatedAt": "2026-06-01T00:00:00.000Z"
+    }
+  ]
+}

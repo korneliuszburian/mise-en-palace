@@ -123,3 +123,37 @@ Results:
   included `3` and excluded `0`, which is expected until M25.03/M25.04 seed a
   noisy activation fixture/smoke with search hits and anti-memory conflicts.
 - `git diff --check` passed.
+
+## Slice 03
+
+Commands run:
+
+```sh
+pnpm --filter @krn/harness test -- noisyBrainFixture.test.ts
+pnpm --filter @krn/harness test -- noisyBrainFixture.test.ts
+pnpm --filter @krn/harness test -- noisyBrainFixture.test.ts
+pnpm --filter @krn/harness test -- noisyBrainFixture.test.ts
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Results:
+
+- RED-1 failed because the first fixture score selected source claim
+  `claim-activation-smoke` instead of search document
+  `search-activation-smoke`; the fixture search score was then corrected to
+  make the expected bounded-inclusion contract explicit.
+- RED-2 failed because source claim `claim-no-mechanism` was excluded as
+  `over_budget` instead of `unsafe`, proving the missing source-mechanism
+  policy.
+- Added `hasMechanism` to source activation candidates and source safety in
+  `assembleContext` for source claims without a mechanism.
+- GREEN-1 exposed a regression where an existing weak-context compiler test
+  lost `low_trust`; source safety now only overrides `over_budget` and
+  `low_context_roi`, while preserving low-trust, temporal, and anti-memory
+  unsafe exclusions.
+- GREEN-2 passed with 4 test files and 9 tests.
+- `pnpm typecheck` passed.
+- Full `pnpm test` passed with 17 test files and 96 tests.
+- `git diff --check` passed.
