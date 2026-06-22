@@ -22,16 +22,16 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Last pushed implementation head before MM-15 closeout:
+Last pushed implementation head before MM-16 closeout:
 
 ```txt
-03e31db feat(core): add observation source-range policy matrix
+023a365 feat(cli): add manual observe-run command
 ```
 
-Current expected branch after MM-15 closeout:
+Current expected branch after MM-16 closeout:
 
 ```txt
-main == origin/main after `feat(cli): add manual observe-run command` is pushed
+main == origin/main after `feat(harness): add observation prefix selector` is pushed
 ```
 
 Known local untracked quarry that is not accepted as truth:
@@ -139,17 +139,19 @@ MM-12  evidence/source range linkage
 MM-13  observer input builder
 MM-14  observation source-range policy matrix
 MM-15  manual observe-run CLI
+MM-16  observation prefix selector
 ```
 
-First unchecked slice after MM-15:
+First unchecked slice after MM-16:
 
 ```txt
-MM-16  Observation prefix selector
+MM-17  Observation dogfood
 ```
 
 Recent pushed commits:
 
 ```txt
+023a365 feat(cli): add manual observe-run command
 03e31db feat(core): add observation source-range policy matrix
 ec77c57 feat(harness): add deterministic observer input builder
 f7dbc6e feat(db): link observations to raw evidence
@@ -167,6 +169,54 @@ d2d0a4a feat(core): add audit bundle domain contract
 4c944e8 docs(memory): record audit baseline
 c38eaff docs(memory): add controlled memory brain execution plan
 ```
+
+## MM-16 Closeout Note
+
+MM-16 is intended to be complete in the repository head that includes:
+
+```txt
+feat(harness): add observation prefix selector
+```
+
+That slice touched:
+
+```txt
+packages/harness/src/observations/observationPrefix.ts
+packages/harness/src/observations/observationPrefix.test.ts
+packages/harness/src/observations/index.ts
+docs/plans/memory-ideal-state/PLAN.md
+REVIEW.md
+```
+
+Implemented intent:
+
+- add pure `selectObservationPrefix`;
+- rank already loaded observations against a `TaskContract`;
+- return a small prefix with selected items, reasons, scores, warnings,
+  exclusions, and rendered text;
+- exclude cross-project, invalidated/deprecated/superseded, stale, low-relevance,
+  and budget-overflow observations with explicit reasons.
+
+Important limitation:
+
+- this is not yet wired into context assembly;
+- this is not yet wired into `krn observe`;
+- this performs no DB reads;
+- this performs no LLM call;
+- this does not create or promote memory.
+
+Verification expected for the MM-16 head:
+
+```txt
+pnpm --filter @krn/harness test -- observations/observationPrefix.test.ts
+pnpm --filter @krn/harness typecheck
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
+```
+
+The reviewer should rerun these commands against the exact checkout being
+reviewed. Do not treat this note as a substitute for current command output.
 
 ## MM-15 Closeout Note
 
@@ -393,6 +443,8 @@ Observation layer:
 - explicit source-range policy matrix in
   `packages/core/src/observations/observationPolicy.ts`.
 - manual observe-run CLI in `packages/cli/src/runObserveCommand.ts`.
+- pure observation prefix selector in
+  `packages/harness/src/observations/observationPrefix.ts`.
 
 Observation tables:
 
