@@ -10,6 +10,7 @@ export * from "./harnessPlan.js";
 export * from "./ids.js";
 export * from "./memory.js";
 export * from "./operatorIntent.js";
+export * from "./observations/index.js";
 export * from "./policy.js";
 export * from "./reviewAssessment.js";
 export * from "./source.js";
