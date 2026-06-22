@@ -22,16 +22,16 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Last pushed implementation head before this review-request rewrite:
+Last pushed implementation head before MM-12 closeout:
 
 ```txt
-3c62597 feat(db): add observation repository adapter
+d28431d docs(review): expand anti-slop reviewer request
 ```
 
-Current branch before committing this review-request rewrite:
+Current expected branch after MM-12 closeout:
 
 ```txt
-main == origin/main
+main == origin/main after `feat(db): link observations to raw evidence` is pushed
 ```
 
 Known local untracked quarry that is not accepted as truth:
@@ -135,17 +135,19 @@ MM-08  observation domain contracts
 MM-09  observation IO schemas
 MM-10  observation DB schema and migration
 MM-11  observation repository adapter
+MM-12  evidence/source range linkage
 ```
 
-First unchecked pushed slice:
+First unchecked slice after MM-12:
 
 ```txt
-MM-12  Evidence/source range linkage
+MM-13  Observer input builder
 ```
 
 Recent pushed commits:
 
 ```txt
+d28431d docs(review): expand anti-slop reviewer request
 3c62597 feat(db): add observation repository adapter
 fec2a45 docs(review): add extended reviewer goal
 03442ff feat(db): add observation persistence schema
@@ -160,17 +162,24 @@ d2d0a4a feat(core): add audit bundle domain contract
 c38eaff docs(memory): add controlled memory brain execution plan
 ```
 
-## Local In-Progress Note
+## MM-12 Closeout Note
 
-At the time this review request was rewritten, there is a local uncommitted
-MM-12 draft in:
+MM-12 is intended to be complete in the repository head that includes:
+
+```txt
+feat(db): link observations to raw evidence
+```
+
+That slice touched:
 
 ```txt
 packages/db/src/repositories/DrizzleObservationRepository.ts
 packages/db/src/repositories/DrizzleObservationRepository.test.ts
+docs/plans/memory-ideal-state/PLAN.md
+REVIEW.md
 ```
 
-Draft intent:
+Implemented intent:
 
 - add evidence-linkage helper checks for observation source ranges;
 - block factual observations unless they have an evidence-linked source range;
@@ -178,7 +187,16 @@ Draft intent:
 - add `recallRawEvidence(observationItemId)` to reconstruct raw run/source/
   evidence/review/feedback material from observation source ranges.
 
-Draft verification already run locally before this review rewrite:
+Important limitation:
+
+- source ranges that only carry polymorphic `sourceType` / `sourceId` and no
+  typed FK are still returned as unavailable raw evidence;
+- tool traces are recalled when represented through existing run event/evidence
+  records, not through a dedicated tool trace table;
+- MM-13 still needs to build deterministic observer input and must not be
+  mistaken for already-built observer runtime.
+
+Verification expected for the MM-12 head:
 
 ```txt
 pnpm --filter @krn/db test -- repositories/DrizzleObservationRepository.test.ts
@@ -188,9 +206,8 @@ pnpm test
 KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
 ```
 
-All above passed on the local worktree. Do not treat the MM-12 draft as pushed
-repo truth unless the diff is provided separately or appears in the repository
-head you review.
+The reviewer should rerun these commands against the exact checkout being
+reviewed. Do not treat this note as a substitute for current command output.
 
 ## What Exists
 
@@ -212,6 +229,10 @@ Observation layer:
 - migration `packages/db/src/migrations/0009_dusty_tattoo.sql`;
 - repository adapter in
   `packages/db/src/repositories/DrizzleObservationRepository.ts`.
+- repository-level raw evidence recall in
+  `DrizzleObservationRepository.recallRawEvidence`.
+- repository-level factual observation guard requiring typed evidence-linked
+  source ranges.
 
 Observation tables:
 
@@ -221,6 +242,14 @@ Observation tables:
 - `observation_entity_edges`
 - `observation_claim_edges`
 - `observation_feedback_events`
+
+Evidence linkage currently supports typed observation source range links to:
+
+- `run_events`
+- `source_chunks`
+- `evidence_bundles`
+- `review_assessments`
+- `feedback_deltas`
 
 Observation doctrine:
 

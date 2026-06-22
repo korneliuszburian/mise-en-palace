@@ -1,4 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
+import { requiresObservationSourceRange } from "@krn/core";
 import type {
   ExecutionRunId,
   ObservationClaimLink,
@@ -21,12 +22,17 @@ import type {
 
 import type { KrnDatabase } from "../database.js";
 import {
+  evidenceBundles,
   observationClaimEdges,
   observationEntityEdges,
   observationFeedbackEvents,
   observationGroups,
   observationItems,
-  observationSourceRanges
+  observationSourceRanges,
+  reviewAssessments,
+  feedbackDeltas,
+  runEvents,
+  sourceChunks
 } from "../schema/index.js";
 import {
   fromIsoTimestamp,
@@ -117,12 +123,70 @@ export interface RecordObservationFeedbackInput {
   metadata?: Record<string, unknown>;
 }
 
+export type ObservationRawEvidenceKind =
+  | "run_event"
+  | "source_chunk"
+  | "evidence_bundle"
+  | "review_assessment"
+  | "feedback_delta"
+  | "unavailable";
+
+export interface ObservationRawEvidenceRecord {
+  sourceRange: ObservationSourceRange;
+  kind: ObservationRawEvidenceKind;
+  sourceId: string;
+  locator: string;
+  excerpt?: string;
+  text?: string;
+  payload: Record<string, unknown>;
+  capturedAt: string;
+}
+
+interface ObservationEvidenceLinkageInput {
+  kind: ObservationKind;
+  provenanceKind: ObservationProvenanceKind;
+  sourceRanges: CreateObservationSourceRangeInput[];
+}
+
 type ObservationGroupRow = typeof observationGroups.$inferSelect;
 type ObservationItemRow = typeof observationItems.$inferSelect;
 type ObservationSourceRangeRow = typeof observationSourceRanges.$inferSelect;
 type ObservationEntityEdgeRow = typeof observationEntityEdges.$inferSelect;
 type ObservationClaimEdgeRow = typeof observationClaimEdges.$inferSelect;
 type ObservationFeedbackEventRow = typeof observationFeedbackEvents.$inferSelect;
+
+const unknownListOrEmpty = (value: unknown): unknown[] => (
+  Array.isArray(value) ? value : []
+);
+
+export const isEvidenceLinkedObservationSourceRangeInput = (
+  input: CreateObservationSourceRangeInput
+): boolean => (
+  input.runEventId !== undefined ||
+  input.sourceChunkId !== undefined ||
+  input.evidenceBundleId !== undefined ||
+  input.reviewAssessmentId !== undefined ||
+  input.feedbackDeltaId !== undefined
+);
+
+export const assertObservationItemEvidenceLinkage = (
+  input: ObservationEvidenceLinkageInput
+): void => {
+  if (!requiresObservationSourceRange(input.kind, input.provenanceKind)) {
+    return;
+  }
+
+  if (input.sourceRanges.length === 0) {
+    throw new Error("Observation item requires source ranges");
+  }
+
+  if (
+    input.kind === "fact" &&
+    !input.sourceRanges.some(isEvidenceLinkedObservationSourceRangeInput)
+  ) {
+    throw new Error("Factual observation requires an evidence-linked source range");
+  }
+};
 
 const scopeFromGroupRow = (row: ObservationGroupRow): ObservationScope => ({
   ...metadataOrEmpty(row.scope),
@@ -317,6 +381,12 @@ export class DrizzleObservationRepository {
       const items: ObservationItem[] = [];
 
       for (const input of inputs) {
+        assertObservationItemEvidenceLinkage({
+          kind: input.kind,
+          provenanceKind: input.provenanceKind,
+          sourceRanges: input.sourceRanges ?? []
+        });
+
         const scope = itemScope(group, input.scope);
         const itemRow = requireReturnedRow(
           await tx
@@ -446,6 +516,20 @@ export class DrizzleObservationRepository {
     observationItemId: ObservationItemId,
     input: CreateObservationSourceRangeInput
   ): Promise<ObservationSourceRange> {
+    const itemRow = await this.db.query.observationItems.findFirst({
+      where: eq(observationItems.id, observationItemId)
+    });
+
+    if (itemRow === undefined) {
+      throw new Error(`Observation item ${observationItemId} was not found`);
+    }
+
+    assertObservationItemEvidenceLinkage({
+      kind: itemRow.kind,
+      provenanceKind: itemRow.provenanceKind,
+      sourceRanges: [input]
+    });
+
     const row = requireReturnedRow(
       await this.db
         .insert(observationSourceRanges)
@@ -477,6 +561,22 @@ export class DrizzleObservationRepository {
     return mapObservationSourceRange(row);
   }
 
+  async recallRawEvidence(
+    observationItemId: ObservationItemId
+  ): Promise<ObservationRawEvidenceRecord[]> {
+    const rows = await this.db.query.observationSourceRanges.findMany({
+      where: eq(observationSourceRanges.observationItemId, observationItemId)
+    });
+
+    const evidence: ObservationRawEvidenceRecord[] = [];
+
+    for (const row of rows) {
+      evidence.push(await this.recallRawEvidenceForRange(row));
+    }
+
+    return evidence;
+  }
+
   async recordFeedback(
     input: RecordObservationFeedbackInput
   ): Promise<ObservationFeedbackEventRecord> {
@@ -497,6 +597,152 @@ export class DrizzleObservationRepository {
     );
 
     return mapObservationFeedbackEvent(row);
+  }
+
+  private async recallRawEvidenceForRange(
+    row: ObservationSourceRangeRow
+  ): Promise<ObservationRawEvidenceRecord> {
+    const sourceRange = mapObservationSourceRange(row);
+    const base = (): ObservationRawEvidenceRecord => {
+      const record: ObservationRawEvidenceRecord = {
+        sourceRange,
+        kind: "unavailable",
+        sourceId: row.sourceId,
+        locator: row.locator,
+        payload: metadataOrEmpty(row.metadata),
+        capturedAt: toIsoTimestamp(row.capturedAt)
+      };
+
+      if (row.excerpt !== null) {
+        record.excerpt = row.excerpt;
+      }
+
+      return record;
+    };
+
+    if (row.runEventId !== null) {
+      const runEvent = await this.db.query.runEvents.findFirst({
+        where: eq(runEvents.id, row.runEventId)
+      });
+
+      if (runEvent !== undefined) {
+        return {
+          ...base(),
+          kind: "run_event",
+          sourceId: runEvent.id,
+          text: runEvent.message,
+          payload: {
+            executionRunId: runEvent.executionRunId,
+            sequence: runEvent.sequence,
+            type: runEvent.type,
+            severity: runEvent.severity,
+            payload: metadataOrEmpty(runEvent.payload),
+            occurredAt: toIsoTimestamp(runEvent.occurredAt)
+          }
+        };
+      }
+    }
+
+    if (row.sourceChunkId !== null) {
+      const sourceChunk = await this.db.query.sourceChunks.findFirst({
+        where: eq(sourceChunks.id, row.sourceChunkId)
+      });
+
+      if (sourceChunk !== undefined) {
+        return {
+          ...base(),
+          kind: "source_chunk",
+          sourceId: sourceChunk.id,
+          text: sourceChunk.content,
+          payload: {
+            sourceArtifactId: sourceChunk.sourceArtifactId,
+            ordinal: sourceChunk.ordinal,
+            heading: sourceChunk.heading,
+            tokenCount: sourceChunk.tokenCount,
+            contentHash: sourceChunk.contentHash,
+            metadata: metadataOrEmpty(sourceChunk.metadata),
+            createdAt: toIsoTimestamp(sourceChunk.createdAt)
+          }
+        };
+      }
+    }
+
+    if (row.evidenceBundleId !== null) {
+      const evidenceBundle = await this.db.query.evidenceBundles.findFirst({
+        where: eq(evidenceBundles.id, row.evidenceBundleId)
+      });
+
+      if (evidenceBundle !== undefined) {
+        return {
+          ...base(),
+          kind: "evidence_bundle",
+          sourceId: evidenceBundle.id,
+          text: evidenceBundle.rollbackPath,
+          payload: {
+            executionRunId: evidenceBundle.executionRunId,
+            status: evidenceBundle.status,
+            changedFiles: unknownListOrEmpty(evidenceBundle.changedFiles),
+            commands: unknownListOrEmpty(evidenceBundle.commands),
+            diffRisk: evidenceBundle.diffRisk,
+            reviewBurden: evidenceBundle.reviewBurden,
+            rollbackPath: evidenceBundle.rollbackPath,
+            metadata: metadataOrEmpty(evidenceBundle.metadata),
+            createdAt: toIsoTimestamp(evidenceBundle.createdAt),
+            updatedAt: toIsoTimestamp(evidenceBundle.updatedAt)
+          }
+        };
+      }
+    }
+
+    if (row.reviewAssessmentId !== null) {
+      const reviewAssessment = await this.db.query.reviewAssessments.findFirst({
+        where: eq(reviewAssessments.id, row.reviewAssessmentId)
+      });
+
+      if (reviewAssessment !== undefined) {
+        return {
+          ...base(),
+          kind: "review_assessment",
+          sourceId: reviewAssessment.id,
+          text: reviewAssessment.summary,
+          payload: {
+            evidenceBundleId: reviewAssessment.evidenceBundleId,
+            status: reviewAssessment.status,
+            reviewer: reviewAssessment.reviewer,
+            findings: unknownListOrEmpty(reviewAssessment.findings),
+            metadata: metadataOrEmpty(reviewAssessment.metadata),
+            createdAt: toIsoTimestamp(reviewAssessment.createdAt),
+            updatedAt: toIsoTimestamp(reviewAssessment.updatedAt)
+          }
+        };
+      }
+    }
+
+    if (row.feedbackDeltaId !== null) {
+      const feedbackDelta = await this.db.query.feedbackDeltas.findFirst({
+        where: eq(feedbackDeltas.id, row.feedbackDeltaId)
+      });
+
+      if (feedbackDelta !== undefined) {
+        return {
+          ...base(),
+          kind: "feedback_delta",
+          sourceId: feedbackDelta.id,
+          payload: {
+            reviewAssessmentId: feedbackDelta.reviewAssessmentId,
+            status: feedbackDelta.status,
+            memoryCandidates: unknownListOrEmpty(feedbackDelta.memoryCandidates),
+            sourceDecisions: unknownListOrEmpty(feedbackDelta.sourceDecisions),
+            evalCandidates: unknownListOrEmpty(feedbackDelta.evalCandidates),
+            metadata: metadataOrEmpty(feedbackDelta.metadata),
+            createdAt: toIsoTimestamp(feedbackDelta.createdAt),
+            updatedAt: toIsoTimestamp(feedbackDelta.updatedAt)
+          }
+        };
+      }
+    }
+
+    return base();
   }
 
   private async hydrateItems(rows: ObservationItemRow[]): Promise<ObservationItem[]> {
