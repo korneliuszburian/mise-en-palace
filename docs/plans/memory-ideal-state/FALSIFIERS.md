@@ -20,3 +20,7 @@ These falsifiers convert the MM-00 memory direction into testable constraints.
 | F14 | LongMemEval is benchmark class, not proof. | KRN treats external LongMemEval numbers as evidence that KRN memory works without dogfood/golden-task proof. | MM-22 |
 | F15 | Gaps are durable. | Known gaps and abstentions remain transient prose and cannot produce observation/eval candidates. | MM-18, MM-22 |
 | F16 | Candidate promotion is reviewed. | Candidate promotion skips review state, lineage, validity, or explicit acceptance. | MM-12 through MM-14 |
+| F17 | No Research Foundry. | A package, DB table, CLI command, worker, or roadmap slice creates Research Foundry as product architecture. | All MM slices |
+| F18 | No Pattern Vault. | A package, DB table, CLI command, worker, or roadmap slice creates Pattern Vault or pattern inspect/promote product behavior. | All MM slices |
+| F19 | Macro reports are eval/report lane only. | Recurring behavior analysis mutates memory, skills, rules, architecture, or candidates without normal review gates. | MM-68 through MM-71 |
+| F20 | Golden tests are not benchmark theater. | Golden memory behavior tests do not map to real KRN behavior or dogfood failures. | MM-59 through MM-67 |

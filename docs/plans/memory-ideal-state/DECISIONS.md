@@ -63,7 +63,26 @@ contract and review gate.
 D20. Local raw research materials are quarry. MM-00 extracts mechanisms into
 the ledger; the raw files are not treated as canonical truth or runtime memory.
 
+D21. `docs/plans/memory-ideal-state/PLAN.md` is the canonical Memory Brain
+ExecPlan. Root `PLAN.md` remains the repo-wide KRN ExecPlan.
+
+D22. Research Foundry, Pattern Vault, meta-researcher runtime, autoresearch
+product behavior, research DB/CLI, and pattern inspect/promote CLI are rejected
+as Memory Brain product architecture.
+
+D23. Cookbook, course, and local research materials may provide process,
+evaluation, or source-to-decision evidence only. They do not create product
+subsystems.
+
+D24. Golden memory behavior tests are allowed inside the normal eval lane. They
+must protect real memory/context/source/evidence/audit behavior and must not
+become benchmark theater.
+
+D25. Pre-plan work in `acca6d2` created pure observation contracts. The
+controlled plan does not automatically mark MM-08 complete; MM-08 must audit and
+reconcile those contracts when reached.
+
 ## Implementation Consequence
 
-Every MM-01..MM-24 implementation slice must point back to the decision it
+Every MM-01..MM-97 implementation slice must point back to the decision it
 implements and the falsifier it must not violate.

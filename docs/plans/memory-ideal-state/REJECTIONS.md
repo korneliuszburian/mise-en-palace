@@ -82,3 +82,23 @@ R16. Hidden autonomous agent zoo.
 
 Reason: KRN is one operating brain around Codex. Observer and Reflector are
 bounded workers later, not independent product actors now.
+
+R17. Research Foundry as a product subsystem.
+
+Reason: research materials are decision evidence, not a new product runtime,
+database, CLI, or architecture gate.
+
+R18. Pattern Vault as a product subsystem.
+
+Reason: reusable patterns may become reviewed skills/rules/evals later, but not
+a separate pattern product layer.
+
+R19. Meta-researcher runtime or autoresearch product loop.
+
+Reason: macro behavior reports may analyze recurring failures later; they must
+not automatically mutate architecture, memory, skills, or rules.
+
+R20. Research CLI or pattern inspect/promote CLI in the Memory Brain roadmap.
+
+Reason: the controlled plan keeps research/pattern activity inside normal
+source-to-decision, review, and eval lanes.
