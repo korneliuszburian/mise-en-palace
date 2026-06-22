@@ -5,7 +5,6 @@ No hard blocker for M25.00.
 Known gaps for later M25 slices:
 
 - current persisted live probe had zero context exclusions;
-- no `pnpm db:smoke:activation` path exists;
 - doctor does not report activation readiness.
 
 Resolved in M25.01:
@@ -33,6 +32,15 @@ Resolved in M25.03:
   source-without-mechanism rejection, and conflict flags;
 - source safety no longer lets decorative/no-mechanism source claims hide
   behind budget exclusions.
+
+Resolved in M25.04:
+
+- `pnpm db:smoke:activation` exists;
+- activation smoke creates a store-backed noisy corpus and persists retrieval
+  candidates, activation decisions, context items, and context exclusions;
+- activation smoke readback proves included, excluded, conflict, and stale
+  activation decisions;
+- activation smoke cleanup proved remaining marker count `0`.
 
 Non-goals that remain intentionally blocked:
 

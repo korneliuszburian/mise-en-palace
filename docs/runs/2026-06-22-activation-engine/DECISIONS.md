@@ -156,3 +156,50 @@ Slice 03 type-safety notes:
   `hasMechanism` through `ActivationCandidate`.
 - Type-safety exceptions: one narrowed test-fixture assertion remains after the
   runtime shape check; no `any` or double assertions were added.
+
+Slice 04 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN DB export and CLI
+  smoke target coverage.
+- `activation-engine`: used to keep the smoke path focused on bounded
+  inclusions, explicit exclusions, conflict, staleness, search, and
+  anti-memory.
+- `brain-store-schema`: used for smoke lifecycle, Drizzle repositories,
+  retrieval/context readback, and cleanup count proof.
+- `typescript-type-safety`: used for the `exactOptionalPropertyTypes` boundary
+  fix and typed smoke report.
+- `superpowers:systematic-debugging`: used when `pnpm typecheck` exposed the
+  optional `tokenBudget` boundary error.
+- `source-to-decision`: used to map local repo evidence into the smoke-path
+  decision below.
+
+Slice 04 decisions:
+
+- Source: `packages/harness/src/activation/*`.
+  Mechanism: activation engine functions already retrieve, rank, filter,
+  detect anti-memory conflicts, assemble context, and persist activation trace.
+  KRN implication: DB smoke should prove the engine against a store-backed
+  noisy corpus rather than reimplementing activation policy in CLI.
+  Decision: `runActivationSmokeCheck` calls harness activation functions
+  directly and keeps CLI as dispatch/formatting only.
+  Rejection/falsifier: if CLI contains ranking/filtering policy, M25 has hidden
+  selection behavior in the wrong layer.
+- Source: `packages/db/src/schema/retrieval.ts`.
+  Mechanism: retrieval runs cascade to retrieval candidates and activation
+  decisions; context items/exclusions cascade through context assembly.
+  KRN implication: activation smoke can self-clean without new tables or
+  schema changes by using smoke metadata plus workspace/context cascade.
+  Decision: add a DB smoke command, not a migration.
+  Rejection/falsifier: if cleanup remaining marker count is nonzero, the smoke
+  is not an acceptable runtime proof.
+
+Slice 04 type-safety notes:
+
+- Boundary classification: CLI command target union, DB smoke report, Drizzle
+  repository input/output, and exact optional properties.
+- Validation/narrowing: no untrusted JSON parsing added; DB rows stay behind
+  Drizzle repository mappers.
+- Public type changes: `@krn/db` now exports `runActivationSmokeCheck` and its
+  report/input types.
+- Type-safety exceptions: none; no `any`, no double assertions, and no schema
+  weakening.

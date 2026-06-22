@@ -1,4 +1,5 @@
 export * from "./database.js";
+export * from "./activationSmoke.js";
 export * from "./harnessEvidenceSmoke.js";
 export * from "./harnessPersistenceReadiness.js";
 export * from "./harnessPlanSmoke.js";

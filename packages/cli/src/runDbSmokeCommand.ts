@@ -3,6 +3,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import {
+  runActivationSmokeCheck,
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
   runMemoryGovernanceSmokeCheck,
@@ -21,7 +22,8 @@ export interface DbSmokeRuntime {
     | "harnessEvidence"
     | "sourceGraph"
     | "memoryGovernance"
-    | "retrievalSubstrate";
+    | "retrievalSubstrate"
+    | "activation";
 }
 
 export interface DbSmokeResult {
@@ -82,6 +84,10 @@ const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "KRN Retrieval Substrate Smoke";
   }
 
+  if (target === "activation") {
+    return "KRN Activation Smoke";
+  }
+
   return "KRN DB Smoke";
 };
 
@@ -106,6 +112,10 @@ const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "Retrieval substrate smoke: skipped (database not configured)";
   }
 
+  if (target === "activation") {
+    return "Activation smoke: skipped (database not configured)";
+  }
+
   return "Persistence smoke: skipped (database not configured)";
 };
 
@@ -128,6 +138,10 @@ const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
 
   if (target === "retrievalSubstrate") {
     return "Retrieval substrate smoke";
+  }
+
+  if (target === "activation") {
+    return "Activation smoke";
   }
 
   return "Persistence smoke";
@@ -324,6 +338,53 @@ export const runDbSmokeCommand = async (
           `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
           `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
           `Retrieval substrate smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
+    if (runtime.target === "activation") {
+      const report = await runActivationSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("activation-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Activation Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          `Workspace smoke row: ${report.workspaceSlug}`,
+          `Project smoke row: ${report.projectSlug}`,
+          `Execution run: ${report.executionRunId}`,
+          `Task contract: ${report.taskContractId}`,
+          `Harness plan: ${report.harnessPlanId}`,
+          `Retrieval run: ${report.retrievalRunId}`,
+          `Retrieval run readback: ${
+            report.readBackRetrievalRunId === report.retrievalRunId ? "matched" : "mismatch"
+          }`,
+          `Context assembly: ${report.contextAssemblyId}`,
+          `Context assembly readback: ${
+            report.readBackContextAssemblyId === report.contextAssemblyId ? "matched" : "mismatch"
+          }`,
+          `Source claims: ${report.sourceClaimCount}`,
+          `Memory records: ${report.memoryRecordCount}`,
+          `Anti-memory records: ${report.antiMemoryRecordCount}`,
+          `Search documents: ${report.searchDocumentCount}`,
+          `Search candidates: ${report.searchCandidateCount}`,
+          `Retrieval candidates: ${report.retrievalCandidateCount}`,
+          `Activation decisions: ${report.activationDecisionCount}`,
+          `Included decisions: ${report.includedDecisionCount}`,
+          `Excluded decisions: ${report.excludedDecisionCount}`,
+          `Conflict decisions: ${report.conflictDecisionCount}`,
+          `Stale decisions: ${report.staleDecisionCount}`,
+          `Context items: ${report.contextItemCount}`,
+          `Context exclusions: ${report.contextExclusionCount}`,
+          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+          `Activation smoke: ${report.cleanedUp ? "passed" : "failed"}`
         ].join("\n") + "\n"
       };
     }

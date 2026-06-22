@@ -533,6 +533,20 @@ describe("runCli", () => {
     );
   });
 
+  it("reports activation smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "activation"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Activation Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain("Activation smoke: skipped (database not configured)");
+  });
+
   it("previews memory candidate add without DB writes", async () => {
     const result = await runCli(
       [

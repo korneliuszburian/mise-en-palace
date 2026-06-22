@@ -2,7 +2,7 @@
 
 Goal: M25 - Activation Engine V1 integrated into persisted harness plan.
 
-Current slice: Slice 03 noisy-brain activation fixture complete.
+Current slice: Slice 04 activation DB smoke path complete.
 
 Completed:
 
@@ -41,6 +41,15 @@ Completed:
 - Slice 03 added `hasMechanism` to source activation candidates and made
   source safety override budget/low-ROI exclusions without overriding
   low-trust, stale, invalidated, superseded, or anti-memory unsafe decisions.
+- Slice 04 added `packages/db/src/activationSmoke.ts` and exported
+  `runActivationSmokeCheck` from `@krn/db`.
+- Slice 04 added root command `pnpm db:smoke:activation` through
+  `krn db smoke activation`.
+- Slice 04 activation smoke creates a smoke workspace/project/run, seeds source
+  claims, memory records, anti-memory, and a search document, runs the harness
+  activation engine, persists retrieval candidates, activation decisions,
+  context inclusions/exclusions, reads back context/retrieval linkage, and
+  cleans marker rows to zero.
 
 Verification:
 
@@ -113,9 +122,27 @@ Verification:
 - `pnpm typecheck`: passed.
 - `pnpm test`: passed with 17 test files and 96 tests.
 - `git diff --check`: passed.
+- Slice 04 RED: `pnpm --filter @krn/db test -- activationSmoke.test.ts`
+  failed because `runActivationSmokeCheck` was not exported.
+- Slice 04 RED: `pnpm --filter @krn/cli test -- runCli.test.ts` failed
+  because `krn db smoke activation` parsed as invalid usage.
+- Slice 04 GREEN: `pnpm --filter @krn/db test -- activationSmoke.test.ts`
+  passed with 10 test files and 25 tests.
+- Slice 04 GREEN: `pnpm --filter @krn/cli test -- runCli.test.ts` passed
+  with 52 tests.
+- First Slice 04 `pnpm typecheck` failed on `exactOptionalPropertyTypes`
+  because `tokenBudget: undefined` was passed to `createContextAssembly`.
+- `pnpm typecheck`: passed after omitting `tokenBudget` when absent.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:activation`: passed with retrieval candidates `6`, activation
+  decisions `6`, included decisions `2`, excluded decisions `2`, conflict
+  decisions `1`, stale decisions `1`, context items `2`, context exclusions
+  `4`, and cleanup remaining marker count `0`.
+- `pnpm test`: passed with 18 test files and 98 tests.
 
 Next:
 
-- Commit Slice 03 as `test(harness): add noisy brain activation fixture`.
-- Start M25.04 by adding an activation smoke path that uses the fixture/DB path
-  to prove included and excluded activation decisions.
+- Run `git diff --check`.
+- Commit Slice 04 as `test(db): add activation engine smoke path`.
+- Start M25.05 by hardening `krn plan --persist` output around bounded
+  inclusions, explicit exclusions, and abstentions.

@@ -157,3 +157,44 @@ Results:
 - `pnpm typecheck` passed.
 - Full `pnpm test` passed with 17 test files and 96 tests.
 - `git diff --check` passed.
+
+## Slice 04
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- activationSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/db test -- activationSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm typecheck
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:activation
+pnpm test
+```
+
+Results:
+
+- RED DB export test failed because `runActivationSmokeCheck` was undefined.
+- RED CLI test failed because `krn db smoke activation` returned usage exit
+  `2`.
+- Added `packages/db/src/activationSmoke.ts`, exported it from `@krn/db`, added
+  parser/CLI dispatch for `activation`, and added root script
+  `pnpm db:smoke:activation`.
+- Targeted DB test passed with 10 test files and 25 tests.
+- Targeted CLI test passed with 52 tests.
+- First `pnpm typecheck` failed because `tokenBudget: undefined` violated
+  `exactOptionalPropertyTypes` at the `createContextAssembly` boundary.
+- The boundary was fixed by omitting `tokenBudget` when absent; `pnpm
+  typecheck` then passed.
+- Live activation smoke passed with:
+  - execution run `dc7b8f72-6cc7-4f94-b9c7-c8a8008f2086`;
+  - retrieval run `7c1d546a-84b3-4873-b0f6-815277819d09`;
+  - context assembly `129f088b-db0b-452a-9e2b-87c21ca0c1d9`;
+  - source claims `3`, memory records `2`, anti-memory records `1`, search
+    documents `1`, search candidates `1`;
+  - retrieval candidates `6`, activation decisions `6`, included decisions
+    `2`, excluded decisions `2`, conflict decisions `1`, stale decisions `1`;
+  - context items `2`, context exclusions `4`;
+  - cleanup remaining marker count `0`.
+- Full `pnpm test` passed with 18 test files and 98 tests.

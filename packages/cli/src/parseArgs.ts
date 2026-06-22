@@ -18,7 +18,8 @@ export type CliCommand =
         | "harnessEvidence"
         | "sourceGraph"
         | "memoryGovernance"
-        | "retrievalSubstrate";
+        | "retrievalSubstrate"
+        | "activation";
     }
   | {
       kind: "evidenceCapture";
@@ -166,7 +167,7 @@ const usage = [
   "Other commands:",
   "krn doctor",
   "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance]",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
@@ -470,10 +471,19 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
       };
     }
 
+    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "activation") {
+      return {
+        command: {
+          kind: "dbSmoke",
+          target: "activation"
+        }
+      };
+    }
+
     return {
       error: [
         "Usage: krn db readiness|smoke",
-        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate]"
+        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation]"
       ].join(" ")
     };
   }
