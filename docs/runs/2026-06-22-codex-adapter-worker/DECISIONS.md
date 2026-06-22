@@ -513,3 +513,59 @@
   input/record/result types and `DrizzleWorkerJobRepository`.
 - Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
   suppressions.
+
+## Slice 08 Decisions
+
+- Source: `GOAL.md` M26.08.
+  Mechanism: M26.08 requires `pnpm db:smoke:worker-jobs`, DB-required
+  enqueue/readback/running/succeeded/skipped/failed transitions, cleanup, and
+  cleanup remaining marker count zero.
+  KRN implication: worker smoke should prove the DB lifecycle of the worker
+  skeleton, not execute maintenance work.
+  Decision: add `runWorkerJobSmokeCheck` in `@krn/db` and route
+  `krn db smoke worker-jobs` through CLI formatting. The smoke enqueues one
+  job per M26 job type, verifies queued readback, transitions all jobs through
+  `running`, completes a controlled 2/2/2 succeeded/skipped/failed split, and
+  cleans by marker IDs.
+  Rejection/falsifier: if the smoke requires a daemon, invokes embeddings,
+  performs real maintenance, or leaves marker rows behind, M26.08 is not a
+  skeleton smoke proof.
+
+- Source: `docs/KRN_KERNEL.md` runtime truth and `AGENTS.md` no broad worker
+  runtime boundary.
+  Mechanism: KRN should build selected, verified, store-backed machinery while
+  avoiding dashboards, broad multi-agent systems, file-backed runtime memory,
+  and broad worker runtime in this phase.
+  KRN implication: M26.08 can use Postgres `worker_jobs` as durable state but
+  must not add Redis/Kafka, background loops, process spawning, or actual job
+  execution.
+  Decision: keep the smoke as a synchronous DB proof over existing repository
+  methods and leave worker execution to a later accepted milestone.
+  Rejection/falsifier: if worker smoke starts long-running behavior or imports
+  execution-layer worker code into `packages/db`, the package boundary has
+  drifted.
+
+## Slice 08 Skill Record
+
+- `superpowers:test-driven-development`: used for RED/GREEN CLI and DB smoke
+  coverage before implementation.
+- `brain-store-schema`: used for worker job persistence lifecycle, marker
+  cleanup, and Postgres-only proof.
+- `source-to-decision`: used to map M26.08 and kernel boundaries into the
+  smoke/worker runtime decision.
+- `typescript-type-safety`: used for public `WorkerJobSmokeReport`, CLI target
+  routing, and avoiding `any` or double assertions.
+- `superpowers:verification-before-completion`: used before claiming focused
+  tests, typecheck, live smoke, root gates, or scans passed.
+
+## Slice 08 Type-Safety Notes
+
+- Boundary classification: CLI args/env, public `@krn/db` smoke helper output,
+  and DB repository lifecycle records.
+- Validation/narrowing: CLI continues to require `KRN_DATABASE_URL`; DB
+  repository readback still narrows `jobType`, lifecycle status, JSONB payload,
+  and timestamps before smoke logic consumes records.
+- Public type changes: `@krn/db` now exports `WorkerJobSmokeInput`,
+  `WorkerJobSmokeReport`, and `runWorkerJobSmokeCheck`.
+- Type-safety exceptions: none; no `any`, no double assertions, no TypeScript
+  suppressions.

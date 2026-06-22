@@ -410,3 +410,56 @@ Results:
 - Boundary/runtime scan returned no `@krn/workers` import in `packages/db` and
   no Redis/Kafka, background loop, process spawn, or `exec(` matches in the new
   worker repository surfaces.
+
+## Slice 08
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- workerJobSmoke.test.ts
+pnpm --filter @krn/db test -- workerJobSmoke.test.ts
+pnpm --filter @krn/cli test -- workerJobSmoke.test.ts
+pnpm --filter @krn/db test -- workerJobSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts
+pnpm --filter @krn/db typecheck
+pnpm --filter @krn/cli typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:worker-jobs
+pnpm typecheck
+pnpm test
+git diff --check
+rg -n "\bany\b|as unknown as|// @ts-ignore|// @ts-expect-error" packages/db/src/workerJobSmoke.ts packages/cli/src/workerJobSmoke.ts packages/cli/src/runDbSmokeCommand.ts packages/cli/src/parseArgs.ts
+rg -n "Redis|Kafka|setInterval|while \(|for \(;;\)|spawn|exec\(" packages/db/src/workerJobSmoke.ts packages/cli/src/workerJobSmoke.ts packages/cli/src/runDbSmokeCommand.ts
+rg -n "@krn/workers" packages/db/src packages/db/package.json
+```
+
+Results:
+
+- RED CLI test failed because `./workerJobSmoke.js` did not exist and the new
+  `runCli` missing-config test received parser exit code `2` instead of `1`.
+- RED DB test failed because `./workerJobSmoke.js` did not exist.
+- Added `runWorkerJobSmokeCheck` in `@krn/db`.
+- Added CLI worker job smoke formatting, parser target `worker-jobs`, and root
+  script `pnpm db:smoke:worker-jobs`.
+- GREEN CLI worker smoke tests passed with 3 test files and 60 tests.
+- GREEN DB worker smoke tests passed with 14 test files and 31 tests.
+- `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 3 test files and
+  60 tests.
+- `pnpm --filter @krn/db typecheck` passed.
+- `pnpm --filter @krn/cli typecheck` passed.
+- Initial live `pnpm db:smoke:worker-jobs` inside sandbox failed before app
+  code with `listen EPERM` for a `tsx` IPC pipe under `/tmp/tsx-1000/`.
+- Escalated live
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:worker-jobs` passed: enqueued `6`, queued readback `6`, running
+  transitions `6`, succeeded `2`, skipped `2`, failed `2`, cleanup deleted
+  `6`, cleanup remaining marker count `0`.
+- `pnpm typecheck` passed across 7 workspace packages.
+- `pnpm test` passed across package outputs totaling 26 test files and 118
+  tests.
+- `git diff --check` passed.
+- TypeScript hygiene scan returned no matches for `any`, double assertions, or
+  TypeScript suppressions.
+- `@krn/workers` boundary scan returned no matches in `packages/db`.
+- Redis/Kafka/background-loop scan returned only the existing
+  `packages/cli/src/runDbSmokeCommand.ts:58` repo-root `for (;;)` search, not
+  worker runtime or daemon code.

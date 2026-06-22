@@ -14,8 +14,8 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 07 it still lacks
-worker-job DB smoke and doctor readiness for adapter/worker surfaces.
+The current surface is not M26-complete. After Slice 08 it still lacks doctor
+readiness for adapter/worker surfaces.
 
 ## Files Inspected
 
@@ -139,7 +139,7 @@ Gaps:
 | Run scheduling field | `runAfter` | aligned | Drizzle and worker package expose `runAfter`; SQL keeps existing `available_at` column. |
 | WorkerJobRepository | `packages/db/src/repositories/DrizzleWorkerJobRepository.ts` | exists | Supports enqueue, read by id, queued listing, running/succeeded/failed/skipped transitions, and cleanup by test IDs. |
 | Drizzle worker repository | `DrizzleWorkerJobRepository` | exists | DB-backed adapter over `worker_jobs`; no daemon, no execution, no external queue. |
-| Worker smoke | none | missing | No `pnpm db:smoke:worker-jobs` or CLI target. |
+| Worker smoke | `pnpm db:smoke:worker-jobs` | exists | Enqueues all six M26 job types, verifies queued readback, running transitions, succeeded/skipped/failed split, and cleanup count zero. |
 | Daemon / loop | absent | correct | No broad worker runtime or infinite loop found. |
 | Redis/Kafka | absent | correct | No separate queue infrastructure found. |
 
@@ -155,10 +155,10 @@ Existing root scripts:
 - `pnpm db:smoke:retrieval-substrate`
 - `pnpm db:smoke:activation`
 - `pnpm db:smoke:codex-adapter`
+- `pnpm db:smoke:worker-jobs`
 
 Missing for M26:
 
-- `pnpm db:smoke:worker-jobs`;
 - `krn plan --task "..." --persist --brief` integrated mode;
 - doctor Codex adapter readiness section;
 - doctor worker job readiness section.
@@ -170,7 +170,6 @@ runtime/Redis/Kafka surfaces.
 
 ## M26 Gaps
 
-- Add worker job smoke proof.
 - Add doctor readiness for adapter and worker surfaces.
 
 ## Non-Gaps
@@ -296,4 +295,21 @@ M26.07 resolved DB-backed worker repository methods:
 - legacy DB statuses `dead_letter` and `cancelled` are rejected by the mapper
   instead of being returned as target lifecycle records.
 
-Remaining worker work is `pnpm db:smoke:worker-jobs`.
+## Slice 08 Update
+
+M26.08 resolved worker smoke proof:
+
+- root script `pnpm db:smoke:worker-jobs` calls
+  `krn db smoke worker-jobs`;
+- CLI missing-config output reports `KRN Worker Job Smoke` and the expected
+  local Postgres next action;
+- `runWorkerJobSmokeCheck` lives in `@krn/db`, because the proof is purely over
+  Postgres worker job persistence;
+- smoke applies migration readiness, enqueues one job for each M26 job type,
+  reads those queued jobs back, marks all jobs running, then marks a controlled
+  2/2/2 split succeeded/skipped/failed;
+- smoke deletes all marker jobs and proves cleanup remaining marker count zero;
+- smoke does not add Redis/Kafka, a daemon, actual job execution, embeddings,
+  or a dependency from `packages/db` to `@krn/workers`.
+
+Remaining M26 work is doctor readiness, dogfood, anti-rot, and final handoff.

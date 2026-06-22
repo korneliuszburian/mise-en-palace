@@ -1,10 +1,9 @@
 # Blockers
 
-No hard blocker for M26.00.
+No hard blocker for M26.
 
 Known gaps for later M26 slices:
 
-- no `pnpm db:smoke:worker-jobs`;
 - doctor does not yet report Codex adapter or worker readiness.
 
 Resolved in M26.01:
@@ -68,6 +67,17 @@ Resolved in M26.07:
   payload, and timestamps before returning typed records;
 - repository code does not import `@krn/workers`, add Redis/Kafka, create a
   daemon, execute jobs, or call embeddings.
+
+Resolved in M26.08:
+
+- `pnpm db:smoke:worker-jobs` exists;
+- `krn db smoke worker-jobs` has missing-config reporting;
+- live worker job smoke enqueues one job for each M26 worker job type;
+- smoke reads queued jobs back, marks all jobs running, and proves controlled
+  succeeded/skipped/failed transitions;
+- smoke cleanup deletes all marker jobs and proves remaining marker count zero;
+- smoke code does not add Redis/Kafka, a daemon, actual job execution, or a
+  `packages/db` dependency on `@krn/workers`.
 
 Non-goals that remain intentionally blocked:
 

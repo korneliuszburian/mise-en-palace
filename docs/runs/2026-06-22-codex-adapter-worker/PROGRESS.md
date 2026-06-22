@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 07 WorkerJobRepository methods complete.
+Current slice: Slice 08 worker job smoke path complete.
 
 Completed:
 
@@ -78,6 +78,17 @@ Completed:
   `jobType`, target lifecycle status, JSONB payload, and `runAfter`.
 - Slice 07 keeps actual job execution out of scope: no daemon, no loop, no
   external queue, and no embedding call.
+- Slice 08 added root script `pnpm db:smoke:worker-jobs`.
+- Slice 08 added `krn db smoke worker-jobs` CLI routing and missing-config
+  reporting.
+- Slice 08 added `runWorkerJobSmokeCheck` in `@krn/db`.
+- Slice 08 worker smoke applies migrations/readiness, enqueues one job for each
+  M26 worker job type, reads queued jobs back, transitions all jobs to
+  `running`, then completes a controlled split of `succeeded`, `skipped`, and
+  `failed`, and cleans marker rows to zero.
+- Slice 08 remains a skeleton proof: no daemon, no loop, no Redis/Kafka, no
+  job execution, no embedding calls, and no `@krn/workers` import into
+  `packages/db`.
 
 Verification:
 
@@ -238,7 +249,35 @@ Verification:
 - Slice 07 boundary/runtime scan returned no `@krn/workers` import in
   `packages/db` and no Redis/Kafka/background-loop/process-spawn matches in
   the new worker repository surfaces.
+- Slice 08 RED: `pnpm --filter @krn/cli test -- workerJobSmoke.test.ts`
+  failed because `./workerJobSmoke.js` did not exist and `db smoke
+  worker-jobs` returned parser exit code `2`.
+- Slice 08 RED: `pnpm --filter @krn/db test -- workerJobSmoke.test.ts` failed
+  because `./workerJobSmoke.js` did not exist.
+- Slice 08 GREEN: `pnpm --filter @krn/cli test -- workerJobSmoke.test.ts`
+  passed with 3 test files and 60 tests.
+- Slice 08 GREEN: `pnpm --filter @krn/db test -- workerJobSmoke.test.ts`
+  passed with 14 test files and 31 tests.
+- `pnpm --filter @krn/cli test -- runCli.test.ts`: passed with 3 test files
+  and 60 tests.
+- `pnpm --filter @krn/db typecheck`: passed.
+- `pnpm --filter @krn/cli typecheck`: passed.
+- Live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:worker-jobs`: passed outside sandbox after sandbox `tsx` IPC failed
+  with `listen EPERM`; live smoke enqueued `6`, read back `6`, ran `6`,
+  succeeded `2`, skipped `2`, failed `2`, deleted `6`, and left cleanup
+  remaining marker count `0`.
+- `pnpm typecheck`: passed across 7 workspace packages.
+- `pnpm test`: passed across package outputs totaling 26 test files and 118
+  tests.
+- `git diff --check`: passed.
+- Slice 08 TypeScript hygiene scan returned no matches for `any`, double
+  assertions, or TypeScript suppressions.
+- Slice 08 boundary/runtime scan returned no `@krn/workers` import in
+  `packages/db`. The Redis/Kafka/background-loop scan only matched the existing
+  `for (;;)` repo-root search in `runDbSmokeCommand.ts`, not worker runtime
+  code.
 
 Next:
 
-- Start M26.08 worker job smoke path.
+- Start M26.09 doctor Codex adapter / worker readiness.

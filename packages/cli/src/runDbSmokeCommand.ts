@@ -9,12 +9,16 @@ import {
   runMemoryGovernanceSmokeCheck,
   runPersistenceSmokeCheck,
   runRetrievalSubstrateSmokeCheck,
-  runSourceGraphSmokeCheck
+  runSourceGraphSmokeCheck,
+  runWorkerJobSmokeCheck
 } from "@krn/db";
 import {
   formatCodexAdapterSmokeReportLines,
   runCodexAdapterSmokeCheck
 } from "./codexAdapterSmoke.js";
+import {
+  formatWorkerJobSmokeReportLines
+} from "./workerJobSmoke.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -28,7 +32,8 @@ export interface DbSmokeRuntime {
     | "memoryGovernance"
     | "retrievalSubstrate"
     | "activation"
-    | "codexAdapter";
+    | "codexAdapter"
+    | "workerJobs";
 }
 
 export interface DbSmokeResult {
@@ -97,6 +102,10 @@ const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "KRN Codex Adapter Smoke";
   }
 
+  if (target === "workerJobs") {
+    return "KRN Worker Job Smoke";
+  }
+
   return "KRN DB Smoke";
 };
 
@@ -129,6 +138,10 @@ const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "Codex adapter smoke: skipped (database not configured)";
   }
 
+  if (target === "workerJobs") {
+    return "Worker job smoke: skipped (database not configured)";
+  }
+
   return "Persistence smoke: skipped (database not configured)";
 };
 
@@ -159,6 +172,10 @@ const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
 
   if (target === "codexAdapter") {
     return "Codex adapter smoke";
+  }
+
+  if (target === "workerJobs") {
+    return "Worker job smoke";
   }
 
   return "Persistence smoke";
@@ -421,6 +438,25 @@ export const runDbSmokeCommand = async (
           `Migrations folder: ${relativeMigrationsFolder}`,
           "Postgres config: configured",
           ...formatCodexAdapterSmokeReportLines(report)
+        ].join("\n") + "\n"
+      };
+    }
+
+    if (runtime.target === "workerJobs") {
+      const report = await runWorkerJobSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("worker-job-smoke")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Worker Job Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          ...formatWorkerJobSmokeReportLines(report)
         ].join("\n") + "\n"
       };
     }
