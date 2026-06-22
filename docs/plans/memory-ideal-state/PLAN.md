@@ -340,7 +340,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-03 complete: added pure AuditBundle domain contract in `packages/core/src/auditBundle.ts`, exported it from `packages/core/src/index.ts`, and added focused tests in `packages/core/src/auditBundle.test.ts`. Intended files: `packages/core/src/auditBundle.ts`, `packages/core/src/auditBundle.test.ts`, `packages/core/src/index.ts`, this PLAN. Non-goals preserved: no DB, schema, CLI, fs/env/network, worker, runtime, migration, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, or `.krn` runtime truth. Evidence: RED `pnpm --filter @krn/core test` failed on missing `auditBundle.js`; GREEN focused core tests passed with 2 files and 7 tests; focused core typecheck passed; final full verification recorded in commit.
 - [x] (2026-06-22) MM-04 complete: added AuditBundle Zod parse boundary, Drizzle `audit_bundles` / `audit_findings` schema, generated migration `0008_tough_slapstick.sql`, and thin `DrizzleAuditBundleRepository` persistence adapter. Intended files: `packages/schema/src/auditBundle.ts`, schema exports/tests, `packages/db/src/schema/audit.ts`, schema exports/tests, audit repository surface, migration files, this PLAN. Non-goals preserved: no CLI, worker, audit checks, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED schema test failed on missing `parseAuditBundleInput`; RED DB schema test failed on missing `schema/audit.js`; focused schema/db/core tests and typechecks passed; `pnpm --filter @krn/db db:generate` created migration; `pnpm --filter @krn/db db:check` passed; DB-aware `pnpm db:ready` passed with 9/9 migrations and pgvector available.
 - [x] (2026-06-22) MM-05 complete: added pure harness audit checks for repo surfaces, architecture drift, package boundaries, TypeScript safety shortcuts, memory semantics, source grounding, eval theater, and handoff compactness. Intended files: `packages/harness/src/audit/auditChecks.ts`, `packages/harness/src/audit/auditChecks.test.ts`, `packages/harness/src/audit/index.ts`, `packages/harness/src/index.ts`, this PLAN. Non-goals preserved: no CLI command, filesystem traversal, shell/process execution, DB writes, worker, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused harness test failed on missing `auditChecks.js`; GREEN `pnpm --filter @krn/harness test -- audit/auditChecks.test.ts` passed with 5 files / 17 tests; focused harness typecheck passed; final `pnpm typecheck`, `pnpm test`, `git diff --check`, and audit-module forbidden runtime import scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is typed snapshot audit engine only; review burden low; diff risk low; rollback path `git revert <MM-05 commit>`; candidate updates none; final verdict pass.
-- [ ] MM-06: Add audit CLI and slice audit gate.
+- [x] (2026-06-22) MM-06 complete: added `krn audit repo` and `krn audit slice --since <ref>` CLI adapter with text and `--json` reports, repo file snapshotting, git changed-file slice snapshotting, and exit-code gate behavior. Intended files: `packages/cli/src/runAuditCommand.ts`, `packages/cli/src/runAuditCommand.test.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runCli.ts`, `packages/harness/src/audit/auditChecks.ts`, this PLAN. Non-goals preserved: no DB persistence/write path, worker, dashboard/API/MCP/server/plugin, source crawler, broad eval suite, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused CLI test failed because `audit` was not parsed/routed; GREEN `pnpm --filter @krn/cli test -- runAuditCommand.test.ts` passed; focused CLI and harness typecheck passed; `pnpm --filter @krn/cli krn audit repo --repo ../..` produced advisory with two existing JSON.parse warnings and no blocking findings; `pnpm --filter @krn/cli krn audit slice --since HEAD --repo ../.. --json` produced advisory with handoff warning only; final `pnpm typecheck`, `pnpm test`, `git diff --check`, dependency scan, forbidden directory scan, and forbidden package-surface scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is CLI adapter plus refined architecture-drift false-positive filtering; review burden medium; diff risk medium; rollback path `git revert <MM-06 commit>`; candidate updates: future type-safety cleanup candidate for existing CLI JSON.parse boundaries; final verdict pass.
 - [ ] MM-07: Dogfood audit on current KRN state.
 - [ ] MM-08: Add observation domain contracts.
 - [ ] MM-09: Add observation IO schemas.
@@ -461,6 +461,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: `packages/harness/src/audit/auditChecks.ts` accepts `AuditRepoSnapshot` and produces `AuditFinding[]` without fs/process/DB imports; seeded violation fixtures prove detection.
   Resolution: Keep snapshot construction and command output for MM-06 CLI, while MM-05 owns deterministic check behavior.
 
+- Observation: Architecture-drift audit must distinguish current adoption from historical/rejected-plan evidence.
+  Evidence: First repo-root `krn audit repo --repo ../..` smoke failed on `PLAN.md` lines documenting prior Research Foundry/Pattern Vault mistakes and non-goals.
+  Resolution: Keep the audit line-based and require adoption terms without negation/history markers such as `do not`, `must not`, `prior`, or `evidence:`.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -514,6 +518,12 @@ Gate 0 MM-05 outcome:
 - The audit checks consume typed snapshots and return `AuditFinding[]`; they do not scan the filesystem, run shell commands, write DB rows, or add CLI/runtime behavior.
 - Seeded violation tests prove each required audit category detects intentional failures.
 - MM-06 owns CLI snapshot construction, human/JSON reports, and slice gate integration.
+
+Gate 0 MM-06 outcome:
+- `krn audit repo [--repo <path>] [--json]` builds a repo snapshot in `packages/cli`, runs the harness audit checks, emits text or JSON, and exits non-zero only on blocking findings.
+- `krn audit slice --since <ref> [--repo <path>] [--json]` builds a changed-file snapshot from git diff, runs the same checks, includes handoff compactness, and works as a slice gate.
+- Seeded CLI tests prove clean repo pass, forbidden surface fail, and slice boundary violation fail.
+- Dogfood smoke on the current repo root returns advisory, not fail: two existing CLI `JSON.parse` type-safety warnings remain as future cleanup candidates, while the current slice gate reports only missing handoff warning before commit.
 
 ## Milestones
 
@@ -583,6 +593,7 @@ MM-06 — Audit CLI and slice gate
 - Scope: packages/cli.
 - Add `krn audit repo` and `krn audit slice --since <ref>`.
 - Output compact human-readable report and machine-readable JSON.
+- Slice note (2026-06-22): implement CLI adapter only. Intended files: `packages/cli/src/parseArgs.ts`, `packages/cli/src/runCli.ts`, `packages/cli/src/runAuditCommand.ts`, focused CLI tests, and this PLAN. The CLI may read repo files and git status/diff to build `AuditRepoSnapshot`, but audit decisions must come from `@krn/harness` checks. Non-goals: no DB persistence/write path, no worker, no dashboard/API/MCP/server/plugin, no source crawler, no broad eval suite, no Research Foundry, no Pattern Vault, no runtime markdown memory, no `.krn` runtime truth, no Redis/Kafka, and no separate vector/graph DB.
 - Verification:
       command smoke
       clean repo produces pass/advisory

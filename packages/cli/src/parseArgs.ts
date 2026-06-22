@@ -20,6 +20,19 @@ export type CliCommand =
       kind: "doctor";
     }
   | {
+      kind: "audit";
+      scope: "repo";
+      repo?: string;
+      format: "text" | "json";
+    }
+  | {
+      kind: "audit";
+      scope: "slice";
+      repo?: string;
+      since: string;
+      format: "text" | "json";
+    }
+  | {
       kind: "dbReadiness";
     }
   | {
@@ -190,6 +203,8 @@ const usage = [
   "krn init --dry-run --repo <path>",
   "krn init --connect --repo <path> --persist",
   "krn doctor",
+  "krn audit repo [--repo <path>] [--json]",
+  "krn audit slice --since <ref> [--repo <path>] [--json]",
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
@@ -431,6 +446,94 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     return {
       command: {
         kind: "doctor"
+      }
+    };
+  }
+
+  if (command === "audit") {
+    const scope = rest[0];
+
+    if (scope !== "repo" && scope !== "slice") {
+      return {
+        error: "Usage: krn audit repo [--repo <path>] [--json]|krn audit slice --since <ref> [--repo <path>] [--json]"
+      };
+    }
+
+    let repo: string | undefined;
+    let since: string | undefined;
+    let format: "text" | "json" = "text";
+
+    for (let index = 1; index < rest.length; index += 1) {
+      const arg = rest[index];
+
+      if (arg === "--json") {
+        format = "json";
+        continue;
+      }
+
+      if (arg === "--repo" || arg?.startsWith("--repo=") === true) {
+        const valueResult = optionValue(rest, index, "--repo");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn audit repo [--repo <path>] [--json]"
+          };
+        }
+
+        repo = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      if (arg === "--since" || arg?.startsWith("--since=") === true) {
+        const valueResult = optionValue(rest, index, "--since");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn audit slice --since <ref> [--repo <path>] [--json]"
+          };
+        }
+
+        since = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      return {
+        error: "Usage: krn audit repo [--repo <path>] [--json]|krn audit slice --since <ref> [--repo <path>] [--json]"
+      };
+    }
+
+    if (scope === "repo") {
+      if (since !== undefined) {
+        return {
+          error: "Usage: krn audit repo [--repo <path>] [--json]"
+        };
+      }
+
+      return {
+        command: {
+          kind: "audit",
+          scope,
+          ...(repo === undefined ? {} : { repo }),
+          format
+        }
+      };
+    }
+
+    if (since === undefined || since.length === 0) {
+      return {
+        error: "Usage: krn audit slice --since <ref> [--repo <path>] [--json]"
+      };
+    }
+
+    return {
+      command: {
+        kind: "audit",
+        scope,
+        ...(repo === undefined ? {} : { repo }),
+        since,
+        format
       }
     };
   }

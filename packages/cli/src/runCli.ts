@@ -58,6 +58,9 @@ import {
 import {
   runMemoryAntiAddCommand
 } from "./runMemoryAntiAddCommand.js";
+import {
+  runAuditCommand
+} from "./runAuditCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -65,6 +68,7 @@ export interface CliRuntime {
   now?(): string;
   createId?(prefix: string): string;
   readGitStatus?(): Promise<string>;
+  readGitChangedFiles?(since: string, repoPath: string): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
   createInitConnectRuntime?: CreateInitConnectRuntime;
 }
@@ -106,6 +110,33 @@ export const runCli = async (
       stdout: formatUsage(),
       stderr: ""
     };
+  }
+
+  if (parsed.command.kind === "audit") {
+    try {
+      const result = await runAuditCommand({
+        cwd: runtime.cwd ?? process.cwd(),
+        now,
+        command: parsed.command,
+        ...(runtime.readGitChangedFiles === undefined
+          ? {}
+          : { readGitChangedFiles: runtime.readGitChangedFiles })
+      });
+
+      return {
+        exitCode: result.exitCode,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown audit error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
   }
 
   if (parsed.command.kind === "sourceClaimAddHelp") {

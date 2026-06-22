@@ -170,7 +170,12 @@ export const runRepoSurfaceAudit = (snapshot: AuditRepoSnapshot): AuditFinding[]
   const findings: AuditFinding[] = [];
 
   for (const file of snapshot.files) {
-    if (contentIncludes(file, [rejectedResearchSubsystem, rejectedResearchSubsystemLabel])) {
+    const filePath = lower(file.path);
+
+    if (
+      filePath.includes(`packages/${rejectedResearchSubsystem}`) ||
+      filePath.includes(`apps/${rejectedResearchSubsystem}`)
+    ) {
       findings.push(makeFinding({
         id: `${snapshot.sliceId}:repo-surface:${rejectedResearchSubsystem}:${file.path}`,
         category: "architecture",
@@ -183,7 +188,10 @@ export const runRepoSurfaceAudit = (snapshot: AuditRepoSnapshot): AuditFinding[]
       }));
     }
 
-    if (contentIncludes(file, [rejectedPatternSubsystem, rejectedPatternSubsystemLabel])) {
+    if (
+      filePath.includes(`packages/${rejectedPatternSubsystem}`) ||
+      filePath.includes(`apps/${rejectedPatternSubsystem}`)
+    ) {
       findings.push(makeFinding({
         id: `${snapshot.sliceId}:repo-surface:${rejectedPatternSubsystem}:${file.path}`,
         category: "architecture",
@@ -196,7 +204,7 @@ export const runRepoSurfaceAudit = (snapshot: AuditRepoSnapshot): AuditFinding[]
       }));
     }
 
-    if (contentIncludes(file, [`source${"crawler"}`, forbiddenCrawlerPath, forbiddenCrawler])) {
+    if (filePath.includes(forbiddenCrawlerPath) || filePath.includes(`source${"crawler"}`)) {
       findings.push(makeFinding({
         id: `${snapshot.sliceId}:repo-surface:${forbiddenCrawlerPath}:${file.path}`,
         category: "architecture",
@@ -228,12 +236,50 @@ export const runRepoSurfaceAudit = (snapshot: AuditRepoSnapshot): AuditFinding[]
 
 export const runArchitectureDriftAudit = (snapshot: AuditRepoSnapshot): AuditFinding[] =>
   snapshot.files
-    .filter((file) => contentIncludes(file, [
-      `${rejectedPatternSubsystemLabel} as a required product subsystem`,
-      `${rejectedResearchSubsystemLabel} as a product subsystem`,
-      `meta-${"researcher"} runtime`,
-      `auto${"research"} product behavior`
-    ]))
+    .filter((file) => {
+      const rejectedTerms = [
+        rejectedPatternSubsystemLabel,
+        rejectedResearchSubsystemLabel,
+        `meta-${"researcher"} runtime`,
+        `auto${"research"} product behavior`
+      ];
+      const adoptionTerms = [
+        "add",
+        "build",
+        "create",
+        "creates",
+        "introduce",
+        "reintroduce",
+        "required",
+        "must implement"
+      ];
+      const rejectionTerms = [
+        "do not",
+        "no ",
+        "must not",
+        "cannot",
+        "remove",
+        "reject",
+        "rejected",
+        "forbidden",
+        "non-goal",
+        "non-goals",
+        "proves no",
+        "without",
+        "evidence:",
+        "previous",
+        "prior"
+      ];
+
+      return file.content
+        .split("\n")
+        .map(lower)
+        .some((line) =>
+          rejectedTerms.some((term) => line.includes(lower(term))) &&
+          adoptionTerms.some((term) => line.includes(term)) &&
+          !rejectionTerms.some((term) => line.includes(term))
+        );
+    })
     .map((file) => makeFinding({
       id: `${snapshot.sliceId}:architecture-drift:${file.path}`,
       category: "architecture",
