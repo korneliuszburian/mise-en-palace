@@ -1,10 +1,6 @@
 import {
   parseMemoryPromotionInput
 } from "@krn/schema";
-import type {
-  MemoryCandidate,
-  SourceClaim
-} from "@krn/core";
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
@@ -88,68 +84,6 @@ const rejectionReason = (review: ReturnType<typeof parseMemoryPromotionInput>): 
   return review.rejectionReason;
 };
 
-const sourceLimitLinesFromClaims = (sourceClaims: SourceClaim[]): string[] =>
-  sourceClaims.length === 0
-    ? []
-    : [
-        "Source limits:",
-        ...sourceClaims.flatMap((sourceClaim) => [
-          `sourceClaimId: ${sourceClaim.id}`,
-          `doesNotProve: ${sourceClaim.doesNotProve}`
-        ])
-      ];
-
-const sourceLimitLinesFromLineage = (candidate: MemoryCandidate): string[] =>
-  candidate.sourceClaimIds.length > 0 || candidate.sourceLineage.length === 0
-    ? []
-    : [
-        "Source limits:",
-        ...candidate.sourceLineage.map((source) => `sourceLineage: ${source.sourceId}`),
-        "doesNotProve: source lineage does not prove automatic application"
-      ];
-
-const sourceLimitLines = async (
-  databaseRuntime: DatabaseRuntime,
-  candidate: MemoryCandidate
-): Promise<string[]> => {
-  if (candidate.sourceClaimIds.length === 0) {
-    return sourceLimitLinesFromLineage(candidate);
-  }
-
-  const sourceClaims: SourceClaim[] = [];
-
-  for (const sourceClaimId of candidate.sourceClaimIds) {
-    const sourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
-
-    if (sourceClaim === undefined) {
-      throw new Error(`SourceClaim not found: ${sourceClaimId}`);
-    }
-
-    sourceClaims.push(sourceClaim);
-  }
-
-  return sourceLimitLinesFromClaims(sourceClaims);
-};
-
-const formatPromoted = (
-  candidateId: string,
-  memoryRecordId: string,
-  review: ReturnType<typeof parseMemoryPromotionInput>,
-  sourceLimits: string[]
-): string =>
-  [
-    "KRN Memory Candidate Promote",
-    "Persistence: enabled (Postgres, explicit --persist)",
-    "",
-    "Persisted IDs:",
-    `memoryCandidate: ${candidateId}`,
-    `memoryRecord: ${memoryRecordId}`,
-    `decision: ${review.decision}`,
-    `reviewer: ${review.reviewer}`,
-    ...sourceLimits,
-    "No memory application recorded"
-  ].join("\n");
-
 const formatRejected = (
   review: ReturnType<typeof parseMemoryPromotionInput>,
   status: string
@@ -189,7 +123,7 @@ const createRuntime = async (
 };
 
 const runPromote = async (
-  runtime: MemoryCandidateReviewCommandRuntime,
+  _runtime: MemoryCandidateReviewCommandRuntime,
   command: MemoryCandidatePromoteCommand
 ): Promise<MemoryCandidateReviewCommandResult> => {
   const reviewInput = parseMemoryPromotionInput({
@@ -209,31 +143,13 @@ const runPromote = async (
     };
   }
 
-  const databaseRuntime = await createRuntime(runtime, "krn memory candidate promote");
-
-  try {
-    const candidate = await databaseRuntime.memoryRepository.getMemoryCandidateById(
-      reviewInput.candidateId
-    );
-
-    if (candidate === undefined) {
-      throw new Error(`MemoryCandidate not found: ${reviewInput.candidateId}`);
-    }
-
-    const limits = await sourceLimitLines(databaseRuntime, candidate);
-    const memoryRecord = await databaseRuntime.memoryRepository.promoteMemoryCandidate({
-      candidateId: reviewInput.candidateId,
-      reviewer: reviewInput.reviewer,
-      decision: "accepted",
-      metadata: reviewInput.metadata
-    });
-
-    return {
-      stdout: formatPromoted(reviewInput.candidateId, memoryRecord.id, reviewInput, limits)
-    };
-  } finally {
-    await databaseRuntime.close();
-  }
+  throw new Error(
+    [
+      "MemoryReviewGate is required before promoting memory candidates.",
+      "Use krn memory candidate reject for negative review decisions.",
+      "No MemoryRecord created."
+    ].join(" ")
+  );
 };
 
 const runReject = async (

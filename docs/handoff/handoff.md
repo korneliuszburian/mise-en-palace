@@ -1,28 +1,23 @@
 # Handoff
 
 Objective:
-M27 Target Repo Init/Connect Dogfood is implemented and verified. KRN can
-initialize a disposable target repo fixture, connect it into the
-Postgres-backed brain store, create/reuse Project, RepoInstallation, and
-ProjectKernel records, compile a project-scoped persisted plan, render a Codex
-brief from the persisted run, persist evidence/review/feedback records, report
-target repo readiness in `krn doctor`, and pass anti-rot.
+The memory ideal-state execution track is implemented through MM-26A. KRN has
+observation staging, manual observe dogfood, reflection contracts, reflection
+persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
+invariants, and a public Memory Core write-surface guard that blocks `krn
+memory candidate promote --persist` until MM-27 MemoryReviewGate exists.
 
 Last verified state:
-Latest M27 anti-rot commit before this handoff is
-`e9b12f2 docs(run): record target repo anti-rot audit`. Anti-rot passed with
-`pnpm typecheck`, `pnpm test`, DB-aware `krn doctor`, live `pnpm db:ready`, all
-M22-M27 DB smokes, forbidden directory scan, forbidden dependency scan, core
-library-safety scan, and `git diff --check`. Typecheck passed across 7
-workspace packages. Tests passed across 29 files and 134 tests. Live DB
-readiness proved 8/8 migrations and pgvector. All smoke cleanup counts that
-report marker counts were `0`.
+MM-26A verification passed with focused CLI promote tests, full `pnpm
+typecheck`, full `pnpm test`, DB-aware `pnpm db:ready`, forbidden surface
+scans, product CLI/harness promotion-call scan, and `git diff --check`. Full
+tests pass across 44 files and 217 tests. Live DB readiness proves 11/11
+migrations and pgvector.
 
 Current dirty context:
-`GOAL.md` remains modified user-owned planning context. The research inputs
-`docs/materials/2026-06-22-big-brain.md` and
+The research inputs `docs/materials/2026-06-22-big-brain.md` and
 `docs/materials/2026-06-22-big-brain-part-2.md` remain untracked user-owned
-materials. They are intentionally not part of M27 implementation commits.
+materials. They are intentionally not part of memory implementation commits.
 
 Milestone status:
 - M22 source graph: complete and proven.
@@ -32,6 +27,8 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
+- MM-00 through MM-26A memory ideal-state slices: complete through the Memory
+  Core write-surface guard.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -52,7 +49,7 @@ M27 commit spine:
 Runtime proof status:
 - DB configured: proven with
   `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`.
-- migrations: proven, 8/8 applied.
+- migrations: proven, 11/11 applied.
 - pgvector: proven available.
 - target repo dry-run: proven; no files written.
 - target repo connect persistence: proven.
@@ -64,6 +61,8 @@ Runtime proof status:
 - cleanup: proven with marker counts `0` where emitted.
 - doctor target repo readiness: proven as
   `ready (init-connect smoke proven; target repo harness smoke proven)`.
+- public `krn memory candidate promote --persist`: blocked before DB runtime
+  until MemoryReviewGate exists; no MemoryRecord is created through that path.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -75,19 +74,19 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No M27 blocker remains. Remaining work is later product scope or the required
-post-M27 memory ideal-state planning slice.
+No MM-26A blocker remains. Memory candidate promotion is intentionally blocked
+from public CLI until MM-27 provides governed MemoryReviewGate promotion.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
-mutation, actual Codex execution, automatic memory promotion, and production
-worker throughput.
+mutation, actual Codex execution, automatic memory promotion, public memory
+promotion before MemoryReviewGate, and production worker throughput.
 
 Next safest action:
-Run Slice 14 and produce `docs/plans/memory-ideal-state/GOAL.md` from the two
-2026-06-22 memory research files and current repo evidence.
+Run MM-27 and add MemoryReviewGate as the only governed product path from
+MemoryCandidate to active MemoryRecord.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

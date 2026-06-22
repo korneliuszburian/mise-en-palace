@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-26 and MM-16R in
+- MM-00 through MM-26A and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -72,10 +72,13 @@ Current runtime truth:
 - MM-26 MemoryRepository invariant guard enforces source lineage, owner,
   application guidance, confidence bounds, and temporal invalidation/validity
   requirements for memory records and candidates.
+- MM-26A blocks public `krn memory candidate promote --persist` before DB
+  runtime and reports that MemoryReviewGate is required; no MemoryRecord is
+  created through the CLI promote path until MM-27.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-26A Memory Core write-surface guard before promotion paths.
+- Continue with MM-27 MemoryReviewGate and governed promotion path.

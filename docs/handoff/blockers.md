@@ -2,7 +2,14 @@
 
 Hard blockers:
 
-- None for MM-17A.
+- None for MM-27.
+
+Closed in MM-26A:
+
+- Public `krn memory candidate promote --persist` no longer enters DB runtime.
+- Public promote reports that MemoryReviewGate is required and no MemoryRecord
+  is created.
+- Low-level repository promotion remains internal DB/smoke infrastructure only.
 
 Closed in M27:
 
@@ -34,10 +41,12 @@ Residual later scope:
 - Source crawler/research layer is not built.
 - Broad eval/benchmark suite is not built.
 - Plugin packaging is not built.
-- Observational memory staging is built through MM-16, but not dogfooded or
-  integrated end-to-end yet. Reflection, governed promotion, anti-memory
+- Observational memory staging is built and dogfooded through MM-17F.
+- Reflection staging is built through MM-25.
+- Governed promotion via MemoryReviewGate, invalidation/demotion, anti-memory
   expansion, and golden proof remain planned later work in
   `docs/plans/memory-ideal-state/PLAN.md`.
+- Public memory promotion before MemoryReviewGate is intentionally blocked.
 
 Explicit non-blockers:
 
