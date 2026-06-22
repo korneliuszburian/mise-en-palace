@@ -4,6 +4,36 @@ This file is a living execution plan for moving `korneliuszburian/mise-en-palace
 
 This plan supersedes the old bootstrap-only direction in `GOAL.md` once it is committed. `GOAL.md` may remain as a compact Codex Goal activation contract, but this `PLAN.md` is the long-running implementation map.
 
+## Current State Addendum — 2026-06-22
+
+This root plan remains the repo-wide historical ExecPlan for the final harness
+spine. The active memory execution track now lives at:
+
+```txt
+docs/plans/memory-ideal-state/PLAN.md
+```
+
+Current public state:
+
+- M27 target repo readiness is complete.
+- MM-00 through MM-17A of the memory ideal-state plan are complete.
+- Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
+  surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
+  linkage, manual observe-run CLI, deterministic observer input builder, and
+  pure observation prefix selector.
+- Built but not proven end-to-end: observation runtime and prefix selection.
+  MM-16R/MM-17B-MM-17F repair slices must harden prefix relevance/scope,
+  dogfood persisted observations, enforce typed lineage, fix project scoping,
+  validate timestamps, and harden redaction before reflection.
+- Not built: reflection, candidate generation from reflection, governed
+  MemoryReviewGate promotion path, memory invalidation/demotion, broad
+  anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,
+  plugin package, source crawler, and broad benchmark suite.
+
+Do not use older orientation text in this file to infer that the repo has no
+CLI or no observation persistence. Historical progress entries below are kept
+for audit continuity.
+
 ## Codex Goal To Activate
 
 Use this `/goal` in Codex after adding this file to the repository root:
@@ -29,9 +59,9 @@ The observable result is not a dashboard and not a benchmark report. The observa
 
 The repository root is `korneliuszburian/mise-en-palace` on branch `main`.
 
-The current state observed before writing this plan:
+The bootstrap state observed before writing this root plan:
 
-- `README.md` says the repo is a KRN kernel workspace, not an application, and lists no CLI implementation, no dashboard, no benchmark lane, no runtime markdown memory, no broad subagent system, no plugin package, and no KRN MCP server as not built.
+- `README.md` said the repo was a KRN kernel workspace, not an application, and listed no CLI implementation, no dashboard, no benchmark lane, no runtime markdown memory, no broad subagent system, no plugin package, and no KRN MCP server as not built. This is historical; README now reflects the MM-16/MM-17A state.
 - `AGENTS.md` is intentionally short. It tells Codex to read `docs/KRN_KERNEL.md`, avoid broad historical rereads, preserve strict TypeScript boundaries, and use Conventional Commits.
 - `GOAL.md` is still the bootstrap execution contract. It says Commit 0/1 are complete and Commit 2 is the active strict TypeScript spine.
 - `package.json` defines a private ESM pnpm workspace and a root `typecheck` script: `pnpm -r --workspace-concurrency=1 typecheck`.
@@ -356,7 +386,7 @@ Edit these files:
 
 - `PLAN.md`: add this file.
 - `GOAL.md`: replace the long bootstrap-phase roadmap with the compact Goal and pointer to `PLAN.md`.
-- `README.md`: update Current Phase from Commit 2 bootstrap to “Final Harness Spine planning installed; next slice is brain-store ADR and package boundaries.”
+- `README.md`: historically updated Current Phase from Commit 2 bootstrap into the final Postgres-backed harness spine; current README now reflects MM-16/MM-17A state.
 - `AGENTS.md`: add one short sentence: “For complex KRN implementation work, keep root PLAN.md current as the living ExecPlan.” Keep AGENTS short.
 
 Run:

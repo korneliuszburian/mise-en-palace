@@ -358,7 +358,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-15 complete: added manual `krn observe --run <id> [--persist]` CLI routing that loads a persisted run, builds deterministic observer input, and creates an observation group/items only when `--persist` is explicit. Intended files: `packages/cli/src/runObserveCommand.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runCli.ts`, `packages/cli/src/index.ts`, `packages/cli/src/databaseRuntime.ts`, `packages/cli/src/runCli.test.ts`, and this PLAN. Non-goals preserved: no LLM call, observer worker, reflection, activation prefix selector, Memory Core mutation, MemoryRecord creation, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused CLI test failed with exit 2 before parser/command support; GREEN focused CLI test passed with 5 files / 78 tests; focused CLI typecheck passed; final `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden dependency/research-surface scans, and forbidden directory scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is manual observe CLI orchestration only; review burden medium; diff risk medium; rollback path `git revert <MM-15 commit>`; candidate updates none; final verdict pass.
 - [x] (2026-06-22) MM-16 complete: added a pure harness `selectObservationPrefix` selector that ranks observations against a task, returns a small prefix with reasons, warnings, exclusions, and excludes invalidated/stale/cross-project observations. Intended files: `packages/harness/src/observations/observationPrefix.ts`, `packages/harness/src/observations/observationPrefix.test.ts`, `packages/harness/src/observations/index.ts`, and this PLAN. Non-goals preserved: no DB/repository changes, CLI integration, context assembly integration, observer worker, LLM call, reflection, Memory Core mutation, MemoryRecord creation, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: RED focused harness test failed on missing `./observationPrefix.js`; GREEN focused harness observation-prefix test passed with 7 files / 21 tests; focused harness typecheck passed; final `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden dependency/research-surface scans, and forbidden directory scan passed. Compact AuditBundle: changed files match intended files; unexpected files none; architectural delta is pure observation prefix selection only; review burden medium; diff risk medium; rollback path `git revert <MM-16 commit>`; candidate updates none; final verdict pass.
 - [x] (2026-06-22) MM-16/17 review-gate complete: integrated the two external harsh review reports into this PLAN as an explicit repair layer before MM-17 dogfood and later governance gates. Intended files: this PLAN. Non-goals preserved: no code, DB schema, runtime, CLI, worker, reflection, memory promotion, dashboard/API/MCP/server/plugin, source crawler, Research Foundry, Pattern Vault, runtime markdown memory, `.krn` runtime truth, Redis/Kafka, or separate vector/graph DB. Evidence: reviewers converged on PASS_WITH_RISKS and called out doc drift, weak dogfood, prefix relevance, source-range typed lineage, project scoping, redaction, timestamp validation, audit shallowness, MemoryReviewGate bypass, anti-memory narrowness, and premature confidence; `pnpm typecheck` passed; `pnpm test` passed with 39 files / 178 tests; `git diff --check` passed; scope check showed only this PLAN changed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces. This line records the planning repair only; implementation starts with MM-17A.
-- [ ] MM-17A: Reconcile public current-state docs before dogfood.
+- [x] (2026-06-22) MM-17A complete: reconciled public current-state docs before dogfood so README, root GOAL/PLAN, REVIEW, handoff docs, and this PLAN no longer present the repo as having no CLI or no observation persistence. Intended files: `README.md`, `GOAL.md`, root `PLAN.md`, `REVIEW.md`, `docs/handoff/progress.md`, `docs/handoff/blockers.md`, and this PLAN. Non-goals preserved: no code/runtime/schema changes, no observe dogfood, no DB write, no reflection, no Memory Core mutation, no dashboard/API/MCP/server/plugin, no source crawler, no Research Foundry, no Pattern Vault. Evidence: stale-phrase grep found only a root `PLAN.md` line explicitly marked historical; `pnpm typecheck` passed; `pnpm test` passed with 39 files / 178 tests; `git diff --check` passed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces. Next: MM-16R prefix relevance and project-scope hardening.
 - [ ] MM-16R: Harden observation prefix relevance and project-scope selection.
 - [ ] MM-17B: Dogfood observations from a real KRN persisted run with raw evidence recall and no MemoryRecord delta.
 - [ ] MM-17C: Enforce typed source-range lineage invariants for truth-bearing observations.
@@ -606,21 +606,21 @@ Gate 1 MM-09 outcome:
 - Observation IO schemas now exist in `packages/schema`.
 - External observation group/item input is parsed from `unknown` through Zod before use.
 - Unsourced factual/run-event observations and private reasoning metadata are rejected at the schema boundary.
-- No DB, repository, CLI, worker, or runtime observation behavior exists yet; MM-10 owns persistence schema.
+- At MM-09 close, no DB, repository, CLI, worker, or runtime observation behavior existed yet; MM-10 owned persistence schema.
 
 Gate 1 MM-10 outcome:
 - Observation staging persistence now exists in `packages/db` with migration `0009_dusty_tattoo.sql`.
 - The schema separates groups, items, source ranges, entity edges, claim edges, and feedback events.
 - Query-critical fields are relational: project, run, task, group, kind, status, priority, provenance, temporal anchors, and source references.
 - Live DB readiness now reports 10/10 migrations applied.
-- No repository, observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior exists yet; MM-11 owns repositories.
+- At MM-10 close, no repository, observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior existed yet; MM-11 owned repositories.
 
 Gate 1 MM-11 outcome:
 - Observation repository adapter now exists in `packages/db`.
 - Repository reads return core `ObservationGroup`, `ObservationItem`, and `ObservationSourceRange` shapes rather than raw DB rows.
 - `findByScope` requires `projectId`, so project-scoped observation reads cannot silently become global reads.
 - Source ranges, entity links, claim links, and feedback events are written through typed repository methods.
-- No observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior exists yet; MM-12 owns evidence/source range linkage.
+- At MM-11 close, no observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior existed yet; MM-12 owned evidence/source range linkage.
 
 Gate 1 MM-12 outcome:
 - Observation writes now enforce source-range requirements at the repository boundary before inserting items or linking ranges.
@@ -628,28 +628,28 @@ Gate 1 MM-12 outcome:
 - Explicit local operator/user preference style notes may remain unsourced when the core observation source-range policy allows that provenance.
 - `recallRawEvidence(observationItemId)` can reconstruct raw material from linked `run_events`, `source_chunks`, `evidence_bundles`, `review_assessments`, and `feedback_deltas` where those links exist.
 - Source types without a typed evidence FK remain recallable only as unavailable source-range records; MM-13 owns deterministic observer input building, not broader evidence ingestion.
-- No observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior exists yet; MM-13 owns observer input construction.
+- At MM-12 close, no observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior existed yet; MM-13 owned observer input construction.
 
 Gate 1 MM-13 outcome:
 - `buildObserverInput` creates a deterministic observer input packet from already loaded run events, evidence bundles, review assessments, and feedback deltas.
 - Run events are ordered by sequence; evidence and review records are ordered deterministically.
 - The builder records counts, source type/id/locator, observed time, human text, compact payload JSON, redaction paths, and truncation records.
 - Secret-like keys are redacted before output, and oversized payload JSON is truncated with retained/original character counts.
-- No observe CLI/runtime, DB query orchestration, worker, LLM observer call, reflection, activation prefix selector, or Memory Core mutation behavior exists yet; MM-14 owns the source-range policy matrix.
+- At MM-13 close, no observe CLI/runtime, DB query orchestration, worker, LLM observer call, reflection, activation prefix selector, or Memory Core mutation behavior existed yet; MM-14 owned the source-range policy matrix.
 
 Gate 1 MM-14 outcome:
 - `OBSERVATION_SOURCE_RANGE_POLICY` is the canonical pure core source-range matrix for every observation kind and provenance kind.
 - `requiresObservationSourceRange(kind, provenanceKind)` now reads from that matrix instead of a hidden provenance-only exemption set.
 - Table-driven tests cover every current observation kind and provenance kind.
 - The only source-range exemptions remain explicit `user_preference` and `local_operator_note` provenance.
-- No schema, DB, repository, observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior exists yet; MM-15 owns the first manual observe-run CLI.
+- At MM-14 close, no schema, DB, repository, observe CLI/runtime, worker, reflection, activation prefix selector, or Memory Core mutation behavior existed yet; MM-15 owned the first manual observe-run CLI.
 
 Gate 1 MM-15 outcome:
 - `krn observe --run <id> [--persist]` is parsed and routed through the CLI.
 - The command reads a persisted harness run, builds deterministic observer input, and reports item/redaction/truncation counts.
 - Without `--persist`, the command previews only; with `--persist`, it creates one observation group and candidate fact observations with source ranges back to the run evidence.
 - The command reports `Memory mutation: none` and does not call the memory repository or create MemoryRecord rows.
-- No observer worker, LLM observer call, reflection, activation prefix selector, or Memory Core mutation behavior exists yet; MM-16 owns observation prefix selection.
+- At MM-15 close, no observer worker, LLM observer call, reflection, activation prefix selector, or Memory Core mutation behavior existed yet; MM-16 owned observation prefix selection.
 
 Gate 1 MM-16 outcome:
 - `selectObservationPrefix` returns a small task-scoped observation prefix with selected observations, reasons, scores, warnings, exclusions, and rendered text.

@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- None for M27.
+- None for MM-17A.
 
 Closed in M27:
 
@@ -34,8 +34,10 @@ Residual later scope:
 - Source crawler/research layer is not built.
 - Broad eval/benchmark suite is not built.
 - Plugin packaging is not built.
-- Observational memory/reflection layer is not built yet; this is planned for
-  the required post-M27 memory ideal-state goal.
+- Observational memory staging is built through MM-16, but not dogfooded or
+  integrated end-to-end yet. Reflection, governed promotion, anti-memory
+  expansion, and golden proof remain planned later work in
+  `docs/plans/memory-ideal-state/PLAN.md`.
 
 Explicit non-blockers:
 

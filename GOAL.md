@@ -11,9 +11,19 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 is complete.
+- MM-00 through MM-17A are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
-- Observational memory implementation is not built yet.
+- The observational memory staging substrate is implemented through MM-16:
+  core contracts, IO schemas, DB schema, repository adapter, evidence/source
+  range linkage, deterministic observer input builder, manual observe-run CLI,
+  source-range policy matrix, and pure observation prefix selector.
+- Observational memory is not proven end-to-end yet: MM-16R prefix hardening,
+  MM-17B dogfood, MM-17C typed lineage, MM-17D project scoping, MM-17E
+  schema/time validation, and MM-17F payload redaction hardening are next.
+- Observation is still staging, not Memory Core.
+- Reflection, candidate generation, governed MemoryReviewGate promotion,
+  memory invalidation/demotion, broad anti-memory enforcement, and golden memory
+  behavior proof are not built yet.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -92,8 +102,8 @@ After implementation:
        rollback path
        next safest action
 
-First expected slice:
-MM-01 — Replace over-expanded memory roadmap with clean PLAN.md and controlled GOAL.
+First expected slice for a fresh run at this state:
+MM-16R — Observation prefix relevance and scope hardening.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

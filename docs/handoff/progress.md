@@ -1,10 +1,16 @@
 # Progress
 
-Current phase: M22-M26 Brain Spine complete through final anti-rot and final
-handoff.
+Current phase: Memory ideal-state execution track after MM-16 and external
+harsh-review repair planning.
 
 Completed:
 
+- M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
+  memory ideal-state goal handoff.
+- MM-00 through MM-17A in `docs/plans/memory-ideal-state/PLAN.md`.
+- MM-16/17 external review repair layer in
+  `docs/plans/memory-ideal-state/PLAN.md`, committed as
+  `88cbbba docs(memory): add harsh review repair layer`.
 - M22 source graph persistence, CLI write/read surfaces, smoke, doctor
   readiness, dogfood, and anti-rot.
 - M23 memory governance schema/repository/CLI promotion surfaces, anti-memory,
@@ -22,11 +28,14 @@ Current runtime truth:
 - PostgreSQL with pgvector is the canonical local brain-store proof path.
 - DB writes require explicit `--persist` or explicit smoke commands.
 - `krn doctor` is read-only.
+- Manual `krn observe --run <id> [--persist]` exists, but the observation
+  runtime still needs MM-17B dogfood proof before it is treated as proven.
+- Observation prefix selector exists as pure harness logic, but it still needs
+  MM-16R hardening and later activation/context integration.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Start the next milestone by designing a bounded maintenance worker
-  lease/claim contract over the proven `worker_jobs` skeleton.
+- Continue with MM-16R observation prefix relevance/project-scope hardening.

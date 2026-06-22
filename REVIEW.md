@@ -22,10 +22,11 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Current pushed implementation head for this review request:
+Current pushed implementation head after integrating the external harsh review
+repair layer:
 
 ```txt
-86344af feat(harness): add observation prefix selector
+88cbbba docs(memory): add harsh review repair layer
 ```
 
 Current branch state expected for review:
@@ -140,17 +141,22 @@ MM-13  observer input builder
 MM-14  observation source-range policy matrix
 MM-15  manual observe-run CLI
 MM-16  observation prefix selector
+MM-16/17 review-gate repair layer from external harsh reviews
+MM-17A current-state reconciliation gate
 ```
 
-First unchecked slice after MM-16:
+First unchecked execution slices after MM-17A:
 
 ```txt
-MM-17  Observation dogfood
+MM-16R  Observation prefix relevance and project-scope hardening
+MM-17B  Observation dogfood with raw recall matrix
 ```
 
 Recent pushed commits:
 
 ```txt
+88cbbba docs(memory): add harsh review repair layer
+d20af02 docs(review): update harsh audit request
 86344af feat(harness): add observation prefix selector
 023a365 feat(cli): add manual observe-run command
 03e31db feat(core): add observation source-range policy matrix
@@ -173,13 +179,15 @@ c38eaff docs(memory): add controlled memory brain execution plan
 
 ## Current Pause Point
 
-The operator is intentionally pausing after MM-16 for a harsh external audit
-before continuing MM-17.
+The operator paused after MM-16 for a harsh external audit. Two external reports
+returned PASS_WITH_RISKS and their findings are now folded into
+`docs/plans/memory-ideal-state/PLAN.md` as a blocking repair layer before
+reflection, promotion, worker, API/MCP, dashboard, or broad eval work.
 
-MM-17 is next and is not complete:
+The next execution slice after current-state reconciliation is MM-16R:
 
 ```txt
-MM-17 Observation dogfood
+MM-16R Observation prefix relevance and project-scope hardening
 ```
 
 Local DB tooling note:
@@ -189,8 +197,8 @@ Local DB tooling note:
 - recent persisted `execution_runs` exist in the local DB;
 - no MM-17 dogfood doc has been committed yet.
 
-The reviewer should treat MM-17 and every later slice as planned work unless
-the repository head proves otherwise.
+The reviewer should treat MM-16R, MM-17B, and every later slice as planned work
+unless the repository head proves otherwise.
 
 ## MM-16 Closeout Note
 
