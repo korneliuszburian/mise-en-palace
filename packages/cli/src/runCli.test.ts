@@ -173,6 +173,22 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Init-connect smoke: skipped (database not configured)");
   });
 
+  it("prints missing DB guidance for target repo harness smoke", async () => {
+    const result = await runCli(["db", "smoke", "target-repo-harness"], {
+      env: {},
+      cwd: path.resolve(process.cwd(), "../.."),
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toContain("KRN Target Repo Harness Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain(
+      "Target repo harness smoke: skipped (database not configured)"
+    );
+  });
+
   it("exposes the target repo init-connect smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const packageJson = JSON.parse(
@@ -183,6 +199,19 @@ describe("runCli", () => {
 
     expect(packageJson.scripts?.["db:smoke:init-connect"]).toBe(
       "pnpm --filter @krn/cli krn db smoke init-connect"
+    );
+  });
+
+  it("exposes the target repo harness smoke script", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = JSON.parse(
+      await import("node:fs/promises").then((fs) =>
+        fs.readFile(path.join(repoRoot, "package.json"), "utf8")
+      )
+    ) as { scripts?: Record<string, string> };
+
+    expect(packageJson.scripts?.["db:smoke:target-repo-harness"]).toBe(
+      "pnpm --filter @krn/cli krn db smoke target-repo-harness"
     );
   });
 

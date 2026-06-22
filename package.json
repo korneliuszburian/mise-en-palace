@@ -17,6 +17,7 @@
     "db:smoke:codex-adapter": "pnpm --filter @krn/cli krn db smoke codex-adapter",
     "db:smoke:worker-jobs": "pnpm --filter @krn/cli krn db smoke worker-jobs",
     "db:smoke:init-connect": "pnpm --filter @krn/cli krn db smoke init-connect",
+    "db:smoke:target-repo-harness": "pnpm --filter @krn/cli krn db smoke target-repo-harness",
     "db:smoke:source-graph": "pnpm --filter @krn/cli krn db smoke source-graph",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"

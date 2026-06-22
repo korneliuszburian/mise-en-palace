@@ -13,8 +13,8 @@ Observed setup issue:
 
 Residual later scope:
 
-- Target-repo Codex brief readback and evidence capture are not proven yet.
-- Target-repo-harness DB smoke does not exist yet.
+- Doctor target repo readiness is not implemented yet.
+- Full M27 dogfood and final anti-rot audit are not complete yet.
 
 Explicit non-blockers:
 
@@ -25,3 +25,5 @@ Explicit non-blockers:
   and project-scoped persisted planning are now proven.
 - Project-scoped persisted planning from an init/connect project is now proven
   by ExecutionRun `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
+- Target-repo Codex brief rendering and evidence capture are now proven by
+  `pnpm db:smoke:target-repo-harness` with cleanup remaining marker count `0`.

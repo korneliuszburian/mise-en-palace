@@ -318,3 +318,44 @@ Results:
   `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
 - `pnpm test` passed across 28 files and 130 tests.
 - `git diff --check` passed.
+
+## Slice 09
+
+Commands run:
+
+```sh
+pnpm --filter @krn/cli test -- runCli.test.ts targetRepoHarnessSmoke.test.ts
+pnpm --filter @krn/cli test -- runCli.test.ts targetRepoHarnessSmoke.test.ts
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:target-repo-harness
+pnpm test
+git diff --check
+```
+
+Results:
+
+- RED focused CLI tests failed because `targetRepoHarnessSmoke` did not exist,
+  `krn db smoke target-repo-harness` was rejected with status `2`, and the
+  root package script was missing.
+- Added root script `pnpm db:smoke:target-repo-harness`.
+- Added parser target `krn db smoke target-repo-harness`.
+- Added `packages/cli/src/targetRepoHarnessSmoke.ts` with format helper and
+  live smoke helper.
+- Added missing-DB output:
+  `Target repo harness smoke: skipped (database not configured)`.
+- Focused CLI tests passed with 73 tests.
+- `pnpm typecheck` passed across 7 workspace packages.
+- Live `pnpm db:smoke:target-repo-harness` passed.
+- Live smoke connected fixture Project
+  `f7d589eb-f532-48f3-b8a1-abd120b51f69`, RepoInstallation
+  `e6d07b06-e015-457d-8f5d-450d56f77715`, and ProjectKernel
+  `2a752de3-82d3-4181-996b-ae46d49372d0`.
+- Live smoke persisted ExecutionRun
+  `f9f2073b-0d69-4810-a8aa-2415af9b7fde`, rendered Codex brief `yes`,
+  persisted EvidenceBundle `88bd55e1-1bae-48f6-a2c9-17fdd825dee6`,
+  ReviewAssessment `b7bd5876-0fa3-4daf-833b-4d7b145c47dc`, and FeedbackDelta
+  `d253e142-2f1f-4cc1-b661-4d3b7a33f033`.
+- Target project linkage was verified as `yes`.
+- Cleanup remaining marker count was `0`.
+- `pnpm test` passed across 29 files and 133 tests.
+- `git diff --check` passed.

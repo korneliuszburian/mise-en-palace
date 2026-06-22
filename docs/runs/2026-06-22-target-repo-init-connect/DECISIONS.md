@@ -194,3 +194,28 @@ Intentionally not built:
   missing/blank values before repository calls.
   Exception record: no `any`, no relaxed strictness, and the only
   `exactOptionalPropertyTypes` issue was fixed with conditional object spreads.
+
+## Slice 09 Decisions
+
+- Source: `GOAL.md` Slice 09.
+  Mechanism: the full target repo harness smoke must connect a fixture repo,
+  create a project-scoped persisted plan, render a Codex brief, persist
+  evidence capture records, verify target-project linkage, and cleanup all
+  marker rows.
+  KRN implication: this smoke crosses CLI, DB, harness, codex-adapter, and
+  evidence persistence, so it belongs in the CLI package as an adapter-level
+  smoke helper rather than in `@krn/db` alone.
+  Decision: add `packages/cli/src/targetRepoHarnessSmoke.ts` and expose it via
+  `krn db smoke target-repo-harness` / `pnpm db:smoke:target-repo-harness`.
+  Rejection/falsifier: if the smoke only proves DB project rows or only renders
+  a brief without evidence persistence and cleanup, Slice 09 is incomplete.
+
+- Source: existing `codexAdapterSmoke` and `initConnectSmoke` patterns.
+  Mechanism: marker-scoped workspace/project rows plus direct SQL cleanup prove
+  smokes are self-cleaning and safe to rerun.
+  KRN implication: target repo harness smoke should use the same marker
+  convention and not mutate the fixture target repo.
+  Decision: use a marker-scoped repo path hint and cleanup by marker plus
+  retrieval/run-event IDs.
+  Rejection/falsifier: cleanup remaining marker count greater than zero blocks
+  the smoke.

@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 08 project-scoped persisted planning complete.
+Current slice: Slice 09 full target repo harness smoke complete.
 
 Completed:
 
@@ -57,7 +57,20 @@ Completed:
   `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`, RepoInstallation
   `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ExecutionRun
   `d001b7b4-fa25-4156-8538-fb7dc316d3d3`.
+- Slice 09 added `pnpm db:smoke:target-repo-harness`.
+- Slice 09 smoke connects the fixture, creates a project-scoped persisted plan,
+  renders a Codex brief, persists evidence/review/feedback records, verifies
+  target-project linkage, and cleans marker rows to zero.
+- Slice 09 live smoke passed with Project
+  `f7d589eb-f532-48f3-b8a1-abd120b51f69`, RepoInstallation
+  `e6d07b06-e015-457d-8f5d-450d56f77715`, ProjectKernel
+  `2a752de3-82d3-4181-996b-ae46d49372d0`, ExecutionRun
+  `f9f2073b-0d69-4810-a8aa-2415af9b7fde`, EvidenceBundle
+  `88bd55e1-1bae-48f6-a2c9-17fdd825dee6`, ReviewAssessment
+  `b7bd5876-0fa3-4daf-833b-4d7b145c47dc`, FeedbackDelta
+  `d253e142-2f1f-4cc1-b661-4d3b7a33f033`, target project linked `yes`, and
+  cleanup remaining marker count `0`.
 
 Next action:
 
-- Slice 09 add full target repo harness smoke.
+- Slice 10 update `krn doctor` target repo readiness.

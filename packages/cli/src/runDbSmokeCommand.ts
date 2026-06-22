@@ -18,6 +18,10 @@ import {
   runCodexAdapterSmokeCheck
 } from "./codexAdapterSmoke.js";
 import {
+  formatTargetRepoHarnessSmokeReportLines,
+  runTargetRepoHarnessSmokeCheck
+} from "./targetRepoHarnessSmoke.js";
+import {
   formatWorkerJobSmokeReportLines
 } from "./workerJobSmoke.js";
 
@@ -35,7 +39,8 @@ export interface DbSmokeRuntime {
     | "activation"
     | "codexAdapter"
     | "workerJobs"
-    | "initConnect";
+    | "initConnect"
+    | "targetRepoHarness";
 }
 
 export interface DbSmokeResult {
@@ -112,6 +117,10 @@ const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "KRN Target Repo Init-Connect Smoke";
   }
 
+  if (target === "targetRepoHarness") {
+    return "KRN Target Repo Harness Smoke";
+  }
+
   return "KRN DB Smoke";
 };
 
@@ -152,6 +161,10 @@ const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
     return "Init-connect smoke: skipped (database not configured)";
   }
 
+  if (target === "targetRepoHarness") {
+    return "Target repo harness smoke: skipped (database not configured)";
+  }
+
   return "Persistence smoke: skipped (database not configured)";
 };
 
@@ -190,6 +203,10 @@ const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
 
   if (target === "initConnect") {
     return "Init-connect smoke";
+  }
+
+  if (target === "targetRepoHarness") {
+    return "Target repo harness smoke";
   }
 
   return "Persistence smoke";
@@ -517,6 +534,26 @@ export const runDbSmokeCommand = async (
           `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
           `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
           `Init-connect smoke: ${report.cleanedUp ? "passed" : "failed"}`
+        ].join("\n") + "\n"
+      };
+    }
+
+    if (runtime.target === "targetRepoHarness") {
+      const report = await runTargetRepoHarnessSmokeCheck({
+        databaseUrl,
+        migrationsFolder,
+        smokeId: runtime.createId("target-repo-harness-smoke"),
+        targetRepoPath: path.join(repoRoot, "tests", "fixtures", "target-repos", "typescript-basic")
+      });
+
+      return {
+        exitCode: report.cleanedUp ? 0 : 1,
+        stdout: [
+          "KRN Target Repo Harness Smoke",
+          `Repo root: ${repoRoot}`,
+          `Migrations folder: ${relativeMigrationsFolder}`,
+          "Postgres config: configured",
+          ...formatTargetRepoHarnessSmokeReportLines(report)
         ].join("\n") + "\n"
       };
     }
