@@ -1,0 +1,198 @@
+# Codex Adapter And Worker Inventory
+
+Goal slice: M26.00 - inventory Codex adapter and worker surfaces before
+adding contracts, CLI brief readback, DB smokes, or doctor readiness.
+
+## Summary
+
+M26 does not start from zero. The repo already has:
+
+- `packages/codex-adapter` with a plain-text execution brief renderer, goal and
+  ExecPlan reference renderers, skill hints, and basic hook expectations;
+- `krn plan` inline rendering of `KRN Codex Execution Brief`;
+- `packages/workers` with typed maintenance job definitions and enqueue ports;
+- Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
+- persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
+
+The current surface is not M26-complete. It lacks standalone
+`krn codex brief --run-id <id>`, Codex adapter DB smoke, worker-job DB smoke,
+doctor readiness for adapter/worker surfaces, and several target contracts
+named in `GOAL.md`.
+
+## Files Inspected
+
+- `docs/KRN_KERNEL.md`
+- `GOAL.md` M26 section
+- `docs/architecture/package-boundaries.md`
+- `docs/decisions/ADR-0009-canonical-harness-spine.md`
+- `docs/KRN_SOURCES.md`
+- `packages/codex-adapter/src/*`
+- `packages/core/src/capabilityPlan.ts`
+- `packages/core/src/codexAdapterPlanRef.ts`
+- `packages/harness/src/compiler/compileHarnessPlan.ts`
+- `packages/harness/src/compiler/createCapabilityPlan.ts`
+- `packages/harness/src/compiler/createEvidenceContract.ts`
+- `packages/harness/src/repositories/harnessRunRepository.ts`
+- `packages/db/src/schema/events.ts`
+- `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`
+- `packages/db/src/index.ts`
+- `packages/workers/src/*`
+- `packages/cli/src/parseArgs.ts`
+- `packages/cli/src/runCli.ts`
+- `packages/cli/src/runPlanCommand.ts`
+- `packages/cli/src/runDbSmokeCommand.ts`
+- `packages/cli/src/runDoctorCommand.ts`
+- `package.json`
+
+## Existing Codex Adapter Surface
+
+| M26 concept | Current surface | Status | Notes |
+| --- | --- | --- | --- |
+| Execution brief renderer | `renderExecutionBrief(input): string` | partial | Renders objective, non-goals, context inclusions/exclusions, capability plan, evidence contract, hook expectations, goal ref, and ExecPlan ref. It is plain and non-mutating. |
+| Codex adapter package | `packages/codex-adapter` | exists | Correct boundary: imports `@krn/core` and `@krn/harness`; core does not import adapter. |
+| `CodexAdapterPlan` | none | missing | Core only has `CodexAdapterPlanRef`; adapter package does not yet export a full adapter plan contract. |
+| `ExecutionBrief` type | none | missing | Current renderer returns a string directly. M26.01/M26.02 should add a typed brief artifact before CLI/DB smoke rely on it. |
+| Skill binding hints | `renderSkillHints(CapabilityPlan)` | partial | Maps capability requirement kinds to skill names. No typed `CodexSkillBindingHint` contract yet. |
+| Hook expectations | `renderHookExpectations(EvidenceContract)` | weak partial | Currently returns required evidence commands only. It does not model `SessionStart`, `PreToolUse`, `PostToolUse`, `PreCompact`, or `Stop`. |
+| MCP refs | none | missing | M26 should model refs only; no MCP server. |
+| Goal ref | `renderGoalReference` | partial | String renderer exists, but no typed `CodexGoalRef` contract yet. |
+| ExecPlan ref | `renderExecPlanReference` | partial | String renderer exists, but no typed `CodexExecPlanRef` contract yet. |
+| Subagent hints | none | missing | No `CodexSubagentProbeHint`; M26 should keep these as hints only. |
+| Codex execution | absent | correct | No Codex invocation runner found. |
+
+## Current Plan Output Probe
+
+Command:
+
+```sh
+pnpm --filter @krn/cli krn plan --task "render Codex execution brief for activated harness run"
+```
+
+Result:
+
+- command passed;
+- persistence was disabled;
+- context status was `abstained`;
+- context included `0`;
+- context excluded `0`;
+- output included `KRN Codex Execution Brief`;
+- output included non-goals: do not invoke Codex, do not spawn agents, do not
+  create dashboard;
+- output included capability requirements, tool boundaries, skill hints,
+  evidence contract, hook expectations, goal reference, and ExecPlan reference;
+- no DB writes were performed.
+
+This proves preview rendering works. It does not prove persisted run readback,
+standalone `krn codex brief --run-id`, JSON output, DB smoke, or doctor
+readiness.
+
+## Harness / Persistence Surface
+
+`compileHarnessPlan` already returns:
+
+- `TaskContract`;
+- `HarnessPlan`;
+- `ContextAssembly`;
+- `CapabilityPlan`;
+- `CodexAdapterPlanRef`;
+- `EvidenceContract`;
+- `nextAction`.
+
+`krn plan --persist` creates an `ExecutionRun` and stores:
+
+- `evidenceContract` in `HarnessPlan.metadata`;
+- `codexAdapterPlanRef` in `ExecutionRun.metadata`;
+- a `plan.persisted` run event with the context assembly and adapter ref IDs.
+
+`DrizzleHarnessRunRepository.getHarnessRunByExecutionRunId` reads back:
+
+- operator intent;
+- task contract;
+- harness plan;
+- context assembly;
+- execution run;
+- evidence bundles;
+- review assessments;
+- feedback deltas;
+- run events.
+
+Gaps:
+
+- no persisted `CapabilityPlan` table or typed readback;
+- no typed parser for `EvidenceContract` stored in metadata;
+- no typed parser for `codexAdapterPlanRef` stored in execution metadata;
+- no repository method dedicated to loading a Codex brief source aggregate;
+- no `krn codex brief --run-id <id>` command.
+
+## Existing Worker Surface
+
+| M26 concept | Current surface | Status | Notes |
+| --- | --- | --- | --- |
+| `worker_jobs` table | `packages/db/src/schema/events.ts` | exists | Has id, type, status, payload, attempts, maxAttempts, availableAt, lockedAt, lockedBy, lastError, createdAt, updatedAt. |
+| `outbox_events` table | `packages/db/src/schema/events.ts` | exists | Available for queued worker job event emission. |
+| Worker package | `packages/workers` | exists | Owns typed maintenance job definitions and enqueue ports. |
+| `embed_source_chunk` | `maintenanceJobTypes` | exists | Payload points to source chunk. |
+| `embed_memory_record` | none | missing | Required by `GOAL.md` M26 worker semantics. |
+| `compact_memory` | `maintenanceJobTypes` | exists | Payload points to project and optional memory record. |
+| `detect_contradiction` | `maintenanceJobTypes` | exists | Payload points to project and optional memory/source claim. |
+| `expire_stale_memory` | `maintenanceJobTypes` | exists | Payload includes stale cutoff. |
+| `promote_eval_candidate` | `maintenanceJobTypes` | exists | Payload points to eval candidate. |
+| Worker job statuses | DB and worker types | partial mismatch | Current values include `dead_letter` and `cancelled`; `GOAL.md` names `skipped`. |
+| Run scheduling field | `availableAt` | partial mismatch | `GOAL.md` names `runAfter`. The existing field is semantically close but should be decided deliberately. |
+| WorkerJobRepository | `packages/workers` interface only | partial | Only `enqueue` exists. M26.07 needs enqueue/read/list/transition/cleanup methods. |
+| Drizzle worker repository | none | missing | DB schema exists, but no DB-backed repository adapter found. |
+| Worker smoke | none | missing | No `pnpm db:smoke:worker-jobs` or CLI target. |
+| Daemon / loop | absent | correct | No broad worker runtime or infinite loop found. |
+| Redis/Kafka | absent | correct | No separate queue infrastructure found. |
+
+## CLI / Smoke / Doctor Surface
+
+Existing root scripts:
+
+- `pnpm db:smoke`
+- `pnpm db:smoke:harness-plan`
+- `pnpm db:smoke:harness-evidence`
+- `pnpm db:smoke:source-graph`
+- `pnpm db:smoke:memory-governance`
+- `pnpm db:smoke:retrieval-substrate`
+- `pnpm db:smoke:activation`
+
+Missing for M26:
+
+- `pnpm db:smoke:codex-adapter`;
+- `pnpm db:smoke:worker-jobs`;
+- `krn codex brief --run-id <id>`;
+- `krn plan --task "..." --persist --brief` integrated mode;
+- doctor Codex adapter readiness section;
+- doctor worker job readiness section.
+
+Current DB-backed doctor passed and reports readiness through activation. It
+does not yet inspect Codex adapter renderer availability, hook expectation
+projection, worker job schema, worker smoke availability, or forbidden worker
+runtime/Redis/Kafka surfaces.
+
+## M26 Gaps
+
+- Add typed Codex adapter contracts:
+  `CodexAdapterPlan`, `ExecutionBrief`, `CodexSkillBindingHint`,
+  `CodexHookExpectation`, `CodexMcpResourceRef`, `CodexGoalRef`,
+  `CodexExecPlanRef`, and `CodexSubagentProbeHint`.
+- Keep Codex types out of `packages/core`.
+- Render a typed bounded brief before flattening to text.
+- Load persisted run/context/evidence data for `krn codex brief --run-id`.
+- Add hook expectation phases rather than only command strings.
+- Add MCP refs and subagent probes as references/hints only.
+- Add `embed_memory_record` to worker job types.
+- Reconcile worker job status vocabulary with `GOAL.md`.
+- Add DB-backed WorkerJobRepository methods and smoke proof.
+- Add Codex adapter DB smoke proof.
+- Add doctor readiness for adapter and worker surfaces.
+
+## Non-Gaps
+
+- Do not build a KRN MCP server.
+- Do not invoke Codex.
+- Do not spawn subagents.
+- Do not build a dashboard or public API.
+- Do not add Redis/Kafka or a broad worker daemon.
+- Do not make markdown or `.krn` runtime truth.
