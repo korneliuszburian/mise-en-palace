@@ -1,3 +1,4 @@
+export * from "./auditBundle.js";
 export * from "./evidenceCapture.js";
 export * from "./harnessCompile.js";
 export * from "./memoryCandidate.js";

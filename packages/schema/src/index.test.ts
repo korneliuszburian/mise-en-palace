@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  parseAuditBundleInput,
   parseEvidenceCaptureInput,
   parseHarnessCompileInput,
   parseMemoryCandidateInput,
@@ -20,6 +21,69 @@ const parser = (name: string): ((input: unknown) => unknown) => {
 };
 
 describe("schema parse boundaries", () => {
+  test("audit bundle inputs parse compact review evidence and reject private reasoning keys", () => {
+    expect(() =>
+      parseAuditBundleInput({
+        sliceId: "MM-04",
+        changedFiles: ["packages/core/src/auditBundle.ts"],
+        intendedFiles: ["packages/core/src/auditBundle.ts"],
+        verificationCommands: [
+          {
+            command: "pnpm typecheck",
+            status: "passed"
+          }
+        ],
+        verificationResults: "typecheck passed",
+        architecturalDelta: "Adds schema and persistence",
+        reviewBurdenEstimate: "low",
+        diffRiskEstimate: "low",
+        rollbackPath: "git restore packages/schema/src/auditBundle.ts",
+        selfCritiqueSummary: "chainOfThought should be rejected",
+        finalVerdict: "pass",
+        metadata: {
+          chainOfThought: "private reasoning"
+        }
+      })
+    ).toThrow();
+
+    const auditBundle = parseAuditBundleInput({
+      sliceId: "MM-04",
+      commitCandidate: "feat(db): add audit bundle persistence",
+      changedFiles: ["packages/schema/src/auditBundle.ts"],
+      intendedFiles: ["packages/schema/src/auditBundle.ts"],
+      unexpectedFiles: [],
+      verificationCommands: [
+        {
+          command: "pnpm typecheck",
+          status: "passed",
+          summary: "all packages typechecked"
+        }
+      ],
+      verificationResults: "typecheck passed",
+      architecturalDelta: "Adds AuditBundle schemas",
+      boundaryFindings: [
+        {
+          category: "boundary",
+          severity: "advisory",
+          title: "test-only fs import",
+          summary: "Fixture read is test-only",
+          evidenceRefs: ["packages/harness/src/activation/noisyBrainFixture.test.ts"],
+          recommendation: "Classify test fixture imports separately"
+        }
+      ],
+      reviewBurdenEstimate: "low",
+      diffRiskEstimate: "low",
+      rollbackPath: "git restore packages/schema/src/auditBundle.ts",
+      candidateUpdates: [],
+      selfCritiqueSummary: "Schema boundary only; no runtime mutation.",
+      finalVerdict: "advisory"
+    });
+
+    expect(auditBundle.boundaryFindings).toHaveLength(1);
+    expect(auditBundle.evalFindings).toEqual([]);
+    expect(auditBundle.metadata).toEqual({});
+  });
+
   test("operator intent and task contract inputs parse unknown values with defaults", () => {
     const intent = parseOperatorIntentInput({
       rawIntent: "Improve KRN doctor brain store readiness",

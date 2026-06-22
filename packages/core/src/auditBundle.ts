@@ -1,4 +1,8 @@
 import type { IsoTimestamp } from "./time.js";
+import type {
+  ExecutionRunId,
+  ProjectId
+} from "./ids.js";
 
 export type AuditFindingSeverity = "info" | "advisory" | "warning" | "blocking";
 
@@ -57,6 +61,8 @@ export interface AuditCandidateUpdate {
 
 export interface AuditBundle {
   id: string;
+  projectId?: ProjectId;
+  executionRunId?: ExecutionRunId;
   sliceId: string;
   commitCandidate?: string;
   changedFiles: string[];
@@ -77,6 +83,7 @@ export interface AuditBundle {
   candidateUpdates: AuditCandidateUpdate[];
   selfCritiqueSummary: string;
   finalVerdict: AuditFinalVerdict;
+  metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
 }

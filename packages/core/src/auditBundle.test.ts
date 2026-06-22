@@ -46,6 +46,7 @@ const bundle = (findings: AuditFinding[]): AuditBundle => ({
   candidateUpdates: [],
   selfCritiqueSummary: "Pure domain slice; no runtime behavior.",
   finalVerdict: "pass",
+  metadata: {},
   createdAt: now,
   updatedAt: now
 });
