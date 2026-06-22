@@ -2,11 +2,10 @@
 
 Hard blockers:
 
-- None through Slice 10.
+- None through Slice 11.
 
 Known unproven M23 behavior:
 
-- M23 dogfood is not recorded yet.
 - M23 final anti-rot and handoff are not recorded yet.
 
 Explicit non-blockers:
@@ -100,9 +99,17 @@ Closed in Slice 10:
 - With DB configured, doctor proves memory governance schema `7/7` and
   MemoryRepository `reachable`.
 
-Known after Slice 10:
+Closed in Slice 11:
 
-- Memory governance runtime proof is still `unverified` until Slice 11 creates
-  durable dogfood MemoryCandidate, MemoryRecord, MemoryApplication, and
-  AntiMemory records. The memory governance smoke is passing but cleans marker
-  rows to zero.
+- Live DB dogfood created durable MemoryCandidate, MemoryRecord,
+  MemoryRecordVersion, MemoryApplication, AntiMemoryRecord, EvidenceBundle,
+  ReviewAssessment, and FeedbackDelta records.
+- `krn doctor` now reports memory governance runtime proof and readiness as
+  ready after the dogfood records exist.
+- `DOGFOOD.md` records IDs, the source-to-decision mapping, what was proven,
+  and what remains unproven.
+
+Known after Slice 11:
+
+- Retrieval quality, ranking quality, long-term graph traversal performance,
+  and future context activation are not proven by M23.11.

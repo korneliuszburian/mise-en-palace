@@ -116,6 +116,13 @@
   are durable MemoryCandidate, MemoryRecord, MemoryApplication, and AntiMemory
   records in the DB. The memory governance smoke remains self-cleaning and does
   not leave marker rows behind as runtime proof.
+- Slice 11 uses live DB dogfood records, not smoke marker rows, as the runtime
+  memory governance proof that doctor can read. Smoke remains a cleanup-tested
+  verification command; dogfood records are the durable proof.
+- Slice 11 does not invent a source claim for markdown runtime memory. Because
+  the live source graph did not yet contain that claim, the anti-memory record
+  cites `docs/KRN_KERNEL.md#runtime-truth` as source lineage and leaves source
+  claim creation to a future explicit source-graph step.
 
 Slice 00 skill record:
 
@@ -233,3 +240,13 @@ Slice 10 skill record:
   tests.
 - `superpowers:verification-before-completion`: used before committing and
   pushing Slice 10.
+
+Slice 11 skill record:
+
+- `source-to-decision`: used to map M22 SourceClaim
+  `212815bc-477c-4985-8992-31825f5c5897` into a reviewed MemoryRecord with
+  explicit `doesNotProve`.
+- `evidence-review-loop`: used to record dogfood evidence, review, feedback,
+  proof, and not-proven boundaries without automatic memory mutation.
+- `brain-store-schema`: used to keep all dogfood runtime proof in Postgres
+  MemoryRepository/HarnessRepository state.

@@ -2,7 +2,7 @@
 
 Goal: M23 - MemoryCandidate to reviewed MemoryRecord promotion.
 
-Current slice: Slice 10 doctor memory governance readiness complete.
+Current slice: Slice 11 memory governance dogfood complete.
 
 Completed:
 
@@ -64,6 +64,11 @@ Completed:
   reachability when DB is configured, memory governance smoke command
   availability, runtime proof ready/unverified status, absence of runtime
   markdown memory, and absence of automatic memory mutation.
+- Slice 11 dogfooded memory governance against the live local DB. It created a
+  persisted execution run, source-grounded MemoryCandidate, reviewed
+  MemoryRecord and version, MemoryApplication, AntiMemoryRecord, persisted
+  evidence/review/feedback records, and a dogfood ledger artifact in
+  `DOGFOOD.md`.
 
 Verification:
 
@@ -238,6 +243,33 @@ Verification:
   absent, and memory governance runtime proof `unverified`. This is expected
   until Slice 11 dogfoods durable memory records because the smoke cleans its
   marker rows to zero.
+- Slice 11 source selection query found M22 SourceClaim
+  `212815bc-477c-4985-8992-31825f5c5897`.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn plan --task "promote reviewed memory from KRN evidence"
+  --persist`: passed and created execution run
+  `291bc2c4-7b02-46e7-9b7c-3980fadb9b34`.
+- `krn memory candidate add --persist`: passed and created MemoryCandidate
+  `221e9838-0cad-42be-b1ec-d8484a8dd14a`.
+- `krn memory candidate promote --persist`: passed and created MemoryRecord
+  `7dda35fd-b89d-4bd4-94bd-7937022d99e7`; source limits printed the M22
+  `doesNotProve` clause.
+- `krn memory record apply --persist`: passed and created MemoryApplication
+  `8fb759f3-a49d-4999-ad4f-5be1ef8b3481`.
+- `krn memory anti add --persist`: passed and created AntiMemoryRecord
+  `7cb45aea-756a-4e70-a855-cf766c41cf22`.
+- `krn evidence capture --run-id
+  291bc2c4-7b02-46e7-9b7c-3980fadb9b34 --persist`: passed and created
+  EvidenceBundle `7c0b5701-2f08-495e-992c-3c7eb5e71733`,
+  ReviewAssessment `e698b9b5-b403-48ca-8ea0-ca9e8ca5b5c7`, and
+  FeedbackDelta `0bf53a6b-f383-49f0-a87d-648679b47086`.
+- Runtime DB readback confirmed MemoryRecordVersion
+  `5394b391-5e9c-411b-8acd-996cea7c04a9` for the promoted record.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:smoke:memory-governance`: passed after dogfood records existed.
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter
+  @krn/cli krn doctor`: passed with memory governance runtime proof and
+  readiness `ready`.
 
 Skill gates:
 
@@ -258,7 +290,12 @@ Skill gates:
   derivation boundaries.
 - Used: `superpowers:test-driven-development` for RED/GREEN doctor tests in
   Slice 10.
+- Used: `source-to-decision` to tie the dogfood MemoryCandidate to M22
+  SourceClaim `212815bc-477c-4985-8992-31825f5c5897` with an explicit
+  `doesNotProve` clause.
+- Used: `evidence-review-loop` to record evidence, review, feedback, and the
+  proof/not-proven split without automatic memory mutation.
 
 Next action:
 
-- Slice 11: dogfood memory governance with live DB.
+- Slice 12: M23 anti-rot and handoff.
