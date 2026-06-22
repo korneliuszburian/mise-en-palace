@@ -24,6 +24,13 @@ score, activation retrieval-candidate linkage, context budget cost, and expected
 decision impact. Migration `0005_young_outlaw_kid.sql` was generated and
 applied locally through `pnpm db:ready`.
 
+M24 Slice 02 is complete. `packages/schema/src/retrieval.ts` now exports Zod
+schemas, inferred input types, and parse functions for search documents,
+retrieval runs, retrieval candidates, activation decisions, context items, and
+context exclusions. The parser boundary keeps input as `unknown`, defaults
+metadata, constrains retrieval mode and activation/exclusion vocabulary, and
+bounds score fields to `0..1000`.
+
 Changed files:
 
 - `docs/runs/2026-06-22-retrieval-substrate/RETRIEVAL_SUBSTRATE_INVENTORY.md`
@@ -38,6 +45,9 @@ Changed files:
 - `packages/db/src/migrations/0005_young_outlaw_kid.sql`
 - `packages/db/src/migrations/meta/0005_snapshot.json`
 - `packages/db/src/migrations/meta/_journal.json`
+- `packages/schema/src/retrieval.ts`
+- `packages/schema/src/index.ts`
+- `packages/schema/src/index.test.ts`
 
 Decisions:
 Reuse the existing Postgres/Drizzle retrieval schema. Keep FTS/vector raw SQL
@@ -63,10 +73,10 @@ Context selectors:
 and `package.json`.
 
 Next action:
-M24.02 should add typed retrieval IO schemas for search documents, retrieval
-runs, candidates, activation decisions, context items, context exclusions,
-embedding models, and embedding rows. Then M24.03 should add repository methods
-and M24.04 should prove the full chain with a smoke command.
+M24.03 should add typed retrieval repository methods and Drizzle behavior for
+search documents, lexical search, embedding models, placeholder/vector rows,
+retrieval candidates, activation decisions, context items/exclusions, and
+cleanup. M24.04 should prove the full chain with a smoke command.
 
 Do not reread:
 `docs/materials/` or broad historical docs unless the next task explicitly

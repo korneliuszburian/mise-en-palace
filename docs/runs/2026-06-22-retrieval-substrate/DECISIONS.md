@@ -73,6 +73,15 @@
   existing Postgres schema.
   Rejection/falsifier: any M24 implementation that requires an external
   embedding provider or separate vector DB violates the milestone.
+- Source: `GOAL.md` M24.02 and existing `packages/schema` parser pattern.
+  Mechanism: KRN CLI/API/file inputs are untrusted until parsed through Zod.
+  KRN implication: retrieval/search input must cross a typed validation
+  boundary before repository code sees it.
+  Decision: add retrieval IO schemas in `packages/schema`, export `parseX`
+  functions that accept `unknown`, constrain mode/decision/reason enums, and
+  bound numeric scores to `0..1000`.
+  Rejection/falsifier: repository or CLI code accepting raw retrieval input
+  without these parsers would violate the M24.02 boundary.
 
 Slice 00 skill record:
 
@@ -97,3 +106,12 @@ Slice 01 skill record:
   candidate and activation/exclusion traceability.
 - `superpowers:systematic-debugging`: used after typecheck exposed the
   widened DB vocabulary versus harness type boundary mismatch.
+
+Slice 02 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN retrieval IO parser
+  tests.
+- `typescript-type-safety`: used for the unknown-input Zod boundary, parser
+  exports, bounded numeric score types, and no-`any` implementation.
+- `activation-engine`: used to constrain retrieval mode, activation decision,
+  context inclusion, and explicit exclusion inputs.

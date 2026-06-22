@@ -62,3 +62,25 @@ Results:
 - Harness retrieval/activation unions were expanded without casts or `any`.
 - Final `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/db db:check`,
   `git diff --check`, and live `pnpm db:ready` all passed.
+
+## Slice 02
+
+Commands run:
+
+```sh
+pnpm --filter @krn/schema test
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Results:
+
+- RED schema test failed because retrieval parser exports were absent.
+- `SearchDocumentInput`, `RetrievalRunInput`, `RetrievalCandidateInput`,
+  `ActivationDecisionInput`, `ContextItemInput`, and `ContextExclusionInput`
+  parser exports were added.
+- Parsers accept `unknown`, default metadata objects, constrain mode/decision
+  enums, constrain context exclusion reasons, and bound numeric scores.
+- Final targeted schema tests, typecheck, full test suite, and diff hygiene
+  passed.

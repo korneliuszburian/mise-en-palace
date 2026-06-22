@@ -296,4 +296,151 @@ describe("schema parse boundaries", () => {
 
     expect(evidence.commands[0]?.status).toBe("passed");
   });
+
+  test("retrieval substrate inputs constrain search, scoring, decisions, and context", () => {
+    const parseSearchDocumentInput = parser("parseSearchDocumentInput");
+    const parseRetrievalRunInput = parser("parseRetrievalRunInput");
+    const parseRetrievalCandidateInput = parser("parseRetrievalCandidateInput");
+    const parseActivationDecisionInput = parser("parseActivationDecisionInput");
+    const parseContextItemInput = parser("parseContextItemInput");
+    const parseContextExclusionInput = parser("parseContextExclusionInput");
+
+    const document = parseSearchDocumentInput({
+      subjectType: "source_claim",
+      subjectId: "source-claim-1",
+      sourceClaimId: "source-claim-1",
+      title: "  Source graph Postgres edge tables  ",
+      body: "Use Postgres source decision edges before adding a separate graph DB.",
+      trustTier: "project-decision"
+    });
+
+    expect(document).toMatchObject({
+      subjectType: "source_claim",
+      searchText:
+        "Source graph Postgres edge tables\nUse Postgres source decision edges before adding a separate graph DB.",
+      metadataFilters: {},
+      metadata: {}
+    });
+
+    expect(() =>
+      parseRetrievalRunInput({
+        query: "source graph postgres edge tables",
+        mode: "prompt-dump"
+      })
+    ).toThrow();
+
+    expect(
+      parseRetrievalRunInput({
+        executionRunId: "execution-run-1",
+        query: "source graph postgres edge tables",
+        mode: "hybrid",
+        budget: 4000
+      })
+    ).toMatchObject({
+      mode: "hybrid",
+      budget: 4000,
+      metadataFilters: {},
+      metadata: {}
+    });
+
+    expect(() =>
+      parseRetrievalCandidateInput({
+        retrievalRunId: "retrieval-run-1",
+        searchDocumentId: "search-document-1",
+        candidateType: "search",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        trustTier: "project-decision",
+        score: 1001,
+        reason: "Lexical match"
+      })
+    ).toThrow();
+
+    expect(
+      parseRetrievalCandidateInput({
+        retrievalRunId: "retrieval-run-1",
+        searchDocumentId: "search-document-1",
+        candidateType: "search",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        trustTier: "project-decision",
+        lexicalScore: 90,
+        score: 95,
+        reason: "Lexical match plus trusted source metadata"
+      })
+    ).toMatchObject({
+      candidateType: "search",
+      status: "candidate",
+      score: 95,
+      metadata: {}
+    });
+
+    expect(() =>
+      parseActivationDecisionInput({
+        retrievalRunId: "retrieval-run-1",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        decision: "maybe",
+        reason: "Unclear"
+      })
+    ).toThrow();
+
+    expect(
+      parseActivationDecisionInput({
+        retrievalRunId: "retrieval-run-1",
+        retrievalCandidateId: "candidate-1",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        decision: "included",
+        reason: "High trust and directly relevant",
+        contextBudgetCost: 240,
+        expectedDecisionImpact: "Supports choosing Postgres edge tables"
+      })
+    ).toMatchObject({
+      decision: "included",
+      contextBudgetCost: 240,
+      metadata: {}
+    });
+
+    expect(
+      parseContextItemInput({
+        contextAssemblyId: "context-assembly-1",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        position: 1,
+        reason: "Direct source graph decision",
+        expectedUse: "Guide retrieval substrate implementation",
+        trustTier: "project-decision"
+      })
+    ).toMatchObject({
+      position: 1,
+      metadata: {}
+    });
+
+    expect(() =>
+      parseContextExclusionInput({
+        contextAssemblyId: "context-assembly-1",
+        subjectType: "search_document",
+        subjectId: "search-document-2",
+        reason: "interesting",
+        explanation: "Nearby but irrelevant",
+        trustTier: "low"
+      })
+    ).toThrow();
+
+    expect(
+      parseContextExclusionInput({
+        contextAssemblyId: "context-assembly-1",
+        subjectType: "search_document",
+        subjectId: "search-document-2",
+        reason: "low_context_roi",
+        explanation: "Mentions graph DB but gives no KRN mechanism",
+        score: 20,
+        trustTier: "low"
+      })
+    ).toMatchObject({
+      reason: "low_context_roi",
+      metadata: {}
+    });
+  });
 });

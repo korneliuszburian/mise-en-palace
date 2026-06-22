@@ -18,6 +18,8 @@ Resolved in M24.01:
   embedding rows linked to search documents, retrieval run mode/budget,
   candidate search-document linkage, and activation candidate/budget/impact
   trace fields.
+- retrieval IO parsers now exist for search documents, retrieval runs,
+  candidates, activation decisions, context items, and context exclusions.
 
 Non-goals that remain intentionally blocked:
 

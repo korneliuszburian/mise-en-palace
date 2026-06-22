@@ -2,7 +2,7 @@
 
 Goal: M24 - Retrieval/search substrate plus activation trace persistence.
 
-Current slice: Slice 01 retrieval schema tightening complete.
+Current slice: Slice 02 retrieval IO schemas complete.
 
 Completed:
 
@@ -26,6 +26,13 @@ Completed:
   `packages/db/src/migrations/0005_young_outlaw_kid.sql`.
 - Slice 01 expanded harness retrieval/activation union types to match the
   widened durable vocabulary.
+- Slice 02 added retrieval IO schemas and parse functions for SearchDocument,
+  RetrievalRun, RetrievalCandidate, ActivationDecision, ContextItem, and
+  ContextExclusion inputs.
+- Slice 02 keeps retrieval external input as `unknown` until parsed, constrains
+  retrieval mode and activation decision vocabulary, constrains context
+  exclusion reasons, bounds numeric scores to `0..1000`, and defaults metadata
+  objects at the parser boundary.
 
 Verification:
 
@@ -54,10 +61,16 @@ Verification:
 - `pnpm test`: passed.
 - `pnpm --filter @krn/db db:check`: passed.
 - `git diff --check`: passed.
+- Slice 02 RED: `pnpm --filter @krn/schema test` failed on missing
+  retrieval parser exports.
+- `pnpm --filter @krn/schema test`: passed with 9 tests.
+- `pnpm typecheck`: passed.
+- `pnpm test`: passed.
+- `git diff --check`: passed.
 
 Next:
 
-- M24.02/M24.03: add typed IO/read models and Drizzle methods for
+- M24.03: add typed repository methods and Drizzle methods for
   `SearchDocument`, lexical search, `EmbeddingModel`, and placeholder/vector
   `Embedding` storage.
 - M24.04: add self-cleaning `pnpm db:smoke:retrieval-substrate`.
