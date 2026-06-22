@@ -13,8 +13,8 @@ Observed setup issue:
 
 Residual later scope:
 
-- Memory ideal-state plan is not complete yet; this is Slice 14 post-M27
-  planning scope, not an M27 target repo blocker.
+- Observational memory implementation is not built yet. It is planned in
+  `docs/plans/memory-ideal-state/GOAL.md`.
 
 Explicit non-blockers:
 
@@ -38,3 +38,4 @@ Explicit non-blockers:
   forbidden surface scans, forbidden dependency scan, core library-safety scan,
   and `git diff --check`.
 - Global final handoff docs are updated for M27 status.
+- Memory ideal-state plan is complete as a planning artifact.

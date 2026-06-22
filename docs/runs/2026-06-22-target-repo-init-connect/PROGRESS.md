@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 13 final handoff complete.
+Current slice: Slice 14 memory research gap analysis and next-goal plan complete.
 
 Completed:
 
@@ -131,7 +131,15 @@ Completed:
 - Slice 13 updated global handoff docs with M27 completed/proven status,
   commit spine, verification, DB proof, target repo status, residual later
   scope, not-built list, and next safest action.
+- Slice 14 read and mapped `docs/materials/2026-06-22-big-brain.md` and
+  `docs/materials/2026-06-22-big-brain-part-2.md`.
+- Slice 14 produced canonical memory ideal-state goal:
+  `docs/plans/memory-ideal-state/GOAL.md`.
+- Slice 14 plan defines source-to-decision ledger, current repo state, gap
+  analysis, current-state vs research matrix, evidence table, strict
+  vocabulary, neuro/metacognitive primitives, and executable MM-00..MM-24
+  backlog.
 
 Next action:
 
-- Slice 14 memory research gap analysis and next-goal plan.
+- Start MM-00: memory ideal-state ADR and source-to-decision ledger.

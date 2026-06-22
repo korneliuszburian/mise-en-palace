@@ -1371,3 +1371,8 @@ library-safety scan, and `git diff --check`.
 2026-06-22: M27 Slice 13 updated final handoff docs. M27 is complete through
 target repo dry-run, connect, project-scoped plan, Codex brief readback,
 evidence capture, doctor readiness, full target-repo smoke, and anti-rot.
+
+2026-06-22: M27 Slice 14 produced
+`docs/plans/memory-ideal-state/GOAL.md`, mapping the two 2026-06-22 memory
+research files to current repo state, gaps, falsifiers, vocabulary, and
+MM-00..MM-24 implementation slices.

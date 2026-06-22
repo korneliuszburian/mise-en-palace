@@ -502,3 +502,40 @@ Docs-only handoff update:
 - Updated `docs/handoff/verification.md`.
 - Updated current M27 run ledger handoff/progress/blockers.
 - `git diff --check` passed before commit.
+
+## Slice 14
+
+Commands run:
+
+```sh
+sed -n '1,240p' docs/materials/2026-06-22-big-brain.md
+sed -n '1,240p' docs/materials/2026-06-22-big-brain-part-2.md
+sed -n '241,520p' docs/materials/2026-06-22-big-brain-part-2.md
+sed -n '521,840p' docs/materials/2026-06-22-big-brain-part-2.md
+rg -n "observation|reflection|memoryRecords|memoryCandidates|antiMemoryRecords|sourceClaims|retrievalRuns|activationDecisions|contextItems|contextExclusions|runEvents|outboxEvents|workerJobs|projectKernels|repoInstallations" packages/core/src packages/db/src packages/harness/src packages/cli/src docs/decisions docs/runs/2026-06-22-target-repo-init-connect -g '*.ts' -g '*.md'
+test -f docs/plans/memory-ideal-state/GOAL.md
+rg "docs/materials/2026-06-22-big-brain.md" docs/plans/memory-ideal-state/GOAL.md
+rg "docs/materials/2026-06-22-big-brain-part-2.md" docs/plans/memory-ideal-state/GOAL.md
+rg "MM-00" docs/plans/memory-ideal-state/GOAL.md
+rg "AntiMemoryCandidate" docs/plans/memory-ideal-state/GOAL.md
+rg "Hippocampus|metacognition|predictive processing|global workspace" docs/plans/memory-ideal-state/GOAL.md
+rg -n "2026-06-22-big-brain|current-state|Current-state|research matrix|Memory research|MM-00|Hippocampus|metacognition|predictive processing|global workspace|no automatic memory promotion|runtime markdown memory|separate vector/graph DB" GOAL.md
+git diff --check
+```
+
+Results:
+
+- Read both required memory research materials.
+- Inspected current source/memory/retrieval/activation/event/worker/project
+  evidence in repo files.
+- Created `docs/plans/memory-ideal-state/GOAL.md`.
+- Verified the canonical plan names both research materials.
+- Verified the canonical plan includes `MM-00`.
+- Verified the canonical plan includes `AntiMemoryCandidate`.
+- Verified the canonical plan includes the neuro/metacognitive trigger terms:
+  `Hippocampus`, `metacognition`, `predictive processing`, and
+  `global workspace`.
+- Verified root `GOAL.md` names both research files, includes current-state vs
+  research matrix, present/missing repo state, executable MM slices, and M27
+  memory boundaries.
+- `git diff --check` passed.

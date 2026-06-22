@@ -13,7 +13,7 @@ M22-M26 brain spine handoff`. Baseline M27 preflight passed after exporting
 smokes from M22-M26.
 
 Current M27 state:
-Slices 00-13 are complete. Target repo fixture dry-run, connect persistence,
+Slices 00-14 are complete. Target repo fixture dry-run, connect persistence,
 init-connect smoke, project-scoped persisted planning, Codex brief readback,
 evidence capture, full target repo harness smoke, and doctor target repo
 readiness are proven. Anti-rot passed. The latest direct dogfood reused Project
@@ -38,10 +38,12 @@ store, Redis/Kafka, or broad eval suite.
 
 Changed files:
 Slice 13 is docs-only. It updates global handoff docs and the M27 run ledger.
+Slice 14 is docs-only. It adds `docs/plans/memory-ideal-state/GOAL.md` and
+updates the root `GOAL.md` memory follow-up plan.
 
 Blockers/risks:
 No hard blocker. `GOAL.md` remains modified user-owned context and is not part
 of the Slice 08 implementation commit.
 
 Next action:
-Slice 14: memory research gap analysis and next-goal plan.
+Start MM-00: memory ideal-state ADR and source-to-decision ledger.
