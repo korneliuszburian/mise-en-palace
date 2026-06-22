@@ -134,12 +134,22 @@ export type RetrievalSubjectType =
   | "memory_record"
   | "anti_memory_record"
   | "task_contract"
-  | "search_document";
+  | "search_document"
+  | "evidence_bundle"
+  | "review_assessment"
+  | "architecture_decision"
+  | "run_event";
 
 export type RetrievalRunStatus = "running" | "completed" | "abstained" | "failed";
 export type RetrievalCandidateKind = "memory" | "anti_memory" | "source" | "search";
 export type RetrievalCandidateStatus = "candidate" | "included" | "excluded";
-export type ActivationDecisionStatus = "included" | "excluded" | "abstained";
+export type ActivationDecisionStatus =
+  | "included"
+  | "excluded"
+  | "abstained"
+  | "deferred"
+  | "conflict"
+  | "stale";
 
 export interface RetrievalRunRecord {
   id: string;

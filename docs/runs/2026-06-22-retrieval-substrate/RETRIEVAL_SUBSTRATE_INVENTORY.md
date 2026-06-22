@@ -100,3 +100,24 @@ The DB substrate already exists. M24 should not add a new search engine,
 separate vector DB, background embedding worker, external embedding service, or
 dashboard. The next slices should tighten the typed repository/API surface and
 prove the existing Postgres/Drizzle substrate with a self-cleaning smoke.
+
+## Slice 01 Update
+
+M24.01 tightened the existing substrate instead of replacing it:
+
+- expanded `retrieval_subject_type` with `evidence_bundle`,
+  `review_assessment`, `architecture_decision`, and `run_event`;
+- added `retrieval_run_mode` with `lexical`, `vector`, `hybrid`, `graph`, and
+  `mixed`;
+- added `search_documents.search_text` plus evidence/review/decision/run event
+  linkage columns;
+- added `embeddings.search_document_id`;
+- added `retrieval_runs.execution_run_id`, `mode`, `budget`, and `created_at`;
+- added `retrieval_candidates.search_document_id` and `score`;
+- added `activation_decisions.retrieval_candidate_id`,
+  `context_budget_cost`, and `expected_decision_impact`;
+- expanded public harness retrieval/activation union types to match the durable
+  schema vocabulary.
+
+Repository behavior is still intentionally deferred to M24.03. M24.01 only
+made the durable schema capable of representing the target retrieval chain.

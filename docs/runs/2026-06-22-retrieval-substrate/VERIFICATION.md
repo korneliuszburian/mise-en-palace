@@ -34,3 +34,31 @@ Post-doc verification:
 
 - `pnpm typecheck`: passed.
 - `git diff --check`: passed.
+
+## Slice 01
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- retrieval.test.ts
+pnpm db:generate
+sed -n '1,260p' packages/db/src/migrations/0005_young_outlaw_kid.sql
+pnpm typecheck
+pnpm --filter @krn/db db:check
+git diff --check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+pnpm test
+```
+
+Results:
+
+- RED retrieval schema test failed before the schema patch on missing M24 enum
+  values and fields.
+- GREEN retrieval schema test passed after the schema patch.
+- Generated SQL is additive: enum values, nullable linkage columns, defaulted
+  non-null run mode/search text/created timestamp, FKs, and indexes.
+- `pnpm typecheck` initially failed at the DB mapper boundary because the
+  widened Drizzle row vocabulary exceeded harness read-model unions.
+- Harness retrieval/activation unions were expanded without casts or `any`.
+- Final `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/db db:check`,
+  `git diff --check`, and live `pnpm db:ready` all passed.

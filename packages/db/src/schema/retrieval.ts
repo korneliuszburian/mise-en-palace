@@ -17,13 +17,18 @@ import {
 } from "./memory.js";
 import {
   contextAssemblies,
+  evidenceBundles,
+  executionRuns,
   projects,
+  reviewAssessments,
   taskContracts
 } from "./harness.js";
+import { runEvents } from "./events.js";
 import {
   sourceArtifacts,
   sourceChunks,
   sourceClaims,
+  sourceDecisions,
   sourceTrustTier
 } from "./sources.js";
 import { tsvector } from "../sql/fullTextSearch.js";
@@ -46,7 +51,11 @@ export const retrievalSubjectType = pgEnum("retrieval_subject_type", [
   "memory_record",
   "anti_memory_record",
   "task_contract",
-  "search_document"
+  "search_document",
+  "evidence_bundle",
+  "review_assessment",
+  "architecture_decision",
+  "run_event"
 ]);
 
 export const retrievalValidityStatus = pgEnum("retrieval_validity_status", [
@@ -60,6 +69,14 @@ export const retrievalRunStatus = pgEnum("retrieval_run_status", [
   "completed",
   "abstained",
   "failed"
+]);
+
+export const retrievalRunMode = pgEnum("retrieval_run_mode", [
+  "lexical",
+  "vector",
+  "hybrid",
+  "graph",
+  "mixed"
 ]);
 
 export const retrievalCandidateKind = pgEnum("retrieval_candidate_kind", [
@@ -78,7 +95,10 @@ export const retrievalCandidateStatus = pgEnum("retrieval_candidate_status", [
 export const activationDecisionStatus = pgEnum("activation_decision_status", [
   "included",
   "excluded",
-  "abstained"
+  "abstained",
+  "deferred",
+  "conflict",
+  "stale"
 ]);
 
 export const contextExclusionReason = pgEnum("context_exclusion_reason", [
@@ -137,6 +157,9 @@ export const embeddings = pgTable(
     antiMemoryRecordId: uuid("anti_memory_record_id").references(() => antiMemoryRecords.id, {
       onDelete: "set null"
     }),
+    searchDocumentId: uuid("search_document_id").references(() => searchDocuments.id, {
+      onDelete: "set null"
+    }),
     embedding: vector("embedding", { dimensions: DEFAULT_EMBEDDING_DIMENSIONS }).notNull(),
     contentHash: text("content_hash").notNull(),
     trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
@@ -152,6 +175,7 @@ export const embeddings = pgTable(
   (table) => [
     index("embeddings_project_id_idx").on(table.projectId),
     index("embeddings_model_id_idx").on(table.embeddingModelId),
+    index("embeddings_search_document_id_idx").on(table.searchDocumentId),
     index("embeddings_subject_idx").on(table.subjectType, table.subjectId),
     index("embeddings_validity_status_idx").on(table.validityStatus),
     index("embeddings_valid_until_idx").on(table.validUntil),
@@ -184,11 +208,24 @@ export const searchDocuments = pgTable(
     antiMemoryRecordId: uuid("anti_memory_record_id").references(() => antiMemoryRecords.id, {
       onDelete: "set null"
     }),
+    evidenceBundleId: uuid("evidence_bundle_id").references(() => evidenceBundles.id, {
+      onDelete: "set null"
+    }),
+    reviewAssessmentId: uuid("review_assessment_id").references(() => reviewAssessments.id, {
+      onDelete: "set null"
+    }),
+    sourceDecisionId: uuid("source_decision_id").references(() => sourceDecisions.id, {
+      onDelete: "set null"
+    }),
+    runEventId: uuid("run_event_id").references(() => runEvents.id, {
+      onDelete: "set null"
+    }),
     trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
     validityStatus: retrievalValidityStatus("validity_status").notNull().default("active"),
     language: text("language").notNull().default("english"),
     title: text("title").notNull(),
     body: text("body").notNull(),
+    searchText: text("search_text").notNull().default(""),
     searchVector: tsvector("search_vector"),
     metadataFilters: jsonb("metadata_filters").$type<JsonObject>().notNull().default(emptyJsonObject),
     validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
@@ -201,6 +238,10 @@ export const searchDocuments = pgTable(
   (table) => [
     index("search_documents_project_id_idx").on(table.projectId),
     index("search_documents_subject_idx").on(table.subjectType, table.subjectId),
+    index("search_documents_evidence_bundle_id_idx").on(table.evidenceBundleId),
+    index("search_documents_review_assessment_id_idx").on(table.reviewAssessmentId),
+    index("search_documents_source_decision_id_idx").on(table.sourceDecisionId),
+    index("search_documents_run_event_id_idx").on(table.runEventId),
     index("search_documents_validity_status_idx").on(table.validityStatus),
     index("search_documents_valid_until_idx").on(table.validUntil),
     index("search_documents_search_vector_idx").using("gin", table.searchVector)
@@ -212,19 +253,26 @@ export const retrievalRuns = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     projectId: uuid("project_id").references(() => projects.id, { onDelete: "set null" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
     taskContractId: uuid("task_contract_id").references(() => taskContracts.id, {
       onDelete: "set null"
     }),
     status: retrievalRunStatus("status").notNull().default("running"),
     query: text("query").notNull(),
+    mode: retrievalRunMode("mode").notNull().default("mixed"),
+    budget: integer("budget"),
     tokenBudget: integer("token_budget"),
     metadataFilters: jsonb("metadata_filters").$type<JsonObject>().notNull().default(emptyJsonObject),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject)
+    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
     index("retrieval_runs_project_id_idx").on(table.projectId),
+    index("retrieval_runs_execution_run_id_idx").on(table.executionRunId),
     index("retrieval_runs_task_contract_id_idx").on(table.taskContractId),
     index("retrieval_runs_status_idx").on(table.status)
   ]
@@ -241,6 +289,9 @@ export const retrievalCandidates = pgTable(
     status: retrievalCandidateStatus("status").notNull().default("candidate"),
     subjectType: retrievalSubjectType("subject_type").notNull(),
     subjectId: uuid("subject_id").notNull(),
+    searchDocumentId: uuid("search_document_id").references(() => searchDocuments.id, {
+      onDelete: "set null"
+    }),
     trustTier: sourceTrustTier("trust_tier").notNull().default("medium"),
     lexicalScore: integer("lexical_score"),
     vectorScore: integer("vector_score"),
@@ -248,6 +299,7 @@ export const retrievalCandidates = pgTable(
     temporalScore: integer("temporal_score"),
     contextRoiScore: integer("context_roi_score"),
     totalScore: integer("total_score"),
+    score: integer("score"),
     reason: text("reason").notNull(),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
@@ -256,6 +308,7 @@ export const retrievalCandidates = pgTable(
     index("retrieval_candidates_retrieval_run_id_idx").on(table.retrievalRunId),
     index("retrieval_candidates_status_idx").on(table.status),
     index("retrieval_candidates_subject_idx").on(table.subjectType, table.subjectId),
+    index("retrieval_candidates_search_document_id_idx").on(table.searchDocumentId),
     index("retrieval_candidates_total_score_idx").on(table.totalScore)
   ]
 );
@@ -267,6 +320,9 @@ export const activationDecisions = pgTable(
     retrievalRunId: uuid("retrieval_run_id")
       .notNull()
       .references(() => retrievalRuns.id, { onDelete: "cascade" }),
+    retrievalCandidateId: uuid("retrieval_candidate_id").references(() => retrievalCandidates.id, {
+      onDelete: "set null"
+    }),
     contextAssemblyId: uuid("context_assembly_id").references(() => contextAssemblies.id, {
       onDelete: "set null"
     }),
@@ -275,11 +331,14 @@ export const activationDecisions = pgTable(
     decision: activationDecisionStatus("decision").notNull(),
     reason: text("reason").notNull(),
     score: integer("score"),
+    contextBudgetCost: integer("context_budget_cost"),
+    expectedDecisionImpact: text("expected_decision_impact"),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [
     index("activation_decisions_retrieval_run_id_idx").on(table.retrievalRunId),
+    index("activation_decisions_retrieval_candidate_id_idx").on(table.retrievalCandidateId),
     index("activation_decisions_context_assembly_id_idx").on(table.contextAssemblyId),
     index("activation_decisions_subject_idx").on(table.subjectType, table.subjectId),
     index("activation_decisions_decision_idx").on(table.decision)

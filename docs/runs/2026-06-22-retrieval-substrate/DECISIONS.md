@@ -53,6 +53,26 @@
   Decision: add `pnpm db:smoke:retrieval-substrate`, route
   `krn db smoke retrieval-substrate`, and later add doctor readiness.
   Rejection/falsifier: docs-only proof or one-off SQL is not enough for M24.
+- Source: `GOAL.md` M24.01 and current `packages/db/src/schema/retrieval.ts`.
+  Mechanism: current retrieval tables already use `subject_type`/`subject_id`
+  to represent the source object generically.
+  KRN implication: duplicating that as separate required `source_type` and
+  `source_id` columns would add ambiguity without improving the M24 smoke
+  proof.
+  Decision: keep `subject_type`/`subject_id` as the canonical generic source
+  pointer, expand the enum to cover M24 source objects, and add specific FKs
+  where first-class tables exist.
+  Rejection/falsifier: if M24.03 repository behavior cannot produce a
+  source-grounded SearchDocument and read it back through lexical search, this
+  decision must be revisited.
+- Source: `GOAL.md` M24.01 embedding rules.
+  Mechanism: pgvector is already installed and `embeddings.embedding` already
+  uses `vector(1536)`.
+  KRN implication: M24 needs vector-ready records, not a new vector service.
+  Decision: add `embeddings.search_document_id` and keep pgvector in the
+  existing Postgres schema.
+  Rejection/falsifier: any M24 implementation that requires an external
+  embedding provider or separate vector DB violates the milestone.
 
 Slice 00 skill record:
 
@@ -64,3 +84,16 @@ Slice 00 skill record:
   missing typed boundaries for search/embedding IO.
 - `superpowers:test-driven-development`: used as a gate for upcoming M24 code
   slices.
+
+Slice 01 skill record:
+
+- `superpowers:test-driven-development`: used for RED/GREEN retrieval schema
+  tests.
+- `brain-store-schema`: used for Drizzle schema, generated migration, enum,
+  FK, index, and live DB readiness checks.
+- `typescript-type-safety`: used to keep harness read-model unions aligned
+  with widened DB vocabulary without casts or `any`.
+- `activation-engine`: used to keep schema fields focused on retrieval
+  candidate and activation/exclusion traceability.
+- `superpowers:systematic-debugging`: used after typecheck exposed the
+  widened DB vocabulary versus harness type boundary mismatch.

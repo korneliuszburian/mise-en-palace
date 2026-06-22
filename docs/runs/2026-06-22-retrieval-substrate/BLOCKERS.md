@@ -12,6 +12,13 @@ Known gaps for later M24 slices:
 - no live smoke proof that cleanup count is zero after the full retrieval
   substrate chain.
 
+Resolved in M24.01:
+
+- durable retrieval schema now represents search documents, vector-ready
+  embedding rows linked to search documents, retrieval run mode/budget,
+  candidate search-document linkage, and activation candidate/budget/impact
+  trace fields.
+
 Non-goals that remain intentionally blocked:
 
 - external embedding service integration;
