@@ -416,6 +416,7 @@ export const mapRepoInstallation = (row: RepoInstallationRow): RepoInstallationR
   provider: row.provider,
   repoUrl: row.repoUrl,
   defaultBranch: row.defaultBranch,
+  ...(row.repoFingerprint === null ? {} : { repoFingerprint: row.repoFingerprint }),
   ...(row.localPathHint === null ? {} : { localPathHint: row.localPathHint }),
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt),

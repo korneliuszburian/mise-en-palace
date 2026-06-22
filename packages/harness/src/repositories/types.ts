@@ -42,6 +42,7 @@ export interface RepoInstallationRecord {
   provider: string;
   repoUrl: string;
   defaultBranch: string;
+  repoFingerprint?: string;
   localPathHint?: string;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
@@ -331,6 +332,7 @@ export interface CreateRepoInstallationInput extends RepositoryMetadata {
   provider: string;
   repoUrl: string;
   defaultBranch: string;
+  repoFingerprint?: string;
   localPathHint?: string;
 }
 

@@ -50,6 +50,13 @@
       "when": 1782120373375,
       "tag": "0006_lucky_ken_ellis",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1782128870024,
+      "tag": "0007_conscious_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

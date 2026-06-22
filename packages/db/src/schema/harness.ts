@@ -123,6 +123,7 @@ export const repoInstallations = pgTable(
     provider: text("provider").notNull(),
     repoUrl: text("repo_url").notNull(),
     defaultBranch: text("default_branch").notNull(),
+    repoFingerprint: text("repo_fingerprint"),
     localPathHint: text("local_path_hint"),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -130,6 +131,8 @@ export const repoInstallations = pgTable(
   },
   (table) => [
     index("repo_installations_project_id_idx").on(table.projectId),
+    index("repo_installations_local_path_hint_idx").on(table.localPathHint),
+    uniqueIndex("repo_installations_repo_fingerprint_unique").on(table.repoFingerprint),
     uniqueIndex("repo_installations_project_repo_unique").on(table.projectId, table.repoUrl)
   ]
 );

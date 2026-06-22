@@ -2,7 +2,7 @@
 
 Goal: M27 - Target Repo Init/Connect Dogfood.
 
-Current slice: Slice 02 target repo fixture complete.
+Current slice: Slice 03 init/connect schema support complete.
 
 Completed:
 
@@ -32,8 +32,10 @@ Completed:
 - Slice 02 added disposable fixture repo
   `tests/fixtures/target-repos/typescript-basic/` with package manager/script
   signals and TypeScript source.
+- Slice 03 added first-class repo fingerprint schema support on
+  `repo_installations`, with generated migration `0007_conscious_scarlet_witch`.
 
 Next action:
 
-- Slice 03 add the minimal repo fingerprint schema/repository support needed
-  for init/connect idempotency.
+- Slice 04 finish and commit repository methods for init/connect idempotency,
+  listing, and fixture cleanup.

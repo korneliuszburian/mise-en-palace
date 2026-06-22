@@ -124,3 +124,31 @@ Results:
   runtime markdown memory.
 - `pnpm typecheck` passed across 7 workspace packages.
 - `pnpm test` passed across 26 test files and 120 tests.
+
+## Slice 03
+
+Commands run:
+
+```sh
+pnpm --filter @krn/db test -- schema/harness.test.ts repositories/DrizzleProjectRepository.test.ts
+pnpm --filter @krn/db test -- schema/harness.test.ts repositories/DrizzleProjectRepository.test.ts
+pnpm db:generate
+sed -n '1,200p' packages/db/src/migrations/0007_conscious_scarlet_witch.sql
+pnpm typecheck
+pnpm --filter @krn/db db:check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+```
+
+Results:
+
+- RED targeted DB tests failed because `repoFingerprint` and target repo
+  repository methods were missing.
+- Added nullable `repo_installations.repo_fingerprint`.
+- Added `repo_installations_local_path_hint_idx`.
+- Added unique `repo_installations_repo_fingerprint_unique`.
+- Generated migration `packages/db/src/migrations/0007_conscious_scarlet_witch.sql`.
+- SQL inspection confirmed the migration only adds `repo_fingerprint`, the
+  local path index, and the repo fingerprint unique index.
+- `pnpm --filter @krn/db db:check` passed.
+- `pnpm typecheck` passed across 7 workspace packages.
+- Live `pnpm db:ready` passed with 8/8 migrations and pgvector available.
