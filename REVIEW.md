@@ -1,67 +1,265 @@
-# Extended Reviewer Goal
+# KRN Full Anti-Slop Review Request
 
 Date: 2026-06-22
 
-Current head when written: `03442ff feat(db): add observation persistence schema`
+Audience: external extended reviewer / ChatGPT Pro with no prior thread context.
 
-Purpose:
-run a fresh extended review of the current KRN repo state. The extended
-reviewer has not audited the repo recently, while the memory-brain line now has
-new audit, observation-domain, observation-schema, and observation-DB slices.
-This file is the review goal, not implementation scope.
+Primary request:
+perform a full current-state review of this repository and return a concrete,
+anti-slop assessment plus a prioritized set of missing layers/tasks that can be
+folded back into `docs/plans/memory-ideal-state/PLAN.md`.
 
-## Current State
+Do not assume conversation context. Treat this file and the repository as the
+only source of truth.
 
-KRN is a Codex Operating Layer / AI Engineering Control Plane. Codex executes;
-KRN supplies bounded context, service/store-backed memory, source grounding,
-policy, skills, eval expectations, traces, review gates, and feedback.
+## Repository
 
-Canonical constraints:
+Repo: `mise-en-palace`
 
-- no dashboard/API/MCP/server/plugin unless a later reviewed slice explicitly
-  opens that boundary;
-- no source crawler;
-- no Research Foundry or Pattern Vault product layer;
-- no runtime markdown memory;
-- no `.krn` runtime truth;
-- no Redis/Kafka;
-- no separate vector or graph DB;
-- `docs/materials/` is raw source/audit quarantine, not truth.
+Local path used by the operator:
 
-Memory ideal-state progress:
+```txt
+/home/krn/coding/krn/active/mise-en-palace
+```
 
-- MM-00 through MM-10 are complete.
-- Next planned slice is MM-11: observation repositories.
-- Observational Memory is staging, not Memory Core.
-- Observations are not SourceClaims, approved memory, or final truth.
-- Reflections and promotion gates are not built yet.
+Last pushed implementation head before this review-request rewrite:
 
-Recent committed slices:
+```txt
+3c62597 feat(db): add observation repository adapter
+```
 
-- `ad36518 feat(harness): add memory brain audit checks`
-- `400b4c7 feat(cli): add memory brain audit gate`
-- `95c9e0c docs(memory): dogfood memory brain audit gate`
-- `3eda7a7 feat(core): reconcile observation domain contracts`
-- `026a4b9 feat(schema): add observation io schemas`
-- `03442ff feat(db): add observation persistence schema`
+Current branch before committing this review-request rewrite:
 
-Raw quarry still untracked and not accepted as truth:
+```txt
+main == origin/main
+```
 
-- `docs/materials/2026-06-22-big-brain.md`
-- `docs/materials/2026-06-22-big-brain-part-2.md`
+Known local untracked quarry that is not accepted as truth:
 
-## Audit Layer Status
+```txt
+docs/materials/2026-06-22-big-brain.md
+docs/materials/2026-06-22-big-brain-part-2.md
+```
 
-Current audit path:
+These files may contain useful research mechanisms, but they must not be
+treated as implementation truth unless mapped through:
 
-- pure `AuditBundle` domain contract exists in `packages/core`;
-- schema and DB persistence exist in `packages/schema` and `packages/db`;
-- deterministic harness audit checks exist in `packages/harness`;
-- CLI adapters exist for `krn audit repo` and `krn audit slice`;
-- dogfood evidence exists at
+```txt
+source -> mechanism -> KRN implication -> decision/rejection -> falsifier
+```
+
+## Product Thesis
+
+KRN is a Codex Operating Layer / AI Engineering Control Plane.
+
+Codex executes. KRN supplies bounded context, service/store-backed memory,
+source grounding, policy, skills, eval expectations, traces, review gates, and
+feedback.
+
+Kernel law:
+
+```txt
+Do not build more context.
+Build the machinery that selects, applies, verifies, and forgets context.
+```
+
+This repo is not supposed to become:
+
+- a dashboard-first app;
+- a prompt pack;
+- a benchmark lab;
+- a generic multi-agent framework;
+- a stack-specific agent zoo;
+- a markdown memory folder;
+- a Research Foundry;
+- a Pattern Vault;
+- a hidden autonomous researcher;
+- a separate vector/graph DB product.
+
+## Current Canonical Plan
+
+Primary execution plan:
+
+```txt
+docs/plans/memory-ideal-state/PLAN.md
+```
+
+The plan is intentionally controlled and slice-based. It removed the previous
+over-expanded Research Foundry / Pattern Vault / meta-researcher architecture.
+
+The target loop is:
+
+```txt
+evidence
+  -> observation
+  -> reflection
+  -> candidates
+  -> review
+  -> memory
+  -> activation
+  -> golden proof
+```
+
+The long-term visible flow is:
+
+```txt
+krn init --connect
+krn doctor
+krn plan --task "..."
+Codex executes from the generated brief
+krn evidence capture
+krn observe --run <runId>
+krn reflect --scope run:<runId>
+krn memory review/promote <candidateId>
+krn eval run --golden
+krn audit slice --since <ref>
+```
+
+This full loop is not finished yet.
+
+## Pushed Progress State
+
+Complete in the plan:
+
+```txt
+M27    target repo readiness / DB smokes / evidence capture / anti-rot audit
+MM-00  observational memory ADR and source-to-decision ledger
+MM-01  controlled Memory Brain PLAN.md and roadmap cleanup
+MM-02  repo audit baseline
+MM-03  AuditBundle core domain contract
+MM-04  AuditBundle schemas and persistence
+MM-05  pure harness audit checks
+MM-06  audit CLI and slice gate
+MM-07  audit dogfood
+MM-08  observation domain contracts
+MM-09  observation IO schemas
+MM-10  observation DB schema and migration
+MM-11  observation repository adapter
+```
+
+First unchecked pushed slice:
+
+```txt
+MM-12  Evidence/source range linkage
+```
+
+Recent pushed commits:
+
+```txt
+3c62597 feat(db): add observation repository adapter
+fec2a45 docs(review): add extended reviewer goal
+03442ff feat(db): add observation persistence schema
+026a4b9 feat(schema): add observation io schemas
+3eda7a7 feat(core): reconcile observation domain contracts
+95c9e0c docs(memory): dogfood memory brain audit gate
+400b4c7 feat(cli): add memory brain audit gate
+ad36518 feat(harness): add memory brain audit checks
+cbb9058 feat(db): add audit bundle schemas and persistence
+d2d0a4a feat(core): add audit bundle domain contract
+4c944e8 docs(memory): record audit baseline
+c38eaff docs(memory): add controlled memory brain execution plan
+```
+
+## Local In-Progress Note
+
+At the time this review request was rewritten, there is a local uncommitted
+MM-12 draft in:
+
+```txt
+packages/db/src/repositories/DrizzleObservationRepository.ts
+packages/db/src/repositories/DrizzleObservationRepository.test.ts
+```
+
+Draft intent:
+
+- add evidence-linkage helper checks for observation source ranges;
+- block factual observations unless they have an evidence-linked source range;
+- allow explicit local operator notes to remain unsourced;
+- add `recallRawEvidence(observationItemId)` to reconstruct raw run/source/
+  evidence/review/feedback material from observation source ranges.
+
+Draft verification already run locally before this review rewrite:
+
+```txt
+pnpm --filter @krn/db test -- repositories/DrizzleObservationRepository.test.ts
+pnpm --filter @krn/db typecheck
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
+```
+
+All above passed on the local worktree. Do not treat the MM-12 draft as pushed
+repo truth unless the diff is provided separately or appears in the repository
+head you review.
+
+## What Exists
+
+Audit layer:
+
+- `AuditBundle` core contract in `packages/core`;
+- audit Zod schemas in `packages/schema`;
+- audit DB tables and repository in `packages/db`;
+- deterministic audit checks in `packages/harness`;
+- `krn audit repo` and `krn audit slice --since <ref>` in `packages/cli`;
+- dogfood evidence in
   `docs/runs/2026-06-22-memory-brain-audit-dogfood.md`.
 
-Known advisory findings from dogfood:
+Observation layer:
+
+- pure observation contracts in `packages/core/src/observations`;
+- Zod IO schemas in `packages/schema/src/observation.ts`;
+- DB schema in `packages/db/src/schema/observations.ts`;
+- migration `packages/db/src/migrations/0009_dusty_tattoo.sql`;
+- repository adapter in
+  `packages/db/src/repositories/DrizzleObservationRepository.ts`.
+
+Observation tables:
+
+- `observation_groups`
+- `observation_items`
+- `observation_source_ranges`
+- `observation_entity_edges`
+- `observation_claim_edges`
+- `observation_feedback_events`
+
+Observation doctrine:
+
+- Observation is staging, not Memory Core.
+- Observation is not SourceClaim.
+- Observation is not final truth.
+- Reflection may later create candidates, not mutate Memory Core.
+- Raw evidence remains canonical for exact claims.
+- Anti-memory is first-class.
+- No chain-of-thought storage.
+- No markdown runtime memory.
+
+## What Is Not Built Yet
+
+Do not confuse planned slices with implemented behavior.
+
+Not built yet:
+
+- observe-run CLI;
+- observer input builder;
+- observer worker;
+- reflector worker;
+- reflection contracts/persistence/repository;
+- candidate generation from reflection;
+- candidate promotion gates;
+- MemoryReviewGate;
+- memory invalidation/versioning/demotion;
+- anti-memory retrieval enforcement;
+- activation prefix selector;
+- ActivationEngine v2;
+- CapabilityCompiler v1;
+- golden memory behavior runner;
+- macro behavior reports;
+- API/MCP boundary;
+- dashboard/read models.
+
+## Known Advisory Findings
+
+From dogfood audit:
 
 - existing unchecked `JSON.parse` boundary in
   `packages/cli/src/runDoctorCommand.ts`;
@@ -70,61 +268,73 @@ Known advisory findings from dogfood:
 - slice audit can warn about missing handoff until automated handoff/audit
   integration is wired.
 
-These are review inputs, not blockers for MM-10.
+These are known cleanup candidates, not proof the current memory plan is wrong.
 
-## Observation Memory Status
+## Files To Inspect First
 
-Built:
+Start with:
 
-- pure observation contracts in `packages/core/src/observations`;
-- schema-owned Zod IO contracts in `packages/schema/src/observation.ts`;
-- Drizzle/Postgres observation staging schema in
-  `packages/db/src/schema/observations.ts`;
-- migration `packages/db/src/migrations/0009_dusty_tattoo.sql`;
-- tables for observation groups, items, source ranges, entity edges, claim
-  edges, and feedback events.
+```txt
+docs/KRN_KERNEL.md
+docs/plans/memory-ideal-state/PLAN.md
+docs/plans/memory-ideal-state/GOAL.md
+docs/plans/memory-ideal-state/SOURCE_LEDGER.md
+docs/plans/memory-ideal-state/DECISIONS.md
+docs/plans/memory-ideal-state/REJECTIONS.md
+docs/plans/memory-ideal-state/FALSIFIERS.md
+docs/plans/memory-ideal-state/MM-ROADMAP.md
+docs/plans/memory-ideal-state/AUDIT_BASELINE.md
+docs/runs/2026-06-22-memory-brain-audit-dogfood.md
+```
 
-Not built yet:
+Then inspect implementation:
 
-- observation repositories;
-- observe-run CLI;
-- observer input builder;
-- observer worker;
-- reflector worker;
-- reflection persistence;
-- candidate generation;
-- candidate promotion gates;
-- anti-memory retrieval integration;
-- activation prefix selector;
-- dashboard/API/MCP boundary.
+```txt
+packages/core/src/observations/
+packages/schema/src/observation.ts
+packages/db/src/schema/observations.ts
+packages/db/src/repositories/DrizzleObservationRepository.ts
+packages/core/src/auditBundle.ts
+packages/schema/src/auditBundle.ts
+packages/db/src/schema/audit.ts
+packages/db/src/repositories/DrizzleAuditBundleRepository.ts
+packages/harness/src/audit/
+packages/cli/src/runAuditCommand.ts
+```
 
-## Review Goals
+Then inspect adjacent memory/source/retrieval surfaces:
 
-1. Verify the current package boundaries and forbidden-surface constraints.
-2. Review whether the audit layer is useful, too noisy, or missing critical
-   checks after MM-05 through MM-07.
-3. Review the observation DB schema before MM-11 repositories bind to it.
-4. Check source-range lineage, temporal fields, and project/run/task scoping.
-5. Identify stale assumptions since the last extended repo review.
-6. Produce prioritized findings with file/line references and suggested next
-   slices. Avoid broad rewrites unless a concrete risk requires one.
+```txt
+packages/db/src/schema/memory.ts
+packages/db/src/repositories/DrizzleMemoryRepository.ts
+packages/db/src/schema/sources.ts
+packages/db/src/repositories/DrizzleSourceRepository.ts
+packages/db/src/schema/retrieval.ts
+packages/db/src/repositories/DrizzleRetrievalRepository.ts
+packages/harness/src/activation/
+```
 
-## Commands To Reproduce Baseline
+## Commands To Run
 
-Run from repo root:
+Baseline:
 
 ```sh
+git status --short --branch
+git log --oneline -12
+pnpm --version
 pnpm typecheck
 pnpm test
 KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
 pnpm --filter @krn/db db:check
-pnpm --filter @krn/cli krn audit repo --repo ../.. --json
-pnpm --filter @krn/cli krn audit slice --since origin/main --repo ../.. --json
 git diff --check
 ```
 
-If reviewing after a fresh push to `origin/main`, use the pushed commit range or
-the latest local branch point instead of `origin/main` for the slice audit.
+Audit commands:
+
+```sh
+pnpm --filter @krn/cli krn audit repo --repo ../.. --json
+pnpm --filter @krn/cli krn audit slice --since origin/main --repo ../.. --json
+```
 
 Forbidden-surface scans:
 
@@ -134,12 +344,140 @@ rg -n "research-foundry|pattern-vault|runResearch|pattern inspect|pattern promot
 find . -maxdepth 3 -type d \( -name dashboard -o -name api -o -name mcp -o -name server -o -name plugin -o -name source-crawler -o -name research-foundry -o -name pattern-vault -o -name .krn \)
 ```
 
-## Review Non-Goals
+## Review Objectives
 
-- Do not implement MM-11 during review.
-- Do not add dashboard/API/MCP/server/plugin surfaces.
-- Do not add source crawler behavior.
-- Do not promote raw `docs/materials/` files into truth.
-- Do not build reflection, worker, activation, or Memory Core mutation behavior.
-- Do not replace the current Postgres/Drizzle/pgvector direction with a
-  separate vector/graph database without a new source-to-decision ADR.
+Produce a full anti-slop review of current state.
+
+Required questions:
+
+1. What is genuinely implemented, with file/line evidence?
+2. What is only planned, documented, or partially scaffolded?
+3. Where does the architecture still risk becoming documentation theater?
+4. Where does memory risk becoming a summarizer/table instead of a governed
+   temporal, source-linked, feedback-aware memory core?
+5. Are observations sufficiently separated from SourceClaim, MemoryRecord,
+   approved truth, and reflection?
+6. Is evidence/source lineage strong enough before observer/reflector runtime
+   is added?
+7. Is the audit layer useful enough to reduce manual supervision, or is it too
+   shallow/noisy?
+8. Are package boundaries intact?
+9. Are TypeScript and unknown-first boundaries intact?
+10. Are there hidden runtime surfaces, broad workers, dashboards, API/MCP
+    surfaces, source crawlers, or research/pattern subsystems sneaking back in?
+11. What missing tasks/layers should be added to `PLAN.md` before continuing
+    too far?
+12. What should be explicitly rejected or deferred?
+
+## Anti-Slop Rules For Reviewer
+
+Do not write a motivational summary.
+
+Do not say "looks good" without evidence.
+
+Do not treat green tests as proof of product behavior unless the tests cover the
+specific behavior.
+
+Do not treat docs as implementation.
+
+Do not treat table existence as memory correctness.
+
+Do not recommend broad new subsystems unless you can map them to an existing
+KRN primitive and a falsifier.
+
+Do not propose a dashboard, API, MCP server, source crawler, Redis/Kafka,
+separate vector DB, separate graph DB, Research Foundry, Pattern Vault, or
+agent zoo unless you also explain why the current plan's explicit rejection is
+wrong.
+
+Do not ask to store chain-of-thought.
+
+Do not collapse all future work into "RAG improvements." This system is about:
+
+```txt
+selection -> application -> verification -> forgetting
+```
+
+## Expected Output Format
+
+Return the review in this exact shape:
+
+```md
+# Executive Verdict
+
+- Verdict: PASS / PASS_WITH_RISKS / FAIL
+- One-sentence reason:
+- Highest-risk area:
+- Next safest slice:
+
+# Current-State Map
+
+| Area | Status | Evidence | Risk |
+|---|---|---|---|
+
+# Findings
+
+## Critical
+
+Each finding:
+- Title:
+- Evidence:
+- Why it matters:
+- Recommended fix:
+- PLAN.md insertion point:
+
+## Important
+
+Same structure.
+
+## Minor
+
+Same structure.
+
+# Missing PLAN.md Layers
+
+For each proposed addition:
+- Slice ID or insertion point:
+- Objective:
+- Files likely touched:
+- Verification:
+- Non-goals:
+- Falsifier:
+
+# Rejections / Deferrals
+
+For each rejected idea:
+- Idea:
+- Why reject/defer:
+- What would change the decision:
+
+# Suggested Next 5 Slices
+
+1. ...
+2. ...
+3. ...
+4. ...
+5. ...
+
+# Evidence Gaps
+
+List exact files/commands/data needed to settle uncertainty.
+
+# Final Reviewer Notes
+
+Hard facts vs interpretation must be separated.
+```
+
+## Bias For This Review
+
+Be blunt. The goal is not to make the current repo sound better. The goal is to
+protect KRN from building the wrong memory system.
+
+The strongest acceptable output is one that says exactly:
+
+- what is real;
+- what is not real yet;
+- what is brittle;
+- what would become slop if continued;
+- what to add to `PLAN.md`;
+- what to avoid building.
