@@ -22,16 +22,16 @@ Local path used by the operator:
 /home/krn/coding/krn/active/mise-en-palace
 ```
 
-Last pushed implementation head before MM-12 closeout:
+Last pushed implementation head before MM-13 closeout:
 
 ```txt
-d28431d docs(review): expand anti-slop reviewer request
+f7dbc6e feat(db): link observations to raw evidence
 ```
 
-Current expected branch after MM-12 closeout:
+Current expected branch after MM-13 closeout:
 
 ```txt
-main == origin/main after `feat(db): link observations to raw evidence` is pushed
+main == origin/main after `feat(harness): add deterministic observer input builder` is pushed
 ```
 
 Known local untracked quarry that is not accepted as truth:
@@ -136,17 +136,19 @@ MM-09  observation IO schemas
 MM-10  observation DB schema and migration
 MM-11  observation repository adapter
 MM-12  evidence/source range linkage
+MM-13  observer input builder
 ```
 
-First unchecked slice after MM-12:
+First unchecked slice after MM-13:
 
 ```txt
-MM-13  Observer input builder
+MM-14  Observation source-range policy matrix
 ```
 
 Recent pushed commits:
 
 ```txt
+f7dbc6e feat(db): link observations to raw evidence
 d28431d docs(review): expand anti-slop reviewer request
 3c62597 feat(db): add observation repository adapter
 fec2a45 docs(review): add extended reviewer goal
@@ -161,6 +163,56 @@ d2d0a4a feat(core): add audit bundle domain contract
 4c944e8 docs(memory): record audit baseline
 c38eaff docs(memory): add controlled memory brain execution plan
 ```
+
+## MM-13 Closeout Note
+
+MM-13 is intended to be complete in the repository head that includes:
+
+```txt
+feat(harness): add deterministic observer input builder
+```
+
+That slice touched:
+
+```txt
+packages/harness/src/observations/observerInput.ts
+packages/harness/src/observations/observerInput.test.ts
+packages/harness/src/observations/index.ts
+packages/harness/src/index.ts
+docs/plans/memory-ideal-state/PLAN.md
+REVIEW.md
+```
+
+Implemented intent:
+
+- build deterministic observer input from already loaded run events, evidence
+  bundles, review assessments, and feedback deltas;
+- sort run events by sequence and other inputs deterministically;
+- record source type/id/locator, observed time, compact text, payload JSON,
+  redaction paths, and truncation records;
+- redact secret-like keys and truncate oversized payloads before they reach an
+  observer prompt or future observation generator.
+
+Important limitation:
+
+- this is not an observe CLI;
+- this is not an observer worker;
+- this performs no DB reads;
+- this performs no LLM call;
+- this creates no ObservationGroup, ObservationItem, MemoryRecord, or candidate.
+
+Verification expected for the MM-13 head:
+
+```txt
+pnpm --filter @krn/harness test -- observations/observerInput.test.ts
+pnpm --filter @krn/harness typecheck
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL="${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}" pnpm db:ready
+```
+
+The reviewer should rerun these commands against the exact checkout being
+reviewed. Do not treat this note as a substitute for current command output.
 
 ## MM-12 Closeout Note
 
@@ -233,6 +285,8 @@ Observation layer:
   `DrizzleObservationRepository.recallRawEvidence`.
 - repository-level factual observation guard requiring typed evidence-linked
   source ranges.
+- deterministic observer input builder in
+  `packages/harness/src/observations/observerInput.ts`.
 
 Observation tables:
 
