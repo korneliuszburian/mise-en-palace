@@ -680,3 +680,30 @@ Results:
   guard strings and negative fixtures; bounded runtime-surface checks above are
   the authoritative anti-rot evidence.
 - `git diff --check` passed before audit docs edits.
+
+## Slice 12
+
+Commands and checks:
+
+```sh
+sed -n '2843,2960p' GOAL.md
+git log --oneline --decorate --all --max-count=80
+git diff --check
+```
+
+Results:
+
+- M26.12 requirements were read from `GOAL.md`.
+- `git log --oneline --decorate --all --max-count=80` supplied exact commit
+  ranges for M22-M26 handoff status.
+- Updated current run `PROGRESS.md`, `HANDOFF.md`, `DECISIONS.md`,
+  `BLOCKERS.md`, and `VERIFICATION.md`.
+- Updated repo-level `docs/handoff/handoff.md`,
+  `docs/handoff/blockers.md`, `docs/handoff/verification.md`,
+  `docs/handoff/progress.md`, and `docs/handoff/decisions.md`.
+- Final handoff states M22, M23, M24, M25, and M26 status; exact commit ranges;
+  verification; DB proof; persisted harness proof; source graph proof; memory
+  governance proof; retrieval/search proof; activation proof; Codex adapter /
+  worker skeleton proof; residual later scope; not-built surfaces; and one
+  next safest action.
+- Final `git diff --check` passed for the handoff docs before commit.

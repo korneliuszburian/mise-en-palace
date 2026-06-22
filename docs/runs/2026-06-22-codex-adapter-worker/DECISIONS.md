@@ -758,3 +758,45 @@
 - Public type changes: none.
 - Type-safety exceptions: none; source-package hygiene scan found no `any`, no
   double assertions, and no TypeScript suppressions.
+
+## Slice 12 Decisions
+
+- Source: `GOAL.md` M26.12.
+  Mechanism: final handoff must update the current run docs and repo-level
+  `docs/handoff/*` with milestone status, commits, verification, proof
+  statuses, residual blockers, not-built surfaces, and one next safest action.
+  KRN implication: durable continuation state must live in repo-local handoff
+  artifacts rather than in a forked Codex conversation.
+  Decision: refresh both the run ledger and repo-level handoff files, including
+  `progress.md` and `decisions.md` even though M26.12 only required
+  `handoff.md`, `blockers.md`, and `verification.md`.
+  Rejection/falsifier: if repo-level handoff still says the current phase is
+  M22 or omits M23-M26 proof, the final handoff is incomplete.
+
+- Source: M22-M26 verification and anti-rot evidence.
+  Mechanism: the proof surface is DB readiness, smokes, doctor readiness,
+  typecheck/tests, and bounded forbidden-surface scans.
+  KRN implication: final handoff can state proven persistence/readiness, but
+  must not claim unsupported runtime behavior.
+  Decision: final handoff explicitly marks Codex execution, MCP availability,
+  dashboard/API readiness, runtime markdown memory, separate stores, source
+  crawler/research layer, production worker throughput, and actual maintenance
+  job execution as not proven/not built.
+  Rejection/falsifier: any final summary that says M22-M26 built those surfaces
+  overstates the verified state.
+
+## Slice 12 Skill Record
+
+- `handoff-compact`: used for the final run and repo-level handoff.
+- `evidence-review-loop`: used to convert anti-rot command proof into durable
+  verification status.
+- `source-to-decision`: used to avoid overclaiming unsupported surfaces.
+- `typescript-type-safety`: used to classify this as docs-only with no public
+  type changes.
+
+## Slice 12 Type-Safety Notes
+
+- Boundary classification: docs-only final handoff.
+- Validation/narrowing: no code or external input boundary changed.
+- Public type changes: none.
+- Type-safety exceptions: none.

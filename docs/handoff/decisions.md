@@ -1,30 +1,28 @@
 # Decisions
 
-- KRN is a Codex operating layer, not an alternative executor or
-  dashboard-first app.
-- PostgreSQL with pgvector remains the canonical brain store for the first
-  spine.
-- `KRN_DATABASE_URL` is the canonical local DB runtime variable.
-- Drizzle owns schema and migrations; Zod owns unknown-input parsing.
+- KRN remains a Codex operating layer, not an alternative executor.
+- PostgreSQL with pgvector remains the first brain-store spine.
+- Drizzle owns schema/migrations; Zod owns unknown-input parsing boundaries.
 - Markdown remains docs/export/audit/handoff material, not runtime Memory Core.
-- `packages/core` stays pure and Codex-agnostic.
-- CLI remains an adapter over harness services, not the architecture.
+- `packages/core` stays pure, library-safe, and Codex-agnostic.
+- CLI remains an adapter over harness/DB services, not the product brain.
 - DB writes require explicit `--persist` or explicit smoke commands.
-- `krn doctor` stays read-only and reports readiness from inspection only.
-- M22 uses existing Postgres/Drizzle source graph tables plus the minimal typed
-  M22 additions; no separate graph DB, crawler, API, dashboard, MCP server, or
-  runtime markdown memory was added.
-- M22 `source_decision_edges` are the typed source-claim-to-target edge model.
-  Legacy `source_decisions` remain decision/adoption records and feedback
-  candidates.
-- Persisted SourceClaims require mechanism, does-not-prove, trust tier, support
-  type, and consumer. Decorative or unsupported material belongs in
-  SourceRejection, not a low-trust SourceClaim.
-- `krn source decision link` verifies SourceClaim existence before creating an
-  edge, but the edge does not prove the whole target.
-- `krn evidence capture` may surface source decision candidates, but it does
-  not create SourceClaims and does not mutate memory.
-- Source graph dogfood rows are retained as local proof rows; smoke rows remain
-  marker-scoped and cleaned up.
-- M22 is complete. Next product capability starts with MemoryCandidate to
-  reviewed MemoryRecord promotion.
+- `krn doctor` stays read-only and does not run smokes or mutate state.
+- Source graph decisions stay explicit: source -> mechanism -> KRN implication
+  -> decision/rejection -> falsifier.
+- Memory governance promotes through reviewed candidates and source-linked
+  records; automatic memory mutation remains forbidden.
+- Retrieval/search uses Postgres lexical search, pgvector readiness, relational
+  edges, and persisted activation records; no separate vector/search/graph DB
+  is introduced.
+- Activation selects bounded context and can abstain; broad context dumps and
+  core `requiredSkills` fields remain rejected.
+- Codex adapter output is an adapter boundary: briefs, hook expectations, skill
+  hints, Goal/ExecPlan refs, and MCP refs are rendered as inspectable text and
+  typed artifacts; Codex is not invoked.
+- Worker jobs are a skeleton over Postgres `worker_jobs` and `outbox_events`;
+  no Redis/Kafka queue, daemon, loop, or job execution is added in M22-M26.
+- Broad scan hits in doctor guard strings or negative fixtures are not product
+  runtime proof; bounded entrypoint/manifest/package checks are authoritative.
+- Next product work should start with a bounded worker lease/claim contract,
+  not dashboard/API/MCP expansion.

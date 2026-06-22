@@ -2,9 +2,9 @@
 
 No hard blocker for M26.
 
-Known gaps for later M26 slices:
+Known gaps for M22-M26:
 
-- final M22-M26 handoff not yet written.
+- None.
 
 Resolved in M26.01:
 
@@ -126,6 +126,16 @@ Resolved in M26.11:
   broad worker runtime, Redis/Kafka queue, separate vector/graph/search DB
   dependencies, `@krn/workers` import in `packages/db`, core `requiredSkills`,
   core runtime imports, or TypeScript hygiene regressions.
+
+Resolved in M26.12:
+
+- current run handoff was updated for final M22-M26 status;
+- repo-level `docs/handoff/handoff.md`, `docs/handoff/blockers.md`,
+  `docs/handoff/verification.md`, `docs/handoff/progress.md`, and
+  `docs/handoff/decisions.md` were refreshed from stale M22-only status to
+  M22-M26 completion status;
+- final handoff records residual later scope without treating not-built
+  dashboard/API/MCP/workers/source-crawler/eval/plugin surfaces as blockers.
 
 Non-goals that remain intentionally blocked:
 

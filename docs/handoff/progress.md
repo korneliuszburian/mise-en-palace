@@ -1,49 +1,32 @@
 # Progress
 
-Current phase: M22 source graph persistence complete.
+Current phase: M22-M26 Brain Spine complete through final anti-rot and final
+handoff.
 
-Completed in M22:
+Completed:
 
-- Run ledger created under
-  `docs/runs/2026-06-21-source-graph-persistence/`.
-- Existing source graph schema/repository/type/CLI surface inventoried.
-- Source graph schema and migration tightened for M22 claim status/run links,
-  typed source decision edges, M22 support/trust vocabulary, and first-class
-  rejection fields.
-- Zod IO parsers added for source artifacts, claims, decision edges, and
-  rejections.
-- SourceRepository methods added for source claim lookup/run listing, source
-  decision edge creation/run listing, and source rejection creation.
-- `pnpm db:smoke:source-graph` proves live source artifact, SourceClaim,
-  SourceDecisionEdge, SourceRejection, outbox events, readback, and cleanup.
-- `krn source claim add` persists SourceArtifact and SourceClaim behind
-  explicit `--persist`.
-- `krn source decision link` persists typed SourceDecisionEdge behind explicit
-  `--persist`.
-- `krn source claim reject` persists SourceRejection behind explicit
-  `--persist` without creating a SourceClaim.
-- `krn evidence capture` surfaces proposal-only `sourceDecisionCandidates` and
-  persists them into `FeedbackDelta.sourceDecisions` when evidence capture is
-  persisted.
-- `krn doctor` reports source graph readiness read-only.
-- Source graph dogfood is recorded in
-  `docs/runs/2026-06-21-source-graph-persistence/DOGFOOD.md`.
-- Final anti-rot audit is recorded in
-  `docs/runs/2026-06-21-source-graph-persistence/ANTI_ROT.md`.
+- M22 source graph persistence, CLI write/read surfaces, smoke, doctor
+  readiness, dogfood, and anti-rot.
+- M23 memory governance schema/repository/CLI promotion surfaces, anti-memory,
+  smoke, doctor readiness, dogfood, and anti-rot.
+- M24 retrieval/search substrate schema/repository/smoke, doctor readiness,
+  dogfood, and anti-rot.
+- M25 activation engine, noisy fixture, persisted activation in `krn plan`,
+  activation smoke, doctor readiness, dogfood, and anti-rot.
+- M26 Codex adapter contracts, execution brief renderer, read-only
+  `krn codex brief`, hook expectation projection, Codex adapter smoke, worker
+  job schema/repository/smoke, doctor readiness, dogfood, and anti-rot.
 
 Current runtime truth:
 
-- DB writes still require explicit `--persist` or explicit smoke commands.
-- `krn source claim add`, `krn source decision link`, and
-  `krn source claim reject` are the current source graph write surface.
-- `krn evidence capture` proposes source decision candidates but does not
-  create SourceClaims and does not mutate memory.
-- `krn doctor` is read-only and reports source graph readiness from schema,
-  repository reachability, smoke command availability, forbidden-infra absence,
-  and durable runtime proof markers.
-- With `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`, source graph
-  doctor readiness and source graph smoke are proven.
+- PostgreSQL with pgvector is the canonical local brain-store proof path.
+- DB writes require explicit `--persist` or explicit smoke commands.
+- `krn doctor` is read-only.
+- Codex adapter renders briefs and expectations; it does not invoke Codex.
+- Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
+- Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- M23: MemoryCandidate to reviewed MemoryRecord promotion.
+- Start the next milestone by designing a bounded maintenance worker
+  lease/claim contract over the proven `worker_jobs` skeleton.

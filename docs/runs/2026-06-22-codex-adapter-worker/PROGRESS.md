@@ -3,7 +3,7 @@
 Goal: M26 - Codex Adapter Execution Brief + Hook Expectations + Worker Job
 Skeleton.
 
-Current slice: Slice 11 final M22-M26 anti-rot audit complete.
+Current slice: Slice 12 final handoff complete.
 
 Completed:
 
@@ -125,6 +125,12 @@ Completed:
 - Slice 11 recorded that broad guard scans may match doctor guard strings and
   negative fixtures, but bounded entrypoint/package/manifest checks remain
   clean.
+- Slice 12 refreshed the current run handoff and repo-level
+  `docs/handoff/*` files for M22-M26 completion.
+- Slice 12 records M22, M23, M24, M25, and M26 status; exact commit ranges;
+  verification; DB proof; persisted harness proof; source graph, memory
+  governance, retrieval/search, activation, Codex adapter, and worker skeleton
+  status; residual later scope; not-built surfaces; and the next safest action.
 
 Verification:
 
@@ -425,7 +431,11 @@ Verification:
   worker surfaces, no `@krn/workers` import in `packages/db`, and no forbidden
   package/top-level directories.
 - M26.11 `git diff --check`: passed before audit docs edits.
+- M26.12 handoff docs updated in `docs/handoff/handoff.md`,
+  `docs/handoff/blockers.md`, `docs/handoff/verification.md`,
+  `docs/handoff/progress.md`, and `docs/handoff/decisions.md`.
 
 Next:
 
-- Start M26.12 final handoff.
+- Start the next milestone with a bounded maintenance worker lease/claim
+  contract over the proven `worker_jobs` skeleton.

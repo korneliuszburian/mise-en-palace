@@ -14,8 +14,7 @@ M26 does not start from zero. The repo already has:
 - Postgres `worker_jobs` and `outbox_events` tables in `packages/db`;
 - persisted run aggregate readback through `getHarnessRunByExecutionRunId`.
 
-The current surface is not M26-complete. After Slice 11 it still lacks only the
-final handoff.
+The current surface is M26-complete after Slice 12 final handoff.
 
 ## Files Inspected
 
@@ -171,7 +170,7 @@ the resolved state.
 
 ## M26 Gaps
 
-- Write final M22-M26 handoff.
+- None.
 
 ## Non-Gaps
 
@@ -376,4 +375,15 @@ M26.11 recorded the final anti-rot audit:
   or `@krn/workers` import in `packages/db`;
 - broad guard scans only matched doctor guard strings and negative fixtures.
 
-Remaining M26 work is final handoff.
+## Slice 12 Update
+
+M26.12 completed final handoff:
+
+- current run progress, handoff, decisions, blockers, and verification files
+  were updated;
+- repo-level `docs/handoff/*` was refreshed from stale M22-only status to
+  M22-M26 completion status;
+- final handoff records exact commit ranges, proof status, residual later
+  scope, not-built surfaces, and one next safest action.
+
+Remaining M26 work is none.

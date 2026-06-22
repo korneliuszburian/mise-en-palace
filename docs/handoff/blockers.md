@@ -2,30 +2,35 @@
 
 Hard blockers:
 
-- None for M22.
+- None for M22-M26.
 
-Closed in M22:
+Closed in M22-M26:
 
-- Source artifacts persist through SourceRepository-backed CLI paths.
-- SourceClaims persist with mechanism, does-not-prove, trust tier, support
-  type, consumer, and optional run linkage.
-- SourceDecisionEdges persist as typed links from SourceClaim to target
-  harness artifacts.
-- SourceRejections persist without creating SourceClaims.
-- Source graph smoke proves artifact/claim/edge/rejection/outbox/readback and
-  cleanup.
-- `krn evidence capture` surfaces proposal-only source decision candidates.
-- `krn doctor` reports source graph readiness read-only.
-- M22 dogfood and anti-rot are recorded.
+- M22 source artifacts, SourceClaims, SourceDecisionEdges, SourceRejections,
+  source graph smoke, doctor readiness, and dogfood are proven.
+- M23 memory candidates, reviewed promotion, memory records/versions,
+  application feedback, anti-memory, memory governance smoke, doctor readiness,
+  and dogfood are proven.
+- M24 search documents, lexical search, pgvector readiness, retrieval
+  candidates, activation decision persistence, retrieval smoke, doctor
+  readiness, and dogfood are proven.
+- M25 activation domain contracts, noisy fixture, persisted ContextAssembly
+  inclusions/exclusions, `krn plan` activation use, activation smoke, doctor
+  readiness, and dogfood are proven.
+- M26 typed Codex adapter contracts, execution brief renderer, read-only
+  `krn codex brief`, hook expectation projection, Codex adapter smoke, worker
+  schema/repository/smoke, doctor readiness, dogfood, and anti-rot are proven.
 
 Residual later scope:
 
-- Reviewed MemoryRecord promotion is not built yet.
-- Anti-memory and memory invalidation workflows are not built yet.
-- Retrieval/search substrate quality is not built yet.
-- Durable activation over persisted memory/source records is not built yet.
-- Worker execution, leasing, retries, and background processing remain later
-  product work.
+- Production worker leasing/claim/retry execution is not built.
+- Actual maintenance jobs are not executed.
+- Codex is not invoked by KRN.
+- MCP server is not built.
+- API and dashboard are not built.
+- Source crawler/research layer is not built.
+- Broad eval/benchmark suite is not built.
+- Plugin packaging is not built.
 
 Explicit non-blockers:
 
