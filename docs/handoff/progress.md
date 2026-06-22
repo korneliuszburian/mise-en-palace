@@ -7,7 +7,7 @@ Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-19 and MM-16R in
+- MM-00 through MM-20 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -47,10 +47,13 @@ Current runtime truth:
   metadata before runtime exists.
 - Reflection IO schemas and `reflection_records` DB table exist; DB readiness
   now applies 11/11 migrations.
+- Reflection repository and pure input selector exist; selector keeps
+  contradiction/gap observations visible and enforces project isolation.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-20 reflection repositories and input selector.
+- Continue with MM-21 deterministic candidate generation contracts from
+  reflection.

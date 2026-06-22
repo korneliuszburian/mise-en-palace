@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-19 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-20 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -26,7 +26,7 @@ Current public state:
   validation plus schema/core parity tests, and MM-17F hardened observer
   payload redaction before reflection. MM-18 added pure reflection contracts,
   MM-18A added candidate-only contract assessment, and MM-19 added reflection
-  schemas plus DB table.
+  schemas plus DB table. MM-20 added reflection repository and input selector.
 - Not built: reflection, candidate generation from reflection, governed
   MemoryReviewGate promotion path, memory invalidation/demotion, broad
   anti-memory enforcement, golden memory behavior runner, API/MCP, dashboard,

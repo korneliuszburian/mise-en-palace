@@ -368,10 +368,8 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-22) MM-18 complete: added pure core reflection domain contracts for ReflectionRecord/Input/Output/Scope/Finding, ContradictionReport, GapReport, and candidate/proposal outputs. Intended files: `packages/core/src/reflection/*`, core export, and this PLAN. Non-goals preserved: no schema, DB tables, repository, CLI, worker, LLM call, Memory Core mutation, source decision truth write, dashboard/API/MCP/server/plugin/source crawler. Evidence: focused core reflection test passed with 3 files / 12 tests; focused core typecheck passed; forbidden reflection import/semantics scan found no DB/Drizzle/fs/process/network/MemoryRecord/createMemoryRecord/promoteMemoryCandidate/SourceDecision strings; full `pnpm typecheck` passed; full `pnpm test` passed with 39 files / 186 tests; DB-aware `pnpm db:ready` passed with 10/10 migrations and pgvector available; `git diff --check` passed. Next: MM-18A reflection candidate-only contract guard.
 - [x] (2026-06-22) MM-18A complete: strengthened reflection candidate-only guard with `assessReflectionOutputContract`, diagnostic violations for final-truth targets, and metadata promotion-semantics detection. Intended files: `packages/core/src/reflection/*` and this PLAN. Non-goals preserved: no schema, DB tables, repository, CLI, worker, LLM call, Memory Core mutation, source decision truth write, dashboard/API/MCP/server/plugin/source crawler. Evidence: focused core reflection test passed with 3 files / 13 tests; focused core typecheck passed; forbidden reflection import/semantics scan found no DB/Drizzle/fs/process/network/MemoryRecord/createMemoryRecord/promoteMemoryCandidate/SourceDecision strings; full `pnpm typecheck` passed; full `pnpm test` passed with 39 files / 187 tests; DB-aware `pnpm db:ready` passed with 10/10 migrations and pgvector available; `git diff --check` passed. Tests prove final-truth targets and hidden `createActiveMemory` / `source_decision` metadata are rejected before any reflection runtime exists. Next: MM-19 reflection schemas and DB.
 - [x] (2026-06-22) MM-19 complete: added reflection IO schemas and Postgres persistence table for reflection records. Intended files: `packages/schema/src/reflection.ts`, schema tests/export, `packages/db/src/schema/reflections.ts`, DB schema tests/export, migration `packages/db/src/migrations/0010_misty_wolfsbane.sql`, Drizzle meta, and this PLAN. Non-goals preserved: no repository, selector, CLI, worker, LLM call, Memory Core mutation, source decision truth write, dashboard/API/MCP/server/plugin/source crawler. Evidence: focused schema reflection tests passed with 1 file / 18 tests; focused DB reflection schema tests passed with 21 files / 53 tests; focused schema/db typechecks passed; `pnpm --filter @krn/db db:generate` produced `0010_misty_wolfsbane.sql`; SQL inspection confirmed `reflection_status`, `reflection_records`, project/run/task FKs, status/project/run/task/created indexes, and JSONB scope/input/output/metadata; `pnpm --filter @krn/db db:check` passed; full `pnpm typecheck` passed; full `pnpm test` passed with 40 files / 189 tests; DB-aware `pnpm db:ready` applied 11/11 migrations and pgvector was available; `git diff --check` passed. Next: MM-20 reflection repositories and input selector.
-- [ ] MM-18: Add reflection domain contracts.
-- [ ] MM-18A: Seal reflection as candidate-only before any manual reflect runtime.
-- [ ] MM-19: Add reflection schemas and DB persistence.
-- [ ] MM-20: Add reflection repositories and input selector.
+- [x] (2026-06-22) MM-20 complete: added `DrizzleReflectionRepository` plus pure harness `selectReflectionInput` over observations, source claims, and anti-memory records. Intended files: `packages/db/src/repositories/DrizzleReflectionRepository.ts`, repository test/export, `packages/harness/src/reflection/*`, harness export, and this PLAN. Non-goals preserved: no new schema/migration, CLI, worker, LLM call, Memory Core mutation, source decision truth write, dashboard/API/MCP/server/plugin/source crawler. Evidence: fixed stale duplicate Progress placeholders for MM-18/MM-18A/MM-19; preflight `pnpm typecheck` passed; preflight `pnpm test` passed with 40 files / 189 tests; focused harness selector test passed with 8 files / 27 tests and proves project isolation plus conflict/gap visibility; focused DB repository test passed with 22 files / 54 tests; focused harness/db typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 41 files / 193 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; `git diff --check` passed. Next: MM-21 deterministic candidate generation contracts from reflection.
+- [ ] MM-21: Generate memory/source/anti-memory/eval candidates from reflection.
 - [ ] MM-21: Generate memory/source/anti-memory/eval candidates from reflection.
 - [ ] MM-22: Add contradiction and gap reports.
 - [ ] MM-23: Add manual reflect CLI.
@@ -541,6 +539,10 @@ Record unexpected behaviors, bugs, optimizer/type-system issues, migration quirk
   Evidence: MM-17F RED tests showed neutral keys containing Bearer/API-key/cookie/private-key/token-like values survived key-only redaction.
   Resolution: Redact secret-shaped string values recursively and record the exact paths before JSON stringify/truncation.
 
+- Observation: SourceClaim currently does not carry first-class `projectId` in the core type.
+  Evidence: MM-20 reflection input selector can isolate source claims only by the existing `metadata.projectId` convention while observations and anti-memory records have explicit project scope.
+  Resolution: Keep MM-20 bounded to the current model; source graph hardening should revisit first-class source-claim project scoping before broad reflection/activation use.
+
 ## Decision Log
 
 - Decision: Remove Research Foundry and Pattern Vault from the Memory Brain target architecture.
@@ -707,6 +709,12 @@ Gate 2 MM-19 outcome:
 - `reflection_records` persists project/run/task/status as relational query fields and stores scope/input/output/metadata as JSONB payloads.
 - Live DB readiness now reports 11/11 migrations applied with pgvector available.
 - No reflection repository, input selector, CLI, worker, LLM call, or Memory Core mutation behavior exists yet; MM-20 owns repository and selector behavior.
+
+Gate 2 MM-20 outcome:
+- Reflection persistence now has a thin DB repository with create/get/list-by-scope methods.
+- Reflection input selection is pure harness logic over already loaded observations, source claims, and anti-memory records.
+- Selector tests prove project isolation and prove conflict/gap observations stay visible for reflection instead of being hidden.
+- No reflection CLI, worker, LLM call, candidate generation, Memory Core mutation, or source-decision truth write exists yet.
 
 ## Milestones
 
