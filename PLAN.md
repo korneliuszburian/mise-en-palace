@@ -1,4 +1,4 @@
-# KRN Canonical Reset Implementation Plan
+# KRN Canonical Reset And Continuous Hardening Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use
 > `superpowers:subagent-driven-development` for independent read-heavy audit
@@ -6,7 +6,8 @@
 > this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Reset KRN from plan-sprawl and productized audit authority into one
-canonical, truthful Memory Brain kernel around Codex.
+canonical, truthful Memory Brain kernel around Codex, then keep hardening it
+from execution evidence instead of treating a checked reset queue as the end.
 
 **Architecture:** Preserve the real typed/Postgres-backed spine and remove false
 authority from docs and public surfaces before feature work. KRN remains one
@@ -95,6 +96,24 @@ Brain spine.
 - `docs/materials/20206-06-23-audit.md` is raw/user-provided audit material.
 - `docs/reviews/repo-reset-audit/*` are decision-grade audit outputs.
 - `docs/materials/2026-06-22-big-brain*.md` remain raw research quarry.
+- The reset queue through P7-00 is complete, but KRN is not "done". Completed
+  slices now feed a continuous hardening queue below.
+
+## Continuous Hardening Law
+
+KRN should keep improving from its own execution evidence.
+
+Every completed slice must leave:
+
+- what changed;
+- what proof exists;
+- what the proof does not prove;
+- what review burden remains;
+- what memory/source/eval/anti-memory/skill/policy candidates were discovered;
+- which concrete follow-up slice owns each real gap.
+
+Do not turn those gaps into a new broad audit product. Repair them directly in
+the smallest package/doc/CLI boundary that owns the behavior.
 
 ## Smallest Honest KRN Kernel
 
@@ -1183,6 +1202,306 @@ rollback:
 git revert <commit>
 ```
 
+## Continuous Hardening Queue
+
+The reset work above is complete. The following queue keeps the goal alive by
+turning completed-slice observations into concrete repair slices.
+
+### C0-00: Persist Real Evidence Command Outcomes
+
+objective:
+
+Make `krn evidence capture --persist` record actual verification command
+outcomes instead of defaulting to `skipped` rows after commands were run
+outside the capture command.
+
+source:
+
+P7-00 run ledger showed that local `pnpm typecheck` and `pnpm test` passed, but
+the persisted EvidenceBundle still contained default `skipped` command rows.
+
+mechanism:
+
+Add an explicit command-outcome input path to evidence capture. Keep external
+input unknown until parsed by schema/CLI validation. Do not infer command
+success from prose or shell history.
+
+required behavior:
+
+- preview and persisted evidence capture can accept command outcomes;
+- each command has command text, status, and optional notes/output ref;
+- missing outcomes remain `skipped`;
+- persisted EvidenceBundle stores only provided outcomes;
+- run ledger can cite the persisted command statuses as proof when statuses are
+  supplied.
+
+likely files:
+
+- `packages/core/src/evidenceBundle.ts`
+- `packages/schema/src/evidenceBundle.ts`
+- `packages/cli/src/parseEvidenceArgs.ts`
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
+- `packages/cli/src/runCli.test.ts`
+- `docs/runs/2026-06-23-self-hosting-memory-loop.md`
+- `PLAN.md`
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/core packages/schema packages/cli docs/runs PLAN.md
+git commit -m "feat(evidence): persist command outcome provenance"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### C0-01: Improve Self-Hosting Context Relevance
+
+objective:
+
+Make `krn plan --task "seal Memory Core write authority" --persist` retrieve
+directly relevant Memory Core write-authority context, not mostly adjacent
+governance/source-graph context.
+
+source:
+
+P7-00 selected six context items. They were not harmful, but they did not
+directly surface the completed Memory Core write-authority decisions from P2
+and worker authority decisions from P6.
+
+mechanism:
+
+Inspect activation candidate ranking and selected project memory/source records
+for this task. Add a focused regression proof only if the missing context exists
+in the store or fixture data. If the store lacks the relevant memory, create a
+reviewed MemoryCandidate path rather than hard-coding recall.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- activation
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/harness packages/cli PLAN.md
+git commit -m "test(activation): improve self-hosting context relevance"
+```
+
+### C1-00: Separate Public CLI From Internal Dev Commands
+
+objective:
+
+Move the P1 CLI taxonomy from docs-only classification into command behavior or
+help text so users cannot confuse internal smokes/audit guards with the public
+operator workflow.
+
+source:
+
+P1-00 classified public operator, governed admin, and internal/dev surfaces.
+P1-01 deproductized `krn audit` in docs, but actual CLI behavior still exposes
+mixed surfaces under one parser.
+
+mechanism:
+
+Add explicit command grouping in usage/help first. Only rename or hide commands
+after the help contract is proved and existing tests are updated.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/cli docs/architecture PLAN.md
+git commit -m "feat(cli): separate operator and internal surfaces"
+```
+
+### C1-01: Narrow Package Barrels From Planned To Enforced
+
+objective:
+
+Turn `docs/architecture/package-surfaces.md` from a plan into enforced package
+exports where broad barrels still expose internals as product API.
+
+source:
+
+P1-02 planned package barrel narrowing but deliberately left broad wildcard
+exports outside the first reset slice.
+
+mechanism:
+
+Start with one package at a time. Preserve tests. Prefer named exports for
+stable contracts and move smokes/concrete adapters behind explicit internal
+paths.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages docs/architecture PLAN.md
+git commit -m "refactor(exports): narrow public package surface"
+```
+
+### C2-00: Add Reviewed Anti-Memory Candidate Storage
+
+objective:
+
+Give reflection unsupported anti-memory proposals a reviewed candidate surface
+instead of leaving them as unsupported in-memory proposals.
+
+source:
+
+P3-02 found no anti-memory candidate store or policy candidate store. The writer
+therefore reports unsupported staged candidates instead of creating final truth.
+
+mechanism:
+
+Design candidate-only storage and review semantics before any
+AntiMemoryRecord write. Do not allow reflection to create final anti-memory.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- reflection
+pnpm --filter @krn/harness test -- reflection
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/core packages/harness packages/schema packages/db packages/cli PLAN.md
+git commit -m "feat(memory): stage reviewed anti-memory candidates"
+```
+
+### C3-00: Expand Real Golden Behavior Gate Coverage
+
+objective:
+
+Extend `runKrnBehaviorGoldenGate` beyond the first three invariants to cover
+raw recall exact proof, observation prefix source-range rejection, and evidence
+capture command provenance once C0-00 exists.
+
+source:
+
+P5-01 created the first real behavior gate but intentionally covered only stale
+memory abstention, anti-memory activation block, and reflection final-truth
+rejection.
+
+mechanism:
+
+Each new case must execute KRN code paths and produce proof rows for
+`runGoldenTaskFixtures`; Promptfoo smoke remains integration only.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/harness tests PLAN.md
+git commit -m "test(eval): expand real KRN behavior gate"
+```
+
+### C4-00: Decide Worker Runtime ADR Before Execution
+
+objective:
+
+Before any worker daemon/job executor exists, write an ADR that decides whether
+KRN needs a worker runtime now, what writes it may perform, and what falsifies
+the decision.
+
+source:
+
+P6-00 and P6-01 proved workers are contract-only and hardened job authority.
+They did not authorize runtime execution.
+
+mechanism:
+
+Use source -> mechanism -> KRN implication -> decision/rejection -> falsifier.
+If runtime is rejected for now, record the rejection and stop.
+
+verification:
+
+```sh
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/decisions PLAN.md
+git commit -m "docs(workers): decide runtime execution boundary"
+```
+
+### C5-00: Convert Self-Hosting Run Gaps Into Candidates
+
+objective:
+
+Turn P7-00 gaps into explicit memory/source/eval/anti-memory candidates through
+governed candidate commands rather than leaving them only in a run ledger.
+
+source:
+
+`docs/runs/2026-06-23-self-hosting-memory-loop.md` records one anti-memory
+candidate, one eval candidate, and several gaps.
+
+mechanism:
+
+Use governed candidate commands with `--persist` only after DB readiness passes
+in the current shell. Do not promote candidates in the same slice.
+
+verification:
+
+```sh
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/runs PLAN.md
+git commit -m "docs(run): stage self-hosting feedback candidates"
+```
+
 ## Progress
 
 - [x] P0-00 Replace root `GOAL.md` with compact execution contract.
@@ -1207,6 +1526,14 @@ git revert <commit>
 - [x] P6-00 Mark worker runtime truth.
 - [x] P6-01 Harden worker job contracts.
 - [x] P7-00 Run first governed self-hosting loop.
+- [ ] C0-00 Persist real evidence command outcomes.
+- [ ] C0-01 Improve self-hosting context relevance.
+- [ ] C1-00 Separate public CLI from internal dev commands.
+- [ ] C1-01 Narrow package barrels from planned to enforced.
+- [ ] C2-00 Add reviewed anti-memory candidate storage.
+- [ ] C3-00 Expand real GoldenTask behavior gate coverage.
+- [ ] C4-00 Decide worker runtime ADR before execution.
+- [ ] C5-00 Convert self-hosting run gaps into candidates.
 
 ## Surprises & Discoveries
 
@@ -1459,8 +1786,10 @@ Current outcome:
   Core gate constraints before any worker runtime exists.
 - First governed self-hosting loop is recorded in
   `docs/runs/2026-06-23-self-hosting-memory-loop.md`.
-- Current reset plan queue is fully checked and P7-00 is committed with final
+- Reset queue P0-P7 is fully checked and P7-00 is committed with final
   verification evidence.
+- Continuous hardening queue C0-C5 is now active. The first unchecked item is
+  C0-00: persist real evidence command outcomes.
 
 ## Command Evidence
 

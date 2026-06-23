@@ -1,4 +1,4 @@
-# Goal: Reset KRN Into A Canonical Memory Brain Kernel
+# Goal: Continuously Harden KRN As A Memory Brain Kernel
 
 You are working in:
 
@@ -24,12 +24,19 @@ Do not continue from `docs/plans/memory-ideal-state/PLAN.md` as the active
 execution track. That file is historical planning/audit quarry until the root
 plan explicitly promotes a retained decision.
 
-The current reset objective is:
+The canonical reset baseline is complete. The current objective is continuous
+hardening: every completed slice must leave behind truthful observations,
+follow-up candidates, and concrete next repair slices when evidence shows a gap.
 
-1. make repo current-truth surfaces honest;
-2. remove productized QG-06 / anti-slop / audit-authority direction;
-3. classify public operator, governed admin, and internal dev surfaces;
-4. harden the real Memory Brain spine only through final-pattern slices.
+The continuing objective is:
+
+1. keep repo current-truth surfaces honest as code changes;
+2. keep productized QG-06 / anti-slop / audit-authority direction rejected;
+3. turn completed-slice findings into bounded implementation slices;
+4. harden the real Memory Brain spine through source-grounded, typed,
+   reviewable changes;
+5. keep `PLAN.md` as the living queue instead of declaring the kernel done
+   because one reset checklist is complete.
 
 ## Required Read Order
 
@@ -65,6 +72,10 @@ slice names them as evidence or target files.
 ## Operating Rules
 
 - Repo evidence beats docs.
+- A checked task is not the end of learning. If verification reveals a gap,
+  record it in `PLAN.md` as a follow-up candidate or next slice.
+- Do not create a new KRN subsystem for ordinary engineering quality concerns.
+  Prefer direct code, type, test, naming, CLI, docs, and review-boundary repair.
 - Every retained source must pass:
 
 ```txt
@@ -77,6 +88,8 @@ source -> mechanism -> KRN implication -> decision/rejection -> falsifier
 - DB runtime truth may be claimed only after DB commands run in the current
   environment.
 - Use Conventional Commits.
+- Keep root `PLAN.md` current after every slice: progress, surprises,
+  decisions, outcomes, command evidence, and next unchecked item.
 
 ## Verification Baseline
 
