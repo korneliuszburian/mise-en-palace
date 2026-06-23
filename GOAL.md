@@ -44,7 +44,7 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C1-02: Separate Harness Root From Eval/Internal Surfaces
+C1-03: Split Repository Port Public And Internal Surfaces
 ```
 
 Do not build worker runtime, dashboard, or broad memory behavior until package

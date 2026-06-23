@@ -18,7 +18,7 @@ import type {
   PromoteMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 
 import type { KrnDatabase } from "../database.js";
 import {

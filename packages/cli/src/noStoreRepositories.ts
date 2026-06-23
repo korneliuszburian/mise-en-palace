@@ -12,6 +12,9 @@ import type {
   TaskContract
 } from "@krn/core";
 import type {
+  HarnessCompilerDependencies
+} from "@krn/harness";
+import type {
   AddRetrievalCandidateInput,
   CompleteRetrievalRunInput,
   CreateContextAssemblyInput,
@@ -22,14 +25,13 @@ import type {
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
   CreateTaskContractInput,
-  HarnessCompilerDependencies,
   MemoryRepository,
   RecordActivationDecisionInput,
   RetrievalRunRecord,
   SourceRepository,
   StartRetrievalRunInput,
   UpdateExecutionRunStatusInput
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 
 export interface NoStoreRuntime {
   now(): string;

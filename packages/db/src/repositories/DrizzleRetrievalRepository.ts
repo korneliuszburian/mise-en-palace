@@ -24,7 +24,7 @@ import type {
   SearchLexicalInput,
   StartRetrievalRunInput,
   StoreContextSelectionInput
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 
 import type { KrnDatabase } from "../database.js";
 import {

@@ -30,7 +30,7 @@ import type {
   HarnessRunAggregate,
   HarnessRunRepository,
   UpdateExecutionRunStatusInput
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 
 import type { KrnDatabase } from "../database.js";
 import {

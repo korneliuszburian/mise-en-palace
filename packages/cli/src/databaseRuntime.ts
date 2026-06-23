@@ -17,13 +17,15 @@ import type {
   CreateReflectionRecordInput
 } from "@krn/db/adapters";
 import type {
-  HarnessCompilerDependencies,
+  HarnessCompilerDependencies
+} from "@krn/harness";
+import type {
   HarnessRunRepository,
   MemoryRepository,
   ProjectKernelRecord,
   RepoInstallationRecord,
   SourceRepository
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 import type {
   ObservationGroup,
   ObservationItem,

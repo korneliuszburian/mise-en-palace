@@ -14,9 +14,11 @@ import {
   createEvidenceContract
 } from "@krn/harness";
 import type {
-  EvidenceContract,
-  HarnessRunRepository
+  EvidenceContract
 } from "@krn/harness";
+import type {
+  HarnessRunRepository
+} from "@krn/harness/repositories";
 
 import type {
   DatabaseRuntimeInput

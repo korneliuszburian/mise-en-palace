@@ -28,13 +28,13 @@ them.
 
 current_priority: Package Surface Condensation.
 
-first_unchecked_slice: `C1-02: Separate Harness Root From Eval/Internal Surfaces`.
+first_unchecked_slice: `C1-03: Split Repository Port Public And Internal Surfaces`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- separate the harness root package surface from eval-adapter/internal helper
-  surfaces without breaking stable public contracts;
+- split repository port public and internal surfaces without weakening
+  MemoryReviewGate write authority;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not start worker runtime, dashboard, or broad memory features before the
@@ -83,6 +83,10 @@ completed_checkpoint:
   concrete Drizzle adapters move to `@krn/db/adapters`, schema access moves to
   `@krn/db/schema`, and `@krn/cli` root exports only `runCli`, `CliRuntime`,
   and `CliResult`.
+- C1-02 separates harness root from eval/internal surfaces: `@krn/harness`
+  root no longer exports Promptfoo adapter helpers or repository ports,
+  Promptfoo helpers move to `@krn/harness/eval`, and repository ports move to
+  `@krn/harness/repositories`.
 
 completed_evidence_pointers:
 
@@ -2507,7 +2511,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C0-01 Improve self-hosting context relevance.
 - [x] C1-00 Separate public CLI from internal dev commands.
 - [x] C1-01 Narrow package barrels from planned to enforced.
-- [ ] C1-02 Separate harness root from eval/internal surfaces.
+- [x] C1-02 Separate harness root from eval/internal surfaces.
 - [ ] C1-03 Split repository port public and internal surfaces.
 - [ ] C2-00 Add reviewed anti-memory candidate storage.
 - [ ] C3-00 Expand real GoldenTask behavior gate coverage.
@@ -2803,9 +2807,9 @@ Current outcome:
 - CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
 - `krn audit` is removed from active CLI routing/help and harness audit scanner
   exports; no QG-06, no new audit categories, no public/internal guardrail UX.
-- DB and CLI package root surfaces are narrowed in source and recorded in
-  `docs/architecture/package-surfaces.md`; harness and repository-port surface
-  narrowing remain active C1 follow-ups.
+- DB, CLI, and harness package root surfaces are narrowed in source and
+  recorded in `docs/architecture/package-surfaces.md`; repository-port surface
+  splitting remains the active C1 follow-up.
 - Package source is touched from P2-00 onward.
 - Memory Core promotion authority is sealed at the public harness port:
   candidate-to-record promotion goes through reviewed promotion naming and
@@ -2867,7 +2871,7 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C1-02: Separate harness root from eval/internal surfaces.
+  C1-03: Split repository port public and internal surfaces.
 
 ## Command Evidence
 
@@ -3705,6 +3709,35 @@ This proves DB and CLI root package surfaces no longer expose DB smoke/dev
 helpers, concrete adapters, schema tables, parser internals, or command runners
 as default package API. It does not prove harness root/repository-port
 narrowing; those remain C1-02 and C1-03.
+
+C1-02 verification after separating harness root from eval/internal surfaces:
+
+```sh
+rg -n 'goldenPromptfoo|repositories/index|export \* from "\.\/repositories|export \* from "\.\/goldenPromptfoo' packages/harness/src/index.ts packages/harness/src/eval/index.ts packages/harness/package.json
+rg -n 'from "@krn/harness"' packages/db/src packages/cli/src packages/codex-adapter/src -g "*.ts" -C 1
+rg -n '@krn/harness/(repositories|eval)' packages/db/src packages/cli/src packages/codex-adapter/src packages/harness/src -g "*.ts"
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- `@krn/harness` root no longer exports Promptfoo adapter helpers or
+  repository ports;
+- `@krn/harness/eval` exports Promptfoo snapshot/result helpers;
+- `@krn/harness/repositories` exports repository ports and persistence-facing
+  record/input types;
+- DB adapters and CLI preview/runtime tests import repository ports from
+  `@krn/harness/repositories`;
+- full workspace typecheck passed;
+- full workspace tests passed: 82 files, 367 tests;
+- `git diff --check` passed.
+
+This proves harness root no longer mixes canonical harness behavior with
+Promptfoo adapter helpers or repository-port plumbing by default. It does not
+split repository ports into public vs internal authority groups; that remains
+C1-03.
 
 ## Historical Reset Completion Criteria
 

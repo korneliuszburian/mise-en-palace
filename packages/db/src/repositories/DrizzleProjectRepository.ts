@@ -9,7 +9,7 @@ import type {
   ProjectRepository,
   RepoInstallationRecord,
   WorkspaceRecord
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 import type { ProjectId, WorkspaceId } from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";

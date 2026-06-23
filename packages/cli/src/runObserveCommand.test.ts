@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type {
   HarnessRunAggregate
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 import type {
   CreateObservationItemInput
 } from "@krn/db/adapters";

@@ -10,11 +10,13 @@ import {
   compileHarnessPlan
 } from "@krn/harness";
 import type {
-  HarnessCompilerDependencies,
+  HarnessCompilerDependencies
+} from "@krn/harness";
+import type {
   HarnessRunRepository,
   ProjectKernelRecord,
   RepoInstallationRecord
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 import {
   parseHarnessCompileInput,
   parseOperatorIntentInput,

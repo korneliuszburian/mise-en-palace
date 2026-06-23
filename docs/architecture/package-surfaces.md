@@ -1,11 +1,12 @@
 # KRN Package Surfaces
 
-Status: C1-01 partially enforced for DB and CLI root surfaces.
-Date: 2026-06-23
+Status: C1-02 enforced for DB, CLI, and harness root surfaces.
+Date: 2026-06-24
 
 This document records package barrel findings for P1-02 and the C1 package
 surface enforcement queue. DB and CLI root surfaces now have source-level
-enforcement; harness and repository-port narrowing remain follow-up work.
+enforcement. Harness root now has source-level enforcement. Repository-port
+classification remains follow-up work.
 
 ## Source Decision
 
@@ -120,31 +121,42 @@ Planned narrowing:
 
 ### `packages/harness`
 
-Current root exports:
+Current root exports after C1-02:
 
-- audit checks;
 - activation;
 - observation input/prefix helpers;
 - compiler helpers;
-- Promptfoo result/export helpers and golden runner;
+- canonical golden runner/proof helpers;
 - memory review gate;
-- reflection input selector;
-- repository port index.
+- reflection input selector.
+
+Explicit subpaths after C1-02:
+
+- `@krn/harness/eval` for Promptfoo adapter export/result helpers;
+- `@krn/harness/repositories` for repository ports and persistence-facing
+  record/input types.
 
 Risk:
 
-- audit helpers look like harness product API.
 - Promptfoo adapter helpers sit beside canonical golden behavior primitives.
 - repository ports are exported as a broad package surface.
 
-Planned narrowing:
+C1-02 decision:
 
 - root should prefer task planning, context assembly, execution/evidence, and
   reviewed feedback/memory promotion contracts.
-- audit remains internal/dev, not root product API.
-- Promptfoo remains eval-adapter surface, not canonical behavior authority.
-- repository ports should be named by stable use-case boundaries, not dumped
-  through a broad wildcard.
+- Promptfoo remains eval-adapter surface under `@krn/harness/eval`, not
+  canonical behavior authority.
+- repository ports move out of the root package surface to
+  `@krn/harness/repositories`.
+- root continues to expose canonical GoldenTask behavior proof helpers and
+  MemoryReviewGate.
+
+Does not prove:
+
+- repository-port public/internal split;
+- that Promptfoo behavior is part of canonical KRN proof;
+- broad Memory Brain readiness.
 
 ### `packages/harness/src/repositories/index.ts`
 
@@ -201,8 +213,9 @@ they start leaking internals as product authority.
    schema moved behind explicit subpaths.
 2. CLI root: complete in C1-01. Root exports `runCli`, `CliRuntime`, and
    `CliResult` only.
-3. Harness root: remove audit from root surface and separate canonical golden
-   behavior from Promptfoo adapter helpers.
+3. Harness root: complete in C1-02. Root keeps canonical harness behavior;
+   Promptfoo helpers move to `@krn/harness/eval`; repository ports move to
+   `@krn/harness/repositories`.
 4. Repository ports: after P2-00, split public reviewed memory write authority
    from internal persistence ports.
 

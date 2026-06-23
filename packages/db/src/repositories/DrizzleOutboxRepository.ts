@@ -3,7 +3,7 @@ import type {
   CreateOutboxEventInput,
   OutboxEventRecord,
   OutboxRepository
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 
 import type { KrnDatabase } from "../database.js";
 import { outboxEvents } from "../schema/index.js";

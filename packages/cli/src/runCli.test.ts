@@ -30,7 +30,7 @@ import type {
   CreateReviewAssessmentInput,
   HarnessRunAggregate,
   SearchDocumentSearchResult
-} from "@krn/harness";
+} from "@krn/harness/repositories";
 import type {
   DatabaseRuntimeInput
 } from "./databaseRuntime.js";
