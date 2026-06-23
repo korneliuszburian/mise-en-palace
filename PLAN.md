@@ -26,20 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Native Invariant Re-homing.
+current_priority: Legacy AuditBundle Fate Decision.
 
-first_unchecked_slice: `C6-00: Re-home Former Audit Invariants Into Native Mechanisms`.
+first_unchecked_slice: `C6-01: Decide Legacy AuditBundle Storage Fate`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- re-home any retained former audit invariants into native MemoryReviewGate,
-  SourceClaim/SourceDecision, and EvidenceBundle mechanisms;
+- decide whether legacy AuditBundle storage/contracts are deleted, renamed, or
+  migrated into EvidenceBundle/ReviewAssessment lineage;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while re-homing native invariants;
-- do not promote any C5-00 candidates while re-homing former audit invariants.
+  authority layer while deciding legacy AuditBundle fate;
+- do not promote any C5-00 candidates while deciding legacy AuditBundle fate.
 
 completed_checkpoint:
 
@@ -117,6 +117,10 @@ completed_checkpoint:
 - C5-02 removes the speculative current `promote_eval_candidate` worker job
   contract and `eval_candidates` allowed write. Eval candidate worker work is
   absent until ADR-0016 preconditions are met.
+- C6-00 re-homes retained source-grounding audit invariants into pure
+  `packages/core/src/source.ts` review signals and makes DB source repository
+  governance use the core decision-grade support-type helper. EvidenceBundle
+  already had native completeness, rollback, and review-risk assessments.
 
 completed_evidence_pointers:
 
@@ -2627,6 +2631,72 @@ commit:
 git commit -m "refactor(workers): align eval candidate contract"
 ```
 
+### C6-00: Re-home Former Source/Evidence Audit Invariants
+
+status: complete.
+
+objective:
+
+Move retained source-grounding audit invariants into native SourceClaim /
+SourceDecision and EvidenceBundle mechanisms without restoring any audit
+scanner, audit CLI, or quality subsystem.
+
+source:
+
+The removed audit checker included useful source-grounding checks: SourceClaims
+need mechanism, implication, does-not-prove, consumer, falsifier, and
+decision-grade support; stale accepted claims need review; accepted source
+claims without decisions risk source hoarding; SourceDecisions need a claim
+link, consumer, and falsifier. EvidenceBundle completeness, rollback, and
+review-risk helpers already exist in core.
+
+mechanism:
+
+Add pure source review signals to `packages/core/src/source.ts` and keep DB
+repository write-time enforcement aligned with those core helpers. Do not
+restore `packages/harness/src/audit`, `krn audit`, repo-wide scanners, or
+AuditBundle mutation paths.
+
+outcome:
+
+- `assessSourceClaimReviewSignals` reports missing source-to-decision fields,
+  decorative support type, stale accepted claims, and accepted claims without
+  linked decisions;
+- `assessSourceDecisionReviewSignals` reports missing source claim links,
+  missing decision fields, and rejected/deprecated claim support;
+- source trust ranking, temporal validity, and override assessment moved into
+  core source domain code;
+- `DrizzleSourceRepository` now uses the core decision-grade support helper
+  instead of owning a local copy of that invariant;
+- no audit scanner, CLI, or broad quality subsystem was added.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- source
+pnpm --filter @krn/db test -- DrizzleSourceRepository
+pnpm typecheck
+git diff --check
+```
+
+observed:
+
+- focused core source tests passed;
+- focused DB source repository tests passed;
+- full workspace typecheck passed;
+- `git diff --check` passed.
+
+This proves retained source-grounding checks now have pure domain functions and
+DB write-time enforcement reuses core support-type authority. It does not prove
+all former audit scanner categories should be retained, does not restore a
+scanner, and does not decide legacy AuditBundle storage fate.
+
+commit:
+
+```sh
+git commit -m "feat(source): add native source review signals"
+```
+
 ### C6-00A: Re-home Memory Review Signals
 
 status: complete.
@@ -2727,7 +2797,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C5-01 Decide governed EvalCandidate staging path.
 - [x] C5-02 Align worker EvalCandidate contract.
 - [x] C6-00A Re-home memory review signals as pure core behavior.
-- [ ] C6-00 Re-home former memory/source/evidence audit invariants into native
+- [x] C6-00 Re-home former memory/source/evidence audit invariants into native
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
 - [ ] C6-01 Decide whether legacy AuditBundle storage is deleted, renamed, or
   migrated into EvidenceBundle/ReviewAssessment lineage.
@@ -3102,6 +3172,10 @@ Current outcome:
 - C5-02 removed the current `promote_eval_candidate` worker job type instead
   of adding eval storage. Future eval worker work must first satisfy ADR-0016's
   standalone consumer/review-path preconditions.
+- C6-00 found source-grounding invariants were partly enforced in the DB
+  adapter and schema, but not exposed as pure core review signals. The retained
+  source checks now live in `packages/core/src/source.ts`; DB enforcement
+  reuses core decision-grade support-type logic.
 
 ## Command Evidence
 

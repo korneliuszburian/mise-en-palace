@@ -44,13 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C6-00: Re-home Former Audit Invariants Into Native Mechanisms
+C6-01: Decide Legacy AuditBundle Storage Fate
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while re-homing native invariants. Do not promote the C5-00
-candidates in the same slice.
+eval platform while deciding legacy AuditBundle storage fate. Do not promote
+the C5-00 candidates in the same slice.
 
 ## Required Read Order
 
