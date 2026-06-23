@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-36
+- targeted slice checks recorded in Progress through MM-37
 
 Known target repo readiness:
 - dry-run: proven
@@ -407,7 +407,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-34 complete: hardened SourceClaim and SourceDecisionEdge write boundaries so source records cannot be decorative citations. Intended files: `packages/schema/src/sourceClaim.ts`, schema tests, `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, source/activation/codex smoke fixtures, CLI source usage/tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin, no broad eval suite, no Research Foundry, no Pattern Vault, no runtime markdown memory. Evidence: RED focused DB source repository test failed because `assertSourceClaimGovernance` / `assertSourceDecisionGovernance` helpers did not exist; RED focused schema test failed because SourceClaim `falsifier` was still optional; GREEN focused DB source repository test passed with 23 files / 61 tests; GREEN focused schema test passed with 1 file / 19 tests; GREEN focused CLI test passed with 6 files / 92 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 239 tests; DB-aware `pnpm db:smoke:source-graph`, `pnpm db:smoke:activation`, and `pnpm db:smoke:codex-adapter` passed after legacy negative smoke claims were rewritten as decision-grade rejection/risk source records; final `pnpm db:ready`, `git diff --check`, forbidden directory scan, and audit slice check passed. SourceClaim IO now requires `falsifier`; repository writes require claim, mechanism, krnImplication, doesNotProve, trustTier, supportType, consumer, and falsifier; decorative support types are rejected for SourceClaim and SourceDecisionEdge; `adopt`/`reject` SourceDecision writes require a linked SourceClaim. Next: MM-35 source rejection and doesNotProve enforcement.
 - [x] (2026-06-23) MM-35 complete: hardened source rejection support boundaries so rejected/deprecated SourceClaim rows cannot support SourceDecisionEdge writes. Intended files: `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, `packages/cli/src/runSourceDecisionLinkCommand.ts`, CLI source decision tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no source graph health audit, no trust-tier/temporal scoring, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB source repository test failed because `assertSourceDecisionSourceClaimCanSupport` did not exist; RED focused CLI test failed because rejected SourceClaim still reached `createSourceDecisionEdge`; GREEN focused DB source repository test passed with 23 files / 62 tests; GREEN focused CLI test passed with 6 files / 93 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 241 tests; DB-aware `pnpm db:ready` and `pnpm db:smoke:source-graph` passed. Next: MM-36 trust and temporal source behavior.
 - [x] (2026-06-23) MM-36 complete: added deterministic trust-tier ranking and temporal override assessment for SourceClaim governance. Intended files: `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no source graph health audit, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB source repository test failed because `rankSourceTrustTier` and `assessSourceClaimOverride` were missing; GREEN focused DB source repository test passed with 23 files / 65 tests and proves deterministic trust ranks, blocks a newer weak claim from overriding stronger current consensus without explicit reason, and permits weaker challenge when stronger consensus is stale by `revisitWhen`; focused DB package typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 244 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-37 source graph health audit.
-- [ ] MM-37: Add source graph health audit.
+- [x] (2026-06-23) MM-37 complete: broadened source graph health audit over semantic source snapshots. Intended files: `packages/harness/src/audit/auditChecks.ts`, focused audit tests, `packages/db/src/auditSemanticSnapshot.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused harness audit test failed because seeded decorative source support, stale accepted claim, unlinked accepted claim, and rejected-claim decision support produced no findings; GREEN focused harness audit test passed with 9 files / 40 tests; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 245 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-38 source-to-decision dogfood on memory implementation.
 - [ ] MM-38: Dogfood source-to-decision on memory implementation.
 - [ ] MM-39: ActivationEngine v2 query model.
 - [ ] MM-40: Hybrid lexical/vector/graph candidate merge.
@@ -850,6 +850,16 @@ Gate 4 MM-36 outcome:
   consensus.
 - No DB migration was required; MM-36 added source policy behavior over
   existing SourceClaim fields.
+
+Gate 4 MM-37 outcome:
+- Source graph health audit now detects decorative SourceClaim support types,
+  stale accepted SourceClaims, accepted SourceClaims with no SourceDecision,
+  and SourceDecisions that still reference rejected/deprecated claims.
+- DB-backed audit semantic snapshots now include SourceClaim `trustTier`,
+  `supportType`, and `revisitWhen` so health checks can run from persisted
+  source graph state.
+- No DB migration or new CLI surface was required; MM-37 expanded semantic
+  audit behavior over existing source tables and snapshots.
 
 ## Milestones
 
@@ -1380,6 +1390,13 @@ MM-36 — Trust and temporal source behavior
 
 MM-37 — Source graph health audit
 - Detect decorative sources, decisions without sources, sources without consumers, stale claims.
+- Slice note (2026-06-23): extend the existing source grounding audit over
+  semantic snapshots rather than adding schema or crawler behavior. Intended
+  files: `packages/harness/src/audit/auditChecks.ts`, focused audit tests,
+  `packages/db/src/auditSemanticSnapshot.ts`, root `PLAN.md`, `GOAL.md`,
+  handoff files, and this PLAN. Non-goals: no DB migration, no source crawler,
+  no new CLI surface, no activation v2 integration, no reflection candidate
+  persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin.
 - Verification:
       seeded failures detected.
 

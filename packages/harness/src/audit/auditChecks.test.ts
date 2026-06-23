@@ -276,6 +276,87 @@ describe("audit checks", () => {
     ]));
   });
 
+  it("detects unhealthy source graph snapshots", () => {
+    const findings = runSourceGroundingAudit(baseSnapshot({
+      capturedAt: "2026-06-23T12:00:00.000Z",
+      sourceClaims: [
+        {
+          id: "source-decorative",
+          claim: "Dashboard screenshots are enough evidence.",
+          mechanism: "A screenshot can show a UI state.",
+          krnImplication: "Use screenshots as decision evidence.",
+          doesNotProve: "This does not prove runtime memory behavior.",
+          consumer: "MM-37 source graph health audit",
+          supportType: "background",
+          status: "accepted"
+        },
+        {
+          id: "source-stale",
+          claim: "Old source crawler direction is still current.",
+          mechanism: "The old plan mentioned crawler behavior.",
+          krnImplication: "Treat crawler guidance as active.",
+          doesNotProve: "This does not prove current plan acceptance.",
+          consumer: "MM-37 source graph health audit",
+          supportType: "risk",
+          revisitWhen: "2026-06-01T00:00:00.000Z",
+          status: "accepted"
+        },
+        {
+          id: "source-orphan",
+          claim: "A source claim exists but has no decision edge.",
+          mechanism: "Unreferenced claims do not change behavior.",
+          krnImplication: "Audit should flag source hoarding.",
+          doesNotProve: "This does not prove all source graph usage.",
+          consumer: "MM-37 source graph health audit",
+          supportType: "mechanism",
+          status: "accepted"
+        },
+        {
+          id: "source-rejected",
+          claim: "Rejected source should not support decisions.",
+          mechanism: "Rejected evidence is not decision support.",
+          krnImplication: "Audit should catch legacy bad rows.",
+          doesNotProve: "This does not prove repository write guards.",
+          consumer: "MM-37 source graph health audit",
+          supportType: "rejection",
+          status: "rejected"
+        }
+      ],
+      sourceDecisions: [
+        {
+          id: "decision-bad-support",
+          decision: "Adopt rejected source guidance.",
+          sourceClaimId: "source-rejected",
+          falsifier: "Rejected sources still support decisions.",
+          consumer: "MM-37 source graph health audit"
+        }
+      ]
+    }));
+
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        category: "source_grounding",
+        severity: "blocking",
+        title: "Source claim has decorative support type"
+      }),
+      expect.objectContaining({
+        category: "source_grounding",
+        severity: "warning",
+        title: "Accepted source claim is stale"
+      }),
+      expect.objectContaining({
+        category: "source_grounding",
+        severity: "warning",
+        title: "Accepted source claim has no source decision"
+      }),
+      expect.objectContaining({
+        category: "source_grounding",
+        severity: "blocking",
+        title: "Source decision uses rejected claim"
+      })
+    ]));
+  });
+
   it("detects eval theater", () => {
     const findings = runEvalTheaterAudit(baseSnapshot({
       evalCandidates: [

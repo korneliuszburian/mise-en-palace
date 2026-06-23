@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-37.
+- None for MM-38.
+
+Closed in MM-37:
+
+- Source graph health audit flags decorative SourceClaim support types.
+- Source graph health audit flags stale accepted SourceClaims using
+  `revisitWhen`.
+- Source graph health audit flags accepted SourceClaims without SourceDecision
+  links.
+- Source graph health audit flags SourceDecisions referencing
+  rejected/deprecated SourceClaims.
 
 Closed in MM-36:
 

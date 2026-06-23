@@ -111,6 +111,9 @@ const sourceClaimSnapshot = (
   krnImplication: row.krnImplication,
   doesNotProve: row.doesNotProve,
   consumer: row.consumer,
+  trustTier: row.trustTier,
+  supportType: row.supportType,
+  ...(row.revisitWhen === null ? {} : { revisitWhen: row.revisitWhen }),
   status: row.status
 });
 

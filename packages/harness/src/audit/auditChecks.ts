@@ -2,7 +2,9 @@ import type {
   AuditFinding,
   AuditFindingCategory,
   AuditFindingSeverity,
-  AuditFindingStatus
+  AuditFindingStatus,
+  SourceSupportType,
+  SourceTrustTier
 } from "@krn/core";
 
 export interface AuditFileSnapshot {
@@ -47,6 +49,9 @@ export interface AuditSourceClaimSnapshot {
   krnImplication: string;
   doesNotProve: string;
   consumer: string;
+  trustTier?: SourceTrustTier;
+  supportType?: SourceSupportType;
+  revisitWhen?: string;
   status: "proposed" | "accepted" | "rejected" | "deprecated";
 }
 
@@ -199,6 +204,31 @@ const schemaDbImportPatterns = [
   `${importFrom}'${"drizzle"}-orm'`,
   `${importFrom}"${"drizzle"}-orm"`
 ] as const;
+
+const decisionGradeSourceSupportTypes = new Set<SourceSupportType>([
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary",
+  "contradicts"
+]);
+
+const isPastTime = (value: string | undefined, now: string): boolean => {
+  if (value === undefined) {
+    return false;
+  }
+
+  const valueTime = Date.parse(value);
+  const nowTime = Date.parse(now);
+
+  if (!Number.isFinite(valueTime) || !Number.isFinite(nowTime)) {
+    return false;
+  }
+
+  return valueTime < nowTime;
+};
 
 export const runRepoSurfaceAudit = (snapshot: AuditRepoSnapshot): AuditFinding[] => {
   const findings: AuditFinding[] = [];
@@ -569,6 +599,21 @@ export const runMemorySemanticsAudit = (snapshot: AuditRepoSnapshot): AuditFindi
 
 export const runSourceGroundingAudit = (snapshot: AuditRepoSnapshot): AuditFinding[] => {
   const findings: AuditFinding[] = [];
+  const decisionsByClaimId = new Map<string, AuditSourceDecisionSnapshot[]>();
+  const claimsById = new Map<string, AuditSourceClaimSnapshot>();
+
+  for (const claim of snapshot.sourceClaims ?? []) {
+    claimsById.set(claim.id, claim);
+  }
+
+  for (const decision of snapshot.sourceDecisions ?? []) {
+    if (decision.sourceClaimId === undefined) {
+      continue;
+    }
+
+    const existing = decisionsByClaimId.get(decision.sourceClaimId) ?? [];
+    decisionsByClaimId.set(decision.sourceClaimId, [...existing, decision]);
+  }
 
   for (const claim of snapshot.sourceClaims ?? []) {
     if (
@@ -585,6 +630,52 @@ export const runSourceGroundingAudit = (snapshot: AuditRepoSnapshot): AuditFindi
         summary: "Retained sources require mechanism, KRN implication, doesNotProve, and consumer fields.",
         evidenceRefs: [claim.id],
         recommendation: "Complete the source-to-decision fields or reject the source as decorative.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (
+      claim.supportType !== undefined &&
+      !decisionGradeSourceSupportTypes.has(claim.supportType)
+    ) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:source-claim:decorative-support:${claim.id}`,
+        category: "source_grounding",
+        severity: "blocking",
+        title: "Source claim has decorative support type",
+        summary: "Accepted source graph records must support decisions with mechanism, risk, rejection, eval, boundary, or contradiction semantics.",
+        evidenceRefs: [claim.id],
+        recommendation: "Reject decorative/background sources or rewrite them as decision-grade source claims.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (claim.status === "accepted" && isPastTime(claim.revisitWhen, snapshot.capturedAt)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:source-claim:stale:${claim.id}`,
+        category: "source_grounding",
+        severity: "warning",
+        title: "Accepted source claim is stale",
+        summary: "Accepted source claims past revisitWhen need review before they keep guiding memory or activation behavior.",
+        evidenceRefs: [claim.id],
+        recommendation: "Review, refresh, deprecate, or replace the stale source claim before relying on it.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (
+      claim.status === "accepted" &&
+      hasText(claim.consumer) &&
+      (decisionsByClaimId.get(claim.id)?.length ?? 0) === 0
+    ) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:source-claim:no-decision:${claim.id}`,
+        category: "source_grounding",
+        severity: "warning",
+        title: "Accepted source claim has no source decision",
+        summary: "Accepted source claims without decisions become source hoarding instead of source-to-decision evidence.",
+        evidenceRefs: [claim.id],
+        recommendation: "Link the claim to a SourceDecision or demote it until a decision consumer exists.",
         createdAt: snapshot.capturedAt
       }));
     }
@@ -615,6 +706,23 @@ export const runSourceGroundingAudit = (snapshot: AuditRepoSnapshot): AuditFindi
         recommendation: "Add a concrete consumer and falsifier for the decision.",
         createdAt: snapshot.capturedAt
       }));
+    }
+
+    if (decision.sourceClaimId !== undefined) {
+      const sourceClaim = claimsById.get(decision.sourceClaimId);
+
+      if (sourceClaim?.status === "rejected" || sourceClaim?.status === "deprecated") {
+        findings.push(makeFinding({
+          id: `${snapshot.sliceId}:source-decision:rejected-claim:${decision.id}`,
+          category: "source_grounding",
+          severity: "blocking",
+          title: "Source decision uses rejected claim",
+          summary: "Rejected or deprecated SourceClaims must not remain attached to active SourceDecision records.",
+          evidenceRefs: [decision.id, decision.sourceClaimId],
+          recommendation: "Create a new accepted SourceClaim with evidence or remove the invalid decision support edge.",
+          createdAt: snapshot.capturedAt
+        }));
+      }
     }
   }
 
