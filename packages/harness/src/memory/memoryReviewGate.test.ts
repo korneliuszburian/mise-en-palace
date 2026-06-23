@@ -87,7 +87,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           async getMemoryCandidateById() {
             return candidate();
           },
-          async promoteMemoryCandidate() {
+          async promoteReviewedMemoryCandidate() {
             promoteCalled = true;
             return memoryRecord();
           }
@@ -117,7 +117,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
           async getMemoryCandidateById() {
             return candidate();
           },
-          async promoteMemoryCandidate() {
+          async promoteReviewedMemoryCandidate() {
             promoteCalled = true;
             return memoryRecord();
           }
@@ -146,7 +146,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
         async getMemoryCandidateById() {
           return candidate();
         },
-        async promoteMemoryCandidate(input) {
+        async promoteReviewedMemoryCandidate(input) {
           capturedPromotion = input;
           return memoryRecord();
         }
@@ -177,6 +177,44 @@ describe("promoteMemoryCandidateThroughGate", () => {
         reviewGate: {
           evidenceReviewedRef: "raw-evidence:run-event-1",
           sourceClaimIds: ["source-claim-1"]
+        }
+      }
+    });
+  });
+
+  it("uses the reviewed promotion port instead of raw candidate promotion", async () => {
+    let capturedPromotion: PromoteMemoryCandidateInput | undefined;
+
+    const result = await promoteMemoryCandidateThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate();
+        },
+        async promoteReviewedMemoryCandidate(input) {
+          capturedPromotion = input;
+          return memoryRecord();
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimById() {
+          return sourceClaim();
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "raw-evidence:run-event-1"
+      }
+    });
+
+    expect(result.memoryRecord.id).toBe("memory-record-1");
+    expect(capturedPromotion).toMatchObject({
+      candidateId: "memory-candidate-1",
+      reviewer: "operator",
+      decision: "accepted",
+      metadata: {
+        reviewGate: {
+          evidenceReviewedRef: "raw-evidence:run-event-1"
         }
       }
     });

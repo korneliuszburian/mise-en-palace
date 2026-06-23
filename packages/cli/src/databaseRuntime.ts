@@ -72,7 +72,7 @@ export interface DatabaseRuntime {
     MemoryRepository,
     | "createMemoryCandidate"
     | "getMemoryCandidateById"
-    | "promoteMemoryCandidate"
+    | "promoteReviewedMemoryCandidate"
     | "rejectMemoryCandidate"
     | "getMemoryRecordById"
     | "invalidateMemoryRecord"

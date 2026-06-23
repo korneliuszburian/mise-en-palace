@@ -119,14 +119,13 @@ export interface CreateAntiMemoryRecordInput extends RepositoryMetadata {
 }
 
 export interface MemoryRepository {
-  createMemoryRecord(input: CreateMemoryRecordInput): Promise<MemoryRecord>;
   getMemoryRecord(id: string): Promise<MemoryRecord | undefined>;
   getMemoryRecordById(id: string): Promise<MemoryRecord | undefined>;
   listMemoryRecordsForProject(projectId: ProjectId, limit?: number): Promise<MemoryRecord[]>;
   listActiveMemory(projectId: ProjectId, limit: number): Promise<MemoryRecord[]>;
   createMemoryCandidate(input: CreateMemoryCandidateInput): Promise<MemoryCandidate>;
   getMemoryCandidateById(id: string): Promise<MemoryCandidate | undefined>;
-  promoteMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord>;
+  promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord>;
   rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate>;
   listMemoryCandidates(projectId: ProjectId, limit: number): Promise<MemoryCandidate[]>;
   invalidateMemoryRecord(input: InvalidateMemoryRecordInput): Promise<MemoryRecord>;

@@ -432,6 +432,10 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     });
   }
 
+  async promoteReviewedMemoryCandidate(input: PromoteMemoryCandidateInput): Promise<MemoryRecord> {
+    return this.promoteMemoryCandidate(input);
+  }
+
   async rejectMemoryCandidate(input: RejectMemoryCandidateInput): Promise<MemoryCandidate> {
     const now = new Date();
     const row = requireReturnedRow(

@@ -21,7 +21,6 @@ import type {
   CreateFeedbackDeltaInput,
   CreateHarnessPlanInput,
   CreateMemoryCandidateInput,
-  CreateMemoryRecordInput,
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
   CreateTaskContractInput,
@@ -215,10 +214,6 @@ class FakeMemoryRepository implements MemoryRepository {
     private readonly records: readonly MemoryRecord[],
     private readonly antiMemoryRecords: readonly AntiMemoryRecord[] = []
   ) {}
-
-  async createMemoryRecord(_input: CreateMemoryRecordInput): Promise<MemoryRecord> {
-    throw new Error("not used by compiler");
-  }
 
   async getMemoryRecord(_id: string): Promise<MemoryRecord | undefined> {
     throw new Error("not used by compiler");

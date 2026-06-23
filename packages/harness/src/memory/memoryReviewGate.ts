@@ -22,7 +22,7 @@ export interface MemoryReviewGateReview {
 export interface PromoteMemoryCandidateThroughGateInput {
   memoryRepository: Pick<
     MemoryRepository,
-    "getMemoryCandidateById" | "promoteMemoryCandidate"
+    "getMemoryCandidateById" | "promoteReviewedMemoryCandidate"
   >;
   sourceRepository: Pick<SourceRepository, "getSourceClaimById">;
   review: MemoryReviewGateReview;
@@ -138,7 +138,7 @@ export const promoteMemoryCandidateThroughGate = async (
     promotionInput.recordKey = requireTrimmed(input.review.recordKey, "recordKey");
   }
 
-  const memoryRecord = await input.memoryRepository.promoteMemoryCandidate(promotionInput);
+  const memoryRecord = await input.memoryRepository.promoteReviewedMemoryCandidate(promotionInput);
 
   return {
     candidate,

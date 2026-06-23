@@ -50,8 +50,8 @@ const unusedMemoryRepository = {
   async getMemoryCandidateById(_id: string): Promise<never> {
     throw new Error("getMemoryCandidateById should not be called");
   },
-  async promoteMemoryCandidate(_input: PromoteMemoryCandidateInput): Promise<never> {
-    throw new Error("promoteMemoryCandidate should not be called");
+  async promoteReviewedMemoryCandidate(_input: PromoteMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteReviewedMemoryCandidate should not be called");
   },
   async rejectMemoryCandidate(_input: RejectMemoryCandidateInput): Promise<never> {
     throw new Error("rejectMemoryCandidate should not be called");
@@ -1868,7 +1868,7 @@ describe("runCli", () => {
                 updatedAt: now
               };
             },
-            async promoteMemoryCandidate(input) {
+            async promoteReviewedMemoryCandidate(input) {
               capturedPromotion = input;
 
               return {
@@ -1979,8 +1979,8 @@ describe("runCli", () => {
             async getMemoryCandidateById() {
               throw new Error("getMemoryCandidateById should not be called");
             },
-            async promoteMemoryCandidate() {
-              throw new Error("promoteMemoryCandidate should not be called");
+            async promoteReviewedMemoryCandidate() {
+              throw new Error("promoteReviewedMemoryCandidate should not be called");
             },
             async rejectMemoryCandidate(input) {
               capturedRejection = input;

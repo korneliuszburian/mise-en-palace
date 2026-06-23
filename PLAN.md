@@ -613,6 +613,8 @@ git revert <commit>
 
 ### P2-00: Seal Memory Core Write Authority
 
+status: complete.
+
 objective:
 
 Make MemoryReviewGate or an equivalent reviewed service the only public
@@ -1165,7 +1167,7 @@ git revert <commit>
 - [x] P1-00 Classify CLI surfaces.
 - [x] P1-01 Deproductize `krn audit`.
 - [x] P1-02 Plan package barrel narrowing.
-- [ ] P2-00 Seal Memory Core write authority.
+- [x] P2-00 Seal Memory Core write authority.
 - [ ] P2-01 Type SourceClaim project scope.
 - [ ] P2-02 Promote behavior metadata to typed fields.
 - [ ] P3-00 Define observation staging doctrine.
@@ -1199,6 +1201,9 @@ git revert <commit>
   target set in core/schema/codex-adapter/workers. They are recorded as out of
   first-slice scope unless later evidence shows they leak internals as product
   authority.
+- P2-00 did not require DB schema or migration changes. The durable object is
+  still MemoryCandidate -> MemoryRecord; the changed boundary is the public
+  harness-facing promotion port.
 
 ## Decision Log
 
@@ -1222,6 +1227,11 @@ git revert <commit>
 - 2026-06-23: Package public surfaces should be narrowed from broad barrels to
   stable named contracts; smokes, concrete repositories, schema tables, and CLI
   command runners should not be default product API.
+- 2026-06-23: Public `MemoryRepository` no longer exposes raw
+  `createMemoryRecord` or raw `promoteMemoryCandidate`. Reviewed promotion is
+  exposed as `promoteReviewedMemoryCandidate` and is called through
+  `MemoryReviewGate`; raw create/promote remains only on the concrete DB
+  adapter for internal setup/smoke use.
 
 ## Outcomes & Retrospective
 
@@ -1236,8 +1246,11 @@ Current outcome:
 - `krn audit` is deproductized in docs: no QG-06, no new audit categories, no
   public product UX claim.
 - Package barrel narrowing is planned in `docs/architecture/package-surfaces.md`.
-- Package source is untouched.
-- Next safe action is P2-00: seal Memory Core write authority.
+- Package source is touched from P2-00 onward.
+- Memory Core promotion authority is sealed at the public harness port:
+  candidate-to-record promotion goes through reviewed promotion naming and
+  MemoryReviewGate metadata.
+- Next safe action is P2-01: type SourceClaim project scope.
 
 ## Command Evidence
 
@@ -1372,6 +1385,36 @@ git diff --check
 
 Observed: wildcard export inventory produced the expected broad barrel list;
 `git diff --check` passed with no output.
+
+P2-00 Memory Core write authority:
+
+```sh
+pnpm --filter @krn/harness test -- memory/memoryReviewGate.test.ts
+```
+
+Observed RED before implementation: 1 failing test,
+`uses the reviewed promotion port instead of raw candidate promotion`, with
+`TypeError: input.memoryRepository.promoteMemoryCandidate is not a function`.
+
+Observed GREEN after implementation: 15 harness test files passed; 82 tests
+passed.
+
+```sh
+rg -n "createMemoryRecord\\(|promoteMemoryCandidate\\(" packages/harness/src/repositories/memoryRepository.ts packages/harness/src/memory/memoryReviewGate.ts packages/cli/src/databaseRuntime.ts
+pnpm --filter @krn/db test
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- `rg` returned no matches in the public harness memory port, MemoryReviewGate,
+  or CLI database runtime boundary;
+- DB tests passed: 24 files, 67 tests;
+- full typecheck passed across 7 workspace projects;
+- full test passed across 7 workspace projects: 78 test files, 363 tests;
+- `git diff --check` passed with no output.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
