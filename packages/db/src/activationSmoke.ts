@@ -65,6 +65,7 @@ export interface ActivationSmokeReport {
   staleDecisionCount: number;
   contextItemCount: number;
   contextExclusionCount: number;
+  rawEvidenceRecallTriggerCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
@@ -157,6 +158,18 @@ const countByDecision = (
   decisions: readonly { decision: string }[],
   decision: string
 ): number => decisions.filter((item) => item.decision === decision).length;
+
+const rawEvidenceRecallTriggerCount = (
+  metadata: unknown
+): number => {
+  if (metadata === null || typeof metadata !== "object") {
+    return 0;
+  }
+
+  const count = (metadata as Record<string, unknown>).rawEvidenceRecallTriggerCount;
+
+  return typeof count === "number" ? count : 0;
+};
 
 const hasMergedSearchSignal = (metadata: Record<string, unknown>): boolean => {
   const searchDocumentIds = metadata.searchDocumentIds;
@@ -483,6 +496,10 @@ export const runActivationSmokeCheck = async (
       contextAssembly,
       completedAt: now,
       retrievalRepository,
+      rawRecall: {
+        requireExactProof: true,
+        exactProofKinds: ["source", "search"]
+      },
       metadata: {
         smokeId: marker,
         conflictCount: filterResult.conflictSets.length
@@ -501,7 +518,10 @@ export const runActivationSmokeCheck = async (
       .from(contextAssemblies)
       .where(eq(contextAssemblies.id, contextAssembly.id));
     const readBackRetrievalRunRows = await db
-      .select({ id: retrievalRuns.id })
+      .select({
+        id: retrievalRuns.id,
+        metadata: retrievalRuns.metadata
+      })
       .from(retrievalRuns)
       .where(eq(retrievalRuns.id, retrievalRun.id));
     const contextItemRows = await db
@@ -534,6 +554,7 @@ export const runActivationSmokeCheck = async (
     const staleDecisionCount = countByDecision(activationRecords, "stale");
     const contextItemCount = contextItemRows[0]?.count ?? 0;
     const contextExclusionCount = contextExclusionRows[0]?.count ?? 0;
+    const rawRecallTriggerCount = rawEvidenceRecallTriggerCount(readBackRetrievalRun?.metadata);
 
     if (
       readBackContextAssembly === undefined ||
@@ -550,7 +571,8 @@ export const runActivationSmokeCheck = async (
       conflictDecisionCount !== 1 ||
       staleDecisionCount !== 1 ||
       contextItemCount !== 2 ||
-      contextExclusionCount < 3
+      contextExclusionCount < 3 ||
+      rawRecallTriggerCount < 1
     ) {
       throw new Error("Activation smoke readback did not match expected activation records");
     }
@@ -580,6 +602,7 @@ export const runActivationSmokeCheck = async (
       staleDecisionCount,
       contextItemCount,
       contextExclusionCount,
+      rawEvidenceRecallTriggerCount: rawRecallTriggerCount,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };

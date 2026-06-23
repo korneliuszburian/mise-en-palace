@@ -2,7 +2,16 @@
 
 Hard blockers:
 
-- None for MM-43.
+- None for MM-44.
+
+Closed in MM-43:
+
+- Raw evidence recall trigger helper marks exact-proof and low-trust included
+  activation candidates.
+- Activation inclusion decisions carry raw recall requirement metadata when a
+  trigger exists.
+- Retrieval run metadata summarizes raw evidence recall triggers.
+- Activation smoke persists and reports `Raw evidence recall triggers: 1`.
 
 Closed in MM-42:
 

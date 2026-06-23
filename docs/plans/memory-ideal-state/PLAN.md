@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-42
+- targeted slice checks recorded in Progress through MM-43
 
 Known target repo readiness:
 - dry-run: proven
@@ -413,7 +413,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-40 complete: added pure hybrid candidate merge across source/search channels and routed activation retrieval through it. Intended files: `packages/harness/src/activation/rankCandidates.ts`, `packages/harness/src/activation/activationEngine.ts`, `packages/harness/src/repositories/types.ts`, `packages/db/src/activationSmoke.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new retrieval store, no pgvector query implementation, no observation prefix integration, no trust/temporal filter change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `mergeActivationCandidates` did not exist; GREEN focused activation test passed with 9 files / 42 tests and proves a SourceClaim candidate and linked SearchDocument candidate merge into one source candidate while preserving search document metadata and graph/lexical signals; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 247 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-41 trust, temporal, invalidation, and anti-memory filters.
 - [x] (2026-06-23) MM-41 complete: added a pure ActivationEngine v2 filter pass for anti-memory, trust, temporal, invalidation, stale, and superseded filtering after candidate merge. Intended files: `packages/harness/src/activation/activationFilters.ts`, activation exports, activation tests, `packages/db/src/activationSmoke.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge change, no ContextROI/diversity rewrite, no observation prefix integration, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `applyActivationFilters` did not exist; GREEN focused activation test passed with 9 files / 43 tests and proves merged source/search candidates are blocked by anti-memory while TTL-expired memory is stale and low-confidence memory is low_trust; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 248 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-42 ContextROI, diversity, dedup, inclusions, and exclusions.
 - [x] (2026-06-23) MM-42 complete: hardened ContextROI selection so final activation context deduplicates by canonical subject, preserves requested memory/source/search diversity before filling remaining budget, and emits explicit duplicate/over_budget/low_context_roi exclusions. Intended files: `packages/harness/src/activation/contextRoi.ts`, activation tests, `packages/db/src/activationSmoke.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval query change, no anti-memory filter change, no observation prefix integration, no activation trace persistence change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because ContextROI selected `memory-secondary` instead of the independent search support; GREEN focused activation test passed with 9 files / 44 tests and proves canonical dedup, kind diversity, and explicit duplicate/over_budget exclusions; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 249 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-43 activation trace and raw recall trigger.
-- [ ] MM-43: Activation traces and raw evidence recall trigger.
+- [x] (2026-06-23) MM-43 complete: added pure activation raw-evidence recall triggers for exact-proof and low-trust inclusions, persisted trigger summaries into activation decision and retrieval run metadata, and made activation smoke prove `Raw evidence recall triggers: 1`. Intended files: `packages/harness/src/activation/activationRawRecall.ts`, activation exports/tests, `packages/harness/src/activation/activationEngine.ts`, `packages/db/src/activationSmoke.ts`, `packages/cli/src/runDbSmokeCommand.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no raw evidence fetcher implementation, no observation prefix integration, no retrieval query change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: focused activation test passed with 9 files / 45 tests and proves exact-proof source inclusions and low-trust memory inclusions create raw recall triggers with evidence hints; focused harness/db/cli typechecks passed after fixing strict optional input construction; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 250 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, raw evidence recall triggers `1`, and context exclusions `3`. Next: MM-44 observation prefix integration.
 - [ ] MM-44: Observation prefix integration.
 - [ ] MM-44A: Integrate observation prefix only after relevance/project-scope hardening.
 - [ ] MM-45: Dogfood activation before/after observations.
@@ -1473,6 +1473,16 @@ Gate 5 MM-42 outcome:
   activation trace persistence change, or observation prefix integration was
   added.
 
+Gate 5 MM-43 outcome:
+- `buildActivationRawRecallTriggers` now marks included candidates that need
+  exact proof or have low trust before response/runtime use.
+- `persistActivationTrace` stores raw recall requirements on inclusion
+  activation decisions and summarizes triggers on the retrieval run metadata.
+- Activation smoke now proves one persisted raw evidence recall trigger and
+  reports it in CLI output.
+- No DB migration, raw evidence fetcher, retrieval query change, or observation
+  prefix integration was added.
+
 Slices:
 
 MM-39 — ActivationQuery model
@@ -1531,6 +1541,16 @@ MM-42 — ContextROI, diversity, dedup, inclusions/exclusions
 MM-43 — Activation trace and raw recall trigger
 - Persist activation decision trace.
 - Trigger raw evidence recall when exact proof is needed or confidence is low.
+- Slice note (2026-06-23): add a pure raw-evidence recall trigger helper for
+  included activation candidates and persist the trigger summary into activation
+  trace metadata. Trigger reasons should cover high-risk/exact-proof source or
+  search inclusions and low-trust included context. Intended files:
+  `packages/harness/src/activation/activationRawRecall.ts`, activation exports,
+  activation tests, `packages/harness/src/activation/activationEngine.ts`,
+  `packages/db/src/activationSmoke.ts`, root `PLAN.md`, `GOAL.md`, handoff
+  files, and this PLAN. Non-goals: no DB migration, no raw evidence fetcher
+  implementation, no observation prefix integration, no retrieval query change,
+  no dashboard/API/MCP/server/plugin/source crawler.
 - Verification:
       low-confidence task asks for raw recall instead of confident answer.
 

@@ -1,6 +1,7 @@
 import type {
   AntiMemoryRecord,
   ContextAssembly,
+  SourceTrustTier,
   TaskContract
 } from "@krn/core";
 
@@ -26,9 +27,13 @@ import {
   buildSourceQuery
 } from "./sourceQuery.js";
 import type {
+  ActivationCandidateKind,
   ActivationQuery,
   RankedActivationCandidate
 } from "./types.js";
+import {
+  buildActivationRawRecallTriggers
+} from "./activationRawRecall.js";
 
 export interface ActivationRetrievalLimits {
   memory: number;
@@ -68,6 +73,11 @@ export interface PersistActivationTraceInput {
     "addCandidate" | "recordActivationDecision" | "storeContextSelection" | "completeRetrievalRun"
   >;
   metadata?: Record<string, unknown>;
+  rawRecall?: {
+    requireExactProof?: boolean;
+    lowTrustTiers?: readonly SourceTrustTier[];
+    exactProofKinds?: readonly ActivationCandidateKind[];
+  };
 }
 
 const candidateKey = (candidate: { subjectType: string; subjectId: string }): string =>
@@ -143,6 +153,22 @@ export const retrieveActivationCandidates = async (
 export const persistActivationTrace = async (
   input: PersistActivationTraceInput
 ): Promise<void> => {
+  const rawEvidenceRecallTriggers = buildActivationRawRecallTriggers({
+    candidates: input.candidates,
+    contextAssembly: input.contextAssembly,
+    ...(input.rawRecall?.requireExactProof === undefined
+      ? {}
+      : { requireExactProof: input.rawRecall.requireExactProof }),
+    ...(input.rawRecall?.lowTrustTiers === undefined
+      ? {}
+      : { lowTrustTiers: input.rawRecall.lowTrustTiers }),
+    ...(input.rawRecall?.exactProofKinds === undefined
+      ? {}
+      : { exactProofKinds: input.rawRecall.exactProofKinds })
+  });
+  const rawEvidenceRecallTriggersBySubject = new Map(
+    rawEvidenceRecallTriggers.map((trigger) => [candidateKey(trigger), trigger])
+  );
   const includedIds = new Set(
     input.contextAssembly.inclusions.map((inclusion) =>
       candidateKey(inclusion)
@@ -183,6 +209,7 @@ export const persistActivationTrace = async (
     const key = candidateKey(inclusion);
     const candidate = candidatesBySubject.get(key);
     const retrievalCandidateId = candidateRecordIds.get(key);
+    const rawEvidenceRecallTrigger = rawEvidenceRecallTriggersBySubject.get(key);
 
     await input.retrievalRepository.recordActivationDecision({
       retrievalRunId: input.retrievalRunId,
@@ -198,7 +225,14 @@ export const persistActivationTrace = async (
         : { contextBudgetCost: inclusion.tokenEstimate }),
       expectedDecisionImpact: inclusion.expectedUse,
       metadata: {
-        expectedUse: inclusion.expectedUse
+        expectedUse: inclusion.expectedUse,
+        ...(rawEvidenceRecallTrigger === undefined
+          ? {}
+          : {
+              rawEvidenceRecallRequired: true,
+              rawEvidenceRecallReasons: rawEvidenceRecallTrigger.reasons,
+              rawEvidenceHints: rawEvidenceRecallTrigger.evidenceHints
+            })
       }
     });
   }
@@ -242,7 +276,11 @@ export const persistActivationTrace = async (
     metadata: {
       ...(input.metadata ?? {}),
       inclusionCount: input.contextAssembly.inclusions.length,
-      exclusionCount: input.contextAssembly.exclusions.length
+      exclusionCount: input.contextAssembly.exclusions.length,
+      rawEvidenceRecallTriggerCount: rawEvidenceRecallTriggers.length,
+      ...(rawEvidenceRecallTriggers.length === 0
+        ? {}
+        : { rawEvidenceRecallTriggers })
     }
   });
 };

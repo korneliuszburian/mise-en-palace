@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-42. KRN has
+The memory ideal-state execution track is implemented through MM-43. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -45,14 +45,15 @@ for anti-memory conflict detection, trust filtering, and temporal/invalidation
 filtering. ContextROI selection now deduplicates by canonical subject,
 preserves requested memory/source/search diversity before filling remaining
 budget, and keeps duplicate/over-budget/low-ROI candidates visible as explicit
-exclusions.
+exclusions. Activation trace persistence now records raw evidence recall
+triggers for exact-proof and low-trust inclusions.
 
 Last verified state:
-MM-42 hardened ContextROI diversity and dedup. Focused RED test proved
-ContextROI selected `memory-secondary` instead of independent search support;
-focused GREEN test passed for canonical dedup, kind diversity, and explicit
-duplicate/over_budget exclusions. Full `pnpm typecheck`, full `pnpm test`, DB
-readiness, and activation smoke passed.
+MM-43 added activation raw evidence recall triggers. Focused activation test
+passed for exact-proof and low-trust trigger generation; strict focused
+typechecks passed; full `pnpm typecheck`, full `pnpm test`, DB readiness, and
+activation smoke passed. Activation smoke reported
+`Raw evidence recall triggers: 1`.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -67,7 +68,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-42 memory ideal-state slices: complete through governed
+- MM-00 through MM-43 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -79,7 +80,8 @@ Milestone status:
   override assessment, broader source graph health audit findings, and one
   source-to-decision dogfood run for an implementation decision, plus the pure
   ActivationQuery model, hybrid candidate merge, unified post-merge filter
-  pass, and diversity-aware ContextROI selection for ActivationEngine v2.
+  pass, diversity-aware ContextROI selection, and raw evidence recall trigger
+  metadata for ActivationEngine v2.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -167,6 +169,9 @@ Runtime proof status:
 - ContextROI: `applyContextROI` deduplicates by canonical source/memory subject,
   preserves requested kind diversity, and emits explicit duplicate/
   over_budget/low_context_roi exclusions.
+- raw evidence recall trigger: `buildActivationRawRecallTriggers` marks
+  exact-proof or low-trust inclusions, and `persistActivationTrace` stores the
+  trigger summary in activation decision and retrieval run metadata.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -178,12 +183,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-42 blocker remains.
+No MM-43 blocker remains.
 
 Rollback path:
-After commit, revert the MM-42 commit with `git revert <commit>` if
-diversity-aware ContextROI regresses. No DB migration was added; rollback is
-code/docs only.
+After commit, revert the MM-43 commit with `git revert <commit>` if raw recall
+trigger metadata regresses. No DB migration was added; rollback is code/docs
+only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -193,7 +198,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-43 and add activation trace and raw evidence recall trigger.
+Run MM-44 and integrate observation prefix into activation/context assembly.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

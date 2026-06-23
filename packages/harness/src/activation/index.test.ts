@@ -15,6 +15,7 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
+  buildActivationRawRecallTriggers,
   buildActivationQuery,
   buildMemoryQuery,
   buildSourceQuery,
@@ -418,6 +419,63 @@ describe("activation engine", () => {
       expect.objectContaining({
         subjectId: "memory-secondary",
         reason: "over_budget"
+      })
+    ]));
+  });
+
+  it("triggers raw evidence recall for exact-proof and low-trust inclusions", () => {
+    const query = buildActivationQuery(task, {
+      focus: "mixed",
+      needs: ["source", "memory"],
+      risk: "high"
+    });
+    const ranked = rankCandidates([
+      {
+        ...toSourceClaimCandidate(
+          sourceClaim({
+            id: "claim-exact-proof",
+            claim: "Doctor readiness requires exact persisted evidence."
+          })
+        ),
+        contextRoiScore: 120
+      },
+      {
+        ...toMemoryCandidate(
+          memoryRecord({
+            id: "memory-low-confidence",
+            confidence: 40,
+            summary: "Low-confidence memory still needs proof before use"
+          })
+        ),
+        contextRoiScore: 110
+      }
+    ], query);
+    const context = assembleContext({
+      id: "context-raw-recall",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(ranked, {
+        maxInclusions: 2,
+        minimumScore: 25
+      }),
+      createdAt: now
+    });
+
+    const triggers = buildActivationRawRecallTriggers({
+      candidates: ranked,
+      contextAssembly: context,
+      requireExactProof: true
+    });
+
+    expect(triggers).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "claim-exact-proof",
+        reasons: ["exact_proof_required"],
+        evidenceHints: expect.arrayContaining(["source_claim:claim-exact-proof"])
+      }),
+      expect.objectContaining({
+        subjectId: "memory-low-confidence",
+        reasons: ["low_trust"],
+        evidenceHints: expect.arrayContaining(["memory_record:memory-low-confidence"])
       })
     ]));
   });
