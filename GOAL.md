@@ -44,14 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-EXEC-01: Require Slice Template For Future Backlog Items
+COND-03: Decide Remaining Package Barrels
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while requiring future slice templates. Do not create a quality
-subsystem; encode the discipline as bounded slice behavior in the living plan
-and keep completed detail compressed.
+eval platform while deciding remaining package barrels. Promote the slice
+through the `slice_template_gate` in `PLAN.md` before code changes.
 
 ## Required Read Order
 

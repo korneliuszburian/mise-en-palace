@@ -26,20 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Future Slice Template Gate.
+current_priority: Remaining Package Barrel Decision.
 
-first_unchecked_slice: `EXEC-01: Require Slice Template For Future Backlog Items`.
+first_unchecked_slice: `COND-03: Decide Remaining Package Barrels`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- require future backlog/slice templates to preserve assumptions, tradeoffs,
-  touch boundaries, verification, and rollback without expanding active
-  context;
+- decide remaining core/schema/codex-adapter/workers package barrels through
+  the `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while requiring future slice templates;
+  authority layer while deciding remaining package barrels;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -132,6 +131,11 @@ completed_checkpoint:
   each slice records assumptions, ambiguity/tradeoff, simplest acceptable
   implementation, touched/untouched files, non-goals, success criteria,
   verification, and rollback. This is slice behavior, not a quality subsystem.
+- EXEC-01 adds a slice template gate for future and promoted backlog items.
+  Existing appendix backlog items are sketches until promoted; promotion must
+  add the template fields and keep completed detail compressed. COND-00 through
+  COND-02 are already covered by C1-01/C1-02/C1-03, so the next barrel slice is
+  COND-03.
 
 completed_evidence_pointers:
 
@@ -209,6 +213,26 @@ executor_discipline:
 - if unrelated slop is found, record it in Surprises & Discoveries or a later
   bounded slice instead of editing it immediately;
 - verification must say what commands prove and what they do not prove.
+
+slice_template_gate:
+
+- every future backlog item and every backlog sketch promoted into the active
+  queue must include:
+  - assumptions;
+  - tradeoffs;
+  - simplest acceptable implementation;
+  - files likely touched;
+  - files forbidden to touch;
+  - non-goals;
+  - success criteria;
+  - verification;
+  - rollback.
+- appendix items written before EXEC-01 are planning sketches, not permission
+  to start coding;
+- when promoting an older sketch, normalize it into the template first and
+  remove duplicate prose that does not change execution;
+- completed template details should collapse into a checkpoint note and command
+  evidence after commit/push.
 
 ---
 
@@ -2983,7 +3007,8 @@ git revert <C6-02 commit>
 - [x] C6-02 Decide legacy audit table retention/export/drop migration after DB
   row/provenance review.
 - [x] EXEC-00 Add executor discipline to active slice template.
-- [ ] EXEC-01 Require slice template for future backlog items.
+- [x] EXEC-01 Require slice template for future backlog items.
+- [ ] COND-03 Decide remaining package barrels.
 
 ## Surprises & Discoveries
 
@@ -4591,6 +4616,16 @@ rg -n "Executor Discipline|assumptions|simplest acceptable implementation|files 
 git diff --check
 ```
 
+observed:
+
+- `executor_discipline` now lives in the active queue snapshot, not as a new
+  package, CLI, scanner, audit layer, or quality subsystem;
+- progress marks EXEC-00 complete and the active queue no longer points at
+  EXEC-00;
+- focused docs verification found the Executor Discipline gate and required
+  fields in `PLAN.md`;
+- `git diff --check` passed.
+
 commit:
 
 ```sh
@@ -4598,6 +4633,8 @@ git commit -m "docs(plan): add executor discipline gate"
 ```
 
 ### EXEC-01: Require Slice Template For Future Backlog Items
+
+status: complete.
 
 priority: P0.
 
@@ -4626,6 +4663,18 @@ verification:
 rg -n "files forbidden to touch|success criteria|rollback" PLAN.md
 git diff --check
 ```
+
+observed:
+
+- `slice_template_gate` now defines the required fields for future backlog
+  items and promoted backlog sketches;
+- older appendix backlog items are explicitly treated as sketches until
+  normalized into the template;
+- active queue now points to `COND-03` because COND-00 through COND-02 are
+  covered by completed C1 package-surface slices;
+- docs verification found `files forbidden to touch`, `success criteria`, and
+  `rollback` in `PLAN.md`;
+- `git diff --check` passed.
 
 commit:
 
