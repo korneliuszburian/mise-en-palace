@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-51.
+Current phase: Memory ideal-state execution track after MM-52.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-51 and MM-16R in
+- MM-00 through MM-52 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -168,10 +168,12 @@ Current runtime truth:
 - MM-51 dogfoods capability routing on a persisted KRN memory implementation
   task and fixes read-only Codex brief readback so it preserves task-text
   routing from the persisted TaskContract.
+- MM-52 adds pure core EvidenceBundle completeness assessment for required
+  execution evidence.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-52 EvidenceBundle hardening.
+- Continue with MM-53 ReviewAssessment / FeedbackDelta hardening.

@@ -1,21 +1,15 @@
 # Verification
 
-Latest verified slice: MM-51 capability routing dogfood.
+Latest verified slice: MM-52 EvidenceBundle hardening.
 
 Passed:
 
-- Live `krn plan --persist` created ExecutionRun
-  `1c6dd716-3903-4d9f-b765-57c20019beff`.
-- Initial read-only `krn codex brief --run-id` exposed generic capability
-  hints because the persisted TaskContract was not passed to
-  `createCapabilityPlan`.
-- RED focused `pnpm --filter @krn/cli test -- runCli.test.ts` failed because
-  readback did not include `unknown-first boundary check`.
-- GREEN focused `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
-  6 files and 93 tests.
-- Final read-only `krn codex brief --run-id
-  1c6dd716-3903-4d9f-b765-57c20019beff` preserved task-text capability
-  routing.
+- RED focused `pnpm --filter @krn/core test -- evidenceBundle.test.ts` failed
+  because `assessEvidenceBundleCompleteness` did not exist.
+- GREEN focused `pnpm --filter @krn/core test -- evidenceBundle.test.ts`
+  passed with 5 files and 25 tests.
+- Focused `pnpm --filter @krn/core typecheck` passed.
+- Focused `pnpm --filter @krn/core test` passed with 5 files and 25 tests.
 - Final `pnpm typecheck` passed across all workspace packages.
 - Final `pnpm test` passed across 47 files and 259 tests.
 - Final `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
@@ -31,22 +25,19 @@ Passed:
 - Final `krn audit slice --since origin/main --repo ../.. --fail-on warning`
   passed with verdict `pass` and 0 findings.
 
-MM-51 behavior proof:
+MM-52 behavior proof:
 
-- Persisted memory implementation task selected small capability hints for
-  source-to-decision, typescript-type-safety, test-driven-development,
-  evidence-review-loop, and brain-store-schema.
-- Read-only Codex brief readback preserves task-text TypeScript/review-risk/
-  schema routing from the persisted TaskContract.
-- Codex invocation remained `none`.
-- Memory mutation remained `none`.
-- No lifecycle storage, new CLI surface, execution authority, or automatic
-  skill/rule growth was added.
+- `assessEvidenceBundleCompleteness` accepts complete typed EvidenceBundle
+  evidence.
+- Missing executionRunId, changedFiles, typecheck/test evidence, diffSummary,
+  sourceRefs, reviewBurden, and rollbackPath are flagged.
+- Failed required command evidence is flagged.
+- No schema, DB, repository, CLI, or Memory Core mutation surface was added.
 
-Not proven by MM-51:
+Not proven by MM-52:
 
 - Actual raw evidence fetching from activation trigger metadata remains future
   scope.
 - Automatic DB loading of observations into `krn plan` remains future scope.
 - Golden memory behavior remains future scope.
-- EvidenceBundle hardening remains MM-52.
+- ReviewAssessment / FeedbackDelta hardening remains MM-53.

@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-52.
+- None for MM-53.
+
+Closed in MM-52:
+
+- `assessEvidenceBundleCompleteness` exists as a pure core helper.
+- Missing executionRunId, changedFiles, typecheck/test evidence, diffSummary,
+  sourceRefs, reviewBurden, and rollbackPath are flagged.
+- Failed required command evidence is flagged.
+- No schema, DB, repository, CLI, or Memory Core mutation surface was added.
 
 Closed in MM-51:
 
