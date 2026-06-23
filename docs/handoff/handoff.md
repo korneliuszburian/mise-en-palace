@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-40. KRN has
+The memory ideal-state execution track is implemented through MM-41. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -40,14 +40,15 @@ ActivationQuery model and builder for task/project scope, memory/source/
 observation needs, budget, and risk. Activation retrieval now merges linked
 search results into canonical source/memory candidates before downstream
 filters run, preserving lexical/vector/graph signals without duplicating
-context candidates.
+context candidates. Activation filtering now has a pure post-merge filter pass
+for anti-memory conflict detection, trust filtering, and temporal/invalidation
+filtering.
 
 Last verified state:
-MM-40 added hybrid candidate merge. Focused RED test proved
-`mergeActivationCandidates` did not exist; focused GREEN test passed for
-merging a SourceClaim candidate with a linked SearchDocument candidate while
-preserving search document metadata and graph/lexical signals. Full `pnpm
-typecheck`, full `pnpm test`, DB readiness, and activation smoke passed.
+MM-41 added the activation filter pass. Focused RED test proved
+`applyActivationFilters` did not exist; focused GREEN test passed for
+post-merge anti-memory, trust, and temporal filtering. Full `pnpm typecheck`,
+full `pnpm test`, DB readiness, and activation smoke passed.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -62,7 +63,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-40 memory ideal-state slices: complete through governed
+- MM-00 through MM-41 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -73,7 +74,8 @@ Milestone status:
   rejected-source support blocking, plus deterministic source trust/temporal
   override assessment, broader source graph health audit findings, and one
   source-to-decision dogfood run for an implementation decision, plus the pure
-  ActivationQuery model and hybrid candidate merge for ActivationEngine v2.
+  ActivationQuery model, hybrid candidate merge, and unified post-merge filter
+  pass for ActivationEngine v2.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -155,6 +157,9 @@ Runtime proof status:
 - hybrid candidate merge: `mergeActivationCandidates` deduplicates linked
   source/search and memory/search candidates while preserving merged candidate
   metadata and score signals.
+- activation filter pass: `applyActivationFilters` applies explicit
+  anti-memory conflict detection, trust filtering, and temporal/invalidation
+  filtering after merge and before ContextROI selection.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -166,11 +171,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-40 blocker remains.
+No MM-41 blocker remains.
 
 Rollback path:
-After commit, revert the MM-40 commit with `git revert <commit>` if hybrid
-candidate merge regresses. No DB migration was added; rollback is code/docs only.
+After commit, revert the MM-41 commit with `git revert <commit>` if the unified
+activation filter pass regresses. No DB migration was added; rollback is
+code/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -180,7 +186,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-41 and add trust, temporal, invalidation, and anti-memory filters.
+Run MM-42 and add ContextROI, diversity, dedup, inclusions, and exclusions.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

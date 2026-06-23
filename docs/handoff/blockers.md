@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-41.
+- None for MM-42.
+
+Closed in MM-41:
+
+- `applyActivationFilters` composes anti-memory conflict detection, trust
+  filtering, and temporal/invalidation filtering as one pure post-merge pass.
+- Activation smoke now calls the unified filter pass.
+- Merged source/search candidates blocked by anti-memory keep linked search
+  metadata while being excluded.
+- Expired memory is stale and low-confidence memory is low_trust through the
+  same pass.
 
 Closed in MM-40:
 

@@ -11,6 +11,7 @@ import type {
 
 import {
   applyContextROI,
+  applyActivationFilters,
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
@@ -202,6 +203,81 @@ describe("activation engine", () => {
       mergedKinds: expect.arrayContaining(["source", "search"]),
       searchDocumentIds: ["search-duplicate"]
     });
+  });
+
+  it("applies trust, temporal, invalidation, and anti-memory filters after merge", () => {
+    const query = buildSourceQuery(task);
+    const mergedBlocked = mergeActivationCandidates(rankCandidates([
+      toSourceClaimCandidate(
+        sourceClaim({
+          id: "claim-blocked",
+          claim: "Activation readiness should add a source crawler."
+        })
+      ),
+      toSearchCandidate(
+        searchDocument({
+          id: "search-blocked",
+          subjectType: "source_claim",
+          subjectId: "claim-blocked",
+          sourceClaimId: "claim-blocked",
+          title: "Crawler source claim search hit"
+        })
+      )
+    ], query));
+    const ranked = [
+      ...mergedBlocked,
+      ...rankCandidates([
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-expired",
+            validUntil: "2026-06-10T00:00:00.000Z"
+          })
+        ),
+        toMemoryCandidate(
+          memoryRecord({
+            id: "memory-low-trust",
+            confidence: 20
+          })
+        )
+      ], buildMemoryQuery(task))
+    ];
+    const result = applyActivationFilters({
+      candidates: ranked,
+      antiMemoryRecords: [
+        antiMemoryRecord({
+          id: "anti-crawler",
+          invalidatedBySourceClaimIds: ["claim-blocked"],
+          appliesTo: "crawler-only"
+        })
+      ],
+      minimumTrustTier: "medium",
+      now
+    });
+
+    expect(result.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "claim-blocked",
+        exclusion: expect.objectContaining({ reason: "unsafe" }),
+        metadata: expect.objectContaining({
+          antiMemoryRecordId: "anti-crawler",
+          searchDocumentIds: ["search-blocked"]
+        })
+      }),
+      expect.objectContaining({
+        subjectId: "memory-expired",
+        exclusion: expect.objectContaining({ reason: "stale" })
+      }),
+      expect.objectContaining({
+        subjectId: "memory-low-trust",
+        exclusion: expect.objectContaining({ reason: "low_trust" })
+      })
+    ]));
+    expect(result.conflictSets).toEqual([
+      expect.objectContaining({
+        reason: "anti_memory_block",
+        candidateIds: expect.arrayContaining(["claim-blocked", "anti-crawler"])
+      })
+    ]);
   });
 
   it("selects a small high-signal working set from noisy candidates", () => {

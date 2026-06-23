@@ -5,11 +5,9 @@ import {
 } from "drizzle-orm";
 import {
   applyContextROI,
-  applyTemporalFilter,
-  applyTrustFilter,
+  applyActivationFilters,
   assembleContext,
   buildSourceQuery,
-  detectConflicts,
   persistActivationTrace,
   retrieveActivationCandidates
 } from "@krn/harness";
@@ -443,12 +441,14 @@ export const runActivationSmokeCheck = async (
         sourceQuery: retrieved.sourceQuery.text
       }
     });
-    const conflictResult = detectConflicts(retrieved.candidates, retrieved.antiMemoryRecords);
+    const filterResult = applyActivationFilters({
+      candidates: retrieved.candidates,
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      minimumTrustTier: "medium",
+      now
+    });
     const filteredCandidates = applyContextROI(
-      applyTemporalFilter(
-        applyTrustFilter(conflictResult.candidates, { minimumTrustTier: "medium" }),
-        now
-      ),
+      filterResult.candidates,
       {
         tokenBudget: 420,
         maxInclusions: 2
@@ -463,7 +463,7 @@ export const runActivationSmokeCheck = async (
       metadata: {
         smokeId: marker,
         retrievalRunId: retrievalRun.id,
-        conflictSets: conflictResult.conflictSets
+        conflictSets: filterResult.conflictSets
       }
     });
     const contextAssembly = await harnessRunRepository.createContextAssembly({
@@ -484,7 +484,7 @@ export const runActivationSmokeCheck = async (
       retrievalRepository,
       metadata: {
         smokeId: marker,
-        conflictCount: conflictResult.conflictSets.length
+        conflictCount: filterResult.conflictSets.length
       }
     });
 

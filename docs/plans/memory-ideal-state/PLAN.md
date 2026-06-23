@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-40
+- targeted slice checks recorded in Progress through MM-41
 
 Known target repo readiness:
 - dry-run: proven
@@ -411,7 +411,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-38 complete: dogfooded source-to-decision on the MM-37 source graph health audit implementation decision. Intended files: `docs/runs/2026-06-23-source-to-decision-dogfood.md`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: live `krn plan --persist` created ExecutionRun `bba64c9a-eb96-47b7-819a-93937e6d8c5d`; live `krn source claim add --persist` created SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605` with mechanism, doesNotProve, falsifier, `implementation-boundary` support, `project-decision` trust, consumer `MM-38 source-to-decision dogfood`, and run linkage; live `krn source decision link --persist` created SourceDecisionEdge `a343ebef-2951-4ba6-b0d7-8eb3af586509` targeting the same harness run with high confidence; DB proof showed run source claims `1` and run source decision edges `1`. Next: MM-39 ActivationEngine v2 query model.
 - [x] (2026-06-23) MM-39 complete: added a pure unified ActivationQuery model and builder for task/project scope, needs, budget, and risk. Intended files: `packages/harness/src/activation/types.ts`, `packages/harness/src/activation/memoryQuery.ts`, `packages/harness/src/activation/sourceQuery.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge, no trust/temporal filter change, no activation trace persistence change, no source crawler, no dashboard/API/MCP/server/plugin. Evidence: RED focused activation test failed because `buildActivationQuery` did not exist; GREEN focused activation test passed with 9 files / 41 tests and proves mixed memory/source/observation needs, project/task scope, budget, risk, and extra query terms; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 246 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`. Next: MM-40 hybrid candidate merge.
 - [x] (2026-06-23) MM-40 complete: added pure hybrid candidate merge across source/search channels and routed activation retrieval through it. Intended files: `packages/harness/src/activation/rankCandidates.ts`, `packages/harness/src/activation/activationEngine.ts`, `packages/harness/src/repositories/types.ts`, `packages/db/src/activationSmoke.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new retrieval store, no pgvector query implementation, no observation prefix integration, no trust/temporal filter change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `mergeActivationCandidates` did not exist; GREEN focused activation test passed with 9 files / 42 tests and proves a SourceClaim candidate and linked SearchDocument candidate merge into one source candidate while preserving search document metadata and graph/lexical signals; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 247 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-41 trust, temporal, invalidation, and anti-memory filters.
-- [ ] MM-41: Trust, temporal, invalidation, and anti-memory filters.
+- [x] (2026-06-23) MM-41 complete: added a pure ActivationEngine v2 filter pass for anti-memory, trust, temporal, invalidation, stale, and superseded filtering after candidate merge. Intended files: `packages/harness/src/activation/activationFilters.ts`, activation exports, activation tests, `packages/db/src/activationSmoke.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge change, no ContextROI/diversity rewrite, no observation prefix integration, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `applyActivationFilters` did not exist; GREEN focused activation test passed with 9 files / 43 tests and proves merged source/search candidates are blocked by anti-memory while TTL-expired memory is stale and low-confidence memory is low_trust; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 248 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-42 ContextROI, diversity, dedup, inclusions, and exclusions.
 - [ ] MM-42: ContextROI, diversity, dedup, inclusions, and exclusions.
 - [ ] MM-43: Activation traces and raw evidence recall trigger.
 - [ ] MM-44: Observation prefix integration.
@@ -1448,6 +1448,18 @@ Gate 5 MM-40 outcome:
 - No DB migration, new retrieval store, vector query implementation, trust/
   temporal filter change, or observation prefix integration was added.
 
+Gate 5 MM-41 outcome:
+- `applyActivationFilters` now provides a pure post-merge filter pass for
+  anti-memory conflict detection, trust filtering, and temporal/invalidation
+  filtering.
+- Activation smoke now uses the same unified filter pass instead of composing
+  conflict, trust, and temporal filters inline.
+- A merged source/search candidate blocked by anti-memory remains a single
+  excluded candidate with linked search-document metadata; expired memory is
+  stale and low-confidence memory is low_trust.
+- No DB migration, retrieval merge change, ContextROI/diversity rewrite, or
+  observation prefix integration was added.
+
 Slices:
 
 MM-39 — ActivationQuery model
@@ -1477,6 +1489,14 @@ MM-40 — Hybrid candidate merge
 
 MM-41 — Trust/temporal/invalidation/anti-memory filters
 - Filter invalid, stale, low-trust, blocked, and superseded candidates.
+- Slice note (2026-06-23): add a pure ActivationEngine v2 filter pass that
+  applies anti-memory conflict detection, trust filtering, and temporal/
+  invalidation filtering after candidate merge. Intended files:
+  `packages/harness/src/activation/activationFilters.ts`, activation exports,
+  activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN.
+  Non-goals: no DB migration, no retrieval merge change, no ContextROI/
+  diversity rewrite, no observation prefix integration, no dashboard/API/MCP/
+  server/plugin/source crawler.
 - Verification:
       anti-memory and TTL fixtures pass.
 

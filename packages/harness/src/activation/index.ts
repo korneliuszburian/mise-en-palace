@@ -1,3 +1,4 @@
+export * from "./activationFilters.js";
 export * from "./assembleContext.js";
 export * from "./activationEngine.js";
 export * from "./conflictFilter.js";
