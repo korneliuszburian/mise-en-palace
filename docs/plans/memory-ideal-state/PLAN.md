@@ -251,6 +251,14 @@ QG-04B — command parser modularization
 - Split `packages/cli/src/parseArgs.ts` by command family while preserving one
   public `parseArgs` entrypoint.
 - Add table-driven parser tests before moving command syntax logic.
+- Slice note (2026-06-23): start with the audit command family because it owns
+  the richest option grammar and currently bloats the top-level parser.
+  Intended files: `packages/cli/src/parseAuditArgs.ts`,
+  `packages/cli/src/parseAuditArgs.test.ts`,
+  `packages/cli/src/parseArgs.ts`, status docs, and this PLAN. Non-goals:
+  no command behavior change, no CLI runtime command changes, no DB
+  schema/migration, no doctor modularization, no memory/eval feature work, no
+  Promptfoo decision, no dashboard/API/MCP/server/plugin/source crawler.
 - Verification:
       parser tests prove representative commands still parse exactly; the
       top-level parser no longer owns every command grammar directly.
