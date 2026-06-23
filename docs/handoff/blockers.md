@@ -2,19 +2,15 @@
 
 Hard blockers:
 
-- None for MM-64.
+- None for MM-65.
 
-Closed in MM-63:
+Closed in MM-64:
 
-- Observation/reflection fixture now declares observation, reflection,
-  anti-memory, and gap-reporting golden cases.
-- Fixture-backed harness tests protect those behaviors through existing
-  core/harness primitives without adding the broad golden runner.
-- Observation validation rejects Memory Core promotion semantics.
-- Reflection candidate generation blocks final-truth `memory_record` targets.
-- Anti-memory blocks rejected observation prefix patterns.
-- Reflection issue reports surface missing source ranges as visible gaps.
-- No DB schema/migration, repository, runner, CLI, Promptfoo export, broad
+- Pure harness GoldenTask runner emits pass/fail reports from validated task
+  contracts plus explicit behavior proofs.
+- Missing behavior proof fails, so fixture shape alone cannot pass.
+- Contract-invalid GoldenTask fixtures fail even when a proof is supplied.
+- No DB schema/migration, repository, CLI, Promptfoo export, broad
   benchmark suite, dashboard/API/MCP/server/plugin, or source crawler surface
   was added.
 

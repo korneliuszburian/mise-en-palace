@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-63. KRN has
+The memory ideal-state execution track is implemented through MM-64. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -104,10 +104,13 @@ unchecked runtime parsing/type-boundary audit.
 MM-63 added fixture-backed observation/reflection/anti-memory golden cases for
 observation staging, reflection candidate-only output, anti-memory prefix
 blocking, and visible missing-evidence gap reports.
+MM-64 added a pure harness GoldenTask runner that emits pass/fail reports from
+validated task contracts plus explicit behavior proofs, so fixture shape alone
+cannot pass as a golden eval.
 
 Last verified state:
-MM-63 added observation/reflection/anti-memory golden cases. Focused
-harness/schema tests passed;
+MM-64 added the pure golden eval runner. Focused harness tests and typecheck
+passed;
 full verification is recorded in
 `docs/handoff/verification.md`.
 
@@ -124,7 +127,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-63 memory ideal-state slices: complete through governed
+- MM-00 through MM-64 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -305,12 +308,11 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-63 blocker remains.
+No MM-64 blocker remains.
 
 Rollback path:
-After commit, revert the MM-63 commit with `git revert <commit>` if the
-observation/reflection golden cases regress. No DB migration was added;
-rollback is harness/fixture/docs only.
+After commit, revert the MM-64 commit with `git revert <commit>` if the golden
+runner regresses. No DB migration was added; rollback is harness/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -320,7 +322,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, broad golden runner, and production worker throughput.
 
 Next safest action:
-Run MM-64 golden eval runner.
+Run MM-65 optional Promptfoo-compatible export.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly
