@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-47.
+- None for MM-48.
+
+Closed in MM-47:
+
+- CapabilityCompiler v1 derives additional schema/db requirements from memory,
+  source, audit, schema, repository, migration, and Postgres task text.
+- Memory/source/audit task fixtures now route to focused
+  schema/db/source/evidence/review requirements.
+- Codex adapter skill hints for those requirements include
+  `brain-store-schema`, `source-to-decision`, and `evidence-review-loop`.
+- TaskContract remains free of `requiredSkills`.
 
 Closed in MM-46:
 

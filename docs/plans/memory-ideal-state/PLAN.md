@@ -418,7 +418,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-44A complete: added an assembly-side observation prefix gate so manually supplied prefix metadata is rejected when any selected item lacks source ranges. Intended files: `packages/harness/src/activation/assembleContext.ts`, `packages/harness/src/activation/index.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new prefix fetcher, no reflection, no memory promotion, no broad vector search rewrite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because an unsourced prefix-only context assembled; GREEN focused activation test passed with 9 files / 47 tests after context assembly omitted `metadata.observationPrefix`, added `metadata.observationPrefixGate` with `missing_source_ranges`, and kept the context abstained when no other inclusions existed. Next: MM-45 activation dogfood.
 - [x] (2026-06-23) MM-45 complete: dogfooded activation before/after observation prefix on one KRN memory implementation task and recorded proof at `docs/runs/2026-06-23-activation-observation-prefix-dogfood.md`. Intended files: dogfood run doc, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new CLI, no prefix fetcher, no reflection, no memory promotion, no dashboard/API/MCP/server/plugin/source crawler. Evidence: DB counts before and after stayed unchanged for `memory_records=4`, `memory_candidates=2`, `observation_groups=1`, `observation_items=5`, and `context_assemblies=18`; before context without candidates/prefix abstained with `no_candidates`; after context with one selected source-ranged observation prefix assembled with `observationPrefixItemCount=1`; verdict `prefix_improves_context_precision_without_candidates`. Next: MM-46 CapabilityRequirement and CapabilityPlan hardening.
 - [x] (2026-06-23) MM-46 complete: hardened pure CapabilityRequirement/CapabilityPlan domain fields with explicit requirement priority and binding kinds while keeping TaskContract free of `requiredSkills`. Intended files: `packages/core/src/capabilityPlan.ts`, `packages/harness/src/compiler/createCapabilityPlan.ts`, compiler tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no CLI surface, no new skill lifecycle, no binding repository, no TaskContract `requiredSkills`, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused compiler test failed because capability requirements had no priority/binding kinds; GREEN focused compiler test passed with 9 files / 48 tests after requirements gained `priority: "required"` and binding kinds such as `skill`, `rule`, `policy_gate`, and `tool_boundary`; focused core/harness/codex-adapter typechecks passed; grep/audit proof keeps `TaskContract` outside requiredSkills ownership. Next: MM-47 CapabilityCompiler v1.
-- [ ] MM-47: CapabilityCompiler v1.
+- [x] (2026-06-23) MM-47 complete: made CapabilityCompiler v1 derive focused schema/db requirements from memory/source/audit task text and verified Codex skill hints route those requirements to brain-store/source/evidence skills. Intended files: `packages/harness/src/compiler/createCapabilityPlan.ts`, `packages/harness/src/compiler/compileHarnessPlan.ts`, compiler tests, Codex adapter skill-hint tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no lifecycle repository, no new CLI, no TaskContract `requiredSkills`, no automatic skill growth, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused compiler test failed because a memory/source/audit task did not include `schema_design` or `db_migration`; GREEN focused compiler test passed with 9 files / 49 tests after task text routing added those requirements; focused Codex adapter test passed with 3 files / 7 tests and proves `brain-store-schema`, `source-to-decision`, and `evidence-review-loop` skill hints; focused harness and codex-adapter typechecks passed. Next: MM-48 Skill/rule/policy/tool binding models.
 - [ ] MM-48: Skill/rule/policy/tool binding models.
 - [ ] MM-49: Product-emitted skill/rule lifecycle without auto-growth.
 - [ ] MM-50: TypeScript/review-risk rule bindings.
@@ -1660,6 +1660,16 @@ Gate 6 MM-46 outcome:
   CapabilityPlan/CapabilityCompiler layers.
 - No DB, CLI, lifecycle repository, or runtime surface was added.
 
+Gate 6 MM-47 outcome:
+- CapabilityCompiler v1 now derives additional schema/db requirements from
+  memory/source/audit task text.
+- Memory/source/audit task fixtures route to `schema_design`, `db_migration`,
+  `source_grounding`, `evidence_capture`, and `review_capture`.
+- Codex adapter skill hints for those requirements include `brain-store-schema`,
+  `source-to-decision`, and `evidence-review-loop`.
+- TaskContract still does not own `requiredSkills`, and no automatic skill
+  growth or lifecycle repository was added.
+
 Slices:
 
 MM-46 — Capability domain hardening
@@ -1678,6 +1688,16 @@ MM-46 — Capability domain hardening
 
 MM-47 — CapabilityCompiler v1
 - Compile task/risk/context into skill/rule/policy/tool bindings.
+- Slice note (2026-06-23): make the existing `createCapabilityPlan` act as
+  CapabilityCompiler v1 by deriving additional requirements from TaskContract
+  task text and context state. Memory/source/audit tasks must route to small,
+  relevant requirements that the Codex adapter can render as skill hints.
+  Intended files: `packages/harness/src/compiler/createCapabilityPlan.ts`,
+  `packages/harness/src/compiler/compileHarnessPlan.ts`, compiler tests,
+  Codex adapter tests if needed, root `PLAN.md`, `GOAL.md`, handoff files, and
+  this PLAN. Non-goals: no DB migration, no lifecycle repository, no new CLI,
+  no TaskContract `requiredSkills`, no automatic skill growth, no dashboard/
+  API/MCP/server/plugin/source crawler.
 - Verification:
       fixtures route memory task to memory/source/audit skills.
 

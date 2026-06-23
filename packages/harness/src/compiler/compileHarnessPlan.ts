@@ -196,6 +196,7 @@ export const compileHarnessPlan = async (
 
   const capabilityPlan = createCapabilityPlan({
     harnessPlan,
+    taskContract,
     hasContext: contextAssembly.inclusions.length > 0,
     createdAt,
     createId: dependencies.createId

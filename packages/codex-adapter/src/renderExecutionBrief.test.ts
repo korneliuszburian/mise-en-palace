@@ -14,6 +14,9 @@ import {
   renderExecutionBriefText,
   renderExecutionBrief
 } from "./renderExecutionBrief.js";
+import {
+  createCodexSkillBindingHints
+} from "./renderSkillHints.js";
 
 const createdAt = "2026-06-21T12:00:00.000Z";
 
@@ -95,16 +98,22 @@ const capabilityPlan: CapabilityPlan = {
   requirements: [
     {
       kind: "type_safety",
+      priority: "required",
+      bindingKinds: ["skill", "rule"],
       reason: "Preserve strict TypeScript boundaries.",
       requiredEvidence: ["pnpm typecheck"]
     },
     {
       kind: "evidence_capture",
+      priority: "required",
+      bindingKinds: ["skill", "tool_boundary"],
       reason: "Keep execution reviewable.",
       requiredEvidence: ["git diff --check"]
     },
     {
       kind: "policy_gate",
+      priority: "required",
+      bindingKinds: ["policy_gate", "tool_boundary"],
       reason: "Weak context must abstain instead of expanding context.",
       requiredEvidence: ["context abstention"]
     }
@@ -223,5 +232,54 @@ describe("renderExecutionBrief", () => {
 
     expect(rendered).toContain("KRN Codex Execution Brief");
     expect(rendered).toContain("What This Does Not Prove:");
+  });
+
+  it("renders focused skill hints for memory source audit capabilities", () => {
+    const hints = createCodexSkillBindingHints({
+      ...capabilityPlan,
+      requirements: [
+        {
+          kind: "schema_design",
+          priority: "required",
+          bindingKinds: ["skill", "rule"],
+          reason: "Memory schema changes require brain-store schema discipline.",
+          requiredEvidence: ["schema/domain tests"]
+        },
+        {
+          kind: "db_migration",
+          priority: "required",
+          bindingKinds: ["skill", "policy_gate"],
+          reason: "Memory persistence changes require DB readiness proof.",
+          requiredEvidence: ["pnpm db:ready"]
+        },
+        {
+          kind: "source_grounding",
+          priority: "required",
+          bindingKinds: ["skill", "policy_gate"],
+          reason: "Architecture decisions require source-to-decision evidence.",
+          requiredEvidence: ["source claim"]
+        },
+        {
+          kind: "evidence_capture",
+          priority: "required",
+          bindingKinds: ["skill", "tool_boundary"],
+          reason: "Audit work requires reviewable evidence.",
+          requiredEvidence: ["audit slice"]
+        },
+        {
+          kind: "review_capture",
+          priority: "required",
+          bindingKinds: ["skill", "policy_gate"],
+          reason: "Review output must become candidates, not final truth.",
+          requiredEvidence: ["feedback delta"]
+        }
+      ]
+    });
+
+    expect(hints.map((hint) => hint.skillName)).toEqual(expect.arrayContaining([
+      "brain-store-schema",
+      "source-to-decision",
+      "evidence-review-loop"
+    ]));
   });
 });

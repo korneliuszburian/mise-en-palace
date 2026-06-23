@@ -518,6 +518,40 @@ describe("compileHarnessPlan", () => {
     expect("requiredSkills" in result.taskContract).toBe(false);
   });
 
+  it("routes memory source audit tasks to focused capability requirements", async () => {
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Harden memory schema source audit path",
+          objective: "Update Memory Core repository schema and source-to-decision audit evidence for a memory implementation slice.",
+          constraints: ["preserve MemoryReviewGate", "source-ground every decision"],
+          acceptance: ["audit slice passes", "db readiness passes"]
+        }
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([memoryRecord({ id: "memory-high" })]),
+        sourceRepository: new FakeSourceRepository([sourceClaim({ id: "claim-high" })]),
+        retrievalRepository: new FakeRetrievalRepository(),
+        now: () => now,
+        createId: (prefix) => `${prefix}-capability-routing`
+      }
+    );
+
+    expect(result.capabilityPlan.requirements.map((requirement) => requirement.kind)).toEqual(
+      expect.arrayContaining([
+        "schema_design",
+        "db_migration",
+        "source_grounding",
+        "evidence_capture",
+        "review_capture"
+      ])
+    );
+    expect("requiredSkills" in result.taskContract).toBe(false);
+  });
+
   it("activates search candidates and records anti-memory conflicts as explicit exclusions", async () => {
     const retrievalRepository = new FakeRetrievalRepository([
       searchDocument({

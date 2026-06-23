@@ -3,11 +3,13 @@ import type {
   CapabilityPlan,
   CapabilityRequirement,
   CapabilityRequirementKind,
-  HarnessPlan
+  HarnessPlan,
+  TaskContract
 } from "@krn/core";
 
 export interface CreateCapabilityPlanInput {
   harnessPlan: HarnessPlan;
+  taskContract?: Pick<TaskContract, "title" | "objective" | "constraints" | "nonGoals" | "acceptance">;
   hasContext: boolean;
   createdAt: string;
   createId(prefix: string): string;
@@ -31,6 +33,42 @@ const requirement = (
   priority: "required",
   bindingKinds: [...bindingKindsByRequirement[input.kind]]
 });
+
+const textTerms = (
+  taskContract: CreateCapabilityPlanInput["taskContract"]
+): Set<string> => {
+  if (taskContract === undefined) {
+    return new Set();
+  }
+
+  return new Set(
+    [
+      taskContract.title,
+      taskContract.objective,
+      ...taskContract.constraints,
+      ...taskContract.nonGoals,
+      ...taskContract.acceptance
+    ]
+      .join(" ")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/u)
+      .filter((term) => term.length >= 3)
+  );
+};
+
+const hasAnyTerm = (terms: ReadonlySet<string>, candidates: readonly string[]): boolean =>
+  candidates.some((candidate) => terms.has(candidate));
+
+const pushRequirement = (
+  requirements: CapabilityRequirement[],
+  next: Omit<CapabilityRequirement, "priority" | "bindingKinds">
+): void => {
+  if (requirements.some((item) => item.kind === next.kind)) {
+    return;
+  }
+
+  requirements.push(requirement(next));
+};
 
 export const createCapabilityPlan = (input: CreateCapabilityPlanInput): CapabilityPlan => {
   const requirements: CapabilityRequirement[] = [
@@ -62,11 +100,38 @@ export const createCapabilityPlan = (input: CreateCapabilityPlanInput): Capabili
   ];
 
   if (!input.hasContext) {
-    requirements.push(requirement({
+    pushRequirement(requirements, {
       kind: "policy_gate",
       reason: "Weak context requires an abstention path instead of broad rereads.",
       requiredEvidence: ["context abstention", "context exclusions"]
-    }));
+    });
+  }
+
+  const terms = textTerms(input.taskContract);
+  if (
+    hasAnyTerm(terms, [
+      "memory",
+      "memories",
+      "schema",
+      "drizzle",
+      "postgres",
+      "repository",
+      "repositories",
+      "migration",
+      "migrations",
+      "core"
+    ])
+  ) {
+    pushRequirement(requirements, {
+      kind: "schema_design",
+      reason: "Memory/schema tasks must preserve typed domain and IO boundaries before persistence shape changes.",
+      requiredEvidence: ["schema/domain tests", "typecheck"]
+    });
+    pushRequirement(requirements, {
+      kind: "db_migration",
+      reason: "Memory/schema tasks that touch persistence require brain-store migration readiness evidence.",
+      requiredEvidence: ["pnpm db:ready", "relevant DB smoke"]
+    });
   }
 
   return {
