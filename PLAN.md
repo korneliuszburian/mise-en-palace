@@ -787,6 +787,8 @@ git revert <commit>
 
 ### P3-01: Prove Observation And Reflection Invariants
 
+status: complete.
+
 objective:
 
 Strengthen tests around staging/candidate-only behavior.
@@ -1177,7 +1179,7 @@ git revert <commit>
 - [x] P2-01 Type SourceClaim project scope.
 - [x] P2-02 Promote behavior metadata to typed fields.
 - [x] P3-00 Define observation staging doctrine.
-- [ ] P3-01 Prove observation/reflection invariants.
+- [x] P3-01 Prove observation/reflection invariants.
 - [ ] P3-02 Create reviewed candidate writer from ReflectionRecord.
 - [ ] P4-00 Define activation as admission control.
 - [ ] P4-01 Add noisy context golden proofs.
@@ -1225,6 +1227,10 @@ git revert <commit>
   ADR-0013 therefore does not replace it with a new architecture; it narrows the
   reset doctrine around source ranges, non-mutation, bounded prefixes, and
   metadata not being authority.
+- P3-01 found there was no small direct `runObserveCommand.test.ts`; observe
+  invariants were covered through the large CLI integration test. Added a
+  direct command test so the planned `runObserveCommand` verification has an
+  explicit unit surface.
 
 ## Decision Log
 
@@ -1267,6 +1273,9 @@ git revert <commit>
   truth-bearing observations require source ranges, raw evidence remains
   canonical, observation/reflection cannot mutate Memory Core, and observation
   prefix is bounded activation input.
+- 2026-06-23: P3-01 treats the existing core/db/reflect tests as retained proof
+  and adds only the missing direct observe-command proof. The slice strengthens
+  tests without changing observation/reflection production behavior.
 
 ## Outcomes & Retrospective
 
@@ -1295,7 +1304,12 @@ Current outcome:
   package matches.
 - Observation staging doctrine is captured in
   `docs/decisions/ADR-0013-observation-is-staging-not-memory.md`.
-- Next safe action is P3-01: prove observation/reflection invariants.
+- Observation/reflection staging invariants are now backed by focused tests:
+  core source-range and reflection contracts, DB observation/reflection
+  repository contracts, CLI reflect non-mutation, CLI observe source-ranged
+  staging, and activation prefix rejection.
+- Next safe action is P3-02: create reviewed candidate writer from
+  ReflectionRecord.
 
 ## Command Evidence
 
@@ -1562,6 +1576,34 @@ Observed: passed with no output.
 
 This proves the ADR text is whitespace-clean and grounded in existing reset
 evidence. It does not prove implementation invariants; P3-01 owns those tests.
+
+P3-01 observation/reflection invariant proofs:
+
+```sh
+pnpm --filter @krn/core test -- observations reflection
+pnpm --filter @krn/schema test -- observation reflection
+pnpm --filter @krn/db test -- Observation Reflection
+pnpm --filter @krn/cli test -- runReflectCommand runObserveCommand
+pnpm typecheck
+git diff --check
+```
+
+Observed:
+
+- core scoped tests passed: 8 files, 39 tests;
+- schema scoped tests passed: 3 files, 25 tests;
+- db scoped tests passed: 24 files, 67 tests;
+- cli scoped tests passed after adding direct observe-command tests: 25 files,
+  142 tests;
+- full typecheck passed across 7 workspace projects;
+- `git diff --check` passed with no output.
+
+This proves the named staging invariants are covered by tests: factual
+observations without source ranges are rejected, observation prefix rejects
+unsourced items, reflect persists ReflectionRecord only, reflect reports
+gaps/contradictions, and observe/reflect command surfaces state no Memory Core
+mutation. It does not prove a live DB runtime smoke; P3-01 was a package test
+slice.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
