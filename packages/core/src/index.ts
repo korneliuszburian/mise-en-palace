@@ -1,6 +1,5 @@
 export * from "./capabilityPlan.js";
 export * from "./activation.js";
-export * from "./auditBundle.js";
 export * from "./codexAdapterPlanRef.js";
 export * from "./contextAssembly.js";
 export * from "./eval.js";

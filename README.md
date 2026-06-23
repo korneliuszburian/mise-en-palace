@@ -45,8 +45,9 @@ them into their native mechanisms.
 - CLI surfaces for planning, doctor/readiness, evidence capture, Codex brief
   rendering, init/connect, manual observation, reflection, source, memory, and
   review workflows.
-- Legacy AuditBundle contracts and persistence still exist as cleanup
-  candidates; they are not an active audit product surface.
+- Legacy AuditBundle domain/IO/repository contracts are removed. Historical
+  `audit_bundles` / `audit_findings` tables remain migration-retained legacy
+  schema only until a data-retention/drop migration is explicitly approved.
 - Observation core contracts, IO schemas, DB schema, repository adapter,
   evidence/source-range linkage, deterministic observer input builder, manual
   `krn observe --run <id> [--persist]`, and observation prefix selection.

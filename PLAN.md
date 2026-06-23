@@ -26,20 +26,21 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Legacy AuditBundle Fate Decision.
+current_priority: Legacy Audit Table Retention Decision.
 
-first_unchecked_slice: `C6-01: Decide Legacy AuditBundle Storage Fate`.
+first_unchecked_slice: `C6-02: Decide Legacy Audit Table Retention Or Drop Migration`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide whether legacy AuditBundle storage/contracts are deleted, renamed, or
-  migrated into EvidenceBundle/ReviewAssessment lineage;
+- decide whether migration-retained legacy audit tables are kept, exported, or
+  dropped in a separate migration after DB row/provenance review;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding legacy AuditBundle fate;
-- do not promote any C5-00 candidates while deciding legacy AuditBundle fate.
+  authority layer while deciding legacy audit table retention;
+- do not drop `audit_bundles` / `audit_findings` until row counts, provenance,
+  export/rollback path, and generated migration impact are reviewed.
 
 completed_checkpoint:
 
@@ -121,6 +122,11 @@ completed_checkpoint:
   `packages/core/src/source.ts` review signals and makes DB source repository
   governance use the core decision-grade support-type helper. EvidenceBundle
   already had native completeness, rollback, and review-risk assessments.
+- C6-01 accepts ADR-0017 and removes active `AuditBundle`
+  domain/schema/repository contracts. Historical `audit_bundles` /
+  `audit_findings` table definitions remain only as explicitly named legacy
+  migration-retention schema until a separate data-retention/drop migration
+  slice proves it is safe.
 
 completed_evidence_pointers:
 
@@ -134,6 +140,8 @@ completed_evidence_pointers:
   `docs/decisions/ADR-0015-worker-runtime-boundary.md`;
 - eval candidate staging decision:
   `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`;
+- legacy AuditBundle storage fate:
+  `docs/decisions/ADR-0017-legacy-auditbundle-storage-fate.md`;
 - detailed command transcript:
   `Command Evidence` later in this plan, historical reference only.
 
@@ -843,7 +851,9 @@ follow-ups:
 
 - C6-00 re-homes former memory/source/evidence invariants into
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle behavior.
-- C6-01 decides the fate of legacy AuditBundle storage/contracts.
+- C6-01 decided the fate of legacy AuditBundle contracts and active write
+  storage: remove the contracts/repository, retain only explicitly legacy table
+  definitions for migration compatibility.
 
 verification:
 
@@ -867,8 +877,9 @@ observed:
 - `git diff --check` passed;
 - removed audit command/scanner/runtime symbols have no active TypeScript
   matches under `packages/`;
-- legacy `AuditBundle` core/schema/db storage still exists and is queued for
-  C6-01 rather than treated as active audit UX.
+- at the time of P1-03, legacy `AuditBundle` core/schema/db storage still
+  existed and was queued for C6-01; C6-01 later removed the active contracts
+  and demoted DB tables to legacy migration-retention schema only.
 
 rollback:
 
@@ -2756,6 +2767,111 @@ rollback:
 git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 ```
 
+### C6-01: Decide Legacy AuditBundle Storage Fate
+
+status: complete.
+
+objective:
+
+Remove active legacy `AuditBundle` authority after `krn audit` was removed,
+without destroying historical DB evidence in the same slice.
+
+source:
+
+Live package inventory found `AuditBundle` only in its own core/schema/db tests,
+package barrels, `DrizzleAuditBundleRepository`, and Drizzle audit table
+definitions. No CLI, harness, memory, source, evidence, observation,
+reflection, or activation runtime consumed the contract.
+
+decision:
+
+ADR-0017 is accepted. `AuditBundle` is no longer a KRN domain/IO/repository
+contract. Evidence and review truth belongs in
+EvidenceBundle/ReviewAssessment/FeedbackDelta lineage.
+
+mechanism:
+
+- delete `packages/core/src/auditBundle.ts` and its tests;
+- delete `packages/schema/src/auditBundle.ts` and parser tests;
+- delete `DrizzleAuditBundleRepository` and repository export;
+- keep `audit_bundles` / `audit_findings` table definitions only as explicitly
+  named `legacyAudit*` migration-retention schema;
+- update README, GOAL, PLAN, and ADR-0017 with the data-retention boundary.
+
+does_not_prove:
+
+- legacy DB tables contain no rows;
+- legacy DB rows can be dropped without export or provenance review;
+- a destructive drop migration is safe.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test
+pnpm --filter @krn/schema test
+pnpm --filter @krn/db test
+pnpm typecheck
+pnpm test
+pnpm --filter @krn/db db:check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+git diff --check
+rg -n "\\bAuditBundle\\b|parseAuditBundleInput|DrizzleAuditBundleRepository|\\bauditBundle\\b" packages --glob "*.ts"
+```
+
+observed:
+
+- focused package tests passed:
+  - `pnpm --filter @krn/core test`: 9 files, 47 tests;
+  - `pnpm --filter @krn/schema test`: 3 files, 24 tests;
+  - `pnpm --filter @krn/db test`: 24 files, 74 tests;
+- full `pnpm typecheck` passed;
+- full `pnpm test` passed across workspace packages;
+- `pnpm --filter @krn/db db:check` passed with the renamed legacy table
+  definitions, so no migration drift was introduced;
+- plain `pnpm db:ready` failed because this shell lacked `KRN_DATABASE_URL`;
+  this proves missing env only, not DB failure;
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
+  passed with Postgres reachable, 12/12 migrations applied, and pgvector
+  available;
+- `git diff --check` passed;
+- active package scan for `AuditBundle`, `parseAuditBundleInput`,
+  `DrizzleAuditBundleRepository`, and lowercase `auditBundle` returned no
+  matches.
+
+rollback:
+
+```sh
+git revert <C6-01 commit>
+```
+
+### C6-02: Decide Legacy Audit Table Retention Or Drop Migration
+
+status: planned.
+
+objective:
+
+Decide whether migration-retained legacy audit tables should stay for
+compatibility, be exported and dropped, or be migrated into current
+EvidenceBundle/ReviewAssessment lineage.
+
+rules:
+
+- inspect target DB row counts and representative provenance first;
+- do not drop `audit_bundles`, `audit_findings`, or enum types without export /
+  rollback path;
+- do not restore `AuditBundle` domain, parser, repository, CLI, scanner, or
+  guardrail UX;
+- use ADR-0017 future drop preconditions as the acceptance gate.
+
+verification:
+
+```sh
+git status --short --branch
+pnpm --filter @krn/db db:check
+pnpm db:ready
+git diff --check
+```
+
 ## Progress
 
 - [x] P0-00 Replace root `GOAL.md` with compact execution contract.
@@ -2807,8 +2923,10 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C6-00A Re-home memory review signals as pure core behavior.
 - [x] C6-00 Re-home former memory/source/evidence audit invariants into native
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
-- [ ] C6-01 Decide whether legacy AuditBundle storage is deleted, renamed, or
+- [x] C6-01 Decide whether legacy AuditBundle storage is deleted, renamed, or
   migrated into EvidenceBundle/ReviewAssessment lineage.
+- [ ] C6-02 Decide legacy audit table retention/export/drop migration after DB
+  row/provenance review.
 
 ## Surprises & Discoveries
 

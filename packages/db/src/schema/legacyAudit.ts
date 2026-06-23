@@ -20,14 +20,14 @@ type JsonList = unknown[];
 const emptyJsonObject = sql`'{}'::jsonb`;
 const emptyJsonList = sql`'[]'::jsonb`;
 
-export const auditFindingSeverity = pgEnum("audit_finding_severity", [
+export const legacyAuditFindingSeverity = pgEnum("audit_finding_severity", [
   "info",
   "advisory",
   "warning",
   "blocking"
 ]);
 
-export const auditFindingCategory = pgEnum("audit_finding_category", [
+export const legacyAuditFindingCategory = pgEnum("audit_finding_category", [
   "architecture",
   "boundary",
   "type_safety",
@@ -39,27 +39,27 @@ export const auditFindingCategory = pgEnum("audit_finding_category", [
   "verification"
 ]);
 
-export const auditFindingStatus = pgEnum("audit_finding_status", [
+export const legacyAuditFindingStatus = pgEnum("audit_finding_status", [
   "open",
   "accepted",
   "resolved",
   "waived"
 ]);
 
-export const auditFinalVerdict = pgEnum("audit_final_verdict", [
+export const legacyAuditFinalVerdict = pgEnum("audit_final_verdict", [
   "pass",
   "advisory",
   "needs_review",
   "fail"
 ]);
 
-export const auditRiskEstimate = pgEnum("audit_risk_estimate", [
+export const legacyAuditRiskEstimate = pgEnum("audit_risk_estimate", [
   "low",
   "medium",
   "high"
 ]);
 
-export const auditBundles = pgTable(
+export const legacyAuditBundles = pgTable(
   "audit_bundles",
   {
     id: uuid("id").primaryKey().defaultRandom(),
@@ -78,12 +78,12 @@ export const auditBundles = pgTable(
       .default(emptyJsonList),
     verificationResults: text("verification_results").notNull(),
     architecturalDelta: text("architectural_delta").notNull(),
-    reviewBurdenEstimate: auditRiskEstimate("review_burden_estimate").notNull(),
-    diffRiskEstimate: auditRiskEstimate("diff_risk_estimate").notNull(),
+    reviewBurdenEstimate: legacyAuditRiskEstimate("review_burden_estimate").notNull(),
+    diffRiskEstimate: legacyAuditRiskEstimate("diff_risk_estimate").notNull(),
     rollbackPath: text("rollback_path").notNull(),
     candidateUpdates: jsonb("candidate_updates").$type<JsonList>().notNull().default(emptyJsonList),
     selfCritiqueSummary: text("self_critique_summary").notNull(),
-    finalVerdict: auditFinalVerdict("final_verdict").notNull(),
+    finalVerdict: legacyAuditFinalVerdict("final_verdict").notNull(),
     metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
@@ -97,20 +97,20 @@ export const auditBundles = pgTable(
   ]
 );
 
-export const auditFindings = pgTable(
+export const legacyAuditFindings = pgTable(
   "audit_findings",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     auditBundleId: uuid("audit_bundle_id")
       .notNull()
-      .references(() => auditBundles.id, { onDelete: "cascade" }),
-    category: auditFindingCategory("category").notNull(),
-    severity: auditFindingSeverity("severity").notNull(),
+      .references(() => legacyAuditBundles.id, { onDelete: "cascade" }),
+    category: legacyAuditFindingCategory("category").notNull(),
+    severity: legacyAuditFindingSeverity("severity").notNull(),
     title: text("title").notNull(),
     summary: text("summary").notNull(),
     evidenceRefs: jsonb("evidence_refs").$type<JsonList>().notNull().default(emptyJsonList),
     recommendation: text("recommendation").notNull(),
-    status: auditFindingStatus("status").notNull().default("open"),
+    status: legacyAuditFindingStatus("status").notNull().default("open"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
   },
   (table) => [

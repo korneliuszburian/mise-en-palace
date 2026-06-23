@@ -1,4 +1,3 @@
-export * from "./DrizzleAuditBundleRepository.js";
 export * from "./DrizzleEventLedgerRepository.js";
 export * from "./DrizzleHarnessRunRepository.js";
 export * from "./DrizzleMemoryRepository.js";

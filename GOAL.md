@@ -44,13 +44,14 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C6-01: Decide Legacy AuditBundle Storage Fate
+C6-02: Decide Legacy Audit Table Retention Or Drop Migration
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding legacy AuditBundle storage fate. Do not promote
-the C5-00 candidates in the same slice.
+eval platform while deciding legacy audit table retention. Do not drop legacy
+audit tables until row counts, provenance, export/rollback, and migration
+impact are explicitly reviewed.
 
 ## Required Read Order
 
