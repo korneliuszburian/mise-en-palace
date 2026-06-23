@@ -19,7 +19,8 @@ import {
 import type {
   AuditCheckResult,
   AuditFileSnapshot,
-  AuditRepoSnapshot
+  AuditRepoSnapshot,
+  AuditVerificationCommandSnapshot
 } from "@krn/harness";
 
 const execFileAsync = promisify(execFile);
@@ -33,6 +34,8 @@ export interface AuditCliCommand {
   repo?: string;
   since?: string;
   format: AuditCommandFormat;
+  intendedFiles?: readonly string[];
+  verificationCommands?: readonly AuditVerificationCommandSnapshot[];
 }
 
 export interface AuditCommandRuntime {
@@ -198,6 +201,7 @@ const flattenFindings = (
   ...checkResult.memorySemanticsFindings,
   ...checkResult.sourceGroundingFindings,
   ...checkResult.evalFindings,
+  ...checkResult.verificationFindings,
   ...(includeHandoff ? checkResult.handoffFindings : [])
 ];
 
@@ -285,8 +289,8 @@ export const runAuditCommand = async (
     capturedAt: runtime.now(),
     files,
     changedFiles,
-    intendedFiles: [],
-    verificationCommands: []
+    intendedFiles: runtime.command.intendedFiles ?? [],
+    verificationCommands: runtime.command.verificationCommands ?? []
   };
   const checks = runAuditChecks(snapshot);
   const findings = flattenFindings(checks, runtime.command.scope === "slice");

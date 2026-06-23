@@ -98,6 +98,7 @@ export interface AuditCheckResult {
   memorySemanticsFindings: AuditFinding[];
   sourceGroundingFindings: AuditFinding[];
   evalFindings: AuditFinding[];
+  verificationFindings: AuditFinding[];
   handoffFindings: AuditFinding[];
 }
 
@@ -659,6 +660,89 @@ export const runHandoffCompactAudit = (snapshot: AuditRepoSnapshot): AuditFindin
   return findings;
 };
 
+export const runSliceEvidenceAudit = (snapshot: AuditRepoSnapshot): AuditFinding[] => {
+  const findings: AuditFinding[] = [];
+
+  if (snapshot.changedFiles.length === 0) {
+    return findings;
+  }
+
+  if (snapshot.intendedFiles.length === 0) {
+    findings.push(makeFinding({
+      id: `${snapshot.sliceId}:verification:intended-files:missing`,
+      category: "verification",
+      severity: "warning",
+      title: "Audit snapshot lacks intended files",
+      summary: "Slice audits need intended file scope to distinguish planned changes from drift.",
+      evidenceRefs: [snapshot.sliceId],
+      recommendation: "Pass intended files from the AuditBundle or explicit audit CLI options.",
+      createdAt: snapshot.capturedAt
+    }));
+  }
+
+  if (snapshot.verificationCommands.length === 0) {
+    findings.push(makeFinding({
+      id: `${snapshot.sliceId}:verification:commands:missing`,
+      category: "verification",
+      severity: "warning",
+      title: "Audit snapshot lacks verification commands",
+      summary: "Slice audits need verification command results to avoid treating file scans as proof of behavior.",
+      evidenceRefs: [snapshot.sliceId],
+      recommendation: "Pass verification command results from the AuditBundle or explicit audit CLI options.",
+      createdAt: snapshot.capturedAt
+    }));
+  }
+
+  const intended = new Set(snapshot.intendedFiles);
+
+  if (intended.size > 0) {
+    for (const changedFile of snapshot.changedFiles) {
+      if (!intended.has(changedFile)) {
+        findings.push(makeFinding({
+          id: `${snapshot.sliceId}:verification:unexpected-file:${changedFile}`,
+          category: "verification",
+          severity: "warning",
+          title: "Changed file outside intended slice scope",
+          summary: "A changed file is not listed in the intended slice scope.",
+          evidenceRefs: [changedFile],
+          recommendation: "Add the file to intended scope or move the change into a separate slice.",
+          createdAt: snapshot.capturedAt
+        }));
+      }
+    }
+  }
+
+  for (const command of snapshot.verificationCommands) {
+    if (command.status === "failed") {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:verification:command-failed:${command.command}`,
+        category: "verification",
+        severity: "blocking",
+        title: "Verification command failed",
+        summary: "A reported verification command failed and must be resolved before the slice can pass.",
+        evidenceRefs: [command.command],
+        recommendation: "Fix the failure or mark the slice blocked with the failing output.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (command.status === "missing") {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:verification:command-missing:${command.command}`,
+        category: "verification",
+        severity: "warning",
+        title: "Verification command output missing",
+        summary: "A required verification command was listed without captured output/status proof.",
+        evidenceRefs: [command.command],
+        recommendation: "Run the command and attach the result, or explicitly mark it skipped with reason in the AuditBundle.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+  }
+
+  return findings;
+};
+
 export const runAuditChecks = (snapshot: AuditRepoSnapshot): AuditCheckResult => ({
   repoSurfaceFindings: runRepoSurfaceAudit(snapshot),
   architectureFindings: runArchitectureDriftAudit(snapshot),
@@ -667,5 +751,6 @@ export const runAuditChecks = (snapshot: AuditRepoSnapshot): AuditCheckResult =>
   memorySemanticsFindings: runMemorySemanticsAudit(snapshot),
   sourceGroundingFindings: runSourceGroundingAudit(snapshot),
   evalFindings: runEvalTheaterAudit(snapshot),
+  verificationFindings: runSliceEvidenceAudit(snapshot),
   handoffFindings: runHandoffCompactAudit(snapshot)
 });

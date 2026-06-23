@@ -5,6 +5,7 @@ import {
   runEvalTheaterAudit,
   runHandoffCompactAudit,
   runMemorySemanticsAudit,
+  runSliceEvidenceAudit,
   runRepoSurfaceAudit,
   runSourceGroundingAudit,
   runTypeSafetyAudit
@@ -319,5 +320,43 @@ describe("audit checks", () => {
         title: "Handoff omits rollback path"
       })
     ]));
+  });
+
+  it("detects missing slice evidence inputs", () => {
+    const findings = runSliceEvidenceAudit(baseSnapshot({
+      sliceId: "MM-32B",
+      changedFiles: ["packages/harness/src/audit/auditChecks.ts"]
+    }));
+
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        category: "verification",
+        severity: "warning",
+        title: "Audit snapshot lacks intended files"
+      }),
+      expect.objectContaining({
+        category: "verification",
+        severity: "warning",
+        title: "Audit snapshot lacks verification commands"
+      })
+    ]));
+  });
+
+  it("detects changed files outside intended slice scope", () => {
+    const findings = runSliceEvidenceAudit(baseSnapshot({
+      sliceId: "MM-32B",
+      changedFiles: [
+        "packages/harness/src/audit/auditChecks.ts",
+        "packages/api/src/server.ts"
+      ],
+      intendedFiles: ["packages/harness/src/audit/auditChecks.ts"],
+      verificationCommands: [{ command: "pnpm test", status: "passed" }]
+    }));
+
+    expect(findings).toEqual([expect.objectContaining({
+      category: "verification",
+      severity: "warning",
+      title: "Changed file outside intended slice scope"
+    })]);
   });
 });

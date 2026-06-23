@@ -132,4 +132,46 @@ describe("audit command", () => {
       }
     );
   });
+
+  it("accepts explicit slice intended files and verification command results", async () => {
+    await withTempRepo(
+      async (repoPath) => {
+        await writeRepoFile(repoPath, "packages/core/src/index.ts", "export const ok = true;\n");
+      },
+      async (repoPath) => {
+        const result = await runCli(
+          [
+            "audit",
+            "slice",
+            "--since",
+            "HEAD~1",
+            "--repo",
+            repoPath,
+            "--json",
+            "--intended-file",
+            "packages/core/src/index.ts",
+            "--verification",
+            "pnpm typecheck=passed"
+          ],
+          {
+            env: {},
+            cwd: repoPath,
+            now: () => now,
+            createId: (prefix) => `${prefix}-1`,
+            readGitChangedFiles: async () => "packages/core/src/index.ts\n"
+          }
+        );
+        const report = JSON.parse(result.stdout) as {
+          findings: Array<{ title: string }>;
+        };
+
+        expect(result.stderr).toBe("");
+        expect(report.findings).not.toEqual(expect.arrayContaining([
+          expect.objectContaining({ title: "Audit snapshot lacks intended files" }),
+          expect.objectContaining({ title: "Audit snapshot lacks verification commands" }),
+          expect.objectContaining({ title: "Changed file outside intended slice scope" })
+        ]));
+      }
+    );
+  });
 });
