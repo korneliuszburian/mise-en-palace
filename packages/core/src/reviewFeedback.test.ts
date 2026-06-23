@@ -6,6 +6,7 @@ import {
 } from "./reviewAssessment.js";
 import {
   normalizeFeedbackDelta,
+  summarizeFeedbackCandidateProposals,
   type FeedbackDelta
 } from "./feedbackDelta.js";
 
@@ -104,6 +105,99 @@ describe("review and feedback normalization", () => {
       reviewBurden: "low",
       diffRisk: "low",
       correctionLabels: ["feedback_delta"]
+    });
+  });
+});
+
+describe("feedback candidate proposal summary", () => {
+  test("summarizes structured candidate proposals without final memory mutation semantics", () => {
+    expect(summarizeFeedbackCandidateProposals(feedback({
+      memoryCandidates: [{
+        id: "memory-candidate-1",
+        projectId: "project-1",
+        feedbackDeltaId: "feedback-1",
+        proposedBy: "reviewer",
+        kind: "procedure",
+        status: "candidate",
+        summary: "Keep review feedback as candidates.",
+        body: "Feedback extraction must not create MemoryRecord rows.",
+        owner: "memory-governance",
+        confidence: 80,
+        applicationGuidance: "Use when closing review slices.",
+        sourceClaimIds: [],
+        sourceLineage: [{
+          sourceId: "review-1",
+          note: "review feedback"
+        }],
+        isUserPreference: false,
+        validFrom: now,
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      }],
+      evalCandidates: [{
+        id: "eval-candidate-1",
+        projectId: "project-1",
+        status: "candidate",
+        title: "Feedback proposal summary does not promote memory",
+        scenario: "Review feedback contains memory guidance.",
+        expectedSignal: "Candidate proposal summary exists; MemoryRecord does not.",
+        sourceEvidence: ["review-1"],
+        metadata: {},
+        createdAt: now
+      }],
+      metadata: {
+        sourceClaimCandidates: [{
+          id: "source-claim-candidate-1",
+          claim: "Review feedback can propose source claims."
+        }],
+        antiMemoryCandidates: [{
+          id: "anti-memory-candidate-1",
+          rejectedClaim: "Feedback can directly mutate Memory Core."
+        }],
+        observationCandidates: [{
+          id: "observation-candidate-1",
+          summary: "Reviewer found a recurring rollback gap."
+        }]
+      }
+    }))).toEqual({
+      memoryRecordMutation: "none",
+      counts: {
+        memoryCandidates: 1,
+        sourceClaimCandidates: 1,
+        antiMemoryCandidates: 1,
+        evalCandidates: 1,
+        observationCandidates: 1
+      },
+      candidates: [
+        {
+          kind: "memory_candidate",
+          id: "memory-candidate-1",
+          summary: "Keep review feedback as candidates.",
+          status: "candidate"
+        },
+        {
+          kind: "source_claim_candidate",
+          id: "source-claim-candidate-1",
+          summary: "Review feedback can propose source claims."
+        },
+        {
+          kind: "anti_memory_candidate",
+          id: "anti-memory-candidate-1",
+          summary: "Feedback can directly mutate Memory Core."
+        },
+        {
+          kind: "eval_candidate",
+          id: "eval-candidate-1",
+          summary: "Feedback proposal summary does not promote memory",
+          status: "candidate"
+        },
+        {
+          kind: "observation_candidate",
+          id: "observation-candidate-1",
+          summary: "Reviewer found a recurring rollback gap."
+        }
+      ]
     });
   });
 });

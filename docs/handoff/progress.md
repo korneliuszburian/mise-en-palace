@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-55.
+Current phase: Memory ideal-state execution track after MM-56.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-55 and MM-16R in
+- MM-00 through MM-56 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -176,10 +176,13 @@ Current runtime truth:
   narrow core, and broad DB/runtime diffs with command evidence.
 - MM-55 adds pure core EvidenceBundle rollback-path enforcement for non-doc
   changes.
+- MM-56 adds pure core FeedbackDelta candidate-proposal summary over already
+  structured proposal fields, with no text mining or Memory Core mutation.
+- MM-56A is queued to define KRN code vocabulary and TypeScript elegance rules.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-56 candidate extraction from feedback.
+- Continue with MM-56A code vocabulary and TypeScript elegance standard.

@@ -427,7 +427,8 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-53 complete: added pure core normalization for ReviewAssessment and FeedbackDelta review signals without changing persistence/runtime surfaces. Intended files: `packages/core/src/reviewAssessment.ts`, `packages/core/src/feedbackDelta.ts`, `packages/core/src/reviewFeedback.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no schema change, no DB migration, no repository change, no CLI change, no review assess command, no candidate extraction, no Memory Core mutation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core test failed because `normalizeReviewAssessment` and `normalizeFeedbackDelta` did not exist; GREEN focused core reviewFeedback test passed with 6 files / 29 tests after helpers normalized outcome, review burden, diff risk, and correction labels from review/feedback metadata with conservative fallbacks; focused core typecheck and full core test passed. Next: MM-54 diff risk and review burden scoring v1.
 - [x] (2026-06-23) MM-54 complete: added pure core EvidenceBundle review-risk scoring v1 so risky broad diffs score higher than narrow tested diffs. Intended files: `packages/core/src/evidenceBundle.ts`, `packages/core/src/evidenceBundle.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no schema change, no DB migration, no repository change, no CLI integration, no review assess command, no rollback enforcement, no candidate extraction, no Memory Core mutation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core evidence test failed because `scoreEvidenceBundleReviewRisk` did not exist; GREEN focused core evidence test passed with 6 files / 31 tests after deterministic scoring ranked docs-only tested diffs as low, narrow core diffs as medium, and broad DB/runtime diffs with failed required commands as high; focused core typecheck and full core test passed. Next: MM-55 rollback path enforcement.
 - [x] (2026-06-23) MM-55 complete: added pure core EvidenceBundle rollback-path enforcement for non-doc changes. Intended files: `packages/core/src/evidenceBundle.ts`, `packages/core/src/evidenceBundle.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no schema change, no DB migration, no repository change, no CLI integration, no review assess command, no candidate extraction, no Memory Core mutation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core evidence test failed because `assessEvidenceBundleRollbackPath` did not exist; GREEN focused core evidence test passed with 6 files / 33 tests after docs-only diffs were exempted while non-doc core/DB/runtime diffs require a concrete revert or recovery command; focused core typecheck and full core test passed. Next: MM-56 candidate extraction from feedback.
-- [ ] MM-56: candidate extraction from feedback.
+- [x] (2026-06-23) MM-56 complete: added pure core FeedbackDelta candidate-proposal summary over already structured candidate/proposal fields without text mining or final Memory Core mutation. Intended files: `packages/core/src/feedbackDelta.ts`, `packages/core/src/reviewFeedback.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no LLM extraction, no freeform text mining, no schema change, no DB migration, no repository change, no CLI integration, no review assess command, no MemoryRecord creation, no SourceDecision truth write, no candidate promotion, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core reviewFeedback test failed because `summarizeFeedbackCandidateProposals` did not exist; GREEN focused core reviewFeedback test passed with 6 files / 34 tests after structured memory/eval candidates and metadata source-claim/anti-memory/observation proposal arrays were summarized with `memoryRecordMutation: "none"`; focused core typecheck and full core test passed. Next: MM-56A code vocabulary and TypeScript elegance standard.
+- [ ] MM-56A: code vocabulary and TypeScript elegance standard.
 - [ ] MM-57: review assess CLI.
 - [ ] MM-58: Dogfood feedback capture from one KRN slice.
 - [ ] MM-59: GoldenTask domain model.
@@ -1849,10 +1850,32 @@ MM-55 — rollback path enforcement
 - Verification:
       missing rollback path triggers audit finding.
 
-MM-56 — candidate extraction from feedback
-- Extract MemoryCandidate, SourceClaimCandidate, AntiMemoryCandidate, EvalCandidate, ObservationCandidate as appropriate.
+MM-56 — candidate proposal summary from feedback
+- Summarize already structured MemoryCandidate, SourceClaimCandidate,
+  AntiMemoryCandidate, EvalCandidate, and ObservationCandidate proposals from
+  FeedbackDelta.
+- This is not LLM extraction, not freeform text mining, not promotion, and not
+  final truth.
+- Intended files: `packages/core/src/feedbackDelta.ts`,
+  `packages/core/src/reviewFeedback.test.ts`, root `PLAN.md`, `GOAL.md`,
+  handoff files, and this PLAN.
+- Non-goals: no LLM extraction, no freeform text mining, no schema change, no
+  DB migration, no repository change, no CLI integration, no review assess
+  command, no MemoryRecord creation, no SourceDecision truth write, no
+  candidate promotion, no dashboard/API/MCP/server/plugin/source crawler.
 - Verification:
-      feedback creates candidates, not final memory.
+      feedback summarizes candidate proposals, not final memory.
+
+MM-56A — code vocabulary and TypeScript elegance standard
+- Establish naming/vocabulary rules for core helpers and proposal/gate/review
+  concepts, explicitly avoiding over-powerful names like "extract" when a
+  function only summarizes structured data.
+- Ground the standard in existing KRN package boundaries and a Matt
+  Pocock-style TypeScript discipline: precise names, explicit public types,
+  unknown-first boundaries, small pure helpers, no magic runtime authority.
+- Verification:
+      docs/rules prevent candidate-summary helpers from being named as mutating
+      or AI extraction surfaces.
 
 MM-57 — review assess CLI
 - Add `krn review assess` or extend existing evidence capture.

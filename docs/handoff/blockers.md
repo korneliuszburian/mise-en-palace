@@ -2,7 +2,20 @@
 
 Hard blockers:
 
-- None for MM-56.
+- None for MM-56A.
+
+Closed in MM-56:
+
+- `summarizeFeedbackCandidateProposals` exists as a pure core helper.
+- Structured MemoryCandidate and EvalCandidate arrays are summarized without
+  creating final records.
+- Structured metadata proposal arrays for source-claim, anti-memory, and
+  observation proposals are summarized when present.
+- The summary reports `memoryRecordMutation: "none"`.
+- No LLM extraction, freeform text mining, DB write, MemoryRecord creation,
+  SourceDecision truth write, or candidate promotion was added.
+- MM-56A was queued to define KRN code vocabulary and TypeScript elegance
+  standards so helper names match actual authority.
 
 Closed in MM-55:
 

@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-55 and MM-16R are complete.
+- MM-00 through MM-56 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -116,6 +116,11 @@ Current known status:
 - MM-55 added pure core EvidenceBundle rollback-path enforcement for non-doc
   changes, requiring concrete revert or recovery commands while exempting
   docs-only diffs.
+- MM-56 added pure core FeedbackDelta candidate-proposal summary over already
+  structured candidate/proposal fields, with explicit `memoryRecordMutation:
+  "none"` and no LLM extraction or Memory Core mutation.
+- MM-56A is now queued to define KRN code vocabulary and TypeScript elegance
+  rules so helper names match actual authority and avoid over-powered wording.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -195,7 +200,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-56 — candidate extraction from feedback.
+MM-56A — code vocabulary and TypeScript elegance standard.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;
