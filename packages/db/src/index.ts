@@ -1,18 +1,6 @@
-export * from "./database.js";
-export * from "./activationReadiness.js";
-export * from "./activationSmoke.js";
-export * from "./harnessEvidenceSmoke.js";
-export * from "./harnessPersistenceReadiness.js";
-export * from "./harnessPlanSmoke.js";
-export * from "./initConnectSmoke.js";
-export * from "./memoryGovernanceSmoke.js";
-export * from "./memoryGovernanceReadiness.js";
-export * from "./migrationReadiness.js";
-export * from "./persistenceSmoke.js";
-export * from "./retrievalSubstrateSmoke.js";
-export * from "./retrievalSubstrateReadiness.js";
-export * from "./sourceGraphSmoke.js";
-export * from "./sourceGraphReadiness.js";
-export * from "./workerJobSmoke.js";
-export * from "./repositories/index.js";
-export * from "./schema/index.js";
+export {
+  createKrnDatabase
+} from "./database.js";
+export type {
+  KrnDatabase
+} from "./database.js";

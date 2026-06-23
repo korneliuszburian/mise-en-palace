@@ -1,7 +1,7 @@
 import path from "node:path";
 import {
   runMigrationReadinessCheck
-} from "@krn/db";
+} from "@krn/db/dev";
 import {
   findRepoRoot
 } from "./cliFileBoundary.js";

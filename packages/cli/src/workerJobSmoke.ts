@@ -1,6 +1,6 @@
 import type {
   WorkerJobSmokeReport
-} from "@krn/db";
+} from "@krn/db/dev";
 
 export const formatWorkerJobSmokeReportLines = (
   report: WorkerJobSmokeReport

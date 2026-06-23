@@ -6,7 +6,7 @@ import {
   inspectMigrationReadiness,
   inspectRetrievalSubstrateReadiness,
   inspectSourceGraphReadiness
-} from "@krn/db";
+} from "@krn/db/dev";
 
 import type {
   DoctorCheck

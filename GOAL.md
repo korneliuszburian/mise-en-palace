@@ -44,7 +44,7 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C1-01: Narrow Package Barrels From Planned To Enforced
+C1-02: Separate Harness Root From Eval/Internal Surfaces
 ```
 
 Do not build worker runtime, dashboard, or broad memory behavior until package

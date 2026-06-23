@@ -2,19 +2,13 @@ import {
   runCli
 } from "./runCli.js";
 
-export * from "./parseArgs.js";
-export * from "./runDbReadinessCommand.js";
-export * from "./runDbSmokeCommand.js";
-export * from "./runCodexBriefCommand.js";
-export * from "./runDoctorCommand.js";
-export * from "./runEvidenceCaptureCommand.js";
-export * from "./runObserveCommand.js";
-export * from "./runCli.js";
-export * from "./runInitCommand.js";
-export * from "./runPlanCommand.js";
-export * from "./runSourceClaimAddCommand.js";
-export * from "./runSourceClaimRejectCommand.js";
-export * from "./runSourceDecisionLinkCommand.js";
+export {
+  runCli
+} from "./runCli.js";
+export type {
+  CliResult,
+  CliRuntime
+} from "./runCli.js";
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const result = await runCli(process.argv.slice(2), {

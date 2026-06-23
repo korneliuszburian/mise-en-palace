@@ -1,8 +1,10 @@
 import postgres from "postgres";
 import {
-  createKrnDatabase,
-  DrizzleHarnessRunRepository
+  createKrnDatabase
 } from "@krn/db";
+import {
+  DrizzleHarnessRunRepository
+} from "@krn/db/adapters";
 import {
   createExecutionBrief,
   renderExecutionBriefText

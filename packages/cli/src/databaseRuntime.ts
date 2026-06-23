@@ -1,6 +1,8 @@
 import postgres from "postgres";
 import {
-  createKrnDatabase,
+  createKrnDatabase
+} from "@krn/db";
+import {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
   DrizzleObservationRepository,
@@ -8,12 +10,12 @@ import {
   DrizzleReflectionRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
-} from "@krn/db";
+} from "@krn/db/adapters";
 import type {
   CreateObservationGroupInput,
   CreateObservationItemInput,
   CreateReflectionRecordInput
-} from "@krn/db";
+} from "@krn/db/adapters";
 import type {
   HarnessCompilerDependencies,
   HarnessRunRepository,

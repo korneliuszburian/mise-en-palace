@@ -4,9 +4,11 @@ import {
 import path from "node:path";
 import postgres from "postgres";
 import {
-  createKrnDatabase,
-  DrizzleProjectRepository
+  createKrnDatabase
 } from "@krn/db";
+import {
+  DrizzleProjectRepository
+} from "@krn/db/adapters";
 import type {
   ProjectKernelRecord,
   ProjectRecord,

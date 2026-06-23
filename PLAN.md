@@ -28,13 +28,13 @@ them.
 
 current_priority: Package Surface Condensation.
 
-first_unchecked_slice: `C1-01: Narrow Package Barrels From Planned To Enforced`.
+first_unchecked_slice: `C1-02: Separate Harness Root From Eval/Internal Surfaces`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- narrow or classify broad package root/barrel exports without breaking stable
-  public contracts;
+- separate the harness root package surface from eval-adapter/internal helper
+  surfaces without breaking stable public contracts;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not start worker runtime, dashboard, or broad memory features before the
@@ -78,6 +78,11 @@ completed_checkpoint:
   public operator, governed admin, and internal/dev commands; `krn db --help`
   labels DB readiness/smokes as internal runtime plumbing proof, not product
   workflow or quality authority.
+- C1-01 narrows DB and CLI root package surfaces: `@krn/db` root exports only
+  database connection helpers, DB smokes/readiness move to `@krn/db/dev`,
+  concrete Drizzle adapters move to `@krn/db/adapters`, schema access moves to
+  `@krn/db/schema`, and `@krn/cli` root exports only `runCli`, `CliRuntime`,
+  and `CliResult`.
 
 completed_evidence_pointers:
 
@@ -2211,6 +2216,75 @@ git add packages docs/architecture PLAN.md
 git commit -m "refactor(exports): narrow public package surface"
 ```
 
+### C1-02: Separate Harness Root From Eval/Internal Surfaces
+
+objective:
+
+Narrow `@krn/harness` root so canonical harness behavior is not mixed with
+Promptfoo adapter helpers or internal repository plumbing by default.
+
+source:
+
+C1-01 enforced DB and CLI root surfaces first.
+`docs/architecture/package-surfaces.md` still records harness root and repository-port barrels as remaining
+surface authority debt.
+
+mechanism:
+
+Inspect root imports from `@krn/harness`, then add explicit subpaths only for
+surfaces that are already conceptually separate. Do not hide canonical
+GoldenTask behavior or MemoryReviewGate. Do not rename package APIs without
+updating all consumers and tests.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/harness packages/db packages/cli packages/codex-adapter docs/architecture PLAN.md GOAL.md
+git commit -m "refactor(exports): separate harness package surfaces"
+```
+
+### C1-03: Split Repository Port Public And Internal Surfaces
+
+objective:
+
+Separate reviewed public memory/source/harness repository ports from internal
+persistence plumbing, especially around Memory Core write authority.
+
+source:
+
+C1-01 left `packages/harness/src/repositories/index.ts` broad on purpose.
+Repository-port narrowing depends on MemoryReviewGate and reviewed promotion
+authority, so it needs its own slice.
+
+mechanism:
+
+Classify repository ports by public contract vs internal persistence plumbing.
+Expose Memory Core write authority through reviewed promotion paths only; do
+not make raw persistence writes more convenient.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/harness packages/db packages/cli docs/architecture PLAN.md GOAL.md
+git commit -m "refactor(exports): split repository port surfaces"
+```
+
 ### C2-00: Add Reviewed Anti-Memory Candidate Storage
 
 objective:
@@ -2432,7 +2506,9 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] EVI-10 Operator ergonomics for evidence capture.
 - [x] C0-01 Improve self-hosting context relevance.
 - [x] C1-00 Separate public CLI from internal dev commands.
-- [ ] C1-01 Narrow package barrels from planned to enforced.
+- [x] C1-01 Narrow package barrels from planned to enforced.
+- [ ] C1-02 Separate harness root from eval/internal surfaces.
+- [ ] C1-03 Split repository port public and internal surfaces.
 - [ ] C2-00 Add reviewed anti-memory candidate storage.
 - [ ] C3-00 Expand real GoldenTask behavior gate coverage.
 - [ ] C4-00 Decide worker runtime ADR before execution.
@@ -2727,7 +2803,9 @@ Current outcome:
 - CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
 - `krn audit` is removed from active CLI routing/help and harness audit scanner
   exports; no QG-06, no new audit categories, no public/internal guardrail UX.
-- Package barrel narrowing is planned in `docs/architecture/package-surfaces.md`.
+- DB and CLI package root surfaces are narrowed in source and recorded in
+  `docs/architecture/package-surfaces.md`; harness and repository-port surface
+  narrowing remain active C1 follow-ups.
 - Package source is touched from P2-00 onward.
 - Memory Core promotion authority is sealed at the public harness port:
   candidate-to-record promotion goes through reviewed promotion naming and
@@ -2789,7 +2867,7 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C1-01: Narrow package barrels from planned to enforced.
+  C1-02: Separate harness root from eval/internal surfaces.
 
 ## Command Evidence
 
@@ -3601,6 +3679,32 @@ internal/dev commands; `krn db --help` is a normal help path; and DB
 readiness/smoke commands are labeled as internal runtime plumbing proof, not
 product workflow or quality authority. It does not rename CLI commands, prove
 DB runtime behavior, or change command implementations.
+
+C1-01 verification after narrowing DB and CLI package roots:
+
+```sh
+rg -n 'export \*' packages/db/src/index.ts packages/cli/src/index.ts packages/db/src/dev/index.ts packages/db/src/repositories/index.ts packages/db/src/schema/index.ts
+rg -n 'from "@krn/db"' packages/cli/src -g "*.ts" -C 1
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- `packages/db/src/index.ts` has named root exports for `createKrnDatabase` and
+  `KrnDatabase` only;
+- DB smoke/readiness exports are reachable through `packages/db/src/dev/index.ts`;
+- concrete Drizzle adapters are reachable through `@krn/db/adapters`;
+- CLI imports root `@krn/db` only for `createKrnDatabase`;
+- full workspace typecheck passed;
+- full workspace tests passed: 81 files, 366 tests;
+- `git diff --check` passed.
+
+This proves DB and CLI root package surfaces no longer expose DB smoke/dev
+helpers, concrete adapters, schema tables, parser internals, or command runners
+as default package API. It does not prove harness root/repository-port
+narrowing; those remain C1-02 and C1-03.
 
 ## Historical Reset Completion Criteria
 

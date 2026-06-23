@@ -7,14 +7,18 @@ import {
   renderExecutionBriefText
 } from "@krn/codex-adapter";
 import {
-  createKrnDatabase,
+  createKrnDatabase
+} from "@krn/db";
+import {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
   DrizzleProjectRepository,
   DrizzleRetrievalRepository,
-  DrizzleSourceRepository,
+  DrizzleSourceRepository
+} from "@krn/db/adapters";
+import {
   runMigrationReadinessCheck
-} from "@krn/db";
+} from "@krn/db/dev";
 import {
   compileHarnessPlan,
   createCapabilityPlan

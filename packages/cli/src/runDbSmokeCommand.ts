@@ -9,7 +9,7 @@ import {
   runRetrievalSubstrateSmokeCheck,
   runSourceGraphSmokeCheck,
   runWorkerJobSmokeCheck
-} from "@krn/db";
+} from "@krn/db/dev";
 import {
   formatCodexAdapterSmokeReportLines,
   runCodexAdapterSmokeCheck

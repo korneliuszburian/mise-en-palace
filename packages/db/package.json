@@ -7,6 +7,18 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./src/index.ts"
+    },
+    "./adapters": {
+      "types": "./src/repositories/index.ts",
+      "import": "./src/repositories/index.ts"
+    },
+    "./dev": {
+      "types": "./src/dev/index.ts",
+      "import": "./src/dev/index.ts"
+    },
+    "./schema": {
+      "types": "./src/schema/index.ts",
+      "import": "./src/schema/index.ts"
     }
   },
   "scripts": {

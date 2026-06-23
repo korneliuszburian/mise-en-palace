@@ -5,7 +5,7 @@ import type {
 } from "@krn/harness";
 import type {
   CreateObservationItemInput
-} from "@krn/db";
+} from "@krn/db/adapters";
 import type {
   ObserveDatabaseRuntime
 } from "./databaseRuntime.js";

@@ -1,11 +1,11 @@
 # KRN Package Surfaces
 
-Status: narrowing plan, no source export changes yet.
+Status: C1-01 partially enforced for DB and CLI root surfaces.
 Date: 2026-06-23
 
-This document records package barrel findings for P1-02. It plans which public
-entrypoints should stay stable and which exports should become internal or
-explicitly dev-only in later code slices.
+This document records package barrel findings for P1-02 and the C1 package
+surface enforcement queue. DB and CLI root surfaces now have source-level
+enforcement; harness and repository-port narrowing remain follow-up work.
 
 ## Source Decision
 
@@ -25,6 +25,8 @@ default import path.
 Inspected files:
 
 - `packages/db/src/index.ts`
+- `packages/db/package.json`
+- `packages/db/src/dev/index.ts`
 - `packages/db/src/repositories/index.ts`
 - `packages/db/src/schema/index.ts`
 - `packages/harness/src/index.ts`
@@ -52,13 +54,16 @@ Do not use root barrels to make internals convenient.
 
 ### `packages/db`
 
-Current root exports:
+Current root exports after C1-01:
 
 - database connection helpers;
-- readiness and smoke modules;
-- audit semantic snapshot helpers;
-- every concrete Drizzle repository through `repositories/index.js`;
-- every schema table module through `schema/index.js`.
+- `KrnDatabase` type and `createKrnDatabase`.
+
+Explicit subpaths after C1-01:
+
+- `@krn/db/adapters` for concrete Drizzle repository adapters;
+- `@krn/db/dev` for readiness and smoke modules;
+- `@krn/db/schema` for schema-table access.
 
 Risk:
 
@@ -66,20 +71,18 @@ Risk:
 - Concrete repository adapters look like the public persistence contract.
 - Schema table modules are exposed as the package default surface.
 
-Planned narrowing:
+C1-01 decision:
 
-- keep a small root surface for database connection and intentionally public DB
-  runtime factory helpers;
-- move smokes/readiness behind explicit dev/runtime paths;
-- move concrete Drizzle repositories behind explicit adapter paths;
-- keep schema table access explicit and internal-to-DB unless a migration or
-  repository boundary needs it.
+- keep a small root surface for database connection helpers only;
+- move smokes/readiness behind `@krn/db/dev`;
+- move concrete Drizzle repositories behind `@krn/db/adapters`;
+- keep schema table access explicit through `@krn/db/schema`.
 
-Later code slice candidate:
+Does not prove:
 
-- replace root wildcard exports with named exports.
-- add `packages/db/src/dev/index.ts` or direct internal imports for smokes only
-  if current imports need a stable target.
+- DB runtime behavior;
+- that concrete adapters are the right long-term public integration contract;
+- repository-port authority split, which remains a later slice.
 
 ### `packages/db/src/repositories/index.ts`
 
@@ -164,12 +167,11 @@ Planned narrowing:
 
 ### `packages/cli`
 
-Current root exports:
+Current root exports after C1-01:
 
-- parser union and parser;
-- command runners for DB readiness/smoke, Codex brief, doctor, evidence,
-  observe, init, plan, source claim add/reject/link;
-- top-level `runCli`.
+- `runCli`;
+- `CliRuntime`;
+- `CliResult`.
 
 Risk:
 
@@ -178,12 +180,13 @@ Risk:
 - CLI root omits some governed admin commands while exporting selected command
   runners, so the surface is accidental rather than designed.
 
-Planned narrowing:
+C1-01 decision:
 
 - keep `runCli` and explicitly stable CLI input/output types public.
-- keep parser types only if they are a stable adapter contract.
 - move command implementation runners behind internal paths.
-- never expose DB smoke runners as public product API.
+- do not expose DB smoke runners as public product API.
+- do not expose parser internals as root package API until they are accepted as
+  stable adapter contracts.
 
 ## Not In First Narrowing Slice
 
@@ -194,12 +197,12 @@ they start leaking internals as product authority.
 
 ## Ordered Repair Slices
 
-1. DB root: replace wildcard root exports with named stable exports; move smokes
-   and concrete adapters out of the default surface.
-2. Harness root: remove audit from root surface and separate canonical golden
+1. DB root: complete in C1-01. Root is database-only; smokes, adapters, and
+   schema moved behind explicit subpaths.
+2. CLI root: complete in C1-01. Root exports `runCli`, `CliRuntime`, and
+   `CliResult` only.
+3. Harness root: remove audit from root surface and separate canonical golden
    behavior from Promptfoo adapter helpers.
-3. CLI root: expose `runCli` and stable adapter types only; move command
-   runners and DB smoke runners to internal imports.
 4. Repository ports: after P2-00, split public reviewed memory write authority
    from internal persistence ports.
 
