@@ -360,11 +360,11 @@ non-goals:
 
 steps:
 
-- [ ] Add the historical banner to each target file that still reads like
+- [x] Add the historical banner to each target file that still reads like
       current execution truth.
-- [ ] Preserve historical content below the banner.
-- [ ] Run verification.
-- [ ] Commit.
+- [x] Preserve historical content below the banner.
+- [x] Run verification.
+- [x] Commit.
 
 verification:
 
@@ -1131,6 +1131,8 @@ git revert <commit>
 
 ### P7-00: Run First Governed Self-Hosting Loop
 
+status: complete.
+
 objective:
 
 Use KRN to improve KRN and record whether it reduces review burden.
@@ -1204,7 +1206,7 @@ git revert <commit>
 - [x] P5-01 Add first real behavior eval gate.
 - [x] P6-00 Mark worker runtime truth.
 - [x] P6-01 Harden worker job contracts.
-- [ ] P7-00 Run first governed self-hosting loop.
+- [x] P7-00 Run first governed self-hosting loop.
 
 ## Surprises & Discoveries
 
@@ -1297,6 +1299,19 @@ git revert <commit>
 - P6-01 did not need a worker runtime, DB migration, or schema package change.
   The hardening belongs to typed worker job descriptors: current jobs can
   declare write authority and Memory Core gates without claiming execution.
+- P7-00 initially hit the expected DB environment boundary: plain
+  `pnpm db:ready` failed because `KRN_DATABASE_URL` was absent in the current
+  shell. Starting the local `krn-postgres` compose service and passing the
+  runbook URL made the brain store ready in this shell.
+- P7-00 found the first self-hosting flow is operational but not yet strong as
+  command-proof capture: `krn evidence capture --persist` persisted default
+  verification command rows as `skipped` even though `pnpm typecheck` and
+  `pnpm test` had just been run manually. The run ledger records the stronger
+  local command output separately.
+- P7-00 selected six context items. The selected memory/source context helped
+  with governance-proof caution and source graph persistence boundaries, but it
+  did not directly surface a Memory Core write-authority memory for the P7
+  self-hosting objective.
 
 ## Decision Log
 
@@ -1378,6 +1393,13 @@ git revert <commit>
   output event, failed state, allowed writes, forbidden writes, and Memory Core
   gate constraints. Current worker contracts forbid direct writes to
   MemoryRecord, AntiMemoryRecord, SourceClaim, and SourceDecision truth.
+- 2026-06-23: P7-00 accepts the first governed self-hosting loop as operational
+  proof, not candidate-quality proof. The persisted run links plan, evidence,
+  observation, feedback, and reflection records while preserving no automatic
+  MemoryRecord mutation.
+- 2026-06-23: P7-00 records a follow-up product gap: evidence capture must not
+  present default `skipped` command rows as verification proof when real command
+  output exists outside the persisted EvidenceBundle.
 
 ## Outcomes & Retrospective
 
@@ -1435,7 +1457,10 @@ Current outcome:
   explicitly accepted.
 - Worker job contracts now carry explicit write-authority fields and Memory
   Core gate constraints before any worker runtime exists.
-- Next safe action is P7-00: run the first governed self-hosting loop.
+- First governed self-hosting loop is recorded in
+  `docs/runs/2026-06-23-self-hosting-memory-loop.md`.
+- Current reset plan queue is fully checked and P7-00 is committed with final
+  verification evidence.
 
 ## Command Evidence
 
@@ -1964,6 +1989,48 @@ Observed:
 This proves current worker job descriptors expose the required write-authority
 fields and preserve strict TypeScript boundaries. It does not prove a worker
 daemon, job executor, or autonomous maintenance runtime exists.
+
+P7-00 first governed self-hosting loop:
+
+```sh
+pnpm db:ready
+docker compose up -d krn-postgres
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "seal Memory Core write authority" --persist
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn evidence capture --run-id 00d74890-b18d-498b-90bf-f172c26cffb6 --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn observe --run 00d74890-b18d-498b-90bf-f172c26cffb6 --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn reflect --scope run:00d74890-b18d-498b-90bf-f172c26cffb6 --persist
+```
+
+Observed:
+
+- plain `pnpm db:ready` failed with missing `KRN_DATABASE_URL`, which proves
+  DB runtime truth was not available before configuring the current shell;
+- local compose Postgres was running, and DB readiness with the runbook URL
+  passed with 11 expected/applied migrations and pgvector available;
+- persisted `krn plan` assembled 6 context inclusions, 0 exclusions, and
+  created execution run `00d74890-b18d-498b-90bf-f172c26cffb6`;
+- `pnpm typecheck` passed across core, schema, harness, workers,
+  codex-adapter, db, and cli;
+- `pnpm test` passed across core 8/39, schema 3/25, harness 18/89, workers
+  1/4, codex-adapter 3/7, db 24/67, and cli 25/142;
+- persisted evidence capture created evidence bundle
+  `29aaedd2-a005-4f9b-afa3-15d305e779c6`, review assessment
+  `ff87f61f-386b-4507-baae-d322e6cbf227`, and feedback delta
+  `30a815e9-0055-4129-b99c-24662945dc96`;
+- persisted observe created observation group
+  `1ef45c13-f12c-4fb9-a9a8-4693f587333c` with 5 observation items and
+  reported `MemoryRecord created: no`;
+- persisted reflect selected 5 observations, wrote reflection record
+  `a3c275ef-6aaf-4db6-a09a-44c62c229724`, and reported candidate rows
+  written `no`, memory mutation `none`, and `MemoryRecord created: no`.
+
+This proves the first persisted plan -> evidence -> observe -> reflect loop can
+run locally with store-backed state and without Memory Core mutation. It does
+not prove candidate quality, automatic promotion, worker runtime execution, or
+real command-status provenance inside the persisted EvidenceBundle.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
