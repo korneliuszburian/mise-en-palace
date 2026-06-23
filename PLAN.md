@@ -747,6 +747,8 @@ git revert <commit>
 
 ### P3-00: Define Observation Staging Doctrine
 
+status: complete.
+
 objective:
 
 Record observation as event-derived staging, not Memory Core.
@@ -1174,7 +1176,7 @@ git revert <commit>
 - [x] P2-00 Seal Memory Core write authority.
 - [x] P2-01 Type SourceClaim project scope.
 - [x] P2-02 Promote behavior metadata to typed fields.
-- [ ] P3-00 Define observation staging doctrine.
+- [x] P3-00 Define observation staging doctrine.
 - [ ] P3-01 Prove observation/reflection invariants.
 - [ ] P3-02 Create reviewed candidate writer from ReflectionRecord.
 - [ ] P4-00 Define activation as admission control.
@@ -1219,6 +1221,10 @@ git revert <commit>
 - P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
   Both paths now use the same typed source/memory record identity fields instead
   of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
+- P3-00 found existing ADR-0011 already defines observational memory as staging.
+  ADR-0013 therefore does not replace it with a new architecture; it narrows the
+  reset doctrine around source ranges, non-mutation, bounded prefixes, and
+  metadata not being authority.
 
 ## Decision Log
 
@@ -1256,6 +1262,11 @@ git revert <commit>
   gate, and activation abstention. Metadata may still carry debug snapshots, but
   merge, conflict, raw recall, ContextROI, and context assembly do not trust
   generic `metadata.*` keys for these decisions.
+- 2026-06-23: ADR-0013 adopts ADR-0011 as the source doctrine and makes the
+  reset-specific decision explicit: observation is event-derived staging,
+  truth-bearing observations require source ranges, raw evidence remains
+  canonical, observation/reflection cannot mutate Memory Core, and observation
+  prefix is bounded activation input.
 
 ## Outcomes & Retrospective
 
@@ -1282,7 +1293,9 @@ Current outcome:
   `metadata.searchDocumentId`, `metadata.activationAbstention`,
   `metadata.observationPrefix`, and `metadata.observationPrefixGate` returns no
   package matches.
-- Next safe action is P3-00: define observation staging doctrine.
+- Observation staging doctrine is captured in
+  `docs/decisions/ADR-0013-observation-is-staging-not-memory.md`.
+- Next safe action is P3-01: prove observation/reflection invariants.
 
 ## Command Evidence
 
@@ -1522,6 +1535,33 @@ Observed:
 This proves the named behavior-governing metadata reads are gone from package
 code and the workspace test suite passes. It does not prove DB runtime smoke,
 because P2-02 did not require DB runtime commands or schema migration.
+
+P3-00 observation staging doctrine:
+
+```sh
+cat docs/decisions/ADR-0011-observational-memory-as-staging-layer.md
+sed -n '230,270p' docs/reviews/repo-reset-audit/FULL_REPO_AUDIT.md
+sed -n '518,531p' docs/reviews/repo-reset-audit/FULL_REPO_AUDIT.md
+sed -n '448,482p' docs/reviews/repo-reset-audit/REPAIR_PLAN.md
+```
+
+Observed summary:
+
+- ADR-0011 already accepts observation as source-ranged temporal staging and
+  rejects reflection auto-promotion;
+- the reset audit says current observe/reflect paths are deterministic,
+  explicit, and non-mutating with respect to Memory Core;
+- the repair plan says to keep observation/reflection as staging while removing
+  autonomous brain, dreaming, self-healing, and auto-promotion language.
+
+```sh
+git diff --check
+```
+
+Observed: passed with no output.
+
+This proves the ADR text is whitespace-clean and grounded in existing reset
+evidence. It does not prove implementation invariants; P3-01 owns those tests.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
