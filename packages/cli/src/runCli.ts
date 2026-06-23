@@ -37,6 +37,9 @@ import {
 import {
   runReviewAssessCommand
 } from "./runReviewAssessCommand.js";
+import type {
+  CreateReviewAssessDatabaseRuntime
+} from "./runReviewAssessCommand.js";
 import {
   runObserveCommand
 } from "./runObserveCommand.js";
@@ -90,6 +93,7 @@ export interface CliRuntime {
   readGitChangedFiles?(since: string, repoPath: string): Promise<string>;
   createAuditDatabaseRuntime?(input: AuditDatabaseRuntimeInput): Promise<AuditDatabaseRuntime>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
+  createReviewAssessDatabaseRuntime?: CreateReviewAssessDatabaseRuntime;
   createObserveDatabaseRuntime?: CreateObserveDatabaseRuntime;
   createReflectDatabaseRuntime?: CreateReflectDatabaseRuntime;
   createInitConnectRuntime?: CreateInitConnectRuntime;
@@ -265,9 +269,9 @@ export const runCli = async (
         now,
         createId,
         command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
+        ...(runtime.createReviewAssessDatabaseRuntime === undefined
           ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+          : { createDatabaseRuntime: runtime.createReviewAssessDatabaseRuntime })
       });
 
       return {

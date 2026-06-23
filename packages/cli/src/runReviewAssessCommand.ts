@@ -5,11 +5,11 @@ import type {
   ReviewFinding
 } from "@krn/core";
 import {
-  createDatabaseRuntime
+  createReviewAssessDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
-  DatabaseRuntime,
-  DatabaseRuntimeInput
+  ReviewAssessDatabaseRuntime,
+  ReviewAssessDatabaseRuntimeInput
 } from "./databaseRuntime.js";
 import type {
   CliCommand
@@ -30,11 +30,8 @@ export interface ReviewAssessCommandResult {
 }
 
 export type CreateReviewAssessDatabaseRuntime = (
-  input: DatabaseRuntimeInput
-) => Promise<DatabaseRuntime>;
-
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
+  input: ReviewAssessDatabaseRuntimeInput
+) => Promise<ReviewAssessDatabaseRuntime>;
 
 const reviewStatuses = new Set<ReviewAssessmentStatus>([
   "pending",
@@ -207,13 +204,9 @@ export const runReviewAssessCommand = async (
     throw new Error("KRN_DATABASE_URL is required for krn review assess --persist");
   }
 
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  const createRuntime = runtime.createDatabaseRuntime ?? createReviewAssessDatabaseRuntime;
   const databaseRuntime = await createRuntime({
-    databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    now: runtime.now,
-    createId: runtime.createId
+    databaseUrl
   });
 
   try {

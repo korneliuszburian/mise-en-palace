@@ -3475,15 +3475,8 @@ describe("runCli", () => {
         },
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
-        createDatabaseRuntime: async () => ({
-          workspaceId: "workspace-1",
-          projectId: "project-1",
-          compilerDependencies: {
-            ...dependencies,
-            harnessRunRepository
-          },
+        createReviewAssessDatabaseRuntime: async () => ({
           harnessRunRepository,
-          memoryRepository: unusedMemoryRepository,
           async close() {
             return undefined;
           }

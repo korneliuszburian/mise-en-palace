@@ -2,7 +2,26 @@
 
 Hard blockers:
 
-- None for MM-58.
+- None for MM-59.
+
+Closed in MM-58:
+
+- Feedback capture was dogfooded on persisted ExecutionRun
+  `5db6c5aa-3fcf-48bd-b013-f732c7558e33`.
+- Evidence capture persisted EvidenceBundle
+  `4d2e3247-4469-45bc-99a3-0a4b4095110d`, generated one proposal-only memory
+  candidate inside FeedbackDelta JSON, and did not create MemoryCandidate or
+  MemoryRecord rows.
+- `krn review assess --persist` now uses a narrow review-assess DB runtime
+  instead of the broad workspace/project planning runtime.
+- Manual review assess persisted ReviewAssessment
+  `c6b0130d-c6d0-4db2-95b5-4076201eee4e` and FeedbackDelta
+  `de8b97e3-1593-4f4c-891a-60c7a3df444c`.
+- Review burden and diff risk were recorded as `medium`.
+- FeedbackDelta metadata carries `memoryRecordMutation: "none"`.
+- MemoryCandidate and MemoryRecord counts did not change.
+- The raw research files under `docs/materials/` remain untracked dirty
+  context and were not committed.
 
 Closed in MM-57:
 

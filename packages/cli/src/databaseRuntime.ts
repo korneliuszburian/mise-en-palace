@@ -119,6 +119,19 @@ export interface ReflectDatabaseRuntimeInput {
   databaseUrl: string;
 }
 
+export interface ReviewAssessDatabaseRuntimeInput {
+  databaseUrl: string;
+}
+
+export interface ReviewAssessDatabaseRuntime {
+  harnessRunRepository: Pick<
+    HarnessRunRepository,
+    | "createReviewAssessment"
+    | "createFeedbackDelta"
+  >;
+  close(): Promise<void>;
+}
+
 export interface ReflectRunSnapshot {
   executionRunId: string;
   projectId: string;
@@ -330,6 +343,21 @@ export const createReflectDatabaseRuntime = async (
     reflectionRepository: {
       createReflectionRecord: (...args) => reflectionRepository.createReflectionRecord(...args)
     },
+    async close(): Promise<void> {
+      await client.end();
+    }
+  };
+};
+
+export const createReviewAssessDatabaseRuntime = async (
+  input: ReviewAssessDatabaseRuntimeInput
+): Promise<ReviewAssessDatabaseRuntime> => {
+  const client = postgres(input.databaseUrl, { max: 1 });
+  const db = createKrnDatabase(client);
+  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+
+  return {
+    harnessRunRepository,
     async close(): Promise<void> {
       await client.end();
     }

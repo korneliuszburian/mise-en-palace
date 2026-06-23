@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-57.
+Current phase: Memory ideal-state execution track after MM-58.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-57 and MM-16R in
+- MM-00 through MM-58 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -186,10 +186,20 @@ Current runtime truth:
   status/outcome/risk/finding inputs and persists ReviewAssessment plus
   FeedbackDelta with `memoryRecordMutation: "none"` and no Memory Core row
   creation.
+- MM-58 dogfoods feedback capture on persisted ExecutionRun
+  `5db6c5aa-3fcf-48bd-b013-f732c7558e33`: evidence capture persisted
+  EvidenceBundle `4d2e3247-4469-45bc-99a3-0a4b4095110d` plus ReviewAssessment
+  `99ad79d8-f4b1-4018-9721-79676238e882` and FeedbackDelta
+  `0ba61fdd-179d-455d-bac5-af57515b6f87`; manual `krn review assess
+  --persist` persisted ReviewAssessment
+  `c6b0130d-c6d0-4db2-95b5-4076201eee4e` and FeedbackDelta
+  `de8b97e3-1593-4f4c-891a-60c7a3df444c`; counts ended at
+  `evidence_bundles=9`, `review_assessments=10`, `feedback_deltas=10`,
+  `memory_candidates=2`, and `memory_records=4`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-58 feedback dogfood capture from one KRN slice.
+- Continue with MM-59 GoldenTask domain model.
