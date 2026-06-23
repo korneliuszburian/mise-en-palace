@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- QG-00 through QG-06 must run before MM-66/MM-67 feature work continues.
+- QG-01 through QG-06 must run before MM-66/MM-67 feature work continues.
 - Current test topology is not documented as a conscious repo decision.
 - Current quality gates do not yet prove absence of zombie exports, dead code,
   stale public docs, broad barrel overexposure, test-helper runtime leaks, or
@@ -10,6 +10,14 @@ Hard blockers:
 - MM-65 Promptfoo snapshot export must not be treated as final eval
   integration until QG-05 adopts or rejects official Promptfoo through
   source-to-decision.
+
+Closed in QG-00:
+
+- Repo-wide current-state inventory is recorded at
+  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
+- Current package, script, test, fixture, public-export, docs-truth, forbidden
+  surface, Promptfoo, and placeholder-smell facts are captured.
+- `REVIEW.md` is marked as historical instead of current-state truth.
 
 Closed in MM-65:
 

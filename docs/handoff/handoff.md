@@ -1,8 +1,8 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-65 and is now
-paused for a blocking quality correction gate. KRN has
+The memory ideal-state execution track is implemented through MM-65 and QG-00,
+and is now paused for the remaining blocking quality correction gate. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -112,14 +112,18 @@ MM-65 added a pure harness Promptfoo-compatible snapshot export for GoldenTask
 cases. The export is deterministic, snapshot-only, carries behavior proof
 status metadata, declares `promptfooDependency: "not_required"`, and does not
 execute a model.
-QG-00 through QG-06 are queued before MM-66 so the repo does not build more
-features on top of an under-audited quality model.
+QG-00 recorded the repo-wide current-state inventory at
+`docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. QG-01 through QG-06
+are queued before MM-66 so the repo does not build more features on top of an
+under-audited quality model.
 
 Last verified state:
-MM-65 added the optional Promptfoo-compatible snapshot export and was pushed as
-`f3cbea6`. A post-MM-65 quality pre-audit found that official Promptfoo
-integration, test topology, TypeScript excellence automation, zombie/dead-code
-audit, and stale-doc prevention need explicit QG slices before MM-66.
+QG-00 added the repo-wide current-state inventory and marked `REVIEW.md` as
+historical current-state context. Preflight `pnpm typecheck` and `pnpm test`
+passed, and only the raw research materials under `docs/materials/` remained
+untracked. The remaining QG work is test topology, TypeScript excellence
+automation, zombie/dead-code/export audit, smell/bloat audit, official
+Promptfoo decision, and audit automation before MM-66.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -134,7 +138,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-65 memory ideal-state slices: complete through governed
+- MM-00 through MM-65 memory ideal-state slices and QG-00: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -163,7 +167,8 @@ Milestone status:
   GoldenTask seeds, plus fixture-backed memory behavior golden tests for
   source-linked memory, stale/weak abstention, temporal validity, and
   application guidance, plus the pure golden runner and optional snapshot-only
-  Promptfoo-compatible export.
+  Promptfoo-compatible export, plus QG-00 repo-wide current-state inventory and
+  quality-risk map.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -316,7 +321,7 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-QG-00 through QG-06 block MM-66/MM-67.
+QG-01 through QG-06 block MM-66/MM-67.
 
 Rollback path:
 After commit, revert the quality-plan correction commit with `git revert
@@ -331,7 +336,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, broad eval suite, and production worker throughput.
 
 Next safest action:
-Run QG-00 repo-wide current-state inventory refresh.
+Run QG-01 test topology ADR and enforcement.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

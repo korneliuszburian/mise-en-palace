@@ -1,5 +1,21 @@
 # KRN Full Anti-Slop Review Request
 
+Status update, 2026-06-23:
+
+This file is historical review-request material, not the current repo status
+source. It targeted the repository around commit `88cbbba`. Current QG tracking
+has moved on: MM-00 through MM-65, MM-16R, and QG-00 are complete at
+`7e0c6b8691c79e4ccba85bae9ac004f2fe63b5ad`, and the active current-state
+inventory is:
+
+```txt
+docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md
+```
+
+Use `README.md`, `GOAL.md`, root `PLAN.md`,
+`docs/plans/memory-ideal-state/PLAN.md`, and the QG-00 inventory for current
+state. Keep this file only as historical external-review context.
+
 Date: 2026-06-22
 
 Audience: external extended reviewer / ChatGPT Pro with no prior thread context.

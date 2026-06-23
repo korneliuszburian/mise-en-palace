@@ -1,18 +1,21 @@
 # Verification
 
-Latest verified slice: MM-65 optional Promptfoo-compatible export.
+Latest verified slice: QG-00 repo-wide current-state inventory.
 
 Passed:
 
-- Preflight `git status --short --branch` showed branch `main` aligned with
-  `origin/main` plus only the two raw research materials untracked.
-- Preflight `git log --oneline -5` showed latest commit
-  `f3cbea6 feat(harness): add promptfoo golden export`.
-- MM-65 final verification passed before commit `f3cbea6`: `pnpm typecheck`,
-  `pnpm test` with 56 files / 303 tests, `pnpm db:ready`, `git diff --check`,
-  forbidden surface/dependency scan, and `krn audit slice --fail-on warning`.
+- QG-00 preflight `git status --short --branch` showed branch `main` aligned
+  with `origin/main` plus only the two raw research materials untracked.
+- QG-00 preflight `git log --oneline -8` showed latest commit
+  `7e0c6b8 docs(memory): add blocking quality correction gate`.
+- QG-00 preflight `git rev-parse HEAD` returned
+  `7e0c6b8691c79e4ccba85bae9ac004f2fe63b5ad`.
+- `pnpm typecheck` passed.
+- `pnpm test` passed with 56 colocated test files.
+- QG-00 inventory recorded package/test/export/script/docs/non-goal facts at
+  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 
-QG audit facts gathered after MM-65:
+QG audit facts gathered during QG-00:
 
 - Test files are currently colocated under `packages/*/src/**/*.test.ts`.
 - Current strict TS settings are strong but not yet enforced by a single
@@ -25,7 +28,7 @@ QG audit facts gathered after MM-65:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-00 through QG-06 remain next.
+- QG-01 through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

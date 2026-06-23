@@ -11,7 +11,9 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-65 and MM-16R are complete.
+- MM-00 through MM-65, MM-16R, and QG-00 are complete.
+- QG-00 repo-wide current-state inventory is recorded at
+  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -146,10 +148,10 @@ Current known status:
   from validated task contracts plus explicit behavior proofs.
 - MM-65 added a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases, with no Promptfoo dependency and no model execution.
-- QG-00 through QG-06 are now queued as a blocking quality correction gate:
-  current-state inventory, test topology decision, global TypeScript excellence,
-  zombie/dead-code/export audit, bloat/smell audit, official Promptfoo
-  integration decision, and audit automation.
+- QG-01 through QG-06 remain queued as a blocking quality correction gate:
+  test topology decision, global TypeScript excellence, zombie/dead-code/export
+  audit, bloat/smell audit, official Promptfoo integration decision, and audit
+  automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.

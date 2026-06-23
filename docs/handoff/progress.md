@@ -1,13 +1,15 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-65, paused for QG quality correction gate.
+Current phase: Memory ideal-state execution track after QG-00, paused for the remaining QG quality correction gate.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-65 and MM-16R in
+- MM-00 through MM-65, MM-16R, and QG-00 in
   `docs/plans/memory-ideal-state/PLAN.md`.
+- QG-00 repo-wide current-state inventory at
+  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
   `88cbbba docs(memory): add harsh review repair layer`.
@@ -221,10 +223,10 @@ Current runtime truth:
 - MM-65 adds a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases without adding Promptfoo as a dependency or executing a
   model.
-- QG-00 through QG-06 are queued before MM-66: current-state inventory, test
-  topology ADR/enforcement, TypeScript excellence standard, zombie/dead-code/
-  export audit, bloat/smell audit, official Promptfoo decision, and quality
-  gate automation in `krn audit`.
+- QG-01 through QG-06 are queued before MM-66: test topology ADR/enforcement,
+  TypeScript excellence standard, zombie/dead-code/export audit, bloat/smell
+  audit, official Promptfoo decision, and quality gate automation in
+  `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
