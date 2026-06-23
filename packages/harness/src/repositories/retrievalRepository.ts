@@ -1,4 +1,6 @@
 import type {
+  ActivationAbstentionReason,
+  ActivationExclusionReason,
   ContextExclusion,
   ContextInclusion,
   ExecutionRunId,
@@ -96,10 +98,36 @@ export interface StartRetrievalRunInput {
   metadata?: Record<string, unknown>;
 }
 
+export type ActivationTraceRawRecallReason = "exact_proof_required" | "low_trust";
+
+export interface ActivationTraceRawRecall {
+  required: boolean;
+  reasons: readonly ActivationTraceRawRecallReason[];
+  evidenceHints: readonly string[];
+}
+
+export interface ActivationTraceRawRecallTrigger {
+  subjectType: RetrievalSubjectType;
+  subjectId: string;
+  candidateId: string;
+  reasons: readonly ActivationTraceRawRecallReason[];
+  trustTier: SourceTrustTier;
+  evidenceHints: readonly string[];
+}
+
+export type ActivationDecisionSourceSupportState =
+  | "not_applicable"
+  | "source_claim_supported"
+  | "source_claim_missing_mechanism"
+  | "source_claim_missing_does_not_prove";
+
 export interface CompleteRetrievalRunInput {
   retrievalRunId: string;
   status: RetrievalRunRecord["status"];
   completedAt: string;
+  activationAbstentionReason?: ActivationAbstentionReason;
+  rawEvidenceRecallTriggerCount?: number;
+  rawEvidenceRecallTriggers?: readonly ActivationTraceRawRecallTrigger[];
   metadata?: Record<string, unknown>;
 }
 
@@ -133,6 +161,12 @@ export interface RecordActivationDecisionInput {
   score?: number;
   contextBudgetCost?: number;
   expectedDecisionImpact?: string;
+  expectedUse?: string;
+  rawRecall?: ActivationTraceRawRecall;
+  antiMemoryRecordId?: string;
+  exclusionCategory?: ActivationExclusionReason;
+  sourceSupportState?: ActivationDecisionSourceSupportState;
+  activationAbstentionReason?: ActivationAbstentionReason;
   metadata?: Record<string, unknown>;
 }
 

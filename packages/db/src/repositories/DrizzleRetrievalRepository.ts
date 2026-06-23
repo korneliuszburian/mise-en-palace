@@ -72,6 +72,41 @@ const toContextExclusionReason = (reason: string): ContextExclusionReason => {
   return "irrelevant";
 };
 
+const retrievalRunCompletionMetadata = (
+  input: CompleteRetrievalRunInput
+): Record<string, unknown> => ({
+  ...(input.metadata ?? {}),
+  ...(input.activationAbstentionReason === undefined
+    ? {}
+    : { activationAbstentionReason: input.activationAbstentionReason }),
+  ...(input.rawEvidenceRecallTriggerCount === undefined
+    ? {}
+    : { rawEvidenceRecallTriggerCount: input.rawEvidenceRecallTriggerCount }),
+  ...(input.rawEvidenceRecallTriggers === undefined
+    ? {}
+    : { rawEvidenceRecallTriggers: input.rawEvidenceRecallTriggers })
+});
+
+const activationDecisionMetadata = (
+  input: RecordActivationDecisionInput
+): Record<string, unknown> => ({
+  ...(input.metadata ?? {}),
+  ...(input.expectedUse === undefined ? {} : { expectedUse: input.expectedUse }),
+  ...(input.rawRecall === undefined ? {} : { rawRecall: input.rawRecall }),
+  ...(input.antiMemoryRecordId === undefined
+    ? {}
+    : { antiMemoryRecordId: input.antiMemoryRecordId }),
+  ...(input.exclusionCategory === undefined
+    ? {}
+    : { exclusionCategory: input.exclusionCategory }),
+  ...(input.sourceSupportState === undefined
+    ? {}
+    : { sourceSupportState: input.sourceSupportState }),
+  ...(input.activationAbstentionReason === undefined
+    ? {}
+    : { activationAbstentionReason: input.activationAbstentionReason })
+});
+
 export class DrizzleRetrievalRepository implements RetrievalRepository {
   constructor(private readonly db: KrnDatabase) {}
 
@@ -243,7 +278,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
         .set({
           status: input.status,
           completedAt: fromIsoTimestamp(input.completedAt),
-          ...(input.metadata === undefined ? {} : { metadata: input.metadata })
+          metadata: retrievalRunCompletionMetadata(input)
         })
         .where(eq(retrievalRuns.id, input.retrievalRunId))
         .returning(),
@@ -323,7 +358,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
           ...(input.expectedDecisionImpact === undefined
             ? {}
             : { expectedDecisionImpact: input.expectedDecisionImpact }),
-          metadata: input.metadata ?? {}
+          metadata: activationDecisionMetadata(input)
         })
         .returning(),
       "recordActivationDecision"

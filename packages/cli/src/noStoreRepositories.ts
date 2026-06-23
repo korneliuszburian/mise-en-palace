@@ -13,6 +13,7 @@ import type {
 } from "@krn/core";
 import type {
   AddRetrievalCandidateInput,
+  CompleteRetrievalRunInput,
   CreateContextAssemblyInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
@@ -177,12 +178,7 @@ export const createNoStoreCompilerDependencies = (
       };
     },
 
-    async completeRetrievalRun(input: {
-      retrievalRunId: string;
-      status: RetrievalRunRecord["status"];
-      completedAt: string;
-      metadata?: Record<string, unknown>;
-    }): Promise<RetrievalRunRecord> {
+    async completeRetrievalRun(input: CompleteRetrievalRunInput): Promise<RetrievalRunRecord> {
       return {
         id: input.retrievalRunId,
         status: input.status,

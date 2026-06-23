@@ -946,6 +946,8 @@ git revert <commit>
 
 ### P4-02: Type Activation Trace Decisions
 
+status: complete.
+
 objective:
 
 Move behavior-governing activation trace fields out of metadata where they
@@ -1189,7 +1191,7 @@ git revert <commit>
 - [x] P3-02 Create reviewed candidate writer from ReflectionRecord.
 - [x] P4-00 Define activation as admission control.
 - [x] P4-01 Add noisy context golden proofs.
-- [ ] P4-02 Type activation trace decisions.
+- [x] P4-02 Type activation trace decisions.
 - [ ] P5-00 Bound Promptfoo claims.
 - [ ] P5-01 Add first real behavior eval gate.
 - [ ] P6-00 Mark worker runtime truth.
@@ -1251,6 +1253,10 @@ git revert <commit>
   stale abstention, anti-memory block, broad dump rejection, unsupported source
   decision rejection, and observation prefix source-range gates. The missing
   golden-specific case was raw recall on exact proof.
+- P4-02 did not require a DB migration. Activation trace decisions are typed at
+  the repository input boundary; the Drizzle adapter serializes those fields
+  into existing metadata JSON as a persistence snapshot because the current
+  schema has no dedicated columns for these trace fields.
 
 ## Decision Log
 
@@ -1309,6 +1315,11 @@ git revert <commit>
   Golden memory behavior now asserts that included exact-proof source claims
   produce `exact_proof_required` raw recall triggers with source-claim evidence
   hints.
+- 2026-06-23: P4-02 types activation trace decisions at the repository port:
+  expected use, raw recall, anti-memory hit, exclusion category, source support
+  state, and activation abstention reason are explicit inputs. DB metadata is
+  retained only as a compatible persistence snapshot, not as caller-side
+  behavior authority.
 
 ## Outcomes & Retrospective
 
@@ -1350,7 +1361,11 @@ Current outcome:
   anti-memory block, broad context dump rejection, unsupported source decision
   rejection, observation prefix source-range requirement, and raw recall on
   exact proof.
-- Next safe action is P4-02: type activation trace decisions.
+- Activation trace persistence now receives typed decision fields for expected
+  use, raw recall, anti-memory hit, exclusion category, source support state,
+  and activation abstention reason. DB metadata stores a compatibility snapshot
+  of those fields without adding schema columns in this slice.
+- Next safe action is P5-00: bound Promptfoo claims.
 
 ## Command Evidence
 
@@ -1725,6 +1740,42 @@ Observed:
 This proves the required noisy-context golden cases have behavior proof coverage
 or explicit fixture coverage. It does not add new activation trace persistence;
 P4-02 owns typed trace decisions.
+
+P4-02 typed activation trace decisions:
+
+```sh
+pnpm --filter @krn/harness test -- activationTraceDecisions
+```
+
+Observed RED before implementation: 2 failing tests. Inclusion decisions lacked
+typed `expectedUse`, `rawRecall`, and `sourceSupportState`; exclusion decisions
+lacked typed `antiMemoryRecordId`, `exclusionCategory`,
+`activationAbstentionReason`, and `sourceSupportState`.
+
+Observed GREEN after implementation: harness focused test run passed, 17 files
+and 88 tests.
+
+```sh
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+git diff --check
+```
+
+Observed:
+
+- full typecheck passed across 7 workspace projects;
+- full test passed across 7 workspace projects: core 8 files/39 tests, schema
+  3 files/25 tests, harness 17 files/88 tests, workers 1 file/3 tests,
+  codex-adapter 3 files/7 tests, db 24 files/67 tests, cli 25 files/142 tests;
+- DB readiness passed with configured Postgres, reachable database, 11/11
+  migrations applied, pgvector available, and brain store readiness ready;
+- `git diff --check` passed with no output.
+
+This proves activation trace decision inputs are typed and the current DB
+adapter can persist compatibility snapshots without schema drift. It does not
+prove dedicated relational columns are needed or rejected for future read-model
+queries.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

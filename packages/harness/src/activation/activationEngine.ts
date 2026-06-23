@@ -6,6 +6,7 @@ import type {
 } from "@krn/core";
 
 import type {
+  ActivationDecisionSourceSupportState,
   MemoryRepository,
   RetrievalRepository,
   SourceRepository
@@ -95,6 +96,24 @@ const activationDecisionForExclusion = (
   }
 
   return "excluded";
+};
+
+const sourceSupportStateFor = (
+  candidate: RankedActivationCandidate | undefined
+): ActivationDecisionSourceSupportState => {
+  if (candidate?.subjectType !== "source_claim") {
+    return "not_applicable";
+  }
+
+  if (candidate.hasMechanism === false) {
+    return "source_claim_missing_mechanism";
+  }
+
+  if (candidate.doesNotProve === undefined || candidate.doesNotProve.trim().length === 0) {
+    return "source_claim_missing_does_not_prove";
+  }
+
+  return "source_claim_supported";
 };
 
 export const retrieveActivationCandidates = async (
@@ -221,18 +240,21 @@ export const persistActivationTrace = async (
         ? {}
         : { contextBudgetCost: inclusion.tokenEstimate }),
       expectedDecisionImpact: inclusion.expectedUse,
+      expectedUse: inclusion.expectedUse,
+      ...(rawEvidenceRecallTrigger === undefined
+        ? {}
+        : {
+            rawRecall: {
+              required: true,
+              reasons: rawEvidenceRecallTrigger.reasons,
+              evidenceHints: rawEvidenceRecallTrigger.evidenceHints
+            }
+          }),
+      sourceSupportState: sourceSupportStateFor(candidate),
       metadata: {
-        expectedUse: inclusion.expectedUse,
         ...(candidate?.searchDocumentIds === undefined
           ? {}
-          : { mergedSearchDocumentIds: candidate.searchDocumentIds }),
-        ...(rawEvidenceRecallTrigger === undefined
-          ? {}
-          : {
-              rawEvidenceRecallRequired: true,
-              rawEvidenceRecallReasons: rawEvidenceRecallTrigger.reasons,
-              rawEvidenceHints: rawEvidenceRecallTrigger.evidenceHints
-            })
+          : { mergedSearchDocumentIds: candidate.searchDocumentIds })
       }
     });
   }
@@ -252,14 +274,18 @@ export const persistActivationTrace = async (
       decision,
       reason: decision === "conflict" ? "anti_memory_block" : exclusion.reason,
       ...(exclusion.score === undefined ? {} : { score: exclusion.score }),
+      ...(candidate?.antiMemoryRecordId === undefined
+        ? {}
+        : { antiMemoryRecordId: candidate.antiMemoryRecordId }),
+      ...(candidate?.exclusion?.reason === undefined
+        ? {}
+        : { exclusionCategory: candidate.exclusion.reason }),
+      sourceSupportState: sourceSupportStateFor(candidate),
+      ...(input.contextAssembly.activationAbstention === undefined
+        ? {}
+        : { activationAbstentionReason: input.contextAssembly.activationAbstention.reason }),
       metadata: {
-        explanation: exclusion.explanation,
-        ...(candidate?.conflictReason === undefined
-          ? {}
-          : { conflictReason: candidate.conflictReason }),
-        ...(candidate?.antiMemoryRecordId === undefined
-          ? {}
-          : { blockedByAntiMemoryRecord: { recordId: candidate.antiMemoryRecordId } })
+        explanation: exclusion.explanation
       }
     });
   }
@@ -273,14 +299,17 @@ export const persistActivationTrace = async (
     retrievalRunId: input.retrievalRunId,
     status: input.contextAssembly.status === "abstained" ? "abstained" : "completed",
     completedAt: input.completedAt,
+    ...(input.contextAssembly.activationAbstention === undefined
+      ? {}
+      : { activationAbstentionReason: input.contextAssembly.activationAbstention.reason }),
+    rawEvidenceRecallTriggerCount: rawEvidenceRecallTriggers.length,
+    ...(rawEvidenceRecallTriggers.length === 0
+      ? {}
+      : { rawEvidenceRecallTriggers }),
     metadata: {
       ...(input.metadata ?? {}),
       inclusionCount: input.contextAssembly.inclusions.length,
-      exclusionCount: input.contextAssembly.exclusions.length,
-      rawEvidenceRecallTriggerCount: rawEvidenceRecallTriggers.length,
-      ...(rawEvidenceRecallTriggers.length === 0
-        ? {}
-        : { rawEvidenceRecallTriggers })
+      exclusionCount: input.contextAssembly.exclusions.length
     }
   });
 };
