@@ -2,18 +2,18 @@
 
 Hard blockers:
 
-- None for MM-62.
+- None for MM-63.
 
-Closed in MM-61-lite:
+Closed in MM-62:
 
-- Golden memory fixture now declares early smoke cases for stale memory
-  abstention, anti-memory blocking, and unsupported SourceDecision rejection.
+- Boundary fixture now declares context/source/audit/type-boundary golden cases.
 - Fixture-backed harness tests protect those behaviors through existing
   activation/audit primitives without adding the broad golden runner.
-- Stale memory is excluded and context abstains instead of confidently using it.
-- Active anti-memory blocks a tempting high-confidence stale pattern by
-  explicit key/appliesTo conflict evidence.
-- Unsupported SourceDecision records are flagged by source grounding audit.
+- ContextROI rejects broad context dumps through explicit `over_budget`
+  exclusions.
+- Source grounding audit flags source claims that omit `doesNotProve`.
+- Repo surface audit flags forbidden Research Foundry-style product surfaces.
+- Type-safety audit flags unchecked `JSON.parse` runtime boundaries.
 - No DB schema/migration, repository, runner, CLI, Promptfoo export, broad
   benchmark suite, dashboard/API/MCP/server/plugin, or source crawler surface
   was added.

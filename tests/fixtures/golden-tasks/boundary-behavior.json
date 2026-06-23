@@ -1,0 +1,116 @@
+[
+  {
+    "id": "golden-task-boundary-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Context, source, audit, and type boundaries hold",
+    "description": "Protects KRN from broad context dumps, decorative sources, forbidden surfaces, and unchecked runtime input.",
+    "owner": "boundary-eval",
+    "domains": ["context", "source", "audit", "type_boundary"],
+    "cases": [
+      {
+        "id": "golden-case-context-001-a",
+        "title": "broad context dump is rejected",
+        "input": {
+          "task": "Protect against broad context dump in a source-grounded implementation task."
+        },
+        "expectedBehavior": {
+          "outcome": "exclude",
+          "subject": "context_assembly:broad_dump",
+          "rationale": "ContextROI must keep the packet small and mark extra candidates as exclusions.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-context-001-a",
+            "domain": "context",
+            "severity": "blocking",
+            "title": "broad context dump enters packet",
+            "mustNot": "ContextAssembly must not include every available candidate when the ROI budget is small.",
+            "detection": "ContextAssembly includes more than the configured maxInclusions or omits over_budget exclusions."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-source-001-a",
+        "title": "source claim requires doesNotProve",
+        "input": {
+          "claim": "A source proves the whole memory architecture is correct."
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "source_claim:source-claim-missing-does-not-prove",
+          "rationale": "Source-to-decision records must say what the source does not prove before they can guide architecture.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-source-001-a",
+            "domain": "source",
+            "severity": "blocking",
+            "title": "decorative source accepted",
+            "mustNot": "A SourceClaim must not be accepted without doesNotProve.",
+            "detection": "Source grounding audit emits no blocking finding for a claim missing doesNotProve."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-audit-001-a",
+        "title": "audit finds forbidden surface",
+        "input": {
+          "path": "packages/research-foundry/src/index.ts"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "repo_surface:research-foundry",
+          "rationale": "Audit must block rejected product subsystems before they enter the runtime surface.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-audit-001-a",
+            "domain": "audit",
+            "severity": "blocking",
+            "title": "forbidden surface accepted",
+            "mustNot": "Audit must not pass when a rejected Research Foundry surface appears.",
+            "detection": "Repo surface audit emits no blocking finding for packages/research-foundry."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-type-001-a",
+        "title": "unknown-first boundary is enforced",
+        "input": {
+          "file": "packages/cli/src/runtimeInput.ts"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "type_boundary:runtime-json-parse",
+          "rationale": "Runtime input must be treated as unknown and validated before use.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-type-001-a",
+            "domain": "type_boundary",
+            "severity": "warning",
+            "title": "unchecked runtime input accepted",
+            "mustNot": "Runtime JSON.parse must not pass without unknown-first validation.",
+            "detection": "Type-safety audit emits no warning for unchecked JSON.parse."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-62"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T10:00:00.000Z",
+    "updatedAt": "2026-06-23T10:00:00.000Z"
+  }
+]

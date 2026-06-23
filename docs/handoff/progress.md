@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-61-lite.
+Current phase: Memory ideal-state execution track after MM-62.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-61-lite and MM-16R in
+- MM-00 through MM-62 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -210,10 +210,13 @@ Current runtime truth:
 - MM-61-lite adds early golden smoke cases for stale memory abstention,
   explicit anti-memory blocking of a tempting stale pattern, and source
   grounding audit rejection of unsupported SourceDecision records.
+- MM-62 adds fixture-backed context/source/audit/TS boundary golden cases for
+  ContextROI broad-dump rejection, source `doesNotProve`, forbidden surface
+  audit, and unchecked runtime parsing/type-boundary audit.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-62 context/source/audit/TS boundary golden cases.
+- Continue with MM-63 observation/reflection/anti-memory golden cases.

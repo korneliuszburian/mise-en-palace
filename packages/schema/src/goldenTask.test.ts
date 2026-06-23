@@ -14,6 +14,15 @@ const readFixture = (): unknown => {
   return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
 };
 
+const readBoundaryFixture = (): unknown => {
+  const fixtureUrl = new URL(
+    "../../../tests/fixtures/golden-tasks/boundary-behavior.json",
+    import.meta.url
+  );
+
+  return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
+};
+
 describe("golden task fixtures", () => {
   test("load deterministically from file fixtures", () => {
     const tasks = parseGoldenTaskFixtures(readFixture());
@@ -33,6 +42,18 @@ describe("golden task fixtures", () => {
     expect(tasks[1]?.cases[1]?.protectedFailureModes.map((failureMode) => failureMode.id)).toEqual([
       "failure-mode-memory-002-a",
       "failure-mode-memory-002-b"
+    ]);
+  });
+
+  test("load boundary behavior fixtures deterministically", () => {
+    const tasks = parseGoldenTaskFixtures(readBoundaryFixture());
+
+    expect(tasks.map((task) => task.id)).toEqual(["golden-task-boundary-001"]);
+    expect(tasks[0]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
+      "golden-case-audit-001-a",
+      "golden-case-context-001-a",
+      "golden-case-source-001-a",
+      "golden-case-type-001-a"
     ]);
   });
 
