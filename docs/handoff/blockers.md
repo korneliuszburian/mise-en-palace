@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-45.
+- None for MM-46.
+
+Closed in MM-45:
+
+- Activation dogfood compared one KRN memory implementation task before and
+  after observation prefix.
+- Without observation prefix, context abstained with `no_candidates`.
+- With one source-ranged observation prefix item, context assembled as a
+  metadata-only activation artifact.
+- DB before/after counts proved no Memory Core, observation, or context table
+  mutation during the comparison.
 
 Closed in MM-44A:
 

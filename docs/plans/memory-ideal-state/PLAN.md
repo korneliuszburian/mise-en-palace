@@ -416,7 +416,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-43 complete: added pure activation raw-evidence recall triggers for exact-proof and low-trust inclusions, persisted trigger summaries into activation decision and retrieval run metadata, and made activation smoke prove `Raw evidence recall triggers: 1`. Intended files: `packages/harness/src/activation/activationRawRecall.ts`, activation exports/tests, `packages/harness/src/activation/activationEngine.ts`, `packages/db/src/activationSmoke.ts`, `packages/cli/src/runDbSmokeCommand.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no raw evidence fetcher implementation, no observation prefix integration, no retrieval query change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: focused activation test passed with 9 files / 45 tests and proves exact-proof source inclusions and low-trust memory inclusions create raw recall triggers with evidence hints; focused harness/db/cli typechecks passed after fixing strict optional input construction; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 250 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, raw evidence recall triggers `1`, and context exclusions `3`. Next: MM-44 observation prefix integration.
 - [x] (2026-06-23) MM-44 complete: integrated the hardened observation prefix selector into context assembly as a rendered activation metadata artifact, added source-range counts to selected prefix items, and made activation smoke prove `Observation prefix items: 1`. Intended files: `packages/harness/src/activation/types.ts`, `packages/harness/src/activation/assembleContext.ts`, `packages/harness/src/observations/observationPrefix.ts`, activation/observation tests, `packages/db/src/activationSmoke.ts`, `packages/cli/src/runDbSmokeCommand.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no Memory Core mutation, no reflection, no promotion, no broad vector search rewrite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because context with only a valid observation prefix still abstained; GREEN focused activation/observation-prefix tests passed with 9 files / 46 tests and prove source-ranged prefix metadata, selected item count, and low-relevance exclusion; focused harness/db/cli typechecks passed; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, observation prefix items `1`, raw evidence recall triggers `1`, and context exclusions `3`. Next: MM-44A observation prefix integration gate.
 - [x] (2026-06-23) MM-44A complete: added an assembly-side observation prefix gate so manually supplied prefix metadata is rejected when any selected item lacks source ranges. Intended files: `packages/harness/src/activation/assembleContext.ts`, `packages/harness/src/activation/index.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new prefix fetcher, no reflection, no memory promotion, no broad vector search rewrite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because an unsourced prefix-only context assembled; GREEN focused activation test passed with 9 files / 47 tests after context assembly omitted `metadata.observationPrefix`, added `metadata.observationPrefixGate` with `missing_source_ranges`, and kept the context abstained when no other inclusions existed. Next: MM-45 activation dogfood.
-- [ ] MM-45: Dogfood activation before/after observations.
+- [x] (2026-06-23) MM-45 complete: dogfooded activation before/after observation prefix on one KRN memory implementation task and recorded proof at `docs/runs/2026-06-23-activation-observation-prefix-dogfood.md`. Intended files: dogfood run doc, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new CLI, no prefix fetcher, no reflection, no memory promotion, no dashboard/API/MCP/server/plugin/source crawler. Evidence: DB counts before and after stayed unchanged for `memory_records=4`, `memory_candidates=2`, `observation_groups=1`, `observation_items=5`, and `context_assemblies=18`; before context without candidates/prefix abstained with `no_candidates`; after context with one selected source-ranged observation prefix assembled with `observationPrefixItemCount=1`; verdict `prefix_improves_context_precision_without_candidates`. Next: MM-46 CapabilityRequirement and CapabilityPlan hardening.
 - [ ] MM-46: CapabilityRequirement and CapabilityPlan hardening.
 - [ ] MM-47: CapabilityCompiler v1.
 - [ ] MM-48: Skill/rule/policy/tool binding models.
@@ -1508,6 +1508,17 @@ Gate 5 MM-44A outcome:
 - No DB migration, prefix fetcher, reflection, memory promotion, broad vector
   search rewrite, or new runtime surface was added.
 
+Gate 5 MM-45 outcome:
+- Activation dogfood compared the same KRN memory implementation task before
+  and after observation prefix.
+- Before prefix, context correctly abstained with `no_candidates`.
+- After prefix, context assembled with one source-ranged observation prefix
+  item and no memory/source/search inclusions.
+- DB before/after counts proved no Memory Core, observation, or context
+  persistence mutation during the dogfood proof.
+- The proof is recorded at
+  `docs/runs/2026-06-23-activation-observation-prefix-dogfood.md`.
+
 Slices:
 
 MM-39 — ActivationQuery model
@@ -1620,6 +1631,14 @@ MM-44A — Observation prefix integration gate
 
 MM-45 — Activation dogfood
 - Compare one KRN memory task before/after observation prefix.
+- Slice note (2026-06-23): run a dogfood proof over existing activation APIs
+  that compares the same KRN memory task with no observation prefix and with a
+  selected source-ranged observation prefix. Record DB before/after counts for
+  Memory Core tables to prove the dogfood did not mutate memory. Intended
+  files: `docs/runs/2026-06-23-activation-observation-prefix-dogfood.md`,
+  root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals: no DB
+  migration, no new CLI, no prefix fetcher, no reflection, no memory promotion,
+  no dashboard/API/MCP/server/plugin/source crawler.
 - Verification:
       context precision improves or result is marked revisit; no automatic product mutation.
 

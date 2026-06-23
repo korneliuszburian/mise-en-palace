@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-44A.
+Current phase: Memory ideal-state execution track after MM-45.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-44A and MM-16R in
+- MM-00 through MM-45 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -145,10 +145,16 @@ Current runtime truth:
 - MM-44A adds an assembly-side observation prefix gate: if a selected prefix
   item lacks source ranges, `assembleContext` rejects prefix metadata, records
   `observationPrefixGate`, and leaves a prefix-only context abstained.
+- MM-45 dogfoods activation before/after observation prefix on one KRN memory
+  implementation task. Proof is recorded at
+  `docs/runs/2026-06-23-activation-observation-prefix-dogfood.md`: before
+  prefix context abstained with `no_candidates`; after prefix context assembled
+  with one source-ranged observation prefix item; DB counts for Memory Core,
+  observation, and context tables stayed unchanged.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-45 activation dogfood.
+- Continue with MM-46 CapabilityRequirement and CapabilityPlan hardening.
