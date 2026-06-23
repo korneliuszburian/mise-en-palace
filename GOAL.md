@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C3-00: Expand Real GoldenTask Behavior Gate Coverage
+C4-00: Decide Worker Runtime ADR Before Execution
 ```
 
 Do not build worker runtime, dashboard, or broad memory behavior until
-real GoldenTask behavior coverage is expanded or explicitly deferred in
-`PLAN.md`.
+C4 records whether a worker daemon/job executor is accepted or rejected, with
+write authority and falsifiers in `PLAN.md` / ADR form.
 
 ## Required Read Order
 

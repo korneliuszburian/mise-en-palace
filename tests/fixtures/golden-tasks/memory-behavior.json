@@ -250,6 +250,70 @@
     "updatedAt": "2026-06-23T09:20:00.000Z"
   },
   {
+    "id": "golden-task-runtime-proof-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Runtime proof boundaries stay explicit",
+    "description": "Protects observation prefix source-range rejection and command evidence provenance.",
+    "owner": "memory-eval",
+    "domains": ["observation", "context", "type_boundary"],
+    "cases": [
+      {
+        "id": "golden-case-observation-prefix-001-a",
+        "title": "unsourced observation prefix is rejected",
+        "input": {
+          "observationPrefix": "selected observation item without source ranges"
+        },
+        "expectedBehavior": {
+          "outcome": "reject",
+          "subject": "observation_prefix:observation-unsourced-prefix",
+          "rationale": "Selected observation prefix items must carry source ranges before context assembly accepts them.",
+          "evidenceRefs": ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-observation-prefix-001-a",
+            "domain": "observation",
+            "severity": "blocking",
+            "title": "unsourced observation prefix admitted",
+            "mustNot": "ContextAssembly must not accept selected observation prefix items without source ranges.",
+            "detection": "ContextAssembly contains observationPrefix for observation-unsourced-prefix."
+          }
+        ],
+        "sourceRefs": ["docs/decisions/ADR-0013-observation-is-staging-not-memory.md"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-evidence-001-a",
+        "title": "command evidence keeps provenance visible",
+        "input": {
+          "commands": ["pnpm test=not_run", "pnpm typecheck=passed"]
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "evidence_command:provenance",
+          "rationale": "Weak default command rows must remain distinguishable from operator-reported passed evidence.",
+          "evidenceRefs": ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-evidence-001-a",
+            "domain": "type_boundary",
+            "severity": "blocking",
+            "title": "weak command evidence masquerades as proof",
+            "mustNot": "EvidenceBundle command rows must not lose default_template versus operator_reported provenance.",
+            "detection": "normalizeEvidenceCommand returns indistinguishable provenance for default and operator-reported rows."
+          }
+        ],
+        "sourceRefs": ["packages/core/src/evidenceBundle.ts"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T09:20:00.000Z",
+    "updatedAt": "2026-06-23T09:20:00.000Z"
+  },
+  {
     "id": "golden-task-source-001",
     "projectId": "project-1",
     "status": "draft",

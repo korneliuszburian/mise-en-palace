@@ -26,19 +26,18 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Real GoldenTask Behavior Gate Coverage.
+current_priority: Worker Runtime Decision Boundary.
 
-first_unchecked_slice: `C3-00: Expand Real GoldenTask Behavior Gate Coverage`.
+first_unchecked_slice: `C4-00: Decide Worker Runtime ADR Before Execution`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- expand real GoldenTask behavior proof without treating Promptfoo smoke as
-  behavior proof;
+- decide worker runtime authority before any daemon/job executor exists;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
-- do not start worker runtime, dashboard, or broad memory features before the
-  package surface authority debt is handled.
+- do not start worker runtime, dashboard, or broad memory features before C4
+  records the accepted or rejected runtime boundary.
 
 completed_checkpoint:
 
@@ -96,6 +95,11 @@ completed_checkpoint:
   candidates instead of final records, `memory anti promote/reject` goes through
   AntiMemoryReviewGate, and the memory-governance DB smoke proves
   candidate-to-record promotion on live Postgres.
+- C3-00 expands the real GoldenTask behavior gate from three to six KRN
+  behavior proofs: stale memory abstention, anti-memory block, raw recall exact
+  proof, observation prefix source-range rejection, evidence command provenance,
+  and reflection final-truth rejection. Promptfoo smoke remains integration
+  proof only.
 
 completed_evidence_pointers:
 
@@ -2336,6 +2340,8 @@ git commit -m "feat(memory): stage reviewed anti-memory candidates"
 
 ### C3-00: Expand Real Golden Behavior Gate Coverage
 
+status: complete.
+
 objective:
 
 Extend `runKrnBehaviorGoldenGate` beyond the first three invariants to cover
@@ -2352,6 +2358,17 @@ mechanism:
 
 Each new case must execute KRN code paths and produce proof rows for
 `runGoldenTaskFixtures`; Promptfoo smoke remains integration only.
+
+outcome:
+
+`runKrnBehaviorGoldenGate` now produces six accepted
+`krn_behavior_execution` proof rows. The added rows execute:
+
+- activation raw recall trigger generation for exact-proof source claims;
+- context assembly rejection for selected observation prefix items without
+  source ranges;
+- EvidenceBundle command provenance normalization for weak default rows versus
+  operator-reported passed rows.
 
 verification:
 
@@ -2525,7 +2542,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C1-02 Separate harness root from eval/internal surfaces.
 - [x] C1-03 Split repository port public and internal surfaces.
 - [x] C2-00 Add reviewed anti-memory candidate storage.
-- [ ] C3-00 Expand real GoldenTask behavior gate coverage.
+- [x] C3-00 Expand real GoldenTask behavior gate coverage.
 - [ ] C4-00 Decide worker runtime ADR before execution.
 - [ ] C5-00 Convert self-hosting run gaps into candidates.
 - [x] C6-00A Re-home memory review signals as pure core behavior.
@@ -2881,7 +2898,12 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C3-00: Expand real GoldenTask behavior gate coverage.
+  C4-00: Decide worker runtime ADR before execution.
+- C3-00 found no need for a new eval subsystem. The existing
+  `runKrnBehaviorGoldenGate` path could cover raw recall, observation prefix
+  source-range rejection, and EvidenceBundle command provenance by executing
+  current KRN functions and passing the resulting `krn_behavior_execution`
+  proof rows through `runGoldenTaskFixtures`.
 
 ## Command Evidence
 
@@ -3813,8 +3835,38 @@ Observed:
 - `git diff --check` passed.
 
 This proves anti-memory final truth now has a reviewed candidate storage path
-and runtime DB proof. It does not expand real GoldenTask behavior coverage; C3-00
-remains the next active slice.
+and runtime DB proof. It did not expand real GoldenTask behavior coverage; C3-00
+below closes that gap.
+
+C3-00 verification after expanding real GoldenTask behavior gate coverage:
+
+```sh
+pnpm --filter @krn/harness test -- goldenKrnBehaviorGate goldenMemoryBehavior
+pnpm --filter @krn/schema test -- goldenTask
+node -e "JSON.parse(require('fs').readFileSync('tests/fixtures/golden-tasks/memory-behavior.json','utf8')); console.log('memory-behavior fixture JSON ok')"
+pnpm --filter @krn/harness test -- golden
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- `runKrnBehaviorGoldenGate` now covers six behavior cases with
+  `krn_behavior_execution` proof rows;
+- new cases cover exact-proof raw recall, observation prefix source-range
+  rejection, and EvidenceBundle command provenance;
+- memory behavior fixture JSON parses and declares the new cases;
+- focused harness golden tests passed: 20 files, 79 tests;
+- focused schema golden task tests passed: 3 files, 25 tests;
+- full workspace typecheck passed;
+- full workspace tests passed: 84 files, 380 tests;
+- `git diff --check` passed.
+
+This proves the real GoldenTask behavior gate now executes the added KRN code
+paths before `runGoldenTaskFixtures` accepts the proof rows. It does not prove
+Promptfoo executes behavior, worker runtime readiness, or global Memory Brain
+quality.
 
 ## Historical Reset Completion Criteria
 

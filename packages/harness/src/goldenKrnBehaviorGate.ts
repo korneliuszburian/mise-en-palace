@@ -2,19 +2,26 @@ import type {
   AntiMemoryRecord,
   GoldenTask,
   MemoryRecord,
+  ObservationItem,
+  SourceClaim,
   TaskContract
 } from "@krn/core";
 import {
-  assessReflectionOutputContract
+  assessReflectionOutputContract,
+  normalizeEvidenceCommand
 } from "@krn/core";
 
 import {
   applyActivationFilters,
+  applyContextROI,
   applyTemporalFilter,
   assembleContext,
+  buildActivationRawRecallTriggers,
   buildMemoryQuery,
+  buildSourceQuery,
   rankCandidates,
-  toMemoryCandidate
+  toMemoryCandidate,
+  toSourceClaimCandidate
 } from "./activation/index.js";
 import type {
   GoldenBehaviorProof,
@@ -23,6 +30,9 @@ import type {
 import {
   runGoldenTaskFixtures
 } from "./goldenRunner.js";
+import {
+  selectObservationPrefix
+} from "./observations/observationPrefix.js";
 
 export interface RunKrnBehaviorGoldenGateInput {
   tasks: readonly GoldenTask[];
@@ -85,6 +95,58 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
   validFrom: "2026-06-01T00:00:00.000Z",
   createdAt: "2026-06-01T00:00:00.000Z",
   updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
+  id: "source-claim-exact-proof",
+  sourceArtifactId: "source-artifact-1",
+  claim: "Exact source proof is required before using this activation claim.",
+  mechanism: "The claim affects implementation safety and needs raw evidence recall.",
+  krnImplication: "Activation may include the claim only with a raw recall trigger.",
+  doesNotProve: "This does not prove implementation correctness.",
+  trustTier: "high",
+  supportType: "supports",
+  consumer: "golden-real-behavior-gate",
+  status: "proposed",
+  metadata: {},
+  createdAt: "2026-06-01T00:00:00.000Z",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const observationItem = (now: string, overrides: Partial<ObservationItem>): ObservationItem => ({
+  id: "observation-unsourced-prefix",
+  groupId: "observation-group-1",
+  scope: {
+    projectId: "project-1",
+    taskContractId: "task-real-behavior-gate"
+  },
+  kind: "fact",
+  status: "candidate",
+  priority: "high",
+  confidence: "high",
+  provenanceKind: "run_event",
+  subject: "observation prefix source range",
+  summary: "Observation prefix source range is required.",
+  body: "Activation must reject selected observation prefix items without source ranges.",
+  temporalScope: {
+    observedAt: now,
+    ingestedAt: now,
+    validFrom: now
+  },
+  sourceRanges: [{
+    id: "observation-range-1",
+    sourceType: "run_event",
+    sourceId: "run-event-1",
+    locator: "run_events.sequence:1",
+    capturedAt: now
+  }],
+  entityLinks: [],
+  claimLinks: [],
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
   ...overrides
 });
 
@@ -205,10 +267,116 @@ const runReflectionFinalTruthBlock = (now: string): GoldenBehaviorProof => {
   );
 };
 
+const runRawRecallExactProof = (now: string): GoldenBehaviorProof => {
+  const ranked = rankCandidates([
+    toSourceClaimCandidate(sourceClaim({}))
+  ], buildSourceQuery(taskContract(now, "Use exact source proof before implementing activation safety.")));
+  const context = assembleContext({
+    id: "context-real-gate-exact-proof",
+    harnessPlanId: "plan-real-gate",
+    candidates: applyContextROI(ranked, { maxInclusions: 1 }),
+    createdAt: now
+  });
+  const triggers = buildActivationRawRecallTriggers({
+    candidates: ranked,
+    contextAssembly: context,
+    requireExactProof: true
+  });
+  const passed =
+    context.inclusions.some((inclusion) =>
+      inclusion.subjectType === "source_claim" &&
+      inclusion.subjectId === "source-claim-exact-proof"
+    ) &&
+    triggers.some((trigger) =>
+      trigger.subjectType === "source_claim" &&
+      trigger.subjectId === "source-claim-exact-proof" &&
+      trigger.reasons.includes("exact_proof_required") &&
+      trigger.evidenceHints.includes("source_claim:source-claim-exact-proof")
+    );
+
+  return proof(
+    "golden-case-memory-005-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real activation behavior included exact-proof source claim only with raw recall trigger."
+      : "Real activation behavior did not attach raw recall trigger to exact-proof source claim."
+  );
+};
+
+const runObservationPrefixSourceRangeRejection = (now: string): GoldenBehaviorProof => {
+  const task = taskContract(
+    now,
+    "Use observation prefix source range evidence before assembling context."
+  );
+  const prefix = selectObservationPrefix({
+    task,
+    projectId: "project-1",
+    observations: [observationItem(now, {
+      sourceRanges: []
+    })],
+    maxItems: 1,
+    now
+  });
+  const context = assembleContext({
+    id: "context-real-gate-unsourced-prefix",
+    harnessPlanId: "plan-real-gate",
+    candidates: [],
+    observationPrefix: prefix,
+    createdAt: now
+  });
+  const passed =
+    context.status === "abstained" &&
+    context.observationPrefix === undefined &&
+    context.observationPrefixGate?.status === "rejected" &&
+    context.observationPrefixGate.reasons.includes("missing_source_ranges") &&
+    context.observationPrefixGate.rejectedObservationIds.includes("observation-unsourced-prefix");
+
+  return proof(
+    "golden-case-observation-prefix-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real context assembly rejected selected observation prefix item without source ranges."
+      : "Real context assembly did not reject selected observation prefix item without source ranges."
+  );
+};
+
+const runEvidenceCommandProvenance = (_now: string): GoldenBehaviorProof => {
+  const weakDefault = normalizeEvidenceCommand({
+    command: "pnpm test",
+    status: "not_run"
+  });
+  const operatorReported = normalizeEvidenceCommand({
+    command: "pnpm typecheck",
+    status: "passed",
+    provenance: "operator_reported",
+    exitCode: 0,
+    capturedAt: "2026-06-23T10:00:00.000Z",
+    assertedBy: "operator"
+  });
+  const passed =
+    weakDefault.provenance === "default_template" &&
+    weakDefault.status === "not_run" &&
+    weakDefault.doesNotProve.includes("does not prove the command executed") &&
+    operatorReported.provenance === "operator_reported" &&
+    operatorReported.status === "passed" &&
+    operatorReported.doesNotProve.includes("does not prove memory quality");
+
+  return proof(
+    "golden-case-evidence-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence."
+      : "Real EvidenceBundle behavior did not preserve command provenance distinction."
+  );
+};
+
 const proofFactories = {
   "golden-case-memory-smoke-001": runStaleMemoryAbstention,
   "golden-case-memory-smoke-002": runAntiMemoryBlock,
-  "golden-case-reflection-001-a": runReflectionFinalTruthBlock
+  "golden-case-reflection-001-a": runReflectionFinalTruthBlock,
+  "golden-case-memory-005-a": runRawRecallExactProof,
+  "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,
+  "golden-case-evidence-001-a": runEvidenceCommandProvenance
 } as const;
 
 type SupportedCaseId = keyof typeof proofFactories;

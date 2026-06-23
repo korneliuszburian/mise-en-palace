@@ -117,6 +117,7 @@ const goldenCaseIds = (): string[] => {
 describe("golden memory behavior cases", () => {
   it("declares the required MM-61 memory behavior cases as fixtures", () => {
     expect(goldenCaseIds()).toEqual([
+      "golden-case-evidence-001-a",
       "golden-case-memory-001-a",
       "golden-case-memory-002-a",
       "golden-case-memory-002-b",
@@ -125,6 +126,7 @@ describe("golden memory behavior cases", () => {
       "golden-case-memory-005-a",
       "golden-case-memory-smoke-001",
       "golden-case-memory-smoke-002",
+      "golden-case-observation-prefix-001-a",
       "golden-case-source-smoke-001"
     ]);
   });
