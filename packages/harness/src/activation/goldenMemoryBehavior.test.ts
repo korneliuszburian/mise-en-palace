@@ -1,11 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import type {
+  AntiMemoryRecord,
   MemoryRecord,
   TaskContract
 } from "@krn/core";
 
 import {
+  runSourceGroundingAudit
+} from "../audit/auditChecks.js";
+import {
+  applyActivationFilters,
   applyContextROI,
   applyTemporalFilter,
   applyTrustFilter,
@@ -55,6 +60,26 @@ const memoryRecord = (overrides: Partial<MemoryRecord>): MemoryRecord => ({
   ...overrides
 });
 
+const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecord => ({
+  id: "anti-memory-1",
+  projectId: "project-1",
+  key: "stale-pattern",
+  rejectedClaim: "Use stale memory update patterns as trusted guidance.",
+  reason: "The pattern was rejected by reviewed anti-memory.",
+  invalidatedBySourceClaimIds: [],
+  appliesTo: "stale-pattern",
+  summary: "Block stale memory pattern",
+  body: "Activation must exclude this stale memory key.",
+  owner: "memory-eval",
+  confidence: 95,
+  sourceLineage: [{ sourceId: "source-claim-anti-memory-1" }],
+  metadata: {},
+  validFrom: "2026-06-01T00:00:00.000Z",
+  createdAt: "2026-06-01T00:00:00.000Z",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
 const goldenCaseIds = (): string[] => {
   const fixtureUrl = new URL(
     "../../../../tests/fixtures/golden-tasks/memory-behavior.json",
@@ -78,7 +103,10 @@ describe("golden memory behavior cases", () => {
       "golden-case-memory-002-a",
       "golden-case-memory-002-b",
       "golden-case-memory-003-a",
-      "golden-case-memory-004-a"
+      "golden-case-memory-004-a",
+      "golden-case-memory-smoke-001",
+      "golden-case-memory-smoke-002",
+      "golden-case-source-smoke-001"
     ]);
   });
 
@@ -185,5 +213,90 @@ describe("golden memory behavior cases", () => {
       expectedUse: guidance
     });
     expect(ranked[0]?.lexicalScore).toBeGreaterThan(0);
+  });
+
+  it("smoke case: stale memory abstains instead of entering context confidently", () => {
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({
+        id: "memory-smoke-stale",
+        confidence: 95,
+        validUntil: "2026-06-01T00:00:00.000Z"
+      }))
+    ], buildMemoryQuery(task({
+      objective: "Use the stale memory update pattern."
+    })));
+    const context = assembleContext({
+      id: "context-smoke-stale",
+      harnessPlanId: "plan-1",
+      candidates: applyTemporalFilter(ranked, now),
+      createdAt: now
+    });
+
+    expect(context.status).toBe("abstained");
+    expect(context.inclusions).toHaveLength(0);
+    expect(context.exclusions).toEqual([expect.objectContaining({
+      subjectId: "memory-smoke-stale",
+      reason: "stale"
+    })]);
+  });
+
+  it("smoke case: active anti-memory blocks a tempting stale pattern", () => {
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({
+        id: "memory-stale-pattern",
+        key: "stale-pattern",
+        summary: "Stale pattern appears highly relevant for memory updates.",
+        body: "This stale pattern should be tempting but blocked.",
+        confidence: 98
+      }))
+    ], buildMemoryQuery(task({
+      objective: "Use stale pattern guidance for a memory update."
+    })));
+    const filtered = applyActivationFilters({
+      candidates: ranked,
+      antiMemoryRecords: [antiMemoryRecord({})],
+      minimumTrustTier: "low",
+      now
+    });
+    const context = assembleContext({
+      id: "context-smoke-anti-memory",
+      harnessPlanId: "plan-1",
+      candidates: filtered.candidates,
+      createdAt: now
+    });
+
+    expect(context.inclusions).toHaveLength(0);
+    expect(context.exclusions).toEqual([expect.objectContaining({
+      subjectId: "memory-stale-pattern",
+      reason: "unsafe"
+    })]);
+    expect(filtered.conflictSets).toEqual([expect.objectContaining({
+      reason: "anti_memory_block",
+      candidateIds: expect.arrayContaining(["memory-stale-pattern", "anti-memory-1"])
+    })]);
+  });
+
+  it("smoke case: unsupported SourceDecision is flagged by source grounding audit", () => {
+    const findings = runSourceGroundingAudit({
+      sliceId: "MM-61-lite",
+      capturedAt: now,
+      files: [],
+      changedFiles: [],
+      intendedFiles: [],
+      verificationCommands: [],
+      sourceDecisions: [{
+        id: "source-decision-unsupported",
+        decision: "Adopt broad memory behavior without a source claim.",
+        sourceClaimId: undefined,
+        falsifier: "The decision can be implemented without source support.",
+        consumer: "MM-61-lite golden smoke"
+      }]
+    });
+
+    expect(findings).toEqual([expect.objectContaining({
+      category: "source_grounding",
+      severity: "blocking",
+      title: "Source decision lacks source claim"
+    })]);
   });
 });

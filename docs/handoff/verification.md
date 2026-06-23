@@ -1,23 +1,23 @@
 # Verification
 
-Latest verified slice: MM-61 memory behavior golden cases.
+Latest verified slice: MM-61-lite early golden memory smoke cases.
 
 Passed:
 
 - Preflight `git status --short --branch` showed branch `main` aligned with
   `origin/main` plus only the two raw research materials untracked.
 - Preflight `git log --oneline -5` showed latest commit
-  `7d97182 feat(schema): add golden task fixture parsing`.
+  `0f54a84 test(harness): add golden memory behavior cases`.
 - RED focused `pnpm --filter @krn/harness test --
-  activation/goldenMemoryBehavior.test.ts` failed because the fixture declared
-  only three of the required MM-61 memory behavior cases.
+  activation/goldenMemoryBehavior.test.ts` failed because the fixture lacked
+  the required MM-61-lite smoke cases.
 - GREEN focused `pnpm --filter @krn/harness test --
-  activation/goldenMemoryBehavior.test.ts` passed with 10 files and 56 tests.
+  activation/goldenMemoryBehavior.test.ts` passed with 10 files and 59 tests.
 - Focused `pnpm --filter @krn/schema test -- goldenTask.test.ts` passed with
-  2 files and 21 tests after the fixture was extended.
-- Focused `pnpm --filter @krn/harness typecheck` passed.
+  2 files and 21 tests after deterministic task/case expectations were
+  updated for the source smoke fixture.
 - Final `pnpm typecheck` passed across all workspace packages.
-- Final `pnpm test` passed across 51 files and 283 tests.
+- Final `pnpm test` passed across 52 files and 286 tests.
 - Final `git diff --check` passed.
 - Final forbidden surface/dependency scan found no forbidden packages,
   `.krn` runtime truth directory, forbidden dependencies, server/listener
@@ -28,28 +28,25 @@ Passed:
   with explicit intended files and verification flags passed with verdict
   `pass` and 0 findings.
 
-MM-61 behavior proof:
+MM-61-lite behavior proof:
 
-- Fixture now declares five memory behavior cases:
-  source-linked memory selection, stale memory exclusion, weak/stale
-  abstention, temporal validity, and application guidance.
+- Fixture now declares early smoke cases for stale memory abstention,
+  anti-memory blocking, and unsupported SourceDecision rejection in addition
+  to the existing MM-61 memory behavior cases.
 - Harness golden behavior test uses existing activation primitives, not a broad
   runner.
-- Source-linked memory is included when it matches the memory query.
-- Stale memory is excluded and context abstains when stale memory is the only
-  candidate.
-- Weak low-confidence memory produces abstention metadata instead of context.
-- Current memory is selected over expired memory.
-- Application guidance is preserved as ranked memory `expectedUse` and
-  participates in lexical activation text.
+- Stale memory is excluded and context abstains instead of confidently using it.
+- Active anti-memory blocks a tempting high-confidence stale memory pattern
+  by explicit key/appliesTo conflict evidence.
+- Source grounding audit emits a blocking finding for SourceDecision records
+  that lack a linked SourceClaim.
 - No DB schema/migration, repository, runner, CLI, Promptfoo export, broad
   benchmark suite, dashboard/API/MCP/server/plugin, source crawler, runtime
   markdown memory, or `.krn` runtime truth was added.
 
-Not proven by MM-61:
+Not proven by MM-61-lite:
 
-- MM-61-lite early smoke cases for anti-memory and unsupported SourceDecision
-  remain next.
+- MM-62 context/source/audit/TS boundary golden cases remain next.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.
 - The two raw research materials under `docs/materials/` remain untracked dirty

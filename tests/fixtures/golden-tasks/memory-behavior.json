@@ -65,6 +65,56 @@
         ],
         "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
         "metadata": {}
+      },
+      {
+        "id": "golden-case-memory-smoke-001",
+        "title": "stale memory smoke abstains",
+        "input": {
+          "task": "Use the stale memory update pattern."
+        },
+        "expectedBehavior": {
+          "outcome": "abstain",
+          "subject": "context_assembly",
+          "rationale": "A stale memory record must become exclusion evidence, not confident context.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-smoke-001",
+            "domain": "memory",
+            "severity": "blocking",
+            "title": "stale memory used confidently",
+            "mustNot": "ContextAssembly must not include stale memory without abstaining.",
+            "detection": "ContextAssembly includes memory_record:memory-smoke-stale."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-memory-smoke-002",
+        "title": "anti-memory blocks tempting stale pattern",
+        "input": {
+          "task": "Use stale pattern guidance for a memory update."
+        },
+        "expectedBehavior": {
+          "outcome": "exclude",
+          "subject": "memory_record:memory-stale-pattern",
+          "rationale": "Active anti-memory must block a high-confidence stale pattern even when it lexically matches the task.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-smoke-002",
+            "domain": "anti_memory",
+            "severity": "blocking",
+            "title": "anti-memory block bypassed",
+            "mustNot": "Activation must not include memory_record:memory-stale-pattern when active anti-memory targets its key.",
+            "detection": "ContextAssembly includes memory_record:memory-stale-pattern or omits anti_memory_block conflict evidence."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"],
+        "metadata": {}
       }
     ],
     "metadata": {},
@@ -167,6 +217,45 @@
           }
         ],
         "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T09:20:00.000Z",
+    "updatedAt": "2026-06-23T09:20:00.000Z"
+  },
+  {
+    "id": "golden-task-source-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Unsupported source decisions are rejected",
+    "description": "Protects source-to-decision governance from unsupported decisions.",
+    "owner": "source-eval",
+    "domains": ["source", "audit"],
+    "cases": [
+      {
+        "id": "golden-case-source-smoke-001",
+        "title": "unsupported SourceDecision is flagged",
+        "input": {
+          "decision": "Adopt broad memory behavior without a source claim."
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "source_decision:source-decision-unsupported",
+          "rationale": "Source-backed decisions must link to a SourceClaim or be rejected as unsupported.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-source-smoke-001",
+            "domain": "source",
+            "severity": "blocking",
+            "title": "unsupported source decision accepted",
+            "mustNot": "Audit must not allow a SourceDecision without sourceClaimId to pass as supported.",
+            "detection": "Source grounding audit emits no blocking finding for source-decision-unsupported."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61-lite"],
         "metadata": {}
       }
     ],

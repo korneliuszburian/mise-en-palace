@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-61. KRN has
+The memory ideal-state execution track is implemented through MM-61-lite. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -95,9 +95,12 @@ test/seed fixtures, not runtime memory or Memory Core.
 MM-61 added memory behavior golden cases and fixture-backed harness tests for
 source-linked memory selection, stale memory exclusion/abstention, weak memory
 abstention, temporal validity, and application guidance preservation.
+MM-61-lite added early golden smoke cases for stale memory abstention, explicit
+anti-memory blocking of a tempting stale pattern, and source grounding audit
+rejection of unsupported SourceDecision records.
 
 Last verified state:
-MM-61 added memory behavior golden cases. Focused harness/schema tests passed;
+MM-61-lite added early golden memory smoke cases. Focused harness/schema tests passed;
 full verification is recorded in
 `docs/handoff/verification.md`.
 
@@ -114,7 +117,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-61 memory ideal-state slices: complete through governed
+- MM-00 through MM-61-lite memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -295,11 +298,11 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-61 blocker remains.
+No MM-61-lite blocker remains.
 
 Rollback path:
-After commit, revert the MM-61 commit with `git revert <commit>` if the memory
-behavior golden cases regress. No DB migration was added; rollback is
+After commit, revert the MM-61-lite commit with `git revert <commit>` if the
+early golden smoke cases regress. No DB migration was added; rollback is
 harness/fixture/docs only.
 
 Not built:
@@ -307,10 +310,10 @@ dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
 mutation, actual Codex execution, automatic memory promotion, fuzzy
-anti-memory matching, golden proof, and production worker throughput.
+anti-memory matching, broad golden runner, and production worker throughput.
 
 Next safest action:
-Run MM-61-lite early golden memory smoke cases.
+Run MM-62 context/source/audit/TS boundary golden cases.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly
