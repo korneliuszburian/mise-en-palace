@@ -1060,6 +1060,8 @@ git revert <commit>
 
 ### P6-00: Mark Worker Runtime Truth
 
+status: complete.
+
 objective:
 
 Ensure workers are described as contracts/skeleton only until a runtime exists.
@@ -1198,7 +1200,7 @@ git revert <commit>
 - [x] P4-02 Type activation trace decisions.
 - [x] P5-00 Bound Promptfoo claims.
 - [x] P5-01 Add first real behavior eval gate.
-- [ ] P6-00 Mark worker runtime truth.
+- [x] P6-00 Mark worker runtime truth.
 - [ ] P6-01 Harden worker job contracts.
 - [ ] P7-00 Run first governed self-hosting loop.
 
@@ -1280,6 +1282,16 @@ git revert <commit>
   targets at the TypeScript boundary. The real gate therefore uses
   `assessReflectionOutputContract` for a reflection-like untrusted payload
   instead of forcing `memory_record` into the typed `ReflectionOutput` union.
+- P6-00 found README and root PLAN already bounded worker runtime correctly,
+  and `packages/workers` already exposes `requiresBackgroundLoop: false`. The
+  only active-doc overclaim found was `docs/architecture/package-boundaries.md`
+  saying workers owned "execution boundaries"; that now says enqueue contracts
+  and contract/skeleton-only truth.
+- P6-00 verification scan is noisy by design because `docs/materials/` contains
+  raw source proposals and `docs/runs/` contains historical worker dogfood
+  ledgers. The active-current surfaces now distinguish worker job persistence
+  and smoke proof from job execution, daemon, throughput, or autonomous
+  maintenance.
 
 ## Decision Log
 
@@ -1352,6 +1364,10 @@ git revert <commit>
   real KRN behavior for stale-memory abstention, anti-memory activation block,
   and reflection final-truth rejection, then feeds those proofs through
   `runGoldenTaskFixtures`.
+- 2026-06-23: P6-00 records worker truth as contract/skeleton only. Worker job
+  definitions, enqueue ports, Postgres persistence, and smokes may exist, but
+  no worker daemon, job executor, background loop, autonomous maintenance, or
+  Memory Core mutation runtime is claimed as built.
 
 ## Outcomes & Retrospective
 
@@ -1404,7 +1420,10 @@ Current outcome:
 - First real GoldenTask behavior gate exists in harness. It covers stale memory
   abstention, anti-memory blocking, and reflection non-mutation by executing
   KRN functions and producing proof rows for `runGoldenTaskFixtures`.
-- Next safe action is P6-00: mark worker runtime truth.
+- Worker runtime truth is marked at the package and architecture surfaces:
+  workers are typed job definitions/enqueue contracts only until a runtime is
+  explicitly accepted.
+- Next safe action is P6-01: harden worker job contracts.
 
 ## Command Evidence
 
@@ -1888,6 +1907,32 @@ This proves at least one GoldenTask gate now executes real KRN behavior before
 creating proof rows. It does not make Promptfoo a behavior gate; Promptfoo
 remains bounded to runner/result-adapter integration until a later slice wires
 real behavior execution through that runner.
+
+P6-00 worker runtime truth:
+
+```sh
+rg -n "worker|dream|dreaming|background|maintenance" README.md PLAN.md docs packages/workers
+git diff --check
+```
+
+Observed:
+
+- broad scan completed; matches include raw quarantined materials in
+  `docs/materials/`, historical run ledgers in `docs/runs/`, and current
+  package/code terms;
+- active README already said worker jobs are contracts/skeletons and production
+  background execution is not built;
+- active root PLAN already said `packages/workers` stays contract-only until
+  runtime exists;
+- active package-boundary doc was narrowed from "worker execution boundaries"
+  to enqueue contracts and contract/skeleton-only truth;
+- new `packages/workers/README.md` states no worker daemon, no background loop,
+  no job executor, no maintenance runtime, and no job-execution proof;
+- `git diff --check` passed with no output.
+
+This proves active worker docs now mark runtime truth honestly. It does not
+prove worker job write authority is sufficiently bounded; P6-01 owns that
+contract hardening.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

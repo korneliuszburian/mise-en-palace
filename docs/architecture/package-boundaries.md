@@ -73,12 +73,14 @@ runtime markdown memory.
 
 ### `packages/workers`
 
-Owns typed worker job definitions and thin worker execution boundaries for
-embedding source chunks, compacting memory, detecting contradictions, expiring
-stale memory, and promoting eval candidates.
+Owns typed worker job definitions and enqueue contracts for future maintenance
+work such as embedding source chunks, compacting memory, detecting
+contradictions, expiring stale memory, and promoting eval candidates.
 
-Must use the Postgres outbox and worker-job tables. Must not introduce Redis,
-Kafka, or unbounded background loops in the first spine.
+Current worker truth is contract/skeleton only: no daemon, no job executor, no
+background maintenance runtime. Future runtime work must use the Postgres
+outbox and worker-job tables. It must not introduce Redis, Kafka, or unbounded
+background loops in the first spine.
 
 ## Later Packages
 
