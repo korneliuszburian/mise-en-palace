@@ -8,6 +8,9 @@ import {
   parseDbArgs
 } from "./parseDbArgs.js";
 import {
+  parseDoctorArgs
+} from "./parseDoctorArgs.js";
+import {
   parseEvidenceArgs
 } from "./parseEvidenceArgs.js";
 import {
@@ -468,17 +471,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   if (command === "doctor") {
-    if (rest.length > 0) {
-      return {
-        error: "Usage: krn doctor"
-      };
-    }
-
-    return {
-      command: {
-        kind: "doctor"
-      }
-    };
+    return parseDoctorArgs(rest);
   }
 
   if (command === "audit") {
