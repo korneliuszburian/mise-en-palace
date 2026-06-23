@@ -16,6 +16,7 @@ import {
   parseOperatorIntentInput,
   parseReflectionRecordInput,
   parseSourceClaimInput,
+  parseSourceDecisionEdgeInput,
   parseTaskContractInput
 } from "./index.js";
 import * as schemaExports from "./index.js";
@@ -246,6 +247,44 @@ describe("schema parse boundaries", () => {
         }
       }
     }
+  });
+
+  test("source claim schemas reject decorative decision evidence", () => {
+    expect(() =>
+      parseSourceClaimInput({
+        claim: "KRN should cite this source.",
+        mechanism: "A vague source is attached.",
+        krnImplication: "KRN may use it later.",
+        doesNotProve: "This does not prove source grounding quality.",
+        trustTier: "project-decision",
+        supportType: "implementation-boundary",
+        consumer: "MM-34 source graph hardening"
+      })
+    ).toThrow();
+
+    expect(() =>
+      parseSourceClaimInput({
+        claim: "KRN should cite this source.",
+        mechanism: "A vague source is attached.",
+        krnImplication: "KRN may use it later.",
+        doesNotProve: "This does not prove source grounding quality.",
+        trustTier: "project-decision",
+        supportType: "background",
+        consumer: "MM-34 source graph hardening",
+        falsifier: "Decorative sources persist."
+      })
+    ).toThrow();
+
+    expect(() =>
+      parseSourceDecisionEdgeInput({
+        sourceClaimId: "source-claim-1",
+        targetType: "harness_run",
+        targetId: "execution-run-1",
+        supportType: "background",
+        confidence: "medium",
+        notes: "Decorative citation."
+      })
+    ).toThrow();
   });
 
   test("observation group inputs default metadata and timestamps", () => {
@@ -499,7 +538,8 @@ describe("schema parse boundaries", () => {
       doesNotProve: "The vector extension exists in every database",
       trustTier: "project-decision",
       supportType: "implementation-boundary",
-      consumer: "db schema"
+      consumer: "db schema",
+      falsifier: "The DB readiness smoke cannot apply pgvector migrations."
     });
 
     expect(claim.doesNotProve).toContain("extension");

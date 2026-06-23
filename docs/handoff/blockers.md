@@ -2,7 +2,19 @@
 
 Hard blockers:
 
-- None for MM-34.
+- None for MM-35.
+
+Closed in MM-34:
+
+- SourceClaim IO now requires `falsifier`.
+- SourceClaim repository writes require claim, mechanism, krnImplication,
+  doesNotProve, trustTier, non-decorative supportType, consumer, and falsifier.
+- SourceDecisionEdge repository writes reject decorative support types and blank
+  target/notes.
+- SourceDecision `adopt` and `reject` writes require a linked SourceClaim.
+- Source graph, activation, and codex-adapter DB smokes remain green after
+  legacy negative fixtures were converted to decision-grade rejection/risk
+  source records.
 
 Closed in MM-33:
 

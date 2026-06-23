@@ -86,7 +86,7 @@ export const SourceClaimInputSchema = z.object({
   trustTier: SourceTrustTierSchema,
   supportType: SourceSupportTypeSchema,
   consumer: RequiredTextSchema,
-  falsifier: RequiredTextSchema.optional(),
+  falsifier: RequiredTextSchema,
   revisitWhen: RequiredTextSchema.optional(),
   status: SourceClaimStatusSchema.default("proposed"),
   metadata: MetadataSchema

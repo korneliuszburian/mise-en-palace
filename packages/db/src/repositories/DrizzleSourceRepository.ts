@@ -5,6 +5,8 @@ import type {
   SourceClaim,
   SourceDecision,
   SourceDecisionEdge,
+  SourceDecisionStatus,
+  SourceSupportType,
   SourceRejection
 } from "@krn/core";
 import type {
@@ -43,6 +45,86 @@ const smokePayload = (metadata: Record<string, unknown> | undefined): Record<str
   const smokeId = metadata?.smokeId;
 
   return typeof smokeId === "string" ? { smokeId } : {};
+};
+
+const decisionGradeSupportTypes = new Set<SourceSupportType>([
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary",
+  "contradicts"
+]);
+
+const requireText = (value: string | undefined, message: string): void => {
+  if (value === undefined || value.trim().length === 0) {
+    throw new Error(message);
+  }
+};
+
+const assertDecisionGradeSupportType = (
+  supportType: SourceSupportType,
+  label: string
+): void => {
+  if (!decisionGradeSupportTypes.has(supportType)) {
+    throw new Error(`${label} supportType cannot be decorative`);
+  }
+};
+
+export const assertSourceClaimGovernance = (
+  input: Pick<
+    CreateSourceClaimInput,
+    | "claim"
+    | "mechanism"
+    | "krnImplication"
+    | "doesNotProve"
+    | "trustTier"
+    | "supportType"
+    | "consumer"
+    | "falsifier"
+  >
+): void => {
+  requireText(input.claim, "SourceClaim requires claim");
+  requireText(input.mechanism, "SourceClaim requires mechanism");
+  requireText(input.krnImplication, "SourceClaim requires krnImplication");
+  requireText(input.doesNotProve, "SourceClaim requires doesNotProve");
+  requireText(input.trustTier, "SourceClaim requires trustTier");
+  requireText(input.consumer, "SourceClaim requires consumer");
+  requireText(input.falsifier, "SourceClaim requires falsifier");
+  assertDecisionGradeSupportType(input.supportType, "SourceClaim");
+};
+
+export const assertSourceDecisionGovernance = (
+  input: Pick<
+    CreateSourceDecisionInput,
+    "status" | "decision" | "rationale" | "falsifier" | "consumer" | "sourceClaimId"
+  >
+): void => {
+  requireText(input.decision, "SourceDecision requires decision");
+  requireText(input.rationale, "SourceDecision requires rationale");
+  requireText(input.falsifier, "SourceDecision requires falsifier");
+  requireText(input.consumer, "SourceDecision requires consumer");
+
+  const sourceClaimRequiredStatuses = new Set<SourceDecisionStatus>(["adopt", "reject"]);
+
+  if (sourceClaimRequiredStatuses.has(input.status)) {
+    requireText(input.sourceClaimId, `SourceDecision ${input.status} requires sourceClaimId`);
+  }
+};
+
+export const assertSourceDecisionEdgeGovernance = (
+  input: Pick<
+    CreateSourceDecisionEdgeInput,
+    "sourceClaimId" | "targetType" | "targetId" | "supportType" | "confidence" | "notes"
+  >
+): void => {
+  requireText(input.sourceClaimId, "SourceDecisionEdge requires sourceClaimId");
+  requireText(input.targetType, "SourceDecisionEdge requires targetType");
+  requireText(input.targetId, "SourceDecisionEdge requires targetId");
+  requireText(input.confidence, "SourceDecisionEdge requires confidence");
+  requireText(input.notes, "SourceDecisionEdge requires notes");
+  assertDecisionGradeSupportType(input.supportType, "SourceDecisionEdge");
 };
 
 export class DrizzleSourceRepository implements SourceRepository {
@@ -89,6 +171,8 @@ export class DrizzleSourceRepository implements SourceRepository {
   }
 
   async createSourceClaim(input: CreateSourceClaimInput): Promise<SourceClaim> {
+    assertSourceClaimGovernance(input);
+
     const row = requireReturnedRow(
       await this.db
         .insert(sourceClaims)
@@ -164,6 +248,8 @@ export class DrizzleSourceRepository implements SourceRepository {
   }
 
   async createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision> {
+    assertSourceDecisionGovernance(input);
+
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx
@@ -198,6 +284,8 @@ export class DrizzleSourceRepository implements SourceRepository {
   async createSourceDecisionEdge(
     input: CreateSourceDecisionEdgeInput
   ): Promise<SourceDecisionEdge> {
+    assertSourceDecisionEdgeGovernance(input);
+
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx

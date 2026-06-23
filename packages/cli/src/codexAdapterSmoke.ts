@@ -298,7 +298,7 @@ export const runCodexAdapterSmokeCheck = async (
       krnImplication: "The smoke command would become an executor.",
       doesNotProve: "M26 allows actual Codex invocation.",
       trustTier: "project-decision",
-      supportType: "supports",
+      supportType: "rejection",
       consumer: "M26 Codex adapter smoke",
       falsifier: "M26 non-goals forbid Codex invocation.",
       revisitWhen: "A later milestone explicitly accepts execution.",
