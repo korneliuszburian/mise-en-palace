@@ -1,20 +1,19 @@
 # Progress
 
-Current phase: Memory ideal-state execution track during QG-04B command parser modularization.
+Current phase: Memory ideal-state execution track after QG-04B command parser modularization.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A in
-  `docs/plans/memory-ideal-state/PLAN.md`.
-- QG-04B is in progress. The `audit`, `db`, `init`, `evidence`, `observe`,
-  `codex`, `reflect`, `review`, `plan`, `doctor`, and `source` command-family
-  parsers have been extracted from
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A, and
+  QG-04B in `docs/plans/memory-ideal-state/PLAN.md`.
+- QG-04B modularized command-family parsing. The `audit`, `db`, `init`,
+  `evidence`, `observe`, `codex`, `reflect`, `review`, `plan`, `doctor`,
+  `source`, and `memory` command-family parsers have been extracted from
   `packages/cli/src/parseArgs.ts` into focused parser modules with focused
-  tests. QG-04B stays unchecked until the remaining large command families are
-  modularized enough that `parseArgs.ts` is a dispatcher instead of the main
-  parser body.
+  tests. `parseArgs.ts` is now 379 lines and acts as dispatcher plus shared
+  `CliCommand`/top-level usage surface.
 - QG-00 repo-wide current-state inventory at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-16/17 external review repair layer in
@@ -238,11 +237,9 @@ Current runtime truth:
   vocabulary from retrieval smoke fixtures, and queued QG-04A through QG-04H
   repair slices.
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
-- QG-04B is in progress: the audit and db command family parsers have been
-  extracted from `parseArgs.ts` into `packages/cli/src/parseAuditArgs.ts` and
-  `packages/cli/src/parseDbArgs.ts`, but the slice remains unchecked until the
-  remaining command families are modularized.
-- QG-04B through QG-06 are queued before MM-66: parser/doctor modularization,
+- QG-04B modularized command-family parsing and reduced `parseArgs.ts` to a
+  dispatcher plus shared CLI command type/usage surface.
+- QG-04C through QG-06 are queued before MM-66: doctor modularization,
   schema/core vocabulary cleanup, DB mapper split, official Promptfoo decision,
   and quality gate automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
@@ -251,4 +248,4 @@ Current runtime truth:
 
 Next action:
 
-- Continue with QG-00 repo-wide current-state inventory refresh.
+- Continue with QG-04C doctor command modularization.

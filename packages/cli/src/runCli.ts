@@ -1,12 +1,14 @@
 import {
   formatUsage,
+  parseArgs
+} from "./parseArgs.js";
+import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
   formatMemoryRecordApplyUsage,
-  formatMemoryAntiAddUsage,
-  parseArgs
-} from "./parseArgs.js";
+  formatMemoryAntiAddUsage
+} from "./parseMemoryArgs.js";
 import {
   formatSourceClaimAddUsage,
   formatSourceClaimRejectUsage,

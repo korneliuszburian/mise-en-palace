@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-04A CLI filesystem and JSON boundary helper consolidation.
+Latest verified slice: QG-04B command parser modularization.
 
 Passed:
 
@@ -65,6 +65,22 @@ Passed:
 - QG-04A stale status scan passed.
 - QG-04A `krn audit slice --fail-on warning` passed with verdict `pass` and 0
   findings.
+- QG-04B RED focused `pnpm --filter @krn/cli test -- parseMemoryArgs` failed
+  because `./parseMemoryArgs.js` did not exist.
+- QG-04B GREEN focused `pnpm --filter @krn/cli test -- parseMemoryArgs`
+  passed with 19 files and 129 tests.
+- QG-04B focused `pnpm --filter @krn/cli typecheck` passed.
+- QG-04B focused `pnpm --filter @krn/cli test` passed with 19 files and 129
+  tests.
+- QG-04B full `pnpm typecheck` passed.
+- QG-04B full `pnpm test` passed.
+- QG-04B `git diff --check` passed.
+- QG-04B forbidden directory scan found no added forbidden surfaces.
+- QG-04B `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
+- QG-04B reduced `packages/cli/src/parseArgs.ts` to 379 lines and moved the
+  remaining `memory` command-family grammar to
+  `packages/cli/src/parseMemoryArgs.ts`.
 
 QG audit facts gathered during QG-00:
 
@@ -79,7 +95,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04B through QG-06 remain next.
+- QG-04C through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

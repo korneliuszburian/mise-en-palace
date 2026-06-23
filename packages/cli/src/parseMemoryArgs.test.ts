@@ -1,0 +1,244 @@
+import {
+  describe,
+  expect,
+  it
+} from "vitest";
+
+import {
+  formatMemoryAntiAddUsage,
+  formatMemoryCandidateAddUsage,
+  formatMemoryCandidatePromoteUsage,
+  formatMemoryCandidateRejectUsage,
+  formatMemoryRecordApplyUsage,
+  parseMemoryArgs
+} from "./parseMemoryArgs.js";
+
+describe("parseMemoryArgs", () => {
+  it("parses memory candidate add options and metadata", () => {
+    expect(parseMemoryArgs([
+      "candidate",
+      "add",
+      "--run-id",
+      "run-1",
+      "--kind",
+      "lesson",
+      "--content",
+      " Memory content ",
+      "--confidence",
+      "high",
+      "--application-guidance",
+      "Use when planning",
+      "--source-claim-id",
+      "claim-1",
+      "--source-lineage",
+      "lineage-1",
+      "--invalidation-rule",
+      "revisit after schema changes",
+      "--owner",
+      "operator",
+      "--proposed-by",
+      "codex",
+      "--metadata",
+      "slice=QG-04B",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryCandidateAdd",
+        persist: true,
+        runId: "run-1",
+        memoryKind: "lesson",
+        content: "Memory content",
+        confidence: "high",
+        applicationGuidance: "Use when planning",
+        sourceClaimId: "claim-1",
+        sourceLineageIds: ["lineage-1"],
+        invalidationRule: "revisit after schema changes",
+        owner: "operator",
+        proposedBy: "codex",
+        metadata: {
+          slice: "QG-04B"
+        }
+      }
+    });
+  });
+
+  it("parses memory candidate promote and reject commands", () => {
+    expect(parseMemoryArgs([
+      "candidate",
+      "promote",
+      "--candidate-id",
+      "candidate-1",
+      "--reviewer",
+      "operator",
+      "--decision",
+      "accepted",
+      "--evidence-reviewed-ref",
+      "review-1",
+      "--metadata",
+      "gate=memory-review",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryCandidatePromote",
+        persist: true,
+        candidateId: "candidate-1",
+        reviewer: "operator",
+        decision: "accepted",
+        evidenceReviewedRef: "review-1",
+        metadata: {
+          gate: "memory-review"
+        }
+      }
+    });
+
+    expect(parseMemoryArgs([
+      "candidate",
+      "reject",
+      "--candidate-id",
+      "candidate-1",
+      "--reviewer",
+      "operator",
+      "--reason",
+      "unsupported",
+      "--metadata",
+      "reason=unsupported",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryCandidateReject",
+        persist: true,
+        candidateId: "candidate-1",
+        reviewer: "operator",
+        reason: "unsupported",
+        metadata: {
+          reason: "unsupported"
+        }
+      }
+    });
+  });
+
+  it("parses memory record apply and anti-memory add commands", () => {
+    expect(parseMemoryArgs([
+      "record",
+      "apply",
+      "--run-id",
+      "run-1",
+      "--memory-id",
+      "memory-1",
+      "--outcome",
+      "helped",
+      "--notes",
+      "Useful",
+      "--expected-use",
+      "planning",
+      "--task-contract-id",
+      "task-1",
+      "--context-assembly-id",
+      "context-1",
+      "--metadata",
+      "result=helped",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryRecordApply",
+        persist: true,
+        runId: "run-1",
+        memoryId: "memory-1",
+        outcome: "helped",
+        notes: "Useful",
+        expectedUse: "planning",
+        taskContractId: "task-1",
+        contextAssemblyId: "context-1",
+        metadata: {
+          result: "helped"
+        }
+      }
+    });
+
+    expect(parseMemoryArgs([
+      "anti",
+      "add",
+      "--run-id",
+      "run-1",
+      "--rejected-claim",
+      "Bad pattern",
+      "--reason",
+      "stale",
+      "--invalidated-by-source-claim-id",
+      "claim-1",
+      "--source-lineage",
+      "lineage-1",
+      "--applies-to",
+      "memory-key",
+      "--may-revisit-when",
+      "2026-07-01",
+      "--owner",
+      "operator",
+      "--confidence",
+      "medium",
+      "--key",
+      "anti-key",
+      "--metadata",
+      "kind=anti",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryAntiAdd",
+        persist: true,
+        runId: "run-1",
+        rejectedClaim: "Bad pattern",
+        reason: "stale",
+        invalidatedBySourceClaimId: "claim-1",
+        sourceLineageIds: ["lineage-1"],
+        appliesTo: "memory-key",
+        mayRevisitWhen: "2026-07-01",
+        owner: "operator",
+        confidence: "medium",
+        key: "anti-key",
+        metadata: {
+          kind: "anti"
+        }
+      }
+    });
+  });
+
+  it("parses memory command help and rejects unsupported shapes", () => {
+    expect(parseMemoryArgs(["candidate", "add", "--help"])).toEqual({
+      command: {
+        kind: "memoryCandidateAddHelp"
+      }
+    });
+    expect(parseMemoryArgs(["candidate", "promote", "-h"])).toEqual({
+      command: {
+        kind: "memoryCandidatePromoteHelp"
+      }
+    });
+    expect(parseMemoryArgs(["candidate", "reject", "--help"])).toEqual({
+      command: {
+        kind: "memoryCandidateRejectHelp"
+      }
+    });
+    expect(parseMemoryArgs(["record", "apply", "-h"])).toEqual({
+      command: {
+        kind: "memoryRecordApplyHelp"
+      }
+    });
+    expect(parseMemoryArgs(["anti", "add", "--help"])).toEqual({
+      command: {
+        kind: "memoryAntiAddHelp"
+      }
+    });
+    expect(parseMemoryArgs(["candidate", "add", "--metadata", "not-a-pair"])).toEqual({
+      error: "--metadata requires key=value"
+    });
+    expect(parseMemoryArgs(["candidate", "unknown"])).toEqual({
+      error: [
+        formatMemoryCandidateAddUsage().trim(),
+        formatMemoryCandidatePromoteUsage().trim(),
+        formatMemoryCandidateRejectUsage().trim(),
+        formatMemoryRecordApplyUsage().trim(),
+        formatMemoryAntiAddUsage().trim()
+      ].join("\n\n")
+    });
+  });
+});

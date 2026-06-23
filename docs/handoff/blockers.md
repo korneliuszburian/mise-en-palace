@@ -2,9 +2,9 @@
 
 Hard blockers:
 
-- QG-04B through QG-06 must run before MM-66/MM-67 feature work continues.
-- Current quality gates do not yet prove modular command parsing, modular
-  doctor checks, shared memory confidence parsing, shared schema metadata
+- QG-04C through QG-06 must run before MM-66/MM-67 feature work continues.
+- Current quality gates do not yet prove modular doctor checks, shared memory
+  confidence parsing, shared schema metadata
   guards, shared review signal vocabulary, split DB mappers, or automated
   smell/bloat scans.
 - MM-65 Promptfoo snapshot export must not be treated as final eval
@@ -61,6 +61,15 @@ Closed in QG-04A:
 - `runDoctorCommand`, `runInitCommand`, `runDbReadinessCommand`, and
   `runDbSmokeCommand` no longer define duplicate local filesystem/JSON helper
   functions.
+
+Closed in QG-04B:
+
+- CLI command-family parsing is modularized into focused parser modules.
+- `packages/cli/src/parseArgs.ts` is now a dispatcher plus shared
+  `CliCommand`/top-level usage surface instead of the owner of every command
+  grammar.
+- The final `memory` command-family extraction is covered by
+  `packages/cli/src/parseMemoryArgs.test.ts`.
 
 Closed in MM-65:
 

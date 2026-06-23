@@ -158,12 +158,13 @@ Current public state:
   low-risk placeholder vocabulary from retrieval smoke fixtures, and queued
   QG-04A through QG-04H repair slices. QG-04A consolidated CLI filesystem and
   JSON boundary helpers into `packages/cli/src/cliFileBoundary.ts`. QG-04B
-  through QG-06 remain queued as a blocking quality correction gate:
-  parser/doctor modularization, schema/core vocabulary cleanup, DB mapper
-  split, official Promptfoo integration decision, and `krn audit` quality gate
-  automation.
+  modularized command-family parsing so `packages/cli/src/parseArgs.ts` is a
+  dispatcher plus shared command type/usage surface. QG-04C through QG-06
+  remain queued as a blocking quality correction gate: doctor modularization,
+  schema/core vocabulary cleanup, DB mapper split, official Promptfoo
+  integration decision, and `krn audit` quality gate automation.
 - Not built:
-  quality correction gate QG-04B through QG-06, official Promptfoo adapter
+  quality correction gate QG-04C through QG-06, official Promptfoo adapter
   decision/integration, EvalCandidate promotion gate, Golden eval dogfood
   regression gate, API/MCP, dashboard, plugin package, source crawler, fuzzy
   anti-memory matching, and broad benchmark suite.

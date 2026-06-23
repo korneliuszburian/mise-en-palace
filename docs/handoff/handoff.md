@@ -120,15 +120,16 @@ double-assertion shortcuts. QG-03 removed clear zombie exports and recorded the
 accepted fixture finding. QG-04 recorded the smell/bloat audit, removed
 low-risk placeholder vocabulary from retrieval smoke fixtures, and queued
 QG-04A through QG-04H repair slices. QG-04A consolidated CLI filesystem and
-JSON boundary helpers. QG-04B through QG-06 are queued before MM-66 so the repo
-does not build more features on top of an under-audited quality model.
+JSON boundary helpers. QG-04B modularized command-family parsing. QG-04C
+through QG-06 are queued before MM-66 so the repo does not build more features
+on top of an under-audited quality model.
 
 Last verified state:
-QG-04A consolidated CLI filesystem and JSON boundary helpers in
-`packages/cli/src/cliFileBoundary.ts` and removed duplicate local helper
-definitions from doctor/init/db readiness/db smoke commands. The remaining QG
-work is parser/doctor modularization, schema/core vocabulary cleanup, DB mapper
-split, official Promptfoo decision, and audit automation before MM-66.
+QG-04B modularized command-family parsing. `parseArgs.ts` now delegates command
+grammar to focused parser modules and is down to 379 lines; the final `memory`
+extraction is covered by focused parser tests. The remaining QG work is doctor
+modularization, schema/core vocabulary cleanup, DB mapper split, official
+Promptfoo decision, and audit automation before MM-66.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -143,7 +144,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-65 memory ideal-state slices and QG-00/QG-01/QG-02/QG-03/QG-04/QG-04A: complete through governed
+- MM-00 through MM-65 memory ideal-state slices and QG-00/QG-01/QG-02/QG-03/QG-04/QG-04A/QG-04B: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -328,12 +329,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-QG-04B through QG-06 block MM-66/MM-67.
+QG-04C through QG-06 block MM-66/MM-67.
 
 Rollback path:
-After commit, revert the QG-04A commit with `git revert <commit>` if the helper
-consolidation needs to be replaced. No DB migration or runtime behavior was
-added by QG-04A; it is a CLI boundary refactor plus tests/docs.
+After commit, revert the QG-04B commit with `git revert <commit>` if the parser
+modularization needs to be replaced. No DB migration or runtime behavior was
+added by QG-04B; it is a CLI parser refactor plus tests/docs.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -343,7 +344,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, broad eval suite, and production worker throughput.
 
 Next safest action:
-Run QG-04B command parser modularization.
+Run QG-04C doctor command modularization.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

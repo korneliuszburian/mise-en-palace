@@ -11,8 +11,8 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A
-  are complete.
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A,
+  and QG-04B are complete.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
@@ -152,8 +152,10 @@ Current known status:
 - QG-04 recorded the repo-wide smell/bloat audit and converted findings into
   repair slices QG-04A through QG-04H.
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
-- QG-04B through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: parser/doctor modularization, schema/core
+- QG-04B modularized command-family parsing so `parseArgs.ts` no longer owns
+  every command grammar directly.
+- QG-04C through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: doctor modularization, schema/core
   vocabulary cleanup, DB mapper split, official Promptfoo integration decision,
   and audit automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
