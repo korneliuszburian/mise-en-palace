@@ -1,5 +1,9 @@
 # Progress
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 Current phase: Memory ideal-state execution track after QG-04H smell scan automation requirements.
 
 Completed:

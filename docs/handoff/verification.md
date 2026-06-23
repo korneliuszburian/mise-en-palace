@@ -1,5 +1,9 @@
 # Verification
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 Latest verified slice: QG-04H smell scan automation requirements.
 
 Passed:

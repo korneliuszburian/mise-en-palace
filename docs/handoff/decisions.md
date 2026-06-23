@@ -1,5 +1,9 @@
 # Decisions
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 - KRN remains a Codex operating layer, not an alternative executor.
 - PostgreSQL with pgvector remains the first brain-store spine.
 - Drizzle owns schema/migrations; Zod owns unknown-input parsing boundaries.

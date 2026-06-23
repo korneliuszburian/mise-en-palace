@@ -1,5 +1,9 @@
 # KRN Full Anti-Slop Review Request
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 Status update, 2026-06-23:
 
 This file is historical review-request material, not the current repo status

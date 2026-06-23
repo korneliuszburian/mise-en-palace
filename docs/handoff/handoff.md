@@ -1,5 +1,9 @@
 # Handoff
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 Objective:
 The memory ideal-state execution track is implemented through MM-65 and QG-03,
 and is now paused for the remaining blocking quality correction gate. KRN has

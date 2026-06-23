@@ -1153,7 +1153,7 @@ git revert <commit>
 
 - [x] P0-00 Replace root `GOAL.md` with compact execution contract.
 - [x] P0-01 Replace root `PLAN.md` with canonical reset plan.
-- [ ] P0-02 Mark historical planning ledgers.
+- [x] P0-02 Mark historical planning ledgers.
 - [ ] P0-03 Align README as doorway.
 - [ ] P0-04 Remove productized QG-06 direction.
 - [ ] P1-00 Classify CLI surfaces.
@@ -1182,6 +1182,9 @@ git revert <commit>
   next; P0-03/P0-04 must repair that before feature work.
 - DB package implementation exists, but live DB runtime truth still depends on
   `KRN_DATABASE_URL` in the current shell.
+- Historical handoff and memory-plan files still contain stale QG-06 and
+  current-phase language below the new banner. That content is preserved as
+  ledger evidence only; P0-04 owns rewriting active product-direction claims.
 
 ## Decision Log
 
@@ -1192,14 +1195,17 @@ git revert <commit>
   until a specific slice decides its fate.
 - 2026-06-23: Treat old memory ideal-state plan, QG docs, handoffs, and raw
   materials as historical quarry unless a slice explicitly promotes a decision.
+- 2026-06-23: Marked old memory plan, QG-04H requirements, REVIEW, and handoff
+  files as historical ledgers instead of current execution truth.
 
 ## Outcomes & Retrospective
 
 Current outcome:
 
 - Root activation contract and root execution plan are reset.
+- Historical planning ledgers are bannered as non-current truth.
 - Package source is untouched.
-- Next safe action is P0-02: mark old planning surfaces historical.
+- Next safe action is P0-03: align README as doorway.
 
 ## Command Evidence
 
@@ -1246,6 +1252,35 @@ Observed matches are in explicit rejection, historical-quarry language, or
 verification commands. This proves the root files no longer route active work
 into the old memory plan or productized QG-06 direction. It does not prove
 README/handoff docs are repaired; P0-02 through P0-04 still own that work.
+
+```sh
+git diff --check
+```
+
+Observed: passed with no output.
+
+P0-02 verification after marking historical ledgers:
+
+```sh
+rg -n "Current canonical execution plan" docs/plans docs/handoff REVIEW.md
+```
+
+Observed:
+
+```txt
+REVIEW.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/handoff/blockers.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/handoff/decisions.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/handoff/progress.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/handoff/handoff.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/handoff/verification.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md:5:> Current canonical execution plan: `/PLAN.md`.
+docs/plans/memory-ideal-state/PLAN.md:5:> Current canonical execution plan: `/PLAN.md`.
+```
+
+This proves the P0-02 target files now advertise `/PLAN.md` as canonical
+current truth. It does not remove stale historical claims inside those files;
+P0-04 owns active QG-06/productized anti-slop cleanup.
 
 ```sh
 git diff --check

@@ -1,5 +1,9 @@
 # QG-04H — Smell Scan Automation Requirements
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 Date: 2026-06-23
 
 Status: complete as requirements; QG-06 owns implementation in `krn audit`.

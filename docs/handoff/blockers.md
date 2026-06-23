@@ -1,5 +1,9 @@
 # Blockers
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 Hard blockers:
 
 - QG-04C through QG-06 must run before MM-66/MM-67 feature work continues.

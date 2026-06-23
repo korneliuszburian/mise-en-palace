@@ -1,5 +1,9 @@
 # KRN Memory Brain — Controlled PLAN.md
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+
 This PLAN.md is a living execution plan for completing the KRN Memory Brain after M27 and MM-00.
 
 It is written in the style of the OpenAI Cookbook PLANS.md / ExecPlan pattern:
