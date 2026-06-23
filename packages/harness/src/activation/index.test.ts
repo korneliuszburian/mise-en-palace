@@ -565,6 +565,36 @@ describe("activation engine", () => {
     });
   });
 
+  it("rejects observation prefix metadata when selected items are not source-ranged", () => {
+    const prefix = selectObservationPrefix({
+      task,
+      projectId: "project-1",
+      observations: [
+        observation({
+          id: "observation-unsourced",
+          sourceRanges: []
+        })
+      ],
+      maxItems: 1,
+      now
+    });
+    const context = assembleContext({
+      id: "context-unsourced-observation-prefix",
+      harnessPlanId: "plan-1",
+      candidates: [],
+      observationPrefix: prefix,
+      createdAt: now
+    });
+
+    expect(context.status).toBe("abstained");
+    expect(context.metadata.observationPrefix).toBeUndefined();
+    expect(context.metadata.observationPrefixGate).toMatchObject({
+      status: "rejected",
+      reasons: ["missing_source_ranges"],
+      rejectedObservationIds: ["observation-unsourced"]
+    });
+  });
+
   it("excludes invalidated memory with an explicit reason", () => {
     const query = buildMemoryQuery(task);
     const ranked = rankCandidates(

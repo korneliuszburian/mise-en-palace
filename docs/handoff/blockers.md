@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-44A.
+- None for MM-45.
+
+Closed in MM-44A:
+
+- Context assembly rejects observation prefix metadata when any selected prefix
+  item lacks source ranges.
+- Rejected prefix metadata records `observationPrefixGate` with
+  `missing_source_ranges` and rejected observation ids.
+- A prefix-only context remains abstained when the prefix fails the source-range
+  gate.
+- Valid source-ranged prefix metadata from MM-44 remains attachable.
 
 Closed in MM-44:
 

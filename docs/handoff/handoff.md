@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-44. KRN has
+The memory ideal-state execution track is implemented through MM-44A. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -48,13 +48,14 @@ budget, and keeps duplicate/over-budget/low-ROI candidates visible as explicit
 exclusions. Activation trace persistence now records raw evidence recall
 triggers for exact-proof and low-trust inclusions. Observation prefix selection
 is now integrated into context assembly metadata as a small source-ranged
-activation artifact.
+activation artifact, with an assembly-side gate that rejects manually supplied
+prefix metadata when selected items lack source ranges.
 
 Last verified state:
-MM-44 integrated observation prefix into context assembly metadata. Focused
-activation/observation-prefix tests passed for source-ranged prefix metadata,
-selected item count, and low-relevance exclusions; strict focused typechecks
-passed; activation smoke reported `Observation prefix items: 1`.
+MM-44A added the observation prefix integration gate. Focused activation tests
+passed for rejecting unsourced prefix metadata, recording
+`observationPrefixGate`, and keeping a prefix-only context abstained; full
+verification is recorded in `docs/handoff/verification.md`.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -69,7 +70,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-44 memory ideal-state slices: complete through governed
+- MM-00 through MM-44A memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -82,7 +83,8 @@ Milestone status:
   source-to-decision dogfood run for an implementation decision, plus the pure
   ActivationQuery model, hybrid candidate merge, unified post-merge filter
   pass, diversity-aware ContextROI selection, and raw evidence recall trigger
-  metadata plus observation prefix metadata integration for ActivationEngine v2.
+  metadata plus observation prefix metadata integration and source-range gating
+  for ActivationEngine v2.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -176,6 +178,9 @@ Runtime proof status:
 - observation prefix integration: `assembleContext` accepts a selected
   `ObservationPrefix` and stores rendered prefix text/items/warnings/exclusions
   in context assembly metadata without turning observations into Memory Core.
+- observation prefix integration gate: `assembleContext` rejects prefix
+  metadata when selected prefix items lack source ranges, records
+  `observationPrefixGate`, and keeps a prefix-only context abstained.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -187,11 +192,11 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-44 blocker remains.
+No MM-44A blocker remains.
 
 Rollback path:
-After commit, revert the MM-44 commit with `git revert <commit>` if observation
-prefix context metadata regresses. No DB migration was added; rollback is
+After commit, revert the MM-44A commit with `git revert <commit>` if
+observation prefix gating regresses. No DB migration was added; rollback is
 code/docs only.
 
 Not built:
@@ -202,7 +207,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-44A and verify the observation prefix integration gate before dogfood.
+Run MM-45 activation dogfood before continuing into capability compiler work.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

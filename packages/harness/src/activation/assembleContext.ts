@@ -74,25 +74,40 @@ const toExclusion = (candidate: RankedActivationCandidate): ContextExclusion | u
   };
 };
 
-const observationPrefixMetadata = (
-  input: AssembleContextInput
-): Record<string, unknown> | undefined => {
+const observationPrefixMetadata = (input: AssembleContextInput): {
+  metadata?: Record<string, unknown>;
+  gate?: Record<string, unknown>;
+} => {
   const prefix = input.observationPrefix;
 
   if (prefix === undefined) {
-    return undefined;
+    return {};
+  }
+
+  const unsourcedItems = prefix.items.filter((item) => item.sourceRangeCount <= 0);
+
+  if (unsourcedItems.length > 0) {
+    return {
+      gate: {
+        status: "rejected",
+        reasons: ["missing_source_ranges"],
+        rejectedObservationIds: unsourcedItems.map((item) => item.observationId)
+      }
+    };
   }
 
   return {
-    projectId: prefix.projectId,
-    taskContractId: prefix.taskContractId,
-    text: prefix.text,
-    itemCount: prefix.items.length,
-    warningCount: prefix.warnings.length,
-    exclusionCount: prefix.exclusions.length,
-    items: prefix.items,
-    warnings: prefix.warnings,
-    exclusions: prefix.exclusions
+    metadata: {
+      projectId: prefix.projectId,
+      taskContractId: prefix.taskContractId,
+      text: prefix.text,
+      itemCount: prefix.items.length,
+      warningCount: prefix.warnings.length,
+      exclusionCount: prefix.exclusions.length,
+      items: prefix.items,
+      warnings: prefix.warnings,
+      exclusions: prefix.exclusions
+    }
   };
 };
 
@@ -153,7 +168,9 @@ const abstentionExplanationFor = (reason: ActivationAbstentionReason): string =>
 export const assembleContext = (input: AssembleContextInput): ContextAssembly => {
   const candidates = input.candidates.map(enforceSourceClaimSafety);
   const prefixMetadata = observationPrefixMetadata(input);
-  const hasObservationPrefixItems = (input.observationPrefix?.items.length ?? 0) > 0;
+  const hasObservationPrefixItems =
+    prefixMetadata.metadata !== undefined &&
+    (input.observationPrefix?.items.length ?? 0) > 0;
   const inclusions = candidates
     .filter((candidate) => candidate.exclusion === undefined)
     .sort((left, right) => right.totalScore - left.totalScore)
@@ -188,7 +205,12 @@ export const assembleContext = (input: AssembleContextInput): ContextAssembly =>
     exclusions,
     metadata: {
       ...metadata,
-      ...(prefixMetadata === undefined ? {} : { observationPrefix: prefixMetadata }),
+      ...(prefixMetadata.metadata === undefined
+        ? {}
+        : { observationPrefix: prefixMetadata.metadata }),
+      ...(prefixMetadata.gate === undefined
+        ? {}
+        : { observationPrefixGate: prefixMetadata.gate }),
       ...(activationAbstention === undefined ? {} : { activationAbstention })
     },
     createdAt: input.createdAt
