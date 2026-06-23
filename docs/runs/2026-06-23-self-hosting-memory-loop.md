@@ -222,6 +222,105 @@ Gaps:
 - Reflection generated no findings, contradictions, gaps, or candidate rows for
   this run, so it proves operational flow rather than candidate quality.
 
+## C5 Candidate Staging Closure
+
+C5-00 converted the remaining P7 self-hosting feedback into governed persisted
+candidate/source rows instead of leaving it only in this ledger.
+
+DB readiness for this slice:
+
+```sh
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+```
+
+Observed:
+
+```text
+Postgres: reachable
+Migrations expected: 12
+Migrations applied: 12
+pgvector: available
+Brain store readiness: ready
+```
+
+Persisted source claims:
+
+```text
+58e28e58-d4c8-4196-861e-cb14caeb08e1
+  P7 command evidence provenance gap
+
+479b1ce8-9904-42ab-a8d1-393a2bacf685
+  Eval candidate staging path gap
+
+302f88f7-71b0-4a86-8521-330dee4713fe
+  P7 reflection proved flow, not candidate quality
+```
+
+Persisted memory candidates:
+
+```text
+b40cac51-73d6-4974-966b-36833c13e757
+  kind: procedure
+  status: proposed
+  subject: self-hosting ledger evidence boundary
+
+1ea7bb3a-6fa0-404a-b284-adeeb9183b6a
+  kind: constraint
+  status: proposed
+  subject: governed EvalCandidate staging path missing
+
+8beb1776-355f-477d-bba0-ebaeb121cc96
+  kind: risk
+  status: proposed
+  subject: reflection flow is not reflection quality
+```
+
+Persisted anti-memory candidate:
+
+```text
+45657a7d-d245-4680-83b2-a6dcddccf5e8
+  status: candidate
+  key: anti:p7-weak-command-proof
+  rejected claim: Persisted EvidenceBundle command rows with weak default
+    provenance prove verification commands passed.
+```
+
+Readback:
+
+```sh
+psql postgres://krn:krn@localhost:54329/krn \
+  -c "select id,status,claim,metadata->>'p7Gap' as gap from source_claims where metadata->>'slice'='C5-00' order by created_at;"
+
+psql postgres://krn:krn@localhost:54329/krn \
+  -c "select id,status,kind,summary,metadata->>'p7Candidate' as candidate from memory_candidates where metadata->>'slice'='C5-00' order by created_at;"
+
+psql postgres://krn:krn@localhost:54329/krn \
+  -c "select id,status,key,rejected_claim,metadata->>'p7Candidate' as candidate from anti_memory_candidates where metadata->>'slice'='C5-00' order by created_at;"
+
+psql postgres://krn:krn@localhost:54329/krn \
+  -c "select (select count(*) from memory_records where metadata->>'slice'='C5-00') as c5_memory_records, (select count(*) from anti_memory_records where metadata->>'slice'='C5-00') as c5_anti_memory_records;"
+```
+
+Observed:
+
+```text
+source_claims: 3 proposed rows
+memory_candidates: 3 proposed rows
+anti_memory_candidates: 1 candidate row
+c5_memory_records: 0
+c5_anti_memory_records: 0
+```
+
+Important boundary:
+
+- The P7 eval candidate is now represented as a staged source claim plus memory
+  candidate describing the missing governed EvalCandidate staging path.
+- No standalone EvalCandidate row was created because this repo currently has
+  no `krn eval candidate add --persist` or equivalent governed operator path.
+- C5-01 owns deciding whether to add that path or explicitly keep eval
+  candidates as FeedbackDelta/ReflectionRecord proposal-only.
+- No MemoryRecord or AntiMemoryRecord was created or promoted in C5-00.
+
 ## Activation Relevance Review
 
 This review uses the historical run ledger above plus DB-backed expansion of

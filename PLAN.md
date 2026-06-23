@@ -26,20 +26,21 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Self-Hosting Feedback Candidate Staging.
+current_priority: Governed EvalCandidate Staging Decision.
 
-first_unchecked_slice: `C5-00: Convert Self-Hosting Run Gaps Into Candidates`.
+first_unchecked_slice: `C5-01: Decide Governed EvalCandidate Staging Path`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- convert self-hosting run gaps into governed candidates instead of leaving them
-  only in prose;
+- decide whether EvalCandidate feedback remains FeedbackDelta/ReflectionRecord
+  proposal-only or gets a governed operator staging path;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
-- do not promote new candidates in the same slice that stages them;
-- do not start worker runtime, dashboard, or broad memory features before the
-  staged self-hosting feedback is represented as reviewable candidate rows.
+- do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
+  authority layer while deciding this;
+- do not promote any C5-00 candidates in the same slice that decides the eval
+  staging path.
 
 completed_checkpoint:
 
@@ -105,6 +106,11 @@ completed_checkpoint:
 - C4-00 adds ADR-0015 and defers worker daemon/job executor runtime. Current
   worker truth remains typed contracts, enqueue ports, Postgres lifecycle
   repository/smoke proof, and explicit future write-authority limits.
+- C5-00 stages P7 self-hosting feedback as governed rows in live Postgres:
+  three proposed SourceClaims, three proposed MemoryCandidates, and one
+  AntiMemoryCandidate. It creates no MemoryRecord or AntiMemoryRecord. It also
+  records that standalone EvalCandidate add/persist is missing and belongs to
+  C5-01.
 
 completed_evidence_pointers:
 
@@ -2434,6 +2440,8 @@ git commit -m "docs(workers): decide runtime execution boundary"
 
 ### C5-00: Convert Self-Hosting Run Gaps Into Candidates
 
+status: complete.
+
 objective:
 
 Turn P7-00 gaps into explicit memory/source/eval/anti-memory candidates through
@@ -2449,6 +2457,25 @@ mechanism:
 Use governed candidate commands with `--persist` only after DB readiness passes
 in the current shell. Do not promote candidates in the same slice.
 
+outcome:
+
+C5-00 persisted:
+
+- source claims:
+  `58e28e58-d4c8-4196-861e-cb14caeb08e1`,
+  `479b1ce8-9904-42ab-a8d1-393a2bacf685`,
+  `302f88f7-71b0-4a86-8521-330dee4713fe`;
+- memory candidates:
+  `b40cac51-73d6-4974-966b-36833c13e757`,
+  `1ea7bb3a-6fa0-404a-b284-adeeb9183b6a`,
+  `8beb1776-355f-477d-bba0-ebaeb121cc96`;
+- anti-memory candidate:
+  `45657a7d-d245-4680-83b2-a6dcddccf5e8`.
+
+Readback confirmed `c5_memory_records=0` and `c5_anti_memory_records=0`.
+The P7 eval candidate was not faked as a row. C5-01 owns deciding the governed
+EvalCandidate staging path.
+
 verification:
 
 ```sh
@@ -2462,6 +2489,43 @@ commit:
 ```sh
 git add docs/runs PLAN.md
 git commit -m "docs(run): stage self-hosting feedback candidates"
+```
+
+### C5-01: Decide Governed EvalCandidate Staging Path
+
+objective:
+
+Decide whether `EvalCandidate` should remain FeedbackDelta/ReflectionRecord
+proposal-only or gain a governed operator add/persist path comparable to
+`krn memory candidate add` and `krn memory anti add`.
+
+source:
+
+C5-00 persisted source claim `479b1ce8-9904-42ab-a8d1-393a2bacf685` and memory
+candidate `1ea7bb3a-6fa0-404a-b284-adeeb9183b6a`, which record that the P7 eval
+candidate could not be staged as a standalone governed row through current CLI
+surfaces.
+
+mechanism:
+
+Inspect current `EvalCandidate`, `FeedbackDelta`, reflection candidate writer,
+DB mappers, and CLI surfaces. Either write a small ADR/decision that eval
+candidates intentionally remain proposal-only, or implement the narrowest
+governed staging path. Do not build Promptfoo authority, an eval platform,
+dashboard, worker, or automatic promotion.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(eval): decide governed candidate staging"
 ```
 
 ### C6-00A: Re-home Memory Review Signals
@@ -2560,7 +2624,8 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C2-00 Add reviewed anti-memory candidate storage.
 - [x] C3-00 Expand real GoldenTask behavior gate coverage.
 - [x] C4-00 Decide worker runtime ADR before execution.
-- [ ] C5-00 Convert self-hosting run gaps into candidates.
+- [x] C5-00 Convert self-hosting run gaps into candidates.
+- [ ] C5-01 Decide governed EvalCandidate staging path.
 - [x] C6-00A Re-home memory review signals as pure core behavior.
 - [ ] C6-00 Re-home former memory/source/evidence audit invariants into native
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
@@ -2914,7 +2979,7 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C5-00: Convert self-hosting run gaps into candidates.
+  C5-01: Decide governed EvalCandidate staging path.
 - C3-00 found no need for a new eval subsystem. The existing
   `runKrnBehaviorGoldenGate` path could cover raw recall, observation prefix
   source-range rejection, and EvidenceBundle command provenance by executing
@@ -2924,6 +2989,11 @@ Current outcome:
   descriptions, enqueue ports, Postgres worker job lifecycle repository, and DB
   smoke proof, but no evidence that a daemon/poller is needed before C5 stages
   self-hosting feedback as governed candidates.
+- C5-00 found that memory candidates, anti-memory candidates, and source claims
+  have governed operator persistence paths, but standalone EvalCandidate does
+  not. The P7 eval candidate is therefore represented as a source claim plus
+  memory candidate describing the missing staging path, and C5-01 owns the
+  decision.
 
 ## Command Evidence
 
@@ -3916,6 +3986,65 @@ Observed:
 This proves the repo has a recorded worker runtime decision before execution
 work. It does not prove a worker daemon, job executor, autonomous maintenance,
 or production throughput exists.
+
+C5-00 verification after staging self-hosting feedback candidates:
+
+```sh
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn source claim add ... --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn memory anti add ... --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn memory candidate add ... --persist
+psql postgres://krn:krn@localhost:54329/krn -c "<C5 source/memory/anti-memory candidate readback queries>"
+psql postgres://krn:krn@localhost:54329/krn -c "<C5 final MemoryRecord/AntiMemoryRecord count query>"
+```
+
+Observed:
+
+- DB readiness passed: Postgres reachable, 12/12 migrations applied,
+  pgvector available;
+- source claims staged:
+  `58e28e58-d4c8-4196-861e-cb14caeb08e1`,
+  `479b1ce8-9904-42ab-a8d1-393a2bacf685`,
+  `302f88f7-71b0-4a86-8521-330dee4713fe`;
+- memory candidates staged:
+  `b40cac51-73d6-4974-966b-36833c13e757`,
+  `1ea7bb3a-6fa0-404a-b284-adeeb9183b6a`,
+  `8beb1776-355f-477d-bba0-ebaeb121cc96`;
+- anti-memory candidate staged:
+  `45657a7d-d245-4680-83b2-a6dcddccf5e8`;
+- readback by `metadata.slice=C5-00` returned three source claims, three
+  memory candidates, and one anti-memory candidate;
+- final truth counts remained `c5_memory_records=0` and
+  `c5_anti_memory_records=0`;
+- standalone EvalCandidate staging was not faked; C5-01 owns deciding that
+  path.
+
+This proves P7 self-hosting feedback is no longer only prose for the surfaces
+that have governed persistence. It does not prove candidates are reviewed,
+promoted, or high quality.
+
+Worktree/remote hygiene goal update:
+
+```sh
+git diff --check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+pnpm typecheck
+```
+
+Observed:
+
+- `GOAL.md` now makes worktree and remote hygiene an explicit part of the
+  current goal;
+- completed slices require a focused Conventional Commit, immediate push, and
+  clean post-push status before the next slice starts;
+- `git diff --check` passed;
+- DB readiness passed again in the current environment: Postgres reachable,
+  12/12 migrations applied, pgvector available;
+- full workspace typecheck passed.
+
+This proves the active goal now carries the user's commit/push cleanliness rule
+as an execution requirement. It does not prove future slices will stay clean;
+that must be checked after each pushed slice.
 
 ## Historical Reset Completion Criteria
 

@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C5-00: Convert Self-Hosting Run Gaps Into Candidates
+C5-01: Decide Governed EvalCandidate Staging Path
 ```
 
-Do not build worker runtime, dashboard, or broad memory behavior until the
-self-hosting run gaps are staged as governed candidate rows. Do not promote
-those candidates in the same slice that stages them.
+Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
+authority, or an eval platform while deciding this. Do not promote the C5-00
+candidates in the same slice.
 
 ## Required Read Order
 
@@ -118,6 +118,23 @@ source -> mechanism -> KRN implication -> decision/rejection -> falsifier
   current goal state: remove or demote completed detail blocks from active
   context, keep only checkpoint evidence and next actions, and avoid preserving
   duplicate prose that does not change execution.
+
+## Worktree And Remote Hygiene
+
+This is part of the goal, not optional housekeeping.
+
+- Before each slice, check `git status --short --branch` and confirm whether
+  the worktree is clean or whether unrelated dirty state must be isolated.
+- During a slice, touch only files required by that slice. Do not fold adjacent
+  cleanup, formatting churn, or old completed-task edits into the same diff.
+- After verification, commit the completed slice with one focused Conventional
+  Commit.
+- Push immediately after every completed slice commit.
+- Re-check `git status --short --branch` after push. The next slice cannot
+  start unless the pushed slice is clean locally and remotely, or the exact
+  blocker is recorded in `PLAN.md`.
+- Do not keep finished work as active context. Once pushed, reduce it to a
+  compact checkpoint, command evidence, rollback path, and next unchecked item.
 
 ## Verification Baseline
 
