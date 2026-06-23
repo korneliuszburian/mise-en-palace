@@ -3,6 +3,9 @@ import {
   parseArgs
 } from "./parseArgs.js";
 import {
+  formatDbUsage
+} from "./parseDbArgs.js";
+import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
@@ -130,6 +133,14 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "dbHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatDbUsage(),
       stderr: ""
     };
   }

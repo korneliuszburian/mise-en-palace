@@ -5,10 +5,19 @@ import {
 } from "vitest";
 
 import {
+  formatDbUsage,
   parseDbArgs
 } from "./parseDbArgs.js";
 
 describe("parseDbArgs", () => {
+  it("parses db help", () => {
+    expect(parseDbArgs(["--help"])).toEqual({
+      command: {
+        kind: "dbHelp"
+      }
+    });
+  });
+
   it("parses db readiness", () => {
     expect(parseDbArgs(["readiness"])).toEqual({
       command: {
@@ -34,10 +43,7 @@ describe("parseDbArgs", () => {
 
   it("rejects unsupported db command shapes", () => {
     expect(parseDbArgs(["smoke", "unknown"])).toEqual({
-      error: [
-        "Usage: krn db readiness|smoke",
-        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]"
-      ].join(" ")
+      error: formatDbUsage()
     });
   });
 });

@@ -57,6 +57,9 @@ export type CliCommand =
       kind: "doctor";
     }
   | {
+      kind: "dbHelp";
+    }
+  | {
       kind: "dbReadiness";
     }
   | {
@@ -266,12 +269,19 @@ const usage = [
   "Usage: krn init --connect --repo <path> --persist",
   "Usage: krn plan [--project <project-id>] --task \"...\" [--persist]",
   "",
-  "Other commands:",
+  "Public operator commands:",
   "krn init --dry-run --repo <path>",
   "krn init --connect --repo <path> --persist",
   "krn doctor",
-  "krn db readiness",
-  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
+  "krn evidence capture [--run-id <id>] [--verification \"pnpm typecheck=passed\"] [--persist]",
+  "  example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+  "  persisted: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
+  "  note: evidence capture records outcomes; it does not execute commands",
+  "krn observe --run <id> [--project <id>] [--persist]",
+  "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
+  "krn codex brief --run-id <id>",
+  "",
+  "Governed admin commands:",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
@@ -280,14 +290,13 @@ const usage = [
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
-  "krn evidence capture [--run-id <id>] [--verification \"pnpm typecheck=passed\"] [--persist]",
-  "  example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
-  "  persisted: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
-  "  note: evidence capture records outcomes; it does not execute commands",
   "krn review assess --evidence-bundle-id <id> --reviewer <name> --summary \"...\" [--status accepted|changes_requested|rejected|pending] [--persist]",
-  "krn observe --run <id> [--project <id>] [--persist]",
-  "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
-  "krn codex brief --run-id <id>"
+  "",
+  "Internal/dev commands:",
+  "krn db --help",
+  "krn db readiness",
+  "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
+  "  note: DB readiness/smoke commands prove local runtime plumbing only; they are not product workflow or quality authority"
 ].join("\n");
 
 export const formatUsage = (): string => `${usage}\n`;

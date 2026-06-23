@@ -44,11 +44,11 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C1-00: Separate Public CLI From Internal Dev Commands
+C1-01: Narrow Package Barrels From Planned To Enforced
 ```
 
-Do not build worker runtime, dashboard, or broad memory behavior until the
-public/internal CLI boundary is honest and explicitly recorded in `PLAN.md`.
+Do not build worker runtime, dashboard, or broad memory behavior until package
+root surfaces are narrowed or explicitly classified in `PLAN.md`.
 
 ## Required Read Order
 

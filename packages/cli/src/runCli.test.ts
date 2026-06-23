@@ -1018,6 +1018,42 @@ describe("runCli", () => {
     );
   });
 
+  it("groups public, governed admin, and internal dev commands in help", async () => {
+    const result = await runCli(["--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Public operator commands:");
+    expect(result.stdout).toContain("Governed admin commands:");
+    expect(result.stdout).toContain("Internal/dev commands:");
+    expect(result.stdout).toContain("krn db --help");
+    expect(result.stdout).toContain(
+      "DB readiness/smoke commands prove local runtime plumbing only"
+    );
+    expect(result.stdout).not.toContain("krn audit");
+  });
+
+  it("prints DB help as an internal dev surface", async () => {
+    const result = await runCli(["db", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Internal/dev commands:");
+    expect(result.stdout).toContain("krn db readiness");
+    expect(result.stdout).toContain("krn db smoke [target]");
+    expect(result.stdout).toContain(
+      "They are not public operator workflow, product quality authority, or Memory Brain readiness proof."
+    );
+  });
+
   it("prints a read-only doctor report", async () => {
     const result = await runCli(["doctor"], {
       env: {},

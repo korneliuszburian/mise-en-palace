@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Public/Internal CLI Hygiene.
+current_priority: Package Surface Condensation.
 
-first_unchecked_slice: `C1-00: Separate Public CLI From Internal Dev Commands`.
+first_unchecked_slice: `C1-01: Narrow Package Barrels From Planned To Enforced`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- move the documented public/governed-admin/internal CLI taxonomy into command
-  behavior or help text;
+- narrow or classify broad package root/barrel exports without breaking stable
+  public contracts;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not start worker runtime, dashboard, or broad memory features before the
-  remaining CLI surface confusion is handled.
+  package surface authority debt is handled.
 
 completed_checkpoint:
 
@@ -74,6 +74,10 @@ completed_checkpoint:
   added and promoted through MemoryReviewGate; a live persisted plan then
   selected `memory_record:f950b8b4-5392-4084-9f98-93881fbe961a` first for
   `seal Memory Core write authority`.
+- C1-00 implements the CLI taxonomy in help behavior: `krn --help` groups
+  public operator, governed admin, and internal/dev commands; `krn db --help`
+  labels DB readiness/smokes as internal runtime plumbing proof, not product
+  workflow or quality authority.
 
 completed_evidence_pointers:
 
@@ -2427,7 +2431,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] EVI-09 Promptfoo and GoldenTask boundary for self-hosting.
 - [x] EVI-10 Operator ergonomics for evidence capture.
 - [x] C0-01 Improve self-hosting context relevance.
-- [ ] C1-00 Separate public CLI from internal dev commands.
+- [x] C1-00 Separate public CLI from internal dev commands.
 - [ ] C1-01 Narrow package barrels from planned to enforced.
 - [ ] C2-00 Add reviewed anti-memory candidate storage.
 - [ ] C3-00 Expand real GoldenTask behavior gate coverage.
@@ -2781,8 +2785,11 @@ Current outcome:
 - C0-01 found the live DB had no direct Memory Core write-authority memory for
   self-hosting plan activation. The repair used the reviewed MemoryCandidate
   path instead of hard-coded recall.
+- C1-00 did not rename commands. It made the existing CLI taxonomy visible in
+  help behavior first, preserving command compatibility while removing public
+  ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C1-00: Separate public CLI from internal dev commands.
+  C1-01: Narrow package barrels from planned to enforced.
 
 ## Command Evidence
 
@@ -3569,6 +3576,31 @@ This proves reviewed write-authority memory can be added through
 MemoryReviewGate and then selected by a live persisted self-hosting plan. It
 does not prove general activation quality, broad Memory Brain readiness, or
 worker runtime execution.
+
+C1-00 verification after separating public CLI from internal/dev commands:
+
+```sh
+pnpm --filter @krn/cli test -- parseDbArgs runCli
+pnpm typecheck
+pnpm --filter @krn/cli krn --help
+pnpm --filter @krn/cli krn db --help
+git diff --check
+```
+
+Observed:
+
+- CLI focused tests passed: 23 files, 144 tests;
+- `pnpm typecheck` passed;
+- `krn --help` printed public operator, governed admin, and internal/dev
+  command groups;
+- `krn db --help` printed the DB internal/dev boundary;
+- `git diff --check` passed.
+
+This proves top-level help groups public operator, governed admin, and
+internal/dev commands; `krn db --help` is a normal help path; and DB
+readiness/smoke commands are labeled as internal runtime plumbing proof, not
+product workflow or quality authority. It does not rename CLI commands, prove
+DB runtime behavior, or change command implementations.
 
 ## Historical Reset Completion Criteria
 

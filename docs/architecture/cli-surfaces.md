@@ -1,9 +1,10 @@
 # KRN CLI Surfaces
 
-Status: current architecture classification.
+Status: current architecture classification and implemented help contract.
 Date: 2026-06-23
 
-This document classifies the existing CLI surface before behavior changes.
+This document classifies the existing CLI surface and the top-level help
+contract.
 P1-03 update: public `krn audit` has been removed from the CLI. The old audit
 scanner mixed real Memory/Source/Evidence invariants with a wrong product-shaped
 surface; those invariants must be re-homed into their native mechanisms instead
@@ -15,6 +16,10 @@ Evidence:
 - `packages/cli/src/runCli.ts` owns command dispatch and runtime dependency
   wiring.
 - `packages/cli/src/parseDbArgs.ts` defines DB readiness and smoke targets.
+- `krn --help` groups commands as public operator, governed admin, and
+  internal/dev.
+- `krn db --help` labels DB readiness/smoke commands as internal/dev runtime
+  plumbing proof, not product workflow or quality authority.
 
 ## Classification Rule
 
