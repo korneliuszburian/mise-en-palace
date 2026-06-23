@@ -1092,6 +1092,8 @@ git revert <commit>
 
 ### P6-01: Harden Worker Job Contracts
 
+status: complete.
+
 objective:
 
 Before any worker runtime, every job contract defines write authority.
@@ -1201,7 +1203,7 @@ git revert <commit>
 - [x] P5-00 Bound Promptfoo claims.
 - [x] P5-01 Add first real behavior eval gate.
 - [x] P6-00 Mark worker runtime truth.
-- [ ] P6-01 Harden worker job contracts.
+- [x] P6-01 Harden worker job contracts.
 - [ ] P7-00 Run first governed self-hosting loop.
 
 ## Surprises & Discoveries
@@ -1292,6 +1294,9 @@ git revert <commit>
   ledgers. The active-current surfaces now distinguish worker job persistence
   and smoke proof from job execution, daemon, throughput, or autonomous
   maintenance.
+- P6-01 did not need a worker runtime, DB migration, or schema package change.
+  The hardening belongs to typed worker job descriptors: current jobs can
+  declare write authority and Memory Core gates without claiming execution.
 
 ## Decision Log
 
@@ -1368,6 +1373,11 @@ git revert <commit>
   definitions, enqueue ports, Postgres persistence, and smokes may exist, but
   no worker daemon, job executor, background loop, autonomous maintenance, or
   Memory Core mutation runtime is claimed as built.
+- 2026-06-23: P6-01 hardens maintenance worker job contracts before runtime.
+  Each job descriptor now declares input schema, idempotency key, completed
+  output event, failed state, allowed writes, forbidden writes, and Memory Core
+  gate constraints. Current worker contracts forbid direct writes to
+  MemoryRecord, AntiMemoryRecord, SourceClaim, and SourceDecision truth.
 
 ## Outcomes & Retrospective
 
@@ -1423,7 +1433,9 @@ Current outcome:
 - Worker runtime truth is marked at the package and architecture surfaces:
   workers are typed job definitions/enqueue contracts only until a runtime is
   explicitly accepted.
-- Next safe action is P6-01: harden worker job contracts.
+- Worker job contracts now carry explicit write-authority fields and Memory
+  Core gate constraints before any worker runtime exists.
+- Next safe action is P7-00: run the first governed self-hosting loop.
 
 ## Command Evidence
 
@@ -1933,6 +1945,25 @@ Observed:
 This proves active worker docs now mark runtime truth honestly. It does not
 prove worker job write authority is sufficiently bounded; P6-01 owns that
 contract hardening.
+
+P6-01 worker job contract hardening:
+
+```sh
+pnpm --filter @krn/workers test
+pnpm typecheck
+git diff --check
+```
+
+Observed:
+
+- worker package tests passed: 1 test file, 4 tests;
+- workspace typecheck passed across core, schema, harness, workers,
+  codex-adapter, db, and cli;
+- `git diff --check` passed with no output.
+
+This proves current worker job descriptors expose the required write-authority
+fields and preserve strict TypeScript boundaries. It does not prove a worker
+daemon, job executor, or autonomous maintenance runtime exists.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

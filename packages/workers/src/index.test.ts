@@ -159,4 +159,35 @@ describe("maintenance worker skeleton", () => {
 
     expect(skippedRecord.status).toBe("skipped");
   });
+
+  test("describes write authority before any worker runtime exists", () => {
+    const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));
+
+    expect(descriptions).toEqual(
+      maintenanceJobTypes.map((type) =>
+        expect.objectContaining({
+          jobType: type,
+          failureState: "failed",
+          outputEvent: "worker_job.completed",
+          memoryCoreGate: expect.any(String),
+          inputSchema: expect.stringContaining("Payload"),
+          idempotencyKey: expect.stringContaining(type),
+          allowedWrites: expect.arrayContaining(["worker_jobs", "outbox_events"]),
+          forbiddenWrites: expect.arrayContaining(["memory_records"])
+        })
+      )
+    );
+    expect(describeMaintenanceJob("compact_memory")).toEqual(
+      expect.objectContaining({
+        allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
+        forbiddenWrites: [
+          "memory_records",
+          "anti_memory_records",
+          "source_claims",
+          "source_decisions"
+        ],
+        memoryCoreGate: "write_memory_candidate_only"
+      })
+    );
+  });
 });
