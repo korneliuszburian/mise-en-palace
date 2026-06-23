@@ -2,11 +2,11 @@
 
 Hard blockers:
 
-- QG-04A through QG-06 must run before MM-66/MM-67 feature work continues.
-- Current quality gates do not yet prove consolidated CLI boundary helpers,
-  modular command parsing, modular doctor checks, shared memory confidence
-  parsing, shared schema metadata guards, shared review signal vocabulary,
-  split DB mappers, or automated smell/bloat scans.
+- QG-04B through QG-06 must run before MM-66/MM-67 feature work continues.
+- Current quality gates do not yet prove modular command parsing, modular
+  doctor checks, shared memory confidence parsing, shared schema metadata
+  guards, shared review signal vocabulary, split DB mappers, or automated
+  smell/bloat scans.
 - MM-65 Promptfoo snapshot export must not be treated as final eval
   integration until QG-05 adopts or rejects official Promptfoo through
   source-to-decision.
@@ -53,6 +53,14 @@ Closed in QG-04:
   code and mapper tests.
 - Remaining smell/bloat findings are converted into QG-04A through QG-04H
   repair slices before feature work resumes.
+
+Closed in QG-04A:
+
+- CLI filesystem and JSON boundary helpers are consolidated in
+  `packages/cli/src/cliFileBoundary.ts`.
+- `runDoctorCommand`, `runInitCommand`, `runDbReadinessCommand`, and
+  `runDbSmokeCommand` no longer define duplicate local filesystem/JSON helper
+  functions.
 
 Closed in MM-65:
 

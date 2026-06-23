@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after QG-04, paused for the remaining QG repair and automation gate.
+Current phase: Memory ideal-state execution track after QG-04A, paused for the remaining QG repair and automation gate.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, and QG-04 in
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - QG-00 repo-wide current-state inventory at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
@@ -230,10 +230,10 @@ Current runtime truth:
 - QG-04 recorded the smell/bloat audit, removed low-risk placeholder
   vocabulary from retrieval smoke fixtures, and queued QG-04A through QG-04H
   repair slices.
-- QG-04A through QG-06 are queued before MM-66: helper consolidation,
-  parser/doctor modularization, schema/core vocabulary cleanup, DB mapper
-  split, official Promptfoo decision, and quality gate automation in
-  `krn audit`.
+- QG-04A consolidated CLI filesystem and JSON boundary helpers.
+- QG-04B through QG-06 are queued before MM-66: parser/doctor modularization,
+  schema/core vocabulary cleanup, DB mapper split, official Promptfoo decision,
+  and quality gate automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.

@@ -11,8 +11,8 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, and QG-04 are
-  complete.
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A
+  are complete.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
@@ -151,10 +151,11 @@ Current known status:
   GoldenTask cases, with no Promptfoo dependency and no model execution.
 - QG-04 recorded the repo-wide smell/bloat audit and converted findings into
   repair slices QG-04A through QG-04H.
-- QG-04A through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: helper consolidation, parser/doctor
-  modularization, schema/core vocabulary cleanup, DB mapper split, official
-  Promptfoo integration decision, and audit automation.
+- QG-04A consolidated CLI filesystem and JSON boundary helpers.
+- QG-04B through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: parser/doctor modularization, schema/core
+  vocabulary cleanup, DB mapper split, official Promptfoo integration decision,
+  and audit automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.

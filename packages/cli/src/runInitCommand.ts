@@ -1,8 +1,4 @@
 import {
-  access,
-  readFile
-} from "node:fs/promises";
-import {
   createHash
 } from "node:crypto";
 import path from "node:path";
@@ -16,6 +12,11 @@ import type {
   ProjectRecord,
   RepoInstallationRecord
 } from "@krn/harness";
+import {
+  findRepoRoot as findWorkspaceRoot,
+  pathExists,
+  readJsonObject
+} from "./cliFileBoundary.js";
 
 export interface InitCommandRuntime {
   cwd: string;
@@ -75,28 +76,8 @@ export type CreateInitConnectRuntime = (
   input: InitConnectRuntimeInput
 ) => Promise<InitConnectRuntime>;
 
-const pathExists = async (targetPath: string): Promise<boolean> => {
-  try {
-    await access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
-
-const readJsonObject = async (filePath: string): Promise<Record<string, unknown> | undefined> => {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    const parsed: unknown = JSON.parse(raw);
-
-    return isRecord(parsed) ? parsed : undefined;
-  } catch {
-    return undefined;
-  }
-};
 
 const dependencyRecordHas = (
   value: unknown,
@@ -199,24 +180,6 @@ const normalizeSlugPart = (value: string): string => {
     .slice(0, 48);
 
   return normalized.length === 0 ? "target-repo" : normalized;
-};
-
-const findWorkspaceRoot = async (startPath: string): Promise<string> => {
-  let currentPath = startPath;
-
-  for (;;) {
-    if (await pathExists(path.join(currentPath, "pnpm-workspace.yaml"))) {
-      return currentPath;
-    }
-
-    const parentPath = path.dirname(currentPath);
-
-    if (parentPath === currentPath) {
-      return startPath;
-    }
-
-    currentPath = parentPath;
-  }
 };
 
 const resolveRepoPath = async (cwd: string, repo: string): Promise<string> => {

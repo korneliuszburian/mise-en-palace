@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-04 code smell and bloat audit.
+Latest verified slice: QG-04A CLI filesystem and JSON boundary helper consolidation.
 
 Passed:
 
@@ -49,6 +49,22 @@ Passed:
   findings.
 - QG-04 recorded repair slices QG-04A through QG-04H at
   `docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`.
+- QG-04A RED focused `pnpm --filter @krn/cli test -- cliFileBoundary` failed
+  because `./cliFileBoundary.js` did not exist.
+- QG-04A GREEN focused `pnpm --filter @krn/cli test -- cliFileBoundary` passed
+  with 7 files and 96 tests.
+- QG-04A focused `pnpm --filter @krn/cli test` passed with 7 files and 96
+  tests.
+- QG-04A focused `pnpm --filter @krn/cli typecheck` passed.
+- QG-04A full `pnpm typecheck` passed.
+- QG-04A full `pnpm test` passed.
+- QG-04A duplicate-helper scan found only canonical helper definitions in
+  `packages/cli/src/cliFileBoundary.ts`.
+- QG-04A `git diff --check` passed.
+- QG-04A forbidden directory scan found no added forbidden surfaces.
+- QG-04A stale status scan passed.
+- QG-04A `krn audit slice --fail-on warning` passed with verdict `pass` and 0
+  findings.
 
 QG audit facts gathered during QG-00:
 
@@ -63,7 +79,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04A through QG-06 remain next.
+- QG-04B through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

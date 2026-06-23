@@ -1,5 +1,4 @@
 import {
-  access,
   readdir,
   readFile
 } from "node:fs/promises";
@@ -12,6 +11,11 @@ import {
   inspectRetrievalSubstrateReadiness,
   inspectSourceGraphReadiness
 } from "@krn/db";
+import {
+  findRepoRoot,
+  pathExists,
+  readJsonObject
+} from "./cliFileBoundary.js";
 
 export interface DoctorRuntime {
   env: Record<string, string | undefined>;
@@ -27,48 +31,6 @@ export interface DoctorCheck {
   label: string;
   status: string;
 }
-
-const pathExists = async (targetPath: string): Promise<boolean> => {
-  try {
-    await access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const findRepoRoot = async (startPath: string): Promise<string> => {
-  let currentPath = startPath;
-
-  for (;;) {
-    if (await pathExists(path.join(currentPath, "pnpm-workspace.yaml"))) {
-      return currentPath;
-    }
-
-    const parentPath = path.dirname(currentPath);
-
-    if (parentPath === currentPath) {
-      return startPath;
-    }
-
-    currentPath = parentPath;
-  }
-};
-
-const readJsonObject = async (filePath: string): Promise<Record<string, unknown> | undefined> => {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    const parsed: unknown = JSON.parse(raw);
-
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      return undefined;
-    }
-
-    return parsed as Record<string, unknown>;
-  } catch {
-    return undefined;
-  }
-};
 
 const checkPostgres = async (
   databaseUrl: string | undefined,

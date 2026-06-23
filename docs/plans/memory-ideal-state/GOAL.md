@@ -20,8 +20,8 @@ Use that file as the living ExecPlan. It owns:
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, and QG-04 are
-  complete in the controlled plan.
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A
+  are complete in the controlled plan.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-56A added the KRN code vocabulary and TypeScript elegance standard at
@@ -52,16 +52,17 @@ Use that file as the living ExecPlan. It owns:
   GoldenTask cases, with no Promptfoo dependency and no model execution.
 - QG-04 recorded the repo-wide smell/bloat audit at
   `docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`.
-- QG-04A through QG-04H, then QG-05 through QG-06, remain queued as the blocking
-  quality correction gate: helper consolidation, parser/doctor modularization,
-  schema/core vocabulary cleanup, DB mapper split, official Promptfoo
-  integration decision, and audit automation.
+- QG-04A consolidated CLI filesystem and JSON boundary helpers into
+  `packages/cli/src/cliFileBoundary.ts`.
+- QG-04B through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: parser/doctor modularization, schema/core
+  vocabulary cleanup, DB mapper split, official Promptfoo integration decision,
+  and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-04A CLI filesystem and JSON boundary
-helper consolidation.
+the first unchecked Progress item: QG-04B command parser modularization.
 
 ## Hard Non-Goals
 

@@ -1,6 +1,3 @@
-import {
-  access
-} from "node:fs/promises";
 import path from "node:path";
 import {
   runActivationSmokeCheck,
@@ -24,6 +21,9 @@ import {
 import {
   formatWorkerJobSmokeReportLines
 } from "./workerJobSmoke.js";
+import {
+  findRepoRoot
+} from "./cliFileBoundary.js";
 
 export interface DbSmokeRuntime {
   env: Record<string, string | undefined>;
@@ -49,33 +49,6 @@ export interface DbSmokeResult {
 }
 
 const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
-
-const pathExists = async (targetPath: string): Promise<boolean> => {
-  try {
-    await access(targetPath);
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-const findRepoRoot = async (startPath: string): Promise<string> => {
-  let currentPath = startPath;
-
-  for (;;) {
-    if (await pathExists(path.join(currentPath, "pnpm-workspace.yaml"))) {
-      return currentPath;
-    }
-
-    const parentPath = path.dirname(currentPath);
-
-    if (parentPath === currentPath) {
-      return startPath;
-    }
-
-    currentPath = parentPath;
-  }
-};
 
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : "unknown DB smoke error";
