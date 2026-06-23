@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-64 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-65 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -140,8 +140,12 @@ Current public state:
   observation-prefix blocking, and visible missing-evidence gap reports.
   MM-64 added a pure harness GoldenTask runner that emits pass/fail reports
   only from validated GoldenTask contracts plus explicit behavior proofs.
+  MM-65 added a pure harness Promptfoo-compatible snapshot export for
+  GoldenTask cases. The export is deterministic, marks itself as
+  snapshot-only, carries behavior proof status metadata, and requires no
+  Promptfoo dependency or model execution.
 - Not built:
-  golden memory behavior runner, API/MCP, dashboard, plugin package, source
+  EvalCandidate promotion gate, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.
 
 Do not use older orientation text in this file to infer that the repo has no

@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-64. KRN has
+The memory ideal-state execution track is implemented through MM-65. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -107,9 +107,14 @@ blocking, and visible missing-evidence gap reports.
 MM-64 added a pure harness GoldenTask runner that emits pass/fail reports from
 validated task contracts plus explicit behavior proofs, so fixture shape alone
 cannot pass as a golden eval.
+MM-65 added a pure harness Promptfoo-compatible snapshot export for GoldenTask
+cases. The export is deterministic, snapshot-only, carries behavior proof
+status metadata, declares `promptfooDependency: "not_required"`, and does not
+execute a model.
 
 Last verified state:
-MM-64 added the pure golden eval runner. Focused harness tests and typecheck
+MM-65 added the optional Promptfoo-compatible snapshot export. Focused harness
+tests and typecheck
 passed;
 full verification is recorded in
 `docs/handoff/verification.md`.
@@ -127,7 +132,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-64 memory ideal-state slices: complete through governed
+- MM-00 through MM-65 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -155,7 +160,8 @@ Milestone status:
   protected failure modes, plus deterministic file fixture parsing for initial
   GoldenTask seeds, plus fixture-backed memory behavior golden tests for
   source-linked memory, stale/weak abstention, temporal validity, and
-  application guidance.
+  application guidance, plus the pure golden runner and optional snapshot-only
+  Promptfoo-compatible export.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -308,21 +314,22 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-64 blocker remains.
+No MM-65 blocker remains.
 
 Rollback path:
-After commit, revert the MM-64 commit with `git revert <commit>` if the golden
-runner regresses. No DB migration was added; rollback is harness/docs only.
+After commit, revert the MM-65 commit with `git revert <commit>` if the golden
+Promptfoo snapshot export regresses. No DB migration was added; rollback is
+harness/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
 layer, source crawler, runtime markdown memory, `.krn` runtime truth, separate
 vector/graph/search DB, Redis/Kafka, broad eval suite, real external repo
 mutation, actual Codex execution, automatic memory promotion, fuzzy
-anti-memory matching, broad golden runner, and production worker throughput.
+anti-memory matching, broad eval suite, and production worker throughput.
 
 Next safest action:
-Run MM-65 optional Promptfoo-compatible export.
+Run MM-66 EvalCandidate promotion gate.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

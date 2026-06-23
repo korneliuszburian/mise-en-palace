@@ -2,7 +2,19 @@
 
 Hard blockers:
 
-- None for MM-65.
+- None for MM-66.
+
+Closed in MM-65:
+
+- Pure harness Promptfoo-compatible snapshot export exists at
+  `packages/harness/src/goldenPromptfooExport.ts`.
+- Export emits deterministic snapshot-only tests with behavior proof status
+  metadata.
+- Export declares `promptfooDependency: "not_required"` and
+  `doesNotExecuteModel: true`.
+- No Promptfoo dependency, CLI command, DB schema/migration, repository, model
+  execution, broad benchmark suite, dashboard/API/MCP/server/plugin, or source
+  crawler surface was added.
 
 Closed in MM-64:
 

@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-64.
+Current phase: Memory ideal-state execution track after MM-65.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-64 and MM-16R in
+- MM-00 through MM-65 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -218,10 +218,13 @@ Current runtime truth:
   prefix blocking, and visible missing-evidence gap reports.
 - MM-64 adds a pure harness GoldenTask runner that emits pass/fail reports from
   validated task contracts plus explicit behavior proofs.
+- MM-65 adds a pure harness Promptfoo-compatible snapshot export for
+  GoldenTask cases without adding Promptfoo as a dependency or executing a
+  model.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-65 optional Promptfoo-compatible export.
+- Continue with MM-66 EvalCandidate promotion gate.
