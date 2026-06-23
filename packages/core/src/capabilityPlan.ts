@@ -14,8 +14,18 @@ export type CapabilityRequirementKind =
   | "evidence_capture"
   | "policy_gate";
 
+export type CapabilityRequirementPriority = "required" | "recommended";
+
+export type CapabilityBindingKind =
+  | "skill"
+  | "rule"
+  | "policy_gate"
+  | "tool_boundary";
+
 export interface CapabilityRequirement {
   kind: CapabilityRequirementKind;
+  priority: CapabilityRequirementPriority;
+  bindingKinds: CapabilityBindingKind[];
   reason: string;
   requiredEvidence: string[];
 }

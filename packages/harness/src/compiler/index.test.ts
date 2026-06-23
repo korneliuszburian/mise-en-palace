@@ -493,6 +493,31 @@ describe("compileHarnessPlan", () => {
     expect(retrievalRepository.decisions.every((item) => item.decision !== "included")).toBe(true);
   });
 
+  it("hardens capability requirements with priority and binding kinds outside TaskContract", async () => {
+    const result = await compileHarnessPlan(compileInput, {
+      harnessRunRepository: new FakeHarnessRunRepository(),
+      memoryRepository: new FakeMemoryRepository([memoryRecord({ id: "memory-high" })]),
+      sourceRepository: new FakeSourceRepository([sourceClaim({ id: "claim-high" })]),
+      retrievalRepository: new FakeRetrievalRepository(),
+      now: () => now,
+      createId: (prefix) => `${prefix}-capability`
+    });
+
+    expect(result.capabilityPlan.requirements).not.toHaveLength(0);
+    expect(result.capabilityPlan.requirements.every((requirement) =>
+      requirement.priority === "required" &&
+      requirement.bindingKinds.length > 0 &&
+      requirement.requiredEvidence.length > 0
+    )).toBe(true);
+    expect(result.capabilityPlan.requirements.find((requirement) =>
+      requirement.kind === "source_grounding"
+    )?.bindingKinds).toEqual(expect.arrayContaining(["skill", "policy_gate"]));
+    expect(result.capabilityPlan.requirements.find((requirement) =>
+      requirement.kind === "type_safety"
+    )?.bindingKinds).toEqual(expect.arrayContaining(["skill", "rule"]));
+    expect("requiredSkills" in result.taskContract).toBe(false);
+  });
+
   it("activates search candidates and records anti-memory conflicts as explicit exclusions", async () => {
     const retrievalRepository = new FakeRetrievalRepository([
       searchDocument({

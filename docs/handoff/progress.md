@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-45.
+Current phase: Memory ideal-state execution track after MM-46.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-45 and MM-16R in
+- MM-00 through MM-46 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -151,10 +151,13 @@ Current runtime truth:
   prefix context abstained with `no_candidates`; after prefix context assembled
   with one source-ranged observation prefix item; DB counts for Memory Core,
   observation, and context tables stayed unchanged.
+- MM-46 hardens CapabilityRequirement/CapabilityPlan domain fields. Requirements
+  now carry explicit priority and binding kinds, while TaskContract remains free
+  of `requiredSkills`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-46 CapabilityRequirement and CapabilityPlan hardening.
+- Continue with MM-47 CapabilityCompiler v1.

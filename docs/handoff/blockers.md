@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-46.
+- None for MM-47.
+
+Closed in MM-46:
+
+- CapabilityRequirement now carries explicit priority.
+- CapabilityRequirement now carries binding kinds for later skill/rule/policy/
+  tool binding work.
+- CapabilityPlan remains the owner of capability binding needs.
+- TaskContract remains free of `requiredSkills`.
 
 Closed in MM-45:
 

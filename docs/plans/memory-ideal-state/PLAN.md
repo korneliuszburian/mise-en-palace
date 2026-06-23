@@ -417,7 +417,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-44 complete: integrated the hardened observation prefix selector into context assembly as a rendered activation metadata artifact, added source-range counts to selected prefix items, and made activation smoke prove `Observation prefix items: 1`. Intended files: `packages/harness/src/activation/types.ts`, `packages/harness/src/activation/assembleContext.ts`, `packages/harness/src/observations/observationPrefix.ts`, activation/observation tests, `packages/db/src/activationSmoke.ts`, `packages/cli/src/runDbSmokeCommand.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no Memory Core mutation, no reflection, no promotion, no broad vector search rewrite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because context with only a valid observation prefix still abstained; GREEN focused activation/observation-prefix tests passed with 9 files / 46 tests and prove source-ranged prefix metadata, selected item count, and low-relevance exclusion; focused harness/db/cli typechecks passed; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, observation prefix items `1`, raw evidence recall triggers `1`, and context exclusions `3`. Next: MM-44A observation prefix integration gate.
 - [x] (2026-06-23) MM-44A complete: added an assembly-side observation prefix gate so manually supplied prefix metadata is rejected when any selected item lacks source ranges. Intended files: `packages/harness/src/activation/assembleContext.ts`, `packages/harness/src/activation/index.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new prefix fetcher, no reflection, no memory promotion, no broad vector search rewrite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because an unsourced prefix-only context assembled; GREEN focused activation test passed with 9 files / 47 tests after context assembly omitted `metadata.observationPrefix`, added `metadata.observationPrefixGate` with `missing_source_ranges`, and kept the context abstained when no other inclusions existed. Next: MM-45 activation dogfood.
 - [x] (2026-06-23) MM-45 complete: dogfooded activation before/after observation prefix on one KRN memory implementation task and recorded proof at `docs/runs/2026-06-23-activation-observation-prefix-dogfood.md`. Intended files: dogfood run doc, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new CLI, no prefix fetcher, no reflection, no memory promotion, no dashboard/API/MCP/server/plugin/source crawler. Evidence: DB counts before and after stayed unchanged for `memory_records=4`, `memory_candidates=2`, `observation_groups=1`, `observation_items=5`, and `context_assemblies=18`; before context without candidates/prefix abstained with `no_candidates`; after context with one selected source-ranged observation prefix assembled with `observationPrefixItemCount=1`; verdict `prefix_improves_context_precision_without_candidates`. Next: MM-46 CapabilityRequirement and CapabilityPlan hardening.
-- [ ] MM-46: CapabilityRequirement and CapabilityPlan hardening.
+- [x] (2026-06-23) MM-46 complete: hardened pure CapabilityRequirement/CapabilityPlan domain fields with explicit requirement priority and binding kinds while keeping TaskContract free of `requiredSkills`. Intended files: `packages/core/src/capabilityPlan.ts`, `packages/harness/src/compiler/createCapabilityPlan.ts`, compiler tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no CLI surface, no new skill lifecycle, no binding repository, no TaskContract `requiredSkills`, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused compiler test failed because capability requirements had no priority/binding kinds; GREEN focused compiler test passed with 9 files / 48 tests after requirements gained `priority: "required"` and binding kinds such as `skill`, `rule`, `policy_gate`, and `tool_boundary`; focused core/harness/codex-adapter typechecks passed; grep/audit proof keeps `TaskContract` outside requiredSkills ownership. Next: MM-47 CapabilityCompiler v1.
 - [ ] MM-47: CapabilityCompiler v1.
 - [ ] MM-48: Skill/rule/policy/tool binding models.
 - [ ] MM-49: Product-emitted skill/rule lifecycle without auto-growth.
@@ -1652,10 +1652,27 @@ At the end:
 - Skill/rule/policy lifecycle is reviewed and auditable.
 - Product-emitted skills remain bounded engineering disciplines.
 
+Gate 6 MM-46 outcome:
+- `CapabilityRequirement` now carries explicit `priority` and `bindingKinds`.
+- `createCapabilityPlan` emits required requirements with bounded binding kinds
+  such as `skill`, `rule`, `policy_gate`, and `tool_boundary`.
+- `TaskContract` remains free of `requiredSkills`; capability binding stays in
+  CapabilityPlan/CapabilityCompiler layers.
+- No DB, CLI, lifecycle repository, or runtime surface was added.
+
 Slices:
 
 MM-46 — Capability domain hardening
 - Add/adjust CapabilityRequirement, CapabilityPlan, binding kinds.
+- Slice note (2026-06-23): harden the existing pure CapabilityPlan domain by
+  making every `CapabilityRequirement` carry explicit priority and binding
+  kinds. This prepares MM-47/MM-48 without moving skill/rule/tool selection
+  into `TaskContract`. Intended files: `packages/core/src/capabilityPlan.ts`,
+  `packages/harness/src/compiler/createCapabilityPlan.ts`, compiler tests,
+  root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals: no DB
+  migration, no CLI surface, no new skill lifecycle, no binding repository, no
+  TaskContract `requiredSkills`, no dashboard/API/MCP/server/plugin/source
+  crawler.
 - Verification:
       grep proves TaskContract does not own requiredSkills as core primitive.
 
