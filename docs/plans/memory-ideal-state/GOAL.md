@@ -1,12 +1,20 @@
 # Goal: Controlled Memory Brain Execution
 
-The canonical execution plan for the Memory Brain is:
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+> Reset decision, 2026-06-23: QG-06/productized audit automation is rejected as
+> active product direction. Treat QG-06 references below as historical evidence
+> or quarry for bounded internal guards only.
+
+Historical note: this file previously treated the old memory-plan ledger as the
+canonical execution plan:
 
 ```txt
 docs/plans/memory-ideal-state/PLAN.md
 ```
 
-Use that file as the living ExecPlan. It owns:
+At the time, that file was described as the living ExecPlan owning:
 
 - current status;
 - progress checkboxes;
@@ -16,7 +24,7 @@ Use that file as the living ExecPlan. It owns:
 - verification requirements;
 - recovery and rollback rules.
 
-## Current Status
+## Historical Status
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
@@ -71,14 +79,14 @@ Use that file as the living ExecPlan. It owns:
   explicit audit findings.
 - QG-05 adopted official Promptfoo as a bounded eval-lane runner and result
   adapter, with a runnable local smoke fixture and JSONL-to-KRN proof bridge.
-- QG-06 remains queued as the blocking quality correction gate: audit
-  automation.
+- QG-06 was queued as the blocking quality correction gate: audit automation.
+  The 2026-06-23 reset rejects that as active product direction.
 
-## Next Action
+## Historical Next Action
 
-Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-06 quality gate automation in
-`krn audit`.
+The old next action was to read `docs/plans/memory-ideal-state/PLAN.md` top to
+bottom and continue from the first unchecked Progress item: QG-06 quality gate
+automation in `krn audit`. Current execution must instead follow `/PLAN.md`.
 
 ## Hard Non-Goals
 

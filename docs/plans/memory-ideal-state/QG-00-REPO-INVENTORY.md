@@ -1,5 +1,12 @@
 # QG-00 Repo-Wide Current-State Inventory
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+> Reset decision, 2026-06-23: QG-06/productized audit automation is rejected as
+> active product direction. Treat QG-06 references below as historical evidence
+> or quarry for bounded internal guards only.
+
 Date: 2026-06-23
 
 Head inspected:
@@ -327,4 +334,3 @@ Observed:
 - forbidden directory scan returned no forbidden product directories;
 - test inventory found 56 colocated test files;
 - production TS inventory found 162 production TS files across packages.
-

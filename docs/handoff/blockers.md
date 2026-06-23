@@ -4,9 +4,11 @@
 > Not current execution truth.
 > Current canonical execution plan: `/PLAN.md`.
 
-Hard blockers:
+Historical blockers recorded by the old memory plan:
 
-- QG-04C through QG-06 must run before MM-66/MM-67 feature work continues.
+- At the time this handoff was written, QG-04C through QG-06 were treated as
+  blockers before MM-66/MM-67 feature work. That is no longer current truth;
+  `/PLAN.md` owns the active reset queue.
 - Current quality gates do not yet prove modular doctor checks, shared memory
   confidence parsing, shared schema metadata
   guards, shared review signal vocabulary, split DB mappers, or automated

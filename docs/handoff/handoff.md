@@ -125,15 +125,17 @@ accepted fixture finding. QG-04 recorded the smell/bloat audit, removed
 low-risk placeholder vocabulary from retrieval smoke fixtures, and queued
 QG-04A through QG-04H repair slices. QG-04A consolidated CLI filesystem and
 JSON boundary helpers. QG-04B modularized command-family parsing. QG-04C
-through QG-06 are queued before MM-66 so the repo does not build more features
-on top of an under-audited quality model.
+through QG-06 were queued before MM-66 in the old memory plan so the repo did
+not build more features on top of an under-audited quality model. This is
+historical context, not current execution truth.
 
 Last verified state:
 QG-04B modularized command-family parsing. `parseArgs.ts` now delegates command
 grammar to focused parser modules and is down to 379 lines; the final `memory`
-extraction is covered by focused parser tests. The remaining QG work is doctor
-modularization, schema/core vocabulary cleanup, DB mapper split, official
-Promptfoo decision, and audit automation before MM-66.
+extraction is covered by focused parser tests. At the time, remaining QG work
+was doctor modularization, schema/core vocabulary cleanup, DB mapper split,
+official Promptfoo decision, and audit automation before MM-66. Current
+execution must instead follow `/PLAN.md`.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -332,8 +334,10 @@ Key proof IDs:
 - Latest anti-rot target harness ExecutionRun:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
-Residual blockers:
-QG-04C through QG-06 block MM-66/MM-67.
+Residual blockers recorded at the time:
+QG-04C through QG-06 were treated as blocking MM-66/MM-67 in the old plan. The
+current root plan rejects productized QG-06 / audit automation as active
+direction.
 
 Rollback path:
 After commit, revert the QG-04B commit with `git revert <commit>` if the parser

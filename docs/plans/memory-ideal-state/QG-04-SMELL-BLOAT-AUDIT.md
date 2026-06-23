@@ -1,5 +1,12 @@
 # QG-04 — Code Smell And Bloat Audit
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+> Reset decision, 2026-06-23: QG-06/productized audit automation is rejected as
+> active product direction. Treat QG-06 references below as historical evidence
+> or quarry for bounded internal guards only.
+
 Date: 2026-06-23
 
 Status: complete as audit; repair slices are queued before feature work resumes.
@@ -274,4 +281,3 @@ QG-04 completes the smell/bloat audit and removes one low-risk smell
 immediately. It does not certify the repo as fully clean. The repo cannot
 return to memory/eval feature work until QG-04A through QG-04H are resolved or
 explicitly reclassified with evidence.
-

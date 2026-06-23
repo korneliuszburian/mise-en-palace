@@ -339,7 +339,7 @@ git revert <commit>
 
 ### P0-02: Mark Historical Planning Ledgers
 
-status: next.
+status: complete.
 
 objective:
 
@@ -388,6 +388,8 @@ git revert <commit>
 
 ### P0-03: Align README As Doorway
 
+status: complete.
+
 objective:
 
 Make README an honest doorway instead of a stale status ledger.
@@ -430,6 +432,8 @@ git revert <commit>
 ```
 
 ### P0-04: Remove Productized QG-06 Direction
+
+status: complete.
 
 objective:
 
@@ -1155,7 +1159,7 @@ git revert <commit>
 - [x] P0-01 Replace root `PLAN.md` with canonical reset plan.
 - [x] P0-02 Mark historical planning ledgers.
 - [x] P0-03 Align README as doorway.
-- [ ] P0-04 Remove productized QG-06 direction.
+- [x] P0-04 Remove productized QG-06 direction.
 - [ ] P1-00 Classify CLI surfaces.
 - [ ] P1-01 Deproductize `krn audit`.
 - [ ] P1-02 Plan package barrel narrowing.
@@ -1183,9 +1187,10 @@ git revert <commit>
   must be cleaned up or explicitly rejected by P0-04.
 - DB package implementation exists, but live DB runtime truth still depends on
   `KRN_DATABASE_URL` in the current shell.
-- Historical handoff and memory-plan files still contain stale QG-06 and
-  current-phase language below the new banner. That content is preserved as
-  ledger evidence only; P0-04 owns rewriting active product-direction claims.
+- Historical handoff and memory-plan files still contain old QG-06 wording as
+  ledger evidence, but target files now carry reset-decision banners or
+  historical-note wording that rejects QG-06/productized audit automation as
+  active product direction.
 - README now points readers to root `GOAL.md` and root `PLAN.md`; old memory
   ideal-state docs are described as historical ledgers, not active truth.
 
@@ -1202,6 +1207,9 @@ git revert <commit>
   files as historical ledgers instead of current execution truth.
 - 2026-06-23: README is a doorway, not a progress ledger; it rejects
   productized QG-06/anti-slop direction and bounds Promptfoo smoke claims.
+- 2026-06-23: Productized QG-06 / anti-slop / audit automation is removed as
+  active direction in root surfaces and classified as historical/rejected in
+  old memory-plan and handoff surfaces.
 
 ## Outcomes & Retrospective
 
@@ -1210,9 +1218,10 @@ Current outcome:
 - Root activation contract and root execution plan are reset.
 - Historical planning ledgers are bannered as non-current truth.
 - README is aligned with root `GOAL.md` and root `PLAN.md`.
+- Productized QG-06 / anti-slop / audit automation direction is rejected or
+  historical wherever the P0-04 scan finds it.
 - Package source is untouched.
-- Next safe action is P0-04: remove remaining productized QG-06 direction from
-  historical/current-state surfaces.
+- Next safe action is P1-00: classify CLI surfaces.
 
 ## Command Evidence
 
@@ -1259,6 +1268,32 @@ Observed matches are in explicit rejection, historical-quarry language, or
 verification commands. This proves the root files no longer route active work
 into the old memory plan or productized QG-06 direction. It does not prove
 README/handoff docs are repaired; P0-02 through P0-04 still own that work.
+
+```sh
+git diff --check
+```
+
+Observed: passed with no output.
+
+P0-04 verification after rejecting productized QG-06 direction:
+
+```sh
+rg -n "anti-slop|quality gate automation|smell scan automation|QG-06|quality engine|audit automation" README.md GOAL.md PLAN.md docs/plans docs/handoff
+```
+
+Observed summary:
+
+- root `GOAL.md`, `README.md`, and root `PLAN.md` matches are rejection,
+  non-goal, or verification-command text;
+- old memory-plan/QG docs with QG-06 matches now carry a reset-decision banner
+  that rejects QG-06/productized audit automation as active direction;
+- handoff matches are historical notes or old ledger evidence under the
+  historical banner.
+
+This proves the P0-04 search surface no longer presents productized QG-06 /
+anti-slop / audit automation as current execution truth. It does not decide
+whether the `krn audit` command is deleted, renamed, or retained as an internal
+guard; P1-01 owns that decision.
 
 ```sh
 git diff --check

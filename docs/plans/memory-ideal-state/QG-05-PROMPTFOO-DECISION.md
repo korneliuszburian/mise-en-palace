@@ -1,5 +1,12 @@
 # QG-05: Official Promptfoo Adapter Decision
 
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+> Reset decision, 2026-06-23: QG-06/productized audit automation is rejected as
+> active product direction. Treat QG-06 references below as historical evidence
+> or quarry for bounded internal guards only.
+
 Status: complete
 Date: 2026-06-23
 

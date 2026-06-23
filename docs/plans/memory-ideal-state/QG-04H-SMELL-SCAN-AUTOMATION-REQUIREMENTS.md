@@ -3,19 +3,27 @@
 > Historical audit/planning ledger.
 > Not current execution truth.
 > Current canonical execution plan: `/PLAN.md`.
+> Reset decision, 2026-06-23: QG-06/productized audit automation is rejected as
+> active product direction. Treat QG-06 requirements below as historical
+> evidence or quarry for bounded internal guards only.
 
 Date: 2026-06-23
 
-Status: complete as requirements; QG-06 owns implementation in `krn audit`.
+Status: historical requirements record; the 2026-06-23 reset rejects
+productized QG-06 / `krn audit` implementation as active direction.
 
 ## Purpose
 
 QG-04 proved that manual smell scans catch real repo risks, but manual scans
-will be forgotten during feature work. QG-04H turns the accepted QG-04 scans
-into a concrete automation contract for QG-06.
+will be forgotten during feature work. QG-04H previously turned the accepted
+QG-04 scans into a concrete automation contract for QG-06.
 
-This slice does not add audit runtime code. It defines the checks QG-06 must
-implement before feature work can continue to MM-66.
+This slice did not add audit runtime code. Its proposed checks are historical
+evidence or quarry for bounded internal guards only; they are not an active
+product-quality subsystem.
+
+The requirement language below is preserved as ledger evidence. "Must" means
+"required by the old QG-06 plan", not "required by current KRN direction".
 
 ## Inputs
 

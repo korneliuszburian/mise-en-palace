@@ -4,7 +4,7 @@
 > Not current execution truth.
 > Current canonical execution plan: `/PLAN.md`.
 
-Latest verified slice: QG-04H smell scan automation requirements.
+Historical latest verified slice: QG-04H smell scan automation requirements.
 
 Passed:
 
@@ -193,10 +193,11 @@ Passed:
 - QG-04H preflight `pnpm test` passed.
 - QG-04H recorded QG-06 automation requirements at
   `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`.
-- QG-04H requires QG-06 audit automation for placeholder vocabulary, duplicate
-  helper families, large-file thresholds, behavior-governing metadata keys,
-  export/dead-code findings, stale current-state docs, allowlist expiry, and
-  seeded failure proofs.
+- QG-04H historically required QG-06 audit automation for placeholder
+  vocabulary, duplicate helper families, large-file thresholds,
+  behavior-governing metadata keys, export/dead-code findings, stale
+  current-state docs, allowlist expiry, and seeded failure proofs. The current
+  root plan rejects that productized audit direction.
 - QG-04H full `pnpm typecheck` passed.
 - QG-04H full `pnpm test` passed.
 - QG-04H `git diff --check` passed.
@@ -242,7 +243,9 @@ QG audit facts gathered during QG-00:
 
 Not proven by MM-65/QG pre-audit:
 
-- QG-06 audit automation remains next.
+- Historical note: QG-06 audit automation was previously recorded as next. The
+  current root plan rejects productized QG-06 / audit automation as active
+  direction.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

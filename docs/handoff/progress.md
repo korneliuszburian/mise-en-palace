@@ -4,7 +4,8 @@
 > Not current execution truth.
 > Current canonical execution plan: `/PLAN.md`.
 
-Current phase: Memory ideal-state execution track after QG-04H smell scan automation requirements.
+Historical phase recorded by the old memory plan: Memory ideal-state execution
+track after QG-04H smell scan automation requirements.
 
 Completed:
 
@@ -40,7 +41,7 @@ Completed:
   legacy mapper import surface through re-exports while no longer owning memory
   row types or memory/anti-memory mapper implementations.
 - QG-04H recorded `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
-  as the implementation contract for QG-06 smell automation: placeholder
+  as the old implementation contract for QG-06 smell automation: placeholder
   vocabulary, duplicate helper families, large-file thresholds, behavior-
   governing metadata keys, export/dead-code scan, stale current-state docs,
   allowlist shape, and seeded failure proofs.
@@ -274,13 +275,16 @@ Current runtime truth:
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
 - QG-04B modularized command-family parsing and reduced `parseArgs.ts` to a
   dispatcher plus shared CLI command type/usage surface.
-- QG-06 remains queued before MM-66: quality gate automation in `krn audit`.
+- Historical note: QG-06 was previously queued before MM-66 as quality gate
+  automation in `krn audit`. The root reset plan rejects this as active product
+  direction.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
-Next action:
+Historical next action at the time:
 
-- Continue with QG-06 by implementing the quality gate automation requirements
-  from `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
-  before MM-66 resumes.
+- The old next action was to continue with QG-06 by implementing the quality
+  gate automation requirements from
+  `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
+  before MM-66 resumes. Current execution must instead follow `/PLAN.md`.

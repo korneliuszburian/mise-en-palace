@@ -3,6 +3,9 @@
 > Historical audit/planning ledger.
 > Not current execution truth.
 > Current canonical execution plan: `/PLAN.md`.
+> Reset decision, 2026-06-23: QG-06/productized audit automation is rejected as
+> active product direction. Treat QG-06 references below as historical evidence
+> or quarry for bounded internal guards only.
 
 This PLAN.md is a living execution plan for completing the KRN Memory Brain after M27 and MM-00.
 
