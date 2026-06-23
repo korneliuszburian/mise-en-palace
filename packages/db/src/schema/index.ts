@@ -1,6 +1,5 @@
 export * from "./events.js";
 export * from "./harness.js";
-export * from "./legacyAudit.js";
 export * from "./memory.js";
 export * from "./observations.js";
 export * from "./reflections.js";

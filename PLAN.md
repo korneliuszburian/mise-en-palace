@@ -26,21 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Legacy Audit Table Retention Decision.
+current_priority: Executor Discipline Gate.
 
-first_unchecked_slice: `C6-02: Decide Legacy Audit Table Retention Or Drop Migration`.
+first_unchecked_slice: `EXEC-00: Add Executor Discipline To Active Slice Template`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide whether migration-retained legacy audit tables are kept, exported, or
-  dropped in a separate migration after DB row/provenance review;
+- add executor discipline as bounded slice behavior in this living plan;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding legacy audit table retention;
-- do not drop `audit_bundles` / `audit_findings` until row counts, provenance,
-  export/rollback path, and generated migration impact are reviewed.
+  authority layer while adding executor discipline;
+- do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
 
@@ -123,10 +121,11 @@ completed_checkpoint:
   governance use the core decision-grade support-type helper. EvidenceBundle
   already had native completeness, rollback, and review-risk assessments.
 - C6-01 accepts ADR-0017 and removes active `AuditBundle`
-  domain/schema/repository contracts. Historical `audit_bundles` /
-  `audit_findings` table definitions remain only as explicitly named legacy
-  migration-retention schema until a separate data-retention/drop migration
-  slice proves it is safe.
+  domain/schema/repository contracts.
+- C6-02 accepts ADR-0018 and drops empty legacy `audit_bundles` /
+  `audit_findings` tables plus related enum types with migration
+  `0012_condemned_wolf_cub.sql` after local DB row counts proved zero retained
+  legacy audit rows.
 
 completed_evidence_pointers:
 
@@ -142,6 +141,8 @@ completed_evidence_pointers:
   `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`;
 - legacy AuditBundle storage fate:
   `docs/decisions/ADR-0017-legacy-auditbundle-storage-fate.md`;
+- legacy audit table drop:
+  `docs/decisions/ADR-0018-drop-empty-legacy-audit-tables.md`;
 - detailed command transcript:
   `Command Evidence` later in this plan, historical reference only.
 
@@ -2846,7 +2847,7 @@ git revert <C6-01 commit>
 
 ### C6-02: Decide Legacy Audit Table Retention Or Drop Migration
 
-status: planned.
+status: complete.
 
 objective:
 
@@ -2867,9 +2868,37 @@ verification:
 
 ```sh
 git status --short --branch
+psql postgres://krn:krn@localhost:54329/krn -Atc "select 'audit_bundles', count(*) from audit_bundles union all select 'audit_findings', count(*) from audit_findings;"
+pnpm --filter @krn/db db:generate
 pnpm --filter @krn/db db:check
-pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+psql postgres://krn:krn@localhost:54329/krn -Atc "select to_regclass('public.audit_bundles'), to_regclass('public.audit_findings'), to_regtype('public.audit_final_verdict'), to_regtype('public.audit_finding_category'), to_regtype('public.audit_finding_severity'), to_regtype('public.audit_finding_status'), to_regtype('public.audit_risk_estimate');"
 git diff --check
+```
+
+observed:
+
+- local DB readiness before the drop passed with 12/12 migrations applied and
+  pgvector available;
+- local DB row counts were `audit_bundles=0` and `audit_findings=0`;
+- representative sample query over `audit_bundles` returned no rows;
+- generated migration `0012_condemned_wolf_cub.sql` drops `audit_bundles`,
+  `audit_findings`, and legacy audit enum types;
+- `pnpm --filter @krn/db db:check` passed after generation;
+- `pnpm typecheck` passed;
+- full `pnpm test` passed across workspace packages;
+- `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
+  applied and verified 13/13 migrations with pgvector available;
+- post-migration `to_regclass` / `to_regtype` returned null for legacy audit
+  tables and enum types;
+- package scan for `legacyAudit`, `AuditBundle`,
+  `DrizzleAuditBundleRepository`, and `parseAuditBundleInput` returned no
+  active TypeScript matches.
+
+rollback:
+
+```sh
+git revert <C6-02 commit>
 ```
 
 ## Progress
@@ -2925,8 +2954,9 @@ git diff --check
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
 - [x] C6-01 Decide whether legacy AuditBundle storage is deleted, renamed, or
   migrated into EvidenceBundle/ReviewAssessment lineage.
-- [ ] C6-02 Decide legacy audit table retention/export/drop migration after DB
+- [x] C6-02 Decide legacy audit table retention/export/drop migration after DB
   row/provenance review.
+- [ ] EXEC-00 Add executor discipline to active slice template.
 
 ## Surprises & Discoveries
 

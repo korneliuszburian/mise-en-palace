@@ -4,7 +4,8 @@ Status: accepted.
 
 Date: 2026-06-24
 
-Decision status: active demotion, no destructive drop.
+Decision status: active demotion accepted; C6-02 later dropped empty legacy
+tables through ADR-0018 and migration `0012_condemned_wolf_cub.sql`.
 
 ## Context
 
@@ -79,8 +80,9 @@ Accepted changes:
   schema so existing migrations and databases are not destructively changed in
   this slice.
 
-The remaining DB symbols are legacy table definitions, not a review authority,
-not a write repository, and not product UX.
+The temporary DB symbols were legacy table definitions, not a review authority,
+not a write repository, and not product UX. C6-02 later found the target tables
+empty and removed them with an explicit drop migration.
 
 ## Future Drop Preconditions
 

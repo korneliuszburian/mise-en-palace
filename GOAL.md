@@ -44,14 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C6-02: Decide Legacy Audit Table Retention Or Drop Migration
+EXEC-00: Add Executor Discipline To Active Slice Template
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding legacy audit table retention. Do not drop legacy
-audit tables until row counts, provenance, export/rollback, and migration
-impact are explicitly reviewed.
+eval platform while adding executor discipline. Do not create a quality
+subsystem; encode the discipline as bounded slice behavior in the living plan.
 
 ## Required Read Order
 
