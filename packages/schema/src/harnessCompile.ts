@@ -2,8 +2,9 @@ import { z } from "zod";
 
 import { OperatorIntentInputSchema } from "./operatorIntent.js";
 import { TaskContractInputSchema } from "./taskContract.js";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
+import {
+  MetadataSchema
+} from "./schemaPrimitives.js";
 
 export const HarnessCompileInputSchema = z.object({
   operatorIntent: OperatorIntentInputSchema,

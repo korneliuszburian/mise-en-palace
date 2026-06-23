@@ -1,8 +1,10 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
-const OptionalTextSchema = z.string().trim().min(1).optional();
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema,
+  TextListSchema
+} from "./schemaPrimitives.js";
 
 export const MemoryRecordKindSchema = z.enum([
   "fact",
@@ -50,8 +52,6 @@ export const SourceLineageItemSchema = z.object({
   note: OptionalTextSchema
 });
 
-const SourceClaimIdsSchema = z.array(RequiredTextSchema).default([]);
-
 const isExplicitUserPreference = (value: {
   kind: z.infer<typeof MemoryRecordKindSchema>;
   isUserPreference: boolean;
@@ -71,7 +71,7 @@ export const MemoryCandidateInputSchema = z
     confidence: z.number().int().min(0).max(100),
     applicationGuidance: RequiredTextSchema,
     invalidationRule: OptionalTextSchema,
-    sourceClaimIds: SourceClaimIdsSchema,
+    sourceClaimIds: TextListSchema,
     sourceLineage: z.array(SourceLineageItemSchema).default([]),
     isUserPreference: z.boolean().default(false),
     validFrom: OptionalTextSchema,
@@ -157,7 +157,7 @@ export const AntiMemoryInputSchema = z
     rejectedClaim: RequiredTextSchema,
     reason: RequiredTextSchema,
     invalidatedBySourceClaimId: OptionalTextSchema,
-    invalidatedBySourceClaimIds: SourceClaimIdsSchema,
+    invalidatedBySourceClaimIds: TextListSchema,
     appliesTo: OptionalTextSchema,
     mayRevisitWhen: OptionalTextSchema,
     owner: RequiredTextSchema,

@@ -1,7 +1,8 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
+import {
+  MetadataSchema,
+  RequiredTextSchema
+} from "./schemaPrimitives.js";
 
 export const SourceArtifactKindSchema = z.enum([
   "doc",

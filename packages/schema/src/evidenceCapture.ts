@@ -1,25 +1,29 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema,
+  TextListSchema
+} from "./schemaPrimitives.js";
 
 export const EvidenceCommandStatusSchema = z.enum(["passed", "failed", "skipped"]);
 
 export const EvidenceCommandSchema = z.object({
-  command: z.string().trim().min(1),
+  command: RequiredTextSchema,
   status: EvidenceCommandStatusSchema,
   exitCode: z.number().int().optional(),
-  outputPath: z.string().trim().min(1).optional()
+  outputPath: OptionalTextSchema
 });
 
 export const DiffRiskSchema = z.enum(["low", "medium", "high"]);
 
 export const EvidenceCaptureInputSchema = z.object({
   executionRunId: z.string().uuid().optional(),
-  changedFiles: z.array(z.string().trim().min(1)).default([]),
+  changedFiles: TextListSchema,
   commands: z.array(EvidenceCommandSchema).default([]),
   diffRisk: DiffRiskSchema,
-  reviewBurden: z.string().trim().min(1),
-  rollbackPath: z.string().trim().min(1),
+  reviewBurden: RequiredTextSchema,
+  rollbackPath: RequiredTextSchema,
   metadata: MetadataSchema
 });
 

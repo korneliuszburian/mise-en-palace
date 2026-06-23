@@ -1,17 +1,15 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
-const OptionalTextSchema = z.string().trim().min(1).optional();
-const TextListSchema = z.array(RequiredTextSchema).default([]);
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema,
+  TextListSchema,
+  privateReasoningMetadataKeys,
+  rejectForbiddenMetadataKeys
+} from "./schemaPrimitives.js";
 
 const forbiddenMetadataKeys = new Set([
-  "chainOfThought",
-  "chain_of_thought",
-  "reasoningTrace",
-  "reasoning_trace",
-  "privateReasoning",
-  "private_reasoning",
+  ...privateReasoningMetadataKeys,
   "createActiveMemory",
   "create_active_memory",
   "memory_record",
@@ -22,15 +20,10 @@ const rejectForbiddenMetadata = (
   value: Record<string, unknown>,
   context: z.RefinementCtx
 ): void => {
-  for (const key of Object.keys(value)) {
-    if (forbiddenMetadataKeys.has(key)) {
-      context.addIssue({
-        code: "custom",
-        message: "reflection metadata cannot store private reasoning or final-truth mutation semantics",
-        path: [key]
-      });
-    }
-  }
+  rejectForbiddenMetadataKeys(value, context, {
+    keys: forbiddenMetadataKeys,
+    message: "reflection metadata cannot store private reasoning or final-truth mutation semantics"
+  });
 };
 
 export const ReflectionStatusSchema = z.enum([

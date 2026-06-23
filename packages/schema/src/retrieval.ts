@@ -1,8 +1,9 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
-const OptionalTextSchema = z.string().trim().min(1).optional();
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema
+} from "./schemaPrimitives.js";
 const OptionalIdSchema = OptionalTextSchema;
 const BoundedScoreSchema = z.number().int().min(0).max(1000);
 const OptionalBoundedScoreSchema = BoundedScoreSchema.optional();

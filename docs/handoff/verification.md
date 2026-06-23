@@ -132,6 +132,22 @@ Passed:
 - QG-04D forbidden directory scan found no added forbidden surfaces.
 - QG-04D `krn audit slice --since origin/main --fail-on warning` passed with
   verdict `pass` and 0 findings.
+- QG-04E RED focused `pnpm --filter @krn/schema test -- schemaPrimitives`
+  failed because `./schemaPrimitives.js` did not exist.
+- QG-04E GREEN focused `pnpm --filter @krn/schema test -- schemaPrimitives`
+  passed with 3 files and 25 tests.
+- QG-04E focused `pnpm --filter @krn/schema typecheck` passed.
+- QG-04E focused `pnpm --filter @krn/schema test` passed with 3 files and 25
+  tests.
+- QG-04E duplicate primitive scan shows only
+  `packages/schema/src/schemaPrimitives.ts` defines `MetadataSchema`,
+  `RequiredTextSchema`, `OptionalTextSchema`, and `TextListSchema`.
+- QG-04E full `pnpm typecheck` passed.
+- QG-04E full `pnpm test` passed.
+- QG-04E `git diff --check` passed.
+- QG-04E forbidden directory scan found no added forbidden surfaces.
+- QG-04E `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
 
 QG audit facts gathered during QG-00:
 
@@ -146,7 +162,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04E through QG-06 remain next.
+- QG-04F through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

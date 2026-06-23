@@ -1,15 +1,15 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
-const OptionalTextSchema = z.string().trim().min(1).optional();
-const TextListSchema = z.array(RequiredTextSchema).min(1);
+import {
+  MetadataSchema,
+  NonEmptyTextListSchema,
+  OptionalTextSchema,
+  RequiredTextSchema,
+  privateReasoningMetadataKeys,
+  rejectForbiddenMetadataKeys
+} from "./schemaPrimitives.js";
 
 const forbiddenMetadataKeys = new Set([
-  "chainOfThought",
-  "chain_of_thought",
-  "privateReasoning",
-  "private_reasoning",
+  ...privateReasoningMetadataKeys,
   "hiddenReasoning",
   "hidden_reasoning"
 ]);
@@ -18,15 +18,10 @@ const rejectForbiddenMetadata = (
   value: Record<string, unknown>,
   context: z.RefinementCtx
 ): void => {
-  for (const key of Object.keys(value)) {
-    if (forbiddenMetadataKeys.has(key)) {
-      context.addIssue({
-        code: "custom",
-        message: "golden task metadata cannot store private reasoning",
-        path: [key]
-      });
-    }
-  }
+  rejectForbiddenMetadataKeys(value, context, {
+    keys: forbiddenMetadataKeys,
+    message: "golden task metadata cannot store private reasoning"
+  });
 };
 
 export const GoldenTaskStatusSchema = z.enum(["draft", "active", "deprecated"]);
@@ -63,7 +58,7 @@ export const ExpectedBehaviorSchema = z.object({
   outcome: ExpectedBehaviorOutcomeSchema,
   subject: RequiredTextSchema,
   rationale: RequiredTextSchema,
-  evidenceRefs: TextListSchema
+  evidenceRefs: NonEmptyTextListSchema
 });
 
 export const ProtectedFailureModeSchema = z.object({
@@ -82,7 +77,7 @@ export const GoldenCaseSchema = z
     input: z.object({}).catchall(z.unknown()).default({}),
     expectedBehavior: ExpectedBehaviorSchema,
     protectedFailureModes: z.array(ProtectedFailureModeSchema).min(1),
-    sourceRefs: TextListSchema,
+    sourceRefs: NonEmptyTextListSchema,
     metadata: MetadataSchema
   })
   .superRefine((value, context) => {

@@ -1,8 +1,11 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
-const OptionalTextSchema = z.string().trim().min(1).optional();
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema,
+  privateReasoningMetadataKeys,
+  rejectForbiddenMetadataKeys
+} from "./schemaPrimitives.js";
 const isoDateTimeWithZonePattern =
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/u;
 const normalizeIsoDateTime = (value: string): string => (
@@ -19,28 +22,14 @@ const OptionalIsoTextSchema = IsoTextSchema.optional();
 
 const nowIso = (): string => new Date().toISOString();
 
-const forbiddenMetadataKeys = new Set([
-  "chainOfThought",
-  "chain_of_thought",
-  "reasoningTrace",
-  "reasoning_trace",
-  "privateReasoning",
-  "private_reasoning"
-]);
-
 const rejectPrivateReasoningMetadata = (
   value: Record<string, unknown>,
   context: z.RefinementCtx
 ): void => {
-  for (const key of Object.keys(value)) {
-    if (forbiddenMetadataKeys.has(key)) {
-      context.addIssue({
-        code: "custom",
-        message: "private reasoning metadata is not allowed",
-        path: [key]
-      });
-    }
-  }
+  rejectForbiddenMetadataKeys(value, context, {
+    keys: privateReasoningMetadataKeys,
+    message: "private reasoning metadata is not allowed"
+  });
 };
 
 const sourceRangeExemptProvenance = new Set([

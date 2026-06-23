@@ -1,6 +1,9 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema
+} from "./schemaPrimitives.js";
 
 export const OperatorIntentSourceSchema = z.enum([
   "goal",
@@ -11,10 +14,10 @@ export const OperatorIntentSourceSchema = z.enum([
 ]);
 
 export const OperatorIntentInputSchema = z.object({
-  rawIntent: z.string().trim().min(1),
+  rawIntent: RequiredTextSchema,
   source: OperatorIntentSourceSchema,
-  workspaceSlug: z.string().trim().min(1).optional(),
-  projectSlug: z.string().trim().min(1).optional(),
+  workspaceSlug: OptionalTextSchema,
+  projectSlug: OptionalTextSchema,
   metadata: MetadataSchema
 });
 

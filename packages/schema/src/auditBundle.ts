@@ -1,33 +1,12 @@
 import { z } from "zod";
-
-const MetadataSchema = z.object({}).catchall(z.unknown()).default({});
-const RequiredTextSchema = z.string().trim().min(1);
-const OptionalTextSchema = z.string().trim().min(1).optional();
-const TextListSchema = z.array(RequiredTextSchema).default([]);
-
-const forbiddenMetadataKeys = new Set([
-  "chainOfThought",
-  "chain_of_thought",
-  "reasoningTrace",
-  "reasoning_trace",
-  "privateReasoning",
-  "private_reasoning"
-]);
-
-const rejectPrivateReasoningMetadata = (
-  value: Record<string, unknown>,
-  context: z.RefinementCtx
-): void => {
-  for (const key of Object.keys(value)) {
-    if (forbiddenMetadataKeys.has(key)) {
-      context.addIssue({
-        code: "custom",
-        message: "private reasoning metadata is not allowed",
-        path: [key]
-      });
-    }
-  }
-};
+import {
+  MetadataSchema,
+  OptionalTextSchema,
+  RequiredTextSchema,
+  TextListSchema,
+  privateReasoningMetadataKeys,
+  rejectForbiddenMetadataKeys
+} from "./schemaPrimitives.js";
 
 export const AuditFindingSeveritySchema = z.enum([
   "info",
@@ -126,7 +105,10 @@ export const AuditBundleInputSchema = z
     metadata: MetadataSchema
   })
   .superRefine((value, context) => {
-    rejectPrivateReasoningMetadata(value.metadata, context);
+    rejectForbiddenMetadataKeys(value.metadata, context, {
+      keys: privateReasoningMetadataKeys,
+      message: "private reasoning metadata is not allowed"
+    });
   });
 
 export type AuditBundleInput = z.infer<typeof AuditBundleInputSchema>;
