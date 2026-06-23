@@ -2,6 +2,9 @@ import {
   parseAuditArgs
 } from "./parseAuditArgs.js";
 import {
+  parseCodexArgs
+} from "./parseCodexArgs.js";
+import {
   parseDbArgs
 } from "./parseDbArgs.js";
 import {
@@ -744,45 +747,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   if (command === "codex") {
-    if (rest[0] === "brief") {
-      let runId: string | undefined;
-
-      for (let index = 1; index < rest.length; index += 1) {
-        const arg = rest[index];
-
-        if (arg === "--run-id") {
-          runId = rest[index + 1];
-          index += 1;
-          continue;
-        }
-
-        if (arg?.startsWith("--run-id=") === true) {
-          runId = arg.slice("--run-id=".length);
-          continue;
-        }
-
-        return {
-          error: "Usage: krn codex brief --run-id <id>"
-        };
-      }
-
-      if (runId === undefined || runId.trim().length === 0) {
-        return {
-          error: "Usage: krn codex brief --run-id <id>"
-        };
-      }
-
-      return {
-        command: {
-          kind: "codexBrief",
-          runId: runId.trim()
-        }
-      };
-    }
-
-    return {
-      error: "Usage: krn codex brief --run-id <id>"
-    };
+    return parseCodexArgs(rest);
   }
 
   if (command === "source") {
