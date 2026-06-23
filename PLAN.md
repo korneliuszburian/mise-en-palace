@@ -828,6 +828,8 @@ git revert <commit>
 
 ### P3-02: Create Reviewed Candidate Writer From ReflectionRecord
 
+status: complete.
+
 objective:
 
 Add explicit candidate creation from reflection outputs without MemoryRecord
@@ -1180,7 +1182,7 @@ git revert <commit>
 - [x] P2-02 Promote behavior metadata to typed fields.
 - [x] P3-00 Define observation staging doctrine.
 - [x] P3-01 Prove observation/reflection invariants.
-- [ ] P3-02 Create reviewed candidate writer from ReflectionRecord.
+- [x] P3-02 Create reviewed candidate writer from ReflectionRecord.
 - [ ] P4-00 Define activation as admission control.
 - [ ] P4-01 Add noisy context golden proofs.
 - [ ] P4-02 Type activation trace decisions.
@@ -1231,6 +1233,13 @@ git revert <commit>
   invariants were covered through the large CLI integration test. Added a
   direct command test so the planned `runObserveCommand` verification has an
   explicit unit surface.
+- P3-02 found there is no anti-memory candidate store or policy candidate store
+  in the current spine. The writer therefore does not create `AntiMemoryRecord`
+  or policy truth; it returns those proposals as unsupported staged candidates
+  until a reviewed candidate store exists.
+- P3-02 found SourceClaim candidate state is `proposed`, not `candidate`; the
+  writer uses the existing SourceClaim status vocabulary instead of expanding
+  source status in this slice.
 
 ## Decision Log
 
@@ -1276,6 +1285,11 @@ git revert <commit>
 - 2026-06-23: P3-01 treats the existing core/db/reflect tests as retained proof
   and adds only the missing direct observe-command proof. The slice strengthens
   tests without changing observation/reflection production behavior.
+- 2026-06-23: Reflection candidate writing is explicit and candidate-only.
+  `writeReflectionCandidates` creates MemoryCandidate records, creates
+  SourceClaim records only when a source repository and source artifact are
+  supplied, emits typed EvalCandidate values in memory, and reports unsupported
+  anti-memory/policy/source proposals instead of creating final truth.
 
 ## Outcomes & Retrospective
 
@@ -1308,8 +1322,10 @@ Current outcome:
   core source-range and reflection contracts, DB observation/reflection
   repository contracts, CLI reflect non-mutation, CLI observe source-ranged
   staging, and activation prefix rejection.
-- Next safe action is P3-02: create reviewed candidate writer from
-  ReflectionRecord.
+- Reviewed candidate writing from ReflectionRecord exists as a harness service
+  and is covered by tests. It does not promote MemoryRecord and does not create
+  AntiMemoryRecord/policy truth.
+- Next safe action is P4-00: define activation as admission control.
 
 ## Command Evidence
 
@@ -1604,6 +1620,41 @@ unsourced items, reflect persists ReflectionRecord only, reflect reports
 gaps/contradictions, and observe/reflect command surfaces state no Memory Core
 mutation. It does not prove a live DB runtime smoke; P3-01 was a package test
 slice.
+
+P3-02 reflection candidate writer:
+
+```sh
+pnpm --filter @krn/harness test -- reflection/reflectionCandidateWriter.test.ts
+```
+
+Observed RED before implementation: missing
+`./reflectionCandidateWriter.js` module in
+`reflection/reflectionCandidateWriter.test.ts`.
+
+Observed GREEN after implementation: 16 harness test files passed; 85 tests
+passed.
+
+```sh
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+git diff --check
+```
+
+Observed:
+
+- full typecheck passed across 7 workspace projects;
+- full test passed across 7 workspace projects: core 8 files/39 tests, schema
+  3 files/25 tests, harness 16 files/85 tests, workers 1 file/3 tests,
+  codex-adapter 3 files/7 tests, db 24 files/67 tests, cli 25 files/142 tests;
+- DB readiness passed with configured Postgres, reachable database, 11/11
+  migrations applied, pgvector available, and brain store readiness ready;
+- `git diff --check` passed with no output.
+
+This proves the writer creates supported candidate records/values and blocks
+final-truth reflection output under package tests. It does not prove
+anti-memory or policy candidate persistence, because those candidate stores do
+not exist in this spine yet.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
