@@ -986,6 +986,8 @@ git revert <commit>
 
 ### P5-00: Bound Promptfoo Claims
 
+status: complete.
+
 objective:
 
 Make every Promptfoo doc/fixture state integration smoke only unless real KRN
@@ -1192,7 +1194,7 @@ git revert <commit>
 - [x] P4-00 Define activation as admission control.
 - [x] P4-01 Add noisy context golden proofs.
 - [x] P4-02 Type activation trace decisions.
-- [ ] P5-00 Bound Promptfoo claims.
+- [x] P5-00 Bound Promptfoo claims.
 - [ ] P5-01 Add first real behavior eval gate.
 - [ ] P6-00 Mark worker runtime truth.
 - [ ] P6-01 Harden worker job contracts.
@@ -1257,6 +1259,17 @@ git revert <commit>
   the repository input boundary; the Drizzle adapter serializes those fields
   into existing metadata JSON as a persistence snapshot because the current
   schema has no dedicated columns for these trace fields.
+- P5-00 found the README already bounded Promptfoo correctly, but the historical
+  QG-05 decision and committed smoke fixture/provider still used wording that
+  could be read as behavior proof (`behavior smoke proof`, `KRN golden proof`,
+  `status=passed`, and tasks beginning with `Prove ...`). Those surfaces now
+  say integration smoke and explicitly state that the smoke does not execute
+  KRN behavior.
+- P5-00 verification command `rg -n "Promptfoo|promptfoo|smoke|behavior proof|integration smoke" README.md docs tests packages`
+  is intentionally broad and noisy because it includes historical run logs and
+  unrelated DB smoke files. The bounded decision used target-specific follow-up
+  scans for QG-05/Promptfoo fixtures to prove the overclaiming phrases were
+  removed from the P5 target surfaces.
 
 ## Decision Log
 
@@ -1320,6 +1333,10 @@ git revert <commit>
   state, and activation abstention reason are explicit inputs. DB metadata is
   retained only as a compatible persistence snapshot, not as caller-side
   behavior authority.
+- 2026-06-23: P5-00 keeps Promptfoo as a bounded runner/result adapter only.
+  The committed local Promptfoo smoke proves dependency/config/provider/output
+  wiring and result writing; it explicitly does not prove KRN memory,
+  anti-memory, activation, observation, reflection, or review-gate behavior.
 
 ## Outcomes & Retrospective
 
@@ -1365,7 +1382,11 @@ Current outcome:
   use, raw recall, anti-memory hit, exclusion category, source support state,
   and activation abstention reason. DB metadata stores a compatibility snapshot
   of those fields without adding schema columns in this slice.
-- Next safe action is P5-00: bound Promptfoo claims.
+- Promptfoo/QG-05 current claims are bounded: README says smoke proves runner
+  integration and result mapping only, QG-05 says behavior proofs require evals
+  that actually execute KRN behavior, and the committed smoke output includes
+  `doesNotExecuteKrnBehavior=true`.
+- Next safe action is P5-01: add first real behavior eval gate.
 
 ## Command Evidence
 
@@ -1776,6 +1797,42 @@ This proves activation trace decision inputs are typed and the current DB
 adapter can persist compatibility snapshots without schema drift. It does not
 prove dedicated relational columns are needed or rejected for future read-model
 queries.
+
+P5-00 bounded Promptfoo claims:
+
+```sh
+pnpm --filter @krn/harness test -- goldenPromptfooResult
+rg -n "Promptfoo|promptfoo|smoke|behavior proof|integration smoke" README.md docs tests packages
+pnpm exec promptfoo --version
+pnpm eval:promptfoo:smoke
+git diff --check
+```
+
+Observed:
+
+- focused harness Promptfoo result mapping test passed: 17 files, 88 tests;
+- broad Promptfoo/smoke scan completed; it is intentionally noisy because
+  `docs/runs`, DB smoke files, and historical audit docs also contain smoke
+  language;
+- target negative scan for old overclaims returned no matches for
+  `behavior smoke proof`, `KRN golden proof`, `status=passed`, `Prove stale
+  memory`, or `Prove active anti-memory` in README, QG-05, Promptfoo fixtures,
+  and Promptfoo result mapper tests;
+- target positive scan found `integration smoke` and
+  `doesNotExecuteKrnBehavior=true` in the committed Promptfoo fixture/provider
+  surfaces;
+- `pnpm exec promptfoo --version` returned `0.121.17` after the known
+  `DecompressInterceptor` experimental warning;
+- `pnpm eval:promptfoo:smoke` passed with 2 passed, 0 failed, 0 errors, wrote
+  `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`, and the provider
+  output included `integrationSmoke=passed` and
+  `doesNotExecuteKrnBehavior=true`;
+- `git diff --check` passed with no output.
+
+This proves the current Promptfoo smoke claim is bounded to dependency/config/
+provider/result-output integration. It does not prove KRN memory,
+anti-memory, activation, observation, reflection, or review-gate behavior;
+P5-01 owns the first real behavior eval gate.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

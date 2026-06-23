@@ -24,7 +24,9 @@ a review gate, and not a replacement for KRN behavior proofs. KRN owns:
 - promotion and rejection decisions.
 
 Promptfoo may execute configured eval cases, run assertions, and emit JSON/JSONL
-evidence that KRN maps back into explicit behavior proofs.
+evidence that KRN maps back into explicit behavior proofs only when the eval
+case actually executes KRN behavior. The current local smoke does not execute
+KRN behavior.
 
 ## Source To Decision
 
@@ -49,9 +51,9 @@ evidence that KRN maps back into explicit behavior proofs.
 - Mechanism: a custom provider implements `id` and `callApi`, and `callApi`
   returns a provider response containing output and optional metadata.
 - KRN implication: KRN can run an official Promptfoo eval without external model
-  calls by using a local provider for behavior smoke proof.
-- Decision: adopt a local provider for smoke proof; do not use external model
-  providers until a later eval slice requires them.
+  calls by using a local provider for integration smoke proof.
+- Decision: adopt a local provider for runner/config/provider smoke proof; do
+  not use external model providers until a later eval slice requires them.
 - Does not prove: local provider output is product intelligence.
 - Consumer: `tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs`.
 - Falsifier: local provider cannot be loaded by Promptfoo from the fixture.
@@ -107,9 +109,11 @@ evidence that KRN maps back into explicit behavior proofs.
 - Result bridge: `mapPromptfooJsonlRowsToGoldenBehaviorProofs`.
 
 The local provider is deliberately not a model evaluator. It proves the
-official Promptfoo runner/config/provider/output path. Later eval slices may
-replace the provider with real KRN behavior runners or model-backed graders, but
-they must still feed KRN-owned proof/candidate types.
+official Promptfoo runner/config/provider/output path only. The committed smoke
+provider must not be cited as stale-memory, anti-memory, activation, or Memory
+Core behavior proof. Later eval slices may replace the provider with real KRN
+behavior runners or model-backed graders, but they must still feed KRN-owned
+proof/candidate types.
 
 ## Verification
 
@@ -118,6 +122,10 @@ they must still feed KRN-owned proof/candidate types.
   -> configuration valid.
 - `pnpm eval:promptfoo:smoke` -> 2 passed, 0 failed, 0 errors; JSONL written to
   `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`.
+
+This verification proves Promptfoo dependency/config/provider/result-output
+integration only. It does not prove KRN memory, anti-memory, activation,
+observation, reflection, or review-gate behavior.
 
 Observed non-blocking runtime notes:
 

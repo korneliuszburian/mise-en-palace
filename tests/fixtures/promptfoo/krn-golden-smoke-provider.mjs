@@ -8,9 +8,10 @@ export default class KrnGoldenSmokeProvider {
 
     return {
       output: [
-        `KRN golden proof case=${caseId} status=passed`,
+        `KRN Promptfoo integration smoke case=${caseId} integrationSmoke=passed`,
         `expectedOutcome=${expectedOutcome}`,
         `expectedSubject=${expectedSubject}`,
+        "doesNotExecuteKrnBehavior=true",
         `prompt=${prompt}`
       ].join("\n")
     };

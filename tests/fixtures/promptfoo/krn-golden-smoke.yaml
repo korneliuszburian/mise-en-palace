@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
-description: KRN official Promptfoo golden smoke
+description: KRN official Promptfoo integration smoke
 
 prompts:
   - "{{task}}"
@@ -15,7 +15,7 @@ commandLineOptions:
 
 tests:
   - vars:
-      task: "Prove stale memory abstain behavior without mutating Memory Core."
+      task: "Exercise the Promptfoo runner/config/provider path for stale-memory case wiring."
       caseId: "golden-case-memory-smoke-001"
       expectedOutcome: "abstain"
       expectedSubject: "context_assembly"
@@ -23,9 +23,9 @@ tests:
       - type: contains
         value: "case=golden-case-memory-smoke-001"
       - type: contains
-        value: "status=passed"
+        value: "integrationSmoke=passed"
   - vars:
-      task: "Prove active anti-memory blocks stale pattern context."
+      task: "Exercise the Promptfoo runner/config/provider path for anti-memory case wiring."
       caseId: "golden-case-memory-smoke-002"
       expectedOutcome: "exclude"
       expectedSubject: "memory_record:memory-stale-pattern"
@@ -33,4 +33,4 @@ tests:
       - type: contains
         value: "case=golden-case-memory-smoke-002"
       - type: contains
-        value: "status=passed"
+        value: "integrationSmoke=passed"

@@ -5,13 +5,13 @@ import {
 } from "./goldenPromptfooResult.js";
 
 describe("golden Promptfoo result mapping", () => {
-  it("maps official Promptfoo JSONL rows into KRN golden behavior proofs", () => {
+  it("maps official Promptfoo JSONL rows into KRN proof records", () => {
     const proofs = mapPromptfooJsonlRowsToGoldenBehaviorProofs({
       rows: [{
         success: true,
         score: 1,
         response: {
-          output: "KRN golden proof case=golden-case-memory-smoke-001 status=passed"
+          output: "KRN Promptfoo integration smoke case=golden-case-memory-smoke-001 integrationSmoke=passed"
         },
         gradingResult: {
           pass: true,
@@ -31,7 +31,7 @@ describe("golden Promptfoo result mapping", () => {
     }]);
   });
 
-  it("keeps failed Promptfoo rows as failed KRN proofs", () => {
+  it("keeps failed Promptfoo rows as failed KRN proof records", () => {
     const proofs = mapPromptfooJsonlRowsToGoldenBehaviorProofs({
       rows: [{
         success: false,
