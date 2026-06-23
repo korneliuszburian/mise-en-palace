@@ -1161,7 +1161,7 @@ git revert <commit>
 - [x] P0-03 Align README as doorway.
 - [x] P0-04 Remove productized QG-06 direction.
 - [x] P1-00 Classify CLI surfaces.
-- [ ] P1-01 Deproductize `krn audit`.
+- [x] P1-01 Deproductize `krn audit`.
 - [ ] P1-02 Plan package barrel narrowing.
 - [ ] P2-00 Seal Memory Core write authority.
 - [ ] P2-01 Type SourceClaim project scope.
@@ -1199,8 +1199,8 @@ git revert <commit>
 - 2026-06-23: Adopt the audit recommendation to replace root `GOAL.md` and
   root `PLAN.md` instead of adding another addendum to the old plan.
 - 2026-06-23: Reject QG-06/productized anti-slop as active product direction.
-- 2026-06-23: Keep `krn audit` only as delete/rename/internal-guard candidate
-  until a specific slice decides its fate.
+- 2026-06-23: Before P1-01, `krn audit` was kept only as a
+  delete/rename/internal-guard candidate.
 - 2026-06-23: Treat old memory ideal-state plan, QG docs, handoffs, and raw
   materials as historical quarry unless a slice explicitly promotes a decision.
 - 2026-06-23: Marked old memory plan, QG-04H requirements, REVIEW, and handoff
@@ -1210,6 +1210,9 @@ git revert <commit>
 - 2026-06-23: Productized QG-06 / anti-slop / audit automation is removed as
   active direction in root surfaces and classified as historical/rejected in
   old memory-plan and handoff surfaces.
+- 2026-06-23: Public `krn audit` is deprecated as product direction. It may
+  remain only as temporary internal/dev mechanics until a code slice removes it
+  from public CLI or moves checks behind an explicit internal script.
 
 ## Outcomes & Retrospective
 
@@ -1221,9 +1224,10 @@ Current outcome:
 - Productized QG-06 / anti-slop / audit automation direction is rejected or
   historical wherever the P0-04 scan finds it.
 - CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
+- `krn audit` is deproductized in docs: no QG-06, no new audit categories, no
+  public product UX claim.
 - Package source is untouched.
-- Next safe action is P1-01: decide whether `krn audit` is deleted, renamed, or
-  retained as a narrow internal guard.
+- Next safe action is P1-02: plan package barrel narrowing.
 
 ## Command Evidence
 
@@ -1306,6 +1310,27 @@ git diff --check
 Observed: required classification terms found in
 `docs/architecture/cli-surfaces.md` and `PLAN.md`; `git diff --check` passed
 with no output.
+
+P1-01 deproductize `krn audit`:
+
+```sh
+rg -n "krn audit|audit automation|quality engine|anti-slop|smell scan" README.md PLAN.md docs
+git diff --check
+```
+
+Observed summary:
+
+- `README.md`, root `PLAN.md`, `docs/architecture/cli-surfaces.md`, and
+  QG-04H reset text classify `krn audit` as deprecated product direction,
+  temporary internal/dev mechanics, historical evidence, or not a quality
+  engine;
+- `docs/materials/` matches are raw quarantined source material, not active
+  implementation truth;
+- `docs/reviews/repo-reset-audit/` matches are decision-grade audit evidence
+  supporting the deproductization decision;
+- historical ledger matches remain historical and are not current execution
+  truth;
+- `git diff --check` passed with no output.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

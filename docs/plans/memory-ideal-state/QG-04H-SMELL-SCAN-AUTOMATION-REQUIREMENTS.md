@@ -24,6 +24,8 @@ product-quality subsystem.
 
 The requirement language below is preserved as ledger evidence. "Must" means
 "required by the old QG-06 plan", not "required by current KRN direction".
+P1-01 decision: do not implement these requirements as QG-06 or as a public
+`krn audit` product feature.
 
 ## Inputs
 

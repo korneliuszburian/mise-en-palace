@@ -32,8 +32,10 @@ The current reset direction is:
 - classify public operator, governed admin, and internal dev surfaces;
 - harden the real Memory Brain spine only through final-pattern slices.
 
-`krn audit` is not a product quality engine. It may survive only as a narrow
-internal deterministic guard, or be renamed/deleted by a later slice.
+`krn audit` is not a product quality engine and is not future public UX. It is
+temporarily documented as an internal/dev mechanical check until a code slice
+removes it from the public CLI or moves the checks behind an explicit internal
+script.
 
 ## Built
 
@@ -41,9 +43,9 @@ internal deterministic guard, or be renamed/deleted by a later slice.
   `core/schema/db/harness/codex-adapter/cli/workers` packages.
 - PostgreSQL/pgvector-oriented brain-store schema, migrations, repositories,
   readiness checks, and DB smoke commands.
-- CLI surfaces for planning, doctor/readiness, evidence capture, audit, Codex
-  brief rendering, init/connect, manual observation, reflection, source, memory,
-  and review workflows.
+- CLI surfaces for planning, doctor/readiness, evidence capture, Codex brief
+  rendering, init/connect, manual observation, reflection, source, memory, and
+  review workflows. Existing audit commands are internal/dev only.
 - AuditBundle contracts and persistence as evidence packaging.
 - Observation core contracts, IO schemas, DB schema, repository adapter,
   evidence/source-range linkage, deterministic observer input builder, manual

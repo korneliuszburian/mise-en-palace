@@ -5,6 +5,10 @@ Date: 2026-06-23
 
 This document classifies the existing CLI surface before behavior changes.
 It does not rename commands, change parser behavior, or certify DB runtime.
+P1-01 decision: public `krn audit` is deprecated as product direction; keep the
+current command only as a temporary internal/dev mechanical check until a code
+slice removes it from the public CLI or moves checks behind an explicit
+internal script.
 
 Evidence:
 
@@ -28,7 +32,7 @@ plumbing. They are not product UX and must not be treated as KRN's architecture
 or quality authority.
 
 Historical/delete candidates are commands or command meanings that conflict
-with the reset direction and need a later delete/rename/retain decision.
+with the reset direction and need later code removal or internalization.
 
 ## Public Operator
 
@@ -83,8 +87,8 @@ Boundary:
 - `krn db smoke worker-jobs`
 - `krn db smoke init-connect`
 - `krn db smoke target-repo-harness`
-- `krn audit repo [--repo <path>] [--json]`
-- `krn audit slice --since <ref> [--repo <path>] [--project <id>] [--retrieval-run <id>] [--audit-bundle-id <id>] [--intended-file <path>] [--verification <command=status>] [--fail-on warning] [--json]`
+- `krn audit repo [--repo <path>] [--json]` (temporary internal/dev)
+- `krn audit slice --since <ref> [--repo <path>] [--project <id>] [--retrieval-run <id>] [--audit-bundle-id <id>] [--intended-file <path>] [--verification <command=status>] [--fail-on warning] [--json]` (temporary internal/dev)
 
 Boundary:
 
@@ -92,6 +96,7 @@ Boundary:
   are not product workflow commands.
 - `krn audit` is not a product quality engine, autonomous anti-slop layer, or
   architectural authority.
+- Do not add new audit categories while it remains a public top-level command.
 - Audit findings can support local guardrails, but general engineering quality
   must come from architecture, type boundaries, focused tests, naming, and
   review.
@@ -101,11 +106,12 @@ Boundary:
 - `krn audit repo`
 - `krn audit slice`
 
-Decision required in P1-01:
+P1-01 decision:
 
-- delete `krn audit`;
-- rename it to an explicitly internal guard command; or
-- retain it as a narrow deterministic guard with no product-quality authority.
+- do not retain `krn audit` as public product UX;
+- do not implement QG-06 audit automation;
+- later code may delete the command or move its deterministic checks to an
+  explicitly internal script/surface.
 
-Until that decision is made, do not add audit categories or present `krn audit`
-as the next product feature.
+Until that code slice happens, do not add audit categories or present
+`krn audit` as the next product feature.
