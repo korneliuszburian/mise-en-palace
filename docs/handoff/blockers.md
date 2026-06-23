@@ -2,7 +2,16 @@
 
 Hard blockers:
 
-- None for MM-48.
+- None for MM-49.
+
+Closed in MM-48:
+
+- Pure core binding contracts exist for SkillBinding, RulePackBinding,
+  PolicyGateBinding, and ToolBoundaryBinding.
+- Invalid bindings with blank names, blank reasons, or missing evidence are
+  rejected by `validateCapabilityBindings`.
+- Bindings remain plan artifacts only; no lifecycle storage, CLI, execution
+  authority, or automatic skill/rule growth was added.
 
 Closed in MM-47:
 

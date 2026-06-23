@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-47 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-48 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -95,7 +95,9 @@ Current public state:
   with explicit priority and binding kinds while keeping TaskContract free of
   `requiredSkills`. MM-47 added CapabilityCompiler v1 task-text routing so
   memory/source/audit tasks receive focused schema/db/source/evidence/review
-  requirements and Codex skill hints.
+  requirements and Codex skill hints. MM-48 added pure core binding models for
+  skills, rule packs, policy gates, and tool boundaries with conservative
+  invalid-binding validation.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.
