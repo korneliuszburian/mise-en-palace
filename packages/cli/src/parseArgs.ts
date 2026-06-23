@@ -2,6 +2,9 @@ import {
   parseAuditArgs
 } from "./parseAuditArgs.js";
 import {
+  parseDbArgs
+} from "./parseDbArgs.js";
+import {
   metadataEntry,
   optionValue
 } from "./parseArgHelpers.js";
@@ -556,119 +559,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   if (command === "db") {
-    if (rest.length === 1 && rest[0] === "readiness") {
-      return {
-        command: {
-          kind: "dbReadiness"
-        }
-      };
-    }
-
-    if (rest.length === 1 && rest[0] === "smoke") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "project"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "harness-plan") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "harnessPlan"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "harness-evidence") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "harnessEvidence"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "source-graph") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "sourceGraph"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "memory-governance") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "memoryGovernance"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "retrieval-substrate") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "retrievalSubstrate"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "activation") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "activation"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "codex-adapter") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "codexAdapter"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "worker-jobs") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "workerJobs"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "init-connect") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "initConnect"
-        }
-      };
-    }
-
-    if (rest.length === 2 && rest[0] === "smoke" && rest[1] === "target-repo-harness") {
-      return {
-        command: {
-          kind: "dbSmoke",
-          target: "targetRepoHarness"
-        }
-      };
-    }
-
-    return {
-      error: [
-        "Usage: krn db readiness|smoke",
-        "[harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]"
-      ].join(" ")
-    };
+    return parseDbArgs(rest);
   }
 
   if (command === "evidence") {

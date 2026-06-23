@@ -231,9 +231,10 @@ Current runtime truth:
   vocabulary from retrieval smoke fixtures, and queued QG-04A through QG-04H
   repair slices.
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
-- QG-04B is in progress: the audit command family parser has been extracted
-  from `parseArgs.ts` into `packages/cli/src/parseAuditArgs.ts`, but the slice
-  remains unchecked until the remaining command families are modularized.
+- QG-04B is in progress: the audit and db command family parsers have been
+  extracted from `parseArgs.ts` into `packages/cli/src/parseAuditArgs.ts` and
+  `packages/cli/src/parseDbArgs.ts`, but the slice remains unchecked until the
+  remaining command families are modularized.
 - QG-04B through QG-06 are queued before MM-66: parser/doctor modularization,
   schema/core vocabulary cleanup, DB mapper split, official Promptfoo decision,
   and quality gate automation in `krn audit`.
