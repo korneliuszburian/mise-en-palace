@@ -160,6 +160,13 @@ const countByDecision = (
   decision: string
 ): number => decisions.filter((item) => item.decision === decision).length;
 
+const hasMergedSearchSignal = (metadata: Record<string, unknown>): boolean => {
+  const searchDocumentIds = metadata.searchDocumentIds;
+
+  return Array.isArray(searchDocumentIds) &&
+    searchDocumentIds.some((value) => typeof value === "string" && value.length > 0);
+};
+
 export const runActivationSmokeCheck = async (
   input: ActivationSmokeInput
 ): Promise<ActivationSmokeReport> => {
@@ -515,7 +522,9 @@ export const runActivationSmokeCheck = async (
     const memoryRecordCount = 2;
     const antiMemoryRecordCount = retrieved.antiMemoryRecords.length;
     const searchDocumentCount = searchDocumentRows[0]?.count ?? 0;
-    const searchCandidateCount = candidates.filter((candidate) => candidate.kind === "search").length;
+    const searchCandidateCount = candidates.filter((candidate) =>
+      candidate.kind === "search" || hasMergedSearchSignal(candidate.metadata)
+    ).length;
     const retrievalCandidateCount = candidates.length;
     const activationDecisionCount = activationRecords.length;
     const includedDecisionCount = countByDecision(activationRecords, "included");

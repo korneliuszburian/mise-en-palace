@@ -37,6 +37,115 @@ const lexicalScore = (candidateText: string, query: ActivationQuery): number => 
   return hits * 20;
 };
 
+const metadataString = (
+  metadata: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+};
+
+const canonicalCandidateKey = (candidate: RankedActivationCandidate): string => {
+  const sourceClaimId = metadataString(candidate.metadata, "sourceClaimId");
+
+  if (sourceClaimId !== undefined) {
+    return `source_claim:${sourceClaimId}`;
+  }
+
+  const memoryRecordId = metadataString(candidate.metadata, "memoryRecordId");
+
+  if (memoryRecordId !== undefined) {
+    return `memory_record:${memoryRecordId}`;
+  }
+
+  return `${candidate.subjectType}:${candidate.subjectId}`;
+};
+
+const strongerTrustTier = (
+  left: ActivationCandidate["trustTier"],
+  right: ActivationCandidate["trustTier"]
+): ActivationCandidate["trustTier"] =>
+  trustRank[right] > trustRank[left] ? right : left;
+
+const preferredRepresentative = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate
+): RankedActivationCandidate => {
+  if (left.kind === "search" && right.kind !== "search") {
+    return right;
+  }
+
+  if (right.kind === "search" && left.kind !== "search") {
+    return left;
+  }
+
+  return right.totalScore > left.totalScore ? right : left;
+};
+
+const uniqueStrings = (values: readonly string[]): string[] => [...new Set(values)];
+
+const mergeTwoCandidates = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate
+): RankedActivationCandidate => {
+  const representative = preferredRepresentative(left, right);
+  const lexical = Math.max(left.lexicalScore, right.lexicalScore);
+  const vector = Math.max(left.vectorScore, right.vectorScore);
+  const graph = Math.max(left.graphScore, right.graphScore);
+  const temporal = Math.max(left.temporalScore, right.temporalScore);
+  const contextRoi = Math.max(left.contextRoiScore, right.contextRoiScore);
+  const feedback = left.feedbackScore + right.feedbackScore;
+  const trustTier = strongerTrustTier(left.trustTier, right.trustTier);
+  const trust = trustRank[trustTier] * 10;
+  const searchDocumentIds = uniqueStrings([
+    ...(Array.isArray(left.metadata.searchDocumentIds)
+      ? left.metadata.searchDocumentIds.filter((value): value is string => typeof value === "string")
+      : []),
+    ...(Array.isArray(right.metadata.searchDocumentIds)
+      ? right.metadata.searchDocumentIds.filter((value): value is string => typeof value === "string")
+      : []),
+    ...(left.kind === "search" ? [left.subjectId] : []),
+    ...(right.kind === "search" ? [right.subjectId] : [])
+  ]);
+  const mergedCandidateIds = uniqueStrings([
+    ...(Array.isArray(left.metadata.mergedCandidateIds)
+      ? left.metadata.mergedCandidateIds.filter((value): value is string => typeof value === "string")
+      : [left.id]),
+    ...(Array.isArray(right.metadata.mergedCandidateIds)
+      ? right.metadata.mergedCandidateIds.filter((value): value is string => typeof value === "string")
+      : [right.id])
+  ]);
+  const mergedKinds = uniqueStrings([
+    ...(Array.isArray(left.metadata.mergedKinds)
+      ? left.metadata.mergedKinds.filter((value): value is string => typeof value === "string")
+      : [left.kind]),
+    ...(Array.isArray(right.metadata.mergedKinds)
+      ? right.metadata.mergedKinds.filter((value): value is string => typeof value === "string")
+      : [right.kind])
+  ]);
+
+  return {
+    ...representative,
+    trustTier,
+    tokenEstimate: Math.min(left.tokenEstimate, right.tokenEstimate),
+    lexicalScore: lexical,
+    vectorScore: vector,
+    graphScore: graph,
+    temporalScore: temporal,
+    contextRoiScore: contextRoi,
+    feedbackScore: feedback,
+    totalScore: lexical + vector + graph + temporal + contextRoi + feedback + trust,
+    metadata: {
+      ...left.metadata,
+      ...right.metadata,
+      mergedCandidateIds,
+      mergedKinds,
+      ...(searchDocumentIds.length === 0 ? {} : { searchDocumentIds })
+    }
+  };
+};
+
 const memoryFeedbackScore = (record: MemoryRecord): number =>
   record.positiveFeedbackCount * 2 - record.negativeFeedbackCount * 15;
 
@@ -101,6 +210,10 @@ export const toSearchCandidate = (document: SearchDocumentSearchResult): Activat
   ...(document.validUntil === undefined ? {} : { validUntil: document.validUntil }),
   ...(document.invalidatedAt === undefined ? {} : { invalidatedAt: document.invalidatedAt }),
   lexicalScore: document.lexicalScore,
+  ...(document.vectorScore === undefined ? {} : { vectorScore: document.vectorScore }),
+  ...(document.graphScore === undefined ? {} : { graphScore: document.graphScore }),
+  ...(document.temporalScore === undefined ? {} : { temporalScore: document.temporalScore }),
+  ...(document.contextRoiScore === undefined ? {} : { contextRoiScore: document.contextRoiScore }),
   metadata: {
     searchDocumentId: document.id,
     subjectType: document.subjectType,
@@ -139,3 +252,20 @@ export const rankCandidates = (
       };
     })
     .sort((left, right) => right.totalScore - left.totalScore);
+
+export const mergeActivationCandidates = (
+  candidates: readonly RankedActivationCandidate[]
+): RankedActivationCandidate[] => {
+  const mergedByKey = new Map<string, RankedActivationCandidate>();
+
+  for (const candidate of candidates) {
+    const key = canonicalCandidateKey(candidate);
+    const existing = mergedByKey.get(key);
+
+    mergedByKey.set(key, existing === undefined
+      ? candidate
+      : mergeTwoCandidates(existing, candidate));
+  }
+
+  return [...mergedByKey.values()].sort((left, right) => right.totalScore - left.totalScore);
+};

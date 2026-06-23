@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-39
+- targeted slice checks recorded in Progress through MM-40
 
 Known target repo readiness:
 - dry-run: proven
@@ -410,7 +410,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-37 complete: broadened source graph health audit over semantic source snapshots. Intended files: `packages/harness/src/audit/auditChecks.ts`, focused audit tests, `packages/db/src/auditSemanticSnapshot.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused harness audit test failed because seeded decorative source support, stale accepted claim, unlinked accepted claim, and rejected-claim decision support produced no findings; GREEN focused harness audit test passed with 9 files / 40 tests; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 245 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-38 source-to-decision dogfood on memory implementation.
 - [x] (2026-06-23) MM-38 complete: dogfooded source-to-decision on the MM-37 source graph health audit implementation decision. Intended files: `docs/runs/2026-06-23-source-to-decision-dogfood.md`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: live `krn plan --persist` created ExecutionRun `bba64c9a-eb96-47b7-819a-93937e6d8c5d`; live `krn source claim add --persist` created SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605` with mechanism, doesNotProve, falsifier, `implementation-boundary` support, `project-decision` trust, consumer `MM-38 source-to-decision dogfood`, and run linkage; live `krn source decision link --persist` created SourceDecisionEdge `a343ebef-2951-4ba6-b0d7-8eb3af586509` targeting the same harness run with high confidence; DB proof showed run source claims `1` and run source decision edges `1`. Next: MM-39 ActivationEngine v2 query model.
 - [x] (2026-06-23) MM-39 complete: added a pure unified ActivationQuery model and builder for task/project scope, needs, budget, and risk. Intended files: `packages/harness/src/activation/types.ts`, `packages/harness/src/activation/memoryQuery.ts`, `packages/harness/src/activation/sourceQuery.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge, no trust/temporal filter change, no activation trace persistence change, no source crawler, no dashboard/API/MCP/server/plugin. Evidence: RED focused activation test failed because `buildActivationQuery` did not exist; GREEN focused activation test passed with 9 files / 41 tests and proves mixed memory/source/observation needs, project/task scope, budget, risk, and extra query terms; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 246 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`. Next: MM-40 hybrid candidate merge.
-- [ ] MM-40: Hybrid lexical/vector/graph candidate merge.
+- [x] (2026-06-23) MM-40 complete: added pure hybrid candidate merge across source/search channels and routed activation retrieval through it. Intended files: `packages/harness/src/activation/rankCandidates.ts`, `packages/harness/src/activation/activationEngine.ts`, `packages/harness/src/repositories/types.ts`, `packages/db/src/activationSmoke.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new retrieval store, no pgvector query implementation, no observation prefix integration, no trust/temporal filter change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `mergeActivationCandidates` did not exist; GREEN focused activation test passed with 9 files / 42 tests and proves a SourceClaim candidate and linked SearchDocument candidate merge into one source candidate while preserving search document metadata and graph/lexical signals; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 247 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-41 trust, temporal, invalidation, and anti-memory filters.
 - [ ] MM-41: Trust, temporal, invalidation, and anti-memory filters.
 - [ ] MM-42: ContextROI, diversity, dedup, inclusions, and exclusions.
 - [ ] MM-43: Activation traces and raw evidence recall trigger.
@@ -1435,6 +1435,19 @@ Gate 5 MM-39 outcome:
 - No retrieval merge, trust/temporal filtering change, activation persistence
   change, DB migration, or new runtime surface was added.
 
+Gate 5 MM-40 outcome:
+- `mergeActivationCandidates` now deduplicates ranked activation candidates by
+  canonical source/memory subject and preserves lexical, vector, graph,
+  temporal, context ROI, feedback, merged candidate ids, merged kinds, and
+  search document ids.
+- `retrieveActivationCandidates` now returns merged memory/source/search
+  candidates before downstream conflict, trust, temporal, and context ROI
+  filters run.
+- Search results linked to SourceClaims or MemoryRecords can now enrich the
+  canonical candidate instead of entering context as duplicate nearby text.
+- No DB migration, new retrieval store, vector query implementation, trust/
+  temporal filter change, or observation prefix integration was added.
+
 Slices:
 
 MM-39 — ActivationQuery model
@@ -1452,6 +1465,13 @@ MM-39 — ActivationQuery model
 MM-40 — Hybrid candidate merge
 - Merge lexical, vector, graph, source, memory, and observation candidates.
 - Use existing Postgres/pgvector/FTS capabilities; no new store.
+- Slice note (2026-06-23): implement this as pure candidate merge behavior over
+  existing ranked activation candidates, then route retrieval through it.
+  Intended files: `packages/harness/src/activation/rankCandidates.ts`,
+  activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN.
+  Non-goals: no DB migration, no new retrieval store, no pgvector query
+  implementation, no observation prefix integration, no trust/temporal filter
+  change, no dashboard/API/MCP/server/plugin/source crawler.
 - Verification:
       fixture with duplicates merges correctly.
 

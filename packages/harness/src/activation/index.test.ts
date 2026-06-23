@@ -18,6 +18,7 @@ import {
   buildMemoryQuery,
   buildSourceQuery,
   detectConflicts,
+  mergeActivationCandidates,
   rankCandidates,
   toMemoryCandidate,
   toSearchCandidate,
@@ -162,6 +163,45 @@ describe("activation engine", () => {
       "source",
       "health"
     ]));
+  });
+
+  it("merges duplicate source candidates across source and search channels", () => {
+    const query = buildSourceQuery(task);
+    const source = toSourceClaimCandidate(
+      sourceClaim({
+        id: "claim-duplicate",
+        claim: "Doctor brain store readiness must use Postgres source graph evidence."
+      })
+    );
+    const search = toSearchCandidate(
+      searchDocument({
+        id: "search-duplicate",
+        subjectType: "source_claim",
+        subjectId: "claim-duplicate",
+        sourceClaimId: "claim-duplicate",
+        title: "Postgres source graph evidence",
+        body: "Doctor readiness source graph evidence for Postgres.",
+        lexicalScore: 70,
+        graphScore: 15
+      })
+    );
+
+    const merged = mergeActivationCandidates(
+      rankCandidates([source, search], query)
+    );
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      subjectType: "source_claim",
+      subjectId: "claim-duplicate",
+      graphScore: 15
+    });
+    expect(merged[0]?.lexicalScore).toBeGreaterThanOrEqual(70);
+    expect(merged[0]?.metadata).toMatchObject({
+      mergedCandidateIds: expect.arrayContaining(["claim-duplicate", "search-duplicate"]),
+      mergedKinds: expect.arrayContaining(["source", "search"]),
+      searchDocumentIds: ["search-duplicate"]
+    });
   });
 
   it("selects a small high-signal working set from noisy candidates", () => {

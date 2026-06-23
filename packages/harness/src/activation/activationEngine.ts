@@ -16,6 +16,7 @@ import {
   buildMemoryQuery
 } from "./memoryQuery.js";
 import {
+  mergeActivationCandidates,
   rankCandidates,
   toMemoryCandidate,
   toSearchCandidate,
@@ -130,9 +131,11 @@ export const retrieveActivationCandidates = async (
   return {
     memoryQuery,
     sourceQuery,
-    candidates: [...memoryCandidates, ...sourceCandidates, ...searchCandidates].sort(
-      (left, right) => right.totalScore - left.totalScore
-    ),
+    candidates: mergeActivationCandidates([
+      ...memoryCandidates,
+      ...sourceCandidates,
+      ...searchCandidates
+    ]),
     antiMemoryRecords
   };
 };

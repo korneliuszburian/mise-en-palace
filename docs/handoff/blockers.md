@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-40.
+- None for MM-41.
+
+Closed in MM-40:
+
+- Hybrid candidate merge deduplicates linked source/search candidates by
+  canonical SourceClaim id.
+- Merge preserves lexical/vector/graph/temporal/context ROI/feedback score
+  channels, merged candidate ids, merged kinds, and search document ids.
+- Activation retrieval returns merged candidates before downstream filters.
+- Activation smoke readback now treats merged search document ids as
+  search-backed candidates.
 
 Closed in MM-39:
 

@@ -186,6 +186,10 @@ export interface SearchDocumentRecord {
 
 export interface SearchDocumentSearchResult extends SearchDocumentRecord {
   lexicalScore: number;
+  vectorScore?: number;
+  graphScore?: number;
+  temporalScore?: number;
+  contextRoiScore?: number;
 }
 
 export interface EmbeddingModelRecord {
