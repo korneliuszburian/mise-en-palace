@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-59. KRN has
+The memory ideal-state execution track is implemented through MM-60. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -89,10 +89,13 @@ MemoryCandidate/MemoryRecord row counts did not change.
 MM-59 added pure GoldenTask domain contracts for behavior-focused golden cases,
 expected behavior, and protected failure modes, plus a validator that rejects
 shape-only eval theater and private reasoning metadata.
+MM-60 chose file-backed GoldenTask fixtures for the initial strategy and added
+schema-owned deterministic parsing for unknown JSON fixtures; these files are
+test/seed fixtures, not runtime memory or Memory Core.
 
 Last verified state:
-MM-59 added the pure GoldenTask domain model. Focused core test/typecheck
-passed; full verification is recorded in
+MM-60 added deterministic GoldenTask fixture parsing. Focused schema
+test/typecheck passed; full verification is recorded in
 `docs/handoff/verification.md`.
 
 Current dirty context:
@@ -108,7 +111,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-59 memory ideal-state slices: complete through governed
+- MM-00 through MM-60 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -133,7 +136,8 @@ Milestone status:
   candidate-proposal summary with no final Memory Core mutation, plus manual
   review assessment capture dogfooded against one persisted KRN slice, plus
   pure GoldenTask contracts for behavior-focused golden eval cases and
-  protected failure modes.
+  protected failure modes, plus deterministic file fixture parsing for initial
+  GoldenTask seeds.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -286,12 +290,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-59 blocker remains.
+No MM-60 blocker remains.
 
 Rollback path:
-After commit, revert the MM-59 commit with `git revert <commit>` if the
-GoldenTask contract regresses. No DB migration was added; rollback is
-core/docs only.
+After commit, revert the MM-60 commit with `git revert <commit>` if the
+GoldenTask fixture parser regresses. No DB migration was added; rollback is
+schema/fixture/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -301,7 +305,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-60 GoldenTask storage or fixture strategy.
+Run MM-61 memory behavior golden cases.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

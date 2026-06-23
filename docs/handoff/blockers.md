@@ -2,7 +2,21 @@
 
 Hard blockers:
 
-- None for MM-60.
+- None for MM-61.
+
+Closed in MM-60:
+
+- File-backed GoldenTask fixtures were chosen as the initial strategy.
+- `tests/fixtures/golden-tasks/memory-behavior.json` exists as a seed/test
+  fixture, not runtime memory or Memory Core.
+- `parseGoldenTaskFixtures` validates unknown fixture JSON at the schema
+  boundary.
+- Fixture loading is deterministic: tasks, cases, and protected failure modes
+  are sorted by id.
+- Shape-only fixtures without behavior expectations, source/evidence refs, and
+  protected failure modes are rejected.
+- DB-backed GoldenTask storage is deferred until a runner/promotion lifecycle
+  proves it is needed.
 
 Closed in MM-59:
 

@@ -1,0 +1,113 @@
+[
+  {
+    "id": "golden-task-memory-002",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Anti-memory blocks stale context",
+    "description": "Protects activation from using invalidated memory.",
+    "owner": "memory-eval",
+    "domains": ["anti_memory", "memory", "context"],
+    "cases": [
+      {
+        "id": "golden-case-memory-002-b",
+        "title": "stale memory is excluded",
+        "input": {
+          "task": "Plan a memory update using the stale pattern."
+        },
+        "expectedBehavior": {
+          "outcome": "exclude",
+          "subject": "memory_record:stale-pattern",
+          "rationale": "Active anti-memory invalidates the stale pattern.",
+          "evidenceRefs": ["docs/runs/2026-06-23-memory-dogfood.md"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-002-b",
+            "domain": "anti_memory",
+            "severity": "blocking",
+            "title": "stale pattern enters context",
+            "mustNot": "Context must not include invalidated memory.",
+            "detection": "Included context item references memory_record:stale-pattern."
+          },
+          {
+            "id": "failure-mode-memory-002-a",
+            "domain": "context",
+            "severity": "warning",
+            "title": "anti-memory reason missing",
+            "mustNot": "Context exclusion must not omit the anti-memory reason.",
+            "detection": "Exclusion exists without conflict or stale reason."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-memory-002-a",
+        "title": "activation abstains when only stale memory remains",
+        "input": {
+          "task": "Use weak stale memory as the only context."
+        },
+        "expectedBehavior": {
+          "outcome": "abstain",
+          "subject": "context_assembly",
+          "rationale": "Weak stale memory should not become confident context.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-002-c",
+            "domain": "memory",
+            "severity": "blocking",
+            "title": "weak stale memory used confidently",
+            "mustNot": "Activation must not include weak stale memory as trusted context.",
+            "detection": "ContextAssembly includes stale memory without abstention metadata."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T09:20:00.000Z",
+    "updatedAt": "2026-06-23T09:20:00.000Z"
+  },
+  {
+    "id": "golden-task-memory-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Source-linked memory is selected",
+    "description": "Protects source-linked memory activation behavior.",
+    "owner": "memory-eval",
+    "domains": ["memory", "source", "context"],
+    "cases": [
+      {
+        "id": "golden-case-memory-001-a",
+        "title": "source-linked memory enters context",
+        "input": {
+          "task": "Plan using the reviewed KRN memory lesson."
+        },
+        "expectedBehavior": {
+          "outcome": "include",
+          "subject": "memory_record:reviewed-lesson",
+          "rationale": "Reviewed memory with source lineage should be eligible for context.",
+          "evidenceRefs": ["docs/runs/2026-06-23-memory-dogfood.md"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-001-a",
+            "domain": "source",
+            "severity": "blocking",
+            "title": "unsourced memory selected",
+            "mustNot": "Activation must not select memory without source lineage.",
+            "detection": "Included memory lacks sourceLineage or sourceClaimIds."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-60"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T09:20:00.000Z",
+    "updatedAt": "2026-06-23T09:20:00.000Z"
+  }
+]

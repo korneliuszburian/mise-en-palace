@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-59 and MM-16R are complete.
+- MM-00 through MM-60 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -129,6 +129,8 @@ Current known status:
   mutation.
 - MM-59 added pure GoldenTask domain contracts for behavior-focused golden
   cases and protected failure modes.
+- MM-60 chose file-backed GoldenTask fixtures for the initial strategy and
+  added schema-owned deterministic fixture parsing.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -208,7 +210,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-60 — GoldenTask storage or fixture strategy.
+MM-61 — Memory behavior golden cases.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

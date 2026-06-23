@@ -1,5 +1,6 @@
 export * from "./auditBundle.js";
 export * from "./evidenceCapture.js";
+export * from "./goldenTask.js";
 export * from "./harnessCompile.js";
 export * from "./memoryCandidate.js";
 export * from "./observation.js";
