@@ -162,11 +162,12 @@ Current public state:
   dispatcher plus shared command type/usage surface. QG-04C modularized
   `krn doctor`; QG-04D consolidated MemoryCandidate and AntiMemory confidence
   parsing; QG-04E consolidated schema primitives; QG-04F consolidated review
-  signal vocabulary; QG-04G through QG-06 remain queued as a blocking quality
-  correction gate: DB mapper split, official Promptfoo integration decision,
-  and `krn audit` quality gate automation.
+  signal vocabulary; QG-04G split memory-domain DB row mapping out of the
+  mixed mapper file; QG-04H through QG-06 remain queued as a blocking quality
+  correction gate: smell scan automation requirements, official Promptfoo
+  integration decision, and `krn audit` quality gate automation.
 - Not built:
-  quality correction gate QG-04G through QG-06, official Promptfoo adapter
+  quality correction gate QG-04H through QG-06, official Promptfoo adapter
   decision/integration, EvalCandidate promotion gate, Golden eval dogfood
   regression gate, API/MCP, dashboard, plugin package, source crawler, fuzzy
   anti-memory matching, and broad benchmark suite.

@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-04B command parser modularization.
+Latest verified slice: QG-04G DB mapper/repository split plan and first safe split.
 
 Passed:
 
@@ -165,6 +165,26 @@ Passed:
 - QG-04F forbidden directory scan found no added forbidden surfaces.
 - QG-04F `krn audit slice --since origin/main --fail-on warning` passed with
   verdict `pass` and 0 findings.
+- QG-04G RED focused `pnpm --filter @krn/db test -- memoryMappers` failed
+  before `packages/db/src/repositories/memoryMappers.ts` existed.
+- QG-04G pre-completion full `pnpm test` failed only on the new
+  `memoryMappers.test.ts` incomplete DB-row fixture, then the row fixture was
+  corrected.
+- QG-04G GREEN focused `pnpm --filter @krn/db test -- memoryMappers` passed
+  with 24 files and 67 tests.
+- QG-04G focused `pnpm --filter @krn/db test -- mappers` passed with 24 files
+  and 67 tests.
+- QG-04G focused `pnpm --filter @krn/db typecheck` passed.
+- QG-04G full `pnpm typecheck` passed.
+- QG-04G full `pnpm test` passed.
+- QG-04G `git diff --check` passed.
+- QG-04G forbidden directory scan found no added forbidden surfaces.
+- QG-04G `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
+- QG-04G split memory row types, source-lineage narrowing, memory candidate
+  JSON narrowing, and memory/anti-memory mapper implementations into
+  `packages/db/src/repositories/memoryMappers.ts`; `mappers.ts` is now 714
+  lines and preserves legacy memory mapper imports by re-export.
 
 QG audit facts gathered during QG-00:
 
@@ -179,7 +199,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04G through QG-06 remain next.
+- QG-04H through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.
