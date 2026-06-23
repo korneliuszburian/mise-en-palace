@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-54. KRN has
+The memory ideal-state execution track is implemented through MM-55. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -70,10 +70,12 @@ EvidenceBundle now has a pure completeness assessment for required execution
 evidence. ReviewAssessment and FeedbackDelta now have pure normalization
 helpers for outcome, review burden, diff risk, and correction labels.
 EvidenceBundle now also has pure review-risk scoring v1 for docs-only, narrow
-core, and broad DB/runtime diffs with command evidence.
+core, and broad DB/runtime diffs with command evidence. EvidenceBundle rollback
+enforcement now requires concrete revert or recovery commands for non-doc
+changes while leaving docs-only diffs exempt in the rollback-specific helper.
 
 Last verified state:
-MM-54 added pure core EvidenceBundle review-risk scoring v1. Focused core
+MM-55 added pure core EvidenceBundle rollback-path enforcement. Focused core
 RED/GREEN tests passed; full verification is recorded in
 `docs/handoff/verification.md`.
 
@@ -90,7 +92,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-54 memory ideal-state slices: complete through governed
+- MM-00 through MM-55 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -110,7 +112,8 @@ Milestone status:
   candidates, TypeScript/review-risk capability routing, capability routing
   dogfood/readback proof for Gate 6, EvidenceBundle hardening for Gate 7,
   ReviewAssessment/FeedbackDelta normalization for review-signal hardening, and
-  EvidenceBundle review-risk scoring for broad-vs-narrow diff assessment.
+  EvidenceBundle review-risk scoring for broad-vs-narrow diff assessment, plus
+  rollback-path enforcement for non-doc changes.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -238,6 +241,9 @@ Runtime proof status:
 - Evidence review-risk scoring: `scoreEvidenceBundleReviewRisk` ranks docs-only
   tested diffs as low, narrow core diffs as medium, and broad DB/runtime diffs
   with failed required commands as high, with explicit reasons.
+- Evidence rollback enforcement: `assessEvidenceBundleRollbackPath` emits
+  findings for non-doc changes with missing or vague rollback paths, and
+  accepts docs-only bundles without a rollback path.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -249,11 +255,11 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-54 blocker remains.
+No MM-55 blocker remains.
 
 Rollback path:
-After commit, revert the MM-54 commit with `git revert <commit>` if
-EvidenceBundle review-risk scoring regresses. No DB migration was added;
+After commit, revert the MM-55 commit with `git revert <commit>` if
+EvidenceBundle rollback-path enforcement regresses. No DB migration was added;
 rollback is core/docs only.
 
 Not built:
@@ -264,7 +270,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-55 rollback path enforcement.
+Run MM-56 candidate extraction from feedback.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

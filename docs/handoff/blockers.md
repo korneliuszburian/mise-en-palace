@@ -2,7 +2,18 @@
 
 Hard blockers:
 
-- None for MM-55.
+- None for MM-56.
+
+Closed in MM-55:
+
+- `assessEvidenceBundleRollbackPath` exists as a pure core helper.
+- Docs-only evidence bundles do not receive rollback-specific findings when the
+  rollback path is blank.
+- Non-doc core/DB/runtime changes without rollback paths receive a finding.
+- Non-doc changes with vague rollback prose receive a finding that asks for a
+  concrete revert or recovery command.
+- No schema, DB, repository, CLI integration, review assess command, candidate
+  extraction, or Memory Core mutation surface was added.
 
 Closed in MM-54:
 

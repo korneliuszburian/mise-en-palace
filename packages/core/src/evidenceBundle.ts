@@ -106,6 +106,19 @@ const touchesDatabaseOrMigration = (changedFiles: readonly string[]): boolean =>
 const touchesCoreDomain = (changedFiles: readonly string[]): boolean =>
   changedFiles.some((file) => file.startsWith("packages/core/src/"));
 
+const hasConcreteRollbackCommand = (rollbackPath: string): boolean => {
+  const normalized = rollbackPath.toLowerCase();
+
+  return (
+    normalized.includes("git revert") ||
+    normalized.includes("git restore") ||
+    normalized.includes("git checkout") ||
+    normalized.includes("rollback") ||
+    normalized.includes("restore from") ||
+    normalized.includes("re-run")
+  );
+};
+
 export const assessEvidenceBundleCompleteness = (
   bundle: EvidenceBundle
 ): string[] => {
@@ -144,6 +157,24 @@ export const assessEvidenceBundleCompleteness = (
   }
 
   return findings;
+};
+
+export const assessEvidenceBundleRollbackPath = (
+  bundle: EvidenceBundle
+): string[] => {
+  if (docsOnly(bundle.changedFiles)) {
+    return [];
+  }
+
+  if (isBlank(bundle.rollbackPath)) {
+    return ["rollbackPath is required for non-doc changes"];
+  }
+
+  if (!hasConcreteRollbackCommand(bundle.rollbackPath)) {
+    return ["rollbackPath must include a concrete revert or recovery command"];
+  }
+
+  return [];
 };
 
 export const scoreEvidenceBundleReviewRisk = (

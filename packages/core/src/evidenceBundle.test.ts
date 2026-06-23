@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   assessEvidenceBundleCompleteness,
+  assessEvidenceBundleRollbackPath,
   scoreEvidenceBundleReviewRisk,
   type EvidenceBundle
 } from "./evidenceBundle.js";
@@ -149,5 +150,33 @@ describe("evidence bundle review risk scoring", () => {
       reviewBurden: "medium",
       reasons: ["core domain files changed", "required commands passed"]
     });
+  });
+});
+
+describe("evidence bundle rollback path enforcement", () => {
+  test("does not require rollback path for docs-only evidence bundles", () => {
+    expect(assessEvidenceBundleRollbackPath(bundle({
+      changedFiles: ["docs/handoff/verification.md"],
+      rollbackPath: ""
+    }))).toEqual([]);
+  });
+
+  test("requires a concrete rollback path for runtime and database changes", () => {
+    expect(assessEvidenceBundleRollbackPath(bundle({
+      changedFiles: [
+        "packages/core/src/evidenceBundle.ts",
+        "packages/db/src/schema/harness.ts"
+      ],
+      rollbackPath: ""
+    }))).toEqual([
+      "rollbackPath is required for non-doc changes"
+    ]);
+
+    expect(assessEvidenceBundleRollbackPath(bundle({
+      changedFiles: ["packages/cli/src/runEvidenceCaptureCommand.ts"],
+      rollbackPath: "manual cleanup"
+    }))).toEqual([
+      "rollbackPath must include a concrete revert or recovery command"
+    ]);
   });
 });
