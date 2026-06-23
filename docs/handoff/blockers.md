@@ -2,7 +2,16 @@
 
 Hard blockers:
 
-- None for MM-35.
+- None for MM-36.
+
+Closed in MM-35:
+
+- Public `krn source decision link --persist` rejects rejected/deprecated
+  SourceClaims before edge creation.
+- `DrizzleSourceRepository.createSourceDecisionEdge` rejects rejected/deprecated
+  SourceClaims at the repository boundary.
+- Rejected sources remain explicit `source_rejections` records and cannot later
+  become decision support without a new accepted SourceClaim.
 
 Closed in MM-34:
 

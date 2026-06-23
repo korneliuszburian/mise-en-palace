@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-34.
+Current phase: Memory ideal-state execution track after MM-35.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-34 and MM-16R in
+- MM-00 through MM-35 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -115,10 +115,13 @@ Current runtime truth:
   require a linked SourceClaim; source/activation/codex smokes were kept green
   by converting legacy negative examples to decision-grade rejection/risk
   source records.
+- MM-35 hardens source rejection support boundaries. Rejected/deprecated
+  SourceClaims cannot support new SourceDecisionEdge writes through public CLI
+  or repository adapter paths.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-35 source rejection workflow and doesNotProve enforcement.
+- Continue with MM-36 trust and temporal source behavior.

@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-34. KRN has
+The memory ideal-state execution track is implemented through MM-35. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -26,14 +26,15 @@ that a later matching plan selected it into context. SourceClaim and
 SourceDecisionEdge write boundaries now reject decorative source records:
 SourceClaim IO requires `falsifier`, repository writes reject decorative support
 types, and `adopt`/`reject` SourceDecision writes require linked SourceClaims.
+Rejected/deprecated SourceClaims also cannot support new SourceDecisionEdge
+writes through CLI or repository adapter paths.
 
 Last verified state:
-MM-34 hardened source graph write boundaries. Focused RED tests proved missing
-source governance helpers and optional SourceClaim falsifier; focused GREEN
-tests passed for DB source repository, schema, and CLI source command behavior.
-Full `pnpm typecheck`, full `pnpm test`, DB-aware source graph/activation/
-codex-adapter smokes, `pnpm db:ready`, `git diff --check`, forbidden scan, and
-audit slice check passed.
+MM-35 hardened source rejection support boundaries. Focused RED tests proved
+that rejected SourceClaims could still reach SourceDecisionEdge creation;
+focused GREEN tests passed for DB source repository and CLI source decision
+behavior. Full `pnpm typecheck`, full `pnpm test`, DB-aware source graph smoke,
+and `pnpm db:ready` passed.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -48,14 +49,15 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-34 memory ideal-state slices: complete through governed
+- MM-00 through MM-35 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
   observation prefix items, explicit activation abstention metadata, and
   broader memory health audit findings, AuditBundle/semantic DB snapshot
   ingestion in the audit CLI, one dogfooded reviewed memory application, and
-  source graph write-boundary hardening for SourceClaim/SourceDecisionEdge.
+  source graph write-boundary hardening for SourceClaim/SourceDecisionEdge and
+  rejected-source support blocking.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -119,6 +121,9 @@ Runtime proof status:
 - source graph hardening: SourceClaim creation now requires `falsifier`; source
   claim and source decision edge writes reject decorative support types; source
   decisions with `adopt` or `reject` status require linked SourceClaims.
+- source rejection support blocking: rejected/deprecated SourceClaims cannot
+  support new SourceDecisionEdge writes through public CLI or DB repository
+  paths.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -130,12 +135,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-34 blocker remains.
+No MM-35 blocker remains.
 
 Rollback path:
-After commit, revert the MM-34 commit with `git revert <commit>` if source
-graph hardening regresses. No DB migration was added; rollback is code/docs
-only.
+After commit, revert the MM-35 commit with `git revert <commit>` if source
+rejection support blocking regresses. No DB migration was added; rollback is
+code/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -145,7 +150,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-35 and add source rejection workflow / doesNotProve enforcement.
+Run MM-36 and add trust-tier / temporal source behavior.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

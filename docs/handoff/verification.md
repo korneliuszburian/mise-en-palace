@@ -1,25 +1,20 @@
 # Verification
 
-Latest verified slice: MM-34 SourceClaim and SourceDecisionEdge hardening.
+Latest verified slice: MM-35 source rejection support boundary.
 
 Passed:
 
 - RED focused DB source repository test failed because
-  `assertSourceClaimGovernance` / `assertSourceDecisionGovernance` helpers did
-  not exist.
-- RED focused schema test failed because SourceClaim `falsifier` was still
-  optional.
+  `assertSourceDecisionSourceClaimCanSupport` did not exist.
+- RED focused CLI test failed because a rejected SourceClaim still reached
+  `createSourceDecisionEdge`.
 - GREEN focused `pnpm --filter @krn/db test -- repositories/DrizzleSourceRepository.test.ts`
-  passed with 23 files and 61 tests.
-- GREEN focused `pnpm --filter @krn/schema test -- index.test.ts` passed with
-  1 file and 19 tests.
+  passed with 23 files and 62 tests.
 - GREEN focused `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
-  6 files and 92 tests.
+  6 files and 93 tests.
 - Final `pnpm typecheck` passed across all workspace packages.
-- Final `pnpm test` passed across 46 files and 239 tests.
+- Final `pnpm test` passed across 46 files and 241 tests.
 - Final DB-aware `pnpm db:smoke:source-graph` passed.
-- Final DB-aware `pnpm db:smoke:activation` passed.
-- Final DB-aware `pnpm db:smoke:codex-adapter` passed.
 - Final `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
   passed with 11/11 migrations and pgvector available.
 - Final `git diff --check` passed.
@@ -27,22 +22,16 @@ Passed:
   pattern surfaces.
 - Final `krn audit slice --since origin/main ...` passed with 0 findings.
 
-MM-34 behavior proof:
+MM-35 behavior proof:
 
-- `parseSourceClaimInput` now rejects SourceClaim input without `falsifier`.
-- `DrizzleSourceRepository.createSourceClaim` rejects missing/blank claim,
-  mechanism, krnImplication, doesNotProve, trustTier, consumer, falsifier, and
-  decorative support types.
-- `DrizzleSourceRepository.createSourceDecisionEdge` rejects blank source,
-  target, confidence, notes, and decorative support types.
-- `DrizzleSourceRepository.createSourceDecision` rejects `adopt` and `reject`
-  decisions without a linked SourceClaim.
-- Source, activation, and codex-adapter smokes remain green after legacy
-  negative examples were converted to decision-grade rejection/risk source
-  records.
+- Public `krn source decision link --persist` rejects SourceClaims with
+  `rejected` or `deprecated` status before calling `createSourceDecisionEdge`.
+- `DrizzleSourceRepository.createSourceDecisionEdge` reads the linked
+  SourceClaim and rejects rejected/deprecated claims at the repository boundary.
+- Existing `source claim reject` remains the explicit path for decorative or
+  unsupported sources; rejected claims are not reusable as decision support.
 
-Not proven by MM-34:
+Not proven by MM-35:
 
-- Full source rejection workflow quality.
 - Trust-tier and temporal source behavior.
 - Source graph health audit.

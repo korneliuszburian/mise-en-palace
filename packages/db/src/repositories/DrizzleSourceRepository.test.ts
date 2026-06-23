@@ -4,7 +4,8 @@ import {
   DrizzleSourceRepository,
   assertSourceClaimGovernance,
   assertSourceDecisionEdgeGovernance,
-  assertSourceDecisionGovernance
+  assertSourceDecisionGovernance,
+  assertSourceDecisionSourceClaimCanSupport
 } from "./DrizzleSourceRepository.js";
 
 const methodNames = [
@@ -95,5 +96,23 @@ describe("DrizzleSourceRepository", () => {
       confidence: "medium",
       notes: " "
     })).toThrow("SourceDecisionEdge requires targetId");
+  });
+
+  it("rejects rejected or deprecated source claims as decision support", () => {
+    const validClaim = {
+      id: "source-claim-1",
+      status: "accepted",
+      claim: "Source claim supports an implementation boundary."
+    } as const;
+
+    expect(() => assertSourceDecisionSourceClaimCanSupport(validClaim)).not.toThrow();
+    expect(() => assertSourceDecisionSourceClaimCanSupport({
+      ...validClaim,
+      status: "rejected"
+    })).toThrow("SourceDecisionEdge cannot use rejected SourceClaim");
+    expect(() => assertSourceDecisionSourceClaimCanSupport({
+      ...validClaim,
+      status: "deprecated"
+    })).toThrow("SourceDecisionEdge cannot use deprecated SourceClaim");
   });
 });

@@ -131,11 +131,11 @@ against the controlled MM-08 slice when the plan reaches Gate 1.
 
 Latest verification already passed:
 - pnpm typecheck
-- pnpm test: 46 files, 239 tests
+- pnpm test: 46 files, 241 tests
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-34
+- targeted slice checks recorded in Progress through MM-35
 
 Known target repo readiness:
 - dry-run: proven
@@ -179,6 +179,8 @@ Known built but not fully integrated:
   `docs/runs/2026-06-23-memory-dogfood.md`
 - SourceClaim and SourceDecisionEdge write boundaries now reject decorative
   support types and missing decision-grade fields before persistence
+- rejected/deprecated SourceClaim rows cannot support new SourceDecisionEdge
+  writes through either the public CLI path or repository adapter
 - observation prefix selector is still not wired into the main context
   assembly/activation runtime path as a stable prefix primitive
 - reflection still does not create persisted MemoryCandidate/SourceClaim/
@@ -403,7 +405,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-32B complete: audit CLI now consumes explicit slice evidence, AuditBundle evidence, DB-backed semantic snapshots, and repo-local handoff docs. Intended files: `packages/harness/src/audit/auditChecks.ts`, `packages/db/src/auditSemanticSnapshot.ts`, DB export, `packages/cli/src/databaseRuntime.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runAuditCommand.ts`, `packages/cli/src/runCli.ts`, audit CLI tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no dashboard, no API/MCP/server/plugin, no CI service, no broad benchmark suite, no new DB migration, no source crawler, no runtime markdown memory. Evidence: RED focused CLI test failed because `--fail-on warning` was rejected as usage error; GREEN focused CLI test passed with 6 files / 91 tests after parser/runner support; focused AuditBundle semantic snapshot test passed with DB runtime injection and JSON `semanticSnapshotCounts`; RED handoff-focused CLI test failed because repo handoff docs were not converted into an `AuditHandoffSnapshot`; GREEN handoff-focused CLI test passed with 6 files / 92 tests after adding the repo handoff snapshot builder; focused DB/harness/CLI typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 230 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; `git diff --check` passed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces; final `krn audit slice --since origin/main ...` passed with 0 findings. Audit slice now merges AuditBundle/CLI intended files and verification commands, flags missing/failed verification, reads MemoryCandidate/MemoryRecord/SourceClaim/SourceDecision/EvalCandidate/ObservationGroup/ActivationDecision snapshots where a project/retrieval run is supplied, emits semantic snapshot counts, derives handoff evidence from `docs/handoff/*`, and supports `--fail-on warning` for CI-style slice gates. Next: MM-33 memory dogfood.
 - [x] (2026-06-23) MM-33 complete: dogfooded promotion of one reviewed KRN lesson through MemoryReviewGate and proved later application by planning context. Intended files: `docs/runs/2026-06-23-memory-dogfood.md`, root `PLAN.md`, `GOAL.md`, `docs/handoff/*`, and this PLAN. Non-goals preserved: no automatic memory promotion, no reflection worker, no new DB schema/migration, no dashboard/API/MCP/server/plugin, no source crawler, no broad eval suite, no fuzzy anti-memory matching. Evidence: preflight `git status --short --branch` showed only raw research materials untracked; `git log --oneline -5` showed `9df7ca3`; `pnpm --version` reported 10.32.1; preflight `pnpm typecheck` passed; preflight `pnpm test` passed with 45 files / 230 tests; DB before counts were execution_runs=14, source_claims=2, memory_candidates=1, memory_records=1, memory_versions=1, memory_applications=1; live `krn plan --task "MM-33 dogfood MemoryReviewGate promotion for audit semantic snapshot lesson" --persist` created execution run `daafa66b-dd85-4b7c-bcf5-9ccf60c2b170`; live `krn source claim add --persist` created SourceClaim `f0b5c9ee-01aa-41df-9268-7df3f7437068` for commit `9df7ca3`; live `krn memory candidate add --persist` created MemoryCandidate `2b31845c-1e34-4e5e-9862-23d0ce12cb69`; live `krn memory candidate promote --persist --evidence-reviewed-ref ...` passed MemoryReviewGate and created MemoryRecord `41d1a2ef-3578-4e45-947f-42c6739796de`; DB proof shows status active, kind procedure, confidence 90, owner `memory-governance`, source lineage and reviewed SourceClaim `f0b5c9ee-01aa-41df-9268-7df3f7437068`, application guidance, invalidation rule, reviewGate metadata, and MemoryRecordVersion `9200736c-13ac-4ca6-bde9-dc494519cc17` created from the candidate; live follow-up `krn plan --task "close a memory implementation slice with audit semantic snapshots and handoff evidence" --persist` included memory_record `41d1a2ef-3578-4e45-947f-42c6739796de` in context and created execution run `54f6e3e0-d634-4b61-a67c-cde5d558f822`; live `krn memory record apply --persist` recorded MemoryApplication `55a8e695-8665-45da-a19e-b8be578708ea` with outcome `helped`; final counts were execution_runs=16, source_claims=3, memory_candidates=2, memory_records=2, memory_versions=2, memory_applications=2; final full `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden directory scan, and `krn audit slice --since origin/main ...` passed with 0 findings. Next: MM-34 SourceClaim and SourceDecisionEdge hardening.
 - [x] (2026-06-23) MM-34 complete: hardened SourceClaim and SourceDecisionEdge write boundaries so source records cannot be decorative citations. Intended files: `packages/schema/src/sourceClaim.ts`, schema tests, `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, source/activation/codex smoke fixtures, CLI source usage/tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin, no broad eval suite, no Research Foundry, no Pattern Vault, no runtime markdown memory. Evidence: RED focused DB source repository test failed because `assertSourceClaimGovernance` / `assertSourceDecisionGovernance` helpers did not exist; RED focused schema test failed because SourceClaim `falsifier` was still optional; GREEN focused DB source repository test passed with 23 files / 61 tests; GREEN focused schema test passed with 1 file / 19 tests; GREEN focused CLI test passed with 6 files / 92 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 239 tests; DB-aware `pnpm db:smoke:source-graph`, `pnpm db:smoke:activation`, and `pnpm db:smoke:codex-adapter` passed after legacy negative smoke claims were rewritten as decision-grade rejection/risk source records; final `pnpm db:ready`, `git diff --check`, forbidden directory scan, and audit slice check passed. SourceClaim IO now requires `falsifier`; repository writes require claim, mechanism, krnImplication, doesNotProve, trustTier, supportType, consumer, and falsifier; decorative support types are rejected for SourceClaim and SourceDecisionEdge; `adopt`/`reject` SourceDecision writes require a linked SourceClaim. Next: MM-35 source rejection and doesNotProve enforcement.
-- [ ] MM-35: Add source rejection and doesNotProve enforcement.
+- [x] (2026-06-23) MM-35 complete: hardened source rejection support boundaries so rejected/deprecated SourceClaim rows cannot support SourceDecisionEdge writes. Intended files: `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, `packages/cli/src/runSourceDecisionLinkCommand.ts`, CLI source decision tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no source graph health audit, no trust-tier/temporal scoring, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB source repository test failed because `assertSourceDecisionSourceClaimCanSupport` did not exist; RED focused CLI test failed because rejected SourceClaim still reached `createSourceDecisionEdge`; GREEN focused DB source repository test passed with 23 files / 62 tests; GREEN focused CLI test passed with 6 files / 93 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 241 tests; DB-aware `pnpm db:ready` and `pnpm db:smoke:source-graph` passed. Next: MM-36 trust and temporal source behavior.
 - [ ] MM-36: Add trust-tier and temporal source claim behavior.
 - [ ] MM-37: Add source graph health audit.
 - [ ] MM-38: Dogfood source-to-decision on memory implementation.
@@ -825,6 +827,17 @@ Gate 4 MM-34 outcome:
   support types instead of persisting decorative claims.
 - No DB migration was required; the hardening lives at IO and repository
   boundaries over the existing relational source graph schema.
+
+Gate 4 MM-35 outcome:
+- Public `krn source decision link --persist` now rejects SourceClaims with
+  `rejected` or `deprecated` status before attempting to create a decision
+  edge.
+- `DrizzleSourceRepository.createSourceDecisionEdge` now reads the linked
+  SourceClaim and rejects rejected/deprecated claims at the repository boundary.
+- Existing `source claim reject` remains the explicit workflow for decorative
+  or unsupported sources; rejected claims are not reusable as decision support.
+- No DB migration was required; MM-35 tightened write semantics over existing
+  SourceClaim status and SourceDecisionEdge tables.
 
 ## Milestones
 
@@ -1326,6 +1339,16 @@ MM-34 — SourceClaim and SourceDecisionEdge hardening
 
 MM-35 — Source rejection workflow
 - Add source_rejections behavior and CLI/report surface if needed.
+- Slice note (2026-06-23): existing `source claim reject` CLI and
+  `source_rejections` persistence already exist, so this slice hardens the
+  missing support boundary: rejected/deprecated SourceClaim rows must not be
+  usable as SourceDecisionEdge support. Intended files:
+  `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source
+  repository tests, `packages/cli/src/runSourceDecisionLinkCommand.ts`, CLI
+  source decision tests, root `PLAN.md`, `GOAL.md`, handoff files, and this
+  PLAN. Non-goals: no new DB migration, no source crawler, no source graph
+  health audit, no trust-tier/temporal scoring, no reflection candidate
+  persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin.
 - Verification:
       rejected source cannot support decision.
 

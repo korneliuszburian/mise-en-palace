@@ -127,6 +127,14 @@ export const assertSourceDecisionEdgeGovernance = (
   assertDecisionGradeSupportType(input.supportType, "SourceDecisionEdge");
 };
 
+export const assertSourceDecisionSourceClaimCanSupport = (
+  sourceClaim: Pick<SourceClaim, "id" | "status">
+): void => {
+  if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
+    throw new Error(`SourceDecisionEdge cannot use ${sourceClaim.status} SourceClaim`);
+  }
+};
+
 export class DrizzleSourceRepository implements SourceRepository {
   constructor(private readonly db: KrnDatabase) {}
 
@@ -287,6 +295,17 @@ export class DrizzleSourceRepository implements SourceRepository {
     assertSourceDecisionEdgeGovernance(input);
 
     return this.db.transaction(async (tx) => {
+      const sourceClaim = requireReturnedRow(
+        await tx
+          .select()
+          .from(sourceClaims)
+          .where(eq(sourceClaims.id, input.sourceClaimId))
+          .limit(1),
+        "getSourceClaimForSourceDecisionEdge"
+      );
+
+      assertSourceDecisionSourceClaimCanSupport(mapSourceClaim(sourceClaim));
+
       const row = requireReturnedRow(
         await tx
           .insert(sourceDecisionEdges)
