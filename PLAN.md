@@ -153,12 +153,20 @@ context_hygiene:
 
 worktree_hygiene:
 
+- treat every task/slice as an atomic Git unit: inspect, implement, verify,
+  commit, push, and confirm clean status before the next task starts;
+- if a task cannot fit one focused Conventional Commit, split the task before
+  coding instead of producing a mixed commit;
 - run `git status --short --branch` before and after each slice;
 - do not start a new slice while completed work is still uncommitted;
 - split completed work into focused Conventional Commits;
 - push after each completed slice commit;
 - treat push plus clean worktree as part of slice completion, not optional
   follow-up;
+- if push fails, fix the remote/worktree blocker or record it in this snapshot
+  before continuing;
+- include only the slice's own `GOAL.md` / `PLAN.md` checkpoint in a slice
+  commit; unrelated backlog or policy edits require a separate docs commit;
 - if existing dirty state is unrelated to the current slice, leave it untouched
   and record it instead of mixing it into the slice commit;
 - first application of this rule may use one catch-up commit for the already

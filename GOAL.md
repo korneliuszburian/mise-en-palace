@@ -124,6 +124,10 @@ source -> mechanism -> KRN implication -> decision/rejection -> falsifier
 
 This is part of the goal, not optional housekeeping.
 
+- Treat every task/slice as an atomic Git unit: inspect, implement, verify,
+  commit, push, and confirm clean status before starting the next one.
+- If a task is too large for one focused commit, split the task before coding
+  instead of producing a mixed commit.
 - Before each slice, check `git status --short --branch` and confirm whether
   the worktree is clean or whether unrelated dirty state must be isolated.
 - During a slice, touch only files required by that slice. Do not fold adjacent
@@ -131,6 +135,10 @@ This is part of the goal, not optional housekeeping.
 - After verification, commit the completed slice with one focused Conventional
   Commit.
 - Push immediately after every completed slice commit.
+- If push fails, fix the remote/worktree blocker or record it in `PLAN.md`;
+  do not start the next task with a finished but unpushed commit.
+- `GOAL.md` / `PLAN.md` bookkeeping may travel with the slice it describes.
+  Unrelated backlog or policy edits require their own docs commit.
 - Re-check `git status --short --branch` after push. The next slice cannot
   start unless the pushed slice is clean locally and remotely, or the exact
   blocker is recorded in `PLAN.md`.
