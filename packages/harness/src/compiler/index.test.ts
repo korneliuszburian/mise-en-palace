@@ -552,6 +552,62 @@ describe("compileHarnessPlan", () => {
     expect("requiredSkills" in result.taskContract).toBe(false);
   });
 
+  it("routes TypeScript boundary and review-risk tasks to focused capability requirements", async () => {
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Harden TypeScript boundary review risk",
+          objective: "Review JSON.parse and unknown input handling in CLI TypeScript code without weakening strict types.",
+          constraints: ["preserve unknown-first boundaries", "report diff risk for reviewer"],
+          nonGoals: ["do not add broad runtime surface"],
+          acceptance: ["type boundary fixture triggers type-review binding", "diff risk review evidence is required"]
+        }
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([memoryRecord({ id: "memory-high" })]),
+        sourceRepository: new FakeSourceRepository([sourceClaim({ id: "claim-high" })]),
+        retrievalRepository: new FakeRetrievalRepository(),
+        now: () => now,
+        createId: (prefix) => `${prefix}-type-risk`
+      }
+    );
+
+    const typeSafety = result.capabilityPlan.requirements.find((requirement) =>
+      requirement.kind === "type_safety"
+    );
+    const reviewCapture = result.capabilityPlan.requirements.find((requirement) =>
+      requirement.kind === "review_capture"
+    );
+    const evidenceCapture = result.capabilityPlan.requirements.find((requirement) =>
+      requirement.kind === "evidence_capture"
+    );
+
+    expect(typeSafety).toMatchObject({
+      bindingKinds: expect.arrayContaining(["skill", "rule"]),
+      requiredEvidence: expect.arrayContaining([
+        "pnpm typecheck",
+        "unknown-first boundary check",
+        "no type weakening"
+      ])
+    });
+    expect(typeSafety?.reason).toContain("TypeScript boundary");
+    expect(reviewCapture).toMatchObject({
+      bindingKinds: expect.arrayContaining(["skill", "policy_gate"]),
+      requiredEvidence: expect.arrayContaining([
+        "review-risk notes",
+        "diff risk summary"
+      ])
+    });
+    expect(evidenceCapture).toMatchObject({
+      bindingKinds: expect.arrayContaining(["skill", "tool_boundary"]),
+      requiredEvidence: expect.arrayContaining(["changed files summary", "git diff --check"])
+    });
+    expect("requiredSkills" in result.taskContract).toBe(false);
+  });
+
   it("activates search candidates and records anti-memory conflicts as explicit exclusions", async () => {
     const retrievalRepository = new FakeRetrievalRepository([
       searchDocument({

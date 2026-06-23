@@ -2,7 +2,16 @@
 
 Hard blockers:
 
-- None for MM-50.
+- None for MM-51.
+
+Closed in MM-50:
+
+- TypeScript boundary task text strengthens the `type_safety` capability
+  requirement with unknown-first boundary and no-type-weakening evidence.
+- Review-risk/diff-risk task text strengthens `evidence_capture` and
+  `review_capture` with changed-file, diff-risk, and review-risk evidence.
+- Routing remains CapabilityPlan-only; no storage, CLI, execution authority, or
+  automatic skill/rule growth was added.
 
 Closed in MM-49:
 

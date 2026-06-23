@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-49. KRN has
+The memory ideal-state execution track is implemented through MM-50. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -60,11 +60,14 @@ route those requirements to brain-store/source/evidence skills. Pure core
 binding contracts now model skill, rule-pack, policy-gate, and tool-boundary
 bindings with conservative invalid-binding validation. Capability binding
 candidates now require approved review with evidence before they can be treated
-as promotable.
+as promotable. CapabilityCompiler now routes TypeScript boundary and
+review-risk task text to focused capability requirements for unknown-first
+boundary checks, no type weakening, changed-file evidence, diff-risk
+summaries, and review-risk notes.
 
 Last verified state:
-MM-49 added pure core capability binding candidate/review contracts and a
-promotion assessment gate. Focused core RED/GREEN tests passed; full
+MM-50 routed TypeScript boundary and review-risk task text to focused
+capability requirements. Focused harness RED/GREEN tests passed; full
 verification is recorded in
 `docs/handoff/verification.md`.
 
@@ -81,7 +84,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-49 memory ideal-state slices: complete through governed
+- MM-00 through MM-50 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -97,8 +100,8 @@ Milestone status:
   metadata plus observation prefix metadata integration, source-range gating,
   and one before/after activation dogfood proof for observation prefix, plus
   CapabilityRequirement priority/binding-kind hardening and CapabilityCompiler
-  v1 task-text routing plus pure binding model contracts and review-gated
-  binding candidates for Gate 6.
+  v1 task-text routing plus pure binding model contracts, review-gated binding
+  candidates, and TypeScript/review-risk capability routing for Gate 6.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -208,6 +211,9 @@ Runtime proof status:
   for blank name/reason/evidence.
 - capability binding lifecycle gate: proposed binding candidates are not
   promotable until approved review with reviewer and evidence ref exists.
+- capability TypeScript/review-risk routing: TypeScript boundary tasks require
+  unknown-first boundary and no-type-weakening evidence; review-risk tasks
+  require changed-file, diff-risk, and review-risk evidence.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -219,12 +225,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-49 blocker remains.
+No MM-50 blocker remains.
 
 Rollback path:
-After commit, revert the MM-49 commit with `git revert <commit>` if capability
-binding candidate review-gating regresses. No DB migration was added; rollback
-is code/docs only.
+After commit, revert the MM-50 commit with `git revert <commit>` if
+TypeScript/review-risk capability routing regresses. No DB migration was added;
+rollback is code/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -234,7 +240,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-50 TypeScript/review-risk rule bindings.
+Run MM-51 Capability dogfood.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-49.
+Current phase: Memory ideal-state execution track after MM-50.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-49 and MM-16R in
+- MM-00 through MM-50 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -162,10 +162,13 @@ Current runtime truth:
 - MM-49 adds pure core capability binding candidate/review contracts. Proposed
   binding candidates are not promotable until an approved review with evidence
   exists.
+- MM-50 routes TypeScript boundary and review-risk task text to focused
+  capability requirements with unknown-first/no-type-weakening and diff-risk/
+  review-risk evidence.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-50 TypeScript/review-risk rule bindings.
+- Continue with MM-51 Capability dogfood.

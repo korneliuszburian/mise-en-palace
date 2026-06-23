@@ -421,7 +421,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-47 complete: made CapabilityCompiler v1 derive focused schema/db requirements from memory/source/audit task text and verified Codex skill hints route those requirements to brain-store/source/evidence skills. Intended files: `packages/harness/src/compiler/createCapabilityPlan.ts`, `packages/harness/src/compiler/compileHarnessPlan.ts`, compiler tests, Codex adapter skill-hint tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no lifecycle repository, no new CLI, no TaskContract `requiredSkills`, no automatic skill growth, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused compiler test failed because a memory/source/audit task did not include `schema_design` or `db_migration`; GREEN focused compiler test passed with 9 files / 49 tests after task text routing added those requirements; focused Codex adapter test passed with 3 files / 7 tests and proves `brain-store-schema`, `source-to-decision`, and `evidence-review-loop` skill hints; focused harness and codex-adapter typechecks passed. Next: MM-48 Skill/rule/policy/tool binding models.
 - [x] (2026-06-23) MM-48 complete: added pure core SkillBinding, RulePackBinding, PolicyGateBinding, and ToolBoundaryBinding contracts with conservative validation for invalid binding shapes. Intended files: `packages/core/src/capabilityPlan.ts`, `packages/core/src/capabilityPlan.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no repository, no CLI surface, no lifecycle events, no automatic skill/rule growth, no Codex invocation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core test failed because `validateCapabilityBindings` did not exist; GREEN focused core test passed with 4 files / 21 tests after binding contracts and validator were added; focused core/harness/codex-adapter typechecks passed; invalid binding with blank name/reason/evidence is rejected. Next: MM-49 Product-emitted skill/rule lifecycle without auto-growth.
 - [x] (2026-06-23) MM-49 complete: added pure core CapabilityBindingCandidate and CapabilityBindingReview contracts with a promotion assessment gate requiring explicit approved review before capability bindings can be treated as promotable. Intended files: `packages/core/src/capabilityPlan.ts`, `packages/core/src/capabilityPlan.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no repository, no CLI, no automatic promotion, no Codex invocation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core test failed because `assessCapabilityBindingCandidatePromotion` did not exist; GREEN focused core test passed with 4 files / 22 tests after candidate/review contracts and assessment helper were added; focused core/harness/codex-adapter typechecks passed; proposed candidate is rejected until approved review with evidence ref exists. Next: MM-50 TypeScript/review-risk rule bindings.
-- [ ] MM-50: TypeScript/review-risk rule bindings.
+- [x] (2026-06-23) MM-50 complete: routed TypeScript boundary and review-risk task text to focused capability requirements without adding lifecycle storage or runtime surfaces. Intended files: `packages/harness/src/compiler/createCapabilityPlan.ts`, `packages/harness/src/compiler/index.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no repository, no CLI, no new binding records, no automatic promotion, no Codex invocation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused harness test failed because TS boundary/review-risk tasks only had generic `type_safety` evidence; GREEN focused harness test passed with 9 files / 50 tests after `type_safety`, `evidence_capture`, and `review_capture` requirements gained unknown-first/no-type-weakening/review-risk/diff-risk evidence; focused harness and codex-adapter typechecks passed; full `pnpm typecheck` and `pnpm test` passed with 47 files / 259 tests. Next: MM-51 Capability dogfood.
 - [ ] MM-51: Dogfood capability routing for a memory task.
 - [ ] MM-52: EvidenceBundle hardening.
 - [ ] MM-53: ReviewAssessment and FeedbackDelta hardening.
@@ -1685,6 +1685,15 @@ Gate 6 MM-49 outcome:
 - The lifecycle remains pure core assessment only; no storage, CLI, execution
   authority, or automatic skill/rule growth was added.
 
+Gate 6 MM-50 outcome:
+- CapabilityCompiler now detects TypeScript boundary task text and strengthens
+  `type_safety` evidence with unknown-first boundary and no-type-weakening
+  requirements.
+- Review-risk/diff-risk task text now strengthens `evidence_capture` and
+  `review_capture` with changed-file, diff-risk, and review-risk evidence.
+- The routing remains CapabilityPlan requirements only; no binding repository,
+  CLI, Codex invocation, lifecycle promotion, or runtime surface was added.
+
 Slices:
 
 MM-46 — Capability domain hardening
@@ -1744,6 +1753,16 @@ MM-49 — Lifecycle without auto-growth
 
 MM-50 — TypeScript and review-risk bindings
 - Bind TS boundary review and diff-risk review when relevant.
+- Slice note (2026-06-23): strengthen CapabilityCompiler routing for
+  TypeScript boundary and review-risk tasks by making existing
+  `type_safety`, `evidence_capture`, and `review_capture` requirements carry
+  concrete evidence for unknown-first parsing, no type weakening, changed-file
+  review, and diff-risk review. Intended files:
+  `packages/harness/src/compiler/createCapabilityPlan.ts`, focused compiler
+  tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals:
+  no DB migration, no repository, no CLI, no new binding records, no automatic
+  promotion, no Codex invocation, no dashboard/API/MCP/server/plugin/source
+  crawler.
 - Verification:
       TS boundary fixture triggers type-review binding.
 
