@@ -633,6 +633,9 @@ export const runCli = async (
         createId,
         persist: parsed.command.persist,
         ...(parsed.command.runId === undefined ? {} : { runId: parsed.command.runId }),
+        ...(parsed.command.commandOutcomes === undefined
+          ? {}
+          : { commandOutcomes: parsed.command.commandOutcomes }),
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime }),

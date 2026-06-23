@@ -1,3 +1,6 @@
+import type {
+  EvidenceCommand
+} from "@krn/core";
 import {
   parseAuditArgs
 } from "./parseAuditArgs.js";
@@ -97,6 +100,7 @@ export type CliCommand =
       kind: "evidenceCapture";
       persist: boolean;
       runId?: string;
+      commandOutcomes?: readonly EvidenceCommand[];
     }
   | {
       kind: "reviewAssess";

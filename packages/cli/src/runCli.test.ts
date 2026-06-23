@@ -3213,6 +3213,7 @@ describe("runCli", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
+    let capturedCommands: CreateEvidenceBundleInput["commands"] | undefined;
     let capturedSourceDecisions: CreateFeedbackDeltaInput["sourceDecisions"] | undefined;
     let capturedMemoryCandidates: CreateFeedbackDeltaInput["memoryCandidates"] | undefined;
     const aggregate: HarnessRunAggregate = {
@@ -3290,6 +3291,8 @@ describe("runCli", () => {
         return aggregate;
       },
       async createEvidenceBundle(input: CreateEvidenceBundleInput) {
+        capturedCommands = input.commands;
+
         return {
           id: "evidence-bundle-1",
           executionRunId: input.executionRunId,
@@ -3387,6 +3390,244 @@ describe("runCli", () => {
     expect(capturedSourceDecisions).toHaveLength(1);
     expect(capturedSourceDecisions?.[0]?.status).toBe("defer");
     expect(capturedSourceDecisions?.[0]?.consumer).toBe("krn evidence capture");
+    expect(capturedCommands).toEqual([
+      {
+        command: "pnpm typecheck",
+        status: "skipped"
+      },
+      {
+        command: "pnpm test",
+        status: "skipped"
+      },
+      {
+        command: "git diff --check",
+        status: "skipped"
+      }
+    ]);
+  });
+
+  it("prints supplied evidence command outcomes instead of default skipped rows", async () => {
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--command",
+        "pnpm typecheck",
+        "--status",
+        "passed",
+        "--exit-code",
+        "0",
+        "--output",
+        ".local-lab/p7-self-hosting/02-typecheck.txt",
+        "--command",
+        "pnpm test",
+        "--status",
+        "failed",
+        "--exit-code",
+        "1",
+        "--output",
+        ".local-lab/p7-self-hosting/03-test.txt"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "pnpm typecheck: passed | exitCode=0 | output=.local-lab/p7-self-hosting/02-typecheck.txt"
+    );
+    expect(result.stdout).toContain(
+      "pnpm test: failed | exitCode=1 | output=.local-lab/p7-self-hosting/03-test.txt"
+    );
+    expect(result.stdout).not.toContain("pnpm typecheck: skipped");
+  });
+
+  it("persists supplied evidence command outcomes for a run id", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedCommands: CreateEvidenceBundleInput["commands"] | undefined;
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        source: "cli",
+        rawIntent: "persist harness run",
+        metadata: {},
+        createdAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-1",
+        title: "persist harness run",
+        objective: "persist harness run",
+        constraints: [],
+        nonGoals: [],
+        acceptance: [],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "persist harness run",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      contextAssembly: {
+        id: "context-assembly-1",
+        harnessPlanId: "harness-plan-1",
+        status: "assembled",
+        inclusions: [],
+        exclusions: [],
+        metadata: {},
+        createdAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "planned",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: [{
+        id: "run-event-1",
+        executionRunId: "execution-run-1",
+        sequence: 1,
+        type: "plan.persisted",
+        severity: "info",
+        message: "plan persisted",
+        payload: {},
+        occurredAt: now
+      }]
+    };
+    const harnessRunRepository = {
+      ...dependencies.harnessRunRepository,
+      async getHarnessRunByExecutionRunId() {
+        return aggregate;
+      },
+      async createEvidenceBundle(input: CreateEvidenceBundleInput) {
+        capturedCommands = input.commands;
+
+        return {
+          id: "evidence-bundle-1",
+          executionRunId: input.executionRunId,
+          status: input.status ?? "captured",
+          changedFiles: input.changedFiles,
+          commands: input.commands,
+          diffRisk: input.diffRisk,
+          reviewBurden: input.reviewBurden,
+          rollbackPath: input.rollbackPath,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      async createReviewAssessment(input: CreateReviewAssessmentInput) {
+        return {
+          id: "review-assessment-1",
+          evidenceBundleId: input.evidenceBundleId,
+          status: input.status ?? "pending",
+          reviewer: input.reviewer,
+          summary: input.summary,
+          findings: input.findings,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      },
+      async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
+        return {
+          id: "feedback-delta-1",
+          reviewAssessmentId: input.reviewAssessmentId,
+          status: input.status ?? "candidate",
+          memoryCandidates: input.memoryCandidates,
+          sourceDecisions: input.sourceDecisions,
+          evalCandidates: input.evalCandidates,
+          metadata: input.metadata ?? {},
+          createdAt: now,
+          updatedAt: now
+        };
+      }
+    };
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--persist",
+        "--command",
+        "pnpm typecheck",
+        "--status",
+        "passed",
+        "--exit-code",
+        "0",
+        "--output",
+        ".local-lab/p7-self-hosting/02-typecheck.txt",
+        "--command",
+        "pnpm test",
+        "--status",
+        "passed",
+        "--exit-code",
+        "0"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => "",
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: {
+            ...dependencies,
+            harnessRunRepository
+          },
+          harnessRunRepository,
+          memoryRepository: unusedMemoryRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(capturedCommands).toEqual([
+      {
+        command: "pnpm typecheck",
+        status: "passed",
+        exitCode: 0,
+        outputPath: ".local-lab/p7-self-hosting/02-typecheck.txt"
+      },
+      {
+        command: "pnpm test",
+        status: "passed",
+        exitCode: 0
+      }
+    ]);
   });
 
   it("prints clean evidence capture when there are no changed files", async () => {

@@ -26,6 +26,7 @@ export interface EvidenceCaptureRuntime {
   createId(prefix: string): string;
   persist: boolean;
   runId?: string;
+  commandOutcomes?: readonly EvidenceCommand[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -193,6 +194,13 @@ const defaultCommands = (): EvidenceCommand[] => [
     status: "skipped"
   }
 ];
+
+const renderCommand = (command: EvidenceCommand): string =>
+  [
+    `${command.command}: ${command.status}`,
+    ...(command.exitCode === undefined ? [] : [`exitCode=${command.exitCode}`]),
+    ...(command.outputPath === undefined ? [] : [`output=${command.outputPath}`])
+  ].join(" | ");
 
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
   runtime.persist
@@ -377,7 +385,10 @@ export const runEvidenceCaptureCommand = async (
 ): Promise<EvidenceCaptureResult> => {
   const statusOutput = await readGitStatus(runtime);
   const changedFiles = parseChangedFiles(statusOutput);
-  const commands = defaultCommands();
+  const commands =
+    runtime.commandOutcomes === undefined || runtime.commandOutcomes.length === 0
+      ? defaultCommands()
+      : [...runtime.commandOutcomes];
   const diffRisk = diffRiskFromChangedFiles(changedFiles);
   const sourceDecisionCandidates = buildSourceDecisionCandidates(runtime, changedFiles);
   const memoryCandidateProposals = buildMemoryCandidateProposals(runtime, changedFiles);
@@ -403,7 +414,7 @@ export const runEvidenceCaptureCommand = async (
     "Changed files:",
     ...renderChangedFiles(changedFiles),
     "Commands:",
-    ...commands.map((command) => `${command.command}: ${command.status}`),
+    ...commands.map(renderCommand),
     `Diff risk: ${diffRisk}`,
     "Review burden: summarize changed files, command proof, residual risk, and rollback path.",
     "Rollback path: revert the focused implementation commit or discard uncommitted changes.",

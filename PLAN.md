@@ -68,6 +68,23 @@ consumer: non-goals, architecture laws.
 falsifier: implementation creates runtime agent taxonomy before the harness
 spine is proven.
 
+source_id: user milestone review after P7 self-hosting loop.
+trust_tier: high as operator/product direction, medium as implementation truth
+until checked against live repo.
+mechanism: active reset goal is closed, but Memory Brain readiness is not;
+Evidence Integrity must become the next hardening program before candidate
+generation, worker runtime, dashboard, or broader memory behavior claims.
+krn_implication: evidence command provenance is epistemic infrastructure for
+ReviewAssessment, FeedbackDelta, Observation, Reflection, MemoryCandidate, and
+EvalCandidate. Weak/default command rows must not masquerade as verification
+proof.
+decision: adopt.
+does_not_prove: the proposed model is already implemented or that DB schema
+must change before code inspection.
+consumer: Evidence Integrity queue EVI-00..EVI-10.
+falsifier: KRN builds more memory/reflection/worker/dashboard behavior while
+persisted EvidenceBundle command provenance remains weak or ambiguous.
+
 ## Purpose / Big Picture
 
 KRN exists to make Codex work continuous, source-grounded, reviewable, and less
@@ -1209,6 +1226,9 @@ turning completed-slice observations into concrete repair slices.
 
 ### C0-00: Persist Real Evidence Command Outcomes
 
+status: complete as interim repair. Superseded by the broader EVI provenance
+program below.
+
 objective:
 
 Make `krn evidence capture --persist` record actual verification command
@@ -1237,10 +1257,11 @@ required behavior:
 
 likely files:
 
-- `packages/core/src/evidenceBundle.ts`
-- `packages/schema/src/evidenceBundle.ts`
 - `packages/cli/src/parseEvidenceArgs.ts`
 - `packages/cli/src/runEvidenceCaptureCommand.ts`
+- `packages/cli/src/runCli.ts`
+- `packages/cli/src/parseArgs.ts`
+- `packages/cli/src/parseEvidenceArgs.test.ts`
 - `packages/cli/src/runCli.test.ts`
 - `docs/runs/2026-06-23-self-hosting-memory-loop.md`
 - `PLAN.md`
@@ -1265,6 +1286,454 @@ rollback:
 
 ```sh
 git revert <commit>
+```
+
+## Evidence Integrity Program
+
+The P7 loop proved the operational spine, not Memory Brain readiness. Evidence
+Integrity is now the top hardening program because every downstream memory,
+source, observation, reflection, review, and eval decision inherits the quality
+of evidence provenance.
+
+Non-goals for EVI:
+
+- no QG-06;
+- no audit product expansion;
+- no hidden shell runner;
+- no terminal transcript scraping;
+- no dashboard;
+- no worker runtime;
+- no automatic memory promotion;
+- no broad Promptfoo lane.
+
+### EVI-00: Define Evidence Command Provenance Model
+
+objective:
+
+Make verification command evidence explicit about status, provenance, output,
+assertion source, and what it does not prove.
+
+source:
+
+P7 proved local typecheck/test output existed outside the persisted
+EvidenceBundle. C0-00 added explicit command outcomes, but the domain model
+still cannot distinguish weak default rows from operator-reported or captured
+proof with enough precision.
+
+required model:
+
+```txt
+EvidenceCommandResult:
+  command
+  status: passed | failed | skipped | missing | not_run
+  provenance:
+    default_template
+    operator_reported
+    captured_output_file
+    command_runner
+    external_log
+  outputRef?
+  capturedAt?
+  assertedBy?
+  doesNotProve
+```
+
+rules:
+
+- preserve backwards compatibility where existing `EvidenceCommand` rows are
+  already stored;
+- default template rows are visibly weak;
+- `doesNotProve` is required or generated for every command row;
+- no behavior-governing provenance may hide in undocumented metadata.
+
+likely files:
+
+- `packages/core/src/evidenceBundle.ts`
+- `packages/schema/src/*`
+- `packages/db/src/repositories/mappers.ts`
+- `packages/harness/src/repositories/harnessRunRepository.ts`
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
+- tests for evidence bundle, DB mapper, and CLI evidence capture.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test
+pnpm --filter @krn/schema test
+pnpm --filter @krn/db test
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/core packages/schema packages/db packages/harness packages/cli PLAN.md
+git commit -m "feat(evidence): model verification command provenance"
+```
+
+### EVI-01: Capture Explicit Verification Evidence In CLI
+
+objective:
+
+Make `krn evidence capture` accept real verification evidence without implying
+that KRN ran commands automatically.
+
+source:
+
+C0-00 added `--command`, `--status`, `--exit-code`, and `--output`. The stronger
+operator request prefers a first-class verification syntax, for example
+`--verification "pnpm typecheck=passed"`, if that becomes the accepted CLI
+shape.
+
+required behavior:
+
+- explicit verification entries can be passed in preview and persisted modes;
+- unknown statuses fail parse;
+- empty command text fails parse;
+- if no explicit verification is supplied, default rows are marked weak/default;
+- output separates persisted command provenance, operator/manual command
+  output, and missing evidence;
+- no hidden shell execution.
+
+likely files:
+
+- `packages/cli/src/parseEvidenceArgs.ts`
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
+- `packages/cli/src/runCli.test.ts`
+- `packages/cli/src/parseEvidenceArgs.test.ts`
+- `README.md` if CLI usage needs public operator wording.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test -- parseEvidenceArgs runCli
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/cli README.md PLAN.md
+git commit -m "feat(cli): capture explicit verification evidence"
+```
+
+### EVI-02: Persist Command Provenance Without Metadata Convention
+
+objective:
+
+Ensure DB persistence round-trips the typed command provenance model.
+
+rules:
+
+- do not add a migration if existing JSON command storage can represent the
+  typed model safely;
+- if existing JSON is used, validate/narrow it at mapper or IO boundary;
+- do not rely on undocumented metadata keys for provenance;
+- historical rows without provenance must map to weak/default semantics.
+
+likely files:
+
+- `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`
+- `packages/db/src/repositories/mappers.ts`
+- `packages/db/src/schema/*` only if schema cannot represent typed command
+  provenance;
+- DB repository tests.
+
+verification:
+
+```sh
+pnpm --filter @krn/db test
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/db packages/core packages/schema PLAN.md
+git commit -m "feat(db): persist evidence command provenance"
+```
+
+### EVI-03: Guard Self-Hosting Evidence Provenance
+
+objective:
+
+Turn P7 from a one-time run ledger into a regression proof that catches weak or
+false command provenance.
+
+minimum proof:
+
+- plan/evidence/observe/reflect loop is represented;
+- EvidenceBundle contains explicit command provenance for typecheck/test;
+- observe reports no MemoryRecord creation;
+- reflect reports no MemoryRecord creation and no automatic candidate rows;
+- weak default command rows are not described as verification proof.
+
+allowed implementation shapes:
+
+- harness GoldenTask behavior test;
+- CLI integration-style test with no live DB;
+- fixture-backed proof under `tests/fixtures`;
+- live DB smoke only if explicitly bounded and not required for every unit
+  test.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm --filter @krn/cli test -- runCli
+pnpm test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/harness packages/cli tests PLAN.md
+git commit -m "test(evidence): guard self-hosting command provenance"
+```
+
+### EVI-04: Close P7 Run Ledger Evidence Gap
+
+objective:
+
+Update the P7 run ledger and root plan after the evidence provenance model is
+implemented.
+
+must state:
+
+- original P7 gap;
+- what was fixed;
+- what remains unproved;
+- exact commands run;
+- whether historical EvidenceBundle rows were left unchanged or migrated.
+
+files:
+
+- `docs/runs/2026-06-23-self-hosting-memory-loop.md`
+- `PLAN.md`
+- `README.md` if public claims around evidence capture were too broad.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/runs PLAN.md README.md
+git commit -m "docs(run): close self-hosting evidence provenance gap"
+```
+
+### EVI-05: Remote Status Hygiene Before Long-Running Goals
+
+objective:
+
+Prevent future goals from starting with stale assumptions about whether commits
+are only local or visible on GitHub.
+
+observed state after this fetch:
+
+```txt
+git fetch --prune: passed
+git status --short --branch: main...origin/main [ahead 1] before committing the current C0/EVI work
+git log --oneline --decorate --left-right origin/main...main: > a45cee4 docs(goal): continue KRN hardening backlog
+HEAD: a45cee4
+origin/main: 87cac53
+```
+
+requirements:
+
+- add a lightweight pre-goal status hygiene note to `GOAL.md` or `PLAN.md`;
+- require `git fetch --prune` and left-right log before any new broad goal;
+- do not block local work merely because branch is ahead, but record exactly
+  what is ahead.
+
+verification:
+
+```sh
+git fetch --prune
+git status --short --branch
+git log --oneline --decorate --left-right origin/main...main
+git diff --check
+```
+
+commit:
+
+```sh
+git add GOAL.md PLAN.md
+git commit -m "docs(goal): require remote status hygiene"
+```
+
+### EVI-06: Activation Relevance Review For Self-Hosting
+
+objective:
+
+Explain whether selected memory/source context actually helped the P7
+self-hosting task.
+
+required review table:
+
+```txt
+included item
+expected use
+actual use
+helped | hurt | neutral | stale
+strengthen | demote | keep | anti-memory candidate
+reason
+```
+
+non-goals:
+
+- no dashboard;
+- no new ranking subsystem before the review proves a specific ranking failure;
+- no hard-coded recall.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- activation
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/runs packages/harness PLAN.md
+git commit -m "docs(activation): review self-hosting context relevance"
+```
+
+### EVI-07: Reflection Candidate Path After Evidence Integrity
+
+objective:
+
+Only after EVI-00..EVI-04, decide how reflection should produce useful
+candidate rows from self-hosting evidence without mutating Memory Core.
+
+requirements:
+
+- reflection may create candidate/report records only;
+- no MemoryRecord promotion;
+- candidates must carry evidence provenance and `doesNotProve`;
+- weak/default command evidence cannot produce high-confidence memory
+  candidates.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- reflection
+pnpm --filter @krn/harness test -- reflection
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/core packages/harness PLAN.md
+git commit -m "feat(reflection): stage evidence-grounded candidates"
+```
+
+### EVI-08: Candidate To Memory Review Loop Proof
+
+objective:
+
+Prove the loop candidate -> review -> memory -> activation on one small,
+reviewed, source-grounded case.
+
+requirements:
+
+- MemoryCandidate has evidence provenance;
+- MemoryReviewGate rejects weak or missing provenance;
+- reviewed MemoryRecord can influence a later activation;
+- anti-memory remains first-class for rejected claims.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- memory
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/core packages/harness packages/cli PLAN.md
+git commit -m "test(memory): prove reviewed candidate activation loop"
+```
+
+### EVI-09: Promptfoo And GoldenTask Boundary For Self-Hosting
+
+objective:
+
+Ensure Promptfoo remains integration/result-adapter proof while GoldenTask or
+KRN behavior tests own the self-hosting evidence regression.
+
+requirements:
+
+- Promptfoo smoke must not claim self-hosting behavior proof;
+- GoldenTask behavior gate or equivalent KRN test protects the self-hosting
+  provenance invariant;
+- docs state what each lane proves and does not prove.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm exec promptfoo --version
+pnpm eval:promptfoo:smoke
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/harness tests docs PLAN.md
+git commit -m "test(eval): bound self-hosting regression proof"
+```
+
+### EVI-10: Operator Ergonomics For Evidence Capture
+
+objective:
+
+Make the evidence capture CLI understandable for a real operator without
+turning it into a dashboard or quality engine.
+
+requirements:
+
+- help text shows explicit verification/provenance examples;
+- output labels weak/default command rows plainly;
+- persisted IDs remain visible;
+- no hidden command runner;
+- no broad audit/check product language.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/cli README.md PLAN.md
+git commit -m "docs(cli): clarify evidence capture provenance"
 ```
 
 ### C0-01: Improve Self-Hosting Context Relevance
@@ -1526,7 +1995,18 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 - [x] P6-00 Mark worker runtime truth.
 - [x] P6-01 Harden worker job contracts.
 - [x] P7-00 Run first governed self-hosting loop.
-- [ ] C0-00 Persist real evidence command outcomes.
+- [x] C0-00 Persist real evidence command outcomes.
+- [ ] EVI-00 Define evidence command provenance model.
+- [ ] EVI-01 Capture explicit verification evidence in CLI.
+- [ ] EVI-02 Persist command provenance without metadata convention.
+- [ ] EVI-03 Guard self-hosting evidence provenance.
+- [ ] EVI-04 Close P7 run ledger evidence gap.
+- [ ] EVI-05 Remote status hygiene before long-running goals.
+- [ ] EVI-06 Activation relevance review for self-hosting.
+- [ ] EVI-07 Reflection candidate path after Evidence Integrity.
+- [ ] EVI-08 Candidate to Memory Review loop proof.
+- [ ] EVI-09 Promptfoo and GoldenTask boundary for self-hosting.
+- [ ] EVI-10 Operator ergonomics for evidence capture.
 - [ ] C0-01 Improve self-hosting context relevance.
 - [ ] C1-00 Separate public CLI from internal dev commands.
 - [ ] C1-01 Narrow package barrels from planned to enforced.
@@ -1639,6 +2119,17 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
   with governance-proof caution and source graph persistence boundaries, but it
   did not directly surface a Memory Core write-authority memory for the P7
   self-hosting objective.
+- C0-00 did not need a core or schema package change. `EvidenceCommand` already
+  carried `status`, `exitCode`, and `outputPath`; the missing behavior was the
+  CLI parser/runtime path from explicit operator-provided outcomes into the
+  EvidenceBundle.
+- The operator milestone review sharpened C0-00 into a broader Evidence
+  Integrity program. Explicit command outcomes are useful, but insufficient
+  without typed provenance, `doesNotProve`, weak/default semantics, persistence
+  round-trip proof, and a self-hosting regression guard.
+- After `git fetch --prune`, remote state was narrower than the older
+  `ahead 21` status: `origin/main` was at `87cac53` and local `main` was ahead
+  by `a45cee4` before the current uncommitted work.
 
 ## Decision Log
 
@@ -1727,6 +2218,15 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 - 2026-06-23: P7-00 records a follow-up product gap: evidence capture must not
   present default `skipped` command rows as verification proof when real command
   output exists outside the persisted EvidenceBundle.
+- 2026-06-23: C0-00 adds an explicit evidence command outcome input path to
+  `krn evidence capture`. The CLI accepts repeated `--command ... --status ...`
+  groups with optional `--exit-code` and `--output`; missing outcomes still
+  remain `skipped`. KRN still does not infer command success from prose, shell
+  history, or local output files.
+- 2026-06-23: Adopt Evidence Integrity as the next priority program after P7.
+  Do not continue into candidate generation, worker runtime, dashboard, or
+  broader memory behavior until command provenance can say what was run, how it
+  was observed, and what it does not prove.
 
 ## Outcomes & Retrospective
 
@@ -1788,8 +2288,12 @@ Current outcome:
   `docs/runs/2026-06-23-self-hosting-memory-loop.md`.
 - Reset queue P0-P7 is fully checked and P7-00 is committed with final
   verification evidence.
-- Continuous hardening queue C0-C5 is now active. The first unchecked item is
-  C0-00: persist real evidence command outcomes.
+- C0-00 lets future EvidenceBundles persist real command outcome provenance
+  when the operator supplies it explicitly.
+- Evidence Integrity queue EVI-00..EVI-10 is active. The first unchecked item is
+  EVI-00: define evidence command provenance model.
+- Continuous hardening queue C0-C5 remains active behind the Evidence Integrity
+  priority program.
 
 ## Command Evidence
 
@@ -2360,6 +2864,56 @@ This proves the first persisted plan -> evidence -> observe -> reflect loop can
 run locally with store-backed state and without Memory Core mutation. It does
 not prove candidate quality, automatic promotion, worker runtime execution, or
 real command-status provenance inside the persisted EvidenceBundle.
+
+C0-00 evidence command outcome provenance:
+
+```sh
+pnpm --filter @krn/cli test -- runCli
+```
+
+Observed RED:
+
+- after adding tests for explicit command outcomes, focused CLI tests failed
+  because `krn evidence capture --command ... --status ...` was still rejected
+  by the parser with exit code 2;
+- failed tests: `prints supplied evidence command outcomes instead of default
+  skipped rows` and `persists supplied evidence command outcomes for a run id`.
+
+Observed GREEN:
+
+- focused CLI suite passed: 25 test files, 145 tests;
+- parser tests cover repeated `--command` groups, valid statuses, integer
+  exit-code parsing, output refs, and invalid ordering/status/exit-code cases;
+- run CLI tests prove preview rendering and persisted `CreateEvidenceBundle`
+  command rows use supplied outcomes instead of default skipped rows.
+
+Final verification after EVI backlog expansion:
+
+```sh
+pnpm --filter @krn/cli test -- runCli
+pnpm test
+pnpm typecheck
+git fetch --prune
+git status --short --branch
+git log --oneline --decorate --left-right origin/main...main
+git diff --check
+```
+
+Observed:
+
+- focused CLI suite passed: 25 files, 145 tests;
+- full test passed: core 8/39, schema 3/25, harness 18/89, workers 1/4,
+  codex-adapter 3/7, db 24/67, cli 25/145;
+- full typecheck passed across core, schema, harness, workers, codex-adapter,
+  db, and cli;
+- `git fetch --prune` passed;
+- remote status before this commit was `main...origin/main [ahead 1]` with
+  `origin/main` at `87cac53` and local `main` at `a45cee4`;
+- `git diff --check` passed with no output.
+
+This proves future evidence captures can preserve explicit command outcome
+provenance. It does not rewrite historical EvidenceBundles, execute the
+commands on behalf of the operator, or infer success from local output files.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

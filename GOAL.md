@@ -38,6 +38,11 @@ The continuing objective is:
 5. keep `PLAN.md` as the living queue instead of declaring the kernel done
    because one reset checklist is complete.
 
+The current priority program is Evidence Integrity. P7 proved the operational
+spine, not Memory Brain readiness. Do not build candidate generation, worker
+runtime, dashboard, or broader memory behavior while persisted EvidenceBundle
+command provenance remains weak or ambiguous.
+
 ## Required Read Order
 
 Before editing:
@@ -72,6 +77,10 @@ slice names them as evidence or target files.
 ## Operating Rules
 
 - Repo evidence beats docs.
+- Before starting a broad new goal, run `git fetch --prune`,
+  `git status --short --branch`, and
+  `git log --oneline --decorate --left-right origin/main...main`; record any
+  ahead/behind state instead of relying on stale status output.
 - A checked task is not the end of learning. If verification reveals a gap,
   record it in `PLAN.md` as a follow-up candidate or next slice.
 - Do not create a new KRN subsystem for ordinary engineering quality concerns.

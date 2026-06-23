@@ -112,6 +112,10 @@ Important gap: `krn evidence capture` persisted default command rows as
 before capture in this shell. The local command outputs are stronger evidence
 than the persisted command status fields for this run.
 
+C0-00 follow-up: this gap is addressed for future captures by adding explicit
+command outcome input to `krn evidence capture`. The original persisted
+EvidenceBundle above remains historical evidence and was not rewritten.
+
 Observe:
 
 ```sh
@@ -198,6 +202,7 @@ Eval candidates:
 Gaps:
 
 - Evidence capture cannot ingest actual command outcomes from this shell yet.
+  Addressed for future captures by C0-00.
 - The first selected context set contained useful governance warnings, but no
   direct Memory Core write-authority memory.
 - Reflection generated no findings, contradictions, gaps, or candidate rows for
