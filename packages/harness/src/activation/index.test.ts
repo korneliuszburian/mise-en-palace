@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 import type {
   AntiMemoryRecord,
   MemoryRecord,
+  ObservationItem,
   SourceClaim,
   TaskContract
 } from "@krn/core";
 import type {
   SearchDocumentSearchResult
 } from "../repositories/types.js";
+import {
+  selectObservationPrefix
+} from "../observations/observationPrefix.js";
 
 import {
   applyContextROI,
@@ -98,6 +102,43 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
   sourceLineage: [{ sourceId: "source-claim-1" }],
   metadata: {},
   validFrom: now,
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
+const observation = (
+  overrides: Partial<ObservationItem>
+): ObservationItem => ({
+  id: "observation-1",
+  groupId: "observation-group-1",
+  scope: {
+    projectId: "project-1",
+    taskContractId: "task-1"
+  },
+  kind: "fact",
+  status: "candidate",
+  priority: "high",
+  confidence: "high",
+  provenanceKind: "run_event",
+  subject: "doctor brain store readiness",
+  summary: "Doctor readiness observations are source-ranged.",
+  body: "Observation prefix should remain a small source-ranged activation artifact.",
+  temporalScope: {
+    observedAt: now,
+    ingestedAt: now,
+    validFrom: now
+  },
+  sourceRanges: [{
+    id: "range-1",
+    sourceType: "run_event",
+    sourceId: "run-event-1",
+    locator: "run_events.sequence:1",
+    capturedAt: now
+  }],
+  entityLinks: [],
+  claimLinks: [],
+  metadata: {},
   createdAt: now,
   updatedAt: now,
   ...overrides
@@ -478,6 +519,50 @@ describe("activation engine", () => {
         evidenceHints: expect.arrayContaining(["memory_record:memory-low-confidence"])
       })
     ]));
+  });
+
+  it("attaches a small source-ranged observation prefix as context metadata", () => {
+    const prefix = selectObservationPrefix({
+      task,
+      projectId: "project-1",
+      observations: [
+        observation({ id: "observation-selected" }),
+        observation({
+          id: "observation-unrelated",
+          subject: "marketing calendar",
+          summary: "Marketing calendar changed.",
+          body: "Campaign launch dates changed."
+        })
+      ],
+      maxItems: 1,
+      now
+    });
+    const context = assembleContext({
+      id: "context-observation-prefix",
+      harnessPlanId: "plan-1",
+      candidates: [],
+      observationPrefix: prefix,
+      createdAt: now
+    });
+
+    expect(context.status).toBe("assembled");
+    expect(context.inclusions).toHaveLength(0);
+    expect(context.metadata.observationPrefix).toMatchObject({
+      text: expect.stringContaining("Observation prefix:"),
+      itemCount: 1,
+      items: [
+        expect.objectContaining({
+          observationId: "observation-selected",
+          sourceRangeCount: 1
+        })
+      ],
+      exclusions: [
+        expect.objectContaining({
+          observationId: "observation-unrelated",
+          reason: "low_relevance"
+        })
+      ]
+    });
   });
 
   it("excludes invalidated memory with an explicit reason", () => {

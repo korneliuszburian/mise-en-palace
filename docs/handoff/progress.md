@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-43.
+Current phase: Memory ideal-state execution track after MM-44.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-43 and MM-16R in
+- MM-00 through MM-44 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -140,10 +140,12 @@ Current runtime truth:
   low_context_roi exclusions.
 - MM-43 adds raw evidence recall triggers for exact-proof and low-trust
   inclusions and persists them into activation trace metadata.
+- MM-44 integrates the hardened observation prefix selector into context
+  assembly metadata as a small source-ranged activation artifact.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-44 observation prefix integration.
+- Continue with MM-44A observation prefix integration gate.

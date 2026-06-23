@@ -9,6 +9,9 @@ import type {
   ProjectId,
   SourceTrustTier
 } from "@krn/core";
+import type {
+  ObservationPrefix
+} from "../observations/observationPrefix.js";
 
 export type ActivationCandidateKind = CoreActivationCandidateKind;
 
@@ -94,6 +97,7 @@ export interface AssembleContextInput {
   id: ContextAssemblyId;
   harnessPlanId: HarnessPlanId;
   candidates: readonly RankedActivationCandidate[];
+  observationPrefix?: ObservationPrefix;
   tokenBudget?: number;
   createdAt: IsoTimestamp;
   metadata?: Record<string, unknown>;

@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-43 and MM-16R are complete.
+- MM-00 through MM-44 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -81,6 +81,8 @@ Current known status:
   low_context_roi exclusions.
 - MM-43 added raw evidence recall triggers for exact-proof and low-trust
   inclusions and persists them into activation trace metadata.
+- MM-44 integrated the hardened observation prefix selector into context
+  assembly metadata as a small source-ranged activation artifact.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -160,7 +162,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-44 — Observation prefix integration.
+MM-44A — Observation prefix integration gate.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

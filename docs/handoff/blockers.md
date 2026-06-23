@@ -2,7 +2,18 @@
 
 Hard blockers:
 
-- None for MM-44.
+- None for MM-44A.
+
+Closed in MM-44:
+
+- Context assembly accepts a selected `ObservationPrefix` and persists it as
+  rendered metadata.
+- Observation prefix items carry `sourceRangeCount` so selected prefix items are
+  auditable as source-ranged.
+- A context with useful observation prefix items can assemble even with no
+  memory/source/search inclusions; the prefix remains metadata, not a new
+  MemoryRecord or `ContextSubjectType`.
+- Activation smoke persists and reports `Observation prefix items: 1`.
 
 Closed in MM-43:
 

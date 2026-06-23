@@ -449,6 +449,7 @@ export const runDbSmokeCommand = async (
           `Stale decisions: ${report.staleDecisionCount}`,
           `Context items: ${report.contextItemCount}`,
           `Context exclusions: ${report.contextExclusionCount}`,
+          `Observation prefix items: ${report.observationPrefixItemCount}`,
           `Raw evidence recall triggers: ${report.rawEvidenceRecallTriggerCount}`,
           `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
           `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,

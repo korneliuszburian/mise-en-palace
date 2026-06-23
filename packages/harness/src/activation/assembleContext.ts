@@ -74,6 +74,28 @@ const toExclusion = (candidate: RankedActivationCandidate): ContextExclusion | u
   };
 };
 
+const observationPrefixMetadata = (
+  input: AssembleContextInput
+): Record<string, unknown> | undefined => {
+  const prefix = input.observationPrefix;
+
+  if (prefix === undefined) {
+    return undefined;
+  }
+
+  return {
+    projectId: prefix.projectId,
+    taskContractId: prefix.taskContractId,
+    text: prefix.text,
+    itemCount: prefix.items.length,
+    warningCount: prefix.warnings.length,
+    exclusionCount: prefix.exclusions.length,
+    items: prefix.items,
+    warnings: prefix.warnings,
+    exclusions: prefix.exclusions
+  };
+};
+
 const uniqueExclusionReasons = (
   candidates: readonly RankedActivationCandidate[]
 ): ActivationExclusionReason[] => Array.from(new Set(
@@ -130,6 +152,8 @@ const abstentionExplanationFor = (reason: ActivationAbstentionReason): string =>
 
 export const assembleContext = (input: AssembleContextInput): ContextAssembly => {
   const candidates = input.candidates.map(enforceSourceClaimSafety);
+  const prefixMetadata = observationPrefixMetadata(input);
+  const hasObservationPrefixItems = (input.observationPrefix?.items.length ?? 0) > 0;
   const inclusions = candidates
     .filter((candidate) => candidate.exclusion === undefined)
     .sort((left, right) => right.totalScore - left.totalScore)
@@ -137,7 +161,7 @@ export const assembleContext = (input: AssembleContextInput): ContextAssembly =>
   const exclusions = candidates
     .map(toExclusion)
     .filter((exclusion): exclusion is ContextExclusion => exclusion !== undefined);
-  const status = inclusions.length === 0 ? "abstained" : "assembled";
+  const status = inclusions.length === 0 && !hasObservationPrefixItems ? "abstained" : "assembled";
   const exclusionReasons = uniqueExclusionReasons(candidates);
   const metadata = input.metadata ?? {};
   let activationAbstention: ActivationAbstention | undefined;
@@ -164,6 +188,7 @@ export const assembleContext = (input: AssembleContextInput): ContextAssembly =>
     exclusions,
     metadata: {
       ...metadata,
+      ...(prefixMetadata === undefined ? {} : { observationPrefix: prefixMetadata }),
       ...(activationAbstention === undefined ? {} : { activationAbstention })
     },
     createdAt: input.createdAt

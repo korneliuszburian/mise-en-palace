@@ -22,6 +22,7 @@ export interface ObservationPrefixItem {
   confidence: ObservationConfidence;
   priority: ObservationPriority;
   summary: string;
+  sourceRangeCount: number;
   reason: string;
   score: number;
 }
@@ -289,6 +290,7 @@ export const selectObservationPrefix = (
     confidence: candidate.observation.confidence,
     priority: candidate.observation.priority,
     summary: candidate.observation.summary,
+    sourceRangeCount: candidate.observation.sourceRanges.length,
     reason: `matched task terms: ${candidate.matches.join(", ")}`,
     score: candidate.score
   }));

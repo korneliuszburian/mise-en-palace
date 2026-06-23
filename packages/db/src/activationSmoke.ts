@@ -4,12 +4,16 @@ import {
   sql
 } from "drizzle-orm";
 import {
+  type ObservationItem,
+} from "@krn/core";
+import {
   applyContextROI,
   applyActivationFilters,
   assembleContext,
   buildSourceQuery,
   persistActivationTrace,
-  retrieveActivationCandidates
+  retrieveActivationCandidates,
+  selectObservationPrefix
 } from "@krn/harness";
 
 import { createKrnDatabase } from "./database.js";
@@ -65,6 +69,7 @@ export interface ActivationSmokeReport {
   staleDecisionCount: number;
   contextItemCount: number;
   contextExclusionCount: number;
+  observationPrefixItemCount: number;
   rawEvidenceRecallTriggerCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -176,6 +181,24 @@ const hasMergedSearchSignal = (metadata: Record<string, unknown>): boolean => {
 
   return Array.isArray(searchDocumentIds) &&
     searchDocumentIds.some((value) => typeof value === "string" && value.length > 0);
+};
+
+const observationPrefixItemCount = (
+  metadata: unknown
+): number => {
+  if (metadata === null || typeof metadata !== "object") {
+    return 0;
+  }
+
+  const prefix = (metadata as Record<string, unknown>).observationPrefix;
+
+  if (prefix === null || typeof prefix !== "object") {
+    return 0;
+  }
+
+  const count = (prefix as Record<string, unknown>).itemCount;
+
+  return typeof count === "number" ? count : 0;
 };
 
 export const runActivationSmokeCheck = async (
@@ -468,10 +491,89 @@ export const runActivationSmokeCheck = async (
         minimumDiverseKinds: ["memory", "source"]
       }
     );
+    const observationPrefix = selectObservationPrefix({
+      task: taskContract,
+      projectId: project.id,
+      observations: [
+        {
+          id: `activation-smoke-observation-${marker}-selected`,
+          groupId: `activation-smoke-observation-group-${marker}`,
+          scope: {
+            projectId: project.id,
+            taskContractId: taskContract.id
+          },
+          kind: "fact",
+          status: "candidate",
+          priority: "high",
+          confidence: "high",
+          provenanceKind: "run_event",
+          subject: "activation smoke bounded context",
+          summary: "Activation smoke observations remain source-ranged.",
+          body: "Observation prefix integration should add a small source-ranged activation artifact, not a MemoryRecord.",
+          temporalScope: {
+            observedAt: now,
+            ingestedAt: now,
+            validFrom: now
+          },
+          sourceRanges: [{
+            id: `activation-smoke-source-range-${marker}`,
+            sourceType: "run_event",
+            sourceId: executionRun.id,
+            locator: "execution_run.initial_event",
+            capturedAt: now
+          }],
+          entityLinks: [],
+          claimLinks: [],
+          metadata: {
+            smokeId: marker
+          },
+          createdAt: now,
+          updatedAt: now
+        },
+        {
+          id: `activation-smoke-observation-${marker}-unrelated`,
+          groupId: `activation-smoke-observation-group-${marker}`,
+          scope: {
+            projectId: project.id
+          },
+          kind: "fact",
+          status: "candidate",
+          priority: "critical",
+          confidence: "high",
+          provenanceKind: "run_event",
+          subject: "release calendar",
+          summary: "Release calendar moved.",
+          body: "This unrelated observation must not enter activation prefix by priority alone.",
+          temporalScope: {
+            observedAt: now,
+            ingestedAt: now,
+            validFrom: now
+          },
+          sourceRanges: [{
+            id: `activation-smoke-source-range-${marker}-unrelated`,
+            sourceType: "run_event",
+            sourceId: executionRun.id,
+            locator: "execution_run.initial_event",
+            capturedAt: now
+          }],
+          entityLinks: [],
+          claimLinks: [],
+          metadata: {
+            smokeId: marker
+          },
+          createdAt: now,
+          updatedAt: now
+        }
+      ] satisfies ObservationItem[],
+      antiMemoryRecords: retrieved.antiMemoryRecords,
+      maxItems: 1,
+      now
+    });
     const draftContext = assembleContext({
       id: `activation-smoke-context-${marker}`,
       harnessPlanId: harnessPlan.id,
       candidates: filteredCandidates,
+      observationPrefix,
       tokenBudget: 420,
       createdAt: now,
       metadata: {
@@ -513,7 +615,8 @@ export const runActivationSmokeCheck = async (
     const readBackContextAssemblyRows = await db
       .select({
         id: contextAssemblies.id,
-        retrievalRunId: sql<string>`${contextAssemblies.metadata}->>'retrievalRunId'`
+        retrievalRunId: sql<string>`${contextAssemblies.metadata}->>'retrievalRunId'`,
+        metadata: contextAssemblies.metadata
       })
       .from(contextAssemblies)
       .where(eq(contextAssemblies.id, contextAssembly.id));
@@ -554,6 +657,7 @@ export const runActivationSmokeCheck = async (
     const staleDecisionCount = countByDecision(activationRecords, "stale");
     const contextItemCount = contextItemRows[0]?.count ?? 0;
     const contextExclusionCount = contextExclusionRows[0]?.count ?? 0;
+    const prefixItemCount = observationPrefixItemCount(readBackContextAssembly?.metadata);
     const rawRecallTriggerCount = rawEvidenceRecallTriggerCount(readBackRetrievalRun?.metadata);
 
     if (
@@ -572,6 +676,7 @@ export const runActivationSmokeCheck = async (
       staleDecisionCount !== 1 ||
       contextItemCount !== 2 ||
       contextExclusionCount < 3 ||
+      prefixItemCount !== 1 ||
       rawRecallTriggerCount < 1
     ) {
       throw new Error("Activation smoke readback did not match expected activation records");
@@ -602,6 +707,7 @@ export const runActivationSmokeCheck = async (
       staleDecisionCount,
       contextItemCount,
       contextExclusionCount,
+      observationPrefixItemCount: prefixItemCount,
       rawEvidenceRecallTriggerCount: rawRecallTriggerCount,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
