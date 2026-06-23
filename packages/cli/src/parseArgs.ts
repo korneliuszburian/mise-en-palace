@@ -5,6 +5,9 @@ import {
   parseDbArgs
 } from "./parseDbArgs.js";
 import {
+  parseInitArgs
+} from "./parseInitArgs.js";
+import {
   metadataEntry,
   optionValue
 } from "./parseArgHelpers.js";
@@ -288,8 +291,6 @@ const usage = [
 
 export const formatUsage = (): string => `${usage}\n`;
 
-const initUsage = "Usage: krn init --dry-run --repo <path>|krn init --connect --repo <path> --persist";
-
 export const formatSourceClaimAddUsage = (): string =>
   [
     "Usage: krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" [--persist]",
@@ -487,75 +488,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   if (command === "init") {
-    let dryRun = false;
-    let connect = false;
-    let persist = false;
-    let repo: string | undefined;
-
-    for (let index = 0; index < rest.length; index += 1) {
-      const arg = rest[index];
-
-      if (arg === "--dry-run") {
-        dryRun = true;
-        continue;
-      }
-
-      if (arg === "--connect") {
-        connect = true;
-        continue;
-      }
-
-      if (arg === "--persist") {
-        persist = true;
-        continue;
-      }
-
-      if (arg === "--repo") {
-        repo = rest[index + 1];
-        index += 1;
-        continue;
-      }
-
-      if (arg?.startsWith("--repo=") === true) {
-        repo = arg.slice("--repo=".length);
-        continue;
-      }
-
-      return {
-        error: initUsage
-      };
-    }
-
-    if (repo === undefined || repo.trim().length === 0 || dryRun === connect) {
-      return {
-        error: initUsage
-      };
-    }
-
-    if (connect && !persist) {
-      return {
-        error: initUsage
-      };
-    }
-
-    if (connect) {
-      return {
-        command: {
-          kind: "init",
-          mode: "connect",
-          repo: repo.trim(),
-          persist
-        }
-      };
-    }
-
-    return {
-      command: {
-        kind: "init",
-        mode: "dryRun",
-        repo: repo.trim()
-      }
-    };
+    return parseInitArgs(rest);
   }
 
   if (command === "db") {
