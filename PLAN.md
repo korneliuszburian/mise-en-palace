@@ -866,6 +866,8 @@ git revert <commit>
 
 ### P4-00: Define Activation As Admission Control
 
+status: complete.
+
 objective:
 
 Record activation as the trust boundary for context admission.
@@ -1183,7 +1185,7 @@ git revert <commit>
 - [x] P3-00 Define observation staging doctrine.
 - [x] P3-01 Prove observation/reflection invariants.
 - [x] P3-02 Create reviewed candidate writer from ReflectionRecord.
-- [ ] P4-00 Define activation as admission control.
+- [x] P4-00 Define activation as admission control.
 - [ ] P4-01 Add noisy context golden proofs.
 - [ ] P4-02 Type activation trace decisions.
 - [ ] P5-00 Bound Promptfoo claims.
@@ -1240,6 +1242,9 @@ git revert <commit>
 - P3-02 found SourceClaim candidate state is `proposed`, not `candidate`; the
   writer uses the existing SourceClaim status vocabulary instead of expanding
   source status in this slice.
+- P4-00 did not need a new activation architecture. The existing plan law
+  already says activation is admission control; ADR-0014 makes the falsifiers
+  explicit before adding golden noisy-context proofs.
 
 ## Decision Log
 
@@ -1290,6 +1295,10 @@ git revert <commit>
   SourceClaim records only when a source repository and source artifact are
   supplied, emits typed EvalCandidate values in memory, and reports unsupported
   anti-memory/policy/source proposals instead of creating final truth.
+- 2026-06-23: ADR-0014 defines activation as the trust boundary between recall
+  and context. Similarity/ranking is not permission; activation must produce
+  typed inclusions, exclusions, abstention, and raw recall triggers where
+  applicable.
 
 ## Outcomes & Retrospective
 
@@ -1325,7 +1334,9 @@ Current outcome:
 - Reviewed candidate writing from ReflectionRecord exists as a harness service
   and is covered by tests. It does not promote MemoryRecord and does not create
   AntiMemoryRecord/policy truth.
-- Next safe action is P4-00: define activation as admission control.
+- Activation admission-control doctrine is captured in
+  `docs/decisions/ADR-0014-activation-is-admission-control.md`.
+- Next safe action is P4-01: add noisy context golden proofs.
 
 ## Command Evidence
 
@@ -1655,6 +1666,27 @@ This proves the writer creates supported candidate records/values and blocks
 final-truth reflection output under package tests. It does not prove
 anti-memory or policy candidate persistence, because those candidate stores do
 not exist in this spine yet.
+
+P4-00 activation admission-control doctrine:
+
+```sh
+ls docs/decisions
+rg -n "Activation|activation|admission|context admission|anti-memory|raw recall|abstain|ContextAssembly" docs/decisions docs/KRN_KERNEL.md docs/reviews/repo-reset-audit/FULL_REPO_AUDIT.md PLAN.md
+git diff --check
+```
+
+Observed summary:
+
+- no prior activation-specific ADR existed;
+- kernel and reset audit evidence already locate activation between retrieval
+  and context assembly, and require typed behavior decisions;
+- ADR-0014 now states similarity is not permission, activation can abstain,
+  activation must emit inclusions/exclusions, and raw recall can be required
+  for exact proof, low trust, or conflict cases;
+- `git diff --check` passed with no output.
+
+This proves the doctrine is recorded and whitespace-clean. It does not prove
+behavioral rejection of noisy context; P4-01 owns those golden tests.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
