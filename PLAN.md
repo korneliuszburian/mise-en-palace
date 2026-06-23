@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-53 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-54 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -107,7 +107,9 @@ Current public state:
   MM-52 added pure core EvidenceBundle completeness assessment for required
   execution evidence. MM-53 added pure core normalization for ReviewAssessment
   and FeedbackDelta review signals: outcome, review burden, diff risk, and
-  correction labels.
+  correction labels. MM-54 added pure core EvidenceBundle review-risk scoring
+  v1 for docs-only, narrow core, and broad DB/runtime diffs with command
+  evidence.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.

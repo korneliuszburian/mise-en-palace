@@ -7,6 +7,7 @@ import type { IsoTimestamp } from "./time.js";
 export type EvidenceBundleStatus = "draft" | "captured" | "verified" | "rejected";
 export type EvidenceCommandStatus = "passed" | "failed" | "skipped";
 export type DiffRisk = "low" | "medium" | "high";
+export type ReviewBurdenScore = "low" | "medium" | "high";
 
 export interface EvidenceCommand {
   command: string;
@@ -27,6 +28,12 @@ export interface EvidenceBundle {
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
+}
+
+export interface EvidenceReviewRiskScore {
+  diffRisk: DiffRisk;
+  reviewBurden: ReviewBurdenScore;
+  reasons: string[];
 }
 
 const isBlank = (value: string): boolean => value.trim().length === 0;
@@ -57,6 +64,47 @@ const stringListMetadata = (
 
   return value.filter((item): item is string => typeof item === "string" && !isBlank(item));
 };
+
+const clampRisk = (score: number): DiffRisk => {
+  if (score >= 2) {
+    return "high";
+  }
+
+  if (score >= 1) {
+    return "medium";
+  }
+
+  return "low";
+};
+
+const docsOnly = (changedFiles: readonly string[]): boolean =>
+  changedFiles.length > 0 && changedFiles.every((file) =>
+    file.startsWith("docs/") ||
+    file === "README.md" ||
+    file === "PLAN.md" ||
+    file === "GOAL.md" ||
+    file === "AGENTS.md"
+  );
+
+const commandFailed = (bundle: EvidenceBundle, command: string): boolean =>
+  bundle.commands.some((entry) => entry.command === command && entry.status === "failed");
+
+const commandSkippedOrMissing = (bundle: EvidenceBundle, command: string): boolean =>
+  !hasRequiredCommand(bundle, command) ||
+  bundle.commands.some((entry) => entry.command === command && entry.status === "skipped");
+
+const requiredCommandsPassed = (bundle: EvidenceBundle): boolean =>
+  ["pnpm typecheck", "pnpm test"].every((command) => requiredCommandPassed(bundle, command));
+
+const touchesDatabaseOrMigration = (changedFiles: readonly string[]): boolean =>
+  changedFiles.some((file) =>
+    file.startsWith("packages/db/") ||
+    file.includes("/migrations/") ||
+    file.includes("/schema/")
+  );
+
+const touchesCoreDomain = (changedFiles: readonly string[]): boolean =>
+  changedFiles.some((file) => file.startsWith("packages/core/src/"));
 
 export const assessEvidenceBundleCompleteness = (
   bundle: EvidenceBundle
@@ -96,4 +144,54 @@ export const assessEvidenceBundleCompleteness = (
   }
 
   return findings;
+};
+
+export const scoreEvidenceBundleReviewRisk = (
+  bundle: EvidenceBundle
+): EvidenceReviewRiskScore => {
+  let diffRiskScore = 0;
+  let reviewBurdenScore = 0;
+  const reasons: string[] = [];
+
+  if (docsOnly(bundle.changedFiles)) {
+    reasons.push("docs-only diff");
+  }
+
+  if (bundle.changedFiles.length > 5) {
+    diffRiskScore += 1;
+    reviewBurdenScore += 1;
+    reasons.push(`broad diff touches ${bundle.changedFiles.length} files`);
+  }
+
+  if (touchesDatabaseOrMigration(bundle.changedFiles)) {
+    diffRiskScore += 2;
+    reviewBurdenScore += 2;
+    reasons.push("database or migration files changed");
+  } else if (touchesCoreDomain(bundle.changedFiles)) {
+    diffRiskScore += 1;
+    reviewBurdenScore += 1;
+    reasons.push("core domain files changed");
+  }
+
+  for (const command of ["pnpm typecheck", "pnpm test"] as const) {
+    if (commandFailed(bundle, command)) {
+      diffRiskScore += 2;
+      reviewBurdenScore += 2;
+      reasons.push(`required command failed: ${command}`);
+    } else if (commandSkippedOrMissing(bundle, command)) {
+      diffRiskScore += 1;
+      reviewBurdenScore += 1;
+      reasons.push(`required command missing or skipped: ${command}`);
+    }
+  }
+
+  if (requiredCommandsPassed(bundle)) {
+    reasons.push("required commands passed");
+  }
+
+  return {
+    diffRisk: clampRisk(diffRiskScore),
+    reviewBurden: clampRisk(reviewBurdenScore),
+    reasons
+  };
 };

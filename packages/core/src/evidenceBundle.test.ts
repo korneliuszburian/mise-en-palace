@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   assessEvidenceBundleCompleteness,
+  scoreEvidenceBundleReviewRisk,
   type EvidenceBundle
 } from "./evidenceBundle.js";
 
@@ -92,5 +93,61 @@ describe("evidence bundle completeness", () => {
         }
       ]
     }))).toEqual(["pnpm typecheck evidence must pass"]);
+  });
+});
+
+describe("evidence bundle review risk scoring", () => {
+  test("scores risky broad runtime diffs higher than narrow tested diffs", () => {
+    const narrow = scoreEvidenceBundleReviewRisk(bundle({
+      changedFiles: ["docs/handoff/verification.md"],
+      diffRisk: "high",
+      reviewBurden: "Prior estimate should not override deterministic scoring."
+    }));
+
+    const broad = scoreEvidenceBundleReviewRisk(bundle({
+      changedFiles: [
+        "packages/core/src/evidenceBundle.ts",
+        "packages/schema/src/evidence.ts",
+        "packages/db/src/schema/harness.ts",
+        "packages/db/src/migrations/0012_review_scoring.sql",
+        "packages/cli/src/runEvidenceCaptureCommand.ts",
+        "docs/plans/memory-ideal-state/PLAN.md"
+      ],
+      commands: [
+        {
+          command: "pnpm typecheck",
+          status: "passed",
+          exitCode: 0
+        },
+        {
+          command: "pnpm test",
+          status: "failed",
+          exitCode: 1
+        }
+      ],
+      diffRisk: "low",
+      reviewBurden: "Prior estimate should not hide broad runtime risk."
+    }));
+
+    expect(narrow).toEqual({
+      diffRisk: "low",
+      reviewBurden: "low",
+      reasons: ["docs-only diff", "required commands passed"]
+    });
+    expect(broad.diffRisk).toBe("high");
+    expect(broad.reviewBurden).toBe("high");
+    expect(broad.reasons).toContain("broad diff touches 6 files");
+    expect(broad.reasons).toContain("database or migration files changed");
+    expect(broad.reasons).toContain("required command failed: pnpm test");
+  });
+
+  test("scores narrow tested core diffs as medium review burden", () => {
+    expect(scoreEvidenceBundleReviewRisk(bundle({
+      changedFiles: ["packages/core/src/reviewAssessment.ts"]
+    }))).toEqual({
+      diffRisk: "medium",
+      reviewBurden: "medium",
+      reasons: ["core domain files changed", "required commands passed"]
+    });
   });
 });

@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-53.
+Current phase: Memory ideal-state execution track after MM-54.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-53 and MM-16R in
+- MM-00 through MM-54 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -172,10 +172,12 @@ Current runtime truth:
   execution evidence.
 - MM-53 adds pure core ReviewAssessment/FeedbackDelta normalization for
   outcome, review burden, diff risk, and correction labels.
+- MM-54 adds pure core EvidenceBundle review-risk scoring v1 for docs-only,
+  narrow core, and broad DB/runtime diffs with command evidence.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-54 diff risk and review burden scoring v1.
+- Continue with MM-55 rollback path enforcement.

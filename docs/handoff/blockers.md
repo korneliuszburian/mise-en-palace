@@ -2,7 +2,18 @@
 
 Hard blockers:
 
-- None for MM-54.
+- None for MM-55.
+
+Closed in MM-54:
+
+- `scoreEvidenceBundleReviewRisk` exists as a pure core helper.
+- Docs-only tested diffs score low risk and low review burden.
+- Narrow tested core-domain diffs score medium risk and medium review burden.
+- Broad DB/runtime diffs with failed required commands score high risk and high
+  review burden.
+- Scoring emits explicit reasons for reviewer audit.
+- No schema, DB, repository, CLI integration, review assess command, rollback
+  enforcement, candidate extraction, or Memory Core mutation surface was added.
 
 Closed in MM-53:
 
