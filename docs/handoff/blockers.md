@@ -2,7 +2,19 @@
 
 Hard blockers:
 
-- None for MM-59.
+- None for MM-60.
+
+Closed in MM-59:
+
+- `GoldenTask`, `GoldenCase`, `ExpectedBehavior`, and
+  `ProtectedFailureMode` exist as pure core contracts.
+- `validateGoldenTaskContract` accepts behavior-focused golden cases and
+  rejects artifact-theater cases that lack expected behavior evidence,
+  protected failure modes, or source refs.
+- GoldenTask metadata rejects private reasoning keys such as `chainOfThought`.
+- No storage/fixture strategy, DB schema/migration, repository, runner, CLI,
+  Promptfoo export, broad benchmark suite, dashboard/API/MCP/server/plugin, or
+  source crawler surface was added.
 
 Closed in MM-58:
 

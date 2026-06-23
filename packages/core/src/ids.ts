@@ -29,3 +29,6 @@ export type SourceDecisionEdgeId = string;
 export type SourceRejectionId = string;
 export type PolicyGateId = string;
 export type EvalCandidateId = string;
+export type GoldenTaskId = string;
+export type GoldenCaseId = string;
+export type ProtectedFailureModeId = string;

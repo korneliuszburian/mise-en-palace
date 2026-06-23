@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-58.
+Current phase: Memory ideal-state execution track after MM-59.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-58 and MM-16R in
+- MM-00 through MM-59 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -196,10 +196,14 @@ Current runtime truth:
   `de8b97e3-1593-4f4c-891a-60c7a3df444c`; counts ended at
   `evidence_bundles=9`, `review_assessments=10`, `feedback_deltas=10`,
   `memory_candidates=2`, and `memory_records=4`.
+- MM-59 adds `GoldenTask`, `GoldenCase`, `ExpectedBehavior`, and
+  `ProtectedFailureMode` as pure core contracts. `validateGoldenTaskContract`
+  rejects shape-only cases without behavior expectations, source/evidence refs,
+  or protected failure modes, and rejects private reasoning metadata.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-59 GoldenTask domain model.
+- Continue with MM-60 GoldenTask storage or fixture strategy.

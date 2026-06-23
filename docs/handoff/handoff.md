@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-58. KRN has
+The memory ideal-state execution track is implemented through MM-59. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -86,11 +86,13 @@ MM-58 dogfooded that feedback capture path on one persisted KRN slice: evidence
 capture generated one proposal-only memory candidate in FeedbackDelta JSON,
 manual `krn review assess --persist` recorded review burden/diff risk, and
 MemoryCandidate/MemoryRecord row counts did not change.
+MM-59 added pure GoldenTask domain contracts for behavior-focused golden cases,
+expected behavior, and protected failure modes, plus a validator that rejects
+shape-only eval theater and private reasoning metadata.
 
 Last verified state:
-MM-58 dogfooded feedback capture and fixed the `review assess` DB runtime to
-use a narrow review-assess runtime instead of broad workspace/project planning
-runtime. Full verification is recorded in
+MM-59 added the pure GoldenTask domain model. Focused core test/typecheck
+passed; full verification is recorded in
 `docs/handoff/verification.md`.
 
 Current dirty context:
@@ -106,7 +108,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-58 memory ideal-state slices: complete through governed
+- MM-00 through MM-59 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -129,7 +131,9 @@ Milestone status:
   EvidenceBundle review-risk scoring for broad-vs-narrow diff assessment, plus
   rollback-path enforcement for non-doc changes, and FeedbackDelta
   candidate-proposal summary with no final Memory Core mutation, plus manual
-  review assessment capture dogfooded against one persisted KRN slice.
+  review assessment capture dogfooded against one persisted KRN slice, plus
+  pure GoldenTask contracts for behavior-focused golden eval cases and
+  protected failure modes.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -282,12 +286,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-58 blocker remains.
+No MM-59 blocker remains.
 
 Rollback path:
-After commit, revert the MM-58 commit with `git revert <commit>` if the feedback
-dogfood/runtime narrowing regresses. No DB migration was added; rollback is
-CLI/docs only.
+After commit, revert the MM-59 commit with `git revert <commit>` if the
+GoldenTask contract regresses. No DB migration was added; rollback is
+core/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -297,7 +301,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-59 GoldenTask domain model.
+Run MM-60 GoldenTask storage or fixture strategy.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

@@ -20,7 +20,7 @@ Use that file as the living ExecPlan. It owns:
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
-- MM-00 through MM-58 and MM-16R are complete in the controlled plan.
+- MM-00 through MM-59 and MM-16R are complete in the controlled plan.
 - MM-56A added the KRN code vocabulary and TypeScript elegance standard at
   `docs/standards/code-vocabulary.md`.
 - MM-57 added `krn review assess`, a manual review write path for
@@ -28,11 +28,13 @@ Use that file as the living ExecPlan. It owns:
 - MM-58 dogfooded feedback capture on one KRN slice and proved proposal-only
   candidate generation, review burden/diff risk capture, and no Memory Core
   mutation.
+- MM-59 added pure GoldenTask domain contracts for behavior-focused golden
+  cases and protected failure modes.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: MM-59 GoldenTask domain model.
+the first unchecked Progress item: MM-60 GoldenTask storage or fixture strategy.
 
 ## Hard Non-Goals
 

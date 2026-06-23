@@ -7,6 +7,7 @@ export * from "./eval.js";
 export * from "./evidenceBundle.js";
 export * from "./executionRun.js";
 export * from "./feedbackDelta.js";
+export * from "./goldenTask.js";
 export * from "./harnessPlan.js";
 export * from "./ids.js";
 export * from "./memory.js";
