@@ -22,7 +22,7 @@ import type {
   MemoryRepository,
   RetrievalRepository,
   SourceRepository
-} from "../repositories/index.js";
+} from "../repositories/internal/index.js";
 import {
   createCapabilityPlan
 } from "./createCapabilityPlan.js";

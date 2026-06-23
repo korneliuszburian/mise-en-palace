@@ -44,11 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C1-03: Split Repository Port Public And Internal Surfaces
+C2-00: Add Reviewed Anti-Memory Candidate Storage
 ```
 
-Do not build worker runtime, dashboard, or broad memory behavior until package
-root surfaces are narrowed or explicitly classified in `PLAN.md`.
+Do not build worker runtime, dashboard, or broad memory behavior until
+anti-memory writes have a reviewed candidate path or are explicitly deferred in
+`PLAN.md`.
 
 ## Required Read Order
 
@@ -104,8 +105,9 @@ source -> mechanism -> KRN implication -> decision/rejection -> falsifier
   environment.
 - Use Conventional Commits.
 - After each completed slice, commit the slice with a focused Conventional
-  Commit and push it. Do not keep completed work as uncommitted context unless
-  the user explicitly says to pause before commit/push.
+  Commit and push it. A slice is not done until the commit is pushed and the
+  worktree is clean, unless the user explicitly says to pause before
+  commit/push.
 - Worktree hygiene is part of done: check `git status --short --branch` before
   and after each slice, keep unrelated dirty state separate, and do not start
   the next slice with completed changes still floating in the worktree.

@@ -20,7 +20,7 @@ import type {
   SourceArtifactRecord,
   SourceChunkRecord,
   SourceRepository
-} from "@krn/harness/repositories";
+} from "@krn/harness/repositories/internal";
 
 import type { KrnDatabase } from "../database.js";
 import {

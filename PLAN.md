@@ -26,15 +26,15 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Package Surface Condensation.
+current_priority: Reviewed Anti-Memory Candidate Storage.
 
-first_unchecked_slice: `C1-03: Split Repository Port Public And Internal Surfaces`.
+first_unchecked_slice: `C2-00: Add Reviewed Anti-Memory Candidate Storage`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- split repository port public and internal surfaces without weakening
-  MemoryReviewGate write authority;
+- add a reviewed anti-memory candidate path before any new final AntiMemoryRecord
+  write authority;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not start worker runtime, dashboard, or broad memory features before the
@@ -87,6 +87,10 @@ completed_checkpoint:
   root no longer exports Promptfoo adapter helpers or repository ports,
   Promptfoo helpers move to `@krn/harness/eval`, and repository ports move to
   `@krn/harness/repositories`.
+- C1-03 splits repository surfaces: `@krn/harness/repositories` is now a
+  curated public repository surface without raw Memory Core write ports, while
+  `@krn/harness/repositories/internal` keeps full adapter/persistence plumbing
+  for DB adapters and runtime internals.
 
 completed_evidence_pointers:
 
@@ -119,6 +123,8 @@ worktree_hygiene:
 - do not start a new slice while completed work is still uncommitted;
 - split completed work into focused Conventional Commits;
 - push after each completed slice commit;
+- treat push plus clean worktree as part of slice completion, not optional
+  follow-up;
 - if existing dirty state is unrelated to the current slice, leave it untouched
   and record it instead of mixing it into the slice commit;
 - first application of this rule may use one catch-up commit for the already
@@ -2512,7 +2518,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C1-00 Separate public CLI from internal dev commands.
 - [x] C1-01 Narrow package barrels from planned to enforced.
 - [x] C1-02 Separate harness root from eval/internal surfaces.
-- [ ] C1-03 Split repository port public and internal surfaces.
+- [x] C1-03 Split repository port public and internal surfaces.
 - [ ] C2-00 Add reviewed anti-memory candidate storage.
 - [ ] C3-00 Expand real GoldenTask behavior gate coverage.
 - [ ] C4-00 Decide worker runtime ADR before execution.
@@ -2807,9 +2813,8 @@ Current outcome:
 - CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
 - `krn audit` is removed from active CLI routing/help and harness audit scanner
   exports; no QG-06, no new audit categories, no public/internal guardrail UX.
-- DB, CLI, and harness package root surfaces are narrowed in source and
-  recorded in `docs/architecture/package-surfaces.md`; repository-port surface
-  splitting remains the active C1 follow-up.
+- DB, CLI, harness, and repository public/internal package surfaces are narrowed
+  in source and recorded in `docs/architecture/package-surfaces.md`.
 - Package source is touched from P2-00 onward.
 - Memory Core promotion authority is sealed at the public harness port:
   candidate-to-record promotion goes through reviewed promotion naming and
@@ -2871,7 +2876,7 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C1-03: Split repository port public and internal surfaces.
+  C2-00: Add reviewed anti-memory candidate storage.
 
 ## Command Evidence
 
@@ -3738,6 +3743,33 @@ This proves harness root no longer mixes canonical harness behavior with
 Promptfoo adapter helpers or repository-port plumbing by default. It does not
 split repository ports into public vs internal authority groups; that remains
 C1-03.
+
+C1-03 verification after splitting repository public/internal surfaces:
+
+```sh
+rg -n '@krn/harness/repositories' packages -g "*.ts" -C 1
+rg -n 'CreateMemoryRecordInput|CreateAntiMemoryRecordInput|MemoryRepository,|MemoryCandidateReviewRepository' packages/harness/src/repositories/index.ts packages/harness/src/repositories/internal/index.ts packages/harness/src/repositories/memoryRepository.ts
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- `@krn/harness/repositories` exports a curated public surface with
+  `MemoryActivationRepository` and `MemoryCandidateReviewRepository`;
+- public repository index does not export `MemoryRepository`,
+  `CreateMemoryRecordInput`, or `CreateAntiMemoryRecordInput`;
+- `@krn/harness/repositories/internal` remains the full adapter/persistence
+  contract for DB adapters and internal runtime code;
+- focused repository surface test passed as part of harness tests;
+- full workspace typecheck passed;
+- full workspace tests passed: 83 files, 371 tests;
+- `git diff --check` passed.
+
+This proves raw Memory Core write ports are no longer in the public repository
+subpath. It does not prove direct anti-memory writes are reviewed; C2-00 remains
+required for reviewed anti-memory candidate storage.
 
 ## Historical Reset Completion Criteria
 

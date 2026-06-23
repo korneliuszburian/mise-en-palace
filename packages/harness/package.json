@@ -15,6 +15,10 @@
     "./repositories": {
       "types": "./src/repositories/index.ts",
       "import": "./src/repositories/index.ts"
+    },
+    "./repositories/internal": {
+      "types": "./src/repositories/internal/index.ts",
+      "import": "./src/repositories/internal/index.ts"
     }
   },
   "scripts": {

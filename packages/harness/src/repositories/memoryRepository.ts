@@ -135,3 +135,21 @@ export interface MemoryRepository {
   listAntiMemoryForProject(projectId: ProjectId, limit: number): Promise<AntiMemoryRecord[]>;
   listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]>;
 }
+
+export type MemoryActivationRepository = Pick<
+  MemoryRepository,
+  "listActiveMemory" | "listAntiMemoryForProject"
+>;
+
+export type MemoryCandidateReviewRepository = Pick<
+  MemoryRepository,
+  | "createMemoryCandidate"
+  | "getMemoryCandidateById"
+  | "promoteReviewedMemoryCandidate"
+  | "rejectMemoryCandidate"
+  | "getMemoryRecordById"
+  | "invalidateMemoryRecord"
+  | "recordMemoryApplication"
+  | "createMemoryFeedbackEvent"
+  | "listMemoryCandidates"
+>;

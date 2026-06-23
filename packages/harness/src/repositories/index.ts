@@ -1,8 +1,41 @@
-export * from "./eventLedgerRepository.js";
-export * from "./harnessRunRepository.js";
-export * from "./memoryRepository.js";
-export * from "./outboxRepository.js";
-export * from "./projectRepository.js";
-export * from "./retrievalRepository.js";
-export * from "./sourceRepository.js";
-export * from "./types.js";
+export type {
+  CreateContextAssemblyInput,
+  CreateEvidenceBundleInput,
+  CreateExecutionRunInput,
+  CreateFeedbackDeltaInput,
+  CreateReviewAssessmentInput,
+  HarnessRunAggregate,
+  HarnessRunRepository,
+  UpdateExecutionRunStatusInput
+} from "./harnessRunRepository.js";
+export type {
+  CreateMemoryCandidateInput,
+  CreateMemoryFeedbackEventInput,
+  InvalidateMemoryRecordInput,
+  MemoryActivationRepository,
+  MemoryCandidateReviewRepository,
+  PromoteMemoryCandidateInput,
+  RejectMemoryCandidateInput,
+  RecordMemoryApplicationInput
+} from "./memoryRepository.js";
+export type {
+  CreateSourceClaimInput,
+  CreateSourceDecisionEdgeInput,
+  CreateSourceDecisionInput,
+  CreateSourceRejectionInput,
+  SourceRepository
+} from "./sourceRepository.js";
+export type {
+  CreateHarnessPlanInput,
+  CreateOperatorIntentInput,
+  CreateSourceArtifactInput,
+  CreateSourceChunkInput,
+  CreateTaskContractInput,
+  ProjectKernelRecord,
+  ProjectRecord,
+  RepoInstallationRecord,
+  RunEventRecord,
+  SourceArtifactRecord,
+  SourceChunkRecord,
+  WorkspaceRecord
+} from "./types.js";

@@ -1,12 +1,12 @@
 # KRN Package Surfaces
 
-Status: C1-02 enforced for DB, CLI, and harness root surfaces.
+Status: C1-03 enforced for DB, CLI, harness, and repository package surfaces.
 Date: 2026-06-24
 
 This document records package barrel findings for P1-02 and the C1 package
 surface enforcement queue. DB and CLI root surfaces now have source-level
 enforcement. Harness root now has source-level enforcement. Repository-port
-classification remains follow-up work.
+public/internal classification now has source-level enforcement.
 
 ## Source Decision
 
@@ -160,10 +160,19 @@ Does not prove:
 
 ### `packages/harness/src/repositories/index.ts`
 
-Current exports:
+Current public exports after C1-03:
 
-- event ledger, harness run, memory, outbox, project, retrieval, and source
-  repository ports plus shared types.
+- harness run repository port and run/evidence input types;
+- reviewed/source-grounded source repository port and source input types;
+- reviewed memory candidate/review interfaces:
+  `MemoryActivationRepository` and `MemoryCandidateReviewRepository`;
+- project/source/run record types needed by public operator flows.
+
+Internal subpath after C1-03:
+
+- `@krn/harness/repositories/internal` exports full repository plumbing:
+  event ledger, raw memory persistence, outbox, project, retrieval, source, and
+  shared record/input types.
 
 Risk:
 
@@ -171,11 +180,23 @@ Risk:
   plumbing.
 - memory write authority is not visually separated from reviewed promotion.
 
-Planned narrowing:
+C1-03 decision:
 
-- split public ports from internal persistence plumbing.
-- coordinate with P2-00 so candidate-to-MemoryRecord promotion is exposed only
-  through reviewed authority.
+- public repository surface does not export `MemoryRepository`,
+  `CreateMemoryRecordInput`, or `CreateAntiMemoryRecordInput`;
+- public memory authority is named around activation and reviewed candidate
+  promotion;
+- raw Memory Core writes remain available only through
+  `@krn/harness/repositories/internal` for DB adapters and existing runtime
+  internals;
+- C2-00 must replace direct anti-memory writes with reviewed candidate storage
+  before adding more anti-memory behavior.
+
+Does not prove:
+
+- anti-memory writes are reviewed yet;
+- worker runtime authority;
+- DB adapter methods are inaccessible to internal packages.
 
 ### `packages/cli`
 
@@ -216,8 +237,8 @@ they start leaking internals as product authority.
 3. Harness root: complete in C1-02. Root keeps canonical harness behavior;
    Promptfoo helpers move to `@krn/harness/eval`; repository ports move to
    `@krn/harness/repositories`.
-4. Repository ports: after P2-00, split public reviewed memory write authority
-   from internal persistence ports.
+4. Repository ports: complete in C1-03. Public repository surface is curated;
+   full persistence plumbing moved to `@krn/harness/repositories/internal`.
 
 Each code slice must run:
 

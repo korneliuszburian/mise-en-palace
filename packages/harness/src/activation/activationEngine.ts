@@ -10,7 +10,7 @@ import type {
   MemoryRepository,
   RetrievalRepository,
   SourceRepository
-} from "../repositories/index.js";
+} from "../repositories/internal/index.js";
 import type {
   RecordActivationDecisionInput
 } from "../repositories/retrievalRepository.js";

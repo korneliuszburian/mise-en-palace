@@ -25,7 +25,7 @@ import type {
   ProjectKernelRecord,
   RepoInstallationRecord,
   SourceRepository
-} from "@krn/harness/repositories";
+} from "@krn/harness/repositories/internal";
 import type {
   ObservationGroup,
   ObservationItem,
