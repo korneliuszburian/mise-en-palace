@@ -44,12 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C5-01: Decide Governed EvalCandidate Staging Path
+C5-02: Align Worker EvalCandidate Contract
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
-authority, or an eval platform while deciding this. Do not promote the C5-00
-candidates in the same slice.
+authority, standalone eval candidate storage, eval CLI, or an eval platform
+while aligning this contract. Do not promote the C5-00 candidates in the same
+slice.
 
 ## Required Read Order
 

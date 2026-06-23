@@ -26,21 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Governed EvalCandidate Staging Decision.
+current_priority: Worker Eval Candidate Contract Alignment.
 
-first_unchecked_slice: `C5-01: Decide Governed EvalCandidate Staging Path`.
+first_unchecked_slice: `C5-02: Align Worker Eval Candidate Contract`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide whether EvalCandidate feedback remains FeedbackDelta/ReflectionRecord
-  proposal-only or gets a governed operator staging path;
+- align worker eval-candidate contract wording/code with ADR-0016 so it does
+  not imply current standalone `eval_candidates` storage or runtime promotion;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding this;
-- do not promote any C5-00 candidates in the same slice that decides the eval
-  staging path.
+  authority layer while aligning this contract;
+- do not promote any C5-00 candidates while aligning worker contract wording.
 
 completed_checkpoint:
 
@@ -111,6 +110,10 @@ completed_checkpoint:
   AntiMemoryCandidate. It creates no MemoryRecord or AntiMemoryRecord. It also
   records that standalone EvalCandidate add/persist is missing and belongs to
   C5-01.
+- C5-01 accepts ADR-0016: `EvalCandidate` remains proposal-only through
+  `feedback_deltas.eval_candidates` and `reflection_records.output.evalCandidates`
+  until a real standalone consumer/review path exists. No eval table, CLI,
+  worker runtime, Promptfoo authority layer, or dashboard was added.
 
 completed_evidence_pointers:
 
@@ -122,6 +125,8 @@ completed_evidence_pointers:
   `docs/reviews/repo-reset-audit/*`;
 - worker runtime boundary:
   `docs/decisions/ADR-0015-worker-runtime-boundary.md`;
+- eval candidate staging decision:
+  `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`;
 - detailed command transcript:
   `Command Evidence` later in this plan, historical reference only.
 
@@ -2493,6 +2498,8 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 
 ### C5-01: Decide Governed EvalCandidate Staging Path
 
+status: complete.
+
 objective:
 
 Decide whether `EvalCandidate` should remain FeedbackDelta/ReflectionRecord
@@ -2514,6 +2521,26 @@ candidates intentionally remain proposal-only, or implement the narrowest
 governed staging path. Do not build Promptfoo authority, an eval platform,
 dashboard, worker, or automatic promotion.
 
+outcome:
+
+ADR-0016 accepts proposal-only eval candidate staging for the current kernel.
+The governed current carriers are:
+
+- `FeedbackDelta.evalCandidates` persisted in
+  `feedback_deltas.eval_candidates`;
+- `ReflectionRecord.output.evalCandidates` persisted in
+  `reflection_records.output`.
+
+No standalone `eval_candidates` table, `krn eval candidate add`, eval review
+gate, worker runtime, Promptfoo authority layer, dashboard, or eval platform
+was added. The falsifier is a real consumer that needs independent eval
+candidate review/promotion/execution beyond parent feedback/reflection
+lineage.
+
+The slice also found one follow-up: worker job contracts currently mention
+`promote_eval_candidate` and allowed writes to `eval_candidates`, which must be
+aligned with ADR-0016 before worker surfaces can be called fully clean.
+
 verification:
 
 ```sh
@@ -2526,6 +2553,49 @@ commit:
 
 ```sh
 git commit -m "docs(eval): decide governed candidate staging"
+```
+
+### C5-02: Align Worker Eval Candidate Contract
+
+objective:
+
+Remove or qualify the speculative worker eval-candidate contract so it does
+not imply a current standalone `eval_candidates` table or eval promotion
+runtime after ADR-0016.
+
+source:
+
+ADR-0016 accepts proposal-only eval candidate staging. Current
+`packages/workers/src/jobTypes.ts` still includes `promote_eval_candidate`,
+`PromoteEvalCandidatePayload`, and `allowedWrites: ["worker_jobs",
+"outbox_events", "eval_candidates"]`, while `packages/db` has no standalone
+`eval_candidates` table.
+
+mechanism:
+
+Inspect worker package tests, DB worker job types/smoke, and ADR-0015. Choose
+the smallest honest cleanup:
+
+- either remove/defer `promote_eval_candidate` from current worker job types;
+- or rename/qualify it as future-only documentation without exposing it as a
+  runnable current job type.
+
+Do not add worker runtime, eval table, eval CLI, or Promptfoo authority in this
+slice.
+
+verification:
+
+```sh
+pnpm --filter @krn/workers test
+pnpm --filter @krn/db test -- workerJob
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "refactor(workers): align eval candidate contract"
 ```
 
 ### C6-00A: Re-home Memory Review Signals
@@ -2625,7 +2695,8 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C3-00 Expand real GoldenTask behavior gate coverage.
 - [x] C4-00 Decide worker runtime ADR before execution.
 - [x] C5-00 Convert self-hosting run gaps into candidates.
-- [ ] C5-01 Decide governed EvalCandidate staging path.
+- [x] C5-01 Decide governed EvalCandidate staging path.
+- [ ] C5-02 Align worker EvalCandidate contract.
 - [x] C6-00A Re-home memory review signals as pure core behavior.
 - [ ] C6-00 Re-home former memory/source/evidence audit invariants into native
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
@@ -2994,6 +3065,11 @@ Current outcome:
   not. The P7 eval candidate is therefore represented as a source claim plus
   memory candidate describing the missing staging path, and C5-01 owns the
   decision.
+- C5-01 found that eval candidate proposals are already persisted through
+  FeedbackDelta and ReflectionRecord JSON lineage, but worker contracts still
+  mention `promote_eval_candidate` and `eval_candidates` as if standalone eval
+  candidate lifecycle/storage existed. ADR-0016 keeps eval candidates
+  proposal-only for now, and C5-02 owns the worker contract cleanup.
 
 ## Command Evidence
 
@@ -4045,6 +4121,34 @@ Observed:
 This proves the active goal now carries the user's commit/push cleanliness rule
 as an execution requirement. It does not prove future slices will stay clean;
 that must be checked after each pushed slice.
+
+C5-01 verification after deciding eval candidate staging:
+
+```sh
+git status --short --branch
+git diff --check
+pnpm typecheck
+pnpm test
+```
+
+Observed:
+
+- pre-slice status was clean: `## main...origin/main`;
+- ADR-0016 accepts proposal-only EvalCandidate staging through
+  `FeedbackDelta.evalCandidates` / `feedback_deltas.eval_candidates` and
+  `ReflectionRecord.output.evalCandidates` / `reflection_records.output`;
+- no standalone `eval_candidates` table, eval CLI, worker runtime, Promptfoo
+  authority layer, dashboard, or eval platform was added;
+- C5-02 was added as the next slice to align the speculative worker
+  `promote_eval_candidate` / `eval_candidates` contract with ADR-0016;
+- `git diff --check` passed;
+- full workspace typecheck passed;
+- full workspace tests passed.
+
+This proves the repo has an explicit eval candidate staging decision and the
+docs-only slice does not break the workspace. It does not prove standalone eval
+candidate lifecycle, review, promotion, worker execution, or Promptfoo behavior
+authority exists.
 
 ## Historical Reset Completion Criteria
 
