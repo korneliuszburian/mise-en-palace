@@ -5,6 +5,12 @@ import type {
   ReviewFinding
 } from "@krn/core";
 import {
+  isNormalizedReviewRisk,
+  isReviewAssessmentStatus,
+  normalizeReviewOutcome,
+  normalizeReviewRisk
+} from "@krn/core";
+import {
   createReviewAssessDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -33,24 +39,6 @@ export type CreateReviewAssessDatabaseRuntime = (
   input: ReviewAssessDatabaseRuntimeInput
 ) => Promise<ReviewAssessDatabaseRuntime>;
 
-const reviewStatuses = new Set<ReviewAssessmentStatus>([
-  "pending",
-  "accepted",
-  "changes_requested",
-  "rejected"
-]);
-
-const outcomes = new Set<NormalizedReviewOutcome>([
-  "accepted",
-  "changes_requested",
-  "rejected",
-  "pending",
-  "needs_changes"
-]);
-
-const riskValues = new Set<NormalizedReviewRisk>(["low", "medium", "high"]);
-const findingSeverities = new Set<ReviewFinding["severity"]>(["low", "medium", "high"]);
-
 const requiredText = (
   value: string | undefined,
   label: string
@@ -67,34 +55,34 @@ const requiredText = (
 const parseReviewStatus = (value: string | undefined): ReviewAssessmentStatus => {
   const status = value?.trim() ?? "pending";
 
-  if (!reviewStatuses.has(status as ReviewAssessmentStatus)) {
+  if (!isReviewAssessmentStatus(status)) {
     throw new Error("--status must be pending, accepted, changes_requested, or rejected");
   }
 
-  return status as ReviewAssessmentStatus;
+  return status;
 };
 
 const parseOutcome = (value: string | undefined, status: ReviewAssessmentStatus): NormalizedReviewOutcome => {
-  const outcome = value?.trim() ?? status;
+  const outcome = normalizeReviewOutcome(value ?? status);
 
-  if (!outcomes.has(outcome as NormalizedReviewOutcome)) {
+  if (outcome === undefined) {
     throw new Error("--outcome must be accepted, changes_requested, rejected, pending, or needs_changes");
   }
 
-  return outcome as NormalizedReviewOutcome;
+  return outcome;
 };
 
 const parseRisk = (
   value: string | undefined,
   label: string
 ): NormalizedReviewRisk => {
-  const risk = value?.trim() ?? "low";
+  const risk = normalizeReviewRisk(value ?? "low");
 
-  if (!riskValues.has(risk as NormalizedReviewRisk)) {
+  if (risk === undefined) {
     throw new Error(`${label} must be low, medium, or high`);
   }
 
-  return risk as NormalizedReviewRisk;
+  return risk;
 };
 
 const parseFinding = (input: string): ReviewFinding => {
@@ -107,7 +95,7 @@ const parseFinding = (input: string): ReviewFinding => {
   const severity = input.slice(0, separatorIndex).trim();
   const message = input.slice(separatorIndex + 1).trim();
 
-  if (!findingSeverities.has(severity as ReviewFinding["severity"])) {
+  if (!isNormalizedReviewRisk(severity)) {
     throw new Error("--finding severity must be low, medium, or high");
   }
 
@@ -116,7 +104,7 @@ const parseFinding = (input: string): ReviewFinding => {
   }
 
   return {
-    severity: severity as ReviewFinding["severity"],
+    severity,
     message
   };
 };

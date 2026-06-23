@@ -1,13 +1,13 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after QG-04E schema primitive consolidation.
+Current phase: Memory ideal-state execution track after QG-04F review signal vocabulary consolidation.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
 - MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A,
-  QG-04B, QG-04C, QG-04D, and QG-04E in
+  QG-04B, QG-04C, QG-04D, QG-04E, and QG-04F in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - QG-04B modularized command-family parsing. The `audit`, `db`, `init`,
   `evidence`, `observe`, `codex`, `reflect`, `review`, `plan`, `doctor`,
@@ -28,6 +28,9 @@ Completed:
 - QG-04E consolidated schema-local metadata/text/list primitives and private
   reasoning metadata guards into `packages/schema/src/schemaPrimitives.ts`.
   Domain-specific forbidden metadata keys remain local only where needed.
+- QG-04F consolidated review status/outcome/risk vocabulary and metadata
+  readers into `packages/core/src/reviewSignal.ts`; ReviewAssessment,
+  FeedbackDelta, and `krn review assess` now share the same validation helpers.
 - QG-00 repo-wide current-state inventory at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-16/17 external review repair layer in
@@ -253,15 +256,14 @@ Current runtime truth:
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
 - QG-04B modularized command-family parsing and reduced `parseArgs.ts` to a
   dispatcher plus shared CLI command type/usage surface.
-- QG-04F through QG-06 remain queued before MM-66: review signal vocabulary
-  cleanup, DB mapper split, official Promptfoo decision, and quality gate
-  automation in `krn audit`.
+- QG-04G through QG-06 remain queued before MM-66: DB mapper split, official
+  Promptfoo decision, and quality gate automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with QG-04F by consolidating repeated review outcome/risk
-  normalization across core ReviewAssessment, FeedbackDelta, and review-assess
-  CLI parsing.
+- Continue with QG-04G by splitting `packages/db/src/repositories/mappers.ts`
+  by domain first, then planning repository internal splits around invariant
+  tests.

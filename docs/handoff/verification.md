@@ -148,6 +148,23 @@ Passed:
 - QG-04E forbidden directory scan found no added forbidden surfaces.
 - QG-04E `krn audit slice --since origin/main --fail-on warning` passed with
   verdict `pass` and 0 findings.
+- QG-04F RED focused `pnpm --filter @krn/core test -- reviewSignal` failed
+  because `./reviewSignal.js` did not exist.
+- QG-04F GREEN focused `pnpm --filter @krn/core test -- reviewSignal
+  reviewFeedback` passed with 8 files and 39 tests.
+- QG-04F focused `pnpm --filter @krn/cli test -- runCli parseReviewArgs`
+  passed with 24 files and 140 tests.
+- QG-04F focused `pnpm --filter @krn/core typecheck` and
+  `pnpm --filter @krn/cli typecheck` passed.
+- QG-04F duplicate review-vocabulary scan shows ReviewAssessment,
+  FeedbackDelta, and `runReviewAssessCommand.ts` no longer define local
+  review outcome/risk sets or local outcome/risk normalizers.
+- QG-04F full `pnpm typecheck` passed.
+- QG-04F full `pnpm test` passed.
+- QG-04F `git diff --check` passed.
+- QG-04F forbidden directory scan found no added forbidden surfaces.
+- QG-04F `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
 
 QG audit facts gathered during QG-00:
 
@@ -162,7 +179,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04F through QG-06 remain next.
+- QG-04G through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

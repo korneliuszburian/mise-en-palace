@@ -61,15 +61,17 @@ Use that file as the living ExecPlan. It owns:
 - QG-04D consolidated MemoryCandidate and AntiMemory CLI confidence parsing.
 - QG-04E consolidated schema metadata/text/list primitives and private
   reasoning metadata guards.
-- QG-04F through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: review signal vocabulary cleanup, DB
-  mapper split, official Promptfoo integration decision, and audit automation.
+- QG-04F consolidated review status/outcome/risk vocabulary across core and
+  CLI review-assess parsing.
+- QG-04G through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: DB mapper split, official Promptfoo
+  integration decision, and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-04F review signal vocabulary
-consolidation.
+the first unchecked Progress item: QG-04G DB mapper/repository split plan and
+first safe split.
 
 ## Hard Non-Goals
 

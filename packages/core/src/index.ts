@@ -15,6 +15,7 @@ export * from "./operatorIntent.js";
 export * from "./observations/index.js";
 export * from "./policy.js";
 export * from "./reviewAssessment.js";
+export * from "./reviewSignal.js";
 export * from "./reflection/index.js";
 export * from "./source.js";
 export * from "./taskContract.js";

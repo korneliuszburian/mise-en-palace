@@ -159,9 +159,11 @@ Current known status:
 - QG-04D consolidated MemoryCandidate and AntiMemory CLI confidence parsing.
 - QG-04E consolidated schema metadata/text/list primitives and private
   reasoning metadata guards.
-- QG-04F through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: review signal vocabulary cleanup, DB
-  mapper split, official Promptfoo integration decision, and audit automation.
+- QG-04F consolidated review status/outcome/risk vocabulary across core and
+  CLI review-assess parsing.
+- QG-04G through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: DB mapper split, official Promptfoo
+  integration decision, and audit automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
