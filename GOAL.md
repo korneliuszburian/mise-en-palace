@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-48 and MM-16R are complete.
+- MM-00 through MM-49 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -97,6 +97,8 @@ Current known status:
   skill hints.
 - MM-48 added pure core binding models for skills, rule packs, policy gates,
   and tool boundaries with invalid-binding validation.
+- MM-49 added pure core capability binding candidate/review contracts and a
+  promotion assessment gate requiring approved review with evidence.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.

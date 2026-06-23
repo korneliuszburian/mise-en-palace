@@ -69,6 +69,33 @@ export type CapabilityBinding =
   | PolicyGateBinding
   | ToolBoundaryBinding;
 
+export type CapabilityBindingCandidateStatus =
+  | "proposed"
+  | "approved"
+  | "rejected"
+  | "superseded";
+
+export type CapabilityBindingReviewDecision = "approved" | "rejected";
+
+export interface CapabilityBindingReview {
+  reviewer: string;
+  decision: CapabilityBindingReviewDecision;
+  evidenceReviewedRef: string;
+  reviewedAt: IsoTimestamp;
+}
+
+export interface CapabilityBindingCandidate {
+  id: string;
+  binding: CapabilityBinding;
+  status: CapabilityBindingCandidateStatus;
+  proposalReason: string;
+  proposedBy: string;
+  review?: CapabilityBindingReview;
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
 export interface CapabilityPlan {
   id: CapabilityPlanId;
   harnessPlanId: HarnessPlanId;
@@ -104,6 +131,32 @@ export const validateCapabilityBindings = (
     if (binding.requiredEvidence.length === 0) {
       findings.push(`${bindingId}:requiredEvidence is required`);
     }
+  }
+
+  return findings;
+};
+
+export const assessCapabilityBindingCandidatePromotion = (
+  candidate: CapabilityBindingCandidate
+): string[] => {
+  const findings = validateCapabilityBindings([candidate.binding]);
+  const candidateId = isBlank(candidate.id) ? "binding-candidate" : candidate.id;
+
+  if (candidate.status !== "approved" || candidate.review === undefined) {
+    findings.push(`${candidateId}:review is required before promotion`);
+    return findings;
+  }
+
+  if (isBlank(candidate.review.reviewer)) {
+    findings.push(`${candidateId}:reviewer is required`);
+  }
+
+  if (candidate.review.decision !== "approved") {
+    findings.push(`${candidateId}:approved review decision is required`);
+  }
+
+  if (isBlank(candidate.review.evidenceReviewedRef)) {
+    findings.push(`${candidateId}:evidenceReviewedRef is required`);
   }
 
   return findings;

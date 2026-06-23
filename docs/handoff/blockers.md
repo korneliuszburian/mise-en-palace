@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-49.
+- None for MM-50.
+
+Closed in MM-49:
+
+- CapabilityBindingCandidate and CapabilityBindingReview exist as pure core
+  contracts.
+- Proposed or unreviewed binding candidates are rejected by
+  `assessCapabilityBindingCandidatePromotion`.
+- Approved review requires reviewer, approved decision, and evidence reference.
+- No storage, CLI, execution authority, or automatic skill/rule growth was
+  added.
 
 Closed in MM-48:
 
