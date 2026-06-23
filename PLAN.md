@@ -1023,6 +1023,8 @@ git revert <commit>
 
 ### P5-01: Add First Real Behavior Eval Gate
 
+status: complete.
+
 objective:
 
 Make at least one GoldenTask path execute real KRN behavior, not fixture
@@ -1195,7 +1197,7 @@ git revert <commit>
 - [x] P4-01 Add noisy context golden proofs.
 - [x] P4-02 Type activation trace decisions.
 - [x] P5-00 Bound Promptfoo claims.
-- [ ] P5-01 Add first real behavior eval gate.
+- [x] P5-01 Add first real behavior eval gate.
 - [ ] P6-00 Mark worker runtime truth.
 - [ ] P6-01 Harden worker job contracts.
 - [ ] P7-00 Run first governed self-hosting loop.
@@ -1270,6 +1272,14 @@ git revert <commit>
   unrelated DB smoke files. The bounded decision used target-specific follow-up
   scans for QG-05/Promptfoo fixtures to prove the overclaiming phrases were
   removed from the P5 target surfaces.
+- P5-01 found that the existing golden behavior tests already execute real KRN
+  functions, but the GoldenTask runner path still depended on supplied proof
+  rows. The new gate generates those proof rows by executing real activation
+  and reflection contract code for the first three protected invariants.
+- P5-01 also found that `ReflectionOutput` correctly disallows final-truth
+  targets at the TypeScript boundary. The real gate therefore uses
+  `assessReflectionOutputContract` for a reflection-like untrusted payload
+  instead of forcing `memory_record` into the typed `ReflectionOutput` union.
 
 ## Decision Log
 
@@ -1337,6 +1347,11 @@ git revert <commit>
   The committed local Promptfoo smoke proves dependency/config/provider/output
   wiring and result writing; it explicitly does not prove KRN memory,
   anti-memory, activation, observation, reflection, or review-gate behavior.
+- 2026-06-23: P5-01 adds the first real GoldenTask behavior gate in harness.
+  `runKrnBehaviorGoldenGate` generates `GoldenBehaviorProof` records by running
+  real KRN behavior for stale-memory abstention, anti-memory activation block,
+  and reflection final-truth rejection, then feeds those proofs through
+  `runGoldenTaskFixtures`.
 
 ## Outcomes & Retrospective
 
@@ -1386,7 +1401,10 @@ Current outcome:
   integration and result mapping only, QG-05 says behavior proofs require evals
   that actually execute KRN behavior, and the committed smoke output includes
   `doesNotExecuteKrnBehavior=true`.
-- Next safe action is P5-01: add first real behavior eval gate.
+- First real GoldenTask behavior gate exists in harness. It covers stale memory
+  abstention, anti-memory blocking, and reflection non-mutation by executing
+  KRN functions and producing proof rows for `runGoldenTaskFixtures`.
+- Next safe action is P6-00: mark worker runtime truth.
 
 ## Command Evidence
 
@@ -1833,6 +1851,43 @@ This proves the current Promptfoo smoke claim is bounded to dependency/config/
 provider/result-output integration. It does not prove KRN memory,
 anti-memory, activation, observation, reflection, or review-gate behavior;
 P5-01 owns the first real behavior eval gate.
+
+P5-01 first real behavior eval gate:
+
+```sh
+pnpm --filter @krn/harness test -- goldenKrnBehaviorGate
+```
+
+Observed RED before implementation: failing suite because
+`./goldenKrnBehaviorGate.js` did not exist. This proved the new test required a
+real gate rather than passing against existing fixture proof plumbing.
+
+Observed GREEN after implementation: focused harness run passed, 18 files and
+89 tests.
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm test
+pnpm typecheck
+git diff --check
+```
+
+Observed:
+
+- final focused harness golden run passed: 18 files, 89 tests;
+- full test passed across 7 workspace projects: core 8 files/39 tests, schema
+  3 files/25 tests, harness 18 files/89 tests, workers 1 file/3 tests,
+  codex-adapter 3 files/7 tests, db 24 files/67 tests, cli 25 files/142 tests;
+- first `pnpm typecheck` failed because the gate tried to construct a typed
+  `ReflectionOutput` with forbidden `targetType: "memory_record"`; the fix uses
+  `assessReflectionOutputContract` for that untrusted reflection-like payload;
+- final `pnpm typecheck` passed across 7 workspace projects;
+- `git diff --check` passed with no output.
+
+This proves at least one GoldenTask gate now executes real KRN behavior before
+creating proof rows. It does not make Promptfoo a behavior gate; Promptfoo
+remains bounded to runner/result-adapter integration until a later slice wires
+real behavior execution through that runner.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
