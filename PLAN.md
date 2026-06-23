@@ -1,1556 +1,1304 @@
-# PLAN.md — KRN Final Harness Spine From Current Repository State
+# KRN Canonical Reset Implementation Plan
 
-This file is a living execution plan for moving `korneliuszburian/mise-en-palace` from the current bootstrap kernel into the first real KRN product spine. It follows the Codex ExecPlan discipline: it is self-contained, it records progress and decisions, it gives exact repository-relative paths, it defines non-obvious terms, and it treats validation as the proof of completion. Keep the sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` up to date as work proceeds.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use
+> `superpowers:subagent-driven-development` for independent read-heavy audit
+> passes, or `superpowers:executing-plans` for inline implementation. Execute
+> this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-This plan supersedes the old bootstrap-only direction in `GOAL.md` once it is committed. `GOAL.md` may remain as a compact Codex Goal activation contract, but this `PLAN.md` is the long-running implementation map.
+**Goal:** Reset KRN from plan-sprawl and productized audit authority into one
+canonical, truthful Memory Brain kernel around Codex.
 
-## Current State Addendum — 2026-06-22
+**Architecture:** Preserve the real typed/Postgres-backed spine and remove false
+authority from docs and public surfaces before feature work. KRN remains one
+operating layer around Codex: bounded context, source-grounded memory, policy,
+skills, eval expectations, traces, review gates, and feedback.
 
-This root plan remains the repo-wide historical ExecPlan for the final harness
-spine. The active memory execution track now lives at:
+**Tech Stack:** pnpm workspace, strict TypeScript, Zod IO schemas,
+Drizzle/Postgres/pgvector, Vitest, Promptfoo as bounded eval runner/result
+adapter, Codex-facing adapter surfaces.
 
-```txt
-docs/plans/memory-ideal-state/PLAN.md
-```
+---
 
-Current public state:
+## Source Decision Ledger
 
-- M27 target repo readiness is complete.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A
-  of the memory ideal-state plan are complete.
-- Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
-  surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
-  linkage, manual observe-run CLI, deterministic observer input builder, and
-  pure observation prefix selector.
-- Built but not proven end-to-end: observation runtime and prefix selection.
-  MM-17D removed hardcoded observe project scope, MM-17E added datetime
-  validation plus schema/core parity tests, and MM-17F hardened observer
-  payload redaction before reflection. MM-18 added pure reflection contracts,
-  MM-18A added candidate-only contract assessment, and MM-19 added reflection
-  schemas plus DB table. MM-20 added reflection repository and input selector.
-  MM-21 added deterministic reflection candidate-generation planning. MM-22
-  added pure contradiction/gap report generation for contested/conflict
-  observations, missing source ranges, stale observations, duplicates, and
-  unsupported decisions. MM-23 added manual `krn reflect --scope ...`
-  preview/persist CLI that writes ReflectionRecord only and does not create
-  candidate or Memory Core rows. MM-24 sealed the reflect runtime memory
-  surface to read-only anti-memory listing and added promotion-call guard tests.
-  MM-24A recorded live before/after DB proof that reflect persist changes
-  `reflection_records` without changing `memory_records` or `memory_candidates`.
-  MM-25 dogfooded reflection on the MM-17 observation project and recorded that
-  current observations produce zero findings/candidate proposals.
-- MM-26 hardened MemoryRecord/MemoryCandidate repository invariants.
-  MM-26A blocked the public CLI `krn memory candidate promote --persist`
-  write surface until MM-27 MemoryReviewGate existed. MM-27 added the
-  harness MemoryReviewGate and reopened public promotion only with
-  `--evidence-reviewed-ref`, while leaving low-level repository promotion
-  as internal DB/smoke infrastructure. MM-28 added repository invalidation
-  and live smoke proof that invalidated memory is excluded from active memory
-  while the previous MemoryRecordVersion remains auditable. MM-29 made memory
-  application feedback affect activation ranking through explicit feedback
-  score/penalty. MM-29A added an audit health finding for active memory with
-  repeated negative feedback. MM-30 expanded anti-memory enforcement to block
-  explicit memory-record candidates by key/appliesTo. MM-30A expanded the
-  explicit anti-memory path to linked search documents and observation prefix
-  items. MM-31 added explicit activation abstention metadata when candidate
-  context is absent, weak, unsafe, stale, over budget, or fully excluded.
-  MM-32 broadened memory health audit findings for stale high-confidence
-  memory, active unsupported/no-lineage memory, missing application feedback,
-  missing guidance, and temporal records without invalidation strategy.
-  MM-32B made the audit CLI consume explicit slice evidence, AuditBundle
-  evidence, and DB-backed semantic snapshots for memory/source/eval/
-  observation/activation state, with `--fail-on warning` available for
-  CI-style slice gates. MM-33 promoted one reviewed KRN lesson through
-  MemoryReviewGate, proved the resulting MemoryRecord has lineage/guidance/
-  confidence/invalidation metadata, and then proved a later matching plan
-  selected that memory into context and recorded a helped MemoryApplication.
-  MM-34 hardened SourceClaim and SourceDecisionEdge boundaries so source
-  records require decision-grade fields, falsifiers, non-decorative support
-  types, and linked SourceClaims for adopt/reject source decisions.
-  MM-35 hardened the rejection workflow boundary so rejected/deprecated
-  SourceClaims cannot support new SourceDecisionEdge writes through CLI or
-  repository paths. MM-36 added deterministic trust-tier ranking plus temporal
-  override assessment so newer weak claims cannot override stronger current
-  consensus without explicit reason, while stale consensus can be challenged.
-  MM-37 broadened source graph health audit so semantic snapshots catch
-  decorative support, stale accepted claims, accepted claims with no
-  SourceDecision, and decisions still attached to rejected/deprecated claims.
-  MM-38 dogfooded source-to-decision on the MM-37 implementation decision with
-  one live SourceClaim and SourceDecisionEdge linked to the same harness run.
-  MM-39 added the pure ActivationQuery model and builder for task/project
-  scope, memory/source/observation needs, budget, and risk. MM-40 added hybrid
-  candidate merge so linked search results enrich canonical source/memory
-  candidates instead of duplicating context. MM-41 added a pure activation
-  filter pass for anti-memory conflict detection, trust filtering, and
-  temporal/invalidation filtering after candidate merge. MM-42 hardened
-  ContextROI selection with canonical dedup, requested kind diversity, and
-  explicit duplicate/over_budget/low_context_roi exclusions. MM-43 added raw
-  evidence recall triggers for exact-proof and low-trust inclusions and
-  persists them into activation trace metadata. MM-44 integrated the hardened
-  observation prefix selector into context assembly metadata as a small
-  source-ranged activation artifact. MM-44A added an assembly-side gate that
-  rejects manually supplied prefix metadata when selected prefix items are not
-  source-ranged. MM-45 dogfooded activation before/after observation prefix on
-  one KRN memory task and proved no Memory Core, observation, or context table
-  counts changed during the comparison. MM-46 hardened CapabilityRequirement
-  with explicit priority and binding kinds while keeping TaskContract free of
-  `requiredSkills`. MM-47 added CapabilityCompiler v1 task-text routing so
-  memory/source/audit tasks receive focused schema/db/source/evidence/review
-  requirements and Codex skill hints. MM-48 added pure core binding models for
-  skills, rule packs, policy gates, and tool boundaries with conservative
-  invalid-binding validation. MM-49 added pure core capability binding
-  candidate/review contracts and requires approved review before promotion.
-  MM-50 routed TypeScript boundary and review-risk task text to focused
-  capability requirements for unknown-first/no-type-weakening and diff-risk/
-  review-risk evidence. MM-51 dogfooded capability routing on a persisted KRN
-  memory implementation task and fixed read-only Codex brief readback so it
-  preserves task-text capability routing from the persisted TaskContract.
-  MM-52 added pure core EvidenceBundle completeness assessment for required
-  execution evidence. MM-53 added pure core normalization for ReviewAssessment
-  and FeedbackDelta review signals: outcome, review burden, diff risk, and
-  correction labels. MM-54 added pure core EvidenceBundle review-risk scoring
-  v1 for docs-only, narrow core, and broad DB/runtime diffs with command
-  evidence. MM-55 added pure core rollback-path enforcement for non-doc
-  EvidenceBundle changes. MM-56 added pure core FeedbackDelta
-  candidate-proposal summary over already structured proposal fields without
-  Memory Core mutation. MM-56A added the KRN code vocabulary standard so helper
-  names describe actual authority and TypeScript public surfaces stay precise.
-  MM-57 added `krn review assess`, a manual CLI write path that persists a
-  ReviewAssessment and a FeedbackDelta while reporting no Memory Core mutation.
-  MM-58 dogfooded feedback capture on one persisted KRN slice, proved one
-  proposal-only memory candidate was generated inside FeedbackDelta JSON, then
-  persisted an additional manual review assessment and feedback delta with
-  review burden/diff risk recorded and no MemoryCandidate or MemoryRecord row
-  creation.
-  MM-59 added pure GoldenTask domain contracts for behavior-focused golden
-  cases, expected behavior, and protected failure modes, without storage,
-  runner, CLI, or benchmark surface.
-  MM-60 chose file-backed GoldenTask fixtures as the initial strategy and added
-  schema-owned deterministic fixture parsing over unknown JSON input.
-  MM-61 added memory behavior golden cases and fixture-backed harness tests for
-  source-linked memory selection, stale/weak abstention, temporal validity, and
-  application guidance.
-  MM-61-lite added early smoke cases for stale memory abstention, explicit
-  anti-memory blocking of a tempting stale pattern, and source grounding audit
-  rejection of unsupported SourceDecision records.
-  MM-62 added fixture-backed boundary golden cases for ContextROI broad-dump
-  rejection, source `doesNotProve` enforcement, forbidden surface audit, and
-  unchecked runtime parsing/type-boundary audit.
-  MM-63 added fixture-backed observation/reflection/anti-memory golden cases
-  for observation != memory, reflection candidate-only output, anti-memory
-  observation-prefix blocking, and visible missing-evidence gap reports.
-  MM-64 added a pure harness GoldenTask runner that emits pass/fail reports
-  only from validated GoldenTask contracts plus explicit behavior proofs.
-  MM-65 added a pure harness Promptfoo-compatible snapshot export for
-  GoldenTask cases. The export is deterministic, marks itself as
-  snapshot-only, carries behavior proof status metadata, and requires no
-  Promptfoo dependency or model execution.
-  QG-00 added the repo-wide current-state inventory at
-  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. QG-01 accepted
-  colocated package tests with runtime-leak enforcement in
-  `docs/decisions/ADR-0012-colocated-package-tests.md`. QG-02 added the
-  TypeScript excellence standard at `docs/standards/typescript-excellence.md`
-  and audit checks for suppression/double-assertion shortcuts. QG-03 removed
-  clear zombie exports and recorded the accepted fixture finding at
-  `docs/plans/memory-ideal-state/QG-03-EXPORT-DEAD-CODE-AUDIT.md`. QG-04
-  recorded the smell/bloat audit at
-  `docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`, removed
-  low-risk placeholder vocabulary from retrieval smoke fixtures, and queued
-  QG-04A through QG-04H repair slices. QG-04A consolidated CLI filesystem and
-  JSON boundary helpers into `packages/cli/src/cliFileBoundary.ts`. QG-04B
-  modularized command-family parsing so `packages/cli/src/parseArgs.ts` is a
-  dispatcher plus shared command type/usage surface. QG-04C modularized
-  `krn doctor`; QG-04D consolidated MemoryCandidate and AntiMemory confidence
-  parsing; QG-04E consolidated schema primitives; QG-04F consolidated review
-  signal vocabulary; QG-04G split memory-domain DB row mapping out of the
-  mixed mapper file; QG-04H recorded smell-scan automation requirements for
-  QG-06; QG-05 adopted official Promptfoo as a bounded eval-lane runner and
-  result adapter; QG-06 remains queued as a blocking quality correction gate:
-  `krn audit` quality gate automation.
-- Not built:
-  QG-06 quality gate automation, EvalCandidate promotion gate, Golden eval
-  dogfood regression gate, API/MCP, dashboard, plugin package, source crawler,
-  fuzzy anti-memory matching, and broad benchmark suite.
+source_id: `docs/materials/20206-06-23-audit.md`
+trust_tier: medium as user-provided strategic audit, low as implementation
+truth until checked against live repo.
+mechanism: replace active root `GOAL.md` and root `PLAN.md` instead of appending
+another addendum to the old memory plan.
+krn_implication: active context must have one canonical execution truth; old
+plans become historical quarry.
+decision: adopt.
+does_not_prove: package source is correct or that old docs can be deleted.
+consumer: `GOAL.md`, `PLAN.md`, docs-current-truth reset slices.
+falsifier: executor still routes next work through
+`docs/plans/memory-ideal-state/PLAN.md` as active truth.
 
-Do not use older orientation text in this file to infer that the repo has no
-CLI or no observation persistence. Historical progress entries below are kept
-for audit continuity.
+source_id: `docs/reviews/repo-reset-audit/FULL_REPO_AUDIT.md`
+trust_tier: high repo-local audit evidence.
+mechanism: preserve the real typed/Postgres-backed spine while cutting
+misleading public authority around diagnostics, smokes, and quality gates.
+krn_implication: repair docs/surfaces first, then harden memory/source/
+activation invariants.
+decision: adopt.
+does_not_prove: DB runtime is available in every shell.
+consumer: package verdicts, task queue, verification boundaries.
+falsifier: future docs describe smokes or audit results as product proof.
 
-## Codex Goal To Activate
+source_id: `docs/reviews/repo-reset-audit/WRONG_ABSTRACTIONS.md`
+trust_tier: high repo-local abstraction decision record.
+mechanism: `krn audit` may survive only as a narrow internal mechanical guard;
+QG-06/productized anti-slop is rejected as product direction.
+krn_implication: general engineering quality belongs to architecture, types,
+tests, naming, and review, not a KRN-branded subsystem.
+decision: adopt.
+does_not_prove: all current audit checks should be deleted.
+consumer: docs cleanup, CLI taxonomy, future `krn audit` decision.
+falsifier: `krn audit` becomes the next product feature or quality engine.
 
-Use this `/goal` in Codex after adding this file to the repository root:
-
-    /goal Implement KRN as a Postgres-backed AI Engineering Harness OS from the current mise-en-palace repository state, verified by a self-contained PLAN.md kept current, passing pnpm typecheck, schema/type tests where introduced, a working krn plan --task vertical slice, a read-only krn doctor, evidence capture, and a recorded dogfood run, while preserving strict TypeScript boundaries, no runtime markdown memory, no .krn truth, no dashboard-first UI, no separate vector/graph/queue stores, no broad subagent system, and no Codex-specific leakage into packages/core. Use the current repository files, official Codex Goal and ExecPlan patterns summarized in this plan, and local source docs only as bounded inputs. Between iterations, update Progress, Surprises & Discoveries, Decision Log, and Outcomes & Retrospective, run the relevant validation command, commit with Conventional Commits, and choose the next smallest slice that advances the canonical harness flow. If blocked, stop with attempted paths, evidence gathered, the blocker, and the exact input that would unlock progress.
-
-This Goal is intentionally narrow enough to audit but broad enough to let Codex choose the next safe slice. It names the desired end state, verification surface, constraints, allowed context, iteration policy, and blocked stop condition.
+source_id: `docs/STATE_OF_THE_ART.md`
+trust_tier: medium doctrine, must yield to live repo and reset audit.
+mechanism: KRN is one operating brain around Codex; subagents, skills, MCP,
+hooks, evals, and dashboard are organs, not the brain.
+krn_implication: do not build a generic agent zoo or dashboard-first app.
+decision: adopt.
+does_not_prove: any particular current package boundary is correct.
+consumer: non-goals, architecture laws.
+falsifier: implementation creates runtime agent taxonomy before the harness
+spine is proven.
 
 ## Purpose / Big Picture
 
-KRN is a Codex Operating Layer / AI Engineering Control Plane. Codex executes code changes. KRN supplies bounded context, source grounding, store-backed memory, policy, engineering skills, traces, review gates, and feedback loops.
+KRN exists to make Codex work continuous, source-grounded, reviewable, and less
+vulnerable to stale or noisy context.
 
-The repository currently contains the kernel language, docs, repo-local skills, one read-only TypeScript critic subagent, and a strict two-package TypeScript workspace. That is not yet a product. After this plan is implemented, a user should be able to run a first real KRN vertical path:
+The repo is not empty. It already contains real code for memory/source
+contracts, DB-backed repositories, observation/reflection staging, activation,
+evidence capture, Codex brief rendering, guarded memory review, GoldenTask, and
+Promptfoo integration plumbing.
 
-    pnpm typecheck
-    pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"
-    pnpm --filter @krn/cli krn doctor
-    pnpm --filter @krn/cli krn evidence capture
+The current failure is authority drift: README/GOAL/PLAN/memory-plan/handoff/QG
+surfaces disagree about current truth, and some docs route future work into
+QG-06 / `krn audit` quality automation. That makes the repo itself a context
+poison source.
 
-The observable result is not a dashboard and not a benchmark report. The observable result is a typed, Postgres-shaped harness path that turns an operator intent into a task contract, selected context, capability plan, Codex adapter brief, evidence contract, review/evidence records, and feedback candidates without pretending that markdown is runtime memory.
+This plan resets the active truth surface first, then hardens the real Memory
+Brain spine.
 
-## Current Repository Orientation
+## Current State
 
-The repository root is `korneliuszburian/mise-en-palace` on branch `main`.
+- Root `GOAL.md` is now a compact activation contract.
+- Root `PLAN.md` is now the canonical execution plan.
+- Old memory ideal-state plan, QG docs, handoff docs, and raw materials are not
+  active execution truth unless a slice explicitly mines them.
+- `README.md` still contains stale current-phase language and must be aligned.
+- `docs/materials/20206-06-23-audit.md` is raw/user-provided audit material.
+- `docs/reviews/repo-reset-audit/*` are decision-grade audit outputs.
+- `docs/materials/2026-06-22-big-brain*.md` remain raw research quarry.
 
-The bootstrap state observed before writing this root plan:
+## Smallest Honest KRN Kernel
 
-- `README.md` said the repo was a KRN kernel workspace, not an application, and listed no CLI implementation, no dashboard, no benchmark lane, no runtime markdown memory, no broad subagent system, no plugin package, and no KRN MCP server as not built. This is historical; README now reflects the MM-16/MM-17A state.
-- `AGENTS.md` is intentionally short. It tells Codex to read `docs/KRN_KERNEL.md`, avoid broad historical rereads, preserve strict TypeScript boundaries, and use Conventional Commits.
-- `GOAL.md` is still the bootstrap execution contract. It says Commit 0/1 are complete and Commit 2 is the active strict TypeScript spine.
-- `package.json` defines a private ESM pnpm workspace and a root `typecheck` script: `pnpm -r --workspace-concurrency=1 typecheck`.
-- `pnpm-workspace.yaml` includes `packages/*`.
-- `tsconfig.base.json` uses strict TypeScript settings, including `strict`, `exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `noUnusedLocals`, and `noEmit`.
-- `packages/core` and `packages/cli` exist only as shells with `package.json`, `tsconfig.json`, and `src/index.ts` exporting nothing.
-- `.agents/skills/` contains initial engineering skills such as `source-to-decision`, `to-issues`, `handoff-compact`, and `typescript-type-safety`.
-- `.codex/agents/ts-type-critic.toml` exists as the single read-only/proposal-only TypeScript critic subagent.
+The smallest honest KRN product is not a dashboard, not a benchmark lane, and
+not an agent zoo.
 
-Important implication: do not restart from an empty repo. The next move is to close bootstrap and begin the final infra-backed spine.
+It is this loop:
 
-## Definitions
+```txt
+OperatorIntent
+  -> TaskContract
+  -> HarnessPlan
+  -> ContextAssembly
+  -> CodexAdapterPlan
+  -> ExecutionRun
+  -> EvidenceBundle
+  -> ReviewAssessment
+  -> FeedbackDelta
+  -> MemoryCandidate / SourceDecision / EvalCandidate
+  -> reviewed promotion or rejection
+```
 
-KRN means the operating layer around Codex. It is not an alternative code-writing agent.
+`ContextPacket` and Codex briefs are rendered artifacts. They are not the
+central domain model.
 
-Harness means the system that takes a user task, frames it, selects context and capabilities, prepares a Codex execution brief, records evidence, and converts review feedback into candidates for memory, source, policy, or eval updates.
+## Architecture Laws
 
-Brain store means the canonical database where KRN keeps typed project state, memory, sources, run ledgers, context activations, policy results, and feedback. In this plan the brain store is PostgreSQL with pgvector, not markdown, not `.krn`, and not a separate vector database.
+1. KRN is one operating brain around Codex, not many independent brains.
+2. Runtime memory is store/service-backed, not markdown and not `.krn`.
+3. PostgreSQL + pgvector is the canonical brain store for this reset.
+4. Drizzle owns DB schema/migrations/repositories.
+5. Zod owns IO/API/CLI validation boundaries.
+6. Observation is event-derived staging, not Memory Core.
+7. Reflection creates records, reports, and candidates only; it cannot mutate
+   Memory Core.
+8. Memory Core requires lineage, confidence, owner, guidance, validity/
+   invalidation, and review.
+9. Anti-memory is first-class.
+10. Activation is admission control, not prompt assembly.
+11. Similarity is not permission.
+12. Eval runners are adapters, not truth.
+13. Promptfoo smoke proves runner integration/result mapping only unless real
+   KRN behavior executes.
+14. `krn audit` is not a product quality engine.
+15. General engineering quality comes from architecture, types, tests, naming,
+   and review, not an anti-slop subsystem.
+16. Public CLI is an adapter surface; internals must not look like product.
+17. Subagents/prosecutor roles are temporary audit lenses, not runtime agents.
+18. Hooks are deterministic guardrails, not hidden semantic brains.
 
-Memory Core means typed, temporal, source-linked, confidence-aware, invalidatable memory records. It is not a folder of notes.
+## Package Verdicts
 
-Source Graph means source artifacts, claims, decisions, rejections, and edges that explain how evidence supports or fails to support KRN decisions. It is not a list of links.
+- `packages/core`: keep as pure domain. Harden behavior metadata boundaries.
+- `packages/schema`: keep as Zod IO boundary. Parsing is not behavior proof.
+- `packages/db`: keep as Drizzle/Postgres persistence. Narrow public exports
+  and distinguish runtime DB proof from package tests.
+- `packages/harness`: keep as activation/compiler/review-gate layer. Prevent
+  audit checks from looking like product-quality authority.
+- `packages/cli`: keep as adapter. Classify public operator vs governed admin
+  vs internal dev commands.
+- `packages/codex-adapter`: keep as Codex renderer. Do not leak Codex-specific
+  semantics into `packages/core`.
+- `packages/workers`: keep as contract-only until runtime exists. Do not
+  describe it as background maintenance/dreaming runtime.
 
-Activation Engine means the logic that selects a small working set for a task. It ranks lexical, vector, graph, trust, temporal, and context-ROI signals, and it can abstain when context is weak.
+## Public Surface Verdicts
 
-Context Assembly means the final selected context for a task: inclusions, exclusions, reasons, expected use, budget, and evidence requirements.
+public operator:
 
-Capability Plan means the selected engineering disciplines, policy gates, tool boundaries, and Codex adapter hints needed for a task. It replaces the old idea of storing `requiredSkills` directly in core task objects.
+```txt
+krn init
+krn doctor
+krn plan
+krn evidence capture
+krn observe
+krn reflect
+krn codex brief
+```
 
-Codex Adapter means the layer that renders KRN output into Codex-native surfaces such as execution briefs, AGENTS pointers, skills, hooks, MCP references, Goals, and ExecPlans. It must not leak into `packages/core`.
+governed admin:
 
-Evidence Contract means the explicit list of proof expected from a run: commands, changed files, test/typecheck output, diff risk, review burden, rollback path, and feedback candidates.
+```txt
+krn memory candidate add/promote/reject
+krn memory anti add
+krn source claim add/reject/link
+krn review assess
+```
 
-Dogfood means using KRN to improve KRN and recording the evidence. The first dogfood target is improving `krn doctor` brain-store readiness.
+internal/dev:
 
-## Non-Negotiable Architecture Decisions
+```txt
+krn db readiness
+krn db smoke ...
+krn audit / guard
+repository smokes
+```
 
-KRN now starts from target infrastructure, not from contracts disconnected from storage.
+This is a starting classification. Implementation slices must verify actual CLI
+code before changing behavior.
 
-The canonical data plane is PostgreSQL with pgvector. PostgreSQL stores transactional state, JSON metadata, graph edges, full-text search documents, vectors, run events, outbox events, worker jobs, and read-model inputs. pgvector is the vector search path. PostgreSQL full-text search is the lexical path. Relational edge tables are the graph path. Redis, Kafka, Neo4j, Qdrant, LanceDB, Elastic, and OpenSearch are rejected for the first implementation.
+## Memory Lifecycle
 
-Local development may use Docker Postgres with pgvector. PGlite can be used only as a lightweight local/test adapter if it does not distort the canonical Postgres design.
+```txt
+Observation / Evidence / SourceClaim
+  -> ReflectionRecord / FeedbackDelta
+  -> MemoryCandidate
+  -> MemoryReviewGate
+  -> MemoryRecord
+  -> Activation
+  -> MemoryApplication feedback
+  -> invalidation / demotion / anti-memory when needed
+```
 
-Drizzle owns the database schema and migrations. Zod owns IO/API/CLI validation boundaries. TypeScript stays strict and unknown-first at external boundaries.
+Forbidden: observation, reflection, Promptfoo, or `krn audit` creating Memory
+Core truth directly.
 
-Markdown files are allowed as docs, exports, seeds, audit logs, and handoffs. Markdown files are not Memory Core. `.krn/**` must not become runtime product truth.
+## Source / Claim Lifecycle
 
-Dashboard is later and only as a read-model projection over typed objects with actions. Dashboard is not proof that the product exists.
+Source truth must remain decision-grade:
 
-Codex surfaces are adapters. AGENTS.md, skills, hooks, MCP, Goals, and ExecPlans are not the core product brain. The core product is the harness.
+```txt
+SourceArtifact
+  -> SourceClaim with mechanism / implication / doesNotProve / trust /
+     consumer / falsifier
+  -> SourceDecisionEdge
+  -> SourceDecision or SourceRejection
+```
 
-## Canonical Harness Flow
+Project scope must not hide in generic metadata.
 
-All slices must ultimately advance this flow:
+## Activation Lifecycle
 
-    OperatorIntent
-      -> TaskContract
-      -> HarnessPlan
-      -> ContextAssembly
-      -> CapabilityPlan
-      -> CodexAdapterPlan
-      -> ExecutionRun
-      -> EvidenceBundle
-      -> ReviewAssessment
-      -> FeedbackDelta
-      -> Memory / Source / Skill / Policy / Eval updates
+Activation decides what is allowed into context.
 
-A slice may implement only part of this flow, but it must not introduce a temporary architecture that contradicts it.
+It must record inclusion, exclusion, abstention, conflict, trust, temporal
+state, anti-memory hit, raw recall trigger, and expected use through typed
+fields/read models where those values affect behavior.
 
-## Hard Non-Goals
+## Eval / Promptfoo Lifecycle
 
-Do not create:
+`GoldenTask` is the canonical KRN behavior contract.
 
-- dashboard UI or `apps/` before typed state and read models exist;
-- separate vector store, graph store, search store, Redis, or Kafka;
-- runtime markdown memory;
-- `.krn` runtime truth;
-- broad benchmark lane;
-- broad eval suite;
-- KRN MCP server before DB, repositories, harness compiler, and CLI vertical slice exist;
-- broad subagent system;
-- project-oriented skill zoo;
-- custom prompt library;
-- old repo topology import;
-- a CLI-first architecture that bypasses the harness;
-- fake in-memory-only architecture as the final path.
+Promptfoo is a runner/result adapter. Current smoke is integration proof only.
 
-## Target Package Boundaries
+Real behavior gates must execute KRN code paths and fail on invariant breaks.
 
-The repository should grow from two packages into the final spine below.
+## Docs Hygiene Rules
 
-`packages/core` owns pure domain types and pure logic. It must not import database code, CLI code, filesystem code, shell code, environment code, network code, Codex-specific code, or process mutation. It should not use global `ts-reset`.
+Every doc must fit one bucket:
 
-`packages/schema` owns Zod schemas and JSON/IO contracts. External data stays `unknown` until parsed.
+```txt
+canonical
+standard
+ADR
+historical ledger
+raw material
+run proof
+delete candidate
+```
 
-`packages/db` owns Drizzle schema, migrations, SQL helpers, database connection adapters, and repository implementations.
+Historical docs need a banner if future agents can mistake them for current
+truth:
 
-`packages/harness` owns activation engine, harness compiler, context assembly, evidence contracts, and capability planning.
+```md
+> Historical audit/planning ledger.
+> Not current execution truth.
+> Current canonical execution plan: `/PLAN.md`.
+```
 
-`packages/codex-adapter` owns rendering to Codex-native surfaces: execution brief, AGENTS pointers, skill hints, hook expectations, MCP resource references, Goal references, and ExecPlan references.
+Raw materials remain in `docs/materials/` and are never direct implementation
+truth.
 
-`packages/cli` owns terminal commands and user-facing command output. It calls schema parsing and harness services; it does not become the architecture.
+## Ordered Task Queue
 
-`packages/workers` owns job definitions and thin worker skeletons for embedding, compaction, contradiction detection, stale memory expiration, and eval promotion.
+### P0-00: Replace Root `GOAL.md`
 
-`packages/api` and `packages/dashboard` are future packages. Do not create them in the first product spine unless the current plan is explicitly revised after the CLI and brain-store behavior exist.
+status: complete in this docs reset.
+
+files:
+
+- Modify: `GOAL.md`
+
+verification:
+
+```sh
+wc -l GOAL.md
+rg -n "QG-06|quality gate automation|smell scan automation|anti-slop subsystem|docs/plans/memory-ideal-state/PLAN.md" GOAL.md
+git diff --check
+```
+
+expected:
+
+- `GOAL.md` stays compact.
+- Any old-plan/QG matches are absent or explicitly rejected/historical.
+
+commit:
+
+```sh
+git add GOAL.md
+git commit -m "docs(goal): reset KRN execution contract"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P0-01: Replace Root `PLAN.md`
+
+status: complete in this docs reset.
+
+files:
+
+- Modify: `PLAN.md`
+
+verification:
+
+```sh
+rg -n "active execution track|QG-06 remains queued|quality gate automation|smell scan automation" PLAN.md
+git diff --check
+```
+
+expected:
+
+- `PLAN.md` is self-contained.
+- It does not send execution back to the old memory plan as active truth.
+- It rejects QG-06/productized audit direction.
+
+commit:
+
+```sh
+git add PLAN.md
+git commit -m "docs(plan): create canonical KRN reset plan"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P0-02: Mark Historical Planning Ledgers
+
+status: next.
+
+objective:
+
+Make stale plans/handoffs impossible to mistake for current truth.
+
+files:
+
+- Modify: `docs/plans/memory-ideal-state/PLAN.md`
+- Modify: `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
+- Modify: selected `docs/handoff/*`
+- Modify: `REVIEW.md`
+
+non-goals:
+
+- no package source changes;
+- no deletion of raw materials;
+- no broad rewrite of historical evidence.
+
+steps:
+
+- [ ] Add the historical banner to each target file that still reads like
+      current execution truth.
+- [ ] Preserve historical content below the banner.
+- [ ] Run verification.
+- [ ] Commit.
+
+verification:
+
+```sh
+rg -n "Current canonical execution plan" docs/plans docs/handoff REVIEW.md
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/plans docs/handoff REVIEW.md
+git commit -m "docs(state): mark historical planning ledgers"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P0-03: Align README As Doorway
+
+objective:
+
+Make README an honest doorway instead of a stale status ledger.
+
+files:
+
+- Modify: `README.md`
+
+requirements:
+
+- Name root `GOAL.md` and `PLAN.md` as current activation/plan surfaces.
+- State that raw materials are quarantine inputs.
+- State that Promptfoo smoke is integration proof only.
+- State that QG-06/productized anti-slop direction is rejected.
+- State what is built, built but not proven, and not built.
+
+non-goals:
+
+- no package source changes;
+- no long progress ledger in README.
+
+verification:
+
+```sh
+rg -n "Promptfoo|QG-06|quality gate|memory ideal-state|current phase" README.md
+git diff --check
+```
+
+commit:
+
+```sh
+git add README.md
+git commit -m "docs(readme): align KRN current state"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P0-04: Remove Productized QG-06 Direction
+
+objective:
+
+Ensure QG-06, anti-slop, quality-gate automation, and smell-scan language is
+historical/rejected/internal-guard only.
+
+files:
+
+- Modify: `README.md`
+- Modify: `GOAL.md`
+- Modify: `PLAN.md`
+- Modify: `docs/plans/memory-ideal-state/PLAN.md`
+- Modify: `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
+- Modify: selected `docs/handoff/*`
+
+non-goals:
+
+- no new audit checks;
+- no audit rename yet;
+- no quality subsystem.
+
+verification:
+
+```sh
+rg -n "anti-slop|quality gate automation|smell scan automation|QG-06|quality engine|audit automation" README.md GOAL.md PLAN.md docs/plans docs/handoff
+git diff --check
+```
+
+expected:
+
+- Remaining matches are historical, explicitly rejected, or internal guard only.
+
+commit:
+
+```sh
+git add README.md GOAL.md PLAN.md docs/plans docs/handoff
+git commit -m "docs(review): reject productized anti-slop layer"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P1-00: Classify CLI Surfaces
+
+objective:
+
+Create durable CLI taxonomy before changing CLI behavior.
+
+files:
+
+- Create: `docs/architecture/cli-surfaces.md`
+- Modify: `PLAN.md`
+
+content required:
+
+- public operator commands;
+- governed admin commands;
+- internal/dev commands;
+- historical/delete candidates;
+- rule that DB smokes and audit guard are not product UX.
+
+verification:
+
+```sh
+rg -n "public operator|governed admin|internal/dev|krn audit|krn db" docs/architecture/cli-surfaces.md PLAN.md
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/architecture/cli-surfaces.md PLAN.md
+git commit -m "docs(cli): classify operator and internal surfaces"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P1-01: Deproductize `krn audit`
+
+objective:
+
+Decide whether `krn audit` is deleted, renamed, or retained as an internal
+mechanical guard.
+
+files:
+
+- Modify: `README.md`
+- Modify: `PLAN.md`
+- Modify: `docs/architecture/cli-surfaces.md`
+- Modify: `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
+
+non-goals:
+
+- no code rename in this slice;
+- no new audit categories;
+- no anti-slop product.
+
+verification:
+
+```sh
+rg -n "krn audit|audit automation|quality engine|anti-slop|smell scan" README.md PLAN.md docs
+git diff --check
+```
+
+expected:
+
+- All matches classify `krn audit` as historical, rejected, delete/rename
+  candidate, or internal guard only.
+
+commit:
+
+```sh
+git add README.md PLAN.md docs
+git commit -m "docs(audit): deproductize audit guard"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P1-02: Plan Package Barrel Narrowing
+
+objective:
+
+Identify broad exports that expose internals as product API.
+
+files:
+
+- Modify: `PLAN.md`
+- Create: `docs/architecture/package-surfaces.md`
+
+inspect:
+
+```txt
+packages/db/src/index.ts
+packages/db/src/repositories/index.ts
+packages/db/src/schema/index.ts
+packages/harness/src/index.ts
+packages/harness/src/repositories/index.ts
+packages/cli/src/index.ts
+```
+
+non-goals:
+
+- no source export changes in this docs slice.
+
+verification:
+
+```sh
+rg -n "export \\*" packages/*/src/index.ts packages/*/src/**/index.ts
+git diff --check
+```
+
+commit:
+
+```sh
+git add PLAN.md docs/architecture/package-surfaces.md
+git commit -m "docs(exports): plan public surface narrowing"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P2-00: Seal Memory Core Write Authority
+
+objective:
+
+Make MemoryReviewGate or an equivalent reviewed service the only public
+candidate-to-MemoryRecord path.
+
+files likely touched:
+
+- Modify: `packages/harness/src/repositories/memoryRepository.ts`
+- Modify: `packages/harness/src/memory/memoryReviewGate.ts`
+- Modify: `packages/db/src/repositories/DrizzleMemoryRepository.ts`
+- Modify: `packages/db/src/repositories/index.ts`
+- Modify: related tests.
+
+rules:
+
+- low-level create/promote methods may exist only inside internal DB adapter or
+  explicit test setup;
+- public harness-facing port exposes gate-owned verbs;
+- CLI promotion keeps `--evidence-reviewed-ref`;
+- no automatic promotion.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- memory/memoryReviewGate.test.ts
+pnpm --filter @krn/db test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages
+git commit -m "refactor(memory): seal public promotion authority"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P2-01: Type SourceClaim Project Scope
+
+objective:
+
+Remove behavior-governing project scope from generic metadata.
+
+files likely touched:
+
+- Modify: `packages/core/src/source.ts`
+- Modify: `packages/db/src/schema/sources.ts`
+- Modify: `packages/db/src/repositories/DrizzleSourceRepository.ts`
+- Modify: `packages/harness/src/reflection/reflectionInputSelector.ts`
+- Modify: schema/migration/test files as required.
+
+decision required:
+
+Choose one before implementation:
+
+- add first-class `projectId` to `SourceClaim`; or
+- derive project through typed source-artifact joins.
+
+verification:
+
+```sh
+rg -n "metadata\\.projectId" packages
+pnpm typecheck
+pnpm test
+pnpm db:ready
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages
+git commit -m "refactor(source): type source claim project scope"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P2-02: Promote Behavior Metadata To Typed Fields
+
+objective:
+
+Move runtime authority out of generic metadata.
+
+search:
+
+```sh
+rg -n "metadata\\.(projectId|sourceClaimId|memoryRecordId|antiMemoryRecordId|searchDocumentId|activationAbstention|observationPrefix|observationPrefixGate)" packages
+```
+
+rules:
+
+- no metadata linter product;
+- fix known keys directly;
+- metadata remains allowed for evidence/debug payload only.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages
+git commit -m "refactor(core): type behavior metadata boundaries"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P3-00: Define Observation Staging Doctrine
+
+objective:
+
+Record observation as event-derived staging, not Memory Core.
+
+files:
+
+- Create: `docs/decisions/ADR-0013-observation-is-staging-not-memory.md`
+- Modify: `PLAN.md`
+
+must state:
+
+- source ranges are required for truth-bearing observations;
+- raw evidence remains canonical;
+- observation cannot mutate Memory Core;
+- observation prefix is bounded;
+- observation may lead to candidates only through explicit reflection/review.
+
+verification:
+
+```sh
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/decisions/ADR-0013-observation-is-staging-not-memory.md PLAN.md
+git commit -m "docs(memory): define observation staging doctrine"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P3-01: Prove Observation And Reflection Invariants
+
+objective:
+
+Strengthen tests around staging/candidate-only behavior.
+
+required proofs:
+
+- factual observation without source range is rejected;
+- observation does not create MemoryRecord;
+- observation prefix rejects unsourced items;
+- reflection persists ReflectionRecord only;
+- reflection surfaces gaps/contradictions;
+- reflection cannot mutate Memory Core.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- observations reflection
+pnpm --filter @krn/schema test -- observation reflection
+pnpm --filter @krn/db test -- Observation Reflection
+pnpm --filter @krn/cli test -- runReflectCommand runObserveCommand
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages
+git commit -m "test(memory): prove staging invariants"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P3-02: Create Reviewed Candidate Writer From ReflectionRecord
+
+objective:
+
+Add explicit candidate creation from reflection outputs without MemoryRecord
+promotion.
+
+rules:
+
+- creates candidates only;
+- preserves source ranges/source claims;
+- emits memory/source/anti-memory/eval candidates where types support it;
+- no automatic promotion.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm db:ready
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages
+git commit -m "feat(memory): create reviewed candidates from reflection records"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P4-00: Define Activation As Admission Control
+
+objective:
+
+Record activation as the trust boundary for context admission.
+
+files:
+
+- Create: `docs/decisions/ADR-0014-activation-is-admission-control.md`
+- Modify: `PLAN.md`
+
+must state:
+
+- similarity is not permission;
+- activation filters trust, temporal state, anti-memory, source support, budget,
+  and context ROI;
+- activation can abstain;
+- activation must produce inclusions and exclusions;
+- exact proof / low trust / conflict can require raw recall.
+
+verification:
+
+```sh
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/decisions/ADR-0014-activation-is-admission-control.md PLAN.md
+git commit -m "docs(activation): define admission control doctrine"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P4-01: Add Noisy Context Golden Proofs
+
+objective:
+
+Prove activation rejects bad context instead of dumping everything.
+
+required cases:
+
+- stale memory abstention;
+- anti-memory block;
+- broad context dump rejection;
+- unsupported source decision rejection;
+- observation prefix source-range requirement;
+- raw recall trigger on exact proof.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages tests
+git commit -m "test(activation): prove noisy context rejection"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P4-02: Type Activation Trace Decisions
+
+objective:
+
+Move behavior-governing activation trace fields out of metadata where they
+affect behavior.
+
+fields:
+
+- abstention reason;
+- raw recall trigger;
+- anti-memory hit;
+- exclusion category;
+- source support state;
+- expected use.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm db:ready
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages
+git commit -m "feat(activation): type activation trace decisions"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P5-00: Bound Promptfoo Claims
+
+objective:
+
+Make every Promptfoo doc/fixture state integration smoke only unless real KRN
+behavior executes.
+
+files:
+
+- Modify: `README.md`
+- Modify: QG-05 docs
+- Modify: Promptfoo fixtures/tests if naming overclaims behavior.
+
+verification:
+
+```sh
+rg -n "Promptfoo|promptfoo|smoke|behavior proof|integration smoke" README.md docs tests packages
+pnpm exec promptfoo --version
+pnpm eval:promptfoo:smoke
+git diff --check
+```
+
+commit:
+
+```sh
+git add README.md docs tests packages
+git commit -m "docs(eval): bound Promptfoo integration claims"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P5-01: Add First Real Behavior Eval Gate
+
+objective:
+
+Make at least one GoldenTask path execute real KRN behavior, not fixture
+self-pass only.
+
+required invariants:
+
+- anti-memory blocks activation;
+- stale/weak memory abstains;
+- reflection cannot mutate Memory Core.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages tests
+git commit -m "test(eval): add KRN memory behavior regression gate"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P6-00: Mark Worker Runtime Truth
+
+objective:
+
+Ensure workers are described as contracts/skeleton only until a runtime exists.
+
+verification:
+
+```sh
+rg -n "worker|dream|dreaming|background|maintenance" README.md PLAN.md docs packages/workers
+git diff --check
+```
+
+expected:
+
+- No doc claims background maintenance/dreaming runtime exists.
+
+commit:
+
+```sh
+git add README.md PLAN.md docs packages/workers
+git commit -m "docs(workers): mark maintenance runtime as not built"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P6-01: Harden Worker Job Contracts
+
+objective:
+
+Before any worker runtime, every job contract defines write authority.
+
+required fields:
+
+- input schema;
+- idempotency key;
+- output event;
+- failure state;
+- allowed writes;
+- forbidden writes;
+- Memory Core gate constraints.
+
+verification:
+
+```sh
+pnpm --filter @krn/workers test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git add packages/workers packages/core
+git commit -m "feat(workers): harden maintenance job contracts"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
+
+### P7-00: Run First Governed Self-Hosting Loop
+
+objective:
+
+Use KRN to improve KRN and record whether it reduces review burden.
+
+flow:
+
+```sh
+pnpm --filter @krn/cli krn plan --task "seal Memory Core write authority" --persist
+pnpm typecheck
+pnpm test
+pnpm --filter @krn/cli krn evidence capture --persist
+pnpm --filter @krn/cli krn observe --run <runId> --persist
+pnpm --filter @krn/cli krn reflect --scope run:<runId> --persist
+```
+
+output:
+
+- Create: `docs/runs/<date>-self-hosting-memory-loop.md`
+
+record:
+
+- whether selected memory helped;
+- review burden before/after;
+- gaps;
+- anti-memory candidates;
+- eval candidates;
+- rollback path.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm db:ready
+git diff --check
+```
+
+commit:
+
+```sh
+git add docs/runs packages
+git commit -m "docs(run): prove first governed self-hosting loop"
+```
+
+rollback:
+
+```sh
+git revert <commit>
+```
 
 ## Progress
 
-Use this section as the single progress truth while executing the plan. Update every stopping point with a date, evidence, and next action.
-
-- [x] 2026-06-21: Kernel docs exist, including README, AGENTS, KRN kernel docs, source map, failure report, and ADRs.
-- [x] 2026-06-21: Repo-local skills exist under `.agents/skills/`, and one read-only/proposal-only TypeScript critic subagent exists under `.codex/agents/`.
-- [x] 2026-06-21: Strict pnpm TypeScript workspace spine exists with `packages/core` and `packages/cli` shells.
-- [x] 2026-06-21: Root `package.json`, `pnpm-workspace.yaml`, and `tsconfig.base.json` exist.
-- [x] 2026-06-21: Added root `PLAN.md`, compacted `GOAL.md` to the activation contract, updated `README.md` current phase, and kept `AGENTS.md` short with a pointer to this living ExecPlan. Evidence: docs-only diff and `pnpm typecheck` for this milestone.
-- [x] 2026-06-21: Added `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md` and `docs/architecture/package-boundaries.md`. Evidence: ADR includes source-to-decision mappings and `pnpm typecheck` passed.
-- [x] 2026-06-21: Expanded workspace shells for `schema`, `db`, `harness`, `codex-adapter`, and `workers` with empty module entrypoints and strict package tsconfigs. Evidence: `pnpm install --lockfile-only` recognized all 8 workspace projects and `pnpm typecheck` passed across 7 package projects.
-- [x] 2026-06-21: Added Vitest only when Zod IO schema boundaries existed, with RED/GREEN tests for unknown-input parsing, source claim decision fields, memory lineage/user-preference rules, and structured evidence commands. Evidence: initial `pnpm --filter @krn/schema test` failed because parse functions were missing, then `pnpm test` passed with 4 tests.
-- [x] 2026-06-21: Added Drizzle/Postgres schema foundation for workspaces, projects, repo installations, project kernels, operator intents, task contracts, harness plans, context assemblies, execution runs, evidence bundles, review assessments, feedback deltas, run events, outbox events, and worker jobs. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, and `git diff --check` passed.
-- [x] 2026-06-21: Added Memory Core and source graph schema, including memory records, versions, edges, candidates, applications, feedback events, anti-memory, activation traces, source artifacts, chunks, claims, claim edges, decisions, rejections, and snapshots. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, SQL inspection for `mechanism` / `krn_implication` / `does_not_prove`, and `git diff --check` passed.
-- [x] 2026-06-21: Added retrieval and activation schema with embedding models, embeddings, search documents, retrieval runs, retrieval candidates, activation decisions, context items, and context exclusions. Evidence: `pnpm typecheck`, `pnpm --filter @krn/db db:generate`, `pnpm --filter @krn/db db:check`, SQL inspection for `CREATE EXTENSION IF NOT EXISTS vector`, `vector(1536)`, HNSW vector index, `tsvector`, GIN search index, context inclusions, context exclusions, and `git diff --check` passed.
-- [x] 2026-06-21: Added Zod IO schemas and public parse functions for operator intents, task contracts, memory candidates, source claims, harness compile inputs, and evidence capture inputs. Evidence: `pnpm typecheck`, `pnpm test`, and `git diff --check` passed.
-- [x] 2026-06-21: Added pure core domain model types for IDs, time, operator intents, task contracts, harness plans, context assembly, capability plans, Codex adapter plan refs, execution runs, evidence bundles, review assessments, feedback deltas, memory, sources, policy, and eval candidates. Evidence: `pnpm typecheck`, `pnpm test`, `grep -R "requiredSkills" packages/core && exit 1 || true`, forbidden-import search, and `git diff --check` passed.
-- [x] 2026-06-21: Added repository interfaces in `packages/harness` and Drizzle/Postgres adapters in `packages/db` for projects, memory, sources, harness runs, event ledger, outbox, and retrieval. Evidence: `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness packages/db/src`, and no forbidden DB/runtime imports or `requiredSkills` in `packages/core`.
-- [x] 2026-06-21: Added pure harness activation engine with memory/source query builders, ranking, trust and temporal filters, context ROI budget filtering, and context assembly with explicit inclusions/exclusions. Evidence: TDD RED `pnpm --filter @krn/harness test` failed on missing activation module, then GREEN `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness/src packages/db/src`, and no forbidden DB/CLI/Codex imports in `packages/harness/src` or `packages/core`.
-- [x] 2026-06-21: Added harness compiler that persists operator intent, task contract, harness plan, context assembly, retrieval candidates, activation decisions, and context selections through repository ports, then returns capability plan, Codex adapter plan reference, and evidence contract without invoking Codex. Evidence: TDD RED `pnpm --filter @krn/harness test` failed on missing compiler module, then GREEN `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness/src packages/db/src`, and no forbidden DB/CLI/Codex imports in `packages/harness/src` or `packages/core`.
-- [x] 2026-06-21: Added Codex adapter renderer for bounded execution briefs, Goal/ExecPlan references, skill hints, hook expectations, context inclusions/exclusions, capability plan, and evidence contract. Evidence: TDD RED `pnpm --filter @krn/codex-adapter test` failed on missing renderer module, then GREEN `pnpm typecheck`, `pnpm test`, `git diff --check`, no `any` in `packages/core packages/harness/src packages/codex-adapter/src packages/db/src`, no `@krn/codex-adapter` imports in `packages/core`, and no process/filesystem/network/MCP calls in `packages/codex-adapter/src`.
-- [x] 2026-06-21: Added CLI vertical path `pnpm --filter @krn/cli krn plan --task "..."` with manual arg parsing, schema validation, optional `KRN_DATABASE_URL` Postgres runtime, explicit no-store preview when DB is absent, harness compiler call, and Codex execution brief output. Evidence: `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"`, `git diff --check`, no `.krn` directory, no `any` in KRN source packages, and no CLI filesystem/process-spawn writes; the only CLI `dashboard` match is a non-goal string.
-- [x] 2026-06-21: Added read-only `krn doctor` with Postgres config/reachability, pgvector, migrations, AGENTS.md, `.krn` runtime truth, TypeScript strictness, workspace packages, skills surface, hooks surface, and forbidden-surface checks. Evidence: TDD RED `pnpm --filter @krn/cli test` failed because `doctor` was unknown, then GREEN `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/cli krn doctor`, `git diff --check`, no `.krn` directory, no `any` in KRN source packages, and no CLI write/spawn calls.
-- [x] 2026-06-21: Added `krn evidence capture` with changed-file detection, skipped command evidence placeholders, diff risk, review burden, rollback path, no memory mutation, and feedback-candidate summary. It prints evidence when `KRN_DATABASE_URL` / `KRN_EXECUTION_RUN_ID` are absent instead of faking persistence. Evidence: TDD RED `pnpm --filter @krn/cli test` failed because `evidence capture` was unknown, then GREEN `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/cli krn evidence capture`, `git diff --check`, no `.krn` directory, no `any` in KRN source packages, and clean-tree behavior covered by CLI tests.
-- [x] 2026-06-21: Added `packages/workers` maintenance job skeleton for `embed_source_chunk`, `compact_memory`, `detect_contradiction`, `expire_stale_memory`, and `promote_eval_candidate`, with typed payloads, job descriptions, enqueue ports, and `worker_job.queued` outbox emission. Evidence: TDD RED `pnpm --filter @krn/workers test` failed on missing worker exports, then GREEN `pnpm --filter @krn/workers test`, `pnpm typecheck`, `pnpm test`, no `.krn` directory, no `any` in KRN source packages, and no Redis/Kafka/background worker loop in `packages/workers`.
-- [x] 2026-06-21: Refactored repo-local skills to the final harness-spine operational set: `target-infra-adr`, `brain-store-schema`, `activation-engine`, `codex-adapter-plan`, `evidence-review-loop`, `source-to-decision`, `typescript-type-safety`, and `handoff-compact`. Evidence: RED skill-set audit failed on missing target skills and extra broad planning skills, then GREEN skill-set/section/frontmatter audit passed, system `quick_validate.py` passed for all 8 skills, and `pnpm typecheck` passed.
-- [x] 2026-06-21: Dogfooded KRN on KRN with `krn plan --task "improve KRN doctor brain store readiness"`, added doctor brain-store readiness status, refreshed Codex adapter skill hints after the skill refactor, and recorded the run in `docs/runs/2026-06-21-first-postgres-backed-harness-dogfood.md`. Evidence: dogfood `krn plan` ran in no-store preview with context abstention, TDD RED/GREEN covered doctor readiness and stale skill hints, `krn doctor` prints `Brain store readiness: preview only...`, and `krn evidence capture` printed feedback candidates without memory mutation.
-- [x] 2026-06-21: Added final handoff docs under `docs/handoff/`, updated `GOAL.md` to require matching repo-local operational skills when their triggers apply, then ran final verification and forbidden-surface checks. Evidence: `pnpm typecheck`, `pnpm test`, `pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"`, `pnpm --filter @krn/cli krn doctor`, `pnpm --filter @krn/cli krn evidence capture`, `find . -maxdepth 3 -type d | sort`, `grep -R "requiredSkills" packages/core && exit 1 || true`, targeted forbidden-directory/store/core-import/subagent/eval checks, and `git diff --check` passed.
-- [x] 2026-06-21: Started M20 local brain-store runtime proof and completed Slice 00 preflight ledger under `docs/runs/2026-06-21-brain-store-proof/`. Evidence: `git status --short --branch`, `git log --oneline -8`, `pnpm typecheck`, and `pnpm test` passed; `GOAL.md` handoff path casing was normalized to `docs/handoff/handoff.md`.
-- [x] 2026-06-21: Completed M20 Slice 01 DB runtime inventory in `docs/runs/2026-06-21-brain-store-proof/DB_RUNTIME_INVENTORY.md`. Evidence: `KRN_DATABASE_URL` is canonical in `krn plan`, `krn doctor`, and `krn evidence capture`; Drizzle schema/migrations exist with pgvector SQL in `0002_shocking_post.sql`; no `.env.example`, Compose file, migration readiness command, or DB smoke command exists yet; `pnpm --filter @krn/db db:check` and `pnpm typecheck` passed.
-- [x] 2026-06-21: Added M20 Slice 02 local brain-store setup path with `.env.example`, `compose.yaml`, `docs/runbooks/local-brain-store.md`, and env-aware Drizzle config. Evidence: `docker compose config`, `pnpm --filter @krn/db db:check`, and `pnpm typecheck` passed; the runbook documents that live migration and persistence proof remain pending.
-- [x] 2026-06-21: Added M20 Slice 03 migration readiness command `pnpm db:ready`, backed by `krn db readiness` and a Drizzle/postgres-js migration readiness helper. Evidence: RED `pnpm --filter @krn/cli test` failed on parser exit `2`, GREEN CLI test passed, `pnpm db:ready` without `KRN_DATABASE_URL` exited `1` with a clear report, Docker Compose local pgvector Postgres became healthy, `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready` passed with migrations expected/applied `3/3`, pgvector available, and brain-store readiness ready; `pnpm test` and `pnpm typecheck` passed.
-- [x] 2026-06-21: Refined M20 Slice 04 `krn doctor` DB readiness to stay read-only while checking exact migration count and pgvector readiness. Evidence: RED `pnpm --filter @krn/cli test` failed on missing `deriveBrainStoreReadiness`, GREEN CLI test passed, `pnpm --filter @krn/cli krn doctor` without DB reported preview-only readiness, `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn doctor` reported migrations `verified (3/3 applied)` and brain-store readiness ready, `pnpm typecheck` and `pnpm test` passed.
-- [x] 2026-06-21: Added M20 Slice 05 minimal persistence smoke command `pnpm db:smoke`, backed by `krn db smoke` and a Drizzle project repository smoke helper. Evidence: RED `pnpm --filter @krn/cli test` failed on parser exit `2`, GREEN CLI test passed, `pnpm db:smoke` without DB exited `1` with a skipped missing-config report, `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke` inserted/read/cleaned a smoke workspace/project and passed, direct SQL cleanup check returned `0` `krn-smoke-%` workspaces, `pnpm typecheck` and `pnpm test` passed.
-- [x] 2026-06-21: Completed M20 Slice 06 final audit and handoff/blocker closure. Evidence: clean `git status --short --branch` before handoff edits, `git log --oneline -8`, healthy `docker compose ps krn-postgres`, `pnpm typecheck`, `pnpm test`, no-env `krn doctor`, live-DB `krn doctor`, live-DB `pnpm db:ready`, live-DB `pnpm db:smoke`, direct smoke cleanup count `0`, and refreshed `docs/handoff/*`.
-- [x] 2026-06-21: Started M21 persisted harness spine and completed Slice 00 preflight ledger under `docs/runs/2026-06-21-persisted-harness-spine/`. Evidence: `a312afe docs(goal): define persisted harness spine` is the start commit, `git status --short --branch`, `git log --oneline -10`, `pnpm typecheck`, `pnpm test`, and no-DB `pnpm --filter @krn/cli krn doctor` passed; `GOAL.md` now forces repo-local skill gates for matching slices.
-- [x] 2026-06-21: Completed M21 Slice 01 harness persistence inventory in `docs/runs/2026-06-21-persisted-harness-spine/HARNESS_PERSISTENCE_INVENTORY.md`. Evidence: existing harness tables and Drizzle repository writes were mapped; gaps are explicit `--persist`, run aggregate readback, evidence contract persistence, evidence capture persistence, and feedback delta readback; `pnpm --filter @krn/db db:check` and `pnpm typecheck` passed.
-- [x] 2026-06-21: Completed M21 Slice 02 minimal schema decision in `docs/runs/2026-06-21-persisted-harness-spine/SCHEMA_DECISION.md`. Evidence: no new migration is needed for primary spine tables; evidence contract expectations will use typed `harness_plans.metadata.evidenceContract` unless implementation falsifies it; `pnpm --filter @krn/db db:check`, `pnpm typecheck`, and live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready` passed.
-- [x] 2026-06-21: Completed M21 Slice 03 repository aggregate readback. Evidence: RED `@krn/db` tests failed on dropped feedback candidates and missing `getHarnessRunByExecutionRunId`, then GREEN `pnpm --filter @krn/db test` passed with 2 tests; `pnpm typecheck`, full `pnpm test`, `pnpm --filter @krn/db db:check`, and no-`any` scan passed.
-- [x] 2026-06-21: Completed M21 Slice 04 explicit persisted plan. Evidence: RED CLI tests failed on implicit DB writes and missing `--persist`, GREEN `pnpm --filter @krn/cli test` passed with 11 tests, `pnpm typecheck`, full `pnpm test`, and `pnpm --filter @krn/db db:check` passed; live `krn plan --persist` created execution run `b529e20e-b8ca-4cb5-9342-58578e880945` with evidence contract metadata and one run event; DB-configured preview without `--persist` left `execution_runs` count unchanged.
-- [x] 2026-06-21: Completed M21 Slice 05 persisted harness plan smoke path. Evidence: RED CLI test failed on missing `db smoke harness-plan`, GREEN `pnpm --filter @krn/cli test` passed with 12 tests, `pnpm typecheck`, full `pnpm test`, and `pnpm --filter @krn/db db:check` passed; live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-plan` created execution run `7fc256ef-2868-483c-bd3a-c3283df4b761`, read it back through the repository aggregate, verified evidence contract commands `3` and run events `1`, and cleaned up with remaining marker count `0`.
-- [x] 2026-06-21: Completed M21 Slice 06 persisted evidence capture. Evidence: RED CLI tests failed on missing `evidence capture --run-id --persist`, GREEN `pnpm --filter @krn/cli test` passed with 15 tests, `pnpm typecheck`, full `pnpm test`, and `pnpm --filter @krn/db db:check` passed; live capture against execution run `b529e20e-b8ca-4cb5-9342-58578e880945` persisted evidence bundle `41b27f25-efb7-48ed-92ad-00fb88cdf7c4`, review assessment `384bb648-dcf4-43f6-a60e-9003acff047e`, feedback delta `975e26bf-6eae-4fb8-a0ae-80352977331c`, and SQL proof showed 1 evidence bundle, 1 review assessment, 1 feedback delta, and 2 run events.
-- [x] 2026-06-21: Completed M21 Slice 07 persisted evidence smoke path. Evidence: RED CLI test failed on missing `db smoke harness-evidence`, GREEN `pnpm --filter @krn/cli test` passed with 16 tests, `pnpm typecheck`, full `pnpm test`, `pnpm --filter @krn/db db:check`, no-`any` scan, and `git diff --check` passed; live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:harness-evidence` created execution run `8db14bdf-6390-485d-9736-89274c5affff`, evidence bundle `1dbe1d1b-e537-4670-a6cb-2b878b44c7f2`, review assessment `31fe636d-5d61-402b-82bc-64d225cd0c6d`, feedback delta `7bc1b78f-4aeb-48cb-b9e5-2d8b456f1fe9`, verified linked counts `1/1/1`, run events `2`, and cleanup remaining marker count `0`.
-- [x] 2026-06-21: Completed M21 Slice 08 doctor harness persistence readiness. Evidence: RED CLI test failed on missing doctor harness readiness behavior, GREEN `pnpm --filter @krn/cli test` passed with 17 tests, `pnpm typecheck`, full `pnpm test`, `pnpm --filter @krn/db db:check`, no-`any` scan, and `git diff --check` passed; no-env doctor reported harness persistence preview-only, live DB doctor reported harness persistence schema `ready (10/10 tables present)` and readiness `ready (schema present; smoke commands available)`, and direct SQL counts before/after live doctor stayed unchanged at `1,1,1,1,2`.
-- [x] 2026-06-21: Completed M21 Slice 09 persisted harness loop dogfood. Evidence: live `krn plan --task "improve KRN doctor harness persistence readiness" --persist` created execution run `66626e90-0cf5-4803-9bc7-f477b28b47c4`; live `krn evidence capture --run-id 66626e90-0cf5-4803-9bc7-f477b28b47c4 --persist` created evidence bundle `94cf92cf-a826-406f-bcad-9d9ebb7a0a8e`, review assessment `630d46ec-e323-4974-a90e-4a1a03571499`, and feedback delta `21c93ea7-2f2e-4e0c-8d80-ed07138e57f8`; live doctor and both harness smoke scripts passed; `pnpm typecheck` and `pnpm test` passed; SQL readback showed evidence contract present, linked counts `1/1/1`, run events `2`, and smoke cleanup count `0,0`.
-- [x] 2026-06-21: Completed M21 Slice 10 anti-rot audit. Evidence: clean `git status --short --branch`, `git log --oneline -12`, `pnpm typecheck`, `pnpm test`, no-env doctor, live doctor, live `pnpm db:ready`, live `pnpm db:smoke`, live `pnpm db:smoke:harness-plan`, live `pnpm db:smoke:harness-evidence`, and `pnpm --filter @krn/db db:check` passed; SQL smoke cleanup count returned `0,0,0`; forbidden directory, direct forbidden dependency, eval/benchmark directory, core library-safe, no-`any`, and `git diff --check` scans passed.
-- [x] 2026-06-21: Completed M21 Slice 11 final handoff. Evidence: final handoff records M21 completion, commits through anti-rot, DB proof status, persisted harness status, residual later scope, not-built surfaces, and M22 as the next safest action.
-- [x] 2026-06-22: Continued the M22-M26 Brain Spine through M26.06 worker job schema alignment. Evidence: `docs/runs/2026-06-22-codex-adapter-worker/` records M26.00-M26.06; `embed_memory_record`, `jobType`, `runAfter`, and `skipped` are now in the worker/schema contract; migration `0006_lucky_ken_ellis.sql` only adds enum value `skipped`; `pnpm --filter @krn/db db:check`, `pnpm typecheck`, `pnpm test`, `git diff --check`, and live `pnpm db:ready` passed with 7/7 migrations.
-- [x] 2026-06-22: Completed M26.07 WorkerJobRepository methods. Evidence: `DrizzleWorkerJobRepository` and worker job mappers/types are exported from `@krn/db`; RED DB tests failed on missing repository/mapper modules, then GREEN `pnpm --filter @krn/db test` passed with 13 files and 30 tests; `pnpm --filter @krn/db db:check`, `pnpm typecheck`, `pnpm test`, `git diff --check`, no-`any`, no-runtime-loop, and no `@krn/workers` import scans passed. Next: M26.08 worker job smoke path.
-- [x] 2026-06-22: Completed M26.08 worker job smoke path. Evidence: `pnpm db:smoke:worker-jobs` and `krn db smoke worker-jobs` exist; RED CLI/DB tests failed on missing worker smoke helpers and parser target, then GREEN focused tests passed; live `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:worker-jobs` passed with 6 enqueued/read back/running jobs, 2 succeeded, 2 skipped, 2 failed, cleanup deleted 6, and remaining marker count 0; `pnpm typecheck`, `pnpm test`, `git diff --check`, no-`any`, no `@krn/workers`, and no new worker-runtime scans passed. Next: M26.09 doctor Codex adapter / worker readiness.
-- [x] 2026-06-22: Completed M26.09 doctor Codex adapter / worker readiness. Evidence: RED CLI tests failed on missing adapter/worker doctor output and derive helpers, then GREEN `pnpm --filter @krn/cli test -- runCli.test.ts` passed with 62 tests; no-env doctor reports adapter/worker readiness preview-only; live DB doctor reports Codex adapter and worker job readiness ready before and after `pnpm db:smoke:codex-adapter` and `pnpm db:smoke:worker-jobs`; `pnpm typecheck`, `pnpm test`, `git diff --check`, no-`any`, no Codex execution/MCP entrypoint, no Redis/Kafka dependency, no broad worker runtime, and no `@krn/workers` DB import scans passed. Next: M26.10 dogfood Codex adapter and worker skeleton.
-- [x] 2026-06-22: Completed M26.10 Codex adapter and worker skeleton dogfood. Evidence: live `krn plan --task "render Codex execution brief for activated harness run" --persist` created execution run `e6b02685-63ed-48a2-a5cd-07b1a9a64fab`; `krn codex brief --run-id e6b02685-63ed-48a2-a5cd-07b1a9a64fab` read the run back from Postgres with source/memory refs, 5 hook expectations, `Codex invocation: none`, and `Memory mutation: none`; live `pnpm db:smoke:codex-adapter` passed with 0 Codex invocations and cleanup count 0; live `pnpm db:smoke:worker-jobs` passed with 6 jobs enqueued/read/running, 2 succeeded, 2 skipped, 2 failed, and cleanup count 0; persisted evidence capture created bundle `3ccbf304-fb5a-482a-a30e-8dff95d2a160`, review `7cbc61c2-b4c1-4056-a890-21fe5e89c873`, and feedback `a1f834b7-b3fd-4a81-945e-309451d93cf7`; live doctor reported adapter/worker readiness ready; final `pnpm typecheck`, `pnpm test`, and `git diff --check` passed. Next: M26.11 final M22-M26 anti-rot audit.
-- [x] 2026-06-22: Completed M26.11 final M22-M26 anti-rot audit. Evidence: clean status/log from `c5a7490`; local pgvector Postgres healthy; `pnpm typecheck`, `pnpm test`, no-env `krn doctor`, live `pnpm db:ready`, `pnpm --filter @krn/db db:check`, all DB smokes named in M26.11, live DB `krn doctor`, forbidden directory checks, bounded MCP/Codex runner/worker/runtime memory/source crawler/dependency/core-safety scans, and `git diff --check` passed; all smoke cleanup counts reported zero where emitted; no dashboard/API/MCP/server/broad worker/runtime markdown memory/source crawler/broad eval/separate store/Redis/Kafka/core runtime-import drift was found. Next: M26.12 final handoff.
-- [x] 2026-06-22: Completed M26.12 final handoff. Evidence: current run ledger and repo-level `docs/handoff/*` now record M22-M26 milestone status, exact commit ranges, verification, DB proof, persisted harness proof, source graph proof, memory governance proof, retrieval/search proof, activation proof, Codex adapter and worker skeleton proof, residual later scope, not-built surfaces, and one next safest action. Next: bounded maintenance worker lease/claim contract over the proven `worker_jobs` skeleton.
-- [x] 2026-06-22: Started M27 target repo init/connect dogfood with compact run ledger under `docs/runs/2026-06-22-target-repo-init-connect/`. Evidence: preflight `git status --short --branch`, `git log --oneline -20`, `pnpm typecheck`, `pnpm test`, no-env `krn doctor`, live `pnpm db:ready`, and all M22-M26 DB smokes passed after exporting `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`; plain `pnpm db:ready` first failed only because the URL was not exported. Next: inventory current init/connect/project model support before adding behavior.
-- [x] 2026-06-22: Completed M27 Slice 01 inventory. Evidence: current CLI rejects `krn init --dry-run --repo ...` and `krn plan --project ...` with status 2; current DB schema/repository supports Project, RepoInstallation, and ProjectKernel creation/readback but lacks first-class repo fingerprint lookup/idempotency, repo installation listing, fixture cleanup, target repo fixture, init overlay proposal, init/connect smokes, target-repo harness smoke, and doctor target repo readiness. Next: add the minimal disposable TypeScript target repo fixture.
-- [x] 2026-06-22: Completed M27 Slice 02 target repo fixture. Evidence: added `tests/fixtures/target-repos/typescript-basic/` with package manifest scripts, strict TypeScript config, and source file; fixture contains no `.krn`, `.codex`, `.agents`, dashboard, `apps/`, or runtime markdown memory; `pnpm typecheck` and `pnpm test` passed. Next: add minimal repo fingerprint schema/repository support for init/connect idempotency.
-- [x] 2026-06-22: Completed M27 Slice 03 schema check. Evidence: RED DB tests failed on missing repo fingerprint/repository support; added nullable `repo_installations.repo_fingerprint`, local path index, unique repo fingerprint index, generated `0007_conscious_scarlet_witch.sql`, inspected SQL, `pnpm --filter @krn/db db:check`, `pnpm typecheck`, and live `pnpm db:ready` passed with 8/8 migrations and pgvector available. Next: finish repository methods for init/connect idempotency/list/cleanup.
-- [x] 2026-06-22: Completed M27 Slice 04 repository methods. Evidence: added `getProjectByRepoFingerprint`, `getProjectByRepoPath`, `listRepoInstallationsForProject`, `cleanupFixtureProjectRecords`, and `repoFingerprint` persistence in `createRepoInstallation`; targeted DB repository test, `pnpm typecheck`, and `pnpm test` passed with 28 files and 122 tests. Next: implement `krn init --dry-run --repo <path>`.
-- [x] 2026-06-22: Completed M27 Slice 05 init dry-run. Evidence: RED CLI test failed because `init` was unsupported; added read-only `krn init --dry-run --repo <path>` detection for repo path, package manager, TypeScript, scripts, existing AGENTS/Codex/skills surfaces, forbidden surfaces, ProjectKernel proposal, Codex overlay proposal, `No files written`, and next connect command; real fixture dry-run passed; path-resolution regression under package cwd was fixed with workspace-root fallback; `pnpm typecheck` and `pnpm test` passed with 28 files and 124 tests. Next: implement `krn init --connect --repo <path> --persist`.
-- [x] 2026-06-22: Completed M27 Slice 06 init connect. Evidence: RED CLI tests failed because `init --connect` was unsupported; added parser/dispatcher and DB-backed connect runtime; missing DB reports `KRN_DATABASE_URL is required for krn init --connect --persist`; first fixture connect created Project `9da67341-0124-407e-b3fa-197f7f850a57`, RepoInstallation `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and ProjectKernel `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`; second connect reused the same IDs; `pnpm typecheck` and `pnpm test` passed with 28 files and 126 tests. Next: add `pnpm db:smoke:init-connect`.
-- [x] 2026-06-22: Completed M27 Slice 07 init-connect smoke. Evidence: RED CLI tests failed on missing smoke script/parser target; added `pnpm db:smoke:init-connect`, `krn db smoke init-connect`, and `runInitConnectSmokeCheck`; first live smoke exposed path-hint collision with an earlier manual fixture connect and was fixed by marker-scoped path hints; live smoke then passed with Project `f82ac45f-8b68-493c-9c4b-f594aa843b5c`, RepoInstallation `b6c30792-904a-4077-8f86-b3eda770ff73`, ProjectKernel `55e43209-6101-49b1-9c46-564e3d2abaec`, idempotency matches, and cleanup remaining marker count `0`; `pnpm typecheck` and `pnpm test` passed with 28 files and 128 tests. Next: implement project-scoped persisted planning with `krn plan --project <project-id>`.
-- [x] 2026-06-22: Completed M27 Slice 08 project-scoped persisted planning. Evidence: RED CLI tests failed because `plan --project ... --persist` was rejected by the parser; added explicit `--project` parsing, project ID runtime plumbing, DB runtime resolution through `getProject`, `getLatestProjectKernel`, and `listRepoInstallationsForProject`, and missing-project/no-fallback behavior; focused CLI tests passed with 70 tests; `pnpm typecheck` passed after fixing an `exactOptionalPropertyTypes` object-spread issue; live `krn plan --project 9da67341-0124-407e-b3fa-197f7f850a57 --task "improve test script readiness" --persist` loaded ProjectKernel `db32f8c2-dc8d-4e26-b4b5-89ca84f721f6`, RepoInstallation `e40219ed-a6b1-4842-9ef4-9bf851cdb65e`, and persisted ExecutionRun `d001b7b4-fa25-4156-8538-fb7dc316d3d3`. Next: add full target repo harness smoke.
-- [x] 2026-06-22: Completed M27 Slice 09 full target repo harness smoke. Evidence: RED CLI tests failed on missing `targetRepoHarnessSmoke`, parser target, and root script; added `pnpm db:smoke:target-repo-harness`, `krn db smoke target-repo-harness`, and a CLI smoke helper that connects the fixture, creates a project-scoped persisted plan, renders a Codex brief, persists evidence/review/feedback, verifies target-project linkage, and cleans marker rows; focused CLI tests passed with 73 tests; `pnpm typecheck` passed; live `pnpm db:smoke:target-repo-harness` passed with Project `f7d589eb-f532-48f3-b8a1-abd120b51f69`, RepoInstallation `e6d07b06-e015-457d-8f5d-450d56f77715`, ProjectKernel `2a752de3-82d3-4181-996b-ae46d49372d0`, ExecutionRun `f9f2073b-0d69-4810-a8aa-2415af9b7fde`, EvidenceBundle `88bd55e1-1bae-48f6-a2c9-17fdd825dee6`, ReviewAssessment `b7bd5876-0fa3-4daf-833b-4d7b145c47dc`, FeedbackDelta `d253e142-2f1f-4cc1-b661-4d3b7a33f033`, target project linked `yes`, and cleanup remaining marker count `0`. Next: update `krn doctor` target repo readiness.
-- [x] 2026-06-22: Started MM-00 memory ideal-state decision slice after M27 completion. Evidence: added ADR-0011, source-to-decision ledger, decisions, rejections, falsifiers, and MM-00..MM-24 roadmap under `docs/plans/memory-ideal-state/`; scope is docs-only and explicitly rejects DB tables, observer/reflector runtime, source crawler, dashboard/API/MCP/server/plugin surfaces, broad eval suites, and runtime markdown memory. Next: run MM-00 verification and commit.
-- [x] 2026-06-22: Completed MM-01 Observational Memory domain contracts in `packages/core`. Evidence: RED `pnpm --filter @krn/core test` first failed on missing `observations/index.js`; GREEN focused core tests pass with 1 file and 5 tests; full `pnpm typecheck`, full `pnpm test` with 30 files and 139 tests, `git diff --check`, forbidden runtime/dependency scans, no DB/Zod/fs/process/network core import scan, and no-`any` core scan passed. Scope stayed pure core domain plus test runner wiring.
+- [x] P0-00 Replace root `GOAL.md` with compact execution contract.
+- [x] P0-01 Replace root `PLAN.md` with canonical reset plan.
+- [ ] P0-02 Mark historical planning ledgers.
+- [ ] P0-03 Align README as doorway.
+- [ ] P0-04 Remove productized QG-06 direction.
+- [ ] P1-00 Classify CLI surfaces.
+- [ ] P1-01 Deproductize `krn audit`.
+- [ ] P1-02 Plan package barrel narrowing.
+- [ ] P2-00 Seal Memory Core write authority.
+- [ ] P2-01 Type SourceClaim project scope.
+- [ ] P2-02 Promote behavior metadata to typed fields.
+- [ ] P3-00 Define observation staging doctrine.
+- [ ] P3-01 Prove observation/reflection invariants.
+- [ ] P3-02 Create reviewed candidate writer from ReflectionRecord.
+- [ ] P4-00 Define activation as admission control.
+- [ ] P4-01 Add noisy context golden proofs.
+- [ ] P4-02 Type activation trace decisions.
+- [ ] P5-00 Bound Promptfoo claims.
+- [ ] P5-01 Add first real behavior eval gate.
+- [ ] P6-00 Mark worker runtime truth.
+- [ ] P6-01 Harden worker job contracts.
+- [ ] P7-00 Run first governed self-hosting loop.
 
 ## Surprises & Discoveries
 
-- Observation: The repository already has more than bootstrap docs; it also has a strict pnpm workspace and empty `core`/`cli` packages. Evidence: `package.json` has `pnpm -r --workspace-concurrency=1 typecheck`, and both packages have empty `src/index.ts` entrypoints. Implication: do not run an empty-repo bootstrap goal; continue from the TypeScript spine.
-- Observation: The current `GOAL.md` still declares Commit 2 as active and later phases as typed primitives, init dry-run, context build, and review capture. Evidence: `GOAL.md` names Commit 2 as active and lists later phases. Implication: update direction so target infra, DB schema, memory/source graph, and harness compiler start now.
-- Observation: Existing skills are compact and useful, but they are still bootstrap-oriented. Evidence: `to-issues` and `source-to-decision` encode bounded outputs and forbidden behavior. Implication: keep their discipline, but add or refactor operational skills around final KRN spine: target-infra-design, brain-store-schema, activation-engine, codex-adapter-plan, evidence-review-loop.
-- Observation: `docs/decisions/ADR-0009-canonical-harness-spine.md` already existed in the worktree before the brain-store ADR was added. Evidence: `README.md` and `docs/KRN_KERNEL.md` reference the canonical harness spine. Implication: keep canonical harness spine as ADR-0009 and record the Postgres/pgvector brain-store decision as ADR-0010.
-- Observation: The worktree had a partial `codex-adapter` lockfile importer and a root TypeScript path alias before the package shells existed. Evidence: `pnpm-lock.yaml` named `packages/codex-adapter` while `packages/codex-adapter/` was absent. Implication: regenerate the lockfile from actual package manifests and avoid speculative path aliases until imports require them.
-- Observation: Drizzle ORM 0.45.2 type declarations pull optional non-Postgres dialect declarations under TypeScript 5.9 when `skipLibCheck` is false. Evidence: `@krn/db` typecheck failed on `gel`, MySQL, SingleStore, SQLite, `Buffer`, and `TextDecoder` declarations before any project-code error appeared. Implication: keep the root strict config unchanged, add a package-local `skipLibCheck` exception only in `packages/db`, and keep KRN code strict.
-- Observation: Drizzle generated the pgvector column and HNSW index but did not create the `vector` extension. Evidence: `0002_shocking_post.sql` initially contained `vector(1536)` and `USING hnsw` but no `CREATE EXTENSION`. Implication: keep `packages/db/src/sql/pgvector.ts` as the explicit helper and add `CREATE EXTENSION IF NOT EXISTS vector` manually to the migration that first introduces vector columns.
-- Observation: Including Vitest test files in the production schema `tsc` pass pulled Vite/Vitest browser and timer declarations into a library package. Evidence: root `pnpm typecheck` failed on `AbortSignal`, timers, `EventTarget`, and `WebSocket` after tests were added, while `pnpm test` passed. Implication: exclude `*.test.ts` from production typecheck and keep test verification in Vitest.
-- Observation: Cross-package imports were first required by repository interfaces and DB adapters, not by empty package shells. Evidence: `packages/harness` now imports `@krn/core`, `packages/db` now imports `@krn/core` and `@krn/harness`, and root `tsconfig.base.json` now has package path aliases. Implication: keep aliases limited to real package boundaries and avoid speculative imports for future packages.
-- Observation: Several domain fields are stored as JSONB in the first schema, especially context selections, evidence commands, review findings, source lineage, and feedback candidates. Evidence: repository mappers in `packages/db/src/repositories/mappers.ts` narrow JSON values before returning domain types. Implication: adapters remain a trust boundary; harness/core must not consume raw DB JSON rows.
-- Observation: Adding a second package-local Vitest runner required a real `pnpm install`, not only `pnpm install --lockfile-only`. Evidence: the first harness RED run failed before imports with `vitest: not found`; after `pnpm install`, the intended RED failure was the missing activation module. Implication: when adding a new package-level executable dependency, refresh both lockfile and local workspace links before relying on test output.
-- Observation: Weak-context tests must avoid accidental term overlap with task non-goals and inherited fixture guidance. Evidence: an intended weak memory candidate was first activated because it contained `dashboard`, then because inherited `applicationGuidance` contained `doctor readiness`. Implication: activation/compiler tests need noisy fixtures that are explicitly unrelated across summary, body, and guidance.
-- Observation: Codex adapter can depend on harness/core without changing core import direction. Evidence: `packages/codex-adapter` now imports `@krn/core` and `@krn/harness`, while `rg '@krn/codex-adapter|codex-adapter' packages/core` returns no matches. Implication: Codex-native wording stays at the adapter edge and core remains executor-agnostic.
-- Observation: Runtime package execution through Vitest/tsx needs package `exports`, not only TypeScript path aliases. Evidence: the first CLI RED run failed to resolve `@krn/codex-adapter` until source exports were added to the internal packages used at runtime. Implication: source-package exports are part of the workspace contract for CLI and test execution.
-- Observation: Importing DB adapters into CLI pulls Drizzle declaration files into CLI typecheck. Evidence: CLI `pnpm typecheck` reproduced the known Drizzle optional-dialect declaration failures until `packages/cli/tsconfig.json` used the same package-local `skipLibCheck` exception as `packages/db`. Implication: any package that directly imports `@krn/db` may need the isolated third-party declaration exception while KRN source remains strict.
-- Observation: Doctor can report useful readiness without spawning shell commands. Evidence: `krn doctor` reads repo files directly, checks optional Postgres via SQL only when configured, and reports `KRN_DATABASE_URL` absence as not configured. Implication: doctor remains safe as a read-only command and should not become a hidden quality-gate runner.
-- Observation: Evidence capture needs to distinguish proof capture from proof execution. Evidence: `krn evidence capture` records changed files and expected commands but marks `pnpm typecheck`, `pnpm test`, and `git diff --check` as skipped rather than claiming it ran them. Implication: later evidence persistence should store command results only when explicitly supplied or actually run.
-- Observation: `packages/workers` inherited the early package-shell `rootDir: "src"` setting, which fails once the package imports `@krn/core` through workspace source exports. Evidence: the first full `pnpm typecheck` after adding worker types failed with TS6059 for `packages/core/src/*`; matching the dependent-package tsconfig pattern fixed the failure. Implication: packages with workspace source imports should not force a package-local `rootDir` unless declarations/build output require it.
-- Observation: The available multi-agent validation tool forbids spawning subagents unless the user explicitly asks for subagents or delegation. Evidence: tool metadata exposed the restriction during M17. Implication: M17 used deterministic skill-set audits and `quick_validate.py`; it does not claim subagent forward-testing.
-- Observation: The first KRN-on-KRN dogfood exposed stale Codex adapter skill hints after the M17 skill refactor. Evidence: initial dogfood output still referenced removed `select-kernel-patterns`. Implication: adapter hint maps must be updated with repo-local skill topology changes and covered by tests.
-- Observation: Final verification kept the bootstrap TypeScript critic but did not introduce a broad subagent system. Evidence: `.codex/agents` contains only `ts-type-critic.toml`. Implication: the original read-only critic remains allowed while broad agent sprawl stays out of the first spine.
+- `docs/materials/20206-06-23-audit.md` intentionally exists with `20206` in
+  the filename; do not silently rename it during this reset.
+- Root README still says the old memory ideal-state plan is active and QG-06 is
+  next; P0-03/P0-04 must repair that before feature work.
+- DB package implementation exists, but live DB runtime truth still depends on
+  `KRN_DATABASE_URL` in the current shell.
 
 ## Decision Log
 
-- Decision: Root `PLAN.md` becomes the living ExecPlan for the final harness spine.
-  Rationale: A Goal should be a compact completion contract, not the whole product brain. A self-contained PLAN.md can hold the long-running design, progress, decisions, validation, and recovery rules.
-  Date/Author: 2026-06-21 / Codex planning pass.
-
-- Decision: PostgreSQL + pgvector is the canonical KRN brain store.
-  Rationale: KRN needs one transactional state plane for schema, memory, source graph edges, vector retrieval, full-text retrieval, run ledger, outbox, worker jobs, and later dashboard read models. Starting with separate Qdrant, Neo4j, Elastic, Redis, or Kafka creates integration complexity before the product spine exists.
-  Date/Author: 2026-06-21 / Codex planning pass.
-
-- Decision: Drizzle and Zod are adopted now, not later.
-  Rationale: The new direction rejects “contracts now, infra later.” Database schema and IO validation must shape the harness from the beginning.
-  Date/Author: 2026-06-21 / Codex planning pass.
-
-- Decision: `packages/core` remains pure and Codex-agnostic.
-  Rationale: Codex integration is an adapter. Core domain types must survive changes to Codex surfaces, CLI rendering, MCP, hooks, and skills.
-  Date/Author: 2026-06-21 / Codex planning pass.
-
-- Decision: `requiredSkills` must not be a core TaskContract field.
-  Rationale: Skills are procedural memory / capability bindings selected by a capability compiler. Task contracts should express needs and constraints, not Codex skill names.
-  Date/Author: 2026-06-21 / Codex planning pass.
-
-- Decision: No dashboard, broad eval lane, MCP server, or plugin packaging before the first DB-backed CLI vertical path.
-  Rationale: The prior failure mode was artifact factory and dashboard/benchmark theater. The first proof must be a working harness path.
-  Date/Author: 2026-06-21 / Codex planning pass.
-
-- Decision: Use `drizzle-orm` 0.45.2, `drizzle-kit` 0.31.10, and `postgres` 3.4.9 for the first DB schema slice.
-  Rationale: Drizzle's current PostgreSQL docs support both `pg` and `postgres.js` drivers, drizzle-kit owns migration generation/checking, and Drizzle documents pgvector support while requiring explicit extension migration setup. `postgres.js` keeps the first adapter dependency small; pgvector extension SQL is deferred until vector columns are introduced.
-  Date/Author: 2026-06-21 / Codex DB schema pass.
-
-- Decision: `packages/db` uses a package-local `skipLibCheck` exception.
-  Rationale: Drizzle 0.45.2 declaration files expose optional dialect and peer declarations that fail this repo's strict dependency declaration check under TypeScript 5.9. The exception is isolated to third-party declaration checking in the DB package; KRN source remains strict and the root `skipLibCheck: false` stays unchanged.
-  Date/Author: 2026-06-21 / Codex DB schema pass.
-
-- Decision: The first embeddings table uses a 1536-dimension pgvector column and records model dimensions separately.
-  Rationale: Drizzle's vector column requires a fixed dimension. The schema records provider/model/dimension metadata and can add a later migration if KRN standardizes on another embedding dimension.
-  Date/Author: 2026-06-21 / Codex retrieval schema pass.
-
-- Decision: Full-text search uses a custom Drizzle `tsvector` column helper plus a GIN index.
-  Rationale: Drizzle does not expose a native `tsvector` helper in this package version. A local helper keeps the PostgreSQL full-text plan explicit without adding a separate search store.
-  Date/Author: 2026-06-21 / Codex retrieval schema pass.
-
-- Decision: Test files are excluded from package production `tsc` and verified by Vitest.
-  Rationale: The package `typecheck` script should protect exported library code without importing Vitest/Vite runtime declarations into production compiler settings. Boundary behavior remains covered by `pnpm test`.
-  Date/Author: 2026-06-21 / Codex schema validation pass.
-
-- Decision: Repository ports live in `packages/harness`; Postgres adapters live in `packages/db`.
-  Rationale: The repository contracts are harness-facing capabilities, while Drizzle schema, transactions, mappers, and Postgres details belong to the DB package. This preserves `packages/core` as pure domain types and keeps CLI/Codex surfaces out of state access.
-  Date/Author: 2026-06-21 / Codex repository adapter pass.
-
-- Decision: State writes that pair with version, run-event, or outbox records are implemented as DB transactions.
-  Rationale: Memory record creation must preserve its initial version, execution/evidence status changes must preserve run ledger evidence, and review feedback/source-memory candidate creation must preserve outbox visibility. The first spine should not create state without its audit/work signal when both are part of the same operation.
-  Date/Author: 2026-06-21 / Codex repository adapter pass.
-
-- Decision: Activation is pure harness logic over candidate records, not DB queries or Codex rendering.
-  Rationale: Repository adapters supply candidates, the activation engine ranks and filters them, and later compiler/adapter layers decide how to render the selected context. Keeping activation pure makes exclusions reviewable and prevents CLI, DB, or Codex surfaces from becoming hidden selection policy.
-  Date/Author: 2026-06-21 / Codex activation engine pass.
-
-- Decision: Source claims with blank `doesNotProve` are excluded during context assembly.
-  Rationale: The kernel decision rule requires source -> mechanism -> KRN implication -> decision/rejection and explicit limits. A source claim without `doesNotProve` is not safe to activate even if it scores highly.
-  Date/Author: 2026-06-21 / Codex activation engine pass.
-
-- Decision: The harness compiler accepts resolved workspace/project IDs; CLI slug resolution is deferred to the CLI slice.
-  Rationale: M11 should compile a harness plan through repository ports without becoming a CLI parser or project resolver. The schema layer already validates external operator input, while the CLI can later map workspace/project slugs to IDs before calling the compiler.
-  Date/Author: 2026-06-21 / Codex harness compiler pass.
-
-- Decision: Evidence contract is a harness artifact, not an `EvidenceBundle`.
-  Rationale: An `EvidenceBundle` records proof after execution. M11 needs pre-execution expectations for typecheck, tests, diff risk, review burden, and rollback path; execution capture remains a later CLI/evidence milestone.
-  Date/Author: 2026-06-21 / Codex harness compiler pass.
-
-- Decision: Codex adapter output is plain text plus small helper renderers, not a runtime Codex invocation.
-  Rationale: M12 should prepare a bounded brief that a CLI can display and a future adapter can pass along. Calling Codex, writing files, implementing MCP, or mutating memory would cross into execution/runtime surfaces that are explicitly later.
-  Date/Author: 2026-06-21 / Codex adapter renderer pass.
-
-- Decision: `krn plan --task` supports a no-store preview when `KRN_DATABASE_URL` is absent.
-  Rationale: The command must be runnable in the current workspace without pretending that file-backed memory or `.krn` truth exists. The output explicitly says persistence is disabled and uses empty memory/source repositories; when `KRN_DATABASE_URL` exists, the CLI resolves workspace/project rows and uses the Drizzle-backed repositories.
-  Date/Author: 2026-06-21 / Codex CLI vertical path pass.
-
-- Decision: CLI argument parsing stays manual for M13.
-  Rationale: The first command needs only `plan --task`; adding a parser dependency before more commands exist would not improve the contract enough to justify another runtime dependency.
-  Date/Author: 2026-06-21 / Codex CLI vertical path pass.
-
-- Decision: `krn doctor` is read-only inspection, not command execution.
-  Rationale: Doctor should explain readiness and remediation without mutating repo state or running quality gates behind the user's back. Typecheck/test remain explicit verification commands, while doctor reads configuration, package files, and optional DB status.
-  Date/Author: 2026-06-21 / Codex read-only doctor pass.
-
-- Decision: `krn evidence capture` prints evidence when no execution run is configured.
-  Rationale: Evidence capture must be useful on the current worktree but must not invent an `ExecutionRun` or mutate Memory Core. When `KRN_DATABASE_URL` and `KRN_EXECUTION_RUN_ID` are absent, the command clearly reports printed-only persistence.
-  Date/Author: 2026-06-21 / Codex evidence capture pass.
-
-- Decision: Worker skeleton behavior is enqueue/describe only.
-  Rationale: M16 needs typed maintenance job contracts and a verifiable enqueue handoff to `worker_jobs` plus `outbox_events`, not a long-running daemon. Actual job execution, leasing, retries, and runtime worker commands are later behavior.
-  Date/Author: 2026-06-21 / Codex worker skeleton pass.
-
-- Decision: Repo-local skills now target operational harness disciplines, not broad planning meta-work.
-  Rationale: M17 should help future Codex runs build the final KRN spine: target infrastructure ADRs, brain-store schema, activation, Codex adapter rendering, evidence review, source decisions, TypeScript safety, and handoff continuity. The broader bootstrap planning skills were removed to reduce trigger ambiguity and context drift.
-  Date/Author: 2026-06-21 / Codex operational skill refactor pass.
-
-- Decision: `krn doctor` reports derived brain-store readiness.
-  Rationale: The operator needs one line that distinguishes no-store preview from reachable/ready persisted harness state. The check is derived from existing Postgres, pgvector, and migration checks and does not create DB state or run migrations.
-  Date/Author: 2026-06-21 / Codex dogfood pass.
-
-- Decision: Observational Memory is a staging layer, not Memory Core.
-  Rationale: KRN needs event-derived, source-ranged, temporal observations and offline reflections that create reviewable candidates. It must not let summaries, reflections, benchmark claims, or raw research files become approved memory or runtime truth.
-  Date/Author: 2026-06-22 / Codex MM-00 decision pass.
+- 2026-06-23: Adopt the audit recommendation to replace root `GOAL.md` and
+  root `PLAN.md` instead of adding another addendum to the old plan.
+- 2026-06-23: Reject QG-06/productized anti-slop as active product direction.
+- 2026-06-23: Keep `krn audit` only as delete/rename/internal-guard candidate
+  until a specific slice decides its fate.
+- 2026-06-23: Treat old memory ideal-state plan, QG docs, handoffs, and raw
+  materials as historical quarry unless a slice explicitly promotes a decision.
 
 ## Outcomes & Retrospective
 
-Update this section after each major milestone.
+Current outcome:
 
-Current outcome: Milestone 0 installed the root `PLAN.md` as the living ExecPlan and compacted `GOAL.md` into the activation contract. Milestone 1 added the canonical harness-spine ADR, the PostgreSQL/pgvector brain-store ADR, and the package boundary map. Milestone 2 added the final harness package shells without runtime behavior. Milestones 4 through 6 added the first Drizzle/Postgres harness, memory, source graph, retrieval, and activation schemas with generated SQL migrations. Milestones 3 and 7 added the first real boundary tests and Zod IO validation schemas. Milestone 8 added the pure core domain model. Milestone 9 added harness repository ports and Drizzle-backed Postgres adapters with typed DB-to-domain mappers. Milestone 10 added the pure activation engine and tests for small high-signal selection, invalidated-memory exclusion, source safety, and explicit exclusion records. Milestone 11 added the harness compiler over repository ports with retrieval trace persistence, weak-context abstention, capability planning, Codex adapter plan references, and evidence contracts. Milestone 12 added the Codex adapter renderer as a pure text-rendering edge. Milestone 13 added the first CLI vertical path for `krn plan --task`. Milestone 14 added the read-only `krn doctor`. Milestone 15 added printed evidence capture with clean-tree behavior and no memory mutation. Milestone 16 added typed maintenance worker job skeletons with enqueue/outbox handoff and no background loop. Milestone 17 aligned repo-local skills with the final harness spine. Milestone 18 used the harness on KRN itself and recorded the first dogfood run. Milestone 19 added final handoff docs and verification evidence. M20 proved local Postgres/pgvector migration readiness and a minimal persistence smoke path. M21 is now active and has a preflight ledger.
+- Root activation contract and root execution plan are reset.
+- Package source is untouched.
+- Next safe action is P0-02: mark old planning surfaces historical.
 
-Current gaps: M21 still needs full persisted evidence-loop smoke/readback/cleanup proof. Full MemoryStore, SourceStore, eval persistence, and worker execution remain later scope.
+## Command Evidence
 
-## Plan of Work
+Initial evidence for this reset:
 
-Work in small vertical slices. Each slice should compile before moving on. Commit after each accepted slice using Conventional Commits. Never hide broken state behind future slices.
+```sh
+git status --short --branch
+```
 
-### Milestone 0 — Install the Final Plan and Close Bootstrap
+Observed before editing:
 
-Add this file at repository root as `PLAN.md`. Update `GOAL.md` so it is no longer the bootstrap product brain. It should contain only the compact Codex Goal activation contract, current non-goals, and pointer to `PLAN.md` for the living execution plan. Update `README.md` current phase to say the repo is moving from Commit 2 bootstrap into the final Postgres-backed harness spine.
+```txt
+## main...origin/main
+?? docs/materials/20206-06-23-audit.md
+```
 
-Edit these files:
+This proves the only observed dirty file before the docs reset was the new raw
+audit material. It does not prove code correctness.
 
-- `PLAN.md`: add this file.
-- `GOAL.md`: replace the long bootstrap-phase roadmap with the compact Goal and pointer to `PLAN.md`.
-- `README.md`: historically updated Current Phase from Commit 2 bootstrap into the final Postgres-backed harness spine; current README now reflects MM-16/MM-17A state.
-- `AGENTS.md`: add one short sentence: “For complex KRN implementation work, keep root PLAN.md current as the living ExecPlan.” Keep AGENTS short.
+Additional verification must be appended by each implementing slice.
 
-Run:
+P0-00/P0-01 verification run after replacing root `GOAL.md` and `PLAN.md`:
 
-    pnpm typecheck
+```sh
+wc -l GOAL.md PLAN.md
+```
 
-Expected result:
+Observed:
 
-    all workspace packages typecheck successfully
+```txt
+  126 GOAL.md
+ 1272 PLAN.md
+ 1398 total
+```
 
-Acceptance:
+This proves `GOAL.md` is compact relative to the previous long activation
+contract. It does not prove future slices are implemented.
 
-- `PLAN.md` exists.
-- `GOAL.md` is compact and not the architecture backlog.
-- `AGENTS.md` remains short.
-- No runtime behavior is added.
-- `pnpm typecheck` passes.
+```sh
+rg -n "docs/plans/memory-ideal-state/PLAN.md|QG-06|quality gate automation|smell scan|anti-slop subsystem" GOAL.md PLAN.md
+```
 
-Commit:
+Observed matches are in explicit rejection, historical-quarry language, or
+verification commands. This proves the root files no longer route active work
+into the old memory plan or productized QG-06 direction. It does not prove
+README/handoff docs are repaired; P0-02 through P0-04 still own that work.
 
-    docs(plan): add final KRN harness spine plan
+```sh
+git diff --check
+```
 
-### Milestone 1 — Brain Store ADR and Package Boundary ADR
+Observed: passed with no output.
 
-Create a new ADR for the target data plane and a concise architecture note for packages.
+## Final Completion Criteria
 
-Add:
+The reset is complete only when:
 
-- `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md`
-- `docs/architecture/package-boundaries.md`
+1. `GOAL.md` is compact and points to root `PLAN.md`.
+2. Root `PLAN.md` remains canonical and current.
+3. Stale docs are historical or deleted.
+4. QG-06/productized anti-slop is removed as product direction.
+5. `krn audit` is internalized/deproductized or explicitly slated for
+   deletion/rename.
+6. CLI surface taxonomy exists.
+7. MemoryReviewGate is the only public Memory Core promotion path.
+8. Behavior-governing metadata debt is typed or explicitly tracked.
+9. SourceClaim project scoping is typed or safely derived.
+10. Observation/reflection are proven staging/candidate-only.
+11. Activation has noisy-context behavior proofs.
+12. Promptfoo smoke is not overclaimed.
+13. Workers are not described as runtime.
+14. A self-hosting memory loop is run and recorded.
+15. Every slice has command evidence and rollback.
 
-`ADR-0010-brain-store-postgres-pgvector.md` must decide:
+## Commit Discipline
 
-- PostgreSQL + pgvector is canonical KRN state.
-- Graph is relational edge tables first.
-- Vector search is pgvector.
-- Lexical search is PostgreSQL full-text search.
-- Async is PostgreSQL outbox and job tables first.
-- PGlite or Docker Postgres may be used for local/test.
-- Qdrant, Neo4j, LanceDB, Elastic/OpenSearch, Redis, and Kafka are rejected for first implementation.
-- Markdown and `.krn` are not Memory Core.
+Use Conventional Commits.
 
-`docs/architecture/package-boundaries.md` must name each package, what it owns, and what it must not import.
+Every commit must answer:
 
-Run:
+```txt
+what changed?
+why now?
+what invariant is stronger?
+what commands prove it?
+what does not prove it?
+rollback path?
+```
 
-    pnpm typecheck
+Do not make broad commits. Do not mix docs-current-truth reset with package
+source hardening.
 
-Acceptance:
+## Stop Conditions
 
-- ADR exists and is clear enough that later implementation does not debate the canonical store.
-- Package boundary doc exists.
-- No new dependencies are added in this milestone.
-- `pnpm typecheck` passes.
+Stop and report if:
 
-Commit:
-
-    docs(adr): choose Postgres pgvector brain store
-
-### Milestone 2 — Expand Workspace Shells Without Behavior
-
-Create package shells for the final spine:
-
-- `packages/schema`
-- `packages/db`
-- `packages/harness`
-- `packages/codex-adapter`
-- `packages/workers`
-
-Each package should contain:
-
-- `package.json`
-- `tsconfig.json`
-- `src/index.ts`
-
-Package names:
-
-- `@krn/schema`
-- `@krn/db`
-- `@krn/harness`
-- `@krn/codex-adapter`
-- `@krn/workers`
-
-Use the existing strict base config. Export nothing initially except safe placeholders if TypeScript needs a module boundary. Do not add API or dashboard packages.
-
-Run:
-
-    pnpm typecheck
-
-Acceptance:
-
-- Workspace includes all final spine packages.
-- All packages typecheck.
-- `packages/core` remains dependency-free.
-- No runtime behavior is implemented yet.
-
-Commit:
-
-    build: add final harness workspace packages
-
-### Milestone 3 — Add Test Tooling for Real Boundaries
-
-Add Vitest only when there is a boundary to protect. Start with minimal tests around pure domain fixtures and schema parsing once those exist. If adding the runner before tests, keep it lightweight and explain why in the Decision Log.
-
-Likely edits:
-
-- root `package.json`: add `test` script such as `pnpm -r --workspace-concurrency=1 test` only after at least one package has tests.
-- relevant package `package.json` files: add local `test` scripts.
-- `vitest.config.ts` only if shared configuration is useful.
-
-Acceptance:
-
-- Tests are not added as theater.
-- Every test protects a real boundary: no runtime markdown memory, no `requiredSkills` in core, schema rejects untrusted invalid input, activation rejects context dumps, or source claims require `doesNotProve`.
-- `pnpm typecheck` passes.
-- `pnpm test` passes once introduced.
-
-Commit:
-
-    test: add boundary tests for KRN spine
-
-### Milestone 4 — Drizzle/Postgres Schema Foundation
-
-Add Drizzle and a Postgres driver. Prefer `postgres` or `pg` after checking Drizzle’s current compatibility and keeping the adapter thin. Add drizzle-kit for migration generation.
-
-Edit:
-
-- root `package.json`: add dev/build scripts only as needed, such as `db:generate` and `db:check`.
-- `packages/db/package.json`: add Drizzle dependencies.
-- `packages/db/src/schema/harness.ts`: harness tables.
-- `packages/db/src/schema/events.ts`: event and outbox tables.
-- `packages/db/src/schema/index.ts`: export schemas.
-- `packages/db/src/migrations/`: generated SQL migrations if drizzle-kit is configured.
-
-Add schema for:
-
-- `workspaces`
-- `projects`
-- `repo_installations`
-- `project_kernels`
-- `operator_intents`
-- `task_contracts`
-- `harness_plans`
-- `context_assemblies`
-- `execution_runs`
-- `evidence_bundles`
-- `review_assessments`
-- `feedback_deltas`
-- `run_events`
-- `outbox_events`
-- `worker_jobs`
-
-Design notes:
-
-- Use UUID primary keys.
-- Use timestamps with timezone semantics.
-- Use JSONB for flexible metadata only when the shape is not yet stable.
-- Keep important query/filter fields relational.
-- Use enums or text unions consistently; do not hide everything in JSON.
-- `run_events` should support append-only event ledger semantics.
-- `outbox_events` should include status, payload, attempts, available_at, and last_error.
-
-Run:
-
-    pnpm typecheck
-    pnpm --filter @krn/db db:generate
-
-Expected result:
-
-    schema compiles and migration generation succeeds
-
-Acceptance:
-
-- Schema compiles.
-- Migrations are generated or the migration command is clearly documented if no DB connection is required.
-- No business logic is implemented in DB schema files.
-- No separate queue or store is introduced.
-
-Commit:
-
-    feat(db): add canonical harness schema
-
-### Milestone 5 — Memory and Source Graph Schema
-
-Add memory and source graph schema in `packages/db`.
-
-Add files:
-
-- `packages/db/src/schema/memory.ts`
-- `packages/db/src/schema/sources.ts`
-
-Memory tables:
-
-- `memory_records`
-- `memory_record_versions`
-- `memory_edges`
-- `memory_candidates`
-- `memory_applications`
-- `memory_feedback_events`
-- `anti_memory_records`
-- `memory_activation_traces`
-
-Source graph tables:
-
-- `source_artifacts`
-- `source_chunks`
-- `source_claims`
-- `source_claim_edges`
-- `source_decisions`
-- `source_rejections`
-- `source_snapshots`
-
-Rules to encode in schema or repository validation:
-
-- Memory records require source lineage unless explicitly marked as user preference.
-- Memory records require confidence, owner, application guidance, validity/invalidation fields, and feedback counters.
-- Source claims require mechanism, KRN implication, `doesNotProve`, trust tier, support type, and consumer.
-- Anti-memory is first-class, not a comment field.
-
-Run:
-
-    pnpm typecheck
-    pnpm --filter @krn/db db:generate
-
-Acceptance:
-
-- Memory and source graph schema compile.
-- Migration includes the new tables.
-- There is no markdown memory runtime path.
-
-Commit:
-
-    feat(db): add memory and source graph schema
-
-### Milestone 6 — Retrieval and Activation Schema
-
-Add retrieval/search/activation schema.
-
-Add file:
-
-- `packages/db/src/schema/retrieval.ts`
-
-Tables:
-
-- `embedding_models`
-- `embeddings`
-- `search_documents`
-- `retrieval_runs`
-- `retrieval_candidates`
-- `activation_decisions`
-- `context_items`
-- `context_exclusions`
-
-Design notes:
-
-- Include a pgvector column plan. If Drizzle vector support requires custom SQL, isolate it in `packages/db/src/sql/pgvector.ts` and document it.
-- Include PostgreSQL full-text search column plan. If generated tsvector columns require raw SQL, isolate it in migrations and document why.
-- Include metadata filters, trust tier, TTL/validity fields, invalidation status, and ranking scores.
-- `context_exclusions` is as important as `context_items`; KRN wins by not reading 99 percent of available material.
-
-Run:
-
-    pnpm typecheck
-    pnpm --filter @krn/db db:generate
-
-Acceptance:
-
-- Retrieval schema compiles.
-- No separate vector or search DB is added.
-- Context inclusions and exclusions are modeled explicitly.
-
-Commit:
-
-    feat(db): add retrieval and activation schema
-
-### Milestone 7 — Zod IO Schemas
-
-Implement unknown-first validation in `packages/schema`.
-
-Add files:
-
-- `packages/schema/src/operatorIntent.ts`
-- `packages/schema/src/taskContract.ts`
-- `packages/schema/src/memoryCandidate.ts`
-- `packages/schema/src/sourceClaim.ts`
-- `packages/schema/src/harnessCompile.ts`
-- `packages/schema/src/evidenceCapture.ts`
-- `packages/schema/src/index.ts`
-
-Schemas:
-
-- `OperatorIntentInputSchema`
-- `TaskContractInputSchema`
-- `MemoryCandidateInputSchema`
-- `SourceClaimInputSchema`
-- `HarnessCompileInputSchema`
-- `EvidenceCaptureInputSchema`
-
-Rules:
-
-- Public parse functions accept `unknown`.
-- Parsed values become typed domain inputs.
-- Do not export `any`.
-- Source claim input must require `mechanism`, `krnImplication`, and `doesNotProve`.
-- Memory candidate input must require `sourceLineage`, `confidence`, `owner`, and `applicationGuidance`, or explicitly mark the memory as user preference.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-
-Acceptance:
-
-- Invalid CLI/source/memory inputs are rejected in tests.
-- Valid minimal inputs parse.
-- No schema imports DB code.
-
-Commit:
-
-    feat(schema): add harness IO validation schemas
-
-### Milestone 8 — Pure Core Domain Model
-
-Implement core domain types in `packages/core`. Keep them pure.
-
-Add files under `packages/core/src/`:
-
-- `ids.ts`
-- `time.ts`
-- `operatorIntent.ts`
-- `taskContract.ts`
-- `harnessPlan.ts`
-- `contextAssembly.ts`
-- `capabilityPlan.ts`
-- `codexAdapterPlanRef.ts`
-- `executionRun.ts`
-- `evidenceBundle.ts`
-- `reviewAssessment.ts`
-- `feedbackDelta.ts`
-- `memory.ts`
-- `source.ts`
-- `policy.ts`
-- `eval.ts`
-- `index.ts`
-
-Types:
-
-- `OperatorIntent`
-- `TaskContract`
-- `HarnessPlan`
-- `ContextAssembly`
-- `ContextInclusion`
-- `ContextExclusion`
-- `CapabilityRequirement`
-- `CapabilityPlan`
-- `CodexAdapterPlanRef`
-- `ExecutionRun`
-- `EvidenceBundle`
-- `ReviewAssessment`
-- `FeedbackDelta`
-- `MemoryRecord`
-- `MemoryCandidate`
-- `AntiMemoryRecord`
-- `SourceClaim`
-- `SourceDecisionEdge`
-- `PolicyGate`
-- `PolicyGateResult`
-- `ToolBoundary`
-- `EvalCandidate`
-
-Rules:
-
-- No DB imports.
-- No CLI imports.
-- No filesystem imports.
-- No process/env imports.
-- No Codex skill names in core.
-- No `requiredSkills` field in `TaskContract`.
-- Public types must be explicit and strict.
-
-Run:
-
-    pnpm typecheck
-    grep -R "requiredSkills" packages/core && exit 1 || true
-
-Acceptance:
-
-- Types compile.
-- Core remains pure.
-- The grep command finds no `requiredSkills` in `packages/core`.
-
-Commit:
-
-    feat(core): add final harness domain model
-
-### Milestone 9 — Repository Interfaces and Postgres Adapters
-
-Define repository interfaces in a package that does not pollute core. Prefer `packages/harness` for ports and `packages/db` for adapters, or `packages/core` for pure port types only if they remain IO-free abstractions. Do not implement fake in-memory architecture as the final route.
-
-Interfaces:
-
-- `ProjectRepository`
-- `MemoryRepository`
-- `SourceRepository`
-- `HarnessRunRepository`
-- `EventLedgerRepository`
-- `OutboxRepository`
-- `RetrievalRepository`
-
-Adapters in `packages/db`:
-
-- `DrizzleProjectRepository`
-- `DrizzleMemoryRepository`
-- `DrizzleSourceRepository`
-- `DrizzleHarnessRunRepository`
-- `DrizzleEventLedgerRepository`
-- `DrizzleOutboxRepository`
-- `DrizzleRetrievalRepository`
-
-Rules:
-
-- Repositories return domain types, not raw DB rows.
-- Writes that create state should also append run/audit events where appropriate.
-- Use transactions for state + event/outbox writes.
-- Keep SQL escape hatches isolated and documented.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-
-Acceptance:
-
-- Repository methods compile.
-- Core has no DB imports.
-- Tests can use mocked ports or a PGlite/test Postgres adapter if available, but tests must not imply fake memory is final architecture.
-
-Commit:
-
-    feat(db): add Postgres repository adapters
-
-### Milestone 10 — Activation Engine
-
-Implement activation in `packages/harness`.
-
-Add files:
-
-- `packages/harness/src/activation/memoryQuery.ts`
-- `packages/harness/src/activation/sourceQuery.ts`
-- `packages/harness/src/activation/rankCandidates.ts`
-- `packages/harness/src/activation/trustFilter.ts`
-- `packages/harness/src/activation/temporalFilter.ts`
-- `packages/harness/src/activation/contextRoi.ts`
-- `packages/harness/src/activation/assembleContext.ts`
-- `packages/harness/src/activation/index.ts`
-
-Functions:
-
-- `buildMemoryQuery(task: TaskContract): MemoryQuery`
-- `buildSourceQuery(task: TaskContract): SourceQuery`
-- `rankCandidates(candidates, query): RankedCandidate[]`
-- `applyTrustFilter(candidates, policy): Candidate[]`
-- `applyTemporalFilter(candidates, now): Candidate[]`
-- `applyContextROI(candidates, budget): Candidate[]`
-- `assembleContext(input): ContextAssembly`
-
-Behavior:
-
-- Select a small working set.
-- Record explicit exclusions.
-- Every inclusion has a reason and expected use.
-- Memory can abstain.
-- Source can abstain.
-- Stale, invalidated, low-trust, or irrelevant items are excluded with reasons.
-- Do not context dump.
-
-Tests:
-
-- A noisy fixture selects a small high-signal working set.
-- Invalidated memory is excluded.
-- Source claims without `doesNotProve` are not eligible.
-- Activation records both inclusions and exclusions.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-
-Acceptance:
-
-- Activation engine compiles and passes tests.
-- Context assembly is reviewable.
-- No markdown memory path is introduced.
-
-Commit:
-
-    feat(harness): add activation engine
-
-### Milestone 11 — Harness Compiler
-
-Implement the compiler that turns operator intent into a Codex-ready plan without invoking Codex.
-
-Add files:
-
-- `packages/harness/src/compiler/compileHarnessPlan.ts`
-- `packages/harness/src/compiler/createTaskContract.ts`
-- `packages/harness/src/compiler/createCapabilityPlan.ts`
-- `packages/harness/src/compiler/createEvidenceContract.ts`
-- `packages/harness/src/compiler/index.ts`
-
-Flow:
-
-    OperatorIntent
-      -> TaskContract
-      -> HarnessPlan
-      -> ContextAssembly
-      -> CapabilityPlan
-      -> CodexAdapterPlanRef
-      -> EvidenceContract
-
-Rules:
-
-- Use repositories and activation engine.
-- Persist activation trace and harness plan.
-- Do not invoke Codex.
-- Do not mutate memory automatically.
-- Do not spawn agents.
-- Do not write markdown memory.
-
-Tests:
-
-- Golden fixture flows through compiler.
-- Weak context produces abstain/exclusion records rather than broad rereads.
-- Evidence contract includes typecheck/test/diff-risk/review-burden expectations.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-
-Acceptance:
-
-- Compiler output has final harness shape.
-- The compiler can be called by CLI later.
-- Core remains Codex-agnostic.
-
-Commit:
-
-    feat(harness): add Postgres-backed harness compiler
-
-### Milestone 12 — Codex Adapter Renderer
-
-Implement rendering in `packages/codex-adapter`.
-
-Add files:
-
-- `packages/codex-adapter/src/renderExecutionBrief.ts`
-- `packages/codex-adapter/src/renderGoalReference.ts`
-- `packages/codex-adapter/src/renderExecPlanReference.ts`
-- `packages/codex-adapter/src/renderSkillHints.ts`
-- `packages/codex-adapter/src/renderHookExpectations.ts`
-- `packages/codex-adapter/src/index.ts`
-
-Renderer output should include:
-
-- objective;
-- non-goals;
-- selected context inclusions;
-- selected context exclusions;
-- capability plan;
-- policy/tool boundaries;
-- evidence contract;
-- next action;
-- references to Goal/ExecPlan when appropriate.
-
-Rules:
-
-- Codex-specific names and surfaces live here, not in core.
-- Renderer does not call Codex.
-- Renderer does not mutate memory.
-- Renderer does not implement MCP server.
-
-Tests:
-
-- Sample CodexAdapterPlan output is stable enough to review.
-- No Codex adapter imports appear in `packages/core`.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-
-Acceptance:
-
-- Execution brief is human-readable and bounded.
-- Output includes explicit exclusions and evidence requirements.
-
-Commit:
-
-    feat(codex): add adapter plan renderer
-
-### Milestone 13 — CLI Vertical Path: `krn plan --task`
-
-Implement the first user-facing behavior in `packages/cli`.
-
-Command:
-
-    krn plan --task "..."
-
-Behavior:
-
-- Parse args manually or with a tiny dependency only if justified.
-- Validate input through `packages/schema`.
-- Load config for database connection or test/local adapter.
-- Call harness compiler.
-- Persist run state if DB is configured.
-- Output execution brief, context inclusions/exclusions, evidence contract, and next action.
-
-It must not:
-
-- call Codex;
-- spawn agents;
-- create `.krn` truth;
-- write runtime markdown memory;
-- create dashboard;
-- bypass schema validation.
-
-Example expected output shape:
-
-    KRN Plan
-    Task: improve KRN doctor brain store readiness
-    Context included: <n>
-    Context excluded: <n>
-    Evidence expected: pnpm typecheck, doctor output, diff risk, rollback path
-    Next action: implement the smallest missing doctor check
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-    pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"
-
-Acceptance:
-
-- Command runs.
-- Output is bounded and final-pattern shaped.
-- No forbidden surfaces are created.
-
-Commit:
-
-    feat(cli): add Postgres-backed harness plan command
-
-### Milestone 14 — Read-Only Doctor
-
-Implement:
-
-    krn doctor
-
-Checks:
-
-- Postgres connection/config status.
-- pgvector availability when DB is configured.
-- migration status if DB is configured.
-- AGENTS.md compactness.
-- no runtime markdown memory.
-- no `.krn` memory truth.
-- TypeScript strictness.
-- workspace package status.
-- skills surface status.
-- hooks surface status, if hooks are introduced later.
-- forbidden surfaces absent.
-
-Rules:
-
-- Doctor is read-only.
-- Doctor prints clear remediation.
-- Doctor failure should not mutate repo state.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-    pnpm --filter @krn/cli krn doctor
-
-Acceptance:
-
-- Doctor command runs.
-- Doctor reports current brain-store readiness honestly.
-- Doctor fails or warns if forbidden surfaces exist.
-
-Commit:
-
-    feat(cli): add KRN brain store doctor
-
-### Milestone 15 — Evidence Capture
-
-Implement:
-
-    krn evidence capture
-
-Behavior:
-
-- Record changed files.
-- Record commands run if provided or detectable.
-- Record typecheck/test status.
-- Record diff risk.
-- Record review burden.
-- Record rollback path.
-- Create feedback candidates.
-- Append run event.
-
-Rules:
-
-- No automatic memory application.
-- Memory writes are candidates unless explicitly accepted.
-- Evidence capture can run on a clean tree and say so.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-    pnpm --filter @krn/cli krn evidence capture
-
-Acceptance:
-
-- Command runs on clean tree.
-- Evidence bundle is persisted or printed depending on DB config.
-- No memory mutation except explicit candidate creation.
-
-Commit:
-
-    feat(cli): add evidence capture with feedback candidates
-
-### Milestone 16 — Worker Skeleton
-
-Implement worker job types, not long-running daemon behavior.
-
-Add in `packages/workers`:
-
-- `embed_source_chunk`
-- `compact_memory`
-- `detect_contradiction`
-- `expire_stale_memory`
-- `promote_eval_candidate`
-
-Rules:
-
-- Use Postgres `worker_jobs` and `outbox_events` tables.
-- No Redis.
-- No Kafka.
-- No infinite worker loop unless explicitly invoked in a command with safe stop behavior.
-- Job payloads are typed.
-
-Run:
-
-    pnpm typecheck
-    pnpm test
-
-Acceptance:
-
-- Job types compile.
-- Worker skeleton can enqueue/describe jobs.
-- No background process is required to verify this milestone.
-
-Commit:
-
-    feat(workers): add KRN maintenance job skeleton
-
-### Milestone 17 — Operational Skill Refactor
-
-Refactor repo-local skills only after the core harness direction is encoded. Keep existing useful skills if they still reduce ambiguity and review burden. Remove or replace skills that are bootstrap-only or too broad.
-
-Target internal skill set:
-
-- `target-infra-adr`: turns architecture choices into ADRs and explicit rejections.
-- `brain-store-schema`: designs Drizzle/Postgres schema with lineage, TTL, invalidation, and outbox semantics.
-- `activation-engine`: selects context with inclusions, exclusions, trust, time, and context ROI.
-- `codex-adapter-plan`: renders bounded Codex briefs without leaking into core.
-- `evidence-review-loop`: captures diff risk, review burden, rollback, and feedback candidates.
-- keep `source-to-decision` if it continues to prevent decorative sources.
-- keep `typescript-type-safety` if it continues to protect unknown-first boundaries.
-- keep `handoff-compact` if it produces first-screen resumability.
-
-Rules:
-
-- Skills remain engineering disciplines, not KRN marketing.
-- No stack-agent zoo.
-- Skill frontmatter remains compact.
-- Each skill has trigger, workflow, output, forbidden behavior, and verification.
-
-Run:
-
-    pnpm typecheck
-
-Acceptance:
-
-- Skills align with final product spine.
-- No skill duplicates product docs.
-- No broad subagent system is introduced.
-
-Commit:
-
-    docs(skills): align operational skills with harness spine
-
-### Milestone 18 — Dogfood KRN on KRN
-
-Run the first product dogfood task:
-
-    pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"
-
-Then:
-
-- inspect ContextAssembly;
-- inspect context exclusions;
-- inspect EvidenceContract;
-- implement the smallest doctor improvement suggested by the plan;
-- run `pnpm typecheck` and `pnpm test` if available;
-- run `krn doctor`;
-- run `krn evidence capture`;
-- create `FeedbackDelta` or printed feedback candidate output.
-
-Record the run in:
-
-- `docs/runs/2026-06-21-first-postgres-backed-harness-dogfood.md`
-
-The dogfood record must include:
-
-- task;
-- plan output summary;
-- included context;
-- excluded context;
-- commands run;
-- changed files;
-- review burden;
-- diff risk;
-- rollback path;
-- memory/source/eval candidates;
-- what the dogfood proved;
-- what it did not prove.
-
-Acceptance:
-
-- Dogfood record exists.
-- The product has been used on itself.
-- Review burden and diff risk are recorded.
-- Next safest action is clear.
-
-Commit:
-
-    docs(run): record first Postgres-backed harness dogfood
-
-### Milestone 19 — Final Handoff and Verification
-
-Add handoff docs only after the dogfood run exists.
-
-Add or update:
-
-- `docs/handoff/progress.md`
-- `docs/handoff/handoff.md`
-- `docs/handoff/decisions.md`
-- `docs/handoff/blockers.md`
-- `docs/handoff/verification.md`
-- `GOAL.md` operational skill-use constraints
-
-Each file must be short and action-oriented. Do not create a new artifact factory.
-
-Final verification commands:
-
-    pnpm typecheck
-    pnpm test
-    pnpm --filter @krn/cli krn plan --task "improve KRN doctor brain store readiness"
-    pnpm --filter @krn/cli krn doctor
-    pnpm --filter @krn/cli krn evidence capture
-    find . -maxdepth 3 -type d | sort
-    grep -R "requiredSkills" packages/core && exit 1 || true
-
-Final forbidden-surface verification:
-
-- no dashboard UI;
-- no `apps/` unless explicitly accepted in a later revision;
-- no separate vector/graph/search/queue store;
-- no runtime markdown memory;
-- no `.krn` truth;
-- no broad eval suite;
-- no broad subagent system;
-- no Codex adapter imports in `packages/core`.
-
-Commit:
-
-    docs(run): add final KRN infra handoff
-
-## Concrete First Next Action
-
-The first implementation action after committing this plan is Milestone 0.
-
-Do exactly this:
-
-1. Create root `PLAN.md` from this file.
-2. Replace `GOAL.md` with a compact Goal activation contract and pointer to `PLAN.md`.
-3. Add one sentence to `AGENTS.md` telling Codex to keep `PLAN.md` current for complex KRN implementation work.
-4. Update `README.md` Current Phase.
-5. Run `pnpm typecheck`.
-6. Commit `docs(plan): add final KRN harness spine plan`.
-
-Do not add Drizzle, Zod, new packages, or runtime code in the same commit. Keep the review diff small.
-
-## Validation and Acceptance for the Whole Plan
-
-The plan is complete only when all of the following are true:
-
-- `pnpm typecheck` passes.
-- `pnpm test` passes if tests have been introduced.
-- `krn plan --task "improve KRN doctor brain store readiness"` runs and outputs final-pattern plan data.
-- `krn doctor` runs read-only and reports brain-store readiness.
-- `krn evidence capture` runs and records or prints evidence without automatic memory mutation.
-- Drizzle schema and migrations exist for harness, memory, source, retrieval, run events, outbox, and worker jobs.
-- Zod schemas parse unknown input at CLI/API boundaries.
-- Core domain model is pure and Codex-agnostic.
-- Activation engine selects bounded context and records exclusions.
-- Codex adapter renderer produces a bounded execution brief.
-- A dogfood run is recorded.
-- No forbidden surfaces are present.
-
-## Idempotence and Recovery
-
-Every milestone is additive and should leave the repository in a typechecking state. If a milestone fails midway, revert only the files touched in that milestone or split the milestone into a smaller follow-up. Do not proceed to the next milestone with a broken typecheck.
-
-Database migrations should be generated in small slices. If a migration is wrong before it has been shared, regenerate it in the same milestone and record the reason in the Decision Log. If a migration has already been shared, add a corrective migration rather than silently rewriting history unless the repo is explicitly still in local bootstrap and the user approves history rewriting.
-
-If a dependency choice becomes problematic, document the attempted path, error output, and replacement decision in `Surprises & Discoveries` and `Decision Log` before switching.
-
-If context becomes too broad, stop and use the activation-engine principle manually: name what is included, what is excluded, and why.
-
-## Interfaces and Dependencies
-
-Initial dependencies:
-
-- TypeScript is already present and remains strict.
-- pnpm is already the package manager.
-
-Dependencies to add when their milestone begins:
-
-- Drizzle ORM and drizzle-kit in the DB milestone.
-- A PostgreSQL driver in the DB milestone.
-- Zod in the schema milestone.
-- Vitest in the first real boundary-test milestone.
-
-Do not add dependencies speculatively. Each dependency must serve the milestone being implemented.
-
-Important interfaces to exist by the end:
-
-    interface ProjectRepository { ... }
-    interface MemoryRepository { ... }
-    interface SourceRepository { ... }
-    interface HarnessRunRepository { ... }
-    interface EventLedgerRepository { ... }
-    interface OutboxRepository { ... }
-    interface RetrievalRepository { ... }
-
-    function buildMemoryQuery(task: TaskContract): MemoryQuery
-    function buildSourceQuery(task: TaskContract): SourceQuery
-    function assembleContext(input: AssembleContextInput): ContextAssembly
-    function compileHarnessPlan(input: HarnessCompileInput): Promise<HarnessCompileResult>
-    function renderExecutionBrief(plan: CodexAdapterPlan): string
-
-The exact signatures may evolve, but any change must preserve the canonical flow and be recorded in the Decision Log.
-
-## Artifacts and Notes
-
-Expected final tree shape at a high level:
-
-    .agents/skills/
-    .codex/agents/
-    docs/
-    packages/core/
-    packages/schema/
-    packages/db/
-    packages/harness/
-    packages/codex-adapter/
-    packages/cli/
-    packages/workers/
-    PLAN.md
-    GOAL.md
-    AGENTS.md
-    README.md
-    package.json
-    pnpm-workspace.yaml
-    tsconfig.base.json
-
-Not expected yet:
-
-    apps/
-    packages/api/
-    packages/dashboard/
-    .krn/
-    runtime markdown memory folders
-    qdrant/neo4j/redis/kafka infrastructure
-    broad eval or benchmark suites
-
-## Change Notes
-
-2026-06-21: Initial PLAN.md drafted from current repository state, project doctrine, user-provided final infra direction, and Codex Goal/ExecPlan patterns. The plan begins from the existing kernel workspace rather than an empty repository and makes PostgreSQL + pgvector the first implementation spine.
-
-2026-06-22: M27 Slice 10 added read-only target repo readiness to `krn doctor`.
-No-env doctor reports preview-only target repo readiness; DB-aware doctor reports
-`ready (init-connect smoke proven; target repo harness smoke proven)` after
-live `db:smoke:init-connect` and `db:smoke:target-repo-harness` proof.
-
-2026-06-22: M27 Slice 11 dogfooded the fixture flow end to end: dry-run,
-connect, project-scoped persisted plan, Codex brief readback, persisted
-evidence capture, DB-aware doctor, and both target repo smokes. Direct dogfood
-ExecutionRun: `eb16411b-d304-420e-adc7-1fdb86857c1d`.
-
-2026-06-22: M27 Slice 12 anti-rot passed: typecheck, tests, DB-aware doctor,
-DB readiness, all M22-M27 DB smokes, forbidden surface/dependency scans, core
-library-safety scan, and `git diff --check`.
-
-2026-06-22: M27 Slice 13 updated final handoff docs. M27 is complete through
-target repo dry-run, connect, project-scoped plan, Codex brief readback,
-evidence capture, doctor readiness, full target-repo smoke, and anti-rot.
-
-2026-06-22: M27 Slice 14 produced
-`docs/plans/memory-ideal-state/GOAL.md`, mapping the two 2026-06-22 memory
-research files to current repo state, gaps, falsifiers, vocabulary, and
-MM-00..MM-24 implementation slices.
+- local DB is unavailable for a DB-required slice;
+- typecheck/test cannot run;
+- repo state has unrelated dirty changes that affect the slice;
+- a slice requires destructive deletion not already authorized by this plan;
+- evidence contradicts this plan;
+- the next action requires broad historical rereads instead of a bounded slice.
