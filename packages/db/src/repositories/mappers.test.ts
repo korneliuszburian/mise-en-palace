@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type {
+  EvidenceBundle,
   EvalCandidate,
   MemoryCandidate,
   SourceDecision
@@ -86,6 +87,63 @@ describe("mapFeedbackDelta", () => {
     expect(result.memoryCandidates).toEqual([memoryCandidate]);
     expect(result.sourceDecisions).toEqual([sourceDecision]);
     expect(result.evalCandidates).toEqual([evalCandidate]);
+  });
+});
+
+describe("evidence bundle mappers", () => {
+  it("normalizes legacy and rich command rows from persisted JSON", () => {
+    const mapEvidenceBundle = mapper("mapEvidenceBundle") as (
+      row: unknown
+    ) => EvidenceBundle;
+
+    const result = mapEvidenceBundle({
+      id: "evidence-bundle-1",
+      executionRunId: "execution-run-1",
+      status: "captured",
+      changedFiles: ["packages/cli/src/runEvidenceCaptureCommand.ts"],
+      commands: [
+        {
+          command: "pnpm typecheck",
+          status: "passed",
+          exitCode: 0,
+          outputPath: ".local-lab/typecheck.txt"
+        },
+        {
+          command: "pnpm test",
+          status: "skipped"
+        },
+        {
+          command: "bad command",
+          status: "maybe"
+        }
+      ],
+      diffRisk: "medium",
+      reviewBurden: "Review command provenance.",
+      rollbackPath: "git revert <commit>",
+      metadata: {},
+      createdAt,
+      updatedAt
+    });
+
+    expect(result.commands).toEqual([
+      {
+        command: "pnpm typecheck",
+        status: "passed",
+        exitCode: 0,
+        outputPath: ".local-lab/typecheck.txt",
+        outputRef: ".local-lab/typecheck.txt",
+        provenance: "captured_output_file",
+        doesNotProve:
+          "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+      },
+      {
+        command: "pnpm test",
+        status: "skipped",
+        provenance: "default_template",
+        doesNotProve:
+          "This command row does not prove the command executed; it is default template evidence only."
+      }
+    ]);
   });
 });
 

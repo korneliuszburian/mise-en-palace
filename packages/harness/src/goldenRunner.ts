@@ -7,11 +7,17 @@ import {
 
 export type GoldenBehaviorProofStatus = "passed" | "failed";
 
+export type GoldenBehaviorProofProvenance =
+  | "krn_behavior_execution"
+  | "promptfoo_integration_smoke";
+
 export interface GoldenBehaviorProof {
   caseId: string;
   status: GoldenBehaviorProofStatus;
+  provenance: GoldenBehaviorProofProvenance;
   summary: string;
   evidenceRefs: readonly string[];
+  doesNotProve: string;
 }
 
 export type GoldenCaseRunStatus = "passed" | "failed" | "missing";
@@ -44,10 +50,27 @@ export interface RunGoldenTaskFixturesInput {
 const byId = <T extends { caseId: string }>(left: T, right: T): number =>
   left.caseId.localeCompare(right.caseId);
 
+const acceptableBehaviorProofProvenances = new Set<GoldenBehaviorProofProvenance>([
+  "krn_behavior_execution"
+]);
+
+const proofHasAcceptedBehaviorProvenance = (proof: GoldenBehaviorProof): boolean =>
+  acceptableBehaviorProofProvenances.has(proof.provenance);
+
 const proofIsPassing = (proof: GoldenBehaviorProof): boolean =>
   proof.status === "passed" &&
+  proofHasAcceptedBehaviorProvenance(proof) &&
   proof.summary.trim().length > 0 &&
-  proof.evidenceRefs.length > 0;
+  proof.evidenceRefs.length > 0 &&
+  proof.doesNotProve.trim().length > 0;
+
+const failedProofSummary = (proof: GoldenBehaviorProof): string => {
+  if (!proofHasAcceptedBehaviorProvenance(proof)) {
+    return `Proof provenance ${proof.provenance} is not accepted as GoldenTask behavior proof: ${proof.doesNotProve}`;
+  }
+
+  return proof.summary;
+};
 
 export const runGoldenTaskFixtures = (
   input: RunGoldenTaskFixturesInput
@@ -73,7 +96,7 @@ export const runGoldenTaskFixtures = (
       return {
         caseId: goldenCase.id,
         status: "failed",
-        summary: proof.summary,
+        summary: failedProofSummary(proof),
         evidenceRefs: [...proof.evidenceRefs]
       };
     }

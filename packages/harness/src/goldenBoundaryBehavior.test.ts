@@ -9,11 +9,6 @@ import type {
 } from "@krn/core";
 
 import {
-  runRepoSurfaceAudit,
-  runSourceGroundingAudit,
-  runTypeSafetyAudit
-} from "./audit/auditChecks.js";
-import {
   applyContextROI,
   assembleContext,
   buildMemoryQuery,
@@ -126,71 +121,4 @@ describe("golden boundary behavior cases", () => {
     ]);
   });
 
-  it("requires source claims to include doesNotProve", () => {
-    const findings = runSourceGroundingAudit({
-      sliceId: "MM-62",
-      capturedAt: now,
-      files: [],
-      changedFiles: [],
-      intendedFiles: [],
-      verificationCommands: [],
-      sourceClaims: [{
-        id: "source-claim-missing-does-not-prove",
-        claim: "A source proves the whole memory architecture is correct.",
-        mechanism: "The source demonstrates one relevant mechanism.",
-        krnImplication: "KRN may adopt the mechanism after review.",
-        doesNotProve: "",
-        consumer: "MM-62 source golden case",
-        status: "accepted"
-      }]
-    });
-
-    expect(findings).toEqual(expect.arrayContaining([
-      expect.objectContaining({
-        category: "source_grounding",
-        severity: "blocking",
-        title: "Source claim lacks source-to-decision fields"
-      })
-    ]));
-  });
-
-  it("finds forbidden product surfaces through audit", () => {
-    const findings = runRepoSurfaceAudit({
-      sliceId: "MM-62",
-      capturedAt: now,
-      files: [{
-        path: "packages/research-foundry/src/index.ts",
-        content: "export const researchFoundry = true;"
-      }],
-      changedFiles: [],
-      intendedFiles: [],
-      verificationCommands: []
-    });
-
-    expect(findings).toEqual([expect.objectContaining({
-      category: "architecture",
-      severity: "blocking",
-      title: "Forbidden Research Foundry surface"
-    })]);
-  });
-
-  it("enforces unknown-first boundaries by flagging unchecked parsing", () => {
-    const findings = runTypeSafetyAudit({
-      sliceId: "MM-62",
-      capturedAt: now,
-      files: [{
-        path: "packages/cli/src/runtimeInput.ts",
-        content: "export const parse = (raw: string) => JSON.parse(raw);"
-      }],
-      changedFiles: [],
-      intendedFiles: [],
-      verificationCommands: []
-    });
-
-    expect(findings).toEqual([expect.objectContaining({
-      category: "type_safety",
-      severity: "warning",
-      title: "Unchecked JSON.parse boundary"
-    })]);
-  });
 });

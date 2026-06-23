@@ -3,6 +3,8 @@ import {
   parseMemoryCandidateInput
 } from "@krn/schema";
 import type {
+  ReflectionCandidateEvidence,
+  ReflectionCandidateEvidenceProvenance,
   SourceLineageRef
 } from "@krn/core";
 import {
@@ -44,6 +46,30 @@ const kindAliases = new Map<string, string>([
   ["architecture-boundary", "constraint"]
 ]);
 
+const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidenceProvenance>([
+  "default_template",
+  "operator_reported",
+  "captured_output_file",
+  "command_runner",
+  "external_log",
+  "run_event",
+  "source_chunk",
+  "tool_trace",
+  "diff",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "user_correction",
+  "user_preference",
+  "local_operator_note",
+  "source_claim"
+]);
+
+const isCandidateEvidenceProvenance = (
+  value: string
+): value is ReflectionCandidateEvidenceProvenance =>
+  candidateEvidenceProvenances.has(value as ReflectionCandidateEvidenceProvenance);
+
 const normalizeKind = (kind: string | undefined): string | undefined => {
   const candidate = kind?.trim();
 
@@ -66,6 +92,46 @@ const toSourceLineageRefs = (
     sourceId: item.sourceId,
     ...(item.note === undefined ? {} : { note: item.note })
   }));
+
+const buildCandidateEvidence = (
+  command: MemoryCandidateAddCommand
+): ReflectionCandidateEvidence | undefined => {
+  const provenance = command.candidateEvidenceProvenance?.trim();
+  const evidenceRefs = command.candidateEvidenceRefs
+    .map((evidenceRef) => evidenceRef.trim())
+    .filter((evidenceRef) => evidenceRef.length > 0);
+  const doesNotProve = command.candidateEvidenceDoesNotProve?.trim();
+  const evidenceInputProvided =
+    provenance !== undefined ||
+    command.candidateEvidenceRefs.length > 0 ||
+    doesNotProve !== undefined;
+
+  if (!evidenceInputProvided) {
+    return undefined;
+  }
+
+  if (provenance === undefined || provenance.length === 0) {
+    throw new Error("--candidate-evidence-provenance is required when candidate evidence is supplied");
+  }
+
+  if (!isCandidateEvidenceProvenance(provenance)) {
+    throw new Error(`Unsupported candidate evidence provenance: ${provenance}`);
+  }
+
+  if (evidenceRefs.length === 0) {
+    throw new Error("--candidate-evidence-ref is required when candidate evidence is supplied");
+  }
+
+  if (doesNotProve === undefined || doesNotProve.length === 0) {
+    throw new Error("--candidate-evidence-does-not-prove is required when candidate evidence is supplied");
+  }
+
+  return {
+    provenance,
+    evidenceRefs,
+    doesNotProve
+  };
+};
 
 const formatPreview = (
   command: MemoryCandidateAddCommand,
@@ -91,12 +157,19 @@ const formatPreview = (
     ...(command.sourceClaimId === undefined
       ? []
       : [`sourceClaimId: ${command.sourceClaimId}`]),
+    ...(command.candidateEvidenceProvenance === undefined
+      ? []
+      : [`candidateEvidenceProvenance: ${command.candidateEvidenceProvenance}`]),
+    ...(command.candidateEvidenceRefs.length === 0
+      ? []
+      : [`candidateEvidenceRefs: ${command.candidateEvidenceRefs.join(",")}`]),
     `invalidationRule: ${candidate.invalidationRule ?? ""}`
   ].join("\n");
 
 const formatPersisted = (
   memoryCandidateId: string,
-  candidate: ReturnType<typeof parseMemoryCandidateInput>
+  candidate: ReturnType<typeof parseMemoryCandidateInput>,
+  evidence: ReflectionCandidateEvidence | undefined
 ): string =>
   [
     "KRN Memory Candidate Add",
@@ -111,7 +184,13 @@ const formatPersisted = (
     `kind: ${candidate.kind}`,
     `status: ${candidate.status}`,
     `confidence: ${candidate.confidence}`,
-    `sourceClaimIds: ${candidate.sourceClaimIds.join(",")}`
+    `sourceClaimIds: ${candidate.sourceClaimIds.join(",")}`,
+    ...(evidence === undefined
+      ? ["candidateEvidence: missing (cannot pass MemoryReviewGate until evidence is added)"]
+      : [
+          `candidateEvidenceProvenance: ${evidence.provenance}`,
+          `candidateEvidenceRefs: ${evidence.evidenceRefs.join(",")}`
+        ])
   ].join("\n");
 
 export const runMemoryCandidateAddCommand = async (
@@ -124,6 +203,7 @@ export const runMemoryCandidateAddCommand = async (
     throw new Error(`Unsupported memory kind: ${command.memoryKind}`);
   }
 
+  const evidence = buildCandidateEvidence(command);
   const candidateInput = parseMemoryCandidateInput({
     executionRunId: command.runId,
     feedbackDeltaId: command.feedbackDeltaId,
@@ -140,6 +220,7 @@ export const runMemoryCandidateAddCommand = async (
     isUserPreference: false,
     metadata: {
       ...command.metadata,
+      ...(evidence === undefined ? {} : { reflectionCandidateEvidence: evidence }),
       ...(command.memoryKind === normalizedKind ? {} : { inputKind: command.memoryKind })
     }
   });
@@ -206,7 +287,7 @@ export const runMemoryCandidateAddCommand = async (
     });
 
     return {
-      stdout: formatPersisted(memoryCandidate.id, candidateInput)
+      stdout: formatPersisted(memoryCandidate.id, candidateInput, evidence)
     };
   } finally {
     await databaseRuntime.close();

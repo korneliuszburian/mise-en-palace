@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import {
   assessEvidenceBundleCompleteness,
   assessEvidenceBundleRollbackPath,
+  normalizeEvidenceCommand,
   scoreEvidenceBundleReviewRisk,
   type EvidenceBundle
 } from "./evidenceBundle.js";
@@ -44,6 +45,37 @@ const bundle = (overrides: Partial<EvidenceBundle>): EvidenceBundle => ({
 });
 
 describe("evidence bundle completeness", () => {
+  test("normalizes legacy command rows with weak default provenance", () => {
+    expect(normalizeEvidenceCommand({
+      command: "pnpm test",
+      status: "skipped"
+    })).toEqual({
+      command: "pnpm test",
+      status: "skipped",
+      provenance: "default_template",
+      doesNotProve:
+        "This command row does not prove the command executed; it is default template evidence only."
+    });
+  });
+
+  test("normalizes captured output command rows with explicit limits", () => {
+    expect(normalizeEvidenceCommand({
+      command: "pnpm typecheck",
+      status: "passed",
+      exitCode: 0,
+      outputPath: ".local-lab/typecheck.txt"
+    })).toEqual({
+      command: "pnpm typecheck",
+      status: "passed",
+      exitCode: 0,
+      outputPath: ".local-lab/typecheck.txt",
+      outputRef: ".local-lab/typecheck.txt",
+      provenance: "captured_output_file",
+      doesNotProve:
+        "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    });
+  });
+
   test("accepts a complete implementation evidence bundle", () => {
     expect(assessEvidenceBundleCompleteness(bundle({}))).toEqual([]);
   });

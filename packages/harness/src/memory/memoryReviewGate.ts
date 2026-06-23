@@ -1,6 +1,7 @@
 import type {
   MemoryCandidate,
   MemoryRecord,
+  ReflectionCandidateEvidence,
   SourceClaim
 } from "@krn/core";
 import type {
@@ -39,6 +40,38 @@ const promotableStatuses = new Set<MemoryCandidate["status"]>([
   "candidate"
 ]);
 
+const isRecord = (value: unknown): value is Record<string, unknown> => (
+  typeof value === "object" && value !== null && !Array.isArray(value)
+);
+
+const stringListOrEmpty = (value: unknown): string[] => (
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []
+);
+
+const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidence["provenance"]>([
+  "default_template",
+  "operator_reported",
+  "captured_output_file",
+  "command_runner",
+  "external_log",
+  "run_event",
+  "source_chunk",
+  "tool_trace",
+  "diff",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "user_correction",
+  "user_preference",
+  "local_operator_note",
+  "source_claim"
+]);
+
+const isCandidateEvidenceProvenance = (
+  value: string
+): value is ReflectionCandidateEvidence["provenance"] =>
+  candidateEvidenceProvenances.has(value as ReflectionCandidateEvidence["provenance"]);
+
 const requireTrimmed = (value: string, field: string): string => {
   const trimmed = value.trim();
 
@@ -47,6 +80,31 @@ const requireTrimmed = (value: string, field: string): string => {
   }
 
   return trimmed;
+};
+
+const candidateEvidence = (candidate: MemoryCandidate): ReflectionCandidateEvidence | undefined => {
+  const value = candidate.metadata["reflectionCandidateEvidence"];
+
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const provenance = typeof value.provenance === "string" ? value.provenance.trim() : "";
+  const doesNotProve = typeof value.doesNotProve === "string" ? value.doesNotProve.trim() : "";
+
+  if (
+    provenance.length === 0 ||
+    !isCandidateEvidenceProvenance(provenance) ||
+    doesNotProve.length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    provenance,
+    evidenceRefs: stringListOrEmpty(value.evidenceRefs),
+    doesNotProve
+  };
 };
 
 const assertCandidateReviewable = (candidate: MemoryCandidate): void => {
@@ -70,6 +128,20 @@ const assertCandidateReviewable = (candidate: MemoryCandidate): void => {
 
   if (candidate.validUntil !== undefined && candidate.invalidationRule === undefined) {
     throw new Error(`MemoryCandidate ${candidate.id} requires invalidationRule for temporal promotion`);
+  }
+
+  const evidence = candidateEvidence(candidate);
+
+  if (evidence === undefined) {
+    throw new Error(`MemoryCandidate ${candidate.id} requires candidate evidence provenance before promotion`);
+  }
+
+  if (evidence.evidenceRefs.length === 0) {
+    throw new Error(`MemoryCandidate ${candidate.id} requires candidate evidence refs before promotion`);
+  }
+
+  if (evidence.provenance === "default_template") {
+    throw new Error(`MemoryCandidate ${candidate.id} cannot be promoted from weak default-template evidence`);
   }
 };
 
@@ -103,6 +175,7 @@ export const buildMemoryReviewGateMetadata = (input: {
       input.review.evidenceReviewedRef,
       "evidenceReviewedRef"
     ),
+    candidateEvidence: candidateEvidence(input.candidate),
     sourceClaimIds: input.candidate.sourceClaimIds,
     reviewedSourceClaimIds: input.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id)
   }

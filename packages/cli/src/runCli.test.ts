@@ -7,9 +7,13 @@ import {
 import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
+import {
+  commandResultDoesNotProve
+} from "@krn/core";
 import type {
   AntiMemoryRecord,
   MemoryRecord,
+  ObservationItem,
   SourceClaim
 } from "@krn/core";
 import type {
@@ -74,6 +78,19 @@ const unusedMemoryRepository = {
 };
 
 describe("runCli", () => {
+  it("rejects the removed public audit command", async () => {
+    const result = await runCli(["audit", "repo"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("Unsupported command: audit");
+    expect(result.stderr).not.toContain("krn audit");
+  });
+
   it("prints a target repo init dry-run without writing files", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const fixtureRepo = path.join(
@@ -849,6 +866,126 @@ describe("runCli", () => {
     expect(result.stdout).toContain("anti-memory");
   });
 
+  it("selects reviewed Memory Core write-authority memory for the self-hosting plan", async () => {
+    const writeAuthorityMemory: MemoryRecord = {
+      id: "11111111-1111-4111-8111-111111111111",
+      projectId: "project-1",
+      key: "memory-core-write-authority",
+      kind: "constraint",
+      status: "active",
+      summary: "MemoryReviewGate seals Memory Core write authority",
+      body:
+        "Public Memory Core promotion must go through MemoryReviewGate and promoteReviewedMemoryCandidate; raw MemoryRecord writes remain adapter internals.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance:
+        "Use when sealing Memory Core write authority or reviewing public MemoryRecord promotion paths.",
+      sourceLineage: [{ sourceId: "PLAN.md#P2-00" }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {},
+      validFrom: now,
+      createdAt: now,
+      updatedAt: now
+    };
+    const adjacentSourceGraphMemory: MemoryRecord = {
+      id: "22222222-2222-4222-8222-222222222222",
+      projectId: "project-1",
+      key: "source-graph-postgres",
+      kind: "constraint",
+      status: "active",
+      summary: "Source graph decisions should remain Postgres-backed",
+      body: "Use relational source graph edges before adding a separate graph database.",
+      owner: "kernel",
+      confidence: 95,
+      applicationGuidance: "Use when deciding whether source graph work needs a graph database.",
+      sourceLineage: [{ sourceId: "PLAN.md#P2-01" }],
+      isUserPreference: false,
+      positiveFeedbackCount: 0,
+      negativeFeedbackCount: 0,
+      metadata: {},
+      validFrom: now,
+      createdAt: now,
+      updatedAt: now
+    };
+    const result = await runCli(
+      ["plan", "--task", "seal Memory Core write authority", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          };
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository,
+              memoryRepository: {
+                async listActiveMemory() {
+                  return [adjacentSourceGraphMemory, writeAuthorityMemory];
+                },
+                async listAntiMemoryForProject() {
+                  return [];
+                }
+              },
+              sourceRepository: {
+                async listClaimsForProject() {
+                  return [];
+                }
+              },
+              retrievalRepository: {
+                ...dependencies.retrievalRepository,
+                async searchLexical() {
+                  return [];
+                }
+              }
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    const writeAuthorityIndex = result.stdout.indexOf(
+      "memory_record:11111111-1111-4111-8111-111111111111"
+    );
+    const adjacentIndex = result.stdout.indexOf(
+      "memory_record:22222222-2222-4222-8222-222222222222"
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(writeAuthorityIndex).toBeGreaterThanOrEqual(0);
+    expect(adjacentIndex).toBeGreaterThan(writeAuthorityIndex);
+    expect(result.stdout).toContain(
+      "expected_use=Use when sealing Memory Core write authority or reviewing public MemoryRecord promotion paths."
+    );
+  });
+
   it("returns exit 2 for invalid plan args", async () => {
     const result = await runCli(["plan"], {
       env: {},
@@ -859,6 +996,26 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(2);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("Usage: krn plan [--project <project-id>] --task");
+  });
+
+  it("prints evidence capture verification examples in help", async () => {
+    const result = await runCli(["--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "krn evidence capture [--run-id <id>] [--verification \"pnpm typecheck=passed\"] [--persist]"
+    );
+    expect(result.stdout).toContain(
+      "example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
+    );
+    expect(result.stdout).toContain(
+      "evidence capture records outcomes; it does not execute commands"
+    );
   });
 
   it("prints a read-only doctor report", async () => {
@@ -1589,6 +1746,12 @@ describe("runCli", () => {
         "medium",
         "--application-guidance",
         "Use when deciding whether to add a separate graph DB",
+        "--candidate-evidence-provenance",
+        "operator_reported",
+        "--candidate-evidence-ref",
+        "raw-evidence:run-event-1",
+        "--candidate-evidence-does-not-prove",
+        "This does not prove the candidate is approved Memory Core truth.",
         "--invalidation-rule",
         "Revisit when graph traversal exceeds Postgres edge-table performance",
         "--persist"
@@ -1673,13 +1836,22 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
     expect(result.stdout).toContain("memoryCandidate: memory-candidate-1");
+    expect(result.stdout).toContain("candidateEvidenceProvenance: operator_reported");
+    expect(result.stdout).toContain("candidateEvidenceRefs: raw-evidence:run-event-1");
     expect(capturedCandidate).toMatchObject({
       projectId: "project-1",
       executionRunId: "execution-run-1",
       proposedBy: "cli",
       kind: "constraint",
       confidence: 70,
-      sourceClaimIds: ["source-claim-1"]
+      sourceClaimIds: ["source-claim-1"],
+      metadata: {
+        reflectionCandidateEvidence: {
+          provenance: "operator_reported",
+          evidenceRefs: ["raw-evidence:run-event-1"],
+          doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+        }
+      }
     });
   });
 
@@ -1863,7 +2035,13 @@ describe("runCli", () => {
                 sourceLineage: [{ sourceId: "source-claim-1" }],
                 isUserPreference: false,
                 validFrom: now,
-                metadata: {},
+                metadata: {
+                  reflectionCandidateEvidence: {
+                    provenance: "operator_reported",
+                    evidenceRefs: ["raw-evidence:run-event-1"],
+                    doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+                  }
+                },
                 createdAt: now,
                 updatedAt: now
               };
@@ -1918,6 +2096,11 @@ describe("runCli", () => {
       metadata: {
         reviewNote: "inspected raw run event",
         reviewGate: {
+          candidateEvidence: {
+            provenance: "operator_reported",
+            evidenceRefs: ["raw-evidence:run-event-1"],
+            doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+          },
           evidenceReviewedRef: "raw-evidence:run-event-1",
           sourceClaimIds: ["source-claim-1"],
           reviewedSourceClaimIds: ["source-claim-1"]
@@ -3139,9 +3322,13 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence: disabled");
     expect(result.stdout).toContain("packages/cli/src/runCli.ts");
     expect(result.stdout).toContain("notes.md");
-    expect(result.stdout).toContain("pnpm typecheck: skipped");
-    expect(result.stdout).toContain("pnpm test: skipped");
-    expect(result.stdout).toContain("git diff --check: skipped");
+    expect(result.stdout).toContain("pnpm typecheck: not_run | provenance=default_template");
+    expect(result.stdout).toContain("pnpm test: not_run | provenance=default_template");
+    expect(result.stdout).toContain("git diff --check: not_run | provenance=default_template");
+    expect(result.stdout).toContain(
+      "Command provenance is weak: default_template rows are not proof that commands ran."
+    );
+    expect(result.stdout).toContain("Command execution: none");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Feedback candidates:");
     expect(result.stdout).toContain("memoryCandidates:");
@@ -3393,15 +3580,24 @@ describe("runCli", () => {
     expect(capturedCommands).toEqual([
       {
         command: "pnpm typecheck",
-        status: "skipped"
+        status: "not_run",
+        provenance: "default_template",
+        doesNotProve:
+          "This command row does not prove the command executed; it is default template evidence only."
       },
       {
         command: "pnpm test",
-        status: "skipped"
+        status: "not_run",
+        provenance: "default_template",
+        doesNotProve:
+          "This command row does not prove the command executed; it is default template evidence only."
       },
       {
         command: "git diff --check",
-        status: "skipped"
+        status: "not_run",
+        provenance: "default_template",
+        doesNotProve:
+          "This command row does not prove the command executed; it is default template evidence only."
       }
     ]);
   });
@@ -3439,12 +3635,42 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "pnpm typecheck: passed | exitCode=0 | output=.local-lab/p7-self-hosting/02-typecheck.txt"
+      "pnpm typecheck: passed | provenance=captured_output_file | exitCode=0 | output=.local-lab/p7-self-hosting/02-typecheck.txt | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
     );
     expect(result.stdout).toContain(
-      "pnpm test: failed | exitCode=1 | output=.local-lab/p7-self-hosting/03-test.txt"
+      "pnpm test: failed | provenance=captured_output_file | exitCode=1 | output=.local-lab/p7-self-hosting/03-test.txt | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
     );
     expect(result.stdout).not.toContain("pnpm typecheck: skipped");
+  });
+
+  it("prints explicit verification evidence as operator-reported provenance", async () => {
+    const result = await runCli(
+      [
+        "evidence",
+        "capture",
+        "--verification",
+        "pnpm typecheck=passed",
+        "--verification=pnpm test=passed"
+      ],
+      {
+        env: {},
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        readGitStatus: async () => ""
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain(
+      "pnpm typecheck: passed | provenance=operator_reported | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+    expect(result.stdout).toContain(
+      "pnpm test: passed | provenance=operator_reported | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
+    expect(result.stdout).not.toContain(
+      "Command provenance is weak: default_template rows are not proof that commands ran."
+    );
   });
 
   it("persists supplied evidence command outcomes for a run id", async () => {
@@ -3619,15 +3845,288 @@ describe("runCli", () => {
       {
         command: "pnpm typecheck",
         status: "passed",
+        provenance: "captured_output_file",
         exitCode: 0,
-        outputPath: ".local-lab/p7-self-hosting/02-typecheck.txt"
+        outputPath: ".local-lab/p7-self-hosting/02-typecheck.txt",
+        outputRef: ".local-lab/p7-self-hosting/02-typecheck.txt",
+        doesNotProve:
+          "This command result does not prove memory quality, source truth, review correctness, or production readiness."
       },
       {
         command: "pnpm test",
         status: "passed",
-        exitCode: 0
+        provenance: "operator_reported",
+        exitCode: 0,
+        doesNotProve:
+          "This command result does not prove memory quality, source truth, review correctness, or production readiness."
       }
     ]);
+  });
+
+  it("guards self-hosting evidence provenance through observe and reflect", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    const aggregate: HarnessRunAggregate = {
+      operatorIntent: {
+        id: "operator-intent-1",
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        source: "cli",
+        rawIntent: "self-hosting evidence provenance",
+        metadata: {},
+        createdAt: now
+      },
+      taskContract: {
+        id: "task-contract-1",
+        operatorIntentId: "operator-intent-1",
+        projectId: "project-1",
+        title: "self-hosting evidence provenance",
+        objective: "Represent plan/evidence/observe/reflect without false command proof.",
+        constraints: ["no MemoryRecord mutation"],
+        nonGoals: ["no automatic candidate rows"],
+        acceptance: ["explicit command provenance is preserved"],
+        status: "active",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      harnessPlan: {
+        id: "harness-plan-1",
+        taskContractId: "task-contract-1",
+        version: 1,
+        status: "ready",
+        summary: "self-hosting provenance plan",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      executionRun: {
+        id: "execution-run-1",
+        harnessPlanId: "harness-plan-1",
+        adapter: "codex",
+        status: "succeeded",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      },
+      evidenceBundles: [{
+        id: "evidence-bundle-1",
+        executionRunId: "execution-run-1",
+        status: "captured",
+        changedFiles: ["packages/cli/src/parseEvidenceArgs.ts"],
+        commands: [
+          {
+            command: "pnpm typecheck",
+            status: "passed",
+            provenance: "operator_reported",
+            assertedBy: "operator",
+            doesNotProve: commandResultDoesNotProve
+          },
+          {
+            command: "pnpm test",
+            status: "passed",
+            provenance: "captured_output_file",
+            outputRef: ".local-lab/p7-self-hosting/03-test.txt",
+            doesNotProve: commandResultDoesNotProve
+          }
+        ],
+        diffRisk: "medium",
+        reviewBurden: "Review persisted command provenance only.",
+        rollbackPath: "git revert <commit>",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      }],
+      reviewAssessments: [],
+      feedbackDeltas: [],
+      runEvents: [{
+        id: "run-event-1",
+        executionRunId: "execution-run-1",
+        sequence: 1,
+        type: "krn.plan.persisted",
+        severity: "info",
+        message: "Self-hosting plan persisted",
+        payload: {},
+        occurredAt: now
+      }]
+    };
+    const observedBodies: string[] = [];
+    const observationItem: ObservationItem = {
+      id: "observation-item-1",
+      groupId: "observation-group-1",
+      scope: {
+        projectId: "project-1",
+        executionRunId: "execution-run-1",
+        taskContractId: "task-contract-1"
+      },
+      kind: "fact",
+      status: "candidate",
+      priority: "medium",
+      confidence: "medium",
+      provenanceKind: "evidence_bundle",
+      subject: "evidence_bundle",
+      summary: "Evidence bundle contains explicit command provenance.",
+      body:
+        "{\"commands\":[{\"command\":\"pnpm typecheck\",\"provenance\":\"operator_reported\"},{\"command\":\"pnpm test\",\"provenance\":\"captured_output_file\"}]}",
+      temporalScope: {
+        observedAt: now,
+        eventTime: now,
+        ingestedAt: now
+      },
+      sourceRanges: [{
+        id: "observation-source-range-1",
+        sourceType: "evidence_bundle",
+        sourceId: "evidence-bundle-1",
+        locator: "evidence_bundles.id:evidence-bundle-1",
+        capturedAt: now
+      }],
+      entityLinks: [],
+      claimLinks: [],
+      metadata: {},
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const observeResult = await runCli(
+      ["observe", "--run", "execution-run-1", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createObserveDatabaseRuntime: async () => ({
+          harnessRunRepository: {
+            ...dependencies.harnessRunRepository,
+            async getHarnessRunByExecutionRunId() {
+              return aggregate;
+            }
+          },
+          async resolveProjectRuntime(input: { projectId: string }) {
+            expect(input.projectId).toBe("project-1");
+
+            return {
+              workspaceId: "workspace-1",
+              projectId: input.projectId,
+              observationRepository: {
+                async createGroup(groupInput: { title: string }) {
+                  return {
+                    id: "observation-group-1",
+                    projectId: input.projectId,
+                    executionRunId: "execution-run-1",
+                    scope: {
+                      projectId: input.projectId,
+                      executionRunId: "execution-run-1"
+                    },
+                    title: groupInput.title,
+                    summary: "summary",
+                    source: "krn observe",
+                    metadata: {},
+                    createdAt: now,
+                    updatedAt: now
+                  };
+                },
+                async addItems(_groupId: string, inputs: readonly { body: string }[]) {
+                  observedBodies.push(...inputs.map((item) => item.body));
+
+                  return inputs.map((_item, index) => ({
+                    id: `observation-item-${index + 1}`
+                  }));
+                }
+              }
+            };
+          },
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(observeResult.exitCode).toBe(0);
+    expect(observeResult.stderr).toBe("");
+    expect(observeResult.stdout).toContain("MemoryRecord created: no");
+    expect(observedBodies.join("\n")).toContain("\"provenance\":\"operator_reported\"");
+    expect(observedBodies.join("\n")).toContain("\"provenance\":\"captured_output_file\"");
+    expect(observedBodies.join("\n")).not.toContain("\"provenance\":\"default_template\"");
+
+    let reflectedOutputMemoryCandidateCount: number | undefined;
+    const reflectResult = await runCli(
+      ["reflect", "--scope", "run:execution-run-1", "--persist"],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createReflectDatabaseRuntime: async () => ({
+          async getRunSnapshot(runId: string) {
+            expect(runId).toBe("execution-run-1");
+
+            return {
+              executionRunId: runId,
+              projectId: "project-1",
+              taskContractId: "task-contract-1"
+            };
+          },
+          async projectExists() {
+            return true;
+          },
+          observationRepository: {
+            async findByRun() {
+              return [observationItem];
+            },
+            async findByScope() {
+              return [observationItem];
+            }
+          },
+          sourceRepository: {
+            async listClaimsForProject() {
+              return [];
+            },
+            async listSourceClaimsForRun() {
+              return [];
+            }
+          },
+          memoryRepository: {
+            async listAntiMemoryForProject() {
+              return [];
+            },
+            async listAntiMemoryForRun() {
+              return [];
+            }
+          },
+          reflectionRepository: {
+            async createReflectionRecord(input) {
+              reflectedOutputMemoryCandidateCount = input.output.memoryCandidates.length;
+
+              return {
+                id: "reflection-record-1",
+                scope: input.scope,
+                status: input.status,
+                summary: input.summary,
+                input: input.input,
+                output: input.output,
+                metadata: input.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(reflectResult.exitCode).toBe(0);
+    expect(reflectResult.stderr).toBe("");
+    expect(reflectResult.stdout).toContain("Candidate rows written: no");
+    expect(reflectResult.stdout).toContain("MemoryRecord created: no");
+    expect(reflectedOutputMemoryCandidateCount).toBe(0);
   });
 
   it("prints clean evidence capture when there are no changed files", async () => {
@@ -3641,6 +4140,10 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stdout).toContain("Changed files:\n- none");
     expect(result.stdout).toContain("Diff risk: low");
+    expect(result.stdout).toContain("pnpm typecheck: not_run | provenance=default_template");
+    expect(result.stdout).toContain(
+      "Command provenance is weak: default_template rows are not proof that commands ran."
+    );
     expect(result.stdout).toContain("memoryCandidates:\n- none");
     expect(result.stdout).toContain("No changed files; no feedback candidate proposed.");
   });

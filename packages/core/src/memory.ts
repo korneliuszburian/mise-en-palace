@@ -148,3 +148,56 @@ export interface AntiMemoryRecord extends ValidityWindow {
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;
 }
+
+export type MemoryRecordReviewSignalKind =
+  | "stale_high_confidence"
+  | "unresolved_negative_feedback"
+  | "no_application_feedback";
+
+export interface MemoryRecordReviewSignal {
+  kind: MemoryRecordReviewSignalKind;
+  severity: "warning" | "blocking";
+  memoryRecordId: MemoryRecordId;
+  reason: string;
+}
+
+export const assessMemoryRecordReviewSignals = (
+  record: MemoryRecord
+): MemoryRecordReviewSignal[] => {
+  const signals: MemoryRecordReviewSignal[] = [];
+
+  if (record.status === "stale" && record.confidence >= 85) {
+    signals.push({
+      kind: "stale_high_confidence",
+      severity: "blocking",
+      memoryRecordId: record.id,
+      reason:
+        "High-confidence stale memory must be reviewed, invalidated, or demoted before activation relies on it."
+    });
+  }
+
+  if (record.negativeFeedbackCount >= 3) {
+    signals.push({
+      kind: "unresolved_negative_feedback",
+      severity: "blocking",
+      memoryRecordId: record.id,
+      reason:
+        "Repeated hurt/stale feedback must produce a governed demotion or invalidation review."
+    });
+  }
+
+  if (
+    (record.status === "active" || record.status === "stale") &&
+    record.positiveFeedbackCount === 0
+  ) {
+    signals.push({
+      kind: "no_application_feedback",
+      severity: "warning",
+      memoryRecordId: record.id,
+      reason:
+        "Active or stale memory without positive application feedback has not proven usefulness in KRN runs."
+    });
+  }
+
+  return signals;
+};

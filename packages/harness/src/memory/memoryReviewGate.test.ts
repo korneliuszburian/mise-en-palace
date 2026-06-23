@@ -3,11 +3,19 @@ import { describe, expect, it } from "vitest";
 import type {
   MemoryCandidate,
   MemoryRecord,
-  SourceClaim
+  SourceClaim,
+  TaskContract
 } from "@krn/core";
 import type {
   PromoteMemoryCandidateInput
 } from "../repositories/memoryRepository.js";
+import {
+  applyContextROI,
+  assembleContext,
+  buildMemoryQuery,
+  rankCandidates,
+  toMemoryCandidate
+} from "../activation/index.js";
 import {
   promoteMemoryCandidateThroughGate
 } from "./memoryReviewGate.js";
@@ -33,7 +41,13 @@ const candidate = (
   sourceLineage: [{ sourceId: "source-claim-1" }],
   isUserPreference: false,
   validFrom: now,
-  metadata: {},
+  metadata: {
+    reflectionCandidateEvidence: {
+      provenance: "operator_reported",
+      evidenceRefs: ["raw-evidence:run-event-1"],
+      doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+    }
+  },
   createdAt: now,
   updatedAt: now,
   ...overrides
@@ -55,7 +69,24 @@ const sourceClaim = (): SourceClaim => ({
   updatedAt: now
 });
 
-const memoryRecord = (): MemoryRecord => ({
+const task = (): TaskContract => ({
+  id: "task-1",
+  operatorIntentId: "intent-1",
+  projectId: "project-1",
+  title: "Evaluate graph database proposal",
+  objective: "Decide whether KRN should add a separate graph database.",
+  constraints: ["use reviewed memory"],
+  nonGoals: ["do not add a graph database without proof"],
+  acceptance: ["reviewed memory influences activation"],
+  status: "active",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now
+});
+
+const memoryRecord = (
+  overrides: Partial<MemoryRecord> = {}
+): MemoryRecord => ({
   id: "memory-record-1",
   projectId: "project-1",
   currentVersionId: "memory-record-version-1",
@@ -74,10 +105,81 @@ const memoryRecord = (): MemoryRecord => ({
   negativeFeedbackCount: 0,
   metadata: {},
   createdAt: now,
-  updatedAt: now
+  updatedAt: now,
+  ...overrides
 });
 
 describe("promoteMemoryCandidateThroughGate", () => {
+  it("rejects promotion when candidate evidence provenance is missing", async () => {
+    let promoteCalled = false;
+
+    await expect(
+      promoteMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getMemoryCandidateById() {
+            return candidate({
+              metadata: {}
+            });
+          },
+          async promoteReviewedMemoryCandidate() {
+            promoteCalled = true;
+            return memoryRecord();
+          }
+        },
+        sourceRepository: {
+          async getSourceClaimById() {
+            return sourceClaim();
+          }
+        },
+        review: {
+          candidateId: "memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "raw-evidence:run-event-1"
+        }
+      })
+    ).rejects.toThrow("MemoryCandidate memory-candidate-1 requires candidate evidence provenance before promotion");
+
+    expect(promoteCalled).toBe(false);
+  });
+
+  it("rejects promotion when candidate evidence is weak default-template provenance", async () => {
+    let promoteCalled = false;
+
+    await expect(
+      promoteMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getMemoryCandidateById() {
+            return candidate({
+              metadata: {
+                reflectionCandidateEvidence: {
+                  provenance: "default_template",
+                  evidenceRefs: ["evidence-bundle-1:commands"],
+                  doesNotProve: "This command row does not prove the command executed."
+                }
+              }
+            });
+          },
+          async promoteReviewedMemoryCandidate() {
+            promoteCalled = true;
+            return memoryRecord();
+          }
+        },
+        sourceRepository: {
+          async getSourceClaimById() {
+            return sourceClaim();
+          }
+        },
+        review: {
+          candidateId: "memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "raw-evidence:run-event-1"
+        }
+      })
+    ).rejects.toThrow("MemoryCandidate memory-candidate-1 cannot be promoted from weak default-template evidence");
+
+    expect(promoteCalled).toBe(false);
+  });
+
   it("rejects promotion without raw evidence review reference", async () => {
     let promoteCalled = false;
 
@@ -218,5 +320,45 @@ describe("promoteMemoryCandidateThroughGate", () => {
         }
       }
     });
+  });
+
+  it("promotes a reviewed candidate into memory that can influence later activation", async () => {
+    const result = await promoteMemoryCandidateThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate();
+        },
+        async promoteReviewedMemoryCandidate() {
+          return memoryRecord({
+            id: "memory-reviewed-graph-db"
+          });
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimById() {
+          return sourceClaim();
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "raw-evidence:run-event-1"
+      }
+    });
+
+    const ranked = rankCandidates([
+      toMemoryCandidate(result.memoryRecord)
+    ], buildMemoryQuery(task()));
+    const context = assembleContext({
+      id: "context-reviewed-memory",
+      harnessPlanId: "harness-plan-1",
+      candidates: applyContextROI(ranked, { maxInclusions: 1 }),
+      createdAt: now
+    });
+
+    expect(context.inclusions).toEqual([expect.objectContaining({
+      subjectType: "memory_record",
+      subjectId: "memory-reviewed-graph-db"
+    })]);
   });
 });

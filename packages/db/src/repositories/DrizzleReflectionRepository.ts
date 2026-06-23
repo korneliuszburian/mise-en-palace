@@ -1,14 +1,21 @@
 import { and, asc, eq } from "drizzle-orm";
 import type {
   ReflectionInput,
+  ReflectionAntiMemoryCandidateProposal,
+  ReflectionCandidateEvidence,
   ReflectionCandidateLink,
+  ReflectionEvalCandidateProposal,
   ReflectionFinding,
+  ReflectionMemoryCandidateProposal,
   ReflectionOutput,
+  ReflectionPolicyCandidateProposal,
   ReflectionRecord,
   ReflectionScope,
+  ReflectionSourceClaimCandidateProposal,
   ReflectionStatus,
   ContradictionReport,
-  GapReport
+  GapReport,
+  SourceLineageRef
 } from "@krn/core";
 
 import type { KrnDatabase } from "../database.js";
@@ -47,6 +54,113 @@ const isRecord = (value: unknown): value is Record<string, unknown> => (
 const stringListOrEmpty = (value: unknown): string[] => (
   Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []
 );
+
+const stringOrUndefined = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim().length > 0 ? value : undefined;
+
+const numberOrUndefined = (value: unknown): number | undefined =>
+  typeof value === "number" && Number.isFinite(value) ? value : undefined;
+
+const booleanOrUndefined = (value: unknown): boolean | undefined =>
+  typeof value === "boolean" ? value : undefined;
+
+const reflectionCandidateEvidenceProvenances = new Set<string>([
+  "default_template",
+  "operator_reported",
+  "captured_output_file",
+  "command_runner",
+  "external_log",
+  "run_event",
+  "source_chunk",
+  "tool_trace",
+  "diff",
+  "evidence_bundle",
+  "review_assessment",
+  "feedback_delta",
+  "user_correction",
+  "user_preference",
+  "local_operator_note",
+  "source_claim"
+]);
+
+const memoryKinds = new Set<string>([
+  "fact",
+  "preference",
+  "constraint",
+  "procedure",
+  "pattern",
+  "risk"
+]);
+
+const sourceTrustTiers = new Set<string>([
+  "high",
+  "medium",
+  "low",
+  "primary",
+  "official",
+  "project-decision",
+  "source-code",
+  "paper",
+  "practitioner",
+  "secondary",
+  "hypothesis"
+]);
+
+const sourceSupportTypes = new Set<string>([
+  "supports",
+  "contradicts",
+  "qualifies",
+  "background",
+  "does_not_support",
+  "mechanism",
+  "decision",
+  "risk",
+  "rejection",
+  "eval-design",
+  "implementation-boundary"
+]);
+
+const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): SourceLineageRef[] => {
+    if (!isRecord(item) || typeof item.sourceId !== "string") {
+      return [];
+    }
+
+    return [{
+      sourceId: item.sourceId,
+      ...(typeof item.note === "string" ? { note: item.note } : {})
+    }];
+  });
+};
+
+const reflectionCandidateEvidenceOrUndefined = (
+  value: unknown
+): ReflectionCandidateEvidence | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const provenance = stringOrUndefined(value.provenance);
+  const doesNotProve = stringOrUndefined(value.doesNotProve);
+
+  if (
+    provenance === undefined ||
+    !reflectionCandidateEvidenceProvenances.has(provenance) ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    provenance: provenance as ReflectionCandidateEvidence["provenance"],
+    evidenceRefs: stringListOrEmpty(value.evidenceRefs),
+    doesNotProve
+  };
+};
 
 const reflectionScopeOrFallback = (
   value: unknown,
@@ -248,6 +362,235 @@ const candidateLinksOrEmpty = (value: unknown): ReflectionCandidateLink[] => {
   });
 };
 
+const reflectionMemoryCandidatesOrEmpty = (
+  value: unknown
+): ReflectionMemoryCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionMemoryCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const kind = stringOrUndefined(item.kind);
+    const summary = stringOrUndefined(item.summary);
+    const body = stringOrUndefined(item.body);
+    const owner = stringOrUndefined(item.owner);
+    const confidence = numberOrUndefined(item.confidence);
+    const applicationGuidance = stringOrUndefined(item.applicationGuidance);
+    const isUserPreference = booleanOrUndefined(item.isUserPreference);
+    const validFrom = stringOrUndefined(item.validFrom);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      kind === undefined ||
+      !memoryKinds.has(kind) ||
+      summary === undefined ||
+      body === undefined ||
+      owner === undefined ||
+      confidence === undefined ||
+      applicationGuidance === undefined ||
+      isUserPreference === undefined ||
+      validFrom === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      kind: kind as ReflectionMemoryCandidateProposal["kind"],
+      summary,
+      body,
+      owner,
+      confidence,
+      applicationGuidance,
+      ...(typeof item.invalidationRule === "string" ? { invalidationRule: item.invalidationRule } : {}),
+      sourceClaimIds: stringListOrEmpty(item.sourceClaimIds),
+      sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
+      isUserPreference,
+      validFrom,
+      ...(typeof item.validUntil === "string" ? { validUntil: item.validUntil } : {}),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionSourceClaimCandidatesOrEmpty = (
+  value: unknown
+): ReflectionSourceClaimCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionSourceClaimCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const claim = stringOrUndefined(item.claim);
+    const mechanism = stringOrUndefined(item.mechanism);
+    const krnImplication = stringOrUndefined(item.krnImplication);
+    const doesNotProve = stringOrUndefined(item.doesNotProve);
+    const trustTier = stringOrUndefined(item.trustTier);
+    const supportType = stringOrUndefined(item.supportType);
+    const consumer = stringOrUndefined(item.consumer);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      claim === undefined ||
+      mechanism === undefined ||
+      krnImplication === undefined ||
+      doesNotProve === undefined ||
+      trustTier === undefined ||
+      !sourceTrustTiers.has(trustTier) ||
+      supportType === undefined ||
+      !sourceSupportTypes.has(supportType) ||
+      consumer === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      claim,
+      mechanism,
+      krnImplication,
+      doesNotProve,
+      trustTier: trustTier as ReflectionSourceClaimCandidateProposal["trustTier"],
+      supportType: supportType as ReflectionSourceClaimCandidateProposal["supportType"],
+      consumer,
+      ...(typeof item.falsifier === "string" ? { falsifier: item.falsifier } : {}),
+      ...(typeof item.revisitWhen === "string" ? { revisitWhen: item.revisitWhen } : {}),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionAntiMemoryCandidatesOrEmpty = (
+  value: unknown
+): ReflectionAntiMemoryCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionAntiMemoryCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const key = stringOrUndefined(item.key);
+    const summary = stringOrUndefined(item.summary);
+    const body = stringOrUndefined(item.body);
+    const owner = stringOrUndefined(item.owner);
+    const confidence = numberOrUndefined(item.confidence);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      key === undefined ||
+      summary === undefined ||
+      body === undefined ||
+      owner === undefined ||
+      confidence === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      key,
+      summary,
+      body,
+      owner,
+      confidence,
+      ...(typeof item.reason === "string" ? { reason: item.reason } : {}),
+      invalidatedBySourceClaimIds: stringListOrEmpty(item.invalidatedBySourceClaimIds),
+      ...(typeof item.appliesTo === "string" ? { appliesTo: item.appliesTo } : {}),
+      ...(typeof item.mayRevisitWhen === "string" ? { mayRevisitWhen: item.mayRevisitWhen } : {}),
+      sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionPolicyCandidatesOrEmpty = (
+  value: unknown
+): ReflectionPolicyCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionPolicyCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const key = stringOrUndefined(item.key);
+    const summary = stringOrUndefined(item.summary);
+    const rationale = stringOrUndefined(item.rationale);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      key === undefined ||
+      summary === undefined ||
+      rationale === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      key,
+      summary,
+      rationale,
+      evidenceRefs: stringListOrEmpty(item.evidenceRefs),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
+const reflectionEvalCandidatesOrEmpty = (
+  value: unknown
+): ReflectionEvalCandidateProposal[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): ReflectionEvalCandidateProposal[] => {
+    if (!isRecord(item)) {
+      return [];
+    }
+
+    const title = stringOrUndefined(item.title);
+    const scenario = stringOrUndefined(item.scenario);
+    const expectedSignal = stringOrUndefined(item.expectedSignal);
+    const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+
+    if (
+      title === undefined ||
+      scenario === undefined ||
+      expectedSignal === undefined ||
+      evidence === undefined
+    ) {
+      return [];
+    }
+
+    return [{
+      title,
+      scenario,
+      expectedSignal,
+      sourceEvidence: stringListOrEmpty(item.sourceEvidence),
+      evidence,
+      metadata: metadataOrEmpty(item.metadata)
+    }];
+  });
+};
+
 const reflectionOutputOrFallback = (
   value: unknown,
   scope: ReflectionScope,
@@ -265,18 +608,18 @@ const reflectionOutputOrFallback = (
     contradictions: contradictionsOrEmpty(record.contradictions),
     gaps: gapsOrEmpty(record.gaps),
     candidateLinks: candidateLinksOrEmpty(record.candidateLinks),
-    memoryCandidates: [],
-    sourceClaimCandidates: [],
-    antiMemoryCandidates: [],
-    policyCandidates: [],
-    evalCandidates: [],
+    memoryCandidates: reflectionMemoryCandidatesOrEmpty(record.memoryCandidates),
+    sourceClaimCandidates: reflectionSourceClaimCandidatesOrEmpty(record.sourceClaimCandidates),
+    antiMemoryCandidates: reflectionAntiMemoryCandidatesOrEmpty(record.antiMemoryCandidates),
+    policyCandidates: reflectionPolicyCandidatesOrEmpty(record.policyCandidates),
+    evalCandidates: reflectionEvalCandidatesOrEmpty(record.evalCandidates),
     metadata: metadataOrEmpty(record.metadata),
     createdAt: toIsoTimestamp(row.createdAt),
     updatedAt: toIsoTimestamp(row.updatedAt)
   };
 };
 
-const mapReflectionRecord = (row: ReflectionRecordRow): ReflectionRecord => {
+export const mapReflectionRecordForRead = (row: ReflectionRecordRow): ReflectionRecord => {
   const scope = reflectionScopeOrFallback(row.scope, row);
 
   return {
@@ -321,7 +664,7 @@ export class DrizzleReflectionRepository {
       "createReflectionRecord"
     );
 
-    return mapReflectionRecord(row);
+    return mapReflectionRecordForRead(row);
   }
 
   async getReflectionRecordById(id: string): Promise<ReflectionRecord | undefined> {
@@ -329,7 +672,7 @@ export class DrizzleReflectionRepository {
       where: eq(reflectionRecords.id, id)
     });
 
-    return row === undefined ? undefined : mapReflectionRecord(row);
+    return row === undefined ? undefined : mapReflectionRecordForRead(row);
   }
 
   async listReflectionRecordsByScope(
@@ -355,6 +698,6 @@ export class DrizzleReflectionRepository {
       ...(input.limit === undefined ? {} : { limit: input.limit })
     });
 
-    return rows.map(mapReflectionRecord);
+    return rows.map(mapReflectionRecordForRead);
   }
 }

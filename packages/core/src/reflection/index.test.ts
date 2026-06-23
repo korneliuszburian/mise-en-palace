@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   REFLECTION_CANDIDATE_OUTPUT_TARGETS,
+  assessReflectionMemoryCandidateEvidence,
   assessReflectionOutputContract,
   buildReflectionCandidateGenerationPlan,
   buildReflectionIssueReports,
@@ -61,6 +62,11 @@ const output: ReflectionOutput = {
     sourceLineage: [{ sourceId: "observation-1" }],
     isUserPreference: false,
     validFrom: "2026-06-22T00:00:00.000Z",
+    evidence: {
+      provenance: "operator_reported",
+      evidenceRefs: ["observation-1:range-1"],
+      doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+    },
     metadata: {}
   }],
   sourceClaimCandidates: [{
@@ -71,6 +77,11 @@ const output: ReflectionOutput = {
     trustTier: "project-decision",
     supportType: "mechanism",
     consumer: "reflection candidate generation",
+    evidence: {
+      provenance: "run_event",
+      evidenceRefs: ["observation-1:range-1"],
+      doesNotProve: "This does not prove the source claim is approved truth."
+    },
     metadata: {}
   }],
   antiMemoryCandidates: [{
@@ -81,6 +92,11 @@ const output: ReflectionOutput = {
     confidence: 90,
     invalidatedBySourceClaimIds: [],
     sourceLineage: [{ sourceId: "observation-2" }],
+    evidence: {
+      provenance: "run_event",
+      evidenceRefs: ["observation-2:range-1"],
+      doesNotProve: "This does not prove the anti-memory candidate is reviewed."
+    },
     metadata: {}
   }],
   policyCandidates: [{
@@ -88,6 +104,11 @@ const output: ReflectionOutput = {
     summary: "Reflection cannot mutate Memory Core.",
     rationale: "Reflection is a staging layer that produces reviewable candidates.",
     evidenceRefs: ["ADR-0011"],
+    evidence: {
+      provenance: "source_claim",
+      evidenceRefs: ["ADR-0011"],
+      doesNotProve: "This does not prove the policy candidate is accepted."
+    },
     metadata: {}
   }],
   evalCandidates: [{
@@ -95,6 +116,11 @@ const output: ReflectionOutput = {
     scenario: "A reflection run sees a tempting memory claim.",
     expectedSignal: "It emits MemoryCandidate proposal only.",
     sourceEvidence: ["observation-1"],
+    evidence: {
+      provenance: "run_event",
+      evidenceRefs: ["observation-1:range-1"],
+      doesNotProve: "This does not prove the eval candidate protects production behavior."
+    },
     metadata: {}
   }],
   metadata: {},
@@ -245,6 +271,31 @@ describe("reflection contracts", () => {
     expect(plan.blockedReasons).toEqual([
       "metadata.createActiveMemory:final_truth_metadata"
     ]);
+  });
+
+  it("blocks high-confidence memory candidates backed only by weak command evidence", () => {
+    const proposal = {
+      ...output.memoryCandidates[0],
+      confidence: 90,
+      evidence: {
+        provenance: "default_template",
+        evidenceRefs: ["evidence-bundle-1:commands"],
+        doesNotProve: "This default command template does not prove verification ran."
+      }
+    };
+
+    expect(assessReflectionMemoryCandidateEvidence(proposal)).toEqual({
+      ok: false,
+      blockedReasons: ["weak_command_evidence_high_confidence"]
+    });
+
+    expect(buildReflectionCandidateGenerationPlan({
+      ...output,
+      memoryCandidates: [proposal]
+    })).toMatchObject({
+      status: "blocked",
+      blockedReasons: ["memoryCandidates.0.evidence:weak_command_evidence_high_confidence"]
+    });
   });
 
   it("reports contested and conflict observations as contradictions", () => {

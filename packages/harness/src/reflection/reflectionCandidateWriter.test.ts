@@ -57,6 +57,11 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
       sourceLineage: [{ sourceId: "source-claim-1", note: "reflection proposal" }],
       isUserPreference: false,
       validFrom: now,
+      evidence: {
+        provenance: "operator_reported",
+        evidenceRefs: ["observation-1:range-1"],
+        doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+      },
       metadata: {
         sourceRangeIds: ["range-1"]
       }
@@ -70,6 +75,11 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
       supportType: "supports",
       consumer: "reflection-candidate-writer-test",
       falsifier: "Source candidates are promoted to SourceDecision directly.",
+      evidence: {
+        provenance: "run_event",
+        evidenceRefs: ["observation-1:range-1"],
+        doesNotProve: "This does not prove the source claim is accepted truth."
+      },
       metadata: {
         sourceRangeIds: ["range-1"]
       }
@@ -82,6 +92,11 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
       confidence: 90,
       invalidatedBySourceClaimIds: ["source-claim-1"],
       sourceLineage: [{ sourceId: "source-claim-1" }],
+      evidence: {
+        provenance: "source_claim",
+        evidenceRefs: ["source-claim-1"],
+        doesNotProve: "This does not prove the anti-memory candidate is reviewed."
+      },
       metadata: {}
     }],
     policyCandidates: [{
@@ -89,6 +104,11 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
       summary: "Reflection remains candidate-only.",
       rationale: "Policy candidates have no writer in this slice.",
       evidenceRefs: ["observation-1"],
+      evidence: {
+        provenance: "run_event",
+        evidenceRefs: ["observation-1:range-1"],
+        doesNotProve: "This does not prove the policy candidate is accepted."
+      },
       metadata: {}
     }],
     evalCandidates: [{
@@ -96,6 +116,11 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
       scenario: "A reflection output contains a tempting final memory claim.",
       expectedSignal: "Writer creates candidates only.",
       sourceEvidence: ["observation-1"],
+      evidence: {
+        provenance: "run_event",
+        evidenceRefs: ["observation-1:range-1"],
+        doesNotProve: "This does not prove the eval candidate protects production behavior."
+      },
       metadata: {}
     }],
     metadata: {},
@@ -175,6 +200,11 @@ describe("reflection candidate writer", () => {
       sourceClaimIds: ["source-claim-1"],
       metadata: {
         reflectionRecordId: "reflection-record-1",
+        reflectionCandidateEvidence: {
+          provenance: "operator_reported",
+          evidenceRefs: ["observation-1:range-1"],
+          doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+        },
         sourceRangeIds: ["range-1"]
       }
     });
@@ -229,6 +259,43 @@ describe("reflection candidate writer", () => {
       memoryCandidates: [],
       sourceClaims: [],
       evalCandidates: []
+    });
+    expect(createMemoryCandidateCalled).toBe(false);
+  });
+
+  it("blocks high-confidence memory candidates from weak command evidence", async () => {
+    let createMemoryCandidateCalled = false;
+    const weakRecord = reflectionRecord({
+      output: {
+        ...reflectionRecord().output,
+        memoryCandidates: [{
+          ...reflectionRecord().output.memoryCandidates[0],
+          confidence: 90,
+          evidence: {
+            provenance: "default_template",
+            evidenceRefs: ["evidence-bundle-1:commands"],
+            doesNotProve: "This default command template does not prove verification ran."
+          }
+        }]
+      }
+    });
+
+    const result = await writeReflectionCandidates({
+      reflectionRecord: weakRecord,
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      memoryRepository: {
+        async createMemoryCandidate() {
+          createMemoryCandidateCalled = true;
+          throw new Error("createMemoryCandidate should not be called");
+        }
+      }
+    });
+
+    expect(result).toMatchObject({
+      status: "blocked",
+      blockedReasons: ["memoryCandidates.0.evidence:weak_command_evidence_high_confidence"],
+      memoryCandidates: []
     });
     expect(createMemoryCandidateCalled).toBe(false);
   });

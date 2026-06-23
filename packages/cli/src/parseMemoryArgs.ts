@@ -23,6 +23,9 @@ export const formatMemoryCandidateAddUsage = (): string =>
     "Optional:",
     "--owner <owner>",
     "--proposed-by <name>",
+    "--candidate-evidence-provenance <provenance>",
+    "--candidate-evidence-ref <ref> (repeatable; required before reviewed promotion)",
+    "--candidate-evidence-does-not-prove <text>",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -155,6 +158,7 @@ const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult =
     kind: "memoryCandidateAdd",
     persist: false,
     sourceLineageIds: [],
+    candidateEvidenceRefs: [],
     metadata: {}
   };
 
@@ -183,6 +187,8 @@ const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult =
       "--application-guidance": "applicationGuidance",
       "--source-claim-id": "sourceClaimId",
       "--invalidation-rule": "invalidationRule",
+      "--candidate-evidence-provenance": "candidateEvidenceProvenance",
+      "--candidate-evidence-does-not-prove": "candidateEvidenceDoesNotProve",
       "--owner": "owner",
       "--proposed-by": "proposedBy"
     } as const;
@@ -201,6 +207,23 @@ const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult =
 
       memoryCommand[optionMap[option as keyof typeof optionMap]] =
         valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (
+      arg === "--candidate-evidence-ref" ||
+      arg?.startsWith("--candidate-evidence-ref=") === true
+    ) {
+      const valueResult = optionValue(rest, index, "--candidate-evidence-ref");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatMemoryCandidateAddUsage()
+        };
+      }
+
+      memoryCommand.candidateEvidenceRefs.push(valueResult.value.trim());
       index = valueResult.nextIndex;
       continue;
     }

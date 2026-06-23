@@ -20,6 +20,102 @@ adapter, Codex-facing adapter surfaces.
 
 ---
 
+## Active Queue Snapshot
+
+Read this section first. Completed slices below are ledger/checkpoint material,
+not required active context unless the current slice explicitly points back to
+them.
+
+current_priority: Public/Internal CLI Hygiene.
+
+first_unchecked_slice: `C1-00: Separate Public CLI From Internal Dev Commands`.
+
+active_scope:
+
+- keep the `krn audit` product/guardrail/scanner surface removed;
+- move the documented public/governed-admin/internal CLI taxonomy into command
+  behavior or help text;
+- do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
+  internal quality subsystem;
+- do not start worker runtime, dashboard, or broad memory features before the
+  remaining CLI surface confusion is handled.
+
+completed_checkpoint:
+
+- P0-P7 reset baseline is complete.
+- P1-03 removed public `krn audit` CLI/harness audit scanner.
+- C6-00A re-homed memory review signals as pure core behavior.
+- EVI-00 added typed evidence command status/provenance semantics.
+- EVI-01 added explicit `--verification <command=status>` CLI evidence input.
+- EVI-02 normalizes evidence command provenance at the DB repository write
+  boundary without a schema migration.
+- EVI-03 adds a CLI integration regression proof for self-hosting
+  plan/evidence/observe/reflect provenance with no MemoryRecord mutation and no
+  automatic candidate rows.
+- EVI-04 updates the P7 run ledger with the provenance repair closure and
+  records that historical EvidenceBundle rows were left unchanged.
+- EVI-05 records remote status hygiene before long-running goals.
+- EVI-06 expands the P7 selected context from Postgres and records activation
+  relevance findings.
+- EVI-07 adds typed reflection candidate evidence, blocks high-confidence
+  memory candidates backed only by weak/default command evidence, and preserves
+  persisted reflection proposal arrays on DB readback.
+- EVI-08 proves a reviewed, source-grounded MemoryCandidate can pass
+  MemoryReviewGate into MemoryRecord and influence a later activation, while
+  missing or weak candidate evidence is rejected before promotion.
+- EVI-09 adds typed `GoldenBehaviorProof` provenance so Promptfoo integration
+  smoke rows cannot pass as GoldenTask behavior proof. GoldenTask behavior
+  proof requires `krn_behavior_execution`.
+- EVI-10 makes evidence capture operator output and help text explicit about
+  `--verification`, weak default-template rows, persisted IDs, and the absence
+  of hidden command execution.
+- C0-01 proves self-hosting write-authority context relevance: the store lacked
+  direct Memory Core write-authority memory, so a reviewed MemoryCandidate was
+  added and promoted through MemoryReviewGate; a live persisted plan then
+  selected `memory_record:f950b8b4-5392-4084-9f98-93881fbe961a` first for
+  `seal Memory Core write authority`.
+
+completed_evidence_pointers:
+
+- self-hosting run ledger:
+  `docs/runs/2026-06-23-self-hosting-memory-loop.md`;
+- CLI surface decision:
+  `docs/architecture/cli-surfaces.md`;
+- reset/audit decision records:
+  `docs/reviews/repo-reset-audit/*`;
+- detailed command transcript:
+  `Command Evidence` later in this plan, historical reference only.
+
+context_hygiene:
+
+- do not keep completed slices in the active goal window;
+- do not reread repo-reset audit materials unless a live slice names them;
+- when a slice is complete, update this snapshot to the next unchecked item and
+  compress the slice into a checkpoint note plus command evidence;
+- prefer deleting or archiving stale completed-detail blocks over expanding
+  the active goal.
+- every few completed slices, run a plan condensation pass: active state should
+  keep the current objective, next unchecked item, command evidence pointers,
+  open risks, and rollback notes only. Remove duplicate explanations, demote
+  closed task detail to historical ledger, and do not preserve prose that does
+  not change execution.
+
+worktree_hygiene:
+
+- run `git status --short --branch` before and after each slice;
+- do not start a new slice while completed work is still uncommitted;
+- split completed work into focused Conventional Commits;
+- push after each completed slice commit;
+- if existing dirty state is unrelated to the current slice, leave it untouched
+  and record it instead of mixing it into the slice commit;
+- first application of this rule may use one catch-up commit for the already
+  accumulated EVI/C0 worktree; all following completed slices must return to
+  one focused commit and push per slice;
+- if a completed slice cannot be committed or pushed, record the exact blocker
+  in this snapshot before continuing.
+
+---
+
 ## Source Decision Ledger
 
 source_id: `docs/materials/20206-06-23-audit.md`
@@ -48,14 +144,17 @@ falsifier: future docs describe smokes or audit results as product proof.
 
 source_id: `docs/reviews/repo-reset-audit/WRONG_ABSTRACTIONS.md`
 trust_tier: high repo-local abstraction decision record.
-mechanism: `krn audit` may survive only as a narrow internal mechanical guard;
-QG-06/productized anti-slop is rejected as product direction.
+mechanism: original audit review allowed a narrow internal guard as a possible
+temporary shape, but live operator correction supersedes that: the `krn audit`
+surface is removed, and useful invariants must be re-homed into native
+Memory/Source/Evidence mechanisms.
 krn_implication: general engineering quality belongs to architecture, types,
 tests, naming, and review, not a KRN-branded subsystem.
-decision: adopt.
-does_not_prove: all current audit checks should be deleted.
-consumer: docs cleanup, CLI taxonomy, future `krn audit` decision.
-falsifier: `krn audit` becomes the next product feature or quality engine.
+decision: adopt the abstraction rejection; reject retaining `krn audit` as an
+internal guardrail layer.
+does_not_prove: every old check was useless as a domain invariant.
+consumer: docs cleanup, CLI taxonomy, P1-03, C6-00, C6-01.
+falsifier: `krn audit` returns as a product, guardrail, or scanner surface.
 
 source_id: `docs/STATE_OF_THE_ART.md`
 trust_tier: medium doctrine, must yield to live repo and reset audit.
@@ -113,24 +212,62 @@ Brain spine.
 - `docs/materials/20206-06-23-audit.md` is raw/user-provided audit material.
 - `docs/reviews/repo-reset-audit/*` are decision-grade audit outputs.
 - `docs/materials/2026-06-22-big-brain*.md` remain raw research quarry.
-- The reset queue through P7-00 is complete, but KRN is not "done". Completed
-  slices now feed a continuous hardening queue below.
+- The reset queue through P7-00 is complete, but KRN is not "done".
+- Completed slices are ledger/checkpoint material. They should not be kept in
+  the active goal window after their follow-up candidates have been extracted.
 
 ## Continuous Hardening Law
 
 KRN should keep improving from its own execution evidence.
 
-Every completed slice must leave:
+Every completed slice must leave a compact checkpoint:
 
 - what changed;
 - what proof exists;
 - what the proof does not prove;
 - what review burden remains;
-- what memory/source/eval/anti-memory/skill/policy candidates were discovered;
-- which concrete follow-up slice owns each real gap.
+- which memory/source/eval/anti-memory/skill/policy candidates were discovered;
+- which concrete follow-up slice owns each real gap;
+- what active context can be dropped after the slice closes.
 
 Do not turn those gaps into a new broad audit product. Repair them directly in
 the smallest package/doc/CLI boundary that owns the behavior.
+
+After a slice is complete, move detailed analysis out of the active queue or
+leave it only as historical ledger. `GOAL.md` should point to the next unchecked
+slice, not keep repeating completed work.
+
+Context budget rule:
+
+Every few completed tasks, condense the active plan/state. Keep:
+
+- current objective;
+- first unchecked slice;
+- current decisions and open risks;
+- command evidence pointers;
+- rollback notes.
+
+Remove or demote:
+
+- completed implementation detail that has no next action;
+- duplicate rationale;
+- old prompts copied into active state;
+- prose that sounds useful but does not affect execution.
+
+Architecture cleanliness rule:
+
+Every slice must leave the touched boundary cleaner than it found it. Clean
+means:
+
+- narrow public surface;
+- explicit ownership and lifecycle;
+- typed IO and validated external data;
+- no compatibility shim for a wrong abstraction unless a real consumer exists;
+- no new audit/quality/meta layer for an ordinary engineering concern;
+- no speculative abstraction kept "just in case".
+
+If the clean architecture move is larger than the current slice, record it as a
+bounded follow-up instead of sneaking it into the diff.
 
 ## Smallest Honest KRN Kernel
 
@@ -174,7 +311,8 @@ central domain model.
 12. Eval runners are adapters, not truth.
 13. Promptfoo smoke proves runner integration/result mapping only unless real
    KRN behavior executes.
-14. `krn audit` is not a product quality engine.
+14. `krn audit` is removed as a CLI/product surface; do not rebuild it as an
+    audit/guardrail layer.
 15. General engineering quality comes from architecture, types, tests, naming,
    and review, not an anti-slop subsystem.
 16. Public CLI is an adapter surface; internals must not look like product.
@@ -187,8 +325,9 @@ central domain model.
 - `packages/schema`: keep as Zod IO boundary. Parsing is not behavior proof.
 - `packages/db`: keep as Drizzle/Postgres persistence. Narrow public exports
   and distinguish runtime DB proof from package tests.
-- `packages/harness`: keep as activation/compiler/review-gate layer. Prevent
-  audit checks from looking like product-quality authority.
+- `packages/harness`: keep as activation/compiler/review-gate layer. Re-home
+  useful Memory/Source/Evidence invariants into native mechanisms instead of a
+  broad audit scanner.
 - `packages/cli`: keep as adapter. Classify public operator vs governed admin
   vs internal dev commands.
 - `packages/codex-adapter`: keep as Codex renderer. Do not leak Codex-specific
@@ -224,12 +363,12 @@ internal/dev:
 ```txt
 krn db readiness
 krn db smoke ...
-krn audit / guard
 repository smokes
 ```
 
-This is a starting classification. Implementation slices must verify actual CLI
-code before changing behavior.
+`krn audit` is not an internal/dev command class. It is a removed surface.
+Mechanical invariants that were accidentally hosted there must live in their
+own domain boundaries.
 
 ## Memory Lifecycle
 
@@ -303,7 +442,15 @@ truth:
 Raw materials remain in `docs/materials/` and are never direct implementation
 truth.
 
-## Ordered Task Queue
+## Completed Reset Ledger
+
+The P0-P7 reset task specs below are historical execution ledger. They are kept
+for evidence and rollback context only. Do not execute them as active work and
+do not reread them for normal continuation unless a live slice explicitly names
+one as evidence.
+
+Active work resumes at the first unchecked item listed in
+`Active Queue Snapshot`.
 
 ### P0-00: Replace Root `GOAL.md`
 
@@ -500,7 +647,8 @@ git diff --check
 
 expected:
 
-- Remaining matches are historical, explicitly rejected, or internal guard only.
+- Remaining matches are historical, explicitly rejected, or superseded by
+  removal.
 
 commit:
 
@@ -532,7 +680,8 @@ content required:
 - governed admin commands;
 - internal/dev commands;
 - historical/delete candidates;
-- rule that DB smokes and audit guard are not product UX.
+- rule that DB smokes are not product UX and audit-shaped surfaces are
+  historical/delete candidates.
 
 verification:
 
@@ -554,12 +703,11 @@ rollback:
 git revert <commit>
 ```
 
-### P1-01: Deproductize `krn audit`
+### P1-01: Deproductize `krn audit` (Superseded By P1-03 Code Removal)
 
 objective:
 
-Decide whether `krn audit` is deleted, renamed, or retained as an internal
-mechanical guard.
+Remove product direction for `krn audit` before the later P1-03 code removal.
 
 files:
 
@@ -584,19 +732,87 @@ git diff --check
 expected:
 
 - All matches classify `krn audit` as historical, rejected, delete/rename
-  candidate, or internal guard only.
+  candidate, or superseded by P1-03 removal.
 
 commit:
 
 ```sh
 git add README.md PLAN.md docs
-git commit -m "docs(audit): deproductize audit guard"
+git commit -m "docs(audit): deproductize audit surface"
 ```
 
 rollback:
 
 ```sh
 git revert <commit>
+```
+
+### P1-03: Remove Public `krn audit` Surface
+
+status: complete.
+
+objective:
+
+Delete the active `krn audit` CLI/scanner surface instead of wrapping it in more
+guardrails. Preserve only the underlying Memory/Source/Evidence concerns by
+moving them into native mechanisms in later slices.
+
+files:
+
+- Modify: `packages/cli/src/parseArgs.ts`
+- Modify: `packages/cli/src/runCli.ts`
+- Delete: `packages/cli/src/parseAuditArgs.ts`
+- Delete: `packages/cli/src/runAuditCommand.ts`
+- Delete: `packages/harness/src/audit/*`
+- Delete: `packages/db/src/auditSemanticSnapshot.ts`
+- Modify: `README.md`
+- Modify: `GOAL.md`
+- Modify: `docs/architecture/cli-surfaces.md`
+- Modify: `PLAN.md`
+
+non-goals:
+
+- no replacement `krn guard`;
+- no internal audit UX;
+- no new audit categories;
+- no broad repo scanner;
+- no deletion of legacy `AuditBundle` storage in this slice.
+
+follow-ups:
+
+- C6-00 re-homes former memory/source/evidence invariants into
+  MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle behavior.
+- C6-01 decides the fate of legacy AuditBundle storage/contracts.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test -- runCli -t "rejects the removed public audit command"
+pnpm --filter @krn/cli test
+pnpm --filter @krn/harness test
+pnpm --filter @krn/db test
+pnpm typecheck
+pnpm test
+git diff --check
+rg -n "runAuditChecks|auditChecks|parseAuditArgs|runAuditCommand|createAuditDatabaseRuntime|AuditDatabaseRuntime|auditSemanticSnapshot" packages --glob "*.ts"
+```
+
+observed:
+
+- focused `runCli` removal test passed: `audit repo` is rejected with exit 2;
+- `@krn/cli`, `@krn/harness`, and `@krn/db` package tests passed;
+- full `pnpm test` passed;
+- full `pnpm typecheck` passed;
+- `git diff --check` passed;
+- removed audit command/scanner/runtime symbols have no active TypeScript
+  matches under `packages/`;
+- legacy `AuditBundle` core/schema/db storage still exists and is queued for
+  C6-01 rather than treated as active audit UX.
+
+rollback:
+
+```sh
+git restore README.md GOAL.md PLAN.md docs/architecture/cli-surfaces.md packages/cli packages/db packages/harness
 ```
 
 ### P1-02: Plan Package Barrel Narrowing
@@ -1250,7 +1466,8 @@ required behavior:
 
 - preview and persisted evidence capture can accept command outcomes;
 - each command has command text, status, and optional notes/output ref;
-- missing outcomes remain `skipped`;
+- missing outcomes remain weak rows; this interim slice used `skipped`, later
+  superseded by EVI-00 `not_run` defaults;
 - persisted EvidenceBundle stores only provided outcomes;
 - run ledger can cite the persisted command statuses as proof when statuses are
   supplied.
@@ -1307,6 +1524,8 @@ Non-goals for EVI:
 - no broad Promptfoo lane.
 
 ### EVI-00: Define Evidence Command Provenance Model
+
+status: complete.
 
 objective:
 
@@ -1366,6 +1585,27 @@ pnpm typecheck
 git diff --check
 ```
 
+observed:
+
+- `EvidenceCommand` now models `passed | failed | skipped | missing | not_run`
+  status and explicit provenance.
+- `normalizeEvidenceCommand` generates weak/default semantics for legacy rows
+  and captured-output/operator-reported semantics for supplied command rows.
+- Schema parsing accepts typed provenance fields and rejects invalid/blank
+  evidence limits.
+- DB mapper normalizes persisted JSON rows at the IO boundary and drops unknown
+  command statuses.
+- CLI evidence capture persists/render normalized command provenance and labels
+  default template rows as weak.
+- Verification passed:
+  `pnpm --filter @krn/core test -- evidenceBundle`,
+  `pnpm --filter @krn/schema test -- index`,
+  `pnpm --filter @krn/db test -- mappers`,
+  `pnpm --filter @krn/cli test -- runCli -t "evidence"`,
+  `pnpm typecheck`, `pnpm test`, and `git diff --check`.
+- This closes the typed provenance model only. EVI-02..EVI-04 remain open for
+  CLI ergonomics, persistence/regression proof, and P7 run-ledger closure.
+
 commit:
 
 ```sh
@@ -1374,6 +1614,8 @@ git commit -m "feat(evidence): model verification command provenance"
 ```
 
 ### EVI-01: Capture Explicit Verification Evidence In CLI
+
+status: complete.
 
 objective:
 
@@ -1413,6 +1655,20 @@ pnpm typecheck
 git diff --check
 ```
 
+observed:
+
+- `krn evidence capture` accepts repeated
+  `--verification <command=status>` entries in preview and persisted command
+  input paths.
+- Verification entries are parsed at the CLI boundary into typed
+  `EvidenceCommandStatus` values with `provenance: "operator_reported"`.
+- Unknown statuses and empty command text fail parse.
+- No command runner, shell inference, or terminal transcript scraping was
+  added.
+- Focused verification passed:
+  `pnpm --filter @krn/cli test -- parseEvidenceArgs` and
+  `pnpm --filter @krn/cli test -- runCli -t "explicit verification"`.
+
 commit:
 
 ```sh
@@ -1421,6 +1677,8 @@ git commit -m "feat(cli): capture explicit verification evidence"
 ```
 
 ### EVI-02: Persist Command Provenance Without Metadata Convention
+
+status: complete.
 
 objective:
 
@@ -1451,6 +1709,22 @@ KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
 git diff --check
 ```
 
+observed:
+
+- Existing `evidence_bundles.commands` JSONB storage can represent typed
+  command provenance; no migration was added.
+- `DrizzleHarnessRunRepository.createEvidenceBundle` normalizes commands before
+  insert through `evidenceCommandsForPersistence`.
+- The DB mapper still narrows raw JSON on readback and maps historical rows
+  without provenance to weak/default semantics.
+- Verification passed:
+  `pnpm --filter @krn/db test -- DrizzleHarnessRunRepository`,
+  `pnpm --filter @krn/db test`, `pnpm typecheck`,
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`, and
+  `pnpm test`, and `git diff --check`.
+- DB readiness proof in this shell: Postgres reachable, 11/11 migrations
+  applied, pgvector available, brain store ready.
+
 commit:
 
 ```sh
@@ -1459,6 +1733,8 @@ git commit -m "feat(db): persist evidence command provenance"
 ```
 
 ### EVI-03: Guard Self-Hosting Evidence Provenance
+
+status: complete.
 
 objective:
 
@@ -1491,6 +1767,23 @@ pnpm typecheck
 git diff --check
 ```
 
+observed:
+
+- Added a CLI integration-style regression test with a fake persisted
+  self-hosting run containing plan and EvidenceBundle records.
+- The test proves explicit `operator_reported` and `captured_output_file`
+  command provenance for `pnpm typecheck` and `pnpm test` reaches observe
+  payloads and is not replaced by weak/default provenance.
+- The same test proves observe reports `MemoryRecord created: no`, reflect
+  reports `Candidate rows written: no` and `MemoryRecord created: no`, and the
+  persisted reflection output has zero memory candidates.
+- No live DB dependency is required for this regression proof.
+- Verification passed:
+  `pnpm --filter @krn/cli test -- runCli -t "guards self-hosting evidence provenance"`,
+  `pnpm --filter @krn/harness test -- golden`,
+  `pnpm --filter @krn/cli test -- runCli`, `pnpm typecheck`,
+  `pnpm test`, and `git diff --check`.
+
 commit:
 
 ```sh
@@ -1499,6 +1792,8 @@ git commit -m "test(evidence): guard self-hosting command provenance"
 ```
 
 ### EVI-04: Close P7 Run Ledger Evidence Gap
+
+status: complete.
 
 objective:
 
@@ -1527,6 +1822,16 @@ pnpm test
 git diff --check
 ```
 
+observed:
+
+- `docs/runs/2026-06-23-self-hosting-memory-loop.md` now records the original
+  P7 command-provenance gap, EVI-00..EVI-03 repairs, exact repair verification
+  commands, and remaining non-proofs.
+- Historical P7 EvidenceBundle rows were left unchanged and not migrated.
+- Future captures can persist explicit verification provenance; the historical
+  run remains weak command evidence.
+- Verification passed: `pnpm typecheck`, `pnpm test`, and `git diff --check`.
+
 commit:
 
 ```sh
@@ -1535,6 +1840,8 @@ git commit -m "docs(run): close self-hosting evidence provenance gap"
 ```
 
 ### EVI-05: Remote Status Hygiene Before Long-Running Goals
+
+status: complete.
 
 objective:
 
@@ -1545,9 +1852,11 @@ observed state after this fetch:
 
 ```txt
 git fetch --prune: passed
-git status --short --branch: main...origin/main [ahead 1] before committing the current C0/EVI work
-git log --oneline --decorate --left-right origin/main...main: > a45cee4 docs(goal): continue KRN hardening backlog
-HEAD: a45cee4
+git status --short --branch: main...origin/main [ahead 2], with the current C0/EVI work still uncommitted
+git log --oneline --decorate --left-right origin/main...main:
+  > cc57a93 (HEAD -> main) feat(evidence): capture explicit command outcomes
+  > a45cee4 docs(goal): continue KRN hardening backlog
+HEAD: cc57a93
 origin/main: 87cac53
 ```
 
@@ -1576,10 +1885,33 @@ git commit -m "docs(goal): require remote status hygiene"
 
 ### EVI-06: Activation Relevance Review For Self-Hosting
 
+status: complete.
+
 objective:
 
 Explain whether selected memory/source context actually helped the P7
 self-hosting task.
+
+observed:
+
+- The P7 ledger selected four source claims and two memory records.
+- The first EVI-06 DB check timed out because the local `krn-postgres` service
+  was not running. Root cause: no Docker container was active and nothing
+  listened on `54329`.
+- `docker compose up -d krn-postgres` restored the local brain store.
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
+  passed with 11/11 migrations and pgvector available.
+- DB-backed expansion of execution run
+  `00d74890-b18d-498b-90bf-f172c26cffb6` resolved context assembly
+  `72fdc214-54cb-4979-91ca-18551e4833f4` with 6 inclusions and 0 exclusions.
+- Result: selected context was not dangerous or stale by DB-backed row
+  evidence, but it was only partly useful. It strongly supported evidence
+  provenance/governance caution and did not directly reduce Memory Core
+  write-authority decision burden.
+- Decision: keep all six selected items for this run, create no anti-memory
+  candidate, add no ranking subsystem, strengthen/demote only the relevant
+  evidence-provenance memories later, and carry the direct-relevance gap into
+  `C0-01`.
 
 required review table:
 
@@ -1615,6 +1947,8 @@ git commit -m "docs(activation): review self-hosting context relevance"
 
 ### EVI-07: Reflection Candidate Path After Evidence Integrity
 
+status: complete.
+
 objective:
 
 Only after EVI-00..EVI-04, decide how reflection should produce useful
@@ -1628,11 +1962,27 @@ requirements:
 - weak/default command evidence cannot produce high-confidence memory
   candidates.
 
+observed:
+
+- `ReflectionCandidateEvidence` is now a typed core contract for reflection
+  candidate proposals.
+- `buildReflectionCandidateGenerationPlan` blocks invalid candidate evidence
+  and blocks high-confidence memory candidates when their evidence provenance is
+  `default_template`.
+- `writeReflectionCandidates` writes candidate rows only, never MemoryRecord,
+  and persists typed reflection candidate evidence under the explicit
+  `reflectionCandidateEvidence` metadata key for existing stores.
+- `DrizzleReflectionRepository` no longer drops candidate proposal arrays when
+  reading persisted `reflection_records.output` JSON.
+- No DB migration was added; this slice narrows existing JSONB read/write
+  behavior and candidate writer semantics.
+
 verification:
 
 ```sh
 pnpm --filter @krn/core test -- reflection
 pnpm --filter @krn/harness test -- reflection
+pnpm --filter @krn/db test -- DrizzleReflectionRepository
 pnpm typecheck
 git diff --check
 ```
@@ -1640,11 +1990,13 @@ git diff --check
 commit:
 
 ```sh
-git add packages/core packages/harness PLAN.md
+git add packages/core packages/harness packages/db PLAN.md
 git commit -m "feat(reflection): stage evidence-grounded candidates"
 ```
 
 ### EVI-08: Candidate To Memory Review Loop Proof
+
+status: complete.
 
 objective:
 
@@ -1657,6 +2009,20 @@ requirements:
 - MemoryReviewGate rejects weak or missing provenance;
 - reviewed MemoryRecord can influence a later activation;
 - anti-memory remains first-class for rejected claims.
+
+observed:
+
+- `MemoryReviewGate` now requires typed candidate evidence provenance under the
+  explicit `reflectionCandidateEvidence` metadata key before promotion.
+- Missing candidate evidence and weak `default_template` provenance are rejected
+  before `promoteReviewedMemoryCandidate` is called.
+- Review-gate metadata carries the reviewed candidate evidence alongside
+  `evidenceReviewedRef` and reviewed source claim IDs.
+- A focused harness proof promotes a reviewed candidate into MemoryRecord and
+  then shows that MemoryRecord can enter a later activation context.
+- Existing anti-memory activation behavior remains covered in harness memory
+  behavior tests; this slice did not add an automatic anti-memory promotion
+  path.
 
 verification:
 
@@ -1778,14 +2144,15 @@ git commit -m "test(activation): improve self-hosting context relevance"
 objective:
 
 Move the P1 CLI taxonomy from docs-only classification into command behavior or
-help text so users cannot confuse internal smokes/audit guards with the public
-operator workflow.
+help text so users cannot confuse internal smokes with the public operator
+workflow. This no longer preserves any `krn audit` guardrail; P1-03 removes that
+surface instead.
 
 source:
 
 P1-00 classified public operator, governed admin, and internal/dev surfaces.
-P1-01 deproductized `krn audit` in docs, but actual CLI behavior still exposes
-mixed surfaces under one parser.
+P1-03 removes `krn audit` from CLI routing/help. Remaining work is normal public
+operator vs governed admin vs DB smoke ergonomics.
 
 mechanism:
 
@@ -1971,6 +2338,57 @@ git add docs/runs PLAN.md
 git commit -m "docs(run): stage self-hosting feedback candidates"
 ```
 
+### C6-00A: Re-home Memory Review Signals
+
+status: complete.
+
+objective:
+
+Recover the useful Memory Core review signals from the removed audit scanner as
+a native pure core mechanism. This is not a new audit layer and does not mutate
+Memory Core.
+
+source:
+
+The removed scanner contained useful memory checks:
+
+- stale high-confidence memory should require review;
+- repeated hurt/stale feedback should require demotion or invalidation review;
+- active/stale memory with no positive application feedback is weak evidence of
+  usefulness.
+
+mechanism:
+
+`packages/core/src/memory.ts` now exposes `assessMemoryRecordReviewSignals`,
+which returns typed review signals for one `MemoryRecord`. Consumers can use the
+signals in review/activation flows without a broad repo scanner.
+
+does_not_prove:
+
+- Memory is automatically demoted or invalidated;
+- activation consumes the signals yet;
+- all former audit invariants have been re-homed.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- memory
+pnpm --filter @krn/core typecheck
+```
+
+observed:
+
+- focused memory test passed;
+- core typecheck passed.
+- after the audit-surface purge and C6-00A, full `pnpm test`,
+  `pnpm typecheck`, and `git diff --check` passed.
+
+rollback:
+
+```sh
+git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
+```
+
 ## Progress
 
 - [x] P0-00 Replace root `GOAL.md` with compact execution contract.
@@ -1981,6 +2399,7 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 - [x] P1-00 Classify CLI surfaces.
 - [x] P1-01 Deproductize `krn audit`.
 - [x] P1-02 Plan package barrel narrowing.
+- [x] P1-03 Remove public `krn audit` CLI and harness audit scanner.
 - [x] P2-00 Seal Memory Core write authority.
 - [x] P2-01 Type SourceClaim project scope.
 - [x] P2-02 Promote behavior metadata to typed fields.
@@ -1996,24 +2415,29 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 - [x] P6-01 Harden worker job contracts.
 - [x] P7-00 Run first governed self-hosting loop.
 - [x] C0-00 Persist real evidence command outcomes.
-- [ ] EVI-00 Define evidence command provenance model.
-- [ ] EVI-01 Capture explicit verification evidence in CLI.
-- [ ] EVI-02 Persist command provenance without metadata convention.
-- [ ] EVI-03 Guard self-hosting evidence provenance.
-- [ ] EVI-04 Close P7 run ledger evidence gap.
-- [ ] EVI-05 Remote status hygiene before long-running goals.
-- [ ] EVI-06 Activation relevance review for self-hosting.
-- [ ] EVI-07 Reflection candidate path after Evidence Integrity.
-- [ ] EVI-08 Candidate to Memory Review loop proof.
-- [ ] EVI-09 Promptfoo and GoldenTask boundary for self-hosting.
-- [ ] EVI-10 Operator ergonomics for evidence capture.
-- [ ] C0-01 Improve self-hosting context relevance.
+- [x] EVI-00 Define evidence command provenance model.
+- [x] EVI-01 Capture explicit verification evidence in CLI.
+- [x] EVI-02 Persist command provenance without metadata convention.
+- [x] EVI-03 Guard self-hosting evidence provenance.
+- [x] EVI-04 Close P7 run ledger evidence gap.
+- [x] EVI-05 Remote status hygiene before long-running goals.
+- [x] EVI-06 Activation relevance review for self-hosting.
+- [x] EVI-07 Reflection candidate path after Evidence Integrity.
+- [x] EVI-08 Candidate to Memory Review loop proof.
+- [x] EVI-09 Promptfoo and GoldenTask boundary for self-hosting.
+- [x] EVI-10 Operator ergonomics for evidence capture.
+- [x] C0-01 Improve self-hosting context relevance.
 - [ ] C1-00 Separate public CLI from internal dev commands.
 - [ ] C1-01 Narrow package barrels from planned to enforced.
 - [ ] C2-00 Add reviewed anti-memory candidate storage.
 - [ ] C3-00 Expand real GoldenTask behavior gate coverage.
 - [ ] C4-00 Decide worker runtime ADR before execution.
 - [ ] C5-00 Convert self-hosting run gaps into candidates.
+- [x] C6-00A Re-home memory review signals as pure core behavior.
+- [ ] C6-00 Re-home former memory/source/evidence audit invariants into native
+  MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
+- [ ] C6-01 Decide whether legacy AuditBundle storage is deleted, renamed, or
+  migrated into EvidenceBundle/ReviewAssessment lineage.
 
 ## Surprises & Discoveries
 
@@ -2030,6 +2454,10 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
   active product direction.
 - README now points readers to root `GOAL.md` and root `PLAN.md`; old memory
   ideal-state docs are described as historical ledgers, not active truth.
+- User correction: do not add guardrails around `krn audit`; if the surface is
+  wrong, remove it. The old audit scanner mixed real Memory/Source/Evidence
+  invariants with broad repo-scanner/productized-audit framing, so retained
+  invariants must move to native mechanisms rather than remain in audit code.
 - Package surface inventory found broad wildcard exports beyond the P1-02
   target set in core/schema/codex-adapter/workers. They are recorded as out of
   first-slice scope unless later evidence shows they leak internals as product
@@ -2130,6 +2558,35 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 - After `git fetch --prune`, remote state was narrower than the older
   `ahead 21` status: `origin/main` was at `87cac53` and local `main` was ahead
   by `a45cee4` before the current uncommitted work.
+- After the EVI-05 refresh, remote state is explicit: `git fetch --prune`
+  passed, `origin/main` remains at `87cac53`, and local `main` is ahead by two
+  commits: `cc57a93 feat(evidence): capture explicit command outcomes` and
+  `a45cee4 docs(goal): continue KRN hardening backlog`.
+- EVI-06 initially hit `CONNECT_TIMEOUT localhost:54329` because local
+  `krn-postgres` was not running. After `docker compose up -d krn-postgres`,
+  DB readiness passed with 11/11 migrations and pgvector available, and the
+  P7 context IDs were expanded from Postgres for the activation relevance
+  review.
+- EVI-07 found an existing candidate writer, but memory candidate proposals did
+  not carry typed evidence provenance/`doesNotProve`, high-confidence memory
+  candidates were not blocked when backed only by default-template command
+  evidence, and DB reflection readback discarded persisted candidate proposal
+  arrays. The slice fixed those three gaps without adding a migration or
+  MemoryRecord mutation path.
+- EVI-08 found that `MemoryReviewGate` checked source lineage and review refs
+  but did not inspect the candidate evidence provenance introduced by EVI-07.
+  The gate now rejects missing or weak candidate evidence before promotion and
+  preserves the reviewed candidate evidence in review-gate metadata.
+- EVI-09 found that Promptfoo smoke/provider output was already bounded with
+  `doesNotExecuteKrnBehavior=true`, but the mapped proof type did not preserve
+  the distinction. `GoldenBehaviorProof` now carries explicit provenance and
+  `runGoldenTaskFixtures` rejects `promptfoo_integration_smoke` as behavior
+  proof even when the Promptfoo row passes.
+- EVI-10 found evidence capture already persisted IDs and weak/default command
+  labels, but top-level help did not show the operator-facing
+  `--verification` flow and preview output still used "Persisted command
+  provenance" wording. Help now includes explicit verification examples, and
+  evidence capture output states that no shell commands are executed.
 
 ## Decision Log
 
@@ -2147,9 +2604,11 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
 - 2026-06-23: Productized QG-06 / anti-slop / audit automation is removed as
   active direction in root surfaces and classified as historical/rejected in
   old memory-plan and handoff surfaces.
-- 2026-06-23: Public `krn audit` is deprecated as product direction. It may
-  remain only as temporary internal/dev mechanics until a code slice removes it
-  from public CLI or moves checks behind an explicit internal script.
+- 2026-06-23: Public `krn audit` is removed from CLI routing/help and the
+  harness audit scanner export is deleted. Useful Memory/Source/Evidence
+  invariants from the old scanner are not discarded as concepts; they are
+  queued for native MemoryReviewGate, SourceClaim/SourceDecision, and
+  EvidenceBundle mechanisms.
 - 2026-06-23: Package public surfaces should be narrowed from broad barrels to
   stable named contracts; smokes, concrete repositories, schema tables, and CLI
   command runners should not be default product API.
@@ -2220,9 +2679,33 @@ git commit -m "docs(run): stage self-hosting feedback candidates"
   output exists outside the persisted EvidenceBundle.
 - 2026-06-23: C0-00 adds an explicit evidence command outcome input path to
   `krn evidence capture`. The CLI accepts repeated `--command ... --status ...`
-  groups with optional `--exit-code` and `--output`; missing outcomes still
-  remain `skipped`. KRN still does not infer command success from prose, shell
-  history, or local output files.
+  groups with optional `--exit-code` and `--output`; missing/default outcomes
+  are weak `not_run` rows after EVI-00. KRN still does not infer command success
+  from prose, shell history, or local output files.
+- 2026-06-23: EVI-01 adds explicit
+  `--verification <command=status>` syntax for operator-reported command
+  evidence. This preserves manual evidence without pretending KRN executed the
+  commands.
+- 2026-06-23: EVI-02 keeps command provenance in the existing
+  `evidence_bundles.commands` JSONB field, but normalizes it at the DB
+  repository write boundary and validates/narrows it at mapper readback. No DB
+  migration is needed for this slice.
+- 2026-06-23: EVI-03 turns the P7 self-hosting provenance gap into a CLI
+  regression proof. The proof represents plan/evidence/observe/reflect,
+  preserves explicit command provenance into observation payloads, and confirms
+  observe/reflect do not create MemoryRecord truth or automatic candidate rows.
+- 2026-06-23: EVI-04 closes the P7 run-ledger evidence gap for future work by
+  documenting the EVI-00..EVI-03 repairs, exact verification commands, remaining
+  non-proofs, and the decision not to rewrite the historical P7 EvidenceBundle
+  rows.
+- 2026-06-23: EVI-09 makes GoldenTask proof provenance explicit. Promptfoo
+  result-adapter rows may be mapped into proof-shaped records for reporting,
+  but `promptfoo_integration_smoke` is not accepted as GoldenTask behavior
+  proof; behavior proof requires `krn_behavior_execution`.
+- 2026-06-23: EVI-10 keeps evidence capture as an operator evidence recorder,
+  not a command runner or quality product. CLI help and output now show
+  `--verification` examples, weak default-template semantics, and no hidden
+  command execution.
 - 2026-06-23: Adopt Evidence Integrity as the next priority program after P7.
   Do not continue into candidate generation, worker runtime, dashboard, or
   broader memory behavior until command provenance can say what was run, how it
@@ -2238,8 +2721,8 @@ Current outcome:
 - Productized QG-06 / anti-slop / audit automation direction is rejected or
   historical wherever the P0-04 scan finds it.
 - CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
-- `krn audit` is deproductized in docs: no QG-06, no new audit categories, no
-  public product UX claim.
+- `krn audit` is removed from active CLI routing/help and harness audit scanner
+  exports; no QG-06, no new audit categories, no public/internal guardrail UX.
 - Package barrel narrowing is planned in `docs/architecture/package-surfaces.md`.
 - Package source is touched from P2-00 onward.
 - Memory Core promotion authority is sealed at the public harness port:
@@ -2279,6 +2762,10 @@ Current outcome:
 - First real GoldenTask behavior gate exists in harness. It covers stale memory
   abstention, anti-memory blocking, and reflection non-mutation by executing
   KRN functions and producing proof rows for `runGoldenTaskFixtures`.
+- GoldenTask behavior proof now has typed provenance. Promptfoo
+  `promptfoo_integration_smoke` rows are rejected by `runGoldenTaskFixtures`
+  as behavior proof; only `krn_behavior_execution` proof can satisfy the
+  behavior gate.
 - Worker runtime truth is marked at the package and architecture surfaces:
   workers are typed job definitions/enqueue contracts only until a runtime is
   explicitly accepted.
@@ -2290,10 +2777,12 @@ Current outcome:
   verification evidence.
 - C0-00 lets future EvidenceBundles persist real command outcome provenance
   when the operator supplies it explicitly.
-- Evidence Integrity queue EVI-00..EVI-10 is active. The first unchecked item is
-  EVI-00: define evidence command provenance model.
-- Continuous hardening queue C0-C5 remains active behind the Evidence Integrity
-  priority program.
+- Evidence Integrity queue EVI-00..EVI-10 is complete in the current worktree.
+- C0-01 found the live DB had no direct Memory Core write-authority memory for
+  self-hosting plan activation. The repair used the reviewed MemoryCandidate
+  path instead of hard-coded recall.
+- Continuous hardening queue C0-C5 is active. The first unchecked item is
+  C1-00: Separate public CLI from internal dev commands.
 
 ## Command Evidence
 
@@ -2350,23 +2839,22 @@ Observed: passed with no output.
 P1-00 CLI surface classification:
 
 ```sh
-rg -n "command|CliCommand|run.*Command|parse.*Command|krn audit|audit" packages/cli/src packages/harness/src/audit README.md package.json
+rg -n "command|CliCommand|run.*Command|parse.*Command|krn audit|audit" packages/cli/src README.md package.json
 sed -n '1,520p' packages/cli/src/parseArgs.ts
 sed -n '1,860p' packages/cli/src/runCli.ts
 sed -n '1,120p' packages/cli/src/parseDbArgs.ts
-sed -n '1,280p' packages/cli/src/parseAuditArgs.ts
 ```
 
 Observed summary:
 
-- `parseArgs.ts` defines public operator, governed admin, DB, and audit command
-  variants;
+- `parseArgs.ts` defined public operator, governed admin, DB, and audit command
+  variants before P1-03;
 - `runCli.ts` routes those variants to command runners and wires optional DB
   runtimes;
 - `parseDbArgs.ts` keeps readiness/smoke targets separate from normal operator
   workflows;
-- `parseAuditArgs.ts` exposes `krn audit repo` and `krn audit slice`, which are
-  now classified as internal/dev and historical/delete candidates pending P1-01.
+- `parseAuditArgs.ts` exposed `krn audit repo` and `krn audit slice`; P1-03
+  deletes that parser and command runner.
 
 ```sh
 rg -n "public operator|governed admin|internal/dev|krn audit|krn db" docs/architecture/cli-surfaces.md PLAN.md
@@ -2388,8 +2876,7 @@ Observed summary:
 
 - `README.md`, root `PLAN.md`, `docs/architecture/cli-surfaces.md`, and
   QG-04H reset text classify `krn audit` as deprecated product direction,
-  temporary internal/dev mechanics, historical evidence, or not a quality
-  engine;
+  historical evidence, superseded removal target, or not a quality engine;
 - `docs/materials/` matches are raw quarantined source material, not active
   implementation truth;
 - `docs/reviews/repo-reset-audit/` matches are decision-grade audit evidence
@@ -2996,16 +3483,107 @@ git diff --check
 
 Observed: passed with no output.
 
-## Final Completion Criteria
+EVI-09 verification after separating Promptfoo adapter proof from GoldenTask
+behavior proof:
 
-The reset is complete only when:
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm exec promptfoo --version
+pnpm eval:promptfoo:smoke
+pnpm typecheck
+```
+
+Observed:
+
+- harness golden tests passed: 17 files, 73 tests;
+- `pnpm exec promptfoo --version` returned `0.121.17`;
+- Promptfoo smoke passed 2/2 and emitted `doesNotExecuteKrnBehavior=true`;
+- Promptfoo smoke wrote `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`;
+- Promptfoo printed `telemetry.shutdown() timed out during shutdown` after the
+  successful eval, but exited with code 0;
+- `pnpm typecheck` passed.
+
+This proves Promptfoo still works as a runner/config/provider/result-output
+smoke and that `runGoldenTaskFixtures` no longer accepts
+`promptfoo_integration_smoke` as behavior proof. It does not prove self-hosting
+behavior through Promptfoo, Memory Brain readiness, candidate quality, or live
+DB execution.
+
+EVI-10 verification after clarifying evidence capture operator ergonomics:
+
+```sh
+pnpm --filter @krn/cli test -- parseEvidenceArgs runCli
+pnpm typecheck
+git diff --check
+```
+
+Observed:
+
+- CLI focused tests passed: 23 files, 140 tests;
+- `pnpm typecheck` passed;
+- `git diff --check` passed.
+
+This proves help/output now show explicit verification examples, no hidden
+command execution, weak/default provenance semantics, and existing persisted ID
+output coverage. It does not prove live DB persistence in this slice or
+command-runner behavior, which remains a non-goal.
+
+C0-01 verification after improving self-hosting context relevance:
+
+```sh
+pnpm --filter @krn/harness test -- activation
+pnpm --filter @krn/cli test -- parseMemoryArgs runCli
+pnpm typecheck
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn memory candidate add --run-id 00d74890-b18d-498b-90bf-f172c26cffb6 --kind constraint --content "MemoryReviewGate seals Memory Core write authority. Public Memory Core promotion must go through MemoryReviewGate and promoteReviewedMemoryCandidate; raw MemoryRecord writes remain adapter internals." --confidence high --application-guidance "Use when sealing Memory Core write authority or reviewing public MemoryRecord promotion paths." --source-lineage PLAN.md#P2-00 --source-lineage PLAN.md#P6-01 --candidate-evidence-provenance operator_reported --candidate-evidence-ref PLAN.md#P2-00 --candidate-evidence-ref PLAN.md#P6-01 --candidate-evidence-ref docs/runs/2026-06-23-self-hosting-memory-loop.md#activation-relevance-review --candidate-evidence-does-not-prove "This does not prove Memory Brain readiness or candidate quality; it proves the reviewed write-authority decision is available for activation." --invalidation-rule "Revisit if public MemoryRepository exposes raw MemoryRecord creation or worker runtime gains Memory Core writes." --owner krn-kernel --proposed-by C0-01 --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn memory candidate promote --candidate-id 39bb2ed0-56d9-4033-a181-fc807a775252 --reviewer codex --decision accepted --evidence-reviewed-ref docs/runs/2026-06-23-self-hosting-memory-loop.md#activation-relevance-review --metadata slice=C0-01 --persist
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm --filter @krn/cli krn plan --task "seal Memory Core write authority" --persist
+git diff --check
+```
+
+Catch-up commit verification after introducing worktree hygiene:
+
+```sh
+pnpm test
+```
+
+Observed:
+
+- harness activation tests passed: 17 files, 74 tests;
+- CLI focused tests passed: 23 files, 141 tests;
+- `pnpm typecheck` passed;
+- full workspace tests passed: 80 files, 365 tests;
+- DB readiness passed with Postgres reachable, 11/11 migrations applied, and
+  pgvector available;
+- reviewed candidate `39bb2ed0-56d9-4033-a181-fc807a775252` was promoted to
+  MemoryRecord `f950b8b4-5392-4084-9f98-93881fbe961a`;
+- persisted plan for `seal Memory Core write authority` selected
+  `memory_record:f950b8b4-5392-4084-9f98-93881fbe961a` first, ahead of adjacent
+  governance/source-graph context;
+- persisted IDs from that plan were:
+  `contextAssembly:a98d996a-37a9-4ff3-8a0f-2a14eaeebcb2` and
+  `executionRun:017d4d0d-b048-493d-a2e2-a182840cc3a8`;
+- `git diff --check` passed.
+
+This proves reviewed write-authority memory can be added through
+MemoryReviewGate and then selected by a live persisted self-hosting plan. It
+does not prove general activation quality, broad Memory Brain readiness, or
+worker runtime execution.
+
+## Historical Reset Completion Criteria
+
+The reset criteria below are retained as the completed P0-P7 ledger. They are
+not the active goal. Current active completion is governed by `Active Queue
+Snapshot` and the first unchecked slice.
+
+The reset was complete only when:
 
 1. `GOAL.md` is compact and points to root `PLAN.md`.
 2. Root `PLAN.md` remains canonical and current.
 3. Stale docs are historical or deleted.
 4. QG-06/productized anti-slop is removed as product direction.
-5. `krn audit` is internalized/deproductized or explicitly slated for
-   deletion/rename.
+5. `krn audit` is removed as a product/guardrail/scanner surface and any useful
+   invariants are re-homed into native mechanisms.
 6. CLI surface taxonomy exists.
 7. MemoryReviewGate is the only public Memory Core promotion path.
 8. Behavior-governing metadata debt is typed or explicitly tracked.
@@ -3020,6 +3598,14 @@ The reset is complete only when:
 ## Commit Discipline
 
 Use Conventional Commits.
+
+Completed slice discipline:
+
+- no completed slice is considered done until it has a focused commit;
+- push immediately after the commit;
+- do not batch unrelated slices into one commit;
+- do not carry completed work as active context after push;
+- `git status --short --branch` must be recorded before the next slice starts.
 
 Every commit must answer:
 
@@ -3045,3 +3631,500 @@ Stop and report if:
 - a slice requires destructive deletion not already authorized by this plan;
 - evidence contradicts this plan;
 - the next action requires broad historical rereads instead of a bounded slice.
+
+## Next Epoch Backlog: Evidence Integrity, Repo Condensation, TypeScript Quality
+
+This appendix is append-only backlog after the completed reset ledger and the
+current Evidence Integrity progress. It does not create a new plan, a new
+reset, or a parallel execution surface.
+
+Current carry-forward:
+
+- EVI-00 through EVI-10 are already represented above and are complete in the
+  current worktree.
+- The first unchecked continuous hardening slice is C0-01 in `Active Queue
+  Snapshot`.
+- COND, TSQ, and EXEC slices below are queued after the active Evidence
+  Integrity closure work unless a narrower slice explicitly promotes one.
+
+Executor rule:
+
+Do not start a broad cleanup goal. Condense only where a public surface, type,
+document, or command name gives more authority than implementation evidence
+supports.
+
+### EXEC-00: Add Executor Discipline To Active Slice Template
+
+priority: P0.
+
+objective:
+
+Encode the executor behavior gate directly in this plan without creating a new
+quality subsystem.
+
+before each implementation slice, record:
+
+```txt
+assumptions:
+ambiguity/tradeoff:
+simplest acceptable implementation:
+files likely touched:
+files explicitly not touched:
+non-goals:
+success criteria:
+verification:
+rollback:
+```
+
+rules:
+
+- think before coding;
+- prefer the simplest final-pattern implementation;
+- make surgical changes only;
+- every changed line must trace to the slice objective;
+- do not fix adjacent slop in the same slice;
+- if unrelated slop is found, record it in Surprises & Discoveries or as a
+  later slice.
+
+verification:
+
+```sh
+rg -n "Executor Discipline|assumptions|simplest acceptable implementation|files explicitly not touched" PLAN.md
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): add executor discipline gate"
+```
+
+### EXEC-01: Require Slice Template For Future Backlog Items
+
+priority: P0.
+
+objective:
+
+Every future slice must use a complete execution template so completed work can
+be compressed without losing proof or next actions.
+
+required fields:
+
+```txt
+assumptions:
+tradeoffs:
+simplest acceptable implementation:
+files likely touched:
+files forbidden to touch:
+non-goals:
+success criteria:
+verification:
+rollback:
+```
+
+verification:
+
+```sh
+rg -n "files forbidden to touch|success criteria|rollback" PLAN.md
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): require slice execution template"
+```
+
+### COND-00: Narrow DB Root Exports
+
+priority: P1.
+
+objective:
+
+Make `@krn/db` root exports honest. Smokes, readiness helpers, concrete
+repositories, and schema internals should not look like default public product
+API.
+
+source:
+
+`docs/architecture/package-surfaces.md` already classifies package-surface debt.
+
+target:
+
+- root exports stable DB runtime/factory contracts only;
+- smokes/readiness move to explicit dev/internal paths or package scripts;
+- schema tables are not casual root API;
+- no compatibility layer for imaginary consumers.
+
+files likely touched:
+
+- `packages/db/src/index.ts`
+- `packages/db/src/repositories/index.ts`
+- `packages/db/src/schema/index.ts`
+- imports that currently rely on root wildcard exports.
+
+verification:
+
+```sh
+rg -n "export \\*" packages/db/src/index.ts packages/db/src/repositories/index.ts packages/db/src/schema/index.ts
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "refactor(db): narrow public package surface"
+```
+
+### COND-01: Narrow CLI Root Exports
+
+priority: P1.
+
+objective:
+
+Make `@krn/cli` root exports expose `runCli` and stable adapter types only.
+Command runners and DB smoke helpers should remain internal implementation
+details.
+
+files likely touched:
+
+- `packages/cli/src/index.ts`
+- imports/tests that need explicit internal paths.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "refactor(cli): narrow root adapter exports"
+```
+
+### COND-02: Narrow Harness Root Exports
+
+priority: P1.
+
+objective:
+
+Separate canonical harness behavior from eval adapters, dev helpers, repository
+internals, and removed audit-era surfaces.
+
+target:
+
+- keep activation/compiler/memory review gate/golden behavior as intentional
+  harness API;
+- keep Promptfoo under eval-adapter naming;
+- avoid broad wildcard root exports;
+- do not restore audit scanner exports.
+
+files likely touched:
+
+- `packages/harness/src/index.ts`
+- nested harness indexes;
+- imports/tests.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "refactor(harness): narrow product exports"
+```
+
+### COND-03: Decide Remaining Package Barrels
+
+priority: P2.
+
+objective:
+
+Classify broad wildcard exports in core/schema/codex-adapter/workers instead
+of deleting them by aesthetics.
+
+rules:
+
+- core domain root may stay broad if the exports are stable domain contracts;
+- test helpers and fixtures must not go through package root;
+- adapter internals must not go through package root;
+- workers root should expose contracts, not runtime claims.
+
+files likely touched:
+
+- `docs/architecture/package-surfaces.md`
+- selected package indexes only when a decision is trivial and small.
+
+verification:
+
+```sh
+rg -n "export \\*" packages/*/src/index.ts packages/*/src/**/index.ts
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(exports): decide remaining package barrels"
+```
+
+### COND-04: CLI Public Surface Code Move Decision
+
+priority: P2.
+
+objective:
+
+Decide the code-level fate of internal/dev CLI surfaces without silently
+renaming commands or recreating an audit/guard layer.
+
+options:
+
+1. keep DB readiness/smokes but hide or clearly mark them as internal/dev;
+2. move DB/dev operations under an explicit `krn dev ...` namespace;
+3. replace some dev commands with package scripts only.
+
+rules:
+
+- `krn audit` remains removed;
+- do not create `krn guard`;
+- do not silently rename without a compatibility decision.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(cli): decide internal dev command surface"
+```
+
+### TSQ-00: EvidenceCommand Discriminated Union Decision
+
+priority: P1.
+
+objective:
+
+Decide whether current `EvidenceCommand` should stay as normalized object fields
+or become a discriminated union by provenance.
+
+source:
+
+Total TypeScript describes types as a way to communicate business logic and
+maintainability, not only compile-time errors. It also shows literal unions as
+the way to restrict possible values and runtime narrowing as the way to move
+from wider to narrower types:
+
+- https://www.totaltypescript.com/books/total-typescript-essentials/designing-your-types-in-typescript
+- https://www.totaltypescript.com/books/total-typescript-essentials/unions-literals-and-narrowing
+
+rules:
+
+- do not merge this into EVI-00 retroactively;
+- decide by current evidence after EVI-04 run-ledger closure;
+- if adopted, implement as a small core/schema slice with compatibility
+  mapping for persisted rows.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- evidenceBundle
+pnpm --filter @krn/schema test -- evidence
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide evidence command proof states"
+```
+
+### TSQ-01: Branded ID Types ADR And Pilot
+
+priority: P1.
+
+objective:
+
+Decide whether core IDs should remain string aliases or become branded/opaque
+types.
+
+current risk:
+
+`packages/core/src/ids.ts` aliases high-risk object IDs to `string`, so
+`SourceClaimId`, `MemoryRecordId`, and `ExecutionRunId` are type-compatible.
+
+approach:
+
+- write ADR first;
+- pilot only selected high-risk IDs:
+  `ExecutionRunId`, `MemoryRecordId`, `MemoryCandidateId`, `SourceClaimId`;
+- do not convert the whole repo in one diff.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test
+pnpm --filter @krn/harness test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide branded domain ids"
+```
+
+### TSQ-02: JSON.parse Boundary Classification
+
+priority: P1.
+
+objective:
+
+Classify every `JSON.parse` as production safe boundary, test-only acceptable,
+or repair candidate.
+
+source:
+
+TS Reset documents rules that make `JSON.parse` and `.json()` return `unknown`,
+but it also cautions that `ts-reset` is for applications, not libraries, because
+it changes global scope:
+
+- https://www.totaltypescript.com/ts-reset
+
+rules:
+
+- production `JSON.parse` must produce `unknown`;
+- validate with Zod or a local guard before domain use;
+- no global `ts-reset` in core/schema/public APIs;
+- test-only parses need an explicit reason if they bypass validation.
+
+verification:
+
+```sh
+rg -n "JSON\\.parse" packages
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "refactor(ts): harden json parse boundaries"
+```
+
+### TSQ-03: Unsafe Cast Quarantine
+
+priority: P2.
+
+objective:
+
+Classify `as any`, `as unknown as`, `@ts-ignore`, and `@ts-expect-error` usage
+as accepted boundary tests, hostile runtime fixtures, or repair candidates.
+
+rules:
+
+- production unsafe casts are not accepted without local proof;
+- hostile test fixtures should prefer `unknown` plus parser/guard;
+- `@ts-expect-error` must explain the expected failure;
+- no `@ts-ignore` without a replacement plan.
+
+verification:
+
+```sh
+rg -n "as any|as unknown as|@ts-ignore|@ts-expect-error" packages
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "test(ts): quarantine unsafe type fixtures"
+```
+
+### TSQ-04: Explicit Public Type Boundary Audit
+
+priority: P1.
+
+objective:
+
+Ensure public package APIs use named exported types instead of anonymous object
+shapes that hide boundary contracts.
+
+targets:
+
+- CLI public runtime types;
+- DB repository/factory types;
+- harness activation/review-gate ports;
+- evidence command and activation decision types.
+
+verification:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): audit public type boundaries"
+```
+
+### TSQ-05: Impossible-State Audit For Core Lifecycles
+
+priority: P2.
+
+objective:
+
+Find core lifecycle states where the current model allows invalid combinations
+that should become discriminated unions or narrower value objects.
+
+candidate areas:
+
+- EvidenceCommand;
+- EvidenceBundle status;
+- Reflection candidate writing result;
+- Activation decision;
+- Worker job descriptor/write authority;
+- Memory promotion result.
+
+rules:
+
+- do not convert all candidates in one slice;
+- produce one decision table and promote only the highest-risk model to an
+  implementation slice.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test
+pnpm typecheck
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): audit impossible lifecycle states"
+```

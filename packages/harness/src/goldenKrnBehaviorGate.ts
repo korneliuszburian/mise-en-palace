@@ -95,8 +95,11 @@ const proof = (
 ): GoldenBehaviorProof => ({
   caseId,
   status,
+  provenance: "krn_behavior_execution",
   summary,
-  evidenceRefs
+  evidenceRefs,
+  doesNotProve:
+    "This behavior proof does not prove Promptfoo smoke executes KRN behavior or that Memory Brain is globally ready."
 });
 
 const runStaleMemoryAbstention = (now: string): GoldenBehaviorProof => {

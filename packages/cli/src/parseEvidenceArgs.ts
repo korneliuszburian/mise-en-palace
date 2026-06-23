@@ -9,10 +9,14 @@ import type {
   ParseArgsResult
 } from "./parseArgs.js";
 
-const evidenceUsage =
-  "Usage: krn evidence capture [--run-id <id>] [--persist] [--command <cmd> --status passed|failed|skipped [--exit-code <code>] [--output <path>]]";
+const evidenceUsage = [
+  "Usage: krn evidence capture [--run-id <id>] [--persist] [--verification <command=status>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+  "Persisted example: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
+  "Note: evidence capture records operator/captured evidence; it does not run commands."
+].join("\n");
 
-const evidenceStatuses = ["passed", "failed", "skipped"] as const;
+const evidenceStatuses = ["passed", "failed", "skipped", "missing", "not_run"] as const;
 
 const isEvidenceStatus = (value: string): value is EvidenceCommandStatus =>
   evidenceStatuses.some((status) => status === value);
@@ -43,7 +47,7 @@ const pushPendingCommand = (
 
   if (pending.status === undefined) {
     return {
-      error: "--command requires --status passed|failed|skipped"
+      error: "--command requires --status passed|failed|skipped|missing|not_run"
     };
   }
 
@@ -57,6 +61,39 @@ const pushPendingCommand = (
   });
 
   return {};
+};
+
+const parseVerification = (value: string): { command?: EvidenceCommand; error?: string } => {
+  const separatorIndex = value.lastIndexOf("=");
+
+  if (separatorIndex < 0) {
+    return {
+      error: "--verification requires <command=status>"
+    };
+  }
+
+  const command = value.slice(0, separatorIndex).trim();
+  const status = value.slice(separatorIndex + 1).trim();
+
+  if (command.length === 0) {
+    return {
+      error: "--verification requires a non-empty command"
+    };
+  }
+
+  if (!isEvidenceStatus(status)) {
+    return {
+      error: "--verification status must be passed, failed, skipped, missing, or not_run"
+    };
+  }
+
+  return {
+    command: {
+      command,
+      status,
+      provenance: "operator_reported"
+    }
+  };
 };
 
 export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
@@ -114,6 +151,38 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       continue;
     }
 
+    if (arg === "--verification" || arg?.startsWith("--verification=") === true) {
+      const valueResult = optionValue(rest, index, "--verification");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      const pushResult = pushPendingCommand(commandOutcomes, pendingCommand);
+
+      if (pushResult.error !== undefined) {
+        return {
+          error: pushResult.error
+        };
+      }
+
+      pendingCommand = undefined;
+
+      const verificationResult = parseVerification(valueResult.value);
+
+      if (verificationResult.error !== undefined || verificationResult.command === undefined) {
+        return {
+          error: verificationResult.error ?? evidenceUsage
+        };
+      }
+
+      commandOutcomes.push(verificationResult.command);
+      index = valueResult.nextIndex;
+      continue;
+    }
+
     if (arg === "--status" || arg?.startsWith("--status=") === true) {
       const valueResult = optionValue(rest, index, "--status");
 
@@ -131,7 +200,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
 
       if (!isEvidenceStatus(valueResult.value)) {
         return {
-          error: "--status must be passed, failed, or skipped"
+          error: "--status must be passed, failed, skipped, missing, or not_run"
         };
       }
 

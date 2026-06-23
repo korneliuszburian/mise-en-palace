@@ -26,8 +26,11 @@ describe("golden Promptfoo result mapping", () => {
     expect(proofs).toEqual([{
       caseId: "golden-case-memory-smoke-001",
       status: "passed",
+      provenance: "promptfoo_integration_smoke",
       summary: "Promptfoo row 0 passed with score 1: All assertions passed",
-      evidenceRefs: [".local-lab/promptfoo/krn-golden-smoke-results.jsonl"]
+      evidenceRefs: [".local-lab/promptfoo/krn-golden-smoke-results.jsonl"],
+      doesNotProve:
+        "Promptfoo smoke proves runner/config/provider/result mapping only; it does not execute KRN behavior."
     }]);
   });
 
@@ -52,8 +55,11 @@ describe("golden Promptfoo result mapping", () => {
     expect(proofs).toEqual([{
       caseId: "golden-case-memory-smoke-002",
       status: "failed",
+      provenance: "promptfoo_integration_smoke",
       summary: "Promptfoo row 0 failed with score 0: Expected output to contain case id",
-      evidenceRefs: [".local-lab/promptfoo/krn-golden-smoke-results.jsonl"]
+      evidenceRefs: [".local-lab/promptfoo/krn-golden-smoke-results.jsonl"],
+      doesNotProve:
+        "Promptfoo smoke proves runner/config/provider/result mapping only; it does not execute KRN behavior."
     }]);
   });
 

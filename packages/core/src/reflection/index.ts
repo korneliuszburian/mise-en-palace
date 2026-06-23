@@ -2,6 +2,9 @@ import type {
   EvalCandidate
 } from "../eval.js";
 import type {
+  EvidenceCommandProvenance
+} from "../evidenceBundle.js";
+import type {
   ExecutionRunId,
   ObservationGroupId,
   ObservationItemId,
@@ -19,7 +22,8 @@ import type {
   IsoTimestamp
 } from "../time.js";
 import type {
-  ObservationItem
+  ObservationItem,
+  ObservationProvenanceKind
 } from "../observations/index.js";
 import {
   requiresObservationSourceRange
@@ -106,6 +110,29 @@ export type ReflectionMemoryCandidateKind =
   | "pattern"
   | "risk";
 
+export type ReflectionCandidateEvidenceProvenance =
+  | EvidenceCommandProvenance
+  | ObservationProvenanceKind
+  | "source_claim"
+  | "review_assessment"
+  | "feedback_delta";
+
+export interface ReflectionCandidateEvidence {
+  provenance: ReflectionCandidateEvidenceProvenance;
+  evidenceRefs: string[];
+  doesNotProve: string;
+}
+
+export type ReflectionCandidateEvidenceBlockedReason =
+  | "missing_evidence_ref"
+  | "missing_does_not_prove"
+  | "weak_command_evidence_high_confidence";
+
+export interface ReflectionCandidateEvidenceAssessment {
+  ok: boolean;
+  blockedReasons: ReflectionCandidateEvidenceBlockedReason[];
+}
+
 export interface ReflectionMemoryCandidateProposal {
   kind: ReflectionMemoryCandidateKind;
   summary: string;
@@ -119,6 +146,7 @@ export interface ReflectionMemoryCandidateProposal {
   isUserPreference: boolean;
   validFrom: IsoTimestamp;
   validUntil?: IsoTimestamp;
+  evidence: ReflectionCandidateEvidence;
   metadata: Record<string, unknown>;
 }
 
@@ -135,6 +163,7 @@ export type ReflectionSourceClaimCandidateProposal = Pick<
 > & {
   falsifier?: string;
   revisitWhen?: string;
+  evidence: ReflectionCandidateEvidence;
 };
 
 export interface ReflectionAntiMemoryCandidateProposal {
@@ -148,6 +177,7 @@ export interface ReflectionAntiMemoryCandidateProposal {
   appliesTo?: string;
   mayRevisitWhen?: string;
   sourceLineage: SourceLineageRef[];
+  evidence: ReflectionCandidateEvidence;
   metadata: Record<string, unknown>;
 }
 
@@ -156,13 +186,16 @@ export interface ReflectionPolicyCandidateProposal {
   summary: string;
   rationale: string;
   evidenceRefs: string[];
+  evidence: ReflectionCandidateEvidence;
   metadata: Record<string, unknown>;
 }
 
 export type ReflectionEvalCandidateProposal = Pick<
   EvalCandidate,
   "title" | "scenario" | "expectedSignal" | "sourceEvidence" | "metadata"
->;
+> & {
+  evidence: ReflectionCandidateEvidence;
+};
 
 export interface ReflectionOutput {
   id: string;
@@ -325,6 +358,69 @@ const findingFromGap = (report: GapReport): ReflectionFinding => ({
   metadata: report.metadata
 });
 
+const hasText = (value: string | undefined): value is string =>
+  value !== undefined && value.trim().length > 0;
+
+const assessReflectionCandidateEvidence = (
+  evidence: ReflectionCandidateEvidence
+): ReflectionCandidateEvidenceAssessment => {
+  const blockedReasons: ReflectionCandidateEvidenceBlockedReason[] = [];
+
+  if (evidence.evidenceRefs.length === 0) {
+    blockedReasons.push("missing_evidence_ref");
+  }
+
+  if (!hasText(evidence.doesNotProve)) {
+    blockedReasons.push("missing_does_not_prove");
+  }
+
+  return {
+    ok: blockedReasons.length === 0,
+    blockedReasons
+  };
+};
+
+export const assessReflectionMemoryCandidateEvidence = (
+  proposal: ReflectionMemoryCandidateProposal
+): ReflectionCandidateEvidenceAssessment => {
+  const assessment = assessReflectionCandidateEvidence(proposal.evidence);
+  const blockedReasons = [...assessment.blockedReasons];
+
+  if (proposal.confidence >= 85 && proposal.evidence.provenance === "default_template") {
+    blockedReasons.push("weak_command_evidence_high_confidence");
+  }
+
+  return {
+    ok: blockedReasons.length === 0,
+    blockedReasons
+  };
+};
+
+const candidateEvidenceBlockedReasons = (
+  output: ReflectionOutput
+): string[] => [
+  ...output.memoryCandidates.flatMap((proposal, index) =>
+    assessReflectionMemoryCandidateEvidence(proposal).blockedReasons.map((reason) =>
+      `memoryCandidates.${index}.evidence:${reason}`)
+  ),
+  ...output.sourceClaimCandidates.flatMap((proposal, index) =>
+    assessReflectionCandidateEvidence(proposal.evidence).blockedReasons.map((reason) =>
+      `sourceClaimCandidates.${index}.evidence:${reason}`)
+  ),
+  ...output.antiMemoryCandidates.flatMap((proposal, index) =>
+    assessReflectionCandidateEvidence(proposal.evidence).blockedReasons.map((reason) =>
+      `antiMemoryCandidates.${index}.evidence:${reason}`)
+  ),
+  ...output.policyCandidates.flatMap((proposal, index) =>
+    assessReflectionCandidateEvidence(proposal.evidence).blockedReasons.map((reason) =>
+      `policyCandidates.${index}.evidence:${reason}`)
+  ),
+  ...output.evalCandidates.flatMap((proposal, index) =>
+    assessReflectionCandidateEvidence(proposal.evidence).blockedReasons.map((reason) =>
+      `evalCandidates.${index}.evidence:${reason}`)
+  )
+];
+
 export const buildReflectionIssueReports = (
   input: ReflectionIssueReportInput
 ): ReflectionIssueReports => {
@@ -484,9 +580,15 @@ export const buildReflectionCandidateGenerationPlan = (
   output: ReflectionOutput
 ): ReflectionCandidateGenerationPlan => {
   const assessment = assessReflectionOutputContract(output);
+  const evidenceBlockedReasons = candidateEvidenceBlockedReasons(output);
+  const blockedReasons = [
+    ...assessment.violations.map((violation) =>
+      `${violation.path}:${violation.reason}`),
+    ...evidenceBlockedReasons
+  ];
 
   return {
-    status: assessment.candidateOnly ? "ready" : "blocked",
+    status: assessment.candidateOnly && blockedReasons.length === 0 ? "ready" : "blocked",
     counts: {
       memoryCandidates: output.memoryCandidates.length,
       sourceClaimCandidates: output.sourceClaimCandidates.length,
@@ -499,7 +601,6 @@ export const buildReflectionCandidateGenerationPlan = (
       (left.targetId ?? "").localeCompare(right.targetId ?? "") ||
       left.summary.localeCompare(right.summary)
     )),
-    blockedReasons: assessment.violations.map((violation) =>
-      `${violation.path}:${violation.reason}`)
+    blockedReasons
   };
 };

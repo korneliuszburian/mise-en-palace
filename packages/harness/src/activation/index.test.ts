@@ -248,6 +248,37 @@ describe("activation engine", () => {
     expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
   });
 
+  it("ranks Memory Core write-authority memory above adjacent source-graph memory", () => {
+    const query = buildMemoryQuery({
+      ...task,
+      title: "seal Memory Core write authority",
+      objective: "seal Memory Core write authority"
+    });
+    const ranked = rankCandidates([
+      toMemoryCandidate(memoryRecord({
+        id: "memory-source-graph",
+        key: "source-graph-postgres",
+        summary: "Source graph decisions should remain Postgres-backed",
+        body: "Use relational source graph edges before adding a separate graph database.",
+        applicationGuidance: "Use when deciding whether source graph work needs a graph database."
+      })),
+      toMemoryCandidate(memoryRecord({
+        id: "memory-write-authority",
+        key: "memory-core-write-authority",
+        summary: "MemoryReviewGate seals Memory Core write authority",
+        body:
+          "Public Memory Core promotion must go through MemoryReviewGate and promoteReviewedMemoryCandidate.",
+        applicationGuidance:
+          "Use when sealing Memory Core write authority or reviewing public MemoryRecord promotion paths."
+      }))
+    ], query);
+
+    expect(ranked.map((candidate) => candidate.subjectId)).toEqual([
+      "memory-write-authority",
+      "memory-source-graph"
+    ]);
+  });
+
   it("applies trust, temporal, invalidation, and anti-memory filters after merge", () => {
     const query = buildSourceQuery(task);
     const mergedBlocked = mergeActivationCandidates(rankCandidates([

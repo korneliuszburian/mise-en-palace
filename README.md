@@ -32,10 +32,9 @@ The current reset direction is:
 - classify public operator, governed admin, and internal dev surfaces;
 - harden the real Memory Brain spine only through final-pattern slices.
 
-`krn audit` is not a product quality engine and is not future public UX. It is
-temporarily documented as an internal/dev mechanical check until a code slice
-removes it from the public CLI or moves the checks behind an explicit internal
-script.
+`krn audit` is removed as public CLI/product direction. Do not rebuild it as a
+guardrail layer; retain useful Memory/Source/Evidence invariants only by moving
+them into their native mechanisms.
 
 ## Built
 
@@ -45,8 +44,9 @@ script.
   readiness checks, and DB smoke commands.
 - CLI surfaces for planning, doctor/readiness, evidence capture, Codex brief
   rendering, init/connect, manual observation, reflection, source, memory, and
-  review workflows. Existing audit commands are internal/dev only.
-- AuditBundle contracts and persistence as evidence packaging.
+  review workflows.
+- Legacy AuditBundle contracts and persistence still exist as cleanup
+  candidates; they are not an active audit product surface.
 - Observation core contracts, IO schemas, DB schema, repository adapter,
   evidence/source-range linkage, deterministic observer input builder, manual
   `krn observe --run <id> [--persist]`, and observation prefix selection.

@@ -24,9 +24,10 @@ Do not continue from `docs/plans/memory-ideal-state/PLAN.md` as the active
 execution track. That file is historical planning/audit quarry until the root
 plan explicitly promotes a retained decision.
 
-The canonical reset baseline is complete. The current objective is continuous
-hardening: every completed slice must leave behind truthful observations,
-follow-up candidates, and concrete next repair slices when evidence shows a gap.
+The canonical reset baseline is complete. Completed slices are historical
+ledger, not active context. The current objective is continuous hardening: keep
+only the next live repair slice active, and compress finished work into
+checkpoint observations and follow-up candidates in `PLAN.md`.
 
 The continuing objective is:
 
@@ -35,13 +36,19 @@ The continuing objective is:
 3. turn completed-slice findings into bounded implementation slices;
 4. harden the real Memory Brain spine through source-grounded, typed,
    reviewable changes;
-5. keep `PLAN.md` as the living queue instead of declaring the kernel done
-   because one reset checklist is complete.
+5. keep `PLAN.md` as the living queue without keeping finished tasks in the
+   active goal window.
 
-The current priority program is Evidence Integrity. P7 proved the operational
-spine, not Memory Brain readiness. Do not build candidate generation, worker
-runtime, dashboard, or broader memory behavior while persisted EvidenceBundle
-command provenance remains weak or ambiguous.
+The current epoch is continuous hardening after Evidence Integrity closure. P7
+proved the operational spine, not Memory Brain readiness. Continue from the
+first unchecked slice in `PLAN.md` Active Queue Snapshot:
+
+```txt
+C1-00: Separate Public CLI From Internal Dev Commands
+```
+
+Do not build worker runtime, dashboard, or broad memory behavior until the
+public/internal CLI boundary is honest and explicitly recorded in `PLAN.md`.
 
 ## Required Read Order
 
@@ -49,16 +56,11 @@ Before editing:
 
 1. `AGENTS.md`
 2. `docs/KRN_KERNEL.md`
-3. `docs/STATE_OF_THE_ART.md`
-4. `PLAN.md`
-5. `docs/materials/20206-06-23-audit.md`
-6. `docs/reviews/repo-reset-audit/FULL_REPO_AUDIT.md`
-7. `docs/reviews/repo-reset-audit/WRONG_ABSTRACTIONS.md`
-8. `docs/reviews/repo-reset-audit/RAW_MATERIALS_LEDGER.md`
-9. `docs/reviews/repo-reset-audit/REPAIR_PLAN.md`
+3. `PLAN.md` active queue snapshot and the first unchecked slice only.
 
-Read old plans, QG docs, handoffs, and raw materials only when the current
-slice names them as evidence or target files.
+Read old plans, QG docs, handoffs, repo-reset reviews, and raw materials only
+when the current slice names them as evidence or target files. Do not reread
+completed slices just because they remain in the ledger.
 
 ## Non-Goals
 
@@ -67,12 +69,13 @@ slice names them as evidence or target files.
 - Do not build a generic multi-agent framework.
 - Do not build Research Foundry, Pattern Vault, source crawler, or runtime
   markdown memory.
-- Do not turn `krn audit` into a product quality engine.
+- Do not reintroduce `krn audit` as a product quality engine, guardrail layer,
+  or internal scanner UX.
 - Do not create an anti-slop subsystem.
 - Do not claim Promptfoo smoke proves KRN memory behavior.
 - Do not let observation/reflection mutate Memory Core.
-- Do not do package source feature work before the docs/current-truth reset
-  slices in `PLAN.md` are complete.
+- Do not revive completed reset/audit-cleanup tasks unless live repo evidence
+  shows drift.
 
 ## Operating Rules
 
@@ -85,6 +88,9 @@ slice names them as evidence or target files.
   record it in `PLAN.md` as a follow-up candidate or next slice.
 - Do not create a new KRN subsystem for ordinary engineering quality concerns.
   Prefer direct code, type, test, naming, CLI, docs, and review-boundary repair.
+- Treat architectural cleanliness as a hard acceptance bar. Prefer final-pattern
+  boundaries, explicit ownership, narrow public surfaces, typed IO, and
+  deletion of wrong abstractions over compatibility with local slop.
 - Every retained source must pass:
 
 ```txt
@@ -97,8 +103,19 @@ source -> mechanism -> KRN implication -> decision/rejection -> falsifier
 - DB runtime truth may be claimed only after DB commands run in the current
   environment.
 - Use Conventional Commits.
-- Keep root `PLAN.md` current after every slice: progress, surprises,
-  decisions, outcomes, command evidence, and next unchecked item.
+- After each completed slice, commit the slice with a focused Conventional
+  Commit and push it. Do not keep completed work as uncommitted context unless
+  the user explicitly says to pause before commit/push.
+- Worktree hygiene is part of done: check `git status --short --branch` before
+  and after each slice, keep unrelated dirty state separate, and do not start
+  the next slice with completed changes still floating in the worktree.
+- Keep root `PLAN.md` current after every slice: compact checkpoint,
+  decisions, command evidence, and next unchecked item. Finished tasks should
+  be archived or summarized, not carried as active work.
+- Keep active state small. Every few completed slices, condense `PLAN.md` /
+  current goal state: remove or demote completed detail blocks from active
+  context, keep only checkpoint evidence and next actions, and avoid preserving
+  duplicate prose that does not change execution.
 
 ## Verification Baseline
 

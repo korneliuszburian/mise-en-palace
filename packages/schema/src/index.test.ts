@@ -755,7 +755,12 @@ describe("schema parse boundaries", () => {
       commands: [
         {
           command: "pnpm typecheck",
-          status: "passed"
+          status: "passed",
+          provenance: "captured_output_file",
+          outputRef: ".local-lab/typecheck.txt",
+          capturedAt: "2026-06-23T15:50:00.000Z",
+          assertedBy: "codex",
+          doesNotProve: "This does not prove memory quality."
         }
       ],
       diffRisk: "low",
@@ -764,6 +769,25 @@ describe("schema parse boundaries", () => {
     });
 
     expect(evidence.commands[0]?.status).toBe("passed");
+    expect(evidence.commands[0]?.provenance).toBe("captured_output_file");
+    expect(evidence.commands[0]?.doesNotProve).toBe("This does not prove memory quality.");
+
+    expect(() =>
+      parseEvidenceCaptureInput({
+        changedFiles: ["packages/schema/src/index.ts"],
+        commands: [
+          {
+            command: "pnpm typecheck",
+            status: "passed",
+            provenance: "terminal_memory",
+            doesNotProve: ""
+          }
+        ],
+        diffRisk: "low",
+        reviewBurden: "small",
+        rollbackPath: "Revert schema commit"
+      })
+    ).toThrow();
   });
 
   test("retrieval substrate inputs constrain search, scoring, decisions, and context", () => {

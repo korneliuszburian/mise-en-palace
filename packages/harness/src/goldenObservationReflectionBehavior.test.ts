@@ -84,6 +84,11 @@ const reflectionOutput = (overrides: Partial<ReflectionOutput>): ReflectionOutpu
     sourceLineage: [{ sourceId: "observation-1" }],
     isUserPreference: false,
     validFrom: now,
+    evidence: {
+      provenance: "run_event",
+      evidenceRefs: ["observation-1:range-1"],
+      doesNotProve: "This does not prove the candidate is approved Memory Core truth."
+    },
     metadata: {}
   }],
   sourceClaimCandidates: [],

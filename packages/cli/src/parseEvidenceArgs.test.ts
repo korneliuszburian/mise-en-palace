@@ -9,7 +9,12 @@ import {
 } from "./parseEvidenceArgs.js";
 
 const evidenceUsage =
-  "Usage: krn evidence capture [--run-id <id>] [--persist] [--command <cmd> --status passed|failed|skipped [--exit-code <code>] [--output <path>]]";
+  [
+    "Usage: krn evidence capture [--run-id <id>] [--persist] [--verification <command=status>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+    "Persisted example: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
+    "Note: evidence capture records operator/captured evidence; it does not run commands."
+  ].join("\n");
 
 describe("parseEvidenceArgs", () => {
   it("parses evidence capture preview", () => {
@@ -66,6 +71,32 @@ describe("parseEvidenceArgs", () => {
     });
   });
 
+  it("parses explicit verification evidence", () => {
+    expect(parseEvidenceArgs([
+      "capture",
+      "--verification",
+      "pnpm typecheck=passed",
+      "--verification=pnpm test=failed"
+    ])).toEqual({
+      command: {
+        kind: "evidenceCapture",
+        persist: false,
+        commandOutcomes: [
+          {
+            command: "pnpm typecheck",
+            status: "passed",
+            provenance: "operator_reported"
+          },
+          {
+            command: "pnpm test",
+            status: "failed",
+            provenance: "operator_reported"
+          }
+        ]
+      }
+    });
+  });
+
   it("rejects unsupported evidence command shapes", () => {
     expect(parseEvidenceArgs([])).toEqual({
       error: evidenceUsage
@@ -77,13 +108,19 @@ describe("parseEvidenceArgs", () => {
       error: evidenceUsage
     });
     expect(parseEvidenceArgs(["capture", "--command", "pnpm test"])).toEqual({
-      error: "--command requires --status passed|failed|skipped"
+      error: "--command requires --status passed|failed|skipped|missing|not_run"
     });
     expect(parseEvidenceArgs(["capture", "--status", "passed"])).toEqual({
       error: "--status requires a preceding --command"
     });
     expect(parseEvidenceArgs(["capture", "--command", "pnpm test", "--status", "done"])).toEqual({
-      error: "--status must be passed, failed, or skipped"
+      error: "--status must be passed, failed, skipped, missing, or not_run"
+    });
+    expect(parseEvidenceArgs(["capture", "--verification", "=passed"])).toEqual({
+      error: "--verification requires a non-empty command"
+    });
+    expect(parseEvidenceArgs(["capture", "--verification", "pnpm test=done"])).toEqual({
+      error: "--verification status must be passed, failed, skipped, missing, or not_run"
     });
     expect(parseEvidenceArgs([
       "capture",

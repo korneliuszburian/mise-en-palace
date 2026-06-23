@@ -5,15 +5,31 @@ import type {
 import type { IsoTimestamp } from "./time.js";
 
 export type EvidenceBundleStatus = "draft" | "captured" | "verified" | "rejected";
-export type EvidenceCommandStatus = "passed" | "failed" | "skipped";
+export type EvidenceCommandStatus = "passed" | "failed" | "skipped" | "missing" | "not_run";
+export type EvidenceCommandProvenance =
+  | "default_template"
+  | "operator_reported"
+  | "captured_output_file"
+  | "command_runner"
+  | "external_log";
 export type DiffRisk = "low" | "medium" | "high";
 export type ReviewBurdenScore = "low" | "medium" | "high";
 
 export interface EvidenceCommand {
   command: string;
   status: EvidenceCommandStatus;
+  provenance?: EvidenceCommandProvenance;
   exitCode?: number;
   outputPath?: string;
+  outputRef?: string;
+  capturedAt?: IsoTimestamp;
+  assertedBy?: string;
+  doesNotProve?: string;
+}
+
+export interface NormalizedEvidenceCommand extends EvidenceCommand {
+  provenance: EvidenceCommandProvenance;
+  doesNotProve: string;
 }
 
 export interface EvidenceBundle {
@@ -37,6 +53,58 @@ export interface EvidenceReviewRiskScore {
 }
 
 const isBlank = (value: string): boolean => value.trim().length === 0;
+
+export const defaultTemplateCommandDoesNotProve =
+  "This command row does not prove the command executed; it is default template evidence only.";
+
+export const commandResultDoesNotProve =
+  "This command result does not prove memory quality, source truth, review correctness, or production readiness.";
+
+const hasText = (value: string | undefined): value is string =>
+  value !== undefined && value.trim().length > 0;
+
+const inferCommandProvenance = (command: EvidenceCommand): EvidenceCommandProvenance => {
+  if (hasText(command.outputRef) || hasText(command.outputPath)) {
+    return "captured_output_file";
+  }
+
+  if (
+    (command.status === "passed" || command.status === "failed") &&
+    command.exitCode !== undefined
+  ) {
+    return "operator_reported";
+  }
+
+  return "default_template";
+};
+
+export const normalizeEvidenceCommand = (
+  command: EvidenceCommand
+): NormalizedEvidenceCommand => {
+  const outputRef = hasText(command.outputRef)
+    ? command.outputRef.trim()
+    : hasText(command.outputPath)
+      ? command.outputPath.trim()
+      : undefined;
+  const provenance = command.provenance ?? inferCommandProvenance(command);
+  const doesNotProve = hasText(command.doesNotProve)
+    ? command.doesNotProve.trim()
+    : provenance === "default_template"
+      ? defaultTemplateCommandDoesNotProve
+      : commandResultDoesNotProve;
+
+  return {
+    command: command.command,
+    status: command.status,
+    provenance,
+    ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
+    ...(hasText(command.outputPath) ? { outputPath: command.outputPath.trim() } : {}),
+    ...(outputRef === undefined ? {} : { outputRef }),
+    ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
+    ...(hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {}),
+    doesNotProve
+  };
+};
 
 const hasRequiredCommand = (
   bundle: EvidenceBundle,
@@ -91,7 +159,10 @@ const commandFailed = (bundle: EvidenceBundle, command: string): boolean =>
 
 const commandSkippedOrMissing = (bundle: EvidenceBundle, command: string): boolean =>
   !hasRequiredCommand(bundle, command) ||
-  bundle.commands.some((entry) => entry.command === command && entry.status === "skipped");
+  bundle.commands.some((entry) =>
+    entry.command === command &&
+    (entry.status === "skipped" || entry.status === "missing" || entry.status === "not_run")
+  );
 
 const requiredCommandsPassed = (bundle: EvidenceBundle): boolean =>
   ["pnpm typecheck", "pnpm test"].every((command) => requiredCommandPassed(bundle, command));

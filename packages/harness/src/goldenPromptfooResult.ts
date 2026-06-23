@@ -73,6 +73,9 @@ const parsePromptfooJsonlRow = (
 const statusFromPromptfooSuccess = (success: boolean): GoldenBehaviorProofStatus =>
   success ? "passed" : "failed";
 
+const promptfooSmokeDoesNotProve =
+  "Promptfoo smoke proves runner/config/provider/result mapping only; it does not execute KRN behavior.";
+
 export const mapPromptfooJsonlRowsToGoldenBehaviorProofs = (
   input: MapPromptfooJsonlRowsToGoldenBehaviorProofsInput
 ): GoldenBehaviorProof[] => {
@@ -88,8 +91,10 @@ export const mapPromptfooJsonlRowsToGoldenBehaviorProofs = (
     return {
       caseId: input.caseIdsByRow[rowIndex] ?? "",
       status,
+      provenance: "promptfoo_integration_smoke",
       summary: `Promptfoo row ${rowIndex} ${status} with score ${parsedRow.score}: ${reason}`,
-      evidenceRefs: [input.evidenceRef]
+      evidenceRefs: [input.evidenceRef],
+      doesNotProve: promptfooSmokeDoesNotProve
     };
   });
 };

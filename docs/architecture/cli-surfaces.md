@@ -4,11 +4,10 @@ Status: current architecture classification.
 Date: 2026-06-23
 
 This document classifies the existing CLI surface before behavior changes.
-It does not rename commands, change parser behavior, or certify DB runtime.
-P1-01 decision: public `krn audit` is deprecated as product direction; keep the
-current command only as a temporary internal/dev mechanical check until a code
-slice removes it from the public CLI or moves checks behind an explicit
-internal script.
+P1-03 update: public `krn audit` has been removed from the CLI. The old audit
+scanner mixed real Memory/Source/Evidence invariants with a wrong product-shaped
+surface; those invariants must be re-homed into their native mechanisms instead
+of preserved as an audit layer.
 
 Evidence:
 
@@ -16,7 +15,6 @@ Evidence:
 - `packages/cli/src/runCli.ts` owns command dispatch and runtime dependency
   wiring.
 - `packages/cli/src/parseDbArgs.ts` defines DB readiness and smoke targets.
-- `packages/cli/src/parseAuditArgs.ts` defines audit repo/slice options.
 
 ## Classification Rule
 
@@ -87,31 +85,20 @@ Boundary:
 - `krn db smoke worker-jobs`
 - `krn db smoke init-connect`
 - `krn db smoke target-repo-harness`
-- `krn audit repo [--repo <path>] [--json]` (temporary internal/dev)
-- `krn audit slice --since <ref> [--repo <path>] [--project <id>] [--retrieval-run <id>] [--audit-bundle-id <id>] [--intended-file <path>] [--verification <command=status>] [--fail-on warning] [--json]` (temporary internal/dev)
 
 Boundary:
 
 - DB smokes prove command/runtime integration in the current shell only. They
   are not product workflow commands.
-- `krn audit` is not a product quality engine, autonomous anti-slop layer, or
-  architectural authority.
-- Do not add new audit categories while it remains a public top-level command.
-- Audit findings can support local guardrails, but general engineering quality
-  must come from architecture, type boundaries, focused tests, naming, and
-  review.
 
-## Historical/Delete Candidates
+## Removed
 
 - `krn audit repo`
 - `krn audit slice`
 
-P1-01 decision:
+P1-03 decision:
 
-- do not retain `krn audit` as public product UX;
+- do not retain `krn audit` as public product UX or internal guardrail UX;
 - do not implement QG-06 audit automation;
-- later code may delete the command or move its deterministic checks to an
-  explicitly internal script/surface.
-
-Until that code slice happens, do not add audit categories or present
-`krn audit` as the next product feature.
+- re-home retained Memory/Source/Evidence invariants into native domain,
+  repository, schema, or review mechanisms.

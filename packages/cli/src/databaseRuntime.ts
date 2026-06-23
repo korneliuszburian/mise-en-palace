@@ -1,15 +1,13 @@
 import postgres from "postgres";
 import {
   createKrnDatabase,
-  DrizzleAuditBundleRepository,
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
   DrizzleObservationRepository,
   DrizzleProjectRepository,
   DrizzleReflectionRepository,
   DrizzleRetrievalRepository,
-  DrizzleSourceRepository,
-  readAuditSemanticSnapshot
+  DrizzleSourceRepository
 } from "@krn/db";
 import type {
   CreateObservationGroupInput,
@@ -29,13 +27,8 @@ import type {
   ObservationItem,
   ReflectionRecord,
   SourceClaim,
-  AntiMemoryRecord,
-  AuditBundle
+  AntiMemoryRecord
 } from "@krn/core";
-import type {
-  AuditSemanticSnapshot,
-  AuditSemanticSnapshotInput
-} from "@krn/db";
 
 export interface DatabaseRuntimeInput {
   databaseUrl: string;
@@ -156,16 +149,6 @@ export interface ReflectDatabaseRuntime {
   reflectionRepository: {
     createReflectionRecord(input: CreateReflectionRecordInput): Promise<ReflectionRecord>;
   };
-  close(): Promise<void>;
-}
-
-export interface AuditDatabaseRuntimeInput {
-  databaseUrl: string;
-}
-
-export interface AuditDatabaseRuntime {
-  getAuditBundleById(id: string): Promise<AuditBundle | undefined>;
-  readSemanticSnapshots(input: AuditSemanticSnapshotInput): Promise<AuditSemanticSnapshot>;
   close(): Promise<void>;
 }
 
@@ -358,26 +341,6 @@ export const createReviewAssessDatabaseRuntime = async (
 
   return {
     harnessRunRepository,
-    async close(): Promise<void> {
-      await client.end();
-    }
-  };
-};
-
-export const createAuditDatabaseRuntime = async (
-  input: AuditDatabaseRuntimeInput
-): Promise<AuditDatabaseRuntime> => {
-  const client = postgres(input.databaseUrl, { max: 1 });
-  const db = createKrnDatabase(client);
-  const auditBundleRepository = new DrizzleAuditBundleRepository(db);
-
-  return {
-    getAuditBundleById(id: string): Promise<AuditBundle | undefined> {
-      return auditBundleRepository.getAuditBundleById(id);
-    },
-    readSemanticSnapshots(snapshotInput: AuditSemanticSnapshotInput): Promise<AuditSemanticSnapshot> {
-      return readAuditSemanticSnapshot(db, snapshotInput);
-    },
     async close(): Promise<void> {
       await client.end();
     }

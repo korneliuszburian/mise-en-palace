@@ -6,12 +6,17 @@ import {
 import type {
   ContextAssembly,
   EvidenceBundle,
+  EvidenceCommand,
   ExecutionRun,
   FeedbackDelta,
   HarnessPlan,
+  NormalizedEvidenceCommand,
   OperatorIntent,
   ReviewAssessment,
   TaskContract
+} from "@krn/core";
+import {
+  normalizeEvidenceCommand
 } from "@krn/core";
 import type {
   CreateContextAssemblyInput,
@@ -63,6 +68,11 @@ const requireLinkedRow = <T>(row: T | undefined, operation: string): T => {
 
   return row;
 };
+
+export const evidenceCommandsForPersistence = (
+  commands: readonly EvidenceCommand[]
+): NormalizedEvidenceCommand[] =>
+  commands.map(normalizeEvidenceCommand);
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(private readonly db: KrnDatabase) {}
@@ -224,7 +234,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
             executionRunId: input.executionRunId,
             status: input.status ?? "captured",
             changedFiles: input.changedFiles,
-            commands: input.commands,
+            commands: evidenceCommandsForPersistence(input.commands),
             diffRisk: input.diffRisk,
             reviewBurden: input.reviewBurden,
             rollbackPath: input.rollbackPath,

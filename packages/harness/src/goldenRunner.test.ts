@@ -49,8 +49,10 @@ describe("golden task runner", () => {
       proofs: [{
         caseId: "golden-case-1",
         status: "passed",
+        provenance: "krn_behavior_execution",
         summary: "Fixture-backed behavior test passed.",
-        evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"]
+        evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"],
+        doesNotProve: "This does not prove Promptfoo smoke executes KRN behavior."
       }]
     });
 
@@ -101,8 +103,10 @@ describe("golden task runner", () => {
       proofs: [{
         caseId: "golden-case-1",
         status: "passed",
+        provenance: "krn_behavior_execution",
         summary: "This proof should not override contract failure.",
-        evidenceRefs: ["test"]
+        evidenceRefs: ["test"],
+        doesNotProve: "This does not prove the GoldenTask contract is valid."
       }]
     });
 
@@ -110,5 +114,27 @@ describe("golden task runner", () => {
     expect(report.contractFindings).toEqual([
       "golden-task-1: case golden-case-1 expectedBehavior.evidenceRefs are required"
     ]);
+  });
+
+  it("rejects Promptfoo integration smoke as GoldenTask behavior proof", () => {
+    const report = runGoldenTaskFixtures({
+      tasks: [task()],
+      proofs: [{
+        caseId: "golden-case-1",
+        status: "passed",
+        provenance: "promptfoo_integration_smoke",
+        summary: "Promptfoo row passed with score 1.",
+        evidenceRefs: [".local-lab/promptfoo/krn-golden-smoke-results.jsonl"],
+        doesNotProve: "Promptfoo smoke proves runner wiring only."
+      }]
+    });
+
+    expect(report).toMatchObject({
+      status: "failed",
+      failedProofCaseIds: ["golden-case-1"]
+    });
+    expect(report.caseResults[0]?.summary).toBe(
+      "Proof provenance promptfoo_integration_smoke is not accepted as GoldenTask behavior proof: Promptfoo smoke proves runner wiring only."
+    );
   });
 });

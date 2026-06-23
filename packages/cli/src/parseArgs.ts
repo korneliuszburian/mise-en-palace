@@ -2,9 +2,6 @@ import type {
   EvidenceCommand
 } from "@krn/core";
 import {
-  parseAuditArgs
-} from "./parseAuditArgs.js";
-import {
   parseCodexArgs
 } from "./parseCodexArgs.js";
 import {
@@ -58,25 +55,6 @@ export type CliCommand =
     }
   | {
       kind: "doctor";
-    }
-  | {
-      kind: "audit";
-      scope: "repo";
-      repo?: string;
-      format: "text" | "json";
-    }
-  | {
-      kind: "audit";
-      scope: "slice";
-      repo?: string;
-      since: string;
-      format: "text" | "json";
-      intendedFiles: string[];
-      verificationCommands: AuditVerificationCommand[];
-      projectId?: string;
-      retrievalRunId?: string;
-      auditBundleId?: string;
-      failOn?: AuditFailOn;
     }
   | {
       kind: "dbReadiness";
@@ -170,6 +148,9 @@ export type CliCommand =
       applicationGuidance?: string;
       sourceClaimId?: string;
       sourceLineageIds: string[];
+      candidateEvidenceRefs: string[];
+      candidateEvidenceProvenance?: string;
+      candidateEvidenceDoesNotProve?: string;
       invalidationRule?: string;
       owner?: string;
       proposedBy?: string;
@@ -280,14 +261,6 @@ export interface ParseArgsResult {
   error?: string;
 }
 
-type AuditVerificationCommandStatus = "passed" | "failed" | "skipped" | "missing";
-type AuditFailOn = "warning";
-
-interface AuditVerificationCommand {
-  command: string;
-  status: AuditVerificationCommandStatus;
-}
-
 const usage = [
   "Usage: krn init --dry-run --repo <path>",
   "Usage: krn init --connect --repo <path> --persist",
@@ -297,8 +270,6 @@ const usage = [
   "krn init --dry-run --repo <path>",
   "krn init --connect --repo <path> --persist",
   "krn doctor",
-  "krn audit repo [--repo <path>] [--json]",
-  "krn audit slice --since <ref> [--repo <path>] [--project <id>] [--retrieval-run <id>] [--audit-bundle-id <id>] [--intended-file <path>] [--verification <command=status>] [--fail-on warning] [--json]",
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
@@ -309,7 +280,10 @@ const usage = [
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
-  "krn evidence capture [--run-id <id>] [--persist]",
+  "krn evidence capture [--run-id <id>] [--verification \"pnpm typecheck=passed\"] [--persist]",
+  "  example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+  "  persisted: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
+  "  note: evidence capture records outcomes; it does not execute commands",
   "krn review assess --evidence-bundle-id <id> --reviewer <name> --summary \"...\" [--status accepted|changes_requested|rejected|pending] [--persist]",
   "krn observe --run <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
@@ -331,10 +305,6 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   if (command === "doctor") {
     return parseDoctorArgs(rest);
-  }
-
-  if (command === "audit") {
-    return parseAuditArgs(rest);
   }
 
   if (command === "init") {
@@ -375,7 +345,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   if (command !== "plan") {
     return {
-      error: "Usage: krn plan --task \"...\""
+      error: `Unsupported command: ${command}\n${usage}`
     };
   }
 

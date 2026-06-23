@@ -6,6 +6,8 @@ import type {
   DiffRisk,
   EvidenceBundle,
   EvidenceCommand,
+  EvidenceCommandProvenance,
+  EvidenceCommandStatus,
   EvalCandidate,
   ExecutionRun,
   FeedbackDelta,
@@ -19,6 +21,9 @@ import type {
   SourceRejection,
   SourceTrustTier,
   TaskContract
+} from "@krn/core";
+import {
+  normalizeEvidenceCommand
 } from "@krn/core";
 import type {
   ActivationDecisionRecord,
@@ -109,6 +114,20 @@ const operatorIntentSources = new Set<OperatorIntentSource>([
 ]);
 
 const diffRisks = new Set<DiffRisk>(["low", "medium", "high"]);
+const evidenceCommandStatuses = new Set<EvidenceCommandStatus>([
+  "passed",
+  "failed",
+  "skipped",
+  "missing",
+  "not_run"
+]);
+const evidenceCommandProvenances = new Set<EvidenceCommandProvenance>([
+  "default_template",
+  "operator_reported",
+  "captured_output_file",
+  "command_runner",
+  "external_log"
+]);
 const sourceDecisionStatuses = new Set<SourceDecision["status"]>([
   "adopt",
   "reject",
@@ -156,12 +175,32 @@ const evidenceCommandsOrEmpty = (value: unknown): EvidenceCommand[] => {
     return [];
   }
 
-  return value.filter((item): item is EvidenceCommand => {
+  return value.flatMap((item): EvidenceCommand[] => {
     if (!isRecord(item) || typeof item.command !== "string") {
-      return false;
+      return [];
     }
 
-    return item.status === "passed" || item.status === "failed" || item.status === "skipped";
+    if (!evidenceCommandStatuses.has(item.status as EvidenceCommandStatus)) {
+      return [];
+    }
+
+    const provenance =
+      typeof item.provenance === "string" &&
+      evidenceCommandProvenances.has(item.provenance as EvidenceCommandProvenance)
+        ? item.provenance as EvidenceCommandProvenance
+        : undefined;
+
+    return [normalizeEvidenceCommand({
+      command: item.command,
+      status: item.status as EvidenceCommandStatus,
+      ...(provenance === undefined ? {} : { provenance }),
+      ...(typeof item.exitCode === "number" ? { exitCode: item.exitCode } : {}),
+      ...(typeof item.outputPath === "string" ? { outputPath: item.outputPath } : {}),
+      ...(typeof item.outputRef === "string" ? { outputRef: item.outputRef } : {}),
+      ...(typeof item.capturedAt === "string" ? { capturedAt: item.capturedAt } : {}),
+      ...(typeof item.assertedBy === "string" ? { assertedBy: item.assertedBy } : {}),
+      ...(typeof item.doesNotProve === "string" ? { doesNotProve: item.doesNotProve } : {})
+    })];
   });
 };
 

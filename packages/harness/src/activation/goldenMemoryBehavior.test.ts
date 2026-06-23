@@ -8,9 +8,6 @@ import type {
 } from "@krn/core";
 
 import {
-  runSourceGroundingAudit
-} from "../audit/auditChecks.js";
-import {
   applyActivationFilters,
   applyContextROI,
   applyTemporalFilter,
@@ -329,27 +326,4 @@ describe("golden memory behavior cases", () => {
     })]);
   });
 
-  it("smoke case: unsupported SourceDecision is flagged by source grounding audit", () => {
-    const findings = runSourceGroundingAudit({
-      sliceId: "MM-61-lite",
-      capturedAt: now,
-      files: [],
-      changedFiles: [],
-      intendedFiles: [],
-      verificationCommands: [],
-      sourceDecisions: [{
-        id: "source-decision-unsupported",
-        decision: "Adopt broad memory behavior without a source claim.",
-        sourceClaimId: undefined,
-        falsifier: "The decision can be implemented without source support.",
-        consumer: "MM-61-lite golden smoke"
-      }]
-    });
-
-    expect(findings).toEqual([expect.objectContaining({
-      category: "source_grounding",
-      severity: "blocking",
-      title: "Source decision lacks source claim"
-    })]);
-  });
 });

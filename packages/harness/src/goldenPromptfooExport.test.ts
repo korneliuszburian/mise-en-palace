@@ -52,8 +52,10 @@ const baseTask = (overrides: Partial<GoldenTask> = {}): GoldenTask => ({
 const passingProof: GoldenBehaviorProof = {
   caseId: "golden-case-stale-abstain",
   status: "passed",
+  provenance: "krn_behavior_execution",
   summary: "Fixture-backed behavior proof passed.",
-  evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"]
+  evidenceRefs: ["packages/harness/src/activation/goldenMemoryBehavior.test.ts"],
+  doesNotProve: "This does not prove Promptfoo smoke executes KRN behavior."
 };
 
 describe("golden Promptfoo snapshot export", () => {

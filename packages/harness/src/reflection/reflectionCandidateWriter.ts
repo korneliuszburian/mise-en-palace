@@ -62,6 +62,17 @@ const reflectionMetadata = (
   candidateWriter: "reflection"
 });
 
+const reflectionCandidateMetadata = (
+  reflectionRecord: ReflectionRecord,
+  proposal: {
+    metadata: Record<string, unknown>;
+    evidence: ReflectionRecord["output"]["memoryCandidates"][number]["evidence"];
+  }
+): Record<string, unknown> => reflectionMetadata(reflectionRecord, {
+  ...proposal.metadata,
+  reflectionCandidateEvidence: proposal.evidence
+});
+
 export const writeReflectionCandidates = async (
   input: WriteReflectionCandidatesInput
 ): Promise<WriteReflectionCandidatesResult> => {
@@ -116,7 +127,7 @@ export const writeReflectionCandidates = async (
       isUserPreference: proposal.isUserPreference,
       validFrom: proposal.validFrom,
       ...(proposal.validUntil === undefined ? {} : { validUntil: proposal.validUntil }),
-      metadata: reflectionMetadata(input.reflectionRecord, proposal.metadata)
+      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
     }));
   }
 
@@ -150,7 +161,7 @@ export const writeReflectionCandidates = async (
         ...(proposal.falsifier === undefined ? {} : { falsifier: proposal.falsifier }),
         ...(proposal.revisitWhen === undefined ? {} : { revisitWhen: proposal.revisitWhen }),
         status: "proposed",
-        metadata: reflectionMetadata(input.reflectionRecord, proposal.metadata)
+        metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
       }));
     }
   }
@@ -180,7 +191,7 @@ export const writeReflectionCandidates = async (
     scenario: proposal.scenario,
     expectedSignal: proposal.expectedSignal,
     sourceEvidence: proposal.sourceEvidence,
-    metadata: reflectionMetadata(input.reflectionRecord, proposal.metadata),
+    metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal),
     createdAt: input.now()
   }));
 

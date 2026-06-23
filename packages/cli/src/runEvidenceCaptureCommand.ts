@@ -11,6 +11,9 @@ import type {
   SourceDecision
 } from "@krn/core";
 import {
+  normalizeEvidenceCommand
+} from "@krn/core";
+import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
@@ -183,29 +186,49 @@ const buildMemoryCandidateProposals = (
 const defaultCommands = (): EvidenceCommand[] => [
   {
     command: "pnpm typecheck",
-    status: "skipped"
+    status: "not_run",
+    provenance: "default_template"
   },
   {
     command: "pnpm test",
-    status: "skipped"
+    status: "not_run",
+    provenance: "default_template"
   },
   {
     command: "git diff --check",
-    status: "skipped"
+    status: "not_run",
+    provenance: "default_template"
   }
 ];
 
-const renderCommand = (command: EvidenceCommand): string =>
-  [
-    `${command.command}: ${command.status}`,
-    ...(command.exitCode === undefined ? [] : [`exitCode=${command.exitCode}`]),
-    ...(command.outputPath === undefined ? [] : [`output=${command.outputPath}`])
+const renderCommand = (command: EvidenceCommand): string => {
+  const normalized = normalizeEvidenceCommand(command);
+
+  return [
+    `${normalized.command}: ${normalized.status}`,
+    `provenance=${normalized.provenance}`,
+    ...(normalized.exitCode === undefined ? [] : [`exitCode=${normalized.exitCode}`]),
+    ...(normalized.outputRef === undefined ? [] : [`output=${normalized.outputRef}`]),
+    `doesNotProve=${normalized.doesNotProve}`
   ].join(" | ");
+};
+
+const hasWeakCommandProvenance = (commands: readonly EvidenceCommand[]): boolean =>
+  commands.some((command) => normalizeEvidenceCommand(command).provenance === "default_template");
+
+const normalizeCommands = (commands: readonly EvidenceCommand[]): EvidenceCommand[] =>
+  commands.map(normalizeEvidenceCommand);
 
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
   runtime.persist
     ? "enabled (Postgres, explicit --persist)"
     : "disabled (explicit printed-only preview; use --persist to write)";
+
+const commandInputHint =
+  "Command evidence input: use --verification \"pnpm typecheck=passed\" for operator-reported outcomes.";
+
+const commandExecutionNotice =
+  "Command execution: none (evidence capture records supplied outcomes; it does not run shell commands).";
 
 const renderChangedFiles = (changedFiles: readonly ChangedFile[]): string[] => {
   if (changedFiles.length === 0) {
@@ -387,8 +410,8 @@ export const runEvidenceCaptureCommand = async (
   const changedFiles = parseChangedFiles(statusOutput);
   const commands =
     runtime.commandOutcomes === undefined || runtime.commandOutcomes.length === 0
-      ? defaultCommands()
-      : [...runtime.commandOutcomes];
+      ? normalizeCommands(defaultCommands())
+      : normalizeCommands(runtime.commandOutcomes);
   const diffRisk = diffRiskFromChangedFiles(changedFiles);
   const sourceDecisionCandidates = buildSourceDecisionCandidates(runtime, changedFiles);
   const memoryCandidateProposals = buildMemoryCandidateProposals(runtime, changedFiles);
@@ -411,10 +434,15 @@ export const runEvidenceCaptureCommand = async (
     `Captured at: ${runtime.now()}`,
     `Persistence: ${persistenceLabel(runtime)}`,
     ...(runtime.runId === undefined ? [] : [`Run ID: ${runtime.runId}`]),
+    commandInputHint,
+    commandExecutionNotice,
     "Changed files:",
     ...renderChangedFiles(changedFiles),
     "Commands:",
     ...commands.map(renderCommand),
+    ...(hasWeakCommandProvenance(commands)
+      ? ["Command provenance is weak: default_template rows are not proof that commands ran."]
+      : []),
     `Diff risk: ${diffRisk}`,
     "Review burden: summarize changed files, command proof, residual risk, and rollback path.",
     "Rollback path: revert the focused implementation commit or discard uncommitted changes.",
