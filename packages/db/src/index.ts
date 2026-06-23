@@ -1,5 +1,6 @@
 export * from "./database.js";
 export * from "./activationReadiness.js";
+export * from "./auditSemanticSnapshot.js";
 export * from "./activationSmoke.js";
 export * from "./harnessEvidenceSmoke.js";
 export * from "./harnessPersistenceReadiness.js";

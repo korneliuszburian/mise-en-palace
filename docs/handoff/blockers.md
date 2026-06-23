@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-32B.
+- None for MM-33.
+
+Closed in MM-32B:
+
+- Audit CLI consumes explicit intended files and verification command states.
+- Audit CLI can load persisted AuditBundle evidence by `--audit-bundle-id`.
+- Audit CLI can read DB-backed semantic snapshots for memory/source/eval/
+  observation/activation state when project/retrieval IDs are supplied.
+- Audit reports expose semantic snapshot counts instead of implying file scans
+  are semantic memory governance proof.
+- `--fail-on warning` exists for CI-style slice gates.
 
 Closed in MM-32:
 

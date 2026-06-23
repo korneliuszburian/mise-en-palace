@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-32 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-32B and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -56,6 +56,10 @@ Current public state:
   MM-32 broadened memory health audit findings for stale high-confidence
   memory, active unsupported/no-lineage memory, missing application feedback,
   missing guidance, and temporal records without invalidation strategy.
+  MM-32B made the audit CLI consume explicit slice evidence, AuditBundle
+  evidence, and DB-backed semantic snapshots for memory/source/eval/
+  observation/activation state, with `--fail-on warning` available for
+  CI-style slice gates.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.

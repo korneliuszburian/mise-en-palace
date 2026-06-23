@@ -73,6 +73,10 @@ import {
 import {
   runAuditCommand
 } from "./runAuditCommand.js";
+import type {
+  AuditDatabaseRuntimeInput,
+  AuditDatabaseRuntime
+} from "./databaseRuntime.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -81,6 +85,7 @@ export interface CliRuntime {
   createId?(prefix: string): string;
   readGitStatus?(): Promise<string>;
   readGitChangedFiles?(since: string, repoPath: string): Promise<string>;
+  createAuditDatabaseRuntime?(input: AuditDatabaseRuntimeInput): Promise<AuditDatabaseRuntime>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
   createObserveDatabaseRuntime?: CreateObserveDatabaseRuntime;
   createReflectDatabaseRuntime?: CreateReflectDatabaseRuntime;
@@ -130,11 +135,15 @@ export const runCli = async (
     try {
       const result = await runAuditCommand({
         cwd: runtime.cwd ?? process.cwd(),
+        env: runtime.env,
         now,
         command: parsed.command,
         ...(runtime.readGitChangedFiles === undefined
           ? {}
-          : { readGitChangedFiles: runtime.readGitChangedFiles })
+          : { readGitChangedFiles: runtime.readGitChangedFiles }),
+        ...(runtime.createAuditDatabaseRuntime === undefined
+          ? {}
+          : { createAuditDatabaseRuntime: runtime.createAuditDatabaseRuntime })
       });
 
       return {

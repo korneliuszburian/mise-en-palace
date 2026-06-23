@@ -129,16 +129,13 @@ controlled plan was moved into `docs/plans/memory-ideal-state/PLAN.md`. Do not
 mark MM-08 complete from that fact alone. Reconcile the existing contracts
 against the controlled MM-08 slice when the plan reaches Gate 1.
 
-Known verification already passed:
+Latest verification already passed:
 - pnpm typecheck
-- pnpm test: 29 files, 134 tests
-- DB-aware krn doctor
-- pnpm db:ready: 8/8 migrations, pgvector available
-- all M22-M27 DB smokes
-- forbidden surface/dependency/core-safety scans
+- pnpm test: 45 files, 230 tests
+- pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
-- Slice 14 checks for memory plan
-- MM-00 docs-only scope checks
+- forbidden surface/dependency scans
+- targeted slice checks recorded in Progress through MM-32B
 
 Known target repo readiness:
 - dry-run: proven
@@ -151,23 +148,36 @@ Known target repo readiness:
 - latest target readiness: ready
 
 Known not built:
-- MM-17 dogfood evidence for observation runtime
-- reflection/dreaming implementation
-- MemoryEval/golden memory behavior runner
-- dashboard
+- golden memory behavior runner
 - API
 - MCP server
+- dashboard
+- plugin package
 - broad workers runtime
 - source crawler
 - broad eval suite
-- plugin package
 - research/pattern subsystem
+- fuzzy semantic anti-memory matching
+- automatic memory promotion
 
 Known built but not fully integrated:
-- observation core contracts, IO schemas, DB schema, repository adapter, evidence linkage, manual observe CLI, observer input builder, and pure observation prefix selector
-- observation prefix selector is not wired into context assembly or activation runtime
-- manual `krn observe --run <id> [--persist]` is not yet dogfooded on a committed KRN run
-- observations do not yet flow into reflection, MemoryCandidate creation, MemoryReviewGate, anti-memory, or golden eval behavior
+- observation core contracts, IO schemas, DB schema, repository adapter,
+  evidence linkage, manual observe CLI, observer input builder, pure
+  observation prefix selector, dogfood evidence, project-scoped observe
+  runtime, source-range lineage invariants, datetime validation, and payload
+  redaction
+- reflection contracts, schemas, DB table, repository, input selector,
+  candidate-generation plan, contradiction/gap reports, manual reflect CLI,
+  no-Memory-Core mutation proof, and dogfood evidence
+- governed MemoryReviewGate promotion through public CLI, memory invalidation,
+  feedback-aware activation ranking, negative-feedback health finding,
+  explicit anti-memory blocking for source claims/memory/search/observation
+  prefix, activation abstention metadata, memory health audit, and audit CLI
+  AuditBundle/verification/semantic DB snapshot ingestion
+- observation prefix selector is still not wired into the main context
+  assembly/activation runtime path as a stable prefix primitive
+- reflection still does not create persisted MemoryCandidate/SourceClaim/
+  AntiMemory/Eval candidate rows
 - MemoryRepository has low-level create/promote methods, but the governed MemoryReviewGate product path is not complete yet
 
 Known untracked quarry may exist:
@@ -385,7 +395,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-30A complete: expanded anti-memory enforcement to linked search-document candidates and observation prefix items. Intended files: `packages/harness/src/activation/conflictFilter.ts`, activation tests, `packages/harness/src/observations/observationPrefix.ts`, observation prefix tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no fuzzy semantic matching, no separate graph/vector DB, no source crawler, no dashboard/API/MCP/server/plugin. Evidence: RED focused activation test failed because search documents explicitly linked to an invalidated source claim or memory record were not excluded; RED focused observation prefix test failed because an observation matching anti-memory `key/appliesTo` still entered the prefix; GREEN focused activation test passed with 9 files / 35 tests after search-document blocking was added; GREEN focused observation prefix test passed with 9 files / 35 tests after prefix anti-memory exclusions were added; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 227 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; `git diff --check` passed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces. Next: MM-31 memory abstain behavior.
 - [x] (2026-06-23) MM-31 complete: added explicit memory/source/search activation abstention metadata when context cannot be safely assembled. Intended files: `packages/harness/src/activation/assembleContext.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no activation v2 rewrite, no observation prefix runtime integration, no DB migration, no CLI surface, no API/MCP/dashboard/server/plugin/source crawler. Evidence: RED focused activation test failed because weak low-trust memory produced `status: abstained` without `metadata.activationAbstention`; GREEN focused activation test passed with 9 files / 36 tests after `assembleContext` attached `ActivationAbstention` metadata; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 228 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available. Next: MM-32 memory health audit.
 - [x] (2026-06-23) MM-32 complete: broadened memory health audit findings for unhealthy Memory Core records. Intended files: `packages/harness/src/audit/auditChecks.ts`, audit tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB snapshot reader, no audit CLI ingestion upgrade, no automatic invalidation/demotion, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused audit test failed because seeded stale high-confidence, unsupported/no-lineage, no-feedback, no-guidance, and no-invalidation-strategy memory records produced no findings; GREEN focused audit test passed with 9 files / 37 tests after adding health findings; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 229 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available. Next: MM-32B audit CLI semantic snapshot ingestion.
-- [ ] MM-32B in progress: audit slice can now receive explicit `--intended-file` and `--verification <command=status>` inputs, and snapshot audits flag missing intended files, missing verification commands, failed/missing command results, and changed files outside intended scope. Remaining before completion: DB-backed semantic snapshot readers for memory/source/eval/observation/activation state and AuditBundle ingestion.
+- [x] (2026-06-23) MM-32B complete: audit CLI now consumes explicit slice evidence, AuditBundle evidence, DB-backed semantic snapshots, and repo-local handoff docs. Intended files: `packages/harness/src/audit/auditChecks.ts`, `packages/db/src/auditSemanticSnapshot.ts`, DB export, `packages/cli/src/databaseRuntime.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runAuditCommand.ts`, `packages/cli/src/runCli.ts`, audit CLI tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no dashboard, no API/MCP/server/plugin, no CI service, no broad benchmark suite, no new DB migration, no source crawler, no runtime markdown memory. Evidence: RED focused CLI test failed because `--fail-on warning` was rejected as usage error; GREEN focused CLI test passed with 6 files / 91 tests after parser/runner support; focused AuditBundle semantic snapshot test passed with DB runtime injection and JSON `semanticSnapshotCounts`; RED handoff-focused CLI test failed because repo handoff docs were not converted into an `AuditHandoffSnapshot`; GREEN handoff-focused CLI test passed with 6 files / 92 tests after adding the repo handoff snapshot builder; focused DB/harness/CLI typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 230 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; `git diff --check` passed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces; final `krn audit slice --since origin/main ...` passed with 0 findings. Audit slice now merges AuditBundle/CLI intended files and verification commands, flags missing/failed verification, reads MemoryCandidate/MemoryRecord/SourceClaim/SourceDecision/EvalCandidate/ObservationGroup/ActivationDecision snapshots where a project/retrieval run is supplied, emits semantic snapshot counts, derives handoff evidence from `docs/handoff/*`, and supports `--fail-on warning` for CI-style slice gates. Next: MM-33 memory dogfood.
 - [ ] MM-33: Dogfood promotion of one review lesson.
 - [ ] MM-34: Harden SourceClaim and SourceDecisionEdge.
 - [ ] MM-35: Add source rejection and doesNotProve enforcement.

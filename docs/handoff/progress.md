@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-32.
+Current phase: Memory ideal-state execution track after MM-32B.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-32 and MM-16R in
+- MM-00 through MM-32B and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -96,10 +96,18 @@ Current runtime truth:
   memory, active memory without lineage/source-claim support, missing
   application feedback, missing application guidance, temporal records without
   invalidation strategy, and repeated negative feedback.
+- MM-32B makes `krn audit slice` consume explicit intended files and
+  verification command states, persisted AuditBundle evidence, and DB-backed
+  semantic snapshots for MemoryCandidate, MemoryRecord, SourceClaim,
+  SourceDecision, EvalCandidate, ObservationGroup, and ActivationDecision.
+  Audit output now includes semantic snapshot counts and supports
+  `--fail-on warning` for CI-style gates.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-32B audit CLI semantic snapshot ingestion.
+- Continue with MM-33 memory dogfood: promote one reviewed KRN lesson through
+  MemoryReviewGate and prove the resulting memory has lineage, guidance,
+  confidence, and invalidation strategy.

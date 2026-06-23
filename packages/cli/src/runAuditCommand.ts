@@ -11,14 +11,23 @@ import {
   promisify
 } from "node:util";
 import type {
+  AuditBundle,
   AuditFinding
 } from "@krn/core";
+import {
+  createAuditDatabaseRuntime
+} from "./databaseRuntime.js";
+import type {
+  AuditDatabaseRuntime,
+  AuditDatabaseRuntimeInput
+} from "./databaseRuntime.js";
 import {
   runAuditChecks
 } from "@krn/harness";
 import type {
   AuditCheckResult,
   AuditFileSnapshot,
+  AuditHandoffSnapshot,
   AuditRepoSnapshot,
   AuditVerificationCommandSnapshot
 } from "@krn/harness";
@@ -36,13 +45,19 @@ export interface AuditCliCommand {
   format: AuditCommandFormat;
   intendedFiles?: readonly string[];
   verificationCommands?: readonly AuditVerificationCommandSnapshot[];
+  projectId?: string;
+  retrievalRunId?: string;
+  auditBundleId?: string;
+  failOn?: "warning";
 }
 
 export interface AuditCommandRuntime {
   cwd: string;
+  env?: Record<string, string | undefined>;
   now(): string;
   command: AuditCliCommand;
   readGitChangedFiles?(since: string, repoPath: string): Promise<string>;
+  createAuditDatabaseRuntime?(input: AuditDatabaseRuntimeInput): Promise<AuditDatabaseRuntime>;
 }
 
 export interface AuditCommandResult {
@@ -60,7 +75,18 @@ interface AuditReport {
   blockingCount: number;
   warningCount: number;
   advisoryCount: number;
+  semanticSnapshotCounts: AuditSemanticSnapshotCounts;
   findings: AuditFinding[];
+}
+
+interface AuditSemanticSnapshotCounts {
+  memoryCandidateCount: number;
+  memoryRecordCount: number;
+  sourceClaimCount: number;
+  sourceDecisionCount: number;
+  evalCandidateCount: number;
+  observationGroupCount: number;
+  activationDecisionCount: number;
 }
 
 const excludedDirectoryNames = new Set([
@@ -190,6 +216,65 @@ const collectSliceFiles = async (
   return snapshots.filter((snapshot): snapshot is AuditFileSnapshot => snapshot !== undefined);
 };
 
+const readOptionalTextFile = async (
+  repoPath: string,
+  relativePath: string
+): Promise<string | undefined> =>
+  readFile(path.join(repoPath, relativePath), "utf8").catch(() => undefined);
+
+const includesAny = (
+  text: string,
+  needles: readonly string[]
+): boolean => needles.some((needle) => text.includes(needle));
+
+const readRepoHandoffSnapshot = async (
+  repoPath: string
+): Promise<AuditHandoffSnapshot | undefined> => {
+  const handoffFiles = await Promise.all([
+    readOptionalTextFile(repoPath, "docs/handoff/handoff.md"),
+    readOptionalTextFile(repoPath, "docs/handoff/progress.md"),
+    readOptionalTextFile(repoPath, "docs/handoff/verification.md"),
+    readOptionalTextFile(repoPath, "docs/handoff/blockers.md")
+  ]);
+  const presentFiles = handoffFiles.filter((content): content is string => content !== undefined);
+
+  if (presentFiles.length === 0) {
+    return undefined;
+  }
+
+  const text = presentFiles.join("\n").toLowerCase();
+
+  return {
+    exists: true,
+    includesLastGoodCommit: includesAny(text, [
+      "last good commit",
+      "last verified state",
+      "latest verified slice",
+      "latest verified"
+    ]),
+    includesChangedFiles: includesAny(text, [
+      "changed files",
+      "intended files",
+      "files likely touched"
+    ]),
+    includesVerification: includesAny(text, [
+      "verification",
+      "passed:",
+      "passed"
+    ]),
+    includesRollbackPath: includesAny(text, [
+      "rollback path",
+      "git revert",
+      "rollback"
+    ]),
+    includesNextAction: includesAny(text, [
+      "next action",
+      "next safest action",
+      "next:"
+    ])
+  };
+};
+
 const flattenFindings = (
   checkResult: AuditCheckResult,
   includeHandoff: boolean
@@ -223,6 +308,7 @@ const createReport = (
   input: {
     command: AuditCliCommand;
     repoPath: string;
+    snapshot: AuditRepoSnapshot;
     findings: readonly AuditFinding[];
   }
 ): AuditReport => {
@@ -240,9 +326,27 @@ const createReport = (
     blockingCount,
     warningCount,
     advisoryCount,
+    semanticSnapshotCounts: {
+      memoryCandidateCount: input.snapshot.memoryCandidates?.length ?? 0,
+      memoryRecordCount: input.snapshot.memoryRecords?.length ?? 0,
+      sourceClaimCount: input.snapshot.sourceClaims?.length ?? 0,
+      sourceDecisionCount: input.snapshot.sourceDecisions?.length ?? 0,
+      evalCandidateCount: input.snapshot.evalCandidates?.length ?? 0,
+      observationGroupCount: input.snapshot.observationGroups?.length ?? 0,
+      activationDecisionCount: input.snapshot.activationDecisions?.length ?? 0
+    },
     findings: [...input.findings]
   };
 };
+
+const hasSemanticSnapshotCounts = (counts: AuditSemanticSnapshotCounts): boolean =>
+  counts.memoryCandidateCount > 0 ||
+  counts.memoryRecordCount > 0 ||
+  counts.sourceClaimCount > 0 ||
+  counts.sourceDecisionCount > 0 ||
+  counts.evalCandidateCount > 0 ||
+  counts.observationGroupCount > 0 ||
+  counts.activationDecisionCount > 0;
 
 const formatReport = (report: AuditReport): string => {
   const title = report.scope === "repo" ? "KRN Audit Repo" : "KRN Audit Slice";
@@ -258,6 +362,12 @@ const formatReport = (report: AuditReport): string => {
     `Advisory: ${report.advisoryCount}`
   ];
 
+  if (hasSemanticSnapshotCounts(report.semanticSnapshotCounts)) {
+    lines.push(
+      `Semantic snapshots: memoryCandidates=${report.semanticSnapshotCounts.memoryCandidateCount} memoryRecords=${report.semanticSnapshotCounts.memoryRecordCount} sourceClaims=${report.semanticSnapshotCounts.sourceClaimCount} sourceDecisions=${report.semanticSnapshotCounts.sourceDecisionCount} evalCandidates=${report.semanticSnapshotCounts.evalCandidateCount} observationGroups=${report.semanticSnapshotCounts.observationGroupCount} activationDecisions=${report.semanticSnapshotCounts.activationDecisionCount}`
+    );
+  }
+
   if (report.findings.length > 0) {
     lines.push("", "Findings:");
 
@@ -267,6 +377,42 @@ const formatReport = (report: AuditReport): string => {
   }
 
   return `${lines.join("\n")}\n`;
+};
+
+const auditBundleVerificationCommands = (
+  bundle: AuditBundle | undefined
+): AuditVerificationCommandSnapshot[] =>
+  (bundle?.verificationCommands ?? []).map((command) => ({
+    command: command.command,
+    status: command.status
+  }));
+
+const mergeUnique = (
+  left: readonly string[],
+  right: readonly string[]
+): string[] => Array.from(new Set([...left, ...right]));
+
+const resolveAuditDbRuntime = async (
+  runtime: AuditCommandRuntime
+): Promise<AuditDatabaseRuntime | undefined> => {
+  const needsDatabase =
+    runtime.command.auditBundleId !== undefined ||
+    runtime.command.projectId !== undefined ||
+    runtime.command.retrievalRunId !== undefined;
+
+  if (!needsDatabase) {
+    return undefined;
+  }
+
+  const databaseUrl = runtime.env?.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for audit semantic snapshots");
+  }
+
+  const createRuntime = runtime.createAuditDatabaseRuntime ?? createAuditDatabaseRuntime;
+
+  return createRuntime({ databaseUrl });
 };
 
 export const runAuditCommand = async (
@@ -284,24 +430,61 @@ export const runAuditCommand = async (
   const files = runtime.command.scope === "slice"
     ? await collectSliceFiles(repoPath, changedFiles)
     : await collectRepoFiles(repoPath);
+  const handoff = runtime.command.scope === "slice"
+    ? await readRepoHandoffSnapshot(repoPath)
+    : undefined;
+  const auditDbRuntime = await resolveAuditDbRuntime(runtime);
+  let auditBundle: AuditBundle | undefined;
+  let semanticSnapshots: Partial<AuditRepoSnapshot> = {};
+
+  try {
+    auditBundle = runtime.command.auditBundleId === undefined || auditDbRuntime === undefined
+      ? undefined
+      : await auditDbRuntime.getAuditBundleById(runtime.command.auditBundleId);
+
+    if (runtime.command.auditBundleId !== undefined && auditBundle === undefined) {
+      throw new Error(`AuditBundle not found: ${runtime.command.auditBundleId}`);
+    }
+
+    if (auditDbRuntime !== undefined) {
+      const snapshotProjectId = runtime.command.projectId ?? auditBundle?.projectId;
+      semanticSnapshots = await auditDbRuntime.readSemanticSnapshots({
+        ...(snapshotProjectId === undefined ? {} : { projectId: snapshotProjectId }),
+        ...(runtime.command.retrievalRunId === undefined
+          ? {}
+          : { retrievalRunId: runtime.command.retrievalRunId })
+      });
+    }
+  } finally {
+    await auditDbRuntime?.close();
+  }
+
   const snapshot: AuditRepoSnapshot = {
     sliceId: runtime.command.scope === "slice" ? "audit-slice" : "audit-repo",
     capturedAt: runtime.now(),
     files,
     changedFiles,
-    intendedFiles: runtime.command.intendedFiles ?? [],
-    verificationCommands: runtime.command.verificationCommands ?? []
+    intendedFiles: mergeUnique(auditBundle?.intendedFiles ?? [], runtime.command.intendedFiles ?? []),
+    verificationCommands: [
+      ...auditBundleVerificationCommands(auditBundle),
+      ...(runtime.command.verificationCommands ?? [])
+    ],
+    ...(handoff === undefined ? {} : { handoff }),
+    ...semanticSnapshots
   };
   const checks = runAuditChecks(snapshot);
   const findings = flattenFindings(checks, runtime.command.scope === "slice");
   const report = createReport({
     command: runtime.command,
     repoPath,
+    snapshot,
     findings
   });
+  const shouldFailOnWarning =
+    runtime.command.failOn === "warning" && report.warningCount > 0;
 
   return {
-    exitCode: report.verdict === "fail" ? 1 : 0,
+    exitCode: report.verdict === "fail" || shouldFailOnWarning ? 1 : 0,
     stdout: runtime.command.format === "json"
       ? `${JSON.stringify(report, null, 2)}\n`
       : formatReport(report)

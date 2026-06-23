@@ -66,6 +66,22 @@ export interface AuditEvalCandidateSnapshot {
   protectsRealBehavior: boolean;
 }
 
+export interface AuditObservationGroupSnapshot {
+  id: string;
+  projectId?: string;
+  executionRunId?: string;
+  source: string;
+  summary: string;
+}
+
+export interface AuditActivationDecisionSnapshot {
+  id: string;
+  subjectType: string;
+  subjectId: string;
+  decision: "included" | "excluded" | "abstained" | "deferred" | "conflict" | "stale";
+  reason: string;
+}
+
 export interface AuditHandoffSnapshot {
   exists: boolean;
   includesLastGoodCommit: boolean;
@@ -87,6 +103,8 @@ export interface AuditRepoSnapshot {
   sourceClaims?: readonly AuditSourceClaimSnapshot[];
   sourceDecisions?: readonly AuditSourceDecisionSnapshot[];
   evalCandidates?: readonly AuditEvalCandidateSnapshot[];
+  observationGroups?: readonly AuditObservationGroupSnapshot[];
+  activationDecisions?: readonly AuditActivationDecisionSnapshot[];
   handoff?: AuditHandoffSnapshot;
 }
 

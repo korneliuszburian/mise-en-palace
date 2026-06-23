@@ -33,6 +33,10 @@ export type CliCommand =
       format: "text" | "json";
       intendedFiles: string[];
       verificationCommands: AuditVerificationCommand[];
+      projectId?: string;
+      retrievalRunId?: string;
+      auditBundleId?: string;
+      failOn?: AuditFailOn;
     }
   | {
       kind: "dbReadiness";
@@ -222,6 +226,7 @@ export interface ParseArgsResult {
 }
 
 type AuditVerificationCommandStatus = "passed" | "failed" | "skipped" | "missing";
+type AuditFailOn = "warning";
 
 interface AuditVerificationCommand {
   command: string;
@@ -238,7 +243,7 @@ const usage = [
   "krn init --connect --repo <path> --persist",
   "krn doctor",
   "krn audit repo [--repo <path>] [--json]",
-  "krn audit slice --since <ref> [--repo <path>] [--intended-file <path>] [--verification <command=status>] [--json]",
+  "krn audit slice --since <ref> [--repo <path>] [--project <id>] [--retrieval-run <id>] [--audit-bundle-id <id>] [--intended-file <path>] [--verification <command=status>] [--fail-on warning] [--json]",
   "krn db readiness",
   "krn db smoke [harness-plan|harness-evidence|source-graph|memory-governance|retrieval-substrate|activation|codex-adapter|worker-jobs|init-connect|target-repo-harness]",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
@@ -531,6 +536,10 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     let repo: string | undefined;
     let since: string | undefined;
     let format: "text" | "json" = "text";
+    let projectId: string | undefined;
+    let retrievalRunId: string | undefined;
+    let auditBundleId: string | undefined;
+    let failOn: AuditFailOn | undefined;
     const intendedFiles: string[] = [];
     const verificationCommands: AuditVerificationCommand[] = [];
 
@@ -566,6 +575,70 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
         }
 
         since = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      if (arg === "--project" || arg?.startsWith("--project=") === true) {
+        const valueResult = optionValue(rest, index, "--project");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn audit slice --since <ref> [--project <id>]"
+          };
+        }
+
+        projectId = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      if (arg === "--retrieval-run" || arg?.startsWith("--retrieval-run=") === true) {
+        const valueResult = optionValue(rest, index, "--retrieval-run");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn audit slice --since <ref> [--retrieval-run <id>]"
+          };
+        }
+
+        retrievalRunId = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      if (arg === "--audit-bundle-id" || arg?.startsWith("--audit-bundle-id=") === true) {
+        const valueResult = optionValue(rest, index, "--audit-bundle-id");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn audit slice --since <ref> [--audit-bundle-id <id>]"
+          };
+        }
+
+        auditBundleId = valueResult.value.trim();
+        index = valueResult.nextIndex;
+        continue;
+      }
+
+      if (arg === "--fail-on" || arg?.startsWith("--fail-on=") === true) {
+        const valueResult = optionValue(rest, index, "--fail-on");
+
+        if (valueResult.error !== undefined || valueResult.value === undefined) {
+          return {
+            error: valueResult.error ?? "Usage: krn audit slice --since <ref> [--fail-on warning]"
+          };
+        }
+
+        const failOnValue = valueResult.value.trim();
+
+        if (failOnValue !== "warning") {
+          return {
+            error: "--fail-on must be warning"
+          };
+        }
+
+        failOn = failOnValue;
         index = valueResult.nextIndex;
         continue;
       }
@@ -612,7 +685,15 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     }
 
     if (scope === "repo") {
-      if (since !== undefined || intendedFiles.length > 0 || verificationCommands.length > 0) {
+      if (
+        since !== undefined ||
+        intendedFiles.length > 0 ||
+        verificationCommands.length > 0 ||
+        projectId !== undefined ||
+        retrievalRunId !== undefined ||
+        auditBundleId !== undefined ||
+        failOn !== undefined
+      ) {
         return {
           error: "Usage: krn audit repo [--repo <path>] [--json]"
         };
@@ -642,7 +723,11 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
         since,
         format,
         intendedFiles,
-        verificationCommands
+        verificationCommands,
+        ...(projectId === undefined ? {} : { projectId }),
+        ...(retrievalRunId === undefined ? {} : { retrievalRunId }),
+        ...(auditBundleId === undefined ? {} : { auditBundleId }),
+        ...(failOn === undefined ? {} : { failOn })
       }
     };
   }
