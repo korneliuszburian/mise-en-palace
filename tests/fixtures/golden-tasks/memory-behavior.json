@@ -218,6 +218,31 @@
         ],
         "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"],
         "metadata": {}
+      },
+      {
+        "id": "golden-case-memory-005-a",
+        "title": "exact source proof triggers raw recall",
+        "input": {
+          "task": "Use exact source proof before implementing activation safety."
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "source_claim:source-claim-exact-proof",
+          "rationale": "Exact-proof source claims may enter context only with raw evidence recall triggers.",
+          "evidenceRefs": ["docs/decisions/ADR-0014-activation-is-admission-control.md"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-005-a",
+            "domain": "source",
+            "severity": "blocking",
+            "title": "exact proof admitted without raw recall",
+            "mustNot": "Activation must not include an exact-proof source claim without raw recall evidence hints.",
+            "detection": "Raw recall triggers omit exact_proof_required for source_claim:source-claim-exact-proof."
+          }
+        ],
+        "sourceRefs": ["docs/decisions/ADR-0014-activation-is-admission-control.md"],
+        "metadata": {}
       }
     ],
     "metadata": {},

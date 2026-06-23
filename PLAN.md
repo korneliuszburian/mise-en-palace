@@ -907,6 +907,8 @@ git revert <commit>
 
 ### P4-01: Add Noisy Context Golden Proofs
 
+status: complete.
+
 objective:
 
 Prove activation rejects bad context instead of dumping everything.
@@ -1186,7 +1188,7 @@ git revert <commit>
 - [x] P3-01 Prove observation/reflection invariants.
 - [x] P3-02 Create reviewed candidate writer from ReflectionRecord.
 - [x] P4-00 Define activation as admission control.
-- [ ] P4-01 Add noisy context golden proofs.
+- [x] P4-01 Add noisy context golden proofs.
 - [ ] P4-02 Type activation trace decisions.
 - [ ] P5-00 Bound Promptfoo claims.
 - [ ] P5-01 Add first real behavior eval gate.
@@ -1245,6 +1247,10 @@ git revert <commit>
 - P4-00 did not need a new activation architecture. The existing plan law
   already says activation is admission control; ADR-0014 makes the falsifiers
   explicit before adding golden noisy-context proofs.
+- P4-01 found most noisy-context cases already existed in golden tests/fixtures:
+  stale abstention, anti-memory block, broad dump rejection, unsupported source
+  decision rejection, and observation prefix source-range gates. The missing
+  golden-specific case was raw recall on exact proof.
 
 ## Decision Log
 
@@ -1299,6 +1305,10 @@ git revert <commit>
   and context. Similarity/ranking is not permission; activation must produce
   typed inclusions, exclusions, abstention, and raw recall triggers where
   applicable.
+- 2026-06-23: P4-01 adds `golden-case-memory-005-a` for exact-proof raw recall.
+  Golden memory behavior now asserts that included exact-proof source claims
+  produce `exact_proof_required` raw recall triggers with source-claim evidence
+  hints.
 
 ## Outcomes & Retrospective
 
@@ -1336,7 +1346,11 @@ Current outcome:
   AntiMemoryRecord/policy truth.
 - Activation admission-control doctrine is captured in
   `docs/decisions/ADR-0014-activation-is-admission-control.md`.
-- Next safe action is P4-01: add noisy context golden proofs.
+- Noisy-context golden coverage now includes stale memory abstention,
+  anti-memory block, broad context dump rejection, unsupported source decision
+  rejection, observation prefix source-range requirement, and raw recall on
+  exact proof.
+- Next safe action is P4-02: type activation trace decisions.
 
 ## Command Evidence
 
@@ -1687,6 +1701,30 @@ Observed summary:
 
 This proves the doctrine is recorded and whitespace-clean. It does not prove
 behavioral rejection of noisy context; P4-01 owns those golden tests.
+
+P4-01 noisy context golden proofs:
+
+```sh
+pnpm --filter @krn/harness test -- golden
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- focused harness golden tests passed: 16 files, 86 tests;
+- full typecheck passed across 7 workspace projects;
+- initial full test failed because fixture outcome `raw_recall` was outside the
+  existing golden outcome enum; the case was corrected to outcome `flag`;
+- final full test passed across 7 workspace projects: core 8 files/39 tests,
+  schema 3 files/25 tests, harness 16 files/86 tests, workers 1 file/3 tests,
+  codex-adapter 3 files/7 tests, db 24 files/67 tests, cli 25 files/142 tests;
+- `git diff --check` passed with no output.
+
+This proves the required noisy-context golden cases have behavior proof coverage
+or explicit fixture coverage. It does not add new activation trace persistence;
+P4-02 owns typed trace decisions.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

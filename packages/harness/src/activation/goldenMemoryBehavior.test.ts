@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type {
   AntiMemoryRecord,
   MemoryRecord,
+  SourceClaim,
   TaskContract
 } from "@krn/core";
 
@@ -15,9 +16,12 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
+  buildActivationRawRecallTriggers,
   buildMemoryQuery,
+  buildSourceQuery,
   rankCandidates,
-  toMemoryCandidate
+  toMemoryCandidate,
+  toSourceClaimCandidate
 } from "./index.js";
 
 const now = "2026-06-23T10:00:00.000Z";
@@ -80,6 +84,23 @@ const antiMemoryRecord = (overrides: Partial<AntiMemoryRecord>): AntiMemoryRecor
   ...overrides
 });
 
+const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
+  id: "source-claim-exact-proof",
+  sourceArtifactId: "source-artifact-1",
+  claim: "Exact source proof is required before using this activation claim.",
+  mechanism: "The claim affects implementation safety and needs raw evidence recall.",
+  krnImplication: "Activation may include the claim only with a raw recall trigger.",
+  doesNotProve: "The implementation is already correct.",
+  trustTier: "high",
+  supportType: "supports",
+  consumer: "golden-memory-behavior-test",
+  status: "proposed",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
 const goldenCaseIds = (): string[] => {
   const fixtureUrl = new URL(
     "../../../../tests/fixtures/golden-tasks/memory-behavior.json",
@@ -104,6 +125,7 @@ describe("golden memory behavior cases", () => {
       "golden-case-memory-002-b",
       "golden-case-memory-003-a",
       "golden-case-memory-004-a",
+      "golden-case-memory-005-a",
       "golden-case-memory-smoke-001",
       "golden-case-memory-smoke-002",
       "golden-case-source-smoke-001"
@@ -214,6 +236,36 @@ describe("golden memory behavior cases", () => {
       expectedUse: guidance
     });
     expect(ranked[0]?.lexicalScore).toBeGreaterThan(0);
+  });
+
+  it("requires raw recall when exact source proof is needed", () => {
+    const ranked = rankCandidates([
+      toSourceClaimCandidate(sourceClaim({}))
+    ], buildSourceQuery(task({
+      objective: "Use exact source proof before implementing activation safety."
+    })));
+    const context = assembleContext({
+      id: "context-exact-proof",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(ranked, { maxInclusions: 1 }),
+      createdAt: now
+    });
+    const triggers = buildActivationRawRecallTriggers({
+      candidates: ranked,
+      contextAssembly: context,
+      requireExactProof: true
+    });
+
+    expect(context.inclusions).toEqual([expect.objectContaining({
+      subjectType: "source_claim",
+      subjectId: "source-claim-exact-proof"
+    })]);
+    expect(triggers).toEqual([expect.objectContaining({
+      subjectType: "source_claim",
+      subjectId: "source-claim-exact-proof",
+      reasons: ["exact_proof_required"],
+      evidenceHints: expect.arrayContaining(["source_claim:source-claim-exact-proof"])
+    })]);
   });
 
   it("smoke case: stale memory abstains instead of entering context confidently", () => {
