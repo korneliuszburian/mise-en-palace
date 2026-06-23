@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-56.
+Current phase: Memory ideal-state execution track after MM-56A.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-56 and MM-16R in
+- MM-00 through MM-56A and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -178,11 +178,14 @@ Current runtime truth:
   changes.
 - MM-56 adds pure core FeedbackDelta candidate-proposal summary over already
   structured proposal fields, with no text mining or Memory Core mutation.
-- MM-56A is queued to define KRN code vocabulary and TypeScript elegance rules.
+- MM-56A adds the KRN code vocabulary and TypeScript elegance standard,
+  including the authority ladder for helper verbs and the rule that names must
+  not imply extraction, persistence, promotion, or final truth unless the code
+  really has that authority.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-56A code vocabulary and TypeScript elegance standard.
+- Continue with MM-57 review assess CLI.

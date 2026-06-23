@@ -20,14 +20,14 @@ Use that file as the living ExecPlan. It owns:
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
-- MM-01 in the controlled plan is the docs-only plan correction slice.
-- Pre-plan observation-domain contracts exist at commit `acca6d2`; do not mark
-  controlled MM-08 complete until that slice audits and reconciles them.
+- MM-00 through MM-56A and MM-16R are complete in the controlled plan.
+- MM-56A added the KRN code vocabulary and TypeScript elegance standard at
+  `docs/standards/code-vocabulary.md`.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item.
+the first unchecked Progress item: MM-57 review assess CLI.
 
 ## Hard Non-Goals
 

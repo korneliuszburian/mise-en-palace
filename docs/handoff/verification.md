@@ -1,43 +1,45 @@
 # Verification
 
-Latest verified slice: MM-56 candidate proposal summary from feedback.
+Latest verified slice: MM-56A code vocabulary and TypeScript elegance standard.
 
 Passed:
 
+- Preflight `git status --short --branch` showed branch `main` aligned with
+  `origin/main` plus only the two raw research materials untracked.
+- Preflight `git log --oneline -5` showed latest commit
+  `68f5951 feat(core): summarize feedback candidate proposals`.
 - Preflight `pnpm typecheck` passed across all workspace packages.
-- Preflight `pnpm test` passed across 48 files and 270 tests.
-- RED focused `pnpm --filter @krn/core test -- reviewFeedback.test.ts` failed
-  because `summarizeFeedbackCandidateProposals` did not exist.
-- GREEN focused `pnpm --filter @krn/core test -- reviewFeedback.test.ts`
-  passed with 6 files and 34 tests.
-- Focused `pnpm --filter @krn/core typecheck` passed.
-- Focused `pnpm --filter @krn/core test` passed with 6 files and 34 tests.
+- Preflight `pnpm test` passed across 48 files and 271 tests.
 - Final `pnpm typecheck` passed across all workspace packages.
 - Final `pnpm test` passed across 48 files and 271 tests.
-- Final `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
-  passed with 11/11 migrations and pgvector available.
+- Final `git diff --check` passed.
+- Final forbidden surface scan found only existing guard/test/fixture
+  references and no new runtime dashboard/API/MCP/research/pattern/source
+  crawler surface.
+- Final `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm
+  db:ready` passed with 11/11 migrations and pgvector available.
 - Final DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`,
   `Observation prefix items: 1`, and `Raw evidence recall triggers: 1`.
-- Final `git diff --check` passed.
-- Final forbidden surface scan found only existing guard/test/fixture references
-  and no new runtime dashboard/API/MCP/research/pattern/source crawler surface.
 - Final `krn audit slice --since origin/main --repo ../.. --fail-on warning`
   passed with verdict `pass` and 0 findings.
 
-MM-56 behavior proof:
+MM-56A behavior proof:
 
-- `summarizeFeedbackCandidateProposals` summarizes existing structured
-  `FeedbackDelta.memoryCandidates` and `FeedbackDelta.evalCandidates`.
-- `summarizeFeedbackCandidateProposals` summarizes metadata proposal arrays for
-  source-claim, anti-memory, and observation proposals when they already exist
-  as structured objects.
-- The helper returns counts and proposal refs plus
-  `memoryRecordMutation: "none"`.
-- The helper does not mine freeform feedback text, call an LLM, write DB rows,
-  create MemoryRecords, write SourceDecision truth, or promote candidates.
+- `docs/standards/code-vocabulary.md` defines the KRN authority ladder for
+  helper verbs including `summarize`, `normalize`, `assess`, `validate`,
+  `select`, `build`, `create`, `persist`, `promote`, and `extract`.
+- The standard separates `proposal`, `candidate`, `review`, `MemoryRecord`,
+  `SourceClaim`, `SourceDecision`, `Observation`, and `Reflection`.
+- The standard records `extractFeedbackCandidates` as an anti-pattern when a
+  helper only summarizes already structured candidate/proposal arrays.
+- The standard anchors Matt Pocock-style TypeScript discipline to KRN package
+  boundaries: explicit public types, narrow vocabularies, unknown-first IO
+  boundaries, small pure helpers, no `any`, no double assertions, and no fake
+  authority in names.
+- No TypeScript source, schema, DB, repository, CLI, worker, dashboard, API,
+  MCP, source crawler, or Memory Core mutation surface was added.
 
-Not proven by MM-56:
+Not proven by MM-56A:
 
-- KRN code vocabulary and TypeScript elegance standard remains MM-56A.
 - Review assess CLI remains MM-57.
 - Dogfood feedback capture remains MM-58.

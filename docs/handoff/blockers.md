@@ -2,7 +2,20 @@
 
 Hard blockers:
 
-- None for MM-56A.
+- None for MM-57.
+
+Closed in MM-56A:
+
+- `docs/standards/code-vocabulary.md` exists as the KRN code vocabulary and
+  TypeScript elegance standard.
+- Helper verbs now have an explicit authority ladder.
+- Proposal/candidate/review/final-truth terms are separated.
+- `extractFeedbackCandidates` is documented as an anti-pattern for helpers that
+  only summarize already structured candidate/proposal arrays.
+- Package authority boundaries are tied to naming rules.
+- No TypeScript source, schema, DB, repository, CLI, review assess command,
+  candidate creation, Memory Core mutation, dashboard/API/MCP/server/plugin, or
+  source crawler surface was added.
 
 Closed in MM-56:
 
