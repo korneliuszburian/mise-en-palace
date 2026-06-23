@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-41 and MM-16R are complete.
+- MM-00 through MM-42 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -76,6 +76,9 @@ Current known status:
   signals and avoiding duplicate context candidates.
 - MM-41 added a pure activation filter pass for anti-memory conflict detection,
   trust filtering, and temporal/invalidation filtering after candidate merge.
+- MM-42 hardened ContextROI selection with canonical dedup, requested
+  memory/source/search diversity, and explicit duplicate/over_budget/
+  low_context_roi exclusions.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -155,7 +158,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-42 — ContextROI, diversity, dedup, inclusions, and exclusions.
+MM-43 — Activation traces and raw evidence recall trigger.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

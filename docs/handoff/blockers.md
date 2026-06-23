@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-42.
+- None for MM-43.
+
+Closed in MM-42:
+
+- ContextROI deduplicates by canonical source or memory subject before final
+  budget selection.
+- ContextROI can preserve requested memory/source/search diversity before
+  filling remaining budget by raw score.
+- Duplicate, low-ROI, and over-budget candidates stay visible as explicit
+  exclusions for context assembly and audit.
+- Activation smoke now uses the diversity-aware ContextROI policy.
 
 Closed in MM-41:
 

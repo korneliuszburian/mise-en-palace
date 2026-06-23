@@ -325,6 +325,103 @@ describe("activation engine", () => {
     expect(context.exclusions.map((item) => item.subjectId)).toContain("memory-low");
   });
 
+  it("deduplicates and preserves type diversity before filling ContextROI budget", () => {
+    const query = buildActivationQuery(task, {
+      focus: "mixed",
+      needs: ["memory", "source", "search"],
+      budget: {
+        maxItems: 3,
+        maxTokens: 240,
+        reserveTokens: 0
+      }
+    });
+    const ranked = rankCandidates([
+      {
+        ...toMemoryCandidate(
+          memoryRecord({
+            id: "memory-primary",
+            summary: "Doctor Postgres readiness must stay store-backed"
+          })
+        ),
+        contextRoiScore: 150
+      },
+      {
+        ...toSearchCandidate(
+          searchDocument({
+            id: "search-duplicate-memory",
+            subjectType: "memory_record",
+            subjectId: "memory-primary",
+            memoryRecordId: "memory-primary",
+            sourceClaimId: undefined,
+            title: "Duplicate memory search hit",
+            body: "Search hit pointing at the same memory record.",
+            contextRoiScore: 120
+          })
+        )
+      },
+      {
+        ...toMemoryCandidate(
+          memoryRecord({
+            id: "memory-secondary",
+            summary: "Secondary memory is useful but less diverse"
+          })
+        ),
+        contextRoiScore: 110
+      },
+      {
+        ...toSourceClaimCandidate(
+          sourceClaim({
+            id: "claim-diverse",
+            claim: "Doctor readiness needs source graph evidence."
+          })
+        ),
+        contextRoiScore: 100
+      },
+      {
+        ...toSearchCandidate(
+          searchDocument({
+            id: "search-independent",
+            subjectType: "source_claim",
+            subjectId: "claim-independent",
+            title: "Independent search support",
+            body: "Search result with independent source support.",
+            contextRoiScore: 90
+          })
+        )
+      }
+    ], query);
+
+    const bounded = applyContextROI(ranked, {
+      tokenBudget: 240,
+      maxInclusions: 3,
+      minimumScore: 25,
+      minimumDiverseKinds: ["memory", "source", "search"]
+    });
+    const context = assembleContext({
+      id: "context-diverse",
+      harnessPlanId: "plan-1",
+      candidates: bounded,
+      tokenBudget: 240,
+      createdAt: now
+    });
+
+    expect(context.inclusions.map((item) => item.subjectId)).toEqual([
+      "memory-primary",
+      "claim-diverse",
+      "search-independent"
+    ]);
+    expect(context.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "search-duplicate-memory",
+        reason: "duplicate"
+      }),
+      expect.objectContaining({
+        subjectId: "memory-secondary",
+        reason: "over_budget"
+      })
+    ]));
+  });
+
   it("excludes invalidated memory with an explicit reason", () => {
     const query = buildMemoryQuery(task);
     const ranked = rankCandidates(

@@ -451,7 +451,8 @@ export const runActivationSmokeCheck = async (
       filterResult.candidates,
       {
         tokenBudget: 420,
-        maxInclusions: 2
+        maxInclusions: 2,
+        minimumDiverseKinds: ["memory", "source"]
       }
     );
     const draftContext = assembleContext({

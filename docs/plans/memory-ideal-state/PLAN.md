@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-41
+- targeted slice checks recorded in Progress through MM-42
 
 Known target repo readiness:
 - dry-run: proven
@@ -412,7 +412,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-39 complete: added a pure unified ActivationQuery model and builder for task/project scope, needs, budget, and risk. Intended files: `packages/harness/src/activation/types.ts`, `packages/harness/src/activation/memoryQuery.ts`, `packages/harness/src/activation/sourceQuery.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge, no trust/temporal filter change, no activation trace persistence change, no source crawler, no dashboard/API/MCP/server/plugin. Evidence: RED focused activation test failed because `buildActivationQuery` did not exist; GREEN focused activation test passed with 9 files / 41 tests and proves mixed memory/source/observation needs, project/task scope, budget, risk, and extra query terms; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 246 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`. Next: MM-40 hybrid candidate merge.
 - [x] (2026-06-23) MM-40 complete: added pure hybrid candidate merge across source/search channels and routed activation retrieval through it. Intended files: `packages/harness/src/activation/rankCandidates.ts`, `packages/harness/src/activation/activationEngine.ts`, `packages/harness/src/repositories/types.ts`, `packages/db/src/activationSmoke.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no new retrieval store, no pgvector query implementation, no observation prefix integration, no trust/temporal filter change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `mergeActivationCandidates` did not exist; GREEN focused activation test passed with 9 files / 42 tests and proves a SourceClaim candidate and linked SearchDocument candidate merge into one source candidate while preserving search document metadata and graph/lexical signals; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 247 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-41 trust, temporal, invalidation, and anti-memory filters.
 - [x] (2026-06-23) MM-41 complete: added a pure ActivationEngine v2 filter pass for anti-memory, trust, temporal, invalidation, stale, and superseded filtering after candidate merge. Intended files: `packages/harness/src/activation/activationFilters.ts`, activation exports, activation tests, `packages/db/src/activationSmoke.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge change, no ContextROI/diversity rewrite, no observation prefix integration, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because `applyActivationFilters` did not exist; GREEN focused activation test passed with 9 files / 43 tests and proves merged source/search candidates are blocked by anti-memory while TTL-expired memory is stale and low-confidence memory is low_trust; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 248 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-42 ContextROI, diversity, dedup, inclusions, and exclusions.
-- [ ] MM-42: ContextROI, diversity, dedup, inclusions, and exclusions.
+- [x] (2026-06-23) MM-42 complete: hardened ContextROI selection so final activation context deduplicates by canonical subject, preserves requested memory/source/search diversity before filling remaining budget, and emits explicit duplicate/over_budget/low_context_roi exclusions. Intended files: `packages/harness/src/activation/contextRoi.ts`, activation tests, `packages/db/src/activationSmoke.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval query change, no anti-memory filter change, no observation prefix integration, no activation trace persistence change, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused activation test failed because ContextROI selected `memory-secondary` instead of the independent search support; GREEN focused activation test passed with 9 files / 44 tests and proves canonical dedup, kind diversity, and explicit duplicate/over_budget exclusions; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 249 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`, retrieval candidates `5`, activation decisions `5`, search candidates `1`, included decisions `2`, conflict decisions `1`, stale decisions `1`, context exclusions `3`. Next: MM-43 activation trace and raw recall trigger.
 - [ ] MM-43: Activation traces and raw evidence recall trigger.
 - [ ] MM-44: Observation prefix integration.
 - [ ] MM-44A: Integrate observation prefix only after relevance/project-scope hardening.
@@ -1460,6 +1460,19 @@ Gate 5 MM-41 outcome:
 - No DB migration, retrieval merge change, ContextROI/diversity rewrite, or
   observation prefix integration was added.
 
+Gate 5 MM-42 outcome:
+- `applyContextROI` now deduplicates final candidates by canonical source or
+  memory subject before budget selection.
+- ContextROI can preserve requested kind diversity, so a small budget can keep
+  memory/source/search support instead of filling with near-duplicate high
+  scores.
+- Duplicate, low-ROI, and over-budget candidates remain in the output as
+  explicit exclusions for audit/context assembly.
+- Activation smoke now passes through the diversity-aware ContextROI policy.
+- No DB migration, retrieval query change, anti-memory filter change,
+  activation trace persistence change, or observation prefix integration was
+  added.
+
 Slices:
 
 MM-39 — ActivationQuery model
@@ -1503,6 +1516,15 @@ MM-41 — Trust/temporal/invalidation/anti-memory filters
 MM-42 — ContextROI, diversity, dedup, inclusions/exclusions
 - Rank final context by expected decision impact vs cost.
 - Persist inclusions and exclusions with reasons.
+- Slice note (2026-06-23): harden pure ContextROI selection so final context
+  deduplicates candidates by canonical subject, preserves source/memory/search
+  diversity before filling remaining budget, and emits explicit duplicate/
+  over_budget/low_context_roi exclusions instead of silently dropping
+  candidates. Intended files: `packages/harness/src/activation/contextRoi.ts`,
+  activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN.
+  Non-goals: no DB migration, no retrieval query change, no anti-memory filter
+  change, no observation prefix integration, no activation trace persistence
+  change, no dashboard/API/MCP/server/plugin/source crawler.
 - Verification:
       noisy fixture returns small context with explicit exclusions.
 

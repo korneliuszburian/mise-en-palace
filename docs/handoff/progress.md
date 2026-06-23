@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-41.
+Current phase: Memory ideal-state execution track after MM-42.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-41 and MM-16R in
+- MM-00 through MM-42 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -135,10 +135,13 @@ Current runtime truth:
   avoiding duplicate context candidates.
 - MM-41 adds a pure activation filter pass for anti-memory conflict detection,
   trust filtering, and temporal/invalidation filtering after candidate merge.
+- MM-42 hardens ContextROI selection with canonical dedup, requested
+  memory/source/search diversity, and explicit duplicate/over_budget/
+  low_context_roi exclusions.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-42 ContextROI, diversity, dedup, inclusions, and exclusions.
+- Continue with MM-43 activation trace and raw evidence recall trigger.
