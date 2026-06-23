@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-33.
+- None for MM-34.
+
+Closed in MM-33:
+
+- One reviewed KRN lesson was promoted through MemoryReviewGate.
+- Promoted MemoryRecord `41d1a2ef-3578-4e45-947f-42c6739796de` has source
+  lineage, linked SourceClaim, application guidance, confidence, owner,
+  invalidation rule, review-gate metadata, and MemoryRecordVersion evidence.
+- A later matching plan selected the promoted memory into context.
+- MemoryApplication `55a8e695-8665-45da-a19e-b8be578708ea` records outcome
+  `helped`.
 
 Closed in MM-32B:
 

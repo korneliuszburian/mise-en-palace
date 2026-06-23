@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-32B.
+Current phase: Memory ideal-state execution track after MM-33.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-32B and MM-16R in
+- MM-00 through MM-33 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -102,12 +102,17 @@ Current runtime truth:
   SourceDecision, EvalCandidate, ObservationGroup, and ActivationDecision.
   Audit output now includes semantic snapshot counts and supports
   `--fail-on warning` for CI-style gates.
+- MM-33 dogfoods MemoryReviewGate promotion for one reviewed KRN lesson.
+  Evidence is recorded at `docs/runs/2026-06-23-memory-dogfood.md`.
+  The promoted MemoryRecord is
+  `41d1a2ef-3578-4e45-947f-42c6739796de`; the reviewed SourceClaim is
+  `f0b5c9ee-01aa-41df-9268-7df3f7437068`; a later matching plan selected the
+  memory into context and MemoryApplication
+  `55a8e695-8665-45da-a19e-b8be578708ea` recorded outcome `helped`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-33 memory dogfood: promote one reviewed KRN lesson through
-  MemoryReviewGate and prove the resulting memory has lineage, guidance,
-  confidence, and invalidation strategy.
+- Continue with MM-34 SourceClaim and SourceDecisionEdge hardening.

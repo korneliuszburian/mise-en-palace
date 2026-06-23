@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-32B and MM-16R are complete.
+- MM-00 through MM-33 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -47,6 +47,9 @@ Current known status:
   AuditBundle evidence, and DB-backed semantic snapshots for memory/source/eval/
   observation/activation state; `--fail-on warning` is available for CI-style
   slice gates.
+- MM-33 promoted one reviewed KRN lesson through MemoryReviewGate into
+  MemoryRecord `41d1a2ef-3578-4e45-947f-42c6739796de`, then a later matching
+  plan included that memory in context and recorded a helped MemoryApplication.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -126,7 +129,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-33 — Dogfood promotion of one reviewed KRN lesson.
+MM-34 — Harden SourceClaim and SourceDecisionEdge.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

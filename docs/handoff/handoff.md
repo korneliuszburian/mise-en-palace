@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-32B. KRN has
+The memory ideal-state execution track is implemented through MM-33. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -20,14 +20,19 @@ invalidation strategy, and high negative feedback. Audit CLI now consumes
 explicit slice intended files/verification commands, AuditBundle evidence, and
 DB-backed semantic snapshots for memory/source/eval/observation/activation
 state; repo-local `docs/handoff/*` files are converted into handoff snapshots;
-`--fail-on warning` is available for CI-style slice gates.
+`--fail-on warning` is available for CI-style slice gates. MM-33 promoted one
+reviewed KRN lesson through MemoryReviewGate into active Memory Core and proved
+that a later matching plan selected it into context.
 
 Last verified state:
-MM-32B verification passed with focused audit CLI tests for AuditBundle/semantic
-DB snapshot ingestion and `--fail-on warning`, focused package typechecks, full
-`pnpm typecheck`, full `pnpm test`, DB-aware `pnpm db:ready`, `git diff
---check`, and forbidden surface scan. Full tests pass across 45 files and 230
-tests. Live DB readiness proves 11/11 migrations and pgvector.
+MM-33 dogfood proof is recorded in
+`docs/runs/2026-06-23-memory-dogfood.md`. Preflight `pnpm typecheck` and
+`pnpm test` passed; live DB writes created SourceClaim
+`f0b5c9ee-01aa-41df-9268-7df3f7437068`, MemoryCandidate
+`2b31845c-1e34-4e5e-9862-23d0ce12cb69`, MemoryRecord
+`41d1a2ef-3578-4e45-947f-42c6739796de`, MemoryRecordVersion
+`9200736c-13ac-4ca6-bde9-dc494519cc17`, and MemoryApplication
+`55a8e695-8665-45da-a19e-b8be578708ea`.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -42,13 +47,13 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-32B memory ideal-state slices: complete through governed
+- MM-00 through MM-33 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
   observation prefix items, explicit activation abstention metadata, and
-  broader memory health audit findings, and AuditBundle/semantic DB snapshot
-  ingestion in the audit CLI.
+  broader memory health audit findings, AuditBundle/semantic DB snapshot
+  ingestion in the audit CLI, and one dogfooded reviewed memory application.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -103,6 +108,12 @@ Runtime proof status:
   intended files/verification evidence, read DB-backed semantic snapshots, emit
   semantic snapshot counts in JSON/text output, read repo handoff docs as
   handoff evidence, and fail on warnings when invoked with `--fail-on warning`.
+- memory dogfood: promoted MemoryRecord
+  `41d1a2ef-3578-4e45-947f-42c6739796de` is active, confidence 90, owned by
+  `memory-governance`, sourced to SourceClaim
+  `f0b5c9ee-01aa-41df-9268-7df3f7437068`, has application guidance and
+  invalidation rule, carries reviewGate metadata, and was applied as helped in
+  follow-up run `54f6e3e0-d634-4b61-a67c-cde5d558f822`.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -114,13 +125,13 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-32B blocker remains.
+No MM-33 blocker remains.
 
 Rollback path:
-After commit, revert the MM-32B commit with `git revert <commit>` if the audit
-semantic snapshot ingestion or handoff snapshot builder causes regressions.
-Before commit, discard only the MM-32B touched files listed in the slice
-Progress entry.
+After commit, revert the MM-33 commit with `git revert <commit>` if the dogfood
+documentation/status updates regress. The live DB dogfood rows are persisted
+evidence and should not be deleted unless an explicit cleanup/migration task is
+opened.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -130,8 +141,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-33 and dogfood promotion of one reviewed KRN lesson through
-MemoryReviewGate, with lineage/guidance/confidence/invalidation proof.
+Run MM-34 and harden SourceClaim / SourceDecisionEdge behavior.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

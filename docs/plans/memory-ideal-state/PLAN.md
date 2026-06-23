@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-32B
+- targeted slice checks recorded in Progress through MM-33
 
 Known target repo readiness:
 - dry-run: proven
@@ -174,6 +174,9 @@ Known built but not fully integrated:
   explicit anti-memory blocking for source claims/memory/search/observation
   prefix, activation abstention metadata, memory health audit, and audit CLI
   AuditBundle/verification/semantic DB snapshot ingestion
+- one reviewed KRN lesson has been promoted through MemoryReviewGate and then
+  applied by a later matching plan; evidence is recorded at
+  `docs/runs/2026-06-23-memory-dogfood.md`
 - observation prefix selector is still not wired into the main context
   assembly/activation runtime path as a stable prefix primitive
 - reflection still does not create persisted MemoryCandidate/SourceClaim/
@@ -396,7 +399,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-31 complete: added explicit memory/source/search activation abstention metadata when context cannot be safely assembled. Intended files: `packages/harness/src/activation/assembleContext.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no activation v2 rewrite, no observation prefix runtime integration, no DB migration, no CLI surface, no API/MCP/dashboard/server/plugin/source crawler. Evidence: RED focused activation test failed because weak low-trust memory produced `status: abstained` without `metadata.activationAbstention`; GREEN focused activation test passed with 9 files / 36 tests after `assembleContext` attached `ActivationAbstention` metadata; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 228 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available. Next: MM-32 memory health audit.
 - [x] (2026-06-23) MM-32 complete: broadened memory health audit findings for unhealthy Memory Core records. Intended files: `packages/harness/src/audit/auditChecks.ts`, audit tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB snapshot reader, no audit CLI ingestion upgrade, no automatic invalidation/demotion, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused audit test failed because seeded stale high-confidence, unsupported/no-lineage, no-feedback, no-guidance, and no-invalidation-strategy memory records produced no findings; GREEN focused audit test passed with 9 files / 37 tests after adding health findings; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 229 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available. Next: MM-32B audit CLI semantic snapshot ingestion.
 - [x] (2026-06-23) MM-32B complete: audit CLI now consumes explicit slice evidence, AuditBundle evidence, DB-backed semantic snapshots, and repo-local handoff docs. Intended files: `packages/harness/src/audit/auditChecks.ts`, `packages/db/src/auditSemanticSnapshot.ts`, DB export, `packages/cli/src/databaseRuntime.ts`, `packages/cli/src/parseArgs.ts`, `packages/cli/src/runAuditCommand.ts`, `packages/cli/src/runCli.ts`, audit CLI tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no dashboard, no API/MCP/server/plugin, no CI service, no broad benchmark suite, no new DB migration, no source crawler, no runtime markdown memory. Evidence: RED focused CLI test failed because `--fail-on warning` was rejected as usage error; GREEN focused CLI test passed with 6 files / 91 tests after parser/runner support; focused AuditBundle semantic snapshot test passed with DB runtime injection and JSON `semanticSnapshotCounts`; RED handoff-focused CLI test failed because repo handoff docs were not converted into an `AuditHandoffSnapshot`; GREEN handoff-focused CLI test passed with 6 files / 92 tests after adding the repo handoff snapshot builder; focused DB/harness/CLI typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 45 files / 230 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; `git diff --check` passed; forbidden directory scan found no added dashboard/API/MCP/research/pattern surfaces; final `krn audit slice --since origin/main ...` passed with 0 findings. Audit slice now merges AuditBundle/CLI intended files and verification commands, flags missing/failed verification, reads MemoryCandidate/MemoryRecord/SourceClaim/SourceDecision/EvalCandidate/ObservationGroup/ActivationDecision snapshots where a project/retrieval run is supplied, emits semantic snapshot counts, derives handoff evidence from `docs/handoff/*`, and supports `--fail-on warning` for CI-style slice gates. Next: MM-33 memory dogfood.
-- [ ] MM-33: Dogfood promotion of one review lesson.
+- [x] (2026-06-23) MM-33 complete: dogfooded promotion of one reviewed KRN lesson through MemoryReviewGate and proved later application by planning context. Intended files: `docs/runs/2026-06-23-memory-dogfood.md`, root `PLAN.md`, `GOAL.md`, `docs/handoff/*`, and this PLAN. Non-goals preserved: no automatic memory promotion, no reflection worker, no new DB schema/migration, no dashboard/API/MCP/server/plugin, no source crawler, no broad eval suite, no fuzzy anti-memory matching. Evidence: preflight `git status --short --branch` showed only raw research materials untracked; `git log --oneline -5` showed `9df7ca3`; `pnpm --version` reported 10.32.1; preflight `pnpm typecheck` passed; preflight `pnpm test` passed with 45 files / 230 tests; DB before counts were execution_runs=14, source_claims=2, memory_candidates=1, memory_records=1, memory_versions=1, memory_applications=1; live `krn plan --task "MM-33 dogfood MemoryReviewGate promotion for audit semantic snapshot lesson" --persist` created execution run `daafa66b-dd85-4b7c-bcf5-9ccf60c2b170`; live `krn source claim add --persist` created SourceClaim `f0b5c9ee-01aa-41df-9268-7df3f7437068` for commit `9df7ca3`; live `krn memory candidate add --persist` created MemoryCandidate `2b31845c-1e34-4e5e-9862-23d0ce12cb69`; live `krn memory candidate promote --persist --evidence-reviewed-ref ...` passed MemoryReviewGate and created MemoryRecord `41d1a2ef-3578-4e45-947f-42c6739796de`; DB proof shows status active, kind procedure, confidence 90, owner `memory-governance`, source lineage and reviewed SourceClaim `f0b5c9ee-01aa-41df-9268-7df3f7437068`, application guidance, invalidation rule, reviewGate metadata, and MemoryRecordVersion `9200736c-13ac-4ca6-bde9-dc494519cc17` created from the candidate; live follow-up `krn plan --task "close a memory implementation slice with audit semantic snapshots and handoff evidence" --persist` included memory_record `41d1a2ef-3578-4e45-947f-42c6739796de` in context and created execution run `54f6e3e0-d634-4b61-a67c-cde5d558f822`; live `krn memory record apply --persist` recorded MemoryApplication `55a8e695-8665-45da-a19e-b8be578708ea` with outcome `helped`; final counts were execution_runs=16, source_claims=3, memory_candidates=2, memory_records=2, memory_versions=2, memory_applications=2; final full `pnpm typecheck`, `pnpm test`, DB-aware `pnpm db:ready`, `git diff --check`, forbidden directory scan, and `krn audit slice --since origin/main ...` passed with 0 findings. Next: MM-34 SourceClaim and SourceDecisionEdge hardening.
 - [ ] MM-34: Harden SourceClaim and SourceDecisionEdge.
 - [ ] MM-35: Add source rejection and doesNotProve enforcement.
 - [ ] MM-36: Add trust-tier and temporal source claim behavior.
@@ -797,6 +800,17 @@ Gate 3 MM-32 outcome:
 - Existing repeated negative feedback blocking findings remain intact.
 - The audit still consumes supplied snapshots only; it does not yet read DB state or AuditBundle verification output directly.
 - No automatic invalidation/demotion, DB snapshot reader, audit CLI ingestion upgrade, dashboard/API/MCP/server/plugin, or source crawler behavior was added.
+
+Gate 3 MM-33 outcome:
+- One reviewed KRN lesson has been promoted through the governed public
+  MemoryReviewGate path.
+- The promoted memory is source-linked, confidence-aware, owned, guided,
+  invalidation-aware, versioned, and carries review-gate evidence metadata.
+- A later matching `krn plan --persist` selected that memory into context, and
+  `krn memory record apply --persist` recorded the application as `helped`.
+- This closes the first real reviewed-memory dogfood loop, but it does not
+  prove golden memory behavior, fuzzy anti-memory, API/MCP/dashboard readiness,
+  or automatic promotion safety.
 
 ## Milestones
 
