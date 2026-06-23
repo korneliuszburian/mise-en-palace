@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-37 and MM-16R are complete.
+- MM-00 through MM-38 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -65,6 +65,10 @@ Current known status:
   catch decorative support types, stale accepted claims, accepted claims with
   no SourceDecision, and decisions still referencing rejected/deprecated
   claims.
+- MM-38 dogfooded source-to-decision on the MM-37 implementation decision:
+  SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605` and SourceDecisionEdge
+  `a343ebef-2951-4ba6-b0d7-8eb3af586509` are linked to ExecutionRun
+  `bba64c9a-eb96-47b7-819a-93937e6d8c5d`.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -144,7 +148,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-38 — Source-to-decision dogfood on memory implementation.
+MM-39 — ActivationEngine v2 query model.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

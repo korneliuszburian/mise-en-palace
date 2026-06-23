@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-37
+- targeted slice checks recorded in Progress through MM-38
 
 Known target repo readiness:
 - dry-run: proven
@@ -408,7 +408,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-35 complete: hardened source rejection support boundaries so rejected/deprecated SourceClaim rows cannot support SourceDecisionEdge writes. Intended files: `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, `packages/cli/src/runSourceDecisionLinkCommand.ts`, CLI source decision tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no source graph health audit, no trust-tier/temporal scoring, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB source repository test failed because `assertSourceDecisionSourceClaimCanSupport` did not exist; RED focused CLI test failed because rejected SourceClaim still reached `createSourceDecisionEdge`; GREEN focused DB source repository test passed with 23 files / 62 tests; GREEN focused CLI test passed with 6 files / 93 tests; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 241 tests; DB-aware `pnpm db:ready` and `pnpm db:smoke:source-graph` passed. Next: MM-36 trust and temporal source behavior.
 - [x] (2026-06-23) MM-36 complete: added deterministic trust-tier ranking and temporal override assessment for SourceClaim governance. Intended files: `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no source graph health audit, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB source repository test failed because `rankSourceTrustTier` and `assessSourceClaimOverride` were missing; GREEN focused DB source repository test passed with 23 files / 65 tests and proves deterministic trust ranks, blocks a newer weak claim from overriding stronger current consensus without explicit reason, and permits weaker challenge when stronger consensus is stale by `revisitWhen`; focused DB package typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 244 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-37 source graph health audit.
 - [x] (2026-06-23) MM-37 complete: broadened source graph health audit over semantic source snapshots. Intended files: `packages/harness/src/audit/auditChecks.ts`, focused audit tests, `packages/db/src/auditSemanticSnapshot.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused harness audit test failed because seeded decorative source support, stale accepted claim, unlinked accepted claim, and rejected-claim decision support produced no findings; GREEN focused harness audit test passed with 9 files / 40 tests; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 245 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-38 source-to-decision dogfood on memory implementation.
-- [ ] MM-38: Dogfood source-to-decision on memory implementation.
+- [x] (2026-06-23) MM-38 complete: dogfooded source-to-decision on the MM-37 source graph health audit implementation decision. Intended files: `docs/runs/2026-06-23-source-to-decision-dogfood.md`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: live `krn plan --persist` created ExecutionRun `bba64c9a-eb96-47b7-819a-93937e6d8c5d`; live `krn source claim add --persist` created SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605` with mechanism, doesNotProve, falsifier, `implementation-boundary` support, `project-decision` trust, consumer `MM-38 source-to-decision dogfood`, and run linkage; live `krn source decision link --persist` created SourceDecisionEdge `a343ebef-2951-4ba6-b0d7-8eb3af586509` targeting the same harness run with high confidence; DB proof showed run source claims `1` and run source decision edges `1`. Next: MM-39 ActivationEngine v2 query model.
 - [ ] MM-39: ActivationEngine v2 query model.
 - [ ] MM-40: Hybrid lexical/vector/graph candidate merge.
 - [ ] MM-41: Trust, temporal, invalidation, and anti-memory filters.
@@ -860,6 +860,17 @@ Gate 4 MM-37 outcome:
   source graph state.
 - No DB migration or new CLI surface was required; MM-37 expanded semantic
   audit behavior over existing source tables and snapshots.
+
+Gate 4 MM-38 outcome:
+- A live KRN implementation decision is now dogfooded through the source graph:
+  SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605` records mechanism,
+  doesNotProve, falsifier, consumer, trust, support type, and run linkage for
+  the MM-37 source graph health audit decision.
+- SourceDecisionEdge `a343ebef-2951-4ba6-b0d7-8eb3af586509` links that claim to
+  ExecutionRun `bba64c9a-eb96-47b7-819a-93937e6d8c5d`.
+- DB proof shows the dogfood run has one source claim and one source decision
+  edge; this proves source-to-decision plumbing for one implementation decision,
+  not ActivationEngine v2 trust filtering or source graph query quality.
 
 ## Milestones
 

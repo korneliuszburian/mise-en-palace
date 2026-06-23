@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-37. KRN has
+The memory ideal-state execution track is implemented through MM-38. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -33,14 +33,18 @@ overriding stronger current consensus without explicit reason while allowing
 stale consensus to be challenged. Source graph health audit now flags
 decorative support types, stale accepted SourceClaims, accepted claims without
 SourceDecision links, and SourceDecisions still attached to rejected/deprecated
-claims.
+claims. Source-to-decision has now been dogfooded on the MM-37 source graph
+health audit implementation decision with a live SourceClaim and
+SourceDecisionEdge linked to the same harness run.
 
 Last verified state:
-MM-37 broadened source graph health audit. Focused RED tests proved seeded
-decorative support, stale accepted claim, unlinked accepted claim, and
-rejected-claim decision support produced no source audit findings; focused
-GREEN tests passed for harness audit behavior. Full `pnpm typecheck`, full
-`pnpm test`, DB-aware source graph smoke, and `pnpm db:ready` passed.
+MM-38 dogfooded source-to-decision on the MM-37 implementation decision. Live
+`krn plan --persist` created ExecutionRun
+`bba64c9a-eb96-47b7-819a-93937e6d8c5d`; live `krn source claim add --persist`
+created SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605`; live
+`krn source decision link --persist` created SourceDecisionEdge
+`a343ebef-2951-4ba6-b0d7-8eb3af586509`; DB proof shows one run source claim
+and one run source decision edge.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -55,7 +59,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-37 memory ideal-state slices: complete through governed
+- MM-00 through MM-38 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -64,7 +68,8 @@ Milestone status:
   ingestion in the audit CLI, one dogfooded reviewed memory application, and
   source graph write-boundary hardening for SourceClaim/SourceDecisionEdge and
   rejected-source support blocking, plus deterministic source trust/temporal
-  override assessment and broader source graph health audit findings.
+  override assessment, broader source graph health audit findings, and one
+  source-to-decision dogfood run for an implementation decision.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -137,6 +142,10 @@ Runtime proof status:
 - source graph health audit: semantic source snapshots detect decorative
   support types, stale accepted claims, accepted claims without decisions, and
   decisions referencing rejected/deprecated claims.
+- source-to-decision dogfood: ExecutionRun
+  `bba64c9a-eb96-47b7-819a-93937e6d8c5d` has SourceClaim
+  `d5ea7024-7d7a-4291-a050-4de1fbebf605` and SourceDecisionEdge
+  `a343ebef-2951-4ba6-b0d7-8eb3af586509`.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -148,12 +157,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-37 blocker remains.
+No MM-38 blocker remains.
 
 Rollback path:
-After commit, revert the MM-37 commit with `git revert <commit>` if source
-graph health audit behavior regresses. No DB migration was added; rollback is
-code/docs only.
+After commit, revert the MM-38 commit with `git revert <commit>` if the dogfood
+evidence or docs are wrong. No DB migration or code path was added; rollback is
+docs only, while persisted dogfood DB rows can remain as audit evidence.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -163,7 +172,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-38 and dogfood source-to-decision on a memory implementation decision.
+Run MM-39 and start the ActivationEngine v2 query model.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

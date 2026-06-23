@@ -2,7 +2,16 @@
 
 Hard blockers:
 
-- None for MM-38.
+- None for MM-39.
+
+Closed in MM-38:
+
+- Source-to-decision dogfood run persisted a SourceClaim with mechanism,
+  doesNotProve, falsifier, trust, support type, consumer, and run linkage.
+- Source-to-decision dogfood run persisted a SourceDecisionEdge to the same
+  harness run.
+- DB proof shows one run source claim and one run source decision edge for the
+  MM-38 dogfood execution run.
 
 Closed in MM-37:
 

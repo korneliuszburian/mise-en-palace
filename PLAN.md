@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-37 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-38 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -74,6 +74,8 @@ Current public state:
   MM-37 broadened source graph health audit so semantic snapshots catch
   decorative support, stale accepted claims, accepted claims with no
   SourceDecision, and decisions still attached to rejected/deprecated claims.
+  MM-38 dogfooded source-to-decision on the MM-37 implementation decision with
+  one live SourceClaim and SourceDecisionEdge linked to the same harness run.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.
