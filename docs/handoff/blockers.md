@@ -2,7 +2,17 @@
 
 Hard blockers:
 
-- None for MM-53.
+- None for MM-54.
+
+Closed in MM-53:
+
+- `normalizeReviewAssessment` exists as a pure core helper.
+- `normalizeFeedbackDelta` exists as a pure core helper.
+- ReviewAssessment and FeedbackDelta can produce stable outcome, review burden,
+  diff risk, and correction labels from metadata.
+- Missing metadata falls back to conservative status/finding/default labels.
+- No schema, DB, repository, CLI, review assess command, candidate extraction,
+  or Memory Core mutation surface was added.
 
 Closed in MM-52:
 
