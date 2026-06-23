@@ -19,7 +19,7 @@ Not built:
 - no contradiction detection runtime;
 - no stale-memory expiration runtime;
 - no embedding worker runtime;
-- no EvalCandidate promotion runtime.
+- no EvalCandidate promotion contract or runtime.
 
 Worker job persistence and smoke checks prove storage/readback lifecycle only.
 They do not prove job execution, production throughput, autonomous maintenance,

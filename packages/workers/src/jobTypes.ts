@@ -1,5 +1,4 @@
 import type {
-  EvalCandidateId,
   MemoryRecordId,
   ProjectId,
   SourceChunkId,
@@ -12,8 +11,7 @@ export const maintenanceJobTypes = [
   "embed_memory_record",
   "compact_memory",
   "detect_contradiction",
-  "expire_stale_memory",
-  "promote_eval_candidate"
+  "expire_stale_memory"
 ] as const;
 
 export type MaintenanceJobType = (typeof maintenanceJobTypes)[number];
@@ -50,19 +48,12 @@ export interface ExpireStaleMemoryPayload {
   olderThan: IsoTimestamp;
 }
 
-export interface PromoteEvalCandidatePayload {
-  evalCandidateId: EvalCandidateId;
-  reason: string;
-  projectId?: ProjectId;
-}
-
 export type MaintenanceJobPayloadByType = {
   embed_source_chunk: EmbedSourceChunkPayload;
   embed_memory_record: EmbedMemoryRecordPayload;
   compact_memory: CompactMemoryPayload;
   detect_contradiction: DetectContradictionPayload;
   expire_stale_memory: ExpireStaleMemoryPayload;
-  promote_eval_candidate: PromoteEvalCandidatePayload;
 };
 
 export type MaintenanceJob<TType extends MaintenanceJobType = MaintenanceJobType> = {
@@ -93,8 +84,7 @@ const labels: Record<MaintenanceJobType, string> = {
   embed_memory_record: "Embed memory record",
   compact_memory: "Compact memory",
   detect_contradiction: "Detect contradiction",
-  expire_stale_memory: "Expire stale memory",
-  promote_eval_candidate: "Promote eval candidate"
+  expire_stale_memory: "Expire stale memory"
 };
 
 export type WorkerJobAllowedWrite =
@@ -102,8 +92,7 @@ export type WorkerJobAllowedWrite =
   | "outbox_events"
   | "embeddings"
   | "memory_candidates"
-  | "reflection_records"
-  | "eval_candidates";
+  | "reflection_records";
 
 export type WorkerJobForbiddenWrite =
   | "memory_records"
@@ -169,13 +158,6 @@ const authorityByType: Record<MaintenanceJobType, MaintenanceJobAuthority> = {
     allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
     forbiddenWrites: commonForbiddenWrites,
     memoryCoreGate: "must_create_reviewed_invalidation_candidate"
-  },
-  promote_eval_candidate: {
-    inputSchema: "PromoteEvalCandidatePayload",
-    idempotencyKey: "promote_eval_candidate:{evalCandidateId}",
-    allowedWrites: ["worker_jobs", "outbox_events", "eval_candidates"],
-    forbiddenWrites: commonForbiddenWrites,
-    memoryCoreGate: "must_not_promote_memory_record"
   }
 };
 

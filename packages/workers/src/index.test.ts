@@ -55,8 +55,7 @@ describe("maintenance worker skeleton", () => {
       "embed_memory_record",
       "compact_memory",
       "detect_contradiction",
-      "expire_stale_memory",
-      "promote_eval_candidate"
+      "expire_stale_memory"
     ]);
 
     const descriptions = maintenanceJobTypes.map((type) => describeMaintenanceJob(type));

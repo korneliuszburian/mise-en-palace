@@ -159,7 +159,7 @@ If those preconditions hold, the new slice must define:
 - C5-01 closes as a decision slice, not an implementation slice.
 - The current run feedback remains preserved through SourceClaim,
   MemoryCandidate, FeedbackDelta, and ReflectionRecord lineage.
-- C5-02 must align the speculative worker `promote_eval_candidate` /
+- C5-02 aligns the speculative worker `promote_eval_candidate` /
   `eval_candidates` wording with this decision so worker contracts do not imply
   a table or runtime that does not exist.
 - Existing FeedbackDelta and ReflectionRecord JSON persistence remains the

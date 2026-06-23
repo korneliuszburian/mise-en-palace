@@ -97,13 +97,6 @@ const payloadForJobType = (
     };
   }
 
-  if (jobType === "promote_eval_candidate") {
-    return {
-      ...basePayload,
-      evalCandidateId: `eval-candidate-${marker}`
-    };
-  }
-
   if (jobType === "expire_stale_memory") {
     return {
       ...basePayload,

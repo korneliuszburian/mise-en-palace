@@ -26,20 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Worker Eval Candidate Contract Alignment.
+current_priority: Native Invariant Re-homing.
 
-first_unchecked_slice: `C5-02: Align Worker Eval Candidate Contract`.
+first_unchecked_slice: `C6-00: Re-home Former Audit Invariants Into Native Mechanisms`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- align worker eval-candidate contract wording/code with ADR-0016 so it does
-  not imply current standalone `eval_candidates` storage or runtime promotion;
+- re-home any retained former audit invariants into native MemoryReviewGate,
+  SourceClaim/SourceDecision, and EvidenceBundle mechanisms;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while aligning this contract;
-- do not promote any C5-00 candidates while aligning worker contract wording.
+  authority layer while re-homing native invariants;
+- do not promote any C5-00 candidates while re-homing former audit invariants.
 
 completed_checkpoint:
 
@@ -114,6 +114,9 @@ completed_checkpoint:
   `feedback_deltas.eval_candidates` and `reflection_records.output.evalCandidates`
   until a real standalone consumer/review path exists. No eval table, CLI,
   worker runtime, Promptfoo authority layer, or dashboard was added.
+- C5-02 removes the speculative current `promote_eval_candidate` worker job
+  contract and `eval_candidates` allowed write. Eval candidate worker work is
+  absent until ADR-0016 preconditions are met.
 
 completed_evidence_pointers:
 
@@ -2537,9 +2540,9 @@ was added. The falsifier is a real consumer that needs independent eval
 candidate review/promotion/execution beyond parent feedback/reflection
 lineage.
 
-The slice also found one follow-up: worker job contracts currently mention
-`promote_eval_candidate` and allowed writes to `eval_candidates`, which must be
-aligned with ADR-0016 before worker surfaces can be called fully clean.
+The slice also found one follow-up: worker job contracts mentioned
+`promote_eval_candidate` and allowed writes to `eval_candidates`. C5-02 aligned
+that contract with ADR-0016.
 
 verification:
 
@@ -2557,6 +2560,8 @@ git commit -m "docs(eval): decide governed candidate staging"
 
 ### C5-02: Align Worker Eval Candidate Contract
 
+status: complete.
+
 objective:
 
 Remove or qualify the speculative worker eval-candidate contract so it does
@@ -2565,10 +2570,10 @@ runtime after ADR-0016.
 
 source:
 
-ADR-0016 accepts proposal-only eval candidate staging. Current
-`packages/workers/src/jobTypes.ts` still includes `promote_eval_candidate`,
+ADR-0016 accepts proposal-only eval candidate staging. Before C5-02,
+`packages/workers/src/jobTypes.ts` included `promote_eval_candidate`,
 `PromoteEvalCandidatePayload`, and `allowedWrites: ["worker_jobs",
-"outbox_events", "eval_candidates"]`, while `packages/db` has no standalone
+"outbox_events", "eval_candidates"]`, while `packages/db` had no standalone
 `eval_candidates` table.
 
 mechanism:
@@ -2583,6 +2588,23 @@ the smallest honest cleanup:
 Do not add worker runtime, eval table, eval CLI, or Promptfoo authority in this
 slice.
 
+outcome:
+
+The speculative current eval worker surface was removed:
+
+- `packages/workers/src/jobTypes.ts` no longer exports
+  `promote_eval_candidate`, `PromoteEvalCandidatePayload`, or
+  `eval_candidates` as an allowed write;
+- `packages/db/src/repositories/workerJobTypes.ts` no longer accepts
+  `promote_eval_candidate` as a current worker job type;
+- `packages/db/src/workerJobSmoke.ts` no longer manufactures eval candidate
+  smoke payloads;
+- worker docs and ADR-0015 now say eval candidate worker jobs are absent until
+  ADR-0016 preconditions are met.
+
+This removes the current-contract implication that standalone eval candidate
+storage or promotion runtime exists.
+
 verification:
 
 ```sh
@@ -2591,6 +2613,13 @@ pnpm --filter @krn/db test -- workerJob
 pnpm typecheck
 git diff --check
 ```
+
+observed:
+
+- focused workers tests passed;
+- DB worker-job test command passed;
+- full workspace typecheck passed;
+- `git diff --check` passed.
 
 commit:
 
@@ -2696,7 +2725,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C4-00 Decide worker runtime ADR before execution.
 - [x] C5-00 Convert self-hosting run gaps into candidates.
 - [x] C5-01 Decide governed EvalCandidate staging path.
-- [ ] C5-02 Align worker EvalCandidate contract.
+- [x] C5-02 Align worker EvalCandidate contract.
 - [x] C6-00A Re-home memory review signals as pure core behavior.
 - [ ] C6-00 Re-home former memory/source/evidence audit invariants into native
   MemoryReviewGate, SourceClaim/SourceDecision, and EvidenceBundle mechanisms.
@@ -3069,7 +3098,10 @@ Current outcome:
   FeedbackDelta and ReflectionRecord JSON lineage, but worker contracts still
   mention `promote_eval_candidate` and `eval_candidates` as if standalone eval
   candidate lifecycle/storage existed. ADR-0016 keeps eval candidates
-  proposal-only for now, and C5-02 owns the worker contract cleanup.
+  proposal-only for now, and C5-02 cleaned up the worker contract.
+- C5-02 removed the current `promote_eval_candidate` worker job type instead
+  of adding eval storage. Future eval worker work must first satisfy ADR-0016's
+  standalone consumer/review-path preconditions.
 
 ## Command Evidence
 
@@ -4149,6 +4181,33 @@ This proves the repo has an explicit eval candidate staging decision and the
 docs-only slice does not break the workspace. It does not prove standalone eval
 candidate lifecycle, review, promotion, worker execution, or Promptfoo behavior
 authority exists.
+
+C5-02 verification after aligning worker eval candidate contract:
+
+```sh
+pnpm --filter @krn/workers test
+pnpm --filter @krn/db test -- workerJob
+pnpm typecheck
+git diff --check
+```
+
+Observed:
+
+- `@krn/workers` no longer exposes `promote_eval_candidate`,
+  `PromoteEvalCandidatePayload`, or `eval_candidates` as a current allowed
+  worker write;
+- DB worker-job type fixtures no longer accept or smoke-test
+  `promote_eval_candidate`;
+- ADR-0015 and worker README now state that eval candidate worker jobs are
+  absent until ADR-0016 preconditions are met;
+- focused workers test passed;
+- DB worker-job test command passed;
+- full workspace typecheck passed;
+- `git diff --check` passed.
+
+This proves current worker contracts no longer imply standalone eval candidate
+storage or promotion runtime. It does not prove a future eval candidate worker,
+review gate, CLI, table, or Promptfoo/GoldenTask consumer exists.
 
 ## Historical Reset Completion Criteria
 

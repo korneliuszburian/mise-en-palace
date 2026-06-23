@@ -112,7 +112,11 @@ authority table:
 | `compact_memory` | `worker_jobs`, `outbox_events`, `memory_candidates` | `memory_records`, `anti_memory_records`, `source_claims`, `source_decisions` |
 | `detect_contradiction` | `worker_jobs`, `outbox_events`, `reflection_records` | `memory_records`, `anti_memory_records`, `source_claims`, `source_decisions` |
 | `expire_stale_memory` | `worker_jobs`, `outbox_events`, `memory_candidates` | `memory_records`, `anti_memory_records`, `source_claims`, `source_decisions` |
-| `promote_eval_candidate` | `worker_jobs`, `outbox_events`, `eval_candidates` | `memory_records`, `anti_memory_records`, `source_claims`, `source_decisions` |
+
+Eval candidate worker jobs are intentionally absent from the current worker
+contract. ADR-0016 keeps eval candidates proposal-only through FeedbackDelta
+and ReflectionRecord lineage until a real standalone eval consumer/review path
+exists.
 
 ## Future Runtime Preconditions
 
@@ -140,6 +144,9 @@ A worker runtime can be reconsidered only after all of these are true:
   worker-job tables fail a concrete first-spine requirement.
 - Add dashboard/admin worker controls: rejected because C4 is a runtime-boundary
   decision, not product UX.
+- Add eval-candidate promotion jobs now: rejected by ADR-0016 because no
+  standalone eval candidate lifecycle, review gate, or execution consumer
+  exists.
 
 ## Verification
 

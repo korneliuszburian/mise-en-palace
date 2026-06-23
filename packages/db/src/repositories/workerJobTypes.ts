@@ -5,8 +5,7 @@ export const workerJobTypes = [
   "embed_memory_record",
   "compact_memory",
   "detect_contradiction",
-  "expire_stale_memory",
-  "promote_eval_candidate"
+  "expire_stale_memory"
 ] as const;
 
 export type WorkerJobType = (typeof workerJobTypes)[number];
