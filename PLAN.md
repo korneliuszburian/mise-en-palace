@@ -1160,7 +1160,7 @@ git revert <commit>
 - [x] P0-02 Mark historical planning ledgers.
 - [x] P0-03 Align README as doorway.
 - [x] P0-04 Remove productized QG-06 direction.
-- [ ] P1-00 Classify CLI surfaces.
+- [x] P1-00 Classify CLI surfaces.
 - [ ] P1-01 Deproductize `krn audit`.
 - [ ] P1-02 Plan package barrel narrowing.
 - [ ] P2-00 Seal Memory Core write authority.
@@ -1220,8 +1220,10 @@ Current outcome:
 - README is aligned with root `GOAL.md` and root `PLAN.md`.
 - Productized QG-06 / anti-slop / audit automation direction is rejected or
   historical wherever the P0-04 scan finds it.
+- CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
 - Package source is untouched.
-- Next safe action is P1-00: classify CLI surfaces.
+- Next safe action is P1-01: decide whether `krn audit` is deleted, renamed, or
+  retained as a narrow internal guard.
 
 ## Command Evidence
 
@@ -1274,6 +1276,36 @@ git diff --check
 ```
 
 Observed: passed with no output.
+
+P1-00 CLI surface classification:
+
+```sh
+rg -n "command|CliCommand|run.*Command|parse.*Command|krn audit|audit" packages/cli/src packages/harness/src/audit README.md package.json
+sed -n '1,520p' packages/cli/src/parseArgs.ts
+sed -n '1,860p' packages/cli/src/runCli.ts
+sed -n '1,120p' packages/cli/src/parseDbArgs.ts
+sed -n '1,280p' packages/cli/src/parseAuditArgs.ts
+```
+
+Observed summary:
+
+- `parseArgs.ts` defines public operator, governed admin, DB, and audit command
+  variants;
+- `runCli.ts` routes those variants to command runners and wires optional DB
+  runtimes;
+- `parseDbArgs.ts` keeps readiness/smoke targets separate from normal operator
+  workflows;
+- `parseAuditArgs.ts` exposes `krn audit repo` and `krn audit slice`, which are
+  now classified as internal/dev and historical/delete candidates pending P1-01.
+
+```sh
+rg -n "public operator|governed admin|internal/dev|krn audit|krn db" docs/architecture/cli-surfaces.md PLAN.md
+git diff --check
+```
+
+Observed: required classification terms found in
+`docs/architecture/cli-surfaces.md` and `PLAN.md`; `git diff --check` passed
+with no output.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
