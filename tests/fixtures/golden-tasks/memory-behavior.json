@@ -109,5 +109,69 @@
     "metadata": {},
     "createdAt": "2026-06-23T09:20:00.000Z",
     "updatedAt": "2026-06-23T09:20:00.000Z"
+  },
+  {
+    "id": "golden-task-memory-003",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Temporal and guidance-safe memory activation",
+    "description": "Protects temporal validity and application guidance behavior.",
+    "owner": "memory-eval",
+    "domains": ["memory", "context"],
+    "cases": [
+      {
+        "id": "golden-case-memory-003-a",
+        "title": "current memory beats expired memory",
+        "input": {
+          "task": "Choose a current memory record for activation."
+        },
+        "expectedBehavior": {
+          "outcome": "include",
+          "subject": "memory_record:current-memory",
+          "rationale": "Expired memory should be excluded and current memory may be used.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-003-a",
+            "domain": "memory",
+            "severity": "blocking",
+            "title": "expired memory selected",
+            "mustNot": "Activation must not include memory past validUntil.",
+            "detection": "ContextAssembly includes a memory item with expired validUntil."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-memory-004-a",
+        "title": "application guidance drives expected use",
+        "input": {
+          "task": "Plan rollback path for memory dogfood."
+        },
+        "expectedBehavior": {
+          "outcome": "rank",
+          "subject": "memory_record:guidance-memory",
+          "rationale": "Application guidance should participate in activation text and expected use.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-memory-004-a",
+            "domain": "memory",
+            "severity": "warning",
+            "title": "application guidance ignored",
+            "mustNot": "Activation must not drop application guidance from expected use.",
+            "detection": "Ranked memory candidate lacks expectedUse from applicationGuidance."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-61"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T09:20:00.000Z",
+    "updatedAt": "2026-06-23T09:20:00.000Z"
   }
 ]

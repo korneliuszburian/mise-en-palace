@@ -20,7 +20,8 @@ describe("golden task fixtures", () => {
 
     expect(tasks.map((task) => task.id)).toEqual([
       "golden-task-memory-001",
-      "golden-task-memory-002"
+      "golden-task-memory-002",
+      "golden-task-memory-003"
     ]);
     expect(tasks[1]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
       "golden-case-memory-002-a",

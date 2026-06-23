@@ -2,7 +2,24 @@
 
 Hard blockers:
 
-- None for MM-61.
+- None for MM-61-lite.
+
+Closed in MM-61:
+
+- Memory behavior golden fixture now declares required cases for source-linked
+  memory selection, stale memory exclusion, weak/stale abstention, temporal
+  validity, and application guidance.
+- Fixture-backed harness tests protect those behaviors through existing
+  activation primitives without adding the broad golden runner.
+- Source-linked memory is selected.
+- Stale memory is excluded and context abstains when stale memory is the only
+  candidate.
+- Weak low-confidence memory abstains instead of entering context.
+- Current memory is selected over expired memory.
+- Application guidance is preserved as ranked candidate `expectedUse`.
+- No DB schema/migration, repository, runner, CLI, Promptfoo export, broad
+  benchmark suite, dashboard/API/MCP/server/plugin, or source crawler surface
+  was added.
 
 Closed in MM-60:
 

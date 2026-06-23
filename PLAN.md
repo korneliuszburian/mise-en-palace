@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-60 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-61 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -126,6 +126,9 @@ Current public state:
   runner, CLI, or benchmark surface.
   MM-60 chose file-backed GoldenTask fixtures as the initial strategy and added
   schema-owned deterministic fixture parsing over unknown JSON input.
+  MM-61 added memory behavior golden cases and fixture-backed harness tests for
+  source-linked memory selection, stale/weak abstention, temporal validity, and
+  application guidance.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.
