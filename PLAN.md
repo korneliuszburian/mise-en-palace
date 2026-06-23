@@ -91,7 +91,7 @@ Brain spine.
 - Root `PLAN.md` is now the canonical execution plan.
 - Old memory ideal-state plan, QG docs, handoff docs, and raw materials are not
   active execution truth unless a slice explicitly mines them.
-- `README.md` still contains stale current-phase language and must be aligned.
+- `README.md` is aligned as a doorway to root `GOAL.md` and root `PLAN.md`.
 - `docs/materials/20206-06-23-audit.md` is raw/user-provided audit material.
 - `docs/reviews/repo-reset-audit/*` are decision-grade audit outputs.
 - `docs/materials/2026-06-22-big-brain*.md` remain raw research quarry.
@@ -1154,7 +1154,7 @@ git revert <commit>
 - [x] P0-00 Replace root `GOAL.md` with compact execution contract.
 - [x] P0-01 Replace root `PLAN.md` with canonical reset plan.
 - [x] P0-02 Mark historical planning ledgers.
-- [ ] P0-03 Align README as doorway.
+- [x] P0-03 Align README as doorway.
 - [ ] P0-04 Remove productized QG-06 direction.
 - [ ] P1-00 Classify CLI surfaces.
 - [ ] P1-01 Deproductize `krn audit`.
@@ -1178,13 +1178,16 @@ git revert <commit>
 
 - `docs/materials/20206-06-23-audit.md` intentionally exists with `20206` in
   the filename; do not silently rename it during this reset.
-- Root README still says the old memory ideal-state plan is active and QG-06 is
-  next; P0-03/P0-04 must repair that before feature work.
+- README no longer routes work through the old memory ideal-state plan.
+  Remaining stale QG-06/productized-audit language lives in historical docs and
+  must be cleaned up or explicitly rejected by P0-04.
 - DB package implementation exists, but live DB runtime truth still depends on
   `KRN_DATABASE_URL` in the current shell.
 - Historical handoff and memory-plan files still contain stale QG-06 and
   current-phase language below the new banner. That content is preserved as
   ledger evidence only; P0-04 owns rewriting active product-direction claims.
+- README now points readers to root `GOAL.md` and root `PLAN.md`; old memory
+  ideal-state docs are described as historical ledgers, not active truth.
 
 ## Decision Log
 
@@ -1197,6 +1200,8 @@ git revert <commit>
   materials as historical quarry unless a slice explicitly promotes a decision.
 - 2026-06-23: Marked old memory plan, QG-04H requirements, REVIEW, and handoff
   files as historical ledgers instead of current execution truth.
+- 2026-06-23: README is a doorway, not a progress ledger; it rejects
+  productized QG-06/anti-slop direction and bounds Promptfoo smoke claims.
 
 ## Outcomes & Retrospective
 
@@ -1204,8 +1209,10 @@ Current outcome:
 
 - Root activation contract and root execution plan are reset.
 - Historical planning ledgers are bannered as non-current truth.
+- README is aligned with root `GOAL.md` and root `PLAN.md`.
 - Package source is untouched.
-- Next safe action is P0-03: align README as doorway.
+- Next safe action is P0-04: remove remaining productized QG-06 direction from
+  historical/current-state surfaces.
 
 ## Command Evidence
 
@@ -1252,6 +1259,32 @@ Observed matches are in explicit rejection, historical-quarry language, or
 verification commands. This proves the root files no longer route active work
 into the old memory plan or productized QG-06 direction. It does not prove
 README/handoff docs are repaired; P0-02 through P0-04 still own that work.
+
+```sh
+git diff --check
+```
+
+Observed: passed with no output.
+
+P0-03 verification after aligning README:
+
+```sh
+rg -n "Promptfoo|QG-06|quality gate|memory ideal-state|current phase" README.md
+```
+
+Observed:
+
+```txt
+31:- reject productized QG-06 / anti-slop / audit-authority direction;
+54:  evidence/review feedback, GoldenTask, and Promptfoo adapter primitives.
+65:- Promptfoo is adopted only as a bounded eval runner/result adapter. The local
+66:  Promptfoo smoke proves runner integration and result mapping only; it does
+```
+
+This proves README references QG-06 only as rejected direction and Promptfoo
+only as bounded adapter/integration smoke. It does not prove the remaining
+historical docs are fully rewritten; P0-04 owns the broader stale-direction
+scan.
 
 ```sh
 git diff --check
