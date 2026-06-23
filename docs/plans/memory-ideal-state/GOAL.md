@@ -56,15 +56,18 @@ Use that file as the living ExecPlan. It owns:
   `packages/cli/src/cliFileBoundary.ts`.
 - QG-04B modularized command-family parsing so `packages/cli/src/parseArgs.ts`
   delegates command grammar to focused parser modules.
-- QG-04C through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: doctor modularization, schema/core
-  vocabulary cleanup, DB mapper split, official Promptfoo integration decision,
-  and audit automation.
+- QG-04C modularized `krn doctor` so `runDoctorCommand.ts` is now
+  orchestration/rendering only.
+- QG-04D through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: memory confidence parser consolidation,
+  schema/core vocabulary cleanup, DB mapper split, official Promptfoo
+  integration decision, and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-04C doctor command modularization.
+the first unchecked Progress item: QG-04D memory confidence parser
+consolidation.
 
 ## Hard Non-Goals
 

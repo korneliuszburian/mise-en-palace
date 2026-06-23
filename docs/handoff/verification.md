@@ -94,6 +94,26 @@ Passed:
   tests.
 - QG-04C partial extraction reduced `packages/cli/src/runDoctorCommand.ts` from
   2086 to 1688 lines by moving repo/static read-only checks to focused modules.
+- QG-04C RED focused `pnpm --filter @krn/cli test -- doctorDbChecks` failed
+  because `./doctorDbChecks.js` did not exist.
+- QG-04C GREEN focused `pnpm --filter @krn/cli test -- doctorDbChecks` passed
+  with 22 files and 135 tests.
+- QG-04C RED focused `pnpm --filter @krn/cli test -- doctorReadiness` failed
+  because `./doctorReadiness.js` did not exist.
+- QG-04C GREEN focused `pnpm --filter @krn/cli test -- doctorReadiness` passed
+  with 23 files and 137 tests.
+- QG-04C focused `pnpm --filter @krn/cli typecheck` passed.
+- QG-04C focused `pnpm --filter @krn/cli test` passed with 23 files and 137
+  tests.
+- QG-04C full `pnpm typecheck` passed.
+- QG-04C full `pnpm test` passed.
+- QG-04C `git diff --check` passed.
+- QG-04C forbidden directory scan found no added forbidden surfaces.
+- QG-04C `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
+- QG-04C completed extraction reduced `packages/cli/src/runDoctorCommand.ts`
+  to 205 lines by moving DB-backed checks to `doctorDbChecks.ts` and readiness
+  derivation to `doctorReadiness.ts`.
 
 QG audit facts gathered during QG-00:
 
@@ -108,7 +128,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04C through QG-06 remain next.
+- QG-04D through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

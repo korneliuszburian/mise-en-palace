@@ -1,25 +1,26 @@
 # Progress
 
-Current phase: Memory ideal-state execution track during QG-04C doctor command modularization.
+Current phase: Memory ideal-state execution track after QG-04C doctor command modularization.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A, and
-  QG-04B in `docs/plans/memory-ideal-state/PLAN.md`.
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A,
+  QG-04B, and QG-04C in `docs/plans/memory-ideal-state/PLAN.md`.
 - QG-04B modularized command-family parsing. The `audit`, `db`, `init`,
   `evidence`, `observe`, `codex`, `reflect`, `review`, `plan`, `doctor`,
   `source`, and `memory` command-family parsers have been extracted from
   `packages/cli/src/parseArgs.ts` into focused parser modules with focused
   tests. `parseArgs.ts` is now 379 lines and acts as dispatcher plus shared
   `CliCommand`/top-level usage surface.
-- QG-04C is in progress. Repo-file checks moved to
-  `packages/cli/src/doctorRepoChecks.ts`; static Codex adapter, worker job, and
-  target-repo checks moved to `packages/cli/src/doctorStaticChecks.ts`; shared
-  read-only helpers moved to `packages/cli/src/doctorCheckHelpers.ts`.
-  `runDoctorCommand.ts` is down from 2086 to 1688 lines and still owns DB-backed
-  readiness checks plus orchestration/rendering.
+- QG-04C modularized `krn doctor`. Repo-file checks live in
+  `packages/cli/src/doctorRepoChecks.ts`; DB-backed readiness checks live in
+  `packages/cli/src/doctorDbChecks.ts`; readiness derivation lives in
+  `packages/cli/src/doctorReadiness.ts`; static Codex adapter, worker job, and
+  target-repo checks live in `packages/cli/src/doctorStaticChecks.ts`; shared
+  read-only helpers live in `packages/cli/src/doctorCheckHelpers.ts`.
+  `runDoctorCommand.ts` is now 205 lines and owns orchestration/rendering only.
 - QG-00 repo-wide current-state inventory at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-16/17 external review repair layer in
@@ -245,14 +246,14 @@ Current runtime truth:
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
 - QG-04B modularized command-family parsing and reduced `parseArgs.ts` to a
   dispatcher plus shared CLI command type/usage surface.
-- QG-04C is in progress; QG-04D through QG-06 remain queued before MM-66:
-  memory confidence parsing, schema/core vocabulary cleanup, DB mapper split,
-  official Promptfoo decision, and quality gate automation in `krn audit`.
+- QG-04D through QG-06 remain queued before MM-66: memory confidence parsing,
+  schema/core vocabulary cleanup, DB mapper split, official Promptfoo decision,
+  and quality gate automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue QG-04C by extracting DB-backed doctor readiness checks from
-  `runDoctorCommand.ts` into focused read-only modules.
+- Continue with QG-04D by consolidating MemoryCandidate and AntiMemory CLI
+  confidence parsing and aliases.

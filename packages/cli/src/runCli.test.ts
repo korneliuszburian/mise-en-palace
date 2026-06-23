@@ -40,7 +40,7 @@ import {
   deriveSourceGraphReadiness,
   deriveTargetRepoReadiness,
   deriveWorkerJobReadiness
-} from "./runDoctorCommand.js";
+} from "./doctorReadiness.js";
 
 const now = "2026-06-21T12:00:00.000Z";
 const unusedMemoryRepository = {

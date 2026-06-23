@@ -154,10 +154,12 @@ Current known status:
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
 - QG-04B modularized command-family parsing so `parseArgs.ts` no longer owns
   every command grammar directly.
-- QG-04C through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: doctor modularization, schema/core
-  vocabulary cleanup, DB mapper split, official Promptfoo integration decision,
-  and audit automation.
+- QG-04C modularized `krn doctor` so `runDoctorCommand.ts` is now
+  orchestration/rendering only.
+- QG-04D through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: memory confidence parser consolidation,
+  schema/core vocabulary cleanup, DB mapper split, official Promptfoo
+  integration decision, and audit automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
