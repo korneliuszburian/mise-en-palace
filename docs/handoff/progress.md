@@ -8,7 +8,7 @@ Completed:
   memory ideal-state goal handoff.
 - MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, and QG-04A in
   `docs/plans/memory-ideal-state/PLAN.md`.
-- QG-04B is in progress. The `audit`, `db`, `init`, and `evidence`
+- QG-04B is in progress. The `audit`, `db`, `init`, `evidence`, and `observe`
   command-family parsers have been extracted from
   `packages/cli/src/parseArgs.ts` into focused parser modules with focused
   tests. QG-04B stays unchecked until the remaining large command families are

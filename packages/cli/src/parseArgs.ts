@@ -11,6 +11,9 @@ import {
   parseInitArgs
 } from "./parseInitArgs.js";
 import {
+  parseObserveArgs
+} from "./parseObserveArgs.js";
+import {
   metadataEntry,
   optionValue
 } from "./parseArgHelpers.js";
@@ -614,65 +617,7 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   }
 
   if (command === "observe") {
-    let persist = false;
-    let runId: string | undefined;
-    let projectId: string | undefined;
-
-    for (let index = 0; index < rest.length; index += 1) {
-      const arg = rest[index];
-
-      if (arg === "--persist") {
-        persist = true;
-        continue;
-      }
-
-      if (arg === "--run" || arg?.startsWith("--run=") === true) {
-        const valueResult = optionValue(rest, index, "--run");
-
-        if (valueResult.error !== undefined || valueResult.value === undefined) {
-          return {
-            error: valueResult.error ?? "Usage: krn observe --run <id> [--project <id>] [--persist]"
-          };
-        }
-
-        runId = valueResult.value.trim();
-        index = valueResult.nextIndex;
-        continue;
-      }
-
-      if (arg === "--project" || arg?.startsWith("--project=") === true) {
-        const valueResult = optionValue(rest, index, "--project");
-
-        if (valueResult.error !== undefined || valueResult.value === undefined) {
-          return {
-            error: valueResult.error ?? "Usage: krn observe --run <id> [--project <id>] [--persist]"
-          };
-        }
-
-        projectId = valueResult.value.trim();
-        index = valueResult.nextIndex;
-        continue;
-      }
-
-      return {
-        error: "Usage: krn observe --run <id> [--project <id>] [--persist]"
-      };
-    }
-
-    if (runId === undefined || runId.length === 0) {
-      return {
-        error: "Usage: krn observe --run <id> [--project <id>] [--persist]"
-      };
-    }
-
-    return {
-      command: {
-        kind: "observeRun",
-        runId,
-        ...(projectId === undefined || projectId.length === 0 ? {} : { projectId }),
-        persist
-      }
-    };
+    return parseObserveArgs(rest);
   }
 
   if (command === "reflect") {
