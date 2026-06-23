@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-36.
+- None for MM-37.
+
+Closed in MM-36:
+
+- Source trust tiers have deterministic ranks for source governance policy.
+- A newer weak SourceClaim cannot override stronger current consensus without
+  an explicit override reason.
+- Stale consensus marked by `revisitWhen` can be challenged without being
+  treated as current stronger consensus.
 
 Closed in MM-35:
 

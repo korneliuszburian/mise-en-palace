@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-35 and MM-16R are complete.
+- MM-00 through MM-36 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -57,6 +57,10 @@ Current known status:
 - MM-35 hardened the source rejection support boundary: rejected/deprecated
   SourceClaims cannot support new SourceDecisionEdge writes through public CLI
   or repository adapter paths.
+- MM-36 added deterministic source trust ranking and temporal override
+  assessment: newer weak SourceClaims cannot override stronger current
+  consensus without explicit reason, while stale consensus can be challenged
+  through the same policy helper.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -136,7 +140,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-36 — Trust and temporal source behavior.
+MM-37 — Source graph health audit.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

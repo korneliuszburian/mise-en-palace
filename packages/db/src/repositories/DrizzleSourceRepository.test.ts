@@ -5,7 +5,9 @@ import {
   assertSourceClaimGovernance,
   assertSourceDecisionEdgeGovernance,
   assertSourceDecisionGovernance,
-  assertSourceDecisionSourceClaimCanSupport
+  assertSourceDecisionSourceClaimCanSupport,
+  assessSourceClaimOverride,
+  rankSourceTrustTier
 } from "./DrizzleSourceRepository.js";
 
 const methodNames = [
@@ -114,5 +116,82 @@ describe("DrizzleSourceRepository", () => {
       ...validClaim,
       status: "deprecated"
     })).toThrow("SourceDecisionEdge cannot use deprecated SourceClaim");
+  });
+
+  it("ranks source trust tiers deterministically", () => {
+    expect(rankSourceTrustTier("official")).toBeGreaterThan(rankSourceTrustTier("high"));
+    expect(rankSourceTrustTier("primary")).toBe(rankSourceTrustTier("official"));
+    expect(rankSourceTrustTier("project-decision")).toBe(rankSourceTrustTier("official"));
+    expect(rankSourceTrustTier("source-code")).toBe(rankSourceTrustTier("official"));
+    expect(rankSourceTrustTier("high")).toBeGreaterThan(rankSourceTrustTier("secondary"));
+    expect(rankSourceTrustTier("secondary")).toBeGreaterThan(rankSourceTrustTier("hypothesis"));
+  });
+
+  it("blocks a newer weak source from overriding stronger current consensus without reason", () => {
+    const consensusClaim = {
+      id: "source-claim-strong",
+      status: "accepted",
+      trustTier: "official",
+      revisitWhen: "2026-12-31T00:00:00.000Z",
+      createdAt: "2026-06-01T00:00:00.000Z",
+      claim: "Memory promotion requires a review gate."
+    } as const;
+
+    const weakClaim = {
+      id: "source-claim-weak",
+      status: "candidate",
+      trustTier: "hypothesis",
+      revisitWhen: "2026-12-31T00:00:00.000Z",
+      createdAt: "2026-06-23T00:00:00.000Z",
+      claim: "Memory promotion can skip review when recent."
+    } as const;
+
+    expect(assessSourceClaimOverride({
+      candidate: weakClaim,
+      currentConsensus: [consensusClaim],
+      now: "2026-06-23T12:00:00.000Z"
+    })).toEqual({
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: "source-claim-strong"
+    });
+
+    expect(assessSourceClaimOverride({
+      candidate: weakClaim,
+      currentConsensus: [consensusClaim],
+      now: "2026-06-23T12:00:00.000Z",
+      overrideReason: "Official docs were superseded by an explicit project decision."
+    })).toEqual({
+      allowed: true,
+      reason: "explicit_override_reason"
+    });
+  });
+
+  it("allows a weak source to challenge stale stronger consensus", () => {
+    const staleConsensusClaim = {
+      id: "source-claim-stale",
+      status: "accepted",
+      trustTier: "official",
+      revisitWhen: "2026-06-01T00:00:00.000Z",
+      createdAt: "2026-05-01T00:00:00.000Z",
+      claim: "Observation prefix can be selected by priority alone."
+    } as const;
+
+    const newerWeakClaim = {
+      id: "source-claim-new",
+      status: "candidate",
+      trustTier: "low",
+      createdAt: "2026-06-23T00:00:00.000Z",
+      claim: "Priority alone should not select observation prefix."
+    } as const;
+
+    expect(assessSourceClaimOverride({
+      candidate: newerWeakClaim,
+      currentConsensus: [staleConsensusClaim],
+      now: "2026-06-23T12:00:00.000Z"
+    })).toEqual({
+      allowed: true,
+      reason: "no_stronger_valid_consensus"
+    });
   });
 });

@@ -6,6 +6,7 @@ import type {
   SourceDecision,
   SourceDecisionEdge,
   SourceDecisionStatus,
+  SourceTrustTier,
   SourceSupportType,
   SourceRejection
 } from "@krn/core";
@@ -61,6 +62,114 @@ const requireText = (value: string | undefined, message: string): void => {
   if (value === undefined || value.trim().length === 0) {
     throw new Error(message);
   }
+};
+
+const sourceTrustTierRanks: Record<SourceTrustTier, number> = {
+  official: 100,
+  primary: 100,
+  "project-decision": 100,
+  "source-code": 100,
+  paper: 85,
+  high: 85,
+  practitioner: 60,
+  secondary: 60,
+  medium: 60,
+  low: 25,
+  hypothesis: 10
+};
+
+type SourceClaimOverrideClaim = Pick<
+  SourceClaim,
+  "id" | "status" | "trustTier" | "revisitWhen" | "createdAt"
+>;
+
+export type SourceClaimOverrideAssessment =
+  | {
+      readonly allowed: true;
+      readonly reason: "explicit_override_reason" | "no_stronger_valid_consensus";
+    }
+  | {
+      readonly allowed: false;
+      readonly reason: "weaker_than_current_valid_consensus";
+      readonly blockedBySourceClaimId: SourceClaim["id"];
+    };
+
+export const rankSourceTrustTier = (trustTier: SourceTrustTier): number =>
+  sourceTrustTierRanks[trustTier];
+
+const parseTime = (value: string | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+export const isSourceClaimTemporallyValid = (
+  sourceClaim: Pick<SourceClaim, "status" | "revisitWhen">,
+  now: string
+): boolean => {
+  if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
+    return false;
+  }
+
+  const revisitAt = parseTime(sourceClaim.revisitWhen);
+  const nowAt = parseTime(now);
+
+  if (revisitAt === undefined || nowAt === undefined) {
+    return true;
+  }
+
+  return revisitAt >= nowAt;
+};
+
+export const assessSourceClaimOverride = (input: {
+  readonly candidate: SourceClaimOverrideClaim;
+  readonly currentConsensus: readonly SourceClaimOverrideClaim[];
+  readonly now: string;
+  readonly overrideReason?: string;
+}): SourceClaimOverrideAssessment => {
+  const candidateCreatedAt = parseTime(input.candidate.createdAt);
+  const overrideReason = input.overrideReason?.trim();
+
+  if (overrideReason !== undefined && overrideReason.length > 0) {
+    return {
+      allowed: true,
+      reason: "explicit_override_reason"
+    };
+  }
+
+  const candidateTrustRank = rankSourceTrustTier(input.candidate.trustTier);
+  const strongerCurrentConsensus = input.currentConsensus.find((currentClaim) => {
+    if (!isSourceClaimTemporallyValid(currentClaim, input.now)) {
+      return false;
+    }
+
+    const currentCreatedAt = parseTime(currentClaim.createdAt);
+    const candidateIsNewer =
+      candidateCreatedAt === undefined ||
+      currentCreatedAt === undefined ||
+      candidateCreatedAt > currentCreatedAt;
+
+    return (
+      candidateIsNewer &&
+      rankSourceTrustTier(currentClaim.trustTier) > candidateTrustRank
+    );
+  });
+
+  if (strongerCurrentConsensus !== undefined) {
+    return {
+      allowed: false,
+      reason: "weaker_than_current_valid_consensus",
+      blockedBySourceClaimId: strongerCurrentConsensus.id
+    };
+  }
+
+  return {
+    allowed: true,
+    reason: "no_stronger_valid_consensus"
+  };
 };
 
 const assertDecisionGradeSupportType = (

@@ -1,37 +1,36 @@
 # Verification
 
-Latest verified slice: MM-35 source rejection support boundary.
+Latest verified slice: MM-36 trust and temporal source behavior.
 
 Passed:
 
 - RED focused DB source repository test failed because
-  `assertSourceDecisionSourceClaimCanSupport` did not exist.
-- RED focused CLI test failed because a rejected SourceClaim still reached
-  `createSourceDecisionEdge`.
+  `rankSourceTrustTier` and `assessSourceClaimOverride` did not exist.
 - GREEN focused `pnpm --filter @krn/db test -- repositories/DrizzleSourceRepository.test.ts`
-  passed with 23 files and 62 tests.
-- GREEN focused `pnpm --filter @krn/cli test -- runCli.test.ts` passed with
-  6 files and 93 tests.
+  passed with 23 files and 65 tests.
+- Focused `pnpm --filter @krn/db typecheck` passed.
 - Final `pnpm typecheck` passed across all workspace packages.
-- Final `pnpm test` passed across 46 files and 241 tests.
-- Final DB-aware `pnpm db:smoke:source-graph` passed.
+- Final `pnpm test` passed across 46 files and 244 tests.
 - Final `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
   passed with 11/11 migrations and pgvector available.
+- Final DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`.
 - Final `git diff --check` passed.
-- Final forbidden directory scan found no added dashboard/API/MCP/research/
-  pattern surfaces.
-- Final `krn audit slice --since origin/main ...` passed with 0 findings.
+- Final forbidden surface scan found only existing guard/test/fixture
+  references and no new runtime dashboard/API/MCP/research/pattern/source
+  crawler surface.
+- Final `krn audit slice --since origin/main --repo ../.. --fail-on warning`
+  passed with verdict `pass` and 0 findings.
 
-MM-35 behavior proof:
+MM-36 behavior proof:
 
-- Public `krn source decision link --persist` rejects SourceClaims with
-  `rejected` or `deprecated` status before calling `createSourceDecisionEdge`.
-- `DrizzleSourceRepository.createSourceDecisionEdge` reads the linked
-  SourceClaim and rejects rejected/deprecated claims at the repository boundary.
-- Existing `source claim reject` remains the explicit path for decorative or
-  unsupported sources; rejected claims are not reusable as decision support.
+- `rankSourceTrustTier` ranks official/primary/project-decision/source-code
+  above high/paper, medium/practitioner/secondary, low, and hypothesis.
+- `assessSourceClaimOverride` blocks a newer weak claim from overriding valid
+  stronger consensus without an explicit reason.
+- `assessSourceClaimOverride` allows a weaker challenge once stronger
+  consensus is stale by `revisitWhen`.
 
-Not proven by MM-35:
+Not proven by MM-36:
 
-- Trust-tier and temporal source behavior.
 - Source graph health audit.
+- Activation v2 trust/temporal integration.

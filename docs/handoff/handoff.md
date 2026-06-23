@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-35. KRN has
+The memory ideal-state execution track is implemented through MM-36. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -27,14 +27,16 @@ SourceDecisionEdge write boundaries now reject decorative source records:
 SourceClaim IO requires `falsifier`, repository writes reject decorative support
 types, and `adopt`/`reject` SourceDecision writes require linked SourceClaims.
 Rejected/deprecated SourceClaims also cannot support new SourceDecisionEdge
-writes through CLI or repository adapter paths.
+writes through CLI or repository adapter paths. Source trust/temporal policy
+now ranks trust tiers deterministically and blocks newer weak claims from
+overriding stronger current consensus without explicit reason while allowing
+stale consensus to be challenged.
 
 Last verified state:
-MM-35 hardened source rejection support boundaries. Focused RED tests proved
-that rejected SourceClaims could still reach SourceDecisionEdge creation;
-focused GREEN tests passed for DB source repository and CLI source decision
-behavior. Full `pnpm typecheck`, full `pnpm test`, DB-aware source graph smoke,
-and `pnpm db:ready` passed.
+MM-36 added trust-tier and temporal source behavior. Focused RED tests proved
+`rankSourceTrustTier` and `assessSourceClaimOverride` were missing; focused
+GREEN tests passed for DB source repository behavior. Full `pnpm typecheck`,
+full `pnpm test`, DB-aware source graph smoke, and `pnpm db:ready` passed.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -49,7 +51,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-35 memory ideal-state slices: complete through governed
+- MM-00 through MM-36 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -57,7 +59,8 @@ Milestone status:
   broader memory health audit findings, AuditBundle/semantic DB snapshot
   ingestion in the audit CLI, one dogfooded reviewed memory application, and
   source graph write-boundary hardening for SourceClaim/SourceDecisionEdge and
-  rejected-source support blocking.
+  rejected-source support blocking, plus deterministic source trust/temporal
+  override assessment.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -124,6 +127,9 @@ Runtime proof status:
 - source rejection support blocking: rejected/deprecated SourceClaims cannot
   support new SourceDecisionEdge writes through public CLI or DB repository
   paths.
+- source trust/temporal policy: trust tiers have deterministic ranks, valid
+  stronger consensus blocks weaker newer claims without explicit reason, and
+  stale consensus can be challenged.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -135,11 +141,11 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-35 blocker remains.
+No MM-36 blocker remains.
 
 Rollback path:
-After commit, revert the MM-35 commit with `git revert <commit>` if source
-rejection support blocking regresses. No DB migration was added; rollback is
+After commit, revert the MM-36 commit with `git revert <commit>` if source
+trust/temporal policy regresses. No DB migration was added; rollback is
 code/docs only.
 
 Not built:
@@ -150,7 +156,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-36 and add trust-tier / temporal source behavior.
+Run MM-37 and add source graph health audit.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly
