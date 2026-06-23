@@ -166,8 +166,10 @@ Current known status:
 - QG-04H recorded concrete smell-scan automation requirements for QG-06,
   including behavior-governing metadata keys that must become typed fields or
   explicit audit findings.
-- QG-05 through QG-06 remain queued as the blocking quality correction gate:
-  official Promptfoo integration decision and audit automation.
+- QG-05 adopted official Promptfoo as a bounded eval-lane runner and result
+  adapter, with a runnable local smoke fixture and JSONL-to-KRN proof bridge.
+- QG-06 remains queued as the blocking quality correction gate: audit
+  automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.

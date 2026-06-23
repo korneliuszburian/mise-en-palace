@@ -19,10 +19,12 @@
     "db:smoke:init-connect": "pnpm --filter @krn/cli krn db smoke init-connect",
     "db:smoke:target-repo-harness": "pnpm --filter @krn/cli krn db smoke target-repo-harness",
     "db:smoke:source-graph": "pnpm --filter @krn/cli krn db smoke source-graph",
+    "eval:promptfoo:smoke": "promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml --output .local-lab/promptfoo/krn-golden-smoke-results.jsonl",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"
   },
   "devDependencies": {
+    "promptfoo": "^0.121.17",
     "typescript": "5.9.3"
   }
 }

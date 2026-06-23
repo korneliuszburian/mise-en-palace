@@ -164,14 +164,13 @@ Current public state:
   parsing; QG-04E consolidated schema primitives; QG-04F consolidated review
   signal vocabulary; QG-04G split memory-domain DB row mapping out of the
   mixed mapper file; QG-04H recorded smell-scan automation requirements for
-  QG-06; QG-05 through QG-06 remain queued as a blocking quality correction
-  gate: official Promptfoo integration decision and `krn audit` quality gate
-  automation.
+  QG-06; QG-05 adopted official Promptfoo as a bounded eval-lane runner and
+  result adapter; QG-06 remains queued as a blocking quality correction gate:
+  `krn audit` quality gate automation.
 - Not built:
-  quality correction gate QG-05 through QG-06, official Promptfoo adapter
-  decision/integration, EvalCandidate promotion gate, Golden eval dogfood
-  regression gate, API/MCP, dashboard, plugin package, source crawler, fuzzy
-  anti-memory matching, and broad benchmark suite.
+  QG-06 quality gate automation, EvalCandidate promotion gate, Golden eval
+  dogfood regression gate, API/MCP, dashboard, plugin package, source crawler,
+  fuzzy anti-memory matching, and broad benchmark suite.
 
 Do not use older orientation text in this file to infer that the repo has no
 CLI or no observation persistence. Historical progress entries below are kept

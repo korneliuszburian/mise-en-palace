@@ -69,14 +69,16 @@ Use that file as the living ExecPlan. It owns:
 - QG-04H recorded concrete smell-scan automation requirements for QG-06,
   including behavior-governing metadata keys that must become typed fields or
   explicit audit findings.
-- QG-05 through QG-06 remain queued as the blocking quality correction gate:
-  official Promptfoo integration decision and audit automation.
+- QG-05 adopted official Promptfoo as a bounded eval-lane runner and result
+  adapter, with a runnable local smoke fixture and JSONL-to-KRN proof bridge.
+- QG-06 remains queued as the blocking quality correction gate: audit
+  automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-05 official Promptfoo integration
-decision.
+the first unchecked Progress item: QG-06 quality gate automation in
+`krn audit`.
 
 ## Hard Non-Goals
 

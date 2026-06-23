@@ -255,6 +255,11 @@ Current runtime truth:
 - MM-65 adds a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases without adding Promptfoo as a dependency or executing a
   model.
+- QG-05 adopts official Promptfoo as a bounded eval-lane runner and result
+  adapter. Promptfoo validates/runs the local smoke fixture, and KRN maps JSONL
+  rows back into `GoldenBehaviorProof`; Promptfoo remains outside Memory Core,
+  GoldenTask truth, EvalCandidate truth, review gates, MCP/server/share/redteam
+  surfaces, and broad benchmark scope.
 - QG-01 accepted colocated package tests with runtime-leak enforcement.
 - QG-02 added the TypeScript excellence standard and suppression/double
   assertion audit checks.
@@ -265,13 +270,13 @@ Current runtime truth:
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
 - QG-04B modularized command-family parsing and reduced `parseArgs.ts` to a
   dispatcher plus shared CLI command type/usage surface.
-- QG-05 through QG-06 remain queued before MM-66: official Promptfoo decision
-  and quality gate automation in `krn audit`.
+- QG-06 remains queued before MM-66: quality gate automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with QG-05 by making the official Promptfoo source-to-decision
-  integration decision before MM-66 resumes.
+- Continue with QG-06 by implementing the quality gate automation requirements
+  from `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`
+  before MM-66 resumes.

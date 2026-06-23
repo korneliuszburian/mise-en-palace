@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: KRN official Promptfoo golden smoke
+
+prompts:
+  - "{{task}}"
+
+providers:
+  - file://krn-golden-smoke-provider.mjs
+
+commandLineOptions:
+  cache: false
+  share: false
+  table: false
+  write: false
+
+tests:
+  - vars:
+      task: "Prove stale memory abstain behavior without mutating Memory Core."
+      caseId: "golden-case-memory-smoke-001"
+      expectedOutcome: "abstain"
+      expectedSubject: "context_assembly"
+    assert:
+      - type: contains
+        value: "case=golden-case-memory-smoke-001"
+      - type: contains
+        value: "status=passed"
+  - vars:
+      task: "Prove active anti-memory blocks stale pattern context."
+      caseId: "golden-case-memory-smoke-002"
+      expectedOutcome: "exclude"
+      expectedSubject: "memory_record:memory-stale-pattern"
+    assert:
+      - type: contains
+        value: "case=golden-case-memory-smoke-002"
+      - type: contains
+        value: "status=passed"

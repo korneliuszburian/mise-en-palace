@@ -199,6 +199,32 @@ Passed:
 - QG-04H forbidden directory scan found no added forbidden surfaces.
 - QG-04H `krn audit slice --since origin/main --fail-on warning` passed with
   verdict `pass` and 0 findings.
+- QG-05 RED focused `pnpm --filter @krn/harness test --
+  goldenPromptfooResult.test.ts` failed before `goldenPromptfooResult.ts`
+  existed.
+- QG-05 GREEN focused `pnpm --filter @krn/harness test --
+  goldenPromptfooResult.test.ts` passed with 15 files and 81 tests.
+- QG-05 `pnpm exec promptfoo --version` returned `0.121.17`.
+- QG-05 `pnpm exec promptfoo validate config -c
+  tests/fixtures/promptfoo/krn-golden-smoke.yaml` passed with
+  `Configuration is valid`.
+- QG-05 `pnpm eval:promptfoo:smoke` passed 2/2 official Promptfoo cases and
+  wrote `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`.
+- QG-05 recorded official source-to-decision adoption at
+  `docs/plans/memory-ideal-state/QG-05-PROMPTFOO-DECISION.md`.
+- QG-05 observed non-blocking Promptfoo CLI warnings: Node
+  `DecompressInterceptor` experimental warning, telemetry shutdown timeout,
+  package peer/deprecation warnings, and pnpm ignored transitive build scripts.
+- QG-05 full `pnpm typecheck` passed after fixing exact-optional-property
+  handling in the Promptfoo JSONL result parser.
+- QG-05 full `pnpm test` passed.
+- QG-05 `git diff --check` passed.
+- QG-05 forbidden directory scan found no added forbidden surfaces.
+- QG-05 `krn audit slice --since origin/main --fail-on warning` is expectedly
+  blocked by the known pre-QG-06 audit limitation: the current audit snapshot
+  lacks intended files and verification commands. The same audit without
+  `--fail-on warning` exits 0 with verdict `advisory`, 0 blocking findings, and
+  those 2 warnings only.
 
 QG audit facts gathered during QG-00:
 
@@ -212,8 +238,7 @@ QG audit facts gathered during QG-00:
 
 Not proven by MM-65/QG pre-audit:
 
-- Official Promptfoo integration is not adopted or rejected yet.
-- QG-05 through QG-06 remain next.
+- QG-06 audit automation remains next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

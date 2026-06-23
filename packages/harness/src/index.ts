@@ -4,6 +4,7 @@ export * from "./activation/index.js";
 export * from "./observations/index.js";
 export * from "./compiler/index.js";
 export * from "./goldenPromptfooExport.js";
+export * from "./goldenPromptfooResult.js";
 export * from "./goldenRunner.js";
 export * from "./memory/index.js";
 export * from "./reflection/index.js";
