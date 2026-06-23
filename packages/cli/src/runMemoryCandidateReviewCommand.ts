@@ -15,15 +15,15 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 
-export type MemoryCandidatePromoteCommand = Extract<
+type MemoryCandidatePromoteCommand = Extract<
   CliCommand,
   { kind: "memoryCandidatePromote" }
 >;
-export type MemoryCandidateRejectCommand = Extract<
+type MemoryCandidateRejectCommand = Extract<
   CliCommand,
   { kind: "memoryCandidateReject" }
 >;
-export type MemoryCandidateReviewCommand =
+type MemoryCandidateReviewCommand =
   | MemoryCandidatePromoteCommand
   | MemoryCandidateRejectCommand;
 
@@ -39,7 +39,7 @@ export interface MemoryCandidateReviewCommandResult {
   stdout: string;
 }
 
-export type CreateMemoryCandidateReviewDatabaseRuntime = (
+type CreateMemoryCandidateReviewDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 

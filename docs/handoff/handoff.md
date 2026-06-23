@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-65 and QG-02,
+The memory ideal-state execution track is implemented through MM-65 and QG-03,
 and is now paused for the remaining blocking quality correction gate. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
@@ -116,17 +116,17 @@ QG-00 recorded the repo-wide current-state inventory at
 `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. QG-01 accepted
 colocated package tests with runtime-leak enforcement. QG-02 added the
 TypeScript excellence standard and type-safety audit checks for suppression and
-double-assertion shortcuts. QG-03 through QG-06 are
+double-assertion shortcuts. QG-03 removed clear zombie exports and recorded the
+accepted fixture finding. QG-04 through QG-06 are
 queued before MM-66 so the repo does not build more features on top of an
 under-audited quality model.
 
 Last verified state:
-QG-02 added `docs/standards/typescript-excellence.md`,
-`docs/standards/code-quality.md`, and extended `runTypeSafetyAudit` so double
-assertions, `@ts-ignore`, and undocumented `@ts-expect-error` are visible
-findings. The remaining QG work is
-zombie/dead-code/export audit, smell/bloat audit, official Promptfoo decision,
-and audit automation before MM-66.
+QG-03 ran Knip, removed clear zombie exports and compatibility aliases, changed
+local-only CLI/runtime types from public exports to local types, and accepted
+the remaining target-repo fixture file finding. The remaining QG work is
+smell/bloat audit, official Promptfoo decision, and audit automation before
+MM-66.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -141,7 +141,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-65 memory ideal-state slices and QG-00/QG-01/QG-02: complete through governed
+- MM-00 through MM-65 memory ideal-state slices and QG-00/QG-01/QG-02/QG-03: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -173,7 +173,7 @@ Milestone status:
   Promptfoo-compatible export, plus QG-00 repo-wide current-state inventory and
   quality-risk map, plus QG-01 test topology decision and enforcement, plus
   QG-02 TypeScript/code-quality standards and suppression/double-assertion
-  audit checks.
+  audit checks, plus QG-03 export/dead-code cleanup.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -326,7 +326,7 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-QG-03 through QG-06 block MM-66/MM-67.
+QG-04 through QG-06 block MM-66/MM-67.
 
 Rollback path:
 After commit, revert the quality-plan correction commit with `git revert
@@ -341,7 +341,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, broad eval suite, and production worker throughput.
 
 Next safest action:
-Run QG-03 zombie/dead-code/export-surface audit.
+Run QG-04 code smell and bloat audit.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

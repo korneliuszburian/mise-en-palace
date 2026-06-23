@@ -64,13 +64,12 @@ The memory ideal-state plan is the active execution track:
 docs/plans/memory-ideal-state/PLAN.md
 ```
 
-MM-00 through MM-65, MM-16R, QG-00, QG-01, and QG-02 are complete. The next execution track is
+MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, and QG-03 are complete. The next execution track is
 the blocking QG quality correction gate in
-`docs/plans/memory-ideal-state/PLAN.md`: zombie/dead-code/export audit,
-bloat/smell audit, official Promptfoo integration decision, and audit
-automation. The current repo-wide inventory is
+`docs/plans/memory-ideal-state/PLAN.md`: bloat/smell audit, official Promptfoo
+integration decision, and audit automation. The current repo-wide inventory is
 `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. Feature work resumes
-at MM-66 only after QG-03 through QG-06 pass.
+at MM-66 only after QG-04 through QG-06 pass.
 
 Raw onboarding/research material remains quarantined in `docs/materials/` and is
 not runtime truth.

@@ -4,7 +4,7 @@ Status update, 2026-06-23:
 
 This file is historical review-request material, not the current repo status
 source. It targeted the repository around commit `88cbbba`. Current QG tracking
-has moved on: MM-00 through MM-65, MM-16R, QG-00, QG-01, and QG-02 are complete. The
+has moved on: MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, and QG-03 are complete. The
 QG-00 current-state inventory remains:
 
 ```txt

@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-02 global TypeScript excellence standard.
+Latest verified slice: QG-03 zombie/dead-code/export-surface audit.
 
 Passed:
 
@@ -26,6 +26,11 @@ Passed:
 - QG-02 records general code quality, naming, monolith-boundary, export,
   comments, test, and error-handling rules in
   `docs/standards/code-quality.md`.
+- QG-03 `pnpm dlx knip --reporter json` initially found unused exports/types,
+  duplicate activation aliases, and one fixture file finding.
+- QG-03 cleanup removed clear zombie exports and converted local-only exported
+  types to local types.
+- QG-03 post-cleanup Knip reported only the accepted target-repo fixture file.
 
 QG audit facts gathered during QG-00:
 
@@ -40,7 +45,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-03 through QG-06 remain next.
+- QG-04 through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

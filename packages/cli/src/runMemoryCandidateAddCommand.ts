@@ -16,7 +16,7 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 
-export type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
+type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
 
 export interface MemoryCandidateAddCommandRuntime {
   env: Record<string, string | undefined>;
@@ -30,7 +30,7 @@ export interface MemoryCandidateAddCommandResult {
   stdout: string;
 }
 
-export type CreateMemoryCandidateAddDatabaseRuntime = (
+type CreateMemoryCandidateAddDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 

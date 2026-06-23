@@ -20,7 +20,7 @@ Use that file as the living ExecPlan. It owns:
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
-- MM-00 through MM-65, MM-16R, QG-00, QG-01, and QG-02 are complete in the
+- MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, and QG-03 are complete in the
   controlled plan.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
@@ -50,14 +50,14 @@ Use that file as the living ExecPlan. It owns:
   from validated task contracts plus explicit behavior proofs.
 - MM-65 added a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases, with no Promptfoo dependency and no model execution.
-- QG-03 through QG-06 remain queued as a blocking quality correction gate:
-  zombie/dead-code/export audit, bloat/smell audit, official Promptfoo
-  integration decision, and audit automation.
+- QG-04 through QG-06 remain queued as a blocking quality correction gate:
+  bloat/smell audit, official Promptfoo integration decision, and audit
+  automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-03 zombie/dead-code/export-surface audit.
+the first unchecked Progress item: QG-04 code smell and bloat audit.
 
 ## Hard Non-Goals
 

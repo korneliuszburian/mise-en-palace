@@ -15,7 +15,7 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 
-export type MemoryAntiAddCommand = Extract<CliCommand, { kind: "memoryAntiAdd" }>;
+type MemoryAntiAddCommand = Extract<CliCommand, { kind: "memoryAntiAdd" }>;
 
 export interface MemoryAntiAddCommandRuntime {
   env: Record<string, string | undefined>;
@@ -29,7 +29,7 @@ export interface MemoryAntiAddCommandResult {
   stdout: string;
 }
 
-export type CreateMemoryAntiAddDatabaseRuntime = (
+type CreateMemoryAntiAddDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 

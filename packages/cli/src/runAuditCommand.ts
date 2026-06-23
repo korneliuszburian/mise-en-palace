@@ -34,10 +34,10 @@ import type {
 
 const execFileAsync = promisify(execFile);
 
-export type AuditCommandScope = "repo" | "slice";
-export type AuditCommandFormat = "text" | "json";
+type AuditCommandScope = "repo" | "slice";
+type AuditCommandFormat = "text" | "json";
 
-export interface AuditCliCommand {
+interface AuditCliCommand {
   kind: "audit";
   scope: AuditCommandScope;
   repo?: string;

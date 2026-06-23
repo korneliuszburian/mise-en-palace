@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- QG-03 through QG-06 must run before MM-66/MM-67 feature work continues.
+- QG-04 through QG-06 must run before MM-66/MM-67 feature work continues.
 - Current quality gates do not yet prove absence of zombie exports, dead code,
   stale public docs, broad barrel overexposure, test-helper runtime leaks, or
   placeholder adapters.
@@ -35,6 +35,14 @@ Closed in QG-02:
 - `runTypeSafetyAudit` flags double assertions.
 - `runTypeSafetyAudit` blocks `@ts-ignore`.
 - `runTypeSafetyAudit` flags undocumented `@ts-expect-error`.
+
+Closed in QG-03:
+
+- Export/dead-code audit is recorded at
+  `docs/plans/memory-ideal-state/QG-03-EXPORT-DEAD-CODE-AUDIT.md`.
+- Clear zombie exports and compatibility aliases were removed.
+- Local-only CLI/runtime types no longer leak through public exports.
+- Remaining Knip finding is accepted as a target-repo fixture entry file.
 
 Closed in MM-65:
 

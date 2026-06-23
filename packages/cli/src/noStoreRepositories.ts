@@ -5,7 +5,6 @@ import type {
   ExecutionRun,
   FeedbackDelta,
   HarnessPlan,
-  MemoryCandidate,
   MemoryRecord,
   OperatorIntent,
   ReviewAssessment,
@@ -19,8 +18,6 @@ import type {
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
   CreateHarnessPlanInput,
-  CreateMemoryCandidateInput,
-  CreateMemoryRecordInput,
   CreateOperatorIntentInput,
   CreateReviewAssessmentInput,
   CreateTaskContractInput,
@@ -284,9 +281,3 @@ export const createNoStoreCompilerDependencies = (
     createId: runtime.createId
   };
 };
-
-export type NoStoreUnusedMemoryWrites =
-  | CreateMemoryRecordInput
-  | CreateMemoryCandidateInput
-  | MemoryCandidate
-  | AntiMemoryRecord;

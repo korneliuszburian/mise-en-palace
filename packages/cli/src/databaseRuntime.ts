@@ -94,7 +94,7 @@ export interface ObserveDatabaseRuntimeInput {
   databaseUrl: string;
 }
 
-export interface ObserveProjectRuntime {
+interface ObserveProjectRuntime {
   workspaceId: string;
   projectId: string;
   observationRepository: {
@@ -132,7 +132,7 @@ export interface ReviewAssessDatabaseRuntime {
   close(): Promise<void>;
 }
 
-export interface ReflectRunSnapshot {
+interface ReflectRunSnapshot {
   executionRunId: string;
   projectId: string;
   taskContractId?: string;

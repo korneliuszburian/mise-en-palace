@@ -127,5 +127,3 @@ export const applyContextROI = (
     });
   });
 };
-
-export const scoreContextROI = applyContextROI;

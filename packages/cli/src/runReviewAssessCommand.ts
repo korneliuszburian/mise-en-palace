@@ -15,7 +15,7 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 
-export type ReviewAssessCommand = Extract<CliCommand, { kind: "reviewAssess" }>;
+type ReviewAssessCommand = Extract<CliCommand, { kind: "reviewAssess" }>;
 
 export interface ReviewAssessCommandRuntime {
   env: Record<string, string | undefined>;
