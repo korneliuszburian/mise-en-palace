@@ -14,6 +14,9 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import {
+  parseMemoryConfidence
+} from "./parseMemoryConfidence.js";
 
 type MemoryAntiAddCommand = Extract<CliCommand, { kind: "memoryAntiAdd" }>;
 
@@ -37,34 +40,6 @@ const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 const defaultOwner = "operator";
 const defaultConfidence = 90;
-
-const confidenceAliases = new Map<string, number>([
-  ["low", 40],
-  ["medium", 70],
-  ["high", 90]
-]);
-
-const parseConfidence = (confidence: string | undefined): number => {
-  const candidate = confidence?.trim();
-
-  if (candidate === undefined || candidate.length === 0) {
-    return defaultConfidence;
-  }
-
-  const aliased = confidenceAliases.get(candidate);
-
-  if (aliased !== undefined) {
-    return aliased;
-  }
-
-  const numeric = Number(candidate);
-
-  if (Number.isInteger(numeric) && numeric >= 0 && numeric <= 100) {
-    return numeric;
-  }
-
-  throw new Error("--confidence must be low, medium, high, or an integer 0-100");
-};
 
 const sourceLineage = (command: MemoryAntiAddCommand): { sourceId: string }[] => [
   ...(command.invalidatedBySourceClaimId === undefined
@@ -157,7 +132,7 @@ export const runMemoryAntiAddCommand = async (
     appliesTo: command.appliesTo,
     mayRevisitWhen: command.mayRevisitWhen,
     owner: command.owner ?? defaultOwner,
-    confidence: parseConfidence(command.confidence),
+    confidence: parseMemoryConfidence(command.confidence, { defaultValue: defaultConfidence }),
     sourceLineage: sourceLineage(command),
     metadata: command.metadata
   });

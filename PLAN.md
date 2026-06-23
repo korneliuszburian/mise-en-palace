@@ -160,12 +160,12 @@ Current public state:
   JSON boundary helpers into `packages/cli/src/cliFileBoundary.ts`. QG-04B
   modularized command-family parsing so `packages/cli/src/parseArgs.ts` is a
   dispatcher plus shared command type/usage surface. QG-04C modularized
-  `krn doctor`; QG-04D through QG-06 remain queued as a blocking quality
-  correction gate: memory confidence parser consolidation, schema/core
-  vocabulary cleanup, DB mapper split, official Promptfoo integration decision,
-  and `krn audit` quality gate automation.
+  `krn doctor`; QG-04D consolidated MemoryCandidate and AntiMemory confidence
+  parsing; QG-04E through QG-06 remain queued as a blocking quality correction
+  gate: schema/core vocabulary cleanup, DB mapper split, official Promptfoo
+  integration decision, and `krn audit` quality gate automation.
 - Not built:
-  quality correction gate QG-04D through QG-06, official Promptfoo adapter
+  quality correction gate QG-04E through QG-06, official Promptfoo adapter
   decision/integration, EvalCandidate promotion gate, Golden eval dogfood
   regression gate, API/MCP, dashboard, plugin package, source crawler, fuzzy
   anti-memory matching, and broad benchmark suite.

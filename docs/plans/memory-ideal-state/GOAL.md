@@ -58,16 +58,15 @@ Use that file as the living ExecPlan. It owns:
   delegates command grammar to focused parser modules.
 - QG-04C modularized `krn doctor` so `runDoctorCommand.ts` is now
   orchestration/rendering only.
-- QG-04D through QG-04H, then QG-05 through QG-06, remain queued as the
-  blocking quality correction gate: memory confidence parser consolidation,
-  schema/core vocabulary cleanup, DB mapper split, official Promptfoo
-  integration decision, and audit automation.
+- QG-04D consolidated MemoryCandidate and AntiMemory CLI confidence parsing.
+- QG-04E through QG-04H, then QG-05 through QG-06, remain queued as the
+  blocking quality correction gate: schema/core vocabulary cleanup, DB mapper
+  split, official Promptfoo integration decision, and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-04D memory confidence parser
-consolidation.
+the first unchecked Progress item: QG-04E schema metadata guard consolidation.
 
 ## Hard Non-Goals
 

@@ -114,6 +114,24 @@ Passed:
 - QG-04C completed extraction reduced `packages/cli/src/runDoctorCommand.ts`
   to 205 lines by moving DB-backed checks to `doctorDbChecks.ts` and readiness
   derivation to `doctorReadiness.ts`.
+- QG-04D RED focused `pnpm --filter @krn/cli test -- parseMemoryConfidence`
+  failed because `./parseMemoryConfidence.js` did not exist.
+- QG-04D GREEN focused `pnpm --filter @krn/cli test -- parseMemoryConfidence`
+  passed with 24 files and 140 tests.
+- QG-04D focused `pnpm --filter @krn/cli typecheck` passed.
+- QG-04D focused `pnpm --filter @krn/cli test -- runCli` passed with 24 files
+  and 140 tests.
+- QG-04D focused `pnpm --filter @krn/cli test -- parseMemoryArgs` passed with
+  24 files and 140 tests.
+- QG-04D duplicate confidence-parser scan shows MemoryCandidate and AntiMemory
+  commands import the shared `parseMemoryConfidence` helper and no longer define
+  local `confidenceAliases` or `parseConfidence`.
+- QG-04D full `pnpm typecheck` passed.
+- QG-04D full `pnpm test` passed.
+- QG-04D `git diff --check` passed.
+- QG-04D forbidden directory scan found no added forbidden surfaces.
+- QG-04D `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
 
 QG audit facts gathered during QG-00:
 
@@ -128,7 +146,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04D through QG-06 remain next.
+- QG-04E through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

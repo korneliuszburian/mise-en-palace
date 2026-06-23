@@ -15,6 +15,9 @@ import type {
 import type {
   CliCommand
 } from "./parseArgs.js";
+import {
+  parseMemoryConfidence
+} from "./parseMemoryConfidence.js";
 
 type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
 
@@ -41,12 +44,6 @@ const kindAliases = new Map<string, string>([
   ["architecture-boundary", "constraint"]
 ]);
 
-const confidenceAliases = new Map<string, number>([
-  ["low", 40],
-  ["medium", 70],
-  ["high", 90]
-]);
-
 const normalizeKind = (kind: string | undefined): string | undefined => {
   const candidate = kind?.trim();
 
@@ -55,24 +52,6 @@ const normalizeKind = (kind: string | undefined): string | undefined => {
   }
 
   return kindAliases.get(candidate) ?? candidate;
-};
-
-const parseConfidence = (confidence: string | undefined): number | undefined => {
-  const candidate = confidence?.trim();
-
-  if (candidate === undefined || candidate.length === 0) {
-    return undefined;
-  }
-
-  const aliased = confidenceAliases.get(candidate);
-
-  if (aliased !== undefined) {
-    return aliased;
-  }
-
-  const numeric = Number(candidate);
-
-  return Number.isFinite(numeric) ? numeric : undefined;
 };
 
 const sourceLineage = (command: MemoryCandidateAddCommand): { sourceId: string }[] => [
@@ -153,7 +132,7 @@ export const runMemoryCandidateAddCommand = async (
     summary: command.content,
     body: command.content,
     owner: command.owner ?? "operator",
-    confidence: parseConfidence(command.confidence),
+    confidence: parseMemoryConfidence(command.confidence),
     applicationGuidance: command.applicationGuidance,
     invalidationRule: command.invalidationRule,
     sourceClaimIds: command.sourceClaimId === undefined ? [] : [command.sourceClaimId],

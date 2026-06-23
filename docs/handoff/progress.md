@@ -1,13 +1,13 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after QG-04C doctor command modularization.
+Current phase: Memory ideal-state execution track after QG-04D memory confidence parser consolidation.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
 - MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A,
-  QG-04B, and QG-04C in `docs/plans/memory-ideal-state/PLAN.md`.
+  QG-04B, QG-04C, and QG-04D in `docs/plans/memory-ideal-state/PLAN.md`.
 - QG-04B modularized command-family parsing. The `audit`, `db`, `init`,
   `evidence`, `observe`, `codex`, `reflect`, `review`, `plan`, `doctor`,
   `source`, and `memory` command-family parsers have been extracted from
@@ -21,6 +21,9 @@ Completed:
   target-repo checks live in `packages/cli/src/doctorStaticChecks.ts`; shared
   read-only helpers live in `packages/cli/src/doctorCheckHelpers.ts`.
   `runDoctorCommand.ts` is now 205 lines and owns orchestration/rendering only.
+- QG-04D consolidated MemoryCandidate and AntiMemory confidence parsing into
+  `packages/cli/src/parseMemoryConfidence.ts`. Both memory write commands now
+  share label aliases, integer range validation, and invalid-value errors.
 - QG-00 repo-wide current-state inventory at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-16/17 external review repair layer in
@@ -246,14 +249,14 @@ Current runtime truth:
 - QG-04A consolidated CLI filesystem and JSON boundary helpers.
 - QG-04B modularized command-family parsing and reduced `parseArgs.ts` to a
   dispatcher plus shared CLI command type/usage surface.
-- QG-04D through QG-06 remain queued before MM-66: memory confidence parsing,
-  schema/core vocabulary cleanup, DB mapper split, official Promptfoo decision,
-  and quality gate automation in `krn audit`.
+- QG-04E through QG-06 remain queued before MM-66: schema/core vocabulary
+  cleanup, DB mapper split, official Promptfoo decision, and quality gate
+  automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with QG-04D by consolidating MemoryCandidate and AntiMemory CLI
-  confidence parsing and aliases.
+- Continue with QG-04E by consolidating schema-local forbidden metadata/private
+  reasoning guards and repeated text-list schemas.
