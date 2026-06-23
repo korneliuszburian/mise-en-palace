@@ -1,0 +1,116 @@
+[
+  {
+    "id": "golden-task-observation-reflection-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Observation and reflection staging stays governed",
+    "description": "Protects observation staging, reflection candidate-only output, anti-memory exclusion, and visible gap reporting.",
+    "owner": "memory-eval",
+    "domains": ["observation", "reflection", "anti_memory"],
+    "cases": [
+      {
+        "id": "golden-case-observation-001-a",
+        "title": "observation is not memory",
+        "input": {
+          "observation": "source-ranged observe-run staging record"
+        },
+        "expectedBehavior": {
+          "outcome": "reject",
+          "subject": "observation:promotionTarget",
+          "rationale": "Observation staging must not contain Memory Core promotion semantics.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-observation-001-a",
+            "domain": "observation",
+            "severity": "blocking",
+            "title": "observation promotes memory",
+            "mustNot": "Observation validation must not accept promotionTarget: memory_core.",
+            "detection": "validateObservationContract returns ok for an observation carrying memory promotion semantics."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-reflection-001-a",
+        "title": "reflection creates candidates only",
+        "input": {
+          "reflection": "candidate-only reflection output"
+        },
+        "expectedBehavior": {
+          "outcome": "reject",
+          "subject": "reflection_output:memory_record_target",
+          "rationale": "Reflection may propose MemoryCandidate rows, but must not target MemoryRecord or SourceDecision final truth.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-reflection-001-a",
+            "domain": "reflection",
+            "severity": "blocking",
+            "title": "reflection mutates final truth",
+            "mustNot": "Reflection candidate generation must not be ready when candidateLinks target memory_record.",
+            "detection": "buildReflectionCandidateGenerationPlan returns ready for memory_record target."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-anti-memory-001-a",
+        "title": "anti-memory blocks rejected observation pattern",
+        "input": {
+          "observation": "observe-run rejected pattern"
+        },
+        "expectedBehavior": {
+          "outcome": "exclude",
+          "subject": "observation_prefix:observation-rejected-pattern",
+          "rationale": "Anti-memory must block matching observation prefix items before they become context.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-anti-memory-001-a",
+            "domain": "anti_memory",
+            "severity": "blocking",
+            "title": "rejected observation pattern enters prefix",
+            "mustNot": "Observation prefix must not include an item targeted by active anti-memory.",
+            "detection": "selectObservationPrefix includes observation-rejected-pattern instead of anti_memory exclusion."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-gap-001-a",
+        "title": "gap report is visible",
+        "input": {
+          "observation": "factual observation without source ranges"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "reflection_gap:missing_source_range",
+          "rationale": "Reflection must surface missing evidence as a visible gap instead of silently synthesizing memory.",
+          "evidenceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-gap-001-a",
+            "domain": "reflection",
+            "severity": "blocking",
+            "title": "missing evidence gap hidden",
+            "mustNot": "Reflection issue reports must not omit a gap for a factual observation missing source ranges.",
+            "detection": "buildReflectionIssueReports returns no gap-missing-source-range entry."
+          }
+        ],
+        "sourceRefs": ["docs/plans/memory-ideal-state/PLAN.md#MM-63"],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-23T10:00:00.000Z",
+    "updatedAt": "2026-06-23T10:00:00.000Z"
+  }
+]

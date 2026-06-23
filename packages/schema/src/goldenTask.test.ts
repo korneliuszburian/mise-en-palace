@@ -23,6 +23,15 @@ const readBoundaryFixture = (): unknown => {
   return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
 };
 
+const readObservationReflectionFixture = (): unknown => {
+  const fixtureUrl = new URL(
+    "../../../tests/fixtures/golden-tasks/observation-reflection-behavior.json",
+    import.meta.url
+  );
+
+  return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
+};
+
 describe("golden task fixtures", () => {
   test("load deterministically from file fixtures", () => {
     const tasks = parseGoldenTaskFixtures(readFixture());
@@ -54,6 +63,18 @@ describe("golden task fixtures", () => {
       "golden-case-context-001-a",
       "golden-case-source-001-a",
       "golden-case-type-001-a"
+    ]);
+  });
+
+  test("load observation and reflection behavior fixtures deterministically", () => {
+    const tasks = parseGoldenTaskFixtures(readObservationReflectionFixture());
+
+    expect(tasks.map((task) => task.id)).toEqual(["golden-task-observation-reflection-001"]);
+    expect(tasks[0]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
+      "golden-case-anti-memory-001-a",
+      "golden-case-gap-001-a",
+      "golden-case-observation-001-a",
+      "golden-case-reflection-001-a"
     ]);
   });
 

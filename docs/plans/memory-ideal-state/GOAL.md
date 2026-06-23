@@ -20,7 +20,7 @@ Use that file as the living ExecPlan. It owns:
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
-- MM-00 through MM-62 and MM-16R are complete in the controlled plan.
+- MM-00 through MM-63 and MM-16R are complete in the controlled plan.
 - MM-56A added the KRN code vocabulary and TypeScript elegance standard at
   `docs/standards/code-vocabulary.md`.
 - MM-57 added `krn review assess`, a manual review write path for
@@ -40,11 +40,14 @@ Use that file as the living ExecPlan. It owns:
 - MM-62 added context/source/audit/TS boundary golden cases for broad context
   dump rejection, source `doesNotProve`, forbidden surface audit, and
   unknown-first boundary enforcement.
+- MM-63 added observation/reflection/anti-memory golden cases for observation
+  staging, reflection candidate-only output, anti-memory prefix blocking, and
+  visible gap reports.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: MM-63 observation/reflection/anti-memory cases.
+the first unchecked Progress item: MM-64 golden eval runner.
 
 ## Hard Non-Goals
 

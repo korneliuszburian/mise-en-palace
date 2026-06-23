@@ -2,18 +2,18 @@
 
 Hard blockers:
 
-- None for MM-63.
+- None for MM-64.
 
-Closed in MM-62:
+Closed in MM-63:
 
-- Boundary fixture now declares context/source/audit/type-boundary golden cases.
+- Observation/reflection fixture now declares observation, reflection,
+  anti-memory, and gap-reporting golden cases.
 - Fixture-backed harness tests protect those behaviors through existing
-  activation/audit primitives without adding the broad golden runner.
-- ContextROI rejects broad context dumps through explicit `over_budget`
-  exclusions.
-- Source grounding audit flags source claims that omit `doesNotProve`.
-- Repo surface audit flags forbidden Research Foundry-style product surfaces.
-- Type-safety audit flags unchecked `JSON.parse` runtime boundaries.
+  core/harness primitives without adding the broad golden runner.
+- Observation validation rejects Memory Core promotion semantics.
+- Reflection candidate generation blocks final-truth `memory_record` targets.
+- Anti-memory blocks rejected observation prefix patterns.
+- Reflection issue reports surface missing source ranges as visible gaps.
 - No DB schema/migration, repository, runner, CLI, Promptfoo export, broad
   benchmark suite, dashboard/API/MCP/server/plugin, or source crawler surface
   was added.
