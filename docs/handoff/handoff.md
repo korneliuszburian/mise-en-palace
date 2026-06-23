@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-56A. KRN has
+The memory ideal-state execution track is implemented through MM-57. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -78,11 +78,15 @@ structured proposal fields; it reports `memoryRecordMutation: "none"` and does
 not mine freeform text or create final memory/source/eval truth. The KRN code
 vocabulary standard now defines the authority ladder for helper names and
 TypeScript public surfaces so names do not imply extraction, persistence,
-promotion, or final truth without that actual authority.
+promotion, or final truth without that actual authority. `krn review assess`
+now provides a manual review write path that persists ReviewAssessment plus
+FeedbackDelta records through the existing harness repository and explicitly
+reports no Memory Core mutation.
 
 Last verified state:
-MM-56A added `docs/standards/code-vocabulary.md` as a docs-only standard.
-Preflight and final verification are recorded in `docs/handoff/verification.md`.
+MM-57 added `krn review assess`. Focused RED/GREEN CLI test and focused CLI
+typecheck passed; full verification is recorded in
+`docs/handoff/verification.md`.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -97,7 +101,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-56A memory ideal-state slices: complete through governed
+- MM-00 through MM-57 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -257,6 +261,10 @@ Runtime proof status:
 - Code vocabulary standard: `docs/standards/code-vocabulary.md` records the KRN
   authority ladder for helper verbs, separates proposal/candidate/truth terms,
   and uses the `extractFeedbackCandidates` wording issue as an anti-pattern.
+- Review assess CLI: `krn review assess --evidence-bundle-id <id> --reviewer
+  <name> --summary "..." [--persist]` validates review inputs and writes a
+  ReviewAssessment plus FeedbackDelta with no MemoryCandidate or MemoryRecord
+  creation.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -268,12 +276,11 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-56A blocker remains.
+No MM-57 blocker remains.
 
 Rollback path:
-After commit, revert the MM-56A commit with `git revert <commit>` if the code
-vocabulary standard creates bad guidance or conflicts with package boundaries.
-No DB migration or runtime code was added; rollback is docs only.
+After commit, revert the MM-57 commit with `git revert <commit>` if the review
+assess CLI regresses. No DB migration was added; rollback is CLI/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -283,7 +290,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-57 review assess CLI.
+Run MM-58 feedback dogfood capture from one KRN slice.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

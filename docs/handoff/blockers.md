@@ -2,7 +2,22 @@
 
 Hard blockers:
 
-- None for MM-57.
+- None for MM-58.
+
+Closed in MM-57:
+
+- `krn review assess` exists as a manual CLI command.
+- The command validates external CLI input for review status, outcome, risk,
+  and finding severity.
+- `--persist` writes ReviewAssessment and FeedbackDelta through the existing
+  harness repository.
+- FeedbackDelta metadata carries `memoryRecordMutation: "none"`.
+- The command output reports no Memory Core mutation and no MemoryRecord
+  creation.
+- No schema, DB migration, repository change, candidate row creation,
+  MemoryCandidate creation, MemoryRecord creation, SourceDecision truth write,
+  memory promotion, dashboard/API/MCP/server/plugin, or source crawler surface
+  was added.
 
 Closed in MM-56A:
 

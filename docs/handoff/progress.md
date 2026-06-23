@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-56A.
+Current phase: Memory ideal-state execution track after MM-57.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-56A and MM-16R in
+- MM-00 through MM-57 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -182,10 +182,14 @@ Current runtime truth:
   including the authority ladder for helper verbs and the rule that names must
   not imply extraction, persistence, promotion, or final truth unless the code
   really has that authority.
+- MM-57 adds `krn review assess`, a manual CLI path that validates review
+  status/outcome/risk/finding inputs and persists ReviewAssessment plus
+  FeedbackDelta with `memoryRecordMutation: "none"` and no Memory Core row
+  creation.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-57 review assess CLI.
+- Continue with MM-58 feedback dogfood capture from one KRN slice.

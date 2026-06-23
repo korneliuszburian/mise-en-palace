@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-56A and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-57 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -114,6 +114,8 @@ Current public state:
   candidate-proposal summary over already structured proposal fields without
   Memory Core mutation. MM-56A added the KRN code vocabulary standard so helper
   names describe actual authority and TypeScript public surfaces stay precise.
+  MM-57 added `krn review assess`, a manual CLI write path that persists a
+  ReviewAssessment and a FeedbackDelta while reporting no Memory Core mutation.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.

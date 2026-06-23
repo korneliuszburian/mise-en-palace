@@ -35,6 +35,9 @@ import {
   runEvidenceCaptureCommand
 } from "./runEvidenceCaptureCommand.js";
 import {
+  runReviewAssessCommand
+} from "./runReviewAssessCommand.js";
+import {
   runObserveCommand
 } from "./runObserveCommand.js";
 import type {
@@ -253,6 +256,34 @@ export const runCli = async (
       stdout: formatMemoryAntiAddUsage(),
       stderr: ""
     };
+  }
+
+  if (parsed.command.kind === "reviewAssess") {
+    try {
+      const result = await runReviewAssessCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown review assess error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
   }
 
   if (parsed.command.kind === "sourceClaimAdd") {
