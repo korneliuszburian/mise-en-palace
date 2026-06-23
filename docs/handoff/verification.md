@@ -81,6 +81,19 @@ Passed:
 - QG-04B reduced `packages/cli/src/parseArgs.ts` to 379 lines and moved the
   remaining `memory` command-family grammar to
   `packages/cli/src/parseMemoryArgs.ts`.
+- QG-04C RED focused `pnpm --filter @krn/cli test -- doctorRepoChecks` failed
+  because `./doctorRepoChecks.js` did not exist.
+- QG-04C GREEN focused `pnpm --filter @krn/cli test -- doctorRepoChecks`
+  passed with 20 files and 131 tests.
+- QG-04C RED focused `pnpm --filter @krn/cli test -- doctorStaticChecks`
+  failed because `./doctorStaticChecks.js` did not exist.
+- QG-04C GREEN focused `pnpm --filter @krn/cli test -- doctorStaticChecks`
+  passed with 21 files and 133 tests.
+- QG-04C focused `pnpm --filter @krn/cli typecheck` passed.
+- QG-04C focused `pnpm --filter @krn/cli test` passed with 21 files and 133
+  tests.
+- QG-04C partial extraction reduced `packages/cli/src/runDoctorCommand.ts` from
+  2086 to 1688 lines by moving repo/static read-only checks to focused modules.
 
 QG audit facts gathered during QG-00:
 
