@@ -237,14 +237,15 @@ describe("activation engine", () => {
     expect(merged[0]).toMatchObject({
       subjectType: "source_claim",
       subjectId: "claim-duplicate",
-      graphScore: 15
+      graphScore: 15,
+      searchDocumentIds: ["search-duplicate"]
     });
     expect(merged[0]?.lexicalScore).toBeGreaterThanOrEqual(70);
     expect(merged[0]?.metadata).toMatchObject({
       mergedCandidateIds: expect.arrayContaining(["claim-duplicate", "search-duplicate"]),
-      mergedKinds: expect.arrayContaining(["source", "search"]),
-      searchDocumentIds: ["search-duplicate"]
+      mergedKinds: expect.arrayContaining(["source", "search"])
     });
+    expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
   });
 
   it("applies trust, temporal, invalidation, and anti-memory filters after merge", () => {
@@ -299,10 +300,13 @@ describe("activation engine", () => {
     expect(result.candidates).toEqual(expect.arrayContaining([
       expect.objectContaining({
         subjectId: "claim-blocked",
+        antiMemoryRecordId: "anti-crawler",
+        conflictReason: "anti_memory_block",
+        searchDocumentIds: ["search-blocked"],
         exclusion: expect.objectContaining({ reason: "unsafe" }),
-        metadata: expect.objectContaining({
-          antiMemoryRecordId: "anti-crawler",
-          searchDocumentIds: ["search-blocked"]
+        metadata: expect.not.objectContaining({
+          antiMemoryRecordId: expect.any(String),
+          searchDocumentIds: expect.any(Array)
         })
       }),
       expect.objectContaining({
@@ -547,7 +551,7 @@ describe("activation engine", () => {
 
     expect(context.status).toBe("assembled");
     expect(context.inclusions).toHaveLength(0);
-    expect(context.metadata.observationPrefix).toMatchObject({
+    expect(context.observationPrefix).toMatchObject({
       text: expect.stringContaining("Observation prefix:"),
       itemCount: 1,
       items: [
@@ -563,6 +567,7 @@ describe("activation engine", () => {
         })
       ]
     });
+    expect(context.metadata["observationPrefix"]).toBeUndefined();
   });
 
   it("rejects observation prefix metadata when selected items are not source-ranged", () => {
@@ -587,12 +592,13 @@ describe("activation engine", () => {
     });
 
     expect(context.status).toBe("abstained");
-    expect(context.metadata.observationPrefix).toBeUndefined();
-    expect(context.metadata.observationPrefixGate).toMatchObject({
+    expect(context.observationPrefix).toBeUndefined();
+    expect(context.observationPrefixGate).toMatchObject({
       status: "rejected",
       reasons: ["missing_source_ranges"],
       rejectedObservationIds: ["observation-unsourced"]
     });
+    expect(context.metadata["observationPrefixGate"]).toBeUndefined();
   });
 
   it("excludes invalidated memory with an explicit reason", () => {
@@ -646,7 +652,7 @@ describe("activation engine", () => {
     });
 
     expect(context.status).toBe("abstained");
-    expect(context.metadata.activationAbstention).toMatchObject({
+    expect(context.activationAbstention).toMatchObject({
       reason: "weak_context",
       explanation: expect.stringContaining("weak"),
       metadata: expect.objectContaining({
@@ -654,6 +660,7 @@ describe("activation engine", () => {
         exclusionReasons: ["low_trust"]
       })
     });
+    expect(context.metadata["activationAbstention"]).toBeUndefined();
   });
 
   it("penalizes memory records with negative application feedback during ranking", () => {
@@ -704,14 +711,16 @@ describe("activation engine", () => {
 
     expect(result.candidates[0]).toMatchObject({
       subjectId: "memory-blocked",
+      antiMemoryRecordId: "anti-memory-1",
+      conflictReason: "anti_memory_block",
       exclusion: {
         reason: "unsafe",
         explanation: expect.stringContaining("anti-memory")
       },
-      metadata: {
-        conflictReason: "anti_memory_block",
-        antiMemoryRecordId: "anti-memory-1"
-      }
+      metadata: expect.not.objectContaining({
+        conflictReason: expect.any(String),
+        antiMemoryRecordId: expect.any(String)
+      })
     });
     expect(result.conflictSets).toEqual([
       expect.objectContaining({
@@ -759,18 +768,22 @@ describe("activation engine", () => {
     expect(result.candidates).toEqual(expect.arrayContaining([
       expect.objectContaining({
         subjectId: "search-from-source",
+        antiMemoryRecordId: "anti-source",
+        conflictReason: "anti_memory_block",
         exclusion: expect.objectContaining({ reason: "unsafe" }),
-        metadata: expect.objectContaining({
-          antiMemoryRecordId: "anti-source",
-          conflictReason: "anti_memory_block"
+        metadata: expect.not.objectContaining({
+          antiMemoryRecordId: expect.any(String),
+          conflictReason: expect.any(String)
         })
       }),
       expect.objectContaining({
         subjectId: "search-from-memory",
+        antiMemoryRecordId: "anti-memory",
+        conflictReason: "anti_memory_block",
         exclusion: expect.objectContaining({ reason: "unsafe" }),
-        metadata: expect.objectContaining({
-          antiMemoryRecordId: "anti-memory",
-          conflictReason: "anti_memory_block"
+        metadata: expect.not.objectContaining({
+          antiMemoryRecordId: expect.any(String),
+          conflictReason: expect.any(String)
         })
       })
     ]));

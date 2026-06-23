@@ -166,9 +166,10 @@ describe("golden memory behavior cases", () => {
     });
 
     expect(context.status).toBe("abstained");
-    expect(context.metadata.activationAbstention).toMatchObject({
+    expect(context.activationAbstention).toMatchObject({
       reason: "weak_context"
     });
+    expect(context.metadata["activationAbstention"]).toBeUndefined();
   });
 
   it("respects temporal validity by selecting current memory over expired memory", () => {

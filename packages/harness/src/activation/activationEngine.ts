@@ -83,15 +83,10 @@ export interface PersistActivationTraceInput {
 const candidateKey = (candidate: { subjectType: string; subjectId: string }): string =>
   `${candidate.subjectType}:${candidate.subjectId}`;
 
-const metadataValue = (
-  metadata: Record<string, unknown>,
-  key: string
-): unknown => metadata[key];
-
 const activationDecisionForExclusion = (
   candidate: RankedActivationCandidate | undefined
 ): RecordActivationDecisionInput["decision"] => {
-  if (candidate?.metadata.conflictReason === "anti_memory_block") {
+  if (candidate?.conflictReason === "anti_memory_block") {
     return "conflict";
   }
 
@@ -182,14 +177,16 @@ export const persistActivationTrace = async (
   for (const candidate of input.candidates) {
     const key = candidateKey(candidate);
     const included = includedIds.has(key);
-    const searchDocumentId = metadataValue(candidate.metadata, "searchDocumentId");
+    const searchDocumentId =
+      candidate.searchDocumentId ??
+      (candidate.searchDocumentIds?.length === 1 ? candidate.searchDocumentIds[0] : undefined);
     const record = await input.retrievalRepository.addCandidate({
       retrievalRunId: input.retrievalRunId,
       kind: candidate.kind,
       status: included ? "included" : "excluded",
       subjectType: candidate.subjectType,
       subjectId: candidate.subjectId,
-      ...(typeof searchDocumentId === "string" ? { searchDocumentId } : {}),
+      ...(searchDocumentId === undefined ? {} : { searchDocumentId }),
       trustTier: candidate.trustTier,
       lexicalScore: candidate.lexicalScore,
       vectorScore: candidate.vectorScore,
@@ -226,6 +223,9 @@ export const persistActivationTrace = async (
       expectedDecisionImpact: inclusion.expectedUse,
       metadata: {
         expectedUse: inclusion.expectedUse,
+        ...(candidate?.searchDocumentIds === undefined
+          ? {}
+          : { mergedSearchDocumentIds: candidate.searchDocumentIds }),
         ...(rawEvidenceRecallTrigger === undefined
           ? {}
           : {
@@ -254,12 +254,12 @@ export const persistActivationTrace = async (
       ...(exclusion.score === undefined ? {} : { score: exclusion.score }),
       metadata: {
         explanation: exclusion.explanation,
-        ...(candidate?.metadata.conflictReason === undefined
+        ...(candidate?.conflictReason === undefined
           ? {}
-          : { conflictReason: candidate.metadata.conflictReason }),
-        ...(candidate?.metadata.antiMemoryRecordId === undefined
+          : { conflictReason: candidate.conflictReason }),
+        ...(candidate?.antiMemoryRecordId === undefined
           ? {}
-          : { antiMemoryRecordId: candidate.metadata.antiMemoryRecordId })
+          : { blockedByAntiMemoryRecord: { recordId: candidate.antiMemoryRecordId } })
       }
     });
   }

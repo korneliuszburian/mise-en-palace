@@ -706,6 +706,8 @@ git revert <commit>
 
 ### P2-02: Promote Behavior Metadata To Typed Fields
 
+status: complete.
+
 objective:
 
 Move runtime authority out of generic metadata.
@@ -1171,7 +1173,7 @@ git revert <commit>
 - [x] P1-02 Plan package barrel narrowing.
 - [x] P2-00 Seal Memory Core write authority.
 - [x] P2-01 Type SourceClaim project scope.
-- [ ] P2-02 Promote behavior metadata to typed fields.
+- [x] P2-02 Promote behavior metadata to typed fields.
 - [ ] P3-00 Define observation staging doctrine.
 - [ ] P3-01 Prove observation/reflection invariants.
 - [ ] P3-02 Create reviewed candidate writer from ReflectionRecord.
@@ -1209,6 +1211,14 @@ git revert <commit>
 - P2-01 did not require a new SourceClaim column because source artifacts
   already carry typed `projectId`, and DB `listClaimsForProject` already derives
   claim scope through a typed SourceArtifact join.
+- P2-02 did not require a DB migration. Runtime behavior now uses typed
+  activation candidate fields and typed `ContextAssembly` fields; DB smoke keeps
+  persisted context prefix/search merge values as explicit debug snapshots
+  (`observationPrefixSnapshot`, `mergedSearchDocumentIds`) rather than behavior
+  authority.
+- P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
+  Both paths now use the same typed source/memory record identity fields instead
+  of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
 
 ## Decision Log
 
@@ -1240,6 +1250,12 @@ git revert <commit>
 - 2026-06-23: SourceClaim project scope is derived through typed
   SourceArtifact project scope/read-model selection, not through
   `SourceClaim.metadata.projectId`.
+- 2026-06-23: Behavior-governing activation metadata is promoted to typed
+  fields. `ActivationCandidate` owns search/source/memory/anti-memory identity
+  fields and conflict reason; `ContextAssembly` owns observation prefix, prefix
+  gate, and activation abstention. Metadata may still carry debug snapshots, but
+  merge, conflict, raw recall, ContextROI, and context assembly do not trust
+  generic `metadata.*` keys for these decisions.
 
 ## Outcomes & Retrospective
 
@@ -1260,7 +1276,13 @@ Current outcome:
   MemoryReviewGate metadata.
 - SourceClaim project scope no longer depends on `metadata.projectId` in
   package code.
-- Next safe action is P2-02: promote behavior metadata to typed fields.
+- Behavior-governing metadata debt named by P2-02 has been typed in package
+  code. The plan search for `metadata.projectId`, `metadata.sourceClaimId`,
+  `metadata.memoryRecordId`, `metadata.antiMemoryRecordId`,
+  `metadata.searchDocumentId`, `metadata.activationAbstention`,
+  `metadata.observationPrefix`, and `metadata.observationPrefixGate` returns no
+  package matches.
+- Next safe action is P3-00: define observation staging doctrine.
 
 ## Command Evidence
 
@@ -1466,6 +1488,40 @@ Observed:
   passed with Postgres reachable, 11/11 migrations applied, pgvector available,
   and brain store readiness ready;
 - `git diff --check` passed with no output.
+
+P2-02 behavior metadata typed fields:
+
+```sh
+pnpm --filter @krn/harness test -- activation/index.test.ts activation/goldenMemoryBehavior.test.ts
+```
+
+Observed RED before implementation: 8 failing activation tests after changing
+expectations to require typed `searchDocumentIds`, `antiMemoryRecordId`,
+`conflictReason`, `observationPrefix`, `observationPrefixGate`, and
+`activationAbstention` instead of metadata-owned values.
+
+Observed GREEN after implementation: 15 harness test files passed; 83 tests
+passed.
+
+```sh
+rg -n "metadata\\.(projectId|sourceClaimId|memoryRecordId|antiMemoryRecordId|searchDocumentId|activationAbstention|observationPrefix|observationPrefixGate)" packages
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- final `rg` returned no matches under `packages`;
+- full typecheck passed across 7 workspace projects;
+- full test passed across 7 workspace projects: core 8 files/39 tests, schema
+  3 files/25 tests, harness 15 files/83 tests, workers 1 file/3 tests,
+  codex-adapter 3 files/7 tests, db 24 files/67 tests, cli 24 files/140 tests;
+- `git diff --check` passed with no output.
+
+This proves the named behavior-governing metadata reads are gone from package
+code and the workspace test suite passes. It does not prove DB runtime smoke,
+because P2-02 did not require DB runtime commands or schema migration.
 
 P0-04 verification after rejecting productized QG-06 direction:
 

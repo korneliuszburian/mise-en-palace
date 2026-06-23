@@ -37,26 +37,13 @@ const lexicalScore = (candidateText: string, query: ActivationQuery): number => 
   return hits * 20;
 };
 
-const metadataString = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-};
-
 const canonicalCandidateKey = (candidate: RankedActivationCandidate): string => {
-  const sourceClaimId = metadataString(candidate.metadata, "sourceClaimId");
-
-  if (sourceClaimId !== undefined) {
-    return `source_claim:${sourceClaimId}`;
+  if (candidate.sourceClaimId !== undefined) {
+    return `source_claim:${candidate.sourceClaimId}`;
   }
 
-  const memoryRecordId = metadataString(candidate.metadata, "memoryRecordId");
-
-  if (memoryRecordId !== undefined) {
-    return `memory_record:${memoryRecordId}`;
+  if (candidate.memoryRecordId !== undefined) {
+    return `memory_record:${candidate.memoryRecordId}`;
   }
 
   return `${candidate.subjectType}:${candidate.subjectId}`;
@@ -99,12 +86,10 @@ const mergeTwoCandidates = (
   const trustTier = strongerTrustTier(left.trustTier, right.trustTier);
   const trust = trustRank[trustTier] * 10;
   const searchDocumentIds = uniqueStrings([
-    ...(Array.isArray(left.metadata.searchDocumentIds)
-      ? left.metadata.searchDocumentIds.filter((value): value is string => typeof value === "string")
-      : []),
-    ...(Array.isArray(right.metadata.searchDocumentIds)
-      ? right.metadata.searchDocumentIds.filter((value): value is string => typeof value === "string")
-      : []),
+    ...(left.searchDocumentIds ?? []),
+    ...(right.searchDocumentIds ?? []),
+    ...(left.searchDocumentId === undefined ? [] : [left.searchDocumentId]),
+    ...(right.searchDocumentId === undefined ? [] : [right.searchDocumentId]),
     ...(left.kind === "search" ? [left.subjectId] : []),
     ...(right.kind === "search" ? [right.subjectId] : [])
   ]);
@@ -135,13 +120,14 @@ const mergeTwoCandidates = (
     temporalScore: temporal,
     contextRoiScore: contextRoi,
     feedbackScore: feedback,
+    ...(searchDocumentIds.length === 0 ? {} : { searchDocumentIds }),
     totalScore: lexical + vector + graph + temporal + contextRoi + feedback + trust,
     metadata: {
       ...left.metadata,
       ...right.metadata,
       mergedCandidateIds,
       mergedKinds,
-      ...(searchDocumentIds.length === 0 ? {} : { searchDocumentIds })
+      ...(searchDocumentIds.length === 0 ? {} : { mergedSearchDocumentIds: searchDocumentIds })
     }
   };
 };
@@ -214,15 +200,15 @@ export const toSearchCandidate = (document: SearchDocumentSearchResult): Activat
   ...(document.graphScore === undefined ? {} : { graphScore: document.graphScore }),
   ...(document.temporalScore === undefined ? {} : { temporalScore: document.temporalScore }),
   ...(document.contextRoiScore === undefined ? {} : { contextRoiScore: document.contextRoiScore }),
+  searchDocumentId: document.id,
+  ...(document.sourceClaimId === undefined ? {} : { sourceClaimId: document.sourceClaimId }),
+  ...(document.memoryRecordId === undefined ? {} : { memoryRecordId: document.memoryRecordId }),
+  ...(document.antiMemoryRecordId === undefined
+    ? {}
+    : { antiMemoryRecordId: document.antiMemoryRecordId }),
   metadata: {
-    searchDocumentId: document.id,
     subjectType: document.subjectType,
-    subjectId: document.subjectId,
-    ...(document.sourceClaimId === undefined ? {} : { sourceClaimId: document.sourceClaimId }),
-    ...(document.memoryRecordId === undefined ? {} : { memoryRecordId: document.memoryRecordId }),
-    ...(document.antiMemoryRecordId === undefined
-      ? {}
-      : { antiMemoryRecordId: document.antiMemoryRecordId })
+    subjectId: document.subjectId
   }
 });
 

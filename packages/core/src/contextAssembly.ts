@@ -2,6 +2,13 @@ import type {
   ContextAssemblyId,
   HarnessPlanId
 } from "./ids.js";
+import type {
+  ActivationAbstention
+} from "./activation.js";
+import type {
+  ObservationConfidence,
+  ObservationPriority
+} from "./observations/observationKinds.js";
 import type { SourceTrustTier } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 
@@ -34,6 +41,55 @@ export interface ContextExclusion {
   trustTier: SourceTrustTier;
 }
 
+export type ContextObservationPrefixExclusionReason =
+  | "project_mismatch"
+  | "invalidated"
+  | "stale"
+  | "low_relevance"
+  | "anti_memory"
+  | "budget_exceeded";
+
+export interface ContextObservationPrefixItem {
+  observationId: string;
+  kind: string;
+  confidence: ObservationConfidence;
+  priority: ObservationPriority;
+  summary: string;
+  sourceRangeCount: number;
+  reason: string;
+  score: number;
+}
+
+export interface ContextObservationPrefixExclusion {
+  observationId: string;
+  reason: ContextObservationPrefixExclusionReason;
+  explanation: string;
+}
+
+export interface ContextObservationPrefixWarning {
+  observationId: string;
+  warning: "contested" | "conflict" | "gap";
+  summary: string;
+}
+
+export interface ContextObservationPrefix {
+  projectId: string;
+  taskContractId: string;
+  text: string;
+  itemCount: number;
+  warningCount: number;
+  exclusionCount: number;
+  items: ContextObservationPrefixItem[];
+  warnings: ContextObservationPrefixWarning[];
+  exclusions: ContextObservationPrefixExclusion[];
+}
+
+export interface ContextObservationPrefixGate {
+  status: "rejected";
+  reasons: readonly "missing_source_ranges"[];
+  rejectedObservationIds: string[];
+}
+
 export interface ContextAssembly {
   id: ContextAssemblyId;
   harnessPlanId: HarnessPlanId;
@@ -41,6 +97,9 @@ export interface ContextAssembly {
   tokenBudget?: number;
   inclusions: ContextInclusion[];
   exclusions: ContextExclusion[];
+  observationPrefix?: ContextObservationPrefix;
+  observationPrefixGate?: ContextObservationPrefixGate;
+  activationAbstention?: ActivationAbstention;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
 }

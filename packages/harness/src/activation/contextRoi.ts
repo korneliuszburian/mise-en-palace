@@ -13,26 +13,13 @@ export interface ContextRoiPolicy {
   minimumDiverseKinds?: readonly ActivationCandidateKind[];
 }
 
-const metadataString = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-};
-
 const canonicalCandidateKey = (candidate: RankedActivationCandidate): string => {
-  const sourceClaimId = metadataString(candidate.metadata, "sourceClaimId");
-
-  if (sourceClaimId !== undefined) {
-    return `source_claim:${sourceClaimId}`;
+  if (candidate.sourceClaimId !== undefined) {
+    return `source_claim:${candidate.sourceClaimId}`;
   }
 
-  const memoryRecordId = metadataString(candidate.metadata, "memoryRecordId");
-
-  if (memoryRecordId !== undefined) {
-    return `memory_record:${memoryRecordId}`;
+  if (candidate.memoryRecordId !== undefined) {
+    return `memory_record:${candidate.memoryRecordId}`;
   }
 
   return `${candidate.subjectType}:${candidate.subjectId}`;

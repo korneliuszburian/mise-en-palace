@@ -2,6 +2,8 @@ import type {
   ActivationAbstention,
   ActivationAbstentionReason,
   ContextAssembly,
+  ContextObservationPrefix,
+  ContextObservationPrefixGate,
   ContextExclusion,
   ContextInclusion
 } from "@krn/core";
@@ -75,8 +77,8 @@ const toExclusion = (candidate: RankedActivationCandidate): ContextExclusion | u
 };
 
 const observationPrefixMetadata = (input: AssembleContextInput): {
-  metadata?: Record<string, unknown>;
-  gate?: Record<string, unknown>;
+  prefix?: ContextObservationPrefix;
+  gate?: ContextObservationPrefixGate;
 } => {
   const prefix = input.observationPrefix;
 
@@ -97,7 +99,7 @@ const observationPrefixMetadata = (input: AssembleContextInput): {
   }
 
   return {
-    metadata: {
+    prefix: {
       projectId: prefix.projectId,
       taskContractId: prefix.taskContractId,
       text: prefix.text,
@@ -169,7 +171,7 @@ export const assembleContext = (input: AssembleContextInput): ContextAssembly =>
   const candidates = input.candidates.map(enforceSourceClaimSafety);
   const prefixMetadata = observationPrefixMetadata(input);
   const hasObservationPrefixItems =
-    prefixMetadata.metadata !== undefined &&
+    prefixMetadata.prefix !== undefined &&
     (input.observationPrefix?.items.length ?? 0) > 0;
   const inclusions = candidates
     .filter((candidate) => candidate.exclusion === undefined)
@@ -203,16 +205,10 @@ export const assembleContext = (input: AssembleContextInput): ContextAssembly =>
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     inclusions,
     exclusions,
-    metadata: {
-      ...metadata,
-      ...(prefixMetadata.metadata === undefined
-        ? {}
-        : { observationPrefix: prefixMetadata.metadata }),
-      ...(prefixMetadata.gate === undefined
-        ? {}
-        : { observationPrefixGate: prefixMetadata.gate }),
-      ...(activationAbstention === undefined ? {} : { activationAbstention })
-    },
+    ...(prefixMetadata.prefix === undefined ? {} : { observationPrefix: prefixMetadata.prefix }),
+    ...(prefixMetadata.gate === undefined ? {} : { observationPrefixGate: prefixMetadata.gate }),
+    ...(activationAbstention === undefined ? {} : { activationAbstention }),
+    metadata,
     createdAt: input.createdAt
   };
 };

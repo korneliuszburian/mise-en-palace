@@ -30,36 +30,14 @@ export interface BuildActivationRawRecallTriggersInput {
 const candidateKey = (subject: { subjectType: string; subjectId: string }): string =>
   `${subject.subjectType}:${subject.subjectId}`;
 
-const metadataString = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.length > 0 ? value : undefined;
-};
-
-const metadataStringList = (
-  metadata: Record<string, unknown>,
-  key: string
-): string[] => {
-  const value = metadata[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string => typeof item === "string" && item.length > 0);
-};
-
 const evidenceHintsFor = (candidate: RankedActivationCandidate): string[] => [
   candidateKey(candidate),
   ...[
-    metadataString(candidate.metadata, "sourceClaimId"),
-    metadataString(candidate.metadata, "memoryRecordId"),
-    metadataString(candidate.metadata, "searchDocumentId")
+    candidate.sourceClaimId,
+    candidate.memoryRecordId,
+    candidate.searchDocumentId
   ].filter((value): value is string => value !== undefined),
-  ...metadataStringList(candidate.metadata, "searchDocumentIds")
+  ...(candidate.searchDocumentIds ?? [])
 ];
 
 export const buildActivationRawRecallTriggers = (

@@ -177,7 +177,7 @@ const rawEvidenceRecallTriggerCount = (
 };
 
 const hasMergedSearchSignal = (metadata: Record<string, unknown>): boolean => {
-  const searchDocumentIds = metadata.searchDocumentIds;
+  const searchDocumentIds = metadata.mergedSearchDocumentIds;
 
   return Array.isArray(searchDocumentIds) &&
     searchDocumentIds.some((value) => typeof value === "string" && value.length > 0);
@@ -190,7 +190,7 @@ const observationPrefixItemCount = (
     return 0;
   }
 
-  const prefix = (metadata as Record<string, unknown>).observationPrefix;
+  const prefix = (metadata as Record<string, unknown>).observationPrefixSnapshot;
 
   if (prefix === null || typeof prefix !== "object") {
     return 0;
@@ -588,7 +588,12 @@ export const runActivationSmokeCheck = async (
       ...(draftContext.tokenBudget === undefined ? {} : { tokenBudget: draftContext.tokenBudget }),
       inclusions: draftContext.inclusions,
       exclusions: draftContext.exclusions,
-      metadata: draftContext.metadata
+      metadata: {
+        ...draftContext.metadata,
+        ...(draftContext.observationPrefix === undefined
+          ? {}
+          : { observationPrefixSnapshot: draftContext.observationPrefix })
+      }
     });
     contextAssemblyId = contextAssembly.id;
 

@@ -74,6 +74,12 @@ export interface ActivationCandidate {
   temporalScore?: number;
   contextRoiScore?: number;
   feedbackScore?: number;
+  searchDocumentId?: string;
+  searchDocumentIds?: readonly string[];
+  sourceClaimId?: string;
+  memoryRecordId?: string;
+  antiMemoryRecordId?: string;
+  conflictReason?: "anti_memory_block";
   metadata: Record<string, unknown>;
 }
 

@@ -67,17 +67,18 @@ const antiMemoryTargetsSearch = (
     return false;
   }
 
-  const sourceClaimId = candidate.metadata.sourceClaimId;
-  if (typeof sourceClaimId === "string" && blockedSourceClaims.get(sourceClaimId)?.id === antiMemory.id) {
+  if (
+    candidate.sourceClaimId !== undefined &&
+    blockedSourceClaims.get(candidate.sourceClaimId)?.id === antiMemory.id
+  ) {
     return true;
   }
 
-  const memoryRecordId = candidate.metadata.memoryRecordId;
   const appliesTo = antiMemory.appliesTo?.trim();
 
   return (
-    typeof memoryRecordId === "string" &&
-    (antiMemory.key === memoryRecordId || appliesTo === memoryRecordId)
+    candidate.memoryRecordId !== undefined &&
+    (antiMemory.key === candidate.memoryRecordId || appliesTo === candidate.memoryRecordId)
   );
 };
 
@@ -97,11 +98,8 @@ const blockCandidateWithAntiMemory = (
   markExcluded(
     {
       ...candidate,
-      metadata: {
-        ...candidate.metadata,
-        conflictReason: "anti_memory_block",
-        antiMemoryRecordId: antiMemory.id
-      }
+      conflictReason: "anti_memory_block",
+      antiMemoryRecordId: antiMemory.id
     },
     {
       reason: "unsafe",
