@@ -1,8 +1,5 @@
 import {
   formatUsage,
-  formatSourceClaimRejectUsage,
-  formatSourceDecisionLinkUsage,
-  formatSourceClaimAddUsage,
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
@@ -10,6 +7,11 @@ import {
   formatMemoryAntiAddUsage,
   parseArgs
 } from "./parseArgs.js";
+import {
+  formatSourceClaimAddUsage,
+  formatSourceClaimRejectUsage,
+  formatSourceDecisionLinkUsage
+} from "./parseSourceArgs.js";
 import {
   runPlanCommand
 } from "./runPlanCommand.js";
