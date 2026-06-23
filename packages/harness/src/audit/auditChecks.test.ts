@@ -98,6 +98,57 @@ describe("audit checks", () => {
     ]));
   });
 
+  it("detects production imports from colocated test files", () => {
+    const findings = runBoundaryAudit(baseSnapshot({
+      files: [
+        {
+          path: "packages/harness/src/activation/activationEngine.ts",
+          content: "import { buildActivationFixture } from './activationEngine.test.js';"
+        }
+      ]
+    }));
+
+    expect(findings).toEqual([expect.objectContaining({
+      category: "boundary",
+      severity: "blocking",
+      title: "Production imports colocated test file"
+    })]);
+  });
+
+  it("detects public package barrels that export test helpers", () => {
+    const findings = runBoundaryAudit(baseSnapshot({
+      files: [
+        {
+          path: "packages/core/src/index.ts",
+          content: "export * from './memoryTestHelper.js';"
+        }
+      ]
+    }));
+
+    expect(findings).toEqual([expect.objectContaining({
+      category: "boundary",
+      severity: "blocking",
+      title: "Package barrel exports test helper"
+    })]);
+  });
+
+  it("detects production imports from repo fixture paths", () => {
+    const findings = runBoundaryAudit(baseSnapshot({
+      files: [
+        {
+          path: "packages/cli/src/runGoldenCommand.ts",
+          content: "import fixture from '../../../tests/fixtures/golden-tasks/memory-behavior.json';"
+        }
+      ]
+    }));
+
+    expect(findings).toEqual([expect.objectContaining({
+      category: "boundary",
+      severity: "blocking",
+      title: "Production imports fixture path"
+    })]);
+  });
+
   it("detects type-safety shortcuts", () => {
     const findings = runTypeSafetyAudit(baseSnapshot({
       files: [

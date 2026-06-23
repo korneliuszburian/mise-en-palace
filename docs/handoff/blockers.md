@@ -2,8 +2,7 @@
 
 Hard blockers:
 
-- QG-01 through QG-06 must run before MM-66/MM-67 feature work continues.
-- Current test topology is not documented as a conscious repo decision.
+- QG-02 through QG-06 must run before MM-66/MM-67 feature work continues.
 - Current quality gates do not yet prove absence of zombie exports, dead code,
   stale public docs, broad barrel overexposure, test-helper runtime leaks, or
   placeholder adapters.
@@ -18,6 +17,14 @@ Closed in QG-00:
 - Current package, script, test, fixture, public-export, docs-truth, forbidden
   surface, Promptfoo, and placeholder-smell facts are captured.
 - `REVIEW.md` is marked as historical instead of current-state truth.
+
+Closed in QG-01:
+
+- Colocated package tests are accepted in
+  `docs/decisions/ADR-0012-colocated-package-tests.md`.
+- `runBoundaryAudit` blocks production imports from colocated test modules.
+- `runBoundaryAudit` blocks public package barrels that export test helpers.
+- `runBoundaryAudit` blocks production imports from fixture paths.
 
 Closed in MM-65:
 

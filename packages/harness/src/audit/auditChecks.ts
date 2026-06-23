@@ -204,6 +204,13 @@ const schemaDbImportPatterns = [
   `${importFrom}'${"drizzle"}-orm'`,
   `${importFrom}"${"drizzle"}-orm"`
 ] as const;
+const importFromColocatedTestPattern =
+  /\b(?:import|export)\b[\s\S]*?\bfrom\s+["'][^"']*(?:\.test|\.spec|\/__tests__\/)[^"']*["']/;
+const importFromFixturePathPattern =
+  /\b(?:import|export)\b[\s\S]*?\bfrom\s+["'][^"']*(?:tests\/fixtures|\/fixtures\/)[^"']*["']/;
+const packageBarrelPathPattern = /^packages\/[^/]+\/src\/(?:.*\/)?index\.ts$/;
+const testHelperExportPattern =
+  /\bexport\b[\s\S]*?\bfrom\s+["'][^"']*(?:\.test|\.spec|test-helper|testHelper|TestHelper|fixture-helper|fixtureHelper|FixtureHelper)[^"']*["']/;
 
 const decisionGradeSourceSupportTypes = new Set<SourceSupportType>([
   "mechanism",
@@ -359,6 +366,45 @@ export const runBoundaryAudit = (snapshot: AuditRepoSnapshot): AuditFinding[] =>
   const findings: AuditFinding[] = [];
 
   for (const file of snapshot.files.filter(isProductionFile)) {
+    if (importFromColocatedTestPattern.test(file.content)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:boundary:production-imports-test:${file.path}`,
+        category: "boundary",
+        severity: "blocking",
+        title: "Production imports colocated test file",
+        summary: "Colocated tests are allowed only when production code never imports test modules.",
+        evidenceRefs: [fileEvidence(file)],
+        recommendation: "Move shared behavior into a production module or keep the helper private to tests.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (packageBarrelPathPattern.test(file.path) && testHelperExportPattern.test(file.content)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:boundary:barrel-exports-test-helper:${file.path}`,
+        category: "boundary",
+        severity: "blocking",
+        title: "Package barrel exports test helper",
+        summary: "Package public barrels must not expose colocated test helpers, fixture helpers, or spec modules as runtime API.",
+        evidenceRefs: [fileEvidence(file)],
+        recommendation: "Keep test helpers inside test files or a test-only fixture path that is not exported by the package index.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (importFromFixturePathPattern.test(file.content)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:boundary:production-imports-fixture:${file.path}`,
+        category: "boundary",
+        severity: "blocking",
+        title: "Production imports fixture path",
+        summary: "Repo fixtures are test/seed material and must not become runtime truth through production imports.",
+        evidenceRefs: [fileEvidence(file)],
+        recommendation: "Move runtime data behind a schema/database boundary or keep fixtures in tests and explicit seed scripts.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
     if (
       file.path.startsWith("packages/core/src/") &&
       contentIncludes(file, coreRuntimeImportPatterns)

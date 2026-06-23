@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-00 repo-wide current-state inventory.
+Latest verified slice: QG-01 test topology ADR and enforcement.
 
 Passed:
 
@@ -14,6 +14,10 @@ Passed:
 - `pnpm test` passed with 56 colocated test files.
 - QG-00 inventory recorded package/test/export/script/docs/non-goal facts at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
+- QG-01 focused RED test failed before implementation because
+  `runBoundaryAudit` did not catch production imports from test modules, public
+  test-helper exports, or production fixture imports.
+- QG-01 focused GREEN test passed after boundary audit enforcement was added.
 
 QG audit facts gathered during QG-00:
 
@@ -28,7 +32,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-01 through QG-06 remain next.
+- QG-02 through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

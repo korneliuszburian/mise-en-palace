@@ -20,7 +20,8 @@ Use that file as the living ExecPlan. It owns:
 
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
-- MM-00 through MM-65, MM-16R, and QG-00 are complete in the controlled plan.
+- MM-00 through MM-65, MM-16R, QG-00, and QG-01 are complete in the controlled
+  plan.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-56A added the KRN code vocabulary and TypeScript elegance standard at
@@ -49,15 +50,14 @@ Use that file as the living ExecPlan. It owns:
   from validated task contracts plus explicit behavior proofs.
 - MM-65 added a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases, with no Promptfoo dependency and no model execution.
-- QG-01 through QG-06 remain queued as a blocking quality correction gate:
-  test topology decision, global TypeScript excellence, zombie/dead-code/export
-  audit, bloat/smell audit, official Promptfoo integration decision, and audit
-  automation.
+- QG-02 through QG-06 remain queued as a blocking quality correction gate:
+  global TypeScript excellence, zombie/dead-code/export audit, bloat/smell
+  audit, official Promptfoo integration decision, and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-01 test topology ADR and enforcement.
+the first unchecked Progress item: QG-02 global TypeScript excellence standard.
 
 ## Hard Non-Goals
 

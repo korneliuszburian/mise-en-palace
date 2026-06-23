@@ -4,9 +4,8 @@ Status update, 2026-06-23:
 
 This file is historical review-request material, not the current repo status
 source. It targeted the repository around commit `88cbbba`. Current QG tracking
-has moved on: MM-00 through MM-65, MM-16R, and QG-00 are complete at
-`7e0c6b8691c79e4ccba85bae9ac004f2fe63b5ad`, and the active current-state
-inventory is:
+has moved on: MM-00 through MM-65, MM-16R, QG-00, and QG-01 are complete. The
+QG-00 current-state inventory remains:
 
 ```txt
 docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md

@@ -16,8 +16,8 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-65, MM-16R, and QG-00 of the memory ideal-state plan are
-  complete.
+- MM-00 through MM-65, MM-16R, QG-00, and QG-01 of the memory ideal-state plan
+  are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -146,13 +146,15 @@ Current public state:
   snapshot-only, carries behavior proof status metadata, and requires no
   Promptfoo dependency or model execution.
   QG-00 added the repo-wide current-state inventory at
-  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. QG-01 through QG-06
-  remain queued as a blocking quality correction gate: test topology
-  ADR/enforcement, global TypeScript excellence,
-  zombie/dead-code/export-surface audit, bloat/smell audit, official Promptfoo
-  integration decision, and `krn audit` quality gate automation.
+  `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. QG-01 accepted
+  colocated package tests with runtime-leak enforcement in
+  `docs/decisions/ADR-0012-colocated-package-tests.md`. QG-02 through QG-06
+  remain queued as a blocking quality correction gate: global TypeScript
+  excellence, zombie/dead-code/export-surface audit, bloat/smell audit,
+  official Promptfoo integration decision, and `krn audit` quality gate
+  automation.
 - Not built:
-  quality correction gate QG-01 through QG-06, official Promptfoo adapter
+  quality correction gate QG-02 through QG-06, official Promptfoo adapter
   decision/integration, EvalCandidate promotion gate, Golden eval dogfood
   regression gate, API/MCP, dashboard, plugin package, source crawler, fuzzy
   anti-memory matching, and broad benchmark suite.
