@@ -565,6 +565,8 @@ git revert <commit>
 
 ### P1-02: Plan Package Barrel Narrowing
 
+status: complete.
+
 objective:
 
 Identify broad exports that expose internals as product API.
@@ -1162,7 +1164,7 @@ git revert <commit>
 - [x] P0-04 Remove productized QG-06 direction.
 - [x] P1-00 Classify CLI surfaces.
 - [x] P1-01 Deproductize `krn audit`.
-- [ ] P1-02 Plan package barrel narrowing.
+- [x] P1-02 Plan package barrel narrowing.
 - [ ] P2-00 Seal Memory Core write authority.
 - [ ] P2-01 Type SourceClaim project scope.
 - [ ] P2-02 Promote behavior metadata to typed fields.
@@ -1193,6 +1195,10 @@ git revert <commit>
   active product direction.
 - README now points readers to root `GOAL.md` and root `PLAN.md`; old memory
   ideal-state docs are described as historical ledgers, not active truth.
+- Package surface inventory found broad wildcard exports beyond the P1-02
+  target set in core/schema/codex-adapter/workers. They are recorded as out of
+  first-slice scope unless later evidence shows they leak internals as product
+  authority.
 
 ## Decision Log
 
@@ -1213,6 +1219,9 @@ git revert <commit>
 - 2026-06-23: Public `krn audit` is deprecated as product direction. It may
   remain only as temporary internal/dev mechanics until a code slice removes it
   from public CLI or moves checks behind an explicit internal script.
+- 2026-06-23: Package public surfaces should be narrowed from broad barrels to
+  stable named contracts; smokes, concrete repositories, schema tables, and CLI
+  command runners should not be default product API.
 
 ## Outcomes & Retrospective
 
@@ -1226,8 +1235,9 @@ Current outcome:
 - CLI surfaces are classified in `docs/architecture/cli-surfaces.md`.
 - `krn audit` is deproductized in docs: no QG-06, no new audit categories, no
   public product UX claim.
+- Package barrel narrowing is planned in `docs/architecture/package-surfaces.md`.
 - Package source is untouched.
-- Next safe action is P1-02: plan package barrel narrowing.
+- Next safe action is P2-00: seal Memory Core write authority.
 
 ## Command Evidence
 
@@ -1331,6 +1341,37 @@ Observed summary:
 - historical ledger matches remain historical and are not current execution
   truth;
 - `git diff --check` passed with no output.
+
+P1-02 package surface inventory:
+
+```sh
+sed -n '1,240p' packages/db/src/index.ts
+sed -n '1,220p' packages/db/src/repositories/index.ts
+sed -n '1,240p' packages/db/src/schema/index.ts
+sed -n '1,260p' packages/harness/src/index.ts
+sed -n '1,220p' packages/harness/src/repositories/index.ts
+sed -n '1,240p' packages/cli/src/index.ts
+rg -n "export \\*" packages/*/src/index.ts packages/*/src/**/index.ts
+```
+
+Observed summary:
+
+- DB root exports readiness, smokes, concrete repositories, and schema tables;
+- harness root exports audit, activation, Promptfoo/golden helpers, memory,
+  reflection, and repository ports through one barrel;
+- CLI root exports parser, `runCli`, and selected command runner modules,
+  including DB readiness/smoke runners;
+- additional wildcard exports exist in core/schema/codex-adapter/workers, but
+  P1-02 limits the first narrowing plan to DB, harness, CLI, and nested
+  repository/schema indexes named by the slice.
+
+```sh
+rg -n "export \\*" packages/*/src/index.ts packages/*/src/**/index.ts
+git diff --check
+```
+
+Observed: wildcard export inventory produced the expected broad barrel list;
+`git diff --check` passed with no output.
 
 P0-04 verification after rejecting productized QG-06 direction:
 
