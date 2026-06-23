@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-04G DB mapper/repository split plan and first safe split.
+Latest verified slice: QG-04H smell scan automation requirements.
 
 Passed:
 
@@ -185,6 +185,20 @@ Passed:
   JSON narrowing, and memory/anti-memory mapper implementations into
   `packages/db/src/repositories/memoryMappers.ts`; `mappers.ts` is now 714
   lines and preserves legacy memory mapper imports by re-export.
+- QG-04H preflight `pnpm typecheck` passed.
+- QG-04H preflight `pnpm test` passed.
+- QG-04H recorded QG-06 automation requirements at
+  `docs/plans/memory-ideal-state/QG-04H-SMELL-SCAN-AUTOMATION-REQUIREMENTS.md`.
+- QG-04H requires QG-06 audit automation for placeholder vocabulary, duplicate
+  helper families, large-file thresholds, behavior-governing metadata keys,
+  export/dead-code findings, stale current-state docs, allowlist expiry, and
+  seeded failure proofs.
+- QG-04H full `pnpm typecheck` passed.
+- QG-04H full `pnpm test` passed.
+- QG-04H `git diff --check` passed.
+- QG-04H forbidden directory scan found no added forbidden surfaces.
+- QG-04H `krn audit slice --since origin/main --fail-on warning` passed with
+  verdict `pass` and 0 findings.
 
 QG audit facts gathered during QG-00:
 
@@ -199,7 +213,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04H through QG-06 remain next.
+- QG-05 through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

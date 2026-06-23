@@ -12,7 +12,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 Current known status:
 - M27 is complete.
 - MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A,
-  QG-04B, QG-04C, QG-04D, QG-04E, QG-04F, and QG-04G are complete.
+  QG-04B, QG-04C, QG-04D, QG-04E, QG-04F, QG-04G, and QG-04H are complete.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
@@ -163,9 +163,11 @@ Current known status:
   CLI review-assess parsing.
 - QG-04G split memory-domain DB row mapping out of the mixed repository
   mapper file while preserving the legacy mapper import surface.
-- QG-04H, then QG-05 through QG-06, remain queued as the blocking quality
-  correction gate: smell scan automation requirements, official Promptfoo
-  integration decision, and audit automation.
+- QG-04H recorded concrete smell-scan automation requirements for QG-06,
+  including behavior-governing metadata keys that must become typed fields or
+  explicit audit findings.
+- QG-05 through QG-06 remain queued as the blocking quality correction gate:
+  official Promptfoo integration decision and audit automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.

@@ -21,8 +21,8 @@ Use that file as the living ExecPlan. It owns:
 - M27 is complete.
 - MM-00 is complete at commit `80f9ef9`.
 - MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, QG-03, QG-04, QG-04A,
-  QG-04B, QG-04C, QG-04D, QG-04E, QG-04F, and QG-04G are complete in the
-  controlled plan.
+  QG-04B, QG-04C, QG-04D, QG-04E, QG-04F, QG-04G, and QG-04H are complete in
+  the controlled plan.
 - QG-00 repo-wide current-state inventory is recorded at
   `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`.
 - MM-56A added the KRN code vocabulary and TypeScript elegance standard at
@@ -66,14 +66,17 @@ Use that file as the living ExecPlan. It owns:
   CLI review-assess parsing.
 - QG-04G split memory-domain DB row mapping out of the mixed repository
   mapper file while preserving the legacy mapper import surface.
-- QG-04H, then QG-05 through QG-06, remain queued as the blocking quality
-  correction gate: smell scan automation requirements, official Promptfoo
-  integration decision, and audit automation.
+- QG-04H recorded concrete smell-scan automation requirements for QG-06,
+  including behavior-governing metadata keys that must become typed fields or
+  explicit audit findings.
+- QG-05 through QG-06 remain queued as the blocking quality correction gate:
+  official Promptfoo integration decision and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: QG-04H smell scan automation requirements.
+the first unchecked Progress item: QG-05 official Promptfoo integration
+decision.
 
 ## Hard Non-Goals
 
