@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-03 zombie/dead-code/export-surface audit.
+Latest verified slice: QG-04 code smell and bloat audit.
 
 Passed:
 
@@ -31,6 +31,24 @@ Passed:
 - QG-03 cleanup removed clear zombie exports and converted local-only exported
   types to local types.
 - QG-03 post-cleanup Knip reported only the accepted target-repo fixture file.
+- QG-04 line-count scan identified the largest production files:
+  `parseArgs.ts`, `runDoctorCommand.ts`, `auditChecks.ts`,
+  `DrizzleObservationRepository.ts`, and `mappers.ts`.
+- QG-04 duplicate-helper scan identified repeated CLI filesystem/JSON helpers,
+  memory confidence parsing, schema metadata guards, and review signal
+  normalization.
+- QG-04 removed low-risk `placeholder` vocabulary from retrieval substrate
+  smoke code and mapper tests.
+- QG-04 focused `pnpm --filter @krn/db test -- mappers` passed with 23 files
+  and 65 tests.
+- QG-04 full `pnpm typecheck` passed.
+- QG-04 full `pnpm test` passed.
+- QG-04 `git diff --check` passed.
+- QG-04 stale status scan passed.
+- QG-04 `krn audit slice --fail-on warning` passed with verdict `pass` and 0
+  findings.
+- QG-04 recorded repair slices QG-04A through QG-04H at
+  `docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`.
 
 QG audit facts gathered during QG-00:
 
@@ -45,7 +63,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-04 through QG-06 remain next.
+- QG-04A through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

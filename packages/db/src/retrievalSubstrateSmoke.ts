@@ -63,7 +63,7 @@ const normalizeSlugPart = (value: string): string => {
   return normalized.length === 0 ? "local" : normalized;
 };
 
-const placeholderVector = (): number[] =>
+const deterministicSmokeVector = (): number[] =>
   Array.from({ length: 1536 }, (_, index) => (index === 0 ? 1 : 0));
 
 const countMarkerRows = async (
@@ -390,8 +390,8 @@ export const runRetrievalSubstrateSmokeCheck = async (
     }
 
     const embeddingModel = await retrievalRepository.createEmbeddingModel({
-      provider: "local-placeholder",
-      model: "placeholder-1536",
+      provider: "local-smoke",
+      model: "smoke-1536",
       dimensions: 1536,
       distanceMetric: "cosine",
       metadata: {
@@ -404,8 +404,8 @@ export const runRetrievalSubstrateSmokeCheck = async (
       subjectType: "search_document",
       subjectId: sourceDocument.id,
       searchDocumentId: sourceDocument.id,
-      embedding: placeholderVector(),
-      contentHash: `retrieval-placeholder-${marker}`,
+      embedding: deterministicSmokeVector(),
+      contentHash: `retrieval-smoke-${marker}`,
       trustTier: "project-decision",
       metadata: {
         smokeId: marker

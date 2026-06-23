@@ -228,6 +228,63 @@ QG-04 — code smell and bloat audit
       findings are classified as blocking/warning/advisory; blocking findings
       receive repair tasks before new feature work.
 
+QG-04A — CLI filesystem and JSON boundary helper consolidation
+- Consolidate duplicated CLI `pathExists`, `findRepoRoot`, and JSON-object
+  reading helpers behind one unknown-first boundary module.
+- Keep command-specific shape validation in the owning command.
+- Verification:
+      focused command tests pass; production scan finds no duplicate local
+      repo-root/JSON helper definitions in CLI commands.
+
+QG-04B — command parser modularization
+- Split `packages/cli/src/parseArgs.ts` by command family while preserving one
+  public `parseArgs` entrypoint.
+- Add table-driven parser tests before moving command syntax logic.
+- Verification:
+      parser tests prove representative commands still parse exactly; the
+      top-level parser no longer owns every command grammar directly.
+
+QG-04C — doctor command modularization
+- Split `krn doctor` readiness checks into focused read-only check modules.
+- Keep `runDoctorCommand.ts` as orchestration/rendering only.
+- Verification:
+      doctor output tests pass; check modules have no write imports or shell
+      execution path.
+
+QG-04D — memory confidence parser consolidation
+- Consolidate MemoryCandidate and AntiMemory CLI confidence parsing and aliases.
+- Verification:
+      candidate and anti-memory commands share accepted labels, ranges, and
+      error behavior through one parser.
+
+QG-04E — schema metadata guard consolidation
+- Consolidate schema-local forbidden metadata/private reasoning guards and
+  repeated text-list schemas without importing core runtime exports into
+  schema.
+- Verification:
+      audit bundle, observation, reflection, and golden task schema tests still
+      reject forbidden metadata consistently.
+
+QG-04F — review signal vocabulary consolidation
+- Consolidate repeated review outcome/risk normalization across core
+  ReviewAssessment, FeedbackDelta, and review-assess CLI parsing.
+- Verification:
+      CLI and core accept/reject the same normalized review signal vocabulary.
+
+QG-04G — DB mapper/repository split plan and first safe split
+- Split `packages/db/src/repositories/mappers.ts` by domain first, then plan
+  repository internal splits around invariant tests.
+- Verification:
+      public repository interfaces remain stable; mapper tests pass; no mapper
+      file mixes unrelated memory/source/retrieval/observation domains.
+
+QG-04H — smell scan automation requirements
+- Feed QG-04's accepted scans into QG-06 audit automation: placeholder
+  vocabulary, duplicate helper families, large-file thresholds, and accepted
+  allowlists with expiry.
+- Verification:
+      QG-06 cannot pass with QG-04 checks missing from audit automation.
+
 QG-05 — official Promptfoo integration decision
 - Treat Promptfoo as a real eval-lane tool decision, not a compatibility
   ornament.
@@ -253,7 +310,7 @@ QG-06 — quality gate automation in `krn audit`
       seeded public test-helper export, seeded unchecked JSON.parse, and seeded
       forbidden placeholder adapter.
 
-Only after QG-04 through QG-06 are complete may the plan continue to MM-66.
+Only after QG-04A through QG-06 are complete may the plan continue to MM-66.
 
 ## Current state
 
@@ -595,7 +652,15 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) QG-01 complete: accepted colocated package tests as the explicit test topology and added runtime-leak enforcement. Intended files: `docs/decisions/ADR-0012-colocated-package-tests.md`, `packages/harness/src/audit/auditChecks.ts`, `packages/harness/src/audit/auditChecks.test.ts`, `README.md`, `GOAL.md`, root `PLAN.md`, `docs/handoff/*`, `docs/plans/memory-ideal-state/GOAL.md`, and this PLAN. Non-goals preserved: no test-file moves, no package topology rewrite, no production feature work, no schema/migration, no DB write, no CLI behavior change, no worker, no dashboard/API/MCP/server/plugin/source crawler, no Promptfoo decision, no broad eval suite, no memory promotion. Evidence: RED focused `pnpm --filter @krn/harness test -- auditChecks` failed because `runBoundaryAudit` did not catch production imports from colocated test modules, public package barrels exporting test helpers, or production imports from fixture paths; GREEN focused audit test passed with 14 files / 77 tests after adding the boundary checks; a production import/export scan found no current violations. Next: QG-02 global TypeScript excellence standard.
 - [x] (2026-06-23) QG-02 complete: added the repo-wide TypeScript excellence standard, general code quality standard, and extended type-safety audit enforcement. Intended files: `docs/standards/typescript-excellence.md`, `docs/standards/typescript-boundaries.md`, `docs/standards/code-quality.md`, `packages/harness/src/audit/auditChecks.ts`, `packages/harness/src/audit/auditChecks.test.ts`, `README.md`, `GOAL.md`, root `PLAN.md`, `docs/handoff/*`, `docs/plans/memory-ideal-state/GOAL.md`, and this PLAN. Non-goals preserved: no package topology rewrite, no broad metadata ban, no source-to-decision mapping for external TypeScript material, no schema/migration, no DB write, no CLI behavior change, no worker, no dashboard/API/MCP/server/plugin/source crawler, no Promptfoo decision, no broad eval suite, no memory promotion. Evidence: RED focused `pnpm --filter @krn/harness test -- auditChecks` failed because `runTypeSafetyAudit` did not catch double assertions, `@ts-ignore`, or undocumented `@ts-expect-error`; GREEN focused audit test passed with 14 files / 78 tests after adding the checks; production scan found no current double assertion or TS suppression violations beyond the audit rule definitions, which were written without literal suppression markers. Next: QG-03 zombie/dead-code/export-surface audit.
 - [x] (2026-06-23) QG-03 complete: ran export/dead-code audit, removed clear zombie exports, and recorded the remaining accepted fixture finding. Intended files: `docs/plans/memory-ideal-state/QG-03-EXPORT-DEAD-CODE-AUDIT.md`, CLI/db/harness cleanup files, status docs, and this PLAN. Non-goals preserved: no broad file splitting, no package topology rewrite, no semantic behavior change, no schema/migration, no DB write, no dashboard/API/MCP/server/plugin/source crawler, no Promptfoo decision, no broad eval suite, no memory promotion. Evidence: `pnpm dlx knip --version` returned `6.18.0`; `pnpm dlx ts-prune --version` failed before analysis because the repo has no root `tsconfig.json`; initial Knip report found one fixture file, one unused pgvector export, one dead no-store type, several CLI local types exported as public API, and two duplicate activation aliases; cleanup removed `PGVECTOR_EXTENSION_SQL`, `NoStoreUnusedMemoryWrites`, `assembleActivatedContext`, and `scoreContextROI`, and downgraded local CLI/runtime types from exported to local; post-cleanup Knip reported only the accepted target-repo fixture file; focused CLI/harness/db typechecks passed. Next: QG-04 code smell and bloat audit.
-- [ ] QG-04: code smell and bloat audit.
+- [x] (2026-06-23) QG-04 complete: recorded the repo-wide code smell and bloat audit at `docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`, removed low-risk `placeholder` vocabulary from the retrieval substrate smoke and mapper tests, and converted the remaining smell findings into blocking repair slices QG-04A through QG-04H. Intended files: QG-04 audit doc, retrieval smoke naming cleanup, mapper test naming cleanup, root/current status docs, and this PLAN. Non-goals preserved: no broad refactor, no package topology rewrite, no semantic behavior change, no schema/migration, no DB write, no dashboard/API/MCP/server/plugin/source crawler, no Promptfoo decision, no broad eval suite, no memory promotion. Evidence: line-count scan found the largest production files (`parseArgs.ts` 2181 lines, `runDoctorCommand.ts` 2124 lines, `auditChecks.ts` 971 lines, `DrizzleObservationRepository.ts` 943 lines, `mappers.ts` 939 lines); duplicate-helper scan found repeated CLI file/JSON helpers, confidence parsers, schema metadata guards, and review signal normalization; placeholder/fake scan after cleanup reports only intentional audit test inputs; focused `pnpm --filter @krn/db test -- mappers` passed with 23 files / 65 tests; full `pnpm typecheck` passed; full `pnpm test` passed; `git diff --check` passed; stale status scan passed; `pnpm --filter @krn/cli krn audit slice --since origin/main --repo ../.. --fail-on warning ... --json` passed with verdict `pass` and 0 findings. Next: QG-04A CLI filesystem and JSON boundary helper consolidation.
+- [ ] QG-04A: CLI filesystem and JSON boundary helper consolidation.
+- [ ] QG-04B: command parser modularization.
+- [ ] QG-04C: doctor command modularization.
+- [ ] QG-04D: memory confidence parser consolidation.
+- [ ] QG-04E: schema metadata guard consolidation.
+- [ ] QG-04F: review signal vocabulary consolidation.
+- [ ] QG-04G: DB mapper/repository split plan and first safe split.
+- [ ] QG-04H: smell scan automation requirements.
 - [ ] QG-05: official Promptfoo integration decision.
 - [ ] QG-06: quality gate automation in `krn audit`.
 - [ ] MM-66: EvalCandidate promotion gate.

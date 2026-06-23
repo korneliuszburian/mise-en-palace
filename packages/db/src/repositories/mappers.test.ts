@@ -216,8 +216,8 @@ describe("retrieval substrate mappers", () => {
     expect(
       mapEmbeddingModel({
         id: "embedding-model-1",
-        provider: "local-placeholder",
-        model: "placeholder-1536",
+        provider: "local-smoke",
+        model: "smoke-1536",
         dimensions: 1536,
         distanceMetric: "cosine",
         status: "active",
@@ -226,7 +226,7 @@ describe("retrieval substrate mappers", () => {
         updatedAt
       })
     ).toMatchObject({
-      provider: "local-placeholder",
+      provider: "local-smoke",
       dimensions: 1536
     });
 
@@ -244,7 +244,7 @@ describe("retrieval substrate mappers", () => {
         antiMemoryRecordId: null,
         searchDocumentId: "search-document-1",
         embedding: [0, 1, 0],
-        contentHash: "placeholder-hash",
+        contentHash: "smoke-hash",
         trustTier: "project-decision",
         validityStatus: "active",
         metadataFilters: {},
@@ -258,7 +258,7 @@ describe("retrieval substrate mappers", () => {
     ).toMatchObject({
       searchDocumentId: "search-document-1",
       embedding: [0, 1, 0],
-      contentHash: "placeholder-hash"
+      contentHash: "smoke-hash"
     });
   });
 

@@ -2,10 +2,11 @@
 
 Hard blockers:
 
-- QG-04 through QG-06 must run before MM-66/MM-67 feature work continues.
-- Current quality gates do not yet prove absence of zombie exports, dead code,
-  stale public docs, broad barrel overexposure, test-helper runtime leaks, or
-  placeholder adapters.
+- QG-04A through QG-06 must run before MM-66/MM-67 feature work continues.
+- Current quality gates do not yet prove consolidated CLI boundary helpers,
+  modular command parsing, modular doctor checks, shared memory confidence
+  parsing, shared schema metadata guards, shared review signal vocabulary,
+  split DB mappers, or automated smell/bloat scans.
 - MM-65 Promptfoo snapshot export must not be treated as final eval
   integration until QG-05 adopts or rejects official Promptfoo through
   source-to-decision.
@@ -43,6 +44,15 @@ Closed in QG-03:
 - Clear zombie exports and compatibility aliases were removed.
 - Local-only CLI/runtime types no longer leak through public exports.
 - Remaining Knip finding is accepted as a target-repo fixture entry file.
+
+Closed in QG-04:
+
+- Code smell and bloat audit is recorded at
+  `docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`.
+- Low-risk `placeholder` vocabulary was removed from retrieval substrate smoke
+  code and mapper tests.
+- Remaining smell/bloat findings are converted into QG-04A through QG-04H
+  repair slices before feature work resumes.
 
 Closed in MM-65:
 

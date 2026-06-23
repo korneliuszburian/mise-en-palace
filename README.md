@@ -38,8 +38,9 @@ behavior proof primitives.
   -> memory -> activation -> golden proof` is not complete as a single product
   path.
 - Worker jobs are persisted skeletons; production job execution is not built.
-- Repo-wide quality gates for test topology, zombie/dead-code audit, stale-doc
-  prevention, and export-surface hygiene are queued before further feature work.
+- Repo-wide quality gates for test topology, zombie/dead-code audit,
+  export-surface hygiene, and smell/bloat auditing are active before further
+  feature work.
 
 ## Not Built Yet
 
@@ -64,12 +65,15 @@ The memory ideal-state plan is the active execution track:
 docs/plans/memory-ideal-state/PLAN.md
 ```
 
-MM-00 through MM-65, MM-16R, QG-00, QG-01, QG-02, and QG-03 are complete. The next execution track is
-the blocking QG quality correction gate in
-`docs/plans/memory-ideal-state/PLAN.md`: bloat/smell audit, official Promptfoo
-integration decision, and audit automation. The current repo-wide inventory is
-`docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`. Feature work resumes
-at MM-66 only after QG-04 through QG-06 pass.
+MM-00 through MM-65, MM-16R, and QG-00 through QG-04 are complete. The next
+execution track is the blocking QG quality correction gate in
+`docs/plans/memory-ideal-state/PLAN.md`: QG-04A through QG-04H repair the
+smell/bloat findings, then QG-05 decides official Promptfoo integration, and
+QG-06 automates quality gates in `krn audit`. The current repo-wide inventory
+is `docs/plans/memory-ideal-state/QG-00-REPO-INVENTORY.md`; the current
+smell/bloat audit is
+`docs/plans/memory-ideal-state/QG-04-SMELL-BLOAT-AUDIT.md`. Feature work
+resumes at MM-66 only after QG-04A through QG-06 pass.
 
 Raw onboarding/research material remains quarantined in `docs/materials/` and is
 not runtime truth.
