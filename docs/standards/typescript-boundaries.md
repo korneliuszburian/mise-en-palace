@@ -1,5 +1,10 @@
 # TypeScript Boundary Standard
 
+For the active repo-wide quality gate, use this file together with
+`docs/standards/code-vocabulary.md` and
+`docs/standards/typescript-excellence.md`. General coding standards live in
+`docs/standards/code-quality.md`.
+
 KRN is TypeScript-first, but TypeScript code starts only after Commit 0/1.
 
 ## Doctrine
@@ -47,4 +52,3 @@ validated.
 
 Use `ts-type-critic` for TypeScript source, tsconfig, public types, validation,
 JSON/fetch/env/CLI input, generics, casts, `any`, `unknown`, or type weakening.
-

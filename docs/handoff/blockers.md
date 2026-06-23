@@ -2,7 +2,7 @@
 
 Hard blockers:
 
-- QG-02 through QG-06 must run before MM-66/MM-67 feature work continues.
+- QG-03 through QG-06 must run before MM-66/MM-67 feature work continues.
 - Current quality gates do not yet prove absence of zombie exports, dead code,
   stale public docs, broad barrel overexposure, test-helper runtime leaks, or
   placeholder adapters.
@@ -25,6 +25,16 @@ Closed in QG-01:
 - `runBoundaryAudit` blocks production imports from colocated test modules.
 - `runBoundaryAudit` blocks public package barrels that export test helpers.
 - `runBoundaryAudit` blocks production imports from fixture paths.
+
+Closed in QG-02:
+
+- TypeScript excellence standard is recorded at
+  `docs/standards/typescript-excellence.md`.
+- General code quality standard is recorded at
+  `docs/standards/code-quality.md`.
+- `runTypeSafetyAudit` flags double assertions.
+- `runTypeSafetyAudit` blocks `@ts-ignore`.
+- `runTypeSafetyAudit` flags undocumented `@ts-expect-error`.
 
 Closed in MM-65:
 

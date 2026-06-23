@@ -1,6 +1,6 @@
 # Verification
 
-Latest verified slice: QG-01 test topology ADR and enforcement.
+Latest verified slice: QG-02 global TypeScript excellence standard.
 
 Passed:
 
@@ -18,6 +18,14 @@ Passed:
   `runBoundaryAudit` did not catch production imports from test modules, public
   test-helper exports, or production fixture imports.
 - QG-01 focused GREEN test passed after boundary audit enforcement was added.
+- QG-02 focused RED test failed before implementation because
+  `runTypeSafetyAudit` did not catch double assertions, `@ts-ignore`, or
+  undocumented `@ts-expect-error`.
+- QG-02 focused GREEN test passed after type-safety audit enforcement was
+  added.
+- QG-02 records general code quality, naming, monolith-boundary, export,
+  comments, test, and error-handling rules in
+  `docs/standards/code-quality.md`.
 
 QG audit facts gathered during QG-00:
 
@@ -32,7 +40,7 @@ QG audit facts gathered during QG-00:
 Not proven by MM-65/QG pre-audit:
 
 - Official Promptfoo integration is not adopted or rejected yet.
-- QG-02 through QG-06 remain next.
+- QG-03 through QG-06 remain next.
 - MM-66 EvalCandidate promotion gate remains blocked behind QG.
 - DB-backed GoldenTask storage remains deferred until a runner/promotion
   lifecycle proves it is necessary.

@@ -177,6 +177,43 @@ describe("audit checks", () => {
     ]));
   });
 
+  it("detects TypeScript suppression and double assertion shortcuts", () => {
+    const findings = runTypeSafetyAudit(baseSnapshot({
+      files: [
+        {
+          path: "packages/cli/src/unsafeConfig.ts",
+          content: "const config = value as unknown as RuntimeConfig;"
+        },
+        {
+          path: "packages/core/src/ignored.ts",
+          content: "// @ts-ignore\nexport const ignored = buildUnsafeThing();"
+        },
+        {
+          path: "packages/harness/src/expectError.ts",
+          content: "// @ts-expect-error\nexport const forced = value;"
+        }
+      ]
+    }));
+
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        category: "type_safety",
+        severity: "warning",
+        title: "Double assertion shortcut"
+      }),
+      expect.objectContaining({
+        category: "type_safety",
+        severity: "blocking",
+        title: "Unchecked ts-ignore suppression"
+      }),
+      expect.objectContaining({
+        category: "type_safety",
+        severity: "warning",
+        title: "Undocumented ts-expect-error suppression"
+      })
+    ]));
+  });
+
   it("detects memory semantic violations", () => {
     const findings = runMemorySemanticsAudit(baseSnapshot({
       memoryCandidates: [

@@ -181,6 +181,10 @@ const unsafeTopType = String.fromCharCode(97, 110, 121);
 const unsafeTopTypePattern = new RegExp(`\\b${unsafeTopType}\\b`);
 const unsafeTopTypeCastPattern = new RegExp(`\\bas\\s+${unsafeTopType}\\b`);
 const uncheckedUnsafeTopTypeTitle = `Unchecked ${unsafeTopType} usage`;
+const doubleAssertionPattern = new RegExp(`\\bas\\s+(?:unknown|${unsafeTopType})\\s+as\\b`);
+const tsDirectivePrefix = `@${"ts"}-`;
+const tsIgnorePattern = new RegExp(`//\\s*${tsDirectivePrefix}ignore\\b`);
+const undocumentedTsExpectErrorPattern = new RegExp(`//\\s*${tsDirectivePrefix}expect-error\\s*$`, "m");
 const importFrom = "from ";
 const nodeRuntimePrefix = `node${":"}`;
 const childProcessModule = `child_${"process"}`;
@@ -483,6 +487,45 @@ export const runTypeSafetyAudit = (snapshot: AuditRepoSnapshot): AuditFinding[] 
         summary: "JSON.parse returns untrusted data and must be parsed through an IO schema or unknown-first narrowing.",
         evidenceRefs: [fileEvidence(file)],
         recommendation: "Parse to unknown and validate with the owning schema package before use.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (doubleAssertionPattern.test(file.content)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:type-safety:double-assertion:${file.path}`,
+        category: "type_safety",
+        severity: "warning",
+        title: "Double assertion shortcut",
+        summary: "Double assertions bypass the type system and usually hide a missing boundary model or parser.",
+        evidenceRefs: [fileEvidence(file)],
+        recommendation: "Replace the double assertion with a typed parser, a discriminated domain type, or a narrow local guard.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (tsIgnorePattern.test(file.content)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:type-safety:ts-ignore:${file.path}`,
+        category: "type_safety",
+        severity: "blocking",
+        title: "Unchecked ts-ignore suppression",
+        summary: "ts-ignore hides TypeScript errors without proving the suppressed condition is expected.",
+        evidenceRefs: [fileEvidence(file)],
+        recommendation: "Remove the suppression, model the type boundary, or use a narrowly documented ts-expect-error only in tests.",
+        createdAt: snapshot.capturedAt
+      }));
+    }
+
+    if (undocumentedTsExpectErrorPattern.test(file.content)) {
+      findings.push(makeFinding({
+        id: `${snapshot.sliceId}:type-safety:undocumented-ts-expect-error:${file.path}`,
+        category: "type_safety",
+        severity: "warning",
+        title: "Undocumented ts-expect-error suppression",
+        summary: "ts-expect-error must explain the expected compiler failure so it stays reviewable.",
+        evidenceRefs: [fileEvidence(file)],
+        recommendation: "Add a short reason after ts-expect-error or replace the suppression with a typed boundary.",
         createdAt: snapshot.capturedAt
       }));
     }
