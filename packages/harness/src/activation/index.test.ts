@@ -14,6 +14,7 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
+  buildActivationQuery,
   buildMemoryQuery,
   buildSourceQuery,
   detectConflicts,
@@ -123,6 +124,46 @@ const searchDocument = (
 });
 
 describe("activation engine", () => {
+  it("builds a unified activation query model from task scope, needs, budget, and risk", () => {
+    const query = buildActivationQuery(task, {
+      focus: "mixed",
+      needs: ["memory", "source", "observation"],
+      budget: {
+        maxItems: 4,
+        maxTokens: 900,
+        reserveTokens: 120
+      },
+      risk: "high",
+      extraTerms: ["pgvector", "source-health"]
+    });
+
+    expect(query).toMatchObject({
+      taskContractId: "task-1",
+      projectId: "project-1",
+      focus: "mixed",
+      needs: ["memory", "source", "observation"],
+      scope: {
+        taskContractId: "task-1",
+        projectId: "project-1"
+      },
+      budget: {
+        maxItems: 4,
+        maxTokens: 900,
+        reserveTokens: 120
+      },
+      risk: "high"
+    });
+    expect(query.terms).toEqual(expect.arrayContaining([
+      "doctor",
+      "brain",
+      "store",
+      "readiness",
+      "pgvector",
+      "source",
+      "health"
+    ]));
+  });
+
   it("selects a small high-signal working set from noisy candidates", () => {
     const query = buildMemoryQuery(task);
     const candidates = [

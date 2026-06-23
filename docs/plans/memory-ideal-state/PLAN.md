@@ -135,7 +135,7 @@ Latest verification already passed:
 - pnpm db:ready: 11/11 migrations, pgvector available
 - git diff --check
 - forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-38
+- targeted slice checks recorded in Progress through MM-39
 
 Known target repo readiness:
 - dry-run: proven
@@ -409,7 +409,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-36 complete: added deterministic trust-tier ranking and temporal override assessment for SourceClaim governance. Intended files: `packages/db/src/repositories/DrizzleSourceRepository.ts`, focused source repository tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no source graph health audit, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused DB source repository test failed because `rankSourceTrustTier` and `assessSourceClaimOverride` were missing; GREEN focused DB source repository test passed with 23 files / 65 tests and proves deterministic trust ranks, blocks a newer weak claim from overriding stronger current consensus without explicit reason, and permits weaker challenge when stronger consensus is stale by `revisitWhen`; focused DB package typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 244 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-37 source graph health audit.
 - [x] (2026-06-23) MM-37 complete: broadened source graph health audit over semantic source snapshots. Intended files: `packages/harness/src/audit/auditChecks.ts`, focused audit tests, `packages/db/src/auditSemanticSnapshot.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: RED focused harness audit test failed because seeded decorative source support, stale accepted claim, unlinked accepted claim, and rejected-claim decision support produced no findings; GREEN focused harness audit test passed with 9 files / 40 tests; focused harness and DB typechecks passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 245 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:source-graph` passed with cleanup count `0`. Next: MM-38 source-to-decision dogfood on memory implementation.
 - [x] (2026-06-23) MM-38 complete: dogfooded source-to-decision on the MM-37 source graph health audit implementation decision. Intended files: `docs/runs/2026-06-23-source-to-decision-dogfood.md`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no source crawler, no new CLI surface, no activation v2 integration, no reflection candidate persistence, no Memory Core mutation, no dashboard/API/MCP/server/plugin. Evidence: live `krn plan --persist` created ExecutionRun `bba64c9a-eb96-47b7-819a-93937e6d8c5d`; live `krn source claim add --persist` created SourceClaim `d5ea7024-7d7a-4291-a050-4de1fbebf605` with mechanism, doesNotProve, falsifier, `implementation-boundary` support, `project-decision` trust, consumer `MM-38 source-to-decision dogfood`, and run linkage; live `krn source decision link --persist` created SourceDecisionEdge `a343ebef-2951-4ba6-b0d7-8eb3af586509` targeting the same harness run with high confidence; DB proof showed run source claims `1` and run source decision edges `1`. Next: MM-39 ActivationEngine v2 query model.
-- [ ] MM-39: ActivationEngine v2 query model.
+- [x] (2026-06-23) MM-39 complete: added a pure unified ActivationQuery model and builder for task/project scope, needs, budget, and risk. Intended files: `packages/harness/src/activation/types.ts`, `packages/harness/src/activation/memoryQuery.ts`, `packages/harness/src/activation/sourceQuery.ts`, activation tests, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no retrieval merge, no trust/temporal filter change, no activation trace persistence change, no source crawler, no dashboard/API/MCP/server/plugin. Evidence: RED focused activation test failed because `buildActivationQuery` did not exist; GREEN focused activation test passed with 9 files / 41 tests and proves mixed memory/source/observation needs, project/task scope, budget, risk, and extra query terms; focused harness typecheck passed; full `pnpm typecheck` passed; full `pnpm test` passed with 46 files / 246 tests; DB-aware `pnpm db:ready` passed with 11/11 migrations and pgvector available; DB-aware `pnpm db:smoke:activation` passed with cleanup count `0`. Next: MM-40 hybrid candidate merge.
 - [ ] MM-40: Hybrid lexical/vector/graph candidate merge.
 - [ ] MM-41: Trust, temporal, invalidation, and anti-memory filters.
 - [ ] MM-42: ContextROI, diversity, dedup, inclusions, and exclusions.
@@ -1425,10 +1425,27 @@ At the end:
 - Activation combines memory, source, observation, anti-memory, trust, temporal filters, context ROI, dedup, exclusions, and raw recall triggers.
 - ContextAssembly is small, reasoned, and auditable.
 
+Gate 5 MM-39 outcome:
+- `ActivationQuery` now models task id, project id, focus, needs, scope,
+  budget, risk, text, and query terms.
+- `buildActivationQuery` builds a pure query contract from `TaskContract` plus
+  explicit memory/source/observation needs, budget, risk, and extra terms.
+- Existing `buildMemoryQuery` and `buildSourceQuery` now use the unified query
+  builder while preserving their focused defaults.
+- No retrieval merge, trust/temporal filtering change, activation persistence
+  change, DB migration, or new runtime surface was added.
+
 Slices:
 
 MM-39 — ActivationQuery model
 - Unify task, project, scope, memory/source/observation needs, budget, and risk.
+- Slice note (2026-06-23): implement this as a pure harness query contract
+  and builder over existing TaskContract text. Intended files:
+  `packages/harness/src/activation/types.ts`,
+  `packages/harness/src/activation/memoryQuery.ts`, activation tests, root
+  `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals: no DB
+  migration, no retrieval merge, no trust/temporal filter change, no activation
+  trace persistence change, no source crawler, no dashboard/API/MCP/server/plugin.
 - Verification:
       pure tests.
 

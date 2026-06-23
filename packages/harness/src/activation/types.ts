@@ -6,6 +6,7 @@ import type {
   HarnessPlanId,
   IsoTimestamp,
   MemoryRecordStatus,
+  ProjectId,
   SourceTrustTier
 } from "@krn/core";
 
@@ -13,11 +14,38 @@ export type ActivationCandidateKind = CoreActivationCandidateKind;
 
 export type ActivationExclusionReason = CoreActivationExclusionReason;
 
+export type ActivationQueryFocus = "memory" | "source" | "observation" | "mixed";
+
+export type ActivationQueryNeed =
+  | "memory"
+  | "source"
+  | "observation"
+  | "anti_memory"
+  | "search";
+
+export type ActivationQueryRisk = "low" | "medium" | "high";
+
+export interface ActivationQueryScope {
+  taskContractId: string;
+  projectId?: ProjectId;
+}
+
+export interface ActivationQueryBudget {
+  maxItems: number;
+  maxTokens: number;
+  reserveTokens: number;
+}
+
 export interface ActivationQuery {
   taskContractId: string;
+  projectId?: ProjectId;
   text: string;
   terms: readonly string[];
-  focus: "memory" | "source";
+  focus: ActivationQueryFocus;
+  needs: readonly ActivationQueryNeed[];
+  scope: ActivationQueryScope;
+  budget: ActivationQueryBudget;
+  risk: ActivationQueryRisk;
 }
 
 export interface ActivationCandidate {

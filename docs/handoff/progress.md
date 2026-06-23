@@ -1,12 +1,12 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-38.
+Current phase: Memory ideal-state execution track after MM-39.
 
 Completed:
 
 - M27 target repo readiness, DB smokes, evidence capture, anti-rot audit, and
   memory ideal-state goal handoff.
-- MM-00 through MM-38 and MM-16R in
+- MM-00 through MM-39 and MM-16R in
   `docs/plans/memory-ideal-state/PLAN.md`.
 - MM-16/17 external review repair layer in
   `docs/plans/memory-ideal-state/PLAN.md`, committed as
@@ -128,10 +128,12 @@ Current runtime truth:
 - MM-38 dogfoods source-to-decision on the MM-37 source graph health audit
   implementation decision. The dogfood run has one SourceClaim and one
   SourceDecisionEdge linked to the same harness run.
+- MM-39 adds pure ActivationQuery modeling for task/project scope, focus,
+  memory/source/observation needs, budget, risk, and query terms.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-39 ActivationEngine v2 query model.
+- Continue with MM-40 hybrid lexical/vector/graph candidate merge.

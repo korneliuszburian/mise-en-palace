@@ -2,7 +2,15 @@
 
 Hard blockers:
 
-- None for MM-39.
+- None for MM-40.
+
+Closed in MM-39:
+
+- ActivationQuery now carries task/project scope, focus, memory/source/
+  observation needs, budget, risk, text, and query terms.
+- `buildActivationQuery` exists as a pure harness builder over TaskContract.
+- Memory/source query builders preserve focused defaults through the unified
+  query builder.
 
 Closed in MM-38:
 

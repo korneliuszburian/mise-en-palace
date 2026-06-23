@@ -1,18 +1,13 @@
 import type { TaskContract } from "@krn/core";
 
 import {
-  taskActivationText,
-  tokenizeActivationText
+  buildActivationQuery
 } from "./memoryQuery.js";
 import type { ActivationQuery } from "./types.js";
 
 export const buildSourceQuery = (task: TaskContract): ActivationQuery => {
-  const text = taskActivationText(task);
-
-  return {
-    taskContractId: task.id,
-    text,
-    terms: tokenizeActivationText(text),
-    focus: "source"
-  };
+  return buildActivationQuery(task, {
+    focus: "source",
+    needs: ["source", "search"]
+  });
 };
