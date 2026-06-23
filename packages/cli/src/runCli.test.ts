@@ -561,9 +561,9 @@ describe("runCli", () => {
         id: "task-contract-1",
         operatorIntentId: "operator-intent-1",
         projectId: "project-1",
-        title: "Render Codex execution brief",
-        objective: "Render persisted activated context for Codex.",
-        constraints: ["do not invoke Codex"],
+        title: "Render Codex execution brief for TypeScript review risk",
+        objective: "Render persisted activated context for Codex with TypeScript unknown-first boundary review and diff risk evidence.",
+        constraints: ["do not invoke Codex", "preserve strict unknown boundaries", "report review risk"],
         nonGoals: ["do not mutate memory", "do not spawn agents"],
         acceptance: ["brief renders from persisted run"],
         status: "active",
@@ -684,6 +684,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- memory-record-1");
     expect(result.stdout).toContain("Anti-memory Warnings:");
     expect(result.stdout).toContain("anti_memory_record:anti-memory-1");
+    expect(result.stdout).toContain("unknown-first boundary check");
+    expect(result.stdout).toContain("no type weakening");
+    expect(result.stdout).toContain("diff risk summary");
+    expect(result.stdout).toContain("review-risk notes");
   });
 
   it("requires database config for codex brief", async () => {

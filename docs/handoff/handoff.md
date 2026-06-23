@@ -1,7 +1,7 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-50. KRN has
+The memory ideal-state execution track is implemented through MM-51. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -63,11 +63,13 @@ candidates now require approved review with evidence before they can be treated
 as promotable. CapabilityCompiler now routes TypeScript boundary and
 review-risk task text to focused capability requirements for unknown-first
 boundary checks, no type weakening, changed-file evidence, diff-risk
-summaries, and review-risk notes.
+summaries, and review-risk notes. Capability routing has now been dogfooded on
+a persisted KRN memory implementation task, and read-only Codex brief readback
+preserves task-text capability routing from the persisted TaskContract.
 
 Last verified state:
-MM-50 routed TypeScript boundary and review-risk task text to focused
-capability requirements. Focused harness RED/GREEN tests passed; full
+MM-51 dogfooded capability routing and fixed read-only Codex brief capability
+readback. Focused CLI RED/GREEN tests passed; full
 verification is recorded in
 `docs/handoff/verification.md`.
 
@@ -84,7 +86,7 @@ Milestone status:
 - M26 Codex adapter + hook expectations + worker skeleton: complete and
   proven.
 - M27 target repo init/connect dogfood: complete and proven through anti-rot.
-- MM-00 through MM-50 memory ideal-state slices: complete through governed
+- MM-00 through MM-51 memory ideal-state slices: complete through governed
   MemoryReviewGate promotion, memory invalidation, feedback-aware memory
   ranking, negative-feedback health findings, and explicit memory anti-memory
   blocking across source claims, memory records, linked search documents,
@@ -101,7 +103,8 @@ Milestone status:
   and one before/after activation dogfood proof for observation prefix, plus
   CapabilityRequirement priority/binding-kind hardening and CapabilityCompiler
   v1 task-text routing plus pure binding model contracts, review-gated binding
-  candidates, and TypeScript/review-risk capability routing for Gate 6.
+  candidates, TypeScript/review-risk capability routing, and capability routing
+  dogfood/readback proof for Gate 6.
 
 M27 commit spine:
 - `0de15dd docs(run): add target repo init-connect ledger`
@@ -214,6 +217,11 @@ Runtime proof status:
 - capability TypeScript/review-risk routing: TypeScript boundary tasks require
   unknown-first boundary and no-type-weakening evidence; review-risk tasks
   require changed-file, diff-risk, and review-risk evidence.
+- capability routing dogfood: persisted ExecutionRun
+  `1c6dd716-3903-4d9f-b765-57c20019beff` selected small capability hints for
+  source grounding, TypeScript safety, tests, evidence/review capture, and
+  brain-store schema; read-only Codex brief readback preserves those task-text
+  hints.
 
 Key proof IDs:
 - Direct fixture Project: `9da67341-0124-407e-b3fa-197f7f850a57`.
@@ -225,12 +233,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-50 blocker remains.
+No MM-51 blocker remains.
 
 Rollback path:
-After commit, revert the MM-50 commit with `git revert <commit>` if
-TypeScript/review-risk capability routing regresses. No DB migration was added;
-rollback is code/docs only.
+After commit, revert the MM-51 commit with `git revert <commit>` if capability
+dogfood/readback routing regresses. No DB migration was added; rollback is
+code/docs only.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -240,7 +248,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, golden proof, and production worker throughput.
 
 Next safest action:
-Run MM-51 Capability dogfood.
+Run MM-52 EvidenceBundle hardening.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

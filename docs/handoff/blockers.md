@@ -2,7 +2,18 @@
 
 Hard blockers:
 
-- None for MM-51.
+- None for MM-52.
+
+Closed in MM-51:
+
+- Capability routing was dogfooded on persisted ExecutionRun
+  `1c6dd716-3903-4d9f-b765-57c20019beff`.
+- Read-only Codex brief readback now passes the persisted TaskContract to
+  `createCapabilityPlan`, preserving task-text capability routing.
+- Selected hints are small and auditable: source-to-decision,
+  typescript-type-safety, test-driven-development, evidence-review-loop, and
+  brain-store-schema.
+- Codex invocation and Memory Core mutation remained absent.
 
 Closed in MM-50:
 

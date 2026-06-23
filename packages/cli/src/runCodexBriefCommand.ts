@@ -165,6 +165,7 @@ export const runCodexBriefCommand = async (
       createEvidenceContract(aggregate.taskContract);
     const capabilityPlan = createCapabilityPlan({
       harnessPlan: aggregate.harnessPlan,
+      taskContract: aggregate.taskContract,
       hasContext: aggregate.contextAssembly.inclusions.length > 0,
       createdAt: runtime.now(),
       createId: runtime.createId

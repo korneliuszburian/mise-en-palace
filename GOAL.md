@@ -11,7 +11,7 @@ This is a controlled ExecPlan-style run. Read the entire PLAN.md first. Then con
 
 Current known status:
 - M27 is complete.
-- MM-00 through MM-50 and MM-16R are complete.
+- MM-00 through MM-51 and MM-16R are complete.
 - MM-00 commit: 80f9ef9 docs(memory): add observational memory ideal-state ADR and ledger.
 - The observational memory staging substrate is implemented through MM-16:
   core contracts, IO schemas, DB schema, repository adapter, evidence/source
@@ -102,6 +102,9 @@ Current known status:
 - MM-50 routed TypeScript boundary and review-risk task text to focused
   capability requirements for unknown-first/no-type-weakening and diff-risk/
   review-risk evidence.
+- MM-51 dogfooded capability routing on a persisted KRN memory implementation
+  task and fixed read-only Codex brief readback so it preserves task-text
+  capability routing from the persisted TaskContract.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.

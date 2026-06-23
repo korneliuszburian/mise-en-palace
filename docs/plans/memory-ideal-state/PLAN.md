@@ -422,7 +422,7 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-48 complete: added pure core SkillBinding, RulePackBinding, PolicyGateBinding, and ToolBoundaryBinding contracts with conservative validation for invalid binding shapes. Intended files: `packages/core/src/capabilityPlan.ts`, `packages/core/src/capabilityPlan.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no repository, no CLI surface, no lifecycle events, no automatic skill/rule growth, no Codex invocation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core test failed because `validateCapabilityBindings` did not exist; GREEN focused core test passed with 4 files / 21 tests after binding contracts and validator were added; focused core/harness/codex-adapter typechecks passed; invalid binding with blank name/reason/evidence is rejected. Next: MM-49 Product-emitted skill/rule lifecycle without auto-growth.
 - [x] (2026-06-23) MM-49 complete: added pure core CapabilityBindingCandidate and CapabilityBindingReview contracts with a promotion assessment gate requiring explicit approved review before capability bindings can be treated as promotable. Intended files: `packages/core/src/capabilityPlan.ts`, `packages/core/src/capabilityPlan.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no repository, no CLI, no automatic promotion, no Codex invocation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused core test failed because `assessCapabilityBindingCandidatePromotion` did not exist; GREEN focused core test passed with 4 files / 22 tests after candidate/review contracts and assessment helper were added; focused core/harness/codex-adapter typechecks passed; proposed candidate is rejected until approved review with evidence ref exists. Next: MM-50 TypeScript/review-risk rule bindings.
 - [x] (2026-06-23) MM-50 complete: routed TypeScript boundary and review-risk task text to focused capability requirements without adding lifecycle storage or runtime surfaces. Intended files: `packages/harness/src/compiler/createCapabilityPlan.ts`, `packages/harness/src/compiler/index.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no repository, no CLI, no new binding records, no automatic promotion, no Codex invocation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused harness test failed because TS boundary/review-risk tasks only had generic `type_safety` evidence; GREEN focused harness test passed with 9 files / 50 tests after `type_safety`, `evidence_capture`, and `review_capture` requirements gained unknown-first/no-type-weakening/review-risk/diff-risk evidence; focused harness and codex-adapter typechecks passed; full `pnpm typecheck` and `pnpm test` passed with 47 files / 259 tests. Next: MM-51 Capability dogfood.
-- [ ] MM-51: Dogfood capability routing for a memory task.
+- [x] (2026-06-23) MM-51 complete: dogfooded capability routing on a persisted KRN memory implementation task and recorded proof at `docs/runs/2026-06-23-capability-routing-dogfood.md`. Intended files: dogfood run doc, `packages/cli/src/runCodexBriefCommand.ts`, focused CLI regression test, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no DB migration, no capability repository, no new CLI surface, no binding lifecycle promotion, no Codex invocation, no Memory Core mutation, no dashboard/API/MCP/server/plugin/source crawler. Evidence: live `krn plan --persist` created ExecutionRun `1c6dd716-3903-4d9f-b765-57c20019beff`; first `krn codex brief --run-id` readback exposed generic capability hints because the persisted TaskContract was not passed to `createCapabilityPlan`; RED focused CLI test failed because readback lacked `unknown-first boundary check`; GREEN focused CLI test passed after readback used the persisted TaskContract; final read-only brief preserved small, relevant hints for source-to-decision, typescript-type-safety, test-driven-development, evidence-review-loop, and brain-store-schema. Next: MM-52 EvidenceBundle hardening.
 - [ ] MM-52: EvidenceBundle hardening.
 - [ ] MM-53: ReviewAssessment and FeedbackDelta hardening.
 - [ ] MM-54: diff risk and review burden scoring v1.
@@ -1694,6 +1694,15 @@ Gate 6 MM-50 outcome:
 - The routing remains CapabilityPlan requirements only; no binding repository,
   CLI, Codex invocation, lifecycle promotion, or runtime surface was added.
 
+Gate 6 MM-51 outcome:
+- A persisted memory implementation task selected small, relevant, auditable
+  capability hints across source grounding, TypeScript safety, tests,
+  evidence/review capture, and brain-store schema.
+- `krn codex brief --run-id` now preserves task-text capability routing from
+  the persisted TaskContract instead of reconstructing generic hints.
+- The dogfood remained read-only for Codex and did not mutate Memory Core or
+  promote capability bindings.
+
 Slices:
 
 MM-46 — Capability domain hardening
@@ -1768,6 +1777,15 @@ MM-50 — TypeScript and review-risk bindings
 
 MM-51 — Capability dogfood
 - Use compiler on a KRN memory implementation task.
+- Slice note (2026-06-23): run live persisted capability routing dogfood on a
+  KRN memory implementation task, record selected hints, and make the
+  read-only Codex brief readback preserve the same task-text routing as
+  `krn plan`. Intended files: dogfood run doc, `packages/cli/src/
+  runCodexBriefCommand.ts`, focused CLI test, root `PLAN.md`, `GOAL.md`,
+  handoff files, and this PLAN. Non-goals: no DB migration, no capability
+  repository, no new CLI surface, no binding lifecycle promotion, no Codex
+  invocation, no Memory Core mutation, no dashboard/API/MCP/server/plugin/
+  source crawler.
 - Verification:
       selected bindings are small, relevant, and auditable.
 

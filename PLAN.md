@@ -16,7 +16,7 @@ docs/plans/memory-ideal-state/PLAN.md
 Current public state:
 
 - M27 target repo readiness is complete.
-- MM-00 through MM-50 and MM-16R of the memory ideal-state plan are complete.
+- MM-00 through MM-51 and MM-16R of the memory ideal-state plan are complete.
 - Built: DB-backed harness spine, CLI planning/doctor/evidence/audit/init/connect
   surfaces, AuditBundle layer, observation core/schema/DB/repository/evidence
   linkage, manual observe-run CLI, deterministic observer input builder, and
@@ -101,7 +101,9 @@ Current public state:
   candidate/review contracts and requires approved review before promotion.
   MM-50 routed TypeScript boundary and review-risk task text to focused
   capability requirements for unknown-first/no-type-weakening and diff-risk/
-  review-risk evidence.
+  review-risk evidence. MM-51 dogfooded capability routing on a persisted KRN
+  memory implementation task and fixed read-only Codex brief readback so it
+  preserves task-text capability routing from the persisted TaskContract.
 - Not built:
   golden memory behavior runner, API/MCP, dashboard, plugin package, source
   crawler, fuzzy anti-memory matching, and broad benchmark suite.
