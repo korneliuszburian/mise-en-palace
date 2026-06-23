@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C4-00: Decide Worker Runtime ADR Before Execution
+C5-00: Convert Self-Hosting Run Gaps Into Candidates
 ```
 
-Do not build worker runtime, dashboard, or broad memory behavior until
-C4 records whether a worker daemon/job executor is accepted or rejected, with
-write authority and falsifiers in `PLAN.md` / ADR form.
+Do not build worker runtime, dashboard, or broad memory behavior until the
+self-hosting run gaps are staged as governed candidate rows. Do not promote
+those candidates in the same slice that stages them.
 
 ## Required Read Order
 

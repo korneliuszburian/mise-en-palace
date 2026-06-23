@@ -26,18 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Worker Runtime Decision Boundary.
+current_priority: Self-Hosting Feedback Candidate Staging.
 
-first_unchecked_slice: `C4-00: Decide Worker Runtime ADR Before Execution`.
+first_unchecked_slice: `C5-00: Convert Self-Hosting Run Gaps Into Candidates`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide worker runtime authority before any daemon/job executor exists;
+- convert self-hosting run gaps into governed candidates instead of leaving them
+  only in prose;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
-- do not start worker runtime, dashboard, or broad memory features before C4
-  records the accepted or rejected runtime boundary.
+- do not promote new candidates in the same slice that stages them;
+- do not start worker runtime, dashboard, or broad memory features before the
+  staged self-hosting feedback is represented as reviewable candidate rows.
 
 completed_checkpoint:
 
@@ -100,6 +102,9 @@ completed_checkpoint:
   proof, observation prefix source-range rejection, evidence command provenance,
   and reflection final-truth rejection. Promptfoo smoke remains integration
   proof only.
+- C4-00 adds ADR-0015 and defers worker daemon/job executor runtime. Current
+  worker truth remains typed contracts, enqueue ports, Postgres lifecycle
+  repository/smoke proof, and explicit future write-authority limits.
 
 completed_evidence_pointers:
 
@@ -109,6 +114,8 @@ completed_evidence_pointers:
   `docs/architecture/cli-surfaces.md`;
 - reset/audit decision records:
   `docs/reviews/repo-reset-audit/*`;
+- worker runtime boundary:
+  `docs/decisions/ADR-0015-worker-runtime-boundary.md`;
 - detailed command transcript:
   `Command Evidence` later in this plan, historical reference only.
 
@@ -2387,6 +2394,8 @@ git commit -m "test(eval): expand real KRN behavior gate"
 
 ### C4-00: Decide Worker Runtime ADR Before Execution
 
+status: complete.
+
 objective:
 
 Before any worker daemon/job executor exists, write an ADR that decides whether
@@ -2402,6 +2411,13 @@ mechanism:
 
 Use source -> mechanism -> KRN implication -> decision/rejection -> falsifier.
 If runtime is rejected for now, record the rejection and stop.
+
+outcome:
+
+ADR-0015 records `Decision status: defer`. Workers remain typed contracts,
+enqueue ports, and Postgres worker-job lifecycle proof only. No worker daemon,
+poller, recurring background loop, job executor, autonomous maintenance, or
+Memory Core writer is accepted in this epoch.
 
 verification:
 
@@ -2543,7 +2559,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C1-03 Split repository port public and internal surfaces.
 - [x] C2-00 Add reviewed anti-memory candidate storage.
 - [x] C3-00 Expand real GoldenTask behavior gate coverage.
-- [ ] C4-00 Decide worker runtime ADR before execution.
+- [x] C4-00 Decide worker runtime ADR before execution.
 - [ ] C5-00 Convert self-hosting run gaps into candidates.
 - [x] C6-00A Re-home memory review signals as pure core behavior.
 - [ ] C6-00 Re-home former memory/source/evidence audit invariants into native
@@ -2898,12 +2914,16 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C4-00: Decide worker runtime ADR before execution.
+  C5-00: Convert self-hosting run gaps into candidates.
 - C3-00 found no need for a new eval subsystem. The existing
   `runKrnBehaviorGoldenGate` path could cover raw recall, observation prefix
   source-range rejection, and EvidenceBundle command provenance by executing
   current KRN functions and passing the resulting `krn_behavior_execution`
   proof rows through `runGoldenTaskFixtures`.
+- C4-00 found worker runtime is still premature. The repo already has typed job
+  descriptions, enqueue ports, Postgres worker job lifecycle repository, and DB
+  smoke proof, but no evidence that a daemon/poller is needed before C5 stages
+  self-hosting feedback as governed candidates.
 
 ## Command Evidence
 
@@ -3867,6 +3887,35 @@ This proves the real GoldenTask behavior gate now executes the added KRN code
 paths before `runGoldenTaskFixtures` accepts the proof rows. It does not prove
 Promptfoo executes behavior, worker runtime readiness, or global Memory Brain
 quality.
+
+C4-00 verification after deciding worker runtime boundary:
+
+```sh
+git status --short --branch
+rg -n "worker|runtime|job|outbox|write authority|daemon|executor|queue" docs/decisions packages/workers packages/db packages/harness -g "*.md" -g "*.ts"
+git diff --check
+pnpm typecheck
+```
+
+Observed:
+
+- starting status was `main...origin/main` with only the C4 docs changes dirty;
+- worker/runtime boundary scan completed; matches are the expected worker
+  contracts, DB lifecycle helpers, ADR references, and runtime-boundary docs;
+- ADR-0015 records `Decision status: defer` for worker runtime execution;
+- current worker boundary remains contracts/enqueue ports plus Postgres
+  worker-job lifecycle repository/smoke proof;
+- future runtime writes are limited to job-declared allowed writes and still
+  forbid direct `memory_records`, `anti_memory_records`, `source_claims`, and
+  `source_decisions` writes;
+- `git diff --check` passed;
+- full workspace typecheck passed;
+- no DB command was run for C4, so this slice does not claim new DB runtime
+  truth.
+
+This proves the repo has a recorded worker runtime decision before execution
+work. It does not prove a worker daemon, job executor, autonomous maintenance,
+or production throughput exists.
 
 ## Historical Reset Completion Criteria
 
