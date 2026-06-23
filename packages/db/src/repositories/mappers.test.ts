@@ -507,6 +507,7 @@ describe("memory governance mappers", () => {
       id: "anti-memory-1",
       projectId: "project-1",
       executionRunId: "run-1",
+      createdFromCandidateId: null,
       key: "anti:markdown-runtime-memory",
       rejectedClaim: "Markdown files are runtime memory.",
       reason: "Markdown may be audit/source/export, not Memory Core.",

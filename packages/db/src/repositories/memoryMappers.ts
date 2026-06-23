@@ -1,5 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import type {
+  AntiMemoryCandidate,
   AntiMemoryRecord,
   MemoryApplication,
   MemoryCandidate,
@@ -8,6 +9,7 @@ import type {
   SourceLineageRef
 } from "@krn/core";
 import type {
+  antiMemoryCandidates,
   antiMemoryRecords,
   memoryApplications,
   memoryCandidates,
@@ -25,6 +27,7 @@ type MemoryRecordRow = InferSelectModel<typeof memoryRecords>;
 type MemoryApplicationRow = InferSelectModel<typeof memoryApplications>;
 type MemoryFeedbackEventRow = InferSelectModel<typeof memoryFeedbackEvents>;
 type MemoryCandidateRow = InferSelectModel<typeof memoryCandidates>;
+type AntiMemoryCandidateRow = InferSelectModel<typeof antiMemoryCandidates>;
 type AntiMemoryRecordRow = InferSelectModel<typeof antiMemoryRecords>;
 
 const memoryRecordKinds = new Set<MemoryCandidate["kind"]>([
@@ -188,6 +191,42 @@ export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => 
   };
 };
 
+export const mapAntiMemoryCandidate = (row: AntiMemoryCandidateRow): AntiMemoryCandidate => {
+  const reviewedAt = optionalIsoTimestamp(row.reviewedAt);
+  const validUntil = optionalIsoTimestamp(row.validUntil);
+
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+    ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+    proposedBy: row.proposedBy,
+    key: row.key,
+    status: row.status,
+    ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
+    ...(row.reason === null ? {} : { reason: row.reason }),
+    invalidatedBySourceClaimIds: stringListOrEmpty(row.invalidatedBySourceClaimIds),
+    ...(row.invalidatedBySourceClaimId === null
+      ? {}
+      : { invalidatedBySourceClaimId: row.invalidatedBySourceClaimId }),
+    ...(row.appliesTo === null ? {} : { appliesTo: row.appliesTo }),
+    ...(row.mayRevisitWhen === null ? {} : { mayRevisitWhen: row.mayRevisitWhen }),
+    summary: row.summary,
+    body: row.body,
+    owner: row.owner,
+    confidence: row.confidence,
+    sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
+    ...(row.reviewer === null ? {} : { reviewer: row.reviewer }),
+    ...(reviewedAt === undefined ? {} : { reviewedAt }),
+    ...(row.rejectionReason === null ? {} : { rejectionReason: row.rejectionReason }),
+    validFrom: toIsoTimestamp(row.validFrom),
+    ...(validUntil === undefined ? {} : { validUntil }),
+    metadata: metadataOrEmpty(row.metadata),
+    createdAt: toIsoTimestamp(row.createdAt),
+    updatedAt: toIsoTimestamp(row.updatedAt)
+  };
+};
+
 export const mapMemoryApplication = (row: MemoryApplicationRow): MemoryApplication => ({
   id: row.id,
   memoryRecordId: row.memoryRecordId,
@@ -225,6 +264,9 @@ export const mapAntiMemoryRecord = (row: AntiMemoryRecordRow): AntiMemoryRecord 
     id: row.id,
     projectId: row.projectId,
     ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+    ...(row.createdFromCandidateId === null
+      ? {}
+      : { createdFromCandidateId: row.createdFromCandidateId }),
     key: row.key,
     ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
     ...(row.reason === null ? {} : { reason: row.reason }),

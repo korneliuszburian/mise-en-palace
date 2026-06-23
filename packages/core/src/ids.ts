@@ -17,6 +17,7 @@ export type MemoryRecordVersionId = string;
 export type MemoryCandidateId = string;
 export type MemoryApplicationId = string;
 export type MemoryFeedbackEventId = string;
+export type AntiMemoryCandidateId = string;
 export type AntiMemoryRecordId = string;
 export type ObservationGroupId = string;
 export type ObservationItemId = string;

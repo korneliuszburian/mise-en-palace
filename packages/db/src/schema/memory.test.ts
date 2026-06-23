@@ -47,4 +47,15 @@ describe("memory governance schema", () => {
     expect("appliesTo" in memorySchema.antiMemoryRecords).toBe(true);
     expect("mayRevisitWhen" in memorySchema.antiMemoryRecords).toBe(true);
   });
+
+  it("exposes reviewed anti-memory candidate storage fields", () => {
+    expect("executionRunId" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("feedbackDeltaId" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("proposedBy" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("status" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("reviewer" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("reviewedAt" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("rejectionReason" in memorySchema.antiMemoryCandidates).toBe(true);
+    expect("createdFromCandidateId" in memorySchema.antiMemoryRecords).toBe(true);
+  });
 });

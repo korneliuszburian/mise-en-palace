@@ -10,11 +10,14 @@ export type {
 } from "./harnessRunRepository.js";
 export type {
   CreateMemoryCandidateInput,
+  CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
   InvalidateMemoryRecordInput,
   MemoryActivationRepository,
   MemoryCandidateReviewRepository,
   PromoteMemoryCandidateInput,
+  PromoteAntiMemoryCandidateInput,
+  RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
 } from "./memoryRepository.js";

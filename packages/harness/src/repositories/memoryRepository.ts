@@ -1,4 +1,5 @@
 import type {
+  AntiMemoryCandidate,
   AntiMemoryRecord,
   ExecutionRunId,
   FeedbackDeltaId,
@@ -118,6 +119,41 @@ export interface CreateAntiMemoryRecordInput extends RepositoryMetadata {
   sourceLineage: SourceLineageRef[];
 }
 
+export interface CreateAntiMemoryCandidateInput extends RepositoryMetadata {
+  projectId: ProjectId;
+  executionRunId?: ExecutionRunId;
+  feedbackDeltaId?: FeedbackDeltaId;
+  proposedBy: string;
+  key: string;
+  status?: AntiMemoryCandidate["status"];
+  rejectedClaim?: string;
+  reason?: string;
+  invalidatedBySourceClaimIds?: SourceClaimId[];
+  invalidatedBySourceClaimId?: SourceClaimId;
+  appliesTo?: string;
+  mayRevisitWhen?: string;
+  summary: string;
+  body: string;
+  owner: string;
+  confidence: number;
+  sourceLineage: SourceLineageRef[];
+  validFrom?: string;
+  validUntil?: string;
+}
+
+export interface PromoteAntiMemoryCandidateInput extends RepositoryMetadata {
+  candidateId: AntiMemoryCandidate["id"];
+  reviewer: string;
+  decision: "accepted";
+  recordKey?: string;
+}
+
+export interface RejectAntiMemoryCandidateInput extends RepositoryMetadata {
+  candidateId: AntiMemoryCandidate["id"];
+  reviewer: string;
+  reason: string;
+}
+
 export interface MemoryRepository {
   getMemoryRecord(id: string): Promise<MemoryRecord | undefined>;
   getMemoryRecordById(id: string): Promise<MemoryRecord | undefined>;
@@ -131,6 +167,13 @@ export interface MemoryRepository {
   invalidateMemoryRecord(input: InvalidateMemoryRecordInput): Promise<MemoryRecord>;
   recordMemoryApplication(input: RecordMemoryApplicationInput): Promise<MemoryApplication>;
   createMemoryFeedbackEvent(input: CreateMemoryFeedbackEventInput): Promise<MemoryFeedbackEvent>;
+  createAntiMemoryCandidate(input: CreateAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
+  getAntiMemoryCandidateById(id: string): Promise<AntiMemoryCandidate | undefined>;
+  promoteReviewedAntiMemoryCandidate(
+    input: PromoteAntiMemoryCandidateInput
+  ): Promise<AntiMemoryRecord>;
+  rejectAntiMemoryCandidate(input: RejectAntiMemoryCandidateInput): Promise<AntiMemoryCandidate>;
+  listAntiMemoryCandidates(projectId: ProjectId, limit: number): Promise<AntiMemoryCandidate[]>;
   createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord>;
   listAntiMemoryForProject(projectId: ProjectId, limit: number): Promise<AntiMemoryRecord[]>;
   listAntiMemoryForRun(executionRunId: ExecutionRunId): Promise<AntiMemoryRecord[]>;
@@ -152,4 +195,9 @@ export type MemoryCandidateReviewRepository = Pick<
   | "recordMemoryApplication"
   | "createMemoryFeedbackEvent"
   | "listMemoryCandidates"
+  | "createAntiMemoryCandidate"
+  | "getAntiMemoryCandidateById"
+  | "promoteReviewedAntiMemoryCandidate"
+  | "rejectAntiMemoryCandidate"
+  | "listAntiMemoryCandidates"
 >;

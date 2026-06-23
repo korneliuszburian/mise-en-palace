@@ -11,20 +11,23 @@ import {
   commandResultDoesNotProve
 } from "@krn/core";
 import type {
+  AntiMemoryCandidate,
   AntiMemoryRecord,
   MemoryRecord,
   ObservationItem,
   SourceClaim
 } from "@krn/core";
 import type {
-  CreateAntiMemoryRecordInput,
+  CreateAntiMemoryCandidateInput,
   CreateEvidenceBundleInput,
   CreateExecutionRunInput,
   CreateFeedbackDeltaInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   InvalidateMemoryRecordInput,
+  PromoteAntiMemoryCandidateInput,
   PromoteMemoryCandidateInput,
+  RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput,
   CreateReviewAssessmentInput,
@@ -72,8 +75,17 @@ const unusedMemoryRepository = {
   async createMemoryFeedbackEvent(_input: CreateMemoryFeedbackEventInput): Promise<never> {
     throw new Error("createMemoryFeedbackEvent should not be called");
   },
-  async createAntiMemoryRecord(_input: CreateAntiMemoryRecordInput): Promise<never> {
-    throw new Error("createAntiMemoryRecord should not be called");
+  async createAntiMemoryCandidate(_input: CreateAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("createAntiMemoryCandidate should not be called");
+  },
+  async getAntiMemoryCandidateById(_id: string): Promise<never> {
+    throw new Error("getAntiMemoryCandidateById should not be called");
+  },
+  async promoteReviewedAntiMemoryCandidate(_input: PromoteAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("promoteReviewedAntiMemoryCandidate should not be called");
+  },
+  async rejectAntiMemoryCandidate(_input: RejectAntiMemoryCandidateInput): Promise<never> {
+    throw new Error("rejectAntiMemoryCandidate should not be called");
   }
 };
 
@@ -2646,12 +2658,12 @@ describe("runCli", () => {
     );
   });
 
-  it("persists anti-memory add and validates invalidating source claim", async () => {
+  it("persists anti-memory add as a reviewed candidate and validates invalidating source claim", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
     });
-    let capturedAntiMemory: CreateAntiMemoryRecordInput | undefined;
+    let capturedAntiMemoryCandidate: CreateAntiMemoryCandidateInput | undefined;
     const result = await runCli(
       [
         "memory",
@@ -2665,6 +2677,12 @@ describe("runCli", () => {
         "Files can be export/audit/seed/source bank, not Memory Core",
         "--invalidated-by-source-claim-id",
         "source-claim-1",
+        "--candidate-evidence-provenance",
+        "source_claim",
+        "--candidate-evidence-ref",
+        "source-claim-1",
+        "--candidate-evidence-does-not-prove",
+        "This does not prove the anti-memory candidate is reviewed.",
         "--persist"
       ],
       {
@@ -2710,27 +2728,39 @@ describe("runCli", () => {
           },
           memoryRepository: {
             ...unusedMemoryRepository,
-            async createAntiMemoryRecord(input) {
-              capturedAntiMemory = input;
+            async createAntiMemoryCandidate(input) {
+              capturedAntiMemoryCandidate = input;
 
               return {
-                id: "anti-memory-1",
+                id: "anti-memory-candidate-1",
                 projectId: input.projectId,
-                executionRunId: input.executionRunId,
+                ...(input.executionRunId === undefined
+                  ? {}
+                  : { executionRunId: input.executionRunId }),
+                ...(input.feedbackDeltaId === undefined
+                  ? {}
+                  : { feedbackDeltaId: input.feedbackDeltaId }),
+                proposedBy: input.proposedBy,
                 key: input.key,
-                rejectedClaim: input.rejectedClaim,
-                reason: input.reason,
+                status: input.status ?? "candidate",
+                ...(input.rejectedClaim === undefined ? {} : { rejectedClaim: input.rejectedClaim }),
+                ...(input.reason === undefined ? {} : { reason: input.reason }),
                 invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
-                invalidatedBySourceClaimId: input.invalidatedBySourceClaimId,
-                appliesTo: input.appliesTo,
-                mayRevisitWhen: input.mayRevisitWhen,
+                ...(input.invalidatedBySourceClaimId === undefined
+                  ? {}
+                  : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
+                ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
+                ...(input.mayRevisitWhen === undefined
+                  ? {}
+                  : { mayRevisitWhen: input.mayRevisitWhen }),
                 summary: input.summary,
                 body: input.body,
                 owner: input.owner,
                 confidence: input.confidence,
                 sourceLineage: input.sourceLineage,
                 metadata: input.metadata ?? {},
-                validFrom: now,
+                validFrom: input.validFrom ?? now,
+                ...(input.validUntil === undefined ? {} : { validUntil: input.validUntil }),
                 createdAt: now,
                 updatedAt: now
               };
@@ -2747,18 +2777,168 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
-    expect(result.stdout).toContain("antiMemory: anti-memory-1");
+    expect(result.stdout).toContain("antiMemoryCandidate: anti-memory-candidate-1");
+    expect(result.stdout).toContain("No AntiMemoryRecord created");
     expect(result.stdout).toContain("No MemoryRecord created");
-    expect(capturedAntiMemory).toMatchObject({
+    expect(capturedAntiMemoryCandidate).toMatchObject({
       projectId: "project-1",
       executionRunId: "execution-run-1",
+      proposedBy: "cli",
       rejectedClaim: "Markdown files are KRN runtime memory",
       reason: "Files can be export/audit/seed/source bank, not Memory Core",
       invalidatedBySourceClaimId: "source-claim-1",
       invalidatedBySourceClaimIds: ["source-claim-1"],
       sourceLineage: [{ sourceId: "source-claim-1" }],
       owner: "operator",
-      confidence: 90
+      confidence: 90,
+      metadata: {
+        reflectionCandidateEvidence: {
+          provenance: "source_claim",
+          evidenceRefs: ["source-claim-1"],
+          doesNotProve: "This does not prove the anti-memory candidate is reviewed."
+        }
+      }
+    });
+  });
+
+  it("promotes anti-memory candidates through the review gate", async () => {
+    const dependencies = createNoStoreCompilerDependencies({
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+    let capturedPromotion: PromoteAntiMemoryCandidateInput | undefined;
+    const result = await runCli(
+      [
+        "memory",
+        "anti",
+        "promote",
+        "--candidate-id",
+        "anti-memory-candidate-1",
+        "--reviewer",
+        "operator",
+        "--decision",
+        "accepted",
+        "--evidence-reviewed-ref",
+        "source-claim-1",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => ({
+          workspaceId: "workspace-1",
+          projectId: "project-1",
+          compilerDependencies: dependencies,
+          sourceRepository: {
+            async createSourceArtifact() {
+              throw new Error("createSourceArtifact should not be called");
+            },
+            async createSourceClaim() {
+              throw new Error("createSourceClaim should not be called");
+            },
+            async getSourceClaimById(id) {
+              return {
+                id,
+                sourceArtifactId: "source-artifact-1",
+                claim: "Markdown files are audit artifacts, not runtime memory",
+                mechanism: "KRN runtime memory is store-backed in Postgres",
+                krnImplication: "Do not read markdown as Memory Core",
+                doesNotProve: "This does not prove markdown cannot be source material",
+                trustTier: "project-decision",
+                supportType: "implementation-boundary",
+                consumer: "C2-00",
+                status: "accepted",
+                metadata: {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async createSourceDecisionEdge() {
+              throw new Error("createSourceDecisionEdge should not be called");
+            },
+            async createSourceRejection() {
+              throw new Error("createSourceRejection should not be called");
+            }
+          },
+          memoryRepository: {
+            ...unusedMemoryRepository,
+            async getAntiMemoryCandidateById(id): Promise<AntiMemoryCandidate> {
+              return {
+                id,
+                projectId: "project-1",
+                executionRunId: "execution-run-1",
+                proposedBy: "cli",
+                key: "anti-markdown-runtime-memory",
+                status: "candidate",
+                rejectedClaim: "Markdown files are KRN runtime memory",
+                reason: "Files can be export/audit/seed/source bank, not Memory Core",
+                invalidatedBySourceClaimIds: ["source-claim-1"],
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                summary: "Markdown files are KRN runtime memory",
+                body: "Files can be export/audit/seed/source bank, not Memory Core",
+                owner: "operator",
+                confidence: 90,
+                validFrom: now,
+                metadata: {
+                  reflectionCandidateEvidence: {
+                    provenance: "source_claim",
+                    evidenceRefs: ["source-claim-1"],
+                    doesNotProve: "This does not prove the anti-memory candidate is reviewed."
+                  }
+                },
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async promoteReviewedAntiMemoryCandidate(input) {
+              capturedPromotion = input;
+
+              return {
+                id: "anti-memory-1",
+                projectId: "project-1",
+                executionRunId: "execution-run-1",
+                createdFromCandidateId: input.candidateId,
+                key: "anti-markdown-runtime-memory",
+                rejectedClaim: "Markdown files are KRN runtime memory",
+                reason: "Files can be export/audit/seed/source bank, not Memory Core",
+                invalidatedBySourceClaimIds: ["source-claim-1"],
+                summary: "Markdown files are KRN runtime memory",
+                body: "Files can be export/audit/seed/source bank, not Memory Core",
+                owner: "operator",
+                confidence: 90,
+                sourceLineage: [{ sourceId: "source-claim-1" }],
+                validFrom: now,
+                metadata: input.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            }
+          },
+          harnessRunRepository: dependencies.harnessRunRepository,
+          async close() {
+            return undefined;
+          }
+        })
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Review gate: passed");
+    expect(result.stdout).toContain("antiMemoryRecord: anti-memory-1");
+    expect(capturedPromotion).toMatchObject({
+      candidateId: "anti-memory-candidate-1",
+      reviewer: "operator",
+      decision: "accepted",
+      metadata: {
+        reviewGate: {
+          evidenceReviewedRef: "source-claim-1",
+          invalidatedSourceClaimIds: ["source-claim-1"]
+        }
+      }
     });
   });
 

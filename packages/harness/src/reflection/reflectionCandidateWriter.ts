@@ -1,6 +1,6 @@
 import type {
+  AntiMemoryCandidate,
   EvalCandidate,
-  ReflectionAntiMemoryCandidateProposal,
   ReflectionPolicyCandidateProposal,
   ReflectionRecord,
   SourceClaim
@@ -20,7 +20,6 @@ import type {
 export type ReflectionCandidateWriterStatus = "ready" | "blocked";
 
 export type UnsupportedReflectionCandidateKind =
-  | "anti_memory_candidate"
   | "policy_candidate"
   | "source_claim_candidate";
 
@@ -29,7 +28,6 @@ export interface UnsupportedReflectionCandidate {
   index: number;
   reason: string;
   proposal:
-    | ReflectionAntiMemoryCandidateProposal
     | ReflectionPolicyCandidateProposal
     | ReflectionRecord["output"]["sourceClaimCandidates"][number];
 }
@@ -39,7 +37,7 @@ export interface WriteReflectionCandidatesInput {
   sourceArtifactId?: string;
   now(): string;
   createId(prefix: string): string;
-  memoryRepository: Pick<MemoryRepository, "createMemoryCandidate">;
+  memoryRepository: Pick<MemoryRepository, "createMemoryCandidate" | "createAntiMemoryCandidate">;
   sourceRepository?: Pick<SourceRepository, "createSourceClaim">;
 }
 
@@ -47,6 +45,7 @@ export interface WriteReflectionCandidatesResult {
   status: ReflectionCandidateWriterStatus;
   blockedReasons: string[];
   memoryCandidates: Awaited<ReturnType<MemoryRepository["createMemoryCandidate"]>>[];
+  antiMemoryCandidates: AntiMemoryCandidate[];
   sourceClaims: SourceClaim[];
   evalCandidates: EvalCandidate[];
   unsupportedCandidates: UnsupportedReflectionCandidate[];
@@ -85,6 +84,7 @@ export const writeReflectionCandidates = async (
         `${violation.path}:${violation.reason}`
       ),
       memoryCandidates: [],
+      antiMemoryCandidates: [],
       sourceClaims: [],
       evalCandidates: [],
       unsupportedCandidates: []
@@ -98,6 +98,7 @@ export const writeReflectionCandidates = async (
       status: "blocked",
       blockedReasons: plan.blockedReasons,
       memoryCandidates: [],
+      antiMemoryCandidates: [],
       sourceClaims: [],
       evalCandidates: [],
       unsupportedCandidates: []
@@ -127,6 +128,31 @@ export const writeReflectionCandidates = async (
       isUserPreference: proposal.isUserPreference,
       validFrom: proposal.validFrom,
       ...(proposal.validUntil === undefined ? {} : { validUntil: proposal.validUntil }),
+      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
+    }));
+  }
+
+  const antiMemoryCandidates = [];
+  for (const proposal of input.reflectionRecord.output.antiMemoryCandidates) {
+    antiMemoryCandidates.push(await input.memoryRepository.createAntiMemoryCandidate({
+      projectId: input.reflectionRecord.scope.projectId,
+      ...(input.reflectionRecord.scope.executionRunId === undefined
+        ? {}
+        : { executionRunId: input.reflectionRecord.scope.executionRunId }),
+      proposedBy: "reflection",
+      key: proposal.key,
+      status: "candidate",
+      ...(proposal.reason === undefined ? {} : { reason: proposal.reason }),
+      invalidatedBySourceClaimIds: proposal.invalidatedBySourceClaimIds,
+      summary: proposal.summary,
+      body: proposal.body,
+      owner: proposal.owner,
+      confidence: proposal.confidence,
+      ...(proposal.appliesTo === undefined ? {} : { appliesTo: proposal.appliesTo }),
+      ...(proposal.mayRevisitWhen === undefined
+        ? {}
+        : { mayRevisitWhen: proposal.mayRevisitWhen }),
+      sourceLineage: proposal.sourceLineage,
       metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
     }));
   }
@@ -166,14 +192,6 @@ export const writeReflectionCandidates = async (
     }
   }
 
-  input.reflectionRecord.output.antiMemoryCandidates.forEach((proposal, index) => {
-    unsupportedCandidates.push({
-      kind: "anti_memory_candidate",
-      index,
-      reason: "anti_memory_candidate_store_not_available",
-      proposal
-    });
-  });
   input.reflectionRecord.output.policyCandidates.forEach((proposal, index) => {
     unsupportedCandidates.push({
       kind: "policy_candidate",
@@ -199,6 +217,7 @@ export const writeReflectionCandidates = async (
     status: "ready",
     blockedReasons: [],
     memoryCandidates,
+    antiMemoryCandidates,
     sourceClaims,
     evalCandidates,
     unsupportedCandidates

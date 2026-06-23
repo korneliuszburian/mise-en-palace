@@ -10,6 +10,8 @@ import {
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
   formatMemoryRecordApplyUsage,
+  formatMemoryAntiPromoteUsage,
+  formatMemoryAntiRejectUsage,
   parseMemoryArgs
 } from "./parseMemoryArgs.js";
 
@@ -185,10 +187,18 @@ describe("parseMemoryArgs", () => {
       "2026-07-01",
       "--owner",
       "operator",
+      "--proposed-by",
+      "codex",
       "--confidence",
       "medium",
       "--key",
       "anti-key",
+      "--candidate-evidence-provenance",
+      "source_claim",
+      "--candidate-evidence-ref",
+      "source-claim-1",
+      "--candidate-evidence-does-not-prove",
+      "This does not prove the anti-memory candidate is reviewed.",
       "--metadata",
       "kind=anti",
       "--persist"
@@ -204,11 +214,67 @@ describe("parseMemoryArgs", () => {
         appliesTo: "memory-key",
         mayRevisitWhen: "2026-07-01",
         owner: "operator",
+        proposedBy: "codex",
         confidence: "medium",
         key: "anti-key",
+        candidateEvidenceProvenance: "source_claim",
+        candidateEvidenceRefs: ["source-claim-1"],
+        candidateEvidenceDoesNotProve:
+          "This does not prove the anti-memory candidate is reviewed.",
         metadata: {
           kind: "anti"
         }
+      }
+    });
+  });
+
+  it("parses anti-memory candidate promote and reject commands", () => {
+    expect(parseMemoryArgs([
+      "anti",
+      "promote",
+      "--candidate-id",
+      "anti-candidate-1",
+      "--reviewer",
+      "operator",
+      "--decision",
+      "accepted",
+      "--evidence-reviewed-ref",
+      "source-claim-1",
+      "--metadata",
+      "gate=anti-memory-review",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryAntiPromote",
+        persist: true,
+        candidateId: "anti-candidate-1",
+        reviewer: "operator",
+        decision: "accepted",
+        evidenceReviewedRef: "source-claim-1",
+        metadata: {
+          gate: "anti-memory-review"
+        }
+      }
+    });
+
+    expect(parseMemoryArgs([
+      "anti",
+      "reject",
+      "--candidate-id",
+      "anti-candidate-1",
+      "--reviewer",
+      "operator",
+      "--reason",
+      "unsupported",
+      "--persist"
+    ])).toEqual({
+      command: {
+        kind: "memoryAntiReject",
+        persist: true,
+        candidateId: "anti-candidate-1",
+        reviewer: "operator",
+        reason: "unsupported",
+        metadata: {}
       }
     });
   });
@@ -239,6 +305,16 @@ describe("parseMemoryArgs", () => {
         kind: "memoryAntiAddHelp"
       }
     });
+    expect(parseMemoryArgs(["anti", "promote", "-h"])).toEqual({
+      command: {
+        kind: "memoryAntiPromoteHelp"
+      }
+    });
+    expect(parseMemoryArgs(["anti", "reject", "--help"])).toEqual({
+      command: {
+        kind: "memoryAntiRejectHelp"
+      }
+    });
     expect(parseMemoryArgs(["candidate", "add", "--metadata", "not-a-pair"])).toEqual({
       error: "--metadata requires key=value"
     });
@@ -248,7 +324,9 @@ describe("parseMemoryArgs", () => {
         formatMemoryCandidatePromoteUsage().trim(),
         formatMemoryCandidateRejectUsage().trim(),
         formatMemoryRecordApplyUsage().trim(),
-        formatMemoryAntiAddUsage().trim()
+        formatMemoryAntiAddUsage().trim(),
+        formatMemoryAntiPromoteUsage().trim(),
+        formatMemoryAntiRejectUsage().trim()
       ].join("\n\n")
     });
   });

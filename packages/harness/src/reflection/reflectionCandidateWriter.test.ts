@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
   EvalCandidate,
+  AntiMemoryCandidate,
   MemoryCandidate,
   ReflectionRecord,
   SourceClaim
@@ -136,6 +137,7 @@ const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): Reflection
 describe("reflection candidate writer", () => {
   it("writes reviewed memory and source candidates while preserving lineage", async () => {
     const memoryCandidates: MemoryCandidate[] = [];
+    const antiMemoryCandidates: AntiMemoryCandidate[] = [];
     const sourceClaims: SourceClaim[] = [];
     const result = await writeReflectionCandidates({
       reflectionRecord: reflectionRecord(),
@@ -165,6 +167,43 @@ describe("reflection candidate writer", () => {
             updatedAt: now
           };
           memoryCandidates.push(candidate);
+          return candidate;
+        },
+        async createAntiMemoryCandidate(input) {
+          const candidate: AntiMemoryCandidate = {
+            id: "anti-memory-candidate-1",
+            projectId: input.projectId,
+            ...(input.executionRunId === undefined
+              ? {}
+              : { executionRunId: input.executionRunId }),
+            ...(input.feedbackDeltaId === undefined
+              ? {}
+              : { feedbackDeltaId: input.feedbackDeltaId }),
+            proposedBy: input.proposedBy,
+            key: input.key,
+            status: input.status ?? "candidate",
+            ...(input.rejectedClaim === undefined ? {} : { rejectedClaim: input.rejectedClaim }),
+            ...(input.reason === undefined ? {} : { reason: input.reason }),
+            invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+            ...(input.invalidatedBySourceClaimId === undefined
+              ? {}
+              : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
+            ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
+            ...(input.mayRevisitWhen === undefined
+              ? {}
+              : { mayRevisitWhen: input.mayRevisitWhen }),
+            summary: input.summary,
+            body: input.body,
+            owner: input.owner,
+            confidence: input.confidence,
+            sourceLineage: input.sourceLineage,
+            validFrom: input.validFrom ?? now,
+            ...(input.validUntil === undefined ? {} : { validUntil: input.validUntil }),
+            metadata: input.metadata ?? {},
+            createdAt: now,
+            updatedAt: now
+          };
+          antiMemoryCandidates.push(candidate);
           return candidate;
         }
       },
@@ -216,6 +255,20 @@ describe("reflection candidate writer", () => {
         sourceRangeIds: ["range-1"]
       }
     });
+    expect(antiMemoryCandidates[0]).toMatchObject({
+      proposedBy: "reflection",
+      key: "anti-reflection-autopromote",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      metadata: {
+        reflectionRecordId: "reflection-record-1",
+        reflectionCandidateEvidence: {
+          provenance: "source_claim",
+          evidenceRefs: ["source-claim-1"],
+          doesNotProve: "This does not prove the anti-memory candidate is reviewed."
+        }
+      }
+    });
+    expect(result.antiMemoryCandidates).toHaveLength(1);
     expect(result.evalCandidates[0]).toMatchObject<Partial<EvalCandidate>>({
       id: "eval-candidate-reflection-record-1-1",
       projectId: "project-1",
@@ -224,7 +277,6 @@ describe("reflection candidate writer", () => {
       sourceEvidence: ["observation-1"]
     });
     expect(result.unsupportedCandidates).toEqual([
-      expect.objectContaining({ kind: "anti_memory_candidate" }),
       expect.objectContaining({ kind: "policy_candidate" })
     ]);
   });
@@ -249,6 +301,9 @@ describe("reflection candidate writer", () => {
         async createMemoryCandidate() {
           createMemoryCandidateCalled = true;
           throw new Error("createMemoryCandidate should not be called");
+        },
+        async createAntiMemoryCandidate() {
+          throw new Error("createAntiMemoryCandidate should not be called");
         }
       }
     });
@@ -288,6 +343,9 @@ describe("reflection candidate writer", () => {
         async createMemoryCandidate() {
           createMemoryCandidateCalled = true;
           throw new Error("createMemoryCandidate should not be called");
+        },
+        async createAntiMemoryCandidate() {
+          throw new Error("createAntiMemoryCandidate should not be called");
         }
       }
     });

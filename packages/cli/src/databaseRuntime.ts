@@ -75,7 +75,10 @@ export interface DatabaseRuntime {
     | "invalidateMemoryRecord"
     | "recordMemoryApplication"
     | "createMemoryFeedbackEvent"
-    | "createAntiMemoryRecord"
+    | "createAntiMemoryCandidate"
+    | "getAntiMemoryCandidateById"
+    | "promoteReviewedAntiMemoryCandidate"
+    | "rejectAntiMemoryCandidate"
   >;
   observationRepository?: {
     createGroup(input: CreateObservationGroupInput): Promise<ObservationGroup>;

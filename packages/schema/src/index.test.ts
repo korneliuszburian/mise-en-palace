@@ -9,6 +9,7 @@ import {
   ObservationProvenanceKindSchema,
   parseAuditBundleInput,
   parseEvidenceCaptureInput,
+  parseAntiMemoryCandidateInput,
   parseHarnessCompileInput,
   parseMemoryCandidateInput,
   parseObservationGroupInput,
@@ -735,6 +736,36 @@ describe("schema parse boundaries", () => {
       rejectedClaim: "Markdown files are runtime memory",
       reason: "Files can be audit/source/export, but Memory Core is store-backed",
       invalidatedBySourceClaimIds: [],
+        metadata: {}
+      });
+
+    expect(() =>
+      parseAntiMemoryCandidateInput({
+        proposedBy: "reflection",
+        key: "anti-markdown-runtime-memory",
+        summary: "Markdown is not runtime memory.",
+        body: "Markdown may be source/export, not Memory Core.",
+        owner: "operator",
+        confidence: 90
+      })
+    ).toThrow();
+
+    expect(
+      parseAntiMemoryCandidateInput({
+        executionRunId: "run-1",
+        proposedBy: "reflection",
+        key: "anti-markdown-runtime-memory",
+        rejectedClaim: "Markdown files are runtime memory",
+        reason: "Memory Core is store-backed.",
+        invalidatedBySourceClaimIds: ["source-claim-1"],
+        summary: "Markdown is not runtime memory.",
+        body: "Markdown may be source/export, not Memory Core.",
+        owner: "operator",
+        confidence: 90
+      })
+    ).toMatchObject({
+      status: "candidate",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
       metadata: {}
     });
   });

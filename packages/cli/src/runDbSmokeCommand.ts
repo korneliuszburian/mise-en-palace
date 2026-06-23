@@ -334,6 +334,8 @@ export const runDbSmokeCommand = async (
           `Memory record invalidated status: ${report.invalidatedMemoryRecordStatus}`,
           `Active memory after invalidation: ${report.activeMemoryAfterInvalidationCount}`,
           `Memory application: ${report.memoryApplicationId}`,
+          `Anti-memory candidate: ${report.antiMemoryCandidateId}`,
+          `Anti-memory candidate reviewed status: ${report.reviewedAntiMemoryCandidateStatus}`,
           `Anti-memory record: ${report.antiMemoryRecordId}`,
           `Run anti-memory records: ${report.runAntiMemoryCount}`,
           `Project memory records: ${report.projectMemoryRecordCount}`,

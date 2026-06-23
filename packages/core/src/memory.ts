@@ -4,6 +4,7 @@ import type {
   ExecutionRunId,
   FeedbackDeltaId,
   MemoryApplicationId,
+  AntiMemoryCandidateId,
   MemoryCandidateId,
   MemoryFeedbackEventId,
   MemoryRecordId,
@@ -38,6 +39,7 @@ export type MemoryCandidateStatus =
   | "rejected"
   | "applied"
   | "superseded";
+export type AntiMemoryCandidateStatus = MemoryCandidateStatus;
 export type MemoryApplicationOutcome = "helped" | "hurt" | "neutral" | "stale";
 export type MemoryFeedbackDirection = "positive" | "negative" | "correction";
 export type MemoryFeedbackEventType =
@@ -132,6 +134,7 @@ export interface AntiMemoryRecord extends ValidityWindow {
   id: AntiMemoryRecordId;
   projectId: ProjectId;
   executionRunId?: ExecutionRunId;
+  createdFromCandidateId?: AntiMemoryCandidateId;
   key: string;
   rejectedClaim?: string;
   reason?: string;
@@ -144,6 +147,33 @@ export interface AntiMemoryRecord extends ValidityWindow {
   owner: string;
   confidence: number;
   sourceLineage: SourceLineageRef[];
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+  updatedAt: IsoTimestamp;
+}
+
+export interface AntiMemoryCandidate extends ValidityWindow {
+  id: AntiMemoryCandidateId;
+  projectId: ProjectId;
+  executionRunId?: ExecutionRunId;
+  feedbackDeltaId?: FeedbackDeltaId;
+  proposedBy: string;
+  key: string;
+  status: AntiMemoryCandidateStatus;
+  rejectedClaim?: string;
+  reason?: string;
+  invalidatedBySourceClaimIds: SourceClaimId[];
+  invalidatedBySourceClaimId?: SourceClaimId;
+  appliesTo?: string;
+  mayRevisitWhen?: string;
+  summary: string;
+  body: string;
+  owner: string;
+  confidence: number;
+  sourceLineage: SourceLineageRef[];
+  reviewer?: string;
+  reviewedAt?: IsoTimestamp;
+  rejectionReason?: string;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;

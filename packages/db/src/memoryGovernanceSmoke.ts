@@ -14,6 +14,7 @@ import {
   DrizzleSourceRepository
 } from "./repositories/index.js";
 import {
+  antiMemoryCandidates,
   antiMemoryRecords,
   memoryApplications,
   memoryCandidates,
@@ -47,6 +48,8 @@ export interface MemoryGovernanceSmokeReport {
   invalidatedMemoryRecordStatus: string;
   activeMemoryAfterInvalidationCount: number;
   memoryApplicationId: string;
+  antiMemoryCandidateId: string;
+  reviewedAntiMemoryCandidateStatus: string;
   antiMemoryRecordId: string;
   runAntiMemoryCount: number;
   projectMemoryRecordCount: number;
@@ -104,6 +107,10 @@ const countRows = async (
     .select({ count: sql<number>`count(*)::int` })
     .from(antiMemoryRecords)
     .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`);
+  const antiMemoryCandidateRows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(antiMemoryCandidates)
+    .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}`);
   const eventRows = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(runEvents)
@@ -128,6 +135,7 @@ const countRows = async (
     (memoryRecordRows[0]?.count ?? 0) +
     (memoryRecordVersionRows[0]?.count ?? 0) +
     (memoryApplicationRows[0]?.count ?? 0) +
+    (antiMemoryCandidateRows[0]?.count ?? 0) +
     (antiMemoryRows[0]?.count ?? 0) +
     (eventRows[0]?.count ?? 0) +
     (outboxRows[0]?.count ?? 0) +
@@ -169,6 +177,9 @@ export const runMemoryGovernanceSmokeCheck = async (
     await db
       .delete(antiMemoryRecords)
       .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`);
+    await db
+      .delete(antiMemoryCandidates)
+      .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}`);
     await db.delete(memoryRecords).where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
     await db
       .delete(memoryCandidates)
@@ -351,10 +362,12 @@ export const runMemoryGovernanceSmokeCheck = async (
       }
     });
     const activeMemoryAfterInvalidation = await memoryRepository.listActiveMemory(project.id, 10);
-    const antiMemoryRecord = await memoryRepository.createAntiMemoryRecord({
+    const antiMemoryCandidate = await memoryRepository.createAntiMemoryCandidate({
       projectId: project.id,
       executionRunId: executionRun.id,
       key: `anti-memory-governance-smoke:${marker}`,
+      proposedBy: "memory-governance-smoke",
+      status: "candidate",
       rejectedClaim: "Markdown files are KRN runtime memory.",
       reason: "Runtime Memory Core is store-backed; markdown is audit/source/export material.",
       invalidatedBySourceClaimIds: [sourceClaim.id],
@@ -367,9 +380,30 @@ export const runMemoryGovernanceSmokeCheck = async (
       confidence: 99,
       sourceLineage: [{ sourceId: sourceClaim.id }],
       metadata: {
-        smokeId: marker
+        smokeId: marker,
+        reflectionCandidateEvidence: {
+          provenance: "source_claim",
+          evidenceRefs: [sourceClaim.id],
+          doesNotProve: "This does not prove the anti-memory candidate is reviewed."
+        }
       }
     });
+    const antiMemoryRecord = await memoryRepository.promoteReviewedAntiMemoryCandidate({
+      candidateId: antiMemoryCandidate.id,
+      reviewer: "memory-governance-smoke",
+      decision: "accepted",
+      metadata: {
+        smokeId: marker,
+        reviewGate: {
+          evidenceReviewedRef: sourceClaim.id
+        }
+      }
+    });
+    const reviewedAntiMemoryCandidate = await memoryRepository.getAntiMemoryCandidateById(
+      antiMemoryCandidate.id
+    );
+    const reviewedAntiMemoryCandidateStatus =
+      reviewedAntiMemoryCandidate?.status ?? "missing";
     const runAntiMemory = await memoryRepository.listAntiMemoryForRun(executionRun.id);
     const versionRows = await db
       .select()
@@ -397,8 +431,10 @@ export const runMemoryGovernanceSmokeCheck = async (
       versionRows[0]?.createdFromCandidateId !== memoryCandidate.id ||
       applicationRows.length !== 1 ||
       applicationRows[0]?.memoryRecordId !== memoryRecord.id ||
+      reviewedAntiMemoryCandidateStatus !== "accepted" ||
+      antiMemoryRecord.createdFromCandidateId !== antiMemoryCandidate.id ||
       !runAntiMemory.some((record) => record.id === antiMemoryRecord.id) ||
-      (outboxRows[0]?.count ?? 0) < 2
+      (outboxRows[0]?.count ?? 0) < 4
     ) {
       throw new Error("Memory governance smoke readback did not match persisted records");
     }
@@ -419,6 +455,8 @@ export const runMemoryGovernanceSmokeCheck = async (
       invalidatedMemoryRecordStatus: invalidatedMemoryRecord.status,
       activeMemoryAfterInvalidationCount: activeMemoryAfterInvalidation.length,
       memoryApplicationId: memoryApplication.id,
+      antiMemoryCandidateId: antiMemoryCandidate.id,
+      reviewedAntiMemoryCandidateStatus,
       antiMemoryRecordId: antiMemoryRecord.id,
       runAntiMemoryCount: runAntiMemory.length,
       projectMemoryRecordCount: projectMemoryRecords.length,

@@ -10,7 +10,9 @@ import {
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
   formatMemoryRecordApplyUsage,
-  formatMemoryAntiAddUsage
+  formatMemoryAntiAddUsage,
+  formatMemoryAntiPromoteUsage,
+  formatMemoryAntiRejectUsage
 } from "./parseMemoryArgs.js";
 import {
   formatSourceClaimAddUsage,
@@ -83,6 +85,9 @@ import {
 import {
   runMemoryAntiAddCommand
 } from "./runMemoryAntiAddCommand.js";
+import {
+  runMemoryAntiReviewCommand
+} from "./runMemoryAntiReviewCommand.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -234,6 +239,22 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatMemoryAntiAddUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryAntiPromoteHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryAntiPromoteUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "memoryAntiRejectHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatMemoryAntiRejectUsage(),
       stderr: ""
     };
   }
@@ -459,6 +480,38 @@ export const runCli = async (
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unknown memory anti add error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (
+    parsed.command.kind === "memoryAntiPromote" ||
+    parsed.command.kind === "memoryAntiReject"
+  ) {
+    try {
+      const result = await runMemoryAntiReviewCommand({
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown memory anti review error";
 
       return {
         exitCode: 1,

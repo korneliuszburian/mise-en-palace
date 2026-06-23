@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import type {
+  AntiMemoryCandidate,
   AntiMemoryRecord,
   ExecutionRunId,
   MemoryApplication,
@@ -10,12 +11,15 @@ import type {
 } from "@krn/core";
 import type {
   CreateAntiMemoryRecordInput,
+  CreateAntiMemoryCandidateInput,
   CreateMemoryFeedbackEventInput,
   CreateMemoryCandidateInput,
   CreateMemoryRecordInput,
   InvalidateMemoryRecordInput,
   MemoryRepository,
+  PromoteAntiMemoryCandidateInput,
   PromoteMemoryCandidateInput,
+  RejectAntiMemoryCandidateInput,
   RejectMemoryCandidateInput,
   RecordMemoryApplicationInput
 } from "@krn/harness/repositories/internal";
@@ -23,6 +27,7 @@ import type {
 import type { KrnDatabase } from "../database.js";
 import {
   antiMemoryRecords,
+  antiMemoryCandidates,
   memoryApplications,
   memoryCandidates,
   memoryFeedbackEvents,
@@ -36,6 +41,7 @@ import {
 } from "./common.js";
 import {
   mapAntiMemoryRecord,
+  mapAntiMemoryCandidate,
   mapMemoryApplication,
   mapMemoryCandidate,
   mapMemoryFeedbackEvent,
@@ -53,6 +59,11 @@ const smokePayload = (
 const memoryRecordKeyForCandidate = (input: PromoteMemoryCandidateInput): string =>
   input.recordKey ?? `memory:${input.candidateId}`;
 
+const antiMemoryRecordKeyForCandidate = (
+  candidate: AntiMemoryCandidate,
+  input: PromoteAntiMemoryCandidateInput
+): string => input.recordKey ?? candidate.key;
+
 export const memoryPromotionMetadata = (
   candidate: MemoryCandidate,
   input: PromoteMemoryCandidateInput
@@ -63,6 +74,16 @@ export const memoryPromotionMetadata = (
   sourceClaimIds: candidate.sourceClaimIds
 });
 
+export const antiMemoryPromotionMetadata = (
+  candidate: AntiMemoryCandidate,
+  input: PromoteAntiMemoryCandidateInput
+): Record<string, unknown> => ({
+  ...candidate.metadata,
+  ...(input.metadata ?? {}),
+  createdFromCandidateId: candidate.id,
+  invalidatedBySourceClaimIds: candidate.invalidatedBySourceClaimIds
+});
+
 interface MemoryCoreInvariantInput {
   summary: string;
   body: string;
@@ -70,6 +91,19 @@ interface MemoryCoreInvariantInput {
   confidence: number;
   applicationGuidance: string;
   invalidationRule?: string;
+  sourceLineage: readonly { sourceId: string }[];
+  validFrom?: string;
+  validUntil?: string;
+}
+
+interface AntiMemoryCandidateInvariantInput {
+  key: string;
+  summary: string;
+  body: string;
+  owner: string;
+  confidence: number;
+  invalidatedBySourceClaimIds?: readonly string[];
+  invalidatedBySourceClaimId?: string;
   sourceLineage: readonly { sourceId: string }[];
   validFrom?: string;
   validUntil?: string;
@@ -137,6 +171,55 @@ export const assertMemoryCoreInvariants = (
   }
 };
 
+export const assertAntiMemoryCandidateInvariants = (
+  input: AntiMemoryCandidateInvariantInput,
+  subject: string
+): void => {
+  if (!hasText(input.key)) {
+    throw new Error(`${subject} requires key`);
+  }
+
+  if (!hasText(input.summary)) {
+    throw new Error(`${subject} requires summary`);
+  }
+
+  if (!hasText(input.body)) {
+    throw new Error(`${subject} requires body`);
+  }
+
+  if (!hasText(input.owner)) {
+    throw new Error(`${subject} requires owner`);
+  }
+
+  if (!Number.isInteger(input.confidence) || input.confidence < 0 || input.confidence > 100) {
+    throw new Error(`${subject} confidence must be an integer from 0 to 100`);
+  }
+
+  const invalidatingSourceClaimCount = input.invalidatedBySourceClaimIds?.filter(hasText).length ?? 0;
+
+  if (
+    !hasText(input.invalidatedBySourceClaimId) &&
+    invalidatingSourceClaimCount === 0 &&
+    (input.sourceLineage.length === 0 ||
+      input.sourceLineage.some((lineage) => !hasText(lineage.sourceId)))
+  ) {
+    throw new Error(`${subject} requires invalidating source claim or source lineage`);
+  }
+
+  if (input.validUntil !== undefined) {
+    if (!hasText(input.validFrom)) {
+      throw new Error(`${subject} with validUntil requires validFrom`);
+    }
+
+    const validFrom = timestampValue(input.validFrom);
+    const validUntil = timestampValue(input.validUntil);
+
+    if (validFrom !== undefined && validUntil !== undefined && validUntil <= validFrom) {
+      throw new Error(`${subject} validUntil must be after validFrom`);
+    }
+  }
+};
+
 const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
   if (candidate.status !== "proposed" && candidate.status !== "candidate") {
     throw new Error(
@@ -145,6 +228,16 @@ const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
   }
 
   assertMemoryCoreInvariants(candidate, `Memory candidate ${candidate.id}`);
+};
+
+const ensurePromotableAntiMemoryCandidate = (candidate: AntiMemoryCandidate): void => {
+  if (candidate.status !== "proposed" && candidate.status !== "candidate") {
+    throw new Error(
+      `Anti-memory candidate ${candidate.id} cannot be promoted from ${candidate.status}`
+    );
+  }
+
+  assertAntiMemoryCandidateInvariants(candidate, `Anti-memory candidate ${candidate.id}`);
 };
 
 export class DrizzleMemoryRepository implements MemoryRepository {
@@ -593,6 +686,191 @@ export class DrizzleMemoryRepository implements MemoryRepository {
     );
 
     return mapMemoryFeedbackEvent(row);
+  }
+
+  async createAntiMemoryCandidate(
+    input: CreateAntiMemoryCandidateInput
+  ): Promise<AntiMemoryCandidate> {
+    assertAntiMemoryCandidateInvariants(input, "Anti-memory candidate");
+
+    return this.db.transaction(async (tx) => {
+      const row = requireReturnedRow(
+        await tx
+          .insert(antiMemoryCandidates)
+          .values({
+            projectId: input.projectId,
+            ...(input.executionRunId === undefined
+              ? {}
+              : { executionRunId: input.executionRunId }),
+            ...(input.feedbackDeltaId === undefined
+              ? {}
+              : { feedbackDeltaId: input.feedbackDeltaId }),
+            proposedBy: input.proposedBy,
+            key: input.key,
+            status: input.status ?? "candidate",
+            ...(input.rejectedClaim === undefined
+              ? {}
+              : { rejectedClaim: input.rejectedClaim }),
+            ...(input.reason === undefined ? {} : { reason: input.reason }),
+            invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+            ...(input.invalidatedBySourceClaimId === undefined
+              ? {}
+              : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
+            ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
+            ...(input.mayRevisitWhen === undefined
+              ? {}
+              : { mayRevisitWhen: input.mayRevisitWhen }),
+            summary: input.summary,
+            body: input.body,
+            owner: input.owner,
+            confidence: input.confidence,
+            sourceLineage: input.sourceLineage,
+            ...(input.validFrom === undefined
+              ? {}
+              : { validFrom: fromIsoTimestamp(input.validFrom) }),
+            ...(input.validUntil === undefined
+              ? {}
+              : { validUntil: fromIsoTimestamp(input.validUntil) }),
+            metadata: input.metadata ?? {}
+          })
+          .returning(),
+        "createAntiMemoryCandidate"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "anti_memory.candidate.created",
+        payload: {
+          ...smokePayload(input.metadata),
+          antiMemoryCandidateId: row.id,
+          projectId: row.projectId
+        }
+      });
+
+      return mapAntiMemoryCandidate(row);
+    });
+  }
+
+  async getAntiMemoryCandidateById(id: string): Promise<AntiMemoryCandidate | undefined> {
+    const row = await this.db.query.antiMemoryCandidates.findFirst({
+      where: eq(antiMemoryCandidates.id, id)
+    });
+
+    return row === undefined ? undefined : mapAntiMemoryCandidate(row);
+  }
+
+  async promoteReviewedAntiMemoryCandidate(
+    input: PromoteAntiMemoryCandidateInput
+  ): Promise<AntiMemoryRecord> {
+    return this.db.transaction(async (tx) => {
+      const candidateRow = await tx.query.antiMemoryCandidates.findFirst({
+        where: eq(antiMemoryCandidates.id, input.candidateId)
+      });
+
+      if (candidateRow === undefined) {
+        throw new Error(`Anti-memory candidate ${input.candidateId} was not found`);
+      }
+
+      const candidate = mapAntiMemoryCandidate(candidateRow);
+      ensurePromotableAntiMemoryCandidate(candidate);
+
+      const now = new Date();
+      const metadata = antiMemoryPromotionMetadata(candidate, input);
+      const antiMemoryRow = requireReturnedRow(
+        await tx
+          .insert(antiMemoryRecords)
+          .values({
+            projectId: candidateRow.projectId,
+            ...(candidateRow.executionRunId === null
+              ? {}
+              : { executionRunId: candidateRow.executionRunId }),
+            createdFromCandidateId: candidateRow.id,
+            key: antiMemoryRecordKeyForCandidate(candidate, input),
+            ...(candidateRow.rejectedClaim === null
+              ? {}
+              : { rejectedClaim: candidateRow.rejectedClaim }),
+            ...(candidateRow.reason === null ? {} : { reason: candidateRow.reason }),
+            invalidatedBySourceClaimIds: candidateRow.invalidatedBySourceClaimIds,
+            ...(candidateRow.invalidatedBySourceClaimId === null
+              ? {}
+              : { invalidatedBySourceClaimId: candidateRow.invalidatedBySourceClaimId }),
+            ...(candidateRow.appliesTo === null ? {} : { appliesTo: candidateRow.appliesTo }),
+            ...(candidateRow.mayRevisitWhen === null
+              ? {}
+              : { mayRevisitWhen: candidateRow.mayRevisitWhen }),
+            summary: candidateRow.summary,
+            body: candidateRow.body,
+            owner: candidateRow.owner,
+            confidence: candidateRow.confidence,
+            sourceLineage: candidateRow.sourceLineage,
+            validFrom: candidateRow.validFrom,
+            ...(candidateRow.validUntil === null
+              ? {}
+              : { validUntil: candidateRow.validUntil }),
+            metadata
+          })
+          .returning(),
+        "promoteReviewedAntiMemoryCandidate.insertAntiMemoryRecord"
+      );
+
+      await tx
+        .update(antiMemoryCandidates)
+        .set({
+          status: input.decision,
+          reviewer: input.reviewer,
+          reviewedAt: now,
+          metadata,
+          updatedAt: now
+        })
+        .where(eq(antiMemoryCandidates.id, candidateRow.id));
+
+      await tx.insert(outboxEvents).values({
+        topic: "anti_memory.candidate.promoted",
+        payload: {
+          ...smokePayload(input.metadata),
+          antiMemoryCandidateId: candidateRow.id,
+          antiMemoryRecordId: antiMemoryRow.id,
+          projectId: candidateRow.projectId
+        }
+      });
+
+      return mapAntiMemoryRecord(antiMemoryRow);
+    });
+  }
+
+  async rejectAntiMemoryCandidate(
+    input: RejectAntiMemoryCandidateInput
+  ): Promise<AntiMemoryCandidate> {
+    const now = new Date();
+    const row = requireReturnedRow(
+      await this.db
+        .update(antiMemoryCandidates)
+        .set({
+          status: "rejected",
+          reviewer: input.reviewer,
+          reviewedAt: now,
+          rejectionReason: input.reason,
+          metadata: input.metadata ?? {},
+          updatedAt: now
+        })
+        .where(eq(antiMemoryCandidates.id, input.candidateId))
+        .returning(),
+      "rejectAntiMemoryCandidate"
+    );
+
+    return mapAntiMemoryCandidate(row);
+  }
+
+  async listAntiMemoryCandidates(
+    projectId: ProjectId,
+    limit: number
+  ): Promise<AntiMemoryCandidate[]> {
+    const rows = await this.db.query.antiMemoryCandidates.findMany({
+      where: eq(antiMemoryCandidates.projectId, projectId),
+      orderBy: asc(antiMemoryCandidates.createdAt),
+      limit
+    });
+
+    return rows.map(mapAntiMemoryCandidate);
   }
 
   async createAntiMemoryRecord(input: CreateAntiMemoryRecordInput): Promise<AntiMemoryRecord> {

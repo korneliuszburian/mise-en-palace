@@ -5,6 +5,7 @@ import {
 } from "vitest";
 
 import {
+  mapAntiMemoryCandidate,
   mapAntiMemoryRecord,
   mapMemoryApplication,
   mapMemoryCandidate,
@@ -21,6 +22,7 @@ describe("memoryMappers", () => {
     expect(mapMemoryCandidate).toEqual(expect.any(Function));
     expect(mapMemoryApplication).toEqual(expect.any(Function));
     expect(mapMemoryFeedbackEvent).toEqual(expect.any(Function));
+    expect(mapAntiMemoryCandidate).toEqual(expect.any(Function));
     expect(mapAntiMemoryRecord).toEqual(expect.any(Function));
   });
 
@@ -55,6 +57,44 @@ describe("memoryMappers", () => {
       sourceLineage: [{ sourceId: "source-claim-1", note: "reviewed" }],
       validFrom: createdAt.toISOString(),
       metadata: { slice: "QG-04G" }
+    });
+  });
+
+  it("maps AntiMemoryCandidate review and lineage fields", () => {
+    expect(mapAntiMemoryCandidate({
+      id: "anti-memory-candidate-1",
+      projectId: "project-1",
+      executionRunId: "run-1",
+      feedbackDeltaId: null,
+      proposedBy: "reflection",
+      key: "anti-markdown-runtime-memory",
+      status: "candidate",
+      rejectedClaim: "Markdown files are runtime memory",
+      reason: "Memory Core is store-backed.",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      invalidatedBySourceClaimId: null,
+      appliesTo: "memory:markdown-runtime",
+      mayRevisitWhen: null,
+      summary: "Do not treat markdown as runtime memory.",
+      body: "Markdown may be source/export, not Memory Core.",
+      owner: "operator",
+      confidence: 90,
+      sourceLineage: [{ sourceId: "source-claim-1", note: "reviewed" }],
+      reviewer: null,
+      reviewedAt: null,
+      rejectionReason: null,
+      validFrom: createdAt,
+      validUntil: null,
+      metadata: { reflectionRecordId: "reflection-1" },
+      createdAt,
+      updatedAt
+    })).toMatchObject({
+      id: "anti-memory-candidate-1",
+      proposedBy: "reflection",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1", note: "reviewed" }],
+      validFrom: createdAt.toISOString(),
+      metadata: { reflectionRecordId: "reflection-1" }
     });
   });
 });

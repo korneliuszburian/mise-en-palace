@@ -44,11 +44,11 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-C2-00: Add Reviewed Anti-Memory Candidate Storage
+C3-00: Expand Real GoldenTask Behavior Gate Coverage
 ```
 
 Do not build worker runtime, dashboard, or broad memory behavior until
-anti-memory writes have a reviewed candidate path or are explicitly deferred in
+real GoldenTask behavior coverage is expanded or explicitly deferred in
 `PLAN.md`.
 
 ## Required Read Order

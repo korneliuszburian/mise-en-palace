@@ -74,6 +74,7 @@ import {
 import { memoryCandidatesOrEmpty } from "./memoryMappers.js";
 
 export {
+  mapAntiMemoryCandidate,
   mapAntiMemoryRecord,
   mapMemoryApplication,
   mapMemoryCandidate,

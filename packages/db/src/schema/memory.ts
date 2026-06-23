@@ -231,6 +231,57 @@ export const memoryCandidates = pgTable(
   ]
 );
 
+export const antiMemoryCandidates = pgTable(
+  "anti_memory_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
+      onDelete: "set null"
+    }),
+    feedbackDeltaId: uuid("feedback_delta_id").references(() => feedbackDeltas.id, {
+      onDelete: "set null"
+    }),
+    proposedBy: text("proposed_by").notNull(),
+    key: text("key").notNull(),
+    status: memoryCandidateStatus("status").notNull().default("candidate"),
+    rejectedClaim: text("rejected_claim"),
+    reason: text("reason"),
+    invalidatedBySourceClaimIds: jsonb("invalidated_by_source_claim_ids")
+      .$type<JsonList>()
+      .notNull()
+      .default(emptyJsonList),
+    invalidatedBySourceClaimId: uuid("invalidated_by_source_claim_id").references(() => sourceClaims.id, {
+      onDelete: "set null"
+    }),
+    appliesTo: text("applies_to"),
+    mayRevisitWhen: text("may_revisit_when"),
+    summary: text("summary").notNull(),
+    body: text("body").notNull(),
+    owner: text("owner").notNull(),
+    confidence: integer("confidence").notNull(),
+    sourceLineage: jsonb("source_lineage").$type<JsonList>().notNull().default(emptyJsonList),
+    reviewer: text("reviewer"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    rejectionReason: text("rejection_reason"),
+    validFrom: timestamp("valid_from", { withTimezone: true }).notNull().defaultNow(),
+    validUntil: timestamp("valid_until", { withTimezone: true }),
+    metadata: jsonb("metadata").$type<JsonObject>().notNull().default(emptyJsonObject),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index("anti_memory_candidates_project_id_idx").on(table.projectId),
+    index("anti_memory_candidates_execution_run_id_idx").on(table.executionRunId),
+    index("anti_memory_candidates_feedback_delta_id_idx").on(table.feedbackDeltaId),
+    index("anti_memory_candidates_status_idx").on(table.status),
+    index("anti_memory_candidates_key_idx").on(table.key),
+    index("anti_memory_candidates_valid_until_idx").on(table.validUntil)
+  ]
+);
+
 export const memoryApplications = pgTable(
   "memory_applications",
   {
@@ -301,6 +352,9 @@ export const antiMemoryRecords = pgTable(
     executionRunId: uuid("execution_run_id").references(() => executionRuns.id, {
       onDelete: "set null"
     }),
+    createdFromCandidateId: uuid("created_from_candidate_id").references(() => antiMemoryCandidates.id, {
+      onDelete: "set null"
+    }),
     key: text("key").notNull(),
     rejectedClaim: text("rejected_claim"),
     reason: text("reason"),
@@ -328,6 +382,9 @@ export const antiMemoryRecords = pgTable(
   },
   (table) => [
     uniqueIndex("anti_memory_records_project_key_unique").on(table.projectId, table.key),
+    index("anti_memory_records_created_from_candidate_id_idx").on(
+      table.createdFromCandidateId
+    ),
     index("anti_memory_records_project_id_idx").on(table.projectId),
     index("anti_memory_records_execution_run_id_idx").on(table.executionRunId),
     index("anti_memory_records_invalidated_by_source_claim_id_idx").on(

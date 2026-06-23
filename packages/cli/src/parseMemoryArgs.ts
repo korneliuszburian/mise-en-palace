@@ -91,8 +91,41 @@ export const formatMemoryAntiAddUsage = (): string =>
     "--applies-to <text>",
     "--may-revisit-when <text>",
     "--owner <owner>",
+    "--proposed-by <name>",
     "--confidence <low|medium|high|0-100>",
     "--key <key>",
+    "--candidate-evidence-provenance <provenance>",
+    "--candidate-evidence-ref <ref> (repeatable; required before reviewed promotion)",
+    "--candidate-evidence-does-not-prove <text>",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatMemoryAntiPromoteUsage = (): string =>
+  [
+    "Usage: krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
+    "",
+    "Required:",
+    "--candidate-id",
+    "--reviewer",
+    "--decision accepted",
+    "--evidence-reviewed-ref",
+    "",
+    "Optional:",
+    "--metadata key=value",
+    "--persist"
+  ].join("\n") + "\n";
+
+export const formatMemoryAntiRejectUsage = (): string =>
+  [
+    "Usage: krn memory anti reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
+    "",
+    "Required:",
+    "--candidate-id",
+    "--reviewer",
+    "--reason",
+    "",
+    "Optional:",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -103,7 +136,9 @@ export const formatMemoryUsage = (): string =>
     formatMemoryCandidatePromoteUsage().trim(),
     formatMemoryCandidateRejectUsage().trim(),
     formatMemoryRecordApplyUsage().trim(),
-    formatMemoryAntiAddUsage().trim()
+    formatMemoryAntiAddUsage().trim(),
+    formatMemoryAntiPromoteUsage().trim(),
+    formatMemoryAntiRejectUsage().trim()
   ].join("\n\n");
 
 const parseMetadataOption = (
@@ -521,6 +556,7 @@ const parseMemoryAntiAddArgs = (rest: readonly string[]): ParseArgsResult => {
     kind: "memoryAntiAdd",
     persist: false,
     sourceLineageIds: [],
+    candidateEvidenceRefs: [],
     metadata: {}
   };
 
@@ -548,8 +584,11 @@ const parseMemoryAntiAddArgs = (rest: readonly string[]): ParseArgsResult => {
       "--applies-to": "appliesTo",
       "--may-revisit-when": "mayRevisitWhen",
       "--owner": "owner",
+      "--proposed-by": "proposedBy",
       "--confidence": "confidence",
-      "--key": "key"
+      "--key": "key",
+      "--candidate-evidence-provenance": "candidateEvidenceProvenance",
+      "--candidate-evidence-does-not-prove": "candidateEvidenceDoesNotProve"
     } as const;
     const option = Object.keys(optionMap).find((candidate) =>
       arg === candidate || arg?.startsWith(`${candidate}=`) === true
@@ -566,6 +605,23 @@ const parseMemoryAntiAddArgs = (rest: readonly string[]): ParseArgsResult => {
 
       memoryCommand[optionMap[option as keyof typeof optionMap]] =
         valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (
+      arg === "--candidate-evidence-ref" ||
+      arg?.startsWith("--candidate-evidence-ref=") === true
+    ) {
+      const valueResult = optionValue(rest, index, "--candidate-evidence-ref");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatMemoryAntiAddUsage()
+        };
+      }
+
+      memoryCommand.candidateEvidenceRefs.push(valueResult.value.trim());
       index = valueResult.nextIndex;
       continue;
     }
@@ -608,6 +664,165 @@ const parseMemoryAntiAddArgs = (rest: readonly string[]): ParseArgsResult => {
   };
 };
 
+const parseMemoryAntiPromoteArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "memoryAntiPromoteHelp"
+      }
+    };
+  }
+
+  const memoryCommand: Extract<CliCommand, { kind: "memoryAntiPromote" }> = {
+    kind: "memoryAntiPromote",
+    persist: false,
+    metadata: {}
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const arg = rest[index];
+
+    if (arg === "--persist") {
+      memoryCommand.persist = true;
+      continue;
+    }
+
+    if (arg === "--help" || arg === "-h") {
+      return {
+        command: {
+          kind: "memoryAntiPromoteHelp"
+        }
+      };
+    }
+
+    const optionMap = {
+      "--candidate-id": "candidateId",
+      "--reviewer": "reviewer",
+      "--decision": "decision",
+      "--evidence-reviewed-ref": "evidenceReviewedRef"
+    } as const;
+    const option = Object.keys(optionMap).find((candidate) =>
+      arg === candidate || arg?.startsWith(`${candidate}=`) === true
+    );
+
+    if (option !== undefined) {
+      const valueResult = optionValue(rest, index, option);
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatMemoryAntiPromoteUsage()
+        };
+      }
+
+      memoryCommand[optionMap[option as keyof typeof optionMap]] =
+        valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+      const metadata = parseMetadataOption(rest, index, formatMemoryAntiPromoteUsage());
+
+      if (metadata.error !== undefined || metadata.entry === undefined) {
+        return {
+          error: metadata.error ?? formatMemoryAntiPromoteUsage()
+        };
+      }
+
+      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
+      index = metadata.nextIndex;
+      continue;
+    }
+
+    return {
+      error: formatMemoryAntiPromoteUsage()
+    };
+  }
+
+  return {
+    command: memoryCommand
+  };
+};
+
+const parseMemoryAntiRejectArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "memoryAntiRejectHelp"
+      }
+    };
+  }
+
+  const memoryCommand: Extract<CliCommand, { kind: "memoryAntiReject" }> = {
+    kind: "memoryAntiReject",
+    persist: false,
+    metadata: {}
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const arg = rest[index];
+
+    if (arg === "--persist") {
+      memoryCommand.persist = true;
+      continue;
+    }
+
+    if (arg === "--help" || arg === "-h") {
+      return {
+        command: {
+          kind: "memoryAntiRejectHelp"
+        }
+      };
+    }
+
+    const optionMap = {
+      "--candidate-id": "candidateId",
+      "--reviewer": "reviewer",
+      "--reason": "reason"
+    } as const;
+    const option = Object.keys(optionMap).find((candidate) =>
+      arg === candidate || arg?.startsWith(`${candidate}=`) === true
+    );
+
+    if (option !== undefined) {
+      const valueResult = optionValue(rest, index, option);
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatMemoryAntiRejectUsage()
+        };
+      }
+
+      memoryCommand[optionMap[option as keyof typeof optionMap]] =
+        valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
+      const metadata = parseMetadataOption(rest, index, formatMemoryAntiRejectUsage());
+
+      if (metadata.error !== undefined || metadata.entry === undefined) {
+        return {
+          error: metadata.error ?? formatMemoryAntiRejectUsage()
+        };
+      }
+
+      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
+      index = metadata.nextIndex;
+      continue;
+    }
+
+    return {
+      error: formatMemoryAntiRejectUsage()
+    };
+  }
+
+  return {
+    command: memoryCommand
+  };
+};
+
 export const parseMemoryArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] === "candidate" && rest[1] === "add") {
     return parseMemoryCandidateAddArgs(rest);
@@ -627,6 +842,14 @@ export const parseMemoryArgs = (rest: readonly string[]): ParseArgsResult => {
 
   if (rest[0] === "anti" && rest[1] === "add") {
     return parseMemoryAntiAddArgs(rest);
+  }
+
+  if (rest[0] === "anti" && rest[1] === "promote") {
+    return parseMemoryAntiPromoteArgs(rest);
+  }
+
+  if (rest[0] === "anti" && rest[1] === "reject") {
+    return parseMemoryAntiRejectArgs(rest);
   }
 
   return {

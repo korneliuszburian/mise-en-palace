@@ -179,11 +179,57 @@ export const AntiMemoryInputSchema = z
     }
   });
 
+export const AntiMemoryCandidateInputSchema = z
+  .object({
+    projectId: OptionalTextSchema,
+    executionRunId: OptionalTextSchema,
+    feedbackDeltaId: OptionalTextSchema,
+    proposedBy: RequiredTextSchema,
+    key: RequiredTextSchema,
+    status: MemoryCandidateStatusSchema.default("candidate"),
+    rejectedClaim: OptionalTextSchema,
+    reason: OptionalTextSchema,
+    invalidatedBySourceClaimId: OptionalTextSchema,
+    invalidatedBySourceClaimIds: TextListSchema,
+    appliesTo: OptionalTextSchema,
+    mayRevisitWhen: OptionalTextSchema,
+    summary: RequiredTextSchema,
+    body: RequiredTextSchema,
+    owner: RequiredTextSchema,
+    confidence: z.number().int().min(0).max(100),
+    sourceLineage: z.array(SourceLineageItemSchema).default([]),
+    validFrom: OptionalTextSchema,
+    validUntil: OptionalTextSchema,
+    metadata: MetadataSchema
+  })
+  .superRefine((value, context) => {
+    if (!value.executionRunId && !value.feedbackDeltaId) {
+      context.addIssue({
+        code: "custom",
+        message: "executionRunId or feedbackDeltaId is required for anti-memory candidates",
+        path: ["executionRunId"]
+      });
+    }
+
+    if (
+      !value.invalidatedBySourceClaimId &&
+      value.invalidatedBySourceClaimIds.length === 0 &&
+      value.sourceLineage.length === 0
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "anti-memory candidate requires invalidating source claim or source lineage",
+        path: ["invalidatedBySourceClaimId"]
+      });
+    }
+  });
+
 export type MemoryCandidateInput = z.infer<typeof MemoryCandidateInputSchema>;
 export type MemoryPromotionInput = z.infer<typeof MemoryPromotionInputSchema>;
 export type MemoryApplicationInput = z.infer<typeof MemoryApplicationInputSchema>;
 export type MemoryFeedbackEventInput = z.infer<typeof MemoryFeedbackEventInputSchema>;
 export type AntiMemoryInput = z.infer<typeof AntiMemoryInputSchema>;
+export type AntiMemoryCandidateInput = z.infer<typeof AntiMemoryCandidateInputSchema>;
 
 export function parseMemoryCandidateInput(input: unknown): MemoryCandidateInput {
   return MemoryCandidateInputSchema.parse(input);
@@ -203,4 +249,8 @@ export function parseMemoryFeedbackEventInput(input: unknown): MemoryFeedbackEve
 
 export function parseAntiMemoryInput(input: unknown): AntiMemoryInput {
   return AntiMemoryInputSchema.parse(input);
+}
+
+export function parseAntiMemoryCandidateInput(input: unknown): AntiMemoryCandidateInput {
+  return AntiMemoryCandidateInputSchema.parse(input);
 }

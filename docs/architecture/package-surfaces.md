@@ -166,6 +166,9 @@ Current public exports after C1-03:
 - reviewed/source-grounded source repository port and source input types;
 - reviewed memory candidate/review interfaces:
   `MemoryActivationRepository` and `MemoryCandidateReviewRepository`;
+- reviewed anti-memory candidate/review interfaces are included in
+  `MemoryCandidateReviewRepository`, while raw anti-memory record creation stays
+  internal;
 - project/source/run record types needed by public operator flows.
 
 Internal subpath after C1-03:
@@ -189,12 +192,11 @@ C1-03 decision:
 - raw Memory Core writes remain available only through
   `@krn/harness/repositories/internal` for DB adapters and existing runtime
   internals;
-- C2-00 must replace direct anti-memory writes with reviewed candidate storage
-  before adding more anti-memory behavior.
+- C2-00 replaces direct public anti-memory writes with reviewed candidate
+  storage and promotion before adding more anti-memory behavior.
 
 Does not prove:
 
-- anti-memory writes are reviewed yet;
 - worker runtime authority;
 - DB adapter methods are inaccessible to internal packages.
 

@@ -26,15 +26,15 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Reviewed Anti-Memory Candidate Storage.
+current_priority: Real GoldenTask Behavior Gate Coverage.
 
-first_unchecked_slice: `C2-00: Add Reviewed Anti-Memory Candidate Storage`.
+first_unchecked_slice: `C3-00: Expand Real GoldenTask Behavior Gate Coverage`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- add a reviewed anti-memory candidate path before any new final AntiMemoryRecord
-  write authority;
+- expand real GoldenTask behavior proof without treating Promptfoo smoke as
+  behavior proof;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not start worker runtime, dashboard, or broad memory features before the
@@ -91,6 +91,11 @@ completed_checkpoint:
   curated public repository surface without raw Memory Core write ports, while
   `@krn/harness/repositories/internal` keeps full adapter/persistence plumbing
   for DB adapters and runtime internals.
+- C2-00 adds reviewed anti-memory candidate storage: reflection candidate
+  writer persists anti-memory candidates, CLI `memory anti add` writes
+  candidates instead of final records, `memory anti promote/reject` goes through
+  AntiMemoryReviewGate, and the memory-governance DB smoke proves
+  candidate-to-record promotion on live Postgres.
 
 completed_evidence_pointers:
 
@@ -2519,7 +2524,7 @@ git restore packages/core/src/memory.ts packages/core/src/memory.test.ts PLAN.md
 - [x] C1-01 Narrow package barrels from planned to enforced.
 - [x] C1-02 Separate harness root from eval/internal surfaces.
 - [x] C1-03 Split repository port public and internal surfaces.
-- [ ] C2-00 Add reviewed anti-memory candidate storage.
+- [x] C2-00 Add reviewed anti-memory candidate storage.
 - [ ] C3-00 Expand real GoldenTask behavior gate coverage.
 - [ ] C4-00 Decide worker runtime ADR before execution.
 - [ ] C5-00 Convert self-hosting run gaps into candidates.
@@ -2876,7 +2881,7 @@ Current outcome:
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
 - Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C2-00: Add reviewed anti-memory candidate storage.
+  C3-00: Expand real GoldenTask behavior gate coverage.
 
 ## Command Evidence
 
@@ -3768,8 +3773,48 @@ Observed:
 - `git diff --check` passed.
 
 This proves raw Memory Core write ports are no longer in the public repository
-subpath. It does not prove direct anti-memory writes are reviewed; C2-00 remains
-required for reviewed anti-memory candidate storage.
+subpath. It did not prove direct anti-memory writes are reviewed; that gap is
+closed by C2-00 below.
+
+C2-00 verification after adding reviewed anti-memory candidate storage:
+
+```sh
+pnpm db:generate
+pnpm typecheck
+pnpm --filter @krn/core test -- reflection
+pnpm --filter @krn/harness test -- reflection antiMemoryReviewGate
+pnpm --filter @krn/schema test -- index memoryCandidate
+pnpm --filter @krn/db test -- memory DrizzleMemoryRepository memoryMappers mappers
+pnpm --filter @krn/cli test -- parseMemoryArgs runCli
+pnpm db:check
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:smoke:memory-governance
+pnpm test
+git diff --check
+```
+
+Observed:
+
+- `anti_memory_candidates` migration `0011_wet_elektra.sql` adds durable
+  candidate storage and links final `anti_memory_records.created_from_candidate_id`;
+- reflection candidate writer now persists anti-memory candidates instead of
+  reporting them unsupported;
+- `krn memory anti add --persist` writes `AntiMemoryCandidate`, not final
+  `AntiMemoryRecord`;
+- `krn memory anti promote/reject` uses AntiMemoryReviewGate and requires
+  reviewed evidence before final anti-memory creation;
+- local DB readiness passed: Postgres reachable, 12/12 migrations applied,
+  pgvector available;
+- memory-governance smoke passed with anti-memory candidate reviewed status
+  `accepted`, final anti-memory record created from the candidate, outbox
+  events `4`, and cleanup remaining marker count `0`;
+- full workspace typecheck passed;
+- full workspace tests passed: 84 files, 380 tests;
+- `git diff --check` passed.
+
+This proves anti-memory final truth now has a reviewed candidate storage path
+and runtime DB proof. It does not expand real GoldenTask behavior coverage; C3-00
+remains the next active slice.
 
 ## Historical Reset Completion Criteria
 

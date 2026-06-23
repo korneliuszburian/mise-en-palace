@@ -141,6 +141,12 @@ export type CliCommand =
       kind: "memoryAntiAddHelp";
     }
   | {
+      kind: "memoryAntiPromoteHelp";
+    }
+  | {
+      kind: "memoryAntiRejectHelp";
+    }
+  | {
       kind: "memoryCandidateAdd";
       persist: boolean;
       runId?: string;
@@ -199,8 +205,29 @@ export type CliCommand =
       appliesTo?: string;
       mayRevisitWhen?: string;
       owner?: string;
+      proposedBy?: string;
       confidence?: string;
       key?: string;
+      candidateEvidenceRefs: string[];
+      candidateEvidenceProvenance?: string;
+      candidateEvidenceDoesNotProve?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryAntiPromote";
+      persist: boolean;
+      candidateId?: string;
+      reviewer?: string;
+      decision?: string;
+      evidenceReviewedRef?: string;
+      metadata: Record<string, string>;
+    }
+  | {
+      kind: "memoryAntiReject";
+      persist: boolean;
+      candidateId?: string;
+      reviewer?: string;
+      reason?: string;
       metadata: Record<string, string>;
     }
   | {
@@ -290,6 +317,8 @@ const usage = [
   "krn memory candidate reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn memory record apply --run-id <id> --memory-id <id> --outcome helped --notes \"...\" [--persist]",
   "krn memory anti add --run-id <id> --rejected-claim \"...\" --reason \"...\" --invalidated-by-source-claim-id <id> [--persist]",
+  "krn memory anti promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
+  "krn memory anti reject --candidate-id <id> --reviewer <name> --reason \"...\" [--persist]",
   "krn review assess --evidence-bundle-id <id> --reviewer <name> --summary \"...\" [--status accepted|changes_requested|rejected|pending] [--persist]",
   "",
   "Internal/dev commands:",

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DrizzleMemoryRepository,
+  antiMemoryPromotionMetadata,
+  assertAntiMemoryCandidateInvariants,
   assertMemoryCoreInvariants,
   memoryPromotionMetadata
 } from "./DrizzleMemoryRepository.js";
@@ -16,6 +18,11 @@ const methodNames = [
   "invalidateMemoryRecord",
   "recordMemoryApplication",
   "createMemoryFeedbackEvent",
+  "createAntiMemoryCandidate",
+  "getAntiMemoryCandidateById",
+  "promoteReviewedAntiMemoryCandidate",
+  "rejectAntiMemoryCandidate",
+  "listAntiMemoryCandidates",
   "createAntiMemoryRecord",
   "listAntiMemoryForProject",
   "listAntiMemoryForRun"
@@ -94,6 +101,31 @@ describe("DrizzleMemoryRepository", () => {
     }, "Memory record")).toThrow("Memory record validUntil must be after validFrom");
   });
 
+  it("accepts reviewed anti-memory candidate inputs with lineage", () => {
+    expect(() => assertAntiMemoryCandidateInvariants({
+      key: "anti-markdown-runtime-memory",
+      summary: "Do not treat markdown as runtime memory.",
+      body: "Markdown may be source/export, not Memory Core.",
+      owner: "operator",
+      confidence: 90,
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1" }],
+      validFrom: "2026-06-22T00:00:00.000Z",
+      validUntil: "2026-07-22T00:00:00.000Z"
+    }, "Anti-memory candidate")).not.toThrow();
+
+    expect(() => assertAntiMemoryCandidateInvariants({
+      key: "anti-markdown-runtime-memory",
+      summary: "Do not treat markdown as runtime memory.",
+      body: "Markdown may be source/export, not Memory Core.",
+      owner: "operator",
+      confidence: 90,
+      sourceLineage: []
+    }, "Anti-memory candidate")).toThrow(
+      "Anti-memory candidate requires invalidating source claim or source lineage"
+    );
+  });
+
   it("preserves review gate metadata when promoting a candidate", () => {
     const metadata = memoryPromotionMetadata({
       id: "memory-candidate-1",
@@ -134,6 +166,49 @@ describe("DrizzleMemoryRepository", () => {
       sourceClaimIds: ["source-claim-1"],
       reviewGate: {
         evidenceReviewedRef: "raw-evidence:run-event-1"
+      }
+    });
+  });
+
+  it("preserves anti-memory review gate metadata when promoting a candidate", () => {
+    const metadata = antiMemoryPromotionMetadata({
+      id: "anti-memory-candidate-1",
+      projectId: "project-1",
+      executionRunId: "execution-run-1",
+      proposedBy: "reflection",
+      key: "anti-markdown-runtime-memory",
+      status: "candidate",
+      rejectedClaim: "Markdown files are runtime memory",
+      reason: "Memory Core is store-backed.",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1" }],
+      summary: "Do not treat markdown as runtime memory.",
+      body: "Markdown may be source/export, not Memory Core.",
+      owner: "operator",
+      confidence: 90,
+      validFrom: "2026-06-23T00:00:00.000Z",
+      metadata: {
+        candidateNote: "from reflection"
+      },
+      createdAt: "2026-06-23T00:00:00.000Z",
+      updatedAt: "2026-06-23T00:00:00.000Z"
+    }, {
+      candidateId: "anti-memory-candidate-1",
+      reviewer: "operator",
+      decision: "accepted",
+      metadata: {
+        reviewGate: {
+          evidenceReviewedRef: "source-claim-1"
+        }
+      }
+    });
+
+    expect(metadata).toMatchObject({
+      candidateNote: "from reflection",
+      createdFromCandidateId: "anti-memory-candidate-1",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      reviewGate: {
+        evidenceReviewedRef: "source-claim-1"
       }
     });
   });
