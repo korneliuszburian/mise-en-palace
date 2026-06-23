@@ -1,7 +1,8 @@
 # Handoff
 
 Objective:
-The memory ideal-state execution track is implemented through MM-65. KRN has
+The memory ideal-state execution track is implemented through MM-65 and is now
+paused for a blocking quality correction gate. KRN has
 observation staging, manual observe dogfood, reflection contracts, reflection
 persistence/CLI, reflection no-Memory-Core mutation proof, memory repository
 invariants, and a MemoryReviewGate that permits public `krn memory candidate
@@ -111,13 +112,14 @@ MM-65 added a pure harness Promptfoo-compatible snapshot export for GoldenTask
 cases. The export is deterministic, snapshot-only, carries behavior proof
 status metadata, declares `promptfooDependency: "not_required"`, and does not
 execute a model.
+QG-00 through QG-06 are queued before MM-66 so the repo does not build more
+features on top of an under-audited quality model.
 
 Last verified state:
-MM-65 added the optional Promptfoo-compatible snapshot export. Focused harness
-tests and typecheck
-passed;
-full verification is recorded in
-`docs/handoff/verification.md`.
+MM-65 added the optional Promptfoo-compatible snapshot export and was pushed as
+`f3cbea6`. A post-MM-65 quality pre-audit found that official Promptfoo
+integration, test topology, TypeScript excellence automation, zombie/dead-code
+audit, and stale-doc prevention need explicit QG slices before MM-66.
 
 Current dirty context:
 The research inputs `docs/materials/2026-06-22-big-brain.md` and
@@ -314,12 +316,12 @@ Key proof IDs:
   `ece37032-cb48-477d-bc41-07eb2e742a99`.
 
 Residual blockers:
-No MM-65 blocker remains.
+QG-00 through QG-06 block MM-66/MM-67.
 
 Rollback path:
-After commit, revert the MM-65 commit with `git revert <commit>` if the golden
-Promptfoo snapshot export regresses. No DB migration was added; rollback is
-harness/docs only.
+After commit, revert the quality-plan correction commit with `git revert
+<commit>` if the QG plan needs to be replaced. No DB migration or runtime code
+was added by the quality-plan correction.
 
 Not built:
 dashboard, API, MCP server, plugin package, broad workers runtime, research
@@ -329,7 +331,7 @@ mutation, actual Codex execution, automatic memory promotion, fuzzy
 anti-memory matching, broad eval suite, and production worker throughput.
 
 Next safest action:
-Run MM-66 EvalCandidate promotion gate.
+Run QG-00 repo-wide current-state inventory refresh.
 
 Do not reread:
 Broad historical docs or old repo topology unless a future task explicitly

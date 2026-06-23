@@ -103,9 +103,157 @@ Do not build or reintroduce:
 
 Allowed:
 - lightweight golden memory behavior tests.
-- optional Promptfoo export after golden cases stabilize.
+- official Promptfoo integration only after source-to-decision and real
+  adapter proof; snapshot export alone is not a final pattern.
 - course/Cookbook/local materials as decision evidence only.
 - manual lab-style baseline-vs-candidate comparison inside eval lane only, with no memory mutation.
+
+## Quality Correction Gate — No Slop On Top Of Weak Patterns
+
+This gate is blocking before MM-66/MM-67 feature work continues.
+
+Reason:
+MM-65 exposed a planning smell: a thin slice can accidentally become a cheap
+placeholder instead of a thin vertical slice of the final architecture. KRN must
+not build "less broken now, less broken later" layers. Every slice must either
+implement a narrow part of the intended final pattern or explicitly reject the
+pattern through source-to-decision.
+
+Current repo facts from the 2026-06-23 audit pass:
+
+- Test files are colocated in `packages/*/src/**/*.test.ts`. Count:
+  CLI `6`, codex-adapter `3`, core `7`, db `23`, harness `14`, schema `2`,
+  workers `1`. This may be valid, but it is not recorded as a test topology
+  decision. Until recorded, it is a source-layout ambiguity.
+- `tsconfig.base.json` is strict and already enables `exactOptionalPropertyTypes`,
+  `noUncheckedIndexedAccess`, `noUnusedLocals`, `noUnusedParameters`,
+  `isolatedModules`, and `verbatimModuleSyntax`.
+- Package production `tsc` excludes tests by package config; tests are verified
+  by Vitest. This is recorded historically in root `PLAN.md`, but not promoted
+  into a current quality standard.
+- `docs/standards/typescript-boundaries.md` and
+  `docs/standards/code-vocabulary.md` exist, but they are not yet enforced as
+  a single repo-wide quality gate with exact commands, allowlists, and fail
+  criteria.
+- `README.md` drifted behind the actual implementation state. Stale public docs
+  are treated as slop because fresh agents and reviewers use them as entry
+  points.
+- Current grep-level scans catch `any`, double assertions, unchecked
+  `JSON.parse`, forbidden surfaces, and suspicious terms, but there is no
+  dedicated zombie/dead-code/public-export audit.
+- The package index files use broad barrel exports. This may be intentional for
+  internal packages, but it needs an exported-surface review because broad
+  barrels can hide zombie APIs and overexpose unstable internals.
+- MM-65's Promptfoo-compatible snapshot export is not enough as a final eval
+  architecture. Official Promptfoo must be either adopted as a real adapter or
+  explicitly rejected with falsifier.
+
+Quality doctrine:
+
+- Thin slice means "thin slice of the final architecture", not a placeholder.
+- Green tests are not enough. Tests must protect behavior, governance,
+  boundaries, and known failure modes.
+- Test topology must be intentional. Colocated tests are acceptable only if the
+  repo records why, how production typecheck excludes them, and what prevents
+  test helpers from leaking into public runtime exports.
+- TypeScript quality is a product feature. Use strict compiler settings,
+  unknown-first IO boundaries, narrow domain unions, explicit public types,
+  no `any`, no double assertions, no type suppressions, no type weakening to
+  pass tests, and no catch-all metadata for behavior-governing facts.
+- Dead code, zombie exports, fake adapters, stale docs, decorative tests,
+  and broad catch-all abstractions are blocking quality findings.
+- External tools such as Promptfoo, ESLint, dependency-cruiser, knip, ts-prune,
+  or publint may be adopted only through source-to-decision. If adopted, they
+  must run in the repo and produce actionable evidence.
+
+Blocking QG slices before MM-66:
+
+QG-00 — repo-wide current-state inventory refresh
+- Produce a concise repo inventory for packages, public exports, test files,
+  fixtures, docs truth surfaces, scripts, DB/runtime surfaces, and known
+  non-goals.
+- Update `README.md`, `GOAL.md`, root `PLAN.md`, handoff docs, and this PLAN so
+  a fresh reviewer sees the current pushed state, not MM-17-era claims.
+- Verification:
+      `rg` proves no public status doc still claims MM-17C/MM-64/MM-66 as the
+      current head when the actual first unchecked item is QG-01 or later.
+
+QG-01 — test topology ADR and enforcement
+- Decide whether KRN keeps colocated `*.test.ts` beside source or migrates to
+  package-level `tests/`.
+- If colocated, document why: behavior proximity, package-local Vitest, tests
+  excluded from production `tsc`, and audit rules that prevent test-only
+  helpers/fixtures from becoming runtime exports.
+- If migration is chosen, plan it package by package with no behavior changes.
+- Add audit checks for test topology drift: no production imports from test
+  files, no test helper exports from package index files, no fixture truth in
+  runtime paths.
+- Verification:
+      topology doc/ADR exists; package `tsconfig.json` files consistently
+      exclude tests from production typecheck; `pnpm test` remains the test
+      authority.
+
+QG-02 — global TypeScript excellence standard
+- Consolidate `docs/standards/typescript-boundaries.md` and
+  `docs/standards/code-vocabulary.md` into an enforceable checklist.
+- Explicitly include Matt Pocock-style TypeScript discipline: domain-first
+  types, narrow unions, discriminated unions when state changes by kind/status,
+  typed parser boundaries, `satisfies` where it preserves literal precision,
+  no global `ts-reset` in public/core packages, no unreviewed generics, and no
+  anonymous object soup at public boundaries.
+- Add package-specific rules for core/schema/db/harness/cli/codex-adapter/
+  workers.
+- Verification:
+      `pnpm typecheck`; no `any`, `as any`, `as unknown as`, `@ts-ignore`,
+      `@ts-expect-error`; all `JSON.parse` boundaries are either tests using
+      `unknown` plus schema parse or tracked cleanup findings.
+
+QG-03 — zombie/dead-code/export-surface audit
+- Build or adopt an audit path for unused exports, unreachable modules, stale
+  compatibility aliases, dead CLI routes, unused scripts, broad barrels, and
+  test-only public leaks.
+- Source-to-decision must choose tooling or justify a custom audit:
+  `knip`, `ts-prune`, `depcheck`, `publint`, dependency-cruiser, ESLint, or a
+  repo-local script.
+- Verification:
+      audit report lists findings with owner/action; no "unknown but ignored"
+      bucket; false positives are allowlisted with reasons and expiry.
+
+QG-04 — code smell and bloat audit
+- Add explicit scans/findings for placeholder/stub/fake/mock/temp naming,
+  over-broad metadata, overpowered verbs, decorative tests, huge files that
+  mix unrelated responsibilities, and stale docs.
+- This must review production files and tests. Tests can encode slop too.
+- Verification:
+      findings are classified as blocking/warning/advisory; blocking findings
+      receive repair tasks before new feature work.
+
+QG-05 — official Promptfoo integration decision
+- Treat Promptfoo as a real eval-lane tool decision, not a compatibility
+  ornament.
+- Source-to-decision must record official mechanism, KRN implication, adopted
+  boundary or rejection, falsifier, and consumer.
+- If adopted: add official dependency or isolated optional package/runner,
+  runnable command proof, and mapping from Promptfoo results back into KRN
+  `BehaviorProof` / `EvalCandidate` / `GoldenTask` evidence.
+- If rejected: remove or demote MM-65 snapshot export so it cannot be mistaken
+  for the final eval adapter.
+- Verification:
+      official Promptfoo path either runs and produces KRN evidence, or the
+      repo explicitly rejects it and removes overclaiming surfaces.
+
+QG-06 — quality gate automation in `krn audit`
+- Extend `krn audit repo` and `krn audit slice` so quality findings are part
+  of the same anti-slop gate as memory/source/eval semantics.
+- Inputs: intended files, verification commands, package boundary scan, test
+  topology scan, TS hygiene scan, export/dead-code scan, stale-doc scan, and
+  forbidden-surface scan.
+- Verification:
+      `krn audit slice --fail-on warning` fails on a seeded stale README,
+      seeded public test-helper export, seeded unchecked JSON.parse, and seeded
+      forbidden placeholder adapter.
+
+Only after QG-00 through QG-06 are complete may the plan continue to MM-66.
 
 ## Current state
 
@@ -129,13 +277,11 @@ controlled plan was moved into `docs/plans/memory-ideal-state/PLAN.md`. Do not
 mark MM-08 complete from that fact alone. Reconcile the existing contracts
 against the controlled MM-08 slice when the plan reaches Gate 1.
 
-Latest verification already passed:
-- pnpm typecheck
-- pnpm test: 46 files, 241 tests
-- pnpm db:ready: 11/11 migrations, pgvector available
-- git diff --check
-- forbidden surface/dependency scans
-- targeted slice checks recorded in Progress through MM-44
+Latest pushed verification already passed:
+- MM-65 focused harness test and typecheck passed.
+- MM-65 final `pnpm typecheck`, `pnpm test`, `pnpm db:ready`,
+  `git diff --check`, forbidden surface/dependency scan, and
+  `krn audit slice --fail-on warning` passed before commit `f3cbea6`.
 
 Known target repo readiness:
 - dry-run: proven
@@ -148,7 +294,9 @@ Known target repo readiness:
 - latest target readiness: ready
 
 Known not built:
-- golden memory behavior runner
+- official Promptfoo runner/adapter decision and integration
+- EvalCandidate promotion gate
+- Golden eval dogfood regression gate
 - API
 - MCP server
 - dashboard
@@ -156,6 +304,7 @@ Known not built:
 - broad workers runtime
 - source crawler
 - broad eval suite
+- repo-wide zombie/dead-code/export-surface quality gate
 - research/pattern subsystem
 - fuzzy semantic anti-memory matching
 - automatic memory promotion
@@ -186,6 +335,9 @@ Known built but not fully integrated:
 - reflection still does not create persisted MemoryCandidate/SourceClaim/
   AntiMemory/Eval candidate rows
 - MemoryRepository has low-level create/promote methods, but the governed MemoryReviewGate product path is not complete yet
+- Test topology is not yet documented as a current ADR/standard. Tests are
+  colocated under `packages/*/src`, but this must be decided and enforced in
+  QG-01 before more eval/memory feature work continues.
 
 Known untracked quarry may exist:
 - docs/materials/2026-06-22-big-brain.md
@@ -438,7 +590,14 @@ Keep this section current. Add timestamps in Europe/Warsaw local time or UTC, bu
 - [x] (2026-06-23) MM-62 complete: added context/source/audit/TS boundary golden cases as fixture-backed behavior tests. Intended files: `tests/fixtures/golden-tasks/boundary-behavior.json`, `packages/harness/src/goldenBoundaryBehavior.test.ts`, `packages/schema/src/goldenTask.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no golden runner, no CLI, no DB schema/migration, no repository, no Promptfoo export, no broad benchmark suite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused harness boundary test failed because `boundary-behavior.json` was missing; GREEN focused harness test passed with 11 files / 64 tests after behavior tests proved ContextROI rejects broad dumps, source grounding audit flags missing `doesNotProve`, repo surface audit flags forbidden Research Foundry surface, and type-safety audit flags unchecked `JSON.parse`; focused schema fixture test first failed on invalid `type_safety` fixture domain, then passed with 2 files / 22 tests after using the existing `type_boundary` domain enum. Next: MM-63 observation/reflection/anti-memory golden cases.
 - [x] (2026-06-23) MM-63 complete: added observation/reflection/anti-memory golden cases as fixture-backed behavior tests. Intended files: `tests/fixtures/golden-tasks/observation-reflection-behavior.json`, `packages/harness/src/goldenObservationReflectionBehavior.test.ts`, `packages/schema/src/goldenTask.test.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no golden runner, no CLI, no DB schema/migration, no repository, no Promptfoo export, no broad benchmark suite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused harness observation/reflection test failed because `observation-reflection-behavior.json` was missing; GREEN focused harness test passed with 12 files / 69 tests after behavior tests proved observation promotion-to-memory semantics are rejected, reflection candidate generation is candidate-only and blocks `memory_record` targets, anti-memory blocks rejected observation prefix patterns, and reflection issue reports surface missing source-range gaps; focused schema fixture test passed with 2 files / 23 tests. Next: MM-64 golden eval runner.
 - [x] (2026-06-23) MM-64 complete: added a pure harness GoldenTask fixture runner that emits pass/fail reports from validated GoldenTask contracts plus explicit behavior proofs. Intended files: `packages/harness/src/goldenRunner.ts`, `packages/harness/src/goldenRunner.test.ts`, harness export, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no CLI command, no DB schema/migration, no repository, no Promptfoo export, no broad benchmark suite, no dashboard/API/MCP/server/plugin/source crawler. Evidence: RED focused harness runner test failed because `goldenRunner.js` did not exist; GREEN focused harness runner test passed with 13 files / 72 tests after `runGoldenTaskFixtures` emitted a pass report when every case had behavior proof, failed cases with missing proof, and failed contract-invalid fixtures even when a proof was supplied; focused harness typecheck passed. Next: MM-65 optional Promptfoo-compatible export.
-- [x] (2026-06-23) MM-65 complete: added a pure harness Promptfoo-compatible snapshot export for GoldenTask cases. Intended files: `packages/harness/src/goldenPromptfooExport.ts`, `packages/harness/src/goldenPromptfooExport.test.ts`, `packages/harness/src/index.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no Promptfoo dependency, no CLI command, no DB schema/migration, no repository, no model execution, no broad benchmark suite, no dashboard/API/MCP/server/plugin/source crawler. Scope decision: this is an adapter/export boundary only; it does not imply adopting official Promptfoo as the eval runner, and any official Promptfoo integration requires a later ADR/source-to-decision decision. Evidence: RED focused harness export test failed because `goldenPromptfooExport.js` did not exist; GREEN focused harness export test passed with 14 files / 74 tests after `exportGoldenTasksToPromptfooSnapshot` emitted deterministic snapshot-only tests with proof status metadata and `promptfooDependency: "not_required"`; focused harness typecheck passed. Next: MM-66 EvalCandidate promotion gate.
+- [x] (2026-06-23) MM-65 complete: added a pure harness Promptfoo-compatible snapshot export for GoldenTask cases. Intended files: `packages/harness/src/goldenPromptfooExport.ts`, `packages/harness/src/goldenPromptfooExport.test.ts`, `packages/harness/src/index.ts`, root `PLAN.md`, `GOAL.md`, handoff files, and this PLAN. Non-goals preserved: no Promptfoo dependency, no CLI command, no DB schema/migration, no repository, no model execution, no broad benchmark suite, no dashboard/API/MCP/server/plugin/source crawler. Correction: this snapshot is not an acceptable final pattern by itself; KRN should build thin slices of the final architecture, not placeholder substitutes. Official Promptfoo usage now requires QG-05 before MM-66. Evidence: RED focused harness export test failed because `goldenPromptfooExport.js` did not exist; GREEN focused harness export test passed with 14 files / 74 tests after `exportGoldenTasksToPromptfooSnapshot` emitted deterministic snapshot-only tests with proof status metadata and `promptfooDependency: "not_required"`; focused harness typecheck passed. Next: QG-00 repo-wide current-state inventory refresh.
+- [ ] QG-00: repo-wide current-state inventory refresh.
+- [ ] QG-01: test topology ADR and enforcement.
+- [ ] QG-02: global TypeScript excellence standard.
+- [ ] QG-03: zombie/dead-code/export-surface audit.
+- [ ] QG-04: code smell and bloat audit.
+- [ ] QG-05: official Promptfoo integration decision.
+- [ ] QG-06: quality gate automation in `krn audit`.
 - [ ] MM-66: EvalCandidate promotion gate.
 - [ ] MM-67: Dogfood first golden suite as regression gate.
 - [ ] MM-68: Trace compaction document model for eval analysis.
@@ -1969,6 +2128,20 @@ MM-65 — Optional Promptfoo export
 - No Promptfoo dependency unless already accepted or isolated.
 - Verification:
       exported config validates if Promptfoo available; otherwise snapshot only.
+
+QG-05 — Official Promptfoo adapter decision and integration boundary
+- Decide whether official Promptfoo is part of the final eval lane through
+  source -> mechanism -> KRN implication -> decision/rejection -> falsifier.
+- If adopted, add a real integration boundary: official dependency or isolated
+  package/optional runner, command-level validation path, and proof that
+  Promptfoo results return as KRN evidence/proof/eval signals.
+- KRN `GoldenTask`, `EvalCandidate`, review gates, and behavior proofs remain
+  canonical; Promptfoo must not become Memory Core, GoldenTask truth, or a
+  replacement domain model.
+- The MM-65 snapshot export is not sufficient as the final pattern.
+- Verification:
+      official Promptfoo path is either adopted with runnable proof or rejected
+      with falsifier; no placeholder-only eval adapter remains overclaimed.
 
 MM-66 — EvalCandidate promotion gate
 - Promote real failures to golden tasks through review.

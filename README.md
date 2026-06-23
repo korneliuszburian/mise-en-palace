@@ -6,11 +6,11 @@ Codex executes. KRN supplies bounded context, service/store-backed memory,
 source grounding, policy, skills, eval expectations, traces, review gates, and
 feedback.
 
-This repository is a kernel workspace and early KRN harness implementation, not
-a dashboard-first application. It encodes the language, boundaries,
-Codex-native surfaces, DB-backed harness spine, and the first observational
-memory staging primitives that keep implementation work small, source-grounded,
-and reviewable.
+This repository is a kernel workspace and KRN harness implementation, not a
+dashboard-first application. It encodes the language, boundaries,
+Codex-native surfaces, DB-backed harness spine, observational memory staging,
+reflection staging, governed memory review, activation, audit, and early golden
+behavior proof primitives.
 
 ## Start Here
 
@@ -31,16 +31,22 @@ and reviewable.
 
 ## Built But Not Proven End-To-End
 
-- Manual observation runtime exists, but MM-17 dogfood evidence is not committed yet.
-- Observation prefix selection exists as pure harness logic, but it is not wired into context assembly or activation runtime.
-- Memory schema/repository/governance scaffolding exists, but governed MemoryReviewGate promotion is not the completed product path yet.
+- GoldenTask contracts, fixtures, behavior tests, pure golden runner, and
+  Promptfoo-compatible snapshot export exist, but official Promptfoo integration
+  is not adopted or rejected yet.
+- The full loop `evidence -> observation -> reflection -> candidates -> review
+  -> memory -> activation -> golden proof` is not complete as a single product
+  path.
 - Worker jobs are persisted skeletons; production job execution is not built.
+- Repo-wide quality gates for test topology, zombie/dead-code audit, stale-doc
+  prevention, and export-surface hygiene are queued before further feature work.
 
 ## Not Built Yet
 
-- Reflection contracts, persistence, repository, CLI, worker, and candidate generation.
-- MemoryReviewGate product path, memory invalidation/demotion behavior, and broad anti-memory enforcement.
-- Golden memory behavior runner.
+- Official Promptfoo runner/adapter decision and integration.
+- EvalCandidate promotion gate.
+- Golden eval dogfood regression gate.
+- Repo-wide zombie/dead-code/export-surface quality gate.
 - No dashboard.
 - No benchmark lane.
 - No runtime memory in markdown.
@@ -58,12 +64,12 @@ The memory ideal-state plan is the active execution track:
 docs/plans/memory-ideal-state/PLAN.md
 ```
 
-MM-00 through MM-17C and MM-16R are complete. The latest planning repair layer
-from the external harsh reviews is committed, public current-state docs are
-reconciled, prefix relevance/project-scope hardening is done, observation
-dogfood evidence is committed, typed source-range lineage is enforced at the
-repository boundary, and the next execution slice is MM-17D: project-scoped
-observe runtime.
+MM-00 through MM-65 and MM-16R are complete. The next execution track is the
+blocking QG quality correction gate in
+`docs/plans/memory-ideal-state/PLAN.md`: current-state inventory, test topology
+decision, global TypeScript excellence, zombie/dead-code/export audit,
+bloat/smell audit, official Promptfoo integration decision, and audit
+automation. Feature work resumes at MM-66 only after QG-00 through QG-06 pass.
 
 Raw onboarding/research material remains quarantined in `docs/materials/` and is
 not runtime truth.

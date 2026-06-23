@@ -47,11 +47,16 @@ Use that file as the living ExecPlan. It owns:
   from validated task contracts plus explicit behavior proofs.
 - MM-65 added a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases, with no Promptfoo dependency and no model execution.
+- QG-00 through QG-06 are now queued as a blocking quality correction gate:
+  current-state inventory, test topology decision, global TypeScript excellence,
+  zombie/dead-code/export audit, bloat/smell audit, official Promptfoo
+  integration decision, and audit automation.
 
 ## Next Action
 
 Read `docs/plans/memory-ideal-state/PLAN.md` top to bottom and continue from
-the first unchecked Progress item: MM-66 EvalCandidate promotion gate.
+the first unchecked Progress item: QG-00 repo-wide current-state inventory
+refresh.
 
 ## Hard Non-Goals
 

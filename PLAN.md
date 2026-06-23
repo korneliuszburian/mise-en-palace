@@ -144,9 +144,16 @@ Current public state:
   GoldenTask cases. The export is deterministic, marks itself as
   snapshot-only, carries behavior proof status metadata, and requires no
   Promptfoo dependency or model execution.
+  QG-00 through QG-06 are now queued as a blocking quality correction gate:
+  repo-wide current-state inventory, test topology ADR/enforcement, global
+  TypeScript excellence, zombie/dead-code/export-surface audit, bloat/smell
+  audit, official Promptfoo integration decision, and `krn audit` quality gate
+  automation.
 - Not built:
-  EvalCandidate promotion gate, API/MCP, dashboard, plugin package, source
-  crawler, fuzzy anti-memory matching, and broad benchmark suite.
+  quality correction gate QG-00 through QG-06, official Promptfoo adapter
+  decision/integration, EvalCandidate promotion gate, Golden eval dogfood
+  regression gate, API/MCP, dashboard, plugin package, source crawler, fuzzy
+  anti-memory matching, and broad benchmark suite.
 
 Do not use older orientation text in this file to infer that the repo has no
 CLI or no observation persistence. Historical progress entries below are kept

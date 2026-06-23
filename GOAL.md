@@ -146,6 +146,10 @@ Current known status:
   from validated task contracts plus explicit behavior proofs.
 - MM-65 added a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases, with no Promptfoo dependency and no model execution.
+- QG-00 through QG-06 are now queued as a blocking quality correction gate:
+  current-state inventory, test topology decision, global TypeScript excellence,
+  zombie/dead-code/export audit, bloat/smell audit, official Promptfoo
+  integration decision, and audit automation.
 - The plan intentionally removes Research Foundry, Pattern Vault, meta-researcher runtime, and autoresearch product behavior.
 - Cookbook patterns are process/eval mechanics only, not product architecture.
 - Golden memory behavior tests are allowed inside normal eval lane.
@@ -225,7 +229,7 @@ After implementation:
        next safest action
 
 First expected slice for a fresh run at this state:
-MM-66 — EvalCandidate promotion gate.
+QG-00 — repo-wide current-state inventory refresh.
 
 If PLAN.md is not present yet:
 - create docs/plans/memory-ideal-state/PLAN.md using the provided controlled Memory Brain plan content;

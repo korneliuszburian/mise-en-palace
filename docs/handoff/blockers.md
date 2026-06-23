@@ -2,7 +2,14 @@
 
 Hard blockers:
 
-- None for MM-66.
+- QG-00 through QG-06 must run before MM-66/MM-67 feature work continues.
+- Current test topology is not documented as a conscious repo decision.
+- Current quality gates do not yet prove absence of zombie exports, dead code,
+  stale public docs, broad barrel overexposure, test-helper runtime leaks, or
+  placeholder adapters.
+- MM-65 Promptfoo snapshot export must not be treated as final eval
+  integration until QG-05 adopts or rejects official Promptfoo through
+  source-to-decision.
 
 Closed in MM-65:
 

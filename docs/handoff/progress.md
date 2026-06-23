@@ -1,6 +1,6 @@
 # Progress
 
-Current phase: Memory ideal-state execution track after MM-65.
+Current phase: Memory ideal-state execution track after MM-65, paused for QG quality correction gate.
 
 Completed:
 
@@ -221,10 +221,14 @@ Current runtime truth:
 - MM-65 adds a pure harness Promptfoo-compatible snapshot export for
   GoldenTask cases without adding Promptfoo as a dependency or executing a
   model.
+- QG-00 through QG-06 are queued before MM-66: current-state inventory, test
+  topology ADR/enforcement, TypeScript excellence standard, zombie/dead-code/
+  export audit, bloat/smell audit, official Promptfoo decision, and quality
+  gate automation in `krn audit`.
 - Codex adapter renders briefs and expectations; it does not invoke Codex.
 - Worker jobs are a persistence skeleton; jobs are not executed by a daemon.
 - Markdown is docs/export/audit/handoff material, not runtime Memory Core.
 
 Next action:
 
-- Continue with MM-66 EvalCandidate promotion gate.
+- Continue with QG-00 repo-wide current-state inventory refresh.
