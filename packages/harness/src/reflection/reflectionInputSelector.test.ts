@@ -51,9 +51,7 @@ const sourceClaim = (
   supportType: "mechanism",
   consumer: "reflection",
   status: "proposed",
-  metadata: {
-    projectId: "project-1"
-  },
+  metadata: {},
   createdAt: now,
   updatedAt: now,
   ...overrides
@@ -78,7 +76,7 @@ const antiMemory = (
 });
 
 describe("reflection input selector", () => {
-  it("selects only records scoped to the requested project", () => {
+  it("selects scoped observations and anti-memory while preserving repository-scoped source claims", () => {
     const input = selectReflectionInput({
       projectId: "project-1",
       executionRunId: "run-1",
@@ -99,12 +97,7 @@ describe("reflection input selector", () => {
       ],
       sourceClaims: [
         sourceClaim({ id: "source-claim-project-1" }),
-        sourceClaim({
-          id: "source-claim-project-2",
-          metadata: {
-            projectId: "project-2"
-          }
-        })
+        sourceClaim({ id: "source-claim-project-2" })
       ],
       antiMemoryRecords: [
         antiMemory({ id: "anti-project-1", key: "anti-project-1" }),
@@ -120,7 +113,7 @@ describe("reflection input selector", () => {
       observationGroupIds: ["group-1", "group-2"]
     });
     expect(input.observationItemIds).toEqual(["observation-project-1"]);
-    expect(input.sourceClaimIds).toEqual(["source-claim-project-1"]);
+    expect(input.sourceClaimIds).toEqual(["source-claim-project-1", "source-claim-project-2"]);
     expect(input.antiMemoryKeys).toEqual(["anti-project-1"]);
   });
 
@@ -149,5 +142,24 @@ describe("reflection input selector", () => {
       gapObservationIds: ["gap-1"],
       observationKinds: ["conflict", "fact", "gap"]
     });
+  });
+
+  it("does not use SourceClaim metadata for project scoping", () => {
+    const input = selectReflectionInput({
+      projectId: "project-1",
+      observations: [],
+      sourceClaims: [
+        sourceClaim({
+          id: "source-claim-typed-scope",
+          metadata: {
+            note: "project scope is derived before reflection selection"
+          }
+        })
+      ],
+      antiMemoryRecords: [],
+      generatedAt: now
+    });
+
+    expect(input.sourceClaimIds).toEqual(["source-claim-typed-scope"]);
   });
 });

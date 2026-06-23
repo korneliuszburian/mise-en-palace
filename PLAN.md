@@ -660,6 +660,8 @@ git revert <commit>
 
 ### P2-01: Type SourceClaim Project Scope
 
+status: complete.
+
 objective:
 
 Remove behavior-governing project scope from generic metadata.
@@ -1168,7 +1170,7 @@ git revert <commit>
 - [x] P1-01 Deproductize `krn audit`.
 - [x] P1-02 Plan package barrel narrowing.
 - [x] P2-00 Seal Memory Core write authority.
-- [ ] P2-01 Type SourceClaim project scope.
+- [x] P2-01 Type SourceClaim project scope.
 - [ ] P2-02 Promote behavior metadata to typed fields.
 - [ ] P3-00 Define observation staging doctrine.
 - [ ] P3-01 Prove observation/reflection invariants.
@@ -1204,6 +1206,9 @@ git revert <commit>
 - P2-00 did not require DB schema or migration changes. The durable object is
   still MemoryCandidate -> MemoryRecord; the changed boundary is the public
   harness-facing promotion port.
+- P2-01 did not require a new SourceClaim column because source artifacts
+  already carry typed `projectId`, and DB `listClaimsForProject` already derives
+  claim scope through a typed SourceArtifact join.
 
 ## Decision Log
 
@@ -1232,6 +1237,9 @@ git revert <commit>
   exposed as `promoteReviewedMemoryCandidate` and is called through
   `MemoryReviewGate`; raw create/promote remains only on the concrete DB
   adapter for internal setup/smoke use.
+- 2026-06-23: SourceClaim project scope is derived through typed
+  SourceArtifact project scope/read-model selection, not through
+  `SourceClaim.metadata.projectId`.
 
 ## Outcomes & Retrospective
 
@@ -1250,7 +1258,9 @@ Current outcome:
 - Memory Core promotion authority is sealed at the public harness port:
   candidate-to-record promotion goes through reviewed promotion naming and
   MemoryReviewGate metadata.
-- Next safe action is P2-01: type SourceClaim project scope.
+- SourceClaim project scope no longer depends on `metadata.projectId` in
+  package code.
+- Next safe action is P2-02: promote behavior metadata to typed fields.
 
 ## Command Evidence
 
@@ -1414,6 +1424,47 @@ Observed:
 - DB tests passed: 24 files, 67 tests;
 - full typecheck passed across 7 workspace projects;
 - full test passed across 7 workspace projects: 78 test files, 363 tests;
+- `git diff --check` passed with no output.
+
+P2-01 SourceClaim project scope:
+
+Decision: derive SourceClaim project scope through typed SourceArtifact joins
+and read-model selection. Do not add a redundant `projectId` column to
+`SourceClaim` in this slice.
+
+```sh
+pnpm --filter @krn/harness test -- reflection/reflectionInputSelector.test.ts
+```
+
+Observed RED before implementation: 1 failing test,
+`does not use SourceClaim metadata for project scoping`, expected
+`["source-claim-typed-scope"]` and received `[]`.
+
+Observed GREEN after implementation: 15 harness test files passed; 83 tests
+passed.
+
+```sh
+rg -n "metadata\\.projectId" packages
+rg -n "listClaimsForProject|sourceArtifacts\\.projectId|source_claims.*project" packages/db/src/repositories/DrizzleSourceRepository.ts packages/db/src/schema/sources.ts packages/harness/src/repositories/sourceRepository.ts
+pnpm typecheck
+pnpm test
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready
+git diff --check
+```
+
+Observed:
+
+- `metadata.projectId` returned no matches under `packages`;
+- typed project scoping is represented by `SourceRepository.listClaimsForProject`
+  and `DrizzleSourceRepository` filtering through `sourceArtifacts.projectId`;
+- full typecheck passed across 7 workspace projects;
+- full test passed across 7 workspace projects: 78 test files, 364 tests;
+- initial `pnpm db:ready` without `KRN_DATABASE_URL` failed as expected with
+  "Postgres config: missing KRN_DATABASE_URL";
+- after `docker compose up -d krn-postgres`,
+  `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm db:ready`
+  passed with Postgres reachable, 11/11 migrations applied, pgvector available,
+  and brain store readiness ready;
 - `git diff --check` passed with no output.
 
 P0-04 verification after rejecting productized QG-06 direction:

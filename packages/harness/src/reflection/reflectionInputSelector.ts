@@ -26,11 +26,6 @@ const isProjectScopedObservation = (
   projectId: ProjectId
 ): boolean => observation.scope.projectId === projectId;
 
-const isProjectScopedSourceClaim = (
-  sourceClaim: SourceClaim,
-  projectId: ProjectId
-): boolean => sourceClaim.metadata.projectId === projectId;
-
 const isProjectScopedAntiMemory = (
   antiMemory: AntiMemoryRecord,
   projectId: ProjectId
@@ -49,8 +44,7 @@ export const selectReflectionInput = (
       left.temporalScope.observedAt.localeCompare(right.temporalScope.observedAt) ||
       left.id.localeCompare(right.id)
     ));
-  const sourceClaims = options.sourceClaims
-    .filter((sourceClaim) => isProjectScopedSourceClaim(sourceClaim, options.projectId))
+  const sourceClaims = [...options.sourceClaims]
     .sort((left, right) => left.id.localeCompare(right.id));
   const antiMemoryRecords = options.antiMemoryRecords
     .filter((antiMemory) => isProjectScopedAntiMemory(antiMemory, options.projectId))
