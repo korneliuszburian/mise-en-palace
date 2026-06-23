@@ -44,13 +44,14 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-EXEC-00: Add Executor Discipline To Active Slice Template
+EXEC-01: Require Slice Template For Future Backlog Items
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while adding executor discipline. Do not create a quality
-subsystem; encode the discipline as bounded slice behavior in the living plan.
+eval platform while requiring future slice templates. Do not create a quality
+subsystem; encode the discipline as bounded slice behavior in the living plan
+and keep completed detail compressed.
 
 ## Required Read Order
 

@@ -26,18 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Executor Discipline Gate.
+current_priority: Future Slice Template Gate.
 
-first_unchecked_slice: `EXEC-00: Add Executor Discipline To Active Slice Template`.
+first_unchecked_slice: `EXEC-01: Require Slice Template For Future Backlog Items`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- add executor discipline as bounded slice behavior in this living plan;
+- require future backlog/slice templates to preserve assumptions, tradeoffs,
+  touch boundaries, verification, and rollback without expanding active
+  context;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while adding executor discipline;
+  authority layer while requiring future slice templates;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -126,6 +128,10 @@ completed_checkpoint:
   `audit_findings` tables plus related enum types with migration
   `0012_condemned_wolf_cub.sql` after local DB row counts proved zero retained
   legacy audit rows.
+- EXEC-00 adds an active Executor Discipline gate to this plan: before coding,
+  each slice records assumptions, ambiguity/tradeoff, simplest acceptable
+  implementation, touched/untouched files, non-goals, success criteria,
+  verification, and rollback. This is slice behavior, not a quality subsystem.
 
 completed_evidence_pointers:
 
@@ -183,6 +189,26 @@ worktree_hygiene:
   one focused commit and push per slice;
 - if a completed slice cannot be committed or pushed, record the exact blocker
   in this snapshot before continuing.
+
+executor_discipline:
+
+- before coding each implementation slice, record:
+  - assumptions;
+  - ambiguity/tradeoff;
+  - simplest acceptable implementation;
+  - files likely touched;
+  - files explicitly not touched;
+  - non-goals;
+  - success criteria;
+  - verification;
+  - rollback.
+- keep the slice final-pattern and surgical: every changed line must trace to
+  the slice objective;
+- do not fix adjacent slop, broad cleanup, or unrelated dead code in the same
+  slice;
+- if unrelated slop is found, record it in Surprises & Discoveries or a later
+  bounded slice instead of editing it immediately;
+- verification must say what commands prove and what they do not prove.
 
 ---
 
@@ -2956,7 +2982,8 @@ git revert <C6-02 commit>
   migrated into EvidenceBundle/ReviewAssessment lineage.
 - [x] C6-02 Decide legacy audit table retention/export/drop migration after DB
   row/provenance review.
-- [ ] EXEC-00 Add executor discipline to active slice template.
+- [x] EXEC-00 Add executor discipline to active slice template.
+- [ ] EXEC-01 Require slice template for future backlog items.
 
 ## Surprises & Discoveries
 
@@ -4511,8 +4538,8 @@ Current carry-forward:
 
 - EVI-00 through EVI-10 are already represented above and are complete in the
   current worktree.
-- The first unchecked continuous hardening slice is C0-01 in `Active Queue
-  Snapshot`.
+- The first unchecked continuous hardening slice is always the value in
+  `Active Queue Snapshot`.
 - COND, TSQ, and EXEC slices below are queued after the active Evidence
   Integrity closure work unless a narrower slice explicitly promotes one.
 
@@ -4523,6 +4550,8 @@ document, or command name gives more authority than implementation evidence
 supports.
 
 ### EXEC-00: Add Executor Discipline To Active Slice Template
+
+status: complete.
 
 priority: P0.
 
