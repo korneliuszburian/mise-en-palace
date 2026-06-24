@@ -26,19 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Impossible-State Lifecycle Audit.
+current_priority: Reflection Candidate Writer Result Discrimination.
 
-first_unchecked_slice: `TSQ-05: Impossible-State Audit For Core Lifecycles`.
+first_unchecked_slice: `TSQ-05A: Discriminate Reflection Candidate Writer Result`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- audit impossible core lifecycle states through the
+- discriminate reflection candidate writer result states through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while auditing impossible lifecycle states;
+  authority layer while discriminating reflection candidate writer result
+  states;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -162,6 +163,11 @@ completed_checkpoint:
 - TSQ-04 names the remaining public-ish anonymous return boundaries found by
   AST inventory: DB `mapHarnessPlan` now returns `HarnessPlan`, and CLI
   `parseArgHelpers` exposes `OptionValueResult` / `MetadataEntryResult`.
+- TSQ-05 audits impossible-state candidates and promotes TSQ-05A as the next
+  implementation slice. Highest-risk finding: `WriteReflectionCandidatesResult`
+  has `status: "ready" | "blocked"` but one shape, so TypeScript permits
+  blocked results with written candidates and ready results with
+  `blockedReasons`.
 
 completed_evidence_pointers:
 
@@ -3046,7 +3052,8 @@ git revert <C6-02 commit>
 - [x] TSQ-02 Classify JSON.parse boundaries.
 - [x] TSQ-03 Quarantine unsafe casts and TS suppressions.
 - [x] TSQ-04 Audit explicit public type boundaries.
-- [ ] TSQ-05 Audit impossible core lifecycle states.
+- [x] TSQ-05 Audit impossible core lifecycle states.
+- [ ] TSQ-05A Discriminate reflection candidate writer result.
 
 ## Surprises & Discoveries
 
@@ -3098,6 +3105,11 @@ git revert <C6-02 commit>
   non-schema package source: one inferred public-ish DB mapper and two inline
   CLI helper result shapes. After the patch, the AST inventory reports zero
   inferred exported function return types and zero inline object return types.
+- TSQ-05 found the riskiest remaining impossible-state model is the reflection
+  candidate writer result, not EvidenceCommand. `WriteReflectionCandidatesResult`
+  has `status: "ready" | "blocked"` but one shared payload shape, so TypeScript
+  still allows blocked results with created candidates and ready results with
+  `blockedReasons`.
 - P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
   Both paths now use the same typed source/memory record identity fields instead
   of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
@@ -3245,6 +3257,9 @@ git revert <C6-02 commit>
   package rather than a root package API, but still named its exported helper
   result types because the small change removed the remaining inline object
   return shapes without changing CLI behavior.
+- TSQ-05 rejected converting every lifecycle candidate in one slice. The next
+  implementation slice is TSQ-05A only, focused on
+  `WriteReflectionCandidatesResult`.
 
 ## Decision Log
 
@@ -3403,6 +3418,11 @@ git revert <C6-02 commit>
   boundary smell only when the function is in a non-dev, non-schema exported
   surface. Fix the two small source gaps found now; do not broaden the slice
   into a full package API redesign.
+- 2026-06-24: TSQ-05 selects reflection candidate writer result
+  discrimination as the highest-risk impossible-state repair. Evidence command
+  proof states are already normalized as a discriminated union; worker jobs are
+  keyed by job type and payload; memory promotion gates already enforce runtime
+  review constraints, so they are not the first type-shape repair.
 
 ## Outcomes & Retrospective
 
@@ -3535,6 +3555,8 @@ Current outcome:
   helpers expose named result interfaces. The post-patch AST inventory found no
   inferred exported function return types or inline object return types in
   non-dev, non-schema package source.
+- TSQ-05 produced an impossible-state decision table and one promoted
+  implementation slice. No lifecycle model was converted in the audit slice.
 
 ## Command Evidence
 
@@ -4757,6 +4779,28 @@ and the renamed DB/CLI helper boundaries still compile and pass focused/full
 tests. It does not prove every exported type is semantically ideal, every
 package wildcard export should stay forever, or non-function public constants
 have all been audited.
+
+TSQ-05 verification after impossible-state lifecycle audit:
+
+```sh
+pnpm --filter @krn/core test
+pnpm typecheck
+git diff --check
+```
+
+Observed:
+
+```txt
+@krn/core: 10 test files, 50 tests passed.
+workspace typecheck: passed.
+git diff --check: passed with no output.
+```
+
+This proves the docs-only lifecycle audit does not break focused core tests,
+the workspace still compiles, and the diff has no whitespace errors. It does
+not prove `WriteReflectionCandidatesResult` has already been discriminated;
+that is TSQ-05A. It also does not prove every lifecycle model is semantically
+ideal or that runtime repositories enforce every invariant.
 
 ## Historical Reset Completion Criteria
 
@@ -5992,10 +6036,37 @@ git commit -m "refactor(ts): name public boundary return types"
 
 priority: P2.
 
+status: complete.
+
 objective:
 
 Find core lifecycle states where the current model allows invalid combinations
 that should become discriminated unions or narrower value objects.
+
+source_decision:
+
+source_id: live source inventory of `packages/core/src/evidenceBundle.ts`,
+`packages/core/src/reflection/index.ts`,
+`packages/harness/src/reflection/reflectionCandidateWriter.ts`,
+`packages/harness/src/activation/types.ts`, `packages/workers/src/jobTypes.ts`,
+`packages/workers/src/enqueueMaintenanceJob.ts`,
+`packages/harness/src/repositories/memoryRepository.ts`,
+`packages/harness/src/memory/memoryReviewGate.ts`, and
+`packages/harness/src/memory/antiMemoryReviewGate.ts`.
+trust_tier: high live source.
+mechanism: lifecycle status fields were checked against the payload fields they
+make valid or invalid.
+krn_implication: when a status changes which fields are valid, the public type
+should be a discriminated union or narrower value object instead of relying on
+callers to remember the convention.
+decision: promote only `WriteReflectionCandidatesResult` to implementation in
+TSQ-05A; keep other candidates as classified follow-ups or already-acceptable
+models.
+does_not_prove: every lifecycle model is perfect, runtime repositories enforce
+all invariants, or reflection candidate writer behavior is currently broken.
+consumer: TSQ-05A implementation slice.
+falsifier: TSQ-05A can still express `status: "blocked"` with created
+candidates or `status: "ready"` with blocking reasons.
 
 candidate areas:
 
@@ -6012,6 +6083,71 @@ rules:
 - produce one decision table and promote only the highest-risk model to an
   implementation slice.
 
+assumptions:
+
+- EvidenceCommand compatibility input may remain loose if the normalized proof
+  state is already discriminated and all IO boundaries normalize before domain
+  use;
+- this audit should select one next implementation target, not rewrite every
+  lifecycle in one diff;
+- candidate-write paths deserve higher priority than low-risk status labels
+  because they can create future MemoryCandidate/SourceClaim/EvalCandidate rows.
+
+tradeoffs:
+
+- choosing reflection candidate writer first leaves EvidenceBundle status and
+  MemoryCandidate status as documented risks, but prevents a sprawling type
+  rewrite;
+- a discriminated writer result is a small final-pattern repair with clear
+  tests and low blast radius.
+
+simplest acceptable implementation:
+
+- classify the candidate lifecycle models in one table;
+- promote the highest-risk model to TSQ-05A;
+- do not change source code in TSQ-05.
+
+files likely touched:
+
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- package source;
+- DB schema/migrations;
+- worker runtime behavior;
+- CLI behavior.
+
+non-goals:
+
+- no conversion of all lifecycle models;
+- no worker runtime;
+- no dashboard/eval platform;
+- no audit subsystem.
+
+decision_table:
+
+| Candidate | Live shape | Impossible state risk | Decision |
+| --- | --- | --- | --- |
+| `EvidenceCommand` | Loose compatibility input plus discriminated `NormalizedEvidenceCommand` | Low after TSQ-00A; loose rows are still needed for legacy/schema/DB compatibility | Keep as-is until a boundary proves unnormalized domain use |
+| `EvidenceBundle.status` | `"draft" | "captured" | "verified" | "rejected"` with one object shape | Medium; status does not currently control required fields in type, but completeness helpers enforce command/change/rollback evidence | Defer; revisit only if status begins governing persistence/review workflow |
+| `WriteReflectionCandidatesResult` | `status: "ready" | "blocked"` plus all arrays and `blockedReasons` in one interface | High; type permits blocked result with created candidates and ready result with blocking reasons on a candidate-write path | Promote TSQ-05A |
+| Activation decisions | `RankedActivationCandidate` plus optional `exclusion`, separate context inclusions/exclusions | Medium; excluded candidates can still be represented as ranked candidates, but downstream context assembly already separates inclusions/exclusions | Defer until activation misuse appears |
+| Worker job descriptor/write authority | `MaintenanceJob<TType>` is discriminated by job type and payload; authority map is keyed by job type | Low; allowed/forbidden write authority is already explicit and ADR-0015 keeps runtime absent | Keep as-is |
+| Memory promotion result | Gate functions return final record plus candidate/source claims and throw on invalid candidate state | Medium; runtime gate protects promotion, but candidate status itself is broad | Defer behind reflection writer result |
+
+selected_follow_up:
+
+TSQ-05A: Discriminate reflection candidate writer result.
+
+success criteria:
+
+- decision table names one highest-risk implementation slice;
+- active queue advances to TSQ-05A;
+- no lifecycle model is converted in the audit slice;
+- typecheck and focused core tests still pass.
+
 verification:
 
 ```sh
@@ -6020,8 +6156,62 @@ pnpm typecheck
 git diff --check
 ```
 
+rollback:
+
+```sh
+git revert <TSQ-05 commit>
+```
+
 commit:
 
 ```sh
 git commit -m "docs(ts): audit impossible lifecycle states"
+```
+
+### TSQ-05A: Discriminate Reflection Candidate Writer Result
+
+priority: P1.
+
+objective:
+
+Make `WriteReflectionCandidatesResult` state-dependent so blocked writer
+results cannot carry created candidates, and ready writer results cannot carry
+blocking reasons.
+
+source:
+
+TSQ-05 decision table.
+
+rules:
+
+- keep `writeReflectionCandidates` behavior the same unless tests reveal a real
+  bug;
+- represent blocked and ready result states as a discriminated union;
+- blocked result should carry non-empty blocked reasons and no candidate arrays
+  beyond empty/absent fields;
+- ready result may carry created candidates, eval candidates, source claims,
+  and unsupported non-blocking candidates;
+- do not create source/eval/memory stores or new writer paths.
+
+likely files:
+
+- `packages/harness/src/reflection/reflectionCandidateWriter.ts`;
+- `packages/harness/src/reflection/reflectionCandidateWriter.test.ts`;
+- maybe CLI/db tests only if type fallout reaches them;
+- `GOAL.md`;
+- `PLAN.md`.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- reflectionCandidateWriter
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+commit:
+
+```sh
+git commit -m "refactor(reflection): discriminate candidate writer result"
 ```
