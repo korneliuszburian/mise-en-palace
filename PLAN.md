@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: EvidenceBundle Status Shape Decision.
+current_priority: Activation Decision Shape Decision.
 
-first_unchecked_slice: `TSQ-05D: Decide EvidenceBundle Status Shape`.
+first_unchecked_slice: `TSQ-05E: Decide Activation Decision Shape`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next lifecycle-model follow-up after TSQ-05C narrowed
-  memory review gate result candidate statuses;
+- continue from the next lifecycle-model follow-up after TSQ-05D decided
+  EvidenceBundle status remains a lightweight ledger state;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding EvidenceBundle status shape;
+  authority layer while deciding activation decision shape;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -67,6 +67,10 @@ completed_checkpoint:
 - TSQ-05C narrows successful memory and anti-memory review gate result
   candidates to reviewable `proposed | candidate` status without changing
   promotion behavior or repository return shapes.
+- TSQ-05D decides `EvidenceBundle.status` should stay a lightweight ledger
+  status for now. Command proof strength is already carried by
+  provenance-normalized command rows plus assessment helpers, and no live source
+  requires status-specific bundle fields.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -74,26 +78,28 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: TSQ-05C passed focused harness review gate tests,
-  workspace typecheck, full workspace tests, and diff hygiene in this slice;
-  previous pushed slice is `5328e49 docs(ts): decide memory promotion result
-  shape`;
+- last verified state: TSQ-05D passed focused EvidenceBundle core tests, the
+  schema package command named by the slice, workspace typecheck, and diff
+  hygiene in this slice; previous pushed slice before TSQ-05D was
+  `2a8c52d refactor(memory): narrow review gate candidate status`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05D
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05E
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-05D: Decide EvidenceBundle Status Shape`;
+- next action: execute `TSQ-05E: Decide Activation Decision Shape`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- `EvidenceBundle.status` is the next lifecycle candidate; TSQ-05D should
-  decide whether it governs required fields or remains acceptable as one object
-  shape with helper assessments.
-- Activation decision shapes remain deferred until live misuse appears.
+- `EvidenceBundle.status` remains acceptable as one object shape with helper
+  assessments until a live writer starts using `verified` / `rejected` as proof
+  without explicit review fields.
+- Activation decision shapes are the next lifecycle candidate; TSQ-05E should
+  decide whether current ranked-candidate/exclusion/context assembly types are
+  sufficiently explicit.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
 
@@ -6815,4 +6821,162 @@ commit:
 
 ```sh
 git commit -m "docs(ts): decide evidence bundle status shape"
+```
+
+status: complete.
+
+source_decision:
+
+```yaml
+source_id: packages/core/src/evidenceBundle.ts
+trust_tier: high
+mechanism: EvidenceBundle.status is a four-value ledger status, while command
+  proof strength is normalized through EvidenceCommand provenance/kind plus
+  assessEvidenceBundleCompleteness and scoreEvidenceBundleReviewRisk helpers.
+krn_implication: proof semantics already live in command provenance and
+  assessment helpers; promoting the whole bundle to a discriminated lifecycle
+  shape now would create compatibility churn without preventing a live bug.
+decision: defer EvidenceBundle lifecycle discrimination and keep the single
+  object shape.
+does_not_prove: that a "verified" EvidenceBundle value by itself proves human
+  review, production readiness, or memory quality.
+consumer: PLAN.md TSQ-05D decision and next lifecycle follow-up selection.
+falsifier: a writer starts setting "verified" or "rejected" while relying on
+  status-specific fields such as verifiedBy, rejectedReason, reviewAssessmentId,
+  or command proof guarantees that the current object shape cannot express.
+```
+
+decision_table:
+
+| status | live meaning | required status-specific fields? | decision |
+| --- | --- | --- | --- |
+| `draft` | fixture or not-yet-captured ledger state | no | keep as ledger status |
+| `captured` | CLI/DB capture record; command proof comes from command rows | no | keep as ledger status |
+| `verified` | historical/test label; not used as proof by capture path | no | do not treat as proof without future writer contract |
+| `rejected` | available lifecycle value; no EvidenceBundle-specific writer currently requires rejection fields | no | defer until a real rejection writer appears |
+
+outcome:
+
+- no TypeScript model rewrite in this slice;
+- no DB schema or migration change;
+- no audit scanner, command runner, quality layer, or evidence status authority
+  was added;
+- next bounded lifecycle decision is activation decision shape.
+
+command_evidence:
+
+- `pnpm --filter @krn/core test -- evidenceBundle`: passed, 10 test files and
+  50 tests. This proves the current core EvidenceBundle model, command
+  normalization, completeness, rollback, and review-risk helpers still pass; it
+  does not prove memory quality or production readiness.
+- `pnpm --filter @krn/schema test -- evidenceBundle`: passed, 3 test files and
+  24 tests. This proves the schema package test command named by the slice
+  passes; it does not prove there is an EvidenceBundle status schema requiring
+  a lifecycle rewrite.
+- `pnpm typecheck`: passed across the current workspace. This proves the
+  docs-only decision did not break current TypeScript compilation.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
+
+### TSQ-05E: Decide Activation Decision Shape
+
+priority: P2.
+
+objective:
+
+Inspect activation decision/status surfaces and decide whether they should
+become discriminated decision records or remain represented as ranked candidates
+with explicit inclusions, exclusions, abstention, and persisted activation
+decision rows.
+
+source:
+
+TSQ-05 decision table. Activation decisions were deferred until live misuse
+appears.
+
+assumptions:
+
+- current activation code may already separate included context, excluded
+  candidates, abstention, observation prefix gates, and persisted decision
+  records clearly enough;
+- this is a decision slice before any model rewrite;
+- activation status cleanup must not become a broad retrieval or quality
+  subsystem.
+
+tradeoffs:
+
+- discriminating every activation candidate too early could churn ranking,
+  context assembly, and repository persistence at once;
+- leaving the model as-is is acceptable only if excluded candidates cannot be
+  mistaken for selected context and abstention carries explicit reasons.
+
+simplest acceptable implementation:
+
+- inspect `packages/core/src/activation.ts`,
+  `packages/core/src/contextAssembly.ts`,
+  `packages/harness/src/activation/types.ts`,
+  `packages/harness/src/activation/assembleContext.ts`, and repository
+  activation decision types;
+- produce a decision table for included, excluded, abstained, deferred,
+  conflict, and stale decisions;
+- promote an implementation slice only if live source shows ambiguous decision
+  shape or a field that is valid only for one status.
+
+rules:
+
+- do not change retrieval algorithms in the decision slice;
+- do not add dashboard, quality scanner, audit layer, Promptfoo authority, or
+  worker runtime;
+- do not rewrite activation persistence unless live source proves a status
+  shape bug.
+
+likely files:
+
+- `packages/core/src/activation.ts`;
+- `packages/core/src/contextAssembly.ts`;
+- `packages/harness/src/activation/types.ts`;
+- `packages/harness/src/activation/assembleContext.ts`;
+- `packages/harness/src/repositories/types.ts`;
+- activation tests if needed for source inspection;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- retrieval ranking algorithm behavior;
+- Promptfoo/eval surfaces;
+- unrelated CLI commands.
+
+non-goals:
+
+- no activation rewrite in the decision slice;
+- no new quality subsystem;
+- no dashboard or worker runtime.
+
+success criteria:
+
+- decision table states whether activation decision shapes need
+  discrimination, narrower value objects, or no change;
+- active queue advances to a bounded follow-up or records no-op with evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- activation contextAssembly
+pnpm --filter @krn/harness test -- activation
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-05E commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide activation decision shape"
 ```
