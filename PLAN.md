@@ -26,19 +26,20 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Activation Decision Shape Decision.
+current_priority: Activation Decision Persistence Input Narrowing.
 
-first_unchecked_slice: `TSQ-05E: Decide Activation Decision Shape`.
+first_unchecked_slice: `TSQ-05E-A: Discriminate Activation Decision Persistence Input`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next lifecycle-model follow-up after TSQ-05D decided
-  EvidenceBundle status remains a lightweight ledger state;
+- continue from the next lifecycle-model follow-up after TSQ-05E decided
+  activation context assembly is explicit, but persistence input needs
+  decision-specific narrowing;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding activation decision shape;
+  authority layer while narrowing activation decision persistence input;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -71,6 +72,11 @@ completed_checkpoint:
   status for now. Command proof strength is already carried by
   provenance-normalized command rows plus assessment helpers, and no live source
   requires status-specific bundle fields.
+- TSQ-05E decides activation context assembly should not be rewritten:
+  inclusions, exclusions, observation-prefix gates, and abstention are already
+  explicit. The narrower follow-up is repository persistence input, where
+  `RecordActivationDecisionInput` currently allows one optional object shape for
+  decision-specific fields.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -78,17 +84,17 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: TSQ-05D passed focused EvidenceBundle core tests, the
-  schema package command named by the slice, workspace typecheck, and diff
-  hygiene in this slice; previous pushed slice before TSQ-05D was
-  `2a8c52d refactor(memory): narrow review gate candidate status`;
+- last verified state: TSQ-05E passed focused core activation/context commands,
+  focused harness activation tests, workspace typecheck, and diff hygiene in
+  this slice; previous pushed slice before TSQ-05E was
+  `8c7250e docs(ts): decide evidence bundle status shape`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05E
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05E-A
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-05E: Decide Activation Decision Shape`;
+- next action: execute `TSQ-05E-A: Discriminate Activation Decision Persistence Input`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
@@ -97,9 +103,10 @@ open_risks_and_next_candidates:
 - `EvidenceBundle.status` remains acceptable as one object shape with helper
   assessments until a live writer starts using `verified` / `rejected` as proof
   without explicit review fields.
-- Activation decision shapes are the next lifecycle candidate; TSQ-05E should
-  decide whether current ranked-candidate/exclusion/context assembly types are
-  sufficiently explicit.
+- Activation context assembly is sufficiently explicit, but
+  `RecordActivationDecisionInput` still accepts status-specific fields through
+  one optional object shape. TSQ-05E-A should narrow this repository boundary
+  without changing ranking behavior or DB schema.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
 
@@ -6979,4 +6986,182 @@ commit:
 
 ```sh
 git commit -m "docs(ts): decide activation decision shape"
+```
+
+status: complete.
+
+source_decision:
+
+```yaml
+source_id: packages/harness/src/activation/assembleContext.ts
+trust_tier: high
+mechanism: Context activation already materializes selected items as
+  ContextAssembly.inclusions, rejected candidates as ContextAssembly.exclusions,
+  and no-context outcomes as activationAbstention with explicit reasons.
+krn_implication: the context assembly model does not need a broad
+  discriminated-union rewrite to prevent excluded context from being mistaken
+  for selected context.
+decision: adopt current context assembly shape and focus the follow-up on
+  persistence input narrowing.
+does_not_prove: activation ranking quality, retrieval quality, or that persisted
+  activation decision inputs are already type-safe.
+consumer: PLAN.md TSQ-05E decision and TSQ-05E-A follow-up.
+falsifier: an excluded candidate can enter ContextAssembly.inclusions without
+  losing its exclusion reason, or an abstained assembly can omit
+  activationAbstention.
+```
+
+```yaml
+source_id: packages/harness/src/repositories/retrievalRepository.ts
+trust_tier: high
+mechanism: RecordActivationDecisionInput has one object shape with
+  decision-specific fields such as expectedUse, rawRecall, antiMemoryRecordId,
+  exclusionCategory, sourceSupportState, and activationAbstentionReason all
+  optional regardless of decision status.
+krn_implication: persistence is the real type-safety gap; status-specific
+  decision fields should be represented as a discriminated union at the
+  repository input boundary.
+decision: promote TSQ-05E-A to narrow RecordActivationDecisionInput without DB
+  schema or ranking behavior changes.
+does_not_prove: that the database enum or historical rows are wrong.
+consumer: TSQ-05E-A implementation slice.
+falsifier: live callers already require impossible decision/input pairings at
+  compile time without optional metadata conventions.
+```
+
+decision_table:
+
+| decision | live meaning | required status-specific fields? | decision |
+| --- | --- | --- | --- |
+| `included` | selected subject entered `ContextAssembly.inclusions` | yes: context link, expected use/impact, optional raw-recall/source support | narrow repository input |
+| `excluded` | subject was rejected from context with an exclusion reason | yes: exclusion category/reason should be explicit | narrow repository input |
+| `conflict` | exclusion caused by conflict, currently anti-memory block | yes: conflict reason/anti-memory linkage should not be loose metadata | narrow repository input |
+| `stale` | stale candidate exclusion | yes: stale should be an exclusion-shaped decision | narrow repository input |
+| `deferred` | enum-supported future subject decision | unclear current writer | keep only with explicit defer reason if retained |
+| `abstained` | run-level no-context outcome | not a subject-level decision in current writer | keep as retrieval-run completion state, not normal subject decision input |
+
+outcome:
+
+- no activation ranking or context assembly rewrite in this slice;
+- no DB schema or migration change;
+- no dashboard, worker, eval, audit, or quality layer was added;
+- next bounded implementation slice is repository input narrowing.
+
+command_evidence:
+
+- `pnpm --filter @krn/core test -- activation contextAssembly`: passed, 10 test
+  files and 50 tests. This proves current core activation/context contracts
+  still compile and pass their test suite under the focused command; it does
+  not prove retrieval ranking quality.
+- `pnpm --filter @krn/harness test -- activation`: passed, 20 test files and
+  79 tests. This proves focused harness activation behavior, including context
+  exclusions and activation trace decision tests, still passes; it does not
+  prove the repository input boundary is already narrow enough.
+- `pnpm typecheck`: passed across the current workspace. This proves the
+  docs-only decision and next-slice plan did not break TypeScript compilation.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
+
+### TSQ-05E-A: Discriminate Activation Decision Persistence Input
+
+priority: P2.
+
+objective:
+
+Replace the single optional `RecordActivationDecisionInput` object shape with a
+decision-discriminated input boundary so included, excluded, conflict, stale,
+deferred, and abstention-related activation decisions cannot be mixed
+incorrectly at compile time.
+
+source:
+
+TSQ-05E decision. Context assembly is explicit enough; persistence input is the
+type-safety gap.
+
+assumptions:
+
+- DB schema can stay unchanged because existing columns/metadata can store the
+  same persisted shape;
+- callers should not need ranking behavior changes;
+- `abstained` is currently a retrieval-run completion state, not a normal
+  subject-level activation decision writer path.
+
+tradeoffs:
+
+- narrowing the repository input may require test fixture updates;
+- removing `abstained` from normal record input may need a compatibility alias
+  only if live callers use it;
+- keeping DB enum values broader than write input is acceptable for historical
+  rows and compatibility.
+
+simplest acceptable implementation:
+
+- define a discriminated union for `RecordActivationDecisionInput` in
+  `packages/harness/src/repositories/retrievalRepository.ts`;
+- keep `ActivationDecisionRecord["decision"]` unchanged for persisted read
+  models;
+- update `persistActivationTrace` and focused tests to satisfy the narrower
+  input;
+- keep persistence mapping behavior equivalent and avoid DB migrations.
+
+rules:
+
+- do not change retrieval ranking, context assembly selection, or DB schema;
+- do not add quality scanner, audit layer, worker runtime, or dashboard;
+- do not hide decision-specific fields in arbitrary metadata if a typed field
+  already exists.
+
+likely files:
+
+- `packages/harness/src/repositories/retrievalRepository.ts`;
+- `packages/harness/src/activation/activationEngine.ts`;
+- `packages/harness/src/activation/activationTraceDecisions.test.ts`;
+- `packages/harness/src/compiler/index.test.ts` if repository fake types need
+  alignment;
+- DB repository mapper tests only if compile-time narrowing exposes type drift;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- retrieval ranking algorithms;
+- context assembly selection behavior;
+- Promptfoo/eval surfaces;
+- unrelated CLI commands.
+
+non-goals:
+
+- no behavior change to activation ranking;
+- no DB migration;
+- no broad activation redesign.
+
+success criteria:
+
+- `RecordActivationDecisionInput` is a discriminated union or equivalent typed
+  final-pattern boundary;
+- included/excluded/conflict/stale/deferred inputs expose only the fields valid
+  for that decision shape;
+- abstention remains represented by retrieval run completion unless a live
+  subject-level writer proves otherwise;
+- focused activation trace tests and typecheck pass.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- activationTraceDecisions
+pnpm --filter @krn/harness test -- activation
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-05E-A commit>
+```
+
+commit:
+
+```sh
+git commit -m "refactor(activation): discriminate decision persistence input"
 ```
