@@ -273,7 +273,7 @@ describe("runCli", () => {
     const packageJson = await readRootPackageJson(repoRoot);
 
     expect(packageJson.scripts?.["db:smoke:init-connect"]).toBe(
-      "pnpm --filter @krn/cli krn db smoke init-connect"
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke init-connect"
     );
   });
 
@@ -282,7 +282,7 @@ describe("runCli", () => {
     const packageJson = await readRootPackageJson(repoRoot);
 
     expect(packageJson.scripts?.["db:smoke:target-repo-harness"]).toBe(
-      "pnpm --filter @krn/cli krn db smoke target-repo-harness"
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke target-repo-harness"
     );
   });
 
