@@ -50,6 +50,7 @@ describe("evidence bundle completeness", () => {
       command: "pnpm test",
       status: "skipped"
     })).toEqual({
+      kind: "default_template",
       command: "pnpm test",
       status: "skipped",
       provenance: "default_template",
@@ -65,6 +66,7 @@ describe("evidence bundle completeness", () => {
       exitCode: 0,
       outputPath: ".local-lab/typecheck.txt"
     })).toEqual({
+      kind: "captured_output_file",
       command: "pnpm typecheck",
       status: "passed",
       exitCode: 0,
@@ -73,6 +75,54 @@ describe("evidence bundle completeness", () => {
       provenance: "captured_output_file",
       doesNotProve:
         "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    });
+  });
+
+  test("does not allow weak default provenance to become passed proof", () => {
+    expect(normalizeEvidenceCommand({
+      command: "pnpm test",
+      status: "passed",
+      provenance: "default_template"
+    })).toEqual({
+      kind: "default_template",
+      command: "pnpm test",
+      status: "not_run",
+      provenance: "default_template",
+      doesNotProve:
+        "This command row does not prove the command executed; it is default template evidence only."
+    });
+  });
+
+  test("normalizes command-runner rows only when runner proof fields exist", () => {
+    expect(normalizeEvidenceCommand({
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: now
+    })).toEqual({
+      kind: "command_runner",
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0,
+      capturedAt: now,
+      doesNotProve:
+        "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    });
+
+    expect(normalizeEvidenceCommand({
+      command: "pnpm typecheck",
+      status: "passed",
+      provenance: "command_runner",
+      exitCode: 0
+    })).toEqual({
+      kind: "default_template",
+      command: "pnpm typecheck",
+      status: "not_run",
+      provenance: "default_template",
+      doesNotProve:
+        "This command row does not prove the command executed; it is default template evidence only."
     });
   });
 

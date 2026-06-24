@@ -44,14 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-00A: Implement EvidenceCommand Discriminated Union
+TSQ-01: Branded ID Types ADR And Pilot
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while implementing the evidence command proof-state model.
-Promote the slice through the `slice_template_gate` in `PLAN.md` before code
-changes.
+eval platform while deciding the branded ID pilot. Promote the slice through
+the `slice_template_gate` in `PLAN.md` before code changes.
 
 ## Required Read Order
 

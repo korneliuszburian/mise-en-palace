@@ -5,12 +5,12 @@ import type {
   ContextInclusion,
   DiffRisk,
   EvidenceBundle,
-  EvidenceCommand,
   EvidenceCommandProvenance,
   EvidenceCommandStatus,
   EvalCandidate,
   ExecutionRun,
   FeedbackDelta,
+  NormalizedEvidenceCommand,
   OperatorIntent,
   OperatorIntentSource,
   ReviewAssessment,
@@ -171,12 +171,12 @@ const asDiffRisk = (value: string): DiffRisk => {
 const isSourceTrustTier = (value: unknown): value is SourceTrustTier =>
   typeof value === "string" && sourceTrustTiers.has(value as SourceTrustTier);
 
-const evidenceCommandsOrEmpty = (value: unknown): EvidenceCommand[] => {
+const evidenceCommandsOrEmpty = (value: unknown): NormalizedEvidenceCommand[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((item): EvidenceCommand[] => {
+  return value.flatMap((item): NormalizedEvidenceCommand[] => {
     if (!isRecord(item) || typeof item.command !== "string") {
       return [];
     }

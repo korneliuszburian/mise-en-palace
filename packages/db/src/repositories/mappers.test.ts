@@ -127,6 +127,7 @@ describe("evidence bundle mappers", () => {
 
     expect(result.commands).toEqual([
       {
+        kind: "captured_output_file",
         command: "pnpm typecheck",
         status: "passed",
         exitCode: 0,
@@ -137,6 +138,7 @@ describe("evidence bundle mappers", () => {
           "This command result does not prove memory quality, source truth, review correctness, or production readiness."
       },
       {
+        kind: "default_template",
         command: "pnpm test",
         status: "skipped",
         provenance: "default_template",

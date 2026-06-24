@@ -735,6 +735,7 @@ describe("schema parse boundaries", () => {
       rollbackPath: "Revert schema commit"
     });
 
+    expect(evidence.commands[0]?.kind).toBe("captured_output_file");
     expect(evidence.commands[0]?.status).toBe("passed");
     expect(evidence.commands[0]?.provenance).toBe("captured_output_file");
     expect(evidence.commands[0]?.doesNotProve).toBe("This does not prove memory quality.");
@@ -748,6 +749,47 @@ describe("schema parse boundaries", () => {
             status: "passed",
             provenance: "terminal_memory",
             doesNotProve: ""
+          }
+        ],
+        diffRisk: "low",
+        reviewBurden: "small",
+        rollbackPath: "Revert schema commit"
+      })
+    ).toThrow();
+
+    const weakDefault = parseEvidenceCaptureInput({
+      changedFiles: ["packages/schema/src/index.ts"],
+      commands: [
+        {
+          command: "pnpm test",
+          status: "passed",
+          provenance: "default_template"
+        }
+      ],
+      diffRisk: "low",
+      reviewBurden: "small",
+      rollbackPath: "Revert schema commit"
+    });
+
+    expect(weakDefault.commands[0]).toEqual({
+      kind: "default_template",
+      command: "pnpm test",
+      status: "not_run",
+      provenance: "default_template",
+      doesNotProve:
+        "This command row does not prove the command executed; it is default template evidence only."
+    });
+
+    expect(() =>
+      parseEvidenceCaptureInput({
+        changedFiles: ["packages/schema/src/index.ts"],
+        commands: [
+          {
+            kind: "operator_reported",
+            command: "pnpm typecheck",
+            status: "passed",
+            provenance: "captured_output_file",
+            outputRef: ".local-lab/typecheck.txt"
           }
         ],
         diffRisk: "low",

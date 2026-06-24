@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Evidence Command Proof-State Implementation.
+current_priority: Branded ID Type Decision.
 
-first_unchecked_slice: `TSQ-00A: Implement EvidenceCommand Discriminated Union`.
+first_unchecked_slice: `TSQ-01: Branded ID Types ADR And Pilot`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- implement the evidence command proof-state model through the
+- decide the branded ID type pilot through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding remaining package barrels;
+  authority layer while deciding branded ID type boundaries;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -145,6 +145,10 @@ completed_checkpoint:
 - TSQ-00 accepts ADR-0019: `EvidenceCommand` should become a discriminated
   normalized proof-state model. The implementation is intentionally separated
   into TSQ-00A so compatibility mapping can be tested across core/schema/CLI/DB.
+- TSQ-00A implements ADR-0019: normalized evidence command rows now carry a
+  discriminated `kind`, weak default-template rows cannot remain final
+  `passed`/`failed` proof, schema/CLI/DB preserve legacy compatibility, and no
+  DB migration was needed.
 
 completed_evidence_pointers:
 
@@ -3022,7 +3026,8 @@ git revert <C6-02 commit>
 - [x] COND-03 Decide remaining package barrels.
 - [x] COND-04 Decide internal/dev CLI command surface.
 - [x] TSQ-00 Decide EvidenceCommand proof-state model.
-- [ ] TSQ-00A Implement EvidenceCommand discriminated union.
+- [x] TSQ-00A Implement EvidenceCommand discriminated union.
+- [ ] TSQ-01 Decide branded ID types ADR and pilot.
 
 ## Surprises & Discoveries
 
@@ -3187,6 +3192,10 @@ git revert <C6-02 commit>
   discriminated normalized proof-state model but defers implementation to
   TSQ-00A so core/schema/CLI/DB compatibility can be tested in one focused
   source slice.
+- TSQ-00A typecheck initially failed because `NormalizedEvidenceCommand` is now
+  a real union and CLI rendering tried to read `exitCode` / `outputRef` without
+  narrowing. The fix used `in` checks instead of casts, which confirms the
+  discriminant is doing useful TypeScript work.
 
 ## Decision Log
 
@@ -3327,6 +3336,10 @@ git revert <C6-02 commit>
   valid fields. Keep legacy/loose IO parsing and DB JSON readback mapping; do
   not rewrite historical EvidenceBundle rows or broaden the slice into a
   repo-wide TypeScript cleanup.
+- 2026-06-24: TSQ-00A implements ADR-0019 without a DB migration. Keep
+  `EvidenceCommand` as loose compatibility input, expose
+  `NormalizedEvidenceCommand` as the discriminated proof-state union, and
+  normalize DB JSON/schema/CLI command evidence before domain use.
 
 ## Outcomes & Retrospective
 
@@ -3437,6 +3450,11 @@ Current outcome:
   boundary. No parser or command routing changes were made.
 - TSQ-00 produced ADR-0019 and the next implementation slice. No TypeScript
   source changed in the decision slice.
+- TSQ-00A made normalized command evidence state-dependent:
+  `default_template`, `operator_reported`, `captured_output_file`,
+  `command_runner`, and `external_log` rows have distinct valid fields.
+  Historical/loose rows still normalize through compatibility mapping, and
+  weak default-template rows cannot survive as final passed/failed proof.
 
 ## Command Evidence
 
@@ -5192,6 +5210,8 @@ git commit -m "docs(ts): decide evidence command proof states"
 
 ### TSQ-00A: Implement EvidenceCommand Discriminated Union
 
+status: complete.
+
 priority: P1.
 
 objective:
@@ -5278,6 +5298,29 @@ pnpm --filter @krn/db test -- DrizzleHarnessRunRepository
 pnpm typecheck
 git diff --check
 ```
+
+observed:
+
+- core now keeps `EvidenceCommand` as loose compatibility input and exposes
+  `NormalizedEvidenceCommand` as a discriminated union with `kind`.
+- `normalizeEvidenceCommand` returns distinct `default_template`,
+  `operator_reported`, `captured_output_file`, `command_runner`, and
+  `external_log` states.
+- `default_template` rows are weak; malformed or legacy `passed`/`failed`
+  default-template rows normalize to `not_run` instead of final proof.
+- schema evidence parsing accepts legacy/loose input and returns normalized
+  command proof state with `kind`.
+- CLI evidence capture normalizes command rows once and uses union narrowing
+  when rendering optional proof fields.
+- DB JSON mapping narrows raw command arrays into normalized proof rows before
+  domain use; no schema or migration change was required.
+- focused verification passed:
+  `pnpm --filter @krn/core test -- evidenceBundle`,
+  `pnpm --filter @krn/schema test -- evidence`,
+  `pnpm --filter @krn/cli test -- parseEvidenceArgs runEvidenceCaptureCommand runCli`,
+  and `pnpm --filter @krn/db test -- DrizzleHarnessRunRepository`.
+- full workspace `pnpm typecheck`, full workspace `pnpm test`, and
+  `git diff --check` passed.
 
 rollback:
 

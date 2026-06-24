@@ -7,6 +7,7 @@ import {
 import type {
   DiffRisk,
   EvidenceCommand,
+  NormalizedEvidenceCommand,
   MemoryCandidate,
   SourceDecision
 } from "@krn/core";
@@ -207,16 +208,20 @@ const renderCommand = (command: EvidenceCommand): string => {
   return [
     `${normalized.command}: ${normalized.status}`,
     `provenance=${normalized.provenance}`,
-    ...(normalized.exitCode === undefined ? [] : [`exitCode=${normalized.exitCode}`]),
-    ...(normalized.outputRef === undefined ? [] : [`output=${normalized.outputRef}`]),
+    ...("exitCode" in normalized && normalized.exitCode !== undefined
+      ? [`exitCode=${normalized.exitCode}`]
+      : []),
+    ...("outputRef" in normalized && normalized.outputRef !== undefined
+      ? [`output=${normalized.outputRef}`]
+      : []),
     `doesNotProve=${normalized.doesNotProve}`
   ].join(" | ");
 };
 
-const hasWeakCommandProvenance = (commands: readonly EvidenceCommand[]): boolean =>
-  commands.some((command) => normalizeEvidenceCommand(command).provenance === "default_template");
+const hasWeakCommandProvenance = (commands: readonly NormalizedEvidenceCommand[]): boolean =>
+  commands.some((command) => command.kind === "default_template");
 
-const normalizeCommands = (commands: readonly EvidenceCommand[]): EvidenceCommand[] =>
+const normalizeCommands = (commands: readonly EvidenceCommand[]): NormalizedEvidenceCommand[] =>
   commands.map(normalizeEvidenceCommand);
 
 const persistenceLabel = (runtime: EvidenceCaptureRuntime): string =>
@@ -301,7 +306,7 @@ const materializeFeedbackDeltaMemoryCandidate = (
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
-  commands: EvidenceCommand[],
+  commands: NormalizedEvidenceCommand[],
   diffRisk: DiffRisk,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[]

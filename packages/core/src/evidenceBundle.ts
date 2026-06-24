@@ -27,10 +27,62 @@ export interface EvidenceCommand {
   doesNotProve?: string;
 }
 
-export interface NormalizedEvidenceCommand extends EvidenceCommand {
+interface BaseNormalizedEvidenceCommand {
+  command: string;
   provenance: EvidenceCommandProvenance;
   doesNotProve: string;
 }
+
+export interface DefaultTemplateEvidenceCommand extends BaseNormalizedEvidenceCommand {
+  kind: "default_template";
+  status: "skipped" | "not_run";
+  provenance: "default_template";
+}
+
+export interface OperatorReportedEvidenceCommand extends BaseNormalizedEvidenceCommand {
+  kind: "operator_reported";
+  status: EvidenceCommandStatus;
+  provenance: "operator_reported";
+  exitCode?: number;
+  capturedAt?: IsoTimestamp;
+  assertedBy?: string;
+}
+
+export interface CapturedOutputFileEvidenceCommand extends BaseNormalizedEvidenceCommand {
+  kind: "captured_output_file";
+  status: EvidenceCommandStatus;
+  provenance: "captured_output_file";
+  outputRef: string;
+  outputPath?: string;
+  exitCode?: number;
+  capturedAt?: IsoTimestamp;
+  assertedBy?: string;
+}
+
+export interface CommandRunnerEvidenceCommand extends BaseNormalizedEvidenceCommand {
+  kind: "command_runner";
+  status: "passed" | "failed";
+  provenance: "command_runner";
+  exitCode: number;
+  capturedAt: IsoTimestamp;
+  outputRef?: string;
+}
+
+export interface ExternalLogEvidenceCommand extends BaseNormalizedEvidenceCommand {
+  kind: "external_log";
+  status: EvidenceCommandStatus;
+  provenance: "external_log";
+  outputRef: string;
+  exitCode?: number;
+  capturedAt?: IsoTimestamp;
+}
+
+export type NormalizedEvidenceCommand =
+  | DefaultTemplateEvidenceCommand
+  | OperatorReportedEvidenceCommand
+  | CapturedOutputFileEvidenceCommand
+  | CommandRunnerEvidenceCommand
+  | ExternalLogEvidenceCommand;
 
 export interface EvidenceBundle {
   id: EvidenceBundleId;
@@ -63,6 +115,9 @@ export const commandResultDoesNotProve =
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
+const isPassedOrFailed = (status: EvidenceCommandStatus): status is "passed" | "failed" =>
+  status === "passed" || status === "failed";
+
 const inferCommandProvenance = (command: EvidenceCommand): EvidenceCommandProvenance => {
   if (hasText(command.outputRef) || hasText(command.outputPath)) {
     return "captured_output_file";
@@ -77,6 +132,11 @@ const inferCommandProvenance = (command: EvidenceCommand): EvidenceCommandProven
 
   return "default_template";
 };
+
+const normalizeDefaultTemplateStatus = (
+  status: EvidenceCommandStatus
+): DefaultTemplateEvidenceCommand["status"] =>
+  status === "skipped" ? "skipped" : "not_run";
 
 export const normalizeEvidenceCommand = (
   command: EvidenceCommand
@@ -93,16 +153,71 @@ export const normalizeEvidenceCommand = (
       ? defaultTemplateCommandDoesNotProve
       : commandResultDoesNotProve;
 
+  if (provenance === "captured_output_file" && outputRef !== undefined) {
+    return {
+      kind: "captured_output_file",
+      command: command.command,
+      status: command.status,
+      provenance,
+      outputRef,
+      ...(hasText(command.outputPath) ? { outputPath: command.outputPath.trim() } : {}),
+      ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
+      ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
+      ...(hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {}),
+      doesNotProve
+    };
+  }
+
+  if (provenance === "external_log" && outputRef !== undefined) {
+    return {
+      kind: "external_log",
+      command: command.command,
+      status: command.status,
+      provenance,
+      outputRef,
+      ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
+      ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
+      doesNotProve
+    };
+  }
+
+  if (
+    provenance === "command_runner" &&
+    isPassedOrFailed(command.status) &&
+    command.exitCode !== undefined &&
+    hasText(command.capturedAt)
+  ) {
+    return {
+      kind: "command_runner",
+      command: command.command,
+      status: command.status,
+      provenance,
+      exitCode: command.exitCode,
+      capturedAt: command.capturedAt.trim(),
+      ...(outputRef === undefined ? {} : { outputRef }),
+      doesNotProve
+    };
+  }
+
+  if (provenance === "operator_reported") {
+    return {
+      kind: "operator_reported",
+      command: command.command,
+      status: command.status,
+      provenance: "operator_reported",
+      ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
+      ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
+      ...(hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {}),
+      doesNotProve
+    };
+  }
+
   return {
+    kind: "default_template",
     command: command.command,
-    status: command.status,
-    provenance,
-    ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
-    ...(hasText(command.outputPath) ? { outputPath: command.outputPath.trim() } : {}),
-    ...(outputRef === undefined ? {} : { outputRef }),
-    ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
-    ...(hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {}),
-    doesNotProve
+    status: normalizeDefaultTemplateStatus(command.status),
+    provenance: "default_template",
+    doesNotProve: defaultTemplateCommandDoesNotProve
   };
 };
 

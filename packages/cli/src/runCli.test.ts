@@ -3795,6 +3795,7 @@ describe("runCli", () => {
     expect(capturedSourceDecisions?.[0]?.consumer).toBe("krn evidence capture");
     expect(capturedCommands).toEqual([
       {
+        kind: "default_template",
         command: "pnpm typecheck",
         status: "not_run",
         provenance: "default_template",
@@ -3802,6 +3803,7 @@ describe("runCli", () => {
           "This command row does not prove the command executed; it is default template evidence only."
       },
       {
+        kind: "default_template",
         command: "pnpm test",
         status: "not_run",
         provenance: "default_template",
@@ -3809,6 +3811,7 @@ describe("runCli", () => {
           "This command row does not prove the command executed; it is default template evidence only."
       },
       {
+        kind: "default_template",
         command: "git diff --check",
         status: "not_run",
         provenance: "default_template",
@@ -4059,6 +4062,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(capturedCommands).toEqual([
       {
+        kind: "captured_output_file",
         command: "pnpm typecheck",
         status: "passed",
         provenance: "captured_output_file",
@@ -4069,6 +4073,7 @@ describe("runCli", () => {
           "This command result does not prove memory quality, source truth, review correctness, or production readiness."
       },
       {
+        kind: "operator_reported",
         command: "pnpm test",
         status: "passed",
         provenance: "operator_reported",
