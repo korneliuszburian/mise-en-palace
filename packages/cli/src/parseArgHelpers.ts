@@ -1,8 +1,20 @@
+export interface OptionValueResult {
+  value?: string;
+  nextIndex: number;
+  error?: string;
+}
+
+export interface MetadataEntryResult {
+  key?: string;
+  value?: string;
+  error?: string;
+}
+
 export const optionValue = (
   args: readonly string[],
   index: number,
   option: string
-): { value?: string; nextIndex: number; error?: string } => {
+): OptionValueResult => {
   const arg = args[index];
   const prefix = `${option}=`;
 
@@ -30,7 +42,7 @@ export const optionValue = (
 
 export const metadataEntry = (
   value: string
-): { key?: string; value?: string; error?: string } => {
+): MetadataEntryResult => {
   const separatorIndex = value.indexOf("=");
 
   if (separatorIndex <= 0) {

@@ -10,6 +10,7 @@ import type {
   EvalCandidate,
   ExecutionRun,
   FeedbackDelta,
+  HarnessPlan,
   NormalizedEvidenceCommand,
   OperatorIntent,
   OperatorIntentSource,
@@ -399,7 +400,7 @@ export const mapTaskContract = (row: TaskContractRow): TaskContract => ({
   updatedAt: toIsoTimestamp(row.updatedAt)
 });
 
-export const mapHarnessPlan = (row: HarnessPlanRow) => ({
+export const mapHarnessPlan = (row: HarnessPlanRow): HarnessPlan => ({
   id: row.id,
   taskContractId: row.taskContractId,
   version: row.version,

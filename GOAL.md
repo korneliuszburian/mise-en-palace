@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-04: Public Type Boundary Audit
+TSQ-05: Impossible-State Audit For Core Lifecycles
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while auditing public type boundaries. Promote the slice through
+eval platform while auditing impossible core lifecycle states. Promote the slice through
 the `slice_template_gate` in `PLAN.md` before code changes.
 
 ## Required Read Order

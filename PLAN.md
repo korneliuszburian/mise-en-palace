@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Public Type Boundary Audit.
+current_priority: Impossible-State Lifecycle Audit.
 
-first_unchecked_slice: `TSQ-04: Public Type Boundary Audit`.
+first_unchecked_slice: `TSQ-05: Impossible-State Audit For Core Lifecycles`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- audit public type boundaries through the
+- audit impossible core lifecycle states through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while auditing public type boundaries;
+  authority layer while auditing impossible lifecycle states;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -159,6 +159,9 @@ completed_checkpoint:
 - TSQ-03 classifies unsafe cast and TypeScript suppression usage in `packages/`
   as a zero-current-state: no `as any`, `as unknown as`, `@ts-ignore`, or
   `@ts-expect-error` matches are present in package source.
+- TSQ-04 names the remaining public-ish anonymous return boundaries found by
+  AST inventory: DB `mapHarnessPlan` now returns `HarnessPlan`, and CLI
+  `parseArgHelpers` exposes `OptionValueResult` / `MetadataEntryResult`.
 
 completed_evidence_pointers:
 
@@ -3042,7 +3045,8 @@ git revert <C6-02 commit>
 - [x] TSQ-01 Decide branded ID types ADR and pilot.
 - [x] TSQ-02 Classify JSON.parse boundaries.
 - [x] TSQ-03 Quarantine unsafe casts and TS suppressions.
-- [ ] TSQ-04 Audit explicit public type boundaries.
+- [x] TSQ-04 Audit explicit public type boundaries.
+- [ ] TSQ-05 Audit impossible core lifecycle states.
 
 ## Surprises & Discoveries
 
@@ -3090,6 +3094,10 @@ git revert <C6-02 commit>
   `@ts-ignore`, or `@ts-expect-error`. This is a stronger result than expected,
   so the slice closes as a classification plus future falsifier instead of a
   code repair.
+- TSQ-04 found only three exported function return-type gaps in non-dev,
+  non-schema package source: one inferred public-ish DB mapper and two inline
+  CLI helper result shapes. After the patch, the AST inventory reports zero
+  inferred exported function return types and zero inline object return types.
 - P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
   Both paths now use the same typed source/memory record identity fields instead
   of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
@@ -3233,6 +3241,10 @@ git revert <C6-02 commit>
 - TSQ-03 used the package-source scan as the source of truth and did not add an
   unsafe-type scanner, guardrail, or audit product. The falsifier is simple:
   the package scan returns a real match.
+- TSQ-04 classified `packages/cli/src/parseArgHelpers.ts` as internal to the CLI
+  package rather than a root package API, but still named its exported helper
+  result types because the small change removed the remaining inline object
+  return shapes without changing CLI behavior.
 
 ## Decision Log
 
@@ -3387,6 +3399,10 @@ git revert <C6-02 commit>
 - 2026-06-24: TSQ-03 closes unsafe cast quarantine as a zero-current-state.
   There is no present package-source usage to quarantine; future occurrences
   must be handled in the owning slice, not by adding an audit subsystem.
+- 2026-06-24: TSQ-04 treats exported function return type inference as a public
+  boundary smell only when the function is in a non-dev, non-schema exported
+  surface. Fix the two small source gaps found now; do not broaden the slice
+  into a full package API redesign.
 
 ## Outcomes & Retrospective
 
@@ -3514,6 +3530,11 @@ Current outcome:
 - TSQ-03 verified the package source currently contains no unsafe casts or
   TypeScript suppressions matching the standard's hard-ban inventory. No source
   repair was needed.
+- TSQ-04 removed the remaining public-ish anonymous return boundary findings:
+  `mapHarnessPlan` has an explicit `HarnessPlan` return type, and CLI argument
+  helpers expose named result interfaces. The post-patch AST inventory found no
+  inferred exported function return types or inline object return types in
+  non-dev, non-schema package source.
 
 ## Command Evidence
 
@@ -4707,6 +4728,36 @@ prove future package code cannot introduce unsafe casts, files outside
 `packages/` contain no suppressions, or every possible type assertion has been
 semantically audited.
 
+TSQ-04 verification after naming public boundary return types:
+
+```sh
+node --input-type=module <AST inventory command>
+pnpm --filter @krn/db test -- mappers
+pnpm --filter @krn/cli test -- parse
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+```txt
+AST inventory: inferred exported functions: 0.
+AST inventory: inline object return types: 0.
+focused DB mapper tests: 23 test files, 72 tests passed.
+focused CLI parse tests: 23 test files, 146 tests passed.
+workspace typecheck: passed.
+workspace test: core/schema/harness/workers/codex-adapter/db/cli passed.
+git diff --check: passed with no output.
+```
+
+This proves the selected non-dev, non-schema package-source inventory has no
+exported functions with inferred return types or inline object return types,
+and the renamed DB/CLI helper boundaries still compile and pass focused/full
+tests. It does not prove every exported type is semantically ideal, every
+package wildcard export should stay forever, or non-function public constants
+have all been audited.
+
 ## Historical Reset Completion Criteria
 
 The reset criteria below are retained as the completed P0-P7 ledger. They are
@@ -5819,10 +5870,32 @@ git commit -m "docs(ts): classify unsafe type fixtures"
 
 priority: P1.
 
+status: complete.
+
 objective:
 
 Ensure public package APIs use named exported types instead of anonymous object
 shapes that hide boundary contracts.
+
+source_decision:
+
+source_id: TypeScript AST inventory over non-test package source.
+trust_tier: high live source inventory.
+mechanism: exported function declarations and exported arrow/function
+expressions were scanned for inferred return types and inline object return
+types, excluding dev and DB schema table modules.
+krn_implication: public-ish functions should not leak unnamed object shapes as
+their contract; named return types make package authority and review easier to
+reason about.
+decision: patch the three findings instead of creating a broader API redesign:
+DB `mapHarnessPlan` returns `HarnessPlan`, and CLI argument helpers expose
+named result interfaces.
+does_not_prove: every exported type is semantically perfect, all package root
+wildcards are ideal forever, or ordinary non-function object exports are all
+domain-clean.
+consumer: TSQ-04 source patch and plan checkpoint.
+falsifier: the AST inventory reports inferred exported function return types
+or inline object return types in non-dev, non-schema package source.
 
 targets:
 
@@ -5831,18 +5904,88 @@ targets:
 - harness activation/review-gate ports;
 - evidence command and activation decision types.
 
+assumptions:
+
+- package roots/subpaths define the practical public surface for this private
+  workspace;
+- DB schema table modules and dev smokes/readiness are explicit non-product
+  subpaths, so the audit excludes them from public-domain return-type repair;
+- a small source patch is better than a docs-only classification when the live
+  inventory finds precise return-type gaps.
+
+tradeoffs:
+
+- the AST inventory checks exported functions, not every exported constant or
+  every semantic domain model;
+- naming internal CLI helper result types is slightly more explicit than
+  strictly required by the root package API, but it avoids leaving an exported
+  anonymous shape behind.
+
+simplest acceptable implementation:
+
+- add named return types for the discovered gaps;
+- rerun AST inventory until it reports zero inferred/inline exported function
+  return types for the chosen scope;
+- record scope limits and falsifier in `PLAN.md`.
+
+files likely touched:
+
+- `packages/db/src/repositories/mappers.ts`;
+- `packages/cli/src/parseArgHelpers.ts`;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- package export topology;
+- DB schema/migrations;
+- CLI parser behavior;
+- unrelated public APIs.
+
+non-goals:
+
+- no package surface redesign;
+- no broad barrel cleanup;
+- no semantic rewrite of activation/evidence/memory models;
+- no new type-audit subsystem.
+
+classification:
+
+- CLI root `runCli`, `CliRuntime`, and `CliResult`: already named;
+- evidence command and activation decision domain types: already named;
+- harness activation/review-gate ports: already named;
+- DB adapter mapper gap: `mapHarnessPlan` needed explicit `HarnessPlan`;
+- CLI internal helper gap: `optionValue` and `metadataEntry` needed named
+  result interfaces.
+
+success criteria:
+
+- AST inventory reports zero inferred exported function return types and zero
+  inline object return types in non-dev, non-schema package source;
+- typecheck/tests still pass;
+- no package export topology changes are made.
+
 verification:
 
 ```sh
+node --input-type=module <AST inventory command>
+pnpm --filter @krn/db test -- mappers
+pnpm --filter @krn/cli test -- parse
 pnpm typecheck
 pnpm test
 git diff --check
 ```
 
+rollback:
+
+```sh
+git revert <TSQ-04 commit>
+```
+
 commit:
 
 ```sh
-git commit -m "docs(ts): audit public type boundaries"
+git commit -m "refactor(ts): name public boundary return types"
 ```
 
 ### TSQ-05: Impossible-State Audit For Core Lifecycles
