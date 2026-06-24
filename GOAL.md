@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-06: Decide EvalCandidate Proposal Status Shape
+TSQ-06A: Narrow EvalCandidate Proposal Carriers
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding eval candidate proposal status shape.
+eval platform while narrowing eval candidate proposal carriers.
 Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
 
 ## Required Read Order

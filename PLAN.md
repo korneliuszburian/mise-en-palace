@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: EvalCandidate Proposal Status Shape Decision.
+current_priority: EvalCandidate Proposal Carrier Narrowing.
 
-first_unchecked_slice: `TSQ-06: Decide EvalCandidate Proposal Status Shape`.
+first_unchecked_slice: `TSQ-06A: Narrow EvalCandidate Proposal Carriers`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next typed lifecycle decision after CTX-01 condensed
-  completed lifecycle-hardening context;
+- continue from the next typed lifecycle implementation after TSQ-06 decided
+  proposal-only eval carriers need a narrower status shape;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding eval candidate proposal status shape;
+  authority layer while narrowing eval candidate proposal carriers;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -66,6 +66,9 @@ completed_checkpoint:
 - CTX-01 condenses completed TSQ-05D/E/E-A detail into this checkpoint. Commit
   history remains the detailed evidence ledger:
   `8c7250e`, `1bbcf01`, and `4b429c5`.
+- TSQ-06 decides proposal-only eval carriers need a narrower status shape:
+  reflection proposals are already candidate-only, but `FeedbackDelta` and DB
+  feedback readback still use broad `EvalCandidate[]`.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -73,16 +76,17 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: CTX-01 passed workspace typecheck and diff hygiene in
-  this docs-only condensation slice; previous pushed slice before CTX-01 was
-  `4b429c5 refactor(activation): discriminate decision persistence input`;
+- last verified state: TSQ-06 passed focused core eval/feedback/reflection
+  tests, workspace typecheck, and diff hygiene in this decision slice; previous
+  pushed slice before TSQ-06 was
+  `7ab5383 docs(plan): condense lifecycle hardening context`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-06
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-06A
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-06: Decide EvalCandidate Proposal Status Shape`;
+- next action: execute `TSQ-06A: Narrow EvalCandidate Proposal Carriers`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
@@ -93,10 +97,8 @@ open_risks_and_next_candidates:
   without explicit review fields.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
-- `EvalCandidateStatus` is broader than current proposal-only carriers. TSQ-06
-  should decide whether FeedbackDelta/Reflection eval proposal paths need a
-  narrower proposal status shape or whether the broad core type is acceptable
-  until a standalone eval candidate lifecycle exists.
+- `FeedbackDelta.evalCandidates` should be narrowed to proposal-only
+  `candidate` status while the standalone eval lifecycle remains absent.
 - Activation decision persistence input is narrowed; DB enum/read model remains
   broader by design for historical rows and compatibility.
 
@@ -2992,7 +2994,8 @@ git revert <C6-02 commit>
 - [x] TSQ-05E Decide activation decision shape.
 - [x] TSQ-05E-A Discriminate activation decision persistence input.
 - [x] CTX-01 Condense lifecycle hardening context.
-- [ ] TSQ-06 Decide EvalCandidate proposal status shape.
+- [x] TSQ-06 Decide EvalCandidate proposal status shape.
+- [ ] TSQ-06A Narrow EvalCandidate proposal carriers.
 
 ## Surprises & Discoveries
 
@@ -7414,4 +7417,186 @@ commit:
 
 ```sh
 git commit -m "docs(ts): decide eval candidate proposal status shape"
+```
+
+status: complete.
+
+source_decisions:
+
+```yaml
+source_id: docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md
+trust_tier: high
+mechanism: ADR-0016 accepts FeedbackDelta and ReflectionRecord output as current
+  eval proposal carriers while rejecting standalone eval candidate table, CLI,
+  review gate, worker promotion, Promptfoo authority, dashboard, and eval
+  platform.
+krn_implication: current proposal carriers must not imply accepted, rejected, or
+  promoted eval lifecycle truth.
+decision: adopt and narrow current proposal carriers rather than creating a new
+  eval subsystem.
+does_not_prove: standalone eval candidate storage will never be needed.
+consumer: TSQ-06 decision and TSQ-06A implementation slice.
+falsifier: operators need independent eval candidate review, dedupe, promotion,
+  scheduling, activation, or execution outside FeedbackDelta/ReflectionRecord
+  lineage.
+```
+
+```yaml
+source_id: packages/core/src/reflection/index.ts
+trust_tier: high
+mechanism: ReflectionEvalCandidateProposal omits EvalCandidate.status and
+  carries proposal evidence; reflection candidate writer later materializes
+  EvalCandidate output with status "candidate".
+krn_implication: reflection proposal input is already candidate-only and does
+  not need a broad status rewrite.
+decision: keep reflection proposal input shape.
+does_not_prove: FeedbackDelta proposal storage is equally narrow.
+consumer: TSQ-06 decision table.
+falsifier: reflection output starts accepting EvalCandidate.status from
+  generated proposals.
+```
+
+```yaml
+source_id: packages/core/src/feedbackDelta.ts
+trust_tier: high
+mechanism: FeedbackDelta.evalCandidates is typed as EvalCandidate[], whose
+  status union includes candidate, accepted, rejected, and promoted.
+krn_implication: the current feedback proposal carrier can represent final eval
+  lifecycle states even though ADR-0016 says no governed standalone lifecycle
+  exists.
+decision: promote TSQ-06A to introduce a proposal-only EvalCandidate carrier for
+  FeedbackDelta and related readback.
+does_not_prove: existing persisted JSON rows contain invalid statuses.
+consumer: TSQ-06A implementation slice.
+falsifier: FeedbackDelta.evalCandidates can no longer express accepted,
+  rejected, or promoted without a standalone lifecycle.
+```
+
+decision_table:
+
+| status | proposal-only meaning today | current carrier risk | decision |
+| --- | --- | --- | --- |
+| `candidate` | valid proposal state in FeedbackDelta/reflection lineage | safe | keep |
+| `accepted` | future standalone review state, not current proposal truth | can be represented in FeedbackDelta today | remove from proposal carrier |
+| `rejected` | future standalone review state, not current proposal truth | can be represented in FeedbackDelta today | remove from proposal carrier |
+| `promoted` | future standalone lifecycle state, not current proposal truth | can be represented in FeedbackDelta today | remove from proposal carrier |
+
+outcome:
+
+- no standalone eval candidate storage, CLI, review gate, worker runtime,
+  Promptfoo authority, dashboard, or eval platform was added;
+- reflection proposal input remains acceptable because it has no status field;
+- `FeedbackDelta.evalCandidates` and DB feedback readback need a proposal-only
+  carrier in TSQ-06A.
+
+command_evidence:
+
+- `pnpm --filter @krn/core test -- eval feedbackDelta reflection`: passed, 10
+  files / 50 tests. This proves the current core eval, feedback delta, and
+  reflection behavior still match the decision slice; it does not prove TSQ-06A
+  implementation is complete.
+- `pnpm typecheck`: passed across the workspace. This proves the docs-only
+  decision did not introduce a type failure; it does not prove runtime DB
+  behavior.
+- `git diff --check`: passed. This proves whitespace hygiene for the current
+  diff.
+
+### TSQ-06A: Narrow EvalCandidate Proposal Carriers
+
+priority: P2.
+
+objective:
+
+Introduce a proposal-only eval candidate carrier so FeedbackDelta and reflection
+writer proposal outputs cannot express accepted, rejected, or promoted eval
+truth before a standalone eval lifecycle exists.
+
+source:
+
+TSQ-06 decision and ADR-0016.
+
+assumptions:
+
+- `EvalCandidate` may remain the future standalone lifecycle type;
+- current FeedbackDelta/reflection carriers should expose only `status:
+  "candidate"`;
+- DB schema can stay unchanged because JSONB already stores proposal arrays.
+
+tradeoffs:
+
+- persisted JSON readback may need to filter or normalize non-candidate statuses
+  to avoid importing final lifecycle truth;
+- keeping `EvalCandidate` broad preserves future standalone lifecycle language
+  but requires a separate proposal type for current carriers.
+
+simplest acceptable implementation:
+
+- add a proposal-only eval candidate type in `packages/core/src/eval.ts`;
+- change `FeedbackDelta.evalCandidates` and reflection writer ready output to
+  use the proposal-only type where appropriate;
+- update DB feedback mapper readback to only preserve candidate-status proposal
+  rows, or normalize missing/legacy status to candidate only when safe;
+- update focused tests.
+
+rules:
+
+- do not add `eval_candidates` table;
+- do not add eval CLI, review gate, worker runtime, Promptfoo authority,
+  dashboard, or eval platform;
+- do not change DB schema/migrations;
+- do not treat Promptfoo smoke as behavior proof.
+
+likely files:
+
+- `packages/core/src/eval.ts`;
+- `packages/core/src/feedbackDelta.ts`;
+- `packages/harness/src/reflection/reflectionCandidateWriter.ts`;
+- `packages/db/src/repositories/mappers.ts`;
+- focused core/harness/db tests;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- CLI command surfaces;
+- worker runtime behavior;
+- Promptfoo/eval platform surfaces.
+
+non-goals:
+
+- no standalone eval lifecycle;
+- no eval promotion/review behavior;
+- no dashboard or eval platform;
+- no Promptfoo authority changes.
+
+success criteria:
+
+- FeedbackDelta eval proposal carrier cannot compile with accepted, rejected, or
+  promoted status;
+- reflection writer still emits proposal-only eval candidates;
+- DB feedback readback does not import final eval lifecycle truth into
+  proposal-only carriers;
+- focused tests and typecheck pass.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- eval feedbackDelta reflection
+pnpm --filter @krn/harness test -- reflectionCandidateWriter
+pnpm --filter @krn/db test -- mappers
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-06A commit>
+```
+
+commit:
+
+```sh
+git commit -m "refactor(eval): narrow proposal candidate status"
 ```
