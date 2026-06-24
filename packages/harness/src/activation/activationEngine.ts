@@ -28,6 +28,7 @@ import {
   buildSourceQuery
 } from "./sourceQuery.js";
 import type {
+  ActivationExclusionReason,
   ActivationCandidateKind,
   ActivationQuery,
   RankedActivationCandidate
@@ -84,9 +85,14 @@ export interface PersistActivationTraceInput {
 const candidateKey = (candidate: { subjectType: string; subjectId: string }): string =>
   `${candidate.subjectType}:${candidate.subjectId}`;
 
+type ExclusionActivationDecision = Extract<
+  RecordActivationDecisionInput["decision"],
+  "excluded" | "conflict" | "stale"
+>;
+
 const activationDecisionForExclusion = (
   candidate: RankedActivationCandidate | undefined
-): RecordActivationDecisionInput["decision"] => {
+): ExclusionActivationDecision => {
   if (candidate?.conflictReason === "anti_memory_block") {
     return "conflict";
   }
@@ -96,6 +102,39 @@ const activationDecisionForExclusion = (
   }
 
   return "excluded";
+};
+
+const exclusionCategoryFor = (
+  candidate: RankedActivationCandidate | undefined,
+  subjectId: string
+): ActivationExclusionReason => {
+  if (candidate?.exclusion?.reason !== undefined) {
+    return candidate.exclusion.reason;
+  }
+
+  throw new Error(`Activation decision for ${subjectId} is missing exclusion category`);
+};
+
+const nonStaleExclusionCategory = (
+  category: ActivationExclusionReason,
+  subjectId: string
+): Exclude<ActivationExclusionReason, "stale"> => {
+  if (category === "stale") {
+    throw new Error(`Excluded activation decision for ${subjectId} cannot use stale category`);
+  }
+
+  return category;
+};
+
+const antiMemoryRecordIdForConflict = (
+  candidate: RankedActivationCandidate | undefined,
+  subjectId: string
+): string => {
+  if (candidate?.antiMemoryRecordId !== undefined) {
+    return candidate.antiMemoryRecordId;
+  }
+
+  throw new Error(`Conflict activation decision for ${subjectId} is missing antiMemoryRecordId`);
 };
 
 const sourceSupportStateFor = (
@@ -264,30 +303,46 @@ export const persistActivationTrace = async (
     const candidate = candidatesBySubject.get(key);
     const retrievalCandidateId = candidateRecordIds.get(key);
     const decision = activationDecisionForExclusion(candidate);
+    const exclusionCategory = exclusionCategoryFor(candidate, exclusion.subjectId);
+    const activationAbstentionReason = input.contextAssembly.activationAbstention?.reason;
 
-    await input.retrievalRepository.recordActivationDecision({
+    const commonInput = {
       retrievalRunId: input.retrievalRunId,
       ...(retrievalCandidateId === undefined ? {} : { retrievalCandidateId }),
       contextAssemblyId: input.contextAssembly.id,
       subjectType: exclusion.subjectType,
       subjectId: exclusion.subjectId,
-      decision,
-      reason: decision === "conflict" ? "anti_memory_block" : exclusion.reason,
       ...(exclusion.score === undefined ? {} : { score: exclusion.score }),
-      ...(candidate?.antiMemoryRecordId === undefined
-        ? {}
-        : { antiMemoryRecordId: candidate.antiMemoryRecordId }),
-      ...(candidate?.exclusion?.reason === undefined
-        ? {}
-        : { exclusionCategory: candidate.exclusion.reason }),
       sourceSupportState: sourceSupportStateFor(candidate),
-      ...(input.contextAssembly.activationAbstention === undefined
-        ? {}
-        : { activationAbstentionReason: input.contextAssembly.activationAbstention.reason }),
+      ...(activationAbstentionReason === undefined ? {} : { activationAbstentionReason }),
       metadata: {
         explanation: exclusion.explanation
       }
-    });
+    };
+
+    if (decision === "conflict") {
+      await input.retrievalRepository.recordActivationDecision({
+        ...commonInput,
+        decision,
+        reason: "anti_memory_block",
+        antiMemoryRecordId: antiMemoryRecordIdForConflict(candidate, exclusion.subjectId),
+        exclusionCategory
+      });
+    } else if (decision === "stale") {
+      await input.retrievalRepository.recordActivationDecision({
+        ...commonInput,
+        decision,
+        reason: exclusion.reason,
+        exclusionCategory: "stale"
+      });
+    } else {
+      await input.retrievalRepository.recordActivationDecision({
+        ...commonInput,
+        decision,
+        reason: exclusion.reason,
+        exclusionCategory: nonStaleExclusionCategory(exclusionCategory, exclusion.subjectId)
+      });
+    }
   }
 
   await input.retrievalRepository.storeContextSelection({

@@ -26,20 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Activation Decision Persistence Input Narrowing.
+current_priority: Lifecycle Hardening Context Condensation.
 
-first_unchecked_slice: `TSQ-05E-A: Discriminate Activation Decision Persistence Input`.
+first_unchecked_slice: `CTX-01: Condense Lifecycle Hardening Context`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next lifecycle-model follow-up after TSQ-05E decided
-  activation context assembly is explicit, but persistence input needs
-  decision-specific narrowing;
+- continue from the next context-hygiene follow-up after TSQ-05E-A narrowed
+  activation decision persistence input;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while narrowing activation decision persistence input;
+  authority layer while condensing lifecycle hardening context;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -77,6 +76,9 @@ completed_checkpoint:
   explicit. The narrower follow-up is repository persistence input, where
   `RecordActivationDecisionInput` currently allows one optional object shape for
   decision-specific fields.
+- TSQ-05E-A discriminates `RecordActivationDecisionInput` by decision status:
+  included, excluded, conflict, stale, and deferred persistence inputs now expose
+  decision-specific fields without DB schema or activation ranking changes.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -84,17 +86,17 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: TSQ-05E passed focused core activation/context commands,
-  focused harness activation tests, workspace typecheck, and diff hygiene in
-  this slice; previous pushed slice before TSQ-05E was
-  `8c7250e docs(ts): decide evidence bundle status shape`;
+- last verified state: TSQ-05E-A passed focused activation trace tests, focused
+  harness activation tests, workspace typecheck, full workspace tests, and diff
+  hygiene in this slice; previous pushed slice before TSQ-05E-A was
+  `1bbcf01 docs(ts): decide activation decision shape`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05E-A
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-01
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-05E-A: Discriminate Activation Decision Persistence Input`;
+- next action: execute `CTX-01: Condense Lifecycle Hardening Context`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
@@ -103,10 +105,11 @@ open_risks_and_next_candidates:
 - `EvidenceBundle.status` remains acceptable as one object shape with helper
   assessments until a live writer starts using `verified` / `rejected` as proof
   without explicit review fields.
-- Activation context assembly is sufficiently explicit, but
-  `RecordActivationDecisionInput` still accepts status-specific fields through
-  one optional object shape. TSQ-05E-A should narrow this repository boundary
-  without changing ranking behavior or DB schema.
+- Activation decision persistence input is now narrowed; DB enum/read model
+  remains broader by design for historical rows and compatibility.
+- Active plan context has accumulated several completed lifecycle decisions
+  since CTX-00. CTX-01 should condense the active snapshot and demote completed
+  TSQ-05D/E/E-A detail to compact checkpoint evidence before more runtime work.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
 
@@ -7164,4 +7167,138 @@ commit:
 
 ```sh
 git commit -m "refactor(activation): discriminate decision persistence input"
+```
+
+status: complete.
+
+implementation_notes:
+
+- `RecordActivationDecisionInput` is now a decision-discriminated union at the
+  retrieval repository input boundary.
+- Included activation decisions require `contextAssemblyId`,
+  `expectedDecisionImpact`, and `expectedUse`; raw recall and source-support
+  state remain typed fields.
+- Excluded, stale, and conflict decisions require explicit exclusion category;
+  stale is its own exclusion-shaped decision.
+- Conflict decisions require typed `antiMemoryRecordId` instead of relying on
+  metadata conventions.
+- `abstained` remains represented by retrieval run completion, not normal
+  subject-level activation decision input.
+- DB schema, migrations, retrieval ranking, and context assembly selection were
+  not changed.
+
+changed_files:
+
+- `packages/harness/src/repositories/retrievalRepository.ts`;
+- `packages/harness/src/activation/activationEngine.ts`;
+- `packages/db/src/retrievalSubstrateSmoke.ts`;
+- `GOAL.md`;
+- `PLAN.md`.
+
+command_evidence:
+
+- `pnpm --filter @krn/harness test -- activationTraceDecisions`: passed, 20
+  test files and 79 tests under the focused command. This proves the activation
+  trace writer still records included/conflict decisions as expected; it does
+  not prove retrieval ranking quality.
+- `pnpm --filter @krn/harness typecheck`: passed. This proves the harness
+  package accepts the new discriminated repository input boundary.
+- `pnpm --filter @krn/db typecheck`: passed. This proves DB repository/smoke
+  call-sites compile against the narrower input.
+- `pnpm --filter @krn/harness test -- activation`: passed, 20 test files and
+  79 tests. This proves focused harness activation behavior still passes after
+  the input narrowing.
+- `pnpm typecheck`: passed across the current workspace. This proves current
+  packages compile with the new input union.
+- `pnpm test`: passed across core, schema, harness, workers, codex-adapter, db,
+  and cli. This proves the current workspace test suite passes; it does not
+  prove Memory Brain quality or production readiness.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
+
+### CTX-01: Condense Lifecycle Hardening Context
+
+priority: P1.
+
+objective:
+
+Condense active `GOAL.md` / `PLAN.md` state after TSQ-05D, TSQ-05E, and
+TSQ-05E-A so completed lifecycle-detail blocks do not stay in the active
+context window.
+
+source:
+
+Context hygiene rule in the Active Queue Snapshot: every few completed slices,
+run a plan condensation pass.
+
+assumptions:
+
+- completed lifecycle decisions should remain discoverable as historical
+  evidence;
+- the active queue should keep only current objective, next unchecked item,
+  compact checkpoint, command evidence pointers, risks, and rollback notes;
+- this is docs-only unless live repo evidence shows a broken pointer.
+
+tradeoffs:
+
+- over-condensing can hide useful rollback/evidence details;
+- under-condensing keeps finished work in active context and wastes future
+  context budget.
+
+simplest acceptable implementation:
+
+- collapse TSQ-05D/E/E-A active details into checkpoint bullets and command
+  evidence pointers;
+- keep the completed detailed sections as historical ledger only if they no
+  longer sit in the active window;
+- update `GOAL.md` to the next concrete unchecked slice after condensation.
+
+rules:
+
+- do not edit TypeScript source in the condensation slice;
+- do not delete evidence;
+- do not create a new plan file;
+- do not revive repo-reset audit or anti-slop layers.
+
+likely files:
+
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- TypeScript source;
+- DB schema/migrations;
+- CLI command surfaces;
+- old raw materials.
+
+non-goals:
+
+- no behavior change;
+- no broad cleanup;
+- no new architecture layer.
+
+success criteria:
+
+- active snapshot is shorter and names one next unchecked runtime/docs slice;
+- completed TSQ-05D/E/E-A details are compacted into checkpoint evidence;
+- root `GOAL.md` stays compact;
+- typecheck and diff hygiene pass.
+
+verification:
+
+```sh
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <CTX-01 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): condense lifecycle hardening context"
 ```

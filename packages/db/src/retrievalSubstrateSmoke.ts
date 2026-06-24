@@ -470,6 +470,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       score: 90,
       contextBudgetCost: 220,
       expectedDecisionImpact: "Supports keeping retrieval substrate in Postgres.",
+      expectedUse: "Guide retrieval substrate smoke verification.",
       metadata: {
         smokeId: marker
       }
@@ -485,6 +486,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
       score: 25,
       contextBudgetCost: 400,
       expectedDecisionImpact: "Would add background but not change the decision.",
+      exclusionCategory: "low_context_roi",
       metadata: {
         smokeId: marker
       }

@@ -150,25 +150,85 @@ export interface AddRetrievalCandidateInput {
   metadata?: Record<string, unknown>;
 }
 
-export interface RecordActivationDecisionInput {
+interface RecordActivationDecisionBaseInput {
   retrievalRunId: string;
   retrievalCandidateId?: string;
   contextAssemblyId?: string;
   subjectType: RetrievalSubjectType;
   subjectId: string;
-  decision: ActivationDecisionRecord["decision"];
   reason: string;
   score?: number;
   contextBudgetCost?: number;
   expectedDecisionImpact?: string;
-  expectedUse?: string;
-  rawRecall?: ActivationTraceRawRecall;
-  antiMemoryRecordId?: string;
-  exclusionCategory?: ActivationExclusionReason;
-  sourceSupportState?: ActivationDecisionSourceSupportState;
-  activationAbstentionReason?: ActivationAbstentionReason;
   metadata?: Record<string, unknown>;
 }
+
+export interface RecordIncludedActivationDecisionInput
+  extends RecordActivationDecisionBaseInput {
+  decision: "included";
+  contextAssemblyId: string;
+  expectedDecisionImpact: string;
+  expectedUse: string;
+  rawRecall?: ActivationTraceRawRecall;
+  sourceSupportState?: ActivationDecisionSourceSupportState;
+  antiMemoryRecordId?: never;
+  exclusionCategory?: never;
+  activationAbstentionReason?: never;
+}
+
+export interface RecordExcludedActivationDecisionInput
+  extends RecordActivationDecisionBaseInput {
+  decision: "excluded";
+  contextAssemblyId: string;
+  expectedUse?: never;
+  rawRecall?: never;
+  antiMemoryRecordId?: never;
+  exclusionCategory: Exclude<ActivationExclusionReason, "stale">;
+  sourceSupportState?: ActivationDecisionSourceSupportState;
+  activationAbstentionReason?: ActivationAbstentionReason;
+}
+
+export interface RecordConflictActivationDecisionInput
+  extends RecordActivationDecisionBaseInput {
+  decision: "conflict";
+  contextAssemblyId: string;
+  expectedUse?: never;
+  rawRecall?: never;
+  antiMemoryRecordId: string;
+  exclusionCategory: ActivationExclusionReason;
+  sourceSupportState?: ActivationDecisionSourceSupportState;
+  activationAbstentionReason?: ActivationAbstentionReason;
+}
+
+export interface RecordStaleActivationDecisionInput
+  extends RecordActivationDecisionBaseInput {
+  decision: "stale";
+  contextAssemblyId: string;
+  expectedUse?: never;
+  rawRecall?: never;
+  antiMemoryRecordId?: never;
+  exclusionCategory: "stale";
+  sourceSupportState?: ActivationDecisionSourceSupportState;
+  activationAbstentionReason?: ActivationAbstentionReason;
+}
+
+export interface RecordDeferredActivationDecisionInput
+  extends RecordActivationDecisionBaseInput {
+  decision: "deferred";
+  expectedUse?: never;
+  rawRecall?: never;
+  antiMemoryRecordId?: never;
+  exclusionCategory?: never;
+  sourceSupportState?: ActivationDecisionSourceSupportState;
+  activationAbstentionReason?: never;
+}
+
+export type RecordActivationDecisionInput =
+  | RecordIncludedActivationDecisionInput
+  | RecordExcludedActivationDecisionInput
+  | RecordConflictActivationDecisionInput
+  | RecordStaleActivationDecisionInput
+  | RecordDeferredActivationDecisionInput;
 
 export interface StoreContextSelectionInput {
   contextAssemblyId: string;
