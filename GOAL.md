@@ -39,13 +39,18 @@ The continuing objective is:
 5. keep `PLAN.md` as the living queue without keeping finished tasks in the
    active goal window.
 
-The current epoch converted the completed reset into a compact continuous
-hardening plan and backlog. There is no remaining unchecked slice for this
-goal in `PLAN.md`.
+The reset/hardening epoch is complete. The brain usefulness validation report
+found KRN dogfood-ready for KRN-on-KRN work, but not product-ready. Continue
+from the first unchecked bounded slice in `PLAN.md`:
 
 ```txt
-complete
+BUR-00: Add Brain Usefulness Reporting For Dogfood Runs
 ```
+
+Do not change activation scoring, reflection behavior, candidate generation, or
+product surfaces before usefulness reporting records selected / used / helped /
+missing / stale context, candidate reviewability, command proof strength, and
+review burden delta.
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
