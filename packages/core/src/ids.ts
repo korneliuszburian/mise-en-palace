@@ -1,3 +1,9 @@
+declare const krnIdBrand: unique symbol;
+
+export type BrandedKrnId<TBrand extends string> = string & {
+  readonly [krnIdBrand]?: TBrand;
+};
+
 export type WorkspaceId = string;
 export type ProjectId = string;
 export type RepoInstallationId = string;
@@ -8,13 +14,13 @@ export type HarnessPlanId = string;
 export type ContextAssemblyId = string;
 export type CapabilityPlanId = string;
 export type CodexAdapterPlanRefId = string;
-export type ExecutionRunId = string;
+export type ExecutionRunId = BrandedKrnId<"ExecutionRunId">;
 export type EvidenceBundleId = string;
 export type ReviewAssessmentId = string;
 export type FeedbackDeltaId = string;
-export type MemoryRecordId = string;
+export type MemoryRecordId = BrandedKrnId<"MemoryRecordId">;
 export type MemoryRecordVersionId = string;
-export type MemoryCandidateId = string;
+export type MemoryCandidateId = BrandedKrnId<"MemoryCandidateId">;
 export type MemoryApplicationId = string;
 export type MemoryFeedbackEventId = string;
 export type AntiMemoryCandidateId = string;
@@ -24,7 +30,7 @@ export type ObservationItemId = string;
 export type ObservationSourceRangeId = string;
 export type SourceArtifactId = string;
 export type SourceChunkId = string;
-export type SourceClaimId = string;
+export type SourceClaimId = BrandedKrnId<"SourceClaimId">;
 export type SourceDecisionId = string;
 export type SourceDecisionEdgeId = string;
 export type SourceRejectionId = string;

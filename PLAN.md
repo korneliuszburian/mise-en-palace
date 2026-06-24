@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Branded ID Type Decision.
+current_priority: JSON Parse Boundary Classification.
 
-first_unchecked_slice: `TSQ-01: Branded ID Types ADR And Pilot`.
+first_unchecked_slice: `TSQ-02: JSON.parse Boundary Classification`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide the branded ID type pilot through the
+- classify JSON parse boundaries through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding branded ID type boundaries;
+  authority layer while classifying JSON parse boundaries;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -149,6 +149,10 @@ completed_checkpoint:
   discriminated `kind`, weak default-template rows cannot remain final
   `passed`/`failed` proof, schema/CLI/DB preserve legacy compatibility, and no
   DB migration was needed.
+- TSQ-01 accepts ADR-0020 and pilots soft branded IDs for `ExecutionRunId`,
+  `MemoryRecordId`, `MemoryCandidateId`, and `SourceClaimId`; raw string IO
+  remains compatible while typed cross-ID assignment is blocked by
+  `packages/core/src/ids.typecheck.ts`.
 
 completed_evidence_pointers:
 
@@ -168,6 +172,8 @@ completed_evidence_pointers:
   `docs/decisions/ADR-0018-drop-empty-legacy-audit-tables.md`;
 - evidence command proof states:
   `docs/decisions/ADR-0019-evidence-command-proof-states.md`;
+- branded domain IDs:
+  `docs/decisions/ADR-0020-branded-domain-ids.md`;
 - detailed command transcript:
   `Command Evidence` later in this plan, historical reference only.
 
@@ -3027,7 +3033,8 @@ git revert <C6-02 commit>
 - [x] COND-04 Decide internal/dev CLI command surface.
 - [x] TSQ-00 Decide EvidenceCommand proof-state model.
 - [x] TSQ-00A Implement EvidenceCommand discriminated union.
-- [ ] TSQ-01 Decide branded ID types ADR and pilot.
+- [x] TSQ-01 Decide branded ID types ADR and pilot.
+- [ ] TSQ-02 Classify JSON.parse boundaries.
 
 ## Surprises & Discoveries
 
@@ -3063,6 +3070,10 @@ git revert <C6-02 commit>
   persisted context prefix/search merge values as explicit debug snapshots
   (`observationPrefixSnapshot`, `mergedSearchDocumentIds`) rather than behavior
   authority.
+- TSQ-01 found a soft-brand sweet spot: raw strings remain assignable to the
+  selected ID types, so DB/CLI/schema IO boundaries do not need a broad
+  constructor refactor yet, but already-typed `ExecutionRunId`, `MemoryRecordId`,
+  `MemoryCandidateId`, and `SourceClaimId` are no longer mutually assignable.
 - P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
   Both paths now use the same typed source/memory record identity fields instead
   of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
@@ -3196,6 +3207,10 @@ git revert <C6-02 commit>
   a real union and CLI rendering tried to read `exitCode` / `outputRef` without
   narrowing. The fix used `in` checks instead of casts, which confirms the
   discriminant is doing useful TypeScript work.
+- TSQ-01 found that optional phantom brands are the right pilot shape for the
+  current repo: they block typed cross-ID assignment while preserving raw string
+  compatibility for existing DB/CLI/schema boundaries. Hard opaque IDs need
+  parser constructors first and are deferred.
 
 ## Decision Log
 
@@ -3340,6 +3355,10 @@ git revert <C6-02 commit>
   `EvidenceCommand` as loose compatibility input, expose
   `NormalizedEvidenceCommand` as the discriminated proof-state union, and
   normalize DB JSON/schema/CLI command evidence before domain use.
+- 2026-06-24: TSQ-01 accepts ADR-0020 and pilots soft branded IDs for
+  `ExecutionRunId`, `MemoryRecordId`, `MemoryCandidateId`, and `SourceClaimId`.
+  Do not hard-brand every ID or add runtime wrapper objects until parser-owned
+  IO constructors are explicitly designed.
 
 ## Outcomes & Retrospective
 
@@ -3455,6 +3474,10 @@ Current outcome:
   `command_runner`, and `external_log` rows have distinct valid fields.
   Historical/loose rows still normalize through compatibility mapping, and
   weak default-template rows cannot survive as final passed/failed proof.
+- TSQ-01 added ADR-0020, `BrandedKrnId<TBrand>`, a four-ID pilot, compile-time
+  assignability proof, and a runtime test that branded IDs remain strings.
+  Current result: selected high-risk IDs are separated at compile time without
+  DB, CLI, schema, or worker refactors.
 
 ## Command Evidence
 
@@ -4562,6 +4585,34 @@ This proves current worker contracts no longer imply standalone eval candidate
 storage or promotion runtime. It does not prove a future eval candidate worker,
 review gate, CLI, table, or Promptfoo/GoldenTask consumer exists.
 
+TSQ-01 verification after piloting branded domain IDs:
+
+```sh
+pnpm --filter @krn/core test
+pnpm --filter @krn/harness test
+pnpm typecheck
+pnpm test
+git diff --check
+rg -n "as any|as unknown as|@ts-ignore|@ts-expect-error|JSON\\.parse" packages/core/src/ids.ts packages/core/src/ids.typecheck.ts packages/core/src/ids.test.ts
+```
+
+Observed:
+
+```txt
+@krn/core: 10 test files, 50 tests passed.
+@krn/harness: 20 test files, 79 tests passed.
+workspace typecheck: passed.
+workspace test: core/schema/harness/workers/codex-adapter/db/cli passed.
+git diff --check: passed with no output.
+unsafe-type/JSON scan on touched TS files: no matches.
+```
+
+This proves the branded ID pilot compiles under the repo's strict TypeScript
+settings, selected core/harness and workspace tests still pass, the touched TS
+files did not add local unsafe casts or unchecked JSON, and the diff has no
+whitespace errors. It does not prove runtime ID format validation, DB row
+semantic correctness, or that every KRN ID family should be branded.
+
 ## Historical Reset Completion Criteria
 
 The reset criteria below are retained as the completed P0-P7 ledger. They are
@@ -5332,6 +5383,8 @@ git revert <TSQ-00A commit>
 
 priority: P1.
 
+status: complete.
+
 objective:
 
 Decide whether core IDs should remain string aliases or become branded/opaque
@@ -5349,6 +5402,57 @@ approach:
   `ExecutionRunId`, `MemoryRecordId`, `MemoryCandidateId`, `SourceClaimId`;
 - do not convert the whole repo in one diff.
 
+assumptions:
+
+- current DB/CLI/schema boundaries still produce raw strings;
+- the first value is preventing typed cross-ID mixups, not runtime ID format
+  validation;
+- a branded pilot must compile without broad casts or package-wide refactors.
+
+tradeoffs:
+
+- soft brands preserve string compatibility but do not validate runtime ID
+  format;
+- hard brands would be stronger but require parser-owned constructors and a
+  larger IO-boundary migration.
+
+simplest acceptable implementation:
+
+- add one generic soft brand helper in `packages/core/src/ids.ts`;
+- brand only the four selected high-risk IDs;
+- add an ADR and typecheck-backed assignability proof.
+
+files likely touched:
+
+- `packages/core/src/ids.ts`;
+- `packages/core/src/ids.typecheck.ts`;
+- `packages/core/src/ids.test.ts`;
+- `docs/decisions/ADR-0020-branded-domain-ids.md`;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- CLI parsers;
+- schema validators;
+- worker runtime behavior;
+- unrelated ID families.
+
+non-goals:
+
+- no hard opaque ID constructors;
+- no runtime wrapper objects;
+- no whole-repo ID conversion;
+- no JSON/CLI/DB boundary validation repair in this slice.
+
+success criteria:
+
+- selected IDs are no longer mutually assignable once typed;
+- raw strings remain assignable to selected IDs for existing IO compatibility;
+- runtime value shape remains a string;
+- ADR records the decision, rejections, and falsifiers.
+
 verification:
 
 ```sh
@@ -5358,10 +5462,16 @@ pnpm typecheck
 git diff --check
 ```
 
+rollback:
+
+```sh
+git revert <TSQ-01 commit>
+```
+
 commit:
 
 ```sh
-git commit -m "docs(ts): decide branded domain ids"
+git commit -m "feat(core): pilot branded domain ids"
 ```
 
 ### TSQ-02: JSON.parse Boundary Classification

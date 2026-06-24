@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-01: Branded ID Types ADR And Pilot
+TSQ-02: JSON.parse Boundary Classification
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding the branded ID pilot. Promote the slice through
+eval platform while classifying JSON parse boundaries. Promote the slice through
 the `slice_template_gate` in `PLAN.md` before code changes.
 
 ## Required Read Order
