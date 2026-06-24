@@ -1,4 +1,9 @@
-import type { ContextAssemblyStatus, ContextExclusion, ContextInclusion, ContextSubjectType } from "./contextAssembly.js";
+import type {
+  ContextAssemblyCurrentStatus,
+  ContextExclusion,
+  ContextInclusion,
+  ContextSubjectType
+} from "./contextAssembly.js";
 import type { TaskContractId } from "./ids.js";
 import type { SourceTrustTier } from "./source.js";
 
@@ -129,7 +134,7 @@ export interface ActivationTrace {
 }
 
 export interface ActivationResult {
-  status: Extract<ContextAssemblyStatus, "assembled" | "abstained">;
+  status: ContextAssemblyCurrentStatus;
   inclusions: readonly ContextInclusion[];
   exclusions: readonly ContextExclusion[];
   trace: ActivationTrace;

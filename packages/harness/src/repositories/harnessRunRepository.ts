@@ -1,5 +1,6 @@
 import type {
   ContextAssembly,
+  ContextAssemblyCurrentStatus,
   ContextExclusion,
   ContextInclusion,
   EvidenceBundle,
@@ -24,9 +25,11 @@ import type {
   RunEventRecord
 } from "./types.js";
 
+export type CreateContextAssemblyStatus = ContextAssemblyCurrentStatus;
+
 export interface CreateContextAssemblyInput extends RepositoryMetadata {
   harnessPlanId: string;
-  status?: ContextAssembly["status"];
+  status?: CreateContextAssemblyStatus;
   tokenBudget?: number;
   inclusions: ContextInclusion[];
   exclusions: ContextExclusion[];

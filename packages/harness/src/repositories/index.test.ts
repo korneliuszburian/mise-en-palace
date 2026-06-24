@@ -2,6 +2,8 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
 import type {
+  CreateContextAssemblyInput,
+  CreateContextAssemblyStatus,
   CreateEvidenceBundleInput,
   CreateEvidenceBundleStatus
 } from "./index.js";
@@ -25,6 +27,13 @@ describe("repository package surfaces", () => {
     expectTypeOf<CreateEvidenceBundleInput["status"]>()
       .toEqualTypeOf<CreateEvidenceBundleStatus | undefined>();
     expectTypeOf<Extract<CreateEvidenceBundleInput["status"], "verified" | "rejected">>()
+      .toEqualTypeOf<never>();
+  });
+
+  it("keeps stale and superseded context assembly states out of create input", () => {
+    expectTypeOf<CreateContextAssemblyInput["status"]>()
+      .toEqualTypeOf<CreateContextAssemblyStatus | undefined>();
+    expectTypeOf<Extract<CreateContextAssemblyInput["status"], "stale" | "superseded">>()
       .toEqualTypeOf<never>();
   });
 });

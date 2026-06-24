@@ -12,7 +12,18 @@ import type {
 import type { SourceTrustTier } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 
-export type ContextAssemblyStatus = "assembled" | "abstained" | "stale" | "superseded";
+export const contextAssemblyCurrentStatuses = [
+  "assembled",
+  "abstained"
+] as const;
+
+export type ContextAssemblyCurrentStatus = typeof contextAssemblyCurrentStatuses[number];
+
+export type ContextAssemblyHistoricalStatus = "stale" | "superseded";
+
+export type ContextAssemblyStatus =
+  | ContextAssemblyCurrentStatus
+  | ContextAssemblyHistoricalStatus;
 
 export type ContextSubjectType =
   | "source_artifact"

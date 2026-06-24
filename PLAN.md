@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Context Assembly Create Status Boundary Decision.
+current_priority: Review And Feedback Create Status Boundary Decision.
 
-first_unchecked_slice: `TSQ-10: Decide ContextAssembly Create Status Boundary`.
+first_unchecked_slice: `TSQ-11: Decide ReviewAssessment And FeedbackDelta Create Status Boundaries`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next typed lifecycle decision after CTX-03 condensed
-  TSQ-07, TSQ-08, and TSQ-09 lifecycle boundary evidence;
+- continue from the next typed lifecycle decision after TSQ-10 normalized
+  context assembly current status in core and narrowed create/write authority;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding context assembly create-status boundaries;
+  authority layer while deciding review/feedback create-status boundaries;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -79,6 +79,9 @@ completed_checkpoint:
   `running` for started runs.
 - CTX-03 condenses TSQ-07/08/09 detail into compact ledgers and keeps commit
   history as the detailed evidence ledger.
+- TSQ-10 defines `ContextAssemblyCurrentStatus` in core, makes
+  `assembleContext` return current statuses only, and narrows context assembly
+  create input to `assembled | abstained`.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -86,24 +89,24 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded slice, not
   from historical reset/audit detail;
-- last verified state: CTX-03 condensed completed lifecycle boundary detail and
-  passed docs-only hygiene checks; final command evidence is recorded in the
-  CTX-03 section;
+- last verified state: TSQ-10 passed focused core/harness/db checks, workspace
+  typecheck, workspace tests, and diff hygiene; final command evidence is
+  recorded in the TSQ-10 section;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-10
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-11
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-10: Decide ContextAssembly Create Status Boundary`;
+- next action: execute `TSQ-11: Decide ReviewAssessment And FeedbackDelta Create Status Boundaries`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- `CreateContextAssemblyInput.status?: ContextAssembly["status"]` may still
-  expose read-model lifecycle states such as `stale` / `superseded` at the
-  create/write boundary.
+- `CreateReviewAssessmentInput.status?: ReviewAssessment["status"]` and
+  `CreateFeedbackDeltaInput.status?: FeedbackDelta["status"]` may still expose
+  broad lifecycle statuses at create/write boundaries.
 
 completed_evidence_pointers:
 
@@ -3004,7 +3007,8 @@ git revert <C6-02 commit>
 - [x] TSQ-08 Decide Activation Decision read-model boundary.
 - [x] TSQ-09 Decide Retrieval Run completion status boundary.
 - [x] CTX-03 Condense Lifecycle Boundary hardening context.
-- [ ] TSQ-10 Decide ContextAssembly create status boundary.
+- [x] TSQ-10 Decide ContextAssembly create status boundary.
+- [ ] TSQ-11 Decide ReviewAssessment and FeedbackDelta create status boundaries.
 
 ## Surprises & Discoveries
 
@@ -8048,4 +8052,184 @@ commit:
 
 ```sh
 git commit -m "refactor(context): narrow assembly create status input"
+```
+
+status: complete.
+
+source_decisions:
+
+1. source: `packages/core/src/contextAssembly.ts`
+   mechanism: `ContextAssemblyStatus` mixed current assembly outcomes with
+   historical/read-model lifecycle states.
+   KRN implication: downstream write APIs could not distinguish what can be
+   newly assembled from what can only describe an older/superseded context.
+   decision: add `ContextAssemblyCurrentStatus = "assembled" | "abstained"` and
+   keep `ContextAssemblyStatus` broad as current plus historical states.
+   falsifier: current context assembly output needs `stale` or `superseded`.
+
+2. source: `packages/harness/src/activation/assembleContext.ts`
+   mechanism: runtime assembly already computes only `assembled` or
+   `abstained`, but returned the broad `ContextAssembly` type.
+   KRN implication: callers had to carry broad lifecycle states even when the
+   source function had normalized current outcomes.
+   decision: return `AssembledContextAssembly` with `ContextAssemblyCurrentStatus`.
+   falsifier: `assembleContext` must produce historical lifecycle states.
+
+3. source: `packages/harness/src/repositories/harnessRunRepository.ts`
+   mechanism: `CreateContextAssemblyInput.status` previously referenced
+   `ContextAssembly["status"]`.
+   KRN implication: create/write boundary could compile with `stale` or
+   `superseded`.
+   decision: add `CreateContextAssemblyStatus = ContextAssemblyCurrentStatus`
+   and use it for create input.
+   falsifier: `CreateContextAssemblyInput["status"]` accepts
+   `stale | superseded`.
+
+decision_table:
+
+| status | current assembly output | create/write input | read-model/historical | rule |
+| --- | --- | --- | --- | --- |
+| `assembled` | yes | yes | yes | normal selected context result. |
+| `abstained` | yes | yes | yes | current no-context result. |
+| `stale` | no | no | yes | lifecycle/read-model state, not create. |
+| `superseded` | no | no | yes | lifecycle/read-model state, not create. |
+
+implementation:
+
+- added `contextAssemblyCurrentStatuses` and `ContextAssemblyCurrentStatus` in
+  core;
+- changed `ActivationResult.status` to use `ContextAssemblyCurrentStatus`;
+- changed `assembleContext` to return `AssembledContextAssembly`;
+- changed `CreateContextAssemblyInput.status` to `CreateContextAssemblyStatus`;
+- added type/runtime coverage for current context assembly statuses and create
+  input exclusion of `stale | superseded`;
+- did not change DB schema, DB mapper, activation ranking, or context selection
+  behavior.
+
+command_evidence:
+
+```sh
+pnpm --filter @krn/core test -- contextAssembly
+pnpm --filter @krn/core typecheck
+pnpm --filter @krn/harness typecheck
+pnpm --filter @krn/db typecheck
+pnpm --filter @krn/harness test -- repositories activation
+pnpm --filter @krn/db test -- DrizzleHarnessRunRepository mappers
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+what_this_proves:
+
+- current assembly status is normalized in core, not hidden by a cast;
+- `assembleContext` and create/write input use current status vocabulary;
+- existing focused and workspace checks pass with the narrowed boundary.
+
+what_this_does_not_prove:
+
+- DB runtime readiness; no live DB command was run for this slice;
+- activation ranking quality;
+- broader Memory Brain readiness.
+
+### TSQ-11: Decide ReviewAssessment And FeedbackDelta Create Status Boundaries
+
+priority: P2.
+
+objective:
+
+Inspect review and feedback create/write status authority. Decide whether
+`CreateReviewAssessmentInput.status` and `CreateFeedbackDeltaInput.status`
+should be narrower than their broad persisted/read-model status types.
+
+source:
+
+TSQ-10 live-source scan found
+`packages/harness/src/repositories/harnessRunRepository.ts` still using
+`status?: ReviewAssessment["status"]` and
+`status?: FeedbackDelta["status"]` at create/write boundaries.
+
+assumptions:
+
+- persisted/read-model statuses may remain broad;
+- review creation likely needs `pending | accepted | changes_requested | rejected`
+  only if it is truly recording review outcome at creation;
+- feedback delta creation likely needs proposal/current statuses only, not
+  applied lifecycle state unless a governed apply path exists.
+
+tradeoffs:
+
+- narrowing too aggressively could fight current CLI review assessment flows;
+- leaving statuses broad can encode post-review/application states as initial
+  creation authority.
+
+simplest acceptable implementation:
+
+- inspect `packages/harness/src/repositories/harnessRunRepository.ts`,
+  `packages/core/src/reviewAssessment.ts`,
+  `packages/core/src/feedbackDelta.ts`,
+  `packages/cli/src/runReviewAssessCommand.ts`,
+  `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`, and focused
+  tests;
+- decide whether one or both create inputs need named status subsets;
+- implement only the proven boundary changes and type tests.
+
+rules:
+
+- do not change review outcome semantics without source evidence;
+- do not change DB schema/migrations;
+- do not create lifecycle engine/update APIs;
+- do not fold memory/source candidate status work into this slice.
+
+likely files:
+
+- `packages/harness/src/repositories/harnessRunRepository.ts`;
+- `packages/harness/src/repositories/index.ts`;
+- focused repository/CLI tests;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- memory/source candidate promotion paths;
+- Promptfoo/eval surfaces;
+- old raw materials.
+
+non-goals:
+
+- no DB migration;
+- no review engine rewrite;
+- no dashboard/eval platform;
+- no audit scanner revival.
+
+success criteria:
+
+- decision table states which review/feedback statuses are create input,
+  read-model/historical only, or require separate update/apply paths;
+- implementation exists for every proven broad create/write gap;
+- active queue advances to the next bounded slice or records no-op with
+  evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- repositories
+pnpm --filter @krn/cli test -- runReviewAssessCommand
+pnpm --filter @krn/db test -- DrizzleHarnessRunRepository mappers
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-11 commit>
+```
+
+commit:
+
+```sh
+git commit -m "refactor(review): narrow create status inputs"
 ```

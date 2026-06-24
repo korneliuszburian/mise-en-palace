@@ -1,5 +1,6 @@
 export type {
   CreateContextAssemblyInput,
+  CreateContextAssemblyStatus,
   CreateEvidenceBundleInput,
   CreateEvidenceBundleStatus,
   CreateExecutionRunInput,

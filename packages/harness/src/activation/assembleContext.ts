@@ -2,6 +2,7 @@ import type {
   ActivationAbstention,
   ActivationAbstentionReason,
   ContextAssembly,
+  ContextAssemblyCurrentStatus,
   ContextObservationPrefix,
   ContextObservationPrefixGate,
   ContextExclusion,
@@ -19,6 +20,12 @@ import type {
 import {
   markExcluded
 } from "./types.js";
+
+export type AssembleContextStatus = ContextAssemblyCurrentStatus;
+
+export type AssembledContextAssembly = Omit<ContextAssembly, "status"> & {
+  status: AssembleContextStatus;
+};
 
 const enforceSourceClaimSafety = (
   candidate: RankedActivationCandidate
@@ -167,7 +174,7 @@ const abstentionExplanationFor = (reason: ActivationAbstentionReason): string =>
   }
 };
 
-export const assembleContext = (input: AssembleContextInput): ContextAssembly => {
+export const assembleContext = (input: AssembleContextInput): AssembledContextAssembly => {
   const candidates = input.candidates.map(enforceSourceClaimSafety);
   const prefixMetadata = observationPrefixMetadata(input);
   const hasObservationPrefixItems =
