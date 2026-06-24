@@ -6,9 +6,9 @@
 
 ## Active Queue Snapshot
 
-current_priority: Brain Usefulness Reporting.
+current_priority: Complete.
 
-first_unchecked_slice: `BUR-00: Add Brain Usefulness Reporting For Dogfood Runs`.
+first_unchecked_slice: none.
 
 active_scope:
 
@@ -17,8 +17,6 @@ active_scope:
   ADRs, and compact checkpoint pointers;
 - do not rebuild `krn audit`, anti-slop scanners, dashboard-first surfaces,
   broad eval platforms, or worker runtime while auditing completion evidence;
-- add one bounded usefulness-reporting slice before changing activation
-  scoring, reflection behavior, candidate generation, or product surfaces;
 - use repo/runtime truth over memory or old plans.
 
 completed_checkpoint:
@@ -47,23 +45,31 @@ completed_checkpoint:
 - Brain usefulness validation is complete as a docs/review pass:
   `docs/reviews/brain-usefulness/REPORT.md` found the brain dogfood-ready for
   KRN-on-KRN work but not internal-alpha-ready or product-ready.
+- BUR-00 Brain Usefulness Reporting is complete:
+  `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md` defines the reusable
+  dogfood-run reporting format for selected / used / helped / missing / stale
+  context, candidate reviewability, command proof strength, review burden delta,
+  observation/reflection usefulness, source usefulness, memory usefulness, and
+  Brain ROI.
 - Execution hygiene is active: every slice must inspect status, implement
   narrowly, verify, commit, push, and leave a clean worktree.
 
 last_verified_state:
 
-- Last pushed review slice:
+- Last pushed review slice before BUR-00:
   `9110e13 docs(review): validate KRN brain usefulness`.
+- Last pushed planning slice before BUR-00:
+  `ec950c2 docs(plan): add brain usefulness reporting slice`.
 - Last pushed code slice: `67c1249 refactor(source): narrow claim create status`.
-- Last pushed docs condensation slice before this plan rewrite:
-  `3d4bdae docs(plan): condense lifecycle boundary context`.
 - CTX-05 archive snapshot contains 8141 lines of historical root plan content.
 - Current root `PLAN.md` is the compact living queue.
 
 open_risks_and_next_candidates:
 
-- Active unchecked slice: BUR-00.
-- Brain usefulness reporting should be added before activation scoring rewrites.
+- No active unchecked slice remains for this goal.
+- Use `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md` in 2-3 future
+  dogfood runs before considering activation scoring repair, candidate quality
+  repair, reflection quality repair, or an internal-alpha target repo trial.
 - Future hardening work should stay bounded and should not reopen archived
   historical task bodies.
 
@@ -75,6 +81,8 @@ evidence_pointers:
   `docs/runs/2026-06-23-self-hosting-memory-loop.md`
 - Brain usefulness validation report:
   `docs/reviews/brain-usefulness/REPORT.md`
+- Dogfood usefulness reporting format:
+  `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md`
 - CLI/package surface decisions:
   `docs/architecture/cli-surfaces.md`,
   `docs/architecture/package-surfaces.md`
@@ -100,7 +108,7 @@ evidence_pointers:
 - [x] CTX-00..CTX-05 context condensation and historical ledger archival.
 - [x] VERIFY-00 Audit continuous hardening completion evidence.
 - [x] BUV-00 Brain usefulness validation report.
-- [ ] BUR-00 Add Brain Usefulness Reporting For Dogfood Runs.
+- [x] BUR-00 Add Dogfood Brain Usefulness Reporting Standard.
 
 ## Current Decisions
 
@@ -115,6 +123,9 @@ evidence_pointers:
   environment.
 - Completed task bodies belong in historical ledger archives or commit history,
   not in the active goal window.
+- Brain usefulness should be measured before behavior rewrites. Use the
+  dogfood reporting format for 2-3 runs before changing activation scoring,
+  memory scoring, reflection extraction, or candidate generation.
 
 ## Worktree And Remote Hygiene
 
@@ -124,193 +135,3 @@ evidence_pointers:
   Conventional Commit, push, and confirm a clean worktree.
 - If push or verification fails, record the blocker here before starting a new
   slice.
-
-## BUR-00: Add Brain Usefulness Reporting For Dogfood Runs
-
-status: pending.
-
-priority: P0.
-
-objective:
-
-Make future dogfood run ledgers or review output consistently report whether
-Brain-selected material actually helped the task.
-
-This is not an activation scoring rewrite. This is measurement/reporting first.
-
-source:
-
-- `docs/reviews/brain-usefulness/REPORT.md`
-
-finding:
-
-The validation report found KRN Brain dogfood-ready for KRN-on-KRN work, but
-not product-ready. The main gap is not missing organs; it is inconsistent
-measurement of whether selected memory/source/observation/candidate material
-was actually used, helpful, missing, stale, or merely ledger noise.
-
-scope:
-
-- add or update the smallest existing reporting surface for dogfood runs;
-- prefer run ledger/report templates or existing evidence/review output if
-  there is already a natural place;
-- record, at minimum:
-  - selected / used / helped / missing / stale context;
-  - candidate reviewability;
-  - command proof strength;
-  - review burden delta;
-- keep the output useful for human review, not as a new product subsystem.
-
-non-goals:
-
-- no activation scoring changes;
-- no reflection behavior changes;
-- no candidate generation changes;
-- no dashboard, API, MCP, worker runtime, source crawler, broad eval platform,
-  `krn audit`, anti-slop subsystem, or quality scanner;
-- no Memory Core mutation or memory promotion;
-- no new persistent schema unless current artifacts cannot represent the
-  required report shape and that limitation is proven first.
-
-success criteria:
-
-- future dogfood evidence has a standard place to answer:
-  - what selected context was actually used;
-  - what helped, was neutral, was noise, was stale, or was missing;
-  - which candidates are ready vs need more evidence vs are too vague;
-  - which commands are strong, weak, missing, or not applicable proof;
-  - whether review burden went down, stayed the same, went up, or is unclear;
-- the implementation stays bounded to reporting/ledger ergonomics;
-- no package source is changed unless the chosen reporting surface already
-  lives in existing CLI/evidence/review output and the diff remains narrow;
-- root `PLAN.md` stays compact after completion.
-
-verification:
-
-```sh
-git status --short --branch
-git diff --check
-```
-
-If package source is touched:
-
-```sh
-pnpm typecheck
-pnpm test
-git diff --check
-```
-
-rollback:
-
-```sh
-git revert <BUR-00 commit>
-```
-
-commit:
-
-```sh
-git commit -m "docs(plan): add brain usefulness reporting slice"
-```
-
-## VERIFY-00: Audit Continuous Hardening Completion Evidence
-
-status: complete.
-
-priority: P0.
-
-objective:
-
-Prove or disprove whether the active goal is complete:
-
-```txt
-Turn the completed canonical KRN reset into a continuous hardening goal and
-backlog, preserving completed evidence while adding follow-up observations and
-concrete extension slices from finished tasks.
-```
-
-required audit:
-
-- derive requirements from `GOAL.md`, this `PLAN.md`, the archived historical
-  ledger, and current git state;
-- verify that completed evidence is preserved and discoverable;
-- verify that root `PLAN.md` is now a compact living queue, not a copied
-  historical task dump;
-- verify that follow-up observations and concrete extension slices were added,
-  executed, or preserved as bounded future work;
-- verify worktree/remote cleanliness;
-- verify no active `krn audit`/anti-slop subsystem was reintroduced;
-- run docs hygiene checks and relevant test/typecheck commands if source
-  changes since the last package slice require them.
-
-success criteria:
-
-- each explicit goal requirement has direct evidence or a named missing item;
-- if complete, the active goal can be marked complete only after the audit;
-- if incomplete, this plan gains the next concrete bounded slice.
-
-verification:
-
-```sh
-git status --short --branch
-git log --oneline --decorate -12
-rg -n "^- \\[ \\]|first_unchecked_slice|krn audit|anti-slop|Historical" GOAL.md PLAN.md README.md docs packages
-git diff --check
-```
-
-rollback:
-
-```sh
-git revert <VERIFY-00 commit>
-```
-
-commit:
-
-```sh
-git commit -m "docs(plan): audit continuous hardening completion"
-```
-
-outcome:
-
-- Requirement: turn completed reset into a continuous hardening goal and
-  backlog.
-  Evidence: root `GOAL.md` remains the compact activation contract; this root
-  `PLAN.md` is now the compact living queue with completed checkpoint groups,
-  explicit decisions, worktree hygiene, and no active historical task dump.
-- Requirement: preserve completed evidence.
-  Evidence: the full pre-CTX-05 root plan is archived at
-  `docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md`
-  with 8141 lines; the compact plan points to run ledgers, ADRs, architecture
-  docs, repo-reset reviews, and commit history.
-- Requirement: add follow-up observations and concrete extension slices from
-  finished tasks.
-  Evidence: the completed progress chain includes EVI, C/COND, EXEC, DEV-DB,
-  TSQ, and CTX follow-up slices derived from P7/reset findings, including
-  source/review/context lifecycle hardening and historical context cleanup.
-- Requirement: keep productized audit/anti-slop direction rejected.
-  Evidence: package-source scan found no active `runAudit`, `parseAudit`,
-  `AuditBundle`, or `DrizzleAuditBundleRepository` contracts; CLI tests assert
-  `audit` is unsupported; README/GOAL/PLAN reject rebuilding `krn audit` as a
-  product or guardrail layer.
-- Requirement: keep worktree/remote clean.
-  Evidence: `git status --short --branch` showed `main...origin/main` clean
-  before this audit update.
-
-command_evidence:
-
-```sh
-git status --short --branch
-git log --oneline --decorate -12
-wc -l PLAN.md GOAL.md docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md
-rg -n "runAudit|parseAudit|AuditBundle|DrizzleAuditBundleRepository|kind: \"audit|case \"audit\"|command.*audit|krn audit" packages/core packages/schema packages/cli packages/db packages/harness packages/workers packages/codex-adapter README.md PLAN.md GOAL.md
-rg -n "audit" packages/cli/src/parseArgs.ts packages/cli/src/runCli.ts packages/cli/src/runCli.test.ts README.md
-git diff --check
-```
-
-does_not_prove:
-
-- This audit does not prove Memory Brain product readiness, cognitive quality,
-  worker runtime execution, dashboard/API readiness, or DB runtime state in the
-  current shell.
-- It proves only that the reset was converted into a compact continuous
-  hardening plan/backlog with preserved evidence and no remaining active slice
-  under this goal.

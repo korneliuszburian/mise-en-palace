@@ -40,17 +40,16 @@ The continuing objective is:
    active goal window.
 
 The reset/hardening epoch is complete. The brain usefulness validation report
-found KRN dogfood-ready for KRN-on-KRN work, but not product-ready. Continue
-from the first unchecked bounded slice in `PLAN.md`:
+found KRN dogfood-ready for KRN-on-KRN work, but not product-ready. BUR-00 added
+the reusable dogfood usefulness reporting format:
 
 ```txt
-BUR-00: Add Brain Usefulness Reporting For Dogfood Runs
+docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md
 ```
 
-Do not change activation scoring, reflection behavior, candidate generation, or
-product surfaces before usefulness reporting records selected / used / helped /
-missing / stale context, candidate reviewability, command proof strength, and
-review burden delta.
+There is no remaining unchecked slice for this goal in `PLAN.md`. Use the
+dogfood reporting format in 2-3 future dogfood runs before changing activation
+scoring, reflection behavior, candidate generation, or product surfaces.
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
