@@ -26,14 +26,14 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Evidence Command Proof-State Decision.
+current_priority: Evidence Command Proof-State Implementation.
 
-first_unchecked_slice: `TSQ-00: EvidenceCommand Discriminated Union Decision`.
+first_unchecked_slice: `TSQ-00A: Implement EvidenceCommand Discriminated Union`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide the evidence command proof-state model through the
+- implement the evidence command proof-state model through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
@@ -142,6 +142,9 @@ completed_checkpoint:
   top-level commands rather than renaming them to `krn dev ...` or replacing
   them with scripts only. The live help contract and tests already mark them
   as runtime plumbing proof, not product workflow or quality authority.
+- TSQ-00 accepts ADR-0019: `EvidenceCommand` should become a discriminated
+  normalized proof-state model. The implementation is intentionally separated
+  into TSQ-00A so compatibility mapping can be tested across core/schema/CLI/DB.
 
 completed_evidence_pointers:
 
@@ -159,6 +162,8 @@ completed_evidence_pointers:
   `docs/decisions/ADR-0017-legacy-auditbundle-storage-fate.md`;
 - legacy audit table drop:
   `docs/decisions/ADR-0018-drop-empty-legacy-audit-tables.md`;
+- evidence command proof states:
+  `docs/decisions/ADR-0019-evidence-command-proof-states.md`;
 - detailed command transcript:
   `Command Evidence` later in this plan, historical reference only.
 
@@ -3016,7 +3021,8 @@ git revert <C6-02 commit>
 - [x] EXEC-01 Require slice template for future backlog items.
 - [x] COND-03 Decide remaining package barrels.
 - [x] COND-04 Decide internal/dev CLI command surface.
-- [ ] TSQ-00 Decide EvidenceCommand proof-state model.
+- [x] TSQ-00 Decide EvidenceCommand proof-state model.
+- [ ] TSQ-00A Implement EvidenceCommand discriminated union.
 
 ## Surprises & Discoveries
 
@@ -3176,6 +3182,11 @@ git revert <C6-02 commit>
   runtime-plumbing proof. `package.json` scripts intentionally wrap that
   namespace for local verification, so moving to `krn dev ...` would be rename
   churn without a stronger misuse signal.
+- TSQ-00 found that the current `EvidenceCommand` compatibility model still
+  allows optional-field proof states before normalization. ADR-0019 adopts a
+  discriminated normalized proof-state model but defers implementation to
+  TSQ-00A so core/schema/CLI/DB compatibility can be tested in one focused
+  source slice.
 
 ## Decision Log
 
@@ -3311,6 +3322,11 @@ git revert <C6-02 commit>
   rename DB commands, and do not replace them with package scripts only unless
   future evidence shows the current namespace causes operator misuse that help
   and docs cannot prevent.
+- 2026-06-24: TSQ-00 accepts ADR-0019. `EvidenceCommand` should become a
+  discriminated normalized proof-state model because status/provenance changes
+  valid fields. Keep legacy/loose IO parsing and DB JSON readback mapping; do
+  not rewrite historical EvidenceBundle rows or broaden the slice into a
+  repo-wide TypeScript cleanup.
 
 ## Outcomes & Retrospective
 
@@ -3419,6 +3435,8 @@ Current outcome:
   package-surface doc now carries the falsifiers that would reopen the slice.
 - COND-04 found current CLI help and tests already enforce the internal/dev DB
   boundary. No parser or command routing changes were made.
+- TSQ-00 produced ADR-0019 and the next implementation slice. No TypeScript
+  source changed in the decision slice.
 
 ## Command Evidence
 
@@ -5058,12 +5076,35 @@ git commit -m "docs(cli): decide internal dev command surface"
 
 ### TSQ-00: EvidenceCommand Discriminated Union Decision
 
+status: complete.
+
 priority: P1.
 
 objective:
 
 Decide whether current `EvidenceCommand` should stay as normalized object fields
 or become a discriminated union by provenance.
+
+assumptions:
+
+- `EvidenceCommand` is a public core/schema/CLI/DB boundary, not a private
+  helper type;
+- persisted historical EvidenceBundle JSON may contain loose rows, so any final
+  model must keep compatibility mapping;
+- the decision slice should not mutate TypeScript source.
+
+tradeoffs:
+
+- keeping the current normalized object is simpler today, but it lets invalid
+  proof-state combinations exist until normalization;
+- a discriminated model is more explicit but touches several package
+  boundaries, so implementation needs a separate focused source slice.
+
+simplest acceptable implementation:
+
+- inspect current core/schema/CLI/DB evidence command usage;
+- write an ADR that decides the final model and implementation constraints;
+- queue a separate implementation slice.
 
 source:
 
@@ -5075,6 +5116,11 @@ from wider to narrower types:
 - https://www.totaltypescript.com/books/total-typescript-essentials/designing-your-types-in-typescript
 - https://www.totaltypescript.com/books/total-typescript-essentials/unions-literals-and-narrowing
 
+decision:
+
+Adopt a discriminated normalized command proof-state model in ADR-0019.
+Implementation is queued as TSQ-00A.
+
 rules:
 
 - do not merge this into EVI-00 retroactively;
@@ -5082,19 +5128,161 @@ rules:
 - if adopted, implement as a small core/schema slice with compatibility
   mapping for persisted rows.
 
+files likely touched:
+
+- `docs/decisions/ADR-0019-evidence-command-proof-states.md`;
+- `PLAN.md`;
+- `GOAL.md`.
+
+files forbidden to touch:
+
+- TypeScript source files;
+- DB migrations;
+- historical EvidenceBundle rows.
+
+non-goals:
+
+- no code refactor in TSQ-00;
+- no repo-wide TypeScript cleanup;
+- no DB migration;
+- no hidden command runner.
+
+success criteria:
+
+- ADR decides whether to adopt or reject the discriminated model;
+- decision records source -> mechanism -> KRN implication -> decision ->
+  does_not_prove -> falsifier;
+- follow-up implementation slice is bounded if adoption is accepted.
+
 verification:
 
 ```sh
-pnpm --filter @krn/core test -- evidenceBundle
-pnpm --filter @krn/schema test -- evidence
+rg -n "EvidenceCommand|normalizeEvidenceCommand|EvidenceCommandSchema|commandResultDoesNotProve|provenance" packages docs PLAN.md --glob '!node_modules'
+rg -n "ADR-0019|Evidence Command Proof States|TSQ-00A|does_not_prove|falsifier" docs/decisions/ADR-0019-evidence-command-proof-states.md PLAN.md GOAL.md
 pnpm typecheck
 git diff --check
+```
+
+observed:
+
+- current core type has optional `provenance`, optional `doesNotProve`, and
+  optional output/assertion fields before normalization;
+- schema accepts optional evidence command provenance/limits;
+- CLI creates default-template and operator-reported rows;
+- DB repository tests prove normalization before persistence;
+- ADR-0019 accepts discriminated proof-state modeling and requires
+  compatibility mapping for persisted loose rows;
+- ADR/plan scan found ADR-0019, TSQ-00A, `does_not_prove`, and falsifier
+  coverage in the active surfaces;
+- `pnpm typecheck` passed across the workspace;
+- `git diff --check` passed;
+- no TypeScript source was changed in this decision slice.
+
+rollback:
+
+```sh
+git revert <TSQ-00 commit>
 ```
 
 commit:
 
 ```sh
 git commit -m "docs(ts): decide evidence command proof states"
+```
+
+### TSQ-00A: Implement EvidenceCommand Discriminated Union
+
+priority: P1.
+
+objective:
+
+Implement ADR-0019 by making normalized evidence command proof states
+discriminated while preserving legacy IO and DB JSON compatibility.
+
+assumptions:
+
+- historical persisted EvidenceBundle rows may not contain `kind` or required
+  final fields;
+- the current JSONB persistence shape can likely preserve the mapped command
+  proof states without a migration;
+- the implementation must preserve current CLI evidence capture behavior.
+
+tradeoffs:
+
+- adding a `kind`/proof-state discriminant improves impossible-state checking
+  but requires mapper updates across core/schema/CLI/DB;
+- rejecting every legacy loose row would be purer but would break historical
+  readback and violate Evidence Integrity compatibility.
+
+simplest acceptable implementation:
+
+- introduce a discriminated normalized command proof type in core;
+- keep a legacy/loose input type for schema/CLI/DB boundary parsing;
+- normalize all command rows before persistence/rendering/review logic;
+- update focused tests around evidenceBundle, schema evidence parsing, CLI
+  evidence capture, and DB command normalization.
+
+rules:
+
+- `default_template` rows are weak and cannot be final `passed`/`failed` proof;
+- `doesNotProve` is required after normalization;
+- `captured_output_file`/`external_log` rows need an output reference;
+- `command_runner` rows need `exitCode` and `capturedAt`;
+- no DB migration unless JSON storage cannot round-trip the final shape;
+- no unrelated TypeScript cleanup.
+
+files likely touched:
+
+- `packages/core/src/evidenceBundle.ts`;
+- `packages/core/src/evidenceBundle.test.ts`;
+- `packages/schema/src/evidenceCapture.ts`;
+- `packages/schema/src/index.test.ts`;
+- `packages/cli/src/parseEvidenceArgs.ts`;
+- `packages/cli/src/runEvidenceCaptureCommand.ts`;
+- focused CLI tests if compiler/runtime expectations require updates;
+- `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`;
+- focused DB mapper/repository tests.
+
+files forbidden to touch:
+
+- unrelated TypeScript models;
+- DB migrations unless explicitly proven necessary;
+- worker runtime;
+- Promptfoo/eval surfaces;
+- historical run ledgers except a concise completion note if needed.
+
+non-goals:
+
+- no evidence command runner;
+- no Memory Brain quality scoring;
+- no broad public API cleanup;
+- no `ts-reset`;
+- no rewrite of historical persisted rows.
+
+success criteria:
+
+- core exposes a discriminated normalized command proof type;
+- legacy/loose command rows still normalize;
+- schema validates/narrows external evidence command input;
+- CLI `--verification` and default-template rendering remain compatible;
+- DB persistence/readback preserves explicit proof state and weak defaults;
+- focused tests plus typecheck pass.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- evidenceBundle
+pnpm --filter @krn/schema test -- evidence
+pnpm --filter @krn/cli test -- parseEvidenceArgs runEvidenceCaptureCommand runCli
+pnpm --filter @krn/db test -- DrizzleHarnessRunRepository
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-00A commit>
 ```
 
 ### TSQ-01: Branded ID Types ADR And Pilot
