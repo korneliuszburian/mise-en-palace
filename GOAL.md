@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-CTX-01: Condense Lifecycle Hardening Context
+TSQ-06: Decide EvalCandidate Proposal Status Shape
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while condensing lifecycle hardening context.
+eval platform while deciding eval candidate proposal status shape.
 Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
 
 ## Required Read Order

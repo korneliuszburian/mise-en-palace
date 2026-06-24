@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Lifecycle Hardening Context Condensation.
+current_priority: EvalCandidate Proposal Status Shape Decision.
 
-first_unchecked_slice: `CTX-01: Condense Lifecycle Hardening Context`.
+first_unchecked_slice: `TSQ-06: Decide EvalCandidate Proposal Status Shape`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next context-hygiene follow-up after TSQ-05E-A narrowed
-  activation decision persistence input;
+- continue from the next typed lifecycle decision after CTX-01 condensed
+  completed lifecycle-hardening context;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while condensing lifecycle hardening context;
+  authority layer while deciding eval candidate proposal status shape;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -60,25 +60,12 @@ completed_checkpoint:
   complete.
 - TypeScript hardening: evidence proof states, branded ID pilot, JSON boundary
   classification, unsafe-cast zero-state, named public return types, lifecycle
-  audit, and discriminated reflection candidate writer result are complete.
-- TSQ-05B decides memory promotion result shape: no discriminated result union
-  is needed for success-only review gates, but the returned candidate should be
-  narrowed to a reviewable `proposed | candidate` status in TSQ-05C.
-- TSQ-05C narrows successful memory and anti-memory review gate result
-  candidates to reviewable `proposed | candidate` status without changing
-  promotion behavior or repository return shapes.
-- TSQ-05D decides `EvidenceBundle.status` should stay a lightweight ledger
-  status for now. Command proof strength is already carried by
-  provenance-normalized command rows plus assessment helpers, and no live source
-  requires status-specific bundle fields.
-- TSQ-05E decides activation context assembly should not be rewritten:
-  inclusions, exclusions, observation-prefix gates, and abstention are already
-  explicit. The narrower follow-up is repository persistence input, where
-  `RecordActivationDecisionInput` currently allows one optional object shape for
-  decision-specific fields.
-- TSQ-05E-A discriminates `RecordActivationDecisionInput` by decision status:
-  included, excluded, conflict, stale, and deferred persistence inputs now expose
-  decision-specific fields without DB schema or activation ranking changes.
+  audit, reflection writer result discrimination, memory review result
+  narrowing, EvidenceBundle status decision, and activation decision input
+  discrimination are complete.
+- CTX-01 condenses completed TSQ-05D/E/E-A detail into this checkpoint. Commit
+  history remains the detailed evidence ledger:
+  `8c7250e`, `1bbcf01`, and `4b429c5`.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -86,17 +73,16 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: TSQ-05E-A passed focused activation trace tests, focused
-  harness activation tests, workspace typecheck, full workspace tests, and diff
-  hygiene in this slice; previous pushed slice before TSQ-05E-A was
-  `1bbcf01 docs(ts): decide activation decision shape`;
+- last verified state: CTX-01 passed workspace typecheck and diff hygiene in
+  this docs-only condensation slice; previous pushed slice before CTX-01 was
+  `4b429c5 refactor(activation): discriminate decision persistence input`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-01
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-06
   section, and only the source files named by the next slice;
-- next action: execute `CTX-01: Condense Lifecycle Hardening Context`;
+- next action: execute `TSQ-06: Decide EvalCandidate Proposal Status Shape`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
@@ -105,13 +91,14 @@ open_risks_and_next_candidates:
 - `EvidenceBundle.status` remains acceptable as one object shape with helper
   assessments until a live writer starts using `verified` / `rejected` as proof
   without explicit review fields.
-- Activation decision persistence input is now narrowed; DB enum/read model
-  remains broader by design for historical rows and compatibility.
-- Active plan context has accumulated several completed lifecycle decisions
-  since CTX-00. CTX-01 should condense the active snapshot and demote completed
-  TSQ-05D/E/E-A detail to compact checkpoint evidence before more runtime work.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
+- `EvalCandidateStatus` is broader than current proposal-only carriers. TSQ-06
+  should decide whether FeedbackDelta/Reflection eval proposal paths need a
+  narrower proposal status shape or whether the broad core type is acceptable
+  until a standalone eval candidate lifecycle exists.
+- Activation decision persistence input is narrowed; DB enum/read model remains
+  broader by design for historical rows and compatibility.
 
 completed_evidence_pointers:
 
@@ -3001,7 +2988,11 @@ git revert <C6-02 commit>
 - [x] CTX-00 Condense completed hardening context.
 - [x] TSQ-05B Decide memory promotion result state shape.
 - [x] TSQ-05C Narrow memory review gate result candidate status.
-- [ ] TSQ-05D Decide EvidenceBundle status shape.
+- [x] TSQ-05D Decide EvidenceBundle status shape.
+- [x] TSQ-05E Decide activation decision shape.
+- [x] TSQ-05E-A Discriminate activation decision persistence input.
+- [x] CTX-01 Condense lifecycle hardening context.
+- [ ] TSQ-06 Decide EvalCandidate proposal status shape.
 
 ## Surprises & Discoveries
 
@@ -7301,4 +7292,126 @@ commit:
 
 ```sh
 git commit -m "docs(plan): condense lifecycle hardening context"
+```
+
+status: complete.
+
+outcome:
+
+- Active Queue Snapshot now points to `TSQ-06` and keeps TSQ-05D/E/E-A as a
+  compact checkpoint with commit references instead of active reading context.
+- `GOAL.md` stays compact and points to the next unchecked slice.
+- The Progress checklist now marks TSQ-05D, TSQ-05E, and TSQ-05E-A complete,
+  records CTX-01, and names TSQ-06 as the next typed lifecycle decision.
+- Historical TSQ-05D/E/E-A details remain in the ledger for rollback/evidence,
+  but future context selectors do not require rereading them.
+
+command_evidence:
+
+- `pnpm typecheck`: passed across the current workspace. This proves the
+  docs-only condensation and next-slice plan did not break TypeScript
+  compilation; it does not prove EvalCandidate proposal status quality.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
+
+### TSQ-06: Decide EvalCandidate Proposal Status Shape
+
+priority: P2.
+
+objective:
+
+Inspect current `EvalCandidate` proposal carriers and decide whether the
+proposal-only paths need a narrower status shape than the broad core
+`EvalCandidateStatus`.
+
+source:
+
+ADR-0016 keeps EvalCandidate proposal-only for the current kernel: no standalone
+eval candidate table, CLI, review gate, worker runtime, Promptfoo authority, or
+eval platform exists.
+
+assumptions:
+
+- `FeedbackDelta.evalCandidates` and `ReflectionRecord.output.evalCandidates`
+  are current proposal carriers;
+- broad `EvalCandidateStatus = "candidate" | "accepted" | "rejected" |
+  "promoted"` may be appropriate only for future standalone lifecycle, not for
+  proposal-only storage;
+- this is a decision slice before any model rewrite.
+
+tradeoffs:
+
+- narrowing proposal carriers could improve type truth but may require mapping
+  compatibility for stored JSON rows;
+- leaving the broad status is acceptable only if current writers cannot imply
+  accepted/promoted eval truth without a governed lifecycle.
+
+simplest acceptable implementation:
+
+- inspect `packages/core/src/eval.ts`,
+  `packages/core/src/feedbackDelta.ts`,
+  `packages/core/src/reflection/index.ts`,
+  `packages/harness/src/reflection/reflectionCandidateWriter.ts`, and DB
+  feedback/reflection mappers;
+- produce a decision table for candidate, accepted, rejected, and promoted in
+  proposal-only carriers;
+- promote one implementation slice only if live source shows current proposal
+  paths can express final eval authority incorrectly.
+
+rules:
+
+- do not add an `eval_candidates` table;
+- do not add eval CLI, review gate, worker runtime, Promptfoo authority,
+  dashboard, or eval platform;
+- do not change DB schema/migrations in the decision slice;
+- do not use Promptfoo smoke as KRN behavior proof.
+
+likely files:
+
+- `packages/core/src/eval.ts`;
+- `packages/core/src/feedbackDelta.ts`;
+- `packages/core/src/reflection/index.ts`;
+- `packages/harness/src/reflection/reflectionCandidateWriter.ts`;
+- DB feedback/reflection mappers if needed for source inspection;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- CLI command surfaces;
+- worker runtime behavior;
+- Promptfoo/eval platform surfaces.
+
+non-goals:
+
+- no standalone eval candidate lifecycle;
+- no eval platform;
+- no behavior gate rewrite;
+- no Promptfoo authority change.
+
+success criteria:
+
+- decision table states whether proposal-only eval candidates need a narrower
+  type or no change;
+- active queue advances to a bounded follow-up or records no-op with evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- eval feedbackDelta reflection
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-06 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide eval candidate proposal status shape"
 ```
