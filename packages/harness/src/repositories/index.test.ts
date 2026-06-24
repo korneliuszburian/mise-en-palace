@@ -8,7 +8,8 @@ import type {
   CreateEvidenceBundleInput,
   CreateEvidenceBundleStatus,
   CreateFeedbackDeltaInput,
-  CreateMemoryCandidateInput
+  CreateMemoryCandidateInput,
+  CreateSourceClaimInput
 } from "./index.js";
 
 const repositoryFile = (relativePath: string): string =>
@@ -58,5 +59,12 @@ describe("repository package surfaces", () => {
         "accepted" | "rejected" | "applied" | "superseded"
       >
     >().toEqualTypeOf<never>();
+  });
+
+  it("keeps reviewed source claim lifecycle states out of create input", () => {
+    expectTypeOf<CreateSourceClaimInput["status"]>()
+      .toEqualTypeOf<"proposed" | undefined>();
+    expectTypeOf<Extract<CreateSourceClaimInput["status"], "accepted" | "rejected" | "deprecated">>()
+      .toEqualTypeOf<never>();
   });
 });

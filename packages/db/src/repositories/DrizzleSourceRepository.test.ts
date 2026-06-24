@@ -139,7 +139,7 @@ describe("DrizzleSourceRepository", () => {
 
     const weakClaim = {
       id: "source-claim-weak",
-      status: "candidate",
+      status: "proposed",
       trustTier: "hypothesis",
       revisitWhen: "2026-12-31T00:00:00.000Z",
       createdAt: "2026-06-23T00:00:00.000Z",
@@ -179,7 +179,7 @@ describe("DrizzleSourceRepository", () => {
 
     const newerWeakClaim = {
       id: "source-claim-new",
-      status: "candidate",
+      status: "proposed",
       trustTier: "low",
       createdAt: "2026-06-23T00:00:00.000Z",
       claim: "Priority alone should not select observation prefix."

@@ -480,6 +480,21 @@ describe("schema parse boundaries", () => {
     });
 
     expect(claim.doesNotProve).toContain("extension");
+    expect(claim.status).toBe("proposed");
+
+    expect(() =>
+      parseSourceClaimInput({
+        claim: "Drizzle supports pgvector columns",
+        mechanism: "Drizzle maps vector columns to PostgreSQL pgvector",
+        krnImplication: "KRN can keep vector search in Postgres",
+        doesNotProve: "The vector extension exists in every database",
+        trustTier: "project-decision",
+        supportType: "implementation-boundary",
+        consumer: "db schema",
+        falsifier: "The DB readiness smoke cannot apply pgvector migrations.",
+        status: "accepted"
+      })
+    ).toThrow();
   });
 
   test("source artifact inputs default operator-local artifact fields", () => {

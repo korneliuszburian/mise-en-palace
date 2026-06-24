@@ -41,6 +41,8 @@ export const SourceClaimStatusSchema = z.enum([
   "deprecated"
 ]);
 
+export const SourceClaimCreateStatusSchema = z.enum(["proposed"]);
+
 export const SourceDecisionTargetTypeSchema = z.enum([
   "harness_run",
   "task_contract",
@@ -89,7 +91,7 @@ export const SourceClaimInputSchema = z.object({
   consumer: RequiredTextSchema,
   falsifier: RequiredTextSchema,
   revisitWhen: RequiredTextSchema.optional(),
-  status: SourceClaimStatusSchema.default("proposed"),
+  status: SourceClaimCreateStatusSchema.default("proposed"),
   metadata: MetadataSchema
 });
 

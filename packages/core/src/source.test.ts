@@ -1,10 +1,12 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, expectTypeOf, test } from "vitest";
 
 import {
   assessSourceClaimOverride,
   assessSourceClaimReviewSignals,
   assessSourceDecisionReviewSignals,
   rankSourceTrustTier,
+  type SourceClaimCreateStatus,
+  type SourceClaimLifecycleStatus,
   type SourceClaim,
   type SourceDecision
 } from "./source.js";
@@ -44,6 +46,13 @@ const sourceDecision = (overrides: Partial<SourceDecision>): SourceDecision => (
 });
 
 describe("source review signals", () => {
+  test("separates source claim create status from review lifecycle states", () => {
+    expectTypeOf<SourceClaimCreateStatus>().toEqualTypeOf<"proposed">();
+    expectTypeOf<SourceClaimLifecycleStatus>().toEqualTypeOf<
+      "accepted" | "rejected" | "deprecated"
+    >();
+  });
+
   test("reports stale and unconsumed accepted source claims", () => {
     expect(assessSourceClaimReviewSignals(sourceClaim({
       revisitWhen: "2026-06-01T00:00:00.000Z"

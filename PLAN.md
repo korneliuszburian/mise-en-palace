@@ -26,9 +26,9 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Source Claim And Decision Create Status Boundary Decision.
+current_priority: Active Plan Condensation After Lifecycle Boundary Hardening.
 
-first_unchecked_slice: `TSQ-12: Decide SourceClaim And SourceDecision Create Status Boundaries`.
+first_unchecked_slice: `CTX-04: Condense Completed Lifecycle Boundary Context`.
 
 active_scope:
 
@@ -38,7 +38,7 @@ active_scope:
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding source create-status boundaries;
+  authority layer while condensing completed lifecycle hardening context;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -86,6 +86,10 @@ completed_checkpoint:
   `review assess --status` records the current review outcome at creation,
   but narrows `FeedbackDelta` create status to `candidate` and memory /
   anti-memory candidate create status to `proposed | candidate`.
+- TSQ-12 keeps `SourceDecision` status broad because `adopt | reject | defer |
+  lab_test` is the decision captured at creation, but narrows `SourceClaim`
+  create status to `proposed`; `accepted | rejected | deprecated` are
+  reviewed/read-model lifecycle states.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -93,24 +97,23 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded slice, not
   from historical reset/audit detail;
-- last verified state: TSQ-11 passed focused core/schema/harness/db/CLI checks
+- last verified state: TSQ-12 passed focused core/schema/harness/db/CLI checks
   before full workspace verification; final command evidence is recorded in
-  the TSQ-11 section;
+  the TSQ-12 section;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-12
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-04
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-12: Decide SourceClaim And SourceDecision Create Status Boundaries`;
+- next action: execute `CTX-04: Condense Completed Lifecycle Boundary Context`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- `CreateSourceClaimInput.status?: SourceClaim["status"]` and
-  `CreateSourceDecisionInput.status: SourceDecision["status"]` may still expose
-  broad lifecycle/status vocabularies at create/write boundaries.
+- active `PLAN.md` now carries many completed TSQ lifecycle sections; condense
+  completed detail into checkpoint evidence before starting another code slice.
 
 completed_evidence_pointers:
 
@@ -3013,7 +3016,8 @@ git revert <C6-02 commit>
 - [x] CTX-03 Condense Lifecycle Boundary hardening context.
 - [x] TSQ-10 Decide ContextAssembly create status boundary.
 - [x] TSQ-11 Decide ReviewAssessment and FeedbackDelta create status boundaries.
-- [ ] TSQ-12 Decide SourceClaim and SourceDecision create status boundaries.
+- [x] TSQ-12 Decide SourceClaim and SourceDecision create status boundaries.
+- [ ] CTX-04 Condense completed lifecycle boundary context.
 
 ## Surprises & Discoveries
 
@@ -8389,4 +8393,131 @@ commit:
 
 ```sh
 git commit -m "refactor(source): decide create status boundaries"
+```
+
+outcome:
+
+- `SourceClaimCreateStatus = "proposed"` and
+  `SourceClaimLifecycleStatus = "accepted" | "rejected" | "deprecated"` now
+  separate initial source claim creation from review/deprecation states.
+- `CreateSourceClaimInput.status` now accepts only
+  `SourceClaimCreateStatus`.
+- `SourceClaimInputSchema` now rejects reviewed/deprecated lifecycle statuses at
+  parse time.
+- Test fixtures that used memory-style `status: "candidate"` for SourceClaim
+  override checks were normalized to `status: "proposed"`.
+- `SourceDecisionStatus` remains unchanged. `adopt | reject | defer |
+  lab_test` is the current decision vocabulary captured at creation, not a
+  later lifecycle state; `adopt` and `reject` already require a source claim.
+- DB schema/mappers were unchanged.
+
+command evidence:
+
+```sh
+rtk proxy pnpm --filter @krn/core test -- source
+rtk proxy pnpm --filter @krn/schema test -- index
+rtk proxy pnpm --filter @krn/harness test -- repositories
+rtk proxy pnpm --filter @krn/db test -- DrizzleSourceRepository
+rtk proxy pnpm --filter @krn/core typecheck
+rtk proxy pnpm --filter @krn/schema typecheck
+rtk proxy pnpm --filter @krn/harness typecheck
+rtk proxy pnpm --filter @krn/db typecheck
+rtk proxy pnpm --filter @krn/cli typecheck
+rtk proxy pnpm test
+git diff --check
+```
+
+does_not_prove:
+
+- These checks do not prove DB runtime readiness; no DB runtime command ran in
+  this slice.
+- They do not prove every source graph lifecycle transition exists; they only
+  bound source claim creation and preserve existing source decision creation
+  semantics.
+
+### CTX-04: Condense Completed Lifecycle Boundary Context
+
+priority: P2.
+
+objective:
+
+Condense active `PLAN.md` / `GOAL.md` state after TSQ-10, TSQ-11, and TSQ-12 so
+completed lifecycle-boundary detail does not remain in the active execution
+window.
+
+source:
+
+The Active Queue Snapshot now carries enough completed lifecycle checkpoint
+detail, but the historical ledger still contains long TSQ sections. The user
+explicitly asked to avoid keeping completed tasks as active context and to
+periodically remove/demote excess information.
+
+assumptions:
+
+- completed implementation evidence should remain discoverable in commit
+  history and compact command evidence;
+- active state should preserve only next action, compact checkpoint, open risks,
+  and rollback pointers.
+
+tradeoffs:
+
+- over-condensing can hide useful rollback detail;
+- under-condensing keeps context expensive and encourages agents to reread
+  completed work.
+
+simplest acceptable implementation:
+
+- compact TSQ-10/TSQ-11/TSQ-12 active detail into checkpoint bullets;
+- keep command evidence pointers and commit hashes;
+- keep the next unchecked item explicit;
+- do not alter source behavior.
+
+rules:
+
+- docs-only slice;
+- no source/package changes;
+- do not delete evidence artifacts;
+- do not create a new plan file.
+
+likely files:
+
+- `PLAN.md`;
+- `GOAL.md`.
+
+files forbidden to touch:
+
+- package source;
+- DB schema/migrations;
+- old raw materials.
+
+non-goals:
+
+- no code refactor;
+- no broad repo cleanup;
+- no audit scanner revival.
+
+success criteria:
+
+- Active Queue Snapshot is shorter and points to the next real unchecked slice;
+- completed TSQ-10/11/12 detail is represented as compact checkpoint evidence;
+- `GOAL.md` remains compact;
+- docs diff is clean.
+
+verification:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <CTX-04 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): condense lifecycle boundary context"
 ```

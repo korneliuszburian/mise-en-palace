@@ -34,7 +34,11 @@ export type SourceSupportType =
   | "eval-design"
   | "implementation-boundary";
 
-export type SourceClaimStatus = "proposed" | "accepted" | "rejected" | "deprecated";
+export type SourceClaimCreateStatus = "proposed";
+
+export type SourceClaimLifecycleStatus = "accepted" | "rejected" | "deprecated";
+
+export type SourceClaimStatus = SourceClaimCreateStatus | SourceClaimLifecycleStatus;
 
 export type SourceDecisionStatus = "adopt" | "reject" | "defer" | "lab_test";
 

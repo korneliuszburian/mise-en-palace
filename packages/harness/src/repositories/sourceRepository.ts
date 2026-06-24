@@ -5,6 +5,7 @@ import type {
   SourceDecision,
   SourceDecisionEdge,
   SourceRejection,
+  SourceClaimCreateStatus,
   SourceSupportType,
   SourceTrustTier
 } from "@krn/core";
@@ -29,7 +30,7 @@ export interface CreateSourceClaimInput {
   consumer: string;
   falsifier?: string;
   revisitWhen?: string;
-  status?: SourceClaim["status"];
+  status?: SourceClaimCreateStatus;
   metadata?: Record<string, unknown>;
 }
 
