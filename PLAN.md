@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: EvalCandidate Hardening Context Condensation.
+current_priority: EvidenceBundle Status Authority Boundary Decision.
 
-first_unchecked_slice: `CTX-02: Condense EvalCandidate Hardening Context`.
+first_unchecked_slice: `TSQ-07: Decide EvidenceBundle Status Authority Boundary`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from a context-condensation slice after TSQ-06/06A narrowed
-  proposal-only eval carriers;
+- continue from the next typed lifecycle decision after CTX-02 condensed
+  EvalCandidate hardening context;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while condensing EvalCandidate hardening context;
+  authority layer while deciding the EvidenceBundle status authority boundary;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -66,11 +66,8 @@ completed_checkpoint:
 - CTX-01 condenses completed TSQ-05D/E/E-A detail into this checkpoint. Commit
   history remains the detailed evidence ledger:
   `8c7250e`, `1bbcf01`, and `4b429c5`.
-- TSQ-06/TSQ-06A narrows proposal-only eval carriers:
-  `FeedbackDelta.evalCandidates` and reflection candidate writer output now use
-  `EvalCandidateProposal[]`, while DB feedback readback normalizes missing
-  legacy status to `candidate` and drops accepted/rejected/promoted lifecycle
-  rows.
+- EvalCandidate proposal carrier narrowing is complete. Commit history is the
+  detailed evidence ledger: `3501bd0` and `349c768`.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -78,17 +75,16 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded slice, not
   from historical reset/audit detail;
-- last verified state: TSQ-06A passed focused core/harness/db tests, workspace
-  typecheck, full workspace tests, and diff hygiene in this implementation
-  slice; previous pushed slice before TSQ-06A was
-  `3501bd0 docs(ts): decide eval candidate proposal status shape`;
+- last verified state: CTX-02 is a docs-only condensation after pushed
+  `349c768 refactor(eval): narrow proposal candidate status`; final command
+  evidence is recorded in the CTX-02 section;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-02
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-07
   section, and only the source files named by the next slice;
-- next action: execute `CTX-02: Condense EvalCandidate Hardening Context`;
+- next action: execute `TSQ-07: Decide EvidenceBundle Status Authority Boundary`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
@@ -97,8 +93,6 @@ open_risks_and_next_candidates:
 - `EvidenceBundle.status` remains acceptable as one object shape with helper
   assessments until a live writer starts using `verified` / `rejected` as proof
   without explicit review fields.
-- EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
-  Promptfoo authority exists.
 - Activation decision persistence input is narrowed; DB enum/read model remains
   broader by design for historical rows and compatibility.
 
@@ -2996,7 +2990,8 @@ git revert <C6-02 commit>
 - [x] CTX-01 Condense lifecycle hardening context.
 - [x] TSQ-06 Decide EvalCandidate proposal status shape.
 - [x] TSQ-06A Narrow EvalCandidate proposal carriers.
-- [ ] CTX-02 Condense EvalCandidate hardening context.
+- [x] CTX-02 Condense EvalCandidate hardening context.
+- [ ] TSQ-07 Decide EvidenceBundle status authority boundary.
 
 ## Surprises & Discoveries
 
@@ -7731,4 +7726,140 @@ commit:
 
 ```sh
 git commit -m "docs(plan): condense eval candidate hardening context"
+```
+
+status: complete.
+
+outcome:
+
+- active snapshot no longer carries TSQ-06/TSQ-06A as active reading context;
+- EvalCandidate hardening is represented by compact checkpoint and commit
+  pointers: `3501bd0` and `349c768`;
+- next bounded slice is TSQ-07, focused on the remaining
+  `EvidenceBundle.status` authority risk;
+- no TypeScript source, DB schema, CLI surface, worker runtime, eval platform,
+  dashboard, or audit/anti-slop layer was changed.
+
+selection_notes:
+
+- `rg` found current evidence bundle creation paths using `status: "captured"`
+  in DB smokes and no broad source use of `verified` / `rejected` as proof
+  authority;
+- `EvidenceBundle.status` remains a live type-safety risk because the enum
+  still includes `verified` / `rejected` while completeness/review helpers carry
+  the real proof semantics;
+- activation persistence input has already been narrowed; its broader DB enum
+  read model is retained for historical rows and is lower priority than the
+  remaining EvidenceBundle authority boundary.
+
+command_evidence:
+
+- `pnpm typecheck`: passed across the workspace. This proves the docs-only
+  condensation and next-slice selection did not break TypeScript compilation;
+  it does not prove the EvidenceBundle status boundary decision is complete.
+- `git diff --check`: passed. This proves whitespace hygiene for the current
+  diff.
+
+### TSQ-07: Decide EvidenceBundle Status Authority Boundary
+
+priority: P2.
+
+objective:
+
+Inspect `EvidenceBundle.status` writers, readers, helpers, and persistence
+boundaries to decide whether status should remain a broad ledger label or get a
+narrower write/input authority boundary so `verified` / `rejected` cannot imply
+proof without explicit review/completeness evidence.
+
+source:
+
+Open risk from the Active Queue Snapshot and TSQ-05D decision.
+
+assumptions:
+
+- `EvidenceBundle.status` may remain a persisted read-model vocabulary for
+  historical compatibility;
+- current proof semantics should live in command provenance, completeness
+  assessment, rollback assessment, and review assessment, not status alone;
+- the decision slice should inspect live source before promoting an
+  implementation change.
+
+tradeoffs:
+
+- narrowing write/input status could improve type truth but may require mapper
+  compatibility for existing rows;
+- leaving `verified` / `rejected` in the broad domain type is acceptable only if
+  no current writer or consumer treats those values as standalone proof.
+
+simplest acceptable implementation:
+
+- inspect `packages/core/src/evidenceBundle.ts`, evidence capture CLI, review
+  assessment paths, DB mapper/repository writes, and focused tests;
+- produce a decision table for `draft`, `captured`, `verified`, and `rejected`;
+- promote one implementation slice only if live source shows status can
+  overstate proof authority.
+
+rules:
+
+- do not add a quality scanner, audit layer, dashboard, worker runtime, or eval
+  platform;
+- do not change DB schema/migrations in the decision slice;
+- do not use `EvidenceBundle.status` as proof of command execution, memory
+  quality, source truth, or review correctness;
+- do not rewrite evidence command provenance.
+
+likely files:
+
+- `packages/core/src/evidenceBundle.ts`;
+- `packages/cli/src/runEvidenceCaptureCommand.ts`;
+- `packages/cli/src/runReviewAssessCommand.ts`;
+- `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`;
+- `packages/db/src/repositories/mappers.ts`;
+- focused evidence/review tests if needed for source inspection;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- worker runtime behavior;
+- Promptfoo/eval surfaces;
+- old raw materials.
+
+non-goals:
+
+- no DB migration in the decision slice;
+- no evidence capture behavior rewrite;
+- no quality subsystem;
+- no dashboard/eval platform;
+- no audit scanner revival.
+
+success criteria:
+
+- decision table states whether each `EvidenceBundle.status` value is current
+  writer input, read-model only, rejected as standalone proof, or should be
+  narrowed;
+- active queue advances to a bounded follow-up or records no-op with evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- evidenceBundle
+pnpm --filter @krn/cli test -- runEvidenceCaptureCommand runReviewAssessCommand
+pnpm --filter @krn/db test -- mappers
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-07 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide evidence bundle status authority"
 ```
