@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Memory Promotion Result State Decision.
+current_priority: Memory Review Gate Candidate Status Narrowing.
 
-first_unchecked_slice: `TSQ-05B: Decide Memory Promotion Result State Shape`.
+first_unchecked_slice: `TSQ-05C: Narrow Memory Review Gate Result Candidate Status`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next lifecycle-model follow-up promoted by TSQ-05 after
-  CTX-00 context condensation;
+- continue from the next implementation follow-up promoted by TSQ-05B after
+  live source showed no need for a promotion-result discriminated union;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding memory promotion result state shape;
+  authority layer while narrowing memory review gate result candidate status;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -61,6 +61,9 @@ completed_checkpoint:
 - TypeScript hardening: evidence proof states, branded ID pilot, JSON boundary
   classification, unsafe-cast zero-state, named public return types, lifecycle
   audit, and discriminated reflection candidate writer result are complete.
+- TSQ-05B decides memory promotion result shape: no discriminated result union
+  is needed for success-only review gates, but the returned candidate should be
+  narrowed to a reviewable `proposed | candidate` status in TSQ-05C.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -68,23 +71,25 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: CTX-00 docs-only condensation passed `git diff --check`
-  and `pnpm typecheck`; previous pushed code slice is `6447a08
-  refactor(reflection): discriminate candidate writer result`;
+- last verified state: TSQ-05B docs decision passed focused harness review gate
+  tests, workspace typecheck, and diff hygiene in this slice; previous pushed
+  slice is `f3e8b7d docs(plan): condense completed hardening context`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05 /
-  TSQ-05A sections, and only the source files named by the next slice;
-- next action: execute `TSQ-05B: Decide Memory Promotion Result State Shape`;
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05B /
+  TSQ-05C sections, and only the source files named by the next slice;
+- next action: execute `TSQ-05C: Narrow Memory Review Gate Result Candidate
+  Status`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- `Memory promotion result` is now the next lifecycle candidate because TSQ-05
-  explicitly deferred it behind the reflection writer result.
+- Memory review gate result candidate status remains too broad at type level;
+  TSQ-05C should narrow returned candidates to reviewable `proposed |
+  candidate` status.
 - `EvidenceBundle.status` remains deferred unless status starts governing
   persistence/review workflow fields.
 - Activation decision shapes remain deferred until live misuse appears.
@@ -2977,7 +2982,8 @@ git revert <C6-02 commit>
 - [x] TSQ-05 Audit impossible core lifecycle states.
 - [x] TSQ-05A Discriminate reflection candidate writer result.
 - [x] CTX-00 Condense completed hardening context.
-- [ ] TSQ-05B Decide memory promotion result state shape.
+- [x] TSQ-05B Decide memory promotion result state shape.
+- [ ] TSQ-05C Narrow memory review gate result candidate status.
 
 ## Surprises & Discoveries
 
@@ -6429,6 +6435,8 @@ git commit -m "docs(plan): condense completed hardening context"
 
 priority: P2.
 
+status: complete.
+
 objective:
 
 Inspect memory and anti-memory promotion result models after TSQ-05A and decide
@@ -6447,11 +6455,68 @@ assumptions:
 - no raw MemoryRecord write path should be exposed while inspecting promotion
   result shapes.
 
+source_decisions:
+
+source_id: `packages/harness/src/memory/memoryReviewGate.ts` and
+`packages/harness/src/memory/antiMemoryReviewGate.ts`.
+trust_tier: high live source.
+mechanism: review gates validate candidate status, source/evidence requirements,
+reviewer, and evidence review refs before calling reviewed repository promotion
+ports. Failure is represented by thrown errors before write; success returns the
+candidate, created final record, and reviewed source claims.
+krn_implication: promotion gate result does not need a ready/blocked
+discriminated union like `WriteReflectionCandidatesResult`; the gate is a
+success-only operation with exception-based blocking.
+decision: reject a promotion-result discriminated union for now.
+does_not_prove: all memory promotion modeling is perfect or that candidate
+statuses are narrow enough in returned result types.
+consumer: TSQ-05B decision and TSQ-05C follow-up.
+falsifier: a caller needs to represent blocked promotion without throwing, or a
+future gate starts returning non-exception blocked state.
+
+source_id: `packages/harness/src/repositories/memoryRepository.ts` and
+`packages/db/src/repositories/DrizzleMemoryRepository.ts`.
+trust_tier: high live source.
+mechanism: repository ports `promoteReviewedMemoryCandidate` and
+`promoteReviewedAntiMemoryCandidate` return final records, while DB adapter
+status guards reject non-promotable candidates and update candidate status to
+`accepted`.
+krn_implication: repository-level promotion result is final-record oriented; a
+new union would add shape without removing an actual impossible state.
+decision: defer repository result reshaping; keep final-record returns.
+does_not_prove: public gate result candidate status is precise.
+consumer: memory repository decision and TSQ-05C.
+falsifier: repository callers need both candidate status transition data and
+final record in one typed result.
+
+source_id: `packages/core/src/memory.ts`.
+trust_tier: high live source.
+mechanism: `MemoryCandidate.status` and `AntiMemoryCandidate.status` are broad
+workflow unions, but review gates only allow `proposed | candidate` before
+promotion.
+krn_implication: returned gate `candidate` fields currently remain typed as the
+full candidate union even after the gate has proved promotability.
+decision: promote TSQ-05C to narrow gate result candidate status to a reviewable
+candidate value object.
+does_not_prove: DB persistence has a bug or promotion behavior is currently
+wrong.
+consumer: TSQ-05C implementation slice.
+falsifier: a focused type/test slice proves the broad candidate status is needed
+by downstream callers.
+
 tradeoffs:
 
 - implementing immediately could overfit a medium-risk finding;
 - a decision slice first keeps the next code change small and reviewable if a
   real impossible state remains.
+
+decision_table:
+
+| Candidate | Live shape | Impossible state risk | Decision |
+| --- | --- | --- | --- |
+| Gate blocked/ready result | No blocked result object; validation throws before write, success returns final record + candidate + reviewed claims | Low; blocked state is not a returned domain value today | No discriminated union |
+| Repository promotion result | `promoteReviewedMemoryCandidate` / `promoteReviewedAntiMemoryCandidate` return final records | Low; DB adapter guards status and final record is the consumer value | Keep final-record returns |
+| Gate returned candidate status | Result candidate is `MemoryCandidate` / `AntiMemoryCandidate` with broad workflow status union | Medium; after gate validation, TypeScript still permits `accepted/rejected/applied/superseded` candidate status in the success result | Promote TSQ-05C narrower candidate status |
 
 simplest acceptable implementation:
 
@@ -6498,6 +6563,13 @@ success criteria:
 - active queue advances to a bounded follow-up or records no-op with evidence;
 - typecheck passes.
 
+outcome:
+
+- no promotion result discriminated union is promoted;
+- repository final-record return shape remains the accepted surface;
+- TSQ-05C is promoted to narrow successful gate result candidate status for
+  memory and anti-memory candidates.
+
 verification:
 
 ```sh
@@ -6505,6 +6577,15 @@ pnpm --filter @krn/harness test -- memoryReviewGate antiMemoryReviewGate
 pnpm typecheck
 git diff --check
 ```
+
+command evidence:
+
+- `pnpm --filter @krn/harness test -- memoryReviewGate antiMemoryReviewGate`:
+  passed. This proves the focused memory and anti-memory review gate tests still
+  pass after the docs decision.
+- `pnpm typecheck`: passed across workspace packages. This proves the docs-only
+  decision did not break current TypeScript compilation.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
 
 rollback:
 
@@ -6516,4 +6597,98 @@ commit:
 
 ```sh
 git commit -m "docs(ts): decide memory promotion result shape"
+```
+
+### TSQ-05C: Narrow Memory Review Gate Result Candidate Status
+
+priority: P2.
+
+objective:
+
+Narrow successful MemoryReviewGate and AntiMemoryReviewGate result candidate
+types so callers know the gate returned a reviewable candidate status, not the
+full candidate lifecycle union.
+
+source:
+
+TSQ-05B decision table.
+
+assumptions:
+
+- gate behavior remains success-only with thrown blocking errors;
+- repository promotion ports still return final records;
+- only the gate result candidate type needs narrowing, not core candidate
+  lifecycle definitions.
+
+tradeoffs:
+
+- adding reviewable candidate aliases is more precise than a promotion-result
+  union, but it still adds public exported types;
+- changing core candidate status unions would be broader and unnecessary for
+  this slice.
+
+simplest acceptable implementation:
+
+- export `ReviewableMemoryCandidate` and `ReviewableAntiMemoryCandidate` as
+  narrowed candidate value types in the gate modules or a local shared memory
+  type if duplication becomes meaningful;
+- update `PromoteMemoryCandidateThroughGateResult.candidate` and
+  `PromoteAntiMemoryCandidateThroughGateResult.candidate`;
+- add focused type/runtime assertions proving returned candidates are narrowed
+  after `result.candidate.status` checks.
+
+rules:
+
+- keep promotion behavior unchanged;
+- do not change DB schema/migrations;
+- do not expose raw MemoryRecord write ports;
+- do not rewrite core `MemoryCandidateStatus` globally.
+
+likely files:
+
+- `packages/harness/src/memory/memoryReviewGate.ts`;
+- `packages/harness/src/memory/antiMemoryReviewGate.ts`;
+- `packages/harness/src/memory/memoryReviewGate.test.ts`;
+- `packages/harness/src/memory/antiMemoryReviewGate.test.ts`;
+- maybe `PLAN.md` / `GOAL.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- CLI command behavior unless type fallout requires import-only fixes;
+- worker runtime behavior;
+- Promptfoo/eval surfaces.
+
+non-goals:
+
+- no new promotion result union;
+- no repository return shape change;
+- no Memory Core mutation behavior change.
+
+success criteria:
+
+- successful gate result candidate status is typed as `proposed | candidate`;
+- focused tests/typecheck prove callers do not see the full candidate status
+  union after successful gate promotion;
+- behavior and focused review gate tests still pass.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- memoryReviewGate antiMemoryReviewGate
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-05C commit>
+```
+
+commit:
+
+```sh
+git commit -m "refactor(memory): narrow review gate candidate status"
 ```
