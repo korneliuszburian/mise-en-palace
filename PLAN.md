@@ -1,314 +1,217 @@
-# KRN Brain Usefulness Validation Plan
+# KRN Continuous Hardening Plan
 
-> Canonical living queue for validating whether the current KRN Memory Brain
-> improves real dogfood work. This is a bounded validation goal, not a new
-> architecture or implementation program.
+> Canonical living queue for `/home/krn/coding/krn/active/mise-en-palace`.
+> Historical completed task bodies were archived by CTX-05; do not treat the
+> archive as active execution context unless a future slice explicitly names it.
 
 ## Active Queue Snapshot
 
-current_priority: Brain Usefulness Validation.
+current_priority: Complete.
 
-first_unchecked_slice: `BUV-00: Produce Brain Usefulness Report`.
+first_unchecked_slice: none.
 
 active_scope:
 
-- validate whether selected memory, source grounding, observation/reflection,
-  evidence/review, candidate paths, and activation choices helped real KRN
-  dogfood work;
-- create exactly one primary artifact:
-  `docs/reviews/brain-usefulness/REPORT.md`;
-- inspect 3 to 5 real dogfood runs, including
-  `docs/runs/2026-06-23-self-hosting-memory-loop.md`;
-- do not add architecture, product surfaces, CLI commands, schemas, dashboard,
-  worker runtime, eval platform, source crawler, new memory layer, `krn audit`,
-  anti-slop subsystem, or quality scanner;
-- do not mutate Memory Core, promote memory, change activation behavior, or fix
-  issues during this validation goal.
+- keep `GOAL.md` compact and `PLAN.md` as the living queue;
+- preserve completed evidence through archives, commit history, run ledgers,
+  ADRs, and compact checkpoint pointers;
+- do not rebuild `krn audit`, anti-slop scanners, dashboard-first surfaces,
+  broad eval platforms, or worker runtime while auditing completion evidence;
+- use repo/runtime truth over memory or old plans.
 
-completed_context:
+completed_checkpoint:
 
-- The previous reset/continuous-hardening goal is complete.
-- Root `PLAN.md` previously reached:
-
-```txt
-current_priority: Complete.
-first_unchecked_slice: none.
-```
-
-- Full historical reset/hardening evidence is preserved at:
+- Reset baseline P0-P7 is complete: root `GOAL.md` and root `PLAN.md` became
+  canonical, old memory-plan docs became historical quarry, README was aligned,
+  productized QG-06/anti-slop direction was rejected, and the first governed
+  self-hosting loop was recorded.
+- Evidence Integrity EVI-00..EVI-10 is complete: command provenance,
+  explicit verification evidence, DB persistence, self-hosting regression,
+  activation relevance review, candidate/review loop proof, Promptfoo boundary,
+  and operator evidence ergonomics were repaired or bounded.
+- Repo condensation C/COND slices are complete: public `krn audit` and the
+  harness scanner were removed, DB/CLI/harness/repository surfaces were narrowed
+  or classified, legacy AuditBundle storage/tables were decided and removed
+  after DB proof, and useful invariants moved into native domains.
+- TypeScript quality TSQ slices through TSQ-12 are complete: evidence proof
+  states, branded IDs, JSON/unsafe-cast boundaries, public return types,
+  impossible lifecycle states, reflection writer results, eval candidates,
+  EvidenceBundle, activation decisions, retrieval completion, context assembly,
+  review/feedback/memory candidate, and source claim create-status boundaries
+  were decided and/or narrowed.
+- Context condensation CTX-00..CTX-05 is complete: recent lifecycle details
+  were compacted, and the full historical pre-CTX-05 root plan was archived at
   `docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md`.
-- The previous completion audit did not prove Memory Brain product readiness,
-  cognitive quality, worker runtime execution, dashboard/API readiness, or DB
-  runtime state in the current shell.
+- Execution hygiene is active: every slice must inspect status, implement
+  narrowly, verify, commit, push, and leave a clean worktree.
+
+last_verified_state:
+
+- Last pushed code slice: `67c1249 refactor(source): narrow claim create status`.
+- Last pushed docs condensation slice before this plan rewrite:
+  `3d4bdae docs(plan): condense lifecycle boundary context`.
+- CTX-05 archive snapshot contains 8141 lines of historical root plan content.
+- Current root `PLAN.md` is the compact living queue.
+
+open_risks_and_next_candidates:
+
+- No active unchecked slice remains for this goal.
+- Future hardening work should start from this compact root `PLAN.md` and add a
+  new bounded slice instead of reopening archived historical task bodies.
 
 evidence_pointers:
 
-- `docs/runs/2026-06-23-self-hosting-memory-loop.md`
-- recent run ledgers under `docs/runs/`
-- `docs/architecture/cli-surfaces.md`
-- `docs/architecture/package-surfaces.md`
-- relevant ADRs only if selected runs reference them:
-  - `docs/decisions/ADR-0015-worker-runtime-boundary.md`
-  - `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`
-  - `docs/decisions/ADR-0019-evidence-command-proof-states.md`
-  - `docs/decisions/ADR-0020-branded-domain-ids.md`
+- Historical root plan snapshot:
+  `docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md`
+- Self-hosting run ledger:
+  `docs/runs/2026-06-23-self-hosting-memory-loop.md`
+- CLI/package surface decisions:
+  `docs/architecture/cli-surfaces.md`,
+  `docs/architecture/package-surfaces.md`
+- Reset/audit decision records:
+  `docs/reviews/repo-reset-audit/*`
+- Worker/eval/evidence/ID ADRs:
+  `docs/decisions/ADR-0015-worker-runtime-boundary.md`,
+  `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`,
+  `docs/decisions/ADR-0017-legacy-auditbundle-storage-fate.md`,
+  `docs/decisions/ADR-0018-drop-empty-legacy-audit-tables.md`,
+  `docs/decisions/ADR-0019-evidence-command-proof-states.md`,
+  `docs/decisions/ADR-0020-branded-domain-ids.md`
 
 ## Progress
 
-- [ ] BUV-00 Produce Brain Usefulness Report.
+- [x] P0-P7 Canonical reset baseline and first self-hosting loop.
+- [x] EVI-00..EVI-10 Evidence Integrity program.
+- [x] C0/C1/C2/C3/C4/C5/C6 continuous hardening follow-ups.
+- [x] EXEC-00..EXEC-01 executor discipline and slice template gate.
+- [x] COND-03..COND-04 package/CLI condensation decisions.
+- [x] DEV-DB-00 local DB verification script defaults.
+- [x] TSQ-00..TSQ-12 TypeScript lifecycle and boundary hardening.
+- [x] CTX-00..CTX-05 context condensation and historical ledger archival.
+- [x] VERIFY-00 Audit continuous hardening completion evidence.
 
-## Operating Rules
+## Current Decisions
 
-- Repo evidence beats memory.
-- Use committed run ledgers and docs if local DB is unavailable.
-- Claim DB runtime truth only if DB commands pass in the current shell.
-- If package source is touched accidentally, stop and either revert or split
-  scope; then run `pnpm typecheck`, `pnpm test`, and `git diff --check`.
-- Keep `GOAL.md` compact. Do not expand it into a progress ledger.
-- Commit and push the completed docs/report slice. Leave worktree clean.
+- `krn audit` is removed as a product/CLI/harness scanner surface. Do not
+  recreate it as a guardrail, quality engine, or anti-slop subsystem.
+- General quality is enforced by architecture, narrow package surfaces, typed
+  IO, tests, naming, review boundaries, and deletion of wrong abstractions.
+- Promptfoo is a bounded runner/result adapter. It is not Memory Brain truth.
+- Observation and reflection are staging/candidate paths. They do not mutate
+  Memory Core.
+- DB runtime truth may be claimed only after DB commands run in the current
+  environment.
+- Completed task bodies belong in historical ledger archives or commit history,
+  not in the active goal window.
 
-## BUV-00: Produce Brain Usefulness Report
+## Worktree And Remote Hygiene
+
+- Before each slice: run `git status --short --branch`.
+- During each slice: touch only files required by that slice.
+- After each slice: run the slice verification, commit with a focused
+  Conventional Commit, push, and confirm a clean worktree.
+- If push or verification fails, record the blocker here before starting a new
+  slice.
+
+## VERIFY-00: Audit Continuous Hardening Completion Evidence
+
+status: complete.
 
 priority: P0.
 
 objective:
 
-Create `docs/reviews/brain-usefulness/REPORT.md` answering:
+Prove or disprove whether the active goal is complete:
 
 ```txt
-Did the current KRN Memory Brain help real KRN dogfood work,
-or did it mainly produce well-structured ledger artifacts?
+Turn the completed canonical KRN reset into a continuous hardening goal and
+backlog, preserving completed evidence while adding follow-up observations and
+concrete extension slices from finished tasks.
 ```
 
-required_read_order:
+required audit:
 
-1. `AGENTS.md`
-2. `docs/KRN_KERNEL.md`
-3. `README.md`
-4. `GOAL.md`
-5. `PLAN.md`
-6. `docs/runs/2026-06-23-self-hosting-memory-loop.md`
-7. recent run ledgers under `docs/runs/`
-8. selected architecture docs and ADRs only when relevant to selected runs.
+- derive requirements from `GOAL.md`, this `PLAN.md`, the archived historical
+  ledger, and current git state;
+- verify that completed evidence is preserved and discoverable;
+- verify that root `PLAN.md` is now a compact living queue, not a copied
+  historical task dump;
+- verify that follow-up observations and concrete extension slices were added,
+  executed, or preserved as bounded future work;
+- verify worktree/remote cleanliness;
+- verify no active `krn audit`/anti-slop subsystem was reintroduced;
+- run docs hygiene checks and relevant test/typecheck commands if source
+  changes since the last package slice require them.
 
-preflight:
+success criteria:
 
-```sh
-git fetch --prune
-git status --short --branch
-git log --oneline --decorate --left-right origin/main...main
-git log --oneline --decorate -20
-```
-
-Record in the report:
-
-- remote/local state;
-- worktree state;
-- latest commit;
-- ahead/behind state;
-- whether DB was used.
-
-dogfood_run_selection:
-
-- Select 3 to 5 recent KRN dogfood runs.
-- Include `docs/runs/2026-06-23-self-hosting-memory-loop.md`.
-- Prefer varied brain functions:
-  - one self-hosting/planning run;
-  - one memory or anti-memory governance run;
-  - one source/evidence/review run;
-  - one TypeScript/package-boundary hardening run if available;
-  - one context-condensation or plan-hygiene run if useful.
-- Include at least one run with known weak evidence, gap, or partial
-  usefulness if available.
-
-For each selected run, record:
-
-```txt
-run_id:
-task/objective:
-date:
-source of evidence:
-persisted DB available? yes/no
-related commits:
-changed files:
-commands recorded:
-verification strength:
-```
-
-evaluation_lanes:
-
-1. Activation usefulness:
-   - classify selected context as helped / neutral / noise / missing /
-     harmful-stale;
-   - give verdict: good / mixed / weak / harmful / insufficient evidence.
-2. Memory usefulness:
-   - distinguish exists vs selected vs used vs helped;
-   - classify memory as helped / neutral / noise / hurt / stale / unknown.
-3. Source grounding usefulness:
-   - classify whether source claims supported, qualified, prevented overclaim,
-     added decorative burden, missed a needed source, or left conflict
-     unresolved.
-4. Evidence and review burden:
-   - classify command evidence as strong / weak / missing / not applicable;
-   - assess review burden delta: reduced / unchanged / increased / unclear.
-5. Observation/reflection usefulness:
-   - classify outputs as useful candidate, useful gap, useful contradiction,
-     correctly empty, ledger-only, noise, or missing finding.
-6. Candidate quality:
-   - classify MemoryCandidate / AntiMemoryCandidate / SourceDecision /
-     EvalCandidate proposal reviewability as ready / needs more evidence /
-     too vague / duplicate / not useful.
-7. Brain ROI:
-   - assess context waste, review burden, resume quality, decision grounding,
-     memory usefulness, and operator friction;
-   - final run verdict: strong positive / positive / mixed / weak / negative /
-     insufficient evidence.
-
-required_report_structure:
-
-```md
-# KRN Brain Usefulness Report
-
-Status: validation report, not implementation plan.
-
-Date:
-Evaluator:
-Repo state:
-Latest commit:
-Local/remote state:
-DB available: yes/no
-
-## Executive Verdict
-
-## Scope
-
-## Method
-
-## Findings Summary
-
-## Run Reviews
-
-## Cross-Run Patterns
-
-## What The Brain Already Does Well
-
-## What Is Still Mostly Ledger
-
-## Highest-Value Next Repairs
-
-## What Not To Build Next
-
-## Product Readiness Verdict
-
-## Next Recommended Goal
-
-## Command Evidence
-
-## Appendix: Evidence Pointers
-```
-
-report_requirements:
-
-- At least 3 real dogfood runs inspected.
-- Each selected run covers activation, memory, source, evidence/review,
-  observation/reflection, candidate quality, and ROI.
-- Product readiness verdict must be one of:
-  - not ready;
-  - dogfood-ready;
-  - internal-alpha-ready;
-  - product-ready.
-- Highest-value next repairs are limited to at most 5 bounded candidates.
-- Allowed repair categories only:
-  - activation scoring repair;
-  - memory application guidance repair;
-  - candidate quality repair;
-  - source claim quality repair;
-  - evidence capture ergonomics repair;
-  - review burden reporting repair;
-  - dogfood eval case;
-  - internal-alpha trial.
-- Explicitly list what not to build next.
-- Use qualitative labels only: strong / good / mixed / weak / harmful /
-  unknown / insufficient evidence.
-
-harsh_standard:
-
-```txt
-If a brain component cannot be shown to improve a run, reduce review burden,
-prevent error, select better context, or create a useful candidate, then its
-current value is unproven.
-```
-
-Do not confuse:
-
-- exists with works;
-- persisted with useful;
-- selected with helped;
-- green test with product value.
-
-non_goals:
-
-- no package source changes;
-- no new architecture;
-- no dashboard/API/MCP/worker runtime;
-- no new memory subsystem;
-- no source crawler;
-- no broad benchmark/eval platform;
-- no Promptfoo authority layer;
-- no generic multi-agent workflow;
-- no `krn audit`;
-- no anti-slop subsystem;
-- no quality scanner;
-- no plan-sprawl surface;
-- no memory promotion;
-- no Memory Core mutation;
-- no activation behavior changes.
+- each explicit goal requirement has direct evidence or a named missing item;
+- if complete, the active goal can be marked complete only after the audit;
+- if incomplete, this plan gains the next concrete bounded slice.
 
 verification:
 
 ```sh
+git status --short --branch
+git log --oneline --decorate -12
+rg -n "^- \\[ \\]|first_unchecked_slice|krn audit|anti-slop|Historical" GOAL.md PLAN.md README.md docs packages
 git diff --check
 ```
 
-If local DB is used, also run and record:
+rollback:
 
 ```sh
-pnpm db:ready
+git revert <VERIFY-00 commit>
 ```
 
-Optional if directly relevant:
+commit:
 
 ```sh
-pnpm --filter @krn/db db:check
-pnpm db:smoke
+git commit -m "docs(plan): audit continuous hardening completion"
 ```
 
-If package source is touched, stop and restore scope or run:
+outcome:
+
+- Requirement: turn completed reset into a continuous hardening goal and
+  backlog.
+  Evidence: root `GOAL.md` remains the compact activation contract; this root
+  `PLAN.md` is now the compact living queue with completed checkpoint groups,
+  explicit decisions, worktree hygiene, and no active historical task dump.
+- Requirement: preserve completed evidence.
+  Evidence: the full pre-CTX-05 root plan is archived at
+  `docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md`
+  with 8141 lines; the compact plan points to run ledgers, ADRs, architecture
+  docs, repo-reset reviews, and commit history.
+- Requirement: add follow-up observations and concrete extension slices from
+  finished tasks.
+  Evidence: the completed progress chain includes EVI, C/COND, EXEC, DEV-DB,
+  TSQ, and CTX follow-up slices derived from P7/reset findings, including
+  source/review/context lifecycle hardening and historical context cleanup.
+- Requirement: keep productized audit/anti-slop direction rejected.
+  Evidence: package-source scan found no active `runAudit`, `parseAudit`,
+  `AuditBundle`, or `DrizzleAuditBundleRepository` contracts; CLI tests assert
+  `audit` is unsupported; README/GOAL/PLAN reject rebuilding `krn audit` as a
+  product or guardrail layer.
+- Requirement: keep worktree/remote clean.
+  Evidence: `git status --short --branch` showed `main...origin/main` clean
+  before this audit update.
+
+command_evidence:
 
 ```sh
-pnpm typecheck
-pnpm test
+git status --short --branch
+git log --oneline --decorate -12
+wc -l PLAN.md GOAL.md docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md
+rg -n "runAudit|parseAudit|AuditBundle|DrizzleAuditBundleRepository|kind: \"audit|case \"audit\"|command.*audit|krn audit" packages/core packages/schema packages/cli packages/db packages/harness packages/workers packages/codex-adapter README.md PLAN.md GOAL.md
+rg -n "audit" packages/cli/src/parseArgs.ts packages/cli/src/runCli.ts packages/cli/src/runCli.test.ts README.md
 git diff --check
 ```
 
-completion_criteria:
+does_not_prove:
 
-1. `docs/reviews/brain-usefulness/REPORT.md` exists.
-2. At least 3 real dogfood runs are inspected.
-3. Every selected run has all seven evaluation lanes.
-4. Report states brain readiness.
-5. Recommendations are limited to at most 5 bounded repair candidates.
-6. No package source was modified.
-7. No new product surface was created.
-8. `git diff --check` passes.
-9. `PLAN.md` is updated only if needed to point to the completed report and
-   next recommended bounded action.
-10. `GOAL.md` is not expanded into a progress ledger.
-
-suggested_commit:
-
-```sh
-git add docs/reviews/brain-usefulness/REPORT.md PLAN.md GOAL.md
-git commit -m "docs(review): validate KRN brain usefulness"
-git push
-```
+- This audit does not prove Memory Brain product readiness, cognitive quality,
+  worker runtime execution, dashboard/API readiness, or DB runtime state in the
+  current shell.
+- It proves only that the reset was converted into a compact continuous
+  hardening plan/backlog with preserved evidence and no remaining active slice
+  under this goal.
