@@ -26,14 +26,14 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: CLI Internal Dev Surface Decision.
+current_priority: Evidence Command Proof-State Decision.
 
-first_unchecked_slice: `COND-04: CLI Public Surface Code Move Decision`.
+first_unchecked_slice: `TSQ-00: EvidenceCommand Discriminated Union Decision`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide the code-level fate of internal/dev CLI surfaces through the
+- decide the evidence command proof-state model through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
@@ -138,6 +138,10 @@ completed_checkpoint:
 - COND-03 decides the remaining core/schema/codex-adapter/workers package
   barrels as current stable contract surfaces and records falsifiers instead
   of deleting wildcard exports by aesthetics.
+- COND-04 keeps `krn db readiness` and `krn db smoke ...` as internal/dev
+  top-level commands rather than renaming them to `krn dev ...` or replacing
+  them with scripts only. The live help contract and tests already mark them
+  as runtime plumbing proof, not product workflow or quality authority.
 
 completed_evidence_pointers:
 
@@ -3011,7 +3015,8 @@ git revert <C6-02 commit>
 - [x] EXEC-00 Add executor discipline to active slice template.
 - [x] EXEC-01 Require slice template for future backlog items.
 - [x] COND-03 Decide remaining package barrels.
-- [ ] COND-04 Decide internal/dev CLI command surface.
+- [x] COND-04 Decide internal/dev CLI command surface.
+- [ ] TSQ-00 Decide EvidenceCommand proof-state model.
 
 ## Surprises & Discoveries
 
@@ -3166,6 +3171,11 @@ git revert <C6-02 commit>
   workers barrels. The worker root still exports enqueue contracts, but ADR-0015
   and worker docs state this does not imply a daemon, background loop, or job
   executor.
+- COND-04 found `krn db` is still a top-level parser family, but top-level help
+  and `krn db --help` both label readiness/smoke commands as internal/dev
+  runtime-plumbing proof. `package.json` scripts intentionally wrap that
+  namespace for local verification, so moving to `krn dev ...` would be rename
+  churn without a stronger misuse signal.
 
 ## Decision Log
 
@@ -3296,6 +3306,11 @@ git revert <C6-02 commit>
   probes, DB internals, or adapter internals currently leak through those roots.
   Falsifier: a package root starts exporting helpers whose authority exceeds
   the behavior its package proves.
+- 2026-06-24: COND-04 keeps `krn db readiness` and `krn db smoke ...` as
+  internal/dev top-level CLI commands. Do not add `krn dev`, do not silently
+  rename DB commands, and do not replace them with package scripts only unless
+  future evidence shows the current namespace causes operator misuse that help
+  and docs cannot prevent.
 
 ## Outcomes & Retrospective
 
@@ -3402,6 +3417,8 @@ Current outcome:
 - COND-03 found the remaining core/schema/codex-adapter/workers barrels are
   acceptable as current contract surfaces. No source exports were changed; the
   package-surface doc now carries the falsifiers that would reopen the slice.
+- COND-04 found current CLI help and tests already enforce the internal/dev DB
+  boundary. No parser or command routing changes were made.
 
 ## Command Evidence
 
@@ -4922,12 +4939,39 @@ git commit -m "docs(exports): decide remaining package barrels"
 
 ### COND-04: CLI Public Surface Code Move Decision
 
+status: complete.
+
 priority: P2.
 
 objective:
 
 Decide the code-level fate of internal/dev CLI surfaces without silently
 renaming commands or recreating an audit/guard layer.
+
+assumptions:
+
+- CLI command names carry product authority, so internal/dev commands need
+  visible boundary language in help and docs;
+- a command namespace should not be renamed unless live evidence shows the
+  current name causes real operator misuse;
+- package scripts may wrap internal/dev CLI commands as local verification
+  shortcuts without making those commands product workflow.
+
+tradeoffs:
+
+- keeping `krn db ...` preserves existing scripts and operator muscle memory;
+- adding `krn dev ...` would make the namespace more explicit but introduces
+  compatibility churn and another command family before evidence proves it is
+  needed;
+- scripts-only would hide useful runtime plumbing behind package-manager
+  wrappers and weaken direct CLI verification.
+
+simplest acceptable implementation:
+
+- verify current top-level help, DB help, parser, package scripts, and tests;
+- record a decision in `docs/architecture/cli-surfaces.md`;
+- do not change parser or routing unless help/tests contradict the intended
+  internal/dev boundary.
 
 options:
 
@@ -4941,12 +4985,69 @@ rules:
 - do not create `krn guard`;
 - do not silently rename without a compatibility decision.
 
+decision:
+
+Keep option 1. `krn db readiness` and `krn db smoke ...` remain top-level
+internal/dev commands because live help and tests already classify them as
+runtime plumbing proof, not public operator workflow or quality authority.
+
+files likely touched:
+
+- `docs/architecture/cli-surfaces.md`;
+- `PLAN.md`;
+- `GOAL.md`.
+
+files forbidden to touch:
+
+- `packages/cli/src/parseArgs.ts`;
+- `packages/cli/src/parseDbArgs.ts`;
+- `packages/cli/src/runCli.ts`;
+- package scripts;
+- DB smoke implementations.
+
+non-goals:
+
+- no `krn dev` namespace;
+- no parser rename;
+- no compatibility shim;
+- no `krn guard`;
+- no audit/quality/anti-slop subsystem.
+
+success criteria:
+
+- `docs/architecture/cli-surfaces.md` records why `krn db` stays internal/dev;
+- plan/goal pointer moves to the next unchecked slice after completion;
+- CLI help and tests prove the current boundary is visible;
+- verification states what this does and does not prove.
+
 verification:
 
 ```sh
+pnpm --filter @krn/cli krn --help
+pnpm --filter @krn/cli krn db --help
 pnpm --filter @krn/cli test
 pnpm typecheck
 git diff --check
+```
+
+observed:
+
+- `krn --help` groups `krn db --help`, `krn db readiness`, and
+  `krn db smoke ...` under `Internal/dev commands`.
+- `krn db --help` says DB readiness and smoke commands prove local runtime
+  plumbing only and are not public operator workflow, product quality authority,
+  or Memory Brain readiness proof.
+- `pnpm --filter @krn/cli test` passed 23 test files and 146 tests, including
+  removed `krn audit` rejection and DB smoke/script coverage.
+- `pnpm typecheck` passed across the workspace.
+- `git diff --check` passed.
+- This docs decision did not run DB commands and does not prove DB runtime
+  readiness in the current shell.
+
+rollback:
+
+```sh
+git revert <COND-04 commit>
 ```
 
 commit:

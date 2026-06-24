@@ -1,7 +1,7 @@
 # KRN CLI Surfaces
 
 Status: current architecture classification and implemented help contract.
-Date: 2026-06-23
+Date: 2026-06-24
 
 This document classifies the existing CLI surface and the top-level help
 contract.
@@ -9,6 +9,12 @@ P1-03 update: public `krn audit` has been removed from the CLI. The old audit
 scanner mixed real Memory/Source/Evidence invariants with a wrong product-shaped
 surface; those invariants must be re-homed into their native mechanisms instead
 of preserved as an audit layer.
+
+COND-04 update: keep DB readiness and smoke commands under `krn db` for now,
+but keep them explicitly classified as internal/dev in top-level help, DB help,
+package scripts, and docs. Do not rename them to `krn dev ...` unless a future
+slice proves the current namespace creates real operator misuse that help and
+docs cannot prevent.
 
 Evidence:
 
@@ -20,6 +26,8 @@ Evidence:
   internal/dev.
 - `krn db --help` labels DB readiness/smoke commands as internal/dev runtime
   plumbing proof, not product workflow or quality authority.
+- `package.json` exposes `db:*` scripts as local verification shortcuts over
+  `krn db ...`; those scripts are operator/dev proof helpers, not product UX.
 
 ## Classification Rule
 
@@ -95,6 +103,31 @@ Boundary:
 
 - DB smokes prove command/runtime integration in the current shell only. They
   are not product workflow commands.
+- Keeping them under `krn db` does not make them public operator workflow.
+  Their authority comes from runtime proof in the current shell, not from the
+  namespace.
+
+COND-04 decision:
+
+source_id: `packages/cli/src/parseArgs.ts`,
+`packages/cli/src/parseDbArgs.ts`, `packages/cli/src/runCli.ts`,
+`packages/cli/src/runCli.test.ts`, `package.json`
+trust_tier: high live source.
+mechanism: the parser keeps `db` as a top-level command family, top-level help
+and DB help label it as internal/dev, tests reject the removed `audit` command,
+and package scripts wrap `krn db ...` for local smoke/readiness proof.
+KRN implication: the current namespace is acceptable because the code and help
+already make DB smokes internal/dev and because scripts rely on this stable
+operator verification path.
+decision: keep `krn db readiness` and `krn db smoke ...` as internal/dev
+top-level commands; do not add `krn dev`, do not silently rename commands, and
+do not replace the CLI commands with package scripts only.
+does_not_prove: DB readiness in the current shell, Memory Brain readiness, or
+that future DB smoke growth cannot make the namespace too broad.
+consumer: CLI help contract, package scripts, and `PLAN.md` COND-04.
+falsifier: users or tests start treating `krn db` commands as product workflow
+or quality authority, top-level help stops marking them internal/dev, or DB
+smoke growth creates a mixed dev namespace that cannot be explained by help.
 
 ## Removed
 
