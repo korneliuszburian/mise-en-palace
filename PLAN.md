@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Unsafe Cast Quarantine.
+current_priority: Public Type Boundary Audit.
 
-first_unchecked_slice: `TSQ-03: Unsafe Cast Quarantine`.
+first_unchecked_slice: `TSQ-04: Public Type Boundary Audit`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- quarantine unsafe type fixtures through the
+- audit public type boundaries through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while quarantining unsafe type fixtures;
+  authority layer while auditing public type boundaries;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -156,6 +156,9 @@ completed_checkpoint:
 - TSQ-02 classifies all current `JSON.parse` usage. Production CLI JSON reading
   already used `unknown` plus an object guard; test fixture/package reads now
   parse to `unknown` and use parser/local guards instead of direct casts.
+- TSQ-03 classifies unsafe cast and TypeScript suppression usage in `packages/`
+  as a zero-current-state: no `as any`, `as unknown as`, `@ts-ignore`, or
+  `@ts-expect-error` matches are present in package source.
 
 completed_evidence_pointers:
 
@@ -3038,7 +3041,8 @@ git revert <C6-02 commit>
 - [x] TSQ-00A Implement EvidenceCommand discriminated union.
 - [x] TSQ-01 Decide branded ID types ADR and pilot.
 - [x] TSQ-02 Classify JSON.parse boundaries.
-- [ ] TSQ-03 Quarantine unsafe casts and TS suppressions.
+- [x] TSQ-03 Quarantine unsafe casts and TS suppressions.
+- [ ] TSQ-04 Audit explicit public type boundaries.
 
 ## Surprises & Discoveries
 
@@ -3082,6 +3086,10 @@ git revert <C6-02 commit>
   `unknown` plus an object guard in `packages/cli/src/cliFileBoundary.ts`. The
   unsafe pattern was test-only fixture/package JSON reads that cast parsed
   values directly to partial shapes.
+- TSQ-03 found no current package-source matches for `as any`, `as unknown as`,
+  `@ts-ignore`, or `@ts-expect-error`. This is a stronger result than expected,
+  so the slice closes as a classification plus future falsifier instead of a
+  code repair.
 - P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
   Both paths now use the same typed source/memory record identity fields instead
   of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
@@ -3222,6 +3230,9 @@ git revert <C6-02 commit>
 - TSQ-02 found that `rg -n "JSON\\.parse" packages` also matches one string
   literal in a test objective. That line is not a parse boundary and remains
   classified as documentation text inside a fixture.
+- TSQ-03 used the package-source scan as the source of truth and did not add an
+  unsafe-type scanner, guardrail, or audit product. The falsifier is simple:
+  the package scan returns a real match.
 
 ## Decision Log
 
@@ -3373,6 +3384,9 @@ git revert <C6-02 commit>
 - 2026-06-24: TSQ-02 rejects global `ts-reset` for core/schema/public APIs.
   Adopt the useful TS Reset mechanism locally instead: parsed JSON is assigned
   to `unknown`, then narrowed by a parser or local guard at the boundary.
+- 2026-06-24: TSQ-03 closes unsafe cast quarantine as a zero-current-state.
+  There is no present package-source usage to quarantine; future occurrences
+  must be handled in the owning slice, not by adding an audit subsystem.
 
 ## Outcomes & Retrospective
 
@@ -3497,6 +3511,9 @@ Current outcome:
   harness golden fixture ID extraction uses local object/array guards, CLI
   package JSON checks use a local string-record guard, and production
   `readJsonObject` remains an `unknown` plus object-guard boundary.
+- TSQ-03 verified the package source currently contains no unsafe casts or
+  TypeScript suppressions matching the standard's hard-ban inventory. No source
+  repair was needed.
 
 ## Command Evidence
 
@@ -4665,6 +4682,31 @@ still compiles and tests, and the diff has no whitespace errors. It does not
 prove future JSON parse sites stay safe, runtime JSON payloads are semantically
 valid beyond the local guards/parsers, or fetch `.json()` boundaries exist.
 
+TSQ-03 verification after classifying unsafe casts and suppressions:
+
+```sh
+if rg -n "as any|as unknown as|@ts-ignore|@ts-expect-error" packages; then exit 1; else test $? -eq 1; fi
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+```txt
+unsafe cast/suppression package scan: no matches.
+workspace typecheck: passed.
+workspace test: core/schema/harness/workers/codex-adapter/db/cli passed.
+git diff --check: passed with no output.
+```
+
+This proves current package source has no matches for the hard-ban unsafe cast
+and TypeScript suppression inventory, and that the docs-only classification
+does not break workspace typecheck/tests or whitespace checks. It does not
+prove future package code cannot introduce unsafe casts, files outside
+`packages/` contain no suppressions, or every possible type assertion has been
+semantically audited.
+
 ## Historical Reset Completion Criteria
 
 The reset criteria below are retained as the completed P0-P7 ledger. They are
@@ -5667,10 +5709,29 @@ git commit -m "refactor(ts): harden json parse boundaries"
 
 priority: P2.
 
+status: complete.
+
 objective:
 
 Classify `as any`, `as unknown as`, `@ts-ignore`, and `@ts-expect-error` usage
 as accepted boundary tests, hostile runtime fixtures, or repair candidates.
+
+source_decision:
+
+source_id: live package inventory from
+`rg -n "as any|as unknown as|@ts-ignore|@ts-expect-error" packages`.
+trust_tier: high live source scan for current package files.
+mechanism: the scan finds no current package-source matches for unchecked
+`any`, double assertions, `@ts-ignore`, or `@ts-expect-error`.
+krn_implication: there is no current unsafe cast fixture to quarantine in this
+slice, and adding a new audit/guardrail layer would be scope drift.
+decision: close TSQ-03 as a zero-current-state classification and leave future
+unsafe occurrences to the owning implementation slice.
+does_not_prove: future code cannot introduce unsafe casts, files outside
+`packages/` have no suppressions, or every possible type weakening pattern has
+been found.
+consumer: TSQ-03 plan checkpoint and command evidence.
+falsifier: the package scan returns a real match.
 
 rules:
 
@@ -5679,19 +5740,79 @@ rules:
 - `@ts-expect-error` must explain the expected failure;
 - no `@ts-ignore` without a replacement plan.
 
+assumptions:
+
+- the TSQ-03 scope is package source, matching the TypeScript hard-ban
+  inventory in `docs/standards/typescript-excellence.md`;
+- no-match inventory means no code repair is required in this slice;
+- future unsafe casts should be fixed where they are introduced instead of
+  being routed through a new scanner subsystem.
+
+tradeoffs:
+
+- closing on a zero-current-state avoids speculative tooling, but relies on
+  the existing verification command being rerun when future slices touch TS;
+- scanning only the listed hard-ban patterns does not classify every possible
+  type assertion, which belongs to TSQ-04/TSQ-05 if it affects public contracts
+  or impossible states.
+
+simplest acceptable implementation:
+
+- record the no-match package inventory;
+- update `GOAL.md` / active snapshot to the next TypeScript quality slice;
+- do not change package code.
+
+files likely touched:
+
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- package source;
+- TypeScript config;
+- audit/scanner tooling;
+- unrelated docs.
+
+non-goals:
+
+- no new audit subsystem;
+- no broad search beyond the named hard-ban inventory;
+- no refactor of ordinary type assertions.
+
+classification:
+
+- accepted boundary tests: none currently found;
+- hostile runtime fixtures needing quarantine: none currently found;
+- repair candidates: none currently found;
+- production unsafe casts/suppressions: none currently found.
+
+success criteria:
+
+- package scan returns no hard-ban matches;
+- `PLAN.md` records zero-current-state and falsifier;
+- workspace typecheck/tests still pass;
+- active queue advances to TSQ-04.
+
 verification:
 
 ```sh
-rg -n "as any|as unknown as|@ts-ignore|@ts-expect-error" packages
+! rg -n "as any|as unknown as|@ts-ignore|@ts-expect-error" packages
 pnpm typecheck
 pnpm test
 git diff --check
 ```
 
+rollback:
+
+```sh
+git revert <TSQ-03 commit>
+```
+
 commit:
 
 ```sh
-git commit -m "test(ts): quarantine unsafe type fixtures"
+git commit -m "docs(ts): classify unsafe type fixtures"
 ```
 
 ### TSQ-04: Explicit Public Type Boundary Audit
