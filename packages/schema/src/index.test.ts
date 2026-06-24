@@ -585,6 +585,20 @@ describe("schema parse boundaries", () => {
 
     expect(preference.status).toBe("proposed");
     expect(preference.sourceLineage).toEqual([]);
+
+    expect(() =>
+      parseMemoryCandidateInput({
+        proposedBy: "operator",
+        kind: "preference",
+        status: "accepted",
+        summary: "Keep Polish plans Polish",
+        body: "Polish plans should keep prose Polish and commands in English.",
+        owner: "operator",
+        confidence: 90,
+        applicationGuidance: "Apply to Polish handoff and plan docs",
+        isUserPreference: true
+      })
+    ).toThrow();
   });
 
   test("memory governance inputs constrain review, application, feedback, and anti-memory", () => {

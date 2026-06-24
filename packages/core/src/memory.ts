@@ -32,13 +32,15 @@ export type MemoryRecordStatus =
   | "stale"
   | "invalidated"
   | "superseded";
-export type MemoryCandidateStatus =
-  | "proposed"
-  | "candidate"
+export type MemoryCandidateCreateStatus = "proposed" | "candidate";
+export type MemoryCandidateLifecycleStatus =
   | "accepted"
   | "rejected"
   | "applied"
   | "superseded";
+export type MemoryCandidateStatus =
+  | MemoryCandidateCreateStatus
+  | MemoryCandidateLifecycleStatus;
 export type AntiMemoryCandidateStatus = MemoryCandidateStatus;
 export type MemoryApplicationOutcome = "helped" | "hurt" | "neutral" | "stale";
 export type MemoryFeedbackDirection = "positive" | "negative" | "correction";

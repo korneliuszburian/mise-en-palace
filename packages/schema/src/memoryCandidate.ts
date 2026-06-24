@@ -24,6 +24,8 @@ export const MemoryCandidateStatusSchema = z.enum([
   "superseded"
 ]);
 
+export const MemoryCandidateCreateStatusSchema = z.enum(["proposed", "candidate"]);
+
 export const MemoryPromotionDecisionSchema = z.enum(["accepted", "rejected"]);
 
 export const MemoryApplicationOutcomeSchema = z.enum([
@@ -64,7 +66,7 @@ export const MemoryCandidateInputSchema = z
     feedbackDeltaId: OptionalTextSchema,
     proposedBy: RequiredTextSchema,
     kind: MemoryRecordKindSchema,
-    status: MemoryCandidateStatusSchema.default("proposed"),
+    status: MemoryCandidateCreateStatusSchema.default("proposed"),
     summary: RequiredTextSchema,
     body: RequiredTextSchema,
     owner: RequiredTextSchema,
@@ -186,7 +188,7 @@ export const AntiMemoryCandidateInputSchema = z
     feedbackDeltaId: OptionalTextSchema,
     proposedBy: RequiredTextSchema,
     key: RequiredTextSchema,
-    status: MemoryCandidateStatusSchema.default("candidate"),
+    status: MemoryCandidateCreateStatusSchema.default("candidate"),
     rejectedClaim: OptionalTextSchema,
     reason: OptionalTextSchema,
     invalidatedBySourceClaimId: OptionalTextSchema,

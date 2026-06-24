@@ -1,7 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 
 import {
   assessMemoryRecordReviewSignals,
+  type MemoryCandidateCreateStatus,
+  type MemoryCandidateLifecycleStatus,
   type MemoryRecord
 } from "./memory.js";
 
@@ -29,6 +31,13 @@ const memoryRecord = (overrides: Partial<MemoryRecord>): MemoryRecord => ({
 });
 
 describe("memory review signals", () => {
+  it("separates memory candidate create statuses from review lifecycle states", () => {
+    expectTypeOf<MemoryCandidateCreateStatus>().toEqualTypeOf<"proposed" | "candidate">();
+    expectTypeOf<MemoryCandidateLifecycleStatus>().toEqualTypeOf<
+      "accepted" | "rejected" | "applied" | "superseded"
+    >();
+  });
+
   it("requires review for unresolved negative feedback and high-confidence stale memory", () => {
     expect(assessMemoryRecordReviewSignals(memoryRecord({
       status: "stale",

@@ -7,6 +7,8 @@ import {
 import {
   normalizeFeedbackDelta,
   summarizeFeedbackCandidateProposals,
+  type FeedbackDeltaCreateStatus,
+  type FeedbackDeltaLifecycleStatus,
   type FeedbackDelta
 } from "./feedbackDelta.js";
 
@@ -60,6 +62,13 @@ const feedback = (overrides: Partial<FeedbackDelta>): FeedbackDelta => ({
 });
 
 describe("review and feedback normalization", () => {
+  test("separates feedback delta create status from later lifecycle states", () => {
+    expectTypeOf<FeedbackDeltaCreateStatus>().toEqualTypeOf<"candidate">();
+    expectTypeOf<FeedbackDeltaLifecycleStatus>().toEqualTypeOf<
+      "accepted" | "rejected" | "applied"
+    >();
+  });
+
   test("normalizes review outcome burden risk and correction labels", () => {
     expect(normalizeReviewAssessment(review({}))).toEqual({
       outcome: "changes_requested",

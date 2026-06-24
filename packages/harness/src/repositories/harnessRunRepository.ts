@@ -9,6 +9,7 @@ import type {
   ExecutionRunId,
   ExecutionRunStatus,
   FeedbackDelta,
+  FeedbackDeltaCreateStatus,
   HarnessPlan,
   OperatorIntent,
   ReviewAssessment,
@@ -74,7 +75,7 @@ export interface CreateReviewAssessmentInput extends RepositoryMetadata {
 
 export interface CreateFeedbackDeltaInput extends RepositoryMetadata {
   reviewAssessmentId: string;
-  status?: FeedbackDelta["status"];
+  status?: FeedbackDeltaCreateStatus;
   memoryCandidates: FeedbackDelta["memoryCandidates"];
   sourceDecisions: FeedbackDelta["sourceDecisions"];
   evalCandidates: FeedbackDelta["evalCandidates"];

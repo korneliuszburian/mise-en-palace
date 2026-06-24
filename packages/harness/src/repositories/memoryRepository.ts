@@ -6,6 +6,7 @@ import type {
   MemoryApplication,
   MemoryApplicationOutcome,
   MemoryCandidate,
+  MemoryCandidateCreateStatus,
   MemoryCandidateId,
   MemoryFeedbackDirection,
   MemoryFeedbackEvent,
@@ -47,7 +48,7 @@ export interface CreateMemoryCandidateInput extends RepositoryMetadata {
   feedbackDeltaId?: FeedbackDeltaId;
   proposedBy: string;
   kind: MemoryRecordKind;
-  status?: MemoryCandidate["status"];
+  status?: MemoryCandidateCreateStatus;
   summary: string;
   body: string;
   owner: string;
@@ -125,7 +126,7 @@ export interface CreateAntiMemoryCandidateInput extends RepositoryMetadata {
   feedbackDeltaId?: FeedbackDeltaId;
   proposedBy: string;
   key: string;
-  status?: AntiMemoryCandidate["status"];
+  status?: MemoryCandidateCreateStatus;
   rejectedClaim?: string;
   reason?: string;
   invalidatedBySourceClaimIds?: SourceClaimId[];

@@ -4,8 +4,11 @@ import { readFile } from "node:fs/promises";
 import type {
   CreateContextAssemblyInput,
   CreateContextAssemblyStatus,
+  CreateAntiMemoryCandidateInput,
   CreateEvidenceBundleInput,
-  CreateEvidenceBundleStatus
+  CreateEvidenceBundleStatus,
+  CreateFeedbackDeltaInput,
+  CreateMemoryCandidateInput
 } from "./index.js";
 
 const repositoryFile = (relativePath: string): string =>
@@ -35,5 +38,25 @@ describe("repository package surfaces", () => {
       .toEqualTypeOf<CreateContextAssemblyStatus | undefined>();
     expectTypeOf<Extract<CreateContextAssemblyInput["status"], "stale" | "superseded">>()
       .toEqualTypeOf<never>();
+  });
+
+  it("keeps post-create feedback delta lifecycle states out of create input", () => {
+    expectTypeOf<CreateFeedbackDeltaInput["status"]>()
+      .toEqualTypeOf<"candidate" | undefined>();
+    expectTypeOf<Extract<CreateFeedbackDeltaInput["status"], "accepted" | "rejected" | "applied">>()
+      .toEqualTypeOf<never>();
+  });
+
+  it("keeps post-review memory candidate lifecycle states out of create inputs", () => {
+    expectTypeOf<CreateMemoryCandidateInput["status"]>()
+      .toEqualTypeOf<"proposed" | "candidate" | undefined>();
+    expectTypeOf<CreateAntiMemoryCandidateInput["status"]>()
+      .toEqualTypeOf<"proposed" | "candidate" | undefined>();
+    expectTypeOf<
+      Extract<
+        CreateMemoryCandidateInput["status"] | CreateAntiMemoryCandidateInput["status"],
+        "accepted" | "rejected" | "applied" | "superseded"
+      >
+    >().toEqualTypeOf<never>();
   });
 });

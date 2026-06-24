@@ -17,7 +17,13 @@ import type {
   NormalizedReviewSignal
 } from "./reviewSignal.js";
 
-export type FeedbackDeltaStatus = "candidate" | "accepted" | "rejected" | "applied";
+export type FeedbackDeltaCreateStatus = "candidate";
+
+export type FeedbackDeltaLifecycleStatus = "accepted" | "rejected" | "applied";
+
+export type FeedbackDeltaStatus =
+  | FeedbackDeltaCreateStatus
+  | FeedbackDeltaLifecycleStatus;
 
 export interface FeedbackDelta {
   id: FeedbackDeltaId;
