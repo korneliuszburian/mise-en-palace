@@ -168,6 +168,9 @@ completed_checkpoint:
   has `status: "ready" | "blocked"` but one shape, so TypeScript permits
   blocked results with written candidates and ready results with
   `blockedReasons`.
+- DEV-DB-00 makes root `pnpm db:*` verification scripts use the local compose
+  database URL when `KRN_DATABASE_URL` is absent. Direct `krn db ...` CLI calls
+  remain strict; root verification commands now match the local dev runtime.
 
 completed_evidence_pointers:
 
@@ -6166,6 +6169,102 @@ commit:
 
 ```sh
 git commit -m "docs(ts): audit impossible lifecycle states"
+```
+
+### DEV-DB-00: Default Local DB URL For Root DB Scripts
+
+priority: P0.
+
+status: complete.
+
+objective:
+
+Make root DB verification scripts work against the repo-local compose Postgres
+without requiring every command to manually prefix
+`KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`.
+
+assumptions:
+
+- direct CLI commands should remain strict when `KRN_DATABASE_URL` is absent;
+- root `pnpm db:*` scripts are local operator conveniences and may default to
+  the compose database while still respecting an explicit `KRN_DATABASE_URL`;
+- the local `krn-postgres` container is the intended default DB runtime for
+  this workspace.
+
+tradeoffs:
+
+- duplicating the default URL in root DB scripts is less elegant than a helper
+  script, but it avoids adding a new abstraction or dependency for shell env
+  plumbing;
+- direct CLI strictness keeps DB runtime truth explicit for non-root usage.
+
+simplest acceptable implementation:
+
+- add `${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn}` defaults to
+  root DB readiness and smoke scripts only;
+- document that root scripts default locally while direct CLI remains strict.
+
+files touched:
+
+- `package.json`;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files explicitly not touched:
+
+- CLI command implementation;
+- DB schema or migrations;
+- readiness/smoke runtime code;
+- tests.
+
+non-goals:
+
+- no automatic Docker startup;
+- no global environment mutation;
+- no change to direct CLI missing-env behavior;
+- no DB schema or migration change.
+
+success criteria:
+
+- plain `pnpm db:ready` works from repo root when local compose Postgres is
+  running;
+- plain `pnpm db:smoke` works from repo root when local compose Postgres is
+  running;
+- direct CLI strictness remains documented.
+
+verification:
+
+```sh
+pnpm db:ready
+pnpm db:smoke
+git diff --check
+git status --short --branch
+```
+
+command evidence:
+
+- `pnpm db:ready`: passed with Postgres configured, reachable, 13/13 migrations
+  applied, pgvector available, and Brain store readiness ready. This proves the
+  root readiness script now reaches the local compose DB without manual env
+  prefix. It does not prove all DB smokes.
+- `pnpm db:smoke`: passed with workspace/project readback matched and cleanup
+  completed. This proves the root smoke script can write/read/cleanup using the
+  local default DB URL. It does not prove every specialized DB smoke.
+- `pnpm typecheck`: passed across workspace packages. This proves the script
+  and docs change did not break current TypeScript compilation. It does not
+  execute runtime DB flows beyond the DB commands above.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
+
+rollback:
+
+```sh
+git revert <DEV-DB-00 commit>
+```
+
+commit:
+
+```sh
+git commit -m "chore(db): default local verification scripts"
 ```
 
 ### TSQ-05A: Discriminate Reflection Candidate Writer Result

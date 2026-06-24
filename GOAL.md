@@ -176,6 +176,10 @@ pnpm --filter @krn/db db:check
 pnpm db:smoke
 ```
 
+Root `pnpm db:*` scripts use the local compose database URL by default when
+`KRN_DATABASE_URL` is absent. Direct `krn db ...` CLI calls remain strict and
+only prove DB runtime truth when the command passes in the current environment.
+
 For Promptfoo/eval slices, add:
 
 ```sh
