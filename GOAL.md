@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-CTX-00: Condense Completed Hardening Context
+TSQ-05B: Decide Memory Promotion Result State Shape
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while condensing completed hardening context.
+eval platform while deciding memory promotion result state shape.
 Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
 
 ## Required Read Order

@@ -26,154 +26,70 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Completed Hardening Context Condensation.
+current_priority: Memory Promotion Result State Decision.
 
-first_unchecked_slice: `CTX-00: Condense Completed Hardening Context`.
+first_unchecked_slice: `TSQ-05B: Decide Memory Promotion Result State Shape`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- condense completed hardening detail through the `slice_template_gate` before
-  any edits;
+- continue from the next lifecycle-model follow-up promoted by TSQ-05 after
+  CTX-00 context condensation;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while condensing completed hardening context;
+  authority layer while deciding memory promotion result state shape;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
 
-- P0-P7 reset baseline is complete.
-- P1-03 removed public `krn audit` CLI/harness audit scanner.
-- C6-00A re-homed memory review signals as pure core behavior.
-- EVI-00 added typed evidence command status/provenance semantics.
-- EVI-01 added explicit `--verification <command=status>` CLI evidence input.
-- EVI-02 normalizes evidence command provenance at the DB repository write
-  boundary without a schema migration.
-- EVI-03 adds a CLI integration regression proof for self-hosting
-  plan/evidence/observe/reflect provenance with no MemoryRecord mutation and no
-  automatic candidate rows.
-- EVI-04 updates the P7 run ledger with the provenance repair closure and
-  records that historical EvidenceBundle rows were left unchanged.
-- EVI-05 records remote status hygiene before long-running goals.
-- EVI-06 expands the P7 selected context from Postgres and records activation
-  relevance findings.
-- EVI-07 adds typed reflection candidate evidence, blocks high-confidence
-  memory candidates backed only by weak/default command evidence, and preserves
-  persisted reflection proposal arrays on DB readback.
-- EVI-08 proves a reviewed, source-grounded MemoryCandidate can pass
-  MemoryReviewGate into MemoryRecord and influence a later activation, while
-  missing or weak candidate evidence is rejected before promotion.
-- EVI-09 adds typed `GoldenBehaviorProof` provenance so Promptfoo integration
-  smoke rows cannot pass as GoldenTask behavior proof. GoldenTask behavior
-  proof requires `krn_behavior_execution`.
-- EVI-10 makes evidence capture operator output and help text explicit about
-  `--verification`, weak default-template rows, persisted IDs, and the absence
-  of hidden command execution.
-- C0-01 proves self-hosting write-authority context relevance: the store lacked
-  direct Memory Core write-authority memory, so a reviewed MemoryCandidate was
-  added and promoted through MemoryReviewGate; a live persisted plan then
-  selected `memory_record:f950b8b4-5392-4084-9f98-93881fbe961a` first for
-  `seal Memory Core write authority`.
-- C1-00 implements the CLI taxonomy in help behavior: `krn --help` groups
-  public operator, governed admin, and internal/dev commands; `krn db --help`
-  labels DB readiness/smokes as internal runtime plumbing proof, not product
-  workflow or quality authority.
-- C1-01 narrows DB and CLI root package surfaces: `@krn/db` root exports only
-  database connection helpers, DB smokes/readiness move to `@krn/db/dev`,
-  concrete Drizzle adapters move to `@krn/db/adapters`, schema access moves to
-  `@krn/db/schema`, and `@krn/cli` root exports only `runCli`, `CliRuntime`,
-  and `CliResult`.
-- C1-02 separates harness root from eval/internal surfaces: `@krn/harness`
-  root no longer exports Promptfoo adapter helpers or repository ports,
-  Promptfoo helpers move to `@krn/harness/eval`, and repository ports move to
-  `@krn/harness/repositories`.
-- C1-03 splits repository surfaces: `@krn/harness/repositories` is now a
-  curated public repository surface without raw Memory Core write ports, while
-  `@krn/harness/repositories/internal` keeps full adapter/persistence plumbing
-  for DB adapters and runtime internals.
-- C2-00 adds reviewed anti-memory candidate storage: reflection candidate
-  writer persists anti-memory candidates, CLI `memory anti add` writes
-  candidates instead of final records, `memory anti promote/reject` goes through
-  AntiMemoryReviewGate, and the memory-governance DB smoke proves
-  candidate-to-record promotion on live Postgres.
-- C3-00 expands the real GoldenTask behavior gate from three to six KRN
-  behavior proofs: stale memory abstention, anti-memory block, raw recall exact
-  proof, observation prefix source-range rejection, evidence command provenance,
-  and reflection final-truth rejection. Promptfoo smoke remains integration
-  proof only.
-- C4-00 adds ADR-0015 and defers worker daemon/job executor runtime. Current
-  worker truth remains typed contracts, enqueue ports, Postgres lifecycle
-  repository/smoke proof, and explicit future write-authority limits.
-- C5-00 stages P7 self-hosting feedback as governed rows in live Postgres:
-  three proposed SourceClaims, three proposed MemoryCandidates, and one
-  AntiMemoryCandidate. It creates no MemoryRecord or AntiMemoryRecord. It also
-  records that standalone EvalCandidate add/persist is missing and belongs to
-  C5-01.
-- C5-01 accepts ADR-0016: `EvalCandidate` remains proposal-only through
-  `feedback_deltas.eval_candidates` and `reflection_records.output.evalCandidates`
-  until a real standalone consumer/review path exists. No eval table, CLI,
-  worker runtime, Promptfoo authority layer, or dashboard was added.
-- C5-02 removes the speculative current `promote_eval_candidate` worker job
-  contract and `eval_candidates` allowed write. Eval candidate worker work is
-  absent until ADR-0016 preconditions are met.
-- C6-00 re-homes retained source-grounding audit invariants into pure
-  `packages/core/src/source.ts` review signals and makes DB source repository
-  governance use the core decision-grade support-type helper. EvidenceBundle
-  already had native completeness, rollback, and review-risk assessments.
-- C6-01 accepts ADR-0017 and removes active `AuditBundle`
-  domain/schema/repository contracts.
-- C6-02 accepts ADR-0018 and drops empty legacy `audit_bundles` /
-  `audit_findings` tables plus related enum types with migration
-  `0012_condemned_wolf_cub.sql` after local DB row counts proved zero retained
-  legacy audit rows.
-- EXEC-00 adds an active Executor Discipline gate to this plan: before coding,
-  each slice records assumptions, ambiguity/tradeoff, simplest acceptable
-  implementation, touched/untouched files, non-goals, success criteria,
-  verification, and rollback. This is slice behavior, not a quality subsystem.
-- EXEC-01 adds a slice template gate for future and promoted backlog items.
-  Existing appendix backlog items are sketches until promoted; promotion must
-  add the template fields and keep completed detail compressed. COND-00 through
-  COND-02 are already covered by C1-01/C1-02/C1-03.
-- COND-03 decides the remaining core/schema/codex-adapter/workers package
-  barrels as current stable contract surfaces and records falsifiers instead
-  of deleting wildcard exports by aesthetics.
-- COND-04 keeps `krn db readiness` and `krn db smoke ...` as internal/dev
-  top-level commands rather than renaming them to `krn dev ...` or replacing
-  them with scripts only. The live help contract and tests already mark them
-  as runtime plumbing proof, not product workflow or quality authority.
-- TSQ-00 accepts ADR-0019: `EvidenceCommand` should become a discriminated
-  normalized proof-state model. The implementation is intentionally separated
-  into TSQ-00A so compatibility mapping can be tested across core/schema/CLI/DB.
-- TSQ-00A implements ADR-0019: normalized evidence command rows now carry a
-  discriminated `kind`, weak default-template rows cannot remain final
-  `passed`/`failed` proof, schema/CLI/DB preserve legacy compatibility, and no
-  DB migration was needed.
-- TSQ-01 accepts ADR-0020 and pilots soft branded IDs for `ExecutionRunId`,
-  `MemoryRecordId`, `MemoryCandidateId`, and `SourceClaimId`; raw string IO
-  remains compatible while typed cross-ID assignment is blocked by
-  `packages/core/src/ids.typecheck.ts`.
-- TSQ-02 classifies all current `JSON.parse` usage. Production CLI JSON reading
-  already used `unknown` plus an object guard; test fixture/package reads now
-  parse to `unknown` and use parser/local guards instead of direct casts.
-- TSQ-03 classifies unsafe cast and TypeScript suppression usage in `packages/`
-  as a zero-current-state: no `as any`, `as unknown as`, `@ts-ignore`, or
-  `@ts-expect-error` matches are present in package source.
-- TSQ-04 names the remaining public-ish anonymous return boundaries found by
-  AST inventory: DB `mapHarnessPlan` now returns `HarnessPlan`, and CLI
-  `parseArgHelpers` exposes `OptionValueResult` / `MetadataEntryResult`.
-- TSQ-05 audits impossible-state candidates and promotes TSQ-05A as the next
-  implementation slice. Highest-risk finding: `WriteReflectionCandidatesResult`
-  has `status: "ready" | "blocked"` but one shape, so TypeScript permits
-  blocked results with written candidates and ready results with
-  `blockedReasons`.
-- DEV-DB-00 makes root `pnpm db:*` verification scripts use the local compose
-  database URL when `KRN_DATABASE_URL` is absent. Direct `krn db ...` CLI calls
-  remain strict; root verification commands now match the local dev runtime.
-- TSQ-05A discriminates `WriteReflectionCandidatesResult`: blocked results now
-  carry non-empty `blockedReasons` and no candidate arrays, while ready results
-  carry candidate arrays and no `blockedReasons`. Focused harness tests prove
-  blocked writer paths do not write candidates.
+- Reset baseline: P0-P7 are complete, root `GOAL.md` / `PLAN.md` are canonical,
+  old memory-plan docs are historical quarry, and the first governed
+  self-hosting loop is recorded.
+- Audit/anti-slop cleanup: public `krn audit` CLI/harness scanner is removed,
+  legacy `AuditBundle` contracts/tables are gone after zero-row DB proof, and
+  retained invariants moved into native Memory/Source/Evidence mechanisms.
+- Evidence integrity: command provenance, explicit `--verification`, DB
+  provenance normalization, self-hosting provenance regression, operator output
+  clarity, and P7 ledger closure are complete.
+- Memory/governance spine: reviewed memory and anti-memory candidate paths,
+  self-hosting write-authority activation proof, GoldenTask behavior proofs,
+  proposal-only eval candidates, and deferred worker runtime are recorded.
+- Surface condensation: CLI taxonomy, DB/CLI/harness/repository export
+  narrowing, remaining barrel decisions, and local-default root DB scripts are
+  complete.
+- TypeScript hardening: evidence proof states, branded ID pilot, JSON boundary
+  classification, unsafe-cast zero-state, named public return types, lifecycle
+  audit, and discriminated reflection candidate writer result are complete.
+- Execution hygiene: executor discipline, slice template gate, commit/push/clean
+  worktree requirement, and recurring context-condensation rule are active.
+
+active_handoff:
+
+- objective: continue continuous hardening from the next bounded lifecycle
+  model slice, not from historical reset/audit detail;
+- last verified state: CTX-00 docs-only condensation passed `git diff --check`
+  and `pnpm typecheck`; previous pushed code slice is `6447a08
+  refactor(reflection): discriminate candidate writer result`;
+- decisions: do not create a new plan file, do not delete evidence, and keep
+  `GOAL.md` compact while `PLAN.md` remains the living queue;
+- blockers/risks: full command transcript remains long by design; do not claim
+  broad Memory Brain readiness from green tests or smokes;
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05 /
+  TSQ-05A sections, and only the source files named by the next slice;
+- next action: execute `TSQ-05B: Decide Memory Promotion Result State Shape`;
+- do not reread: `docs/materials/`, old memory ideal-state plans, or completed
+  task bodies unless the active slice names them.
+
+open_risks_and_next_candidates:
+
+- `Memory promotion result` is now the next lifecycle candidate because TSQ-05
+  explicitly deferred it behind the reflection writer result.
+- `EvidenceBundle.status` remains deferred unless status starts governing
+  persistence/review workflow fields.
+- Activation decision shapes remain deferred until live misuse appears.
+- EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
+  Promptfoo authority exists.
 
 completed_evidence_pointers:
 
@@ -3060,7 +2976,8 @@ git revert <C6-02 commit>
 - [x] TSQ-04 Audit explicit public type boundaries.
 - [x] TSQ-05 Audit impossible core lifecycle states.
 - [x] TSQ-05A Discriminate reflection candidate writer result.
-- [ ] CTX-00 Condense completed hardening context.
+- [x] CTX-00 Condense completed hardening context.
+- [ ] TSQ-05B Decide memory promotion result state shape.
 
 ## Surprises & Discoveries
 
@@ -6405,6 +6322,8 @@ git commit -m "refactor(reflection): discriminate candidate writer result"
 
 priority: P1.
 
+status: complete.
+
 objective:
 
 Reduce active-plan context after the completed TSQ/EVI/COND hardening run so
@@ -6465,6 +6384,17 @@ success criteria:
 - historical evidence pointers remain available;
 - docs-only verification passes.
 
+outcome:
+
+- Active Queue Snapshot now uses compact checkpoint categories instead of
+  carrying every completed hardening task as first-read context;
+- active handoff fields preserve current objective, last verified state,
+  decisions, risks, context selectors, next action, and do-not-reread guidance;
+- historical ledger sections, command evidence, run ledgers, and ADR pointers
+  remain in `PLAN.md` / referenced docs;
+- next unchecked slice is promoted to `TSQ-05B: Decide Memory Promotion Result
+  State Shape`.
+
 verification:
 
 ```sh
@@ -6472,6 +6402,16 @@ git status --short --branch
 git diff --check
 pnpm typecheck
 ```
+
+command evidence:
+
+- pre-slice `git status --short --branch`: clean at `## main...origin/main`;
+  verification status after edits showed only `GOAL.md` and `PLAN.md` modified.
+  This proves CTX-00 started clean and stayed docs-only.
+- `git diff --check`: passed. This proves the docs diff has no whitespace
+  errors.
+- `pnpm typecheck`: passed across workspace packages. This proves the docs-only
+  condensation did not break current TypeScript compilation.
 
 rollback:
 
@@ -6483,4 +6423,97 @@ commit:
 
 ```sh
 git commit -m "docs(plan): condense completed hardening context"
+```
+
+### TSQ-05B: Decide Memory Promotion Result State Shape
+
+priority: P2.
+
+objective:
+
+Inspect memory and anti-memory promotion result models after TSQ-05A and decide
+whether they need discriminated unions, narrower value objects, or no change.
+
+source:
+
+TSQ-05 decision table. `Memory promotion result` was deferred behind reflection
+candidate writer result; TSQ-05A is now complete.
+
+assumptions:
+
+- current MemoryReviewGate and AntiMemoryReviewGate runtime checks may already
+  prevent invalid promotion behavior;
+- this slice should decide from live source and tests before changing types;
+- no raw MemoryRecord write path should be exposed while inspecting promotion
+  result shapes.
+
+tradeoffs:
+
+- implementing immediately could overfit a medium-risk finding;
+- a decision slice first keeps the next code change small and reviewable if a
+  real impossible state remains.
+
+simplest acceptable implementation:
+
+- inspect memory/anti-memory review gate result types, candidate status checks,
+  repository ports, and tests;
+- produce a small decision table;
+- promote one implementation slice only if live source proves a type-level
+  impossible state still exists.
+
+rules:
+
+- do not create worker runtime, eval platform, dashboard, or audit scanner;
+- do not loosen Memory Core write authority;
+- do not change DB schema or migrations in the decision slice;
+- do not rewrite every lifecycle model.
+
+likely files:
+
+- `packages/harness/src/memory/memoryReviewGate.ts`;
+- `packages/harness/src/memory/antiMemoryReviewGate.ts`;
+- `packages/harness/src/repositories/memoryRepository.ts`;
+- relevant memory review gate tests;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- CLI command behavior;
+- worker runtime behavior;
+- Promptfoo/eval surfaces.
+
+non-goals:
+
+- no MemoryRecord mutation path changes;
+- no new public repository write ports;
+- no broad memory model rewrite.
+
+success criteria:
+
+- decision table states whether promotion result shape is already safe,
+  should become a discriminated union, or needs a narrower candidate-status
+  value object;
+- active queue advances to a bounded follow-up or records no-op with evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- memoryReviewGate antiMemoryReviewGate
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-05B commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide memory promotion result shape"
 ```
