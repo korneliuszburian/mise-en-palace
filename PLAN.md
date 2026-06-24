@@ -26,9 +26,9 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Active Plan Condensation After Lifecycle Boundary Hardening.
+current_priority: Historical Ledger Archival Boundary Decision.
 
-first_unchecked_slice: `CTX-04: Condense Completed Lifecycle Boundary Context`.
+first_unchecked_slice: `CTX-05: Decide Historical Ledger Archival Boundary`.
 
 active_scope:
 
@@ -38,7 +38,7 @@ active_scope:
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while condensing completed lifecycle hardening context;
+  authority layer while deciding how to shrink historical plan context;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -90,6 +90,8 @@ completed_checkpoint:
   lab_test` is the decision captured at creation, but narrows `SourceClaim`
   create status to `proposed`; `accepted | rejected | deprecated` are
   reviewed/read-model lifecycle states.
+- CTX-04 condenses TSQ-10/11/12 detailed sections into compact checkpoints with
+  commit ids, decisions, evidence, and rollback commands.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -97,23 +99,23 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded slice, not
   from historical reset/audit detail;
-- last verified state: TSQ-12 passed focused core/schema/harness/db/CLI checks
-  before full workspace verification; final command evidence is recorded in
-  the TSQ-12 section;
+- last verified state: CTX-04 passed docs-only status and diff hygiene;
+  TSQ-12 remains the last package-source implementation slice;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-04
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-05
   section, and only the source files named by the next slice;
-- next action: execute `CTX-04: Condense Completed Lifecycle Boundary Context`;
+- next action: execute `CTX-05: Decide Historical Ledger Archival Boundary`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- active `PLAN.md` now carries many completed TSQ lifecycle sections; condense
-  completed detail into checkpoint evidence before starting another code slice.
+- root `PLAN.md` still carries thousands of lines of completed historical task
+  bodies; decide whether to archive old ledger detail into a separate historical
+  artifact while keeping root `PLAN.md` as the small living queue.
 
 completed_evidence_pointers:
 
@@ -3017,7 +3019,8 @@ git revert <C6-02 commit>
 - [x] TSQ-10 Decide ContextAssembly create status boundary.
 - [x] TSQ-11 Decide ReviewAssessment and FeedbackDelta create status boundaries.
 - [x] TSQ-12 Decide SourceClaim and SourceDecision create status boundaries.
-- [ ] CTX-04 Condense completed lifecycle boundary context.
+- [x] CTX-04 Condense completed lifecycle boundary context.
+- [ ] CTX-05 Decide historical ledger archival boundary.
 
 ## Surprises & Discoveries
 
@@ -7935,571 +7938,186 @@ status: complete.
 
 outcome:
 
-- TSQ-07, TSQ-08, and TSQ-09 detailed sections were reduced to compact
-  ledger checkpoints with commit ids, decisions, falsifiers, verification, and
-  rollback commands;
-- detailed proof remains recoverable from commit history:
-  `5c257a1`, `816312c`, and `2f84e50`;
-- active snapshot now points at TSQ-10 instead of completed lifecycle
-  boundary slices;
-- no package source, DB schema, worker runtime, eval surface, dashboard, or
-  audit/anti-slop layer was changed in this condensation slice.
-
-selection_notes:
-
-- `CreateContextAssemblyInput.status?: ContextAssembly["status"]` remains the
-  next concrete lifecycle boundary candidate because `ContextAssemblyStatus`
-  includes `assembled | abstained | stale | superseded`;
-- `assembled` and `abstained` appear to be current create/write statuses, while
-  `stale` and `superseded` may belong to read-model or historical lifecycle
-  state;
-- TSQ-10 must inspect live source before narrowing.
+- TSQ-07, TSQ-08, and TSQ-09 detailed sections were reduced to compact ledger checkpoints with commit ids, decisions, falsifiers, verification, and rollback commands.
+- Detailed proof remains recoverable from commit history: `5c257a1`, `816312c`, and `2f84e50`.
+- Active snapshot advanced to TSQ-10 after completed lifecycle boundary slices.
+- No package source, DB schema, worker runtime, eval surface, dashboard, or audit/anti-slop layer was changed in this condensation slice.
 
 command_evidence:
 
-- `git status --short --branch`: worktree contained only `GOAL.md` and
-  `PLAN.md` changes for this docs-only slice.
+- `git status --short --branch`: worktree contained only `GOAL.md` and `PLAN.md` changes for this docs-only slice.
 - `git diff --check`: passed.
 
-### TSQ-10: Decide ContextAssembly Create Status Boundary
+### TSQ-10: ContextAssembly Create Status Boundary Checkpoint
 
-priority: P2.
+status: compacted-complete.
+commit: `6d3794b refactor(context): narrow assembly create status input`.
 
-objective:
+decision:
 
-Inspect context assembly create/write status authority. Decide whether
-`CreateContextAssemblyInput.status` should be narrower than
-`ContextAssembly["status"]`, because create should likely accept only current
-assembly outcomes instead of read-model lifecycle states like `stale` or
-`superseded`.
+- `ContextAssemblyCurrentStatus = "assembled" | "abstained"` is the current create/write vocabulary.
+- `ContextAssemblyStatus` remains broad for persisted/read-model lifecycle rows including `stale | superseded`.
+- `CreateContextAssemblyInput.status` now accepts only current statuses.
 
-source:
+evidence:
 
-CTX-03 live-source scan found
-`packages/harness/src/repositories/harnessRunRepository.ts` using
-`status?: ContextAssembly["status"]` and
-`packages/core/src/contextAssembly.ts` defining
-`ContextAssemblyStatus = "assembled" | "abstained" | "stale" | "superseded"`.
+- focused core/harness/db checks passed in the TSQ-10 commit;
+- workspace `pnpm typecheck`, `pnpm test`, and `git diff --check` passed in the TSQ-10 commit.
 
-assumptions:
+does_not_prove:
 
-- persisted/read-model context assembly status may remain broad;
-- create input likely needs only `assembled | abstained`;
-- stale/superseded may require a separate update/supersede path if ever used.
-
-tradeoffs:
-
-- broad create input preserves compatibility but can encode historical lifecycle
-  states as newly created assemblies;
-- narrowing create input should not require DB migration if persisted status
-  remains broad.
-
-simplest acceptable implementation:
-
-- inspect `packages/harness/src/repositories/harnessRunRepository.ts`,
-  `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`,
-  `packages/core/src/contextAssembly.ts`, and focused harness/db tests;
-- decide whether create status should be `assembled | abstained`;
-- implement a narrow exported input status type and type-level/runtime tests if
-  live source confirms the broad write gap.
-
-rules:
-
-- do not change activation selection/ranking behavior;
-- do not change DB schema/migrations;
-- do not create lifecycle engine/update APIs;
-- do not fold unrelated status boundaries into this slice.
-
-likely files:
-
-- `packages/harness/src/repositories/harnessRunRepository.ts`;
-- `packages/harness/src/repositories/index.ts`;
-- focused repository tests;
-- `GOAL.md`;
-- `PLAN.md`.
-
-files forbidden to touch:
-
-- DB schema/migrations;
-- activation ranking/filtering algorithms;
-- Promptfoo/eval surfaces;
-- old raw materials.
-
-non-goals:
-
-- no DB migration;
-- no activation rewrite;
-- no dashboard/eval platform;
-- no audit scanner revival.
-
-success criteria:
-
-- decision table states which context assembly statuses are create input,
-  read-model/historical only, or require a separate update path;
-- implementation exists if `CreateContextAssemblyInput` can currently encode an
-  impossible create state;
-- active queue advances to the next bounded slice or records no-op with
-  evidence;
-- typecheck passes.
-
-verification:
-
-```sh
-pnpm --filter @krn/harness test -- repositories
-pnpm --filter @krn/db test -- DrizzleHarnessRunRepository mappers
-pnpm typecheck
-git diff --check
-```
-
-rollback:
-
-```sh
-git revert <TSQ-10 commit>
-```
-
-commit:
-
-```sh
-git commit -m "refactor(context): narrow assembly create status input"
-```
-
-status: complete.
-
-source_decisions:
-
-1. source: `packages/core/src/contextAssembly.ts`
-   mechanism: `ContextAssemblyStatus` mixed current assembly outcomes with
-   historical/read-model lifecycle states.
-   KRN implication: downstream write APIs could not distinguish what can be
-   newly assembled from what can only describe an older/superseded context.
-   decision: add `ContextAssemblyCurrentStatus = "assembled" | "abstained"` and
-   keep `ContextAssemblyStatus` broad as current plus historical states.
-   falsifier: current context assembly output needs `stale` or `superseded`.
-
-2. source: `packages/harness/src/activation/assembleContext.ts`
-   mechanism: runtime assembly already computes only `assembled` or
-   `abstained`, but returned the broad `ContextAssembly` type.
-   KRN implication: callers had to carry broad lifecycle states even when the
-   source function had normalized current outcomes.
-   decision: return `AssembledContextAssembly` with `ContextAssemblyCurrentStatus`.
-   falsifier: `assembleContext` must produce historical lifecycle states.
-
-3. source: `packages/harness/src/repositories/harnessRunRepository.ts`
-   mechanism: `CreateContextAssemblyInput.status` previously referenced
-   `ContextAssembly["status"]`.
-   KRN implication: create/write boundary could compile with `stale` or
-   `superseded`.
-   decision: add `CreateContextAssemblyStatus = ContextAssemblyCurrentStatus`
-   and use it for create input.
-   falsifier: `CreateContextAssemblyInput["status"]` accepts
-   `stale | superseded`.
-
-decision_table:
-
-| status | current assembly output | create/write input | read-model/historical | rule |
-| --- | --- | --- | --- | --- |
-| `assembled` | yes | yes | yes | normal selected context result. |
-| `abstained` | yes | yes | yes | current no-context result. |
-| `stale` | no | no | yes | lifecycle/read-model state, not create. |
-| `superseded` | no | no | yes | lifecycle/read-model state, not create. |
-
-implementation:
-
-- added `contextAssemblyCurrentStatuses` and `ContextAssemblyCurrentStatus` in
-  core;
-- changed `ActivationResult.status` to use `ContextAssemblyCurrentStatus`;
-- changed `assembleContext` to return `AssembledContextAssembly`;
-- changed `CreateContextAssemblyInput.status` to `CreateContextAssemblyStatus`;
-- added type/runtime coverage for current context assembly statuses and create
-  input exclusion of `stale | superseded`;
-- did not change DB schema, DB mapper, activation ranking, or context selection
-  behavior.
-
-command_evidence:
-
-```sh
-pnpm --filter @krn/core test -- contextAssembly
-pnpm --filter @krn/core typecheck
-pnpm --filter @krn/harness typecheck
-pnpm --filter @krn/db typecheck
-pnpm --filter @krn/harness test -- repositories activation
-pnpm --filter @krn/db test -- DrizzleHarnessRunRepository mappers
-pnpm typecheck
-pnpm test
-git diff --check
-```
-
-what_this_proves:
-
-- current assembly status is normalized in core, not hidden by a cast;
-- `assembleContext` and create/write input use current status vocabulary;
-- existing focused and workspace checks pass with the narrowed boundary.
-
-what_this_does_not_prove:
-
-- DB runtime readiness; no live DB command was run for this slice;
+- DB runtime readiness;
 - activation ranking quality;
 - broader Memory Brain readiness.
 
-### TSQ-11: Decide ReviewAssessment And FeedbackDelta Create Status Boundaries
-
-priority: P2.
-
-objective:
-
-Inspect review and feedback create/write status authority. Decide whether
-`CreateReviewAssessmentInput.status` and `CreateFeedbackDeltaInput.status`
-should be narrower than their broad persisted/read-model status types.
-
-source:
-
-TSQ-10 live-source scan found
-`packages/harness/src/repositories/harnessRunRepository.ts` still using
-`status?: ReviewAssessment["status"]` and
-`status?: FeedbackDelta["status"]` at create/write boundaries.
-
-assumptions:
-
-- persisted/read-model statuses may remain broad;
-- review creation likely needs `pending | accepted | changes_requested | rejected`
-  only if it is truly recording review outcome at creation;
-- feedback delta creation likely needs proposal/current statuses only, not
-  applied lifecycle state unless a governed apply path exists.
-
-tradeoffs:
-
-- narrowing too aggressively could fight current CLI review assessment flows;
-- leaving statuses broad can encode post-review/application states as initial
-  creation authority.
-
-simplest acceptable implementation:
-
-- inspect `packages/harness/src/repositories/harnessRunRepository.ts`,
-  `packages/core/src/reviewAssessment.ts`,
-  `packages/core/src/feedbackDelta.ts`,
-  `packages/cli/src/runReviewAssessCommand.ts`,
-  `packages/db/src/repositories/DrizzleHarnessRunRepository.ts`, and focused
-  tests;
-- decide whether one or both create inputs need named status subsets;
-- implement only the proven boundary changes and type tests.
-
-rules:
-
-- do not change review outcome semantics without source evidence;
-- do not change DB schema/migrations;
-- do not create lifecycle engine/update APIs;
-- do not fold memory/source candidate status work into this slice.
-
-likely files:
-
-- `packages/harness/src/repositories/harnessRunRepository.ts`;
-- `packages/harness/src/repositories/index.ts`;
-- focused repository/CLI tests;
-- `GOAL.md`;
-- `PLAN.md`.
-
-files forbidden to touch:
-
-- DB schema/migrations;
-- memory/source candidate promotion paths;
-- Promptfoo/eval surfaces;
-- old raw materials.
-
-non-goals:
-
-- no DB migration;
-- no review engine rewrite;
-- no dashboard/eval platform;
-- no audit scanner revival.
-
-success criteria:
-
-- decision table states which review/feedback statuses are create input,
-  read-model/historical only, or require separate update/apply paths;
-- implementation exists for every proven broad create/write gap;
-- active queue advances to the next bounded slice or records no-op with
-  evidence;
-- typecheck passes.
-
-verification:
+rollback:
 
 ```sh
-pnpm --filter @krn/harness test -- repositories
-pnpm --filter @krn/cli test -- runReviewAssessCommand
-pnpm --filter @krn/db test -- DrizzleHarnessRunRepository mappers
-pnpm typecheck
-git diff --check
+git revert 6d3794b
 ```
+
+### TSQ-11: Review And Feedback Create Status Boundary Checkpoint
+
+status: compacted-complete.
+commit: `ed5fda9 refactor(review): narrow create lifecycle statuses`.
+
+decision:
+
+- `ReviewAssessment` create status remains broad because `review assess --status` records the current review outcome at creation.
+- `FeedbackDeltaCreateStatus = "candidate"`; `accepted | rejected | applied` are later lifecycle states.
+- `MemoryCandidateCreateStatus = "proposed" | "candidate"`; `accepted | rejected | applied | superseded` are review/promotion lifecycle states.
+- `CreateFeedbackDeltaInput`, `CreateMemoryCandidateInput`, and `CreateAntiMemoryCandidateInput` now use create-only status types.
+- Memory candidate schemas reject lifecycle statuses at parse time.
+
+evidence:
+
+- focused core/schema/harness/db/CLI checks passed in the TSQ-11 commit;
+- package typechecks passed through `rtk proxy pnpm --filter ... typecheck`;
+- workspace `rtk proxy pnpm test` and `git diff --check` passed.
+
+does_not_prove:
+
+- DB runtime readiness;
+- SourceClaim/SourceDecision create-status semantics.
 
 rollback:
 
 ```sh
-git revert <TSQ-11 commit>
+git revert ed5fda9
 ```
 
-commit:
+### TSQ-12: Source Claim And Decision Create Status Boundary Checkpoint
 
-```sh
-git commit -m "refactor(review): narrow create lifecycle statuses"
-```
+status: compacted-complete.
+commit: `67c1249 refactor(source): narrow claim create status`.
 
-outcome:
+decision:
 
-- `CreateReviewAssessmentInput.status` intentionally remains broad. Live CLI
-  evidence shows `krn review assess --status` creates the current review
-  outcome, so `pending | accepted | changes_requested | rejected` are valid
-  creation outcomes rather than later-only lifecycle states.
-- `FeedbackDeltaCreateStatus = "candidate"` and
-  `FeedbackDeltaLifecycleStatus = "accepted" | "rejected" | "applied"` now
-  separate initial feedback delta creation from later review/application states.
-- `CreateFeedbackDeltaInput.status` now accepts only
-  `FeedbackDeltaCreateStatus`.
-- `MemoryCandidateCreateStatus = "proposed" | "candidate"` and
-  `MemoryCandidateLifecycleStatus =
-  "accepted" | "rejected" | "applied" | "superseded"` now separate candidate
-  creation from review/promotion lifecycle states.
-- `CreateMemoryCandidateInput.status` and
-  `CreateAntiMemoryCandidateInput.status` now accept only
-  `MemoryCandidateCreateStatus`.
-- `MemoryCandidateInputSchema` and `AntiMemoryCandidateInputSchema` now reject
-  review lifecycle statuses at parse time.
-- DB schema/mappers were unchanged.
+- `SourceClaimCreateStatus = "proposed"`; `accepted | rejected | deprecated` are reviewed/read-model lifecycle states.
+- `CreateSourceClaimInput.status` now accepts only `SourceClaimCreateStatus`.
+- `SourceClaimInputSchema` rejects reviewed/deprecated lifecycle statuses at parse time.
+- SourceClaim override fixtures were normalized from memory-style `status: "candidate"` to `status: "proposed"`.
+- `SourceDecisionStatus` remains unchanged because `adopt | reject | defer | lab_test` is the decision captured at creation, not a later lifecycle state.
 
-command evidence:
+evidence:
 
-```sh
-pnpm --filter @krn/core test -- reviewFeedback
-pnpm --filter @krn/core typecheck
-pnpm --filter @krn/harness typecheck
-pnpm --filter @krn/cli test -- runReviewAssessCommand
-pnpm --filter @krn/harness test -- repositories
-pnpm --filter @krn/db test -- DrizzleHarnessRunRepository mappers
-pnpm --filter @krn/core test -- memory reviewFeedback
-pnpm --filter @krn/schema test -- index
-rtk proxy pnpm --filter @krn/core typecheck
-rtk proxy pnpm --filter @krn/schema typecheck
-rtk proxy pnpm --filter @krn/harness typecheck
-rtk proxy pnpm --filter @krn/cli typecheck
-rtk proxy pnpm --filter @krn/db typecheck
-rtk proxy pnpm test
-git diff --check
-```
+- focused core/schema/harness/db checks passed in the TSQ-12 commit;
+- package typechecks for core, schema, harness, db, and CLI passed;
+- workspace `rtk proxy pnpm test` and `git diff --check` passed.
 
 does_not_prove:
 
-- These checks do not prove DB runtime readiness; no DB runtime command ran in
-  this slice.
-- They do not prove SourceClaim/SourceDecision create-status semantics; TSQ-12
-  owns that decision.
-- Plain `rtk pnpm typecheck` is not used as command evidence because the local
-  `rtk` proxy treated the workspace typecheck as a raw `tsc` help invocation
-  and returned code 1 while summarizing "No errors found"; package-level
-  `rtk proxy pnpm --filter ... typecheck` commands are the valid TS evidence
-  for this slice.
-
-### TSQ-12: Decide SourceClaim And SourceDecision Create Status Boundaries
-
-priority: P2.
-
-objective:
-
-Inspect source claim and source decision create/write status authority. Decide
-whether `CreateSourceClaimInput.status` and `CreateSourceDecisionInput.status`
-should stay as broad domain status types or gain named create-status subsets.
-
-source:
-
-TSQ-11 live-source scan found `packages/harness/src/repositories/sourceRepository.ts`
-still using `status?: SourceClaim["status"]` and
-`status: SourceDecision["status"]` at source create boundaries.
-
-assumptions:
-
-- `SourceDecisionStatus` may already be a creation decision vocabulary rather
-  than a lifecycle state machine;
-- `SourceClaimStatus` needs live-source inspection because `accepted`,
-  `rejected`, and `deprecated` may represent imported/current source truth, not
-  necessarily a later review transition.
-
-tradeoffs:
-
-- narrowing without evidence can block legitimate source imports or direct
-  decision capture;
-- leaving broad status types at create boundaries can let review/deprecation
-  states masquerade as initial provenance if no create path owns them.
-
-simplest acceptable implementation:
-
-- inspect source domain types, source CLI flows, repository create paths, DB
-  mapper defaults, and focused tests;
-- introduce named create-status types only where live create paths prove a
-  narrower authority boundary;
-- otherwise record the no-op decision with evidence.
-
-rules:
-
-- do not normalize source statuses into memory candidate statuses;
-- do not change DB schema/migrations;
-- do not create a source review engine;
-- do not fold context condensation into this slice.
-
-likely files:
-
-- `packages/core/src/source.ts`;
-- `packages/harness/src/repositories/sourceRepository.ts`;
-- `packages/db/src/repositories/DrizzleSourceRepository.ts`;
-- source repository/schema tests if implementation is needed;
-- `GOAL.md`;
-- `PLAN.md`.
-
-files forbidden to touch:
-
-- memory candidate promotion paths;
-- evidence command provenance;
-- Promptfoo/eval surfaces;
-- old raw materials.
-
-non-goals:
-
-- no DB migration;
-- no source crawler/importer;
-- no audit scanner revival.
-
-success criteria:
-
-- decision table states which source statuses are create input,
-  read-model/historical only, or require separate update paths;
-- implementation exists for every proven broad create/write gap;
-- active queue advances to a condensation slice or another bounded lifecycle
-  decision;
-- typecheck passes.
-
-verification:
-
-```sh
-pnpm --filter @krn/core test -- source
-pnpm --filter @krn/db test -- DrizzleSourceRepository
-pnpm typecheck
-git diff --check
-```
+- DB runtime readiness;
+- every future source graph lifecycle transition.
 
 rollback:
 
 ```sh
-git revert <TSQ-12 commit>
+git revert 67c1249
 ```
-
-commit:
-
-```sh
-git commit -m "refactor(source): decide create status boundaries"
-```
-
-outcome:
-
-- `SourceClaimCreateStatus = "proposed"` and
-  `SourceClaimLifecycleStatus = "accepted" | "rejected" | "deprecated"` now
-  separate initial source claim creation from review/deprecation states.
-- `CreateSourceClaimInput.status` now accepts only
-  `SourceClaimCreateStatus`.
-- `SourceClaimInputSchema` now rejects reviewed/deprecated lifecycle statuses at
-  parse time.
-- Test fixtures that used memory-style `status: "candidate"` for SourceClaim
-  override checks were normalized to `status: "proposed"`.
-- `SourceDecisionStatus` remains unchanged. `adopt | reject | defer |
-  lab_test` is the current decision vocabulary captured at creation, not a
-  later lifecycle state; `adopt` and `reject` already require a source claim.
-- DB schema/mappers were unchanged.
-
-command evidence:
-
-```sh
-rtk proxy pnpm --filter @krn/core test -- source
-rtk proxy pnpm --filter @krn/schema test -- index
-rtk proxy pnpm --filter @krn/harness test -- repositories
-rtk proxy pnpm --filter @krn/db test -- DrizzleSourceRepository
-rtk proxy pnpm --filter @krn/core typecheck
-rtk proxy pnpm --filter @krn/schema typecheck
-rtk proxy pnpm --filter @krn/harness typecheck
-rtk proxy pnpm --filter @krn/db typecheck
-rtk proxy pnpm --filter @krn/cli typecheck
-rtk proxy pnpm test
-git diff --check
-```
-
-does_not_prove:
-
-- These checks do not prove DB runtime readiness; no DB runtime command ran in
-  this slice.
-- They do not prove every source graph lifecycle transition exists; they only
-  bound source claim creation and preserve existing source decision creation
-  semantics.
 
 ### CTX-04: Condense Completed Lifecycle Boundary Context
 
+status: complete.
+commit: `docs(plan): condense lifecycle boundary context`.
+
+outcome:
+
+- TSQ-10, TSQ-11, and TSQ-12 detailed sections were reduced to compact checkpoints with commit ids, decisions, evidence summaries, `does_not_prove`, and rollback commands.
+- Detailed proof remains recoverable from commit history: `6d3794b`, `ed5fda9`, and `67c1249`.
+- Active Queue Snapshot now points at CTX-05 instead of completed lifecycle boundary slices.
+- No package source, DB schema, worker runtime, eval surface, dashboard, or audit/anti-slop layer was changed in this condensation slice.
+
+command_evidence:
+
+- `git status --short --branch`: worktree contained only `GOAL.md` and `PLAN.md` docs changes for this docs-only slice.
+- `git diff --check`: passed.
+
+rollback:
+
+```sh
+git revert <CTX-04 commit>
+```
+
+### CTX-05: Decide Historical Ledger Archival Boundary
+
 priority: P2.
 
 objective:
 
-Condense active `PLAN.md` / `GOAL.md` state after TSQ-10, TSQ-11, and TSQ-12 so
-completed lifecycle-boundary detail does not remain in the active execution
-window.
+Decide whether the root `PLAN.md` should keep the full historical task ledger inline or move older completed task bodies into a historical archive artifact, leaving root `PLAN.md` as the small living queue plus compact checkpoint index.
 
 source:
 
-The Active Queue Snapshot now carries enough completed lifecycle checkpoint
-detail, but the historical ledger still contains long TSQ sections. The user
-explicitly asked to avoid keeping completed tasks as active context and to
-periodically remove/demote excess information.
+The user explicitly asked not to keep completed tasks in active goal context. CTX-00 through CTX-04 condensed recent sections, but root `PLAN.md` still contains thousands of lines of completed reset/EVI/COND/TSQ task bodies.
 
 assumptions:
 
-- completed implementation evidence should remain discoverable in commit
-  history and compact command evidence;
-- active state should preserve only next action, compact checkpoint, open risks,
-  and rollback pointers.
+- root `PLAN.md` should stay canonical for current execution;
+- completed evidence must remain discoverable and reversible;
+- archiving historical detail is acceptable only if the root plan keeps a durable index with commit hashes and source artifact pointers.
 
 tradeoffs:
 
-- over-condensing can hide useful rollback detail;
-- under-condensing keeps context expensive and encourages agents to reread
-  completed work.
+- moving too much detail can make forensic review harder;
+- keeping everything inline keeps proof nearby but increases context cost and tempts agents to reread irrelevant completed work.
 
 simplest acceptable implementation:
 
-- compact TSQ-10/TSQ-11/TSQ-12 active detail into checkpoint bullets;
-- keep command evidence pointers and commit hashes;
-- keep the next unchecked item explicit;
-- do not alter source behavior.
+- inspect root `PLAN.md` section topology and decide the archival boundary;
+- if safe, move old completed ledger detail into one historical artifact and replace root sections with compact index entries;
+- if unsafe, record a no-op decision and the next smaller condensation target.
 
 rules:
 
-- docs-only slice;
-- no source/package changes;
-- do not delete evidence artifacts;
-- do not create a new plan file.
+- docs-only unless a broken reference is found;
+- do not delete evidence;
+- do not create a parallel active plan;
+- do not archive the current Active Queue Snapshot or next unchecked slice.
 
 likely files:
 
 - `PLAN.md`;
-- `GOAL.md`.
+- optional historical archive under `docs/` if the decision is to move ledger detail;
+- `GOAL.md` only if the next unchecked slice changes.
 
 files forbidden to touch:
 
 - package source;
 - DB schema/migrations;
-- old raw materials.
+- runtime configs;
+- raw materials unless explicitly selected as the archive target.
 
 non-goals:
 
-- no code refactor;
+- no code changes;
 - no broad repo cleanup;
 - no audit scanner revival.
 
 success criteria:
 
-- Active Queue Snapshot is shorter and points to the next real unchecked slice;
-- completed TSQ-10/11/12 detail is represented as compact checkpoint evidence;
+- root `PLAN.md` active context is measurably smaller or a no-op decision gives a narrower next condensation target;
+- completed evidence remains discoverable by commit hash and historical path;
 - `GOAL.md` remains compact;
 - docs diff is clean.
 
@@ -8513,11 +8131,11 @@ git diff --check
 rollback:
 
 ```sh
-git revert <CTX-04 commit>
+git revert <CTX-05 commit>
 ```
 
 commit:
 
 ```sh
-git commit -m "docs(plan): condense lifecycle boundary context"
+git commit -m "docs(plan): decide historical ledger archival"
 ```
