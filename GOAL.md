@@ -39,18 +39,18 @@ The continuing objective is:
 5. keep `PLAN.md` as the living queue without keeping finished tasks in the
    active goal window.
 
-The current epoch is continuous hardening after Evidence Integrity closure. P7
-proved the operational spine, not Memory Brain readiness. Continue from the
-first unchecked slice in `PLAN.md` Active Queue Snapshot:
+The current epoch converted the completed reset into a compact continuous
+hardening plan and backlog. There is no remaining unchecked slice for this
+goal in `PLAN.md`.
 
 ```txt
-VERIFY-00: Audit Continuous Hardening Completion Evidence
+complete
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while auditing completion evidence.
-Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
+eval platform by extending this completed goal. Start a new bounded slice in
+`PLAN.md` if future hardening work is needed.
 
 ## Required Read Order
 

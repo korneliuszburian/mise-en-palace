@@ -6,9 +6,9 @@
 
 ## Active Queue Snapshot
 
-current_priority: Completion Audit For Continuous Hardening Goal.
+current_priority: Complete.
 
-first_unchecked_slice: `VERIFY-00: Audit Continuous Hardening Completion Evidence`.
+first_unchecked_slice: none.
 
 active_scope:
 
@@ -55,11 +55,9 @@ last_verified_state:
 
 open_risks_and_next_candidates:
 
-- Completion is not yet proven. VERIFY-00 must audit the current repo against
-  the full objective and all active rules before the goal can be marked
-  complete.
-- If VERIFY-00 finds missing hardening work, record bounded follow-up slices
-  here instead of reopening historical task bodies wholesale.
+- No active unchecked slice remains for this goal.
+- Future hardening work should start from this compact root `PLAN.md` and add a
+  new bounded slice instead of reopening archived historical task bodies.
 
 evidence_pointers:
 
@@ -90,7 +88,7 @@ evidence_pointers:
 - [x] DEV-DB-00 local DB verification script defaults.
 - [x] TSQ-00..TSQ-12 TypeScript lifecycle and boundary hardening.
 - [x] CTX-00..CTX-05 context condensation and historical ledger archival.
-- [ ] VERIFY-00 Audit continuous hardening completion evidence.
+- [x] VERIFY-00 Audit continuous hardening completion evidence.
 
 ## Current Decisions
 
@@ -116,6 +114,8 @@ evidence_pointers:
   slice.
 
 ## VERIFY-00: Audit Continuous Hardening Completion Evidence
+
+status: complete.
 
 priority: P0.
 
@@ -169,3 +169,49 @@ commit:
 ```sh
 git commit -m "docs(plan): audit continuous hardening completion"
 ```
+
+outcome:
+
+- Requirement: turn completed reset into a continuous hardening goal and
+  backlog.
+  Evidence: root `GOAL.md` remains the compact activation contract; this root
+  `PLAN.md` is now the compact living queue with completed checkpoint groups,
+  explicit decisions, worktree hygiene, and no active historical task dump.
+- Requirement: preserve completed evidence.
+  Evidence: the full pre-CTX-05 root plan is archived at
+  `docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md`
+  with 8141 lines; the compact plan points to run ledgers, ADRs, architecture
+  docs, repo-reset reviews, and commit history.
+- Requirement: add follow-up observations and concrete extension slices from
+  finished tasks.
+  Evidence: the completed progress chain includes EVI, C/COND, EXEC, DEV-DB,
+  TSQ, and CTX follow-up slices derived from P7/reset findings, including
+  source/review/context lifecycle hardening and historical context cleanup.
+- Requirement: keep productized audit/anti-slop direction rejected.
+  Evidence: package-source scan found no active `runAudit`, `parseAudit`,
+  `AuditBundle`, or `DrizzleAuditBundleRepository` contracts; CLI tests assert
+  `audit` is unsupported; README/GOAL/PLAN reject rebuilding `krn audit` as a
+  product or guardrail layer.
+- Requirement: keep worktree/remote clean.
+  Evidence: `git status --short --branch` showed `main...origin/main` clean
+  before this audit update.
+
+command_evidence:
+
+```sh
+git status --short --branch
+git log --oneline --decorate -12
+wc -l PLAN.md GOAL.md docs/plans/historical-ledgers/2026-06-24-root-plan-before-ctx-05-archive.md
+rg -n "runAudit|parseAudit|AuditBundle|DrizzleAuditBundleRepository|kind: \"audit|case \"audit\"|command.*audit|krn audit" packages/core packages/schema packages/cli packages/db packages/harness packages/workers packages/codex-adapter README.md PLAN.md GOAL.md
+rg -n "audit" packages/cli/src/parseArgs.ts packages/cli/src/runCli.ts packages/cli/src/runCli.test.ts README.md
+git diff --check
+```
+
+does_not_prove:
+
+- This audit does not prove Memory Brain product readiness, cognitive quality,
+  worker runtime execution, dashboard/API readiness, or DB runtime state in the
+  current shell.
+- It proves only that the reset was converted into a compact continuous
+  hardening plan/backlog with preserved evidence and no remaining active slice
+  under this goal.
