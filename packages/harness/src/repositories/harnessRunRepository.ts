@@ -48,9 +48,11 @@ export interface UpdateExecutionRunStatusInput {
   metadata?: Record<string, unknown>;
 }
 
+export type CreateEvidenceBundleStatus = Extract<EvidenceBundle["status"], "draft" | "captured">;
+
 export interface CreateEvidenceBundleInput extends RepositoryMetadata {
   executionRunId: string;
-  status?: EvidenceBundle["status"];
+  status?: CreateEvidenceBundleStatus;
   changedFiles: string[];
   commands: EvidenceCommand[];
   diffRisk: EvidenceBundle["diffRisk"];

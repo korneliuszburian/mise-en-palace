@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
+import type {
+  CreateEvidenceBundleInput,
+  CreateEvidenceBundleStatus
+} from "./index.js";
 
 const repositoryFile = (relativePath: string): string =>
   fileURLToPath(new URL(relativePath, import.meta.url));
@@ -15,5 +19,12 @@ describe("repository package surfaces", () => {
     expect(publicIndex).not.toContain("MemoryRepository,");
     expect(publicIndex).toContain("MemoryCandidateReviewRepository");
     expect(internalIndex).toContain("../memoryRepository.js");
+  });
+
+  it("keeps EvidenceBundle verified and rejected status out of the write input", () => {
+    expectTypeOf<CreateEvidenceBundleInput["status"]>()
+      .toEqualTypeOf<CreateEvidenceBundleStatus | undefined>();
+    expectTypeOf<Extract<CreateEvidenceBundleInput["status"], "verified" | "rejected">>()
+      .toEqualTypeOf<never>();
   });
 });
