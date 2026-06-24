@@ -98,20 +98,35 @@ const sourceClaim = (overrides: Partial<SourceClaim>): SourceClaim => ({
   ...overrides
 });
 
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const goldenFixtureCaseIds = (value: unknown): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((goldenTask) => {
+    if (!isJsonObject(goldenTask) || !Array.isArray(goldenTask.cases)) {
+      return [];
+    }
+
+    return goldenTask.cases.flatMap((goldenCase) =>
+      isJsonObject(goldenCase) && typeof goldenCase.id === "string"
+        ? [goldenCase.id]
+        : []
+    );
+  }).sort();
+};
+
 const goldenCaseIds = (): string[] => {
   const fixtureUrl = new URL(
     "../../../../tests/fixtures/golden-tasks/memory-behavior.json",
     import.meta.url
   );
-  const parsed = JSON.parse(readFileSync(fixtureUrl, "utf8")) as Array<{
-    cases?: Array<{ id?: unknown }>;
-  }>;
+  const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
 
-  return parsed.flatMap((goldenTask) =>
-    goldenTask.cases?.flatMap((goldenCase) =>
-      typeof goldenCase.id === "string" ? [goldenCase.id] : []
-    ) ?? []
-  ).sort();
+  return goldenFixtureCaseIds(parsed);
 };
 
 describe("golden memory behavior cases", () => {

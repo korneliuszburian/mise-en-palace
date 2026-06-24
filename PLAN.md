@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: JSON Parse Boundary Classification.
+current_priority: Unsafe Cast Quarantine.
 
-first_unchecked_slice: `TSQ-02: JSON.parse Boundary Classification`.
+first_unchecked_slice: `TSQ-03: Unsafe Cast Quarantine`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- classify JSON parse boundaries through the
+- quarantine unsafe type fixtures through the
   `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while classifying JSON parse boundaries;
+  authority layer while quarantining unsafe type fixtures;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -153,6 +153,9 @@ completed_checkpoint:
   `MemoryRecordId`, `MemoryCandidateId`, and `SourceClaimId`; raw string IO
   remains compatible while typed cross-ID assignment is blocked by
   `packages/core/src/ids.typecheck.ts`.
+- TSQ-02 classifies all current `JSON.parse` usage. Production CLI JSON reading
+  already used `unknown` plus an object guard; test fixture/package reads now
+  parse to `unknown` and use parser/local guards instead of direct casts.
 
 completed_evidence_pointers:
 
@@ -3034,7 +3037,8 @@ git revert <C6-02 commit>
 - [x] TSQ-00 Decide EvidenceCommand proof-state model.
 - [x] TSQ-00A Implement EvidenceCommand discriminated union.
 - [x] TSQ-01 Decide branded ID types ADR and pilot.
-- [ ] TSQ-02 Classify JSON.parse boundaries.
+- [x] TSQ-02 Classify JSON.parse boundaries.
+- [ ] TSQ-03 Quarantine unsafe casts and TS suppressions.
 
 ## Surprises & Discoveries
 
@@ -3074,6 +3078,10 @@ git revert <C6-02 commit>
   selected ID types, so DB/CLI/schema IO boundaries do not need a broad
   constructor refactor yet, but already-typed `ExecutionRunId`, `MemoryRecordId`,
   `MemoryCandidateId`, and `SourceClaimId` are no longer mutually assignable.
+- TSQ-02 found only one production `JSON.parse` boundary, and it already used
+  `unknown` plus an object guard in `packages/cli/src/cliFileBoundary.ts`. The
+  unsafe pattern was test-only fixture/package JSON reads that cast parsed
+  values directly to partial shapes.
 - P2-02 exposed duplicate dedupe logic in both merge ranking and ContextROI.
   Both paths now use the same typed source/memory record identity fields instead
   of reading `metadata.sourceClaimId` or `metadata.memoryRecordId`.
@@ -3211,6 +3219,9 @@ git revert <C6-02 commit>
   current repo: they block typed cross-ID assignment while preserving raw string
   compatibility for existing DB/CLI/schema boundaries. Hard opaque IDs need
   parser constructors first and are deferred.
+- TSQ-02 found that `rg -n "JSON\\.parse" packages` also matches one string
+  literal in a test objective. That line is not a parse boundary and remains
+  classified as documentation text inside a fixture.
 
 ## Decision Log
 
@@ -3359,6 +3370,9 @@ git revert <C6-02 commit>
   `ExecutionRunId`, `MemoryRecordId`, `MemoryCandidateId`, and `SourceClaimId`.
   Do not hard-brand every ID or add runtime wrapper objects until parser-owned
   IO constructors are explicitly designed.
+- 2026-06-24: TSQ-02 rejects global `ts-reset` for core/schema/public APIs.
+  Adopt the useful TS Reset mechanism locally instead: parsed JSON is assigned
+  to `unknown`, then narrowed by a parser or local guard at the boundary.
 
 ## Outcomes & Retrospective
 
@@ -3478,6 +3492,11 @@ Current outcome:
   assignability proof, and a runtime test that branded IDs remain strings.
   Current result: selected high-risk IDs are separated at compile time without
   DB, CLI, schema, or worker refactors.
+- TSQ-02 hardened JSON parse boundaries without adding global type patches:
+  schema golden-task fixtures parse to `unknown` before schema parser use,
+  harness golden fixture ID extraction uses local object/array guards, CLI
+  package JSON checks use a local string-record guard, and production
+  `readJsonObject` remains an `unknown` plus object-guard boundary.
 
 ## Command Evidence
 
@@ -4613,6 +4632,39 @@ files did not add local unsafe casts or unchecked JSON, and the diff has no
 whitespace errors. It does not prove runtime ID format validation, DB row
 semantic correctness, or that every KRN ID family should be branded.
 
+TSQ-02 verification after hardening JSON.parse boundaries:
+
+```sh
+rg -n "JSON\\.parse" packages
+rg -n "JSON\\.parse\\([^\\n]+\\) as|as \\{ scripts" packages
+pnpm --filter @krn/schema test -- goldenTask
+pnpm --filter @krn/harness test -- goldenBoundaryBehavior goldenMemoryBehavior goldenObservationReflectionBehavior noisyBrainFixture
+pnpm --filter @krn/cli test -- runCli
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Observed:
+
+```txt
+JSON.parse inventory: executable matches now assign parse output to unknown;
+one additional match is non-executable text in a test objective.
+direct parse-cast scan: no matches.
+focused schema test command: 3 test files, 24 tests passed.
+focused harness test command: 20 test files, 79 tests passed.
+focused CLI test command: 23 test files, 146 tests passed.
+workspace typecheck: passed.
+workspace test: core/schema/harness/workers/codex-adapter/db/cli passed.
+git diff --check: passed with no output.
+```
+
+This proves current executable JSON parse sites are inventory-tracked and
+unknown-first, the repaired fixture/script tests still pass, the workspace
+still compiles and tests, and the diff has no whitespace errors. It does not
+prove future JSON parse sites stay safe, runtime JSON payloads are semantically
+valid beyond the local guards/parsers, or fetch `.json()` boundaries exist.
+
 ## Historical Reset Completion Criteria
 
 The reset criteria below are retained as the completed P0-P7 ledger. They are
@@ -5478,6 +5530,8 @@ git commit -m "feat(core): pilot branded domain ids"
 
 priority: P1.
 
+status: complete.
+
 objective:
 
 Classify every `JSON.parse` as production safe boundary, test-only acceptable,
@@ -5491,6 +5545,25 @@ it changes global scope:
 
 - https://www.totaltypescript.com/ts-reset
 
+source_decision:
+
+source_id: Total TypeScript, "TS Reset".
+trust_tier: medium as practitioner TypeScript tooling documentation, not KRN
+product truth.
+mechanism: TS Reset changes global TypeScript built-in typings so `JSON.parse`
+and response `.json()` return `unknown`, and its docs caution that the package
+is designed for application code rather than libraries because it mutates
+global scope.
+krn_implication: KRN should adopt the unknown-first boundary behavior locally
+without importing a global reset into core/schema/public package APIs.
+decision: reject global `ts-reset` for this slice; require `const parsed:
+unknown = JSON.parse(...)` followed by schema parser or local guard.
+does_not_prove: every parsed value is semantically valid, every JSON boundary
+in future code is safe, or `.json()` fetch boundaries are present in this repo.
+consumer: TSQ-02 JSON.parse boundary repairs.
+falsifier: executable `JSON.parse` results are trusted directly, or a future
+slice adds global `ts-reset` to library/public package code.
+
 rules:
 
 - production `JSON.parse` must produce `unknown`;
@@ -5498,13 +5571,90 @@ rules:
 - no global `ts-reset` in core/schema/public APIs;
 - test-only parses need an explicit reason if they bypass validation.
 
+assumptions:
+
+- current `rg -n "JSON\\.parse" packages` is the authoritative inventory for
+  this slice;
+- test fixtures may parse JSON, but parsed values must be `unknown` until a
+  parser or local guard checks the fields actually used;
+- the production CLI `readJsonObject` helper is acceptable if it continues to
+  return only guarded JSON objects or `undefined`.
+
+tradeoffs:
+
+- local guards duplicate a few lines across tests, but avoid creating a new
+  fixture parsing abstraction for one narrow cleanup;
+- not adding `ts-reset` avoids global scope mutation in library/public package
+  code, but requires explicit `unknown` assignments at parse sites.
+
+simplest acceptable implementation:
+
+- keep production `readJsonObject` as `unknown` plus object guard;
+- replace direct test casts after `JSON.parse` with `unknown` plus local guards
+  or existing schema parsers;
+- record the classification in this plan.
+
+files likely touched:
+
+- `packages/schema/src/goldenTask.test.ts`;
+- `packages/harness/src/goldenBoundaryBehavior.test.ts`;
+- `packages/harness/src/activation/goldenMemoryBehavior.test.ts`;
+- `packages/harness/src/goldenObservationReflectionBehavior.test.ts`;
+- `packages/cli/src/runCli.test.ts`;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- production core/schema/domain models;
+- DB schema/migrations;
+- CLI runtime behavior beyond tests;
+- global TypeScript config and global `ts-reset` files.
+
+non-goals:
+
+- no global `ts-reset`;
+- no broad fixture loader framework;
+- no repair of unrelated unsafe casts; TSQ-03 owns that;
+- no runtime ID/parser constructor work.
+
+classification:
+
+- production safe boundary: `packages/cli/src/cliFileBoundary.ts` parses to
+  `unknown` and returns only a guarded JSON object or `undefined`;
+- schema test parser boundary: `packages/schema/src/goldenTask.test.ts` parses
+  fixtures to `unknown` and passes them into `parseGoldenTaskFixtures`;
+- harness test fixture boundary: golden fixture case ID helpers parse to
+  `unknown` and use local object/array guards before reading `cases[].id`;
+- CLI test fixture boundary: `packages/cli/src/runCli.test.ts` reads root
+  `package.json` as `unknown` and narrows `scripts` to `Record<string, string>`;
+- non-boundary text match: `packages/harness/src/compiler/index.test.ts`
+  contains `JSON.parse` only in a string objective.
+
+success criteria:
+
+- every executable `JSON.parse` result is first assigned to `unknown`;
+- no executable parse site casts directly to a trusted shape;
+- production parse remains guarded;
+- tests still prove fixture/script expectations.
+
 verification:
 
 ```sh
 rg -n "JSON\\.parse" packages
+rg -n "JSON\\.parse\\([^\\n]+\\) as|as \\{ scripts" packages
+pnpm --filter @krn/schema test -- goldenTask
+pnpm --filter @krn/harness test -- goldenBoundaryBehavior goldenMemoryBehavior goldenObservationReflectionBehavior noisyBrainFixture
+pnpm --filter @krn/cli test -- runCli
 pnpm typecheck
 pnpm test
 git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-02 commit>
 ```
 
 commit:

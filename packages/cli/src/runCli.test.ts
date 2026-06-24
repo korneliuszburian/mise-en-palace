@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -50,6 +51,37 @@ import {
 } from "./doctorReadiness.js";
 
 const now = "2026-06-21T12:00:00.000Z";
+
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const stringRecord = (value: unknown): Record<string, string> | undefined => {
+  if (!isJsonObject(value)) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] =>
+      typeof entry[1] === "string"
+    )
+  );
+};
+
+const readRootPackageJson = async (
+  repoRoot: string
+): Promise<{ scripts?: Record<string, string> }> => {
+  const raw = await readFile(path.join(repoRoot, "package.json"), "utf8");
+  const parsed: unknown = JSON.parse(raw);
+
+  if (!isJsonObject(parsed)) {
+    return {};
+  }
+
+  const scripts = stringRecord(parsed.scripts);
+
+  return scripts === undefined ? {} : { scripts };
+};
+
 const unusedMemoryRepository = {
   async createMemoryCandidate(_input: CreateMemoryCandidateInput): Promise<never> {
     throw new Error("createMemoryCandidate should not be called");
@@ -238,11 +270,7 @@ describe("runCli", () => {
 
   it("exposes the target repo init-connect smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
-    const packageJson = JSON.parse(
-      await import("node:fs/promises").then((fs) =>
-        fs.readFile(path.join(repoRoot, "package.json"), "utf8")
-      )
-    ) as { scripts?: Record<string, string> };
+    const packageJson = await readRootPackageJson(repoRoot);
 
     expect(packageJson.scripts?.["db:smoke:init-connect"]).toBe(
       "pnpm --filter @krn/cli krn db smoke init-connect"
@@ -251,11 +279,7 @@ describe("runCli", () => {
 
   it("exposes the target repo harness smoke script", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
-    const packageJson = JSON.parse(
-      await import("node:fs/promises").then((fs) =>
-        fs.readFile(path.join(repoRoot, "package.json"), "utf8")
-      )
-    ) as { scripts?: Record<string, string> };
+    const packageJson = await readRootPackageJson(repoRoot);
 
     expect(packageJson.scripts?.["db:smoke:target-repo-harness"]).toBe(
       "pnpm --filter @krn/cli krn db smoke target-repo-harness"

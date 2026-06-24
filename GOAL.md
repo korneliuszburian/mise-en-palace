@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-02: JSON.parse Boundary Classification
+TSQ-03: Unsafe Cast Quarantine
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while classifying JSON parse boundaries. Promote the slice through
+eval platform while quarantining unsafe type fixtures. Promote the slice through
 the `slice_template_gate` in `PLAN.md` before code changes.
 
 ## Required Read Order

@@ -10,8 +10,9 @@ const readFixture = (): unknown => {
     "../../../tests/fixtures/golden-tasks/memory-behavior.json",
     import.meta.url
   );
+  const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
 
-  return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
+  return parsed;
 };
 
 const readBoundaryFixture = (): unknown => {
@@ -19,8 +20,9 @@ const readBoundaryFixture = (): unknown => {
     "../../../tests/fixtures/golden-tasks/boundary-behavior.json",
     import.meta.url
   );
+  const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
 
-  return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
+  return parsed;
 };
 
 const readObservationReflectionFixture = (): unknown => {
@@ -28,8 +30,9 @@ const readObservationReflectionFixture = (): unknown => {
     "../../../tests/fixtures/golden-tasks/observation-reflection-behavior.json",
     import.meta.url
   );
+  const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
 
-  return JSON.parse(readFileSync(fixtureUrl, "utf8")) as unknown;
+  return parsed;
 };
 
 describe("golden task fixtures", () => {
