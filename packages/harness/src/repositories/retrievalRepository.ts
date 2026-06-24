@@ -19,6 +19,7 @@ import type {
   RetrievalCandidateStatus,
   RetrievalRunMode,
   RetrievalRunRecord,
+  RetrievalRunStatus,
   RetrievalSubjectType,
   RetrievalValidityStatus,
   SearchDocumentRecord,
@@ -98,6 +99,11 @@ export interface StartRetrievalRunInput {
   metadata?: Record<string, unknown>;
 }
 
+export type CompleteRetrievalRunStatus = Extract<
+  RetrievalRunStatus,
+  "completed" | "abstained" | "failed"
+>;
+
 export type ActivationTraceRawRecallReason = "exact_proof_required" | "low_trust";
 
 export interface ActivationTraceRawRecall {
@@ -123,7 +129,7 @@ export type ActivationDecisionSourceSupportState =
 
 export interface CompleteRetrievalRunInput {
   retrievalRunId: string;
-  status: RetrievalRunRecord["status"];
+  status: CompleteRetrievalRunStatus;
   completedAt: string;
   activationAbstentionReason?: ActivationAbstentionReason;
   rawEvidenceRecallTriggerCount?: number;

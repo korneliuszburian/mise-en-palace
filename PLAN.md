@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Retrieval Run Completion Status Boundary Decision.
+current_priority: Lifecycle Boundary Context Condensation.
 
-first_unchecked_slice: `TSQ-09: Decide Retrieval Run Completion Status Boundary`.
+first_unchecked_slice: `CTX-03: Condense Lifecycle Boundary Hardening Context`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next typed lifecycle decision after TSQ-08 narrowed
-  activation decision public input authority;
+- continue from the context-condensation task after TSQ-07, TSQ-08, and TSQ-09
+  narrowed lifecycle write authority;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding retrieval run completion status boundaries;
+  authority layer while condensing completed lifecycle boundary evidence;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -74,6 +74,9 @@ completed_checkpoint:
 - TSQ-08 keeps activation decision persisted/read-model vocabulary broad for
   historical `abstained` rows but narrows public activation decision input to
   current write decisions: `included | excluded | deferred | conflict | stale`.
+- TSQ-09 narrows retrieval run completion write authority to terminal statuses:
+  `completed | abstained | failed`; persisted/read-model status still includes
+  `running` for started runs.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -81,23 +84,23 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded slice, not
   from historical reset/audit detail;
-- last verified state: TSQ-08 passed schema, activation/harness, DB mapper,
-  and workspace typecheck checks; final command evidence is recorded in the
-  TSQ-08 section;
+- last verified state: TSQ-09 passed harness typecheck, focused harness/db
+  tests, and workspace typecheck checks; final command evidence is recorded in
+  the TSQ-09 section;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-09
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-03
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-09: Decide Retrieval Run Completion Status Boundary`;
+- next action: execute `CTX-03: Condense Lifecycle Boundary Hardening Context`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- Retrieval run completion input may still accept status values that belong to
-  persisted/read-model vocabulary rather than completion write authority.
+- TSQ-07, TSQ-08, and TSQ-09 detail blocks are now eligible for condensation
+  into checkpoint evidence to reduce active context load.
 
 completed_evidence_pointers:
 
@@ -2996,7 +2999,8 @@ git revert <C6-02 commit>
 - [x] CTX-02 Condense EvalCandidate hardening context.
 - [x] TSQ-07 Decide EvidenceBundle status authority boundary.
 - [x] TSQ-08 Decide Activation Decision read-model boundary.
-- [ ] TSQ-09 Decide Retrieval Run completion status boundary.
+- [x] TSQ-09 Decide Retrieval Run completion status boundary.
+- [ ] CTX-03 Condense Lifecycle Boundary hardening context.
 
 ## Surprises & Discoveries
 
@@ -8239,4 +8243,157 @@ commit:
 
 ```sh
 git commit -m "refactor(retrieval): narrow completion status input"
+```
+
+status: complete.
+
+source_decisions:
+
+1. source: `packages/harness/src/repositories/retrievalRepository.ts`
+   mechanism: `CompleteRetrievalRunInput.status` previously referenced
+   `RetrievalRunRecord["status"]`.
+   KRN implication: a completion writer could compile with `running`, which is
+   a start/current read-model state, not a terminal completion outcome.
+   decision: add `CompleteRetrievalRunStatus` and narrow completion input to
+   terminal statuses only.
+   falsifier: `CompleteRetrievalRunInput["status"]` accepts `running`.
+
+2. source: `packages/harness/src/activation/activationEngine.ts`
+   mechanism: activation trace completion writes only `completed` or
+   `abstained`.
+   KRN implication: narrowing completion input does not change activation
+   selection/ranking behavior.
+   decision: keep activation behavior unchanged.
+   falsifier: activation trace requires `running` as a completion outcome.
+
+3. source: `packages/db/src/repositories/DrizzleRetrievalRepository.ts` and
+   `packages/db/src/repositories/mappers.ts`
+   mechanism: DB writer persists `input.status`, and mapper reads full
+   `RetrievalRunStatus` from rows.
+   KRN implication: DB persisted/read-model vocabulary may stay broad while the
+   write input is narrower.
+   decision: no DB schema or mapper change.
+   falsifier: persisted readback cannot represent started `running` runs.
+
+decision_table:
+
+| status | start/current write | completion write input | read-model/historical | rule |
+| --- | --- | --- | --- | --- |
+| `running` | yes | no | yes | created by start run, not completion. |
+| `completed` | no | yes | yes | terminal successful completion. |
+| `abstained` | no | yes | yes | terminal no-context completion. |
+| `failed` | no | yes | yes | terminal failed completion. |
+
+implementation:
+
+- added `CompleteRetrievalRunStatus = "completed" | "abstained" | "failed"`;
+- changed `CompleteRetrievalRunInput.status` to `CompleteRetrievalRunStatus`;
+- kept `RetrievalRunStatus` broad for persisted/read-model rows;
+- did not change DB schema, mapper, ranking, or activation selection behavior.
+
+command_evidence:
+
+```sh
+pnpm --filter @krn/harness typecheck
+pnpm --filter @krn/harness test -- repositories activationTraceDecisions
+pnpm --filter @krn/db test -- DrizzleRetrievalRepository mappers
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+what_this_proves:
+
+- source typecheck accepts the narrowed completion write input;
+- existing activation trace and DB mapper behavior still passes focused tests;
+- completion writer no longer shares the full persisted read-model status type.
+
+what_this_does_not_prove:
+
+- DB runtime readiness; no live DB command was run for this slice;
+- activation ranking quality;
+- broader Memory Brain readiness.
+
+### CTX-03: Condense Lifecycle Boundary Hardening Context
+
+priority: P1.
+
+objective:
+
+Compress completed TSQ-07, TSQ-08, and TSQ-09 detail into the active checkpoint
+so the next implementation slice does not carry repeated lifecycle decision
+detail in the active context window.
+
+source:
+
+User rule to remove completed-task context and keep `PLAN.md` as a compact
+living execution map.
+
+assumptions:
+
+- completed TSQ-07/08/09 sections remain useful as ledger evidence;
+- active workers need only checkpoint decisions, rollback commits, and next
+  action;
+- no source code change is needed for this slice.
+
+tradeoffs:
+
+- deleting too much ledger detail weakens auditability;
+- leaving all detail in active context increases execution drag.
+
+simplest acceptable implementation:
+
+- condense active snapshot into a compact lifecycle-boundary checkpoint;
+- keep detailed TSQ-07/08/09 sections as ledger or compress them only if their
+  source decisions and command evidence remain discoverable;
+- advance the active queue to the next bounded hardening candidate.
+
+rules:
+
+- do not delete evidence;
+- do not create a new plan file;
+- do not edit old raw materials;
+- do not mix code changes into this docs condensation slice.
+
+likely files:
+
+- `PLAN.md`;
+- `GOAL.md`.
+
+files forbidden to touch:
+
+- package source files;
+- DB schema/migrations;
+- old raw materials.
+
+non-goals:
+
+- no implementation;
+- no audit subsystem;
+- no dashboard/eval platform.
+
+success criteria:
+
+- active queue snapshot is shorter and points to one next unchecked slice;
+- TSQ-07/08/09 proof remains discoverable;
+- `GOAL.md` remains compact;
+- docs-only verification passes.
+
+verification:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <CTX-03 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): condense lifecycle boundary context"
 ```

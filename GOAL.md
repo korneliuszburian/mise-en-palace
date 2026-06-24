@@ -44,13 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-09: Decide Retrieval Run Completion Status Boundary
+CTX-03: Condense Lifecycle Boundary Hardening Context
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding whether retrieval run completion inputs need a
-narrower terminal-status write boundary.
+eval platform while condensing completed lifecycle boundary evidence.
 Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
 
 ## Required Read Order
