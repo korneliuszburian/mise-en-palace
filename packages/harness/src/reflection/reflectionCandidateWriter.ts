@@ -41,15 +41,36 @@ export interface WriteReflectionCandidatesInput {
   sourceRepository?: Pick<SourceRepository, "createSourceClaim">;
 }
 
-export interface WriteReflectionCandidatesResult {
-  status: ReflectionCandidateWriterStatus;
-  blockedReasons: string[];
-  memoryCandidates: Awaited<ReturnType<MemoryRepository["createMemoryCandidate"]>>[];
+export type ReflectionCandidateWriterBlockedReasons = readonly [string, ...string[]];
+
+export type CreatedReflectionMemoryCandidate =
+  Awaited<ReturnType<MemoryRepository["createMemoryCandidate"]>>;
+
+export interface BlockedWriteReflectionCandidatesResult {
+  status: "blocked";
+  blockedReasons: ReflectionCandidateWriterBlockedReasons;
+}
+
+export interface ReadyWriteReflectionCandidatesResult {
+  status: "ready";
+  memoryCandidates: CreatedReflectionMemoryCandidate[];
   antiMemoryCandidates: AntiMemoryCandidate[];
   sourceClaims: SourceClaim[];
   evalCandidates: EvalCandidate[];
   unsupportedCandidates: UnsupportedReflectionCandidate[];
 }
+
+export type WriteReflectionCandidatesResult =
+  | BlockedWriteReflectionCandidatesResult
+  | ReadyWriteReflectionCandidatesResult;
+
+const nonEmptyBlockedReasons = (
+  reasons: readonly string[],
+  fallback: string
+): ReflectionCandidateWriterBlockedReasons => {
+  const [first, ...rest] = reasons;
+  return first === undefined ? [fallback] : [first, ...rest];
+};
 
 const reflectionMetadata = (
   reflectionRecord: ReflectionRecord,
@@ -80,14 +101,10 @@ export const writeReflectionCandidates = async (
   if (!assessment.candidateOnly) {
     return {
       status: "blocked",
-      blockedReasons: assessment.violations.map((violation) =>
-        `${violation.path}:${violation.reason}`
-      ),
-      memoryCandidates: [],
-      antiMemoryCandidates: [],
-      sourceClaims: [],
-      evalCandidates: [],
-      unsupportedCandidates: []
+      blockedReasons: nonEmptyBlockedReasons(
+        assessment.violations.map((violation) => `${violation.path}:${violation.reason}`),
+        "reflection_output_contract_blocked_without_reason"
+      )
     };
   }
 
@@ -96,16 +113,14 @@ export const writeReflectionCandidates = async (
   if (plan.status === "blocked") {
     return {
       status: "blocked",
-      blockedReasons: plan.blockedReasons,
-      memoryCandidates: [],
-      antiMemoryCandidates: [],
-      sourceClaims: [],
-      evalCandidates: [],
-      unsupportedCandidates: []
+      blockedReasons: nonEmptyBlockedReasons(
+        plan.blockedReasons,
+        "reflection_candidate_generation_blocked_without_reason"
+      )
     };
   }
 
-  const memoryCandidates = [];
+  const memoryCandidates: CreatedReflectionMemoryCandidate[] = [];
   for (const proposal of input.reflectionRecord.output.memoryCandidates) {
     memoryCandidates.push(await input.memoryRepository.createMemoryCandidate({
       projectId: input.reflectionRecord.scope.projectId,
@@ -132,7 +147,7 @@ export const writeReflectionCandidates = async (
     }));
   }
 
-  const antiMemoryCandidates = [];
+  const antiMemoryCandidates: AntiMemoryCandidate[] = [];
   for (const proposal of input.reflectionRecord.output.antiMemoryCandidates) {
     antiMemoryCandidates.push(await input.memoryRepository.createAntiMemoryCandidate({
       projectId: input.reflectionRecord.scope.projectId,
@@ -215,7 +230,6 @@ export const writeReflectionCandidates = async (
 
   return {
     status: "ready",
-    blockedReasons: [],
     memoryCandidates,
     antiMemoryCandidates,
     sourceClaims,

@@ -234,6 +234,9 @@ describe("reflection candidate writer", () => {
     });
 
     expect(result.status).toBe("ready");
+    if (result.status !== "ready") {
+      throw new Error("expected ready reflection candidate writer result");
+    }
     expect(memoryCandidates[0]).toMatchObject({
       proposedBy: "reflection",
       sourceClaimIds: ["source-claim-1"],
@@ -269,6 +272,7 @@ describe("reflection candidate writer", () => {
       }
     });
     expect(result.antiMemoryCandidates).toHaveLength(1);
+    expect("blockedReasons" in result).toBe(false);
     expect(result.evalCandidates[0]).toMatchObject<Partial<EvalCandidate>>({
       id: "eval-candidate-reflection-record-1-1",
       projectId: "project-1",
@@ -308,13 +312,16 @@ describe("reflection candidate writer", () => {
       }
     });
 
-    expect(result).toMatchObject({
-      status: "blocked",
-      blockedReasons: ["candidateLinks.0.targetType:final_truth_target"],
-      memoryCandidates: [],
-      sourceClaims: [],
-      evalCandidates: []
-    });
+    expect(result.status).toBe("blocked");
+    if (result.status !== "blocked") {
+      throw new Error("expected blocked reflection candidate writer result");
+    }
+    expect(result.blockedReasons).toEqual(["candidateLinks.0.targetType:final_truth_target"]);
+    expect("memoryCandidates" in result).toBe(false);
+    expect("antiMemoryCandidates" in result).toBe(false);
+    expect("sourceClaims" in result).toBe(false);
+    expect("evalCandidates" in result).toBe(false);
+    expect("unsupportedCandidates" in result).toBe(false);
     expect(createMemoryCandidateCalled).toBe(false);
   });
 
@@ -350,11 +357,18 @@ describe("reflection candidate writer", () => {
       }
     });
 
-    expect(result).toMatchObject({
-      status: "blocked",
-      blockedReasons: ["memoryCandidates.0.evidence:weak_command_evidence_high_confidence"],
-      memoryCandidates: []
-    });
+    expect(result.status).toBe("blocked");
+    if (result.status !== "blocked") {
+      throw new Error("expected blocked reflection candidate writer result");
+    }
+    expect(result.blockedReasons).toEqual([
+      "memoryCandidates.0.evidence:weak_command_evidence_high_confidence"
+    ]);
+    expect("memoryCandidates" in result).toBe(false);
+    expect("antiMemoryCandidates" in result).toBe(false);
+    expect("sourceClaims" in result).toBe(false);
+    expect("evalCandidates" in result).toBe(false);
+    expect("unsupportedCandidates" in result).toBe(false);
     expect(createMemoryCandidateCalled).toBe(false);
   });
 });

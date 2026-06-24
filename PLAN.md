@@ -26,20 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Reflection Candidate Writer Result Discrimination.
+current_priority: Completed Hardening Context Condensation.
 
-first_unchecked_slice: `TSQ-05A: Discriminate Reflection Candidate Writer Result`.
+first_unchecked_slice: `CTX-00: Condense Completed Hardening Context`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- discriminate reflection candidate writer result states through the
-  `slice_template_gate` before any code changes;
+- condense completed hardening detail through the `slice_template_gate` before
+  any edits;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while discriminating reflection candidate writer result
-  states;
+  authority layer while condensing completed hardening context;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -171,6 +170,10 @@ completed_checkpoint:
 - DEV-DB-00 makes root `pnpm db:*` verification scripts use the local compose
   database URL when `KRN_DATABASE_URL` is absent. Direct `krn db ...` CLI calls
   remain strict; root verification commands now match the local dev runtime.
+- TSQ-05A discriminates `WriteReflectionCandidatesResult`: blocked results now
+  carry non-empty `blockedReasons` and no candidate arrays, while ready results
+  carry candidate arrays and no `blockedReasons`. Focused harness tests prove
+  blocked writer paths do not write candidates.
 
 completed_evidence_pointers:
 
@@ -3056,7 +3059,8 @@ git revert <C6-02 commit>
 - [x] TSQ-03 Quarantine unsafe casts and TS suppressions.
 - [x] TSQ-04 Audit explicit public type boundaries.
 - [x] TSQ-05 Audit impossible core lifecycle states.
-- [ ] TSQ-05A Discriminate reflection candidate writer result.
+- [x] TSQ-05A Discriminate reflection candidate writer result.
+- [ ] CTX-00 Condense completed hardening context.
 
 ## Surprises & Discoveries
 
@@ -6271,6 +6275,8 @@ git commit -m "chore(db): default local verification scripts"
 
 priority: P1.
 
+status: complete.
+
 objective:
 
 Make `WriteReflectionCandidatesResult` state-dependent so blocked writer
@@ -6280,6 +6286,29 @@ blocking reasons.
 source:
 
 TSQ-05 decision table.
+
+assumptions:
+
+- `writeReflectionCandidates` currently blocks before any repository writes
+  when reflection output contract or candidate evidence is invalid;
+- existing ready-path writes are behaviorally correct for this slice;
+- callers should narrow on `result.status` before reading ready-only or
+  blocked-only fields.
+
+tradeoffs:
+
+- removing empty candidate arrays from blocked results is a breaking internal
+  type cleanup, but it is the point of the slice: blocked output should not
+  look like an empty ready write;
+- using a non-empty tuple for `blockedReasons` adds a tiny helper, but it makes
+  the blocked invariant visible to TypeScript.
+
+simplest acceptable implementation:
+
+- split `WriteReflectionCandidatesResult` into ready and blocked interfaces;
+- return only `blockedReasons` on blocked results;
+- return only created/unsupported candidate arrays on ready results;
+- update focused tests to narrow by `status`.
 
 rules:
 
@@ -6300,6 +6329,39 @@ likely files:
 - `GOAL.md`;
 - `PLAN.md`.
 
+files forbidden to touch:
+
+- DB schema or migrations;
+- CLI command behavior;
+- worker runtime behavior;
+- reflection candidate storage paths beyond the result type.
+
+non-goals:
+
+- no new candidate writer path;
+- no source/eval/memory store creation;
+- no behavior change to which candidates are written;
+- no broad lifecycle-model rewrite.
+
+success criteria:
+
+- blocked result type has non-empty `blockedReasons` and no candidate arrays;
+- ready result type has candidate arrays and no `blockedReasons`;
+- focused tests prove both blocked cases do not write candidates;
+- typecheck catches callers that access wrong fields without narrowing.
+
+outcome:
+
+- `WriteReflectionCandidatesResult` is now a discriminated union of
+  `BlockedWriteReflectionCandidatesResult` and
+  `ReadyWriteReflectionCandidatesResult`;
+- blocked results carry non-empty `ReflectionCandidateWriterBlockedReasons` and
+  no candidate arrays;
+- ready results carry created/unsupported candidate arrays and no
+  `blockedReasons`;
+- focused tests narrow on `result.status` and assert blocked results do not
+  expose candidate arrays.
+
 verification:
 
 ```sh
@@ -6309,8 +6371,116 @@ pnpm test
 git diff --check
 ```
 
+command evidence:
+
+- `pnpm --filter @krn/harness test -- reflectionCandidateWriter`: first failed
+  because the ready runtime object still included `blockedReasons: []`; after
+  removing that field, it passed with 20 test files and 79 tests. This proves
+  the focused writer contract and nearby harness tests pass.
+- `pnpm typecheck`: passed across workspace packages. This proves callers must
+  narrow the discriminated result before reading ready-only or blocked-only
+  fields.
+- first `pnpm test`: failed in two CLI script expectation tests because
+  DEV-DB-00 changed root DB smoke scripts to include default
+  `KRN_DATABASE_URL`; fixed separately in pushed commit
+  `2b5fedf test(cli): align db smoke script expectations`.
+- final `pnpm test`: passed across core/schema/harness/workers/codex-adapter/db
+  and CLI. This proves the final workspace test suite passes after TSQ-05A and
+  the DEV-DB-00 test expectation fix.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
+
+rollback:
+
+```sh
+git revert <TSQ-05A commit>
+```
+
 commit:
 
 ```sh
 git commit -m "refactor(reflection): discriminate candidate writer result"
+```
+
+### CTX-00: Condense Completed Hardening Context
+
+priority: P1.
+
+objective:
+
+Reduce active-plan context after the completed TSQ/EVI/COND hardening run so
+future workers see the current objective, next unchecked item, open risks, and
+evidence pointers without carrying every completed task detail in the active
+window.
+
+assumptions:
+
+- completed checkpoint bullets and command evidence pointers are enough active
+  context for already-pushed slices;
+- detailed completed task bodies may remain historical ledger, but should not
+  be the first context workers must process;
+- no source or runtime behavior should change in a context-condensation slice.
+
+tradeoffs:
+
+- aggressive deletion saves context but risks losing local recovery detail;
+- the safer final-pattern is to compact the active snapshot and demote detail
+  to historical ledger, not erase evidence.
+
+simplest acceptable implementation:
+
+- compress the Active Queue Snapshot to current objective, completed checkpoint
+  categories, open risks, rollback/evidence pointers, and CTX-00 next action;
+- move or collapse duplicate completed prose that does not change execution;
+- keep exact command evidence and decision-file pointers reachable.
+
+rules:
+
+- docs-only unless live repo evidence shows a broken plan pointer;
+- do not delete decision records, run ledgers, or source evidence;
+- do not edit package source;
+- do not invent a new planning surface.
+
+likely files:
+
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- package source;
+- DB schema/migrations;
+- historical evidence files unless a broken pointer is found.
+
+non-goals:
+
+- no feature work;
+- no test rewriting;
+- no audit subsystem;
+- no new plan file.
+
+success criteria:
+
+- Active Queue Snapshot is smaller and still names the next unchecked slice;
+- completed hardening work is represented as compact checkpoint evidence;
+- historical evidence pointers remain available;
+- docs-only verification passes.
+
+verification:
+
+```sh
+git status --short --branch
+git diff --check
+pnpm typecheck
+```
+
+rollback:
+
+```sh
+git revert <CTX-00 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): condense completed hardening context"
 ```
