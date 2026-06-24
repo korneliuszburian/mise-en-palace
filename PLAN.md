@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: EvalCandidate Proposal Carrier Narrowing.
+current_priority: EvalCandidate Hardening Context Condensation.
 
-first_unchecked_slice: `TSQ-06A: Narrow EvalCandidate Proposal Carriers`.
+first_unchecked_slice: `CTX-02: Condense EvalCandidate Hardening Context`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next typed lifecycle implementation after TSQ-06 decided
-  proposal-only eval carriers need a narrower status shape;
+- continue from a context-condensation slice after TSQ-06/06A narrowed
+  proposal-only eval carriers;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while narrowing eval candidate proposal carriers;
+  authority layer while condensing EvalCandidate hardening context;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -66,27 +66,29 @@ completed_checkpoint:
 - CTX-01 condenses completed TSQ-05D/E/E-A detail into this checkpoint. Commit
   history remains the detailed evidence ledger:
   `8c7250e`, `1bbcf01`, and `4b429c5`.
-- TSQ-06 decides proposal-only eval carriers need a narrower status shape:
-  reflection proposals are already candidate-only, but `FeedbackDelta` and DB
-  feedback readback still use broad `EvalCandidate[]`.
+- TSQ-06/TSQ-06A narrows proposal-only eval carriers:
+  `FeedbackDelta.evalCandidates` and reflection candidate writer output now use
+  `EvalCandidateProposal[]`, while DB feedback readback normalizes missing
+  legacy status to `candidate` and drops accepted/rejected/promoted lifecycle
+  rows.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
 active_handoff:
 
-- objective: continue continuous hardening from the next bounded lifecycle
-  model slice, not from historical reset/audit detail;
-- last verified state: TSQ-06 passed focused core eval/feedback/reflection
-  tests, workspace typecheck, and diff hygiene in this decision slice; previous
-  pushed slice before TSQ-06 was
-  `7ab5383 docs(plan): condense lifecycle hardening context`;
+- objective: continue continuous hardening from the next bounded slice, not
+  from historical reset/audit detail;
+- last verified state: TSQ-06A passed focused core/harness/db tests, workspace
+  typecheck, full workspace tests, and diff hygiene in this implementation
+  slice; previous pushed slice before TSQ-06A was
+  `3501bd0 docs(ts): decide eval candidate proposal status shape`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-06A
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, CTX-02
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-06A: Narrow EvalCandidate Proposal Carriers`;
+- next action: execute `CTX-02: Condense EvalCandidate Hardening Context`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
@@ -97,8 +99,6 @@ open_risks_and_next_candidates:
   without explicit review fields.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
-- `FeedbackDelta.evalCandidates` should be narrowed to proposal-only
-  `candidate` status while the standalone eval lifecycle remains absent.
 - Activation decision persistence input is narrowed; DB enum/read model remains
   broader by design for historical rows and compatibility.
 
@@ -2995,7 +2995,8 @@ git revert <C6-02 commit>
 - [x] TSQ-05E-A Discriminate activation decision persistence input.
 - [x] CTX-01 Condense lifecycle hardening context.
 - [x] TSQ-06 Decide EvalCandidate proposal status shape.
-- [ ] TSQ-06A Narrow EvalCandidate proposal carriers.
+- [x] TSQ-06A Narrow EvalCandidate proposal carriers.
+- [ ] CTX-02 Condense EvalCandidate hardening context.
 
 ## Surprises & Discoveries
 
@@ -7599,4 +7600,135 @@ commit:
 
 ```sh
 git commit -m "refactor(eval): narrow proposal candidate status"
+```
+
+status: complete.
+
+outcome:
+
+- added `EvalCandidateProposal` as the current proposal-only eval carrier with
+  `status: "candidate"`;
+- kept broad `EvalCandidateStatus` / `EvalCandidate` for a future standalone
+  lifecycle, without adding storage, CLI, review gate, worker runtime, Promptfoo
+  authority, dashboard, or eval platform;
+- changed `FeedbackDelta.evalCandidates` and reflection candidate writer ready
+  output to `EvalCandidateProposal[]`;
+- changed DB feedback readback so missing legacy eval proposal status is
+  normalized to `candidate` only when required proposal fields are present, and
+  accepted/rejected/promoted lifecycle rows are not imported into the proposal
+  carrier;
+- added focused tests for proposal-only status typing and DB readback filtering.
+
+command_evidence:
+
+- `pnpm --filter @krn/core test -- eval feedbackDelta reflection`: passed, 10
+  files / 51 tests. This proves focused core eval, feedback, and reflection
+  tests accept the proposal-only carrier; it does not prove standalone eval
+  lifecycle behavior exists.
+- `pnpm --filter @krn/harness test -- reflectionCandidateWriter`: passed, 20
+  files / 79 tests. This proves the reflection writer still emits
+  candidate-only eval proposals and preserves existing candidate writer
+  behavior; it does not prove eval candidates are reviewed or promoted.
+- `pnpm --filter @krn/db test -- mappers`: passed, 23 files / 73 tests. This
+  proves DB mapper readback filters final eval lifecycle statuses from
+  FeedbackDelta proposal carriers; it does not prove live Postgres runtime
+  readiness.
+- `pnpm typecheck`: passed across the workspace. This proves the public type
+  boundary compiles with `FeedbackDelta.evalCandidates` narrowed to
+  `EvalCandidateProposal[]`.
+- `pnpm test`: passed across workspace packages. This proves current test suites
+  still pass after the carrier narrowing; it does not prove Memory Brain
+  readiness.
+- `git diff --check`: passed. This proves whitespace hygiene for the current
+  diff.
+
+### CTX-02: Condense EvalCandidate Hardening Context
+
+priority: P1.
+
+objective:
+
+Condense active `GOAL.md` / `PLAN.md` state after TSQ-06 and TSQ-06A so the
+EvalCandidate decision and implementation do not stay in the active context
+window, then select one next bounded hardening slice from live open risks.
+
+source:
+
+Context hygiene rule in the Active Queue Snapshot and TSQ-06A outcome.
+
+assumptions:
+
+- TSQ-06/06A evidence remains discoverable in commit history and historical
+  ledger sections;
+- the active queue should keep only current objective, next unchecked item,
+  compact checkpoint, command evidence pointers, open risks, and rollback notes;
+- there is no active unchecked implementation slice after TSQ-06A until CTX-02
+  selects one.
+
+tradeoffs:
+
+- over-condensing can hide useful rollback details;
+- under-condensing keeps finished EvalCandidate detail in active context and
+  wastes future context budget.
+
+simplest acceptable implementation:
+
+- collapse TSQ-06/06A active detail into checkpoint bullets and command evidence
+  pointers;
+- update `GOAL.md` to exactly one next unchecked hardening slice;
+- choose the next slice from remaining live risks without rereading raw
+  materials or old reset audit docs.
+
+rules:
+
+- do not edit TypeScript source in CTX-02;
+- do not delete evidence;
+- do not create a new plan file;
+- do not revive repo-reset audit or anti-slop layers;
+- do not choose a broad cleanup goal.
+
+likely files:
+
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- TypeScript source;
+- DB schema/migrations;
+- CLI command surfaces;
+- old raw materials.
+
+non-goals:
+
+- no behavior change;
+- no broad cleanup;
+- no new architecture layer;
+- no eval platform or worker runtime.
+
+success criteria:
+
+- active snapshot is shorter and no longer carries TSQ-06/06A detail as active
+  reading context;
+- `GOAL.md` stays compact;
+- one next concrete unchecked slice is named;
+- typecheck and diff hygiene pass.
+
+verification:
+
+```sh
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <CTX-02 commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(plan): condense eval candidate hardening context"
 ```

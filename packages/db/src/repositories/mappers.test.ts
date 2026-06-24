@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
   EvidenceBundle,
-  EvalCandidate,
+  EvalCandidateProposal,
   MemoryCandidate,
   SourceDecision
 } from "@krn/core";
@@ -58,7 +58,7 @@ const sourceDecision: SourceDecision = {
   updatedAt: updatedAt.toISOString()
 };
 
-const evalCandidate: EvalCandidate = {
+const evalCandidate: EvalCandidateProposal = {
   id: "eval-candidate-1",
   projectId: "project-1",
   status: "candidate",
@@ -87,6 +87,56 @@ describe("mapFeedbackDelta", () => {
     expect(result.memoryCandidates).toEqual([memoryCandidate]);
     expect(result.sourceDecisions).toEqual([sourceDecision]);
     expect(result.evalCandidates).toEqual([evalCandidate]);
+  });
+
+  it("normalizes legacy proposal eval candidates without importing final lifecycle status", () => {
+    const legacyCandidate = {
+      id: "eval-candidate-legacy",
+      projectId: "project-1",
+      title: "Legacy feedback proposal",
+      scenario: "A persisted feedback delta lacks eval candidate status.",
+      expectedSignal: "Readback treats it as a proposal, not final truth.",
+      sourceEvidence: ["source-1"],
+      metadata: {},
+      createdAt: createdAt.toISOString()
+    };
+    const acceptedCandidate = {
+      ...evalCandidate,
+      id: "eval-candidate-accepted",
+      status: "accepted"
+    };
+    const rejectedCandidate = {
+      ...evalCandidate,
+      id: "eval-candidate-rejected",
+      status: "rejected"
+    };
+    const promotedCandidate = {
+      ...evalCandidate,
+      id: "eval-candidate-promoted",
+      status: "promoted"
+    };
+
+    const result = mapFeedbackDelta({
+      id: "feedback-delta-1",
+      reviewAssessmentId: "review-1",
+      status: "candidate",
+      memoryCandidates: [],
+      sourceDecisions: [],
+      evalCandidates: [
+        legacyCandidate,
+        acceptedCandidate,
+        rejectedCandidate,
+        promotedCandidate
+      ],
+      metadata: {},
+      createdAt,
+      updatedAt
+    });
+
+    expect(result.evalCandidates).toEqual([{
+      ...legacyCandidate,
+      status: "candidate"
+    }]);
   });
 });
 

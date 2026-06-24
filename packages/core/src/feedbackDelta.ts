@@ -2,7 +2,7 @@ import type {
   FeedbackDeltaId,
   ReviewAssessmentId
 } from "./ids.js";
-import type { EvalCandidate } from "./eval.js";
+import type { EvalCandidateProposal } from "./eval.js";
 import type { MemoryCandidate } from "./memory.js";
 import type { SourceDecision } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
@@ -25,7 +25,7 @@ export interface FeedbackDelta {
   status: FeedbackDeltaStatus;
   memoryCandidates: MemoryCandidate[];
   sourceDecisions: SourceDecision[];
-  evalCandidates: EvalCandidate[];
+  evalCandidates: EvalCandidateProposal[];
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
   updatedAt: IsoTimestamp;

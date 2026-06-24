@@ -1,6 +1,6 @@
 import type {
   AntiMemoryCandidate,
-  EvalCandidate,
+  EvalCandidateProposal,
   ReflectionPolicyCandidateProposal,
   ReflectionRecord,
   SourceClaim
@@ -56,7 +56,7 @@ export interface ReadyWriteReflectionCandidatesResult {
   memoryCandidates: CreatedReflectionMemoryCandidate[];
   antiMemoryCandidates: AntiMemoryCandidate[];
   sourceClaims: SourceClaim[];
-  evalCandidates: EvalCandidate[];
+  evalCandidates: EvalCandidateProposal[];
   unsupportedCandidates: UnsupportedReflectionCandidate[];
 }
 
@@ -216,17 +216,19 @@ export const writeReflectionCandidates = async (
     });
   });
 
-  const evalCandidates = input.reflectionRecord.output.evalCandidates.map((proposal): EvalCandidate => ({
-    id: input.createId(`eval-candidate-${input.reflectionRecord.id}`),
-    projectId: input.reflectionRecord.scope.projectId,
-    status: "candidate",
-    title: proposal.title,
-    scenario: proposal.scenario,
-    expectedSignal: proposal.expectedSignal,
-    sourceEvidence: proposal.sourceEvidence,
-    metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal),
-    createdAt: input.now()
-  }));
+  const evalCandidates = input.reflectionRecord.output.evalCandidates.map(
+    (proposal): EvalCandidateProposal => ({
+      id: input.createId(`eval-candidate-${input.reflectionRecord.id}`),
+      projectId: input.reflectionRecord.scope.projectId,
+      status: "candidate",
+      title: proposal.title,
+      scenario: proposal.scenario,
+      expectedSignal: proposal.expectedSignal,
+      sourceEvidence: proposal.sourceEvidence,
+      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal),
+      createdAt: input.now()
+    })
+  );
 
   return {
     status: "ready",

@@ -5,15 +5,23 @@ import type {
 import type { IsoTimestamp } from "./time.js";
 
 export type EvalCandidateStatus = "candidate" | "accepted" | "rejected" | "promoted";
+export type EvalCandidateProposalStatus = "candidate";
 
-export interface EvalCandidate {
+export interface EvalCandidateBase {
   id: EvalCandidateId;
   projectId?: ProjectId;
-  status: EvalCandidateStatus;
   title: string;
   scenario: string;
   expectedSignal: string;
   sourceEvidence: string[];
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
+}
+
+export interface EvalCandidateProposal extends EvalCandidateBase {
+  status: EvalCandidateProposalStatus;
+}
+
+export interface EvalCandidate extends EvalCandidateBase {
+  status: EvalCandidateStatus;
 }

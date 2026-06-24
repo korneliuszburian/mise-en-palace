@@ -1,5 +1,5 @@
 import type {
-  EvalCandidate
+  EvalCandidateProposal
 } from "../eval.js";
 import type {
   EvidenceCommandProvenance
@@ -191,7 +191,7 @@ export interface ReflectionPolicyCandidateProposal {
 }
 
 export type ReflectionEvalCandidateProposal = Pick<
-  EvalCandidate,
+  EvalCandidateProposal,
   "title" | "scenario" | "expectedSignal" | "sourceEvidence" | "metadata"
 > & {
   evidence: ReflectionCandidateEvidence;

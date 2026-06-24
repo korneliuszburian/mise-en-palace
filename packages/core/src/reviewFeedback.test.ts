@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, expectTypeOf, test } from "vitest";
 
 import {
   normalizeReviewAssessment,
@@ -110,6 +110,10 @@ describe("review and feedback normalization", () => {
 });
 
 describe("feedback candidate proposal summary", () => {
+  test("types eval candidates as proposal-only candidate status", () => {
+    expectTypeOf<FeedbackDelta["evalCandidates"][number]["status"]>().toEqualTypeOf<"candidate">();
+  });
+
   test("summarizes structured candidate proposals without final memory mutation semantics", () => {
     expect(summarizeFeedbackCandidateProposals(feedback({
       memoryCandidates: [{

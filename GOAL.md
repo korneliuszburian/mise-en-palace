@@ -44,12 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-06A: Narrow EvalCandidate Proposal Carriers
+CTX-02: Condense EvalCandidate Hardening Context
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while narrowing eval candidate proposal carriers.
+eval platform while condensing EvalCandidate hardening context and selecting
+the next bounded hardening slice.
 Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
 
 ## Required Read Order

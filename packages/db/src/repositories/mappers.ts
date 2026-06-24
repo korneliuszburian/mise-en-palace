@@ -7,7 +7,7 @@ import type {
   EvidenceBundle,
   EvidenceCommandProvenance,
   EvidenceCommandStatus,
-  EvalCandidate,
+  EvalCandidateProposal,
   ExecutionRun,
   FeedbackDelta,
   HarnessPlan,
@@ -311,22 +311,43 @@ const vectorOrEmpty = (value: unknown): number[] => {
   return value.filter((item): item is number => typeof item === "number");
 };
 
-const evalCandidatesOrEmpty = (value: unknown): EvalCandidate[] => {
+const evalCandidatesOrEmpty = (value: unknown): EvalCandidateProposal[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.filter((item): item is EvalCandidate => {
+  return value.flatMap((item): EvalCandidateProposal[] => {
     if (!isRecord(item)) {
-      return false;
+      return [];
     }
 
-    return (
-      typeof item.id === "string" &&
-      typeof item.title === "string" &&
-      typeof item.scenario === "string" &&
-      typeof item.expectedSignal === "string"
-    );
+    const status = typeof item.status === "string" ? item.status : undefined;
+
+    if (status !== undefined && status !== "candidate") {
+      return [];
+    }
+
+    if (
+      typeof item.id !== "string" ||
+      typeof item.title !== "string" ||
+      typeof item.scenario !== "string" ||
+      typeof item.expectedSignal !== "string" ||
+      typeof item.createdAt !== "string"
+    ) {
+      return [];
+    }
+
+    return [{
+      id: item.id,
+      ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
+      status: "candidate",
+      title: item.title,
+      scenario: item.scenario,
+      expectedSignal: item.expectedSignal,
+      sourceEvidence: stringListOrEmpty(item.sourceEvidence),
+      metadata: metadataOrEmpty(item.metadata),
+      createdAt: item.createdAt
+    }];
   });
 };
 

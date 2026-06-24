@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type {
-  EvalCandidate,
+  EvalCandidateProposal,
   AntiMemoryCandidate,
   MemoryCandidate,
   ReflectionRecord,
@@ -273,7 +273,7 @@ describe("reflection candidate writer", () => {
     });
     expect(result.antiMemoryCandidates).toHaveLength(1);
     expect("blockedReasons" in result).toBe(false);
-    expect(result.evalCandidates[0]).toMatchObject<Partial<EvalCandidate>>({
+    expect(result.evalCandidates[0]).toMatchObject<Partial<EvalCandidateProposal>>({
       id: "eval-candidate-reflection-record-1-1",
       projectId: "project-1",
       status: "candidate",
