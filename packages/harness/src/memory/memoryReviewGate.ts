@@ -29,16 +29,26 @@ export interface PromoteMemoryCandidateThroughGateInput {
   review: MemoryReviewGateReview;
 }
 
+export type ReviewableMemoryCandidateStatus = Extract<
+  MemoryCandidate["status"],
+  "proposed" | "candidate"
+>;
+
+export type ReviewableMemoryCandidate = MemoryCandidate & {
+  status: ReviewableMemoryCandidateStatus;
+};
+
 export interface PromoteMemoryCandidateThroughGateResult {
-  candidate: MemoryCandidate;
+  candidate: ReviewableMemoryCandidate;
   memoryRecord: MemoryRecord;
   reviewedSourceClaims: SourceClaim[];
 }
 
-const promotableStatuses = new Set<MemoryCandidate["status"]>([
-  "proposed",
-  "candidate"
-]);
+const isReviewableMemoryCandidateStatus = (
+  status: MemoryCandidate["status"]
+): status is ReviewableMemoryCandidateStatus => (
+  status === "proposed" || status === "candidate"
+);
 
 const isRecord = (value: unknown): value is Record<string, unknown> => (
   typeof value === "object" && value !== null && !Array.isArray(value)
@@ -107,8 +117,10 @@ const candidateEvidence = (candidate: MemoryCandidate): ReflectionCandidateEvide
   };
 };
 
-const assertCandidateReviewable = (candidate: MemoryCandidate): void => {
-  if (!promotableStatuses.has(candidate.status)) {
+function assertCandidateReviewable(
+  candidate: MemoryCandidate
+): asserts candidate is ReviewableMemoryCandidate {
+  if (!isReviewableMemoryCandidateStatus(candidate.status)) {
     throw new Error(
       `MemoryCandidate ${candidate.id} cannot be promoted from status ${candidate.status}`
     );
@@ -143,7 +155,7 @@ const assertCandidateReviewable = (candidate: MemoryCandidate): void => {
   if (evidence.provenance === "default_template") {
     throw new Error(`MemoryCandidate ${candidate.id} cannot be promoted from weak default-template evidence`);
   }
-};
+}
 
 const reviewedSourceClaims = async (
   sourceRepository: Pick<SourceRepository, "getSourceClaimById">,

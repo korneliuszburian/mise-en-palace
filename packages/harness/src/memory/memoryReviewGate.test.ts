@@ -109,6 +109,10 @@ const memoryRecord = (
   ...overrides
 });
 
+const expectReviewableMemoryCandidateStatus = (
+  _status: "proposed" | "candidate"
+): void => {};
+
 describe("promoteMemoryCandidateThroughGate", () => {
   it("rejects promotion when candidate evidence provenance is missing", async () => {
     let promoteCalled = false;
@@ -269,6 +273,8 @@ describe("promoteMemoryCandidateThroughGate", () => {
     });
 
     expect(result.memoryRecord.id).toBe("memory-record-1");
+    expectReviewableMemoryCandidateStatus(result.candidate.status);
+    expect(result.candidate.status).toBe("candidate");
     expect(result.reviewedSourceClaims).toHaveLength(1);
     expect(capturedPromotion).toMatchObject({
       candidateId: "memory-candidate-1",
@@ -310,6 +316,8 @@ describe("promoteMemoryCandidateThroughGate", () => {
     });
 
     expect(result.memoryRecord.id).toBe("memory-record-1");
+    expectReviewableMemoryCandidateStatus(result.candidate.status);
+    expect(result.candidate.status).toBe("candidate");
     expect(capturedPromotion).toMatchObject({
       candidateId: "memory-candidate-1",
       reviewer: "operator",
@@ -349,6 +357,7 @@ describe("promoteMemoryCandidateThroughGate", () => {
     const ranked = rankCandidates([
       toMemoryCandidate(result.memoryRecord)
     ], buildMemoryQuery(task()));
+    expectReviewableMemoryCandidateStatus(result.candidate.status);
     const context = assembleContext({
       id: "context-reviewed-memory",
       harnessPlanId: "harness-plan-1",

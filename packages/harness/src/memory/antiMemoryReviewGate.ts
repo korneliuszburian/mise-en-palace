@@ -29,16 +29,26 @@ export interface PromoteAntiMemoryCandidateThroughGateInput {
   review: AntiMemoryReviewGateReview;
 }
 
+export type ReviewableAntiMemoryCandidateStatus = Extract<
+  AntiMemoryCandidate["status"],
+  "proposed" | "candidate"
+>;
+
+export type ReviewableAntiMemoryCandidate = AntiMemoryCandidate & {
+  status: ReviewableAntiMemoryCandidateStatus;
+};
+
 export interface PromoteAntiMemoryCandidateThroughGateResult {
-  candidate: AntiMemoryCandidate;
+  candidate: ReviewableAntiMemoryCandidate;
   antiMemoryRecord: AntiMemoryRecord;
   reviewedSourceClaims: SourceClaim[];
 }
 
-const promotableStatuses = new Set<AntiMemoryCandidate["status"]>([
-  "proposed",
-  "candidate"
-]);
+const isReviewableAntiMemoryCandidateStatus = (
+  status: AntiMemoryCandidate["status"]
+): status is ReviewableAntiMemoryCandidateStatus => (
+  status === "proposed" || status === "candidate"
+);
 
 const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidence["provenance"]>([
   "default_template",
@@ -109,8 +119,10 @@ const candidateEvidence = (
   };
 };
 
-const assertCandidateReviewable = (candidate: AntiMemoryCandidate): void => {
-  if (!promotableStatuses.has(candidate.status)) {
+function assertCandidateReviewable(
+  candidate: AntiMemoryCandidate
+): asserts candidate is ReviewableAntiMemoryCandidate {
+  if (!isReviewableAntiMemoryCandidateStatus(candidate.status)) {
     throw new Error(
       `AntiMemoryCandidate ${candidate.id} cannot be promoted from status ${candidate.status}`
     );
@@ -147,7 +159,7 @@ const assertCandidateReviewable = (candidate: AntiMemoryCandidate): void => {
       `AntiMemoryCandidate ${candidate.id} cannot be promoted from weak default-template evidence`
     );
   }
-};
+}
 
 const candidateSourceClaimIds = (candidate: AntiMemoryCandidate): string[] => [
   ...new Set([

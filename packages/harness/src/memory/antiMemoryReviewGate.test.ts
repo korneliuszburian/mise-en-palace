@@ -80,6 +80,10 @@ const antiMemoryRecord = (): AntiMemoryRecord => ({
   updatedAt: now
 });
 
+const expectReviewableAntiMemoryCandidateStatus = (
+  _status: "proposed" | "candidate"
+): void => {};
+
 describe("promoteAntiMemoryCandidateThroughGate", () => {
   it("rejects promotion when candidate evidence provenance is missing", async () => {
     let promoteCalled = false;
@@ -182,6 +186,8 @@ describe("promoteAntiMemoryCandidateThroughGate", () => {
     });
 
     expect(result.antiMemoryRecord.id).toBe("anti-memory-record-1");
+    expectReviewableAntiMemoryCandidateStatus(result.candidate.status);
+    expect(result.candidate.status).toBe("candidate");
     expect(result.reviewedSourceClaims).toHaveLength(1);
     expect(capturedPromotion).toMatchObject({
       candidateId: "anti-memory-candidate-1",

@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Memory Review Gate Candidate Status Narrowing.
+current_priority: EvidenceBundle Status Shape Decision.
 
-first_unchecked_slice: `TSQ-05C: Narrow Memory Review Gate Result Candidate Status`.
+first_unchecked_slice: `TSQ-05D: Decide EvidenceBundle Status Shape`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next implementation follow-up promoted by TSQ-05B after
-  live source showed no need for a promotion-result discriminated union;
+- continue from the next lifecycle-model follow-up after TSQ-05C narrowed
+  memory review gate result candidate statuses;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while narrowing memory review gate result candidate status;
+  authority layer while deciding EvidenceBundle status shape;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -64,6 +64,9 @@ completed_checkpoint:
 - TSQ-05B decides memory promotion result shape: no discriminated result union
   is needed for success-only review gates, but the returned candidate should be
   narrowed to a reviewable `proposed | candidate` status in TSQ-05C.
+- TSQ-05C narrows successful memory and anti-memory review gate result
+  candidates to reviewable `proposed | candidate` status without changing
+  promotion behavior or repository return shapes.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -71,27 +74,25 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded lifecycle
   model slice, not from historical reset/audit detail;
-- last verified state: TSQ-05B docs decision passed focused harness review gate
-  tests, workspace typecheck, and diff hygiene in this slice; previous pushed
-  slice is `f3e8b7d docs(plan): condense completed hardening context`;
+- last verified state: TSQ-05C passed focused harness review gate tests,
+  workspace typecheck, full workspace tests, and diff hygiene in this slice;
+  previous pushed slice is `5328e49 docs(ts): decide memory promotion result
+  shape`;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05B /
-  TSQ-05C sections, and only the source files named by the next slice;
-- next action: execute `TSQ-05C: Narrow Memory Review Gate Result Candidate
-  Status`;
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-05D
+  section, and only the source files named by the next slice;
+- next action: execute `TSQ-05D: Decide EvidenceBundle Status Shape`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- Memory review gate result candidate status remains too broad at type level;
-  TSQ-05C should narrow returned candidates to reviewable `proposed |
-  candidate` status.
-- `EvidenceBundle.status` remains deferred unless status starts governing
-  persistence/review workflow fields.
+- `EvidenceBundle.status` is the next lifecycle candidate; TSQ-05D should
+  decide whether it governs required fields or remains acceptable as one object
+  shape with helper assessments.
 - Activation decision shapes remain deferred until live misuse appears.
 - EvalCandidate remains proposal-only by ADR-0016; no table, CLI, worker, or
   Promptfoo authority exists.
@@ -2983,7 +2984,8 @@ git revert <C6-02 commit>
 - [x] TSQ-05A Discriminate reflection candidate writer result.
 - [x] CTX-00 Condense completed hardening context.
 - [x] TSQ-05B Decide memory promotion result state shape.
-- [ ] TSQ-05C Narrow memory review gate result candidate status.
+- [x] TSQ-05C Narrow memory review gate result candidate status.
+- [ ] TSQ-05D Decide EvidenceBundle status shape.
 
 ## Surprises & Discoveries
 
@@ -6603,6 +6605,8 @@ git commit -m "docs(ts): decide memory promotion result shape"
 
 priority: P2.
 
+status: complete.
+
 objective:
 
 Narrow successful MemoryReviewGate and AntiMemoryReviewGate result candidate
@@ -6672,6 +6676,17 @@ success criteria:
   union after successful gate promotion;
 - behavior and focused review gate tests still pass.
 
+outcome:
+
+- `ReviewableMemoryCandidateStatus` / `ReviewableMemoryCandidate` and
+  `ReviewableAntiMemoryCandidateStatus` / `ReviewableAntiMemoryCandidate` are
+  exported from the review gate modules;
+- successful gate result `candidate` fields are narrowed to reviewable
+  `proposed | candidate` status;
+- existing gate behavior remains success-only with thrown blocking errors;
+- focused tests include compile-time helpers proving result candidate status is
+  not the full candidate workflow union.
+
 verification:
 
 ```sh
@@ -6680,6 +6695,20 @@ pnpm typecheck
 pnpm test
 git diff --check
 ```
+
+command evidence:
+
+- first `pnpm typecheck`: failed because assertion functions written as const
+  arrow values did not narrow the call target. This proved the initial
+  implementation shape was not valid under the repo TypeScript settings.
+- `pnpm --filter @krn/harness test -- memoryReviewGate antiMemoryReviewGate`:
+  passed after converting assertions to function declarations. This proves
+  focused memory and anti-memory review gate behavior still passes.
+- final `pnpm typecheck`: passed across workspace packages. This proves the
+  narrowed public gate result types compile across current callers.
+- `pnpm test`: passed across core/schema/harness/workers/codex-adapter/db/cli.
+  This proves the final workspace test suite passes after the type narrowing.
+- `git diff --check`: passed. This proves the diff has no whitespace errors.
 
 rollback:
 
@@ -6691,4 +6720,99 @@ commit:
 
 ```sh
 git commit -m "refactor(memory): narrow review gate candidate status"
+```
+
+### TSQ-05D: Decide EvidenceBundle Status Shape
+
+priority: P2.
+
+objective:
+
+Inspect `EvidenceBundle.status` and decide whether it should become a
+discriminated lifecycle shape or remain a single object shape with explicit
+evidence assessment helpers.
+
+source:
+
+TSQ-05 decision table. `EvidenceBundle.status` was deferred unless status starts
+governing persistence or review workflow fields.
+
+assumptions:
+
+- existing EvidenceBundle command provenance and assessment helpers may already
+  carry the meaningful lifecycle constraints;
+- this is a decision slice before any model rewrite;
+- evidence status should not become a broad quality subsystem or audit layer.
+
+tradeoffs:
+
+- converting `EvidenceBundle` too early could create churn around persistence
+  and schema compatibility;
+- leaving status broad is acceptable only if helper assessments make proof
+  strength explicit and no status-specific required fields are implied.
+
+simplest acceptable implementation:
+
+- inspect core EvidenceBundle model, schema parser, CLI capture output, DB
+  mappers/repository use, and tests;
+- produce a decision table for `draft` / `captured` / `verified` / `rejected`;
+- promote one implementation slice only if live source shows status-specific
+  required fields are currently expressible incorrectly.
+
+rules:
+
+- do not add audit scanner, quality subsystem, dashboard, worker runtime, or
+  hidden command runner;
+- do not change DB schema/migrations in the decision slice;
+- do not rewrite evidence command provenance again unless live source proves a
+  status-specific gap.
+
+likely files:
+
+- `packages/core/src/evidenceBundle.ts`;
+- `packages/schema/src/evidenceBundle.ts`;
+- `packages/cli/src/runEvidenceCaptureCommand.ts`;
+- DB evidence bundle mapper/repository tests if needed for source inspection;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- worker runtime behavior;
+- Promptfoo/eval surfaces;
+- unrelated CLI commands.
+
+non-goals:
+
+- no EvidenceBundle rewrite in the decision slice;
+- no command runner;
+- no quality engine or audit layer.
+
+success criteria:
+
+- decision table states whether `EvidenceBundle.status` needs a discriminated
+  union, narrower value object, or no change;
+- active queue advances to a bounded follow-up or records no-op with evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/core test -- evidenceBundle
+pnpm --filter @krn/schema test -- evidenceBundle
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-05D commit>
+```
+
+commit:
+
+```sh
+git commit -m "docs(ts): decide evidence bundle status shape"
 ```
