@@ -26,19 +26,19 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Activation Decision Read-Model Boundary Decision.
+current_priority: Retrieval Run Completion Status Boundary Decision.
 
-first_unchecked_slice: `TSQ-08: Decide Activation Decision Read-Model Boundary`.
+first_unchecked_slice: `TSQ-09: Decide Retrieval Run Completion Status Boundary`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- continue from the next typed lifecycle decision after TSQ-07 narrowed
-  EvidenceBundle write-status authority;
+- continue from the next typed lifecycle decision after TSQ-08 narrowed
+  activation decision public input authority;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
-  authority layer while deciding activation decision read-model boundaries;
+  authority layer while deciding retrieval run completion status boundaries;
 - do not create a quality subsystem, scanner, or standalone anti-slop layer.
 
 completed_checkpoint:
@@ -71,6 +71,9 @@ completed_checkpoint:
 - TSQ-07 narrows EvidenceBundle write authority: repository write input accepts
   only `draft | captured`; broad persisted/read-model status remains for
   historical rows.
+- TSQ-08 keeps activation decision persisted/read-model vocabulary broad for
+  historical `abstained` rows but narrows public activation decision input to
+  current write decisions: `included | excluded | deferred | conflict | stale`.
 - Execution hygiene: executor discipline, slice template gate, commit/push/clean
   worktree requirement, and recurring context-condensation rule are active.
 
@@ -78,23 +81,23 @@ active_handoff:
 
 - objective: continue continuous hardening from the next bounded slice, not
   from historical reset/audit detail;
-- last verified state: TSQ-07 passed focused evidence/CLI/DB/harness tests,
-  workspace typecheck, full workspace tests, and diff hygiene; final command
-  evidence is recorded in the TSQ-07 section;
+- last verified state: TSQ-08 passed schema, activation/harness, DB mapper,
+  and workspace typecheck checks; final command evidence is recorded in the
+  TSQ-08 section;
 - decisions: do not create a new plan file, do not delete evidence, and keep
   `GOAL.md` compact while `PLAN.md` remains the living queue;
 - blockers/risks: full command transcript remains long by design; do not claim
   broad Memory Brain readiness from green tests or smokes;
-- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-08
+- context selectors: read `GOAL.md`, this Active Queue Snapshot, TSQ-09
   section, and only the source files named by the next slice;
-- next action: execute `TSQ-08: Decide Activation Decision Read-Model Boundary`;
+- next action: execute `TSQ-09: Decide Retrieval Run Completion Status Boundary`;
 - do not reread: `docs/materials/`, old memory ideal-state plans, or completed
   task bodies unless the active slice names them.
 
 open_risks_and_next_candidates:
 
-- Activation decision persistence input is narrowed; DB enum/read model remains
-  broader by design for historical rows and compatibility.
+- Retrieval run completion input may still accept status values that belong to
+  persisted/read-model vocabulary rather than completion write authority.
 
 completed_evidence_pointers:
 
@@ -2992,7 +2995,8 @@ git revert <C6-02 commit>
 - [x] TSQ-06A Narrow EvalCandidate proposal carriers.
 - [x] CTX-02 Condense EvalCandidate hardening context.
 - [x] TSQ-07 Decide EvidenceBundle status authority boundary.
-- [ ] TSQ-08 Decide Activation Decision read-model boundary.
+- [x] TSQ-08 Decide Activation Decision read-model boundary.
+- [ ] TSQ-09 Decide Retrieval Run completion status boundary.
 
 ## Surprises & Discoveries
 
@@ -7980,7 +7984,8 @@ assumptions:
   boundary;
 - persisted DB rows and read models may stay broader for historical
   compatibility;
-- this is a decision slice before any mapper or schema change.
+- this is a decision slice before any DB mapper/schema change; public IO schema
+  may be narrowed if it leaks read-model vocabulary into write authority.
 
 tradeoffs:
 
@@ -8012,6 +8017,7 @@ likely files:
 
 - `packages/harness/src/repositories/retrievalRepository.ts`;
 - `packages/harness/src/activation/activationEngine.ts`;
+- `packages/schema/src/retrieval.ts`;
 - `packages/db/src/repositories/DrizzleRetrievalRepository.ts`;
 - `packages/db/src/repositories/mappers.ts`;
 - focused activation/retrieval tests if needed for source inspection;
@@ -8058,5 +8064,179 @@ git revert <TSQ-08 commit>
 commit:
 
 ```sh
-git commit -m "docs(ts): decide activation read model boundary"
+git commit -m "refactor(schema): narrow activation decision input"
+```
+
+status: complete.
+
+source_decisions:
+
+1. source: `packages/harness/src/repositories/retrievalRepository.ts`
+   mechanism: `RecordActivationDecisionInput` is already a discriminated union
+   over current write decisions.
+   KRN implication: repository write authority does not create `abstained`
+   activation decision rows.
+   decision: keep repository input shape.
+   falsifier: a compile-time path accepts
+   `RecordActivationDecisionInput["decision"] = "abstained"`.
+
+2. source: `packages/db/src/schema/retrieval.ts` and
+   `packages/db/src/repositories/mappers.ts`
+   mechanism: DB enum/read model still includes `abstained`.
+   KRN implication: historical rows and persisted readback can remain broader
+   than current writer vocabulary.
+   decision: keep DB enum and mapper broad; no migration.
+   falsifier: current write API needs `abstained` decision rows instead of
+   recording abstention on the retrieval run.
+
+3. source: `packages/schema/src/retrieval.ts`
+   mechanism: public `ActivationDecisionInputSchema` previously used the full
+   `ActivationDecisionSchema`, including `abstained`.
+   KRN implication: read-model vocabulary leaked into public input authority.
+   decision: split activation decision input vocabulary from read-model
+   vocabulary and model input as a decision-discriminated union.
+   falsifier: `parseActivationDecisionInput({ decision: "abstained", ... })`
+   succeeds.
+
+decision_table:
+
+| decision | current write input | read-model/historical | rule |
+| --- | --- | --- | --- |
+| `included` | yes | yes | requires context assembly and expected use/impact. |
+| `excluded` | yes | yes | requires non-stale exclusion category. |
+| `conflict` | yes | yes | requires anti-memory id and exclusion category. |
+| `stale` | yes | yes | requires stale exclusion category. |
+| `deferred` | yes | yes | cannot carry inclusion/exclusion-only fields. |
+| `abstained` | no | yes | retrieval-run outcome, not activation decision write input. |
+
+implementation:
+
+- kept `ActivationDecisionSchema` broad for persisted/read-model vocabulary;
+- added `ActivationDecisionInputDecisionSchema` without `abstained`;
+- changed `ActivationDecisionInputSchema` to a strict discriminated union;
+- added schema tests proving `abstained` input and generic excluded/stale
+  leakage are rejected.
+
+command_evidence:
+
+```sh
+pnpm --filter @krn/schema test
+pnpm --filter @krn/harness test -- activationTraceDecisions activation repositories
+pnpm --filter @krn/db test -- mappers DrizzleRetrievalRepository
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+what_this_proves:
+
+- public activation decision input cannot accept `abstained`;
+- current writer/read-model boundary is explicit in schema and repository
+  types;
+- DB persisted vocabulary remains broad without a schema migration.
+
+what_this_does_not_prove:
+
+- DB runtime readiness; no live DB command was run for this slice;
+- activation ranking quality;
+- broader Memory Brain readiness.
+
+### TSQ-09: Decide Retrieval Run Completion Status Boundary
+
+priority: P2.
+
+objective:
+
+Inspect retrieval run completion write authority after TSQ-08. Decide whether
+`CompleteRetrievalRunInput.status` should be narrower than
+`RetrievalRunRecord["status"]`, because completion should not accept
+read-model/start-state values such as `running`.
+
+source:
+
+TSQ-08 source inspection of `persistActivationTrace` and
+`CompleteRetrievalRunInput`.
+
+assumptions:
+
+- `RetrievalRunRecord["status"]` may remain broad for persisted readback;
+- completion writer likely needs only terminal statuses;
+- activation trace currently writes `completed` or `abstained`.
+
+tradeoffs:
+
+- broad completion input is convenient but can encode impossible lifecycle
+  transitions;
+- narrowing completion status should not require DB migration if the persisted
+  enum remains broad.
+
+simplest acceptable implementation:
+
+- inspect `packages/harness/src/repositories/retrievalRepository.ts`,
+  `packages/harness/src/activation/activationEngine.ts`,
+  `packages/db/src/repositories/DrizzleRetrievalRepository.ts`, and retrieval
+  run tests;
+- decide whether completion write input should be
+  `completed | abstained | failed`;
+- implement a narrow exported input status type and type-level/runtime tests if
+  live source confirms the broad write gap.
+
+rules:
+
+- do not change retrieval ranking or activation selection behavior;
+- do not change DB schema/migrations;
+- do not create a lifecycle engine;
+- do not fold activation decision edits into this slice.
+
+likely files:
+
+- `packages/harness/src/repositories/retrievalRepository.ts`;
+- `packages/harness/src/repositories/index.ts`;
+- focused repository/activation tests;
+- `GOAL.md`;
+- `PLAN.md`.
+
+files forbidden to touch:
+
+- DB schema/migrations;
+- ranking/filtering algorithms;
+- Promptfoo/eval surfaces;
+- old raw materials.
+
+non-goals:
+
+- no DB migration;
+- no activation rewrite;
+- no dashboard/eval platform;
+- no audit scanner revival.
+
+success criteria:
+
+- decision table states which retrieval run statuses are start/current state,
+  terminal completion write input, or historical/read-model only;
+- implementation exists if `CompleteRetrievalRunInput` can currently encode an
+  impossible transition;
+- active queue advances to the next bounded slice or records no-op with
+  evidence;
+- typecheck passes.
+
+verification:
+
+```sh
+pnpm --filter @krn/harness test -- repositories activationTraceDecisions
+pnpm --filter @krn/db test -- DrizzleRetrievalRepository mappers
+pnpm typecheck
+git diff --check
+```
+
+rollback:
+
+```sh
+git revert <TSQ-09 commit>
+```
+
+commit:
+
+```sh
+git commit -m "refactor(retrieval): narrow completion status input"
 ```

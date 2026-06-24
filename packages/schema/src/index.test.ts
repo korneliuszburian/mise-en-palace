@@ -887,21 +887,75 @@ describe("schema parse boundaries", () => {
       })
     ).toThrow();
 
+    expect(() =>
+      parseActivationDecisionInput({
+        retrievalRunId: "retrieval-run-1",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        decision: "abstained",
+        reason: "No candidate should be written as an activation decision"
+      })
+    ).toThrow();
+
+    expect(() =>
+      parseActivationDecisionInput({
+        retrievalRunId: "retrieval-run-1",
+        contextAssemblyId: "context-assembly-1",
+        subjectType: "search_document",
+        subjectId: "search-document-1",
+        decision: "excluded",
+        reason: "Stale evidence is a stale decision, not generic excluded.",
+        exclusionCategory: "stale"
+      })
+    ).toThrow();
+
     expect(
       parseActivationDecisionInput({
         retrievalRunId: "retrieval-run-1",
         retrievalCandidateId: "candidate-1",
+        contextAssemblyId: "context-assembly-1",
         subjectType: "search_document",
         subjectId: "search-document-1",
         decision: "included",
         reason: "High trust and directly relevant",
         contextBudgetCost: 240,
-        expectedDecisionImpact: "Supports choosing Postgres edge tables"
+        expectedDecisionImpact: "Supports choosing Postgres edge tables",
+        expectedUse: "Guide retrieval substrate implementation",
+        rawRecall: {
+          required: true,
+          reasons: ["exact_proof_required"],
+          evidenceHints: ["search_document:search-document-1"]
+        }
       })
     ).toMatchObject({
       decision: "included",
       contextBudgetCost: 240,
+      expectedUse: "Guide retrieval substrate implementation",
+      rawRecall: {
+        required: true,
+        reasons: ["exact_proof_required"],
+        evidenceHints: ["search_document:search-document-1"]
+      },
       metadata: {}
+    });
+
+    expect(
+      parseActivationDecisionInput({
+        retrievalRunId: "retrieval-run-1",
+        retrievalCandidateId: "candidate-2",
+        contextAssemblyId: "context-assembly-1",
+        subjectType: "memory_record",
+        subjectId: "memory-1",
+        decision: "conflict",
+        reason: "anti_memory_block",
+        antiMemoryRecordId: "anti-memory-1",
+        exclusionCategory: "unsafe",
+        activationAbstentionReason: "unsafe_context"
+      })
+    ).toMatchObject({
+      decision: "conflict",
+      antiMemoryRecordId: "anti-memory-1",
+      exclusionCategory: "unsafe"
     });
 
     expect(

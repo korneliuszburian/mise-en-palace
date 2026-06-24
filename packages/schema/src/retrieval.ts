@@ -73,6 +73,14 @@ export const ActivationDecisionSchema = z.enum([
   "stale"
 ]);
 
+export const ActivationDecisionInputDecisionSchema = z.enum([
+  "included",
+  "excluded",
+  "deferred",
+  "conflict",
+  "stale"
+]);
+
 export const ContextExclusionReasonSchema = z.enum([
   "stale",
   "invalidated",
@@ -83,6 +91,43 @@ export const ContextExclusionReasonSchema = z.enum([
   "irrelevant",
   "unsafe",
   "superseded"
+]);
+
+export const NonStaleContextExclusionReasonSchema = z.enum([
+  "invalidated",
+  "low_trust",
+  "low_context_roi",
+  "over_budget",
+  "duplicate",
+  "irrelevant",
+  "unsafe",
+  "superseded"
+]);
+
+export const ActivationDecisionSourceSupportStateSchema = z.enum([
+  "not_applicable",
+  "source_claim_supported",
+  "source_claim_missing_mechanism",
+  "source_claim_missing_does_not_prove"
+]);
+
+export const ActivationTraceRawRecallReasonSchema = z.enum([
+  "exact_proof_required",
+  "low_trust"
+]);
+
+export const ActivationTraceRawRecallSchema = z.object({
+  required: z.boolean(),
+  reasons: z.array(ActivationTraceRawRecallReasonSchema).default([]),
+  evidenceHints: z.array(RequiredTextSchema).default([])
+});
+
+export const ActivationAbstentionReasonSchema = z.enum([
+  "no_candidates",
+  "weak_context",
+  "all_excluded",
+  "over_budget",
+  "unsafe_context"
 ]);
 
 export const SearchDocumentInputSchema = z
@@ -146,19 +191,70 @@ export const RetrievalCandidateInputSchema = z.object({
   metadata: MetadataSchema
 });
 
-export const ActivationDecisionInputSchema = z.object({
+const ActivationDecisionBaseInputShape = {
   retrievalRunId: RequiredTextSchema,
   retrievalCandidateId: OptionalIdSchema,
-  contextAssemblyId: OptionalIdSchema,
   subjectType: RetrievalSubjectTypeSchema,
   subjectId: RequiredTextSchema,
-  decision: ActivationDecisionSchema,
   reason: RequiredTextSchema,
   score: OptionalBoundedScoreSchema,
   contextBudgetCost: NonNegativeIntegerSchema.optional(),
   expectedDecisionImpact: OptionalTextSchema,
+  sourceSupportState: ActivationDecisionSourceSupportStateSchema.optional(),
+  activationAbstentionReason: ActivationAbstentionReasonSchema.optional(),
   metadata: MetadataSchema
-});
+};
+
+export const ActivationDecisionInputSchema = z.discriminatedUnion("decision", [
+  z.object({
+    ...ActivationDecisionBaseInputShape,
+    decision: z.literal("included"),
+    contextAssemblyId: RequiredTextSchema,
+    expectedDecisionImpact: RequiredTextSchema,
+    expectedUse: RequiredTextSchema,
+    rawRecall: ActivationTraceRawRecallSchema.optional(),
+    antiMemoryRecordId: z.never().optional(),
+    exclusionCategory: z.never().optional(),
+    activationAbstentionReason: z.never().optional()
+  }).strict(),
+  z.object({
+    ...ActivationDecisionBaseInputShape,
+    decision: z.literal("excluded"),
+    contextAssemblyId: RequiredTextSchema,
+    expectedUse: z.never().optional(),
+    rawRecall: z.never().optional(),
+    antiMemoryRecordId: z.never().optional(),
+    exclusionCategory: NonStaleContextExclusionReasonSchema
+  }).strict(),
+  z.object({
+    ...ActivationDecisionBaseInputShape,
+    decision: z.literal("conflict"),
+    contextAssemblyId: RequiredTextSchema,
+    expectedUse: z.never().optional(),
+    rawRecall: z.never().optional(),
+    antiMemoryRecordId: RequiredTextSchema,
+    exclusionCategory: ContextExclusionReasonSchema
+  }).strict(),
+  z.object({
+    ...ActivationDecisionBaseInputShape,
+    decision: z.literal("stale"),
+    contextAssemblyId: RequiredTextSchema,
+    expectedUse: z.never().optional(),
+    rawRecall: z.never().optional(),
+    antiMemoryRecordId: z.never().optional(),
+    exclusionCategory: z.literal("stale")
+  }).strict(),
+  z.object({
+    ...ActivationDecisionBaseInputShape,
+    decision: z.literal("deferred"),
+    contextAssemblyId: OptionalIdSchema,
+    expectedUse: z.never().optional(),
+    rawRecall: z.never().optional(),
+    antiMemoryRecordId: z.never().optional(),
+    exclusionCategory: z.never().optional(),
+    activationAbstentionReason: z.never().optional()
+  }).strict()
+]);
 
 export const ContextItemInputSchema = z.object({
   contextAssemblyId: RequiredTextSchema,
@@ -186,6 +282,10 @@ export const ContextExclusionInputSchema = z.object({
 export type SearchDocumentInput = z.infer<typeof SearchDocumentInputSchema>;
 export type RetrievalRunInput = z.infer<typeof RetrievalRunInputSchema>;
 export type RetrievalCandidateInput = z.infer<typeof RetrievalCandidateInputSchema>;
+export type ActivationDecisionInputDecision = z.infer<
+  typeof ActivationDecisionInputDecisionSchema
+>;
+export type ActivationTraceRawRecall = z.infer<typeof ActivationTraceRawRecallSchema>;
 export type ActivationDecisionInput = z.infer<typeof ActivationDecisionInputSchema>;
 export type ContextItemInput = z.infer<typeof ContextItemInputSchema>;
 export type ContextExclusionInput = z.infer<typeof ContextExclusionInputSchema>;

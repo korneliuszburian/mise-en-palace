@@ -44,13 +44,13 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-TSQ-08: Decide Activation Decision Read-Model Boundary
+TSQ-09: Decide Retrieval Run Completion Status Boundary
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding whether activation decision read models need a
-narrower historical/current write boundary.
+eval platform while deciding whether retrieval run completion inputs need a
+narrower terminal-status write boundary.
 Promote the slice through the `slice_template_gate` in `PLAN.md` before edits.
 
 ## Required Read Order
