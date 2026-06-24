@@ -135,6 +135,9 @@ This is part of the goal, not optional housekeeping.
 - After verification, commit the completed slice with one focused Conventional
   Commit.
 - Push immediately after every completed slice commit.
+- Do not batch completed tasks into catch-up commits or delayed pushes. If work
+  is already mixed, stop, split the scope, and make the smallest honest commit
+  before continuing.
 - If push fails, fix the remote/worktree blocker or record it in `PLAN.md`;
   do not start the next task with a finished but unpushed commit.
 - `GOAL.md` / `PLAN.md` bookkeeping may travel with the slice it describes.

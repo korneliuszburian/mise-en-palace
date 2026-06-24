@@ -203,9 +203,9 @@ worktree_hygiene:
   commit; unrelated backlog or policy edits require a separate docs commit;
 - if existing dirty state is unrelated to the current slice, leave it untouched
   and record it instead of mixing it into the slice commit;
-- first application of this rule may use one catch-up commit for the already
-  accumulated EVI/C0 worktree; all following completed slices must return to
-  one focused commit and push per slice;
+- do not batch completed tasks into catch-up commits or delayed pushes; if work
+  is already mixed, stop and split it into the smallest honest commit before
+  continuing;
 - if a completed slice cannot be committed or pushed, record the exact blocker
   in this snapshot before continuing.
 
