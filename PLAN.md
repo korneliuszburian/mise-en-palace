@@ -26,15 +26,15 @@ Read this section first. Completed slices below are ledger/checkpoint material,
 not required active context unless the current slice explicitly points back to
 them.
 
-current_priority: Remaining Package Barrel Decision.
+current_priority: CLI Internal Dev Surface Decision.
 
-first_unchecked_slice: `COND-03: Decide Remaining Package Barrels`.
+first_unchecked_slice: `COND-04: CLI Public Surface Code Move Decision`.
 
 active_scope:
 
 - keep the `krn audit` product/guardrail/scanner surface removed;
-- decide remaining core/schema/codex-adapter/workers package barrels through
-  the `slice_template_gate` before any code changes;
+- decide the code-level fate of internal/dev CLI surfaces through the
+  `slice_template_gate` before any code changes;
 - do not reintroduce `krn audit` as a guardrail, scanner, product UX, or
   internal quality subsystem;
 - do not build a broad eval platform, dashboard, worker runtime, or Promptfoo
@@ -134,8 +134,10 @@ completed_checkpoint:
 - EXEC-01 adds a slice template gate for future and promoted backlog items.
   Existing appendix backlog items are sketches until promoted; promotion must
   add the template fields and keep completed detail compressed. COND-00 through
-  COND-02 are already covered by C1-01/C1-02/C1-03, so the next barrel slice is
-  COND-03.
+  COND-02 are already covered by C1-01/C1-02/C1-03.
+- COND-03 decides the remaining core/schema/codex-adapter/workers package
+  barrels as current stable contract surfaces and records falsifiers instead
+  of deleting wildcard exports by aesthetics.
 
 completed_evidence_pointers:
 
@@ -3008,7 +3010,8 @@ git revert <C6-02 commit>
   row/provenance review.
 - [x] EXEC-00 Add executor discipline to active slice template.
 - [x] EXEC-01 Require slice template for future backlog items.
-- [ ] COND-03 Decide remaining package barrels.
+- [x] COND-03 Decide remaining package barrels.
+- [ ] COND-04 Decide internal/dev CLI command surface.
 
 ## Surprises & Discoveries
 
@@ -3158,6 +3161,11 @@ git revert <C6-02 commit>
   `--verification` flow and preview output still used "Persisted command
   provenance" wording. Help now includes explicit verification examples, and
   evidence capture output states that no shell commands are executed.
+- COND-03 found no current root export of test helpers, fixtures, smokes, DB
+  readiness, or adapter internals in the remaining core/schema/codex-adapter/
+  workers barrels. The worker root still exports enqueue contracts, but ADR-0015
+  and worker docs state this does not imply a daemon, background loop, or job
+  executor.
 
 ## Decision Log
 
@@ -3281,6 +3289,13 @@ git revert <C6-02 commit>
   Do not continue into candidate generation, worker runtime, dashboard, or
   broader memory behavior until command provenance can say what was run, how it
   was observed, and what it does not prove.
+- 2026-06-24: COND-03 keeps remaining `@krn/core`, `@krn/schema`,
+  `@krn/codex-adapter`, and `@krn/workers` barrels as accepted current public
+  contracts. The decision is not aesthetic approval of wildcard exports; it is
+  a source-backed classification that no test fixtures, smokes, readiness
+  probes, DB internals, or adapter internals currently leak through those roots.
+  Falsifier: a package root starts exporting helpers whose authority exceeds
+  the behavior its package proves.
 
 ## Outcomes & Retrospective
 
@@ -3356,8 +3371,8 @@ Current outcome:
 - C1-00 did not rename commands. It made the existing CLI taxonomy visible in
   help behavior first, preserving command compatibility while removing public
   ambiguity around DB smokes/readiness.
-- Continuous hardening queue C0-C5 is active. The first unchecked item is
-  C5-01: Decide governed EvalCandidate staging path.
+- Continuous hardening has advanced beyond C0-C6 and EXEC. The first unchecked
+  item is always the value in `Active Queue Snapshot`, not this retrospective.
 - C3-00 found no need for a new eval subsystem. The existing
   `runKrnBehaviorGoldenGate` path could cover raw recall, observation prefix
   source-range rejection, and EvidenceBundle command provenance by executing
@@ -3384,6 +3399,9 @@ Current outcome:
   adapter and schema, but not exposed as pure core review signals. The retained
   source checks now live in `packages/core/src/source.ts`; DB enforcement
   reuses core decision-grade support-type logic.
+- COND-03 found the remaining core/schema/codex-adapter/workers barrels are
+  acceptable as current contract surfaces. No source exports were changed; the
+  package-surface doc now carries the falsifiers that would reopen the slice.
 
 ## Command Evidence
 
@@ -4670,8 +4688,8 @@ observed:
   items and promoted backlog sketches;
 - older appendix backlog items are explicitly treated as sketches until
   normalized into the template;
-- active queue now points to `COND-03` because COND-00 through COND-02 are
-  covered by completed C1 package-surface slices;
+- after EXEC-01, active queue moved to `COND-03`; after COND-03 completion it
+  now moves to the first unchecked slice in `Active Queue Snapshot`;
 - docs verification found `files forbidden to touch`, `success criteria`, and
   `rollback` in `PLAN.md`;
 - `git diff --check` passed.
@@ -4794,12 +4812,38 @@ git commit -m "refactor(harness): narrow product exports"
 
 ### COND-03: Decide Remaining Package Barrels
 
+status: complete.
+
 priority: P2.
 
 objective:
 
 Classify broad wildcard exports in core/schema/codex-adapter/workers instead
 of deleting them by aesthetics.
+
+assumptions:
+
+- remaining package roots can stay broad only when their exports are stable
+  domain, schema, adapter-renderer, or worker-contract surfaces;
+- wildcard syntax alone is not a defect if the exported modules are the
+  intended contract;
+- package roots carry authority, so any test helper, fixture, smoke,
+  readiness probe, DB table, concrete adapter, or internal runner leaking
+  through them reopens this slice.
+
+tradeoffs:
+
+- keeping accepted barrels avoids churn across import paths and preserves
+  existing package ergonomics;
+- the risk is future drift, so the decision records falsifiers instead of
+  pretending wildcard exports are permanently safe.
+
+simplest acceptable implementation:
+
+- inspect the remaining barrels and directly referenced modules;
+- record a source-backed classification in
+  `docs/architecture/package-surfaces.md`;
+- do not touch package source when no leak is observed.
 
 rules:
 
@@ -4813,11 +4857,61 @@ files likely touched:
 - `docs/architecture/package-surfaces.md`
 - selected package indexes only when a decision is trivial and small.
 
+files forbidden to touch:
+
+- package source files unless the inventory proves an internal export leak;
+- DB migrations;
+- CLI command routing;
+- worker runtime/executor code.
+
+non-goals:
+
+- no worker daemon;
+- no CLI command move;
+- no broad package-barrel rewrite;
+- no compatibility layer;
+- no audit/quality/anti-slop subsystem.
+
+success criteria:
+
+- every remaining package root is classified as keep/narrow/defer with a
+  falsifier;
+- `@krn/workers` explicitly says enqueue contracts do not prove runtime
+  execution;
+- `GOAL.md` and `PLAN.md` point to the next unchecked slice after completion.
+
 verification:
 
 ```sh
 rg -n "export \\*" packages/*/src/index.ts packages/*/src/**/index.ts
+rg -n "schemaPrimitives" packages/schema/src/index.ts packages/schema/src/*.ts
+rg -n "requiresBackgroundLoop|daemon|background|runtime|enqueue" packages/workers/src/*.ts packages/workers/README.md docs/decisions/ADR-0015-worker-runtime-boundary.md
+rg -n "COND-03|Remaining Barrel|@krn/core|@krn/schema|@krn/codex-adapter|@krn/workers|does_not_prove|falsifier" docs/architecture/package-surfaces.md PLAN.md GOAL.md
 git diff --check
+```
+
+observed:
+
+- `@krn/core` root and `@krn/core/observations` export domain contracts,
+  policy, and validation modules; no test helper or adapter internal is
+  exported through the root.
+- `@krn/schema` root exports public Zod IO parser modules, while
+  `schemaPrimitives.ts` remains internal to schema modules and tests.
+- `@krn/codex-adapter` root exports Codex-facing contracts and renderers, not
+  execution tooling or mutators.
+- `@krn/workers` root exports job descriptions and enqueue contracts only.
+  ADR-0015, package README, and `requiresBackgroundLoop: false` state that this
+  does not prove a daemon, background loop, job executor, or autonomous
+  maintenance runtime.
+- No package source change was needed.
+- Focused docs-only verification passed, including remaining barrel inventory,
+  schema primitive visibility check, worker runtime boundary scan, decision
+  text scan, and `git diff --check`.
+
+rollback:
+
+```sh
+git revert <COND-03 commit>
 ```
 
 commit:

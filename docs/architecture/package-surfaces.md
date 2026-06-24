@@ -223,12 +223,87 @@ C1-01 decision:
 - do not expose parser internals as root package API until they are accepted as
   stable adapter contracts.
 
-## Not In First Narrowing Slice
+## COND-03 Remaining Barrel Decision
 
-The `rg` inventory also shows wildcard exports in `packages/core`,
-`packages/schema`, `packages/codex-adapter`, `packages/workers`, and nested
-domain indexes. P1-02 does not decide those. Later slices may inspect them if
-they start leaking internals as product authority.
+COND-03 inspected the remaining wildcard package roots and nested domain
+barrels:
+
+```sh
+rg -n "export \\*" packages/core/src/index.ts packages/core/src/observations/index.ts packages/schema/src/index.ts packages/codex-adapter/src/index.ts packages/workers/src/index.ts
+rg -n "schemaPrimitives" packages/schema/src/index.ts packages/schema/src/*.ts
+rg -n "requiresBackgroundLoop|daemon|background|runtime|enqueue" packages/workers/src/*.ts packages/workers/README.md docs/decisions/ADR-0015-worker-runtime-boundary.md
+```
+
+The decision is to keep these barrels for now. This is not aesthetic approval
+of wildcard exports. It is a source-backed classification that the current
+remaining barrels expose stable contracts and do not currently leak the
+internal/dev surfaces that C1 removed from DB, CLI, harness, and repository
+roots.
+
+source_id: `packages/core/src/index.ts`,
+`packages/core/src/observations/index.ts`
+trust_tier: high live source.
+mechanism: the root exports core domain contracts for capability planning,
+activation, context assembly, evidence, execution runs, feedback, golden tasks,
+memory, policy, review, source, task contracts, IDs, and time; the nested
+observations barrel exports observation domain contracts, policy, and
+validation.
+KRN implication: core is the domain contract package, so a broad root is
+acceptable while it stays contract-only.
+decision: keep the current core root and observations barrel.
+does_not_prove: every exported core type is perfectly modeled or that future
+internal helpers cannot drift into the root.
+consumer: package surface contract.
+falsifier: the root or nested observation barrel exports tests, fixtures,
+adapters, smokes, command runners, or implementation helpers that are not core
+domain contracts.
+
+source_id: `packages/schema/src/index.ts`,
+`packages/schema/src/schemaPrimitives.ts`
+trust_tier: high live source.
+mechanism: schema root exports public Zod IO parser modules, while shared
+`schemaPrimitives.ts` is imported by schema modules and tests but not exported
+from the package root.
+KRN implication: schema entrypoint can remain a parser-surface barrel if
+primitive construction details stay internal.
+decision: keep the current schema root; do not export schema primitives as
+public API.
+does_not_prove: every parser is complete or every JSON/file/CLI boundary is
+fully hardened.
+consumer: schema package surface.
+falsifier: `schemaPrimitives`, test fixtures, or boundary-bypass helpers become
+root exports.
+
+source_id: `packages/codex-adapter/src/index.ts`
+trust_tier: high live source.
+mechanism: codex-adapter root exports Codex-facing contracts and renderers for
+goal references, execution briefs, hook expectations, skill hints, and exec
+plan references.
+KRN implication: adapter root can expose rendering contracts because it is the
+boundary that turns typed KRN state into Codex-facing instructions.
+decision: keep the current codex-adapter root.
+does_not_prove: rendered briefs are sufficient for all Codex workflows or that
+Codex execution quality is proven.
+consumer: Codex adapter public surface.
+falsifier: root exports execution mutators, tool runners, local agent runtime,
+or internal helper modules that bypass the typed harness/core contracts.
+
+source_id: `packages/workers/src/index.ts`,
+`docs/decisions/ADR-0015-worker-runtime-boundary.md`,
+`packages/workers/README.md`
+trust_tier: high live source and accepted ADR.
+mechanism: workers root exports typed job descriptions and enqueue contracts;
+ADR-0015 and the package README state there is no worker daemon, background
+loop, job executor, or autonomous maintenance runtime, and job descriptions use
+`requiresBackgroundLoop: false`.
+KRN implication: the worker package is a contract surface, not a runtime claim.
+decision: keep `enqueueMaintenanceJob` and `jobTypes` in the workers root for
+now, with the ADR/README as the authority boundary.
+does_not_prove: job execution, throughput, background processing, production
+maintenance, or Memory Core mutation exists.
+consumer: worker package contract and ADR-0015.
+falsifier: workers root exports a daemon, poller, executor, scheduler,
+background loop, or Memory Core mutator before a future runtime ADR accepts it.
 
 ## Ordered Repair Slices
 
@@ -241,6 +316,9 @@ they start leaking internals as product authority.
    `@krn/harness/repositories`.
 4. Repository ports: complete in C1-03. Public repository surface is curated;
    full persistence plumbing moved to `@krn/harness/repositories/internal`.
+5. Remaining core/schema/codex-adapter/workers barrels: complete in COND-03.
+   Current barrels stay because they expose stable domain/schema/adapter/
+   worker-contract surfaces; falsifiers above define when to reopen the slice.
 
 Each code slice must run:
 

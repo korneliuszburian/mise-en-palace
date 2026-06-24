@@ -44,12 +44,12 @@ proved the operational spine, not Memory Brain readiness. Continue from the
 first unchecked slice in `PLAN.md` Active Queue Snapshot:
 
 ```txt
-COND-03: Decide Remaining Package Barrels
+COND-04: CLI Public Surface Code Move Decision
 ```
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
-eval platform while deciding remaining package barrels. Promote the slice
+eval platform while deciding the internal/dev CLI surface. Promote the slice
 through the `slice_template_gate` in `PLAN.md` before code changes.
 
 ## Required Read Order
