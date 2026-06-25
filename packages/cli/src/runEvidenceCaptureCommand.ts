@@ -12,14 +12,12 @@ import type {
   SourceDecision
 } from "@krn/core";
 import {
+  assessCandidateReviewability,
   normalizeEvidenceCommand
 } from "@krn/core";
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
-import {
-  assessCandidateReviewability
-} from "./candidateReviewability.js";
 import type {
   CreateDatabaseRuntime
 } from "./runPlanCommand.js";

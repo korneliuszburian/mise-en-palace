@@ -1,11 +1,13 @@
 import type {
   AntiMemoryCandidate,
+  CandidateReviewabilityAssessment,
   EvalCandidateProposal,
   ReflectionPolicyCandidateProposal,
   ReflectionRecord,
   SourceClaim
 } from "@krn/core";
 import {
+  assessCandidateReviewability,
   assessReflectionOutputContract,
   buildReflectionCandidateGenerationPlan
 } from "@krn/core";
@@ -27,6 +29,8 @@ export interface UnsupportedReflectionCandidate {
   kind: UnsupportedReflectionCandidateKind;
   index: number;
   reason: string;
+  reviewability: CandidateReviewabilityAssessment["reviewability"];
+  reviewabilityReasons: string[];
   proposal:
     | ReflectionPolicyCandidateProposal
     | ReflectionRecord["output"]["sourceClaimCandidates"][number];
@@ -82,16 +86,73 @@ const reflectionMetadata = (
   candidateWriter: "reflection"
 });
 
+type ReflectionCandidateProposal =
+  | ReflectionRecord["output"]["memoryCandidates"][number]
+  | ReflectionRecord["output"]["antiMemoryCandidates"][number]
+  | ReflectionRecord["output"]["sourceClaimCandidates"][number]
+  | ReflectionRecord["output"]["policyCandidates"][number]
+  | ReflectionRecord["output"]["evalCandidates"][number];
+
+const reflectionCandidateReviewability = (
+  proposal: ReflectionCandidateProposal
+): CandidateReviewabilityAssessment => {
+  if ("claim" in proposal) {
+    return assessCandidateReviewability({
+      summary: proposal.claim,
+      body: `${proposal.mechanism} ${proposal.krnImplication}`,
+      evidenceRefs: proposal.evidence.evidenceRefs,
+      applicationGuidance: proposal.falsifier ?? proposal.krnImplication,
+      doesNotProve: proposal.evidence.doesNotProve
+    });
+  }
+
+  if ("scenario" in proposal) {
+    return assessCandidateReviewability({
+      summary: proposal.title,
+      body: proposal.scenario,
+      evidenceRefs: proposal.evidence.evidenceRefs.length > 0
+        ? proposal.evidence.evidenceRefs
+        : proposal.sourceEvidence,
+      applicationGuidance: proposal.expectedSignal,
+      doesNotProve: proposal.evidence.doesNotProve
+    });
+  }
+
+  if ("rationale" in proposal) {
+    return assessCandidateReviewability({
+      summary: proposal.summary,
+      body: proposal.rationale,
+      evidenceRefs: proposal.evidence.evidenceRefs,
+      applicationGuidance: proposal.rationale,
+      doesNotProve: proposal.evidence.doesNotProve
+    });
+  }
+
+  return assessCandidateReviewability({
+    summary: proposal.summary,
+    body: proposal.body,
+    evidenceRefs: proposal.evidence.evidenceRefs,
+    sourceLineage: proposal.sourceLineage,
+    applicationGuidance: "applicationGuidance" in proposal
+      ? proposal.applicationGuidance
+      : proposal.reason ?? proposal.summary,
+    doesNotProve: proposal.evidence.doesNotProve
+  });
+};
+
 const reflectionCandidateMetadata = (
   reflectionRecord: ReflectionRecord,
-  proposal: {
-    metadata: Record<string, unknown>;
-    evidence: ReflectionRecord["output"]["memoryCandidates"][number]["evidence"];
-  }
-): Record<string, unknown> => reflectionMetadata(reflectionRecord, {
-  ...proposal.metadata,
-  reflectionCandidateEvidence: proposal.evidence
-});
+  proposal: ReflectionCandidateProposal
+): Record<string, unknown> => {
+  const reviewability = reflectionCandidateReviewability(proposal);
+
+  return reflectionMetadata(reflectionRecord, {
+    ...proposal.metadata,
+    reflectionCandidateEvidence: proposal.evidence,
+    reviewability: reviewability.reviewability,
+    reviewabilityReasons: reviewability.reasons
+  });
+};
 
 export const writeReflectionCandidates = async (
   input: WriteReflectionCandidatesInput
@@ -174,13 +235,17 @@ export const writeReflectionCandidates = async (
 
   const unsupportedCandidates: UnsupportedReflectionCandidate[] = [];
   const sourceClaims: SourceClaim[] = [];
-  input.reflectionRecord.output.sourceClaimCandidates.forEach((_proposal, index) => {
+  input.reflectionRecord.output.sourceClaimCandidates.forEach((proposal, index) => {
     if (input.sourceRepository === undefined || input.sourceArtifactId === undefined) {
+      const reviewability = reflectionCandidateReviewability(proposal);
+
       unsupportedCandidates.push({
         kind: "source_claim_candidate",
         index,
         reason: "source_claim_candidate_requires_source_repository_and_source_artifact",
-        proposal: _proposal
+        reviewability: reviewability.reviewability,
+        reviewabilityReasons: reviewability.reasons,
+        proposal
       });
     }
   });
@@ -208,10 +273,14 @@ export const writeReflectionCandidates = async (
   }
 
   input.reflectionRecord.output.policyCandidates.forEach((proposal, index) => {
+    const reviewability = reflectionCandidateReviewability(proposal);
+
     unsupportedCandidates.push({
       kind: "policy_candidate",
       index,
       reason: "policy_candidate_store_not_available",
+      reviewability: reviewability.reviewability,
+      reviewabilityReasons: reviewability.reasons,
       proposal
     });
   });

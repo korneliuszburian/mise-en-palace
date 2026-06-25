@@ -72,6 +72,11 @@ completed_checkpoint:
   db:ready` passed with 13/13 migrations and pgvector available, and a
   persisted run/evidence/observe/reflect replay exists at
   `79252723-50ed-484a-a7c6-513366130db5`.
+- RCR-00 Reflection Candidate Reviewability is complete:
+  DB-backed run `a0407c7a-ffca-478e-b209-539488b2bd4c` proved that the
+  candidate reviewability helper can move from CLI-only evidence capture into
+  reflection candidate output without changing extraction, review gates,
+  promotion behavior, or DB schema.
 - Execution hygiene is active: every slice must inspect status, implement
   narrowly, verify, commit, push, and leave a clean worktree.
 
@@ -117,6 +122,8 @@ evidence_pointers:
   `docs/reviews/controlled-dogfood/2026-06-25-candidate-reviewability-output/REPORT.md`
 - Current-shell DB replay report:
   `docs/reviews/controlled-dogfood/2026-06-25-db-replay-evidence-metadata/REPORT.md`
+- Reflection candidate reviewability report:
+  `docs/reviews/controlled-dogfood/2026-06-25-reflection-candidate-reviewability/REPORT.md`
 - OpenAI Codex execution references:
   `https://developers.openai.com/cookbook/articles/codex_exec_plans`,
   `https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex`,
@@ -151,6 +158,7 @@ evidence_pointers:
 - [x] GBC-00 Add Golden Behavior Coverage For Evidence Dirty-Context Capture.
 - [x] CRO-00 Improve Candidate Reviewability Output.
 - [x] DBR-00 Prove Current-Shell DB Replay For Evidence Metadata.
+- [x] RCR-00 Apply Candidate Reviewability To Reflection Candidate Output.
 
 ## Current Decisions
 

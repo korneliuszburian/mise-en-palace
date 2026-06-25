@@ -247,6 +247,10 @@ describe("reflection candidate writer", () => {
           evidenceRefs: ["observation-1:range-1"],
           doesNotProve: "This does not prove the candidate is approved Memory Core truth."
         },
+        reviewability: "ready",
+        reviewabilityReasons: [
+          "Candidate has review evidence, application guidance, and doesNotProve boundary."
+        ],
         sourceRangeIds: ["range-1"]
       }
     });
@@ -255,6 +259,10 @@ describe("reflection candidate writer", () => {
       status: "proposed",
       metadata: {
         reflectionRecordId: "reflection-record-1",
+        reviewability: "ready",
+        reviewabilityReasons: [
+          "Candidate has review evidence, application guidance, and doesNotProve boundary."
+        ],
         sourceRangeIds: ["range-1"]
       }
     });
@@ -268,7 +276,11 @@ describe("reflection candidate writer", () => {
           provenance: "source_claim",
           evidenceRefs: ["source-claim-1"],
           doesNotProve: "This does not prove the anti-memory candidate is reviewed."
-        }
+        },
+        reviewability: "ready",
+        reviewabilityReasons: [
+          "Candidate has review evidence, application guidance, and doesNotProve boundary."
+        ]
       }
     });
     expect(result.antiMemoryCandidates).toHaveLength(1);
@@ -278,10 +290,22 @@ describe("reflection candidate writer", () => {
       projectId: "project-1",
       status: "candidate",
       title: "Reflection candidate-only regression",
-      sourceEvidence: ["observation-1"]
+      sourceEvidence: ["observation-1"],
+      metadata: {
+        reviewability: "ready",
+        reviewabilityReasons: [
+          "Candidate has review evidence, application guidance, and doesNotProve boundary."
+        ]
+      }
     });
     expect(result.unsupportedCandidates).toEqual([
-      expect.objectContaining({ kind: "policy_candidate" })
+      expect.objectContaining({
+        kind: "policy_candidate",
+        reviewability: "ready",
+        reviewabilityReasons: [
+          "Candidate has review evidence, application guidance, and doesNotProve boundary."
+        ]
+      })
     ]);
   });
 

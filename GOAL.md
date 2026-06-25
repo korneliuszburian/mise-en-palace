@@ -54,18 +54,20 @@ KRN-SR-00: Improve Evidence Dirty-Context Reporting
 GBC-00: Add Golden Behavior Coverage For Evidence Dirty-Context Capture
 CRO-00: Improve Candidate Reviewability Output
 DBR-00: Prove Current-Shell DB Replay For Evidence Metadata
+RCR-00: Apply Candidate Reviewability To Reflection Candidate Output
 ```
 
 These are KRN-on-KRN repairs/proofs in the actual `mise-en-palace` repo, not a
 synthetic weak-repo trial. Root `PLAN.md` now has no unchecked slice after
-DBR-00 proved current-shell DB replay for evidence metadata. Evidence is
-recorded at:
+RCR-00 moved candidate reviewability into core and reflection candidate output.
+Evidence is recorded at:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context-golden/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-candidate-reviewability-output/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-db-replay-evidence-metadata/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-reflection-candidate-reviewability/REPORT.md
 ```
 
 Do not start a broad new goal from this file. Add the next bounded slice to
