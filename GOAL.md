@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-C-02 — End-To-End Governed Product Path
+C-03 — Codex Brief And Execution Contract Hardening
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, and C-01 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, and C-02 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -39,6 +39,7 @@ docs/reviews/controlled-dogfood/2026-06-25-memory-feedback-demotion-loop/REPORT.
 docs/reviews/controlled-dogfood/2026-06-25-anti-memory-conflict-integration/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-target-workers-harness-trial/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-init-connect-source-seed-hardening/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-governed-memory-activation-path/REPORT.md
 ```
 
 ## Operating Rules

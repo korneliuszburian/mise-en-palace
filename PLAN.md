@@ -389,6 +389,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `C-02`
 - Name: Prove governed path from evidence to memory activation.
+- Status: complete on 2026-06-25.
 - Objective: Complete one governed path: evidence -> observation -> reflection -> candidates -> review -> memory/source update -> activation in a later task -> golden proof.
 - Business rationale: This is the current README gap and the core product value path.
 - Architectural rationale: Integrates all brain/harness layers without shortcuts.
@@ -398,6 +399,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: A promoted record from one run materially helps a later run and is recorded as helped.
 - Verification: DB-backed commands, tests, dogfood report, golden behavior case.
 - Acceptance criteria: No direct mutation bypasses review gates.
+- Outcome: C-01 evidence produced SourceClaim `0395c917-dac3-4938-b901-c77f93d2e7b9`, MemoryCandidate `ededd61c-89d5-4bee-b3d2-3f445d81f075`, reviewed MemoryRecord `c24f8819-66fc-4009-b18f-f033e6b08e9c`, later activation run `17b13857-7787-406a-97c6-c89ea7fc95b9`, and helped MemoryApplication `5adb76a0-eb67-4193-9807-70ecd279adcc`.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-governed-memory-activation-path/REPORT.md`; evidence bundle `9ad5a082-dc42-43a9-95a9-2df95b367a09`; observation group `8a845125-5d0c-45f8-8c2b-e293301c44ac`; reflection record `2347c347-2d2d-4439-975d-54104850e549`.
 - Priority: P0.
 - Complexity: XL.
 - Risks: Forcing promotion prematurely. Mitigation: allow rejection/deferral if candidate is not ready.
@@ -686,9 +689,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    C-02 — End-To-End Governed Product Path
+    C-03 — Codex Brief And Execution Contract Hardening
 
-C-01 is complete. Continue with C-02 as the first governed evidence-to-reviewed-state-to-later-activation path. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+C-02 is complete. Continue with C-03 to harden the Codex-facing brief for reviewed memory/source/evidence boundaries. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
