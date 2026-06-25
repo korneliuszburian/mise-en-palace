@@ -665,6 +665,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `G-01`
 - Name: Define production migration, backup, and replay policy.
+- Status: complete on 2026-06-25.
 - Objective: Establish how KRN brain-store migrations, backups, and rollback are handled.
 - Business rationale: Memory/source/evidence state is durable product value.
 - Architectural rationale: Postgres is canonical state; migrations need operational governance.
@@ -674,6 +675,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Operator can back up, restore, migrate, and verify local brain store.
 - Verification: local backup/restore smoke or documented dry run.
 - Acceptance criteria: No production claims without backup path.
+- Outcome: Adopted PostgreSQL custom-format logical backups plus scratch-database restore verification as the first local/internal-alpha brain-store migration and rollback policy. Extended the local brain-store runbook with backup, restore smoke, migration, and rollback steps. Verified a real dump from the local `krn` database, restored it into `krn_restore_smoke`, passed `pnpm db:ready`, passed `pnpm db:smoke`, read back 14 Drizzle migrations, and dropped the scratch DB.
+- Evidence: `docs/decisions/ADR-0026-brain-store-migration-backup-policy.md`; `docs/runbooks/local-brain-store.md`; `docs/reviews/controlled-dogfood/2026-06-25-migration-backup-policy/REPORT.md`; evidence bundle `6941f7a7-94f2-41fc-98cd-60eeee8ca926`; observation group `32638e89-9e3a-4847-b4ba-2acdeba346b6`; reflection record `1bf72051-b9dc-4990-8d8a-c911305a1946`.
 - Priority: P1.
 - Complexity: M.
 - Risks: Data loss. Mitigation: explicit backup before destructive migrations.
@@ -733,9 +736,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    G-01 — Migration And Backup Policy
+    G-02 — Packaging And Versioning
 
-G-00 is complete. Continue with G-01 to define production migration, backup, restore, and replay policy for the Postgres brain store. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
+G-01 is complete. Continue with G-02 to define repeatable internal-alpha packaging, versioning, install, and release-note boundaries. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

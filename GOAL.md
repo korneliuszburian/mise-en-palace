@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-G-01 — Migration And Backup Policy
+G-02 — Packaging And Versioning
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, and G-00 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, and G-01 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -52,6 +52,7 @@ docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPOR
 docs/reviews/controlled-dogfood/2026-06-25-codex-automation-boundary/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-dashboard-readiness-gate/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-ci-verification-pipeline/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-migration-backup-policy/REPORT.md
 ```
 
 ## Operating Rules
