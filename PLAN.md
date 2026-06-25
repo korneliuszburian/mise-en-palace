@@ -852,6 +852,7 @@ gates needed before another internal-alpha decision.
 
 - ID: `V01-04`
 - Name: Re-run internal-alpha readiness gate after target evidence.
+- Status: complete on 2026-06-25.
 - Objective: Decide whether KRN becomes internal-alpha-ready, remains dogfood-only, or needs another bounded repair.
 - Business rationale: Converts V01 evidence into a release decision.
 - Architectural rationale: Release decisions must be evidence gates, not roadmap momentum.
@@ -861,17 +862,43 @@ gates needed before another internal-alpha decision.
 - Definition of Done: Readiness is classified as not-ready, dogfood-only, internal-alpha, or defer.
 - Verification: release checklist; CI; reports; command evidence.
 - Acceptance criteria: No product-ready claim.
+- Outcome: KRN is classified as controlled-internal-alpha ready for technical operators and bounded target repos. Product-ready remains rejected. The gate is cleared by V01 target evidence, V01-R01 target read-model repair, and green GitHub Actions CI after `27e3f2d`. Remaining limits are real second-human operator proof, hosted/non-Docker DB posture, broader target ingestion/redaction, exact target file recall below named roots, reflection usefulness, and product install UX.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-re-gate-after-v01/REPORT.md`; persisted decision run `77bcaab6-f63b-453d-8c46-a9bad9de2910`; evidence bundle `cc7c54d6-44c8-4950-8b25-e0d656121eb2`; observation group `308e79bf-e49a-4543-b3bc-e2c041ea417e`; reflection record `c456bd75-5572-4359-8fdf-9343d8c1a5bf`; GitHub Actions run `https://github.com/korneliuszburian/mise-en-palace/actions/runs/28186557878`.
 - Priority: P0 after V01 evidence.
 - Complexity: M.
 - Risks: Overclaiming. Mitigation: explicit what-this-does-not-prove section.
+
+## Phase V02 — Controlled Internal Alpha Operation
+
+This phase starts because V01-04 cleared controlled internal alpha but not
+product readiness. The next work is not a new subsystem. It is the smallest
+operator-facing cleanup before asking a real second operator or moving an alpha
+tag.
+
+### V02-00 — Internal Alpha Runbook Friction Update
+
+- ID: `V02-00`
+- Name: Clarify source-workspace alpha runbook friction.
+- Objective: Update internal-alpha runbook/release notes so a technical operator understands expected install warnings, expected `alpha:verify` duration, and preview-vs-DB doctor behavior before running a controlled alpha.
+- Business rationale: V01-01 found repeatable operator friction that can be removed without source changes.
+- Architectural rationale: Operator readiness is part of controlled internal alpha; runbook truth should explain current boundaries instead of hiding them in reports.
+- Dependencies: V01-01, V01-04.
+- Input requirements: V01-01 operator-beyond-author report and current runbooks/release notes.
+- Output requirements: Focused docs update only.
+- Definition of Done: Runbook or release notes state expected install warning posture, expected verification command shape/duration, and why `pnpm krn doctor` is preview-only unless DB commands are run.
+- Verification: `git diff --check`; no package source changes.
+- Acceptance criteria: No release tag move, no npm/global install, no dashboard/API/MCP/worker/source crawler, no product-ready claim.
+- Priority: P1.
+- Complexity: S.
+- Risks: Turning docs into marketing. Mitigation: state proof boundaries and limitations.
 
 ## 8. Current Active Queue Recommendation
 
 The next active slice should be:
 
-    V01-04 — Internal Alpha Re-Gate
+    V02-00 — Internal Alpha Runbook Friction Update
 
-V01-R01 is complete. Continue with V01-04 to decide whether KRN becomes internal-alpha-ready, remains dogfood-only, or needs another bounded repair. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V01-04 is complete. Continue with V02-00 to clarify controlled internal-alpha runbook friction before a real second-operator run or any tag movement. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
@@ -881,14 +908,14 @@ Already achieved for KRN-on-KRN workflow/review brain. Evidence includes Brain U
 
 ### Internal-alpha gate
 
-KRN is internal-alpha-ready only when all are true:
+KRN is controlled-internal-alpha ready only when all are true:
 
-1. A DB-backed target repo trial exists. Status: partially satisfied by V01-00 for one author-operated external target repo.
-2. KRN improves at least one real coding task with lower or clearer review burden.
-3. Activation either selects owner files or has a bounded repair in progress.
-4. Evidence capture, observe, reflect, candidates, review, and at least one later activation link are demonstrated.
-5. CI verifies typecheck/tests and at least non-DB checks; DB checks are either in CI or explicitly documented as local-only.
-6. Safety/trust boundary review has no critical unresolved issue.
+1. A DB-backed target repo trial exists. Status: satisfied by V01-00 for one author-operated external target repo.
+2. KRN improves at least one real coding task with lower or clearer review burden. Status: satisfied by the scoped `muke-v2` eval repair.
+3. Activation either selects owner files or has a bounded repair in progress. Status: satisfied for named target roots/trust exclusions by V01-R01; exact file recall below roots remains future work.
+4. Evidence capture, observe, reflect, candidates, review, and at least one later activation link are demonstrated. Status: satisfied for persistence; reflection usefulness remains weak.
+5. CI verifies typecheck/tests and at least non-DB checks; DB checks are either in CI or explicitly documented as local-only. Status: satisfied by GitHub Actions run `28186557878`.
+6. Safety/trust boundary review has no critical unresolved issue. Status: satisfied for narrow source seeds; broad target ingestion remains blocked.
 
 ### Product-ready gate
 
