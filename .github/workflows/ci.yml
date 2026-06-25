@@ -1,0 +1,102 @@
+name: KRN CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: krn-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast:
+    name: Typecheck, tests, and eval smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Promptfoo smoke
+        run: |
+          pnpm exec promptfoo --version
+          pnpm eval:promptfoo:smoke
+
+      - name: Diff check
+        run: git diff --check
+
+  db:
+    name: DB readiness and smoke
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: krn
+          POSTGRES_PASSWORD: krn
+          POSTGRES_USER: krn
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U krn -d krn"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      KRN_DATABASE_URL: postgres://krn:krn@localhost:54329/krn
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: DB ready
+        run: pnpm db:ready
+
+      - name: Drizzle check
+        run: pnpm --filter @krn/db db:check
+
+      - name: DB smoke
+        run: pnpm db:smoke
+
+      - name: Diff check
+        run: git diff --check
