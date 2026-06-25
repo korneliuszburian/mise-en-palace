@@ -45,6 +45,7 @@ describe("renderHookExpectations", () => {
     expect(projection.rules).toEqual([
       "only expectations/projections",
       "no hidden semantic decisions",
+      "hooks are lifecycle guardrails, not the semantic brain",
       "no actual hook scripts unless already conventional and decision-recorded"
     ]);
     expect(projection.doesNotDo).toEqual([
@@ -66,6 +67,7 @@ describe("renderHookExpectations", () => {
       appliesTo: [
         "destructive paths",
         "generated files",
+        "untrusted selected context",
         "destructive/write approval",
         "tool boundary notes"
       ]
@@ -104,6 +106,8 @@ describe("renderHookExpectations", () => {
     expect(rendered).toContain(
       "- no actual hook scripts unless already conventional and decision-recorded"
     );
+    expect(rendered).toContain("- hooks are lifecycle guardrails, not the semantic brain");
+    expect(rendered).toContain("untrusted selected context");
     expect(rendered).toContain("Does Not Do:");
     expect(rendered).toContain("- make hidden semantic decisions");
     expect(createCodexHookExpectations(evidenceContract)).toEqual(projection.expectations);

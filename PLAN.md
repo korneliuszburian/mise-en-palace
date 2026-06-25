@@ -533,6 +533,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `E-01`
 - Name: Define deterministic policy gates and future hook mapping.
+- Status: complete on 2026-06-25.
 - Objective: Map KRN policy decisions to deterministic Codex hook/MCP boundaries without hidden semantic decisions.
 - Business rationale: Operators need guardrails for destructive or unsafe actions.
 - Architectural rationale: Hooks are guardrails, not the semantic brain.
@@ -542,6 +543,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: One policy gate has evidence output and no hidden mutation.
 - Verification: codex-adapter tests; policy tests.
 - Acceptance criteria: Hook boundary is read/propose/write aware.
+- Outcome: Accepted ADR-0022 and updated Codex adapter hook expectations so `PreToolUse` explicitly covers untrusted selected context while rules state hooks are lifecycle guardrails, not the semantic brain. No hook scripts or runtime hook configuration were created.
+- Evidence: `docs/decisions/ADR-0022-policy-hooks-boundary.md`; `docs/reviews/controlled-dogfood/2026-06-25-policy-hooks-boundary/REPORT.md`; DB-backed plan run `6a513eea-9595-4960-a34b-d4f616dd37aa`; evidence bundle `b26631fe-fa23-4e57-ab8e-cc55b8651415`; observation group `264759fb-2edd-4520-b6ee-a075840c2ce0`; reflection record `0ed14157-eb34-4962-90da-bb4e2f8c6461`.
 - Priority: P2.
 - Complexity: M.
 - Risks: Hidden semantic brain in hooks. Mitigation: deterministic checks only.
@@ -707,9 +710,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    E-01 — Policy Gates And Hook Boundary Design
+    E-02 — Worker Runtime Acceptance Gate
 
-E-00 is complete. Continue with E-01 to define deterministic policy gates and hook boundaries, starting from the untrusted-context warning identified by the security review. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
+E-01 is complete. Continue with E-02 to re-evaluate worker runtime only against concrete bottleneck proof and write-authority constraints. Do not create a dashboard, API, MCP, worker daemon, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

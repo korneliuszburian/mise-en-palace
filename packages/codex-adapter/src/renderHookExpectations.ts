@@ -14,6 +14,7 @@ const requiredCommands = (evidenceContract: EvidenceContract): string[] =>
 const hookProjectionRules = [
   "only expectations/projections",
   "no hidden semantic decisions",
+  "hooks are lifecycle guardrails, not the semantic brain",
   "no actual hook scripts unless already conventional and decision-recorded"
 ] as const;
 
@@ -46,11 +47,12 @@ export const createCodexHookExpectationProjection = (
         phase: "PreToolUse",
         action: "warn_or_deny",
         reason:
-          "Warn or deny destructive paths, generated files, destructive/write actions, and tool-boundary drift before tool execution.",
+          "Warn or deny destructive paths, generated files, destructive/write actions, untrusted selected context, and tool-boundary drift before tool execution.",
         required: true,
         appliesTo: [
           "destructive paths",
           "generated files",
+          "untrusted selected context",
           "destructive/write approval",
           "tool boundary notes"
         ]
