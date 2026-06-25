@@ -142,7 +142,7 @@ The percentages below are planning estimates based on current repository evidenc
 | Memory | Store-backed governed memory | ADR-0002, ADR-0011, memory code | Queryable, invalidatable, reviewable, source-linked memory. | Markdown runtime memory, `.krn` truth, automatic promotion rejected. | Candidate/review paths exist; temporal graph incomplete. |
 | Observation | Staging layer, not Memory Core | ADR-0011, ADR-0013 | Observations capture event-derived facts without final truth mutation. | Observation as approved memory, chain-of-thought storage rejected. | Manual observe and DB persistence exist; extraction quality needs proof. |
 | Reflection | Offline/explicit candidate synthesis | ADR-0011, RCR-00 | Produces candidates/metadata without final truth mutation. | Autonomous dreaming, reflection auto-promotion rejected. | Metadata reviewability exists; useful extraction incomplete. |
-| Activation | Admission control | ADR-0014 | Similarity is not permission; activation records inclusions and exclusions. | Prompt assembly as trust boundary, context dump, ranking as permission rejected. | DB-backed activation works; owner-file recall/relevance not yet proven. |
+| Activation | Admission control | ADR-0014 | Similarity is not permission; activation records inclusions and exclusions. | Prompt assembly as trust boundary, context dump, ranking as permission rejected. | DB-backed activation works; owner-file recall is repaired for the DB readiness case; broader coverage remains unproven. |
 | Source graph | Source-to-decision graph | `docs/KRN_KERNEL.md`, State of the Art, MM-38 | Prevents source hoarding through mechanism, does-not-prove, falsifier. | Bibliography/source-hoarding rejected. | Source claims and edges exist; research ingestion lane missing. |
 | Review / evidence | Review burden and diff risk as product metrics | ADR-0006, evidence reports | Measures whether Codex work becomes easier to trust. | Green tests as product proof rejected. | Evidence and review artifacts exist; metrics not yet aggregated. |
 | CLI | Adapter and operator surface classification | `docs/architecture/cli-surfaces.md` | Separates public operator, governed admin, internal/dev. | `krn audit`, quality engine, hidden dev namespace rejected. | CLI exists and narrowed; UX/product flow incomplete. |
@@ -157,7 +157,7 @@ Research-note: the project references external memory/agent ideas in raw materia
 ## 5. Current Inconsistencies And Unknowns
 
 1. The current repository is dogfood-ready, but not product-ready. README explicitly says the full governed product path is not complete end-to-end.
-2. Activation works as DB-backed guardrail selection, but direct owner-file/raw-recall selection remains weak or unproven. This is an active risk, not yet a scoring-rewrite mandate.
+2. Activation works as DB-backed guardrail selection, and A-02 added bounded owner-file/raw-recall surfacing for the DB readiness case. Broader owner-file coverage remains unproven and should expand only from future misses.
 3. Reflection persistence exists, and reflection candidate reviewability metadata now exists, but useful extraction remains unproven at scale.
 4. Candidate reviewability is implemented, but candidate quality at scale and promotion usefulness remain unproven.
 5. DB runtime works in the current-shell dogfood, but CI, remote, deployment, and production DB posture remain unknown.
@@ -225,6 +225,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `A-02`
 - Name: Repair activation owner-file recall if A-01 proves repeated miss.
+- Status: complete on 2026-06-25.
 - Objective: Add the smallest typed read model or retrieval cue that helps activation surface owner files/raw recall targets for source repairs.
 - Business rationale: Reduces manual code search and review burden.
 - Architectural rationale: Fix likely read-model/raw recall issue before scoring rewrite.
@@ -234,6 +235,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Activation output includes owner-file/raw-recall candidates with inclusion/exclusion reasons for a dogfood source repair.
 - Verification: Targeted activation tests; `pnpm typecheck`; `pnpm test`; DB-backed dogfood report.
 - Acceptance criteria: Future DB-backed plan includes owner files or explains exclusion through typed reasons.
+- Outcome: Added typed owner-file recall candidates through the existing activation/search path without changing scoring. DB-backed run `5611bfde-7d5f-4f35-8332-1e407889dc85` included owner files for the DB readiness source repair.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-activation-owner-file-recall-repair/REPORT.md`; evidence bundle `c3afc052-fbec-44cc-a81d-9217491aeb54`; observation group `5cb31110-6f47-4d43-9944-7ace067ec60f`; reflection record `cd08f447-5266-40d1-a759-294476feae69`.
 - Priority: P0 if A-01 fails; P1 otherwise.
 - Complexity: L.
 - Risks: Accidental scoring rewrite. Mitigation: limit to read model/raw recall and explicitly preserve scoring unless evidence requires it.
@@ -662,9 +665,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    A-02 — Activation Owner-File / Raw-Recall Read Model Repair
+    B-00 — Temporal Claim Graph ADR
 
-A-01 produced DB-backed evidence that activation selected guardrails but missed direct owner files for a command-specific source repair. A-02 should repair owner-file/raw-recall surfacing first; do not start with a broad activation scoring rewrite.
+Phase A is complete enough to move forward: A-01 proved the owner-file miss and A-02 repaired the DB readiness owner-file recall path without a scoring rewrite. Continue with B-00 before schema work; do not implement temporal claim edges until the ADR is accepted.
 
 ## 9. Completion Gates By Stage
 

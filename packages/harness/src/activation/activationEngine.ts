@@ -18,6 +18,9 @@ import {
   buildMemoryQuery
 } from "./memoryQuery.js";
 import {
+  buildOwnerFileRecallCandidates
+} from "./ownerFileRecall.js";
+import {
   mergeActivationCandidates,
   rankCandidates,
   toMemoryCandidate,
@@ -190,6 +193,10 @@ export const retrieveActivationCandidates = async (
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
   const sourceCandidates = rankCandidates(sourceClaims.map(toSourceClaimCandidate), sourceQuery);
   const searchCandidates = rankCandidates(searchResults.map(toSearchCandidate), sourceQuery);
+  const ownerFileCandidates = rankCandidates(
+    buildOwnerFileRecallCandidates(input.taskContract),
+    sourceQuery
+  );
 
   return {
     memoryQuery,
@@ -197,7 +204,8 @@ export const retrieveActivationCandidates = async (
     candidates: mergeActivationCandidates([
       ...memoryCandidates,
       ...sourceCandidates,
-      ...searchCandidates
+      ...searchCandidates,
+      ...ownerFileCandidates
     ]),
     antiMemoryRecords
   };

@@ -681,6 +681,68 @@ describe("compileHarnessPlan", () => {
     );
   });
 
+  it("surfaces owner-file recall candidates for command-specific source repairs", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Improve DB readiness reporting",
+          objective: "Improve DB readiness reporting for checked Postgres endpoint output without exposing secrets.",
+          constraints: ["preserve existing readiness behavior"],
+          acceptance: ["owner-file recall candidates are visible"]
+        }
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository([]),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-owner-recall`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subjectType: "search_document",
+          subjectId: "11111111-1111-4111-8111-111111111001",
+          reason: "Owner-file recall: packages/cli/src/runDbReadinessCommand.ts"
+        })
+      ])
+    );
+    expect(retrievalRepository.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          subjectId: "11111111-1111-4111-8111-111111111001",
+          metadata: expect.objectContaining({
+            source: "owner_file_recall",
+            ownerFileSubjectId: "11111111-1111-4111-8111-111111111001",
+            ownerFilePath: "packages/cli/src/runDbReadinessCommand.ts"
+          })
+        })
+      ])
+    );
+    expect(
+      retrievalRepository.candidates.find((candidate) =>
+        candidate.subjectId === "11111111-1111-4111-8111-111111111001"
+      )
+    ).not.toHaveProperty("searchDocumentId");
+    expect(retrievalRepository.decisions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          decision: "included",
+          subjectId: "11111111-1111-4111-8111-111111111001"
+        })
+      ])
+    );
+  });
+
   it("creates evidence expectations for reviewable engineering work", async () => {
     const result = await compileHarnessPlan(compileInput, {
       harnessRunRepository: new FakeHarnessRunRepository(),

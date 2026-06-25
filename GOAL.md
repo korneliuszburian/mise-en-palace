@@ -24,13 +24,14 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-A-02 — Activation Owner-File / Raw-Recall Read Model Repair
+B-00 — Temporal Claim Graph ADR
 ```
 
-A-01 is complete. Its report is:
+A-01 and A-02 are complete. Their reports are:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-activation-owner-file-recall-repair/REPORT.md
 ```
 
 ## Operating Rules

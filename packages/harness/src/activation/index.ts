@@ -5,6 +5,7 @@ export * from "./activationEngine.js";
 export * from "./conflictFilter.js";
 export * from "./contextRoi.js";
 export * from "./memoryQuery.js";
+export * from "./ownerFileRecall.js";
 export * from "./rankCandidates.js";
 export * from "./sourceQuery.js";
 export * from "./temporalFilter.js";
