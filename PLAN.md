@@ -705,6 +705,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `G-03`
 - Name: Decide internal-alpha readiness.
+- Status: complete on 2026-06-25.
 - Objective: Evaluate whether KRN can be used on controlled target repos by operators beyond the author.
 - Business rationale: Moves from dogfood to real user value.
 - Architectural rationale: Requires full governed path, safety, CI, readback, and target trial proof.
@@ -714,6 +715,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Readiness is classified as not-ready, dogfood-only, internal-alpha, or defer.
 - Verification: Release checklist, CI, dogfood reports, target repo evidence.
 - Acceptance criteria: No product-ready claim; internal-alpha must state limitations.
+- Outcome: Internal-alpha release gate is deferred. KRN has CI, local backup/restore policy, internal-alpha tag/install path, and repo-local target-module evidence, but lacks controlled external target repo evidence and operator-beyond-author proof. The allowed next action is a bounded external target repo trial from `v0.1.0-alpha.0`; product-ready, broad internal-alpha, npm publishing, dashboard/API/MCP, and worker runtime claims remain rejected.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-release-gate/REPORT.md`; evidence bundle `36b7c884-f044-43cb-b7ef-44ed0c1ece1a`; observation group `0c87dbd1-6aab-40bf-804c-c8c8388e8231`; reflection record `d34c9726-298c-4ec0-a283-bf9f9a5b829a`.
 - Priority: P0 after C/D/E/G foundations.
 - Complexity: M.
 - Risks: Overclaiming. Mitigation: explicit what-this-does-not-prove section.
@@ -739,9 +742,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    G-03 — Internal Alpha Release Gate
+    G-04 — v0.1 Production Roadmap Gate
 
-G-02 is complete. Continue with G-03 to decide internal-alpha readiness from the current CI, backup, packaging, dogfood, and target-repo evidence. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
+G-03 is complete. Continue with G-04 to convert the deferred internal-alpha release gate into a bounded v0.1 roadmap. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
