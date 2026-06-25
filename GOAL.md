@@ -47,16 +47,22 @@ the reusable dogfood usefulness reporting format:
 docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md
 ```
 
-Continue from the first unchecked bounded source-repair trial in `PLAN.md`:
+The first bounded source-repair trial is complete:
 
 ```txt
 KRN-SR-00: Improve Evidence Dirty-Context Reporting
 ```
 
-This is a KRN-on-KRN source repair in the actual `mise-en-palace` repo, not a
-synthetic weak-repo trial. Use the dogfood reporting format and OpenAI
-Codex-style execution discipline, but keep root `PLAN.md` as the canonical
-living plan instead of creating a parallel root `PLANS.md`.
+It was a KRN-on-KRN source repair in the actual `mise-en-palace` repo, not a
+synthetic weak-repo trial. Root `PLAN.md` now has no unchecked slice. Completed
+evidence is recorded at:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md
+```
+
+Do not start a broad new goal from this file. Add the next bounded slice to
+root `PLAN.md` only after deciding the next source repair or validation target.
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an

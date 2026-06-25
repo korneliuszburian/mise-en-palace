@@ -6,9 +6,9 @@
 
 ## Active Queue Snapshot
 
-current_priority: KRN-on-KRN Source Repair Trial.
+current_priority: Complete.
 
-first_unchecked_slice: `KRN-SR-00: Improve Evidence Dirty-Context Reporting`.
+first_unchecked_slice: none.
 
 active_scope:
 
@@ -54,6 +54,11 @@ completed_checkpoint:
   context, candidate reviewability, command proof strength, review burden delta,
   observation/reflection usefulness, source usefulness, memory usefulness, and
   Brain ROI.
+- KRN-SR-00 Evidence Dirty-Context Reporting is complete:
+  `krn evidence capture` accepts repeatable `--intended-file`, classifies
+  changed files as intended/unrelated/unknown, preserves command proof
+  provenance, and records the dogfood report at
+  `docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md`.
 - Execution hygiene is active: every slice must inspect status, implement
   narrowly, verify, commit, push, and leave a clean worktree.
 
@@ -69,12 +74,11 @@ last_verified_state:
 
 open_risks_and_next_candidates:
 
-- Active unchecked slice: KRN-SR-00.
-- The next validation should be a real source repair in this repo, not a
-  synthetic weak-repo trial.
-- Use `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md` for this dogfood
-  run before considering activation scoring repair, candidate quality repair,
-  reflection quality repair, or an internal-alpha target repo trial.
+- No active unchecked slice remains in this plan.
+- The KRN-SR-00 report recommends one more bounded KRN-on-KRN source repair
+  with dogfood usefulness reporting before changing activation scoring.
+- DB runtime replay remains unverified in the current shell because
+  `pnpm db:ready` timed out on `localhost:54329`.
 - Future hardening work should stay bounded and should not reopen archived
   historical task bodies.
 
@@ -90,6 +94,8 @@ evidence_pointers:
   `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md`
 - Planned KRN-on-KRN source repair prompt:
   `docs/reviews/controlled-dogfood/evidence-dirty-context/GOAL_PROMPT.md`
+- Completed KRN-on-KRN source repair report:
+  `docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md`
 - OpenAI Codex execution references:
   `https://developers.openai.com/cookbook/articles/codex_exec_plans`,
   `https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex`,
@@ -120,7 +126,7 @@ evidence_pointers:
 - [x] VERIFY-00 Audit continuous hardening completion evidence.
 - [x] BUV-00 Brain usefulness validation report.
 - [x] BUR-00 Add Dogfood Brain Usefulness Reporting Standard.
-- [ ] KRN-SR-00 Improve Evidence Dirty-Context Reporting.
+- [x] KRN-SR-00 Improve Evidence Dirty-Context Reporting.
 
 ## Current Decisions
 
@@ -159,7 +165,7 @@ evidence_pointers:
 
 ## KRN-SR-00: Improve Evidence Dirty-Context Reporting
 
-status: pending.
+status: complete.
 
 priority: P0.
 
@@ -353,3 +359,13 @@ suggested_commit:
 ```sh
 git commit -m "feat(evidence): classify dirty context in capture output"
 ```
+
+completion_evidence:
+
+- `pnpm --filter @krn/cli test -- parseEvidenceArgs runCli` passed.
+- `pnpm typecheck` passed.
+- `pnpm test` passed.
+- `git diff --check` passed.
+- `krn evidence capture` preview classified the six intended CLI files as
+  intended, with no unrelated or unknown changed files.
+- DB runtime truth was not claimed; `pnpm db:ready` timed out before edits.

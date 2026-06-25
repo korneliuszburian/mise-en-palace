@@ -10,9 +10,9 @@ import type {
 } from "./parseArgs.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>] [--persist] [--verification <command=status>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
-  "Example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
-  "Persisted example: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
+  "Usage: krn evidence capture [--run-id <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+  "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
   "Note: evidence capture records operator/captured evidence; it does not run commands."
 ].join("\n");
 
@@ -107,6 +107,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   let runId: string | undefined;
   let pendingCommand: Partial<EvidenceCommand> | undefined;
   const commandOutcomes: EvidenceCommand[] = [];
+  const intendedFiles: string[] = [];
 
   for (let index = 1; index < rest.length; index += 1) {
     const arg = rest[index];
@@ -124,6 +125,28 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
 
     if (arg?.startsWith("--run-id=") === true) {
       runId = arg.slice("--run-id=".length);
+      continue;
+    }
+
+    if (arg === "--intended-file" || arg?.startsWith("--intended-file=") === true) {
+      const valueResult = optionValue(rest, index, "--intended-file");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      const intendedFile = valueResult.value.trim();
+
+      if (intendedFile.length === 0) {
+        return {
+          error: "--intended-file requires a non-empty path"
+        };
+      }
+
+      intendedFiles.push(intendedFile);
+      index = valueResult.nextIndex;
       continue;
     }
 
@@ -284,6 +307,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       kind: "evidenceCapture",
       persist,
       ...(runId === undefined ? {} : { runId: runId.trim() }),
+      ...(intendedFiles.length === 0 ? {} : { intendedFiles }),
       ...(commandOutcomes.length === 0 ? {} : { commandOutcomes })
     }
   };

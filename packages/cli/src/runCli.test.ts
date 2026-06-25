@@ -1044,10 +1044,10 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>] [--verification \"pnpm typecheck=passed\"] [--persist]"
+      "krn evidence capture [--run-id <id>] [--intended-file <path>] [--verification \"pnpm typecheck=passed\"] [--persist]"
     );
     expect(result.stdout).toContain(
-      "example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
+      "example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
     expect(result.stdout).toContain(
       "evidence capture records outcomes; it does not execute commands"
@@ -3562,6 +3562,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Persistence: disabled");
     expect(result.stdout).toContain("packages/cli/src/runCli.ts");
     expect(result.stdout).toContain("notes.md");
+    expect(result.stdout).toContain("Changed files:\nunknown:");
+    expect(result.stdout).toContain("Dirty context: unclassified (no --intended-file provided).");
     expect(result.stdout).toContain("pnpm typecheck: not_run | provenance=default_template");
     expect(result.stdout).toContain("pnpm test: not_run | provenance=default_template");
     expect(result.stdout).toContain("git diff --check: not_run | provenance=default_template");
@@ -3578,6 +3580,45 @@ describe("runCli", () => {
     expect(result.stdout).toContain("missing: applicationGuidance, sourceLineage, invalidationRule");
     expect(result.stdout).toContain("No MemoryCandidate row created");
     expect(result.stdout).toContain("sourceDecisionCandidates:\n- none");
+  });
+
+  it("classifies intended and unrelated changed files during evidence capture", async () => {
+    const result = await runCli([
+      "evidence",
+      "capture",
+      "--intended-file",
+      "packages/cli/src/runEvidenceCaptureCommand.ts",
+      "--intended-file=./packages/cli/src/parseEvidenceArgs.ts",
+      "--intended-file",
+      "docs/reviews/controlled-dogfood/run/REPORT.md",
+      "--verification",
+      "pnpm typecheck=passed"
+    ], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () =>
+        " M src/runEvidenceCaptureCommand.ts\n" +
+        " M src/parseEvidenceArgs.ts\n" +
+        "?? ../../docs/reviews/controlled-dogfood/run/\n" +
+        "?? docs/materials/raw-audit.md\n"
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Changed files:\nintended:");
+    expect(result.stdout).toContain("- M src/runEvidenceCaptureCommand.ts");
+    expect(result.stdout).toContain("- M src/parseEvidenceArgs.ts");
+    expect(result.stdout).toContain("- ?? ../../docs/reviews/controlled-dogfood/run/");
+    expect(result.stdout).toContain("unrelated:\n- ?? docs/materials/raw-audit.md");
+    expect(result.stdout).toContain("unknown:\n- none");
+    expect(result.stdout).toContain("Dirty context: unrelated files present; review burden increased.");
+    expect(result.stdout).toContain(
+      "Review burden: Review intended files, unrelated dirty files, command proof, residual risk, and rollback path."
+    );
+    expect(result.stdout).toContain(
+      "pnpm typecheck: passed | provenance=operator_reported | doesNotProve=This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
   });
 
   it("surfaces proposal-only source decision candidates from source evidence", async () => {
@@ -3641,6 +3682,7 @@ describe("runCli", () => {
       createId: (prefix) => `${prefix}-1`
     });
     let capturedCommands: CreateEvidenceBundleInput["commands"] | undefined;
+    let capturedEvidenceBundle: CreateEvidenceBundleInput | undefined;
     let capturedSourceDecisions: CreateFeedbackDeltaInput["sourceDecisions"] | undefined;
     let capturedMemoryCandidates: CreateFeedbackDeltaInput["memoryCandidates"] | undefined;
     const aggregate: HarnessRunAggregate = {
@@ -3718,6 +3760,7 @@ describe("runCli", () => {
         return aggregate;
       },
       async createEvidenceBundle(input: CreateEvidenceBundleInput) {
+        capturedEvidenceBundle = input;
         capturedCommands = input.commands;
 
         return {
@@ -3765,7 +3808,15 @@ describe("runCli", () => {
       }
     };
     const result = await runCli(
-      ["evidence", "capture", "--run-id", "execution-run-1", "--persist"],
+      [
+        "evidence",
+        "capture",
+        "--run-id",
+        "execution-run-1",
+        "--intended-file",
+        "docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md",
+        "--persist"
+      ],
       {
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -3817,6 +3868,22 @@ describe("runCli", () => {
     expect(capturedSourceDecisions).toHaveLength(1);
     expect(capturedSourceDecisions?.[0]?.status).toBe("defer");
     expect(capturedSourceDecisions?.[0]?.consumer).toBe("krn evidence capture");
+    expect(capturedEvidenceBundle?.reviewBurden).toBe(
+      "Review changed files, command proof, residual risk, and rollback path."
+    );
+    expect(capturedEvidenceBundle?.metadata).toMatchObject({
+      intendedFiles: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
+      changedFileClassification: {
+        intended: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
+        unrelated: [],
+        unknown: [],
+        unmatchedIntendedFiles: []
+      },
+      dirtyContext: {
+        hasUnrelatedFiles: false,
+        unrelatedFileCount: 0
+      }
+    });
     expect(capturedCommands).toEqual([
       {
         kind: "default_template",

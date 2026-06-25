@@ -30,6 +30,7 @@ export interface EvidenceCaptureRuntime {
   createId(prefix: string): string;
   persist: boolean;
   runId?: string;
+  intendedFiles?: readonly string[];
   commandOutcomes?: readonly EvidenceCommand[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
@@ -42,6 +43,14 @@ export interface EvidenceCaptureResult {
 interface ChangedFile {
   status: string;
   path: string;
+}
+
+interface ChangedFileClassification {
+  intended: ChangedFile[];
+  unrelated: ChangedFile[];
+  unknown: ChangedFile[];
+  intendedFiles: string[];
+  unmatchedIntendedFiles: string[];
 }
 
 interface PersistedEvidenceIdentity {
@@ -101,6 +110,76 @@ const diffRiskFromChangedFiles = (changedFiles: readonly ChangedFile[]): DiffRis
   }
 
   return "high";
+};
+
+const normalizeChangedFilePath = (path: string): string =>
+  path
+    .trim()
+    .replace(/^\.\//, "")
+    .replace(/^(\.\.\/)+/, "")
+    .replace(/\/$/, "");
+
+const changedFileMatchesIntendedFile = (changedPath: string, intendedPath: string): boolean => {
+  if (changedPath === intendedPath) {
+    return true;
+  }
+
+  if (intendedPath.startsWith(`${changedPath}/`)) {
+    return true;
+  }
+
+  return intendedPath.startsWith("packages/") && intendedPath.endsWith(`/${changedPath}`);
+};
+
+const classifyChangedFiles = (
+  changedFiles: readonly ChangedFile[],
+  intendedFiles: readonly string[] | undefined
+): ChangedFileClassification => {
+  const normalizedIntendedFiles = [
+    ...new Set((intendedFiles ?? [])
+      .map(normalizeChangedFilePath)
+      .filter((path) => path.length > 0))
+  ];
+
+  if (normalizedIntendedFiles.length === 0) {
+    return {
+      intended: [],
+      unrelated: [],
+      unknown: [...changedFiles],
+      intendedFiles: [],
+      unmatchedIntendedFiles: []
+    };
+  }
+
+  const intendedFileSet = new Set(normalizedIntendedFiles);
+  const intended: ChangedFile[] = [];
+  const unrelated: ChangedFile[] = [];
+  const changedFileSet = new Set<string>();
+
+  for (const file of changedFiles) {
+    const normalizedPath = normalizeChangedFilePath(file.path);
+    changedFileSet.add(normalizedPath);
+
+    if ([...intendedFileSet].some((intendedPath) =>
+      changedFileMatchesIntendedFile(normalizedPath, intendedPath)
+    )) {
+      intended.push(file);
+    } else {
+      unrelated.push(file);
+    }
+  }
+
+  return {
+    intended,
+    unrelated,
+    unknown: [],
+    intendedFiles: normalizedIntendedFiles,
+    unmatchedIntendedFiles: normalizedIntendedFiles.filter((intendedPath) =>
+      ![...changedFileSet].some((changedPath) =>
+        changedFileMatchesIntendedFile(changedPath, intendedPath)
+      )
+    )
+  };
 };
 
 const sourceDecisionSignal = (file: ChangedFile): boolean => {
@@ -235,12 +314,72 @@ const commandInputHint =
 const commandExecutionNotice =
   "Command execution: none (evidence capture records supplied outcomes; it does not run shell commands).";
 
-const renderChangedFiles = (changedFiles: readonly ChangedFile[]): string[] => {
-  if (changedFiles.length === 0) {
+const renderChangedFileGroup = (files: readonly ChangedFile[]): string[] => {
+  if (files.length === 0) {
     return ["- none"];
   }
 
-  return changedFiles.map((file) => `- ${file.status} ${file.path}`);
+  return files.map((file) => `- ${file.status} ${file.path}`);
+};
+
+const renderChangedFiles = (classification: ChangedFileClassification): string[] => {
+  const changedFileCount =
+    classification.intended.length +
+    classification.unrelated.length +
+    classification.unknown.length;
+
+  if (changedFileCount === 0) {
+    return ["- none"];
+  }
+
+  if (classification.intendedFiles.length === 0) {
+    return [
+      "unknown:",
+      ...renderChangedFileGroup(classification.unknown)
+    ];
+  }
+
+  const lines = [
+    "intended:",
+    ...renderChangedFileGroup(classification.intended),
+    "unrelated:",
+    ...renderChangedFileGroup(classification.unrelated),
+    "unknown:",
+    ...renderChangedFileGroup(classification.unknown)
+  ];
+
+  if (classification.unmatchedIntendedFiles.length > 0) {
+    lines.push(
+      "unmatched intended files:",
+      ...classification.unmatchedIntendedFiles.map((path) => `- ${path}`)
+    );
+  }
+
+  return lines;
+};
+
+const renderDirtyContext = (classification: ChangedFileClassification): string => {
+  if (classification.intendedFiles.length === 0) {
+    return "Dirty context: unclassified (no --intended-file provided).";
+  }
+
+  if (classification.unrelated.length > 0) {
+    return "Dirty context: unrelated files present; review burden increased.";
+  }
+
+  return "Dirty context: none detected from intended-file classification.";
+};
+
+const reviewBurdenFromClassification = (classification: ChangedFileClassification): string => {
+  if (classification.unrelated.length > 0) {
+    return "Review intended files, unrelated dirty files, command proof, residual risk, and rollback path.";
+  }
+
+  if (classification.intendedFiles.length === 0 && classification.unknown.length > 0) {
+    return "Review unclassified changed files, command proof, residual risk, and rollback path.";
+  }
+
+  return "Review changed files, command proof, residual risk, and rollback path.";
 };
 
 const renderSourceDecisionCandidates = (
@@ -306,6 +445,7 @@ const materializeFeedbackDeltaMemoryCandidate = (
 const persistEvidenceCapture = async (
   runtime: EvidenceCaptureRuntime,
   changedFiles: readonly ChangedFile[],
+  classification: ChangedFileClassification,
   commands: NormalizedEvidenceCommand[],
   diffRisk: DiffRisk,
   sourceDecisionCandidates: readonly SourceDecision[],
@@ -349,7 +489,7 @@ const persistEvidenceCapture = async (
       changedFiles: changedFiles.map((file) => file.path),
       commands,
       diffRisk,
-      reviewBurden: "Review changed files, command evidence, residual risk, and rollback path.",
+      reviewBurden: reviewBurdenFromClassification(classification),
       rollbackPath: "Revert the focused implementation commit or discard uncommitted changes.",
       event: {
         sequence: nextSequence,
@@ -357,12 +497,26 @@ const persistEvidenceCapture = async (
         message: "Evidence captured from CLI",
         payload: {
           changedFileCount: changedFiles.length,
+          intendedChangedFileCount: classification.intended.length,
+          unrelatedChangedFileCount: classification.unrelated.length,
+          unknownChangedFileCount: classification.unknown.length,
           commandCount: commands.length
         }
       },
       metadata: {
         command: "krn evidence capture --persist",
-        runId
+        runId,
+        intendedFiles: classification.intendedFiles,
+        changedFileClassification: {
+          intended: classification.intended.map((file) => file.path),
+          unrelated: classification.unrelated.map((file) => file.path),
+          unknown: classification.unknown.map((file) => file.path),
+          unmatchedIntendedFiles: classification.unmatchedIntendedFiles
+        },
+        dirtyContext: {
+          hasUnrelatedFiles: classification.unrelated.length > 0,
+          unrelatedFileCount: classification.unrelated.length
+        }
       }
     });
     const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment({
@@ -373,7 +527,10 @@ const persistEvidenceCapture = async (
       findings: [],
       metadata: {
         runId,
-        changedFileCount: changedFiles.length
+        changedFileCount: changedFiles.length,
+        intendedChangedFileCount: classification.intended.length,
+        unrelatedChangedFileCount: classification.unrelated.length,
+        unknownChangedFileCount: classification.unknown.length
       }
     });
     const memoryCandidates = memoryCandidateProposals.map((proposal) =>
@@ -392,6 +549,9 @@ const persistEvidenceCapture = async (
       metadata: {
         runId,
         changedFileCount: changedFiles.length,
+        intendedChangedFileCount: classification.intended.length,
+        unrelatedChangedFileCount: classification.unrelated.length,
+        unknownChangedFileCount: classification.unknown.length,
         memoryCandidateProposalCount: memoryCandidates.length,
         memoryCandidateRowCount: 0,
         sourceDecisionCandidateCount: sourceDecisionCandidates.length
@@ -413,6 +573,7 @@ export const runEvidenceCaptureCommand = async (
 ): Promise<EvidenceCaptureResult> => {
   const statusOutput = await readGitStatus(runtime);
   const changedFiles = parseChangedFiles(statusOutput);
+  const changedFileClassification = classifyChangedFiles(changedFiles, runtime.intendedFiles);
   const commands =
     runtime.commandOutcomes === undefined || runtime.commandOutcomes.length === 0
       ? normalizeCommands(defaultCommands())
@@ -424,6 +585,7 @@ export const runEvidenceCaptureCommand = async (
     ? await persistEvidenceCapture(
       runtime,
       changedFiles,
+      changedFileClassification,
       commands,
       diffRisk,
       sourceDecisionCandidates,
@@ -442,14 +604,15 @@ export const runEvidenceCaptureCommand = async (
     commandInputHint,
     commandExecutionNotice,
     "Changed files:",
-    ...renderChangedFiles(changedFiles),
+    ...renderChangedFiles(changedFileClassification),
+    renderDirtyContext(changedFileClassification),
     "Commands:",
     ...commands.map(renderCommand),
     ...(hasWeakCommandProvenance(commands)
       ? ["Command provenance is weak: default_template rows are not proof that commands ran."]
       : []),
     `Diff risk: ${diffRisk}`,
-    "Review burden: summarize changed files, command proof, residual risk, and rollback path.",
+    `Review burden: ${reviewBurdenFromClassification(changedFileClassification)}`,
     "Rollback path: revert the focused implementation commit or discard uncommitted changes.",
     "Memory mutation: none",
     "Feedback candidates:",

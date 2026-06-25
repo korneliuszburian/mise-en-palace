@@ -10,9 +10,9 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>] [--persist] [--verification <command=status>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
-    "Example: krn evidence capture --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
-    "Persisted example: krn evidence capture --run-id <execution-run-id> --verification \"git diff --check=passed\" --persist",
+    "Usage: krn evidence capture [--run-id <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+    "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
     "Note: evidence capture records operator/captured evidence; it does not run commands."
   ].join("\n");
 
@@ -97,6 +97,24 @@ describe("parseEvidenceArgs", () => {
     });
   });
 
+  it("parses repeatable intended files", () => {
+    expect(parseEvidenceArgs([
+      "capture",
+      "--intended-file",
+      " packages/cli/src/runEvidenceCaptureCommand.ts ",
+      "--intended-file=./packages/cli/src/parseEvidenceArgs.ts"
+    ])).toEqual({
+      command: {
+        kind: "evidenceCapture",
+        persist: false,
+        intendedFiles: [
+          "packages/cli/src/runEvidenceCaptureCommand.ts",
+          "./packages/cli/src/parseEvidenceArgs.ts"
+        ]
+      }
+    });
+  });
+
   it("rejects unsupported evidence command shapes", () => {
     expect(parseEvidenceArgs([])).toEqual({
       error: evidenceUsage
@@ -121,6 +139,9 @@ describe("parseEvidenceArgs", () => {
     });
     expect(parseEvidenceArgs(["capture", "--verification", "pnpm test=done"])).toEqual({
       error: "--verification status must be passed, failed, skipped, missing, or not_run"
+    });
+    expect(parseEvidenceArgs(["capture", "--intended-file", "   "])).toEqual({
+      error: "--intended-file requires a non-empty path"
     });
     expect(parseEvidenceArgs([
       "capture",
