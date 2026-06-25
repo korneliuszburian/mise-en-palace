@@ -685,6 +685,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `G-02`
 - Name: Prepare packages for internal alpha distribution.
+- Status: complete on 2026-06-25.
 - Objective: Define versioning, package outputs, CLI install path, and release notes.
 - Business rationale: Target repo use requires reproducible install, not local repo hacking.
 - Architectural rationale: Product interfaces must be explicit and narrow.
@@ -694,6 +695,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Operator can install or run KRN in a repeatable internal alpha mode.
 - Verification: clean clone install; `pnpm typecheck`; CLI smoke.
 - Acceptance criteria: No internal paths required for normal operator workflow.
+- Outcome: Adopted a git-tagged pnpm source workspace as the first internal-alpha distribution format. Added root `pnpm krn ...` as the normal operator CLI command and `pnpm alpha:verify` as the local alpha verification command. Kept packages private and deferred npm publishing, global binary install, generated dist output, Docker image distribution, plugin package, dashboard, API, MCP, and worker runtime. Verified local `pnpm krn doctor`, `pnpm alpha:verify`, and a clean source-workspace candidate install with `pnpm install --frozen-lockfile` plus `pnpm krn doctor`.
+- Evidence: `docs/decisions/ADR-0027-internal-alpha-source-packaging.md`; `docs/runbooks/internal-alpha-install.md`; `docs/releases/v0.1.0-alpha.0.md`; `docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-packaging/REPORT.md`; evidence bundle `1eff4bc4-2156-4f8a-98af-51a83b6f826b`; observation group `43a1a313-603d-4b44-80ee-d08bfaf99127`; reflection record `827a8fd5-88f3-4a04-b484-8100e5a080ef`.
 - Priority: P1.
 - Complexity: L.
 - Risks: Premature publishing. Mitigation: internal alpha only.
@@ -736,9 +739,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    G-02 — Packaging And Versioning
+    G-03 — Internal Alpha Release Gate
 
-G-01 is complete. Continue with G-02 to define repeatable internal-alpha packaging, versioning, install, and release-note boundaries. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
+G-02 is complete. Continue with G-03 to decide internal-alpha readiness from the current CI, backup, packaging, dogfood, and target-repo evidence. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
