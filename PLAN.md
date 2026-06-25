@@ -513,6 +513,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `E-00`
 - Name: Threat model KRN memory/source/tool boundaries.
+- Status: complete on 2026-06-25.
 - Objective: Identify prompt injection, untrusted text, file IO, command execution, env/secrets, DB trust, and model-output-as-truth risks.
 - Business rationale: KRN stores durable control signals; poisoning can affect future runs.
 - Architectural rationale: Trust boundaries must be explicit before target repo alpha expands.
@@ -522,6 +523,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Critical trust boundaries have tests or repair tasks.
 - Verification: Security review checklist; targeted tests if changes.
 - Acceptance criteria: No untrusted text can become final memory/source truth without review.
+- Outcome: Produced bounded trust-boundary threat model over CLI, file IO, command evidence, DB runtime, observation redaction, source claims, memory promotion, reflection candidates, Codex adapter output, and deferred worker/API/MCP/dashboard surfaces. No critical source fix was required in E-00; follow-up repairs are SEC-01 through SEC-04.
+- Evidence: `docs/architecture/security-trust-boundaries.md`; `docs/reviews/controlled-dogfood/2026-06-25-security-trust-boundary-review/REPORT.md`; DB-backed plan run `4945aaa6-a96a-4894-83f5-884413c85030`; evidence bundle `d129c92c-4a66-4cdc-bcb6-d8401af4cc1e`; observation group `c2341832-44bd-4384-b33d-3cae2926c9a8`; reflection record `dfa21695-4706-4fb3-bde3-cbf3ab0b0459`.
 - Priority: P0 before public alpha.
 - Complexity: L.
 - Risks: Generic security theater. Mitigation: restrict to current entry points and dogfood evidence.
@@ -704,9 +707,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    E-00 — Security And Trust Boundary Review
+    E-01 — Policy Gates And Hook Boundary Design
 
-D-03 is complete. Continue with E-00 to review security and trust boundaries before policy hooks, worker runtime, integrations, or product interfaces. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+E-00 is complete. Continue with E-01 to define deterministic policy gates and hook boundaries, starting from the untrusted-context warning identified by the security review. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
