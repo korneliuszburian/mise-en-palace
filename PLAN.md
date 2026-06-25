@@ -67,6 +67,11 @@ completed_checkpoint:
   evidence-capture candidate output now renders deterministic reviewability
   labels and reasons, recorded at
   `docs/reviews/controlled-dogfood/2026-06-25-candidate-reviewability-output/REPORT.md`.
+- DBR-00 Current-Shell DB Replay For Evidence Metadata is complete:
+  local `krn-postgres` started from the existing compose runbook, `pnpm
+  db:ready` passed with 13/13 migrations and pgvector available, and a
+  persisted run/evidence/observe/reflect replay exists at
+  `79252723-50ed-484a-a7c6-513366130db5`.
 - Execution hygiene is active: every slice must inspect status, implement
   narrowly, verify, commit, push, and leave a clean worktree.
 
@@ -83,13 +88,12 @@ last_verified_state:
 open_risks_and_next_candidates:
 
 - No active unchecked slice remains in this plan.
-- Two bounded KRN-on-KRN source repairs now have dogfood usefulness reports.
-  Candidate reviewability output is now implemented for the evidence-capture
-  proposal surface; activation scoring should still wait for more evidence.
-- The next strongest source-repair candidates are reflection candidate
-  reviewability reuse or DB replay proof for evidence-capture metadata.
-- DB runtime replay remains unverified in the current shell because
-  `pnpm db:ready` timed out on `localhost:54329`.
+- Three bounded KRN-on-KRN source repairs now have dogfood usefulness reports.
+  Candidate reviewability output is implemented for the evidence-capture
+  proposal surface; activation scoring should still wait for DB-backed
+  dogfood evidence.
+- The next strongest source-repair candidates are another DB-backed
+  KRN-on-KRN source repair or reflection candidate reviewability reuse.
 - Future hardening work should stay bounded and should not reopen archived
   historical task bodies.
 
@@ -111,6 +115,8 @@ evidence_pointers:
   `docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context-golden/REPORT.md`
 - Completed candidate reviewability source repair report:
   `docs/reviews/controlled-dogfood/2026-06-25-candidate-reviewability-output/REPORT.md`
+- Current-shell DB replay report:
+  `docs/reviews/controlled-dogfood/2026-06-25-db-replay-evidence-metadata/REPORT.md`
 - OpenAI Codex execution references:
   `https://developers.openai.com/cookbook/articles/codex_exec_plans`,
   `https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex`,
@@ -144,6 +150,7 @@ evidence_pointers:
 - [x] KRN-SR-00 Improve Evidence Dirty-Context Reporting.
 - [x] GBC-00 Add Golden Behavior Coverage For Evidence Dirty-Context Capture.
 - [x] CRO-00 Improve Candidate Reviewability Output.
+- [x] DBR-00 Prove Current-Shell DB Replay For Evidence Metadata.
 
 ## Current Decisions
 
