@@ -287,6 +287,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `B-02`
 - Name: Convert one external source into SourceClaim and candidates.
+- Status: complete on 2026-06-25.
 - Objective: Create a bounded workflow for research/source ingestion: source -> mechanism -> KRN implication -> decision/rejection/hypothesis -> falsifier -> SourceClaim / MemoryCandidate / EvalCandidate.
 - Business rationale: Lets KRN condense best engineering patterns into reusable brain state.
 - Architectural rationale: Turns research into governed knowledge, not source hoarding.
@@ -296,6 +297,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: One source is ingested and later activated or explicitly rejected.
 - Verification: CLI/source tests if code changes; DB-backed source claim if persisted; report with does-not-prove.
 - Acceptance criteria: No decorative source remains without consumer and falsifier.
+- Outcome: Ingested one official OpenAI Codex `AGENTS.md` guidance source as SourceClaim `8c7f97ce-8868-4fc2-bda8-4600d2f050f7`, linked it to `PLAN.md#operating-rules`, and proved later DB-backed activation selected it for a matching guidance task.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-research-to-brain-agents-guidance/REPORT.md`; activation run `164e9158-d03b-4957-a3cd-72bee3ce3dd1`.
 - Priority: P0.
 - Complexity: M.
 - Risks: Research Foundry creep. Mitigation: one source only.
@@ -671,9 +674,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    B-02 — Research-To-Brain Minimal Ingestion Lane
+    B-03 — Memory Application Feedback And Demotion Loop
 
-B-01 is complete. Continue with B-02 as a one-source research-to-brain ingestion slice. Do not create a research-foundry product layer, broad crawler, dashboard, API, MCP, worker runtime, or source-hoarding surface.
+B-02 is complete. Continue with B-03 as a memory feedback loop slice. Do not add automatic demotion, automatic Memory Core mutation, dashboard, API, MCP, worker runtime, broad eval platform, or source crawler.
 
 ## 9. Completion Gates By Stage
 
