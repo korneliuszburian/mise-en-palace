@@ -247,6 +247,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `B-00`
 - Name: Design temporal claim graph for living knowledge.
+- Status: complete on 2026-06-25.
 - Objective: Define how KRN models claims that change over time: supports, contradicts, supersedes, narrows, invalidates, and expires.
 - Business rationale: Required to approach Adam/Bobbin-style dynamic knowledge where latest text is not automatically truth.
 - Architectural rationale: Moves KRN beyond RAG into temporal, source-grounded knowledge.
@@ -256,6 +257,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: ADR states model, rejected alternatives, no-build boundaries, and first implementation slice.
 - Verification: `git diff --check`; architecture review; no package source change unless separately authorized.
 - Acceptance criteria: It is clear what is built in B-01 and what remains lab-only.
+- Outcome: Accepted ADR-0021 defines temporal claim graph semantics as Postgres-backed source-claim relations, rejects graph DB/crawler/latest-wins/metadata-only semantics, and names B-01 as the first implementation slice.
+- Evidence: `docs/decisions/ADR-0021-temporal-claim-graph.md`.
 - Priority: P0.
 - Complexity: L.
 - Risks: Overdesigning graph DB. Mitigation: ADR-0010 keeps first graph in Postgres relational edge tables.
@@ -665,9 +668,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    B-00 — Temporal Claim Graph ADR
+    B-01 — Temporal Claim Edge Schema And Repository
 
-Phase A is complete enough to move forward: A-01 proved the owner-file miss and A-02 repaired the DB readiness owner-file recall path without a scoring rewrite. Continue with B-00 before schema work; do not implement temporal claim edges until the ADR is accepted.
+ADR-0021 is accepted. Continue with B-01 as the minimal Postgres-backed temporal edge implementation; do not add graph DB, crawler, dashboard, API, MCP, or worker runtime.
 
 ## 9. Completion Gates By Stage
 

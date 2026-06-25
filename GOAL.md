@@ -24,14 +24,15 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-B-00 — Temporal Claim Graph ADR
+B-01 — Temporal Claim Edge Schema And Repository
 ```
 
-A-01 and A-02 are complete. Their reports are:
+B-00 is complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-activation-owner-file-recall-repair/REPORT.md
+docs/decisions/ADR-0021-temporal-claim-graph.md
 ```
 
 ## Operating Rules
