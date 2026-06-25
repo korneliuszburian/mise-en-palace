@@ -17,6 +17,9 @@ import {
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  assessCandidateReviewability
+} from "./candidateReviewability.js";
 import type {
   CreateDatabaseRuntime
 } from "./runPlanCommand.js";
@@ -73,6 +76,9 @@ interface MemoryCandidateProposal {
   updatedAt: string;
   metadata: Record<string, unknown>;
 }
+
+const candidateReviewabilityDoesNotProve =
+  "This reviewability classification does not approve, promote, or persist the candidate as Memory Core truth.";
 
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
@@ -207,6 +213,14 @@ const buildSourceDecisionCandidates = (
 
   const timestamp = runtime.now();
   const changedFilePaths = candidateFiles.map((file) => file.path);
+  const reviewability = assessCandidateReviewability({
+    summary: "Review changed files for source graph decision updates.",
+    body: `Changed files imply a possible source decision: ${changedFilePaths.join(", ")}`,
+    evidenceRefs: changedFilePaths,
+    applicationGuidance:
+      "Review only if a SourceClaim with mechanism, doesNotProve, and consumer exists.",
+    doesNotProve: candidateReviewabilityDoesNotProve
+  });
 
   return [{
     id: runtime.createId("source-decision-candidate"),
@@ -220,6 +234,9 @@ const buildSourceDecisionCandidates = (
       candidateType: "sourceDecisionCandidate",
       changedFiles: changedFilePaths,
       changedFileCount: changedFilePaths.length,
+      candidateEvidenceRefs: changedFilePaths,
+      reviewability: reviewability.reviewability,
+      reviewabilityReasons: reviewability.reasons,
       promotion: "proposal-only"
     },
     createdAt: timestamp,
@@ -238,6 +255,14 @@ const buildMemoryCandidateProposals = (
   const timestamp = runtime.now();
   const changedFilePaths = changedFiles.map((file) => file.path);
   const missingFields = ["applicationGuidance", "sourceLineage", "invalidationRule"];
+  const reviewability = assessCandidateReviewability({
+    summary: "Review changed files for reusable memory.",
+    body: `Changed files may contain reusable KRN operating knowledge: ${changedFilePaths.join(", ")}`,
+    evidenceRefs: changedFilePaths,
+    sourceLineage: [],
+    missingFields,
+    doesNotProve: candidateReviewabilityDoesNotProve
+  });
 
   return [{
     id: runtime.createId("memory-candidate-proposal"),
@@ -257,6 +282,8 @@ const buildMemoryCandidateProposals = (
       changedFileCount: changedFilePaths.length,
       completeness: "incomplete",
       missingFields,
+      reviewability: reviewability.reviewability,
+      reviewabilityReasons: reviewability.reasons,
       persistence: "feedback-delta-proposal-only",
       promotion: "manual-only"
     }
@@ -389,13 +416,28 @@ const renderSourceDecisionCandidates = (
     return ["- none"];
   }
 
-  return candidates.flatMap((candidate) => [
-    `- ${candidate.id}: ${candidate.decision}`,
-    `  status: ${candidate.status}`,
-    `  consumer: ${candidate.consumer}`,
-    `  falsifier: ${candidate.falsifier}`,
-    "  No SourceClaim created"
-  ]);
+  return candidates.flatMap((candidate) => {
+    const reviewability = assessCandidateReviewability({
+      summary: candidate.decision,
+      body: candidate.rationale,
+      evidenceRefs: Array.isArray(candidate.metadata.changedFiles)
+        ? candidate.metadata.changedFiles.filter((value): value is string => typeof value === "string")
+        : [],
+      applicationGuidance: candidate.falsifier,
+      doesNotProve: candidateReviewabilityDoesNotProve
+    });
+
+    return [
+      `- ${candidate.id}: ${candidate.decision}`,
+      `  status: ${candidate.status}`,
+      `  reviewability: ${reviewability.reviewability}`,
+      "  reviewability reasons:",
+      ...reviewability.reasons.map((reason) => `  - ${reason}`),
+      `  consumer: ${candidate.consumer}`,
+      `  falsifier: ${candidate.falsifier}`,
+      "  No SourceClaim created"
+    ];
+  });
 };
 
 const renderMemoryCandidateProposals = (
@@ -405,15 +447,37 @@ const renderMemoryCandidateProposals = (
     return ["- none"];
   }
 
-  return proposals.flatMap((proposal) => [
-    `- ${proposal.id}: ${proposal.summary}`,
-    `  status: ${proposal.status}`,
-    `  kind: ${proposal.kind}`,
-    "  completeness: incomplete",
-    `  missing: ${proposal.missingFields.join(", ")}`,
-    "  No MemoryCandidate row created",
-    "  No MemoryRecord created"
-  ]);
+  return proposals.flatMap((proposal) => {
+    const metadataEvidenceRefs = Array.isArray(proposal.metadata.changedFiles)
+      ? proposal.metadata.changedFiles.filter((value): value is string => typeof value === "string")
+      : [];
+    const applicationGuidance =
+      typeof proposal.metadata.applicationGuidance === "string"
+        ? proposal.metadata.applicationGuidance
+        : undefined;
+    const reviewability = assessCandidateReviewability({
+      summary: proposal.summary,
+      body: proposal.body,
+      evidenceRefs: metadataEvidenceRefs,
+      sourceLineage: proposal.sourceLineage,
+      ...(applicationGuidance === undefined ? {} : { applicationGuidance }),
+      doesNotProve: candidateReviewabilityDoesNotProve,
+      missingFields: proposal.missingFields
+    });
+
+    return [
+      `- ${proposal.id}: ${proposal.summary}`,
+      `  status: ${proposal.status}`,
+      `  kind: ${proposal.kind}`,
+      `  reviewability: ${reviewability.reviewability}`,
+      "  reviewability reasons:",
+      ...reviewability.reasons.map((reason) => `  - ${reason}`),
+      "  completeness: incomplete",
+      `  missing: ${proposal.missingFields.join(", ")}`,
+      "  No MemoryCandidate row created",
+      "  No MemoryRecord created"
+    ];
+  });
 };
 
 const materializeFeedbackDeltaMemoryCandidate = (

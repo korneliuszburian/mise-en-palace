@@ -3576,6 +3576,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryCandidates:");
     expect(result.stdout).toContain("memory-candidate-proposal-1");
     expect(result.stdout).toContain("status: proposed");
+    expect(result.stdout).toContain("reviewability: too_vague");
+    expect(result.stdout).toContain("reviewability reasons:\n  - Candidate does not name a concrete future use.");
     expect(result.stdout).toContain("completeness: incomplete");
     expect(result.stdout).toContain("missing: applicationGuidance, sourceLineage, invalidationRule");
     expect(result.stdout).toContain("No MemoryCandidate row created");
@@ -3636,6 +3638,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("sourceDecisionCandidates:");
     expect(result.stdout).toContain("source-decision-candidate-1");
     expect(result.stdout).toContain("status: defer");
+    expect(result.stdout).toContain("reviewability: too_vague");
+    expect(result.stdout).toContain("reviewability reasons:\n  - Candidate does not name a concrete future use.");
     expect(result.stdout).toContain("consumer: krn evidence capture");
     expect(result.stdout).toContain("No SourceClaim created");
   });
@@ -3863,11 +3867,17 @@ describe("runCli", () => {
     expect(capturedMemoryCandidates?.[0]?.applicationGuidance).toContain("Incomplete");
     expect(capturedMemoryCandidates?.[0]?.metadata).toMatchObject({
       completeness: "incomplete",
+      reviewability: "too_vague",
+      reviewabilityReasons: ["Candidate does not name a concrete future use."],
       persistence: "feedback-delta-proposal-only"
     });
     expect(capturedSourceDecisions).toHaveLength(1);
     expect(capturedSourceDecisions?.[0]?.status).toBe("defer");
     expect(capturedSourceDecisions?.[0]?.consumer).toBe("krn evidence capture");
+    expect(capturedSourceDecisions?.[0]?.metadata).toMatchObject({
+      reviewability: "too_vague",
+      reviewabilityReasons: ["Candidate does not name a concrete future use."]
+    });
     expect(capturedEvidenceBundle?.reviewBurden).toBe(
       "Review changed files, command proof, residual risk, and rollback path."
     );
