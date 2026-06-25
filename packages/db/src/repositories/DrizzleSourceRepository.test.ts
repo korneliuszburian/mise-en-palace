@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DrizzleSourceRepository,
+  assertSourceClaimEdgeGovernance,
   assertSourceClaimGovernance,
   assertSourceDecisionEdgeGovernance,
   assertSourceDecisionGovernance,
@@ -18,6 +19,8 @@ const methodNames = [
   "listClaimsForProject",
   "listSourceClaimsForRun",
   "createSourceDecision",
+  "createSourceClaimEdge",
+  "listSourceClaimEdgesForClaim",
   "createSourceDecisionEdge",
   "listSourceDecisionEdgesForRun",
   "createSourceRejection"
@@ -98,6 +101,35 @@ describe("DrizzleSourceRepository", () => {
       confidence: "medium",
       notes: " "
     })).toThrow("SourceDecisionEdge requires targetId");
+  });
+
+  it("requires reviewable source claim edge metadata", () => {
+    const valid = {
+      fromSourceClaimId: "source-claim-new",
+      toSourceClaimId: "source-claim-old",
+      kind: "invalidates",
+      metadata: {
+        consumer: "B-01 temporal claim edge implementation",
+        doesNotProve: "This edge does not prove the newer claim is globally true.",
+        scope: "source graph temporal read model"
+      }
+    } as const;
+
+    expect(() => assertSourceClaimEdgeGovernance(valid)).not.toThrow();
+    expect(() => assertSourceClaimEdgeGovernance({
+      ...valid,
+      metadata: {
+        ...valid.metadata,
+        consumer: " "
+      }
+    })).toThrow("SourceClaimEdge requires metadata.consumer");
+    expect(() => assertSourceClaimEdgeGovernance({
+      ...valid,
+      metadata: {
+        ...valid.metadata,
+        doesNotProve: ""
+      }
+    })).toThrow("SourceClaimEdge requires metadata.doesNotProve");
   });
 
   it("rejects rejected or deprecated source claims as decision support", () => {

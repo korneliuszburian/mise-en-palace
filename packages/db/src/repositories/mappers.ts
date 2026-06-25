@@ -17,6 +17,7 @@ import type {
   ReviewAssessment,
   ReviewFinding,
   SourceClaim,
+  SourceClaimEdge,
   SourceDecision,
   SourceDecisionEdge,
   SourceRejection,
@@ -60,6 +61,7 @@ import type {
   searchDocuments,
   sourceArtifacts,
   sourceChunks,
+  sourceClaimEdges,
   sourceClaims,
   sourceDecisionEdges,
   sourceDecisions,
@@ -95,6 +97,7 @@ type ExecutionRunRow = InferSelectModel<typeof executionRuns>;
 type SourceArtifactRow = InferSelectModel<typeof sourceArtifacts>;
 type SourceChunkRow = InferSelectModel<typeof sourceChunks>;
 type SourceClaimRow = InferSelectModel<typeof sourceClaims>;
+type SourceClaimEdgeRow = InferSelectModel<typeof sourceClaimEdges>;
 type SourceDecisionRow = InferSelectModel<typeof sourceDecisions>;
 type SourceDecisionEdgeRow = InferSelectModel<typeof sourceDecisionEdges>;
 type SourceRejectionRow = InferSelectModel<typeof sourceRejections>;
@@ -576,6 +579,15 @@ export const mapSourceClaim = (row: SourceClaimRow): SourceClaim => ({
   metadata: metadataOrEmpty(row.metadata),
   createdAt: toIsoTimestamp(row.createdAt),
   updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
+export const mapSourceClaimEdge = (row: SourceClaimEdgeRow): SourceClaimEdge => ({
+  id: row.id,
+  fromSourceClaimId: row.fromSourceClaimId,
+  toSourceClaimId: row.toSourceClaimId,
+  kind: row.kind,
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt)
 });
 
 export const mapSourceDecision = (row: SourceDecisionRow): SourceDecision => ({

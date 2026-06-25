@@ -18,7 +18,9 @@ import {
   retrievalRuns,
   runEvents,
   sourceArtifacts,
+  sourceClaimEdges,
   sourceClaims,
+  sourceDecisions,
   sourceDecisionEdges,
   sourceRejections,
   workspaces
@@ -36,10 +38,14 @@ export interface SourceGraphSmokeReport {
   executionRunId: string;
   sourceArtifactId: string;
   sourceClaimId: string;
+  temporalSourceClaimId: string;
   readBackSourceClaimId: string;
+  sourceClaimEdgeId: string;
+  sourceDecisionId: string;
   sourceDecisionEdgeId: string;
   sourceRejectionId: string;
   runClaimCount: number;
+  sourceClaimEdgeCount: number;
   runDecisionEdgeCount: number;
   rejectionCount: number;
   outboxEventCount: number;
@@ -78,6 +84,14 @@ const countRows = async (
     .where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
   const edgeRows = await db
     .select({ count: sql<number>`count(*)::int` })
+    .from(sourceClaimEdges)
+    .where(sql`${sourceClaimEdges.metadata}->>'smokeId' = ${marker}`);
+  const decisionRows = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(sourceDecisions)
+    .where(sql`${sourceDecisions.metadata}->>'smokeId' = ${marker}`);
+  const decisionEdgeRows = await db
+    .select({ count: sql<number>`count(*)::int` })
     .from(sourceDecisionEdges)
     .where(sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${marker}`);
   const rejectionRows = await db
@@ -105,6 +119,8 @@ const countRows = async (
     (artifactRows[0]?.count ?? 0) +
     (claimRows[0]?.count ?? 0) +
     (edgeRows[0]?.count ?? 0) +
+    (decisionRows[0]?.count ?? 0) +
+    (decisionEdgeRows[0]?.count ?? 0) +
     (rejectionRows[0]?.count ?? 0) +
     (eventRows[0]?.count ?? 0) +
     (outboxRows[0]?.count ?? 0) +
@@ -139,6 +155,8 @@ export const runSourceGraphSmokeCheck = async (
     await db.delete(outboxEvents).where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
     await db.delete(sourceRejections).where(sql`${sourceRejections.metadata}->>'smokeId' = ${marker}`);
     await db.delete(sourceDecisionEdges).where(sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${marker}`);
+    await db.delete(sourceDecisions).where(sql`${sourceDecisions.metadata}->>'smokeId' = ${marker}`);
+    await db.delete(sourceClaimEdges).where(sql`${sourceClaimEdges.metadata}->>'smokeId' = ${marker}`);
     await db.delete(sourceClaims).where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
     await db.delete(sourceArtifacts).where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`);
     await db.delete(runEvents).where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
@@ -261,7 +279,49 @@ export const runSourceGraphSmokeCheck = async (
         smokeId: marker
       }
     });
+    const staleSourceClaim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: sourceArtifact.id,
+      executionRunId: executionRun.id,
+      claim: "Source graph smoke only needs source decision edges.",
+      mechanism: "Before B-01, source claim edge relations existed but were not repository-visible.",
+      krnImplication: "KRN could miss temporal invalidation between source claims.",
+      doesNotProve: "This older claim is safe after temporal claim edges exist.",
+      trustTier: "project-decision",
+      supportType: "implementation-boundary",
+      consumer: "B-01 temporal source graph smoke",
+      falsifier: "Temporal claim edge readback or cleanup fails.",
+      revisitWhen: "Temporal source graph semantics change.",
+      status: "proposed",
+      metadata: {
+        smokeId: marker
+      }
+    });
     const readBackClaim = await sourceRepository.getSourceClaimById(sourceClaim.id);
+    const sourceClaimEdge = await sourceRepository.createSourceClaimEdge({
+      fromSourceClaimId: sourceClaim.id,
+      toSourceClaimId: staleSourceClaim.id,
+      kind: "invalidates",
+      metadata: {
+        smokeId: marker,
+        consumer: "B-01 temporal source graph smoke",
+        scope: "source graph repository readback",
+        evidenceRef: executionRun.id,
+        doesNotProve: "This temporal edge does not prove activation uses invalidation yet."
+      }
+    });
+    const sourceDecision = await sourceRepository.createSourceDecision({
+      projectId: project.id,
+      sourceClaimId: sourceClaim.id,
+      status: "adopt",
+      decision: "Adopt source_claim_edges as the first temporal claim graph substrate.",
+      rationale: `Temporal edge ${sourceClaimEdge.id} invalidates an older source graph claim without adding a graph database.`,
+      falsifier: "Temporal source claim edges cannot be created, read back, or cleaned up.",
+      consumer: "B-01 temporal source graph smoke",
+      metadata: {
+        smokeId: marker,
+        sourceClaimEdgeId: sourceClaimEdge.id
+      }
+    });
     const sourceDecisionEdge = await sourceRepository.createSourceDecisionEdge({
       sourceClaimId: sourceClaim.id,
       targetType: "harness_run",
@@ -290,6 +350,9 @@ export const runSourceGraphSmokeCheck = async (
     const runDecisionEdges = await sourceRepository.listSourceDecisionEdgesForRun(
       executionRun.id
     );
+    const sourceClaimEdgesForClaim = await sourceRepository.listSourceClaimEdgesForClaim(
+      sourceClaim.id
+    );
     const rejectionRows = await db
       .select()
       .from(sourceRejections)
@@ -308,6 +371,13 @@ export const runSourceGraphSmokeCheck = async (
           edge.sourceClaimId === sourceClaim.id &&
           edge.targetId === executionRun.id
       ) ||
+      !sourceClaimEdgesForClaim.some(
+        (edge) =>
+          edge.id === sourceClaimEdge.id &&
+          edge.kind === "invalidates" &&
+          edge.fromSourceClaimId === sourceClaim.id &&
+          edge.toSourceClaimId === staleSourceClaim.id
+      ) ||
       rejectionRows.length !== 1 ||
       rejectionRows[0]?.id !== sourceRejection.id ||
       (outboxRows[0]?.count ?? 0) < 2
@@ -323,10 +393,14 @@ export const runSourceGraphSmokeCheck = async (
       executionRunId: executionRun.id,
       sourceArtifactId: sourceArtifact.id,
       sourceClaimId: sourceClaim.id,
+      temporalSourceClaimId: staleSourceClaim.id,
       readBackSourceClaimId: readBackClaim.id,
+      sourceClaimEdgeId: sourceClaimEdge.id,
+      sourceDecisionId: sourceDecision.id,
       sourceDecisionEdgeId: sourceDecisionEdge.id,
       sourceRejectionId: sourceRejection.id,
       runClaimCount: runClaims.length,
+      sourceClaimEdgeCount: sourceClaimEdgesForClaim.length,
       runDecisionEdgeCount: runDecisionEdges.length,
       rejectionCount: rejectionRows.length,
       outboxEventCount: outboxRows[0]?.count ?? 0,

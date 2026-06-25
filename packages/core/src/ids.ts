@@ -31,6 +31,7 @@ export type ObservationSourceRangeId = string;
 export type SourceArtifactId = string;
 export type SourceChunkId = string;
 export type SourceClaimId = BrandedKrnId<"SourceClaimId">;
+export type SourceClaimEdgeId = string;
 export type SourceDecisionId = string;
 export type SourceDecisionEdgeId = string;
 export type SourceRejectionId = string;

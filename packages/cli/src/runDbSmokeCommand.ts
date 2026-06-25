@@ -287,12 +287,16 @@ export const runDbSmokeCommand = async (
           `Execution run: ${report.executionRunId}`,
           `Source artifact: ${report.sourceArtifactId}`,
           `Source claim: ${report.sourceClaimId}`,
+          `Temporal source claim: ${report.temporalSourceClaimId}`,
           `Source claim readback: ${
             report.readBackSourceClaimId === report.sourceClaimId ? "matched" : "mismatch"
           }`,
+          `Source claim edge: ${report.sourceClaimEdgeId}`,
+          `Source decision: ${report.sourceDecisionId}`,
           `Source decision edge: ${report.sourceDecisionEdgeId}`,
           `Source rejection: ${report.sourceRejectionId}`,
           `Run source claims: ${report.runClaimCount}`,
+          `Source claim edges: ${report.sourceClaimEdgeCount}`,
           `Run source decision edges: ${report.runDecisionEdgeCount}`,
           `Source rejections: ${report.rejectionCount}`,
           `Outbox events: ${report.outboxEventCount}`,

@@ -2,6 +2,8 @@ import type {
   ExecutionRunId,
   ProjectId,
   SourceClaim,
+  SourceClaimEdge,
+  SourceClaimEdgeKind,
   SourceDecision,
   SourceDecisionEdge,
   SourceRejection,
@@ -55,6 +57,22 @@ export interface CreateSourceDecisionEdgeInput {
   metadata?: Record<string, unknown>;
 }
 
+export interface CreateSourceClaimEdgeInput {
+  fromSourceClaimId: SourceClaimEdge["fromSourceClaimId"];
+  toSourceClaimId: SourceClaimEdge["toSourceClaimId"];
+  kind: SourceClaimEdgeKind;
+  metadata: {
+    consumer: string;
+    doesNotProve: string;
+    evidenceRef?: string;
+    sourceDecisionRef?: string;
+    scope?: string;
+    validFrom?: string;
+    validUntil?: string;
+    invalidatedAt?: string;
+  } & Record<string, unknown>;
+}
+
 export interface CreateSourceRejectionInput {
   projectId?: ProjectId;
   executionRunId?: ExecutionRunId;
@@ -77,6 +95,8 @@ export interface SourceRepository {
   listClaimsForProject(projectId: ProjectId, limit: number): Promise<SourceClaim[]>;
   listSourceClaimsForRun(executionRunId: ExecutionRunId): Promise<SourceClaim[]>;
   createSourceDecision(input: CreateSourceDecisionInput): Promise<SourceDecision>;
+  createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge>;
+  listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]>;
   createSourceDecisionEdge(input: CreateSourceDecisionEdgeInput): Promise<SourceDecisionEdge>;
   listSourceDecisionEdgesForRun(executionRunId: ExecutionRunId): Promise<SourceDecisionEdge[]>;
   createSourceRejection(input: CreateSourceRejectionInput): Promise<SourceRejection>;

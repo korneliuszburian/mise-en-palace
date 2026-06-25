@@ -1,6 +1,7 @@
 import type {
   ProjectId,
   SourceArtifactId,
+  SourceClaimEdgeId,
   SourceClaimId,
   SourceDecisionEdgeId,
   SourceDecisionId,
@@ -56,6 +57,17 @@ export type SourceDecisionTargetType =
 
 export type SourceDecisionEdgeConfidence = "low" | "medium" | "high";
 
+export type SourceClaimEdgeKind =
+  | "supports"
+  | "contradicts"
+  | "qualifies"
+  | "depends_on"
+  | "supersedes"
+  | "duplicates"
+  | "narrows"
+  | "invalidates"
+  | "expires";
+
 export type SourceRejectionReason =
   | "no_mechanism"
   | "no_consumer"
@@ -107,6 +119,15 @@ export interface SourceDecisionEdge {
   supportType: SourceSupportType;
   confidence: SourceDecisionEdgeConfidence;
   notes: string;
+  metadata: Record<string, unknown>;
+  createdAt: IsoTimestamp;
+}
+
+export interface SourceClaimEdge {
+  id: SourceClaimEdgeId;
+  fromSourceClaimId: SourceClaimId;
+  toSourceClaimId: SourceClaimId;
+  kind: SourceClaimEdgeKind;
   metadata: Record<string, unknown>;
   createdAt: IsoTimestamp;
 }

@@ -27,6 +27,9 @@ describe("source graph schema", () => {
       ])
     );
     expect("sourceClaimStatus" in sourceSchema).toBe(true);
+    expect(sourceSchema.sourceClaimEdgeKind.enumValues).toEqual(
+      expect.arrayContaining(["narrows", "invalidates", "expires"])
+    );
     expect("sourceDecisionTargetType" in sourceSchema).toBe(true);
     expect("sourceDecisionEdgeConfidence" in sourceSchema).toBe(true);
     expect("sourceDecisionEdges" in sourceSchema).toBe(true);

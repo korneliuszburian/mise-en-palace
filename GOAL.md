@@ -24,15 +24,16 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-B-01 — Temporal Claim Edge Schema And Repository
+B-02 — Research-To-Brain Minimal Ingestion Lane
 ```
 
-B-00 is complete. Current evidence:
+B-00 and B-01 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-activation-owner-file-recall-repair/REPORT.md
 docs/decisions/ADR-0021-temporal-claim-graph.md
+docs/reviews/controlled-dogfood/2026-06-25-temporal-claim-edge-schema/REPORT.md
 ```
 
 ## Operating Rules

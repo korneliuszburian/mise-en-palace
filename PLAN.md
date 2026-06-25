@@ -267,6 +267,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `B-01`
 - Name: Implement temporal claim edges.
+- Status: complete on 2026-06-25.
 - Objective: Add minimal Postgres-backed relation support for claim support/contradiction/supersession/invalidation where not already modeled.
 - Business rationale: Enables reliable knowledge updates and anti-memory decisions.
 - Architectural rationale: Extends SourceGraph and Memory governance without separate graph DB.
@@ -276,6 +277,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: A claim can be marked as superseding or contradicting another claim with evidence and does-not-prove boundary.
 - Verification: `pnpm db:generate`; `pnpm --filter @krn/db db:check`; `pnpm test`; `pnpm typecheck`; DB smoke if applicable.
 - Acceptance criteria: Activation/Memory tasks can see the edge as candidate metadata or exclusion reason in a later slice.
+- Outcome: Added temporal `source_claim_edge_kind` values `narrows`, `invalidates`, and `expires`, domain/repository support for `SourceClaimEdge`, and source graph smoke coverage that creates an `invalidates` edge plus source decision evidence.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-temporal-claim-edge-schema/REPORT.md`; migration `packages/db/src/migrations/0013_yummy_the_twelve.sql`; current-shell `pnpm db:smoke:source-graph` passed with cleanup remaining marker count `0`.
 - Priority: P1.
 - Complexity: L.
 - Risks: Creating unused schema theater. Mitigation: require one dogfood run that uses the edge.
@@ -668,9 +671,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    B-01 — Temporal Claim Edge Schema And Repository
+    B-02 — Research-To-Brain Minimal Ingestion Lane
 
-ADR-0021 is accepted. Continue with B-01 as the minimal Postgres-backed temporal edge implementation; do not add graph DB, crawler, dashboard, API, MCP, or worker runtime.
+B-01 is complete. Continue with B-02 as a one-source research-to-brain ingestion slice. Do not create a research-foundry product layer, broad crawler, dashboard, API, MCP, worker runtime, or source-hoarding surface.
 
 ## 9. Completion Gates By Stage
 

@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
+import { or, eq } from "drizzle-orm";
 import type {
   ExecutionRunId,
   ProjectId,
   SourceClaim,
+  SourceClaimEdge,
   SourceDecision,
   SourceDecisionEdge,
   SourceDecisionStatus,
@@ -15,6 +16,7 @@ import {
 import type {
   CreateSourceArtifactInput,
   CreateSourceChunkInput,
+  CreateSourceClaimEdgeInput,
   CreateSourceClaimInput,
   CreateSourceDecisionInput,
   CreateSourceDecisionEdgeInput,
@@ -29,6 +31,7 @@ import {
   outboxEvents,
   sourceArtifacts,
   sourceChunks,
+  sourceClaimEdges,
   sourceClaims,
   sourceDecisionEdges,
   sourceDecisions,
@@ -39,6 +42,7 @@ import {
   mapSourceArtifact,
   mapSourceChunk,
   mapSourceClaim,
+  mapSourceClaimEdge,
   mapSourceDecision,
   mapSourceDecisionEdge,
   mapSourceRejection
@@ -136,6 +140,19 @@ export const assertSourceDecisionSourceClaimCanSupport = (
   if (sourceClaim.status === "rejected" || sourceClaim.status === "deprecated") {
     throw new Error(`SourceDecisionEdge cannot use ${sourceClaim.status} SourceClaim`);
   }
+};
+
+export const assertSourceClaimEdgeGovernance = (
+  input: Pick<
+    CreateSourceClaimEdgeInput,
+    "fromSourceClaimId" | "toSourceClaimId" | "kind" | "metadata"
+  >
+): void => {
+  requireText(input.fromSourceClaimId, "SourceClaimEdge requires fromSourceClaimId");
+  requireText(input.toSourceClaimId, "SourceClaimEdge requires toSourceClaimId");
+  requireText(input.kind, "SourceClaimEdge requires kind");
+  requireText(input.metadata.consumer, "SourceClaimEdge requires metadata.consumer");
+  requireText(input.metadata.doesNotProve, "SourceClaimEdge requires metadata.doesNotProve");
 };
 
 export class DrizzleSourceRepository implements SourceRepository {
@@ -290,6 +307,70 @@ export class DrizzleSourceRepository implements SourceRepository {
 
       return mapSourceDecision(row);
     });
+  }
+
+  async createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge> {
+    assertSourceClaimEdgeGovernance(input);
+
+    return this.db.transaction(async (tx) => {
+      const fromSourceClaim = requireReturnedRow(
+        await tx
+          .select()
+          .from(sourceClaims)
+          .where(eq(sourceClaims.id, input.fromSourceClaimId))
+          .limit(1),
+        "getFromSourceClaimForSourceClaimEdge"
+      );
+      const toSourceClaim = requireReturnedRow(
+        await tx
+          .select()
+          .from(sourceClaims)
+          .where(eq(sourceClaims.id, input.toSourceClaimId))
+          .limit(1),
+        "getToSourceClaimForSourceClaimEdge"
+      );
+
+      assertSourceDecisionSourceClaimCanSupport(mapSourceClaim(fromSourceClaim));
+      assertSourceDecisionSourceClaimCanSupport(mapSourceClaim(toSourceClaim));
+
+      const row = requireReturnedRow(
+        await tx
+          .insert(sourceClaimEdges)
+          .values({
+            fromSourceClaimId: input.fromSourceClaimId,
+            toSourceClaimId: input.toSourceClaimId,
+            kind: input.kind,
+            metadata: input.metadata
+          })
+          .returning(),
+        "createSourceClaimEdge"
+      );
+
+      await tx.insert(outboxEvents).values({
+        topic: "source.claim_edge.created",
+        payload: {
+          ...smokePayload(input.metadata),
+          sourceClaimEdgeId: row.id,
+          fromSourceClaimId: row.fromSourceClaimId,
+          toSourceClaimId: row.toSourceClaimId,
+          kind: row.kind
+        }
+      });
+
+      return mapSourceClaimEdge(row);
+    });
+  }
+
+  async listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]> {
+    const rows = await this.db
+      .select()
+      .from(sourceClaimEdges)
+      .where(or(
+        eq(sourceClaimEdges.fromSourceClaimId, sourceClaimId),
+        eq(sourceClaimEdges.toSourceClaimId, sourceClaimId)
+      ));
+
+    return rows.map(mapSourceClaimEdge);
   }
 
   async createSourceDecisionEdge(

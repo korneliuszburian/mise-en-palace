@@ -71,7 +71,10 @@ export const sourceClaimEdgeKind = pgEnum("source_claim_edge_kind", [
   "qualifies",
   "depends_on",
   "supersedes",
-  "duplicates"
+  "duplicates",
+  "narrows",
+  "invalidates",
+  "expires"
 ]);
 
 export const sourceDecisionStatus = pgEnum("source_decision_status", [

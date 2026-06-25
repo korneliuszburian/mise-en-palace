@@ -252,6 +252,29 @@ describe("source graph mappers", () => {
     });
   });
 
+  it("maps typed source claim edges", () => {
+    const mapSourceClaimEdge = mapper("mapSourceClaimEdge");
+
+    const result = mapSourceClaimEdge({
+      id: "source-claim-edge-1",
+      fromSourceClaimId: "source-claim-new",
+      toSourceClaimId: "source-claim-old",
+      kind: "invalidates",
+      metadata: {
+        consumer: "B-01 temporal source graph",
+        doesNotProve: "This does not prove global source truth."
+      },
+      createdAt
+    });
+
+    expect(result).toMatchObject({
+      id: "source-claim-edge-1",
+      fromSourceClaimId: "source-claim-new",
+      toSourceClaimId: "source-claim-old",
+      kind: "invalidates"
+    });
+  });
+
   it("maps source rejections without promoting them to trusted claims", () => {
     const mapSourceRejection = mapper("mapSourceRejection");
 
