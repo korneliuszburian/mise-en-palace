@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-F-01 — Codex Automation Integration
+F-02 — Dashboard Readiness Gate
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, and F-00 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, and F-01 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -49,6 +49,7 @@ docs/reviews/controlled-dogfood/2026-06-25-security-trust-boundary-review/REPORT
 docs/reviews/controlled-dogfood/2026-06-25-policy-hooks-boundary/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-worker-runtime-acceptance-gate/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-codex-automation-boundary/REPORT.md
 ```
 
 ## Operating Rules

@@ -45,6 +45,7 @@ This plan is based on the current public repository and the following project ev
 - `docs/reviews/controlled-dogfood/2026-06-25-db-replay-evidence-metadata/REPORT.md`
 - `docs/reviews/controlled-dogfood/2026-06-25-reflection-candidate-reviewability/REPORT.md`
 - `docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPORT.md`
+- `docs/reviews/controlled-dogfood/2026-06-25-codex-automation-boundary/REPORT.md`
 
 ### 1.3 Current architectural decisions
 
@@ -68,6 +69,7 @@ This plan is based on the current public repository and the following project ev
 - `docs/decisions/ADR-0021-temporal-claim-graph.md`
 - `docs/decisions/ADR-0022-policy-hooks-boundary.md`
 - `docs/decisions/ADR-0023-read-only-run-readback-boundary.md`
+- `docs/decisions/ADR-0024-codex-automation-boundary.md`
 
 ### 1.4 Official Codex planning references
 
@@ -599,6 +601,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `F-01`
 - Name: Evaluate Codex exec/GitHub Action integration.
+- Status: complete on 2026-06-25.
 - Objective: Determine whether KRN should automate parts of Codex execution after CLI/dogfood proof.
 - Business rationale: Product value may improve if KRN can drive repeatable Codex tasks.
 - Architectural rationale: Codex remains executor; KRN supplies plan/evidence/review contracts.
@@ -608,6 +611,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Either defer or prove one automated run without losing review control.
 - Verification: target repo run, evidence capture, security gates.
 - Acceptance criteria: Automation cannot bypass review or write policies.
+- Outcome: Accepted ADR-0024 and deferred KRN-owned Codex execution. The current boundary remains DB-backed `krn codex brief` and adapter smoke with `Codex invocations: 0`; future automation must pass an explicit acceptance gate for trigger, trusted input, sandbox, approval policy, network policy, allowed/forbidden writes, output artifact, evidence capture, rollback, and proof/non-proof boundaries.
+- Evidence: `docs/decisions/ADR-0024-codex-automation-boundary.md`; `docs/reviews/controlled-dogfood/2026-06-25-codex-automation-boundary/REPORT.md`; DB-backed plan run `1a45a72f-7e84-4532-9f51-c4869425fd03`; evidence bundle `e1c21a5d-9f51-4632-a123-015585dd738e`; observation group `7c94b1cc-8a1c-4da4-ac71-4d466c6538dc`; reflection record `3410b0ae-8ca0-45ac-8e72-a396fc05c106`.
 - Priority: P2.
 - Complexity: L.
 - Risks: Autonomous drift. Mitigation: proposal-only or explicit approval modes.
@@ -720,9 +725,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    F-01 — Codex Automation Integration
+    F-02 — Dashboard Readiness Gate
 
-F-00 is complete. Continue with F-01 to decide whether Codex automation is justified after the read-only run readback boundary. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
+F-01 is complete. Continue with F-02 to decide whether dashboard work is justified by action-oriented read models. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
