@@ -122,7 +122,7 @@ The percentages below are planning estimates based on current repository evidenc
 
 | Area | Current state | Completion estimate | Evidence | Missing / Unknown / Requires verification |
 | --- | --- | ---: | --- | --- |
-| Repo truth / planning hygiene | Current root plan is compact, historical ledgers archived, no active unchecked slice after RCR-00. | 85% | `PLAN.md`, `GOAL.md`, historical archive. | Requires ongoing discipline; not a product feature. |
+| Repo truth / planning hygiene | Current root plan is compact, historical ledgers archived, and active execution is tracked through the V01 queue. | 85% | `PLAN.md`, `GOAL.md`, historical archive. | Requires ongoing discipline; not a product feature. |
 | Brain for KRN-on-KRN coding | Dogfood-ready. DB-backed plan/evidence/observe/reflect and multiple source repairs exist. | 45% toward product, 70% toward dogfood use | Brain usefulness report, DBR-00, RCR-00. | Product usefulness on target repos unknown. Temporal truth graph incomplete. |
 | Adam/Bobbin-style temporal domain brain | Conceptually recognized but not implemented at scale. | 15-25% | ADR-0011, source-to-decision doctrine, anti-memory, activation. | Temporal claim graph, authority model, large corpus ingestion, conflict/supersession missing. |
 | Harness runtime | DB-backed plan/evidence/observe/reflect vertical works locally. | 45% | DBR-00 report, harness package, CLI commands. | No production orchestrator, no CI-backed runtime proof, target-repo vertical incomplete. |
@@ -832,6 +832,7 @@ gates needed before another internal-alpha decision.
 
 - ID: `V01-R01`
 - Name: Repair target project activation/read-model with trust exclusions.
+- Status: complete on 2026-06-25.
 - Objective: Make project-scoped KRN planning surface target-repo owner-file/read-model candidates and explicit trust exclusions for target repos, without building a crawler or broad security subsystem.
 - Business rationale: Internal alpha needs KRN to reduce target owner-file discovery and trust-review burden, not merely run install and evidence commands.
 - Architectural rationale: Fix the target read-model/trust boundary before activation scoring rewrite or reflection extraction rewrite.
@@ -841,6 +842,8 @@ gates needed before another internal-alpha decision.
 - Definition of Done: Target project planning no longer selects stale KRN owner-file recall as target context; trust exclusions cover `.env*`, generated `.muke/`, `.git/`, `node_modules/`, dist/build output, and runtime dirs such as `.supersearch/runtime/`.
 - Verification: focused activation/init-connect/read-model tests; DB-backed `krn plan --project ... --persist`; evidence capture/observe/reflect; `pnpm typecheck`; `pnpm test`; `git diff --check`.
 - Acceptance criteria: No source crawler, dashboard, MCP/API, worker daemon, broad security subsystem, automatic memory/source mutation, or reflection rewrite.
+- Outcome: Added a typed target activation read model built from project kernel metadata, repo installation metadata, and named live source seed detection from the target `localPathHint`. Project-scoped planning now uses target source seed/trust-exclusion candidates instead of the static KRN owner-file recall catalog. The final DB-backed `muke-v2` plan selected `evals`, target trust exclusions, `AGENTS.md`, `CLAUDE.md`, and `docs`, and did not select stale KRN DB-readiness owner files.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md`; persisted plan execution run `5ca9755f-6d82-4e17-a89b-5aa511891741`; evidence bundle `8da44cd4-ce82-40b3-b3e5-4a23f2a74f1a`; observation group `8dec977e-ea7d-4f6c-826c-0cd23a4c8b4f`; reflection record `eab600ce-84d3-4b9e-99fc-4b1e482a8f41`.
 - Priority: P0 before V01-04.
 - Complexity: M.
 - Risks: Accidentally building a crawler or scoring rewrite. Mitigation: limit to init/connect seed/read-model and explicit trust exclusions.
@@ -866,9 +869,9 @@ gates needed before another internal-alpha decision.
 
 The next active slice should be:
 
-    V01-R01 — Trust-Aware Target Activation Read Model Repair
+    V01-04 — Internal Alpha Re-Gate
 
-V01-03 is complete. Continue with V01-R01 to repair target project activation/read-model and trust exclusions before internal-alpha re-gate. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V01-R01 is complete. Continue with V01-04 to decide whether KRN becomes internal-alpha-ready, remains dogfood-only, or needs another bounded repair. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

@@ -18,6 +18,9 @@ import {
   retrieveActivationCandidates
 } from "../activation/index.js";
 import type {
+  TargetActivationReadModel
+} from "../activation/index.js";
+import type {
   HarnessRunRepository,
   MemoryRepository,
   RetrievalRepository,
@@ -51,6 +54,7 @@ export interface ResolvedHarnessCompileInput {
   projectId?: ProjectId;
   operatorIntent: HarnessCompileOperatorIntentInput;
   taskContract?: TaskContractDraft;
+  targetReadModel?: TargetActivationReadModel;
   tokenBudget?: number;
   metadata?: Record<string, unknown>;
 }
@@ -138,6 +142,7 @@ export const compileHarnessPlan = async (
       search: defaultSearchLimit,
       antiMemory: defaultAntiMemoryLimit
     },
+    ...(input.targetReadModel === undefined ? {} : { targetReadModel: input.targetReadModel }),
     repositories: {
       memoryRepository: dependencies.memoryRepository,
       sourceRepository: dependencies.sourceRepository,
@@ -150,7 +155,16 @@ export const compileHarnessPlan = async (
     query: retrieved.memoryQuery.text,
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     metadata: {
-      sourceQuery: retrieved.sourceQuery.text
+      sourceQuery: retrieved.sourceQuery.text,
+      ...(input.targetReadModel === undefined
+        ? {}
+        : {
+            targetReadModel: {
+              repoInstallationIds: input.targetReadModel.repoInstallationIds,
+              sourceSeedCount: input.targetReadModel.sourceSeeds.length,
+              trustExclusionCount: input.targetReadModel.trustExclusions.length
+            }
+          })
     }
   });
   const conflictResult = detectConflicts(retrieved.candidates, retrieved.antiMemoryRecords);

@@ -557,7 +557,15 @@ describe("runCli", () => {
               version: 1,
               summary: "Target repo kernel",
               activeContextRule: "Use target repo context only.",
-              metadata: {},
+              metadata: {
+                sourceSeeds: [
+                  {
+                    path: "evals",
+                    kind: "eval_workspace",
+                    reason: "seed eval, acceptance report, and test owner-file recall"
+                  }
+                ]
+              },
               createdAt: now,
               updatedAt: now
             },
@@ -570,7 +578,15 @@ describe("runCli", () => {
                 defaultBranch: "main",
                 repoFingerprint: "sha256:fixture",
                 localPathHint: "/tmp/target-repo",
-                metadata: {},
+                metadata: {
+                  sourceSeeds: [
+                    {
+                      path: "scripts",
+                      kind: "script_root",
+                      reason: "seed operator script and automation owner-file recall"
+                    }
+                  ]
+                },
                 createdAt: now,
                 updatedAt: now
               }
@@ -595,6 +611,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Project ID: project-target-1");
     expect(result.stdout).toContain("ProjectKernel: project-kernel-1");
     expect(result.stdout).toContain("Repo installations: repo-installation-1");
+    expect(result.stdout).toContain("Target read model: sourceSeeds=2, trustExclusions=7");
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 

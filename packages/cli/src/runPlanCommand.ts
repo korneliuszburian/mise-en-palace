@@ -10,7 +10,8 @@ import {
   compileHarnessPlan
 } from "@krn/harness";
 import type {
-  HarnessCompilerDependencies
+  HarnessCompilerDependencies,
+  TargetActivationReadModel
 } from "@krn/harness";
 import type {
   HarnessRunRepository,
@@ -32,6 +33,12 @@ import type {
 import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
+import {
+  detectSourceSeeds
+} from "./runInitCommand.js";
+import type {
+  SourceSeedProposal
+} from "./runInitCommand.js";
 
 export interface PlanCommandRuntime {
   env: Record<string, string | undefined>;
@@ -76,8 +83,156 @@ interface CompilerRuntimeResolution {
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
+const targetTrustExclusions = [
+  {
+    pathPattern: ".env*",
+    reason: "secret-shaped environment files must not enter planning context without explicit redaction"
+  },
+  {
+    pathPattern: ".muke/",
+    reason: "generated target runtime/eval state is not source truth by default"
+  },
+  {
+    pathPattern: ".git/",
+    reason: "Git internals are not planning context"
+  },
+  {
+    pathPattern: "node_modules/",
+    reason: "installed dependencies are generated/vendor state"
+  },
+  {
+    pathPattern: "dist/",
+    reason: "build output is generated state"
+  },
+  {
+    pathPattern: "build/",
+    reason: "build output is generated state"
+  },
+  {
+    pathPattern: ".supersearch/runtime/",
+    reason: "target runtime directories can contain generated state or secrets"
+  }
+] as const satisfies TargetActivationReadModel["trustExclusions"];
+
+const sourceSeedKinds = [
+  "package_manifest",
+  "workspace_manifest",
+  "typescript_config",
+  "project_readme",
+  "agent_instructions",
+  "docs_root",
+  "eval_workspace",
+  "mcp_workspace",
+  "script_root",
+  "source_root",
+  "test_root"
+] as const satisfies readonly SourceSeedProposal["kind"][];
+
+const isSourceSeedKind = (value: string): value is SourceSeedProposal["kind"] =>
+  sourceSeedKinds.some((kind) => kind === value);
+
 const subjectRef = (item: { subjectType: string; subjectId: string }): string =>
   `${item.subjectType}:${item.subjectId}`;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const sourceSeedFromUnknown = (value: unknown): SourceSeedProposal | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const seedPath = value.path;
+  const kind = value.kind;
+  const reason = value.reason;
+
+  if (
+    typeof seedPath !== "string" ||
+    seedPath.trim().length === 0 ||
+    typeof kind !== "string" ||
+    !isSourceSeedKind(kind) ||
+    kind.trim().length === 0 ||
+    typeof reason !== "string" ||
+    reason.trim().length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    path: seedPath,
+    kind,
+    reason
+  };
+};
+
+const sourceSeedsFromMetadata = (
+  metadata: Record<string, unknown> | undefined
+): SourceSeedProposal[] => {
+  const sourceSeeds = metadata?.sourceSeeds;
+
+  if (!Array.isArray(sourceSeeds)) {
+    return [];
+  }
+
+  return sourceSeeds.flatMap((seed) => {
+    const parsed = sourceSeedFromUnknown(seed);
+
+    return parsed === undefined ? [] : [parsed];
+  });
+};
+
+const uniqueSourceSeeds = (
+  sourceSeeds: readonly SourceSeedProposal[]
+): SourceSeedProposal[] => {
+  const seedsByPath = new Map<string, SourceSeedProposal>();
+
+  for (const seed of sourceSeeds) {
+    seedsByPath.set(seed.path, seed);
+  }
+
+  return [...seedsByPath.values()].sort((left, right) => left.path.localeCompare(right.path));
+};
+
+const buildTargetActivationReadModel = async (
+  metadata: ProjectScopedPlanMetadata | undefined
+): Promise<TargetActivationReadModel | undefined> => {
+  if (metadata === undefined) {
+    return undefined;
+  }
+
+  const repoInstallations = metadata.repoInstallations ?? [];
+  const liveSeedGroups = await Promise.all(
+    repoInstallations.map(async (repoInstallation) => {
+      const localPathHint = repoInstallation.localPathHint;
+
+      if (localPathHint === undefined || localPathHint.trim().length === 0) {
+        return [];
+      }
+
+      return detectSourceSeeds(localPathHint);
+    })
+  );
+  const metadataSeeds = [
+    ...sourceSeedsFromMetadata(metadata.projectKernel?.metadata),
+    ...repoInstallations.flatMap((repoInstallation) =>
+      sourceSeedsFromMetadata(repoInstallation.metadata)
+    )
+  ];
+  const sourceSeeds = uniqueSourceSeeds([
+    ...metadataSeeds,
+    ...liveSeedGroups.flat()
+  ]);
+
+  return {
+    ...(metadata.projectKernel === undefined ? {} : { projectKernelId: metadata.projectKernel.id }),
+    repoInstallationIds: repoInstallations.map((repoInstallation) => repoInstallation.id),
+    localPathHints: repoInstallations.flatMap((repoInstallation) =>
+      repoInstallation.localPathHint === undefined ? [] : [repoInstallation.localPathHint]
+    ),
+    sourceSeeds,
+    trustExclusions: targetTrustExclusions
+  };
+};
 
 const formatInclusionLine = (inclusion: ContextInclusion): string =>
   [
@@ -179,6 +334,7 @@ const formatPlanSummary = (
   nextAction: string,
   executionBrief: string,
   projectScopedMetadata?: ProjectScopedPlanMetadata,
+  targetReadModel?: TargetActivationReadModel,
   persistedIdentity?: PersistedPlanIdentity
 ): string => {
   const lines = [
@@ -199,6 +355,11 @@ const formatPlanSummary = (
                   .map((repoInstallation) => repoInstallation.id)
                   .join(", ")
           }`
+        ]),
+    ...(targetReadModel === undefined
+      ? []
+      : [
+          `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, trustExclusions=${targetReadModel.trustExclusions.length}`
         ]),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
@@ -272,6 +433,9 @@ export const runPlanCommand = async (
   const compilerRuntime = await resolveCompilerRuntime(runtime, workspaceSlug, projectSlug);
 
   try {
+    const targetReadModel = await buildTargetActivationReadModel(
+      compilerRuntime.projectScopedMetadata
+    );
     const result = await compileHarnessPlan(
       {
         workspaceId: compilerRuntime.workspaceId,
@@ -284,6 +448,7 @@ export const runPlanCommand = async (
         ...(compileInput.taskContract === undefined
           ? {}
           : { taskContract: compileInput.taskContract }),
+        ...(targetReadModel === undefined ? {} : { targetReadModel }),
         ...(compileInput.tokenBudget === undefined ? {} : { tokenBudget: compileInput.tokenBudget }),
         metadata: compileInput.metadata
       },
@@ -335,6 +500,15 @@ export const runPlanCommand = async (
                         (repoInstallation) => repoInstallation.id
                       )
                   }),
+              ...(targetReadModel === undefined
+                ? {}
+                : {
+                    targetReadModel: {
+                      sourceSeedCount: targetReadModel.sourceSeeds.length,
+                      trustExclusionCount: targetReadModel.trustExclusions.length,
+                      sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path)
+                    }
+                  }),
               evidenceContract: result.evidenceContract,
               codexAdapterPlanRef: result.codexAdapterPlanRef
             }
@@ -360,6 +534,7 @@ export const runPlanCommand = async (
         result.nextAction,
         executionBrief,
         compilerRuntime.projectScopedMetadata,
+        targetReadModel,
         persistedIdentity
       )
     };

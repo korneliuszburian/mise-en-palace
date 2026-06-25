@@ -51,9 +51,14 @@ export interface SourceSeedProposal {
   path: string;
   kind:
     | "package_manifest"
+    | "workspace_manifest"
     | "typescript_config"
     | "project_readme"
     | "agent_instructions"
+    | "docs_root"
+    | "eval_workspace"
+    | "mcp_workspace"
+    | "script_root"
     | "source_root"
     | "test_root";
   reason: string;
@@ -191,9 +196,19 @@ const sourceSeedCandidates = [
     reason: "detect package identity and scripts"
   },
   {
+    path: "pnpm-workspace.yaml",
+    kind: "workspace_manifest",
+    reason: "detect workspace package boundaries"
+  },
+  {
     path: "tsconfig.json",
     kind: "typescript_config",
     reason: "detect TypeScript boundary settings"
+  },
+  {
+    path: "tsconfig.base.json",
+    kind: "typescript_config",
+    reason: "detect shared TypeScript boundary settings"
   },
   {
     path: "README.md",
@@ -204,6 +219,31 @@ const sourceSeedCandidates = [
     path: "AGENTS.md",
     kind: "agent_instructions",
     reason: "capture target repo Codex instructions when present"
+  },
+  {
+    path: "CLAUDE.md",
+    kind: "agent_instructions",
+    reason: "capture target repo adjacent agent instructions when present"
+  },
+  {
+    path: "docs",
+    kind: "docs_root",
+    reason: "seed target documentation and runbook context"
+  },
+  {
+    path: "evals",
+    kind: "eval_workspace",
+    reason: "seed eval, acceptance report, and test owner-file recall"
+  },
+  {
+    path: "mcp",
+    kind: "mcp_workspace",
+    reason: "seed MCP package and tool owner-file recall"
+  },
+  {
+    path: "scripts",
+    kind: "script_root",
+    reason: "seed operator script and automation owner-file recall"
   },
   {
     path: "src",
@@ -217,7 +257,7 @@ const sourceSeedCandidates = [
   }
 ] as const satisfies readonly SourceSeedProposal[];
 
-const detectSourceSeeds = async (repoPath: string): Promise<SourceSeedProposal[]> => {
+export const detectSourceSeeds = async (repoPath: string): Promise<SourceSeedProposal[]> => {
   const existing = await Promise.all(
     sourceSeedCandidates.map(async (seed) => ({
       seed,

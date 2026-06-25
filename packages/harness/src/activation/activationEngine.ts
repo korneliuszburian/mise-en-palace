@@ -20,6 +20,9 @@ import {
 import {
   buildOwnerFileRecallCandidates
 } from "./ownerFileRecall.js";
+import type {
+  TargetActivationReadModel
+} from "./ownerFileRecall.js";
 import {
   mergeActivationCandidates,
   rankCandidates,
@@ -57,6 +60,7 @@ export interface RetrieveActivationCandidatesInput {
   taskContract: TaskContract;
   memoryQuery?: ActivationQuery;
   sourceQuery?: ActivationQuery;
+  targetReadModel?: TargetActivationReadModel;
   limits: ActivationRetrievalLimits;
   repositories: ActivationCandidateRepositories;
 }
@@ -194,7 +198,9 @@ export const retrieveActivationCandidates = async (
   const sourceCandidates = rankCandidates(sourceClaims.map(toSourceClaimCandidate), sourceQuery);
   const searchCandidates = rankCandidates(searchResults.map(toSearchCandidate), sourceQuery);
   const ownerFileCandidates = rankCandidates(
-    buildOwnerFileRecallCandidates(input.taskContract),
+    buildOwnerFileRecallCandidates(input.taskContract, {
+      ...(input.targetReadModel === undefined ? {} : { targetReadModel: input.targetReadModel })
+    }),
     sourceQuery
   );
 

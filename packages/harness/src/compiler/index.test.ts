@@ -743,6 +743,99 @@ describe("compileHarnessPlan", () => {
     );
   });
 
+  it("uses target read-model candidates instead of static KRN owner files for project-scoped target plans", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Repair muke-v2 eval tests with target trust exclusions",
+          objective: "Repair muke-v2 eval acceptance report tests and keep .env .muke runtime trust exclusions explicit.",
+          constraints: ["do not build a source crawler"],
+          acceptance: ["target owner-file recall candidates are visible"]
+        },
+        targetReadModel: {
+          projectKernelId: "kernel-target",
+          repoInstallationIds: ["repo-installation-target"],
+          localPathHints: ["/tmp/muke-v2"],
+          sourceSeeds: [
+            {
+              path: "evals",
+              kind: "eval_workspace",
+              reason: "seed eval, acceptance report, and test owner-file recall"
+            },
+            {
+              path: "mcp",
+              kind: "mcp_workspace",
+              reason: "seed MCP package and tool owner-file recall"
+            }
+          ],
+          trustExclusions: [
+            {
+              pathPattern: ".env*",
+              reason: "secret-shaped environment files must not enter planning context"
+            },
+            {
+              pathPattern: ".muke/",
+              reason: "generated target state is not source truth by default"
+            }
+          ]
+        }
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository([]),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-target-read-model`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subjectType: "search_document",
+          reason: "Target source seed: evals"
+        }),
+        expect.objectContaining({
+          subjectType: "search_document",
+          reason: "Target trust exclusions for project-scoped planning"
+        })
+      ])
+    );
+    expect(result.contextAssembly.inclusions).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subjectId: "11111111-1111-4111-8111-111111111001"
+        })
+      ])
+    );
+    expect(retrievalRepository.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          metadata: expect.objectContaining({
+            source: "target_project_read_model",
+            targetReadModelKind: "source_seed",
+            targetPath: "evals"
+          })
+        }),
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          metadata: expect.objectContaining({
+            source: "target_project_read_model",
+            targetReadModelKind: "trust_exclusions"
+          })
+        })
+      ])
+    );
+  });
+
   it("creates evidence expectations for reviewable engineering work", async () => {
     const result = await compileHarnessPlan(compileInput, {
       harnessRunRepository: new FakeHarnessRunRepository(),

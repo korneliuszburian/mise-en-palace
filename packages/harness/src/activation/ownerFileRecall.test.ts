@@ -7,6 +7,9 @@ import type {
 import {
   buildOwnerFileRecallCandidates
 } from "./ownerFileRecall.js";
+import type {
+  TargetActivationReadModel
+} from "./ownerFileRecall.js";
 
 const taskContract = (objective: string): TaskContract => ({
   id: "task-1",
@@ -50,5 +53,68 @@ describe("owner-file recall", () => {
     );
 
     expect(candidates).toEqual([]);
+  });
+
+  it("uses target read-model seeds instead of KRN static owner files for target projects", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/muke-v2"],
+      sourceSeeds: [
+        {
+          path: "evals",
+          kind: "eval_workspace",
+          reason: "seed eval, acceptance report, and test owner-file recall"
+        },
+        {
+          path: "mcp",
+          kind: "mcp_workspace",
+          reason: "seed MCP package and tool owner-file recall"
+        }
+      ],
+      trustExclusions: [
+        {
+          pathPattern: ".env*",
+          reason: "secret-shaped environment files must not enter planning context"
+        },
+        {
+          pathPattern: ".muke/",
+          reason: "generated target state is not source truth by default"
+        }
+      ]
+    };
+    const candidates = buildOwnerFileRecallCandidates(
+      taskContract("Repair muke-v2 eval tests and keep target trust exclusions explicit"),
+      { targetReadModel }
+    );
+
+    expect(candidates.map((candidate) => candidate.reason)).toEqual(
+      expect.arrayContaining([
+        "Target source seed: evals",
+        "Target trust exclusions for project-scoped planning"
+      ])
+    );
+    expect(candidates).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            ownerFilePath: "packages/cli/src/runDbReadinessCommand.ts"
+          })
+        })
+      ])
+    );
+    const evalsCandidate = candidates.find((candidate) =>
+      candidate.reason === "Target source seed: evals"
+    );
+
+    expect(evalsCandidate?.metadata).toMatchObject({
+      source: "target_project_read_model",
+      targetReadModelKind: "source_seed",
+      targetPath: "evals",
+      seedKind: "eval_workspace"
+    });
+    expect(evalsCandidate?.subjectId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/
+    );
   });
 });
