@@ -812,6 +812,7 @@ gates needed before another internal-alpha decision.
 
 - ID: `V01-03`
 - Name: Decide whether activation or reflection needs repair from target trial evidence.
+- Status: complete on 2026-06-25.
 - Objective: Use V01-00/V01-01 evidence to decide whether owner-file recall, context selection, or reflection extraction requires a bounded repair.
 - Business rationale: Activation/reflection remain weak in several dogfoods, but repairs should follow target evidence.
 - Architectural rationale: Avoid scoring rewrites from insufficient samples.
@@ -824,6 +825,25 @@ gates needed before another internal-alpha decision.
 - Priority: P1.
 - Complexity: M.
 - Risks: Premature scoring rewrite. Mitigation: require repeated target misses.
+- Outcome: Decision is to repair target activation/read-model first and defer reflection rewrite. V01-00 selected a non-target KRN owner-file recall item for a target repair, V01-02 project-scoped activation abstained, and target trust exclusions for secret-shaped files are not represented in planning. Reflection is weak but should be judged again after better target context exists.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-activation-reflection-usefulness-decision/REPORT.md`; persisted plan execution run `482db4e8-5575-4e45-8b8d-25736060c817`; evidence bundle `c8e3431c-8863-481b-b599-4542f9d06d91`; observation group `d6f255cf-37ed-4c09-ac7a-55e47fee01ea`; reflection record `865f46d3-bf02-4405-a2dc-719315d65eb5`.
+
+### V01-R01 — Trust-Aware Target Activation Read Model Repair
+
+- ID: `V01-R01`
+- Name: Repair target project activation/read-model with trust exclusions.
+- Objective: Make project-scoped KRN planning surface target-repo owner-file/read-model candidates and explicit trust exclusions for target repos, without building a crawler or broad security subsystem.
+- Business rationale: Internal alpha needs KRN to reduce target owner-file discovery and trust-review burden, not merely run install and evidence commands.
+- Architectural rationale: Fix the target read-model/trust boundary before activation scoring rewrite or reflection extraction rewrite.
+- Dependencies: V01-00, V01-02, V01-03.
+- Input requirements: `muke-v2` target repo evidence; current init/connect project registration; target trust report.
+- Output requirements: Focused source repair and dogfood report proving project-scoped activation surfaces target owner/read-model candidates or abstains with explicit missing-read-model/trust reasons.
+- Definition of Done: Target project planning no longer selects stale KRN owner-file recall as target context; trust exclusions cover `.env*`, generated `.muke/`, `.git/`, `node_modules/`, dist/build output, and runtime dirs such as `.supersearch/runtime/`.
+- Verification: focused activation/init-connect/read-model tests; DB-backed `krn plan --project ... --persist`; evidence capture/observe/reflect; `pnpm typecheck`; `pnpm test`; `git diff --check`.
+- Acceptance criteria: No source crawler, dashboard, MCP/API, worker daemon, broad security subsystem, automatic memory/source mutation, or reflection rewrite.
+- Priority: P0 before V01-04.
+- Complexity: M.
+- Risks: Accidentally building a crawler or scoring rewrite. Mitigation: limit to init/connect seed/read-model and explicit trust exclusions.
 
 ### V01-04 — Internal Alpha Re-Gate
 
@@ -832,7 +852,7 @@ gates needed before another internal-alpha decision.
 - Objective: Decide whether KRN becomes internal-alpha-ready, remains dogfood-only, or needs another bounded repair.
 - Business rationale: Converts V01 evidence into a release decision.
 - Architectural rationale: Release decisions must be evidence gates, not roadmap momentum.
-- Dependencies: V01-00, V01-01, V01-02 or explicit deferral, V01-03.
+- Dependencies: V01-00, V01-01, V01-02 or explicit deferral, V01-03, V01-R01 or explicit deferral.
 - Input requirements: Target trial, operator proof, trust/redaction evidence, activation/reflection decision, green CI.
 - Output requirements: Updated release readiness report.
 - Definition of Done: Readiness is classified as not-ready, dogfood-only, internal-alpha, or defer.
@@ -846,9 +866,9 @@ gates needed before another internal-alpha decision.
 
 The next active slice should be:
 
-    V01-03 — Activation And Reflection Usefulness Decision
+    V01-R01 — Trust-Aware Target Activation Read Model Repair
 
-V01-02 is complete. Continue with V01-03 to decide whether activation, reflection, or target trust/read-model behavior needs one bounded repair before internal-alpha re-gate. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V01-03 is complete. Continue with V01-R01 to repair target project activation/read-model and trust exclusions before internal-alpha re-gate. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
@@ -934,18 +954,21 @@ Every goal executed under this plan must end with:
 
 Use this if the operator wants to continue immediately.
 
-    Goal: Activation And Reflection Usefulness Decision
+    Goal: Trust-Aware Target Activation Read Model Repair
 
     Mission:
-      Use V01-00, V01-01, and V01-02 evidence to decide whether activation, reflection, or target trust/read-model behavior needs a bounded repair before internal-alpha re-gate.
+      Repair target project activation/read-model so project-scoped KRN planning surfaces target repo owner/read-model candidates and explicit trust exclusions, without building a crawler or broad security subsystem.
 
     Required:
       - git fetch --prune
       - git status --short --branch
-      - review selected/used/helped/missing context from V01-00 through V01-02
-      - review observation/reflection outcomes and candidate usefulness
-      - decide exactly one next action: repair activation/read-model, repair reflection, repair trust/redaction, defer repairs and re-gate, or gather another trial
-      - produce a decision report
+      - inspect init/connect source seed and activation/read-model code
+      - add the smallest typed target read-model/trust exclusion repair
+      - prove `.env*`, generated `.muke/`, `.git/`, `node_modules/`, dist/build output, and runtime dirs are excluded or redacted from target planning context
+      - prove project-scoped planning no longer selects stale KRN owner-file recall as target context
+      - produce a dogfood report
+      - run pnpm typecheck
+      - run pnpm test
       - git diff --check
 
     Non-goals:
@@ -960,9 +983,9 @@ Use this if the operator wants to continue immediately.
       - no anti-slop scanner;
       - no npm publish;
       - no global binary distribution;
-      - no target writes.
+      - no target writes except read-only inspection.
 
     Completion:
-      - report names one next action with evidence;
-      - no broad retrieval rewrite or autonomous reflection system;
-      - continue V01-04 or the selected bounded repair.
+      - target project planning has target read-model/trust exclusion evidence;
+      - no broad crawler/security layer/scoring rewrite was added;
+      - continue V01-04 or explicitly defer internal alpha.
