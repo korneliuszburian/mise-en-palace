@@ -349,6 +349,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `C-00`
 - Name: Controlled target-repo internal alpha trial.
+- Status: complete on 2026-06-25.
 - Objective: Use KRN on a real target repository outside KRN, or a real target module with separate project identity, to measure before/after review burden.
 - Business rationale: Proves KRN value beyond self-referential dogfood.
 - Architectural rationale: Tests project registry, source/memory isolation, and operator workflow.
@@ -358,6 +359,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: One target repo task is planned, executed, verified, and reviewed through KRN.
 - Verification: Target repo typecheck/test; KRN evidence capture; KRN report; `git diff --check` in relevant repo.
 - Acceptance criteria: Report states whether KRN is internal-alpha-ready or what blocks it.
+- Outcome: `packages/workers` was connected as separate project `421474cb-d7f5-455e-93ce-5200eb617a4b`. KRN planned, executed, captured evidence, observed, and reflected a focused unknown-first maintenance job type parser repair. Evidence lowered review burden, but target-project activation abstained and reflection remained ledger-only.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-target-workers-harness-trial/REPORT.md`; execution run `96488f2b-0015-49fa-8f07-008276183532`; evidence bundle `0547f911-8aef-4ec1-b1f6-f31c850e014f`; observation group `0f7763a9-2250-40bf-a326-f3e7372a5e97`; reflection record `dfe03167-e09e-4d8b-9349-701d2d3801f1`.
 - Priority: P0 after A-phase.
 - Complexity: L.
 - Risks: Fixture theater or target too small. Mitigation: choose real maintenance task with measurable review burden.
@@ -680,9 +683,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    C-00 — Target Repo Harness Trial
+    C-01 — Target Repo Registry And Init/Connect Hardening
 
-B-04 is complete. Continue with C-00 as a controlled target-repo or separate-project harness trial. Do not create a fake benchmark lane, dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+C-00 is complete. Continue with C-01 using the target workers trial evidence as input. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

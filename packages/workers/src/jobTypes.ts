@@ -16,6 +16,14 @@ export const maintenanceJobTypes = [
 
 export type MaintenanceJobType = (typeof maintenanceJobTypes)[number];
 
+const maintenanceJobTypeSet = new Set<string>(maintenanceJobTypes);
+
+export const isMaintenanceJobType = (value: unknown): value is MaintenanceJobType =>
+  typeof value === "string" && maintenanceJobTypeSet.has(value);
+
+export const parseMaintenanceJobType = (value: unknown): MaintenanceJobType | undefined =>
+  isMaintenanceJobType(value) ? value : undefined;
+
 export interface EmbedSourceChunkPayload {
   sourceChunkId: SourceChunkId;
   reason: string;

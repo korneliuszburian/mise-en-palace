@@ -3,7 +3,9 @@ import { describe, expect, test } from "vitest";
 import {
   describeMaintenanceJob,
   enqueueMaintenanceJob,
-  maintenanceJobTypes
+  isMaintenanceJobType,
+  maintenanceJobTypes,
+  parseMaintenanceJobType
 } from "./index.js";
 import type {
   CreateWorkerJobInput,
@@ -70,6 +72,29 @@ describe("maintenance worker skeleton", () => {
         })
       )
     );
+  });
+
+  test("narrows unknown input before using a maintenance job type", () => {
+    const fromExternalInput: unknown = "compact_memory";
+
+    expect(isMaintenanceJobType(fromExternalInput)).toBe(true);
+
+    if (!isMaintenanceJobType(fromExternalInput)) {
+      throw new Error("expected compact_memory to narrow to MaintenanceJobType");
+    }
+
+    expect(describeMaintenanceJob(fromExternalInput)).toEqual(
+      expect.objectContaining({
+        jobType: "compact_memory",
+        memoryCoreGate: "write_memory_candidate_only"
+      })
+    );
+  });
+
+  test("rejects unknown maintenance job type input", () => {
+    expect(parseMaintenanceJobType("run_everything_now")).toBeUndefined();
+    expect(parseMaintenanceJobType({ jobType: "compact_memory" })).toBeUndefined();
+    expect(parseMaintenanceJobType("expire_stale_memory")).toBe("expire_stale_memory");
   });
 
   test("enqueues a typed worker job and emits a worker-job outbox event", async () => {
