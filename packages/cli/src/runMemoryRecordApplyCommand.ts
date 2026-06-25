@@ -144,7 +144,16 @@ const proposeAntiMemoryCandidate = async (
       memoryApplicationId: input.memoryApplication.id,
       memoryFeedbackEventId: input.feedbackEvent.id,
       applicationOutcome: input.outcome,
-      doesNotProve: "This candidate does not prove the memory should be invalidated or demoted without review."
+      doesNotProve: "This candidate does not prove the memory should be invalidated or demoted without review.",
+      reflectionCandidateEvidence: {
+        provenance: "local_operator_note",
+        evidenceRefs: [
+          `memory-application:${input.memoryApplication.id}`,
+          `memory-feedback-event:${input.feedbackEvent.id}`
+        ],
+        doesNotProve:
+          "Operator feedback does not prove the anti-memory candidate should be promoted without review."
+      }
     }
   });
 };

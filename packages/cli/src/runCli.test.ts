@@ -2637,6 +2637,17 @@ describe("runCli", () => {
       invalidatedBySourceClaimIds: ["source-claim-1"],
       appliesTo: "memory:memory-candidate-1"
     });
+    expect(capturedAntiMemoryCandidate?.metadata).toMatchObject({
+      reflectionCandidateEvidence: {
+        provenance: "local_operator_note",
+        evidenceRefs: [
+          "memory-application:memory-application-1",
+          "memory-feedback-event:memory-feedback-event-1"
+        ],
+        doesNotProve:
+          "Operator feedback does not prove the anti-memory candidate should be promoted without review."
+      }
+    });
   });
 
   it("previews anti-memory add without DB writes", async () => {

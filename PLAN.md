@@ -327,6 +327,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `B-04`
 - Name: Make anti-memory visible in activation decisions.
+- Status: complete on 2026-06-25.
 - Objective: Ensure anti-memory blocks or warns against stale/unsafe/contradicted context and is visible in inclusions/exclusions.
 - Business rationale: Prevents repeated resurrection of bad knowledge.
 - Architectural rationale: Anti-memory is first-class and must influence admission control.
@@ -336,6 +337,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Activation output states anti-memory hit and reason.
 - Verification: Activation tests; DB-backed run; `pnpm test`; `pnpm typecheck`.
 - Acceptance criteria: Unsafe/stale candidate does not silently enter Codex context.
+- Outcome: Feedback-generated anti-memory candidates now include review-gate evidence metadata. Reviewed anti-memory record `707f3d5a-ad6e-4303-8fbb-b9f014522231` blocked stale `krn audit slice` memory and its source claim in DB-backed activation output with explicit unsafe exclusions.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-anti-memory-conflict-integration/REPORT.md`; activation run `b2e07c29-385c-4b4f-bd36-5e1f7563f051`.
 - Priority: P1.
 - Complexity: M.
 - Risks: Overblocking useful context. Mitigation: raw recall and reviewable reasons.
@@ -677,9 +680,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    B-04 — Anti-Memory Conflict Integration
+    C-00 — Target Repo Harness Trial
 
-B-03 is complete. Continue with B-04 as an anti-memory activation integration slice. Do not auto-promote anti-memory candidates, bypass review gates, add automatic Memory Core mutation, dashboard, API, MCP, worker runtime, broad eval platform, or source crawler.
+B-04 is complete. Continue with C-00 as a controlled target-repo or separate-project harness trial. Do not create a fake benchmark lane, dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
