@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-D-03 — Observability Read Models
+E-00 — Security And Trust Boundary Review
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, and D-02 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, and D-03 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -44,6 +44,7 @@ docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT
 docs/reviews/controlled-dogfood/2026-06-25-golden-task-promotion-lane/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-promptfoo-adapter-boundary/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-run-evidence-readback/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-observability-read-models/REPORT.md
 ```
 
 ## Operating Rules

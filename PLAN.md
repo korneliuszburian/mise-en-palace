@@ -491,6 +491,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `D-03`
 - Name: Define typed read models for review burden, context ROI, memory usefulness.
+- Status: complete on 2026-06-25.
 - Objective: Create read-model definitions for dashboard/API later without building dashboard now.
 - Business rationale: Product readiness requires actionable metrics.
 - Architectural rationale: Read models should derive from typed DB state and reports.
@@ -500,6 +501,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Read models have owner, data source, action, and falsifier.
 - Verification: Docs review; no source unless accepted.
 - Acceptance criteria: Dashboard remains deferred until read models are useful.
+- Outcome: Defined docs-only `ReviewBurdenReadModel`, `ContextROIReadModel`, and `MemoryUsefulnessReadModel` with owner, data sources, operator action, and falsifier. Dashboard/API and schema implementation remain deferred.
+- Evidence: `docs/architecture/observability-read-models.md`; `docs/reviews/controlled-dogfood/2026-06-25-observability-read-models/REPORT.md`; DB-backed plan run `9bd063ab-70d4-48f1-9243-8c60854b2da7`; evidence bundle `1a0a5648-ec08-4e8d-8464-58950f2fc8af`; observation group `fb82d9f9-806f-46ac-8d71-a82f526b247e`; reflection record `e906e147-a1e3-4023-a1f2-75ce917f2ada`.
 - Priority: P2.
 - Complexity: M.
 - Risks: Vanity metrics. Mitigation: every metric must have action.
@@ -701,9 +704,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    D-03 — Observability Read Models
+    E-00 — Security And Trust Boundary Review
 
-D-02 is complete. Continue with D-03 to define typed observability read models before any dashboard or API. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+D-03 is complete. Continue with E-00 to review security and trust boundaries before policy hooks, worker runtime, integrations, or product interfaces. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
