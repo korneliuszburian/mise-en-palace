@@ -772,6 +772,7 @@ gates needed before another internal-alpha decision.
 
 - ID: `V01-01`
 - Name: Run a second-operator alpha workflow or simulate handoff with strict evidence.
+- Status: complete on 2026-06-25.
 - Objective: Determine whether the install/runbook and root `pnpm krn` flow are usable without author-only context.
 - Business rationale: G-03 failed operator-beyond-author proof.
 - Architectural rationale: KRN must reduce operator ambiguity before product UX work.
@@ -784,6 +785,8 @@ gates needed before another internal-alpha decision.
 - Priority: P0.
 - Complexity: M.
 - Risks: Fake operator proof. Mitigation: record exact starting context and support given.
+- Outcome: Constrained handoff simulation from a fresh public clone proved the checked-in alpha install/runbook path can install, run `pnpm alpha:verify`, start/verify local DB, run DB smoke, and create a persisted `pnpm krn plan`. Classification is mixed positive, not pass, because no real second operator was involved and runbook friction remains around ignored build-script warnings, long verify runtime, preview-only doctor before DB commands, and Docker/Compose dependency.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-operator-beyond-author/REPORT.md`; persisted plan execution run `072d566e-5cd2-4a6f-9e82-ec77ea16ddd2`; evidence bundle `cec1ae2b-63d1-498a-974a-65af4f3f9edd`; observation group `7445388c-3f22-4bbb-9e14-f9d210b65b38`; reflection record `2ed57e56-343c-466c-8732-7be6a974ed7a`.
 
 ### V01-02 — Target Trust And Redaction Trial
 
@@ -840,9 +843,9 @@ gates needed before another internal-alpha decision.
 
 The next active slice should be:
 
-    V01-01 — Operator-Beyond-Author Trial
+    V01-02 — Target Trust And Redaction Trial
 
-V01-00 is complete. Continue with V01-01 to test whether the install/runbook and root `pnpm krn` flow are usable without author-only context. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V01-01 is complete. Continue with V01-02 to validate target-repo trust, untrusted context, and redaction behavior. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
@@ -928,20 +931,18 @@ Every goal executed under this plan must end with:
 
 Use this if the operator wants to continue immediately.
 
-    Goal: Operator-Beyond-Author Trial
+    Goal: Target Trust And Redaction Trial
 
     Mission:
-      Determine whether the install/runbook and root pnpm krn flow are usable without author-only context. Use the V01-00 target trial and v0.1.0-alpha.0 tag evidence, but do not build new KRN product surfaces.
+      Validate whether selected target repo context and observations expose untrusted text or secret-shaped data safely. Use the V01-00 target repo and V01-01 operator evidence, but do not build a broad security subsystem.
 
     Required:
       - git fetch --prune
       - git status --short --branch
-      - start from only checked-in runbooks, GOAL.md, PLAN.md, and tag instructions
-      - simulate or involve a second operator with no hidden author context
-      - run alpha install/doctor commands from the runbook
-      - record every ambiguity, support intervention, missing command, and friction point
-      - classify operator usability as pass, mixed, or fail
-      - produce an operator-beyond-author report
+      - inspect target repo context selected/seeded by KRN init/connect
+      - identify untrusted target text and secret-shaped files/values
+      - verify whether KRN output/reporting avoids leaking secrets or over-trusting target instructions
+      - produce a trust/redaction report
       - git diff --check
 
     Non-goals:
@@ -956,9 +957,9 @@ Use this if the operator wants to continue immediately.
       - no anti-slop scanner;
       - no npm publish;
       - no global binary distribution;
-      - no target writes outside an explicitly scoped trial.
+      - no target writes outside an explicitly scoped trust fixture/report.
 
     Completion:
-      - report states whether second-operator usability is pass, mixed, or fail;
-      - if hidden support was required, keep internal alpha deferred;
-      - continue V01-02 before any internal-alpha claim.
+      - report states whether target trust/redaction is acceptable, mixed, or blocked;
+      - if critical trust gaps are found, open one bounded repair;
+      - continue V01-03 before any internal-alpha claim.
