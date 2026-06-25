@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-F-00 — Read-Only MCP/API Boundary Proof
+F-01 — Codex Automation Integration
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, and E-02 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, and F-00 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -48,6 +48,7 @@ docs/reviews/controlled-dogfood/2026-06-25-observability-read-models/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-security-trust-boundary-review/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-policy-hooks-boundary/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-worker-runtime-acceptance-gate/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPORT.md
 ```
 
 ## Operating Rules
@@ -62,3 +63,5 @@ docs/reviews/controlled-dogfood/2026-06-25-worker-runtime-acceptance-gate/REPORT
 - Before each task, inspect git status and current source truth.
 - After each completed task, verify, commit, push, and leave the worktree
   clean.
+- After the first active task is complete, continue to the next unchecked
+  `PLAN.md` task. Do not treat one slice as completion of this roadmap goal.

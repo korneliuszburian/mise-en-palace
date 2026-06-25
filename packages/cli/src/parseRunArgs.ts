@@ -4,10 +4,10 @@ import type {
 
 export const formatRunUsage = (): string =>
   [
-    "Usage: krn run show --run-id <execution-run-id>",
+    "Usage: krn run show --run-id <execution-run-id> [--json]",
     "",
     "Read-only operator commands:",
-    "krn run show --run-id <execution-run-id>",
+    "krn run show --run-id <execution-run-id> [--json]",
     "  note: run show reads persisted state; it does not mutate memory, evidence, or run records"
   ].join("\n") + "\n";
 
@@ -29,6 +29,7 @@ export const parseRunArgs = (rest: readonly string[]): ParseArgsResult => {
   }
 
   let runId: string | undefined;
+  let format: "text" | "json" = "text";
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -36,6 +37,11 @@ export const parseRunArgs = (rest: readonly string[]): ParseArgsResult => {
     if (arg === "--run-id" || arg === "--run") {
       runId = args[index + 1];
       index += 1;
+      continue;
+    }
+
+    if (arg === "--json") {
+      format = "json";
       continue;
     }
 
@@ -53,7 +59,8 @@ export const parseRunArgs = (rest: readonly string[]): ParseArgsResult => {
   return {
     command: {
       kind: "runShow",
-      runId
+      runId,
+      format
     }
   };
 };

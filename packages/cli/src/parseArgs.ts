@@ -107,6 +107,7 @@ export type CliCommand =
   | {
       kind: "runShow";
       runId: string;
+      format: "text" | "json";
     }
   | {
       kind: "observeRun";

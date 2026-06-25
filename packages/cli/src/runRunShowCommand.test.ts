@@ -6,6 +6,9 @@ import type {
 import {
   runRunShowCommand
 } from "./runRunShowCommand.js";
+import type {
+  RunReadbackResource
+} from "./runRunShowCommand.js";
 
 const now = "2026-06-25T14:40:00.000Z";
 
@@ -151,6 +154,12 @@ const aggregate: HarnessRunAggregate = {
   runEvents: []
 };
 
+const isRunReadbackResource = (input: unknown): input is RunReadbackResource =>
+  typeof input === "object" &&
+  input !== null &&
+  !Array.isArray(input) &&
+  (input as Record<string, unknown>).kind === "krn.run.readback.v1";
+
 describe("runRunShowCommand", () => {
   it("renders persisted run evidence without mutating state", async () => {
     let closed = false;
@@ -161,6 +170,7 @@ describe("runRunShowCommand", () => {
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       runId: "run-1",
+      format: "text",
       createDatabaseRuntime: async () => ({
         harnessRunRepository: {
           async getHarnessRunByExecutionRunId(runId: string) {
@@ -186,6 +196,85 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("memory_candidate:memory-candidate-1");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
     expect(result.stdout).toContain("What This Does Not Prove:");
+    expect(closed).toBe(true);
+  });
+
+  it("renders read-only typed json for external consumers", async () => {
+    let closed = false;
+    const result = await runRunShowCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      runId: "run-1",
+      format: "json",
+      createDatabaseRuntime: async () => ({
+        harnessRunRepository: {
+          async getHarnessRunByExecutionRunId(runId: string) {
+            return runId === "run-1" ? aggregate : undefined;
+          }
+        },
+        async close() {
+          closed = true;
+        }
+      })
+    });
+
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(isRunReadbackResource(parsed)).toBe(true);
+
+    if (!isRunReadbackResource(parsed)) {
+      throw new Error("run show json did not render a run readback resource");
+    }
+
+    expect(parsed).toMatchObject({
+      kind: "krn.run.readback.v1",
+      access: "read_only",
+      mutation: "none",
+      run: {
+        id: "run-1"
+      },
+      evidenceBundles: [{
+        changedFiles: {
+          classification: {
+            source: "metadata",
+            intended: ["packages/cli/src/runRunShowCommand.ts"],
+            unrelated: [],
+            unknown: []
+          }
+        },
+        commands: [{
+          command: "pnpm typecheck",
+          status: "passed",
+          provenance: "operator_reported",
+          doesNotProve:
+            "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+        }]
+      }],
+      feedbackDeltas: [{
+        memoryRecordMutation: "none",
+        candidates: [{
+          kind: "memory_candidate",
+          reviewability: "needs_more_evidence",
+          reviewabilityReasons: ["Missing source lineage."]
+        }]
+      }],
+      proof: {
+        proves: [
+          "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+          "this readback surface exposes no write action"
+        ],
+        doesNotProve: [
+          "commands were executed by this readback command",
+          "memory quality, source truth, review correctness, or product readiness",
+          "Memory Core mutation"
+        ]
+      }
+    });
+    expect(result.stdout).not.toContain("promote");
+    expect(result.stdout).not.toContain("mutate");
     expect(closed).toBe(true);
   });
 });

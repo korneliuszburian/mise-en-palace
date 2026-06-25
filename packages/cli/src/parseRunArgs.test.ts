@@ -9,7 +9,18 @@ describe("parseRunArgs", () => {
     expect(parseRunArgs(["show", "--run-id", "run-1"])).toEqual({
       command: {
         kind: "runShow",
-        runId: "run-1"
+        runId: "run-1",
+        format: "text"
+      }
+    });
+  });
+
+  it("parses run show json format", () => {
+    expect(parseRunArgs(["show", "--run-id", "run-1", "--json"])).toEqual({
+      command: {
+        kind: "runShow",
+        runId: "run-1",
+        format: "json"
       }
     });
   });

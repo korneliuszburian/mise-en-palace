@@ -308,6 +308,7 @@ export const runCli = async (
         now,
         createId,
         runId: parsed.command.runId,
+        format: parsed.command.format,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })

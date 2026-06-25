@@ -44,6 +44,7 @@ This plan is based on the current public repository and the following project ev
 - `docs/reviews/controlled-dogfood/2026-06-25-candidate-reviewability-output/REPORT.md`
 - `docs/reviews/controlled-dogfood/2026-06-25-db-replay-evidence-metadata/REPORT.md`
 - `docs/reviews/controlled-dogfood/2026-06-25-reflection-candidate-reviewability/REPORT.md`
+- `docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPORT.md`
 
 ### 1.3 Current architectural decisions
 
@@ -64,6 +65,9 @@ This plan is based on the current public repository and the following project ev
 - `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`
 - `docs/decisions/ADR-0019-evidence-command-proof-states.md`
 - `docs/decisions/ADR-0020-branded-domain-ids.md`
+- `docs/decisions/ADR-0021-temporal-claim-graph.md`
+- `docs/decisions/ADR-0022-policy-hooks-boundary.md`
+- `docs/decisions/ADR-0023-read-only-run-readback-boundary.md`
 
 ### 1.4 Official Codex planning references
 
@@ -571,11 +575,12 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 ## Phase F — Integrations And Product Interfaces
 
-### F-00 — Read-Only MCP/API Boundary Proof
+### F-00 — Read-Only Typed Run Readback Boundary
 
 - ID: `F-00`
 - Name: Add read-only typed external boundary after CLI readback proves useful.
-- Objective: Expose KRN project/run/memory/source read resources through a read-only MCP/API prototype.
+- Status: complete on 2026-06-25.
+- Objective: Expose KRN run readback through a read-only typed resource that can later serve MCP/API adapters without building those product surfaces now.
 - Business rationale: Integrations need typed state access without direct DB/CLI parsing.
 - Architectural rationale: MCP/API must be adapter over typed read models, not memory truth.
 - Dependencies: D-02, D-03, E-00.
@@ -584,6 +589,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: External consumer can read run summary without write authority.
 - Verification: integration tests, security review, no write endpoints.
 - Acceptance criteria: No Memory Core mutation or source decision mutation via MCP/API.
+- Outcome: Added `krn run show --json` as a typed read-only `krn.run.readback.v1` resource over existing persisted run readback. F-00 did not build an MCP server, HTTP API, dashboard, write endpoint, Memory Core mutation path, or source-decision mutation path.
+- Evidence: `docs/decisions/ADR-0023-read-only-run-readback-boundary.md`; `docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPORT.md`; DB-backed plan run `5656af12-b8df-4cf2-8578-656506c33211`; evidence bundle `2d939f0f-3dc5-4981-9c16-92eff77e9896`; observation group `c6b27488-1f99-402c-a55e-d81d5b21c19f`; reflection record `3f6618fc-5614-4a5f-9af6-569851dfead0`.
 - Priority: P2.
 - Complexity: L.
 - Risks: API product creep. Mitigation: read-only first.
@@ -713,9 +720,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    F-00 — Read-Only MCP/API Boundary Proof
+    F-01 — Codex Automation Integration
 
-E-02 is complete. Continue with F-00 to decide whether a read-only typed external boundary is justified over existing run/readback state. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
+F-00 is complete. Continue with F-01 to decide whether Codex automation is justified after the read-only run readback boundary. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
