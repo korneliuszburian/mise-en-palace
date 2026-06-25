@@ -725,6 +725,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `G-04`
 - Name: Define v0.1 production roadmap after internal alpha.
+- Status: complete on 2026-06-25.
 - Objective: Convert internal-alpha findings into production tasks for deployment, UX, integration, security, and scale.
 - Business rationale: Prevents jumping from dogfood to product prematurely.
 - Architectural rationale: Production scope must be driven by observed alpha gaps.
@@ -734,17 +735,111 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Plan distinguishes production blockers from later/lab work.
 - Verification: Architecture review and command evidence.
 - Acceptance criteria: Roadmap tasks remain bounded and dependency-ordered.
+- Outcome: Converted the deferred G-03 internal-alpha gate into a bounded v0.1 roadmap. Production blockers are external target repo proof, operator-beyond-author proof, target trust/redaction evidence, target activation/reflection usefulness, hosted DB/DR posture, and eventual install UX. Later/lab work remains dashboard, API, MCP, worker runtime, source crawler, broad eval platform, npm publishing, and global binary distribution.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-v0-1-roadmap-gate/REPORT.md`.
 - Priority: P1.
 - Complexity: M.
 - Risks: Plan-sprawl returning. Mitigation: archive alpha details and keep root active queue focused.
+
+## Phase V01 — Bounded v0.1 Roadmap After Deferred Internal Alpha Gate
+
+This phase starts because G-03 deferred internal-alpha release. The next work is
+not a dashboard, API, MCP server, worker runtime, source crawler, npm publish,
+or broad eval platform. It is a short sequence of evidence-gathering and repair
+gates needed before another internal-alpha decision.
+
+### V01-00 — Controlled External Target Repo Trial
+
+- ID: `V01-00`
+- Name: Run one controlled external target repo trial from `v0.1.0-alpha.0`.
+- Objective: Prove or disprove whether a tagged KRN alpha can guide one real external target repo task with lower or clearer review burden.
+- Business rationale: G-03 deferred internal-alpha because target evidence is repo-local and author-operated.
+- Architectural rationale: Product scope must come from real target-repo friction, not more KRN-on-KRN architecture.
+- Dependencies: G-00, G-01, G-02, G-03.
+- Input requirements: A selected external target repo; clean checkout of `v0.1.0-alpha.0`; local DB ready or explicit no-DB caveat.
+- Output requirements: Target trial report with install, init/connect, plan, execution, evidence, observe/reflect when DB-backed, command proof, review burden delta, and readiness implication.
+- Definition of Done: Report states whether KRN reduced review burden, selected useful context, preserved safety boundaries, and exposed blockers.
+- Verification: tag checkout install; `pnpm krn doctor`; target repo commands; `krn init --dry-run`; `krn init --connect` if DB-backed; `krn plan`; evidence capture; `git diff --check`.
+- Acceptance criteria: No product-ready claim; no target writes except the explicitly scoped repair; no new KRN product surfaces.
+- Priority: P0.
+- Complexity: L.
+- Risks: Choosing a too-easy repo. Mitigation: pick a real repo with at least one nontrivial TypeScript, CLI, or docs/source-boundary repair.
+
+### V01-01 — Operator-Beyond-Author Trial
+
+- ID: `V01-01`
+- Name: Run a second-operator alpha workflow or simulate handoff with strict evidence.
+- Objective: Determine whether the install/runbook and root `pnpm krn` flow are usable without author-only context.
+- Business rationale: G-03 failed operator-beyond-author proof.
+- Architectural rationale: KRN must reduce operator ambiguity before product UX work.
+- Dependencies: V01-00.
+- Input requirements: A second operator or a constrained handoff where the executor uses only checked-in runbooks and tag instructions.
+- Output requirements: Report listing friction, missing docs, commands run, and whether support was needed.
+- Definition of Done: Report classifies operator usability as pass, mixed, or fail.
+- Verification: install/runbook transcript; `pnpm alpha:verify`; target workflow command evidence.
+- Acceptance criteria: Do not build UI/API to compensate for unclear CLI/runbook until friction is observed.
+- Priority: P0.
+- Complexity: M.
+- Risks: Fake operator proof. Mitigation: record exact starting context and support given.
+
+### V01-02 — Target Trust And Redaction Trial
+
+- ID: `V01-02`
+- Name: Validate target-repo trust, untrusted context, and redaction behavior.
+- Objective: Prove whether selected target repo context and observations expose untrusted text/secret-shaped data safely.
+- Business rationale: E-00 allowed continued dogfood but did not clear external target safety.
+- Architectural rationale: Target repo source is untrusted input; KRN must preserve source boundaries.
+- Dependencies: V01-00.
+- Input requirements: Target repo with representative env/config/source/doc content or a sanitized fixture derived from the target.
+- Output requirements: Security/trust report with redaction evidence and untrusted-context handling.
+- Definition of Done: Either current behavior is acceptable for internal-alpha or a bounded repair task is opened.
+- Verification: `krn init`, observation/redaction evidence, source inspection, `git diff --check`.
+- Acceptance criteria: No broad security subsystem; only repair observed trust gaps.
+- Priority: P1.
+- Complexity: M.
+- Risks: Overfitting to one repo. Mitigation: record does-not-prove and falsifier.
+
+### V01-03 — Activation And Reflection Usefulness Decision
+
+- ID: `V01-03`
+- Name: Decide whether activation or reflection needs repair from target trial evidence.
+- Objective: Use V01-00/V01-01 evidence to decide whether owner-file recall, context selection, or reflection extraction requires a bounded repair.
+- Business rationale: Activation/reflection remain weak in several dogfoods, but repairs should follow target evidence.
+- Architectural rationale: Avoid scoring rewrites from insufficient samples.
+- Dependencies: V01-00, V01-01.
+- Input requirements: Target trial reports with selected/used/helped/missing/stale context and observation/reflection outcomes.
+- Output requirements: Decision report: repair activation, repair reflection, defer both, or gather another trial.
+- Definition of Done: The decision names evidence and a single next repair if needed.
+- Verification: report review; `git diff --check`.
+- Acceptance criteria: No broad retrieval rewrite or autonomous reflection system.
+- Priority: P1.
+- Complexity: M.
+- Risks: Premature scoring rewrite. Mitigation: require repeated target misses.
+
+### V01-04 — Internal Alpha Re-Gate
+
+- ID: `V01-04`
+- Name: Re-run internal-alpha readiness gate after target evidence.
+- Objective: Decide whether KRN becomes internal-alpha-ready, remains dogfood-only, or needs another bounded repair.
+- Business rationale: Converts V01 evidence into a release decision.
+- Architectural rationale: Release decisions must be evidence gates, not roadmap momentum.
+- Dependencies: V01-00, V01-01, V01-02 or explicit deferral, V01-03.
+- Input requirements: Target trial, operator proof, trust/redaction evidence, activation/reflection decision, green CI.
+- Output requirements: Updated release readiness report.
+- Definition of Done: Readiness is classified as not-ready, dogfood-only, internal-alpha, or defer.
+- Verification: release checklist; CI; reports; command evidence.
+- Acceptance criteria: No product-ready claim.
+- Priority: P0 after V01 evidence.
+- Complexity: M.
+- Risks: Overclaiming. Mitigation: explicit what-this-does-not-prove section.
 
 ## 8. Current Active Queue Recommendation
 
 The next active slice should be:
 
-    G-04 — v0.1 Production Roadmap Gate
+    V01-00 — Controlled External Target Repo Trial
 
-G-03 is complete. Continue with G-04 to convert the deferred internal-alpha release gate into a bounded v0.1 roadmap. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
+G-04 is complete. Continue with V01-00 to run one controlled external target repo trial from `v0.1.0-alpha.0`. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
@@ -830,24 +925,26 @@ Every goal executed under this plan must end with:
 
 Use this if the operator wants to continue immediately.
 
-    Goal: DB-Backed Owner-File Recall Dogfood
+    Goal: Controlled External Target Repo Trial From v0.1.0-alpha.0
 
     Mission:
-      Run one DB-backed KRN-on-KRN source repair where KRN should ideally surface the owner files or raw recall targets. Do not change activation scoring. Measure whether DB-backed activation selects owner files, guardrails, both, or neither.
+      Run one controlled external target repo trial from the tagged KRN alpha. Prove or disprove whether KRN can guide one real target repo task with lower or clearer review burden. Do not build new KRN product surfaces.
 
     Required:
       - git fetch --prune
       - git status --short --branch
-      - pnpm db:ready
-      - krn plan --persist
-      - source inspection
-      - minimal source repair only if a bounded owner-file-heavy task is selected
-      - evidence capture --persist
-      - observe --persist
-      - reflect --persist
-      - dogfood report using DOGFOOD_REPORTING.md
-      - pnpm typecheck
-      - pnpm test
+      - clean checkout of tag v0.1.0-alpha.0 for the alpha candidate path
+      - pnpm install --frozen-lockfile
+      - pnpm krn doctor
+      - select one real external target repo and one bounded task
+      - krn init --dry-run against the target repo
+      - krn init --connect if DB is available and safe
+      - krn plan for the target task
+      - execute only the scoped target repair or record why no repair is safe
+      - run target repo verification commands
+      - capture KRN evidence when available
+      - observe/reflect if DB-backed run exists
+      - target trial report with DOGFOOD_REPORTING.md section
       - git diff --check
 
     Non-goals:
@@ -859,9 +956,12 @@ Use this if the operator wants to continue immediately.
       - no MCP/API;
       - no eval platform;
       - no krn audit;
-      - no anti-slop scanner.
+      - no anti-slop scanner;
+      - no npm publish;
+      - no global binary distribution;
+      - no target writes outside the scoped repair.
 
     Completion:
-      - report states whether activation owner-file recall is good, mixed, weak, or unknown;
-      - if weak, open A-02 as the next bounded slice;
-      - if good, choose B-02 research-to-brain or C-00 target repo trial next.
+      - report states whether KRN reduced review burden, selected useful context, preserved safety boundaries, and exposed blockers;
+      - if target evidence is weak, keep internal alpha deferred;
+      - if target evidence is strong, continue V01-01 and V01-02 before any internal-alpha claim.
