@@ -32,6 +32,9 @@ import {
   parseReviewArgs
 } from "./parseReviewArgs.js";
 import {
+  parseRunArgs
+} from "./parseRunArgs.js";
+import {
   parseSourceArgs
 } from "./parseSourceArgs.js";
 
@@ -97,6 +100,13 @@ export type CliCommand =
       diffRisk?: string;
       correctionLabels: string[];
       metadata: Record<string, string>;
+    }
+  | {
+      kind: "runShowHelp";
+    }
+  | {
+      kind: "runShow";
+      runId: string;
     }
   | {
       kind: "observeRun";
@@ -307,6 +317,7 @@ const usage = [
   "  note: evidence capture records outcomes; it does not execute commands",
   "krn observe --run <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
+  "krn run show --run-id <id>",
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",
@@ -360,6 +371,10 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   if (command === "review") {
     return parseReviewArgs(rest);
+  }
+
+  if (command === "run") {
+    return parseRunArgs(rest);
   }
 
   if (command === "observe") {

@@ -471,6 +471,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `D-02`
 - Name: Add run/evidence readback CLI UX.
+- Status: complete on 2026-06-25.
 - Objective: Let operators read persisted plan/evidence/observation/reflection metadata without ad hoc SQL.
 - Business rationale: Reduces review burden and makes DB-backed proof usable.
 - Architectural rationale: Builds read UX over typed state before dashboard/API.
@@ -480,6 +481,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Operator can retrieve a run summary with evidence classification and candidate reviewability.
 - Verification: CLI tests, DB-backed smoke, dogfood report.
 - Acceptance criteria: Output distinguishes proof from non-proof and does not mutate state.
+- Outcome: Added read-only `krn run show --run-id <id>` CLI UX over the existing persisted harness run aggregate. Output renders task/run status, context counts, evidence classification, command provenance, review assessments, feedback candidate counts, candidate reviewability, and proof/non-proof boundaries without mutation.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-run-evidence-readback/REPORT.md`; DB-backed plan run `e077684d-ab84-417d-9be0-3813be6c8481`; live readback command for run `a5e934e6-87d8-4157-9ec0-b27b719b9f62`; evidence bundle `d09bc73e-dba3-420b-a0cd-31741f224b63`; observation group `39aa0615-a503-48af-b884-232355528248`; reflection record `19451b89-181e-4471-a7ad-39495e40cc39`.
 - Priority: P1.
 - Complexity: L.
 - Risks: Dashboard-by-terminal sprawl. Mitigation: only run/evidence summary first.
@@ -698,9 +701,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    D-02 — Operator Readback UX For Runs And Evidence
+    D-03 — Observability Read Models
 
-D-01 is complete. Continue with D-02 to make run/evidence readback easier before any dashboard or API. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+D-02 is complete. Continue with D-03 to define typed observability read models before any dashboard or API. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

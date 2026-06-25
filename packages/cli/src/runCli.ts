@@ -6,6 +6,9 @@ import {
   formatDbUsage
 } from "./parseDbArgs.js";
 import {
+  formatRunUsage
+} from "./parseRunArgs.js";
+import {
   formatMemoryCandidateAddUsage,
   formatMemoryCandidatePromoteUsage,
   formatMemoryCandidateRejectUsage,
@@ -46,6 +49,9 @@ import {
 import {
   runReviewAssessCommand
 } from "./runReviewAssessCommand.js";
+import {
+  runRunShowCommand
+} from "./runRunShowCommand.js";
 import type {
   CreateReviewAssessDatabaseRuntime
 } from "./runReviewAssessCommand.js";
@@ -203,6 +209,14 @@ export const runCli = async (
     };
   }
 
+  if (parsed.command.kind === "runShowHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatRunUsage(),
+      stderr: ""
+    };
+  }
+
   if (parsed.command.kind === "memoryCandidateAddHelp") {
     return {
       exitCode: 0,
@@ -278,6 +292,34 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown review assess error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: `${message}\n`
+      };
+    }
+  }
+
+  if (parsed.command.kind === "runShow") {
+    try {
+      const result = await runRunShowCommand({
+        env: runtime.env,
+        now,
+        createId,
+        runId: parsed.command.runId,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown run show error";
 
       return {
         exitCode: 1,
