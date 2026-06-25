@@ -908,6 +908,7 @@ tag.
 - Definition of Done: Report states whether a real second operator completed the flow unaided, with support, or failed; next repair is either none, runbook friction, install UX, or target-readiness.
 - Verification: operator transcript, command evidence, `git diff --check` for report, no package source changes unless separately authorized.
 - Acceptance criteria: No tag movement without explicit operator request, no npm/global install, no dashboard/API/MCP/worker/source crawler, no product-ready claim.
+- Preparation: Second-operator trial packet prepared at `docs/runbooks/second-operator-alpha-trial.md`; preparation report `docs/reviews/controlled-dogfood/2026-06-25-second-operator-trial-packet/REPORT.md`; persisted preparation run `00cb800f-6230-4033-affc-dab9ef2d9b6e`; evidence bundle `c49fba9d-012c-479f-a8fb-386292f11c58`; observation group `ed615f66-68ea-4012-8248-6ee653f05487`; reflection record `10bc82ce-ba43-46b7-a901-063e4ba5b65e`. This does not complete V02-01.
 - Priority: P0 before widening internal alpha.
 - Complexity: M.
 - Risks: Treating guided author support as independent proof. Mitigation: log support separately from operator actions.
