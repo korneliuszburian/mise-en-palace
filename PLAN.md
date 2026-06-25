@@ -879,6 +879,7 @@ tag.
 
 - ID: `V02-00`
 - Name: Clarify source-workspace alpha runbook friction.
+- Status: complete on 2026-06-25.
 - Objective: Update internal-alpha runbook/release notes so a technical operator understands expected install warnings, expected `alpha:verify` duration, and preview-vs-DB doctor behavior before running a controlled alpha.
 - Business rationale: V01-01 found repeatable operator friction that can be removed without source changes.
 - Architectural rationale: Operator readiness is part of controlled internal alpha; runbook truth should explain current boundaries instead of hiding them in reports.
@@ -888,17 +889,36 @@ tag.
 - Definition of Done: Runbook or release notes state expected install warning posture, expected verification command shape/duration, and why `pnpm krn doctor` is preview-only unless DB commands are run.
 - Verification: `git diff --check`; no package source changes.
 - Acceptance criteria: No release tag move, no npm/global install, no dashboard/API/MCP/worker/source crawler, no product-ready claim.
+- Outcome: Updated the internal-alpha install runbook and alpha release note to explain expected ignored build-script warnings, expected `alpha:verify` command shape/runtime, preview-only doctor behavior without DB, and the DB-backed commands for current-shell truth. No package source or tag was changed.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-runbook-friction/REPORT.md`; persisted plan run `c5f94650-53b9-43c9-87f7-a9daad827322`; evidence bundle `697d6e88-7561-475f-81d4-ef8d11538068`; observation group `a6d1a45e-1087-4c59-85bd-62e729ae5e96`; reflection record `209fe200-82ed-499e-896d-5e7f20054fc5`.
 - Priority: P1.
 - Complexity: S.
 - Risks: Turning docs into marketing. Mitigation: state proof boundaries and limitations.
+
+### V02-01 — Real Second-Operator Controlled Alpha Trial
+
+- ID: `V02-01`
+- Name: Run controlled internal alpha with a real second operator.
+- Objective: Have an operator beyond the author use the current runbook to install, verify, run DB readiness/smoke, and execute one bounded target-repo plan without hidden author context.
+- Business rationale: V01-01 was only a constrained simulation; controlled internal alpha needs real operator evidence before widening audience or claiming easier onboarding.
+- Architectural rationale: Operator proof should validate the source-workspace distribution and KRN workflow before new product surfaces.
+- Dependencies: V01-04, V02-00.
+- Input requirements: Named operator, target repo or sandbox repo, support boundary, current runbook, and explicit decision whether to use existing tag or a new tag.
+- Output requirements: Operator transcript/report with support given, commands run, failures, friction, and readiness verdict.
+- Definition of Done: Report states whether a real second operator completed the flow unaided, with support, or failed; next repair is either none, runbook friction, install UX, or target-readiness.
+- Verification: operator transcript, command evidence, `git diff --check` for report, no package source changes unless separately authorized.
+- Acceptance criteria: No tag movement without explicit operator request, no npm/global install, no dashboard/API/MCP/worker/source crawler, no product-ready claim.
+- Priority: P0 before widening internal alpha.
+- Complexity: M.
+- Risks: Treating guided author support as independent proof. Mitigation: log support separately from operator actions.
 
 ## 8. Current Active Queue Recommendation
 
 The next active slice should be:
 
-    V02-00 — Internal Alpha Runbook Friction Update
+    V02-01 — Real Second-Operator Controlled Alpha Trial
 
-V01-04 is complete. Continue with V02-00 to clarify controlled internal-alpha runbook friction before a real second-operator run or any tag movement. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V02-00 is complete. Continue with V02-01 only when the operator supplies or approves a real second-operator trial setup. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, tag movement, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

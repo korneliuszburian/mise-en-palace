@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-V02-00 — Internal Alpha Runbook Friction Update
+V02-01 — Real Second-Operator Controlled Alpha Trial
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, V01-01, V01-02, V01-03, V01-R01, and V01-04 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, V01-01, V01-02, V01-03, V01-R01, V01-04, and V02-00 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -62,11 +62,12 @@ docs/reviews/controlled-dogfood/2026-06-25-target-trust-redaction/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-activation-reflection-usefulness-decision/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-re-gate-after-v01/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-runbook-friction/REPORT.md
 ```
 
 Next sequence is the V02 phase in root `PLAN.md`. Continue with the internal
-alpha runbook friction update. Do not move the alpha tag unless explicitly
-asked.
+alpha second-operator trial only after the operator supplies or approves the
+trial setup. Do not move the alpha tag unless explicitly asked.
 
 ## Operating Rules
 

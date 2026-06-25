@@ -29,6 +29,13 @@ git checkout v0.1.0-alpha.0
 pnpm install --frozen-lockfile
 ```
 
+Expected install note:
+
+- `pnpm install --frozen-lockfile` may print ignored build-script warnings from
+  dependencies. For this alpha, that warning is expected unless a later task
+  explicitly approves dependency build scripts. It is not by itself a failed
+  install.
+
 ## Verify
 
 Run:
@@ -45,6 +52,14 @@ pnpm test
 pnpm krn doctor
 ```
 
+Expected runtime:
+
+- `pnpm alpha:verify` runs workspace typecheck and the full test suite before
+  `pnpm krn doctor`. On a normal local checkout it can take long enough to look
+  quiet while package tests run sequentially.
+- A passing `pnpm alpha:verify` proves source-workspace typecheck/tests and a
+  preview doctor run. It does not prove DB-backed runtime readiness by itself.
+
 For DB-backed work, also start the local brain store and verify DB readiness:
 
 ```sh
@@ -55,6 +70,16 @@ pnpm db:smoke
 
 DB runtime truth may be claimed only for commands that ran in the current
 shell.
+
+Doctor modes:
+
+- `pnpm krn doctor` without `KRN_DATABASE_URL` is expected to report preview-only
+  readiness for brain-store-backed paths.
+- `pnpm db:ready` and `pnpm db:smoke` are the DB-backed proof commands for the
+  local alpha.
+- Use `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm krn doctor`
+  when you want the doctor command itself to inspect the local Postgres-backed
+  state.
 
 ## Operator Command
 
