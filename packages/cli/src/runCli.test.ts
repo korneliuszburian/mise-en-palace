@@ -2321,6 +2321,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("outcome: helped");
     expect(result.stdout).toContain("Feedback event: none");
+    expect(result.stdout).toContain("Follow-up candidate: none");
   });
 
   it("requires database config for memory record apply --persist", async () => {
@@ -2459,6 +2460,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryRecord: memory-record-1");
     expect(result.stdout).toContain("outcome: helped");
     expect(result.stdout).toContain("Feedback event: none");
+    expect(result.stdout).toContain("Follow-up candidate: none");
     expect(capturedApplication).toMatchObject({
       memoryRecordId: "memory-record-1",
       executionRunId: "execution-run-1",
@@ -2473,6 +2475,9 @@ describe("runCli", () => {
       createId: (prefix) => `${prefix}-1`
     });
     let capturedFeedbackEvent: CreateMemoryFeedbackEventInput | undefined;
+    let capturedAntiMemoryCandidate:
+      | Parameters<typeof unusedMemoryRepository.createAntiMemoryCandidate>[0]
+      | undefined;
     const result = await runCli(
       [
         "memory",
@@ -2567,6 +2572,37 @@ describe("runCli", () => {
                 metadata: input.metadata ?? {},
                 createdAt: now
               };
+            },
+            async createAntiMemoryCandidate(input) {
+              capturedAntiMemoryCandidate = input;
+
+              return {
+                id: "anti-memory-candidate-1",
+                projectId: input.projectId,
+                ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+                proposedBy: input.proposedBy,
+                key: input.key,
+                status: input.status ?? "candidate",
+                ...(input.rejectedClaim === undefined ? {} : { rejectedClaim: input.rejectedClaim }),
+                ...(input.reason === undefined ? {} : { reason: input.reason }),
+                invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+                ...(input.invalidatedBySourceClaimId === undefined
+                  ? {}
+                  : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
+                ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
+                ...(input.mayRevisitWhen === undefined
+                  ? {}
+                  : { mayRevisitWhen: input.mayRevisitWhen }),
+                summary: input.summary,
+                body: input.body,
+                owner: input.owner,
+                confidence: input.confidence,
+                sourceLineage: input.sourceLineage,
+                metadata: input.metadata ?? {},
+                validFrom: now,
+                createdAt: now,
+                updatedAt: now
+              };
             }
           },
           harnessRunRepository: dependencies.harnessRunRepository,
@@ -2581,6 +2617,8 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("memoryApplication: memory-application-1");
     expect(result.stdout).toContain("memoryFeedbackEvent: memory-feedback-event-1");
+    expect(result.stdout).toContain("antiMemoryCandidate: anti-memory-candidate-1");
+    expect(result.stdout).toContain("Candidate reviewability: review");
     expect(result.stdout).toContain("outcome: stale");
     expect(capturedFeedbackEvent).toMatchObject({
       memoryRecordId: "memory-record-1",
@@ -2589,6 +2627,15 @@ describe("runCli", () => {
       direction: "negative",
       reason: "Graph traversal now exceeds Postgres edge-table performance",
       evidenceRef: "memory-application:memory-application-1"
+    });
+    expect(capturedAntiMemoryCandidate).toMatchObject({
+      projectId: "project-1",
+      executionRunId: "execution-run-1",
+      proposedBy: "krn-memory-feedback",
+      rejectedClaim: "Use Postgres edge tables first",
+      reason: "Graph traversal now exceeds Postgres edge-table performance",
+      invalidatedBySourceClaimIds: ["source-claim-1"],
+      appliesTo: "memory:memory-candidate-1"
     });
   });
 

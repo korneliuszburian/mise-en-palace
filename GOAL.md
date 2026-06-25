@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-B-03 — Memory Application Feedback And Demotion Loop
+B-04 — Anti-Memory Conflict Integration
 ```
 
-B-00, B-01, and B-02 are complete. Current evidence:
+B-00, B-01, B-02, and B-03 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -35,6 +35,7 @@ docs/reviews/controlled-dogfood/2026-06-25-activation-owner-file-recall-repair/R
 docs/decisions/ADR-0021-temporal-claim-graph.md
 docs/reviews/controlled-dogfood/2026-06-25-temporal-claim-edge-schema/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-research-to-brain-agents-guidance/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-memory-feedback-demotion-loop/REPORT.md
 ```
 
 ## Operating Rules

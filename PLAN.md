@@ -307,6 +307,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `B-03`
 - Name: Close memory feedback loop.
+- Status: complete on 2026-06-25.
 - Objective: Record helped/neutral/hurt/stale outcomes and use them for memory strengthening, demotion candidates, or anti-memory candidates.
 - Business rationale: Memory must improve future work, not just exist.
 - Architectural rationale: Adds feedback semantics before scaling memory retrieval.
@@ -316,6 +317,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: A memory used in a run produces feedback and, if negative/stale, a reviewable follow-up candidate.
 - Verification: Harness/core tests; DB-backed dogfood; `pnpm test`; `pnpm typecheck`.
 - Acceptance criteria: Memory usefulness can be measured across runs.
+- Outcome: `krn memory record apply` now leaves helped feedback without follow-up candidate and creates a reviewable `AntiMemoryCandidate` for stale/hurt feedback when source lineage exists, without automatic demotion or Memory Core mutation.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-memory-feedback-demotion-loop/REPORT.md`; stale dogfood created memory application `6ca318e6-828e-42b5-8c8d-a326a0745a8c`, feedback event `51ceba10-2eae-409b-bbe2-6c183e60bc11`, and anti-memory candidate `5ca36316-f94a-4e63-be3d-a56126fc84c7`.
 - Priority: P1.
 - Complexity: L.
 - Risks: Automatic demotion without review. Mitigation: produce candidates only.
@@ -674,9 +677,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    B-03 — Memory Application Feedback And Demotion Loop
+    B-04 — Anti-Memory Conflict Integration
 
-B-02 is complete. Continue with B-03 as a memory feedback loop slice. Do not add automatic demotion, automatic Memory Core mutation, dashboard, API, MCP, worker runtime, broad eval platform, or source crawler.
+B-03 is complete. Continue with B-04 as an anti-memory activation integration slice. Do not auto-promote anti-memory candidates, bypass review gates, add automatic Memory Core mutation, dashboard, API, MCP, worker runtime, broad eval platform, or source crawler.
 
 ## 9. Completion Gates By Stage
 

@@ -3,8 +3,10 @@ import {
   parseMemoryFeedbackEventInput
 } from "@krn/schema";
 import type {
+  AntiMemoryCandidate,
   MemoryApplication,
   MemoryApplicationOutcome,
+  MemoryFeedbackEvent,
   MemoryFeedbackEventType
 } from "@krn/core";
 import {
@@ -71,12 +73,16 @@ const formatPreview = (
     `notes: ${application.notes}`,
     feedbackEventTypeForOutcome(application.outcome) === undefined
       ? "Feedback event: none"
-      : "Feedback event: would be recorded"
+      : "Feedback event: would be recorded",
+    feedbackEventTypeForOutcome(application.outcome) === undefined
+      ? "Follow-up candidate: none"
+      : "Follow-up candidate: anti-memory candidate would be proposed"
   ].join("\n");
 
 const formatPersisted = (
   application: MemoryApplication,
-  feedbackEventId: string | undefined
+  feedbackEventId: string | undefined,
+  antiMemoryCandidate: AntiMemoryCandidate | undefined
 ): string =>
   [
     "KRN Memory Record Apply",
@@ -89,8 +95,59 @@ const formatPersisted = (
     ...(application.outcome === undefined ? [] : [`outcome: ${application.outcome}`]),
     feedbackEventId === undefined
       ? "Feedback event: none"
-      : `memoryFeedbackEvent: ${feedbackEventId}`
+      : `memoryFeedbackEvent: ${feedbackEventId}`,
+    antiMemoryCandidate === undefined
+      ? "Follow-up candidate: none"
+      : `antiMemoryCandidate: ${antiMemoryCandidate.id}`,
+    antiMemoryCandidate === undefined
+      ? "Candidate reviewability: not_applicable"
+      : "Candidate reviewability: review"
   ].join("\n");
+
+const proposeAntiMemoryCandidate = async (
+  databaseRuntime: DatabaseRuntime,
+  input: {
+    memoryRecord: Awaited<ReturnType<DatabaseRuntime["memoryRepository"]["getMemoryRecordById"]>>;
+    memoryApplication: MemoryApplication;
+    feedbackEvent: MemoryFeedbackEvent;
+    outcome: Extract<MemoryApplicationOutcome, "hurt" | "stale">;
+    notes: string;
+  }
+): Promise<AntiMemoryCandidate | undefined> => {
+  const memoryRecord = input.memoryRecord;
+
+  if (memoryRecord === undefined || memoryRecord.sourceLineage.length === 0) {
+    return undefined;
+  }
+
+  return databaseRuntime.memoryRepository.createAntiMemoryCandidate({
+    projectId: memoryRecord.projectId,
+    ...(input.memoryApplication.executionRunId === undefined
+      ? {}
+      : { executionRunId: input.memoryApplication.executionRunId }),
+    proposedBy: "krn-memory-feedback",
+    key: `feedback:${memoryRecord.key}:${input.outcome}`,
+    rejectedClaim: memoryRecord.summary,
+    reason: input.notes,
+    invalidatedBySourceClaimIds: memoryRecord.sourceLineage.map((lineage) => lineage.sourceId),
+    appliesTo: memoryRecord.key,
+    ...(memoryRecord.invalidationRule === undefined
+      ? {}
+      : { mayRevisitWhen: memoryRecord.invalidationRule }),
+    summary: `Review ${input.outcome} memory feedback for ${memoryRecord.key}`,
+    body: `Memory application ${input.memoryApplication.id} recorded outcome ${input.outcome}: ${input.notes}`,
+    owner: memoryRecord.owner,
+    confidence: input.outcome === "stale" ? 70 : 60,
+    sourceLineage: memoryRecord.sourceLineage,
+    metadata: {
+      memoryRecordId: memoryRecord.id,
+      memoryApplicationId: input.memoryApplication.id,
+      memoryFeedbackEventId: input.feedbackEvent.id,
+      applicationOutcome: input.outcome,
+      doesNotProve: "This candidate does not prove the memory should be invalidated or demoted without review."
+    }
+  });
+};
 
 const createRuntime = async (
   runtime: MemoryRecordApplyCommandRuntime
@@ -163,7 +220,13 @@ export const runMemoryRecordApplyCommand = async (
 
     if (feedbackEventType === undefined) {
       return {
-        stdout: formatPersisted(memoryApplication, undefined)
+        stdout: formatPersisted(memoryApplication, undefined, undefined)
+      };
+    }
+
+    if (applicationInput.outcome !== "hurt" && applicationInput.outcome !== "stale") {
+      return {
+        stdout: formatPersisted(memoryApplication, undefined, undefined)
       };
     }
 
@@ -197,9 +260,16 @@ export const runMemoryRecordApplyCommand = async (
         : { evidenceRef: feedbackInput.evidenceRef }),
       metadata: feedbackInput.metadata
     });
+    const antiMemoryCandidate = await proposeAntiMemoryCandidate(databaseRuntime, {
+      memoryRecord,
+      memoryApplication,
+      feedbackEvent,
+      outcome: applicationInput.outcome,
+      notes: applicationInput.notes
+    });
 
     return {
-      stdout: formatPersisted(memoryApplication, feedbackEvent.id)
+      stdout: formatPersisted(memoryApplication, feedbackEvent.id, antiMemoryCandidate)
     };
   } finally {
     await databaseRuntime.close();
