@@ -46,6 +46,7 @@ This plan is based on the current public repository and the following project ev
 - `docs/reviews/controlled-dogfood/2026-06-25-reflection-candidate-reviewability/REPORT.md`
 - `docs/reviews/controlled-dogfood/2026-06-25-read-only-run-readback-boundary/REPORT.md`
 - `docs/reviews/controlled-dogfood/2026-06-25-codex-automation-boundary/REPORT.md`
+- `docs/reviews/controlled-dogfood/2026-06-25-dashboard-readiness-gate/REPORT.md`
 
 ### 1.3 Current architectural decisions
 
@@ -70,6 +71,7 @@ This plan is based on the current public repository and the following project ev
 - `docs/decisions/ADR-0022-policy-hooks-boundary.md`
 - `docs/decisions/ADR-0023-read-only-run-readback-boundary.md`
 - `docs/decisions/ADR-0024-codex-automation-boundary.md`
+- `docs/decisions/ADR-0025-dashboard-readiness-gate.md`
 
 ### 1.4 Official Codex planning references
 
@@ -621,6 +623,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `F-02`
 - Name: Decide dashboard after read models prove actions.
+- Status: complete on 2026-06-25.
 - Objective: Define whether dashboard should be built and which views have actions.
 - Business rationale: Dashboard is useful only if it reduces decision latency or review burden.
 - Architectural rationale: UI must be over typed read models, not status theater.
@@ -630,6 +633,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Every proposed view has owner, threshold, and action.
 - Verification: design review; no UI code unless ADR accepts first slice.
 - Acceptance criteria: Dashboard is not used as product proof.
+- Outcome: Accepted ADR-0025 and deferred dashboard work. Current read-model definitions and typed run readback are useful foundations, but no dashboard package, API package, aggregate helper proof, or repeated operator-use evidence justifies UI. Future dashboard work requires owner, data source, action threshold, operator action, stale/unknown behavior, proof of reduced review burden or decision latency, and read-only boundaries.
+- Evidence: `docs/decisions/ADR-0025-dashboard-readiness-gate.md`; `docs/reviews/controlled-dogfood/2026-06-25-dashboard-readiness-gate/REPORT.md`; DB-backed plan run `5e87bd9b-0439-4210-99b8-8dbde378b4bc`; evidence bundle `33e2b196-8121-4fee-adda-bf947cdc04f5`; observation group `1ca7b3d9-7f64-45c9-a3b2-6ff84d89970f`; reflection record `ab8483e6-97d1-4d14-b569-9822766b7b4b`.
 - Priority: P3.
 - Complexity: M.
 - Risks: Vanity UI. Mitigation: action-per-view gate.
@@ -725,9 +730,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    F-02 — Dashboard Readiness Gate
+    G-00 — CI Verification Pipeline
 
-F-01 is complete. Continue with F-02 to decide whether dashboard work is justified by action-oriented read models. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
+F-02 is complete. Continue with G-00 to move local verification into repeatable CI proof. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
