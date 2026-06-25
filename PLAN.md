@@ -6,9 +6,9 @@
 
 ## Active Queue Snapshot
 
-current_priority: Complete.
+current_priority: KRN-on-KRN Source Repair Trial.
 
-first_unchecked_slice: none.
+first_unchecked_slice: `KRN-SR-00: Improve Evidence Dirty-Context Reporting`.
 
 active_scope:
 
@@ -17,6 +17,9 @@ active_scope:
   ADRs, and compact checkpoint pointers;
 - do not rebuild `krn audit`, anti-slop scanners, dashboard-first surfaces,
   broad eval platforms, or worker runtime while auditing completion evidence;
+- use OpenAI Codex ExecPlan/Goal guidance as execution discipline, mapped to
+  this repo's canonical `PLAN.md` rather than adding a parallel root
+  `PLANS.md`;
 - use repo/runtime truth over memory or old plans.
 
 completed_checkpoint:
@@ -66,10 +69,12 @@ last_verified_state:
 
 open_risks_and_next_candidates:
 
-- No active unchecked slice remains for this goal.
-- Use `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md` in 2-3 future
-  dogfood runs before considering activation scoring repair, candidate quality
-  repair, reflection quality repair, or an internal-alpha target repo trial.
+- Active unchecked slice: KRN-SR-00.
+- The next validation should be a real source repair in this repo, not a
+  synthetic weak-repo trial.
+- Use `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md` for this dogfood
+  run before considering activation scoring repair, candidate quality repair,
+  reflection quality repair, or an internal-alpha target repo trial.
 - Future hardening work should stay bounded and should not reopen archived
   historical task bodies.
 
@@ -83,6 +88,12 @@ evidence_pointers:
   `docs/reviews/brain-usefulness/REPORT.md`
 - Dogfood usefulness reporting format:
   `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md`
+- Planned KRN-on-KRN source repair prompt:
+  `docs/reviews/controlled-dogfood/evidence-dirty-context/GOAL_PROMPT.md`
+- OpenAI Codex execution references:
+  `https://developers.openai.com/cookbook/articles/codex_exec_plans`,
+  `https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex`,
+  `https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide`
 - CLI/package surface decisions:
   `docs/architecture/cli-surfaces.md`,
   `docs/architecture/package-surfaces.md`
@@ -109,6 +120,7 @@ evidence_pointers:
 - [x] VERIFY-00 Audit continuous hardening completion evidence.
 - [x] BUV-00 Brain usefulness validation report.
 - [x] BUR-00 Add Dogfood Brain Usefulness Reporting Standard.
+- [ ] KRN-SR-00 Improve Evidence Dirty-Context Reporting.
 
 ## Current Decisions
 
@@ -126,6 +138,15 @@ evidence_pointers:
 - Brain usefulness should be measured before behavior rewrites. Use the
   dogfood reporting format for 2-3 runs before changing activation scoring,
   memory scoring, reflection extraction, or candidate generation.
+- OpenAI's `PLANS.md` article is adopted as a planning pattern, not a filename
+  override. This repo keeps root `PLAN.md` as the living execution map to avoid
+  plan-sprawl.
+- OpenAI Goals guidance maps to KRN goals as evidence-checked completion
+  contracts: each goal must name the outcome, constraints, and verification
+  surface before implementation.
+- OpenAI Codex prompting guidance maps to execution discipline: inspect current
+  repo state, batch reads, prefer focused patches, verify, commit, push, and do
+  not stop at a plan when source changes are required.
 
 ## Worktree And Remote Hygiene
 
@@ -135,3 +156,200 @@ evidence_pointers:
   Conventional Commit, push, and confirm a clean worktree.
 - If push or verification fails, record the blocker here before starting a new
   slice.
+
+## KRN-SR-00: Improve Evidence Dirty-Context Reporting
+
+status: pending.
+
+priority: P0.
+
+objective:
+
+Use KRN Brain on this actual repo to improve one real source surface:
+`krn evidence capture` should make dirty-context review easier by separating
+intended files, unrelated dirty files, unknown/unclassified changed files, and
+command proof strength.
+
+This is the first KRN-on-KRN source repair trial after the Brain Usefulness
+Report and dogfood usefulness reporting standard. It replaces the earlier weak
+fixture-repo idea with a real source repair in `mise-en-palace`.
+
+source_decisions:
+
+- OpenAI ExecPlans article: long-running Codex work benefits from a living
+  executable plan that stays updated through implementation. KRN keeps this in
+  root `PLAN.md` instead of adding a parallel `PLANS.md`.
+- OpenAI Goals article: this work should run as a scoped, evidence-checked
+  completion contract because the path depends on what code inspection finds.
+- OpenAI Codex prompting guide: execute with repo inspection, batched reads,
+  focused patches, verification, and no speculative broad refactors.
+- KRN Brain Usefulness Report: evidence/review artifacts help most when they
+  preserve weak proof or dirty context honestly, but dirty context currently
+  increases review burden when not separated clearly.
+- Dogfood reporting standard: this source repair must include a full Dogfood
+  Brain Usefulness Section in the final run report.
+
+required_reading:
+
+1. `AGENTS.md`
+2. `docs/KRN_KERNEL.md`
+3. `README.md`
+4. `GOAL.md`
+5. `PLAN.md`
+6. `docs/reviews/brain-usefulness/REPORT.md`
+7. `docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md`
+8. `docs/runs/2026-06-23-feedback-dogfood.md`
+9. `docs/runs/2026-06-23-self-hosting-memory-loop.md`
+10. `packages/core/src/evidenceBundle.ts`
+11. `packages/schema/src/evidenceBundle.ts`
+12. `packages/cli/src/parseEvidenceArgs.ts`
+13. `packages/cli/src/runEvidenceCaptureCommand.ts`
+14. relevant tests for evidence capture and CLI parsing.
+
+preflight:
+
+```sh
+git fetch --prune
+git status --short --branch
+git log --oneline --decorate --left-right origin/main...main
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+If DB is available:
+
+```sh
+pnpm db:ready
+```
+
+Do not claim DB runtime truth unless DB commands pass in the current shell.
+
+krn_planning_step:
+
+Before source edits, run KRN planning if available:
+
+```sh
+pnpm --filter @krn/cli krn plan \
+  --task "Improve evidence capture dirty-context reporting so future dogfood runs distinguish intended files, unrelated dirty files, command proof strength, and weak default command rows"
+```
+
+Use `--persist` only if DB readiness passes.
+
+Record selected context, memory, source claims, exclusions, raw recall triggers,
+expected evidence, and whether the selected context helped.
+
+target_behavior:
+
+- `krn evidence capture` can accept repeatable intended file inputs or an
+  existing equivalent if source inspection finds one.
+- Changed files are rendered/classified as:
+  - intended;
+  - unrelated dirty;
+  - unknown/unclassified when no intent is provided.
+- Command proof output continues to distinguish:
+  - operator-reported passed/failed;
+  - captured output file;
+  - command-runner evidence if already supported;
+  - weak `default_template` / `not_run` rows.
+- Review burden output warns when unrelated dirty files are present and states
+  what command evidence proves and does not prove.
+
+simplest_acceptable_implementation:
+
+- Prefer adding repeatable `--intended-file <path>` to `krn evidence capture`
+  plus a small changed-file classification function and focused CLI rendering.
+- If an intended-file mechanism already exists, improve rendering/tests only.
+- Do not add a generic file classifier, ignore policy, hidden shell runner, or
+  quality system.
+
+likely_files:
+
+- `packages/core/src/evidenceBundle.ts`
+- `packages/schema/src/evidenceBundle.ts`
+- `packages/cli/src/parseEvidenceArgs.ts`
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
+- focused CLI/evidence tests
+- `docs/reviews/controlled-dogfood/<date>-evidence-dirty-context/REPORT.md`
+
+non_goals:
+
+- no activation scoring changes;
+- no memory scoring changes;
+- no reflection extraction changes;
+- no DB schema/migrations unless source inspection proves current persistence
+  cannot represent required fields;
+- no dashboard, API, MCP, worker runtime, source crawler, broad eval platform,
+  `krn audit`, anti-slop scanner, quality engine, or new package;
+- no hidden command execution;
+- no automatic cleanup or hiding of dirty files.
+
+tests:
+
+- `--intended-file` parses as repeatable input.
+- intended changed files classify as intended.
+- dirty changed files not listed as intended classify as unrelated.
+- missing intended-file input keeps changed files unknown/unclassified or
+  preserves old behavior safely.
+- operator-reported command proof still renders provenance and does-not-prove.
+- default not-run command rows remain weak proof.
+
+verification:
+
+```sh
+pnpm --filter @krn/cli test -- parseEvidenceArgs runEvidenceCaptureCommand
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+If DB persistence is touched:
+
+```sh
+pnpm db:ready
+pnpm --filter @krn/db db:check
+pnpm db:smoke:harness-evidence
+```
+
+dogfood_report:
+
+Create:
+
+```txt
+docs/reviews/controlled-dogfood/<date>-evidence-dirty-context/REPORT.md
+```
+
+The report must use
+`docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md` and include:
+
+- KRN plan output summary;
+- selected context/memory/source and whether it helped;
+- code diff summary;
+- command evidence strength;
+- review burden delta;
+- candidate reviewability;
+- Brain ROI;
+- what this proves and does not prove.
+
+completion_criteria:
+
+1. KRN was used to plan or guide this source repair, or the report explains why
+   KRN planning could not be used.
+2. Evidence dirty-context reporting is improved in package source.
+3. Focused tests prove the new behavior.
+4. `pnpm typecheck` passes.
+5. `pnpm test` passes.
+6. `git diff --check` passes.
+7. Dogfood report exists under
+   `docs/reviews/controlled-dogfood/<date>-evidence-dirty-context/REPORT.md`.
+8. The dogfood report includes a full Dogfood Brain Usefulness Section.
+9. No dashboard, worker runtime, eval platform, source crawler, audit scanner,
+   or anti-slop system was added.
+10. Commit is focused and pushed.
+11. Worktree is clean after push.
+
+suggested_commit:
+
+```sh
+git commit -m "feat(evidence): classify dirty context in capture output"
+```

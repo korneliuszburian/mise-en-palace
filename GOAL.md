@@ -47,9 +47,16 @@ the reusable dogfood usefulness reporting format:
 docs/reviews/brain-usefulness/DOGFOOD_REPORTING.md
 ```
 
-There is no remaining unchecked slice for this goal in `PLAN.md`. Use the
-dogfood reporting format in 2-3 future dogfood runs before changing activation
-scoring, reflection behavior, candidate generation, or product surfaces.
+Continue from the first unchecked bounded source-repair trial in `PLAN.md`:
+
+```txt
+KRN-SR-00: Improve Evidence Dirty-Context Reporting
+```
+
+This is a KRN-on-KRN source repair in the actual `mise-en-palace` repo, not a
+synthetic weak-repo trial. Use the dogfood reporting format and OpenAI
+Codex-style execution discipline, but keep root `PLAN.md` as the canonical
+living plan instead of creating a parallel root `PLANS.md`.
 
 Do not build worker runtime, dashboard, broad memory behavior, Promptfoo
 authority, standalone eval candidate storage, eval CLI, audit scanner, or an
