@@ -161,10 +161,20 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Package manager: package-json");
     expect(result.stdout).toContain("TypeScript: present");
     expect(result.stdout).toContain("Scripts: build, test");
+    expect(result.stdout).toContain("Command detection:");
+    expect(result.stdout).toContain("- scripts: build, test");
     expect(result.stdout).toContain("Existing AGENTS.md: absent");
     expect(result.stdout).toContain("Existing .codex: absent");
     expect(result.stdout).toContain("Existing .agents/skills: absent");
     expect(result.stdout).toContain("Forbidden surfaces: absent");
+    expect(result.stdout).toContain("Source seed proposal:");
+    expect(result.stdout).toContain(
+      "- package.json | kind=package_manifest | reason=detect package identity and scripts"
+    );
+    expect(result.stdout).toContain(
+      "- tsconfig.json | kind=typescript_config | reason=detect TypeScript boundary settings"
+    );
+    expect(result.stdout).toContain("- src | kind=source_root | reason=seed source owner-file recall");
     expect(result.stdout).toContain("ProjectKernel proposal:");
     expect(result.stdout).toContain("Codex overlay proposal:");
     expect(result.stdout).toContain("No files written");
@@ -308,6 +318,22 @@ describe("runCli", () => {
           async connectTargetRepo(input) {
             expect(input.repoPath).toBe(fixtureRepo);
             expect(input.repoFingerprint).toMatch(/^sha256:/);
+            expect(input.sourceSeeds).toEqual(
+              expect.arrayContaining([
+                expect.objectContaining({
+                  path: "package.json",
+                  kind: "package_manifest"
+                }),
+                expect.objectContaining({
+                  path: "tsconfig.json",
+                  kind: "typescript_config"
+                }),
+                expect.objectContaining({
+                  path: "src",
+                  kind: "source_root"
+                })
+              ])
+            );
 
             return {
               project: {
@@ -360,6 +386,16 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Project ID: project-target-1 (created)");
     expect(result.stdout).toContain("Repo installation ID: repo-installation-1 (created)");
     expect(result.stdout).toContain("ProjectKernel ID: project-kernel-1 (created)");
+    expect(result.stdout).toContain(
+      "Project scope: project-scoped source, memory, retrieval, and anti-memory only"
+    );
+    expect(result.stdout).toContain("Command detection:");
+    expect(result.stdout).toContain("- scripts: build, test");
+    expect(result.stdout).toContain("Source seed:");
+    expect(result.stdout).toContain(
+      "- package.json | kind=package_manifest | reason=detect package identity and scripts"
+    );
+    expect(result.stdout).toContain("- src | kind=source_root | reason=seed source owner-file recall");
     expect(result.stdout).toContain("Files written: none");
     expect(result.stdout).toContain(
       "Next command: krn plan --project project-target-1 --task \"improve test script readiness\" --persist"

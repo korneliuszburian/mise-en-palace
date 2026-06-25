@@ -369,6 +369,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `C-01`
 - Name: Harden `krn init --dry-run` and `krn init --connect` for target repos.
+- Status: complete on 2026-06-25.
 - Objective: Make repo connection produce project/kernel records, command detection, source seed, and safe output without runtime markdown memory.
 - Business rationale: `krn init` is the product entry point promised by State of the Art.
 - Architectural rationale: Connects harness to real repositories while preserving project scope.
@@ -378,6 +379,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: A target repo can be connected in dry-run and persisted mode with honest output.
 - Verification: CLI tests; `db:smoke:init-connect`; DB-backed dogfood.
 - Acceptance criteria: No runtime memory files are created; project isolation is explicit.
+- Outcome: `krn init` now renders command detection, source seed proposal/source seed, explicit project scope, forbidden surface state, and `Files written: none`. Fresh `packages/schema` connect created Project `62dc912e-d4f8-4485-a0fa-4d4d854cdcd6`, RepoInstallation `7518fce1-8e9f-4c77-b42c-4517458f83c9`, and ProjectKernel `f4ca92f1-7c31-4319-9a0e-9279cedf0e25` with `sourceSeeds` metadata read back from DB.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-init-connect-source-seed-hardening/REPORT.md`; execution run `886afb4d-07e3-4fff-8aa8-43522b0c86d6`; evidence bundle `444d1bae-1ac0-4a6e-a97d-53e42df95e5e`; observation group `ccb34e20-9e25-4d0f-99bc-0fefeee3340d`; reflection record `b505f0a1-e06a-4208-a267-188e06b3796e`.
 - Priority: P0.
 - Complexity: L.
 - Risks: Product UX creep. Mitigation: dry-run first and no dashboard/API.
@@ -683,9 +686,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    C-01 — Target Repo Registry And Init/Connect Hardening
+    C-02 — End-To-End Governed Product Path
 
-C-00 is complete. Continue with C-01 using the target workers trial evidence as input. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+C-01 is complete. Continue with C-02 as the first governed evidence-to-reviewed-state-to-later-activation path. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

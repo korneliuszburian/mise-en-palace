@@ -39,11 +39,24 @@ interface TargetRepoDetection {
   packageManager: string;
   typescriptPresent: boolean;
   scripts: string[];
+  sourceSeeds: SourceSeedProposal[];
   agentsPresent: boolean;
   codexPresent: boolean;
   agentSkillsPresent: boolean;
   forbiddenSurfaces: string[];
   packageName: string;
+}
+
+export interface SourceSeedProposal {
+  path: string;
+  kind:
+    | "package_manifest"
+    | "typescript_config"
+    | "project_readme"
+    | "agent_instructions"
+    | "source_root"
+    | "test_root";
+  reason: string;
 }
 
 export interface InitConnectRuntimeInput {
@@ -58,6 +71,7 @@ export interface ConnectTargetRepoInput {
   packageManager: string;
   typescriptPresent: boolean;
   scripts: string[];
+  sourceSeeds: SourceSeedProposal[];
 }
 
 export interface ConnectTargetRepoResult {
@@ -170,6 +184,50 @@ const detectForbiddenSurfaces = async (repoPath: string): Promise<string[]> => {
   return existing.filter((item) => item.present).map((item) => item.surface);
 };
 
+const sourceSeedCandidates = [
+  {
+    path: "package.json",
+    kind: "package_manifest",
+    reason: "detect package identity and scripts"
+  },
+  {
+    path: "tsconfig.json",
+    kind: "typescript_config",
+    reason: "detect TypeScript boundary settings"
+  },
+  {
+    path: "README.md",
+    kind: "project_readme",
+    reason: "capture project-facing current truth"
+  },
+  {
+    path: "AGENTS.md",
+    kind: "agent_instructions",
+    reason: "capture target repo Codex instructions when present"
+  },
+  {
+    path: "src",
+    kind: "source_root",
+    reason: "seed source owner-file recall"
+  },
+  {
+    path: "tests",
+    kind: "test_root",
+    reason: "seed target repo verification surface"
+  }
+] as const satisfies readonly SourceSeedProposal[];
+
+const detectSourceSeeds = async (repoPath: string): Promise<SourceSeedProposal[]> => {
+  const existing = await Promise.all(
+    sourceSeedCandidates.map(async (seed) => ({
+      seed,
+      present: await pathExists(path.join(repoPath, seed.path))
+    }))
+  );
+
+  return existing.filter((item) => item.present).map((item) => item.seed);
+};
+
 const fingerprintForRepo = (repoPath: string, packageNameValue: string): string =>
   `sha256:${createHash("sha256").update(`${repoPath}\n${packageNameValue}`).digest("hex").slice(0, 16)}`;
 
@@ -214,6 +272,7 @@ const detectTargetRepo = async (
     agentsPresent,
     codexPresent,
     agentSkillsPresent,
+    sourceSeeds,
     forbiddenSurfaces
   ] = await Promise.all([
     detectPackageManager(repoPath, packageJson),
@@ -221,6 +280,7 @@ const detectTargetRepo = async (
     pathExists(path.join(repoPath, "AGENTS.md")),
     pathExists(path.join(repoPath, ".codex")),
     pathExists(path.join(repoPath, ".agents", "skills")),
+    detectSourceSeeds(repoPath),
     detectForbiddenSurfaces(repoPath)
   ]);
 
@@ -230,6 +290,7 @@ const detectTargetRepo = async (
     packageManager,
     typescriptPresent,
     scripts: sortedScriptNames(packageJson),
+    sourceSeeds,
     agentsPresent,
     codexPresent,
     agentSkillsPresent,
@@ -246,6 +307,11 @@ const scriptsLabel = (scripts: readonly string[]): string =>
 const forbiddenSurfacesLabel = (surfaces: readonly string[]): string =>
   surfaces.length === 0 ? "absent" : surfaces.join(", ");
 
+const sourceSeedLines = (sourceSeeds: readonly SourceSeedProposal[]): string[] =>
+  sourceSeeds.length === 0
+    ? ["- none"]
+    : sourceSeeds.map((seed) => `- ${seed.path} | kind=${seed.kind} | reason=${seed.reason}`);
+
 const renderDryRun = (detection: TargetRepoDetection): string =>
   [
     "KRN Init Dry Run",
@@ -254,10 +320,14 @@ const renderDryRun = (detection: TargetRepoDetection): string =>
     `Package manager: ${detection.packageManager}`,
     `TypeScript: ${detection.typescriptPresent ? "present" : "absent"}`,
     `Scripts: ${scriptsLabel(detection.scripts)}`,
+    "Command detection:",
+    `- scripts: ${scriptsLabel(detection.scripts)}`,
     `Existing AGENTS.md: ${presentLabel(detection.agentsPresent)}`,
     `Existing .codex: ${presentLabel(detection.codexPresent)}`,
     `Existing .agents/skills: ${presentLabel(detection.agentSkillsPresent)}`,
     `Forbidden surfaces: ${forbiddenSurfacesLabel(detection.forbiddenSurfaces)}`,
+    "Source seed proposal:",
+    ...sourceSeedLines(detection.sourceSeeds),
     "ProjectKernel proposal:",
     `- summary: ${detection.packageName} target repo connected for KRN harness planning`,
     "- activeContextRule: select project-scoped source, memory, retrieval, and anti-memory only",
@@ -282,6 +352,11 @@ const renderConnect = (
     `Project ID: ${result.project.id} (${createdLabel(result.projectCreated)})`,
     `Repo installation ID: ${result.repoInstallation.id} (${createdLabel(result.repoInstallationCreated)})`,
     `ProjectKernel ID: ${result.projectKernel.id} (${createdLabel(result.projectKernelCreated)})`,
+    "Project scope: project-scoped source, memory, retrieval, and anti-memory only",
+    "Command detection:",
+    `- scripts: ${scriptsLabel(detection.scripts)}`,
+    "Source seed:",
+    ...sourceSeedLines(detection.sourceSeeds),
     "Files written: none",
     `Next command: krn plan --project ${result.project.id} --task "improve test script readiness" --persist`
   ].join("\n") + "\n";
@@ -328,7 +403,8 @@ const createPostgresInitConnectRuntime = async (
             repoPath: repoInput.repoPath,
             packageManager: repoInput.packageManager,
             typescriptPresent: repoInput.typescriptPresent,
-            scripts: repoInput.scripts
+            scripts: repoInput.scripts,
+            sourceSeeds: repoInput.sourceSeeds
           }
         }));
       const installations = await projectRepository.listRepoInstallationsForProject(project.id);
@@ -351,7 +427,8 @@ const createPostgresInitConnectRuntime = async (
             createdBy: "krn init --connect",
             packageManager: repoInput.packageManager,
             typescriptPresent: repoInput.typescriptPresent,
-            scripts: repoInput.scripts
+            scripts: repoInput.scripts,
+            sourceSeeds: repoInput.sourceSeeds
           }
         }));
       const existingKernel = await projectRepository.getLatestProjectKernel(project.id);
@@ -366,7 +443,8 @@ const createPostgresInitConnectRuntime = async (
           metadata: {
             createdBy: "krn init --connect",
             repoFingerprint: repoInput.repoFingerprint,
-            repoPath: repoInput.repoPath
+            repoPath: repoInput.repoPath,
+            sourceSeeds: repoInput.sourceSeeds
           }
         }));
 
@@ -412,7 +490,8 @@ export const runInitCommand = async (
         packageName: detection.packageName,
         packageManager: detection.packageManager,
         typescriptPresent: detection.typescriptPresent,
-        scripts: detection.scripts
+        scripts: detection.scripts,
+        sourceSeeds: detection.sourceSeeds
       });
 
       return {
