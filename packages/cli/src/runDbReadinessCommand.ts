@@ -21,6 +21,19 @@ const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : "unknown DB readiness error";
 
+export const redactedPostgresEndpoint = (databaseUrl: string): string => {
+  try {
+    const parsed = new URL(databaseUrl);
+    parsed.username = "";
+    parsed.password = "";
+    parsed.search = "";
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return "unparseable KRN_DATABASE_URL";
+  }
+};
+
 export const runDbReadinessCommand = async (
   runtime: DbReadinessRuntime
 ): Promise<DbReadinessResult> => {
@@ -57,6 +70,7 @@ export const runDbReadinessCommand = async (
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: configured",
+        `Postgres endpoint: ${redactedPostgresEndpoint(databaseUrl)}`,
         "Postgres: reachable",
         `Migrations expected: ${report.expectedMigrationCount}`,
         `Migrations applied: ${report.appliedMigrationCount}`,
@@ -73,6 +87,7 @@ export const runDbReadinessCommand = async (
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: configured",
+        `Postgres endpoint: ${redactedPostgresEndpoint(databaseUrl)}`,
         `Postgres/migrations: failed (${errorMessage(error)})`,
         "Brain store readiness: blocked (migration readiness failed)"
       ].join("\n") + "\n"

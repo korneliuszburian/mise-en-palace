@@ -205,6 +205,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `A-01`
 - Name: Prove or disprove activation owner-file recall.
+- Status: complete on 2026-06-25.
 - Objective: Run one DB-backed KRN-on-KRN source repair where the expected owner file is known by repo structure, and measure whether activation selects it or only guardrails.
 - Business rationale: KRN must reduce operator rereads and source inspection cost, not only supply high-level guardrails.
 - Architectural rationale: Activation is admission control, but production use requires owner-file/raw-recall targeting.
@@ -214,6 +215,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Report states whether activation selected owner files, guardrails, both, or neither.
 - Verification: `pnpm db:ready`; `krn plan --persist`; `krn evidence capture --persist`; `krn observe --persist`; `krn reflect --persist`; `pnpm typecheck`; `pnpm test`; `git diff --check`.
 - Acceptance criteria: If owner-file recall misses obvious files, task opens A-02. If it succeeds, record candidate to defer activation repair.
+- Outcome: DB-backed run `1d22a22a-e48f-4327-a8e8-657146394fc8` improved DB readiness endpoint reporting and proved activation selected governance guardrails but missed the owner files `packages/cli/src/runDbReadinessCommand.ts`, `packages/cli/src/runDbReadinessCommand.test.ts`, and existing CLI readiness coverage in `packages/cli/src/runCli.test.ts`.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md`; evidence bundle `f3e42ea7-24a6-4e60-8111-9c9d48cdd855`; observation group `f528e758-eb08-4884-b773-d73563a71c2b`; reflection record `e1181fd6-9df7-43f6-ad4d-c59f54cdddb7`.
 - Priority: P0.
 - Complexity: M.
 - Risks: Picking a task whose owner file is too obvious from prompt. Mitigation: define expected owner after source inspection, not in the initial task text.
@@ -659,9 +662,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    A-01 — DB-Backed Owner-File Recall Dogfood
+    A-02 — Activation Owner-File / Raw-Recall Read Model Repair
 
-Do not start activation scoring repair until A-01 produces repeatable evidence that activation misses owner files or raw-recall targets in DB-backed runs. If A-01 succeeds, continue to B-02 or C-00 depending on operator priority.
+A-01 produced DB-backed evidence that activation selected guardrails but missed direct owner files for a command-specific source repair. A-02 should repair owner-file/raw-recall surfacing first; do not start with a broad activation scoring rewrite.
 
 ## 9. Completion Gates By Stage
 

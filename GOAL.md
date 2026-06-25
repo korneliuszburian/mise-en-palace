@@ -24,11 +24,14 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-A-01 — DB-Backed Owner-File Recall Dogfood
+A-02 — Activation Owner-File / Raw-Recall Read Model Repair
 ```
 
-A-00 is complete once the production roadmap is committed and pushed as root
-`PLAN.md`.
+A-01 is complete. Its report is:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
+```
 
 ## Operating Rules
 
