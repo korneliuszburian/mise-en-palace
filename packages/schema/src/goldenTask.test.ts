@@ -45,6 +45,16 @@ const readEvidenceCaptureFixture = (): unknown => {
   return parsed;
 };
 
+const readCodexBriefFixture = (): unknown => {
+  const fixtureUrl = new URL(
+    "../../../tests/fixtures/golden-tasks/codex-brief-behavior.json",
+    import.meta.url
+  );
+  const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
+
+  return parsed;
+};
+
 describe("golden task fixtures", () => {
   test("load deterministically from file fixtures", () => {
     const tasks = parseGoldenTaskFixtures(readFixture());
@@ -99,6 +109,15 @@ describe("golden task fixtures", () => {
     expect(tasks[0]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
       "golden-case-evidence-dirty-context-001-a",
       "golden-case-evidence-dirty-context-001-b"
+    ]);
+  });
+
+  test("load Codex brief behavior fixtures deterministically", () => {
+    const tasks = parseGoldenTaskFixtures(readCodexBriefFixture());
+
+    expect(tasks.map((task) => task.id)).toEqual(["golden-task-codex-brief-001"]);
+    expect(tasks[0]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
+      "golden-case-codex-brief-001-a"
     ]);
   });
 

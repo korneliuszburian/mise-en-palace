@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-D-00 — Dogfood-Derived GoldenTask Promotion Lane
+D-01 — Promptfoo Adapter Boundary Hardening
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, and C-03 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, and D-00 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -41,6 +41,7 @@ docs/reviews/controlled-dogfood/2026-06-25-target-workers-harness-trial/REPORT.m
 docs/reviews/controlled-dogfood/2026-06-25-init-connect-source-seed-hardening/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-governed-memory-activation-path/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-golden-task-promotion-lane/REPORT.md
 ```
 
 ## Operating Rules

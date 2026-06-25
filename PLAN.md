@@ -431,6 +431,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `D-00`
 - Name: Promote repeated dogfood failures to GoldenTasks.
+- Status: complete on 2026-06-25.
 - Objective: Define when a dogfood finding becomes a GoldenTask fixture and behavior proof.
 - Business rationale: Converts real failures into regression protection.
 - Architectural rationale: Keeps evals tied to real KRN behavior, not fixture theater.
@@ -440,6 +441,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: A dogfood-derived behavior case fails if invariant regresses.
 - Verification: Schema fixture test, behavior proof test, `pnpm test`.
 - Acceptance criteria: Promptfoo remains adapter, not truth.
+- Outcome: Added bounded GoldenTask promotion policy and the first non-evidence dogfood-derived GoldenTask case for Codex brief review-contract rendering. The case executes real Codex adapter rendering through `runGoldenTaskFixtures` with `krn_behavior_execution` provenance.
+- Evidence: `docs/architecture/golden-task-promotion.md`; `tests/fixtures/golden-tasks/codex-brief-behavior.json`; `docs/reviews/controlled-dogfood/2026-06-25-golden-task-promotion-lane/REPORT.md`; DB-backed plan run `fee5bc30-edf3-4525-b0ab-2f5c62e22d4d`; evidence bundle `f5f38d4c-631d-40bf-8530-497165609759`; observation group `c22fef47-3143-49f2-8b81-115a1d7f1f6d`; reflection record `c97b58d8-d4d0-442c-834a-2a8800301ab1`.
 - Priority: P1.
 - Complexity: M.
 - Risks: Broad eval platform creep. Mitigation: one case per real failure.
@@ -692,9 +695,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    D-00 — Dogfood-Derived GoldenTask Promotion Lane
+    D-01 — Promptfoo Adapter Boundary Hardening
 
-C-03 is complete. Continue with D-00 to define when repeated dogfood findings become GoldenTask behavior proofs. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+D-00 is complete. Continue with D-01 to keep Promptfoo bounded to runner/result adapter evidence and prevent Promptfoo smoke from being mistaken for KRN behavior proof. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

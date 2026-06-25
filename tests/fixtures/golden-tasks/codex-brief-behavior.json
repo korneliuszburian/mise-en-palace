@@ -1,0 +1,54 @@
+[
+  {
+    "id": "golden-task-codex-brief-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Codex execution brief stays bounded and reviewable",
+    "description": "Protects the Codex-facing brief contract created by the C-03 dogfood run.",
+    "owner": "codex-adapter-eval",
+    "domains": ["capability", "context"],
+    "cases": [
+      {
+        "id": "golden-case-codex-brief-001-a",
+        "title": "brief renders execution contract fields without hidden authority",
+        "input": {
+          "task": "Render a Codex execution brief from typed KRN task, context, capability, and evidence contracts.",
+          "dogfoodRun": "bc1dd6e3-1263-4007-a1e4-34defc1932cf"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "codex_execution_brief:review_contract",
+          "rationale": "Codex-facing briefs must expose constraints, acceptance, review burden, rollback, selected context, exclusions, and proof limits without becoming the product brain.",
+          "evidenceRefs": [
+            "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
+            "packages/codex-adapter/src/renderExecutionBrief.ts"
+          ]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-codex-brief-001-a",
+            "domain": "capability",
+            "severity": "blocking",
+            "title": "Codex brief hides review contract",
+            "mustNot": "The rendered brief must not omit constraints, acceptance, review burden, rollback expectation, selected context, explicit exclusions, or does-not-prove statements.",
+            "detection": "Rendered execution brief text lacks any required review contract section."
+          }
+        ],
+        "sourceRefs": [
+          "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
+          "docs/architecture/golden-task-promotion.md"
+        ],
+        "metadata": {
+          "promotionRule": "critical_invariant",
+          "promptfooBoundary": "Promptfoo is not behavior proof for this case."
+        }
+      }
+    ],
+    "metadata": {
+      "sourceDogfood": "C-03 Codex Brief And Execution Contract Hardening",
+      "doesNotProve": "This fixture does not prove Codex follows the brief or product readiness."
+    },
+    "createdAt": "2026-06-25T14:20:00.000Z",
+    "updatedAt": "2026-06-25T14:20:00.000Z"
+  }
+]
