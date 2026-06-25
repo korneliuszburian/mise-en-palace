@@ -409,6 +409,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `C-03`
 - Name: Improve Codex-facing execution brief.
+- Status: complete on 2026-06-25.
 - Objective: Ensure Codex brief renders objective, constraints, selected context, non-goals, expected evidence, review burden, and rollback in a concise format.
 - Business rationale: KRN must guide Codex execution without giant prompts.
 - Architectural rationale: Codex adapter renders after activation; it must not make independent trust decisions.
@@ -418,6 +419,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: A Codex brief can drive a bounded source repair without rereading broad docs.
 - Verification: codex-adapter tests; CLI brief tests; dogfood report.
 - Acceptance criteria: Brief does not include unreviewed/stale context without reason.
+- Outcome: Codex execution brief now renders task constraints, acceptance criteria, and review burden alongside objective, non-goals, context inclusions/exclusions, evidence contract, rollback, and does-not-prove statements. DB-backed plan run `bc1dd6e3-1263-4007-a1e4-34defc1932cf` showed the fields in real `krn plan --persist` output.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md`; evidence bundle `ba2d47f3-6162-4038-880e-e5bfdc008798`; observation group `8c69526d-3e37-479a-9b83-c3b2667f411b`; reflection record `eb7e7dec-cd20-4028-9c1d-308f1c271a73`.
 - Priority: P1.
 - Complexity: M.
 - Risks: Prompt bloat. Mitigation: strict budget and first-screen summary.
@@ -689,9 +692,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    C-03 — Codex Brief And Execution Contract Hardening
+    D-00 — Dogfood-Derived GoldenTask Promotion Lane
 
-C-02 is complete. Continue with C-03 to harden the Codex-facing brief for reviewed memory/source/evidence boundaries. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+C-03 is complete. Continue with D-00 to define when repeated dogfood findings become GoldenTask behavior proofs. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

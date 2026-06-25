@@ -109,11 +109,14 @@ export interface ExecutionBriefTaskContract {
   id: string;
   title: string;
   objective: string;
+  constraints: string[];
+  acceptance: string[];
 }
 
 export interface ExecutionBriefEvidenceContract {
   commands: string[];
   diffRisk: DiffRisk;
+  reviewBurden: string;
   rollbackPath: string;
 }
 

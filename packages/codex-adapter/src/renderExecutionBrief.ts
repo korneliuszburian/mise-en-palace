@@ -90,6 +90,7 @@ const renderToolBoundaries = (brief: ExecutionBrief): string[] => [
 const renderEvidenceContract = (brief: ExecutionBrief): string[] => [
   ...brief.evidenceContract.commands.map((command) => `- ${command}`),
   `Diff risk: ${brief.evidenceContract.diffRisk}`,
+  `Review burden: ${brief.evidenceContract.reviewBurden}`,
   `Rollback path: ${brief.evidenceContract.rollbackPath}`,
   "Hook Expectations:",
   ...renderList(
@@ -189,7 +190,9 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
     currentTaskContract: {
       id: input.taskContract.id,
       title: input.taskContract.title,
-      objective: input.taskContract.objective
+      objective: input.taskContract.objective,
+      constraints: input.taskContract.constraints,
+      acceptance: input.taskContract.acceptance
     },
     includedContext,
     explicitExclusions,
@@ -202,6 +205,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
         command.required ? `${command.command} (required)` : command.command
       ),
       diffRisk: input.evidenceContract.diffRisk,
+      reviewBurden: input.evidenceContract.reviewBurden,
       rollbackPath: input.evidenceContract.rollbackPath
     },
     hookExpectations: createCodexHookExpectations(input.evidenceContract),
@@ -253,6 +257,10 @@ export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
     `- id=${brief.currentTaskContract.id}`,
     `- title=${brief.currentTaskContract.title}`,
     `- objective=${brief.currentTaskContract.objective}`,
+    "Constraints:",
+    ...renderList(brief.currentTaskContract.constraints),
+    "Acceptance:",
+    ...renderList(brief.currentTaskContract.acceptance),
     "",
     "Context Inclusions:",
     ...renderContextInclusions(brief.includedContext),

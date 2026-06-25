@@ -161,7 +161,9 @@ describe("renderExecutionBrief", () => {
     expect(brief.currentTaskContract).toEqual({
       id: "task-1",
       title: "Improve KRN doctor brain store readiness",
-      objective: "Make doctor report Postgres memory and source graph readiness"
+      objective: "Make doctor report Postgres memory and source graph readiness",
+      constraints: ["no runtime markdown memory"],
+      acceptance: ["typecheck and tests pass"]
     });
     expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
     expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
@@ -193,6 +195,10 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
+    expect(rendered).toContain("Constraints:");
+    expect(rendered).toContain("- no runtime markdown memory");
+    expect(rendered).toContain("Acceptance:");
+    expect(rendered).toContain("- typecheck and tests pass");
     expect(rendered).toContain("memory_record:memory-1");
     expect(rendered).toContain("Explicit Exclusions:");
     expect(rendered).toContain("source_claim:claim-weak");
@@ -204,6 +210,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("anti_memory_record:anti-1");
     expect(rendered).toContain("Tool Boundaries:");
     expect(rendered).toContain("Evidence Contract:");
+    expect(rendered).toContain(`Review burden: ${evidenceContract.reviewBurden}`);
     expect(rendered).toContain("Skill Binding Hints:");
     expect(rendered).toContain("- activation-engine");
     expect(rendered).not.toContain("select-kernel-patterns");
