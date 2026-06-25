@@ -752,6 +752,7 @@ gates needed before another internal-alpha decision.
 
 - ID: `V01-00`
 - Name: Run one controlled external target repo trial from `v0.1.0-alpha.0`.
+- Status: complete on 2026-06-25.
 - Objective: Prove or disprove whether a tagged KRN alpha can guide one real external target repo task with lower or clearer review burden.
 - Business rationale: G-03 deferred internal-alpha because target evidence is repo-local and author-operated.
 - Architectural rationale: Product scope must come from real target-repo friction, not more KRN-on-KRN architecture.
@@ -764,6 +765,8 @@ gates needed before another internal-alpha decision.
 - Priority: P0.
 - Complexity: L.
 - Risks: Choosing a too-easy repo. Mitigation: pick a real repo with at least one nontrivial TypeScript, CLI, or docs/source-boundary repair.
+- Outcome: Ran tagged KRN alpha `v0.1.0-alpha.0` against external target repo `muke-v2`. Alpha install, DB-backed doctor, init dry-run, init connect, persisted project registration, target planning, scoped target repair, target verification, and target commit/push were completed. KRN helped governance and onboarding evidence, but project-scoped activation selected a non-target KRN owner-file recall item; target owner files were found by manual source inspection. Scoped `@muke/evals` tests/build passed, target workspace build passed, and broader recursive target tests still show unrelated timeout sensitivity. Internal alpha remains deferred.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-external-target-muke-v2/REPORT.md`; target commit `05a383e fix(evals): stabilize report artifact tests`; evidence bundle `44b8eb1b-79c4-439e-95e5-5d7dc7bd0082`; observation group `37fd5514-bf8e-40c7-81bb-9a47f0dd52d2`; reflection record `d860ca43-a741-418e-85e3-110db6eb9d90`.
 
 ### V01-01 — Operator-Beyond-Author Trial
 
@@ -837,9 +840,9 @@ gates needed before another internal-alpha decision.
 
 The next active slice should be:
 
-    V01-00 — Controlled External Target Repo Trial
+    V01-01 — Operator-Beyond-Author Trial
 
-G-04 is complete. Continue with V01-00 to run one controlled external target repo trial from `v0.1.0-alpha.0`. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V01-00 is complete. Continue with V01-01 to test whether the install/runbook and root `pnpm krn` flow are usable without author-only context. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
@@ -851,7 +854,7 @@ Already achieved for KRN-on-KRN workflow/review brain. Evidence includes Brain U
 
 KRN is internal-alpha-ready only when all are true:
 
-1. A DB-backed target repo trial exists.
+1. A DB-backed target repo trial exists. Status: partially satisfied by V01-00 for one author-operated external target repo.
 2. KRN improves at least one real coding task with lower or clearer review burden.
 3. Activation either selects owner files or has a bounded repair in progress.
 4. Evidence capture, observe, reflect, candidates, review, and at least one later activation link are demonstrated.
@@ -925,26 +928,20 @@ Every goal executed under this plan must end with:
 
 Use this if the operator wants to continue immediately.
 
-    Goal: Controlled External Target Repo Trial From v0.1.0-alpha.0
+    Goal: Operator-Beyond-Author Trial
 
     Mission:
-      Run one controlled external target repo trial from the tagged KRN alpha. Prove or disprove whether KRN can guide one real target repo task with lower or clearer review burden. Do not build new KRN product surfaces.
+      Determine whether the install/runbook and root pnpm krn flow are usable without author-only context. Use the V01-00 target trial and v0.1.0-alpha.0 tag evidence, but do not build new KRN product surfaces.
 
     Required:
       - git fetch --prune
       - git status --short --branch
-      - clean checkout of tag v0.1.0-alpha.0 for the alpha candidate path
-      - pnpm install --frozen-lockfile
-      - pnpm krn doctor
-      - select one real external target repo and one bounded task
-      - krn init --dry-run against the target repo
-      - krn init --connect if DB is available and safe
-      - krn plan for the target task
-      - execute only the scoped target repair or record why no repair is safe
-      - run target repo verification commands
-      - capture KRN evidence when available
-      - observe/reflect if DB-backed run exists
-      - target trial report with DOGFOOD_REPORTING.md section
+      - start from only checked-in runbooks, GOAL.md, PLAN.md, and tag instructions
+      - simulate or involve a second operator with no hidden author context
+      - run alpha install/doctor commands from the runbook
+      - record every ambiguity, support intervention, missing command, and friction point
+      - classify operator usability as pass, mixed, or fail
+      - produce an operator-beyond-author report
       - git diff --check
 
     Non-goals:
@@ -959,9 +956,9 @@ Use this if the operator wants to continue immediately.
       - no anti-slop scanner;
       - no npm publish;
       - no global binary distribution;
-      - no target writes outside the scoped repair.
+      - no target writes outside an explicitly scoped trial.
 
     Completion:
-      - report states whether KRN reduced review burden, selected useful context, preserved safety boundaries, and exposed blockers;
-      - if target evidence is weak, keep internal alpha deferred;
-      - if target evidence is strong, continue V01-01 and V01-02 before any internal-alpha claim.
+      - report states whether second-operator usability is pass, mixed, or fail;
+      - if hidden support was required, keep internal alpha deferred;
+      - continue V01-02 before any internal-alpha claim.
