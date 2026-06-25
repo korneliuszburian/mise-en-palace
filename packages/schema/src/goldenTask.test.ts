@@ -35,6 +35,16 @@ const readObservationReflectionFixture = (): unknown => {
   return parsed;
 };
 
+const readEvidenceCaptureFixture = (): unknown => {
+  const fixtureUrl = new URL(
+    "../../../tests/fixtures/golden-tasks/evidence-capture-behavior.json",
+    import.meta.url
+  );
+  const parsed: unknown = JSON.parse(readFileSync(fixtureUrl, "utf8"));
+
+  return parsed;
+};
+
 describe("golden task fixtures", () => {
   test("load deterministically from file fixtures", () => {
     const tasks = parseGoldenTaskFixtures(readFixture());
@@ -79,6 +89,16 @@ describe("golden task fixtures", () => {
       "golden-case-gap-001-a",
       "golden-case-observation-001-a",
       "golden-case-reflection-001-a"
+    ]);
+  });
+
+  test("load evidence capture behavior fixtures deterministically", () => {
+    const tasks = parseGoldenTaskFixtures(readEvidenceCaptureFixture());
+
+    expect(tasks.map((task) => task.id)).toEqual(["golden-task-evidence-capture-001"]);
+    expect(tasks[0]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
+      "golden-case-evidence-dirty-context-001-a",
+      "golden-case-evidence-dirty-context-001-b"
     ]);
   });
 

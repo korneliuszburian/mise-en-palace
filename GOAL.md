@@ -51,14 +51,16 @@ The first bounded source-repair trial is complete:
 
 ```txt
 KRN-SR-00: Improve Evidence Dirty-Context Reporting
+GBC-00: Add Golden Behavior Coverage For Evidence Dirty-Context Capture
 ```
 
-It was a KRN-on-KRN source repair in the actual `mise-en-palace` repo, not a
+These were KRN-on-KRN source repairs in the actual `mise-en-palace` repo, not a
 synthetic weak-repo trial. Root `PLAN.md` now has no unchecked slice. Completed
 evidence is recorded at:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context-golden/REPORT.md
 ```
 
 Do not start a broad new goal from this file. Add the next bounded slice to

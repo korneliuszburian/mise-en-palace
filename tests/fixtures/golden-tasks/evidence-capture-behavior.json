@@ -1,0 +1,78 @@
+[
+  {
+    "id": "golden-task-evidence-capture-001",
+    "projectId": "project-1",
+    "status": "draft",
+    "title": "Evidence capture dirty context stays reviewable",
+    "description": "Protects intended, unrelated, and unknown changed-file reporting plus command proof provenance in krn evidence capture.",
+    "owner": "evidence-eval",
+    "domains": ["capability", "type_boundary"],
+    "cases": [
+      {
+        "id": "golden-case-evidence-dirty-context-001-a",
+        "title": "intended and unrelated dirty files are separated",
+        "input": {
+          "command": "krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --intended-file docs/reviews/controlled-dogfood/run/REPORT.md --verification \"pnpm typecheck=passed\"",
+          "gitStatus": "package cwd paths plus root-parent report directory and unrelated raw material"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "evidence_capture:dirty_context_classification",
+          "rationale": "Evidence capture must make intended and unrelated dirty files visible so review burden is explicit.",
+          "evidenceRefs": [
+            "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md",
+            "packages/cli/src/runEvidenceCaptureCommand.ts"
+          ]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-evidence-dirty-context-001-a",
+            "domain": "capability",
+            "severity": "blocking",
+            "title": "dirty context is collapsed into a flat changed-file list",
+            "mustNot": "Evidence capture must not mix intended files, unrelated dirty files, and command proof into an undifferentiated output.",
+            "detection": "CLI output omits intended/unrelated/unknown groups or fails to warn when unrelated dirty files are present."
+          }
+        ],
+        "sourceRefs": [
+          "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
+        ],
+        "metadata": {}
+      },
+      {
+        "id": "golden-case-evidence-dirty-context-001-b",
+        "title": "missing intended files keeps changes unknown and default proof weak",
+        "input": {
+          "command": "krn evidence capture",
+          "gitStatus": "package cwd changed file without intended-file input"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "evidence_capture:unknown_and_weak_default_proof",
+          "rationale": "When no intended files or verification outcomes are supplied, changed files must remain unclassified and default command rows must stay weak proof.",
+          "evidenceRefs": [
+            "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md",
+            "packages/cli/src/runEvidenceCaptureCommand.ts"
+          ]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-evidence-dirty-context-001-b",
+            "domain": "capability",
+            "severity": "blocking",
+            "title": "unknown files or weak default proof are hidden",
+            "mustNot": "Evidence capture must not treat unclassified changed files as intended or default_template command rows as command proof.",
+            "detection": "CLI output omits unknown classification or omits the weak default_template provenance warning."
+          }
+        ],
+        "sourceRefs": [
+          "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
+        ],
+        "metadata": {}
+      }
+    ],
+    "metadata": {},
+    "createdAt": "2026-06-25T09:20:00.000Z",
+    "updatedAt": "2026-06-25T09:20:00.000Z"
+  }
+]
