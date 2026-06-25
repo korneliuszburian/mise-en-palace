@@ -645,6 +645,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `G-00`
 - Name: Establish CI proof for typecheck, tests, DB schema, Promptfoo smoke.
+- Status: complete on 2026-06-25.
 - Objective: Move core verification from local-only reports to repeatable CI.
 - Business rationale: Production readiness requires remote verification, not only operator shell proof.
 - Architectural rationale: Commands already exist; CI should run them with clear does-not-prove boundaries.
@@ -654,6 +655,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: PR/commit runs typecheck/tests and optionally DB check/smoke.
 - Verification: Green CI run; documented skipped checks if DB unavailable.
 - Acceptance criteria: CI failure blocks release claims.
+- Outcome: Added GitHub Actions workflow `KRN CI` with separate fast and DB jobs. The first remote run failed because the Promptfoo smoke output directory did not exist in a fresh checkout; `eval:promptfoo:smoke` now creates `.local-lab/promptfoo` before writing JSONL output. The follow-up run passed for typecheck, tests, Promptfoo smoke, DB readiness, Drizzle check, DB smoke, and diff check.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-ci-verification-pipeline/REPORT.md`; remote run `https://github.com/korneliuszburian/mise-en-palace/actions/runs/28180925760`; workflow commit `1bde496f0eaa1ec90cc67dec2c1a53fa1d6fc6e5`; promptfoo output-dir fix commit `b0a6fbda628b03959d13d7fdc3efc401f6be9c80`; evidence bundle `780b6122-742a-4a74-af69-af187bbf4f22`; observation group `2020339d-ae40-4e71-b28a-6fb783f9ca82`; reflection record `e05a1547-145f-4b10-8726-efe677ad0402`.
 - Priority: P0 before external alpha.
 - Complexity: M.
 - Risks: Slow/flaky CI. Mitigation: separate fast and DB jobs.
@@ -730,9 +733,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    G-00 — CI Verification Pipeline
+    G-01 — Migration And Backup Policy
 
-F-02 is complete. Continue with G-00 to move local verification into repeatable CI proof. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
+G-00 is complete. Continue with G-01 to define production migration, backup, restore, and replay policy for the Postgres brain store. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
