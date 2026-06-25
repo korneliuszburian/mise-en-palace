@@ -451,6 +451,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `D-01`
 - Name: Keep Promptfoo bounded to runner/result adapter.
+- Status: complete on 2026-06-25.
 - Objective: Ensure Promptfoo output maps to KRN GoldenTask or eval candidate records without becoming product truth.
 - Business rationale: External eval runner useful only if connected to actionable repair.
 - Architectural rationale: Eval runner is adapter; GoldenTask is domain contract.
@@ -460,6 +461,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Promptfoo smoke cannot be mistaken for memory behavior proof.
 - Verification: `pnpm exec promptfoo --version`; `pnpm eval:promptfoo:smoke`; adapter tests.
 - Acceptance criteria: Report states what Promptfoo proves and does not prove.
+- Outcome: Promptfoo JSONL rows now map to reviewable `EvalCandidateProposal` values with `acceptedAsBehaviorProof=false`, while `promptfoo_integration_smoke` remains rejected as GoldenTask behavior proof. Promptfoo remains an eval adapter under `@krn/harness/eval`.
+- Evidence: `docs/architecture/promptfoo-adapter-boundary.md`; `docs/reviews/controlled-dogfood/2026-06-25-promptfoo-adapter-boundary/REPORT.md`; DB-backed plan run `a5e934e6-87d8-4157-9ec0-b27b719b9f62`; evidence bundle `870e62df-2341-4afc-9db9-56071b40bd78`; observation group `2cff4f5e-0b3f-4b74-8914-692719f7092b`; reflection record `71d3b046-c08c-4791-9790-97f2010c7809`.
 - Priority: P2.
 - Complexity: M.
 - Risks: Eval theater. Mitigation: no new Promptfoo suite without KRN behavior consumer.
@@ -695,9 +698,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    D-01 — Promptfoo Adapter Boundary Hardening
+    D-02 — Operator Readback UX For Runs And Evidence
 
-D-00 is complete. Continue with D-01 to keep Promptfoo bounded to runner/result adapter evidence and prevent Promptfoo smoke from being mistaken for KRN behavior proof. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
+D-01 is complete. Continue with D-02 to make run/evidence readback easier before any dashboard or API. Do not create a dashboard, API, MCP, worker runtime, source crawler, broad eval platform, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

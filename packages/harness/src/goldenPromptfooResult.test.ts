@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  mapPromptfooJsonlRowsToEvalCandidateProposals,
   mapPromptfooJsonlRowsToGoldenBehaviorProofs
 } from "./goldenPromptfooResult.js";
 
@@ -74,5 +75,45 @@ describe("golden Promptfoo result mapping", () => {
         evidenceRef: ".local-lab/promptfoo/krn-golden-smoke-results.jsonl"
       })
     ).toThrow("Promptfoo row 0 success must be boolean");
+  });
+
+  it("maps Promptfoo rows to eval candidate proposals without behavior-proof authority", () => {
+    const proposals = mapPromptfooJsonlRowsToEvalCandidateProposals({
+      rows: [{
+        success: true,
+        score: 1,
+        gradingResult: {
+          reason: "All assertions passed"
+        }
+      }],
+      caseIdsByRow: ["golden-case-memory-smoke-001"],
+      evidenceRef: ".local-lab/promptfoo/krn-golden-smoke-results.jsonl",
+      createdAt: "2026-06-25T14:30:00.000Z",
+      idPrefix: "eval-candidate-test",
+      projectId: "project-1"
+    });
+
+    expect(proposals).toEqual([{
+      id: "eval-candidate-test-1",
+      projectId: "project-1",
+      status: "candidate",
+      title: "Review Promptfoo adapter result for golden-case-memory-smoke-001",
+      scenario:
+        "Promptfoo integration smoke row 0 for golden-case-memory-smoke-001 passed with score 1.",
+      expectedSignal:
+        "Use as adapter evidence only; map to a KRN GoldenTask behavior proof only after real KRN behavior execution exists.",
+      sourceEvidence: [".local-lab/promptfoo/krn-golden-smoke-results.jsonl"],
+      metadata: {
+        acceptedAsBehaviorProof: false,
+        caseId: "golden-case-memory-smoke-001",
+        doesNotProve:
+          "Promptfoo smoke proves runner/config/provider/result mapping only; it does not execute KRN behavior.",
+        promptfooIntegrationSmoke: true,
+        reason: "All assertions passed",
+        score: 1,
+        status: "passed"
+      },
+      createdAt: "2026-06-25T14:30:00.000Z"
+    }]);
   });
 });
