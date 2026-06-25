@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-E-02 — Worker Runtime Acceptance Gate
+F-00 — Read-Only MCP/API Boundary Proof
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, and E-01 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, and E-02 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -47,6 +47,7 @@ docs/reviews/controlled-dogfood/2026-06-25-run-evidence-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-observability-read-models/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-security-trust-boundary-review/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-policy-hooks-boundary/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-worker-runtime-acceptance-gate/REPORT.md
 ```
 
 ## Operating Rules

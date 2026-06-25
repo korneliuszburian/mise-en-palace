@@ -174,3 +174,46 @@ This ADR is violated when:
 This decision does not prove workers will never be needed. It proves only that
 the current repo should keep workers as typed contracts and Postgres lifecycle
 proof until a concrete runtime executor slice has a stronger falsifier.
+
+## E-02 Re-evaluation: 2026-06-25
+
+Decision status: defer remains accepted.
+
+E-02 rechecked the worker boundary after DB-backed dogfood, evidence/readback,
+security, and policy-hook slices. No current dogfood report shows a concrete
+self-hosting bottleneck that requires background execution or a one-shot worker
+executor. The current worker package and DB repository still prove only:
+
+- typed maintenance job descriptions;
+- enqueue contracts;
+- Postgres `worker_jobs` persistence;
+- `worker_job.queued` outbox events;
+- lifecycle readback and transitions through DB smoke.
+
+They still do not prove:
+
+- job execution;
+- production throughput;
+- autonomous maintenance;
+- memory compaction runtime;
+- contradiction detection runtime;
+- stale-memory expiration runtime;
+- embedding runtime;
+- EvalCandidate promotion runtime.
+
+The next valid worker runtime reconsideration must name one job type and prove:
+
+```txt
+job type:
+self-hosting bottleneck:
+deterministic input builder:
+idempotency key:
+lock/retry/timeout semantics:
+allowed writes:
+forbidden writes:
+Memory Core gate:
+command evidence:
+rollback:
+```
+
+Until that proof exists, worker runtime implementation remains deferred.

@@ -553,6 +553,7 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 - ID: `E-02`
 - Name: Re-evaluate worker runtime only after bottleneck proof.
+- Status: complete on 2026-06-25.
 - Objective: Decide whether to implement a one-shot worker executor for a concrete job type.
 - Business rationale: Some maintenance may need async execution, but only after operator burden proves it.
 - Architectural rationale: ADR-0015 defers worker runtime; first runtime must start from Postgres worker_jobs/outbox and preserve write boundaries.
@@ -562,6 +563,8 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 - Definition of Done: Either defer remains documented, or one job has safe one-shot executor proof.
 - Verification: worker tests, DB job smoke, no Memory Core mutation.
 - Acceptance criteria: No daemon/background loop before one-shot proof.
+- Outcome: Re-evaluated current worker contracts, DB worker job lifecycle smoke, and dogfood evidence. No concrete self-hosting bottleneck justified a one-shot executor. ADR-0015 defer remains accepted; worker runtime, daemon, background loop, and Memory Core write workers remain rejected/deferred.
+- Evidence: `docs/decisions/ADR-0015-worker-runtime-boundary.md`; `docs/reviews/controlled-dogfood/2026-06-25-worker-runtime-acceptance-gate/REPORT.md`; DB-backed plan run `150d5cb2-cace-4146-9251-eb946c82a1e1`; evidence bundle `8080b1d2-8b4f-4411-b7b3-a3efc4e3ae0f`; observation group `1daf9904-f551-40e5-96f4-ae1d9d4a4776`; reflection record `eae76a5d-f8aa-40b4-8065-55330afc929c`.
 - Priority: P3 until bottleneck exists.
 - Complexity: L.
 - Risks: Hidden agency. Mitigation: one-shot/manual only.
@@ -710,9 +713,9 @@ Each task below includes the required fields. Priority uses P0/P1/P2/P3. Complex
 
 The next active slice should be:
 
-    E-02 — Worker Runtime Acceptance Gate
+    F-00 — Read-Only MCP/API Boundary Proof
 
-E-01 is complete. Continue with E-02 to re-evaluate worker runtime only against concrete bottleneck proof and write-authority constraints. Do not create a dashboard, API, MCP, worker daemon, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
+E-02 is complete. Continue with F-00 to decide whether a read-only typed external boundary is justified over existing run/readback state. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 

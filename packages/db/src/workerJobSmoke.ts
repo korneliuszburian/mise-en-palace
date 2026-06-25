@@ -42,6 +42,26 @@ interface CountRow {
   count: number;
 }
 
+export interface WorkerJobSmokeTransitionPlan {
+  succeeded: number;
+  skipped: number;
+  failed: number;
+}
+
+export const workerJobSmokeTransitionPlan = (
+  jobCount: number
+): WorkerJobSmokeTransitionPlan => {
+  const succeeded = Math.min(2, jobCount);
+  const skipped = Math.min(2, Math.max(jobCount - succeeded, 0));
+  const failed = Math.max(jobCount - succeeded - skipped, 0);
+
+  return {
+    succeeded,
+    skipped,
+    failed
+  };
+};
+
 const normalizeMarker = (value: string): string => {
   const normalized = value
     .trim()
@@ -174,6 +194,7 @@ export const runWorkerJobSmokeCheck = async (
     let succeededCount = 0;
     let skippedCount = 0;
     let failedCount = 0;
+    const transitionPlan = workerJobSmokeTransitionPlan(enqueuedJobs.length);
 
     for (const [index, job] of enqueuedJobs.entries()) {
       const runningJob = await repository.markWorkerJobRunning(job.id, {
@@ -184,14 +205,14 @@ export const runWorkerJobSmokeCheck = async (
       requireStatus(runningJob, "running", "running transition");
       runningTransitionCount += 1;
 
-      if (index < 2) {
+      if (index < transitionPlan.succeeded) {
         const succeededJob = await repository.markWorkerJobSucceeded(job.id);
         requireStatus(succeededJob, "succeeded", "succeeded transition");
         succeededCount += 1;
         continue;
       }
 
-      if (index < 4) {
+      if (index < transitionPlan.succeeded + transitionPlan.skipped) {
         const skippedJob = await repository.markWorkerJobSkipped(
           job.id,
           "Skipped by worker job smoke"
@@ -217,9 +238,9 @@ export const runWorkerJobSmokeCheck = async (
 
     if (
       runningTransitionCount !== enqueuedJobs.length ||
-      succeededCount !== 2 ||
-      skippedCount !== 2 ||
-      failedCount !== 2
+      succeededCount !== transitionPlan.succeeded ||
+      skippedCount !== transitionPlan.skipped ||
+      failedCount !== transitionPlan.failed
     ) {
       throw new Error("Worker job smoke transition counts did not match expected proof");
     }
