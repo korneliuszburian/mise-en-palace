@@ -24,10 +24,10 @@ evidence only unless root `PLAN.md` names them for a current task.
 ## First Active Task
 
 ```txt
-V01-02 — Target Trust And Redaction Trial
+V01-03 — Activation And Reflection Usefulness Decision
 ```
 
-B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, and V01-01 are complete. Current evidence:
+B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, V01-01, and V01-02 are complete. Current evidence:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-25-owner-file-recall-db-readiness/REPORT.md
@@ -58,11 +58,12 @@ docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-release-gate/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-v0-1-roadmap-gate/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-external-target-muke-v2/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-25-operator-beyond-author/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-25-target-trust-redaction/REPORT.md
 ```
 
 Next sequence is the V01 phase in root `PLAN.md`. Continue with the
-target trust and redaction trial. Do not move the alpha tag unless explicitly
-asked.
+activation/reflection usefulness decision. Do not move the alpha tag unless
+explicitly asked.
 
 ## Operating Rules
 

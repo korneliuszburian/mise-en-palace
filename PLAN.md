@@ -792,6 +792,7 @@ gates needed before another internal-alpha decision.
 
 - ID: `V01-02`
 - Name: Validate target-repo trust, untrusted context, and redaction behavior.
+- Status: complete on 2026-06-25.
 - Objective: Prove whether selected target repo context and observations expose untrusted text/secret-shaped data safely.
 - Business rationale: E-00 allowed continued dogfood but did not clear external target safety.
 - Architectural rationale: Target repo source is untrusted input; KRN must preserve source boundaries.
@@ -804,6 +805,8 @@ gates needed before another internal-alpha decision.
 - Priority: P1.
 - Complexity: M.
 - Risks: Overfitting to one repo. Mitigation: record does-not-prove and falsifier.
+- Outcome: Target trust/redaction readiness is mixed. Current KRN init/connect source seed for `muke-v2` is acceptable because it selected only `package.json`, `README.md`, and `AGENTS.md`, and those seed files had no secret-shaped matches. The target contains secret-shaped `.env` files under `.supersearch/runtime/...`, so broad target ingestion, `.muke/` generated state ingestion, and automated redaction of arbitrary target observation content are not cleared. KRN plan for the trust task abstained, so manual inspection carried the trial.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-25-target-trust-redaction/REPORT.md`; persisted plan execution run `1241957a-d80b-45a0-be8f-38a0ce18a349`; evidence bundle `fe98fde2-0d80-4880-8f99-6adc9d31aac4`; observation group `a96e1ffb-5bb1-43e8-b88c-88cb3634cfd1`; reflection record `29b3e277-fe44-45d9-b32f-58ee03218ab1`.
 
 ### V01-03 — Activation And Reflection Usefulness Decision
 
@@ -843,9 +846,9 @@ gates needed before another internal-alpha decision.
 
 The next active slice should be:
 
-    V01-02 — Target Trust And Redaction Trial
+    V01-03 — Activation And Reflection Usefulness Decision
 
-V01-01 is complete. Continue with V01-02 to validate target-repo trust, untrusted context, and redaction behavior. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
+V01-02 is complete. Continue with V01-03 to decide whether activation, reflection, or target trust/read-model behavior needs one bounded repair before internal-alpha re-gate. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, or automatic memory/source mutation.
 
 ## 9. Completion Gates By Stage
 
@@ -931,18 +934,18 @@ Every goal executed under this plan must end with:
 
 Use this if the operator wants to continue immediately.
 
-    Goal: Target Trust And Redaction Trial
+    Goal: Activation And Reflection Usefulness Decision
 
     Mission:
-      Validate whether selected target repo context and observations expose untrusted text or secret-shaped data safely. Use the V01-00 target repo and V01-01 operator evidence, but do not build a broad security subsystem.
+      Use V01-00, V01-01, and V01-02 evidence to decide whether activation, reflection, or target trust/read-model behavior needs a bounded repair before internal-alpha re-gate.
 
     Required:
       - git fetch --prune
       - git status --short --branch
-      - inspect target repo context selected/seeded by KRN init/connect
-      - identify untrusted target text and secret-shaped files/values
-      - verify whether KRN output/reporting avoids leaking secrets or over-trusting target instructions
-      - produce a trust/redaction report
+      - review selected/used/helped/missing context from V01-00 through V01-02
+      - review observation/reflection outcomes and candidate usefulness
+      - decide exactly one next action: repair activation/read-model, repair reflection, repair trust/redaction, defer repairs and re-gate, or gather another trial
+      - produce a decision report
       - git diff --check
 
     Non-goals:
@@ -957,9 +960,9 @@ Use this if the operator wants to continue immediately.
       - no anti-slop scanner;
       - no npm publish;
       - no global binary distribution;
-      - no target writes outside an explicitly scoped trust fixture/report.
+      - no target writes.
 
     Completion:
-      - report states whether target trust/redaction is acceptable, mixed, or blocked;
-      - if critical trust gaps are found, open one bounded repair;
-      - continue V01-03 before any internal-alpha claim.
+      - report names one next action with evidence;
+      - no broad retrieval rewrite or autonomous reflection system;
+      - continue V01-04 or the selected bounded repair.
