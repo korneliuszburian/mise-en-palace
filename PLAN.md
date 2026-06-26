@@ -212,21 +212,41 @@ Evidence: `tests/fixtures/target-repos/typescript-basic/AGENTS.md`;
 Goal: address the known remaining limit that target read-model can surface
 named roots while exact file recall below roots remains weak/unknown.
 
-Status: active.
+Status: complete on 2026-06-26.
 
 Expected outputs:
 
 - targeted implementation or guard-only proof;
+  Status: complete.
 - tests/brain-battle guard;
+  Status: complete.
 - report:
   `docs/reviews/controlled-dogfood/2026-06-26-target-owner-file-recall-below-roots/REPORT.md`.
+  Status: complete.
 
 Acceptance:
 
 - Target project planning no longer stops at vague root-level hints when a
   bounded owner-file candidate can be inferred.
+  Status: complete when `ownerFiles` are present in the target read model.
 - If exact owner-file inference is not safe, output explains the missing signal.
+  Status: complete.
 - No crawler, scoring rewrite, or broad retrieval rewrite.
+  Status: complete.
+
+Outcome: `TargetActivationReadModel` now accepts explicit `ownerFiles`.
+Target activation emits `targetReadModelKind=owner_file` candidates below named
+roots when that signal is present, and `krn plan --project` reports
+`ownerFiles=0` plus an unavailable-owner-files warning when exact owner-file
+signals are absent. The target harness smoke now persists and readbacks fixture
+owner files alongside source seeds and trust exclusions.
+
+Evidence: `packages/harness/src/activation/ownerFileRecall.ts`;
+`packages/harness/src/compiler/index.test.ts`;
+`packages/harness/src/goldenKrnBehaviorGate.ts`;
+`packages/cli/src/runPlanCommand.ts`;
+`packages/cli/src/targetRepoHarnessSmoke.ts`;
+`docs/reviews/controlled-dogfood/2026-06-26-target-owner-file-recall-below-roots/REPORT.md`.
 
 ---
 
@@ -235,7 +255,7 @@ Acceptance:
 Goal: prove a target-like run can move from plan to evidence capture to readback
 with honest proof/non-proof boundaries.
 
-Status: pending.
+Status: active.
 
 Expected outputs:
 

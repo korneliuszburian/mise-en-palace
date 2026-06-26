@@ -72,6 +72,7 @@ describe("owner-file recall", () => {
           reason: "seed MCP package and tool owner-file recall"
         }
       ],
+      ownerFiles: [],
       trustExclusions: [
         {
           pathPattern: ".env*",
@@ -115,6 +116,69 @@ describe("owner-file recall", () => {
     });
     expect(evalsCandidate?.subjectId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-8[0-9a-f]{3}-[0-9a-f]{12}$/
+    );
+  });
+
+  it("surfaces explicit target owner files below named roots when the read model provides them", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/typescript-basic"],
+      sourceSeeds: [
+        {
+          path: "src",
+          kind: "source_root",
+          reason: "implementation owner-file root"
+        },
+        {
+          path: "tests",
+          kind: "test_root",
+          reason: "behavior proof and test owner-file root"
+        }
+      ],
+      ownerFiles: [
+        {
+          path: "src/index.ts",
+          root: "src",
+          kind: "implementation_entry",
+          reason: "implementation readiness owner file"
+        },
+        {
+          path: "tests/readiness.test.ts",
+          root: "tests",
+          kind: "behavior_test",
+          reason: "test readiness owner file"
+        }
+      ],
+      trustExclusions: []
+    };
+    const candidates = buildOwnerFileRecallCandidates(
+      taskContract("Repair TypeScript fixture readiness test owner file"),
+      { targetReadModel }
+    );
+
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: "Target owner file: tests/readiness.test.ts",
+          metadata: expect.objectContaining({
+            source: "target_project_read_model",
+            targetReadModelKind: "owner_file",
+            targetPath: "tests/readiness.test.ts",
+            targetRoot: "tests",
+            ownerFileKind: "behavior_test"
+          })
+        })
+      ])
+    );
+    expect(candidates).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            source: "owner_file_recall"
+          })
+        })
+      ])
     );
   });
 });

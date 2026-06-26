@@ -619,6 +619,70 @@ const runTargetFixtureBattleHarness = (now: string): GoldenBehaviorProof => {
   );
 };
 
+const runTargetOwnerFileBelowRoots = (now: string): GoldenBehaviorProof => {
+  const readModel: TargetActivationReadModel = {
+    projectKernelId: "kernel-typescript-basic-fixture",
+    repoInstallationIds: ["repo-installation-typescript-basic-fixture"],
+    localPathHints: ["tests/fixtures/target-repos/typescript-basic"],
+    sourceSeeds: [
+      {
+        path: "src",
+        kind: "source_root",
+        reason: "implementation owner-file root"
+      },
+      {
+        path: "tests",
+        kind: "test_root",
+        reason: "behavior proof and test owner-file root"
+      }
+    ],
+    ownerFiles: [
+      {
+        path: "src/index.ts",
+        root: "src",
+        kind: "implementation_entry",
+        reason: "implementation readiness owner file"
+      },
+      {
+        path: "tests/readiness.test.ts",
+        root: "tests",
+        kind: "behavior_test",
+        reason: "test readiness owner file"
+      }
+    ],
+    trustExclusions: [
+      {
+        pathPattern: ".env*",
+        reason: "secret-shaped environment files must not enter planning context"
+      }
+    ]
+  };
+  const candidates = buildOwnerFileRecallCandidates(
+    taskContract(now, "Repair TypeScript fixture readiness test owner file."),
+    { targetReadModel: readModel }
+  );
+  const targetOwnerFileCandidate = candidates.find((candidate) =>
+    candidate.metadata.targetReadModelKind === "owner_file" &&
+    candidate.metadata.targetPath === "tests/readiness.test.ts"
+  );
+  const staticKrnOwnerFileSelected = candidates.some((candidate) =>
+    candidate.metadata.source === "owner_file_recall"
+  );
+  const passed =
+    targetOwnerFileCandidate !== undefined &&
+    targetOwnerFileCandidate.reason === "Target owner file: tests/readiness.test.ts" &&
+    targetOwnerFileCandidate.expectedUse.includes("tests/readiness.test.ts") &&
+    !staticKrnOwnerFileSelected;
+
+  return proof(
+    "golden-case-target-owner-file-below-roots-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real target owner-file recall surfaced a bounded owner file below tests/ without selecting static KRN owner files."
+      : "Real target owner-file recall did not surface the bounded owner file below named target roots."
+  );
+};
+
 const runDecorativeSourceRejection = (_now: string): GoldenBehaviorProof => {
   const decorativeClaim = sourceClaim({
     id: "source-claim-decorative",
@@ -659,6 +723,7 @@ const proofFactories = {
   "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,
   "golden-case-evidence-001-a": runEvidenceCommandProvenance,
   "golden-case-target-fixture-battle-001-a": runTargetFixtureBattleHarness,
+  "golden-case-target-owner-file-below-roots-001-a": runTargetOwnerFileBelowRoots,
   "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,
   "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection
 } as const;

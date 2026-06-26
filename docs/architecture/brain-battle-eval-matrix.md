@@ -11,6 +11,7 @@ needs, and rejected eval theater.
 | Check | Status | Guard | Evidence | Does not prove |
 |---|---|---|---|---|
 | Local TypeScript target fixture exposes realistic source seeds and trust exclusions for target init/connect/plan behavior. | implemented now | `pnpm eval:brain-battle:smoke` executes `golden-case-target-fixture-battle-001-a`; `pnpm db:smoke:target-repo-harness` readbacks fixture source seeds and trust exclusions. | `tests/fixtures/target-repos/typescript-basic/AGENTS.md`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/cli/src/targetRepoHarnessSmoke.ts`; `docs/reviews/controlled-dogfood/2026-06-26-target-fixture-battle-harness/REPORT.md`. | Does not prove a real external operator target trial or exact owner-file recall below named roots. |
+| Target owner-file recall can surface bounded files below named target roots when the read model provides explicit owner-file signals. | implemented now | `pnpm eval:brain-battle:smoke` executes `golden-case-target-owner-file-below-roots-001-a`; harness compiler tests verify `compileHarnessPlan` includes `tests/readiness.test.ts`. | `packages/harness/src/activation/ownerFileRecall.ts`; `packages/harness/src/compiler/index.test.ts`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `docs/reviews/controlled-dogfood/2026-06-26-target-owner-file-recall-below-roots/REPORT.md`. | Does not prove filesystem crawling, broad arbitrary repo inference, or external target operator readiness. |
 | Target activation uses target read-model source seeds and trust exclusions instead of stale KRN static owner-file recall for target projects. | implemented now | `pnpm eval:brain-battle:smoke` executes `goldenKrnBehaviorGate` target trust exclusion case. | `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/harness/src/goldenKrnBehaviorGate.test.ts`; `docs/reviews/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md`. | Does not prove exact owner-file recall below target source roots. |
 | Trust exclusions cover `.env*`, `.git/`, `node_modules/`, `.muke/`, `.supersearch/runtime/`, `dist/`, and `build/`. | implemented now | Same deterministic GoldenGate case checks the target trust exclusion candidate metadata. | `packages/harness/src/activation/ownerFileRecall.ts`; `packages/harness/src/goldenKrnBehaviorGate.ts`. | Does not prove every target repo generated/runtime folder is known. |
 | Codex execution brief includes objective, constraints, non-goals, context inclusions/exclusions, evidence contract, review burden, rollback, and proof boundaries. | implemented now | `pnpm eval:brain-battle:smoke` runs Codex adapter golden behavior for the brief contract. | `tests/fixtures/golden-tasks/codex-brief-behavior.json`; `packages/codex-adapter/src/codexBriefGoldenBehavior.test.ts`; `docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md`. | Does not prove Codex follows the brief. |
@@ -32,11 +33,11 @@ pnpm eval:brain-battle:smoke
 ```
 
 This executes the existing KRN GoldenGate behavior test plus the V02-02 target
-trust exclusion case, the V03-01 target fixture battle case, the V02-03
-decorative source rejection case, the V02-03 CLI run-readback proof/non-proof
-guard, the V02-04 CLI memory feedback / anti-memory candidate guards, and the
-V02-05 Codex brief / ContextROI guards. It is deterministic and does not call
-an LLM judge.
+trust exclusion case, the V03-01 target fixture battle case, the V03-02 target
+owner-file-below-roots case, the V02-03 decorative source rejection case, the
+V02-03 CLI run-readback proof/non-proof guard, the V02-04 CLI memory feedback /
+anti-memory candidate guards, and the V02-05 Codex brief / ContextROI guards.
+It is deterministic and does not call an LLM judge.
 
 ## Promptfoo Boundary
 

@@ -619,7 +619,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Project ID: project-target-1");
     expect(result.stdout).toContain("ProjectKernel: project-kernel-1");
     expect(result.stdout).toContain("Repo installations: repo-installation-1");
-    expect(result.stdout).toContain("Target read model: sourceSeeds=2, trustExclusions=7");
+    expect(result.stdout).toContain("Target read model: sourceSeeds=2, ownerFiles=0, trustExclusions=7");
+    expect(result.stdout).toContain("Target owner files: unavailable; using root-level source seeds only");
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 

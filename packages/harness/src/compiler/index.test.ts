@@ -836,6 +836,86 @@ describe("compileHarnessPlan", () => {
     );
   });
 
+  it("uses target owner-file candidates below named roots when the read model provides them", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Repair target fixture readiness test owner file",
+          objective: "Repair TypeScript fixture readiness test owner file without a crawler.",
+          constraints: ["do not build a source crawler"],
+          acceptance: ["target owner-file below tests root is visible"]
+        },
+        targetReadModel: {
+          projectKernelId: "kernel-target",
+          repoInstallationIds: ["repo-installation-target"],
+          localPathHints: ["tests/fixtures/target-repos/typescript-basic"],
+          sourceSeeds: [
+            {
+              path: "src",
+              kind: "source_root",
+              reason: "implementation owner-file root"
+            },
+            {
+              path: "tests",
+              kind: "test_root",
+              reason: "behavior proof and test owner-file root"
+            }
+          ],
+          ownerFiles: [
+            {
+              path: "src/index.ts",
+              root: "src",
+              kind: "implementation_entry",
+              reason: "implementation readiness owner file"
+            },
+            {
+              path: "tests/readiness.test.ts",
+              root: "tests",
+              kind: "behavior_test",
+              reason: "test readiness owner file"
+            }
+          ],
+          trustExclusions: []
+        }
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository([]),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-target-owner-file`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          subjectType: "search_document",
+          reason: "Target owner file: tests/readiness.test.ts"
+        })
+      ])
+    );
+    expect(retrievalRepository.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          metadata: expect.objectContaining({
+            source: "target_project_read_model",
+            targetReadModelKind: "owner_file",
+            targetPath: "tests/readiness.test.ts",
+            targetRoot: "tests"
+          })
+        })
+      ])
+    );
+  });
+
   it("creates evidence expectations for reviewable engineering work", async () => {
     const result = await compileHarnessPlan(compileInput, {
       harnessRunRepository: new FakeHarnessRunRepository(),

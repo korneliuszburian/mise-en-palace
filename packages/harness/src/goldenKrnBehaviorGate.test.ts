@@ -206,6 +206,32 @@ const task: GoldenTask = {
       metadata: {}
     },
     {
+      id: "golden-case-target-owner-file-below-roots-001-a",
+      title: "target owner-file recall surfaces files below named roots",
+      input: {
+        task: "Repair TypeScript fixture readiness test owner file."
+      },
+      expectedBehavior: {
+        outcome: "include",
+        subject: "target_owner_file:tests/readiness.test.ts",
+        rationale: "When the target read model provides bounded owner files, KRN should surface the exact owner file below the named root instead of stopping at `tests/`.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-target-owner-file-below-roots",
+        domain: "context",
+        severity: "blocking",
+        title: "target plan stops at root when owner file is known",
+        mustNot: "Target planning must not stop at root-level source seeds when a bounded owner-file signal exists.",
+        detection: "Target candidates omit targetReadModelKind=owner_file for tests/readiness.test.ts."
+      }],
+      sourceRefs: [
+        "tests/fixtures/target-repos/typescript-basic/tests/readiness.test.ts",
+        "docs/architecture/brain-battle-eval-matrix.md"
+      ],
+      metadata: {}
+    },
+    {
       id: "golden-case-target-trust-exclusions-001-a",
       title: "target read model exposes source seeds and trust exclusions",
       input: {
@@ -272,8 +298,8 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 10,
-      passedCaseCount: 10,
+      caseCount: 11,
+      passedCaseCount: 11,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
@@ -288,6 +314,7 @@ describe("KRN behavior golden gate", () => {
       "golden-case-reflection-001-a",
       "golden-case-source-decorative-rejection-001-a",
       "golden-case-target-fixture-battle-001-a",
+      "golden-case-target-owner-file-below-roots-001-a",
       "golden-case-target-trust-exclusions-001-a"
     ]);
     expect(report.caseResults.map((result) => result.summary)).toEqual([
@@ -300,6 +327,7 @@ describe("KRN behavior golden gate", () => {
       "Real reflection behavior blocked final MemoryRecord target generation.",
       "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing.",
       "Real target fixture behavior surfaced docs/src/tests source seeds and trust exclusions without selecting static KRN owner files.",
+      "Real target owner-file recall surfaced a bounded owner file below tests/ without selecting static KRN owner files.",
       "Real target owner-file recall behavior surfaced target source seeds and trust exclusions without selecting static KRN owner files."
     ]);
   });

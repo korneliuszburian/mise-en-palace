@@ -37,6 +37,7 @@ export interface TargetRepoHarnessSmokeReport {
   repoInstallationId: string;
   projectKernelId: string;
   sourceSeedPaths: readonly string[];
+  ownerFilePaths: readonly string[];
   trustExclusionPatterns: readonly string[];
   executionRunId: string;
   readBackExecutionRunId: string;
@@ -112,6 +113,33 @@ const targetFixtureTrustExclusions = [
   }
 ] as const;
 
+const targetFixtureOwnerFiles = [
+  {
+    path: "AGENTS.md",
+    root: ".",
+    kind: "agent_guidance",
+    reason: "target-local agent instructions owner file"
+  },
+  {
+    path: "docs/target-runbook.md",
+    root: "docs",
+    kind: "target_runbook",
+    reason: "target planning runbook owner file"
+  },
+  {
+    path: "src/index.ts",
+    root: "src",
+    kind: "implementation_entry",
+    reason: "implementation readiness owner file"
+  },
+  {
+    path: "tests/readiness.test.ts",
+    root: "tests",
+    kind: "behavior_test",
+    reason: "test readiness owner file"
+  }
+] as const;
+
 const normalizeSlugPart = (value: string): string => {
   const normalized = value
     .trim()
@@ -183,6 +211,7 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Repo installation: ${report.repoInstallationId}`,
   `ProjectKernel: ${report.projectKernelId}`,
   `Target source seeds: ${report.sourceSeedPaths.join(", ")}`,
+  `Target owner files: ${report.ownerFilePaths.join(", ")}`,
   `Target trust exclusions: ${report.trustExclusionPatterns.join(", ")}`,
   `Execution run: ${report.executionRunId}`,
   `Readback: ${
@@ -259,6 +288,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
         repoFingerprint,
         repoPath,
         sourceSeeds: targetFixtureSourceSeeds,
+        ownerFiles: targetFixtureOwnerFiles,
         trustExclusions: targetFixtureTrustExclusions
       }
     });
@@ -273,6 +303,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
         smoke: true,
         fixtureMarker: marker,
         sourceSeeds: targetFixtureSourceSeeds,
+        ownerFiles: targetFixtureOwnerFiles,
         trustExclusions: targetFixtureTrustExclusions
       }
     });
@@ -285,6 +316,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
         smoke: true,
         fixtureMarker: marker,
         sourceSeeds: targetFixtureSourceSeeds,
+        ownerFiles: targetFixtureOwnerFiles,
         trustExclusions: targetFixtureTrustExclusions
       }
     });
@@ -362,6 +394,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
           projectKernelId: projectKernel.id,
           repoInstallationId: repoInstallation.id,
           sourceSeeds: targetFixtureSourceSeeds,
+          ownerFiles: targetFixtureOwnerFiles,
           trustExclusions: targetFixtureTrustExclusions
         }
       },
@@ -371,6 +404,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
         projectKernelId: projectKernel.id,
         repoInstallationIds: [repoInstallation.id],
         sourceSeeds: targetFixtureSourceSeeds,
+        ownerFiles: targetFixtureOwnerFiles,
         trustExclusions: targetFixtureTrustExclusions,
         codexAdapterPlanRef: result.codexAdapterPlanRef,
         evidenceContract: result.evidenceContract
@@ -472,6 +506,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
       repoInstallationId: repoInstallation.id,
       projectKernelId: projectKernel.id,
       sourceSeedPaths: targetFixtureSourceSeeds.map((seed) => seed.path),
+      ownerFilePaths: targetFixtureOwnerFiles.map((ownerFile) => ownerFile.path),
       trustExclusionPatterns: targetFixtureTrustExclusions.map((exclusion) => exclusion.pathPattern),
       executionRunId: executionRun.id,
       readBackExecutionRunId: aggregate.executionRun.id,

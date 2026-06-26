@@ -181,6 +181,67 @@ const sourceSeedsFromMetadata = (
   });
 };
 
+const targetOwnerFileFromUnknown = (
+  value: unknown
+): NonNullable<TargetActivationReadModel["ownerFiles"]>[number] | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const ownerPath = value.path;
+  const root = value.root;
+  const kind = value.kind;
+  const reason = value.reason;
+
+  if (
+    typeof ownerPath !== "string" ||
+    ownerPath.trim().length === 0 ||
+    typeof root !== "string" ||
+    root.trim().length === 0 ||
+    typeof kind !== "string" ||
+    kind.trim().length === 0 ||
+    typeof reason !== "string" ||
+    reason.trim().length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    path: ownerPath,
+    root,
+    kind,
+    reason
+  };
+};
+
+const ownerFilesFromMetadata = (
+  metadata: Record<string, unknown> | undefined
+): NonNullable<TargetActivationReadModel["ownerFiles"]> => {
+  const ownerFiles = metadata?.ownerFiles;
+
+  if (!Array.isArray(ownerFiles)) {
+    return [];
+  }
+
+  return ownerFiles.flatMap((ownerFile) => {
+    const parsed = targetOwnerFileFromUnknown(ownerFile);
+
+    return parsed === undefined ? [] : [parsed];
+  });
+};
+
+const uniqueOwnerFiles = (
+  ownerFiles: NonNullable<TargetActivationReadModel["ownerFiles"]>
+): NonNullable<TargetActivationReadModel["ownerFiles"]> => {
+  const ownerFilesByPath = new Map<string, NonNullable<TargetActivationReadModel["ownerFiles"]>[number]>();
+
+  for (const ownerFile of ownerFiles) {
+    ownerFilesByPath.set(ownerFile.path, ownerFile);
+  }
+
+  return [...ownerFilesByPath.values()].sort((left, right) => left.path.localeCompare(right.path));
+};
+
 const uniqueSourceSeeds = (
   sourceSeeds: readonly SourceSeedProposal[]
 ): SourceSeedProposal[] => {
@@ -222,6 +283,12 @@ const buildTargetActivationReadModel = async (
     ...metadataSeeds,
     ...liveSeedGroups.flat()
   ]);
+  const ownerFiles = uniqueOwnerFiles([
+    ...ownerFilesFromMetadata(metadata.projectKernel?.metadata),
+    ...repoInstallations.flatMap((repoInstallation) =>
+      ownerFilesFromMetadata(repoInstallation.metadata)
+    )
+  ]);
 
   return {
     ...(metadata.projectKernel === undefined ? {} : { projectKernelId: metadata.projectKernel.id }),
@@ -230,6 +297,7 @@ const buildTargetActivationReadModel = async (
       repoInstallation.localPathHint === undefined ? [] : [repoInstallation.localPathHint]
     ),
     sourceSeeds,
+    ...(ownerFiles.length === 0 ? {} : { ownerFiles }),
     trustExclusions: targetTrustExclusions
   };
 };
@@ -359,7 +427,10 @@ const formatPlanSummary = (
     ...(targetReadModel === undefined
       ? []
       : [
-          `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, trustExclusions=${targetReadModel.trustExclusions.length}`
+          `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, ownerFiles=${targetReadModel.ownerFiles?.length ?? 0}, trustExclusions=${targetReadModel.trustExclusions.length}`,
+          ...(targetReadModel.ownerFiles === undefined || targetReadModel.ownerFiles.length === 0
+            ? ["Target owner files: unavailable; using root-level source seeds only"]
+            : [`Target owner files: ${targetReadModel.ownerFiles.map((ownerFile) => ownerFile.path).join(", ")}`])
         ]),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
@@ -505,8 +576,10 @@ export const runPlanCommand = async (
                 : {
                     targetReadModel: {
                       sourceSeedCount: targetReadModel.sourceSeeds.length,
+                      ownerFileCount: targetReadModel.ownerFiles?.length ?? 0,
                       trustExclusionCount: targetReadModel.trustExclusions.length,
-                      sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path)
+                      sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path),
+                      ownerFilePaths: (targetReadModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path)
                     }
                   }),
               evidenceContract: result.evidenceContract,

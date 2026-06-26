@@ -28,11 +28,19 @@ export interface TargetActivationTrustExclusion {
   reason: string;
 }
 
+export interface TargetActivationOwnerFile {
+  path: string;
+  root: string;
+  kind: string;
+  reason: string;
+}
+
 export interface TargetActivationReadModel {
   projectKernelId?: string;
   repoInstallationIds: readonly string[];
   localPathHints: readonly string[];
   sourceSeeds: readonly TargetActivationSourceSeed[];
+  ownerFiles?: readonly TargetActivationOwnerFile[];
   trustExclusions: readonly TargetActivationTrustExclusion[];
 }
 
@@ -197,6 +205,55 @@ const toTargetSeedCandidate = (
   };
 };
 
+const targetOwnerFileMatchCount = (
+  taskTerms: ReadonlySet<string>,
+  ownerFile: TargetActivationOwnerFile
+): number =>
+  tokenizeActivationText([
+    ownerFile.path,
+    ownerFile.root,
+    ownerFile.kind,
+    ownerFile.reason
+  ].join(" ")).filter((term) => taskTerms.has(term)).length;
+
+const toTargetOwnerFileCandidate = (
+  ownerFile: TargetActivationOwnerFile,
+  matchCount: number,
+  readModel: TargetActivationReadModel
+): ActivationCandidate => {
+  const candidateSlug = candidatePathId(ownerFile.path);
+  const subjectId = deterministicUuid(`target-owner-file:${ownerFile.path}`);
+
+  return {
+    id: `target-owner-file:${candidateSlug}`,
+    kind: "search",
+    subjectType: "search_document",
+    subjectId,
+    text: [
+      ownerFile.path,
+      ownerFile.root,
+      ownerFile.kind,
+      ownerFile.reason,
+      "target owner file below named source root project scoped read model"
+    ].join(" "),
+    trustTier: "project-decision",
+    reason: `Target owner file: ${ownerFile.path}`,
+    expectedUse: `Inspect target owner file ${ownerFile.path} for ${ownerFile.reason}.`,
+    tokenEstimate: 56,
+    lexicalScore: matchCount * 45,
+    metadata: {
+      source: "target_project_read_model",
+      targetReadModelKind: "owner_file",
+      targetPath: ownerFile.path,
+      targetRoot: ownerFile.root,
+      ownerFileKind: ownerFile.kind,
+      ownerFileReason: ownerFile.reason,
+      repoInstallationIds: readModel.repoInstallationIds,
+      ...(readModel.projectKernelId === undefined ? {} : { projectKernelId: readModel.projectKernelId })
+    }
+  };
+};
+
 const toTargetTrustExclusionCandidate = (
   readModel: TargetActivationReadModel
 ): ActivationCandidate | undefined => {
@@ -237,6 +294,11 @@ const buildTargetProjectRecallCandidates = (
   readModel: TargetActivationReadModel
 ): ActivationCandidate[] => {
   const taskTerms = new Set(tokenizeActivationText([task.title, task.objective].join(" ")));
+  const ownerFileCandidates = (readModel.ownerFiles ?? []).flatMap((ownerFile) => {
+    const matchCount = targetOwnerFileMatchCount(taskTerms, ownerFile);
+
+    return matchCount >= 1 ? [toTargetOwnerFileCandidate(ownerFile, matchCount, readModel)] : [];
+  });
   const sourceSeedCandidates = readModel.sourceSeeds.flatMap((seed) => {
     const matchCount = targetSeedMatchCount(taskTerms, seed);
 
@@ -245,6 +307,7 @@ const buildTargetProjectRecallCandidates = (
   const trustExclusionCandidate = toTargetTrustExclusionCandidate(readModel);
 
   return [
+    ...ownerFileCandidates,
     ...sourceSeedCandidates,
     ...(trustExclusionCandidate === undefined ? [] : [trustExclusionCandidate])
   ];

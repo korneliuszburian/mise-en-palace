@@ -33,8 +33,9 @@ V02-07 — Target Battle Trial Packet Refresh is complete.
 V02-08 — Controlled Alpha Re-Gate After Brain Battle Guards is complete.
 V03-00 — Local DB Bootstrap And Doctor Recovery is complete.
 V03-01 — Target Fixture Battle Harness is complete.
-V03-02 — Target Owner-File Recall Below Named Roots is active.
-Next active slice: V03-02 — Target Owner-File Recall Below Named Roots.
+V03-02 — Target Owner-File Recall Below Named Roots is complete.
+V03-03 — Target Evidence Capture And Readback Loop is active.
+Next active slice: V03-03 — Target Evidence Capture And Readback Loop.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
