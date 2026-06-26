@@ -180,6 +180,32 @@ const task: GoldenTask = {
       metadata: {}
     },
     {
+      id: "golden-case-target-fixture-battle-001-a",
+      title: "target fixture exposes source seeds and trust exclusions",
+      input: {
+        task: "Repair TypeScript fixture tests and source readiness while keeping docs and target trust exclusions explicit."
+      },
+      expectedBehavior: {
+        outcome: "flag",
+        subject: "target_fixture:typescript-basic",
+        rationale: "Target fixture planning must surface target docs/src/tests source seeds and generated or secret-shaped trust exclusions.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-target-fixture-battle",
+        domain: "context",
+        severity: "blocking",
+        title: "target fixture loses source seeds or trust exclusions",
+        mustNot: "Target fixture planning must not collapse back to static KRN owner files or omit fixture trust exclusions.",
+        detection: "Target fixture candidates omit docs/src/tests, trust exclusions, or include owner_file_recall metadata."
+      }],
+      sourceRefs: [
+        "tests/fixtures/target-repos/typescript-basic/AGENTS.md",
+        "docs/architecture/brain-battle-eval-matrix.md"
+      ],
+      metadata: {}
+    },
+    {
       id: "golden-case-target-trust-exclusions-001-a",
       title: "target read model exposes source seeds and trust exclusions",
       input: {
@@ -246,8 +272,8 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 9,
-      passedCaseCount: 9,
+      caseCount: 10,
+      passedCaseCount: 10,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
@@ -261,6 +287,7 @@ describe("KRN behavior golden gate", () => {
       "golden-case-observation-prefix-001-a",
       "golden-case-reflection-001-a",
       "golden-case-source-decorative-rejection-001-a",
+      "golden-case-target-fixture-battle-001-a",
       "golden-case-target-trust-exclusions-001-a"
     ]);
     expect(report.caseResults.map((result) => result.summary)).toEqual([
@@ -272,6 +299,7 @@ describe("KRN behavior golden gate", () => {
       "Real context assembly rejected selected observation prefix item without source ranges.",
       "Real reflection behavior blocked final MemoryRecord target generation.",
       "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing.",
+      "Real target fixture behavior surfaced docs/src/tests source seeds and trust exclusions without selecting static KRN owner files.",
       "Real target owner-file recall behavior surfaced target source seeds and trust exclusions without selecting static KRN owner files."
     ]);
   });

@@ -514,6 +514,111 @@ const runTargetTrustExclusions = (now: string): GoldenBehaviorProof => {
   );
 };
 
+const runTargetFixtureBattleHarness = (now: string): GoldenBehaviorProof => {
+  const readModel: TargetActivationReadModel = {
+    projectKernelId: "kernel-typescript-basic-fixture",
+    repoInstallationIds: ["repo-installation-typescript-basic-fixture"],
+    localPathHints: ["tests/fixtures/target-repos/typescript-basic"],
+    sourceSeeds: [
+      {
+        path: "AGENTS.md",
+        kind: "agent_guidance",
+        reason: "target-local agent instructions and trust boundary"
+      },
+      {
+        path: "README.md",
+        kind: "repo_overview",
+        reason: "target fixture purpose and setup overview"
+      },
+      {
+        path: "docs",
+        kind: "target_runbook",
+        reason: "target operator runbook and planning guidance"
+      },
+      {
+        path: "src",
+        kind: "source_root",
+        reason: "implementation owner-file root"
+      },
+      {
+        path: "tests",
+        kind: "test_root",
+        reason: "behavior proof and test owner-file root"
+      }
+    ],
+    trustExclusions: [
+      {
+        pathPattern: ".env*",
+        reason: "secret-shaped environment files must not enter planning context"
+      },
+      {
+        pathPattern: ".git/",
+        reason: "repository internals are not planning source truth"
+      },
+      {
+        pathPattern: "node_modules/",
+        reason: "third-party install output is not target source truth"
+      },
+      {
+        pathPattern: ".muke/",
+        reason: "generated target state is not source truth by default"
+      },
+      {
+        pathPattern: ".supersearch/runtime/",
+        reason: "runtime search output is generated state"
+      },
+      {
+        pathPattern: "dist/",
+        reason: "build output is generated state"
+      },
+      {
+        pathPattern: "build/",
+        reason: "build output is generated state"
+      }
+    ]
+  };
+  const candidates = buildOwnerFileRecallCandidates(
+    taskContract(
+      now,
+      "Repair TypeScript fixture tests and source readiness while keeping docs and target trust exclusions explicit."
+    ),
+    { targetReadModel: readModel }
+  );
+  const selectedSeedPaths = candidates
+    .filter((candidate) => candidate.metadata.targetReadModelKind === "source_seed")
+    .map((candidate) => candidate.metadata.targetPath);
+  const trustExclusionCandidate = candidates.find((candidate) =>
+    candidate.metadata.targetReadModelKind === "trust_exclusions"
+  );
+  const patterns = trustExclusionCandidate?.metadata.trustExclusions;
+  const staticKrnOwnerFileSelected = candidates.some((candidate) =>
+    candidate.metadata.source === "owner_file_recall"
+  );
+  const requiredSeedPaths = ["docs", "src", "tests"];
+  const requiredPatterns = [".env*", ".muke/", ".supersearch/runtime/", "dist/", "build/"];
+  const passed =
+    requiredSeedPaths.every((path) => selectedSeedPaths.includes(path)) &&
+    trustExclusionCandidate !== undefined &&
+    Array.isArray(patterns) &&
+    requiredPatterns.every((pathPattern) =>
+      patterns.some((pattern) =>
+        typeof pattern === "object" &&
+        pattern !== null &&
+        "pathPattern" in pattern &&
+        pattern.pathPattern === pathPattern
+      )
+    ) &&
+    !staticKrnOwnerFileSelected;
+
+  return proof(
+    "golden-case-target-fixture-battle-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real target fixture behavior surfaced docs/src/tests source seeds and trust exclusions without selecting static KRN owner files."
+      : "Real target fixture behavior did not preserve fixture source seeds, trust exclusions, or target-scoped owner-file recall."
+  );
+};
+
 const runDecorativeSourceRejection = (_now: string): GoldenBehaviorProof => {
   const decorativeClaim = sourceClaim({
     id: "source-claim-decorative",
@@ -553,6 +658,7 @@ const proofFactories = {
   "golden-case-context-roi-001-a": runContextRoiBoundary,
   "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,
   "golden-case-evidence-001-a": runEvidenceCommandProvenance,
+  "golden-case-target-fixture-battle-001-a": runTargetFixtureBattleHarness,
   "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,
   "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection
 } as const;

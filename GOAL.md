@@ -32,8 +32,9 @@ V02-06 — Operator-Facing Readback / Doctor Friction Repair is complete.
 V02-07 — Target Battle Trial Packet Refresh is complete.
 V02-08 — Controlled Alpha Re-Gate After Brain Battle Guards is complete.
 V03-00 — Local DB Bootstrap And Doctor Recovery is complete.
-V03-01 — Target Fixture Battle Harness is active.
-Next active slice: V03-01 — Target Fixture Battle Harness.
+V03-01 — Target Fixture Battle Harness is complete.
+V03-02 — Target Owner-File Recall Below Named Roots is active.
+Next active slice: V03-02 — Target Owner-File Recall Below Named Roots.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 

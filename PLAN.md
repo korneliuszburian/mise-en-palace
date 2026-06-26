@@ -171,20 +171,39 @@ Goal: create a deterministic, local target-repo fixture that protects target
 init/connect/plan behavior without pretending it is a real external operator
 trial.
 
-Status: active.
+Status: complete on 2026-06-26.
 
 Expected outputs:
 
 - fixture/test/guard updates;
+  Status: complete.
 - optional brain-battle matrix update;
+  Status: complete.
 - report:
   `docs/reviews/controlled-dogfood/2026-06-26-target-fixture-battle-harness/REPORT.md`.
+  Status: complete.
 
 Acceptance:
 
 - Fixture guard is deterministic and CI-runnable.
+  Status: complete.
 - It does not claim external target proof or V02-01 completion.
+  Status: complete.
 - It does not introduce a crawler or broad eval platform.
+  Status: complete.
+
+Outcome: `tests/fixtures/target-repos/typescript-basic` now includes
+target-local agent guidance, README, runbook docs, source, tests,
+secret-shaped example config, and generated/runtime-shaped fixture paths.
+`db:smoke:target-repo-harness` now persists and readbacks target source seeds
+and trust exclusions. `eval:brain-battle:smoke` now includes
+`golden-case-target-fixture-battle-001-a` to guard fixture planning behavior.
+
+Evidence: `tests/fixtures/target-repos/typescript-basic/AGENTS.md`;
+`packages/cli/src/targetRepoHarnessSmoke.ts`;
+`packages/harness/src/goldenKrnBehaviorGate.ts`;
+`docs/architecture/brain-battle-eval-matrix.md`;
+`docs/reviews/controlled-dogfood/2026-06-26-target-fixture-battle-harness/REPORT.md`.
 
 ---
 
@@ -193,7 +212,7 @@ Acceptance:
 Goal: address the known remaining limit that target read-model can surface
 named roots while exact file recall below roots remains weak/unknown.
 
-Status: pending.
+Status: active.
 
 Expected outputs:
 

@@ -163,7 +163,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Scripts: build, test");
     expect(result.stdout).toContain("Command detection:");
     expect(result.stdout).toContain("- scripts: build, test");
-    expect(result.stdout).toContain("Existing AGENTS.md: absent");
+    expect(result.stdout).toContain("Existing AGENTS.md: present");
     expect(result.stdout).toContain("Existing .codex: absent");
     expect(result.stdout).toContain("Existing .agents/skills: absent");
     expect(result.stdout).toContain("Forbidden surfaces: absent");
@@ -174,7 +174,15 @@ describe("runCli", () => {
     expect(result.stdout).toContain(
       "- tsconfig.json | kind=typescript_config | reason=detect TypeScript boundary settings"
     );
+    expect(result.stdout).toContain(
+      "- README.md | kind=project_readme | reason=capture project-facing current truth"
+    );
+    expect(result.stdout).toContain(
+      "- AGENTS.md | kind=agent_instructions | reason=capture target repo Codex instructions when present"
+    );
+    expect(result.stdout).toContain("- docs | kind=docs_root | reason=seed target documentation and runbook context");
     expect(result.stdout).toContain("- src | kind=source_root | reason=seed source owner-file recall");
+    expect(result.stdout).toContain("- tests | kind=test_root | reason=seed target repo verification surface");
     expect(result.stdout).toContain("ProjectKernel proposal:");
     expect(result.stdout).toContain("Codex overlay proposal:");
     expect(result.stdout).toContain("No files written");

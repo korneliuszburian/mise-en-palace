@@ -36,6 +36,8 @@ export interface TargetRepoHarnessSmokeReport {
   projectId: string;
   repoInstallationId: string;
   projectKernelId: string;
+  sourceSeedPaths: readonly string[];
+  trustExclusionPatterns: readonly string[];
   executionRunId: string;
   readBackExecutionRunId: string;
   codexBriefRendered: boolean;
@@ -50,6 +52,65 @@ export interface TargetRepoHarnessSmokeReport {
 interface CountRow {
   count: number;
 }
+
+const targetFixtureSourceSeeds = [
+  {
+    path: "AGENTS.md",
+    kind: "agent_guidance",
+    reason: "target-local agent instructions and trust boundary"
+  },
+  {
+    path: "README.md",
+    kind: "repo_overview",
+    reason: "target fixture purpose and setup overview"
+  },
+  {
+    path: "docs",
+    kind: "target_runbook",
+    reason: "target operator runbook and planning guidance"
+  },
+  {
+    path: "src",
+    kind: "source_root",
+    reason: "implementation owner-file root"
+  },
+  {
+    path: "tests",
+    kind: "test_root",
+    reason: "behavior proof and test owner-file root"
+  }
+] as const;
+
+const targetFixtureTrustExclusions = [
+  {
+    pathPattern: ".env*",
+    reason: "secret-shaped environment files must not enter planning context"
+  },
+  {
+    pathPattern: ".git/",
+    reason: "repository internals are not planning source truth"
+  },
+  {
+    pathPattern: "node_modules/",
+    reason: "third-party install output is not target source truth"
+  },
+  {
+    pathPattern: ".muke/",
+    reason: "generated target state is not source truth by default"
+  },
+  {
+    pathPattern: ".supersearch/runtime/",
+    reason: "runtime search output is generated state"
+  },
+  {
+    pathPattern: "dist/",
+    reason: "build output is generated state"
+  },
+  {
+    pathPattern: "build/",
+    reason: "build output is generated state"
+  }
+] as const;
 
 const normalizeSlugPart = (value: string): string => {
   const normalized = value
@@ -121,6 +182,8 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Project: ${report.projectId}`,
   `Repo installation: ${report.repoInstallationId}`,
   `ProjectKernel: ${report.projectKernelId}`,
+  `Target source seeds: ${report.sourceSeedPaths.join(", ")}`,
+  `Target trust exclusions: ${report.trustExclusionPatterns.join(", ")}`,
   `Execution run: ${report.executionRunId}`,
   `Readback: ${
     report.readBackExecutionRunId === report.executionRunId ? "matched" : "mismatch"
@@ -194,7 +257,9 @@ export const runTargetRepoHarnessSmokeCheck = async (
         smoke: true,
         fixtureMarker: marker,
         repoFingerprint,
-        repoPath
+        repoPath,
+        sourceSeeds: targetFixtureSourceSeeds,
+        trustExclusions: targetFixtureTrustExclusions
       }
     });
     const repoInstallation = await projectRepository.createRepoInstallation({
@@ -206,7 +271,9 @@ export const runTargetRepoHarnessSmokeCheck = async (
       localPathHint: repoPath,
       metadata: {
         smoke: true,
-        fixtureMarker: marker
+        fixtureMarker: marker,
+        sourceSeeds: targetFixtureSourceSeeds,
+        trustExclusions: targetFixtureTrustExclusions
       }
     });
     const projectKernel = await projectRepository.createProjectKernel({
@@ -216,7 +283,9 @@ export const runTargetRepoHarnessSmokeCheck = async (
       activeContextRule: "select project-scoped source, memory, retrieval, and anti-memory only",
       metadata: {
         smoke: true,
-        fixtureMarker: marker
+        fixtureMarker: marker,
+        sourceSeeds: targetFixtureSourceSeeds,
+        trustExclusions: targetFixtureTrustExclusions
       }
     });
     let idCounter = 0;
@@ -291,7 +360,9 @@ export const runTargetRepoHarnessSmokeCheck = async (
           smokeId: marker,
           projectId: project.id,
           projectKernelId: projectKernel.id,
-          repoInstallationId: repoInstallation.id
+          repoInstallationId: repoInstallation.id,
+          sourceSeeds: targetFixtureSourceSeeds,
+          trustExclusions: targetFixtureTrustExclusions
         }
       },
       metadata: {
@@ -299,6 +370,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
         command: "db:smoke:target-repo-harness",
         projectKernelId: projectKernel.id,
         repoInstallationIds: [repoInstallation.id],
+        sourceSeeds: targetFixtureSourceSeeds,
+        trustExclusions: targetFixtureTrustExclusions,
         codexAdapterPlanRef: result.codexAdapterPlanRef,
         evidenceContract: result.evidenceContract
       }
@@ -398,6 +471,8 @@ export const runTargetRepoHarnessSmokeCheck = async (
       projectId: project.id,
       repoInstallationId: repoInstallation.id,
       projectKernelId: projectKernel.id,
+      sourceSeedPaths: targetFixtureSourceSeeds.map((seed) => seed.path),
+      trustExclusionPatterns: targetFixtureTrustExclusions.map((exclusion) => exclusion.pathPattern),
       executionRunId: executionRun.id,
       readBackExecutionRunId: aggregate.executionRun.id,
       codexBriefRendered,
