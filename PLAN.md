@@ -1,7 +1,7 @@
 # KRN Product Push V03 Plan
 
-Status: active root `PLAN.md` and single source of truth for the
-operator-authorized V03 product-forward continuation while V02-01 is blocked.
+Status: complete root `PLAN.md` for the operator-authorized V03 product-forward
+continuation while V02-01 is blocked.
 
 Date: 2026-06-26.
 
@@ -33,10 +33,10 @@ support boundary:
 operator transcript:
 ```
 
-Latest product friction: local `pnpm db:ready` failed with
-`CONNECT_TIMEOUT localhost:54329` during V02-08, while remote CI DB readiness
-and smoke passed. Treat this as product evidence: local operator bootstrap is
-still too fragile or insufficiently guided.
+Latest product state: V03 repaired the V02 local DB bootstrap caveat and added
+target fixture, owner-file, evidence readback, memory usefulness, and first-run
+operator guidance proofs. V02-01 remains blocked/deferred because it still
+requires real second-operator inputs.
 
 ---
 
@@ -363,19 +363,33 @@ Evidence: `packages/cli/src/doctorReadiness.ts`;
 
 Goal: convert V03 evidence into the next honest readiness decision.
 
-Status: active.
+Status: complete on 2026-06-26.
 
 Expected outputs:
 
 - compact `PLAN.md` and `GOAL.md` updates;
+  Status: complete.
 - report:
   `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-v03/REPORT.md`.
+  Status: complete.
 
 Acceptance:
 
 - Readiness classification is honest.
+  Status: complete.
 - The next action is specific.
+  Status: complete.
 - No product-ready claim unless evidence actually satisfies product-ready gates.
+  Status: complete.
+
+Outcome: V03 strengthens `controlled-internal-alpha for technical operators`
+without widening the readiness class. The next real action is V02-01 with a
+second operator, explicit target repo, DB mode, support boundary, and transcript.
+If those inputs are unavailable, the product-forward autopilot queue stops here
+instead of inventing another local substitute.
+
+Evidence:
+`docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-v03/REPORT.md`.
 
 ---
 

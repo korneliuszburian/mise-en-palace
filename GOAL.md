@@ -37,8 +37,8 @@ V03-02 — Target Owner-File Recall Below Named Roots is complete.
 V03-03 — Target Evidence Capture And Readback Loop is complete.
 V03-04 — Target Memory Usefulness Loop is complete.
 V03-05 — First-Run Operator Friction Repair is complete.
-V03-06 — Controlled Alpha Re-Gate After V03 is active.
-Next active slice: V03-06 — Controlled Alpha Re-Gate After V03.
+V03-06 — Controlled Alpha Re-Gate After V03 is complete.
+Next active slice: none.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
