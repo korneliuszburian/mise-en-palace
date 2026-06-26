@@ -25,6 +25,8 @@ evidence only unless root `PLAN.md` names them for a current task.
 
 ```txt
 V02-02 — Brain Battle Eval Matrix And Guarded Eval Harness is complete.
+V02-03 — Run Readback And Source Rejection Guard Expansion is complete.
+Next active slice: V02-04 — Memory Feedback And Anti-Memory Guard Expansion.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
@@ -39,8 +41,8 @@ support boundary:
 ```
 
 Do not substitute V02-02 or local docs/source work for real V02-01 proof.
-If V02-01 remains blocked, continue only after an explicit operator-authorized
-rescope.
+The operator authorized continuous V02 product-forward slices while V02-01 is
+blocked. Continue from root `PLAN.md` and do not stop after one completed slice.
 
 B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, V01-01, V01-02, V01-03, V01-R01, V01-04, and V02-00 are complete. Current evidence:
 

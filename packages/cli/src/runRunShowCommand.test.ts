@@ -273,6 +273,22 @@ describe("runRunShowCommand", () => {
         ]
       }
     });
+    expect(parsed.proof.proves).toEqual([
+      "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+      "this readback surface exposes no write action"
+    ]);
+    expect(parsed.proof.proves).not.toContain("commands were executed by this readback command");
+    expect(parsed.proof.proves).not.toContain(
+      "memory quality, source truth, review correctness, or product readiness"
+    );
+    expect(parsed.proof.doesNotProve).toEqual([
+      "commands were executed by this readback command",
+      "memory quality, source truth, review correctness, or product readiness",
+      "Memory Core mutation"
+    ]);
+    expect(parsed.evidenceBundles[0]?.commands[0]?.doesNotProve).toBe(
+      "This command result does not prove memory quality, source truth, review correctness, or production readiness."
+    );
     expect(result.stdout).not.toContain("promote");
     expect(result.stdout).not.toContain("mutate");
     expect(closed).toBe(true);

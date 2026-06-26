@@ -180,6 +180,32 @@ const task: GoldenTask = {
         "docs/reviews/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md"
       ],
       metadata: {}
+    },
+    {
+      id: "golden-case-source-decorative-rejection-001-a",
+      title: "decorative source retention is rejected",
+      input: {
+        claim: "This source should be retained because it sounds useful."
+      },
+      expectedBehavior: {
+        outcome: "reject",
+        subject: "source_claim:source-claim-decorative",
+        rationale: "Source claims must carry source-to-decision fields and decision-grade support before they can guide KRN behavior.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-decorative-source",
+        domain: "source",
+        severity: "blocking",
+        title: "decorative source retained as authority",
+        mustNot: "KRN must not retain a decorative/background source claim as decision authority when mechanism, implication, consumer, falsifier, or doesNotProve are missing.",
+        detection: "assessSourceClaimReviewSignals emits no blocking signal for a decorative SourceClaim."
+      }],
+      sourceRefs: [
+        "packages/core/src/source.ts",
+        "docs/architecture/brain-battle-eval-matrix.md"
+      ],
+      metadata: {}
     }
   ],
   metadata: {},
@@ -197,8 +223,8 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 7,
-      passedCaseCount: 7,
+      caseCount: 8,
+      passedCaseCount: 8,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
@@ -210,6 +236,7 @@ describe("KRN behavior golden gate", () => {
       "golden-case-memory-smoke-002",
       "golden-case-observation-prefix-001-a",
       "golden-case-reflection-001-a",
+      "golden-case-source-decorative-rejection-001-a",
       "golden-case-target-trust-exclusions-001-a"
     ]);
     expect(report.caseResults.map((result) => result.summary)).toEqual([
@@ -219,6 +246,7 @@ describe("KRN behavior golden gate", () => {
       "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence.",
       "Real context assembly rejected selected observation prefix item without source ranges.",
       "Real reflection behavior blocked final MemoryRecord target generation.",
+      "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing.",
       "Real target owner-file recall behavior surfaced target source seeds and trust exclusions without selecting static KRN owner files."
     ]);
   });

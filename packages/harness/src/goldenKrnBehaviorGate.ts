@@ -7,6 +7,7 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
+  assessSourceClaimReviewSignals,
   assessReflectionOutputContract,
   normalizeEvidenceCommand
 } from "@krn/core";
@@ -463,6 +464,37 @@ const runTargetTrustExclusions = (now: string): GoldenBehaviorProof => {
   );
 };
 
+const runDecorativeSourceRejection = (_now: string): GoldenBehaviorProof => {
+  const decorativeClaim = sourceClaim({
+    id: "source-claim-decorative",
+    claim: "This source should be retained because it sounds useful.",
+    mechanism: "",
+    krnImplication: "",
+    doesNotProve: "",
+    supportType: "background",
+    consumer: "",
+    falsifier: ""
+  });
+  const signals = assessSourceClaimReviewSignals(decorativeClaim);
+  const passed =
+    signals.some((signal) =>
+      signal.kind === "missing_source_to_decision_fields" &&
+      signal.severity === "blocking"
+    ) &&
+    signals.some((signal) =>
+      signal.kind === "decorative_support_type" &&
+      signal.severity === "blocking"
+    );
+
+  return proof(
+    "golden-case-source-decorative-rejection-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real source review behavior blocked decorative source retention when source-to-decision fields and decision-grade support were missing."
+      : "Real source review behavior did not block decorative source retention."
+  );
+};
+
 const proofFactories = {
   "golden-case-memory-smoke-001": runStaleMemoryAbstention,
   "golden-case-memory-smoke-002": runAntiMemoryBlock,
@@ -470,7 +502,8 @@ const proofFactories = {
   "golden-case-memory-005-a": runRawRecallExactProof,
   "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,
   "golden-case-evidence-001-a": runEvidenceCommandProvenance,
-  "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions
+  "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,
+  "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection
 } as const;
 
 type SupportedCaseId = keyof typeof proofFactories;
