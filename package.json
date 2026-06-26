@@ -19,7 +19,7 @@
     "db:smoke:init-connect": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke init-connect",
     "db:smoke:target-repo-harness": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke target-repo-harness",
     "db:smoke:source-graph": "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke source-graph",
-    "eval:brain-battle:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate && pnpm --filter @krn/cli test -- runRunShowCommand",
+    "eval:brain-battle:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate && pnpm --filter @krn/cli test -- runRunShowCommand runCli",
     "eval:promptfoo:smoke": "mkdir -p .local-lab/promptfoo && promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml --output .local-lab/promptfoo/krn-golden-smoke-results.jsonl",
     "krn": "pnpm --filter @krn/cli krn",
     "alpha:verify": "pnpm typecheck && pnpm test && pnpm krn doctor",

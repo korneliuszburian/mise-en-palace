@@ -2373,6 +2373,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryRecordId: memory-record-1");
     expect(result.stdout).toContain("runId: execution-run-1");
     expect(result.stdout).toContain("outcome: helped");
+    expect(result.stdout).toContain("Memory Core mutation: none");
     expect(result.stdout).toContain("Feedback event: none");
     expect(result.stdout).toContain("Follow-up candidate: none");
   });
@@ -2512,6 +2513,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryApplication: memory-application-1");
     expect(result.stdout).toContain("memoryRecord: memory-record-1");
     expect(result.stdout).toContain("outcome: helped");
+    expect(result.stdout).toContain("Memory Core mutation: none");
     expect(result.stdout).toContain("Feedback event: none");
     expect(result.stdout).toContain("Follow-up candidate: none");
     expect(capturedApplication).toMatchObject({
@@ -2522,7 +2524,14 @@ describe("runCli", () => {
     });
   });
 
-  it("persists stale memory record apply and creates feedback event", async () => {
+  it.each([
+    ["stale", "stale_detected", 70],
+    ["hurt", "demoted", 60]
+  ] as const)("persists %s memory record apply and creates feedback event", async (
+    outcome,
+    eventType,
+    expectedConfidence
+  ) => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
       createId: (prefix) => `${prefix}-1`
@@ -2541,7 +2550,7 @@ describe("runCli", () => {
         "--memory-id",
         "memory-record-1",
         "--outcome",
-        "stale",
+        outcome,
         "--notes",
         "Graph traversal now exceeds Postgres edge-table performance",
         "--persist"
@@ -2672,11 +2681,12 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memoryFeedbackEvent: memory-feedback-event-1");
     expect(result.stdout).toContain("antiMemoryCandidate: anti-memory-candidate-1");
     expect(result.stdout).toContain("Candidate reviewability: review");
-    expect(result.stdout).toContain("outcome: stale");
+    expect(result.stdout).toContain("Memory Core mutation: none");
+    expect(result.stdout).toContain(`outcome: ${outcome}`);
     expect(capturedFeedbackEvent).toMatchObject({
       memoryRecordId: "memory-record-1",
       executionRunId: "execution-run-1",
-      eventType: "stale_detected",
+      eventType,
       direction: "negative",
       reason: "Graph traversal now exceeds Postgres edge-table performance",
       evidenceRef: "memory-application:memory-application-1"
@@ -2688,9 +2698,12 @@ describe("runCli", () => {
       rejectedClaim: "Use Postgres edge tables first",
       reason: "Graph traversal now exceeds Postgres edge-table performance",
       invalidatedBySourceClaimIds: ["source-claim-1"],
-      appliesTo: "memory:memory-candidate-1"
+      appliesTo: "memory:memory-candidate-1",
+      confidence: expectedConfidence
     });
     expect(capturedAntiMemoryCandidate?.metadata).toMatchObject({
+      applicationOutcome: outcome,
+      doesNotProve: "This candidate does not prove the memory should be invalidated or demoted without review.",
       reflectionCandidateEvidence: {
         provenance: "local_operator_note",
         evidenceRefs: [

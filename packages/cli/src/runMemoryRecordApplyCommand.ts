@@ -71,6 +71,7 @@ const formatPreview = (
     `runId: ${application.executionRunId}`,
     `outcome: ${application.outcome}`,
     `notes: ${application.notes}`,
+    "Memory Core mutation: none",
     feedbackEventTypeForOutcome(application.outcome) === undefined
       ? "Feedback event: none"
       : "Feedback event: would be recorded",
@@ -93,6 +94,7 @@ const formatPersisted = (
     `memoryRecord: ${application.memoryRecordId}`,
     ...(application.executionRunId === undefined ? [] : [`runId: ${application.executionRunId}`]),
     ...(application.outcome === undefined ? [] : [`outcome: ${application.outcome}`]),
+    "Memory Core mutation: none",
     feedbackEventId === undefined
       ? "Feedback event: none"
       : `memoryFeedbackEvent: ${feedbackEventId}`,

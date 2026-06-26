@@ -14,7 +14,7 @@ needs, and rejected eval theater.
 | Trust exclusions cover `.env*`, `.git/`, `node_modules/`, `.muke/`, `.supersearch/runtime/`, `dist/`, and `build/`. | implemented now | Same deterministic GoldenGate case checks the target trust exclusion candidate metadata. | `packages/harness/src/activation/ownerFileRecall.ts`; `packages/harness/src/goldenKrnBehaviorGate.ts`. | Does not prove every target repo generated/runtime folder is known. |
 | Codex execution brief includes objective, constraints, non-goals, context inclusions/exclusions, evidence contract, review burden, rollback, and proof boundaries. | implemented now | Existing Codex brief GoldenTask behavior and adapter tests. | `tests/fixtures/golden-tasks/codex-brief-behavior.json`; `packages/codex-adapter/src/codexBriefGoldenBehavior.test.ts`; `docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md`. | Does not prove Codex follows the brief. |
 | SourceClaim and SourceDecision records require mechanism, KRN implication, consumer, falsifier or `doesNotProve`, and reject decorative source retention. | implemented now | `pnpm eval:brain-battle:smoke` executes `goldenKrnBehaviorGate` decorative source rejection case. | `packages/core/src/source.ts`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `docs/architecture/security-trust-boundaries.md`. | Does not prove source selection quality or that every decorative source is detected before operator review. |
-| Memory application feedback records helped/hurt/neutral/stale without direct Memory Core mutation; stale/hurt may create reviewable anti-memory candidates only. | candidate only | Existing memory/anti-memory tests and reports support this, but no new V02-02 guard was added. | `docs/reviews/controlled-dogfood/2026-06-25-memory-feedback-demotion-loop/REPORT.md`; `docs/reviews/controlled-dogfood/2026-06-25-anti-memory-conflict-integration/REPORT.md`. | Does not prove feedback consistently improves future activation. |
+| Memory application feedback records helped/hurt/neutral/stale without direct Memory Core mutation; stale/hurt may create reviewable anti-memory candidates only. | implemented now | `pnpm eval:brain-battle:smoke` runs CLI memory record apply guards covering helped, stale, and hurt outcomes plus Memory Core non-mutation output. | `packages/cli/src/runMemoryRecordApplyCommand.ts`; `packages/cli/src/runCli.test.ts`; `docs/reviews/controlled-dogfood/2026-06-25-memory-feedback-demotion-loop/REPORT.md`; `docs/reviews/controlled-dogfood/2026-06-25-anti-memory-conflict-integration/REPORT.md`. | Does not prove feedback consistently improves future activation. |
 | Anti-memory blocks or warns against stale/unsafe context during activation. | implemented now | Existing GoldenGate anti-memory case executes activation conflict behavior. | `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/harness/src/goldenKrnBehaviorGate.test.ts`. | Does not prove anti-memory coverage is complete for all stale claims. |
 | Run readback distinguishes proof from non-proof and can be used by operator or Promptfoo without ad hoc SQL. | implemented now | `pnpm eval:brain-battle:smoke` runs the CLI readback proof/non-proof guard. | `packages/cli/src/runRunShowCommand.ts`; `packages/cli/src/runRunShowCommand.test.ts`; `docs/reviews/controlled-dogfood/2026-06-25-run-evidence-readback/REPORT.md`. | Does not prove live DB readback unless DB commands run. |
 | V02-01 cannot be satisfied by simulation. | requires external operator evidence | Root `PLAN.md` and `GOAL.md` keep V02-01 blocked/deferred until real operator setup exists. | `docs/runbooks/second-operator-alpha-trial.md`; `docs/reviews/controlled-dogfood/2026-06-25-second-operator-trial-packet/REPORT.md`; root `PLAN.md`. | Does not complete V02-01. |
@@ -30,9 +30,10 @@ pnpm eval:brain-battle:smoke
 ```
 
 This executes the existing KRN GoldenGate behavior test plus the V02-02 target
-trust exclusion case, the V02-03 decorative source rejection case, and the
-V02-03 CLI run-readback proof/non-proof guard. It is deterministic and does not
-call an LLM judge.
+trust exclusion case, the V02-03 decorative source rejection case, the V02-03
+CLI run-readback proof/non-proof guard, and the V02-04 CLI memory feedback /
+anti-memory candidate guards. It is deterministic and does not call an LLM
+judge.
 
 ## Promptfoo Boundary
 

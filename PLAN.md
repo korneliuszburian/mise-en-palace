@@ -140,6 +140,8 @@ Evidence: `docs/architecture/brain-battle-eval-matrix.md`; `packages/harness/src
 
 Goal: protect the memory learning loop from poisoning and silent mutation.
 
+Status: complete on 2026-06-26.
+
 Required behavior:
 
 1. helped/neutral feedback does not create unsafe follow-up mutation;
@@ -148,9 +150,9 @@ Required behavior:
 
 Expected outputs:
 
-- update brain-battle matrix;
-- deterministic guard(s) through existing test/eval machinery;
-- report: `docs/reviews/controlled-dogfood/2026-06-26-memory-anti-memory-guards/REPORT.md`.
+- update brain-battle matrix. Status: complete.
+- deterministic guard(s) through existing test/eval machinery. Status: complete through `eval:brain-battle:smoke`.
+- report: `docs/reviews/controlled-dogfood/2026-06-26-memory-anti-memory-guards/REPORT.md`. Status: complete.
 
 Verification:
 
@@ -164,6 +166,10 @@ git status --short --branch
 ```
 
 Non-goals: no memory scoring rewrite, no reflection rewrite, no automatic memory/source mutation, no new DB architecture.
+
+Outcome: `krn memory record apply` now reports `Memory Core mutation: none` in preview and persisted output. CLI guards cover helped feedback producing no feedback event or follow-up candidate, and stale/hurt feedback producing negative feedback plus a reviewable anti-memory candidate without Memory Core mutation. The brain-battle smoke now includes the CLI memory feedback guards alongside GoldenGate and run readback guards.
+
+Evidence: `packages/cli/src/runMemoryRecordApplyCommand.ts`; `packages/cli/src/runCli.test.ts`; `package.json`; `docs/architecture/brain-battle-eval-matrix.md`; `docs/reviews/controlled-dogfood/2026-06-26-memory-anti-memory-guards/REPORT.md`.
 
 ---
 

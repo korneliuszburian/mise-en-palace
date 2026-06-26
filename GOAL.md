@@ -26,7 +26,8 @@ evidence only unless root `PLAN.md` names them for a current task.
 ```txt
 V02-02 — Brain Battle Eval Matrix And Guarded Eval Harness is complete.
 V02-03 — Run Readback And Source Rejection Guard Expansion is complete.
-Next active slice: V02-04 — Memory Feedback And Anti-Memory Guard Expansion.
+V02-04 — Memory Feedback And Anti-Memory Guard Expansion is complete.
+Next active slice: V02-05 — Codex Brief And Context ROI Guard Expansion.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
