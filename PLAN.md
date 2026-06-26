@@ -177,6 +177,8 @@ Evidence: `packages/cli/src/runMemoryRecordApplyCommand.ts`; `packages/cli/src/r
 
 Goal: protect the Codex-facing execution contract and context discipline.
 
+Status: complete on 2026-06-26.
+
 Required behavior:
 
 1. Codex brief includes objective, constraints, non-goals, selected context, exclusions, expected evidence, review burden, rollback, and proof boundaries.
@@ -185,9 +187,9 @@ Required behavior:
 
 Expected outputs:
 
-- update brain-battle matrix;
-- deterministic guard(s) through GoldenTask / brain-battle smoke / unit tests;
-- report: `docs/reviews/controlled-dogfood/2026-06-26-codex-brief-context-roi-guards/REPORT.md`.
+- update brain-battle matrix. Status: complete.
+- deterministic guard(s) through GoldenTask / brain-battle smoke / unit tests. Status: complete through `eval:brain-battle:smoke`.
+- report: `docs/reviews/controlled-dogfood/2026-06-26-codex-brief-context-roi-guards/REPORT.md`. Status: complete.
 
 Verification:
 
@@ -201,6 +203,10 @@ git status --short --branch
 ```
 
 Non-goals: no prompt bloat rewrite, no activation scoring rewrite unless a failing guard proves a focused defect, no source crawler.
+
+Outcome: `eval:brain-battle:smoke` now runs Codex adapter golden behavior for brief contract fields and GoldenGate ContextROI behavior. The guard verifies Codex brief context keeps reason, expected use, explicit exclusion explanation, rollback, stop condition, and proof boundaries. ContextROI guard verifies a one-item budget keeps only bounded selected context and records over-budget exclusions.
+
+Evidence: `package.json`; `packages/codex-adapter/src/codexBriefGoldenBehavior.test.ts`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/harness/src/goldenKrnBehaviorGate.test.ts`; `docs/architecture/brain-battle-eval-matrix.md`; `docs/reviews/controlled-dogfood/2026-06-26-codex-brief-context-roi-guards/REPORT.md`.
 
 ---
 

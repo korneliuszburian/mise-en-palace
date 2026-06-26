@@ -162,10 +162,16 @@ describe("codex brief golden behavior", () => {
       rendered.includes("- brief exposes review contract fields") &&
       rendered.includes("Context Inclusions:") &&
       rendered.includes("source_claim:claim-codex-brief-contract") &&
+      rendered.includes("reason=C-03 dogfood proved brief review contract fields matter.") &&
+      rendered.includes("expected_use=Keep the Codex brief bounded and reviewable.") &&
       rendered.includes("Explicit Exclusions:") &&
       rendered.includes("source_claim:claim-promptfoo-as-truth") &&
+      rendered.includes("reason=low_trust") &&
+      rendered.includes("explanation=Promptfoo smoke is adapter evidence, not KRN behavior proof.") &&
       rendered.includes(`Review burden: ${evidenceContract.reviewBurden}`) &&
+      rendered.includes(`Rollback path: ${evidenceContract.rollbackPath}`) &&
       rendered.includes(`Rollback Expectation: ${evidenceContract.rollbackPath}`) &&
+      rendered.includes("Stop Condition: Stop before Codex execution or hidden state mutation.") &&
       rendered.includes("What This Does Not Prove:") &&
       rendered.includes("- Codex executed the work.");
     const report = runGoldenTaskFixtures({

@@ -308,6 +308,56 @@ const runRawRecallExactProof = (now: string): GoldenBehaviorProof => {
   );
 };
 
+const runContextRoiBoundary = (now: string): GoldenBehaviorProof => {
+  const ranked = rankCandidates([
+    toMemoryCandidate(memoryRecord({
+      id: "memory-context-primary",
+      summary: "Context ROI must keep Codex brief context small.",
+      applicationGuidance: "Use this as the selected bounded context item."
+    })),
+    toMemoryCandidate(memoryRecord({
+      id: "memory-context-extra-1",
+      summary: "Extra context item that should stay excluded.",
+      applicationGuidance: "Use only if the primary context is insufficient."
+    })),
+    toMemoryCandidate(memoryRecord({
+      id: "memory-context-extra-2",
+      summary: "Another extra context item that should stay excluded.",
+      applicationGuidance: "Use only if more context is explicitly required."
+    }))
+  ], buildMemoryQuery(taskContract(now, "Assemble a small Codex brief context packet.")));
+  const context = assembleContext({
+    id: "context-real-gate-context-roi",
+    harnessPlanId: "plan-real-gate",
+    candidates: applyContextROI(ranked, {
+      maxInclusions: 1,
+      minimumScore: 0
+    }),
+    createdAt: now
+  });
+  const overBudgetExclusions = context.exclusions.filter((exclusion) =>
+    exclusion.reason === "over_budget" &&
+    exclusion.explanation.includes("max inclusion count 1")
+  );
+  const passed =
+    context.inclusions.length === 1 &&
+    context.inclusions[0]?.subjectId === "memory-context-primary" &&
+    context.inclusions[0]?.expectedUse === "Use this as the selected bounded context item." &&
+    overBudgetExclusions.length === 2 &&
+    overBudgetExclusions.every((exclusion) =>
+      exclusion.subjectId === "memory-context-extra-1" ||
+      exclusion.subjectId === "memory-context-extra-2"
+    );
+
+  return proof(
+    "golden-case-context-roi-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real ContextROI behavior kept a small packet with expectedUse and explicit over_budget exclusions."
+      : "Real ContextROI behavior did not preserve expectedUse or over_budget exclusion evidence."
+  );
+};
+
 const runObservationPrefixSourceRangeRejection = (now: string): GoldenBehaviorProof => {
   const task = taskContract(
     now,
@@ -500,6 +550,7 @@ const proofFactories = {
   "golden-case-memory-smoke-002": runAntiMemoryBlock,
   "golden-case-reflection-001-a": runReflectionFinalTruthBlock,
   "golden-case-memory-005-a": runRawRecallExactProof,
+  "golden-case-context-roi-001-a": runContextRoiBoundary,
   "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,
   "golden-case-evidence-001-a": runEvidenceCommandProvenance,
   "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,

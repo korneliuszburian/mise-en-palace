@@ -88,6 +88,29 @@ const task: GoldenTask = {
       metadata: {}
     },
     {
+      id: "golden-case-context-roi-001-a",
+      title: "ContextROI keeps brief context bounded",
+      input: {
+        task: "Assemble a small Codex brief context packet."
+      },
+      expectedBehavior: {
+        outcome: "exclude",
+        subject: "context_assembly:context-roi",
+        rationale: "Context assembly should include only bounded high-value context and keep over-budget exclusions explicit.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-context-roi",
+        domain: "context",
+        severity: "blocking",
+        title: "context dump admitted",
+        mustNot: "ContextAssembly must not include every candidate when ContextROI budget is one item.",
+        detection: "ContextAssembly has more than one inclusion or omits over_budget exclusions."
+      }],
+      sourceRefs: ["tests/fixtures/golden-tasks/boundary-behavior.json"],
+      metadata: {}
+    },
+    {
       id: "golden-case-observation-prefix-001-a",
       title: "unsourced observation prefix is rejected",
       input: {
@@ -223,13 +246,14 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 8,
-      passedCaseCount: 8,
+      caseCount: 9,
+      passedCaseCount: 9,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
     });
     expect(report.caseResults.map((result) => result.caseId)).toEqual([
+      "golden-case-context-roi-001-a",
       "golden-case-evidence-001-a",
       "golden-case-memory-005-a",
       "golden-case-memory-smoke-001",
@@ -240,6 +264,7 @@ describe("KRN behavior golden gate", () => {
       "golden-case-target-trust-exclusions-001-a"
     ]);
     expect(report.caseResults.map((result) => result.summary)).toEqual([
+      "Real ContextROI behavior kept a small packet with expectedUse and explicit over_budget exclusions.",
       "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence.",
       "Real activation behavior included exact-proof source claim only with raw recall trigger.",
       "Real activation behavior abstained on stale memory and produced stale exclusion.",
