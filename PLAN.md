@@ -246,12 +246,14 @@ Evidence: `packages/cli/src/runRunShowCommand.ts`; `packages/cli/src/parseRunArg
 
 Goal: make the next real target/second-operator trial fast, measurable, and hard to fake.
 
+Status: complete on 2026-06-26.
+
 Required behavior:
 
-- update or add a runbook only if it reduces execution ambiguity;
-- define 3–5 bounded target trial scenarios with expected context roots, trust exclusions, allowed writes, verification commands, review-burden fields, and does-not-prove boundary;
-- do not claim this completes V02-01;
-- report: `docs/reviews/controlled-dogfood/2026-06-26-target-battle-trial-packet-refresh/REPORT.md`.
+- update or add a runbook only if it reduces execution ambiguity. Status: complete.
+- define 3–5 bounded target trial scenarios with expected context roots, trust exclusions, allowed writes, verification commands, review-burden fields, and does-not-prove boundary. Status: complete.
+- do not claim this completes V02-01. Status: complete.
+- report: `docs/reviews/controlled-dogfood/2026-06-26-target-battle-trial-packet-refresh/REPORT.md`. Status: complete.
 
 Verification:
 
@@ -263,6 +265,10 @@ git status --short --branch
 ```
 
 Non-goals: no fake operator proof, no broad benchmark lane, no source crawler, no new target writes.
+
+Outcome: `docs/runbooks/second-operator-alpha-trial.md` now includes a four-scenario trial menu for docs-only runbook repair, narrow TypeScript boundary repair, target test-readiness investigation, and config/CI command proof mapping. Each scenario names expected context roots, trust exclusions, allowed writes, verification commands, review-burden fields, and does-not-prove boundaries. V02-01 remains blocked until a real second operator runs the packet.
+
+Evidence: `docs/runbooks/second-operator-alpha-trial.md`; `docs/reviews/controlled-dogfood/2026-06-26-target-battle-trial-packet-refresh/REPORT.md`.
 
 ---
 

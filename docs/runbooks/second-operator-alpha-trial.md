@@ -77,6 +77,34 @@ DB mode:
 If using a target repo with secrets or generated runtime directories, do not
 ingest broad target content. Use narrow seed/read-model paths only.
 
+## Trial Scenario Menu
+
+Choose exactly one scenario before running Step 4. Do not combine scenarios in
+one trial.
+
+| Scenario | Expected context roots | Trust exclusions | Allowed writes | Verification commands | Review-burden fields | Does not prove |
+| --- | --- | --- | --- | --- | --- | --- |
+| Docs-only target runbook repair | `README.md`, `docs/`, `AGENTS.md` or equivalent repo instruction file | `.env*`, `.git/`, `node_modules/`, generated runtime/build folders | target docs only, one narrow report if needed | `git diff --check`; target docs formatter if present | changed docs, command proof, missing runtime proof, rollback path | Does not prove source code behavior or target test health. |
+| Narrow TypeScript boundary repair | `package.json`, `tsconfig*.json`, one owning `src/` file, matching test file | `.env*`, generated output, dependency/vendor folders, unrelated packages | one package/module source and focused tests only | package `typecheck`; focused package test; `git diff --check` | intended files, unrelated dirty files, invalid input coverage, residual type-risk | Does not prove full target repo quality or broad architecture health. |
+| Target test-readiness investigation | `package.json`, test config, one failing test owner path, existing failure output | secret files, generated snapshots unless explicitly selected, broad logs | read-only unless operator explicitly approves a scoped test/doc fix | exact failing test command; if changed, focused retest and `git diff --check` | failing command, suspected owner file, skipped broader suite, next smallest repair | Does not prove the whole target suite is green. |
+| Config/CI command proof mapping | `package.json`, CI config, documented scripts, one package README if relevant | secrets, generated CI caches, lockfile changes unless install is the task | docs/runbook or script metadata only unless separately approved | listed script dry-run/help; `git diff --check`; no secret echo | command provenance, script side effects, unsupported assumptions, rollback path | Does not prove hosted CI behavior unless hosted CI ran. |
+
+Every selected scenario must record:
+
+```txt
+scenario:
+expected context roots:
+trust exclusions surfaced:
+allowed writes:
+forbidden writes:
+verification commands:
+review burden:
+does-not-prove:
+```
+
+If KRN-selected context does not match the chosen scenario roots, record the
+miss and continue only if manual source inspection can keep the trial bounded.
+
 ## Step 1: Clone And Install
 
 ```sh
