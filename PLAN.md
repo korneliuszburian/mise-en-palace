@@ -255,19 +255,33 @@ Evidence: `packages/harness/src/activation/ownerFileRecall.ts`;
 Goal: prove a target-like run can move from plan to evidence capture to readback
 with honest proof/non-proof boundaries.
 
-Status: active.
+Status: complete on 2026-06-26.
 
 Expected outputs:
 
 - source/test/guard changes if required;
+  Status: complete.
 - report:
   `docs/reviews/controlled-dogfood/2026-06-26-target-evidence-readback-loop/REPORT.md`.
+  Status: complete.
 
 Acceptance:
 
 - Target-like evidence can be read back without ad hoc SQL.
+  Status: complete.
 - Proof/non-proof boundaries survive the full loop.
+  Status: complete.
 - No automatic memory/source mutation.
+  Status: complete.
+
+Outcome: `db:smoke:target-repo-harness` now readbacks the evidence bundle,
+review assessment, and feedback delta after write. It verifies command evidence
+remains `default_template/not_run`, the target evidence/review/feedback records
+match, and no memory/source/eval candidate mutation path was produced.
+
+Evidence: `packages/cli/src/targetRepoHarnessSmoke.ts`;
+`packages/cli/src/targetRepoHarnessSmoke.test.ts`;
+`docs/reviews/controlled-dogfood/2026-06-26-target-evidence-readback-loop/REPORT.md`.
 
 ---
 
@@ -276,7 +290,7 @@ Acceptance:
 Goal: make memory usefulness measurable for target-like tasks without
 auto-promoting memory.
 
-Status: pending.
+Status: active.
 
 Expected outputs:
 

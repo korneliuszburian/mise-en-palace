@@ -23,6 +23,9 @@ import {
   compileHarnessPlan,
   createCapabilityPlan
 } from "@krn/harness";
+import {
+  normalizeEvidenceCommand
+} from "@krn/core";
 
 export interface TargetRepoHarnessSmokeInput {
   databaseUrl: string;
@@ -43,8 +46,13 @@ export interface TargetRepoHarnessSmokeReport {
   readBackExecutionRunId: string;
   codexBriefRendered: boolean;
   evidenceBundleId: string;
+  evidenceReadbackMatched: boolean;
+  commandProofBoundary: "weak_default_not_run";
   reviewAssessmentId: string;
+  reviewAssessmentReadbackMatched: boolean;
   feedbackDeltaId: string;
+  feedbackDeltaReadbackMatched: boolean;
+  memoryRecordMutation: "none";
   targetProjectLinked: boolean;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -219,8 +227,13 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   }`,
   `Codex brief rendered: ${report.codexBriefRendered ? "yes" : "no"}`,
   `Evidence bundle: ${report.evidenceBundleId}`,
+  `Evidence readback: ${report.evidenceReadbackMatched ? "matched" : "mismatch"}`,
+  `Command proof boundary: ${report.commandProofBoundary}`,
   `Review assessment: ${report.reviewAssessmentId}`,
+  `Review assessment readback: ${report.reviewAssessmentReadbackMatched ? "matched" : "mismatch"}`,
   `Feedback delta: ${report.feedbackDeltaId}`,
+  `Feedback delta readback: ${report.feedbackDeltaReadbackMatched ? "matched" : "mismatch"}`,
+  `MemoryRecord mutation: ${report.memoryRecordMutation}`,
   `Target project linked: ${report.targetProjectLinked ? "yes" : "no"}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
   `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
@@ -453,9 +466,9 @@ export const runTargetRepoHarnessSmokeCheck = async (
       status: "captured",
       changedFiles: [],
       commands: [
-        { command: "pnpm typecheck", status: "skipped" },
-        { command: "pnpm test", status: "skipped" },
-        { command: "git diff --check", status: "skipped" }
+        { command: "target fixture pnpm typecheck", status: "not_run" },
+        { command: "target fixture pnpm test", status: "not_run" },
+        { command: "git diff --check", status: "not_run" }
       ],
       diffRisk: "low",
       reviewBurden: "Review target repo harness smoke linkage and cleanup proof.",
@@ -498,6 +511,43 @@ export const runTargetRepoHarnessSmokeCheck = async (
         projectId: project.id
       }
     });
+    const aggregateWithEvidence = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
+
+    if (aggregateWithEvidence === undefined) {
+      throw new Error("Target repo harness smoke failed to read back evidence aggregate");
+    }
+
+    const readBackEvidenceBundle = aggregateWithEvidence.evidenceBundles.find((bundle) =>
+      bundle.id === evidenceBundle.id
+    );
+    const readBackReviewAssessment = aggregateWithEvidence.reviewAssessments.find((assessment) =>
+      assessment.id === reviewAssessment.id
+    );
+    const readBackFeedbackDelta = aggregateWithEvidence.feedbackDeltas.find((feedback) =>
+      feedback.id === feedbackDelta.id
+    );
+    const commandProofBoundary =
+      readBackEvidenceBundle?.commands.every((command) => {
+        const normalized = normalizeEvidenceCommand(command);
+
+        return normalized.status === "not_run" && normalized.provenance === "default_template";
+      }) ?? false;
+    const noFeedbackMutations =
+      readBackFeedbackDelta !== undefined &&
+      readBackFeedbackDelta.memoryCandidates.length === 0 &&
+      readBackFeedbackDelta.sourceDecisions.length === 0 &&
+      readBackFeedbackDelta.evalCandidates.length === 0;
+
+    if (
+      readBackEvidenceBundle === undefined ||
+      readBackReviewAssessment === undefined ||
+      readBackFeedbackDelta === undefined ||
+      !commandProofBoundary ||
+      !noFeedbackMutations
+    ) {
+      throw new Error("Target repo harness smoke evidence readback did not preserve proof boundaries");
+    }
+
     const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunId);
 
     return {
@@ -512,8 +562,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
       readBackExecutionRunId: aggregate.executionRun.id,
       codexBriefRendered,
       evidenceBundleId: evidenceBundle.id,
+      evidenceReadbackMatched: readBackEvidenceBundle.id === evidenceBundle.id,
+      commandProofBoundary: "weak_default_not_run",
       reviewAssessmentId: reviewAssessment.id,
+      reviewAssessmentReadbackMatched: readBackReviewAssessment.id === reviewAssessment.id,
       feedbackDeltaId: feedbackDelta.id,
+      feedbackDeltaReadbackMatched: readBackFeedbackDelta.id === feedbackDelta.id,
+      memoryRecordMutation: "none",
       targetProjectLinked,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

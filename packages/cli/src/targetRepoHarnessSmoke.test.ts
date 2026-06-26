@@ -18,8 +18,13 @@ describe("targetRepoHarnessSmoke", () => {
       readBackExecutionRunId: "execution-run-1",
       codexBriefRendered: true,
       evidenceBundleId: "evidence-bundle-1",
+      evidenceReadbackMatched: true,
+      commandProofBoundary: "weak_default_not_run",
       reviewAssessmentId: "review-assessment-1",
+      reviewAssessmentReadbackMatched: true,
       feedbackDeltaId: "feedback-delta-1",
+      feedbackDeltaReadbackMatched: true,
+      memoryRecordMutation: "none",
       targetProjectLinked: true,
       remainingMarkerCount: 0,
       cleanedUp: true
@@ -36,8 +41,13 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("Readback: matched");
     expect(output).toContain("Codex brief rendered: yes");
     expect(output).toContain("Evidence bundle: evidence-bundle-1");
+    expect(output).toContain("Evidence readback: matched");
+    expect(output).toContain("Command proof boundary: weak_default_not_run");
     expect(output).toContain("Review assessment: review-assessment-1");
+    expect(output).toContain("Review assessment readback: matched");
     expect(output).toContain("Feedback delta: feedback-delta-1");
+    expect(output).toContain("Feedback delta readback: matched");
+    expect(output).toContain("MemoryRecord mutation: none");
     expect(output).toContain("Target project linked: yes");
     expect(output).toContain("Cleanup remaining marker count: 0");
     expect(output).toContain("Target repo harness smoke: passed");
