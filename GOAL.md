@@ -21,20 +21,14 @@ Do not continue from `docs/plans/memory-ideal-state/PLAN.md` as active context.
 Historical plans, dogfood reports, ADRs, run ledgers, and raw materials are
 evidence only unless root `PLAN.md` names them for a current task.
 
-## First Active Task
+## Current State
 
 ```txt
-V02-01 — Real Second-Operator Controlled Alpha Trial
+V02-02 — Brain Battle Eval Matrix And Guarded Eval Harness is complete.
+V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
-Current state:
-
-```txt
-V02-01 is prepared but external-input blocked.
-```
-
-The trial packet already exists. Continue only after the operator supplies or
-approves:
+V02-01 can resume only after the operator supplies or approves:
 
 ```txt
 operator:
@@ -44,7 +38,9 @@ DB mode: local Docker/Postgres / preview only
 support boundary:
 ```
 
-Do not substitute local docs/source work for the real second-operator trial.
+Do not substitute V02-02 or local docs/source work for real V02-01 proof.
+If V02-01 remains blocked, continue only after an explicit operator-authorized
+rescope.
 
 B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, V01-01, V01-02, V01-03, V01-R01, V01-04, and V02-00 are complete. Current evidence:
 

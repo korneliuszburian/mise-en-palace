@@ -909,17 +909,38 @@ tag.
 - Verification: operator transcript, command evidence, `git diff --check` for report, no package source changes unless separately authorized.
 - Acceptance criteria: No tag movement without explicit operator request, no npm/global install, no dashboard/API/MCP/worker/source crawler, no product-ready claim.
 - Preparation: Second-operator trial packet prepared at `docs/runbooks/second-operator-alpha-trial.md`; preparation report `docs/reviews/controlled-dogfood/2026-06-25-second-operator-trial-packet/REPORT.md`; persisted preparation run `00cb800f-6230-4033-affc-dab9ef2d9b6e`; evidence bundle `c49fba9d-012c-479f-a8fb-386292f11c58`; observation group `ed615f66-68ea-4012-8248-6ee653f05487`; reflection record `10bc82ce-ba43-46b7-a901-063e4ba5b65e`. This does not complete V02-01.
+- Status: blocked/deferred by missing real external operator setup; operator authorized `V02-02` while this waits.
 - Priority: P0 before widening internal alpha.
 - Complexity: M.
 - Risks: Treating guided author support as independent proof. Mitigation: log support separately from operator actions.
+
+### V02-02 — Brain Battle Eval Matrix And Guarded Eval Harness
+
+- ID: `V02-02`
+- Name: Brain battle eval matrix and guarded eval harness.
+- Status: complete on 2026-06-26.
+- Objective: Make KRN brain-in-battle checks measurable with a deterministic-first eval matrix and one bounded executable behavior guard while V02-01 waits for real operator setup.
+- Business rationale: Future target/operator trials need measurable checks for context waste, stale memory harm, unsupported decisions, review burden, and proof boundaries.
+- Architectural rationale: Evals must measure existing brain functions through GoldenTask/Promptfoo boundaries; Promptfoo remains an adapter and LLM-as-judge remains non-blocking until validated.
+- Dependencies: V02-00 complete; V02-01 blocked/deferred; existing GoldenTask and Promptfoo smoke surfaces; target activation/read-model evidence from V01.
+- Input requirements: Current `PLAN.md`, `GOAL.md`, package scripts, Promptfoo fixtures, GoldenTask fixtures, `goldenRunner`, existing harness eval adapter code, and V01/V02 reports for target activation, trust exclusions, run readback, and internal alpha gate.
+- Output requirements: `docs/architecture/brain-battle-eval-matrix.md`; one executable regression guard using existing machinery; optional bounded `eval:brain-battle:smoke` script; dogfood report at `docs/reviews/controlled-dogfood/2026-06-26-brain-battle-eval-matrix/REPORT.md`.
+- Definition of Done: Matrix classifies checks as implemented now, candidate only, requires real target trial evidence, requires external operator evidence, or rejected as eval theater; executable guard protects a real KRN behavior boundary; verification passes.
+- Verification: `pnpm eval:brain-battle:smoke`; `pnpm typecheck`; `pnpm test`; `pnpm eval:promptfoo:smoke`; `git diff --check`; `git status --short --branch`.
+- Acceptance criteria: No dashboard/API/MCP/worker/source crawler/broad eval platform/`krn audit`/fake V02-01 proof/automatic memory or source mutation/product-ready claim.
+- Priority: P0 while V02-01 waits.
+- Complexity: S.
+- Risks: Expanding into eval theater. Mitigation: deterministic guard first, bounded matrix, Promptfoo adapter boundary preserved.
+- Outcome: Added `docs/architecture/brain-battle-eval-matrix.md`, bounded root script `eval:brain-battle:smoke`, and a deterministic GoldenGate behavior proof that target read-model planning surfaces target source seeds and trust exclusions without selecting static KRN owner-file recall candidates. Promptfoo remains an adapter smoke, not behavior proof.
+- Evidence: `docs/reviews/controlled-dogfood/2026-06-26-brain-battle-eval-matrix/REPORT.md`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/harness/src/goldenKrnBehaviorGate.test.ts`; `pnpm eval:brain-battle:smoke`; `pnpm typecheck`; `pnpm test`; `pnpm eval:promptfoo:smoke`; `git diff --check`.
 
 ## 8. Current Active Queue Recommendation
 
 The next active slice should be:
 
-    V02-01 — Real Second-Operator Controlled Alpha Trial
+    V02-01 — Real Second-Operator Controlled Alpha Trial, when real setup exists
 
-V02-00 is complete. Continue with V02-01 only when the operator supplies or approves a real second-operator trial setup. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, tag movement, or automatic memory/source mutation.
+V02-02 is complete. V02-01 remains blocked/deferred until the operator supplies or approves a real second-operator trial setup. Do not create write APIs, MCP mutation tools, dashboard UI, worker daemon, source crawler, broad eval platform, semantic hook brain, Codex execution runner, npm publishing, global binary distribution, tag movement, fake V02-01 proof, or automatic memory/source mutation. If V02-01 remains blocked, continue only after an explicit operator-authorized rescope.
 
 ## 9. Completion Gates By Stage
 

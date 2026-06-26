@@ -155,6 +155,31 @@ const task: GoldenTask = {
       }],
       sourceRefs: ["docs/decisions/ADR-0013-observation-is-staging-not-memory.md"],
       metadata: {}
+    },
+    {
+      id: "golden-case-target-trust-exclusions-001-a",
+      title: "target read model exposes source seeds and trust exclusions",
+      input: {
+        task: "Repair muke-v2 eval tests and keep target trust exclusions explicit."
+      },
+      expectedBehavior: {
+        outcome: "flag",
+        subject: "target_read_model:trust_exclusions",
+        rationale: "Target-repo planning must surface project-scoped source seeds and trust exclusions instead of selecting static KRN owner files.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-target-trust-exclusions",
+        domain: "context",
+        severity: "blocking",
+        title: "target plan loses trust exclusions",
+        mustNot: "Target-repo activation must not omit trust exclusions or select static KRN owner files for target project planning.",
+        detection: "Target read-model candidates omit target-trust-exclusions or include owner_file_recall metadata."
+      }],
+      sourceRefs: [
+        "docs/reviews/controlled-dogfood/2026-06-25-target-activation-read-model/REPORT.md"
+      ],
+      metadata: {}
     }
   ],
   metadata: {},
@@ -172,8 +197,8 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 6,
-      passedCaseCount: 6,
+      caseCount: 7,
+      passedCaseCount: 7,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
@@ -184,7 +209,8 @@ describe("KRN behavior golden gate", () => {
       "golden-case-memory-smoke-001",
       "golden-case-memory-smoke-002",
       "golden-case-observation-prefix-001-a",
-      "golden-case-reflection-001-a"
+      "golden-case-reflection-001-a",
+      "golden-case-target-trust-exclusions-001-a"
     ]);
     expect(report.caseResults.map((result) => result.summary)).toEqual([
       "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence.",
@@ -192,7 +218,8 @@ describe("KRN behavior golden gate", () => {
       "Real activation behavior abstained on stale memory and produced stale exclusion.",
       "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence.",
       "Real context assembly rejected selected observation prefix item without source ranges.",
-      "Real reflection behavior blocked final MemoryRecord target generation."
+      "Real reflection behavior blocked final MemoryRecord target generation.",
+      "Real target owner-file recall behavior surfaced target source seeds and trust exclusions without selecting static KRN owner files."
     ]);
   });
 });

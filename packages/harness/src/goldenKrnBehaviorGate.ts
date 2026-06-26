@@ -17,6 +17,7 @@ import {
   applyTemporalFilter,
   assembleContext,
   buildActivationRawRecallTriggers,
+  buildOwnerFileRecallCandidates,
   buildMemoryQuery,
   buildSourceQuery,
   rankCandidates,
@@ -33,6 +34,9 @@ import {
 import {
   selectObservationPrefix
 } from "./observations/observationPrefix.js";
+import type {
+  TargetActivationReadModel
+} from "./activation/ownerFileRecall.js";
 
 export interface RunKrnBehaviorGoldenGateInput {
   tasks: readonly GoldenTask[];
@@ -370,13 +374,103 @@ const runEvidenceCommandProvenance = (_now: string): GoldenBehaviorProof => {
   );
 };
 
+const runTargetTrustExclusions = (now: string): GoldenBehaviorProof => {
+  const readModel: TargetActivationReadModel = {
+    projectKernelId: "kernel-target",
+    repoInstallationIds: ["repo-installation-target"],
+    localPathHints: ["/tmp/muke-v2"],
+    sourceSeeds: [
+      {
+        path: "evals",
+        kind: "eval_workspace",
+        reason: "seed eval, acceptance report, and test owner-file recall"
+      }
+    ],
+    trustExclusions: [
+      {
+        pathPattern: ".env*",
+        reason: "secret-shaped environment files must not enter planning context"
+      },
+      {
+        pathPattern: ".git/",
+        reason: "repository internals are not planning source truth"
+      },
+      {
+        pathPattern: "node_modules/",
+        reason: "third-party install output is not target source truth"
+      },
+      {
+        pathPattern: ".muke/",
+        reason: "generated target state is not source truth by default"
+      },
+      {
+        pathPattern: ".supersearch/runtime/",
+        reason: "runtime search output is generated state"
+      },
+      {
+        pathPattern: "dist/",
+        reason: "build output is generated state"
+      },
+      {
+        pathPattern: "build/",
+        reason: "build output is generated state"
+      }
+    ]
+  };
+  const candidates = buildOwnerFileRecallCandidates(
+    taskContract(now, "Repair muke-v2 eval tests and keep target trust exclusions explicit."),
+    { targetReadModel: readModel }
+  );
+  const trustExclusionCandidate = candidates.find((candidate) =>
+    candidate.metadata.targetReadModelKind === "trust_exclusions"
+  );
+  const patterns = trustExclusionCandidate?.metadata.trustExclusions;
+  const staticKrnOwnerFileSelected = candidates.some((candidate) =>
+    candidate.metadata.source === "owner_file_recall"
+  );
+  const requiredPatterns = [
+    ".env*",
+    ".git/",
+    "node_modules/",
+    ".muke/",
+    ".supersearch/runtime/",
+    "dist/",
+    "build/"
+  ];
+  const passed =
+    trustExclusionCandidate !== undefined &&
+    Array.isArray(patterns) &&
+    requiredPatterns.every((pathPattern) =>
+      patterns.some((pattern) =>
+        typeof pattern === "object" &&
+        pattern !== null &&
+        "pathPattern" in pattern &&
+        pattern.pathPattern === pathPattern
+      )
+    ) &&
+    candidates.some((candidate) =>
+      candidate.metadata.targetReadModelKind === "source_seed" &&
+      candidate.metadata.targetPath === "evals"
+    ) &&
+    !staticKrnOwnerFileSelected;
+
+  return proof(
+    "golden-case-target-trust-exclusions-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real target owner-file recall behavior surfaced target source seeds and trust exclusions without selecting static KRN owner files."
+      : "Real target owner-file recall behavior did not preserve target trust exclusions or leaked static KRN owner-file candidates."
+  );
+};
+
 const proofFactories = {
   "golden-case-memory-smoke-001": runStaleMemoryAbstention,
   "golden-case-memory-smoke-002": runAntiMemoryBlock,
   "golden-case-reflection-001-a": runReflectionFinalTruthBlock,
   "golden-case-memory-005-a": runRawRecallExactProof,
   "golden-case-observation-prefix-001-a": runObservationPrefixSourceRangeRejection,
-  "golden-case-evidence-001-a": runEvidenceCommandProvenance
+  "golden-case-evidence-001-a": runEvidenceCommandProvenance,
+  "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions
 } as const;
 
 type SupportedCaseId = keyof typeof proofFactories;
