@@ -52,7 +52,13 @@ export interface TargetRepoHarnessSmokeReport {
   reviewAssessmentReadbackMatched: boolean;
   feedbackDeltaId: string;
   feedbackDeltaReadbackMatched: boolean;
-  memoryRecordMutation: "none";
+  memorySeedRecordId: string;
+  memoryIncluded: boolean;
+  memoryApplicationId: string;
+  memoryUsefulnessOutcome: "helped";
+  memoryUsefulnessReadbackMatched: boolean;
+  memoryPositiveFeedbackCount: number;
+  automaticMemoryRecordMutation: "none";
   targetProjectLinked: boolean;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -187,6 +193,18 @@ const countMarkerRows = async (
   count += await countQuery(
     client<CountRow[]>`select count(*)::int as count from run_events where payload->>'smokeId' = ${marker}`
   );
+  count += await countQuery(
+    client<CountRow[]>`select count(*)::int as count from memory_applications where metadata->>'smokeId' = ${marker}`
+  );
+  count += await countQuery(
+    client<CountRow[]>`select count(*)::int as count from memory_records where metadata->>'smokeId' = ${marker}`
+  );
+  count += await countQuery(
+    client<CountRow[]>`select count(*)::int as count from source_claims where metadata->>'smokeId' = ${marker}`
+  );
+  count += await countQuery(
+    client<CountRow[]>`select count(*)::int as count from source_artifacts where metadata->>'smokeId' = ${marker}`
+  );
 
   if (retrievalRunId !== undefined) {
     count += await countQuery(
@@ -202,6 +220,10 @@ const cleanupMarkerRows = async (
   marker: string,
   retrievalRunId: string | undefined
 ): Promise<number> => {
+  await client`delete from memory_applications where metadata->>'smokeId' = ${marker}`;
+  await client`delete from memory_records where metadata->>'smokeId' = ${marker}`;
+  await client`delete from source_claims where metadata->>'smokeId' = ${marker}`;
+  await client`delete from source_artifacts where metadata->>'smokeId' = ${marker}`;
   await client`delete from run_events where payload->>'smokeId' = ${marker}`;
 
   if (retrievalRunId !== undefined) {
@@ -233,7 +255,13 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Review assessment readback: ${report.reviewAssessmentReadbackMatched ? "matched" : "mismatch"}`,
   `Feedback delta: ${report.feedbackDeltaId}`,
   `Feedback delta readback: ${report.feedbackDeltaReadbackMatched ? "matched" : "mismatch"}`,
-  `MemoryRecord mutation: ${report.memoryRecordMutation}`,
+  `Memory seed record: ${report.memorySeedRecordId}`,
+  `Memory included: ${report.memoryIncluded ? "yes" : "no"}`,
+  `Memory application: ${report.memoryApplicationId}`,
+  `Memory usefulness outcome: ${report.memoryUsefulnessOutcome}`,
+  `Memory usefulness readback: ${report.memoryUsefulnessReadbackMatched ? "matched" : "mismatch"}`,
+  `Memory positive feedback count: ${report.memoryPositiveFeedbackCount}`,
+  `Automatic MemoryRecord mutation: ${report.automaticMemoryRecordMutation}`,
   `Target project linked: ${report.targetProjectLinked ? "yes" : "no"}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
   `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
@@ -331,6 +359,54 @@ export const runTargetRepoHarnessSmokeCheck = async (
         sourceSeeds: targetFixtureSourceSeeds,
         ownerFiles: targetFixtureOwnerFiles,
         trustExclusions: targetFixtureTrustExclusions
+      }
+    });
+    const sourceArtifact = await sourceRepository.createSourceArtifact({
+      projectId: project.id,
+      kind: "operator_input",
+      trustTier: "project-decision",
+      uri: `operator://target-repo-harness-smoke/${marker}`,
+      title: "Target repo harness smoke memory source",
+      contentHash: `target-repo-harness-smoke-${marker}`,
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const sourceClaim = await sourceRepository.createSourceClaim({
+      sourceArtifactId: sourceArtifact.id,
+      claim: "Target fixture readiness memory should help target-like planning when scoped to the same project.",
+      mechanism: "A reviewed, project-scoped MemoryRecord is available before planning and can be selected as bounded context.",
+      krnImplication: "Target-like runs can measure whether selected memory helped without automatically promoting new memory.",
+      doesNotProve: "This does not prove memory usefulness on arbitrary external repositories.",
+      trustTier: "project-decision",
+      supportType: "implementation-boundary",
+      consumer: "V03 target memory usefulness smoke",
+      falsifier: "The smoke cannot activate the memory or record helped feedback for the run.",
+      revisitWhen: "Target memory usefulness semantics change.",
+      status: "proposed",
+      metadata: {
+        smokeId: marker
+      }
+    });
+    const memoryRecord = await memoryRepository.createMemoryRecord({
+      projectId: project.id,
+      key: `target-repo-harness:${marker}:readiness-memory`,
+      kind: "procedure",
+      status: "active",
+      summary: "Target fixture readiness memory supports scoped planning.",
+      body:
+        "Use this memory when improving test script readiness in the TypeScript target fixture; keep source seeds, owner files, evidence, and readback bounded to the target project.",
+      owner: "krn-cli-smoke",
+      confidence: 92,
+      applicationGuidance:
+        "Use for target fixture readiness planning only; record helped/neutral/hurt outcome after the run.",
+      invalidationRule: "Revisit when target fixture readiness behavior changes.",
+      sourceLineage: [{ sourceId: sourceClaim.id }],
+      isUserPreference: false,
+      validFrom: now,
+      metadata: {
+        smokeId: marker,
+        fixtureMemory: true
       }
     });
     let idCounter = 0;
@@ -452,13 +528,39 @@ export const runTargetRepoHarnessSmokeCheck = async (
     const targetProjectLinked =
       aggregate.operatorIntent.projectId === project.id &&
       aggregate.taskContract.projectId === project.id;
+    const memoryIncluded = aggregate.contextAssembly.inclusions.some((inclusion) =>
+      inclusion.subjectType === "memory_record" &&
+      inclusion.subjectId === memoryRecord.id
+    );
 
     if (
       aggregate.executionRun.id !== executionRun.id ||
       !codexBriefRendered ||
-      !targetProjectLinked
+      !targetProjectLinked ||
+      !memoryIncluded
     ) {
       throw new Error("Target repo harness smoke readback did not match expected project proof");
+    }
+    const memoryApplication = await memoryRepository.recordMemoryApplication({
+      memoryRecordId: memoryRecord.id,
+      executionRunId: executionRun.id,
+      taskContractId: aggregate.taskContract.id,
+      contextAssemblyId: aggregate.contextAssembly.id,
+      expectedUse: "Use target fixture readiness memory to keep planning scoped and reviewable.",
+      outcome: "helped",
+      notes: "Memory helped keep the target fixture harness smoke scoped to source seeds, owner files, evidence, and readback.",
+      metadata: {
+        smokeId: marker,
+        command: "db:smoke:target-repo-harness"
+      }
+    });
+    const readBackMemoryRecord = await memoryRepository.getMemoryRecordById(memoryRecord.id);
+
+    if (
+      readBackMemoryRecord === undefined ||
+      readBackMemoryRecord.positiveFeedbackCount < memoryRecord.positiveFeedbackCount + 1
+    ) {
+      throw new Error("Target repo harness smoke memory usefulness readback did not match");
     }
 
     const evidenceBundle = await harnessRunRepository.createEvidenceBundle({
@@ -568,7 +670,13 @@ export const runTargetRepoHarnessSmokeCheck = async (
       reviewAssessmentReadbackMatched: readBackReviewAssessment.id === reviewAssessment.id,
       feedbackDeltaId: feedbackDelta.id,
       feedbackDeltaReadbackMatched: readBackFeedbackDelta.id === feedbackDelta.id,
-      memoryRecordMutation: "none",
+      memorySeedRecordId: memoryRecord.id,
+      memoryIncluded,
+      memoryApplicationId: memoryApplication.id,
+      memoryUsefulnessOutcome: "helped",
+      memoryUsefulnessReadbackMatched: readBackMemoryRecord.id === memoryRecord.id,
+      memoryPositiveFeedbackCount: readBackMemoryRecord.positiveFeedbackCount,
+      automaticMemoryRecordMutation: "none",
       targetProjectLinked,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

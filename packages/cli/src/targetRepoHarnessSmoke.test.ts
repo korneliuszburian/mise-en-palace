@@ -24,7 +24,13 @@ describe("targetRepoHarnessSmoke", () => {
       reviewAssessmentReadbackMatched: true,
       feedbackDeltaId: "feedback-delta-1",
       feedbackDeltaReadbackMatched: true,
-      memoryRecordMutation: "none",
+      memorySeedRecordId: "memory-record-1",
+      memoryIncluded: true,
+      memoryApplicationId: "memory-application-1",
+      memoryUsefulnessOutcome: "helped",
+      memoryUsefulnessReadbackMatched: true,
+      memoryPositiveFeedbackCount: 1,
+      automaticMemoryRecordMutation: "none",
       targetProjectLinked: true,
       remainingMarkerCount: 0,
       cleanedUp: true
@@ -47,7 +53,13 @@ describe("targetRepoHarnessSmoke", () => {
     expect(output).toContain("Review assessment readback: matched");
     expect(output).toContain("Feedback delta: feedback-delta-1");
     expect(output).toContain("Feedback delta readback: matched");
-    expect(output).toContain("MemoryRecord mutation: none");
+    expect(output).toContain("Memory seed record: memory-record-1");
+    expect(output).toContain("Memory included: yes");
+    expect(output).toContain("Memory application: memory-application-1");
+    expect(output).toContain("Memory usefulness outcome: helped");
+    expect(output).toContain("Memory usefulness readback: matched");
+    expect(output).toContain("Memory positive feedback count: 1");
+    expect(output).toContain("Automatic MemoryRecord mutation: none");
     expect(output).toContain("Target project linked: yes");
     expect(output).toContain("Cleanup remaining marker count: 0");
     expect(output).toContain("Target repo harness smoke: passed");

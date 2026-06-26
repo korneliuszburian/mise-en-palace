@@ -290,20 +290,37 @@ Evidence: `packages/cli/src/targetRepoHarnessSmoke.ts`;
 Goal: make memory usefulness measurable for target-like tasks without
 auto-promoting memory.
 
-Status: active.
+Status: complete on 2026-06-26.
 
 Expected outputs:
 
 - deterministic tests/guards;
+  Status: complete.
 - optional eval matrix update;
+  Status: complete.
 - report:
   `docs/reviews/controlled-dogfood/2026-06-26-target-memory-usefulness-loop/REPORT.md`.
+  Status: complete.
 
 Acceptance:
 
 - KRN can measure whether memory helped a target-like task.
+  Status: complete.
 - Stale/hurt memory does not silently remain trusted.
+  Status: unchanged from existing memory feedback/anti-memory guards; this
+  slice did not weaken them.
 - No automatic Memory Core mutation bypasses review.
+  Status: complete.
+
+Outcome: `db:smoke:target-repo-harness` now seeds an explicit smoke-scoped
+MemoryRecord, proves target planning included it, records
+`MemoryApplication outcome=helped`, readbacks the incremented positive feedback
+count, and reports `Automatic MemoryRecord mutation: none`. This measures
+target-like memory usefulness without promoting new memory candidates.
+
+Evidence: `packages/cli/src/targetRepoHarnessSmoke.ts`;
+`packages/cli/src/targetRepoHarnessSmoke.test.ts`;
+`docs/reviews/controlled-dogfood/2026-06-26-target-memory-usefulness-loop/REPORT.md`.
 
 ---
 
@@ -311,7 +328,7 @@ Acceptance:
 
 Goal: reduce first-run ambiguity before a real second operator tries V02-01.
 
-Status: pending.
+Status: active.
 
 Expected outputs:
 

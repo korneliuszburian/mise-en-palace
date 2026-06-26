@@ -35,8 +35,9 @@ V03-00 — Local DB Bootstrap And Doctor Recovery is complete.
 V03-01 — Target Fixture Battle Harness is complete.
 V03-02 — Target Owner-File Recall Below Named Roots is complete.
 V03-03 — Target Evidence Capture And Readback Loop is complete.
-V03-04 — Target Memory Usefulness Loop is active.
-Next active slice: V03-04 — Target Memory Usefulness Loop.
+V03-04 — Target Memory Usefulness Loop is complete.
+V03-05 — First-Run Operator Friction Repair is active.
+Next active slice: V03-05 — First-Run Operator Friction Repair.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
