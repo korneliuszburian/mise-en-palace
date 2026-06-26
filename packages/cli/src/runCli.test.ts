@@ -1185,7 +1185,11 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("KRN Doctor");
+    expect(result.stdout).toContain("Postgres mode: preview/no-DB");
     expect(result.stdout).toContain("Postgres config: not configured");
+    expect(result.stdout).toContain(
+      "Postgres next action: export KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn; docker compose up -d krn-postgres; pnpm db:ready"
+    );
     expect(result.stdout).toContain(
       "Brain store readiness: preview only (set KRN_DATABASE_URL and run migrations for persisted harness state)"
     );

@@ -12,6 +12,11 @@ import type {
   DoctorCheck
 } from "./runDoctorCommand.js";
 import {
+  connectedButNotReadyRecovery,
+  missingDbConfigRecovery,
+  unreachablePostgresRecovery
+} from "./dbRecoveryGuidance.js";
+import {
   pathExists,
   readJsonObject
 } from "./cliFileBoundary.js";
@@ -33,8 +38,16 @@ export const checkPostgres = async (
   if (databaseUrl === undefined || databaseUrl.trim().length === 0) {
     return [
       {
+        label: "Postgres mode",
+        status: "preview/no-DB"
+      },
+      {
         label: "Postgres config",
         status: "not configured (KRN_DATABASE_URL missing)"
+      },
+      {
+        label: "Postgres next action",
+        status: missingDbConfigRecovery()
       },
       {
         label: "pgvector",
@@ -52,6 +65,7 @@ export const checkPostgres = async (
       databaseUrl,
       migrationsFolder
     });
+    const ready = report.pgvectorAvailable && report.migrationsVerified;
     const migrationStatus = !report.migrationTablePresent
       ? "migration table missing"
       : report.migrationsVerified
@@ -59,6 +73,10 @@ export const checkPostgres = async (
         : `unverified (${report.appliedMigrationCount}/${report.expectedMigrationCount} applied)`;
 
     return [
+      {
+        label: "Postgres mode",
+        status: ready ? "ready" : "connected but not ready"
+      },
       {
         label: "Postgres config",
         status: "configured and reachable"
@@ -70,6 +88,10 @@ export const checkPostgres = async (
       {
         label: "migrations",
         status: migrationStatus
+      },
+      {
+        label: "Postgres next action",
+        status: ready ? "none" : connectedButNotReadyRecovery()
       }
     ];
   } catch (error) {
@@ -77,8 +99,16 @@ export const checkPostgres = async (
 
     return [
       {
+        label: "Postgres mode",
+        status: "configured but unreachable"
+      },
+      {
         label: "Postgres config",
         status: `configured but unreachable (${message})`
+      },
+      {
+        label: "Postgres next action",
+        status: unreachablePostgresRecovery()
       },
       {
         label: "pgvector",

@@ -31,7 +31,9 @@ V02-05 — Codex Brief And Context ROI Guard Expansion is complete.
 V02-06 — Operator-Facing Readback / Doctor Friction Repair is complete.
 V02-07 — Target Battle Trial Packet Refresh is complete.
 V02-08 — Controlled Alpha Re-Gate After Brain Battle Guards is complete.
-Next active slice: none in this V02 rescope queue.
+V03-00 — Local DB Bootstrap And Doctor Recovery is complete.
+V03-01 — Target Fixture Battle Harness is active.
+Next active slice: V03-01 — Target Fixture Battle Harness.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 
@@ -87,8 +89,10 @@ docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-re-gate-after-v01/REPO
 docs/reviews/controlled-dogfood/2026-06-25-internal-alpha-runbook-friction/REPORT.md
 ```
 
-The V02 product-forward rescope queue is complete through V02-08. Continue with
-the internal alpha second-operator trial only after the operator supplies or
+The V02 product-forward rescope queue is complete through V02-08. The
+operator-authorized V03 product-forward continuation is active in root
+`PLAN.md`; V03-00 is complete and V03-01 is next. Continue with the
+internal alpha second-operator trial only after the operator supplies or
 approves the trial setup. Do not move the alpha tag unless explicitly asked.
 
 ## Operating Rules

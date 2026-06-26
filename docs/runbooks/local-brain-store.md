@@ -50,6 +50,19 @@ This command fails clearly without `KRN_DATABASE_URL`, checks DB reachability,
 applies Drizzle migrations, verifies the applied migration count, checks
 pgvector, and reports brain-store readiness.
 
+Read the `DB mode` line first:
+
+| DB mode | Meaning | Next action |
+| --- | --- | --- |
+| `preview/no-DB` | `KRN_DATABASE_URL` is missing. DB-backed truth is unavailable. | Export `KRN_DATABASE_URL`, start `krn-postgres`, then run `pnpm db:ready`. |
+| `configured but unreachable` | `KRN_DATABASE_URL` is set, but local Postgres is not reachable. | Run `docker compose up -d krn-postgres`, `docker compose ps krn-postgres`, then `pnpm db:ready`. |
+| `connected but not ready` | Postgres is reachable, but migrations or pgvector are not ready. | Run `pnpm db:ready`, then `pnpm db:smoke`; inspect migration/pgvector output if it still fails. |
+| `ready` | Postgres is reachable, migrations are applied, and pgvector is available. | Run `pnpm db:smoke` for persistence proof. |
+
+Starting Docker/Postgres alone does not prove DB readiness. Claim DB-backed
+truth only after `pnpm db:ready` and relevant smoke commands pass in the current
+shell.
+
 ## Run Persistence Smoke
 
 With `KRN_DATABASE_URL` exported:

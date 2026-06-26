@@ -1,69 +1,28 @@
-# KRN Product Push Autopilot PLAN
+# KRN Product Push V03 Plan
 
-Status: active root `PLAN.md` and single source of truth for the operator-authorized V02 product-forward continuation while V02-01 is blocked.
+Status: active root `PLAN.md` and single source of truth for the
+operator-authorized V03 product-forward continuation while V02-01 is blocked.
 
 Date: 2026-06-26.
 
 Repository target: `/home/krn/coding/krn/active/mise-en-palace`.
 
-This file is the checked-in execution map. Do not create `PLANS.md`, `ROADMAP.md`, or another parallel roadmap.
+This file is the checked-in execution map. Do not create `PLANS.md`,
+`ROADMAP.md`, or another parallel roadmap.
 
 ---
 
-## 1. Operator Intent
+## 1. Current Baseline
 
-The operator explicitly authorizes continuous product-forward execution while `V02-01 — Real Second-Operator Controlled Alpha Trial` remains blocked by missing real external inputs.
+The previous product autopilot queue is complete:
 
-The desired mode is:
+- V02-03 through V02-08 are complete, pushed, and CI-confirmed.
+- KRN remains `controlled-internal-alpha for technical operators`.
+- KRN is not product-ready.
+- KRN is not widened-internal-alpha.
+- V02-01 remains blocked/deferred because it requires real external inputs.
 
-```txt
-keep pushing product evidence
-  -> execute bounded slice
-  -> verify
-  -> commit
-  -> push
-  -> check CI when relevant
-  -> update PLAN.md / GOAL.md compactly
-  -> continue to the next unblocked product slice
-```
-
-Do not stop just because one task completed. Stop only for a real blocker, missing external input, unsafe scope, unrecoverable verification failure, or explicit operator stop/rescope.
-
-This authorization does **not** allow fake evidence, broad platform creep, or new product surfaces without named tasks.
-
----
-
-## 2. Product North Star
-
-KRN should keep moving toward the final product:
-
-```txt
-krn init turns any repo into an agent-ready, source-grounded,
-memory-aware, eval-driven, reviewable Codex CLI working environment.
-```
-
-KRN is not trying to win by adding more context, more docs, or more agents.
-
-KRN wins by improving the operating brain around Codex:
-
-- context selection;
-- target owner/read-model recall;
-- trust exclusions;
-- memory application and anti-memory;
-- source-to-decision discipline;
-- Codex execution briefs;
-- evidence capture;
-- proof/non-proof readback;
-- review burden and diff risk;
-- dogfood-derived eval guards.
-
-Every slice should either improve one of those behaviors or prove that the current behavior is good enough for the next gate.
-
----
-
-## 3. Hard Guardrails
-
-Never mark `V02-01` complete without real external setup:
+V02-01 must not be marked complete without:
 
 ```txt
 operator:
@@ -74,7 +33,41 @@ support boundary:
 operator transcript:
 ```
 
-Do not build unless a named task in root `PLAN.md` authorizes it:
+Latest product friction: local `pnpm db:ready` failed with
+`CONNECT_TIMEOUT localhost:54329` during V02-08, while remote CI DB readiness
+and smoke passed. Treat this as product evidence: local operator bootstrap is
+still too fragile or insufficiently guided.
+
+---
+
+## 2. V03 Product Thesis
+
+V03 is a product-reality push, not another planning layer.
+
+The sequence is:
+
+```txt
+local DB bootstrap clarity
+  -> target fixture battle harness
+  -> exact target owner-file recall below roots
+  -> target evidence/readback loop
+  -> target memory usefulness loop
+  -> first-run/operator friction repair
+  -> re-gate
+```
+
+This continues the product north star:
+
+```txt
+krn init turns any repo into an agent-ready, source-grounded,
+memory-aware, eval-driven, reviewable Codex CLI working environment.
+```
+
+---
+
+## 3. Hard Guardrails
+
+Do not build unless a named V03 task authorizes it:
 
 - dashboard;
 - API server;
@@ -91,206 +84,49 @@ Do not build unless a named task in root `PLAN.md` authorizes it:
 - automatic memory/source mutation;
 - npm/global distribution;
 - alpha tag movement;
-- Codex execution automation.
+- Codex execution automation;
+- fake second-operator proof.
 
-Prefer small deterministic behavior guards, targeted repairs, CLI/operator UX improvements, and readiness gates over additional planning documents.
+Do not fake local DB truth. If local Postgres is unavailable, KRN must say that
+honestly and provide the smallest next command/remediation.
+
+Do not fake external target-repo proof. A local fixture repo is allowed only as
+a deterministic product behavior guard, not as V02-01 or broad external proof.
 
 ---
 
-## 4. Authorized Continuous Queue
+## 4. Authorized V03 Queue
 
-### V02-03 — Run Readback And Source Rejection Guard Expansion
+### V03-00 — Local DB Bootstrap And Doctor Recovery
 
-Goal: protect two trust-critical boundaries proposed by V02-02.
+Goal: reduce the most recent operator friction: local DB readiness failed with
+`CONNECT_TIMEOUT localhost:54329` even though CI DB passed.
 
 Status: complete on 2026-06-26.
 
 Required behavior:
 
-1. `krn run show` / JSON readback preserves proof-vs-non-proof separation.
-2. Source retention rejects decorative sources or enforces mechanism / KRN implication / consumer / falsifier / does-not-prove discipline.
+1. Inspect current DB readiness, DB smoke, doctor, `compose.yaml`, runbooks,
+   package scripts, and CI DB workflow.
+2. Improve the operator-facing diagnosis for missing/unreachable local Postgres.
+3. Ensure output distinguishes preview/no-DB mode, DB configured but
+   unreachable, DB connected but migrations/extensions not ready, and DB ready.
+4. Provide actionable next commands without mutating state unexpectedly.
+5. Add deterministic tests where possible.
 
 Expected outputs:
 
 - compact `PLAN.md` and `GOAL.md` updates. Status: complete.
-- update `docs/architecture/brain-battle-eval-matrix.md`. Status: complete.
-- deterministic guard(s) through existing GoldenTask / Promptfoo / test machinery. Status: complete through `eval:brain-battle:smoke`.
-- report: `docs/reviews/controlled-dogfood/2026-06-26-run-readback-source-rejection-guards/REPORT.md`. Status: complete.
-
-Verification:
-
-```sh
-pnpm eval:brain-battle:smoke
-pnpm typecheck
-pnpm test
-pnpm eval:promptfoo:smoke
-git diff --check
-git status --short --branch
-```
-
-Non-goals: no broad eval platform, no dashboard/API/MCP, no LLM-as-judge requirement, no fake second-operator proof.
-
-Outcome: `eval:brain-battle:smoke` now runs both harness GoldenGate behavior and CLI run readback guards. GoldenGate protects decorative source rejection through source review signals. CLI readback tests protect proof-vs-non-proof separation so readback proof does not claim command execution, memory quality, source truth, review correctness, product readiness, or Memory Core mutation.
-
-Evidence: `docs/architecture/brain-battle-eval-matrix.md`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/harness/src/goldenKrnBehaviorGate.test.ts`; `packages/cli/src/runRunShowCommand.test.ts`; `docs/reviews/controlled-dogfood/2026-06-26-run-readback-source-rejection-guards/REPORT.md`.
-
----
-
-### V02-04 — Memory Feedback And Anti-Memory Guard Expansion
-
-Goal: protect the memory learning loop from poisoning and silent mutation.
-
-Status: complete on 2026-06-26.
-
-Required behavior:
-
-1. helped/neutral feedback does not create unsafe follow-up mutation;
-2. stale/hurt feedback with lineage creates reviewable candidate semantics, not direct Memory Core mutation;
-3. reviewed anti-memory blocks stale/unsafe context or surfaces explicit exclusion/warning during activation.
-
-Expected outputs:
-
-- update brain-battle matrix. Status: complete.
-- deterministic guard(s) through existing test/eval machinery. Status: complete through `eval:brain-battle:smoke`.
-- report: `docs/reviews/controlled-dogfood/2026-06-26-memory-anti-memory-guards/REPORT.md`. Status: complete.
-
-Verification:
-
-```sh
-pnpm eval:brain-battle:smoke
-pnpm typecheck
-pnpm test
-pnpm eval:promptfoo:smoke
-git diff --check
-git status --short --branch
-```
-
-Non-goals: no memory scoring rewrite, no reflection rewrite, no automatic memory/source mutation, no new DB architecture.
-
-Outcome: `krn memory record apply` now reports `Memory Core mutation: none` in preview and persisted output. CLI guards cover helped feedback producing no feedback event or follow-up candidate, and stale/hurt feedback producing negative feedback plus a reviewable anti-memory candidate without Memory Core mutation. The brain-battle smoke now includes the CLI memory feedback guards alongside GoldenGate and run readback guards.
-
-Evidence: `packages/cli/src/runMemoryRecordApplyCommand.ts`; `packages/cli/src/runCli.test.ts`; `package.json`; `docs/architecture/brain-battle-eval-matrix.md`; `docs/reviews/controlled-dogfood/2026-06-26-memory-anti-memory-guards/REPORT.md`.
-
----
-
-### V02-05 — Codex Brief And Context ROI Guard Expansion
-
-Goal: protect the Codex-facing execution contract and context discipline.
-
-Status: complete on 2026-06-26.
-
-Required behavior:
-
-1. Codex brief includes objective, constraints, non-goals, selected context, exclusions, expected evidence, review burden, rollback, and proof boundaries.
-2. Context assembly rejects broad dumps and requires reason + expectedUse for included context.
-3. Excluded context keeps explicit reasons where supported: trust, stale, over-budget, duplicate, irrelevant, unsafe, superseded.
-
-Expected outputs:
-
-- update brain-battle matrix. Status: complete.
-- deterministic guard(s) through GoldenTask / brain-battle smoke / unit tests. Status: complete through `eval:brain-battle:smoke`.
-- report: `docs/reviews/controlled-dogfood/2026-06-26-codex-brief-context-roi-guards/REPORT.md`. Status: complete.
-
-Verification:
-
-```sh
-pnpm eval:brain-battle:smoke
-pnpm typecheck
-pnpm test
-pnpm eval:promptfoo:smoke
-git diff --check
-git status --short --branch
-```
-
-Non-goals: no prompt bloat rewrite, no activation scoring rewrite unless a failing guard proves a focused defect, no source crawler.
-
-Outcome: `eval:brain-battle:smoke` now runs Codex adapter golden behavior for brief contract fields and GoldenGate ContextROI behavior. The guard verifies Codex brief context keeps reason, expected use, explicit exclusion explanation, rollback, stop condition, and proof boundaries. ContextROI guard verifies a one-item budget keeps only bounded selected context and records over-budget exclusions.
-
-Evidence: `package.json`; `packages/codex-adapter/src/codexBriefGoldenBehavior.test.ts`; `packages/harness/src/goldenKrnBehaviorGate.ts`; `packages/harness/src/goldenKrnBehaviorGate.test.ts`; `docs/architecture/brain-battle-eval-matrix.md`; `docs/reviews/controlled-dogfood/2026-06-26-codex-brief-context-roi-guards/REPORT.md`.
-
----
-
-### V02-06 — Operator-Facing Readback / Doctor Friction Repair
-
-Goal: reduce known operator ambiguity without building a dashboard or changing packaging.
-
-Status: complete on 2026-06-26.
-
-Required behavior:
-
-- inspect `krn run show`, `krn doctor`, runbooks, and release notes. Status: complete.
-- repair only evidence-backed confusion around proof boundaries, DB/preview mode, verification commands, ignored install warnings, or stale alpha language. Status: complete.
-- add/update tests only where behavior changed. Status: complete.
-- report: `docs/reviews/controlled-dogfood/2026-06-26-operator-readback-doctor-friction/REPORT.md`. Status: complete.
+- source or docs changes only where product friction requires them. Status: complete.
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-local-db-bootstrap-doctor-recovery/REPORT.md`.
+  Status: complete.
 
 Verification:
 
 ```sh
 pnpm typecheck
 pnpm test
-pnpm eval:brain-battle:smoke
-pnpm eval:promptfoo:smoke
-git diff --check
-git status --short --branch
-```
-
-Non-goals: no npm/global install, no tag movement, no dashboard/API/MCP, no source workspace packaging rewrite unless a blocker proves it.
-
-Outcome: `krn run show` now gives an operator-facing DB unblock path when `KRN_DATABASE_URL` is missing, and `krn run --help` names the persisted-run / DB prerequisite plus `pnpm db:ready`. This keeps readback read-only and does not change persistence or doctor semantics.
-
-Evidence: `packages/cli/src/runRunShowCommand.ts`; `packages/cli/src/parseRunArgs.ts`; `packages/cli/src/runCli.test.ts`; `docs/reviews/controlled-dogfood/2026-06-26-operator-readback-doctor-friction/REPORT.md`.
-
----
-
-### V02-07 — Target Battle Trial Packet Refresh
-
-Goal: make the next real target/second-operator trial fast, measurable, and hard to fake.
-
-Status: complete on 2026-06-26.
-
-Required behavior:
-
-- update or add a runbook only if it reduces execution ambiguity. Status: complete.
-- define 3–5 bounded target trial scenarios with expected context roots, trust exclusions, allowed writes, verification commands, review-burden fields, and does-not-prove boundary. Status: complete.
-- do not claim this completes V02-01. Status: complete.
-- report: `docs/reviews/controlled-dogfood/2026-06-26-target-battle-trial-packet-refresh/REPORT.md`. Status: complete.
-
-Verification:
-
-```sh
-git diff --check
-pnpm typecheck
-pnpm test
-git status --short --branch
-```
-
-Non-goals: no fake operator proof, no broad benchmark lane, no source crawler, no new target writes.
-
-Outcome: `docs/runbooks/second-operator-alpha-trial.md` now includes a four-scenario trial menu for docs-only runbook repair, narrow TypeScript boundary repair, target test-readiness investigation, and config/CI command proof mapping. Each scenario names expected context roots, trust exclusions, allowed writes, verification commands, review-burden fields, and does-not-prove boundaries. V02-01 remains blocked until a real second operator runs the packet.
-
-Evidence: `docs/runbooks/second-operator-alpha-trial.md`; `docs/reviews/controlled-dogfood/2026-06-26-target-battle-trial-packet-refresh/REPORT.md`.
-
----
-
-### V02-08 — Controlled Alpha Re-Gate After Brain Battle Guards
-
-Goal: decide whether current `main` is still controlled-internal-alpha ready, widened-alpha deferred, dogfood-only, or not-ready after V02-02 through V02-07.
-
-Status: complete on 2026-06-26.
-
-Required behavior:
-
-- inspect V01/V02 reports, CI status, runbooks, release notes, brain-battle matrix, and completion gates. Status: complete.
-- classify readiness honestly. Status: complete: controlled-internal-alpha for technical operators.
-- list exact blockers and next allowed action. Status: complete.
-- state what this does not prove. Status: complete.
-- do not claim product-ready. Status: complete.
-- do not move tags unless explicitly authorized later. Status: complete.
-- report: `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-brain-battle/REPORT.md`. Status: complete.
-
-Verification:
-
-```sh
 pnpm alpha:verify
 pnpm eval:brain-battle:smoke
 pnpm eval:promptfoo:smoke
@@ -298,28 +134,191 @@ git diff --check
 git status --short --branch
 ```
 
-DB verification:
+Optional if local DB is available:
 
-- If local DB is available, run `pnpm db:ready` and `pnpm db:smoke`.
-- If local DB is unavailable, do not claim current-shell DB truth. Rely only on remote CI DB status and mark local DB as unverified.
+```sh
+pnpm db:ready
+pnpm db:smoke
+```
 
-Outcome: current `main` remains controlled-internal-alpha ready for technical operators, not product-ready and not widened-alpha ready. V02-03 through V02-07 strengthened deterministic brain-battle guards, operator readback guidance, and the second-operator trial packet. V02-01 remains blocked until a real second operator supplies the required setup and transcript. Local `pnpm db:ready` failed with `CONNECT_TIMEOUT localhost:54329`, so current-shell DB truth is unverified for V02-08; remote CI for commit `6515857` passed DB ready/smoke.
+If local DB remains unreachable, record it honestly and rely on remote CI DB
+after push.
 
-Evidence: `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-brain-battle/REPORT.md`; `docs/architecture/brain-battle-eval-matrix.md`; `docs/runbooks/second-operator-alpha-trial.md`; GitHub Actions run `28245585125`.
+Acceptance:
+
+- Missing local Postgres no longer looks like ambiguous product failure. Status: complete.
+- Operator sees exactly what to run next. Status: complete.
+- No DB mutation is hidden inside doctor/diagnosis. Status: complete.
+- No product-ready or external-proof claim. Status: complete.
+
+Outcome: `krn db readiness` now reports `DB mode` and recovery commands for
+preview/no-DB, configured-but-unreachable, connected-but-not-ready, and ready
+states. `krn doctor` now reports `Postgres mode` and `Postgres next action`.
+The V02-08 local `CONNECT_TIMEOUT localhost:54329` state was reproduced and
+recovered by starting `krn-postgres`; local `pnpm db:ready`, `pnpm db:smoke`,
+and DB-backed doctor then passed.
+
+Evidence: `packages/cli/src/dbRecoveryGuidance.ts`;
+`packages/cli/src/runDbReadinessCommand.ts`;
+`packages/cli/src/doctorDbChecks.ts`; `docs/runbooks/local-brain-store.md`;
+`docs/reviews/controlled-dogfood/2026-06-26-local-db-bootstrap-doctor-recovery/REPORT.md`.
 
 ---
 
-## 5. Allowed Repair Rule
+### V03-01 — Target Fixture Battle Harness
 
-If a deterministic guard fails, implement the smallest source repair needed to make the real behavior pass only when all are true:
+Goal: create a deterministic, local target-repo fixture that protects target
+init/connect/plan behavior without pretending it is a real external operator
+trial.
 
-- the guard protects an existing KRN behavior boundary;
-- the repair does not introduce a forbidden product surface;
-- the repair does not broaden scope beyond the failing boundary;
-- package/public surfaces remain consistent;
-- the report explains failure, repair, verification, and what remains unproven.
+Status: active.
 
-Do not perform broad rewrites. Do not turn one failing guard into a subsystem.
+Expected outputs:
+
+- fixture/test/guard updates;
+- optional brain-battle matrix update;
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-target-fixture-battle-harness/REPORT.md`.
+
+Acceptance:
+
+- Fixture guard is deterministic and CI-runnable.
+- It does not claim external target proof or V02-01 completion.
+- It does not introduce a crawler or broad eval platform.
+
+---
+
+### V03-02 — Target Owner-File Recall Below Named Roots
+
+Goal: address the known remaining limit that target read-model can surface
+named roots while exact file recall below roots remains weak/unknown.
+
+Status: pending.
+
+Expected outputs:
+
+- targeted implementation or guard-only proof;
+- tests/brain-battle guard;
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-target-owner-file-recall-below-roots/REPORT.md`.
+
+Acceptance:
+
+- Target project planning no longer stops at vague root-level hints when a
+  bounded owner-file candidate can be inferred.
+- If exact owner-file inference is not safe, output explains the missing signal.
+- No crawler, scoring rewrite, or broad retrieval rewrite.
+
+---
+
+### V03-03 — Target Evidence Capture And Readback Loop
+
+Goal: prove a target-like run can move from plan to evidence capture to readback
+with honest proof/non-proof boundaries.
+
+Status: pending.
+
+Expected outputs:
+
+- source/test/guard changes if required;
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-target-evidence-readback-loop/REPORT.md`.
+
+Acceptance:
+
+- Target-like evidence can be read back without ad hoc SQL.
+- Proof/non-proof boundaries survive the full loop.
+- No automatic memory/source mutation.
+
+---
+
+### V03-04 — Target Memory Usefulness Loop
+
+Goal: make memory usefulness measurable for target-like tasks without
+auto-promoting memory.
+
+Status: pending.
+
+Expected outputs:
+
+- deterministic tests/guards;
+- optional eval matrix update;
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-target-memory-usefulness-loop/REPORT.md`.
+
+Acceptance:
+
+- KRN can measure whether memory helped a target-like task.
+- Stale/hurt memory does not silently remain trusted.
+- No automatic Memory Core mutation bypasses review.
+
+---
+
+### V03-05 — First-Run Operator Friction Repair
+
+Goal: reduce first-run ambiguity before a real second operator tries V02-01.
+
+Status: pending.
+
+Expected outputs:
+
+- source/docs changes as needed;
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-first-run-operator-friction-repair/REPORT.md`.
+
+Acceptance:
+
+- A technical operator has fewer ambiguous states before V02-01.
+- No product-ready, npm/global install, alpha tag move, dashboard, API, MCP, or
+  worker runtime.
+
+---
+
+### V03-06 — Controlled Alpha Re-Gate After V03
+
+Goal: convert V03 evidence into the next honest readiness decision.
+
+Status: pending.
+
+Expected outputs:
+
+- compact `PLAN.md` and `GOAL.md` updates;
+- report:
+  `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-v03/REPORT.md`.
+
+Acceptance:
+
+- Readiness classification is honest.
+- The next action is specific.
+- No product-ready claim unless evidence actually satisfies product-ready gates.
+
+---
+
+## 5. Shared Verification
+
+Unless a slice states a narrower docs-only verification, run:
+
+```sh
+pnpm typecheck
+pnpm test
+pnpm eval:brain-battle:smoke
+pnpm eval:promptfoo:smoke
+git diff --check
+git status --short --branch
+```
+
+Use `pnpm alpha:verify` when operator install/readiness behavior is touched or
+when the slice explicitly requires it.
+
+Use DB commands only when meaningful:
+
+```sh
+pnpm db:ready
+pnpm db:smoke
+```
+
+Do not claim current-shell DB truth unless those commands pass in the current
+shell.
 
 ---
 
@@ -327,8 +326,9 @@ Do not perform broad rewrites. Do not turn one failing guard into a subsystem.
 
 This continuous product push is complete only when one of these is true:
 
-- V02-03 through V02-08 are complete, verified, pushed, and CI-confirmed where relevant;
-- V02-01 receives real external setup and supersedes the rescope queue;
+- V03-00 through V03-06 are complete, verified, pushed, and CI-confirmed where
+  relevant;
+- V02-01 receives real external setup and supersedes this rescope queue;
 - verification blocks further safe work;
-- the next step requires an unauthorized product surface;
+- the next step requires an unauthorized product surface or external input;
 - the operator explicitly stops or rescopes.
