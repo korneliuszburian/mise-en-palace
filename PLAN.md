@@ -328,19 +328,34 @@ Evidence: `packages/cli/src/targetRepoHarnessSmoke.ts`;
 
 Goal: reduce first-run ambiguity before a real second operator tries V02-01.
 
-Status: active.
+Status: complete on 2026-06-26.
 
 Expected outputs:
 
 - source/docs changes as needed;
+  Status: complete.
 - report:
   `docs/reviews/controlled-dogfood/2026-06-26-first-run-operator-friction-repair/REPORT.md`.
+  Status: complete.
 
 Acceptance:
 
 - A technical operator has fewer ambiguous states before V02-01.
+  Status: complete.
 - No product-ready, npm/global install, alpha tag move, dashboard, API, MCP, or
   worker runtime.
+  Status: complete.
+
+Outcome: `krn doctor` target repo readiness now names the concrete guarded
+target surfaces: source seeds, owner files, evidence readback, and memory
+usefulness. The local DB and second-operator runbooks now include
+`pnpm db:smoke:init-connect` and `pnpm db:smoke:target-repo-harness` before a
+real V02-01 attempt.
+
+Evidence: `packages/cli/src/doctorReadiness.ts`;
+`docs/runbooks/local-brain-store.md`;
+`docs/runbooks/second-operator-alpha-trial.md`;
+`docs/reviews/controlled-dogfood/2026-06-26-first-run-operator-friction-repair/REPORT.md`.
 
 ---
 
@@ -348,7 +363,7 @@ Acceptance:
 
 Goal: convert V03 evidence into the next honest readiness decision.
 
-Status: pending.
+Status: active.
 
 Expected outputs:
 

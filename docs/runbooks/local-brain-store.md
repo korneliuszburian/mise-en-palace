@@ -75,6 +75,27 @@ This command ensures migration readiness, inserts a smoke workspace/project
 through the Drizzle project repository, reads the project back, and deletes the
 smoke workspace so cascade cleanup removes the smoke project.
 
+## Run Target-Repo Harness Smokes
+
+Before a real target-repo or second-operator trial, run the target readiness
+smokes in the same shell:
+
+```sh
+pnpm db:smoke:init-connect
+pnpm db:smoke:target-repo-harness
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm krn doctor
+```
+
+`pnpm db:smoke:init-connect` proves local target project registration and
+idempotent Project/RepoInstallation/ProjectKernel readback.
+
+`pnpm db:smoke:target-repo-harness` proves the local target fixture can carry
+source seeds, owner files, trust exclusions, evidence/review/feedback readback,
+and a measured memory usefulness loop.
+
+These smokes do not prove a real external operator trial, hosted CI, target
+source quality, or product readiness.
+
 ## Backup Policy
 
 Before any destructive migration, risky schema change, or internal-alpha

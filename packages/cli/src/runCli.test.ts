@@ -1635,7 +1635,8 @@ describe("runCli", () => {
       deriveTargetRepoReadiness(postgresReady, targetRepoReady)
     ).toEqual({
       label: "Target repo readiness",
-      status: "ready (init-connect smoke proven; target repo harness smoke proven)"
+      status:
+        "ready (init-connect and target harness smokes proven; source seeds, owner files, evidence readback, and memory usefulness guarded)"
     });
 
     expect(

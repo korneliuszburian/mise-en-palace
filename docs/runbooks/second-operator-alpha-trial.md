@@ -151,6 +151,8 @@ Expected: this runs typecheck, tests, and preview `pnpm krn doctor`.
 docker compose up -d krn-postgres
 pnpm db:ready
 pnpm db:smoke
+pnpm db:smoke:init-connect
+pnpm db:smoke:target-repo-harness
 KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm krn doctor
 ```
 
@@ -160,12 +162,17 @@ Record:
 compose result:
 db:ready result:
 db:smoke result:
+init-connect smoke result:
+target repo harness smoke result:
 db-backed doctor result:
 support used:
 ```
 
 If Docker/Postgres is unavailable, stop DB-backed claims and mark DB runtime
 truth as unverified.
+
+The target harness smoke is local fixture proof. It does not complete the real
+target repo trial.
 
 ## Step 4: Target Repo Init / Connect
 
