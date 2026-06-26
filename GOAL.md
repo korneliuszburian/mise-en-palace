@@ -28,7 +28,8 @@ V02-02 — Brain Battle Eval Matrix And Guarded Eval Harness is complete.
 V02-03 — Run Readback And Source Rejection Guard Expansion is complete.
 V02-04 — Memory Feedback And Anti-Memory Guard Expansion is complete.
 V02-05 — Codex Brief And Context ROI Guard Expansion is complete.
-Next active slice: V02-06 — Operator-Facing Readback / Doctor Friction Repair.
+V02-06 — Operator-Facing Readback / Doctor Friction Repair is complete.
+Next active slice: V02-07 — Target Battle Trial Packet Refresh.
 V02-01 — Real Second-Operator Controlled Alpha Trial remains blocked/deferred.
 ```
 

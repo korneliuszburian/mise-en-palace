@@ -128,6 +128,13 @@ export type CreateRunShowDatabaseRuntime = (
 
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
+const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
+
+export const missingRunShowDatabaseUrlMessage = [
+  "KRN_DATABASE_URL is required for krn run show",
+  `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and run pnpm db:ready before readback`,
+  "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
+].join("\n");
 
 const createReadOnlyHarnessRuntime = async (
   databaseUrl: string
@@ -467,7 +474,7 @@ export const runRunShowCommand = async (
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error("KRN_DATABASE_URL is required for krn run show");
+    throw new Error(missingRunShowDatabaseUrlMessage);
   }
 
   const readRuntime = await resolveReadOnlyRuntime(runtime, databaseUrl);

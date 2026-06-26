@@ -214,12 +214,14 @@ Evidence: `package.json`; `packages/codex-adapter/src/codexBriefGoldenBehavior.t
 
 Goal: reduce known operator ambiguity without building a dashboard or changing packaging.
 
+Status: complete on 2026-06-26.
+
 Required behavior:
 
-- inspect `krn run show`, `krn doctor`, runbooks, and release notes;
-- repair only evidence-backed confusion around proof boundaries, DB/preview mode, verification commands, ignored install warnings, or stale alpha language;
-- add/update tests only where behavior changed;
-- report: `docs/reviews/controlled-dogfood/2026-06-26-operator-readback-doctor-friction/REPORT.md`.
+- inspect `krn run show`, `krn doctor`, runbooks, and release notes. Status: complete.
+- repair only evidence-backed confusion around proof boundaries, DB/preview mode, verification commands, ignored install warnings, or stale alpha language. Status: complete.
+- add/update tests only where behavior changed. Status: complete.
+- report: `docs/reviews/controlled-dogfood/2026-06-26-operator-readback-doctor-friction/REPORT.md`. Status: complete.
 
 Verification:
 
@@ -233,6 +235,10 @@ git status --short --branch
 ```
 
 Non-goals: no npm/global install, no tag movement, no dashboard/API/MCP, no source workspace packaging rewrite unless a blocker proves it.
+
+Outcome: `krn run show` now gives an operator-facing DB unblock path when `KRN_DATABASE_URL` is missing, and `krn run --help` names the persisted-run / DB prerequisite plus `pnpm db:ready`. This keeps readback read-only and does not change persistence or doctor semantics.
+
+Evidence: `packages/cli/src/runRunShowCommand.ts`; `packages/cli/src/parseRunArgs.ts`; `packages/cli/src/runCli.test.ts`; `docs/reviews/controlled-dogfood/2026-06-26-operator-readback-doctor-friction/REPORT.md`.
 
 ---
 
