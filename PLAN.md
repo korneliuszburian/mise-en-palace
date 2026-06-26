@@ -276,15 +276,17 @@ Evidence: `docs/runbooks/second-operator-alpha-trial.md`; `docs/reviews/controll
 
 Goal: decide whether current `main` is still controlled-internal-alpha ready, widened-alpha deferred, dogfood-only, or not-ready after V02-02 through V02-07.
 
+Status: complete on 2026-06-26.
+
 Required behavior:
 
-- inspect V01/V02 reports, CI status, runbooks, release notes, brain-battle matrix, and completion gates;
-- classify readiness honestly;
-- list exact blockers and next allowed action;
-- state what this does not prove;
-- do not claim product-ready;
-- do not move tags unless explicitly authorized later;
-- report: `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-brain-battle/REPORT.md`.
+- inspect V01/V02 reports, CI status, runbooks, release notes, brain-battle matrix, and completion gates. Status: complete.
+- classify readiness honestly. Status: complete: controlled-internal-alpha for technical operators.
+- list exact blockers and next allowed action. Status: complete.
+- state what this does not prove. Status: complete.
+- do not claim product-ready. Status: complete.
+- do not move tags unless explicitly authorized later. Status: complete.
+- report: `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-brain-battle/REPORT.md`. Status: complete.
 
 Verification:
 
@@ -300,6 +302,10 @@ DB verification:
 
 - If local DB is available, run `pnpm db:ready` and `pnpm db:smoke`.
 - If local DB is unavailable, do not claim current-shell DB truth. Rely only on remote CI DB status and mark local DB as unverified.
+
+Outcome: current `main` remains controlled-internal-alpha ready for technical operators, not product-ready and not widened-alpha ready. V02-03 through V02-07 strengthened deterministic brain-battle guards, operator readback guidance, and the second-operator trial packet. V02-01 remains blocked until a real second operator supplies the required setup and transcript. Local `pnpm db:ready` failed with `CONNECT_TIMEOUT localhost:54329`, so current-shell DB truth is unverified for V02-08; remote CI for commit `6515857` passed DB ready/smoke.
+
+Evidence: `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-brain-battle/REPORT.md`; `docs/architecture/brain-battle-eval-matrix.md`; `docs/runbooks/second-operator-alpha-trial.md`; GitHub Actions run `28245585125`.
 
 ---
 
