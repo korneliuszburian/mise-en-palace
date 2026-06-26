@@ -27,6 +27,25 @@ evidence only unless root `PLAN.md` names them for a current task.
 V02-01 — Real Second-Operator Controlled Alpha Trial
 ```
 
+Current state:
+
+```txt
+V02-01 is prepared but external-input blocked.
+```
+
+The trial packet already exists. Continue only after the operator supplies or
+approves:
+
+```txt
+operator:
+KRN source: existing tag / current main / other
+target repo:
+DB mode: local Docker/Postgres / preview only
+support boundary:
+```
+
+Do not substitute local docs/source work for the real second-operator trial.
+
 B-00, B-01, B-02, B-03, B-04, C-00, C-01, C-02, C-03, D-00, D-01, D-02, D-03, E-00, E-01, E-02, F-00, F-01, F-02, G-00, G-01, G-02, G-03, G-04, V01-00, V01-01, V01-02, V01-03, V01-R01, V01-04, and V02-00 are complete. Current evidence:
 
 ```txt
