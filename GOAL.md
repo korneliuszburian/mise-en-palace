@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V33 — Reused Project Owner-File Refresh Repair
+V34 — Target Repair Re-Gate After Owner-File Refresh
 ```
 
 Current product loop:
@@ -73,8 +73,9 @@ V29 TypeScript Boundary Research Application Gate: complete.
 V30 Codex Surface Context-Budget Application Gate: complete.
 V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete.
 V32 Controlled Target Repair Trial: complete.
-active stream: V33 Reused Project Owner-File Refresh Repair.
-current task: V33-00 — Reused Project Owner-File Refresh Repair.
+V33 Reused Project Owner-File Refresh Repair: complete.
+active stream: V34 Target Repair Re-Gate After Owner-File Refresh.
+current task: V34-00 — Target Repair Re-Gate After Owner-File Refresh.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

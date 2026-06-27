@@ -408,6 +408,21 @@ const renderDryRun = (detection: TargetRepoDetection): string =>
 
 const createdLabel = (created: boolean): string => (created ? "created" : "reused");
 
+const targetProjectMetadata = (
+  repoInput: ConnectTargetRepoInput
+): Record<string, unknown> => ({
+  createdBy: "krn init --connect",
+  repoFingerprint: repoInput.repoFingerprint,
+  repoPath: repoInput.repoPath,
+  sourceSeeds: repoInput.sourceSeeds,
+  ownerFiles: repoInput.ownerFiles
+});
+
+const metadataMatches = (
+  left: Record<string, unknown>,
+  right: Record<string, unknown>
+): boolean => JSON.stringify(left) === JSON.stringify(right);
+
 const renderConnect = (
   detection: TargetRepoDetection,
   result: ConnectTargetRepoResult
@@ -504,22 +519,18 @@ const createPostgresInitConnectRuntime = async (
           }
         }));
       const existingKernel = await projectRepository.getLatestProjectKernel(project.id);
+      const nextKernelMetadata = targetProjectMetadata(repoInput);
       const projectKernel =
-        existingKernel ??
-        (await projectRepository.createProjectKernel({
-          projectId: project.id,
-          version: 1,
-          summary: `${repoInput.packageName} target repo connected for KRN harness planning`,
-          activeContextRule:
-            "select project-scoped source, memory, retrieval, and anti-memory only",
-          metadata: {
-            createdBy: "krn init --connect",
-            repoFingerprint: repoInput.repoFingerprint,
-            repoPath: repoInput.repoPath,
-            sourceSeeds: repoInput.sourceSeeds,
-            ownerFiles: repoInput.ownerFiles
-          }
-        }));
+        existingKernel !== undefined && metadataMatches(existingKernel.metadata, nextKernelMetadata)
+          ? existingKernel
+          : await projectRepository.createProjectKernel({
+              projectId: project.id,
+              version: existingKernel === undefined ? 1 : existingKernel.version + 1,
+              summary: `${repoInput.packageName} target repo connected for KRN harness planning`,
+              activeContextRule:
+                "select project-scoped source, memory, retrieval, and anti-memory only",
+              metadata: nextKernelMetadata
+            });
 
       return {
         project,
@@ -527,7 +538,7 @@ const createPostgresInitConnectRuntime = async (
         repoInstallation,
         repoInstallationCreated: existingInstallation === undefined,
         projectKernel,
-        projectKernelCreated: existingKernel === undefined
+        projectKernelCreated: projectKernel.id !== existingKernel?.id
       };
     },
     async close(): Promise<void> {

@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V33 Reused Project Owner-File Refresh Repair
-current task: V33-00 Reused Project Owner-File Refresh Repair
+active stream: V34 Target Repair Re-Gate After Owner-File Refresh
+current task: V34-00 Target Repair Re-Gate After Owner-File Refresh
 ```
 
 Completed stream summary:
@@ -62,35 +62,35 @@ V29 TypeScript Boundary Research Application Gate: complete
 V30 Codex Surface Context-Budget Application Gate: complete
 V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 V32 Controlled Target Repair Trial: complete
+V33 Reused Project Owner-File Refresh Repair: complete
 ```
 
 ## Active Stream
 
-### V33-00 — Reused Project Owner-File Refresh Repair
+### V34-00 — Target Repair Re-Gate After Owner-File Refresh
 
 Goal:
 
-Inspect and repair the reused-project owner-file refresh/read-model path so new
-`krn init --owner-file` entries are available to planning or the CLI clearly
-reports stale owner-file/read-model state.
+Decide the next product move after V32/V33, accounting for the repaired
+owner-file refresh path, the current dirty target patch from V32, and unchanged
+V02-01/product-ready/widened-alpha boundaries.
 
 Current finding:
 
 ```txt
-V32 proved KRN can govern one bounded headless target repair with target
-allowed/forbidden writes, persisted evidence, observe, reflect, and readback.
-However, after init/connect accepted two exact FAQ owner-file inputs for a
-reused target project, the subsequent plan selected older/stale owner files and
-omitted both FAQ files.
+V33 repaired reused-project owner-file refresh. Reconnect now creates a fresh
+ProjectKernel snapshot when owner/source metadata changes, and planning treats
+latest ProjectKernel owner files as the active snapshot with repo installation
+owner files as fallback only. V33 replay on the V32 target project selected the
+two FAQ owner files plus trust exclusions.
 ```
 
-Current V33 action:
+Current V34 action:
 
 ```txt
-Inspect the init/connect persistence and planning read-model path for reused
-projects. Add the smallest repair or explicit warning that makes newly supplied
-owner-file inputs visible to planning or honestly reports stale read-model
-state. Prove with DB-backed replay.
+Re-gate target repair readiness. Decide whether the next step is another
+controlled target repair on a clean/safe target, target patch handoff/rollback,
+real operator intake if inputs exist, or no new implementation.
 ```
 
 ## V02-01 Boundary

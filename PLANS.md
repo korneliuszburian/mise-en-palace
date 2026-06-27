@@ -58,12 +58,13 @@ V29 TypeScript Boundary Research Application Gate: complete
 V30 Codex Surface Context-Budget Application Gate: complete
 V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 V32 Controlled Target Repair Trial: complete
+V33 Reused Project Owner-File Refresh Repair: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V33 Reused Project Owner-File Refresh Repair
-current task: V33-00 Reused Project Owner-File Refresh Repair
+active stream: V34 Target Repair Re-Gate After Owner-File Refresh
+current task: V34-00 Target Repair Re-Gate After Owner-File Refresh
 ```
 
 Evidence already recorded in repo:
@@ -78,9 +79,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V32 proved one bounded target repair, but reused-project owner-file refresh is
-not proven: init/connect accepted new owner-file inputs while plan selected
-older/stale target owner files.
+V33 repaired reused-project owner-file refresh. The next task must re-gate the
+target repair path with the V32 target patch still dirty and V02-01/product
+readiness still unproved.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3153,7 +3154,7 @@ Completed evidence:
 
 ### V33-00 — Reused Project Owner-File Refresh Repair
 
-Status: active
+Status: complete
 
 Goal: inspect and repair the reused-project owner-file refresh/read-model path
 so new `krn init --owner-file` entries are available to planning or stale
@@ -3244,6 +3245,82 @@ Rollback: revert the focused KRN source/report/plan commit if necessary.
 Condensation expectation: decide whether owner-file refresh is now sufficient
 for another controlled target repair or whether target planning still needs a
 separate read-model visibility repair.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v33-reused-project-owner-file-refresh/REPORT.md`.
+- Source repair changed `runInitCommand`, `runPlanCommand`, init-connect smoke,
+  and smoke rendering.
+- DB-backed replay on the V32 target project now reports only the two FAQ owner
+  files and includes both plus trust exclusions in context.
+
+### V34-00 — Target Repair Re-Gate After Owner-File Refresh
+
+Status: active
+
+Goal: decide the next product move after V32/V33 without creating another
+implementation stream by inertia.
+
+Product rationale: V32 proved one governed target repair and V33 repaired the
+owner-file refresh gap found by that repair. The target repo still has the V32
+patch dirty, and product-ready, widened alpha, and V02-01 remain unproved.
+
+Architectural rationale: after a source repair, KRN should re-gate from
+evidence instead of immediately stacking another feature. The decision must
+respect target safety, patch handoff, operator readiness, and current CI.
+
+Evidence source: V32 report, V33 report, current target dirty state, current
+KRN CI/verification state.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- KRN git status and latest pushed CI result;
+- target repo dirty state;
+- V32/V33 reports;
+- V02-01 input availability check.
+
+Files likely touched:
+
+- V34 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit;
+- target reset/clean;
+- KRN source changes unless the re-gate identifies a tiny blocking bug and
+  promotes a new task first;
+- product-ready/V02-01/widened-alpha overclaim;
+- dashboard/API/MCP/worker runtime/source crawler/Research Foundry.
+
+Output requirements:
+
+- readiness verdict after V32/V33;
+- target patch handoff/dirty-state decision;
+- next recommended task;
+- proof/non-proof boundaries.
+
+Definition of Done: V34 either promotes the next bounded product task or records
+that real operator inputs/target patch handoff are the honest blocker.
+
+Verification commands: `git diff --check`; inspect target `git status
+--short --branch`; check pushed CI if a commit is made.
+
+Acceptance criteria:
+
+- no target writes;
+- no V02-01 substitution;
+- no product-ready overclaim;
+- active plan points to the next concrete task.
 
 ## 13. Generated Task Backlog
 
@@ -3518,7 +3595,10 @@ Initial entry:
   V32 controlled target repair trial accepted as the next product proof.
 - [x] V32-00 complete: controlled target repair trial succeeded as governed
   headless repair, but exposed reused-project owner-file refresh/selection gap.
-- [ ] V33-00 active: Reused Project Owner-File Refresh Repair.
+- [x] V33-00 complete: reused-project owner-file refresh now creates a fresh
+  ProjectKernel snapshot when metadata changes and planning treats latest
+  kernel owner files as the active snapshot.
+- [ ] V34-00 active: Target Repair Re-Gate After Owner-File Refresh.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3558,6 +3638,15 @@ Record every unexpected fact in this format:
   V32 run `e6c68ed8-4c90-436c-bb33-7673f7ed683b`.
   Impact: V33 should inspect/repair owner-file refresh/read-model state before
   any activation scoring rewrite or target source crawler.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Latest ProjectKernel metadata is the correct owner-file snapshot
+  boundary for reused project planning; repo installation owner files should be
+  fallback only.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v33-reused-project-owner-file-refresh/REPORT.md`;
+  replay run `cea1450b-07c2-4d4c-b190-331a242b47e8`.
+  Impact: V33 repaired read-model freshness without activation scoring rewrite
+  or source crawler.
   Date/Author: 2026-06-27 / Codex
 
 - Discovery: Current target harness smoke proves memory usefulness but source
@@ -4002,6 +4091,18 @@ Initial decisions:
   Falsifier: V33 source inspection proves the V32 owner-file miss came from
     operator input misuse rather than reused-project read-model refresh.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target repair re-gate after owner-file refresh as V34.
+  Rationale: V33 repaired the immediate reused-project owner-file refresh gap;
+    the next product decision should account for the dirty V32 target patch and
+    readiness boundaries before another implementation task.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v33-reused-project-owner-file-refresh/REPORT.md`;
+    V33 replay run `cea1450b-07c2-4d4c-b190-331a242b47e8`.
+  Does not prove: product readiness, V02-01, widened alpha, or full target
+    runtime correctness.
+  Falsifier: V34 finds an unclosed blocking source bug that must be repaired
+    before any readiness/patch-handoff decision.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4349,6 +4450,22 @@ Seed evidence:
   Does not prove: product readiness, V02-01, widened alpha, full target runtime
     correctness, or reused-project owner-file refresh correctness.
   Follow-up task: V33-00.
+
+- Evidence ID: E-V33-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v33-reused-project-owner-file-refresh/REPORT.md`
+  Command/report/file: source repair, full typecheck/test, DB init-connect
+    smoke, DB-backed init/connect/plan replay, evidence capture, observe,
+    reflect, and readback.
+  Result: reused project reconnect creates a fresh ProjectKernel snapshot when
+    metadata changes; planning treats latest ProjectKernel owner files as the
+    active snapshot and repo installation owner files as fallback only. V32
+    target replay selected exactly the two FAQ owner files plus trust
+    exclusions.
+  Proves: the V32 owner-file refresh gap has a focused source repair and
+    current-shell replay.
+  Does not prove: product readiness, V02-01, widened alpha, full target runtime
+    correctness, or activation scoring quality.
+  Follow-up task: V34-00.
 ```
 
 ## 19. Condensation Queue
@@ -4665,11 +4782,20 @@ Seed queue:
   Source evidence: V32 controlled target repair trial
   Surface: init/connect persistence + planning read-model repair or explicit
     stale-state warning
-  Status: accepted as V33-00
+  Status: complete as V33-00
   Reason: V32 supplied two exact FAQ owner files to init/connect for a reused
     target project, but the subsequent plan omitted both and selected older
     owner files; fix refresh/read-model before activation scoring rewrite
   Task: V33-00
+
+- Candidate: target repair re-gate after owner-file refresh
+  Source evidence: V32 and V33 reports
+  Surface: readiness/patch-handoff report
+  Status: accepted as V34-00
+  Reason: after V33, the next product move should be decided from evidence,
+    including the still-dirty V32 target patch and unchanged V02-01/product
+    boundaries
+  Task: V34-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -5457,6 +5583,51 @@ Product readiness verdict:
 Next active stream:
 - V33 — Reused Project Owner-File Refresh Repair.
 
+## Outcome 2026-06-27 V33
+
+Completed:
+- V33-00 repaired reused-project owner-file refresh.
+- `init --connect` now writes a fresh ProjectKernel snapshot when current
+  target source/owner metadata differs from the latest kernel.
+- `plan --project` now treats latest ProjectKernel owner files as the active
+  snapshot and repo installation owner files as fallback only.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v33-reused-project-owner-file-refresh/REPORT.md`.
+- V33 source run `d0092ebd-7c4d-4ed5-a910-98757bb5530a`.
+- Evidence bundle `beeb7a90-fcc3-41ea-ba99-b7b4264d1409`.
+- Observation group `53af9a8e-421f-4d2a-b87a-fda119ca552a`.
+- Reflection record `dd1e31c6-efe6-4f5a-ac88-c7cef0269d39`.
+- V33 target replay run `cea1450b-07c2-4d4c-b190-331a242b47e8`.
+
+What improved:
+- Reused-project owner-file refresh no longer silently leaves planning on old
+  owner-file metadata.
+- V32 target replay now selects the two FAQ owner files and target trust
+  exclusions, not stale unrelated owner files.
+- DB init-connect smoke now proves refreshed ProjectKernel version 2.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Full target runtime/browser/accessibility verification.
+- Source activation for the KRN repair itself; V33 plan abstained.
+
+New blocker:
+- The V32 target patch is still intentionally dirty and uncommitted in the
+  target repo; next work must decide patch handoff/rollback or another safe
+  target proof without overclaiming V02-01/product readiness.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V34 — Target Repair Re-Gate After Owner-File Refresh.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -5505,7 +5676,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V33 Reused Project Owner-File Refresh Repair.
+Active stream: V34 Target Repair Re-Gate After Owner-File Refresh.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

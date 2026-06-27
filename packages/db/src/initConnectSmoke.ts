@@ -30,6 +30,9 @@ export interface InitConnectSmokeReport {
   reusedProjectId: string;
   reusedRepoInstallationId: string;
   reusedProjectKernelId: string;
+  refreshedProjectKernelId: string;
+  refreshedProjectKernelVersion: number;
+  refreshedOwnerFilePaths: string[];
   repoInstallationCount: number;
   remainingMarkerCount: number;
   cleanedUp: boolean;
@@ -93,6 +96,20 @@ export const runInitConnectSmokeCheck = async (
   const repoFingerprint = `smoke:${marker}`;
   const smokePathHint = `${input.targetRepoPath}#${marker}`;
   const repoUrl = `file://${smokePathHint}`;
+  const refreshedOwnerFiles = [
+    {
+      path: "src/index.ts",
+      root: "src",
+      kind: "implementation_entry",
+      reason: "refreshed owner-file snapshot"
+    },
+    {
+      path: "tests/readiness.test.ts",
+      root: "tests",
+      kind: "behavior_test",
+      reason: "refreshed owner-file snapshot"
+    }
+  ];
   const client = postgres(input.databaseUrl, {
     max: 1,
     onnotice: () => undefined
@@ -183,6 +200,47 @@ export const runInitConnectSmokeCheck = async (
       throw new Error("Init-connect smoke idempotency readback did not reuse records");
     }
 
+    const refreshedKernel = await projectRepository.createProjectKernel({
+      projectId: project.id,
+      version: reusedKernel.version + 1,
+      summary: "Fixture target repo refreshed for KRN harness planning",
+      activeContextRule: "select project-scoped source, memory, retrieval, and anti-memory only",
+      metadata: {
+        smoke: true,
+        fixtureMarker: marker,
+        repoFingerprint,
+        repoPath: smokePathHint,
+        ownerFiles: refreshedOwnerFiles
+      }
+    });
+    const latestRefreshedKernel = await projectRepository.getLatestProjectKernel(project.id);
+    const latestOwnerFiles = latestRefreshedKernel?.metadata.ownerFiles;
+
+    const latestOwnerFilePaths = Array.isArray(latestOwnerFiles)
+      ? latestOwnerFiles.flatMap((ownerFile) => {
+          if (
+            typeof ownerFile === "object" &&
+            ownerFile !== null &&
+            !Array.isArray(ownerFile) &&
+            "path" in ownerFile &&
+            typeof ownerFile.path === "string"
+          ) {
+            return [ownerFile.path];
+          }
+
+          return [];
+        })
+      : [];
+
+    if (
+      latestRefreshedKernel === undefined ||
+      latestRefreshedKernel.id !== refreshedKernel.id ||
+      latestRefreshedKernel.version !== projectKernel.version + 1 ||
+      latestOwnerFilePaths.join(",") !== refreshedOwnerFiles.map((ownerFile) => ownerFile.path).join(",")
+    ) {
+      throw new Error("Init-connect smoke failed refreshed ProjectKernel readback");
+    }
+
     const remainingMarkerCount = await cleanup();
 
     return {
@@ -197,6 +255,9 @@ export const runInitConnectSmokeCheck = async (
       reusedProjectId: reusedProject.id,
       reusedRepoInstallationId: reusedInstallations[0].id,
       reusedProjectKernelId: reusedKernel.id,
+      refreshedProjectKernelId: refreshedKernel.id,
+      refreshedProjectKernelVersion: refreshedKernel.version,
+      refreshedOwnerFilePaths: refreshedOwnerFiles.map((ownerFile) => ownerFile.path),
       repoInstallationCount: installations.length,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0

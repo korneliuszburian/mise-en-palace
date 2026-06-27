@@ -284,12 +284,13 @@ const buildTargetActivationReadModel = async (
     ...metadataSeeds,
     ...liveSeedGroups.flat()
   ]);
-  const ownerFiles = uniqueOwnerFiles([
-    ...ownerFilesFromMetadata(metadata.projectKernel?.metadata),
-    ...repoInstallations.flatMap((repoInstallation) =>
-      ownerFilesFromMetadata(repoInstallation.metadata)
-    )
-  ]);
+  const kernelOwnerFiles = ownerFilesFromMetadata(metadata.projectKernel?.metadata);
+  const installationOwnerFiles = repoInstallations.flatMap((repoInstallation) =>
+    ownerFilesFromMetadata(repoInstallation.metadata)
+  );
+  const ownerFiles = uniqueOwnerFiles(
+    kernelOwnerFiles.length > 0 ? kernelOwnerFiles : installationOwnerFiles
+  );
 
   return {
     ...(metadata.projectKernel === undefined ? {} : { projectKernelId: metadata.projectKernel.id }),

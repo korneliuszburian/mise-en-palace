@@ -513,6 +513,9 @@ export const runDbSmokeCommand = async (
           `Idempotent ProjectKernel reuse: ${
             report.reusedProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
           }`,
+          `Refreshed ProjectKernel: ${report.refreshedProjectKernelId}`,
+          `Refreshed ProjectKernel version: ${report.refreshedProjectKernelVersion}`,
+          `Refreshed owner files: ${report.refreshedOwnerFilePaths.join(", ")}`,
           `Repo installations listed: ${report.repoInstallationCount}`,
           `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
           `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
