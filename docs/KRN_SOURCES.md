@@ -270,6 +270,32 @@ cannot be falsified locally, keep it out of active KRN guidance.
   reflector workers now, use text-only runtime memory, or build dashboard/API/MCP
   surfaces before local dogfood and golden proof.
 
+## Infrastructure Sources
+
+### PostgreSQL Row Locking For Queue-Like Tables
+
+- URL: https://www.postgresql.org/docs/current/sql-select.html
+- Trust tier: high.
+- Source class: official docs.
+- Decision kind: defer.
+- Mechanism: PostgreSQL row locking supports `FOR UPDATE ... SKIP LOCKED`,
+  which can let concurrent consumers skip already locked rows for queue-like
+  tables while accepting an inconsistent view that is not suitable for general
+  reads.
+- KRN implication: if KRN later accepts a worker executor, the first queue
+  claim mechanism should be proven against existing Postgres `worker_jobs` and
+  `outbox_events` before adding Redis, Kafka, or another queue service.
+- Decision: keep worker runtime deferred, but retain PostgreSQL row locking as
+  the first candidate locking mechanism for any future one-shot/manual worker
+  executor proof.
+- Consumer: `docs/decisions/ADR-0015-worker-runtime-boundary.md`.
+- Falsifier: a future worker proof cannot express safe claim, lock, retry,
+  timeout, idempotency, and audit behavior over Postgres worker-job/outbox
+  tables without a separate queue service.
+- Does not prove: that a worker daemon should be built now, that
+  `SKIP LOCKED` is correct for every KRN read path, or that queue throughput is
+  sufficient without a local worker-executor proof.
+
 ## TypeScript Practitioner Sources
 
 ### Designing Your Types

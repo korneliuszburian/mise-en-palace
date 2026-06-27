@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V219 Infra Pattern Intake Candidate Gate
-current task: V219-00 Infra Pattern Intake Candidate Gate
+active stream: V220 Post Infra Pattern Intake Re-Gate
+current task: V220-00 Post Infra Pattern Intake Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,40 +45,39 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V219 Infra Pattern Intake Candidate Gate
+### V220 Post Infra Pattern Intake Re-Gate
 
 Goal:
 
-Select one bounded infrastructure/source-pattern intake candidate or reject
-infra intake for lack of immediate consumer.
+Select the next bounded task after retaining PostgreSQL row locking as future
+worker-queue mechanism evidence for ADR-0015.
 
 Current finding:
 
 ```txt
-TypeScript and memory pattern intake now have durable source decisions. The
-next gap is whether infrastructure patterns need the same source-to-decision
-treatment without starting new runtime services.
+V219 retained PostgreSQL `FOR UPDATE ... SKIP LOCKED` as future worker-queue
+mechanism evidence only. Worker runtime remains deferred.
 ```
 
 Current action:
 
 ```txt
-Execute V219-00: inspect current infra ADR/source-map coverage and choose one
-bounded infra source decision, lab-test, or rejection.
+Execute V220-00: decide whether this infra intake needs one local guard, ADR
+alignment, or no further work. Do not build worker runtime.
 ```
 
 Primary consumer:
 
 ```txt
-One infra source-to-decision output with exactly one consumer or an explicit
-rejection.
+One next-task/defer decision with source -> mechanism -> implication ->
+decision/rejection -> consumer -> falsifier.
 ```
 
 Falsifier:
 
 ```txt
-The gate starts worker/runtime/dashboard/API/storage expansion or retains
-decorative infra sources without a consumer/falsifier.
+The re-gate treats PostgreSQL locking docs as permission to build a daemon or
+queue service instead of one bounded decision.
 ```
 
 ## Pattern Gate

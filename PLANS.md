@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V218 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, and post-observational-memory source re-gate slices: complete
-active stream: V219 Infra Pattern Intake Candidate Gate
-current task: V219-00 Infra Pattern Intake Candidate Gate
+V48..V219 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, post-observational-memory source re-gate, and infra pattern intake slices: complete
+active stream: V220 Post Infra Pattern Intake Re-Gate
+current task: V220-00 Post Infra Pattern Intake Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V219-00 Infra Pattern Intake Candidate Gate.
+V220-00 Post Infra Pattern Intake Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17669,6 +17669,60 @@ Next active stream:
 
 Next active task:
 - V219-00 Infra Pattern Intake Candidate Gate.
+
+## Outcome 2026-06-28 V219 Infra Pattern Intake Candidate Gate
+
+Completed task:
+- V219-00 Infra Pattern Intake Candidate Gate.
+
+Decision:
+- Retain PostgreSQL `FOR UPDATE ... SKIP LOCKED` as one bounded official-docs
+  infra source for future worker-queue claim mechanics.
+- Keep worker runtime deferred. This source does not authorize a daemon,
+  scheduler, dashboard, API, MCP server, Redis, Kafka, or broad queue service.
+
+Evidence:
+- `docs/decisions/ADR-0015-worker-runtime-boundary.md` defers worker runtime
+  and says any later runtime starts from existing Postgres `worker_jobs` and
+  `outbox_events`, not a separate queue service.
+- `packages/workers/README.md` and `packages/workers/src/jobTypes.ts` expose
+  typed job contracts and enqueue authority without a daemon.
+- `docs/KRN_SOURCES.md` now retains the PostgreSQL row-locking source with
+  trust tier, source class, decision kind, consumer, falsifier, and non-proof
+  boundary.
+- GitHub Actions run `28304630522` passed for commit `c53290d`.
+
+Source-to-decision:
+- Source: PostgreSQL `SELECT` documentation for row locking and ADR-0015.
+- Mechanism: `FOR UPDATE ... SKIP LOCKED` can support queue-like row claiming
+  for concurrent consumers, while accepting an inconsistent view that is not
+  appropriate for general reads.
+- KRN implication: if worker execution is later accepted, prove the first claim
+  mechanism over Postgres worker-job/outbox tables before adding Redis, Kafka,
+  or another queue service.
+- Decision: defer runtime implementation, but retain PostgreSQL row locking as
+  the first candidate mechanism for a future one-shot/manual executor proof.
+- Does not prove: worker daemon readiness, queue throughput, product readiness,
+  or that `SKIP LOCKED` is correct for every KRN read path.
+- Consumer: `docs/decisions/ADR-0015-worker-runtime-boundary.md`.
+- Falsifier: a future worker proof cannot express safe claim, lock, retry,
+  timeout, idempotency, and audit behavior over Postgres worker-job/outbox
+  tables without a separate queue service.
+
+New task:
+- V220-00 Post Infra Pattern Intake Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V220 Post Infra Pattern Intake Re-Gate.
+
+Next active task:
+- V220-00 Post Infra Pattern Intake Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
