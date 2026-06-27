@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V200 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, and README current-state re-gate slices: complete
-active stream: V201 README Current-State Repair
-current task: V201-00 README Current-State Repair
+V48..V201 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, and README current-state guard slices: complete
+active stream: V202 Post README Current-State Re-Gate
+current task: V202-00 Post README Current-State Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V201-00 README Current-State Repair.
+V202-00 Post README Current-State Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16754,6 +16754,56 @@ Next active stream:
 
 Next active task:
 - V201-00 README Current-State Repair.
+
+## Outcome 2026-06-28 V201 README Current-State Repair
+
+Completed task:
+- V201-00 README Current-State Repair.
+
+What changed:
+- `README.md` now points to root `PLAN.md`, `GOAL.md`, and `PLANS.md` as the
+  compact/current execution surfaces.
+- README current status now states controlled-internal-alpha yes/stronger,
+  product-ready no, widened internal alpha no, and real second-operator proof
+  blocked/deferred.
+- README now describes the continuous evidence-driven loop instead of the old
+  reset/QG/audit cleanup direction.
+- `packages/harness/src/contextHygieneInvariants.test.ts` now fails if README
+  returns to "current reset direction", `QG-06`, or audit-authority wording.
+
+Evidence:
+- Focused context hygiene test passed with TMPDIR outside the repo.
+- The README still preserves the useful boundary that legacy audit/anti-slop
+  remains closed, without making it the current work direction.
+
+Source-to-decision:
+- Source: `README.md`, root `PLAN.md` / `GOAL.md`, and V200 README re-gate.
+- Mechanism: README is broad operator entrypoint; stale reset language can make
+  future work chase closed cleanup rather than the active continuous loop.
+- KRN implication: README should summarize current product state and route
+  execution to compact root truth instead of becoming a roadmap.
+- Decision: repair README current-state framing and guard it.
+- Does not prove: product readiness, external operator readiness, or that every
+  docs page is current.
+- Consumer: `README.md` and
+  `packages/harness/src/contextHygieneInvariants.test.ts`.
+- Falsifier: README can again describe reset/QG/audit cleanup as current
+  direction while tests pass.
+
+New task:
+- V202-00 Post README Current-State Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V202 Post README Current-State Re-Gate.
+
+Next active task:
+- V202-00 Post README Current-State Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

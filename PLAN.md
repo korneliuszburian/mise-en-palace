@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V201 README Current-State Repair
-current task: V201-00 README Current-State Repair
+active stream: V202 Post README Current-State Re-Gate
+current task: V202-00 Post README Current-State Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V200: active-surface compactness, handoff, PLANS freshness,
+V100..V201: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,39 +49,38 @@ V100..V200: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V201 README Current-State Repair
+### V202 Post README Current-State Re-Gate
 
 Goal:
 
-Repair stale current-truth framing in README.md.
+Decide the next bounded task after repairing README current-state framing.
 
 Current finding:
 
 ```txt
-V200 found README.md still frames the repo around current reset direction,
-QG/anti-slop/audit cleanup, and Memory Brain spine hardening rather than the
-current continuous controlled-internal-alpha loop.
+V201 aligned README.md with compact active truth, controlled-internal-alpha
+status, and the continuous evidence-driven loop.
 ```
 
 Current action:
 
 ```txt
-Execute V201-00: align README.md with the current compact active truth and add a
-focused invariant. Do not broaden into a docs sweep, Research Foundry, source
-crawler, dashboard, product-readiness claim, or architecture rewrite.
+Execute V202-00: select the next bounded evidence-backed task. Do not broaden
+README repair into a docs sweep, Research Foundry, source crawler, dashboard,
+product-readiness claim, or architecture rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-README.md and focused context hygiene invariant.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-README can again describe reset/QG/audit cleanup as the current direction while
-tests pass.
+The re-gate turns README repair into broad docs churn without a concrete
+consumer and falsifier.
 ```
 
 ## Pattern Gate

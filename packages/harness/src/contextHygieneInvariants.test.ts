@@ -46,6 +46,24 @@ describe("KRN context hygiene invariants", () => {
     expect(kernel).not.toContain("Commit 0/1");
   });
 
+  it("keeps README current truth aligned with continuous controlled-internal-alpha work", () => {
+    const readme = readRootFile("README.md");
+
+    expect(readme).toContain("Root `PLAN.md` is the active compact product plan.");
+    expect(readme).toContain("Root `GOAL.md` is the compact");
+    expect(readme).toContain("Root `PLANS.md` carries detailed continuous execution");
+    expect(readme).toContain("controlled-internal-alpha for technical operators");
+    expect(readme).toContain("product-ready: no");
+    expect(readme).toContain("widened internal alpha: no");
+    expect(readme).toContain("The current work loop is continuous and evidence-driven");
+    expect(readme).toContain("append next task to PLANS.md");
+    expect(readme).toContain("The legacy audit/anti-slop direction remains closed.");
+
+    expect(readme).not.toContain("The current reset direction is");
+    expect(readme).not.toContain("QG-06");
+    expect(readme).not.toContain("audit-authority direction");
+  });
+
   it("keeps root active surfaces compact enough for resume context", () => {
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");

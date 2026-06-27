@@ -23,18 +23,32 @@ evidence for a slice.
 
 ## Current Truth
 
-Root `PLAN.md` is the active plan.
+Root `PLAN.md` is the active compact product plan. Root `GOAL.md` is the compact
+execution contract. Root `PLANS.md` carries detailed continuous execution
+history, outcomes, and next-task synthesis.
 
-The current reset direction is:
+Current status:
 
-- remove stale current-state surfaces;
-- reject productized QG-06 / anti-slop / audit-authority direction;
-- classify public operator, governed admin, and internal dev surfaces;
-- harden the real Memory Brain spine only through final-pattern slices.
+- controlled-internal-alpha for technical operators: yes / stronger;
+- product-ready: no;
+- widened internal alpha: no;
+- real second-operator proof: blocked/deferred.
 
-`krn audit` is removed as public CLI/product direction. Do not rebuild it as a
-guardrail layer; retain useful Memory/Source/Evidence invariants only by moving
-them into their native mechanisms.
+The current work loop is continuous and evidence-driven:
+
+```text
+controlled scenario
+  -> evidence
+  -> finding
+  -> condensation decision
+  -> rule / skill / guard / eval / memory candidate / source decision / repair
+  -> append next task to PLANS.md
+  -> continue
+```
+
+The legacy audit/anti-slop direction remains closed. Do not rebuild it as a
+guardrail layer; keep useful Memory/Source/Evidence invariants in their native
+mechanisms.
 
 ## Built
 
