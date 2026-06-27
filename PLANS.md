@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V72 Post Security Redaction Corpus Re-Gate
-current task: V72-00 Post Security Redaction Corpus Re-Gate
+active stream: V74 Post Security Memory Gate Re-Gate
+current task: V74-00 Post Security Memory Gate Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -6744,7 +6744,7 @@ Outcome:
 
 ### V72-00 — Post Security Redaction Corpus Re-Gate
 
-Status: active
+Status: complete
 
 Goal: Decide the next bounded task after SEC-02 redaction corpus repair.
 
@@ -6818,6 +6818,125 @@ git status --short --branch
 Acceptance criteria:
 
 - Security work does not continue without a concrete consumer/falsifier.
+
+### V73-00 — Memory Promotion Untrusted-Source Checklist
+
+Status: complete
+
+Goal: Require explicit untrusted-source review before MemoryReviewGate can
+promote candidates backed by non-trusted source lineage.
+
+Pattern surface: security / permissions / trust boundaries.
+
+Product rationale: Memory Core writes are high-authority. Source lineage from
+external or lower-trust sources should not cross into Memory Core without a
+review ref that names the poisoning/trust review.
+
+Architectural rationale: This is a governance gate, not an LLM classifier or
+source crawler. It preserves human review while making untrusted lineage visible
+in promotion metadata.
+
+Evidence source:
+
+- `docs/architecture/security-trust-boundaries.md` SEC-03.
+- `packages/harness/src/memory/memoryReviewGate.ts`.
+- `packages/harness/src/memory/memoryReviewGate.test.ts`.
+
+Inputs required:
+
+- Current MemoryReviewGate behavior and source trust tiers.
+
+Primary consumer:
+
+- `packages/harness/src/memory/memoryReviewGate.ts`
+- `packages/harness/src/memory/memoryReviewGate.test.ts`
+
+Does not prove:
+
+- reviewer judgment is correct;
+- poisoned source text is impossible;
+- every source trust tier is perfectly classified.
+
+Falsifier:
+
+- A memory candidate with non-trusted source lineage can be promoted without
+  `untrustedSourceReviewRef`.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- memoryReviewGate
+pnpm -C packages/harness typecheck
+git diff --check
+```
+
+Outcome:
+
+- `MemoryReviewGateReview` accepts `untrustedSourceReviewRef`.
+- Non-trusted source lineage requires that ref before promotion.
+- Promotion metadata records untrusted source claim ids and review ref.
+
+### V74-00 — Post Security Memory Gate Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after SEC-03 MemoryReviewGate hardening.
+
+Pattern surface: security / permissions / trust boundaries.
+
+Product rationale: SEC-01, SEC-02, and SEC-03 are now handled. SEC-04 is a
+future command-execution allowlist and should not be built unless KRN actually
+adds command execution behavior.
+
+Architectural rationale: The re-gate should either defer SEC-04, move to another
+pattern surface, or record an honest blocker.
+
+Evidence source:
+
+- V69 untrusted-context warning repair.
+- V71 redaction corpus repair.
+- V73 MemoryReviewGate untrusted-source checklist.
+- `docs/architecture/security-trust-boundaries.md`.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- product security readiness;
+- public product readiness;
+- need for command runner behavior.
+
+Falsifier:
+
+- The plan builds command execution allowlist without command execution behavior
+  being accepted.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- command runner;
+- broad security project;
+- hooks/MCP/API/dashboard.
+
+Output requirements:
+
+- One next bounded task or blocker.
+
+Definition of Done:
+
+- Next active task is explicit.
+- `git diff --check` passes.
 
 ### External Input Blocker
 
@@ -7205,7 +7324,11 @@ Initial entry:
   bounded security task.
 - [x] V71-00 complete: added credentialed URL redaction and target-like
   env/package output corpus coverage.
-- [ ] V72-00 active: re-gate after SEC-02.
+- [x] V72-00 complete: selected SEC-03 MemoryReviewGate untrusted-source
+  checklist.
+- [x] V73-00 complete: required untrusted-source review refs for Memory Core
+  promotion from non-trusted source lineage.
+- [ ] V74-00 active: re-gate after SEC-03.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8227,6 +8350,33 @@ Initial decisions:
     npm token, OpenAI-style key, or cookie-shaped value from the target-like
     corpus test.
   Verification: `pnpm --filter @krn/harness test -- observerInput`;
+    `pnpm -C packages/harness typecheck`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select SEC-03 MemoryReviewGate untrusted-source checklist as V73.
+  Rationale: After SEC-01 and SEC-02, the remaining current security/trust item
+    with an immediate bounded consumer is Memory Core promotion from untrusted
+    source lineage. SEC-04 is future-only until command execution behavior is
+    accepted.
+  Surface: security / permissions / trust boundaries.
+  Consumer: MemoryReviewGate.
+  Does not prove: reviewer judgment is correct or source poisoning is solved.
+  Falsifier: MemoryCandidate promotion from non-trusted source lineage succeeds
+    without explicit untrusted-source review reference.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Require untrusted-source review refs in MemoryReviewGate.
+  Rationale: Memory Core writes are high-authority and already require evidence
+    and lineage. Non-trusted source lineage now also requires a specific review
+    reference to make poisoning/trust review visible.
+  Surface: security / permissions / trust boundaries.
+  Consumer: `packages/harness/src/memory/memoryReviewGate.ts`.
+  Does not prove: reviewer judgment is correct, poisoned text is impossible, or
+    all trust tiers are perfect.
+  Falsifier: a candidate backed by `paper`, `practitioner`, `secondary`,
+    `hypothesis`, `medium`, or `low` source lineage is promoted without
+    `untrustedSourceReviewRef`.
+  Verification: `pnpm --filter @krn/harness test -- memoryReviewGate`;
     `pnpm -C packages/harness typecheck`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
@@ -11405,6 +11555,46 @@ Next active stream:
 Next active task:
 - V72-00 Post Security Redaction Corpus Re-Gate.
 
+## Outcome 2026-06-27 V72-V74 Security Gate
+
+Completed:
+- V72-00 Post Security Redaction Corpus Re-Gate.
+- V73-00 Memory Promotion Untrusted-Source Checklist.
+
+Evidence:
+- `docs/architecture/security-trust-boundaries.md`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `packages/harness/src/memory/memoryReviewGate.ts`.
+- `packages/harness/src/memory/memoryReviewGate.test.ts`.
+
+What improved:
+- Memory Core promotion now rejects non-trusted source lineage unless the review
+  includes an explicit `untrustedSourceReviewRef`.
+- Promotion metadata now records `untrustedSourceClaimIds` and the review ref.
+- The security/trust stream now has SEC-01, SEC-02, and SEC-03 covered by
+  bounded source/test changes.
+
+What did not improve:
+- Reviewer judgment correctness.
+- Source poisoning prevention outside the explicit review gate.
+- Product security readiness.
+- Future command execution allowlist behavior.
+
+New task:
+- V74-00 Post Security Memory Gate Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V74 Post Security Memory Gate Re-Gate.
+
+Next active task:
+- V74-00 Post Security Memory Gate Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -11453,7 +11643,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V72 Post Security Redaction Corpus Re-Gate.
+Active stream: V74 Post Security Memory Gate Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

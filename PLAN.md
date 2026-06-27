@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V72 Post Security Redaction Corpus Re-Gate
-current task: V72-00 Post Security Redaction Corpus Re-Gate
+active stream: V74 Post Security Memory Gate Re-Gate
+current task: V74-00 Post Security Memory Gate Re-Gate
 ```
 
 Completed stream summary:
@@ -105,30 +105,33 @@ V68-00 post harness activation pattern re-gate: complete
 V69-00 untrusted context warning pattern application: complete
 V70-00 post security trust boundary re-gate: complete
 V71-00 target-like redaction corpus repair: complete
-V72 post security redaction corpus re-gate: active
+V72-00 post security redaction corpus re-gate: complete
+V73-00 memory promotion untrusted-source checklist: complete
+V74 post security memory gate re-gate: active
 ```
 
 ## Active Stream
 
-### V72 Post Security Redaction Corpus Re-Gate
+### V74 Post Security Memory Gate Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding target-like redaction corpus coverage.
+Decide the next bounded task after adding untrusted-source review gating to
+MemoryReviewGate.
 
 Current finding:
 
 ```txt
-V70 selected SEC-02 and V71 implemented target-like env/package output redaction
-coverage for observer input.
+V72 selected SEC-03 and V73 implemented untrusted-source review refs for Memory
+Core promotion through MemoryReviewGate.
 ```
 
 Current action:
 
 ```txt
-Execute V72-00: decide whether another bounded security task remains, whether to
-move to another pattern surface, or whether internal work is blocked on external
-operator/target input.
+Execute V74-00: decide whether any bounded security task remains before command
+execution allowlist work, whether to move to another pattern surface, or whether
+internal work is blocked on external operator/target input.
 ```
 
 Primary consumer:
@@ -140,8 +143,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate selects more security work without concrete target evidence or a
-named bounded consumer.
+The re-gate selects command execution/security work without a concrete behavior
+change that would execute commands.
 ```
 
 ### External Input Blocker

@@ -41,7 +41,7 @@ Not reviewed in this slice:
 | DB runtime | Persisted commands require `KRN_DATABASE_URL`; readiness redacts credentials and labels current-shell truth. | `runDbReadinessCommand` redacts endpoint credentials; DB truth is only claimed after runtime commands. | Local DB is a trust root; backup, restore, auth, and environment policy are not production-ready. | Defer to G-01 migration/backup policy and G-00 CI verification. |
 | Observation | `buildObserverInput` sanitizes secret-shaped keys/values before truncation. | Redaction tests cover tokens, bearer values, private keys, delayed secret suffixes, and target-like env/package output containing credentialed URLs. | Redaction patterns are heuristic; unknown secret formats can still leak into persisted observations. | Expand only from concrete target evidence. |
 | Source claims | `SourceClaimInputSchema` requires mechanism, KRN implication, `doesNotProve`, consumer, falsifier, and proposed status. | Source-to-decision discipline prevents decorative sources. | Hostile source text may still be selected into context or Codex brief if accepted by operator workflow. | Add untrusted-context/taint warning in Codex brief or policy gate before external repo alpha. |
-| Memory promotion | `MemoryReviewGate` requires review, source lineage/application guidance, candidate evidence provenance, evidence refs, and rejects `default_template`. | Promotion is explicit; observe/reflect do not mutate Memory Core. | Human reviewer can still promote poisoned or stale content if provenance is weak but non-default. | Add promotion checklist/policy gate for untrusted source lineage before broader target use. |
+| Memory promotion | `MemoryReviewGate` requires review, source lineage/application guidance, candidate evidence provenance, evidence refs, rejects `default_template`, and requires an untrusted-source review ref for non-trusted source lineage. | Promotion is explicit; observe/reflect do not mutate Memory Core. | Human reviewer can still make a bad judgment after the checklist. | Keep untrusted-source review metadata visible in promotion records. |
 | Reflection candidates | Reflection writer keeps candidate metadata and reviewability; policy candidates remain unsupported; eval candidates remain proposal-only. | Candidate-only contract; no automatic Memory Core mutation. | Candidate writer can create source claims if repository and artifact are supplied, so source claim review remains important. | Keep source claims proposed and require source decision review before use as authority. |
 | Codex adapter | Brief renderer includes context inclusions, untrusted-context warnings, exclusions, source claims used, memory records used, tool boundaries, evidence contract, hooks, and does-not-prove. | Adapter does not invoke Codex, mutate memory, or create MCP resources. | Warning is trust-tier based and does not prove prompt-injection resistance. | Keep deterministic warning covered by Codex adapter tests; expand only with target evidence. |
 | Workers/API/MCP/dashboard | Not built. | Package boundary docs forbid treating absent surfaces as product proof. | Future interfaces could bypass read/propose/write unless designed over typed read models and policy gates. | Keep deferred until E-00/E-01/G gates are satisfied. |
@@ -103,7 +103,7 @@ falsifier: Codex brief renders untrusted external text without warning labels on
 | E00-T1 | Untrusted source or memory text influences Codex through selected context. | reduced after V69 | Source claims and memory have trust/evidence metadata; Codex brief now renders deterministic untrusted-context warnings for non-trusted tiers. | Keep warning covered by adapter tests; do not claim prompt-injection resistance. |
 | E00-T2 | Secrets leak into persisted observation/evidence payloads. | reduced after V71 | Observation redaction exists and now includes target-like env/package output corpus coverage; evidence metadata can still carry operator text. | Expand only from concrete target evidence. |
 | E00-T3 | Operator-reported command evidence is overtrusted. | medium | Evidence commands carry provenance and `doesNotProve`; readback shows proof/non-proof. | Keep review burden readback; do not add hidden execution without allowlist/output refs. |
-| E00-T4 | Memory promotion accepts poisoned or weakly sourced candidates. | medium | Review gate rejects missing evidence/source lineage and default template proof. | Add promotion checklist for untrusted source lineage before external target-repo use. |
+| E00-T4 | Memory promotion accepts poisoned or weakly sourced candidates. | reduced after V73 | Review gate rejects missing evidence/source lineage, default-template proof, and untrusted source lineage without `untrustedSourceReviewRef`. | Keep checklist covered by memory gate tests. |
 | E00-T5 | Future worker/API/MCP/dashboard bypasses read/propose/write boundaries. | high if built prematurely | Package boundaries and PLAN defer these surfaces. | Keep deferred until read-only boundary proof and policy gates exist. |
 
 ## Security Posture Verdict
@@ -173,6 +173,8 @@ Outcome:
 
 ### SEC-03: Memory Promotion Untrusted-Source Checklist
 
+Status: implemented in V73.
+
 Why:
 - Review gate enforces evidence and lineage, but does not classify poisoning
   risk for external source lineage.
@@ -188,6 +190,12 @@ Non-goals:
 Verification:
 - memory review gate/CLI tests;
 - no Memory Core mutation without reviewed evidence.
+
+Outcome:
+- `MemoryReviewGateReview` accepts `untrustedSourceReviewRef`.
+- Promotion from non-trusted source tiers requires that ref.
+- Promotion metadata records `untrustedSourceClaimIds` and
+  `untrustedSourceReviewRef`.
 
 ### SEC-04: Future Command Execution Allowlist
 

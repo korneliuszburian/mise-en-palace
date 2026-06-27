@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V72 Post Security Redaction Corpus Re-Gate
+V74 Post Security Memory Gate Re-Gate
 ```
 
 Current product loop:
@@ -104,7 +104,7 @@ V60 TypeScript Lifecycle Union Drift Spot-Check: complete.
 V61 Post-Pattern Intake Re-Gate: complete.
 V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill: complete.
 V63 Post Pattern-Intake Linkage Re-Gate: complete.
-V64 Continuous Pattern Distillation Gate: active.
+V64 Continuous Pattern Distillation Gate: complete.
 V64-00 Pattern Gate Re-Entry: complete.
 V64-01 Pattern Surface Consumer Matrix: complete.
 V64-02 First Surface-Matrix Pattern Application: complete.
@@ -117,7 +117,9 @@ V68-00 Post Harness Activation Pattern Re-Gate: complete.
 V69-00 Untrusted Context Warning Pattern Application: complete.
 V70-00 Post Security Trust Boundary Re-Gate: complete.
 V71-00 Target-Like Redaction Corpus Repair: complete.
-current task: V72-00 Post Security Redaction Corpus Re-Gate.
+V72-00 Post Security Redaction Corpus Re-Gate: complete.
+V73-00 Memory Promotion Untrusted-Source Checklist: complete.
+current task: V74-00 Post Security Memory Gate Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

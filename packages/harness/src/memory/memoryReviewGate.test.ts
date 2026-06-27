@@ -53,7 +53,9 @@ const candidate = (
   ...overrides
 });
 
-const sourceClaim = (): SourceClaim => ({
+const sourceClaim = (
+  overrides: Partial<SourceClaim> = {}
+): SourceClaim => ({
   id: "source-claim-1",
   sourceArtifactId: "source-artifact-1",
   claim: "Postgres edge tables are the first graph substrate.",
@@ -66,7 +68,8 @@ const sourceClaim = (): SourceClaim => ({
   status: "accepted",
   metadata: {},
   createdAt: now,
-  updatedAt: now
+  updatedAt: now,
+  ...overrides
 });
 
 const task = (): TaskContract => ({
@@ -244,6 +247,41 @@ describe("promoteMemoryCandidateThroughGate", () => {
     expect(promoteCalled).toBe(false);
   });
 
+  it("rejects promotion from untrusted source lineage without untrusted source review", async () => {
+    let promoteCalled = false;
+
+    await expect(
+      promoteMemoryCandidateThroughGate({
+        memoryRepository: {
+          async getMemoryCandidateById() {
+            return candidate();
+          },
+          async promoteReviewedMemoryCandidate() {
+            promoteCalled = true;
+            return memoryRecord();
+          }
+        },
+        sourceRepository: {
+          async getSourceClaimById() {
+            return sourceClaim({
+              trustTier: "practitioner",
+              consumer: "external-practitioner-note"
+            });
+          }
+        },
+        review: {
+          candidateId: "memory-candidate-1",
+          reviewer: "operator",
+          evidenceReviewedRef: "raw-evidence:run-event-1"
+        }
+      })
+    ).rejects.toThrow(
+      "MemoryCandidate memory-candidate-1 requires untrustedSourceReviewRef before promotion from untrusted source lineage: source-claim-1"
+    );
+
+    expect(promoteCalled).toBe(false);
+  });
+
   it("promotes an approved candidate through the low-level repository with gate metadata", async () => {
     let capturedPromotion: PromoteMemoryCandidateInput | undefined;
 
@@ -285,6 +323,45 @@ describe("promoteMemoryCandidateThroughGate", () => {
         reviewGate: {
           evidenceReviewedRef: "raw-evidence:run-event-1",
           sourceClaimIds: ["source-claim-1"]
+        }
+      }
+    });
+  });
+
+  it("records untrusted source review metadata when promoting from external source lineage", async () => {
+    let capturedPromotion: PromoteMemoryCandidateInput | undefined;
+
+    await promoteMemoryCandidateThroughGate({
+      memoryRepository: {
+        async getMemoryCandidateById() {
+          return candidate();
+        },
+        async promoteReviewedMemoryCandidate(input) {
+          capturedPromotion = input;
+          return memoryRecord();
+        }
+      },
+      sourceRepository: {
+        async getSourceClaimById() {
+          return sourceClaim({
+            trustTier: "paper",
+            consumer: "research-to-brain"
+          });
+        }
+      },
+      review: {
+        candidateId: "memory-candidate-1",
+        reviewer: "operator",
+        evidenceReviewedRef: "raw-evidence:run-event-1",
+        untrustedSourceReviewRef: "security-review:untrusted-source-lineage-1"
+      }
+    });
+
+    expect(capturedPromotion).toMatchObject({
+      metadata: {
+        reviewGate: {
+          untrustedSourceClaimIds: ["source-claim-1"],
+          untrustedSourceReviewRef: "security-review:untrusted-source-lineage-1"
         }
       }
     });

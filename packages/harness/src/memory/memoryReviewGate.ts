@@ -16,6 +16,7 @@ export interface MemoryReviewGateReview {
   candidateId: string;
   reviewer: string;
   evidenceReviewedRef: string;
+  untrustedSourceReviewRef?: string;
   recordKey?: string;
   metadata?: Record<string, unknown>;
 }
@@ -81,6 +82,14 @@ const isCandidateEvidenceProvenance = (
   value: string
 ): value is ReflectionCandidateEvidence["provenance"] =>
   candidateEvidenceProvenances.has(value as ReflectionCandidateEvidence["provenance"]);
+
+const trustedPromotionSourceTiers = new Set([
+  "high",
+  "official",
+  "primary",
+  "project-decision",
+  "source-code"
+]);
 
 const requireTrimmed = (value: string, field: string): string => {
   const trimmed = value.trim();
@@ -176,10 +185,38 @@ const reviewedSourceClaims = async (
   return sourceClaims;
 };
 
+const untrustedReviewedSourceClaims = (
+  sourceClaims: readonly SourceClaim[]
+): SourceClaim[] => sourceClaims.filter((sourceClaim) =>
+  !trustedPromotionSourceTiers.has(sourceClaim.trustTier)
+);
+
+const assertUntrustedSourceReview = (
+  review: MemoryReviewGateReview,
+  sourceClaims: readonly SourceClaim[]
+): string | undefined => {
+  const untrustedClaims = untrustedReviewedSourceClaims(sourceClaims);
+
+  if (untrustedClaims.length === 0) {
+    return undefined;
+  }
+
+  const reviewRef = review.untrustedSourceReviewRef?.trim();
+
+  if (reviewRef === undefined || reviewRef.length === 0) {
+    throw new Error(
+      `MemoryCandidate ${review.candidateId} requires untrustedSourceReviewRef before promotion from untrusted source lineage: ${untrustedClaims.map((sourceClaim) => sourceClaim.id).join(", ")}`
+    );
+  }
+
+  return reviewRef;
+};
+
 export const buildMemoryReviewGateMetadata = (input: {
   review: MemoryReviewGateReview;
   candidate: MemoryCandidate;
   reviewedSourceClaims: SourceClaim[];
+  untrustedSourceReviewRef?: string;
 }): Record<string, unknown> => ({
   ...(input.review.metadata ?? {}),
   reviewGate: {
@@ -189,7 +226,13 @@ export const buildMemoryReviewGateMetadata = (input: {
     ),
     candidateEvidence: candidateEvidence(input.candidate),
     sourceClaimIds: input.candidate.sourceClaimIds,
-    reviewedSourceClaimIds: input.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id)
+    reviewedSourceClaimIds: input.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id),
+    untrustedSourceClaimIds: untrustedReviewedSourceClaims(input.reviewedSourceClaims).map(
+      (sourceClaim) => sourceClaim.id
+    ),
+    ...(input.untrustedSourceReviewRef === undefined
+      ? {}
+      : { untrustedSourceReviewRef: input.untrustedSourceReviewRef })
   }
 });
 
@@ -208,6 +251,7 @@ export const promoteMemoryCandidateThroughGate = async (
 
   assertCandidateReviewable(candidate);
   const sourceClaims = await reviewedSourceClaims(input.sourceRepository, candidate);
+  const untrustedSourceReviewRef = assertUntrustedSourceReview(input.review, sourceClaims);
   const promotionInput: PromoteMemoryCandidateInput = {
     candidateId,
     reviewer,
@@ -215,7 +259,8 @@ export const promoteMemoryCandidateThroughGate = async (
     metadata: buildMemoryReviewGateMetadata({
       review: input.review,
       candidate,
-      reviewedSourceClaims: sourceClaims
+      reviewedSourceClaims: sourceClaims,
+      ...(untrustedSourceReviewRef === undefined ? {} : { untrustedSourceReviewRef })
     })
   };
 
