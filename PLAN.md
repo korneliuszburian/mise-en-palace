@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V34 Target Repair Re-Gate After Owner-File Refresh
-current task: V34-00 Target Repair Re-Gate After Owner-File Refresh
+active stream: V35 Target Patch Handoff Packet
+current task: V35-00 Target Patch Handoff Packet
 ```
 
 Completed stream summary:
@@ -63,34 +63,33 @@ V30 Codex Surface Context-Budget Application Gate: complete
 V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 V32 Controlled Target Repair Trial: complete
 V33 Reused Project Owner-File Refresh Repair: complete
+V34 Target Repair Re-Gate After Owner-File Refresh: complete
 ```
 
 ## Active Stream
 
-### V34-00 — Target Repair Re-Gate After Owner-File Refresh
+### V35-00 — Target Patch Handoff Packet
 
 Goal:
 
-Decide the next product move after V32/V33, accounting for the repaired
-owner-file refresh path, the current dirty target patch from V32, and unchanged
-V02-01/product-ready/widened-alpha boundaries.
+Create a KRN-side handoff packet for the still-dirty V32 target patch, including
+exact diff, commands already run, proof/non-proof boundaries, and operator
+choices.
 
 Current finding:
 
 ```txt
-V33 repaired reused-project owner-file refresh. Reconnect now creates a fresh
-ProjectKernel snapshot when owner/source metadata changes, and planning treats
-latest ProjectKernel owner files as the active snapshot with repo installation
-owner files as fallback only. V33 replay on the V32 target project selected the
-two FAQ owner files plus trust exclusions.
+V34 kept readiness at controlled-internal-alpha for technical operators, not
+widened alpha/product-ready/V02-01. The immediate blocker is that the living
+target repo still has the V32 patch dirty and uncommitted. KRN must not commit
+or revert that patch silently.
 ```
 
-Current V34 action:
+Current V35 action:
 
 ```txt
-Re-gate target repair readiness. Decide whether the next step is another
-controlled target repair on a clean/safe target, target patch handoff/rollback,
-real operator intake if inputs exist, or no new implementation.
+Write a target patch handoff packet under KRN docs. Do not edit, commit, reset,
+or clean the target repo.
 ```
 
 ## V02-01 Boundary
