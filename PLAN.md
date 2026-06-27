@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V213 Post Brain-Battle Smoke Re-Gate
-current task: V213-00 Post Brain-Battle Smoke Re-Gate
+active stream: V215 Post Promptfoo Smoke Re-Gate
+current task: V215-00 Post Promptfoo Smoke Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -35,7 +35,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V212: active-surface compactness, handoff, PLANS freshness,
+V100..V214: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -45,26 +45,26 @@ V100..V212: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V213 Post Brain-Battle Smoke Re-Gate
+### V215 Post Promptfoo Smoke Re-Gate
 
 Goal:
 
-Select the next bounded task after the brain-battle smoke passed with run
-readback reviewability coverage.
+Select the next bounded task after the Promptfoo adapter smoke passed.
 
 Current finding:
 
 ```txt
-V212 ran `pnpm eval:brain-battle:smoke` after V207-V210; harness, CLI run
-readback, and Codex adapter smoke checks passed.
+V214 ran `pnpm eval:promptfoo:smoke`; the local Promptfoo fixture passed 2/2
+and wrote `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`.
 ```
 
 Current action:
 
 ```txt
-Execute V213-00: select the next bounded evidence-backed task from smoke
-results. Do not broaden into Promptfoo authority, dashboard, worker runtime,
-activation rewrite, product-readiness claim, or new eval platform.
+Execute V215-00: select the next bounded evidence-backed task from the recent
+brain-battle and Promptfoo smoke results. Do not treat Promptfoo as KRN behavior
+proof or broaden into dashboard, worker runtime, activation rewrite, product
+readiness, or new eval platform.
 ```
 
 Primary consumer:
@@ -76,8 +76,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate treats a green smoke as product readiness or starts broad feature
-work without a concrete consumer and falsifier.
+The re-gate treats a green Promptfoo smoke as KRN behavior proof/product
+readiness or starts broad feature work without a concrete consumer/falsifier.
 ```
 
 ## Pattern Gate

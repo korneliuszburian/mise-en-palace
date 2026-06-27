@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V212 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, and brain-battle smoke proof slices: complete
-active stream: V213 Post Brain-Battle Smoke Re-Gate
-current task: V213-00 Post Brain-Battle Smoke Re-Gate
+V48..V214 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, and Promptfoo smoke proof slices: complete
+active stream: V215 Post Promptfoo Smoke Re-Gate
+current task: V215-00 Post Promptfoo Smoke Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V213-00 Post Brain-Battle Smoke Re-Gate.
+V215-00 Post Promptfoo Smoke Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17380,6 +17380,82 @@ Next active stream:
 
 Next active task:
 - V213-00 Post Brain-Battle Smoke Re-Gate.
+
+## Outcome 2026-06-28 V213 Post Brain-Battle Smoke Re-Gate
+
+Completed task:
+- V213-00 Post Brain-Battle Smoke Re-Gate.
+
+Decision:
+- Do not treat the green brain-battle smoke as product readiness.
+- Select a bounded Promptfoo smoke proof because Promptfoo is explicitly outside
+  the brain-battle smoke and remains a separate adapter/config/provider/result
+  boundary.
+
+Evidence:
+- `docs/architecture/promptfoo-adapter-boundary.md` says Promptfoo is a bounded
+  runner/result adapter, not KRN behavior proof authority.
+- `package.json` exposes `eval:promptfoo:smoke`.
+- The fixture provider returns `doesNotExecuteKrnBehavior=true`.
+
+Source-to-decision:
+- Source: `docs/architecture/promptfoo-adapter-boundary.md`,
+  `tests/fixtures/promptfoo/krn-golden-smoke.yaml`, and
+  `tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs`.
+- Mechanism: Promptfoo smoke proves runner/config/provider/result wiring only;
+  it must stay separate from deterministic KRN behavior proof.
+- KRN implication: run Promptfoo smoke as adapter proof, not product proof.
+- Decision: execute `pnpm eval:promptfoo:smoke`.
+- Does not prove: KRN behavior execution, Memory Brain readiness, eval quality,
+  product readiness, or V02-01.
+- Consumer: V214 Promptfoo smoke proof outcome.
+- Falsifier: Promptfoo smoke fails or is treated as behavior/product authority.
+
+New task:
+- V214-00 Promptfoo Adapter Smoke Proof.
+
+## Outcome 2026-06-28 V214 Promptfoo Adapter Smoke Proof
+
+Completed task:
+- V214-00 Promptfoo Adapter Smoke Proof.
+
+Evidence:
+- `pnpm eval:promptfoo:smoke` passed.
+- Promptfoo ran 2 test cases, 2 passed, 0 failed, 0 errors.
+- Output was written to
+  `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`.
+- The provider output included `doesNotExecuteKrnBehavior=true`.
+- Node emitted the known experimental `DecompressInterceptor` warning; the smoke
+  still completed successfully.
+
+Source-to-decision:
+- Source: `pnpm eval:promptfoo:smoke` output and
+  `docs/architecture/promptfoo-adapter-boundary.md`.
+- Mechanism: Promptfoo can exercise local runner/config/provider/output plumbing
+  without executing KRN behavior.
+- KRN implication: keep Promptfoo available as adapter evidence only.
+- Decision: record smoke success and re-gate; do not add Promptfoo authority or
+  broad eval surface.
+- Does not prove: deterministic KRN behavior, product readiness, live DB,
+  candidate quality, or Memory Brain readiness.
+- Consumer: root `PLAN.md`, root `GOAL.md`, and the next V215 re-gate.
+- Falsifier: future Promptfoo output is used as `krn_behavior_execution` proof
+  or product readiness evidence.
+
+New task:
+- V215-00 Post Promptfoo Smoke Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V215 Post Promptfoo Smoke Re-Gate.
+
+Next active task:
+- V215-00 Post Promptfoo Smoke Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
