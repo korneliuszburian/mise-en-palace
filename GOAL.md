@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V168 Post Durable Source Map Chain Re-Gate
+V170 Post Accepted ADR Chain Re-Gate
 ```
 
 Current product loop:
@@ -37,7 +37,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V167: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V169: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
@@ -46,8 +46,8 @@ source-class vocabulary, verification TMPDIR, and TypeScript boundary re-scan
 plus stale attachment objective and compact stale-objective contract guards
 plus progress stale-active, root PLAN pattern-gate, and brain-battle smoke
 description plus compact pattern-gate contract, continuation, kernel,
-controlled-scenario, target-infra-ADR, and source-map chain guards complete.
-current task: V168-00 Post Durable Source Map Chain Re-Gate.
+controlled-scenario, target-infra-ADR, source-map, and ADR chain guards
+complete. current task: V170-00 Post Accepted ADR Chain Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

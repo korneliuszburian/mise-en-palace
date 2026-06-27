@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V168 Post Durable Source Map Chain Re-Gate
-current task: V168-00 Post Durable Source Map Chain Re-Gate
+active stream: V170 Post Accepted ADR Chain Re-Gate
+current task: V170-00 Post Accepted ADR Chain Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,34 +39,34 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V167: active-surface compactness, handoff, PLANS freshness,
+V100..V169: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
-           root/smoke/compact/continuation/kernel/scenario/infra/source-map
+           root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
            pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V168 Post Durable Source Map Chain Re-Gate
+### V170 Post Accepted ADR Chain Re-Gate
 
 Goal:
 
-Decide the next bounded task after preserving the full pattern-gate chain in the
-durable source map intro.
+Decide the next bounded task after preserving the full pattern-gate chain in
+accepted ADR guidance.
 
 Current finding:
 
 ```txt
-V166 selected durable source map intro repair because retained source guidance
-must not teach a shorter chain than current source-map section guards.
+V168 selected accepted ADR wording repair because source-backed architecture
+decisions must not teach a shorter chain than current pattern-gate law.
 ```
 
 Current action:
 
 ```txt
-Execute V168-00: select the next pattern surface from evidence. Do not broaden
-source-map preservation into Research Foundry, source crawler, dashboard, or
+Execute V170-00: select the next pattern surface from evidence. Do not broaden
+ADR-chain preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -79,7 +79,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source-map preservation into research hoarding
+The re-gate turns focused ADR-chain preservation into research hoarding
 without a concrete consumer and falsifier.
 ```
 

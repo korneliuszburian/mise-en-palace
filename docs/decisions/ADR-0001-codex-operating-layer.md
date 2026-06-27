@@ -17,5 +17,6 @@ skills, eval expectations, traces, review gates, and feedback.
 
 - Prefer Codex-native surfaces before inventing new mechanisms.
 - Product proof comes from dogfood workflow, not from UI or reports.
-- Architecture decisions must map source -> mechanism -> KRN implication.
-
+- Source-backed architecture decisions must map:
+  source -> mechanism -> KRN implication -> decision/rejection -> consumer ->
+  falsifier.

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V167 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, and source-map chain guard slices: complete
-active stream: V168 Post Durable Source Map Chain Re-Gate
-current task: V168-00 Post Durable Source Map Chain Re-Gate
+V48..V169 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, and accepted-ADR chain guard slices: complete
+active stream: V170 Post Accepted ADR Chain Re-Gate
+current task: V170-00 Post Accepted ADR Chain Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V168-00 Post Durable Source Map Chain Re-Gate.
+V170-00 Post Accepted ADR Chain Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15567,6 +15567,70 @@ Next active stream:
 
 Next active task:
 - V168-00 Post Durable Source Map Chain Re-Gate.
+
+## Outcome 2026-06-27 V169 Accepted ADR Chain Guard
+
+Completed tasks:
+- V168-00 Post Durable Source Map Chain Re-Gate.
+- V169-00 Accepted ADR Chain Guard.
+
+V168 decision:
+- Do not broaden source-map preservation into Research Foundry, source crawler,
+  dashboard, or product-readiness claims.
+- Select accepted ADR chain repair because ADR-0001 and ADR-0010 are active
+  architecture decisions, not archived reports, and still contained shortened
+  source-to-decision wording.
+- The concrete failure mode is future source-backed architecture work following
+  accepted ADR guidance that stops before consumer and falsifier.
+
+What changed:
+- `docs/decisions/ADR-0001-codex-operating-layer.md` now says source-backed
+  architecture decisions must map through consumer and falsifier.
+- `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md` now uses the full
+  chain for source-grounded active context verification.
+- `packages/harness/src/adrInvariants.test.ts` now guards those accepted ADR
+  statements.
+- `docs/architecture/brain-battle-eval-matrix.md` records the accepted ADR chain
+  guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V170.
+
+Evidence:
+- ADR-0001 defines KRN as Codex operating layer and is still active.
+- ADR-0010 defines the accepted Postgres/pgvector brain-store spine and is still
+  active.
+- Before this slice, ADR-0001 only required mapping source -> mechanism -> KRN
+  implication, and ADR-0010 source-grounding text stopped at decision/rejection.
+
+Source-to-decision:
+- Source: accepted ADR-0001 and ADR-0010 plus active pattern-gate law.
+- Mechanism: accepted ADRs shape future architecture choices; shortened
+  source-backed decision wording can bypass consumer/falsifier discipline even
+  when newer plans and skills are stricter.
+- KRN implication: source-backed architecture decisions must name a concrete
+  consumer before falsifier.
+- Decision: update and guard the accepted ADR wording without scanning or
+  rewriting all historical decision files.
+- Does not prove: every historical ADR is current, every future ADR is complete,
+  product readiness, or that ADR wording alone ensures runtime behavior.
+- Consumer: ADR-0001, ADR-0010, `packages/harness/src/adrInvariants.test.ts`,
+  and `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: ADR-0001 or ADR-0010 can regress to shortened source-backed chain
+  wording without focused tests failing.
+
+New task:
+- V170-00 Post Accepted ADR Chain Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V170 Post Accepted ADR Chain Re-Gate.
+
+Next active task:
+- V170-00 Post Accepted ADR Chain Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
