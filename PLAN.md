@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V112 Post Root Active Checkpoint Rolling Summary Re-Gate
-current task: V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate
+active stream: V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
+current task: V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,32 +43,32 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V111: revision-note re-gate and root checkpoint rolling summary complete.
+V110..V113: revision-note, checkpoint rollup, and smoke invariant coverage
+           complete.
 ```
 
 ## Active Stream
 
-### V112 Post Root Active Checkpoint Rolling Summary Re-Gate
+### V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
 
 Goal:
 
-Decide the next bounded task after replacing individual V100+ completed root
-entries with rolling summaries.
+Decide the next bounded task after wiring active-plan, context-hygiene,
+source-map, skill, and matrix invariants into `eval:brain-battle:smoke`.
 
 Current finding:
 
 ```txt
-V110 found that root `GOAL.md` and `PLAN.md` were again approaching their
-line-count guards because V100+ completed slices were listed individually. V111
-replaced them with rolling checkpoint summaries and tightened the active-surface
-guard against individual three-digit completed-slice ledgers.
+V112 found no reason to keep compacting root active truth. V113 instead closed
+the eval-surface gap where recently important deterministic invariants were
+guarded by full test/CI but not by the named brain-battle smoke command.
 ```
 
 Current action:
 
 ```txt
-Execute V112-00: select the next pattern surface from evidence. Do not broaden
-root checkpoint compaction into deleting detailed outcomes from `PLANS.md`.
+Execute V114-00: select the next pattern surface from evidence. Do not broaden
+brain-battle smoke into a new eval platform.
 ```
 
 Primary consumer:
@@ -80,8 +80,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens another root compaction task without a concrete active-surface
-budget or resume-cost finding.
+The re-gate expands eval scope without a concrete deterministic guard,
+source-to-decision consumer, or product-readiness caveat.
 ```
 
 ## External Input Blocker

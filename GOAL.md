@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V112 Post Root Active Checkpoint Rolling Summary Re-Gate
+V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
 ```
 
 Current product loop:
@@ -38,8 +38,8 @@ widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 recent checkpoint: V99 source map full mapping invariant guard complete.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V111: revision-note re-gate and root checkpoint rolling summary complete.
-current task: V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
+V110..V113: revision-note, checkpoint rollup, and smoke invariant coverage complete.
+current task: V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

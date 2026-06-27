@@ -56,7 +56,10 @@ trust exclusion case, the V03-01 target fixture battle case, the V03-02 target
 owner-file-below-roots case, the V02-03 decorative source rejection case, the
 V02-03 CLI run-readback proof/non-proof guard, the V02-04 CLI memory feedback /
 anti-memory candidate guards, and the V02-05 Codex brief / ContextROI guards.
-It is deterministic and does not call an LLM judge.
+It also runs focused harness invariants for active plan freshness, active
+context hygiene, source-map source-to-decision mapping, repo-local skill
+routability, and matrix guard/proof boundaries. It is deterministic and does
+not call an LLM judge.
 
 ## Promptfoo Boundary
 

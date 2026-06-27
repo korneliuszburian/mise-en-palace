@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V111 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
-active stream: V112 Post Root Active Checkpoint Rolling Summary Re-Gate
-current task: V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate
+V48..V113 continuous pattern, CI/eval, target, compactness, handoff, active-contract, and brain-battle smoke coverage slices: complete
+active stream: V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
+current task: V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
+V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13463,6 +13463,78 @@ Next active stream:
 
 Next active task:
 - V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
+
+## Outcome 2026-06-27 V113 Brain-Battle Smoke Invariant Coverage
+
+Completed tasks:
+- V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
+- V113-00 Brain-Battle Smoke Invariant Coverage.
+
+V112 decision:
+- Stop root checkpoint compaction unless a concrete active-surface budget or
+  resume-cost finding appears.
+- Select brain-battle smoke coverage because newly important deterministic
+  invariants were guarded by full test/CI but not by the named smoke command.
+
+What changed:
+- Root `package.json` now includes focused harness invariants in
+  `eval:brain-battle:smoke`.
+- `docs/architecture/brain-battle-eval-matrix.md` now states that current smoke
+  covers active plan freshness, active context hygiene, source-map
+  source-to-decision mapping, repo-local skill routability, and matrix
+  guard/proof boundaries.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V114.
+
+Evidence:
+- `package.json`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `GOAL.md`.
+- `PLAN.md`.
+- `PLANS.md`.
+
+Source-to-decision:
+- Source: V93..V111 guard outcomes and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Mechanism: the named deterministic brain-battle smoke should exercise core
+  brain behavior guards, not only older GoldenGate and adapter paths.
+- KRN implication: active plan/context/source/skill/matrix invariants belong in
+  the current smoke because they protect the same operating brain from stale
+  active truth, decorative sources, hidden skill ledgers, and matrix theater.
+- Decision: wire invariant test filters into `eval:brain-battle:smoke` and
+  update the matrix smoke description.
+- Does not prove: product readiness, strategic completeness, Promptfoo behavior,
+  live DB truth, or that these invariants are sufficient.
+- Consumer: root `package.json` script and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `pnpm eval:brain-battle:smoke` can pass without running the active
+  plan, context hygiene, source-map, skill, and matrix invariant tests, or the
+  matrix claims coverage that the script does not provide.
+
+What improved:
+- Brain-battle smoke now tracks the newer deterministic brain guard surface.
+- Source-to-decision, skill, active context, and eval-matrix discipline are less
+  dependent on full-suite-only coverage.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Promptfoo behavior.
+- Runtime activation, target-repo behavior, or DB replay.
+
+New task:
+- V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
+
+Next active task:
+- V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
