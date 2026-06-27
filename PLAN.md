@@ -143,7 +143,7 @@ Evidence:
 
 ### V04-05 — Controlled Scenario Batch
 
-Status: in progress.
+Status: complete on 2026-06-27.
 
 Goal: plan at least six controlled scenarios and execute at least four unless
 blocked.
@@ -154,6 +154,14 @@ Required coverage:
 - DB-backed replay/readiness/smoke;
 - headless target observation;
 - skill/evidence-review loop.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v04-scenario-batch/PLAN.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-target-repo-skill-boundary-guard/REPORT.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-wilq-seo-observation-boundary/REPORT.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
 
 ### V04-06 — Guard/Eval From Real Evidence
 
@@ -173,6 +181,10 @@ Status: pending.
 
 Goal: create a final V04 report deciding whether KRN became materially more
 useful for our own workflows.
+
+Before final re-gate, finish the detailed V04 ExecPlan compression/screening
+steps: AGENTS/skill compression pass, hook candidate screening, MCP/subagent
+candidate screening, and internal brain usefulness metrics.
 
 ## Hard Non-Goals
 

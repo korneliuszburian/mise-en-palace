@@ -816,9 +816,16 @@ Update this section during execution. Initial checklist:
   Evidence: `packages/cli/src/targetRepoTestingSkill.test.ts` and focused
   `pnpm --filter @krn/cli test -- targetRepoTestingSkill` pass; commit
   `046827b`; GitHub Actions run `28273514668` passed.
-- [ ] M8 first controlled scenario executed with condensation decision.
-- [ ] M9 second scenario executed or honestly deferred.
-- [ ] M10 accepted condensations implemented.
+- [x] M8 first controlled scenario executed with condensation decision.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-scenario-batch/PLAN.md`
+  planned six scenarios; V04-SC-001 through V04-SC-004 have reports.
+- [x] M9 second scenario executed or honestly deferred.
+  Evidence: four scenario reports now cover DB-backed replay, KRN-on-KRN
+  repair/guard, headless target observation, and evidence-review-loop reuse.
+- [x] M10 accepted condensations implemented.
+  Evidence: scenario factory/condensation gate, `target-repo-testing` skill,
+  and deterministic target skill guard are implemented; `evidence-review-loop`
+  new-skill candidate was rejected in favor of existing skill reuse.
 - [ ] M11 AGENTS/skill surface compression pass completed.
 - [ ] M12 hook candidates screened.
 - [ ] M13 MCP/subagent candidates screened.
@@ -884,6 +891,19 @@ Append observations here as they occur.
   and `docs/runbooks/target-repo-testing.md`.
   Impact: M6 created a repo skill and M7 added a deterministic CLI-package test
   that protects the skill's target write boundary.
+
+- Observation: The first V04 scenario batch can be executed mostly by replaying
+  fresh, concrete evidence instead of inventing new local substitutes.
+  Evidence: V04-SC-001 through V04-SC-004 reports cover DB-backed replay,
+  KRN-on-KRN skill/guard repair, observation-only target boundary, and existing
+  evidence-review-loop skill reuse.
+  Impact: M8/M9 are complete without target writes or fake V02-01 claims.
+
+- Observation: The existing `evidence-review-loop` skill is sufficient for V04
+  evidence/report condensation for now.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
+  Impact: Do not create a second evidence review skill until a scenario exposes
+  a concrete missing field or workflow.
 
 Template:
 
@@ -962,6 +982,16 @@ Initial decisions:
   Evidence: `.agents/skills/target-repo-testing/SKILL.md`,
   `docs/architecture/skill-first-krn.md`, and
   `packages/cli/src/targetRepoTestingSkill.test.ts`.
+
+- Decision: Reject a new evidence-review-loop skill for V04.
+  Rationale: the existing `.agents/skills/evidence-review-loop/SKILL.md` already
+  covers changed files, command proof, diff risk, review burden, rollback,
+  feedback candidates, and no automatic memory mutation.
+  Alternatives considered: create a second V04-specific evidence skill; move the
+  scenario report template into AGENTS; add hook enforcement now.
+  Consequence: V04 scenario reports reuse the existing skill and condensation
+  gate; changes wait for a concrete scenario gap.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
 
 Append future decisions with this template:
 
@@ -1050,6 +1080,19 @@ Record commands, reports, commits, and CI here.
     name, metadata, observation-only default, and forbidden target writes.
   Does not prove: target-aware CLI enforcement or arbitrary target repo safety.
 
+- Evidence ID: E-20260627-08
+  Milestone: M8/M9/M10
+  Command/report/commit: V04 scenario batch plan and reports:
+    V04-SC-001 DB smoke fresh DB idempotency;
+    V04-SC-002 target repo skill boundary guard;
+    V04-SC-003 WILQ SEO observation-only boundary;
+    V04-SC-004 evidence-review-loop skill fit.
+  Result: pass as report/replay evidence in working tree.
+  Proves: V04 has six planned controlled scenarios and four executed/replayed
+    scenarios with proof/non-proof and condensation decisions.
+  Does not prove: final V04 re-gate, product readiness, or second-operator
+    usability.
+
 Template:
 
 ```txt
@@ -1106,7 +1149,20 @@ Initial candidate placeholders to verify from repo evidence:
   Source scenario/report: prior V02/V03 reports.
   Frequency: repeated.
   Candidate target: skill.
-  Decision: candidate for M6.
+  Decision: rejected for new skill now; accepted for reuse of existing
+  `.agents/skills/evidence-review-loop/SKILL.md`.
+  Reason: current skill already covers the V04 evidence/report loop and a new
+  skill would create workflow sprawl without a concrete missing field.
+  Implemented in: `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
+
+- Finding: Target-aware evidence capture remains a product candidate.
+  Source scenario/report: `docs/reviews/controlled-dogfood/2026-06-27-wilq-seo-observation-boundary/REPORT.md`.
+  Frequency: repeated/high-risk.
+  Candidate target: evidence-readback or bounded source repair.
+  Decision: deferred to planned V04-SC-005.
+  Reason: current scenario proves the boundary need but does not yet inspect
+  owner files or implementation cost.
+  Implemented in: N/A.
 
 ## Interfaces And Dependencies
 

@@ -48,7 +48,9 @@ V04-02 controlled scenario factory: complete.
 V04-03 knowledge condensation gate: complete.
 V04-04 skill-first KRN: complete.
 V04-06 deterministic guard from real evidence: complete.
-Current active slice: V04-05 — Controlled Scenario Batch.
+V04-05 controlled scenario batch: complete.
+Current active slice: V04 re-gate preparation — AGENTS/skill compression,
+hook/MCP/subagent screening, usefulness metrics, then final V04 report.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
