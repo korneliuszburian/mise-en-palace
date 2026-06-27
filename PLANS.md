@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V216 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, and CI visibility lookup normalization slices: complete
-active stream: V217 Best-Pattern Intake Next-Source Re-Gate
-current task: V217-00 Best-Pattern Intake Next-Source Re-Gate
+V48..V217 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, and observational-memory source-intake slices: complete
+active stream: V218 Post Observational Memory Source Intake Re-Gate
+current task: V218-00 Post Observational Memory Source Intake Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V217-00 Best-Pattern Intake Next-Source Re-Gate.
+V218-00 Post Observational Memory Source Intake Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17559,6 +17559,61 @@ Next active stream:
 
 Next active task:
 - V217-00 Best-Pattern Intake Next-Source Re-Gate.
+
+## Outcome 2026-06-28 V217 Best-Pattern Intake Next-Source Re-Gate
+
+Completed task:
+- V217-00 Best-Pattern Intake Next-Source Re-Gate.
+
+Decision:
+- Retain Mastra Observational Memory as one bounded medium-trust competitor-doc
+  source for the existing ADR-0011 observation/reflection staging decision.
+- Do not use this source to start a research subsystem, memory rewrite, worker
+  runtime, dashboard, API, MCP server, source crawler, or benchmark lane.
+
+Evidence:
+- `docs/decisions/ADR-0011-observational-memory-as-staging-layer.md` already
+  uses the observational-memory mechanism and rejects copying benchmark claims
+  or implementation topology one-to-one.
+- `docs/KRN_SOURCES.md` previously retained OpenAI/Codex and Total TypeScript
+  sources but did not retain the memory practitioner source in the durable
+  source map.
+- Mastra's public research/blog pages present observational memory as
+  event-derived observations plus reflection with source-reported LongMemEval
+  results and explicit limitations.
+
+Source-to-decision:
+- Source: Mastra Observational Memory research and blog pages, plus ADR-0011.
+- Mechanism: event-derived observations and periodic reflection can keep agent
+  context bounded while preserving recall paths to what happened, changed, and
+  was decided.
+- KRN implication: KRN observation/reflection should remain a staging layer over
+  raw evidence and reviewable candidates, not Memory Core or product proof.
+- Decision: add `Mastra Observational Memory` to `docs/KRN_SOURCES.md` with
+  source class, trust tier, decision kind, consumer, falsifier, and non-proof
+  boundary.
+- Does not prove: KRN product readiness, Mastra benchmark reproducibility,
+  text-only runtime memory, worker readiness, or that KRN should copy Mastra's
+  implementation.
+- Consumer: `docs/decisions/ADR-0011-observational-memory-as-staging-layer.md`.
+- Falsifier: a future slice lets observation/reflection directly mutate Memory
+  Core, loses raw evidence recall, or treats source-reported memory benchmark
+  results as KRN product readiness.
+
+New task:
+- V218-00 Post Observational Memory Source Intake Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V218 Post Observational Memory Source Intake Re-Gate.
+
+Next active task:
+- V218-00 Post Observational Memory Source Intake Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

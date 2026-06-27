@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V217 Best-Pattern Intake Next-Source Re-Gate
-current task: V217-00 Best-Pattern Intake Next-Source Re-Gate
+active stream: V218 Post Observational Memory Source Intake Re-Gate
+current task: V218-00 Post Observational Memory Source Intake Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,40 +45,39 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V217 Best-Pattern Intake Next-Source Re-Gate
+### V218 Post Observational Memory Source Intake Re-Gate
 
 Goal:
 
-Select the next bounded source/pattern intake task after CI lookup guidance was
-normalized.
+Select the next bounded task after retaining Mastra Observational Memory for
+ADR-0011.
 
 Current finding:
 
 ```txt
-The user wants KRN to keep absorbing best patterns, courses, papers, and senior
-engineering standards continuously, but only through source -> mechanism -> KRN
-implication -> decision/rejection -> consumer -> falsifier.
+V217 retained Mastra Observational Memory only as staging-layer mechanism
+evidence, not product proof or permission for new runtime surfaces.
 ```
 
 Current action:
 
 ```txt
-Execute V217-00: choose one bounded pattern-intake source or reject/defer if no
-immediate consumer exists. Do not create a research crawler, Research Foundry,
-course archive, broad backlog, or decorative source pile.
+Execute V218-00: decide whether this intake needs one local guard, matrix
+alignment, or no further work. Do not broaden into runtime surfaces.
 ```
 
 Primary consumer:
 
 ```txt
-One source-to-decision output with exactly one consumer or an explicit rejection.
+One next-task/defer decision with source -> mechanism -> implication ->
+decision/rejection -> consumer -> falsifier.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate retains sources without a consumer/falsifier or broadens into a
-research subsystem instead of one bounded decision.
+The re-gate treats Mastra's source-reported results as KRN proof or starts a
+broad memory subsystem instead of one bounded decision.
 ```
 
 ## Pattern Gate

@@ -243,6 +243,33 @@ cannot be falsified locally, keep it out of active KRN guidance.
   verification, proof/non-proof boundaries, rollback, or next-task synthesis.
 - Does not prove: that every small edit needs a verbose prompt.
 
+## Agent Memory Practitioner Sources
+
+### Mastra Observational Memory
+
+- URLs:
+  - https://mastra.ai/research/observational-memory
+  - https://mastra.ai/blog/observational-memory
+- Trust tier: medium.
+- Source class: competitor docs.
+- Decision kind: adopt.
+- Mechanism: event-derived observations and periodic reflection can keep agent
+  context bounded while retaining recall paths to what happened, changed, and
+  was decided.
+- KRN implication: observation and reflection stay as staging layers over raw
+  evidence; they may create reviewable candidates but must not become Memory
+  Core or replace exact source provenance.
+- Decision: keep ADR-0011's raw event -> observation -> reflection ->
+  candidate -> reviewed promotion architecture, while rejecting text-only
+  memory, source hoarding, and benchmark claims as KRN product proof.
+- Consumer: `docs/decisions/ADR-0011-observational-memory-as-staging-layer.md`.
+- Falsifier: a future slice lets observation/reflection directly mutate Memory
+  Core, loses raw evidence recall, or treats source-reported memory benchmark
+  results as KRN product readiness.
+- Does not prove: that KRN should copy Mastra's implementation, add observer or
+  reflector workers now, use text-only runtime memory, or build dashboard/API/MCP
+  surfaces before local dogfood and golden proof.
+
 ## TypeScript Practitioner Sources
 
 ### Designing Your Types
