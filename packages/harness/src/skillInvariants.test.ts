@@ -224,4 +224,20 @@ describe("KRN skill invariants", () => {
     expect(targetRepoTesting).toContain("forbidden_writes:");
     expect(targetRepoTesting).toContain("target_patch_lifecycle:");
   });
+
+  it("keeps TypeScript skill routed to unknown-first boundaries and no type weakening", () => {
+    const typeSafety = readFileSync(
+      new URL("typescript-type-safety/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(typeSafety).toContain("unknown narrowing");
+    expect(typeSafety).toContain("any usage");
+    expect(typeSafety).toContain("fixes that might weaken type safety");
+    expect(typeSafety).toContain("Keep external data as `unknown` until validated.");
+    expect(typeSafety).toContain("Avoid `any`; isolate and justify it if unavoidable.");
+    expect(typeSafety).toContain("Do not trust `JSON.parse`, `fetch().json()`, file reads, env vars, CLI args");
+    expect(typeSafety).toContain("Do not introduce unreviewed `any`.");
+    expect(typeSafety).toContain("Do not claim completion without typecheck");
+  });
 });

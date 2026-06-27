@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V191 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, and target repo skill metadata guard slices: complete
-active stream: V192 Post Target Repo Skill Metadata Re-Gate
-current task: V192-00 Post Target Repo Skill Metadata Re-Gate
+V48..V193 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, and TypeScript skill guard slices: complete
+active stream: V194 Post TypeScript Skill Guard Re-Gate
+current task: V194-00 Post TypeScript Skill Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V192-00 Post Target Repo Skill Metadata Re-Gate.
+V194-00 Post TypeScript Skill Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16323,6 +16323,72 @@ Next active stream:
 
 Next active task:
 - V192-00 Post Target Repo Skill Metadata Re-Gate.
+
+## Outcome 2026-06-27 V193 TypeScript Skill Guard
+
+Completed tasks:
+- V192-00 Post Target Repo Skill Metadata Re-Gate.
+- V193-00 TypeScript Skill Guard.
+
+V192 decision:
+- Do not broaden target-repo metadata preservation into Research Foundry, source
+  crawler, dashboard, target writes by default, or product-readiness claims.
+- Select TypeScript skill guard repair because TypeScript boundary discipline is
+  the core source-quality surface for every KRN implementation slice and the
+  skill guidance was not yet protected by a focused skill invariant.
+- The concrete failure mode is future TypeScript work selecting the skill while
+  the skill has silently dropped unknown-first validation, no type weakening,
+  unsafe parse/input warnings, or typecheck-before-completion guidance.
+
+What changed:
+- `packages/harness/src/skillInvariants.test.ts` now guards
+  `.agents/skills/typescript-type-safety/SKILL.md` for unknown narrowing,
+  `any` risk, no type weakening, unknown-until-validated input handling,
+  no unreviewed `any`, unsafe parse/input warnings, and typecheck-before-
+  completion language.
+- `docs/architecture/brain-battle-eval-matrix.md` records the TypeScript skill
+  guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V194.
+
+Evidence:
+- TypeScript boundary invariants already guard production package source, but
+  the skill itself also needs a routing guard because Codex sees and applies
+  skill guidance before writing TypeScript.
+- The skill frontmatter/body already carried the right direction; this slice
+  makes that direction regression-visible.
+
+Source-to-decision:
+- Source: `.agents/skills/typescript-type-safety/SKILL.md`,
+  `docs/standards/typescript-excellence.md`, TypeScript boundary invariants,
+  and repo-local skill invariant coverage.
+- Mechanism: TypeScript skill guidance determines whether implementation slices
+  keep external data unknown until validated, avoid `any`, avoid unsafe parses,
+  and run typecheck before completion.
+- KRN implication: senior TypeScript standards must be preserved as executable
+  skill guidance, not only as standards docs or source-code scans.
+- Decision: guard TypeScript type-safety skill guidance.
+- Does not prove: every TypeScript domain model is ideal, every impossible
+  state is eliminated, or product readiness.
+- Consumer: `.agents/skills/typescript-type-safety/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the TypeScript skill can drop unknown-first, no-type-weakening, or
+  typecheck-before-completion guidance while tests pass.
+
+New task:
+- V194-00 Post TypeScript Skill Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V194 Post TypeScript Skill Guard Re-Gate.
+
+Next active task:
+- V194-00 Post TypeScript Skill Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

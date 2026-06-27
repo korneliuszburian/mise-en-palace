@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V192 Post Target Repo Skill Metadata Re-Gate
-current task: V192-00 Post Target Repo Skill Metadata Re-Gate
+active stream: V194 Post TypeScript Skill Guard Re-Gate
+current task: V194-00 Post TypeScript Skill Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V191: active-surface compactness, handoff, PLANS freshness,
+V100..V193: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,26 +48,26 @@ V100..V191: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V192 Post Target Repo Skill Metadata Re-Gate
+### V194 Post TypeScript Skill Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after aligning target-repo skill metadata with
-mode, dirty-state, write-authority, proof/non-proof, and handoff boundaries.
+Decide the next bounded task after guarding TypeScript skill unknown-first
+boundary and no-type-weakening guidance.
 
 Current finding:
 
 ```txt
-V190 selected target-repo skill metadata repair because target work is a high
-risk boundary and Codex sees frontmatter before loading the skill body.
+V192 selected TypeScript skill guard repair because TypeScript boundary
+discipline is a core senior-standard surface for every source slice.
 ```
 
 Current action:
 
 ```txt
-Execute V192-00: select the next pattern surface from evidence. Do not broaden
-target-repo metadata preservation into Research Foundry, source crawler,
-dashboard, target writes by default, or product-readiness claims.
+Execute V194-00: select the next pattern surface from evidence. Do not broaden
+TypeScript skill preservation into broad type rewrites, Research Foundry,
+dashboard, or product-readiness claims.
 ```
 
 Primary consumer:
@@ -79,8 +79,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused target-repo metadata preservation into research
-hoarding or target-write pressure without a concrete consumer and falsifier.
+The re-gate turns focused TypeScript skill preservation into broad type rewrite
+pressure without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate
