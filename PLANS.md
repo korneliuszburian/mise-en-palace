@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V68 Post Harness Activation Pattern Re-Gate
-current task: V68-00 Post Harness Activation Pattern Re-Gate
+active stream: V69 Security Trust Boundary Pattern Application
+current task: V69-00 Untrusted Context Warning Pattern Application
 ```
 
 Evidence already recorded in repo:
@@ -6423,7 +6423,7 @@ Acceptance criteria:
 
 ### V68-00 — Post Harness Activation Pattern Re-Gate
 
-Status: active
+Status: complete
 
 Goal: Decide the next bounded task after routing owner-file/read-model activation
 evidence into the activation-engine skill.
@@ -6502,6 +6502,96 @@ git status --short --branch
 Acceptance criteria:
 
 - The next task is not selected by activation momentum alone.
+
+### V69-00 — Untrusted Context Warning Pattern Application
+
+Status: active
+
+Goal: Apply the security/trust boundary pattern to the existing untrusted
+selected-context risk and route it to one bounded consumer.
+
+Pattern surface: security / permissions / trust boundaries.
+
+Product rationale: KRN will increasingly feed Codex selected source and memory
+context. The operator needs strong engineering patterns, but selected context can
+contain external or untrusted text. This risk should be explicit before broader
+target-repo alpha.
+
+Architectural rationale: KRN should not build a security subsystem by momentum.
+It should route the existing E-00 threat-model finding into one bounded Codex
+adapter warning repair, eval/golden candidate, or defer decision.
+
+Evidence source:
+
+- `docs/architecture/security-trust-boundaries.md` E00-T1 and SEC-01.
+- `docs/KRN_SOURCES.md#permissions-and-security`.
+- `docs/runbooks/pattern-intake.md` security/trust surface row.
+
+Official/external sources:
+
+- OpenAI Codex permissions and agent approvals/security docs already retained
+  in `docs/KRN_SOURCES.md`.
+
+Inputs required:
+
+- Current Codex adapter brief behavior and security trust-boundary doc.
+
+Primary consumer:
+
+- exactly one of:
+  - bounded Codex adapter warning repair;
+  - eval/golden candidate;
+  - explicit defer decision in `PLANS.md`.
+
+Does not prove:
+
+- prompt-injection resistance;
+- full security readiness;
+- need for hooks/MCP/API/dashboard.
+
+Falsifier:
+
+- The task creates generic security work instead of addressing the named
+  untrusted selected-context warning.
+
+Files likely touched:
+
+- selected consumer;
+- `PLAN.md`;
+- `GOAL.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- one bounded consumer plus compact plan updates.
+
+Forbidden writes:
+
+- broad security project;
+- prompt-injection scanner;
+- semantic classifier;
+- hooks/MCP/API/dashboard work.
+
+Output requirements:
+
+- One source -> mechanism -> KRN implication -> decision/rejection -> consumer ->
+  falsifier record.
+
+Definition of Done:
+
+- One consumer is selected and updated or the repair is explicitly deferred.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- The next step is bounded to untrusted context warning behavior.
 
 ### External Input Blocker
 
@@ -6881,7 +6971,10 @@ Initial entry:
   drift and deferred repair.
 - [x] V67-00 complete: routed owner-file/read-model activation evidence into
   the activation-engine skill.
-- [ ] V68-00 active: re-gate after the activation skill update.
+- [x] V68-00 complete: selected security/trust boundary work instead of more
+  activation work by momentum.
+- [ ] V69-00 active: apply the untrusted-context warning pattern to one
+  bounded consumer.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7846,6 +7939,21 @@ Initial decisions:
   Falsifier: a future activation task changes scoring before checking task
     contract, target init/connect data, run readback, source seeds, and
     owner-file/read-model availability.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select security/trust boundary pattern application as V69.
+  Rationale: V67 routed activation evidence into a skill, and the eval matrix
+    already has owner-file/read-model behavior proof. Continuing activation work
+    now would be momentum. The next highest-ROI existing risk is E00-T1:
+    untrusted source or memory text can enter Codex briefs through selected
+    context without an explicit warning.
+  Surface: security / permissions / trust boundaries.
+  Consumer: one bounded Codex adapter warning repair, eval/golden candidate, or
+    defer decision selected by V69-00.
+  Does not prove: prompt-injection resistance, security readiness, or need for
+    hooks/MCP/API/dashboard.
+  Falsifier: V69-00 cannot select a bounded consumer for the named untrusted
+    context warning risk.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10959,6 +11067,7 @@ Completed:
 - V65-01 Post TypeScript Pattern Application Re-Gate.
 - V66-00 External Boundary Drift Spot-Check.
 - V67-00 Harness Activation Source Packet Application.
+- V68-00 Post Harness Activation Pattern Re-Gate.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10986,6 +11095,8 @@ What improved:
   explicit defer decision.
 - Activation owner-file/read-model evidence now has a compact execution gate in
   `.agents/skills/activation-engine/SKILL.md`.
+- V68 selected the next pattern surface from existing risk evidence:
+  security/trust untrusted-context warning.
 
 What did not improve:
 - Product readiness.
@@ -10995,9 +11106,10 @@ What did not improve:
 - Current TypeScript source drift.
 - Package source behavior.
 - Activation scoring or runtime behavior.
+- Codex adapter security behavior.
 
 New task:
-- V68-00 Post Harness Activation Pattern Re-Gate.
+- V69-00 Untrusted Context Warning Pattern Application.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -11006,10 +11118,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V68 Post Harness Activation Pattern Re-Gate.
+- V69 Security Trust Boundary Pattern Application.
 
 Next active task:
-- V68-00 Post Harness Activation Pattern Re-Gate.
+- V69-00 Untrusted Context Warning Pattern Application.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -11059,7 +11171,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V68 Post Harness Activation Pattern Re-Gate.
+Active stream: V69 Security Trust Boundary Pattern Application.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

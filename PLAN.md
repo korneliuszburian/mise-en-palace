@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V68 Post Harness Activation Pattern Re-Gate
-current task: V68-00 Post Harness Activation Pattern Re-Gate
+active stream: V69 Security Trust Boundary Pattern Application
+current task: V69-00 Untrusted Context Warning Pattern Application
 ```
 
 Completed stream summary:
@@ -101,43 +101,47 @@ V65-00 TypeScript source packet application: complete
 V65-01 post TypeScript pattern application re-gate: complete
 V66-00 TypeScript boundary falsifier spot-check: complete
 V67-00 harness activation pattern application: complete
-V68 post harness activation pattern re-gate: active
+V68-00 post harness activation pattern re-gate: complete
+V69 security trust boundary pattern application: active
 ```
 
 ## Active Stream
 
-### V68 Post Harness Activation Pattern Re-Gate
+### V69 Security Trust Boundary Pattern Application
 
 Goal:
 
-Decide the next bounded task after applying harness/activation owner-file recall
-guidance to the activation skill.
+Apply the security/trust boundary pattern to the existing untrusted selected
+context risk and route it to one bounded consumer.
 
 Current finding:
 
 ```txt
-V67 routed repeated owner-file/read-model activation evidence into the
-activation-engine skill without changing scoring.
+Activation owner-file recall already has skill guidance and deterministic eval
+coverage. The next high-ROI pattern surface is security/trust: current threat
+model says selected source/memory context can enter Codex briefs without an
+explicit untrusted-context warning.
 ```
 
 Current action:
 
 ```txt
-Execute V68-00: decide whether the next task is a golden/eval proof, another
-pattern surface, or an honest blocker.
+Execute V69-00: route the security/trust source packet to exactly one consumer:
+a bounded Codex adapter warning repair, an eval/golden candidate, or an explicit
+defer decision.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+One bounded repair/eval/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate selects more activation work without evidence that the skill update
-needs proof or repair.
+The task creates a generic security project instead of the named untrusted
+context warning consumer.
 ```
 
 ### External Input Blocker
