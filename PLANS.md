@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V139 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, and source-to-decision skill output guard slices: complete
-active stream: V140 Post Source-To-Decision Skill Output Guard Re-Gate
-current task: V140-00 Post Source-To-Decision Skill Output Guard Re-Gate
+V48..V141 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, and source-class vocabulary guard slices: complete
+active stream: V142 Post Source-Class Vocabulary Guard Re-Gate
+current task: V142-00 Post Source-Class Vocabulary Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
+V142-00 Post Source-Class Vocabulary Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14498,6 +14498,90 @@ Next active stream:
 
 Next active task:
 - V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
+
+## Outcome 2026-06-27 V141 Source-Class Vocabulary Consistency Guard
+
+Completed tasks:
+- V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
+- V141-00 Source-Class Vocabulary Consistency Guard.
+
+V140 decision:
+- Do not broaden source-to-decision skill output alignment into prompt bloat,
+  research bureaucracy, source archive, dashboard, or benchmark lane.
+- Select source-class vocabulary consistency because `source_class` now appears
+  in the pattern-intake runbook, source-to-decision skill, durable source map,
+  and source-map invariant.
+- A small drift already existed: runbook allowed sources used plural
+  `high-quality public course pages` while the guarded source-class enum uses
+  `high-quality public course page`.
+
+What changed:
+- `docs/runbooks/pattern-intake.md` now uses the same
+  `high-quality public course page` source-class value as the skill and durable
+  source map.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks the
+  source-class vocabulary across `docs/runbooks/pattern-intake.md`,
+  `.agents/skills/source-to-decision/SKILL.md`, `docs/KRN_SOURCES.md`, and
+  `packages/harness/src/sourceMapInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md` records the source-class
+  vocabulary consistency guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V142.
+
+Evidence:
+- `docs/runbooks/pattern-intake.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: V139 source-to-decision skill output guard, V135 source classification
+  guard, and current source-class vocabulary surfaces.
+- Mechanism: source-class values are used across multiple KRN intake and guard
+  surfaces; if the vocabulary drifts, future pattern intake can classify the same
+  source differently depending on which surface Codex follows.
+- KRN implication: best-pattern intake needs one small shared vocabulary before
+  sources become durable guidance, skills, eval candidates, or repair work.
+- Decision: add focused active-plan invariant coverage for source-class
+  vocabulary consistency across runbook, skill, durable source map, and
+  source-map invariant.
+- Does not prove: the vocabulary is complete forever, every source class is
+  high quality, source classification alone creates product value, or future
+  source judgment is correct.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts`,
+  `docs/runbooks/pattern-intake.md`, `.agents/skills/source-to-decision/SKILL.md`,
+  `docs/KRN_SOURCES.md`, and `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: one source-class value can drift across runbook, skill, source map,
+  or invariant without focused tests failing.
+
+What improved:
+- Best-pattern intake now has stronger vocabulary consistency across the surfaces
+  Codex uses to ingest official docs, papers, courses, practitioner writing,
+  repo evidence, target evidence, and user-provided research.
+- The guard catches source-class drift without adding a source archive,
+  taxonomy system, crawler, or research product.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Research automation, crawler, or source discovery.
+
+New task:
+- V142-00 Post Source-Class Vocabulary Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V142 Post Source-Class Vocabulary Guard Re-Gate.
+
+Next active task:
+- V142-00 Post Source-Class Vocabulary Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V140 Post Source-To-Decision Skill Output Guard Re-Gate
-current task: V140-00 Post Source-To-Decision Skill Output Guard Re-Gate
+active stream: V142 Post Source-Class Vocabulary Guard Re-Gate
+current task: V142-00 Post Source-Class Vocabulary Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,39 +43,39 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V139: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V141: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
            adapter boundary, source classification, and latest-outcome
-           source-to-decision and source-to-decision skill output guards
-           complete.
+           source-to-decision, source-to-decision skill output, and
+           source-class vocabulary guards complete.
 ```
 
 ## Active Stream
 
-### V140 Post Source-To-Decision Skill Output Guard Re-Gate
+### V142 Post Source-Class Vocabulary Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after aligning the source-to-decision skill output
-with guarded source classification without turning skill work into prompt
-bloat.
+Decide the next bounded task after guarding source-class vocabulary consistency
+without turning pattern intake into taxonomy bureaucracy.
 
 Current finding:
 
 ```txt
-V138 selected source-to-decision skill output alignment as the next bounded
-pattern surface. V139 made the skill require `source_class` and `decision_kind`
-in its primary output and guarded it with skill invariants.
+V140 selected source-class vocabulary consistency as the next bounded pattern
+surface. V141 aligned the `high-quality public course page` source class and
+guarded the vocabulary across pattern intake, source-to-decision skill, durable
+source map, and source-map invariant.
 ```
 
 Current action:
 
 ```txt
-Execute V140-00: select the next pattern surface from evidence. Do not broaden
-the skill into a long prompt ledger, research bureaucracy, source archive,
-dashboard, or benchmark lane.
+Execute V142-00: select the next pattern surface from evidence. Do not broaden
+source-class vocabulary into taxonomy bureaucracy, research archive, dashboard,
+or benchmark lane.
 ```
 
 Primary consumer:
@@ -87,8 +87,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source-to-decision skill output alignment into skill
-bloat or research bureaucracy without a concrete consumer and falsifier.
+The re-gate turns focused source-class vocabulary guarding into taxonomy
+bureaucracy without a concrete consumer and falsifier.
 ```
 
 ## External Input Blocker

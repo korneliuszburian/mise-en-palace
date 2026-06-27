@@ -53,6 +53,17 @@ const expectFieldLines = (body: string, fields: string[]): void => {
   }
 };
 
+const sourceClassVocabulary = [
+  "official docs",
+  "papers",
+  "high-quality public course page",
+  "practitioner writing",
+  "competitor docs",
+  "repo-local evidence",
+  "target-repo evidence",
+  "user-provided research"
+] as const;
+
 describe("KRN active plan invariants", () => {
   it("keeps GOAL, PLAN, and PLANS pointed at the same active stream and task", () => {
     const goal = readRootFile("GOAL.md");
@@ -169,6 +180,28 @@ describe("KRN active plan invariants", () => {
     expect(rejectionReasons).toContain("copyright_or_access:");
     expect(rejectionReasons).toContain("stale_or_conflicting:");
     expect(rejectionReasons).toContain("too_broad:");
+  });
+
+  it("keeps source-class vocabulary aligned across intake, skills, and source guidance", () => {
+    const runbook = readRootFile("docs/runbooks/pattern-intake.md");
+    const sourceSkill = readRootFile(".agents/skills/source-to-decision/SKILL.md");
+    const sourceMapInvariant = readRootFile("packages/harness/src/sourceMapInvariants.test.ts");
+    const sourceMap = readRootFile("docs/KRN_SOURCES.md");
+    const expectedInline = sourceClassVocabulary.join(" | ");
+
+    expect(sourceSkill).toContain(`source_class: ${expectedInline}`);
+    expect(runbook).toContain("source_class:");
+    expect(sourceMapInvariant).toContain(sourceClassVocabulary.join("|"));
+
+    for (const sourceClass of sourceClassVocabulary) {
+      expect(runbook).toContain(sourceClass);
+      expect(sourceSkill).toContain(sourceClass);
+      expect(sourceMapInvariant).toContain(sourceClass);
+    }
+
+    expect(sourceMap).toContain("- Source class: official docs.");
+    expect(sourceMap).toContain("- Source class: high-quality public course page.");
+    expect(sourceMap).toContain("- Source class: practitioner writing.");
   });
 
   it("keeps future task contracts explicit enough for Codex continuation", () => {

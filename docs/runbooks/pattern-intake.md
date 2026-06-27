@@ -24,7 +24,7 @@ archive, crawler, broad reading backlog, or active-context pile.
 ```txt
 official docs
 papers
-high-quality public course pages
+high-quality public course page
 user-provided course notes or summaries
 practitioner writing
 competitor docs
