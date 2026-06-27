@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V25 — Real Target Observation Re-Run After Owner-File Priority Repair
+V26 — CLI Run Reference And Empty Target Changed Files Ergonomics
 ```
 
 Current product loop:
@@ -65,8 +65,9 @@ V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete.
 V22 Persisted CLI DB URL Default Consistency: complete.
 V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete.
 V24 Target Owner-File Recall Deduplication And Budget Priority: complete.
-active stream: V25 Real Target Observation Re-Run After Owner-File Priority Repair.
-current task: V25-00 — Real Target Observation Re-Run After Owner-File Priority Repair.
+V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete.
+active stream: V26 CLI Run Reference And Empty Target Changed Files Ergonomics.
+current task: V26-00 — CLI Run Reference And Empty Target Changed Files Ergonomics.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

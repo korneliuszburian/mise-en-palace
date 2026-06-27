@@ -51,7 +51,8 @@ V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
 V22 Persisted CLI DB URL Default Consistency: complete
 V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete
 V24 Target Owner-File Recall Deduplication And Budget Priority: complete
-active stream: V25 Real Target Observation Re-Run After Owner-File Priority Repair
+V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
+active stream: V26 CLI Run Reference And Empty Target Changed Files Ergonomics
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -508,19 +509,35 @@ Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v24-owner-file-recall-dedup-budget/REPORT.md`.
 
-## Active Stream: V25
+## Completed Stream: V25
 
 V25 reruns the real target observation-only workflow after V24 changed
 owner-file candidate priority.
 
 ### V25-00 — Real Target Observation Re-Run After Owner-File Priority Repair
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: rerun the real target observation-only owner-file trial and prove the
 full workflow now includes direct owner files while preserving target clean
 state, observation-only evidence defaults, and no V02-01/product-ready
 overclaim.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v25-target-rerun-after-owner-file-priority/REPORT.md`.
+
+## Active Stream: V26
+
+V26 repairs small CLI friction found during V24/V25 dogfood.
+
+### V26-00 — CLI Run Reference And Empty Target Changed Files Ergonomics
+
+Status: active.
+
+Goal: make run reference flags and explicit empty target changed-file evidence
+less error-prone without changing evidence semantics, target policy, DB schema,
+or activation behavior.
 
 ## Hard Non-Goals
 

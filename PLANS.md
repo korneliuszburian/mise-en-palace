@@ -50,12 +50,13 @@ V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
 V22 Persisted CLI DB URL Default Consistency: complete
 V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete
 V24 Target Owner-File Recall Deduplication And Budget Priority: complete
+V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V25 Real Target Observation Re-Run After Owner-File Priority Repair
-current task: V25-00 Real Target Observation Re-Run After Owner-File Priority Repair
+active stream: V26 CLI Run Reference And Empty Target Changed Files Ergonomics
+current task: V26-00 CLI Run Reference And Empty Target Changed Files Ergonomics
 ```
 
 Evidence already recorded in repo:
@@ -70,9 +71,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V25 must rerun the real target observation-only workflow after V24: target plan
-replay now includes all explicit owner files, but the full target loop still
-needs evidence/readback proof after the owner-file priority repair.
+V26 must repair or explicitly reject small CLI friction found in V24/V25:
+`evidence capture --run-id` vs `observe --run`, and no explicit accepted
+spelling for zero target changed files.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2053,6 +2054,31 @@ evidence/readback without V02-01 or product-ready overclaim.
 - no fake V02-01 or product-ready claim;
 - readiness remains controlled-internal-alpha for technical operators, stronger.
 
+### Stream V26 — CLI Run Reference And Empty Target Changed Files Ergonomics
+
+Why now:
+
+- V24/V25 exposed two small operator-friction issues while running real
+  dogfood: `evidence capture` accepts `--run-id`, `observe` accepts `--run`,
+  and `--target-changed-file none` is rejected even though target evidence
+  readback renders `changedFiles: none`.
+- These are CLI ergonomics issues, not evidence semantic or target policy
+  changes.
+
+Expected end state:
+
+```txt
+Operators can use a consistent run reference spelling across evidence/observe,
+and can explicitly express zero target changed files if the CLI already renders
+that state.
+```
+
+- no DB schema change;
+- no target policy change;
+- no source crawler;
+- no activation scoring change;
+- no V02-01/product-ready overclaim.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
 Status: complete
@@ -2432,7 +2458,7 @@ Completed evidence:
 
 ### V25-00 — Real Target Observation Re-Run After Owner-File Priority Repair
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: rerun the real target observation-only owner-file trial after V24 and
 prove the full workflow now includes direct owner files while preserving target
@@ -2499,6 +2525,82 @@ activation/read-model follow-up, target runbook update, or another bounded
 source repair.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V25
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v25-target-rerun-after-owner-file-priority/REPORT.md`.
+- Real target remained clean before/after.
+- Plan run `ca9cfa4d-ab52-49cd-b6cc-de8a3e4289cf` included all five owner
+  files plus target trust exclusions.
+- Target evidence readback preserved observation-only defaults.
+
+### V26-00 — CLI Run Reference And Empty Target Changed Files Ergonomics
+
+Status: active
+
+Goal: repair or explicitly reject small CLI ergonomics gaps from V24/V25:
+`krn evidence capture --run-id` vs `krn observe --run`, and invalid
+`--target-changed-file none` despite readback rendering no changed files as
+`none`.
+
+Product rationale: repeated dogfood should not require remembering command
+specific flag aliases for the same execution run concept or guessing how to
+state an empty target changed-file list.
+
+Architectural rationale: this is adapter ergonomics over existing typed
+evidence semantics. It must not change evidence meaning, target policy, DB
+schema, or activation behavior.
+
+Evidence source: V24 report and V25 report.
+
+Official/external sources: none required.
+
+Inputs required: CLI argument parsers and command tests for evidence capture,
+observe, and run show if readback text changes.
+
+Files likely touched:
+
+- `packages/cli/src/parseEvidenceArgs.ts`;
+- `packages/cli/src/parseObserveArgs.ts` or observe parser source discovered by search;
+- related CLI tests;
+- V26 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN CLI source/tests/docs/plans only.
+
+Forbidden writes: target repo edits, DB schema migration, target evidence
+semantic changes, activation scoring, source crawler, dashboard/API/MCP/worker
+runtime, V02-01/product-ready overclaim.
+
+Output requirements:
+
+- source inspection finding;
+- decision: repair or explicit rejection;
+- if repaired, tests for accepted aliases / explicit zero target changed files;
+- proof old documented syntax remains valid;
+- dogfood report with proof/non-proof boundaries.
+
+Definition of Done: either bounded CLI repair with tests or documented rejection
+with evidence.
+
+Verification commands: targeted CLI tests, `pnpm typecheck`, `pnpm test`,
+`git diff --check`.
+
+Acceptance criteria: no evidence semantic drift, no DB schema change, no target
+repo writes.
+
+Risk: adding too many aliases. Mitigation: accept only aliases proven by V24/V25
+friction and keep help text explicit.
+
+Rollback: focused revert.
+
+Condensation expectation: decide whether next work is real operator intake,
+another target trial, or a re-gate after V26.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V26
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2758,8 +2860,10 @@ Initial entry:
   evidence defaults persist without explicit forbidden-write flags.
 - [x] V24-00 complete: explicit target owner files now outrank covered source
   seeds and adjacent agent guidance in owner-file-heavy target planning.
-- [ ] V25-00 active: Real Target Observation Re-Run After Owner-File Priority
-  Repair.
+- [x] V25-00 complete: real target rerun proved repaired owner-file priority,
+  observation-only target evidence defaults, and target clean state.
+- [ ] V26-00 active: CLI Run Reference And Empty Target Changed Files
+  Ergonomics.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3137,6 +3241,19 @@ Initial decisions:
   Falsifier: V25 cannot run safely without target writes or the target checkout
     is dirty in a way that prevents observation-only proof.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote CLI run reference and empty target changed-files ergonomics
+    as V26.
+  Rationale: V24/V25 both exposed small CLI friction in otherwise successful
+    dogfood loops; fixing tiny adapter friction reduces operator burden without
+    changing brain semantics.
+  Evidence: V24 `observe --run-id` failure and V25 `--target-changed-file none`
+    failure.
+  Does not prove: evidence semantics are wrong, DB schema needs migration, or
+    activation needs scoring changes.
+  Falsifier: source inspection proves aliases would create ambiguity or current
+    help already documents the intended spelling clearly enough.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -3385,6 +3502,17 @@ Seed evidence:
   Does not prove: V02-01, product readiness, full target runtime verification,
     or broad activation scoring quality.
   Follow-up task: V25-00.
+
+- Evidence ID: E-V25-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v25-target-rerun-after-owner-file-priority/REPORT.md`
+  Command/report/file: real target observation-only rerun after V24 repair.
+  Result: target plan included all five explicit owner files plus trust
+    exclusions; target commands passed; target remained clean; evidence
+    readback preserved observation-only defaults.
+  Proves: V24 owner-file priority works in the full real target target loop.
+  Does not prove: V02-01, product readiness, widened alpha, or full target
+    runtime correctness.
+  Follow-up task: V26-00.
 ```
 
 ## 19. Condensation Queue
@@ -3639,6 +3767,14 @@ Seed queue:
     loop should prove the full observation-only target workflow uses the
     repaired owner-file priority without target writes
   Task: V25-00
+
+- Candidate: CLI run reference and empty target changed-files ergonomics
+  Source evidence: V24/V25 dogfood command friction
+  Surface: CLI parsers/help/tests
+  Status: accepted as V26-00
+  Reason: `--run-id` vs `--run` and invalid `--target-changed-file none`
+    created avoidable operator friction during successful dogfood loops
+  Task: V26-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4287,7 +4423,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V25 Real Target Observation Re-Run After Owner-File Priority Repair.
+Active stream: V26 CLI Run Reference And Empty Target Changed Files Ergonomics.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
