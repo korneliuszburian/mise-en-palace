@@ -6,11 +6,11 @@ Date: 2026-06-27.
 
 Repository: `/home/krn/coding/krn/active/mise-en-palace`.
 
-Root `PLAN.md` is the product single source of truth. Long-running execution
-details for the current goal live in:
+Root `PLAN.md` is the product single source of truth. Detailed continuous
+execution lives in:
 
 ```txt
-docs/plans/v04-internal-brain-utility/PLANS.md
+PLANS.md
 ```
 
 Do not create another parallel roadmap.
@@ -21,17 +21,17 @@ Completed:
 
 - V02-03 through V02-08 product-forward slices.
 - V03-00 through V03-06 controlled-internal-alpha hardening.
-- Headless `wilq-seo` target trial report as engineering evidence, not
-  second-operator proof.
+- V04-00 through V04-07 internal brain utility, scenario factory, skill-first
+  KRN, surface screening, and re-gate.
 
 Current readiness:
 
 ```txt
-controlled-internal-alpha for technical operators: yes
+controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-V04 internal brain utility: active
+active stream: V05 target-aware evidence capture repair
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -47,165 +47,71 @@ operator transcript:
 
 Do not substitute self/headless scenarios for V02-01.
 
-## Active Goal: V04
+## Active Stream: V05
 
-V04 turns KRN into a more useful internal Codex operating layer by running a
-repeatable improvement loop:
-
-```txt
-controlled scenario
-  -> evidence
-  -> finding
-  -> condensation decision
-  -> rule / skill / test / eval / memory candidate / source decision / repair
-  -> next scenario
-```
-
-V04 is an internal engineering-proof stream. It is allowed to use self/headless
-scenarios to improve KRN for our own workflows. It is not allowed to claim
-product readiness or complete V02-01.
-
-## V04 Queue
-
-### V04-00 — Baseline Governance Reconciliation
-
-Status: complete on 2026-06-27.
-
-Goal: reconcile dirty target-testing/runbook/report state and ensure root plan
-points to the V04 ExecPlan without turning the root plan into a long ledger.
-
-Expected outputs:
-
-- `docs/plans/v04-internal-brain-utility/PLANS.md`;
-- compact `PLAN.md` and `GOAL.md`;
-- target repo testing runbook;
-- corrected headless `wilq-seo` report boundary;
-- second-operator runbook pointer to target repo testing rules.
-
-Evidence:
-
-- commit `9849754 docs(plan): authorize v04 internal brain utility`;
-- GitHub Actions run `28273097780` passed KRN CI, including typecheck, tests,
-  Promptfoo smoke, diff check, DB ready, Drizzle check, and DB smoke.
-
-### V04-01 — First Concrete Product Friction Repair
-
-Status: complete on 2026-06-27.
-
-Candidate: inspect whether generic `db:smoke` idempotency after fresh Docker
-volume recovery is still a real friction. Repair it only if current evidence
-confirms the gap.
-
-Outcome: rejected as active source repair candidate. Current `main` passed
-generic DB smoke in CI, on the local main DB, and on a fresh scratch DB after
-`db:ready`; repeated scratch `db:smoke` also passed.
-
-Evidence:
-
-- `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
-
-### V04-02 — Controlled Scenario Factory
-
-Status: complete on 2026-06-27.
-
-Goal: define the minimal scenario contract for observation-only, repair-trial,
-source-repair, and db-backed-replay modes.
-
-Evidence:
-
-- `docs/architecture/controlled-scenario-factory.md`.
-
-### V04-03 — Knowledge Condensation Gate
-
-Status: complete on 2026-06-27.
-
-Goal: require every scenario report to decide whether findings stay as report
-evidence or condense into AGENTS, skill, guard, eval, memory/source candidate,
-hook candidate, or bounded repair.
-
-Evidence:
-
-- `docs/architecture/controlled-scenario-factory.md`;
-- `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
-
-### V04-04 — Skill-First KRN
-
-Status: complete on 2026-06-27.
-
-Goal: create or improve at most two repo skills/stable workflow surfaces,
-starting with `target-repo-testing` and `evidence-review-loop` if evidence
-still supports them.
-
-Evidence:
-
-- `.agents/skills/target-repo-testing/SKILL.md`;
-- `docs/architecture/skill-first-krn.md`.
-
-### V04-05 — Controlled Scenario Batch
-
-Status: complete on 2026-06-27.
-
-Goal: plan at least six controlled scenarios and execute at least four unless
-blocked.
-
-Required coverage:
-
-- KRN-on-KRN repair;
-- DB-backed replay/readiness/smoke;
-- headless target observation;
-- skill/evidence-review loop.
-
-Evidence:
-
-- `docs/reviews/controlled-dogfood/2026-06-27-v04-scenario-batch/PLAN.md`;
-- `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`;
-- `docs/reviews/controlled-dogfood/2026-06-27-target-repo-skill-boundary-guard/REPORT.md`;
-- `docs/reviews/controlled-dogfood/2026-06-27-wilq-seo-observation-boundary/REPORT.md`;
-- `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
-
-### V04-06 — Guard/Eval From Real Evidence
-
-Status: complete on 2026-06-27.
-
-Goal: add or expand at least one deterministic guard/golden/eval case from V04
-scenario evidence.
-
-Evidence:
-
-- `packages/cli/src/targetRepoTestingSkill.test.ts`;
-- `pnpm --filter @krn/cli test -- targetRepoTestingSkill`.
-
-### V04-07 — Internal Brain Usefulness Re-Gate
-
-Status: complete on 2026-06-27.
-
-Goal: create a final V04 report deciding whether KRN became materially more
-useful for our own workflows.
-
-Preparation complete:
-
-- AGENTS/skill compression pass;
-- hook candidate screening;
-- MCP/subagent candidate screening;
-- internal brain usefulness metrics.
-
-Evidence:
-
-- `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
-- `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
-- commit `c52d08b docs(v04): re-gate internal brain usefulness`;
-- GitHub Actions run `28273909247` passed KRN CI, including typecheck, tests,
-  Promptfoo smoke, diff check, DB ready, Drizzle check, and DB smoke.
-
-Verdict:
+V05 repairs the current target-trial evidence gap:
 
 ```txt
-internal brain utility: improved
-controlled-internal-alpha for technical operators: stronger
-product-ready: no
-V02-01 second-operator proof: still blocked/deferred
-next recommended goal: V05 target-aware evidence capture repair
+KRN evidence capture and readback must distinguish:
+  KRN repo changes
+  target repo evidence
+  target dirty state before/after
+  owned vs external target changes
+  allowed/forbidden target writes
+  target command proof
+  what target evidence proves and does not prove
 ```
+
+This is a KRN source/product repair stream. It is not a target repo repair, not
+V02-01, and not product-readiness proof.
+
+## V05 Queue
+
+### V05-00 — Baseline Audit And Goal/Plan Reconciliation
+
+Status: complete on 2026-06-27.
+
+Goal: replace the completed V04 goal state with compact continuous V05 state and
+check in root `PLANS.md` as the detailed long-run ExecPlan.
+
+Evidence:
+
+- root `GOAL.md`;
+- root `PLAN.md`;
+- root `PLANS.md`.
+
+### V05-01 — Target Evidence Capture Current-State Investigation
+
+Status: active.
+
+Goal: inspect current evidence capture, run readback, target repo testing skill,
+and V04 target reports to define the smallest target-aware evidence repair.
+
+Expected output:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-current-state/REPORT.md`;
+- minimal V05-02 implementation file set or explicit rejection.
+
+### V05-02 — Implement Minimal Target-Aware Evidence Capture
+
+Status: pending.
+
+Goal: add the smallest typed support for target-repo evidence capture/readback if
+V05-01 confirms the code gap.
+
+### V05-03 — Target Evidence Guard And Replay Scenario
+
+Status: pending.
+
+Goal: add deterministic guard coverage and a controlled replay scenario proving
+target-aware evidence capture preserves proof/non-proof boundaries.
+
+### V05-04 — Target-Aware Evidence Re-Gate
+
+Status: pending.
+
+Goal: decide whether V05 materially improved target trials and append the next
+active stream to `PLANS.md`.
 
 ## Hard Non-Goals
 
@@ -226,8 +132,7 @@ Do not build or claim:
 
 ## Verification Policy
 
-Use the narrowest relevant verification for each slice. For source changes,
-run:
+Use the narrowest relevant verification for each slice. For source changes, run:
 
 ```sh
 pnpm typecheck

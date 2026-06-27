@@ -1,4 +1,4 @@
-# Goal: Execute V04 Internal Brain Utility
+# Goal: Execute KRN Continuous Brain Growth
 
 You are working in:
 
@@ -14,25 +14,25 @@ feedback.
 
 ## Current Objective
 
-Use root `PLAN.md` as the product single source of truth and execute the V04
-long-run plan:
+Use root `PLAN.md` as the compact product single source of truth and use root
+`PLANS.md` as the detailed continuous ExecPlan.
+
+Active stream:
 
 ```txt
-docs/plans/v04-internal-brain-utility/PLANS.md
+V05 — Target-Aware Evidence Capture Repair
 ```
 
-V04 objective:
+Current product loop:
 
 ```txt
-Make KRN materially more useful for our own Codex workflows by building a
-repeatable internal brain-improvement loop:
-
 controlled scenario
   -> evidence
   -> finding
   -> condensation decision
-  -> durable surface or bounded repair
-  -> next scenario
+  -> rule / skill / guard / eval / memory candidate / source decision / repair
+  -> append next task to PLANS.md
+  -> continue
 ```
 
 ## Current State
@@ -40,19 +40,13 @@ controlled scenario
 ```txt
 V02-03..V02-08: complete.
 V03-00..V03-06: complete.
-V02-01 real second-operator trial: blocked/deferred.
-V04 internal brain utility: active.
-V04-00 baseline governance reconciliation: complete.
-V04-01 first concrete product friction repair/rejection: complete.
-V04-02 controlled scenario factory: complete.
-V04-03 knowledge condensation gate: complete.
-V04-04 skill-first KRN: complete.
-V04-06 deterministic guard from real evidence: complete.
-V04-05 controlled scenario batch: complete.
-V04 re-gate preparation: complete.
-V04-07 internal brain usefulness re-gate: complete.
-Current active slice: V04 complete; next recommended goal is V05 target-aware
-evidence capture repair.
+V04-00..V04-07: complete.
+controlled-internal-alpha for technical operators: yes / stronger.
+product-ready: no.
+widened internal alpha: no.
+V02-01 real second-operator proof: blocked/deferred.
+active stream: V05 target-aware evidence capture repair.
+current task: V05-01 — Target Evidence Capture Current-State Investigation.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
@@ -74,45 +68,49 @@ proof.
 
 - Keep `GOAL.md` compact.
 - Keep root `PLAN.md` compact and authoritative.
-- Keep the detailed V04 ExecPlan under
-  `docs/plans/v04-internal-brain-utility/PLANS.md`.
+- Keep detailed work in root `PLANS.md`.
 - Do not create another parallel roadmap.
 - Do not reopen archived historical plans as active context.
 - Do not build dashboard, API, MCP server, worker runtime, source crawler,
   broad eval platform, `krn audit`, anti-slop scanner, generic multi-agent
-  system, runtime markdown memory, or hidden semantic hooks.
+  system, runtime markdown memory, or hidden semantic hooks unless `PLANS.md`
+  explicitly authorizes a bounded evidence-backed task.
 - Do not write to living target repos unless the active task explicitly allows
-  target writes.
+  target writes, allowed files, rollback, and verification.
 - After each bounded slice, verify, commit, push, and check CI when relevant.
-- Do not mark V04 complete after one report, one repair, one skill, or one
-  scenario. Completion requires the criteria in the V04 ExecPlan.
+- Do not mark this continuous goal complete after one slice, one report, one
+  repair, one skill, or one scenario.
+- After every completed slice, update `PLANS.md`, append any new tasks
+  discovered from evidence, and continue with the next highest-ROI task.
+- Completion requires explicit operator stop, product-ready gate evidence, or an
+  honest blocked/budget-limited handoff. Budget limit is not success.
 
 ## Continuation After Compact
 
 After auto-compact, resume, context loss, or a new `/goal` continuation:
 
-1. Read `GOAL.md`, root `PLAN.md`, and
-   `docs/plans/v04-internal-brain-utility/PLANS.md`.
-2. Return to the current active slice first. Do not restart from old context,
-   old reports, archived plans, or memory unless the current slice asks for it.
-3. Inspect `git status --short --branch`, latest commits, and the V04 ExecPlan
-   `Progress`, `Evidence Ledger`, `Decision Log`, and `Condensation Queue`.
-4. If the previous slice was committed but not pushed or CI-checked, finish that
+1. Read `GOAL.md`, root `PLAN.md`, and root `PLANS.md`.
+2. Run current-state preflight:
+
+   ```sh
+   git fetch --prune
+   git status --short --branch
+   git log --oneline -n 8
+   ```
+
+3. Inspect `PLANS.md` sections: `Progress`, `Evidence Ledger`, `Decision Log`,
+   `Condensation Queue`, `Active Task Queue`, and `Generated Task Backlog`.
+4. Return to the first incomplete active task. Do not restart from conversation
+   memory.
+5. If a previous slice was committed but not pushed or CI-checked, finish that
    before starting unrelated work.
-5. If the current slice is complete, update progress, choose the next unmet V04
-   criterion, and continue with the smallest evidence-backed product action.
-6. Keep moving the project forward. Do not stop on a completed minor doc/report
-   change unless verification, commit/push/CI, or a real blocker requires it.
-7. When new evidence appears, add new bounded tasks to the V04 ExecPlan instead
-   of bloating `GOAL.md` or root `PLAN.md`.
-8. Condense knowledge continuously: repeated findings become a rule, skill,
-   deterministic guard/eval, memory/source candidate, hook candidate, or a
-   rejected/deferred decision with evidence.
-9. Research is useful only when mapped through:
+6. If the current slice is complete, update progress, synthesize next tasks from
+   evidence, append them to `PLANS.md`, and continue.
+7. Research is useful only when mapped through:
 
    ```txt
    source -> mechanism -> KRN implication -> decision/rejection -> falsifier
    ```
 
-10. V04 is a self-improving loop. Each scenario should reduce future context
-    waste, repeated explanation, review burden, or product uncertainty.
+8. Every scenario should reduce future context waste, repeated explanation,
+   review burden, or product uncertainty.
