@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V203 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, and TypeScript boundary standard guard slices: complete
-active stream: V204 Post TypeScript Boundary Re-Gate
-current task: V204-00 Post TypeScript Boundary Re-Gate
+V48..V204 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, and source-map iterative repair re-gate slices: complete
+active stream: V205 Source Map Iterative Repair Current-State Repair
+current task: V205-00 Source Map Iterative Repair Current-State Repair
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V204-00 Post TypeScript Boundary Re-Gate.
+V205-00 Source Map Iterative Repair Current-State Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16904,6 +16904,55 @@ Next active stream:
 
 Next active task:
 - V204-00 Post TypeScript Boundary Re-Gate.
+
+## Outcome 2026-06-28 V204 Source Map Iterative Repair Re-Gate
+
+Completed task:
+- V204-00 Post TypeScript Boundary Re-Gate.
+
+Decision:
+- Do not broaden TypeScript standard repair into a broad type rewrite, Research
+  Foundry, source crawler, dashboard, product-readiness claim, or docs sweep.
+- Select source-map iterative repair current-state repair because
+  `docs/KRN_SOURCES.md` is retained source guidance and still says iterative
+  repair means "review capture" and later dogfood starts with `krn doctor`.
+
+Evidence:
+- The active implementation loop now uses evidence/review/feedback commands,
+  bounded active tasks, and continuous PLANS outcomes.
+- `docs/KRN_SOURCES.md` is guarded for source-to-decision fields but not yet
+  guarded against this stale current-state wording.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md#iterative-repair-loops`,
+  root `PLAN.md`, and source-map invariants.
+- Mechanism: retained sources shape future decisions; stale source-map wording
+  can route future repair-loop tasks through old command names or a doctor-first
+  path.
+- KRN implication: the source map should preserve the mechanism from the
+  official pattern while mapping it to current KRN evidence/review/feedback
+  surfaces.
+- Decision: repair the source-map entry and guard it.
+- Does not prove: every source-map decision is current, product readiness, or
+  need for broad source-map rewrite.
+- Consumer: `docs/KRN_SOURCES.md` and `packages/harness/src/sourceMapInvariants.test.ts`.
+- Falsifier: the retained source map can again route iterative repair through
+  stale review-capture or doctor-first wording while tests pass.
+
+New task:
+- V205-00 Source Map Iterative Repair Current-State Repair.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V205 Source Map Iterative Repair Current-State Repair.
+
+Next active task:
+- V205-00 Source Map Iterative Repair Current-State Repair.
 
 ## 21. Final Response Format For Codex Runs
 

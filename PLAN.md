@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V204 Post TypeScript Boundary Re-Gate
-current task: V204-00 Post TypeScript Boundary Re-Gate
+active stream: V205 Source Map Iterative Repair Current-State Repair
+current task: V205-00 Source Map Iterative Repair Current-State Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V203: active-surface compactness, handoff, PLANS freshness,
+V100..V204: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,38 +49,40 @@ V100..V203: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V204 Post TypeScript Boundary Re-Gate
+### V205 Source Map Iterative Repair Current-State Repair
 
 Goal:
 
-Decide the next bounded task after repairing TypeScript boundary standard state.
+Repair stale current-state wording in the retained Iterative Repair Loops source
+map entry.
 
 Current finding:
 
 ```txt
-V203 aligned docs/standards/typescript-boundaries.md with current continuous
-TypeScript boundary discipline and added a focused invariant.
+V204 found docs/KRN_SOURCES.md still says KRN needs "review capture" and that
+later dogfood starts with `krn doctor`, while current repair loops use
+evidence/review/feedback commands and bounded active tasks.
 ```
 
 Current action:
 
 ```txt
-Execute V204-00: select the next bounded evidence-backed task. Do not broaden
-TypeScript standard repair into a type rewrite, Research Foundry, source
-crawler, dashboard, product-readiness claim, or docs sweep.
+Execute V205-00: update only that source-map entry and add a focused invariant.
+Do not broaden into source-map rewrite, Research Foundry, source crawler,
+dashboard, product-readiness claim, or docs sweep.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+docs/KRN_SOURCES.md and focused source-map invariant.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate turns TypeScript standard repair into broad type churn without a
-concrete consumer and falsifier.
+The retained source map can again route iterative repair through stale review
+capture / doctor-first wording while tests pass.
 ```
 
 ## Pattern Gate
