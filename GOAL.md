@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V194 Post TypeScript Skill Guard Re-Gate
+V195 Onboarding Current-State Repair
 ```
 
 Current product loop:
@@ -37,7 +37,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V193: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V194: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
@@ -50,8 +50,8 @@ controlled-scenario, target-infra-ADR, source-map, ADR chain, ADR line-wrap,
 kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata,
 source-to-decision skill metadata, evidence review skill provenance, Codex
 adapter skill metadata, activation skill owner-file metadata, brain store skill
-metadata, target repo skill metadata, and TypeScript skill guards complete.
-current task: V194-00 Post TypeScript Skill Guard Re-Gate.
+metadata, target repo skill metadata, TypeScript skill guard, and onboarding current-state re-gate complete.
+current task: V195-00 Onboarding Current-State Repair.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V194 Post TypeScript Skill Guard Re-Gate
-current task: V194-00 Post TypeScript Skill Guard Re-Gate
+active stream: V195 Onboarding Current-State Repair
+current task: V195-00 Onboarding Current-State Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -39,48 +39,48 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V193: active-surface compactness, handoff, PLANS freshness,
+V100..V194: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
-           pattern-gate guards complete.
+           pattern-gate guards and onboarding current-state re-gate complete.
 ```
 
 ## Active Stream
 
-### V194 Post TypeScript Skill Guard Re-Gate
+### V195 Onboarding Current-State Repair
 
 Goal:
 
-Decide the next bounded task after guarding TypeScript skill unknown-first
-boundary and no-type-weakening guidance.
+Repair stale operator-facing onboarding so it reflects the current controlled
+internal-alpha KRN state instead of Commit 0/1 bootstrap language.
 
 Current finding:
 
 ```txt
-V192 selected TypeScript skill guard repair because TypeScript boundary
-discipline is a core senior-standard surface for every source slice.
+V194 found the pattern-intake and source-to-decision gates are already guarded,
+but docs/KRN_ONBOARDING.md still claims the repo contains only Commit 0/1
+surfaces and shows old dogfood commands.
 ```
 
 Current action:
 
 ```txt
-Execute V194-00: select the next pattern surface from evidence. Do not broaden
-TypeScript skill preservation into broad type rewrites, Research Foundry,
-dashboard, or product-readiness claims.
+Execute V195-00: update docs/KRN_ONBOARDING.md to current-state orientation and
+add a focused invariant so stale bootstrap/dogfood claims do not return.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+docs/KRN_ONBOARDING.md and a focused invariant.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate turns focused TypeScript skill preservation into broad type rewrite
-pressure without a concrete consumer and falsifier.
+Onboarding can again claim Commit 0/1-only state or route first dogfood through
+stale commands while tests pass.
 ```
 
 ## Pattern Gate

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V193 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, and TypeScript skill guard slices: complete
-active stream: V194 Post TypeScript Skill Guard Re-Gate
-current task: V194-00 Post TypeScript Skill Guard Re-Gate
+V48..V194 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, and onboarding current-state re-gate slices: complete
+active stream: V195 Onboarding Current-State Repair
+current task: V195-00 Onboarding Current-State Repair
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V194-00 Post TypeScript Skill Guard Re-Gate.
+V195-00 Onboarding Current-State Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16389,6 +16389,66 @@ Next active stream:
 
 Next active task:
 - V194-00 Post TypeScript Skill Guard Re-Gate.
+
+## Outcome 2026-06-27 V194 Onboarding Current-State Re-Gate
+
+Completed task:
+- V194-00 Post TypeScript Skill Guard Re-Gate.
+
+Decision:
+- Do not broaden the TypeScript skill guard into a broad type rewrite,
+  Research Foundry, source crawler, dashboard, or product-readiness claim.
+- The pattern-intake/source-to-decision surfaces already preserve the requested
+  "best patterns at every stage" behavior: infra, harness, CI/eval,
+  Codex-surface, TypeScript, target-workflow, security, operator-UX, and
+  research/paper/course-driven work must route through source -> mechanism ->
+  KRN implication -> decision/rejection -> consumer -> falsifier.
+- Select onboarding current-state repair because `docs/KRN_ONBOARDING.md`
+  remains operator-facing but still claims Commit 0/1 bootstrap state and routes
+  first dogfood through stale `krn context build` / `krn review capture`
+  language.
+
+Evidence:
+- `docs/runbooks/pattern-intake.md` already has the Surface Consumer Matrix.
+- `.agents/skills/source-to-decision/SKILL.md` already routes courses, papers,
+  public docs, practitioner writing, repo evidence, and user research to
+  consumers and falsifiers.
+- `packages/harness/src/activePlanInvariants.test.ts` already guards the
+  active pattern gate and pattern-intake output contract.
+- `docs/KRN_ONBOARDING.md` still contains stale bootstrap/dogfood language.
+
+Source-to-decision:
+- Source: `docs/KRN_ONBOARDING.md`, `docs/runbooks/pattern-intake.md`,
+  `.agents/skills/source-to-decision/SKILL.md`, and active plan invariants.
+- Mechanism: operator-facing onboarding decides what a fresh Codex/operator
+  reads first; stale bootstrap claims can roll understanding backward even when
+  root `GOAL.md`/`PLAN.md` are current.
+- KRN implication: continuous knowledge condensation must include small
+  current-state docs, not only tests and long ledgers.
+- Decision: repair onboarding current-state orientation and add a focused guard
+  against Commit 0/1-only and stale dogfood command regression.
+- Does not prove: every doc is current, product readiness, or that another
+  broad docs sweep is needed.
+- Consumer: `docs/KRN_ONBOARDING.md` and a focused context/active-plan
+  invariant.
+- Falsifier: onboarding can again claim only Commit 0/1 bootstrap surfaces or
+  show stale `krn context build` / `krn review capture` first-dogfood commands
+  while tests pass.
+
+New task:
+- V195-00 Onboarding Current-State Repair.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V195 Onboarding Current-State Repair.
+
+Next active task:
+- V195-00 Onboarding Current-State Repair.
 
 ## 21. Final Response Format For Codex Runs
 
