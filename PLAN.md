@@ -31,7 +31,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V05 target-aware evidence capture repair
+V05 target-aware evidence capture repair: complete
+active stream: V06 activation / owner-file / context ROI utility
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -47,7 +48,7 @@ operator transcript:
 
 Do not substitute self/headless scenarios for V02-01.
 
-## Active Stream: V05
+## Completed Stream: V05
 
 V05 repairs the current target-trial evidence gap:
 
@@ -108,10 +109,27 @@ target-aware evidence capture preserves proof/non-proof boundaries.
 
 ### V05-04 — Target-Aware Evidence Re-Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide whether V05 materially improved target trials and append the next
 active stream to `PLANS.md`.
+
+## Active Stream: V06
+
+V06 improves activation/context ROI after target evidence capture became
+clearer:
+
+```txt
+KRN target planning should surface exact owner-file candidates below named roots
+or clearly abstain with typed reasons.
+```
+
+### V06-00 — Activation / Owner-File Recall Below Target Roots
+
+Status: active.
+
+Goal: improve or re-gate target owner-file recall below named source roots after
+target-aware evidence capture is stable.
 
 ## Hard Non-Goals
 

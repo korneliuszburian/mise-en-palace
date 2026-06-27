@@ -701,7 +701,7 @@ Next-task synthesis rule: proceed to V05-04 re-gate or append follow-up repair i
 
 ### V05-04 — Target-Aware Evidence Re-Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: Decide whether V05 materially improved target trials and what stream should run next.
 
@@ -764,6 +764,44 @@ Condensation expectation: update root PLAN compactly and append V06 active tasks
 
 Next-task synthesis rule: if target evidence is improved, move to V06 activation/context ROI; otherwise append V05-R01 repair.
 
+### V06-00 — Activation / Owner-File Recall Below Target Roots
+
+Status: active
+
+Goal: Improve or re-gate target owner-file recall below named source roots after target-aware evidence capture is stable.
+
+Product rationale: Superior KRN must reduce manual target file discovery, not merely show high-level source roots.
+
+Architectural rationale: Activation is admission control; owner-file recall should be typed/read-model based before any scoring rewrite.
+
+Evidence source: V03/V04 owner-file recall limits and V05 target evidence.
+
+Official/external sources: KRN context supply chain doctrine; Codex Goals evidence-based completion.
+
+Inputs required: V05 re-gate, current activation/read-model code, target fixture.
+
+Files likely touched: activation/read-model code, tests, reports.
+
+Allowed writes: KRN source/tests/reports only.
+
+Forbidden writes: broad activation scoring rewrite without repeated miss evidence.
+
+Output requirements: exact owner-file candidate or typed abstain reason.
+
+Definition of Done: target planning exposes file-level candidates or explicit missing-read-model reason.
+
+Verification commands: `pnpm typecheck`, `pnpm test`, relevant DB/activation smoke, `git diff --check`.
+
+Acceptance criteria: improvement measured by a controlled scenario.
+
+Risk: overfitting to fixture. Mitigation: proof/non-proof section.
+
+Rollback: focused revert.
+
+Condensation expectation: guard if behavior is accepted.
+
+Next-task synthesis rule: if successful, append memory/source usefulness task.
+
 ## 13. Generated Task Backlog
 
 Codex must append here whenever evidence creates new work. Do not execute backlog items until they are promoted to `Active Task Queue`.
@@ -796,7 +834,7 @@ Seed backlog:
 
 ### V06-00 — Activation / Owner-File Recall Below Target Roots
 
-Status: proposed
+Status: promoted to active on 2026-06-27
 
 Goal: Improve or re-gate target owner-file recall below named source roots after target-aware evidence capture is stable.
 
@@ -975,7 +1013,8 @@ Initial entry:
   implemented with explicit CLI inputs, metadata persistence, readback, and tests.
 - [x] V05-03 complete: deterministic golden guard/replay scenario added for
   target-aware evidence capture.
-- [ ] V05-04 active: V05 re-gate and generate next active stream.
+- [x] V05-04 complete: target-aware evidence re-gate selected V06.
+- [ ] V06-00 active: activation / owner-file recall below target roots.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1104,6 +1143,14 @@ Seed evidence:
   Proves: target evidence output cannot disappear without failing the golden guard.
   Does not prove: DB-backed live replay, product readiness, V02-01 usability, target correctness, or target write safety.
   Follow-up task: V05-04.
+
+- Evidence ID: E-V05-04
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v05-target-aware-evidence-re-gate/REPORT.md`
+  Command/report/file: V05 re-gate report.
+  Result: V05 improved target evidence clarity and selected V06 as next stream.
+  Proves: target-aware evidence representation/guard work is sufficient to move to owner-file/context ROI.
+  Does not prove: product readiness, V02-01, target correctness, or owner-file recall quality.
+  Follow-up task: V06-00.
 ```
 
 ## 19. Condensation Queue
@@ -1160,9 +1207,16 @@ Seed queue:
 - Candidate: target-aware evidence stream re-gate
   Source evidence: V05-01 through V05-03
   Surface: re-gate report + next stream selection
-  Status: accepted as V05-04
+  Status: complete as V05-04
   Reason: source repair and guard are complete; KRN needs product decision before more feature work
   Task: V05-04
+
+- Candidate: activation / owner-file / context ROI utility
+  Source evidence: V05 re-gate and prior target owner-file recall gaps
+  Surface: V06 source repair or re-gate
+  Status: accepted as V06
+  Reason: target evidence is clearer; next repeated bottleneck is exact owner-file recall below target roots
+  Task: V06-00
 ```
 
 ## 20. Outcomes & Retrospective
