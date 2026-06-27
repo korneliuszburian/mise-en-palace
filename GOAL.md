@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V07 — Memory / Anti-Memory / Source Usefulness Loop
+V08 — Skill-First Workflow Expansion
 ```
 
 Current product loop:

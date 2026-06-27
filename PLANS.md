@@ -30,11 +30,15 @@ root PLAN.md status: compact product SSOT
 V02-03..V02-08: complete
 V03-00..V03-06: complete
 V04-00..V04-07: complete
+V05 target-aware evidence capture repair: complete
+V06 activation / owner-file / context ROI utility: complete
+V07 memory / anti-memory / source usefulness loop: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-next recommended goal: V05 target-aware evidence capture repair
+active stream: V08 skill-first workflow expansion
+current task: V08-00 Skill-First Workflow Expansion Gate
 ```
 
 Evidence already recorded in repo:
@@ -49,8 +53,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-Current KRN evidence capture classifies KRN repo changes better than target repo dirty state.
-Target-aware evidence capture remains a concrete product gap.
+Repeated KRN/Codex workflows may need condensation into skills, but V08 must
+avoid skill sprawl and accept only evidence-backed bounded skill refinement.
 ```
 
 ## 2. Product Thesis And Strategic Direction
