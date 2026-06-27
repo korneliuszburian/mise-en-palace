@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V209 Post Run Readback Reviewability Repair Re-Gate
-current task: V209-00 Post Run Readback Reviewability Repair Re-Gate
+active stream: V211 Post Matrix Readback Alignment Re-Gate
+current task: V211-00 Post Matrix Readback Alignment Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -35,7 +35,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V208: active-surface compactness, handoff, PLANS freshness,
+V100..V210: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -45,26 +45,25 @@ V100..V208: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V209 Post Run Readback Reviewability Repair Re-Gate
+### V211 Post Matrix Readback Alignment Re-Gate
 
 Goal:
 
-Select the next bounded task after preserving run-readback candidate
-reviewability metadata.
+Select the next bounded task after aligning the matrix with run-readback
+candidate reviewability.
 
 Current finding:
 
 ```txt
-V208 made `krn run show` preserve existing reviewability labels and reasons for
-memory and non-memory candidate output without changing promotion behavior,
-review gates, persistence, or DB schema.
+V210 updated the durable brain-battle matrix and invariant so run readback
+coverage includes candidate reviewability labels and reasons.
 ```
 
 Current action:
 
 ```txt
-Execute V209-00: select the next bounded evidence-backed task from the V207/V208
-evidence. Do not broaden into TypeScript cleanup, research indexing, dashboard,
+Execute V211-00: select the next bounded evidence-backed task. Do not broaden
+one matrix alignment into broad eval work, Promptfoo authority, dashboard,
 worker runtime, activation rewrite, or product-readiness claim.
 ```
 
@@ -77,8 +76,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns one readback repair into broad source/docs churn or feature
-momentum without a concrete consumer and falsifier.
+The re-gate turns one matrix alignment into broad eval/platform/source churn
+without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V208 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, and run-readback reviewability repair slices: complete
-active stream: V209 Post Run Readback Reviewability Repair Re-Gate
-current task: V209-00 Post Run Readback Reviewability Repair Re-Gate
+V48..V210 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, and matrix readback reviewability alignment slices: complete
+active stream: V211 Post Matrix Readback Alignment Re-Gate
+current task: V211-00 Post Matrix Readback Alignment Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V209-00 Post Run Readback Reviewability Repair Re-Gate.
+V211-00 Post Matrix Readback Alignment Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17197,6 +17197,113 @@ Next active stream:
 
 Next active task:
 - V209-00 Post Run Readback Reviewability Repair Re-Gate.
+
+## Outcome 2026-06-28 V209 Post Run Readback Reviewability Repair Re-Gate
+
+Completed task:
+- V209-00 Post Run Readback Reviewability Repair Re-Gate.
+
+Decision:
+- Do not broaden V208 into TypeScript cleanup, research indexing, dashboard,
+  worker runtime, activation rewrite, or product-readiness claim.
+- Select a bounded matrix alignment task because V208 improved candidate
+  reviewability readback, while the durable brain-battle matrix still describes
+  run readback mainly as proof/non-proof separation.
+
+Evidence:
+- `docs/architecture/brain-battle-eval-matrix.md` has a run-readback row tied to
+  `pnpm eval:brain-battle:smoke`, `packages/cli/src/runRunShowCommand.ts`, and
+  `packages/cli/src/runRunShowCommand.test.ts`.
+- V208 added typed `RunReadbackCandidateResource` and tests preserving
+  source-decision candidate reviewability metadata in text and JSON output.
+
+Source-to-decision:
+- Source: V208 outcome, `docs/architecture/brain-battle-eval-matrix.md`, and
+  `packages/cli/src/runRunShowCommand.test.ts`.
+- Mechanism: durable product matrices keep future gates pointed at the behavior
+  that matters; stale matrix wording can hide the newly protected
+  reviewability-readback contract.
+- KRN implication: the run-readback matrix row should name candidate
+  reviewability metadata alongside proof/non-proof boundaries.
+- Decision: align the matrix and, if needed, its invariant guard.
+- Does not prove: product readiness, live DB readback, or candidate quality at
+  scale.
+- Consumer: `docs/architecture/brain-battle-eval-matrix.md` and existing matrix
+  invariants.
+- Falsifier: the matrix can again omit candidate reviewability metadata while
+  tests pass.
+
+New task:
+- V210-00 Brain-Battle Matrix Run Readback Reviewability Alignment.
+
+Task contract:
+- Update the smallest relevant matrix row or guard to include run-readback
+  candidate reviewability metadata.
+- Do not add a new eval lane, dashboard, worker runtime, DB schema, activation
+  rewrite, or broad readback rewrite.
+
+Verification:
+- `pnpm --filter @krn/harness test -- brainBattleMatrixInvariants`
+- `git diff --check`
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V210 Brain-Battle Matrix Run Readback Reviewability Alignment.
+
+Next active task:
+- V210-00 Brain-Battle Matrix Run Readback Reviewability Alignment.
+
+## Outcome 2026-06-28 V210 Brain-Battle Matrix Run Readback Reviewability Alignment
+
+Completed task:
+- V210-00 Brain-Battle Matrix Run Readback Reviewability Alignment.
+
+What changed:
+- `docs/architecture/brain-battle-eval-matrix.md` now states that run readback
+  preserves candidate reviewability metadata, not only proof/non-proof
+  boundaries.
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts` now guards the
+  matrix row for candidate reviewability metadata, labels/reasons, V207
+  evidence, and non-proof boundaries.
+
+Evidence:
+- Focused brain-battle matrix invariant test passed.
+- `git diff --check` passed.
+
+Source-to-decision:
+- Source: V208 outcome, `docs/architecture/brain-battle-eval-matrix.md`, and
+  `packages/cli/src/runRunShowCommand.test.ts`.
+- Mechanism: durable eval matrices preserve which behaviors are actually
+  protected and keep future smoke descriptions aligned with proof boundaries.
+- KRN implication: run-readback candidate reviewability should remain a named
+  protected behavior, not only an incidental CLI unit assertion.
+- Decision: update the matrix and guard it.
+- Does not prove: live DB readback, candidate quality at scale, or product
+  readiness.
+- Consumer: `docs/architecture/brain-battle-eval-matrix.md` and
+  `packages/harness/src/brainBattleMatrixInvariants.test.ts`.
+- Falsifier: the matrix can again omit candidate reviewability metadata while
+  tests pass.
+
+New task:
+- V211-00 Post Matrix Readback Alignment Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V211 Post Matrix Readback Alignment Re-Gate.
+
+Next active task:
+- V211-00 Post Matrix Readback Alignment Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

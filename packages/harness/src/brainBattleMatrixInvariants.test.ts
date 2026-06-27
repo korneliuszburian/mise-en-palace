@@ -157,6 +157,22 @@ describe("KRN brain-battle eval matrix invariants", () => {
     }
   });
 
+  it("keeps run readback matrix coverage tied to candidate reviewability metadata", () => {
+    const runReadbackRow = matrixRows().find((row) =>
+      row.check.includes("Run readback distinguishes proof from non-proof")
+    );
+
+    expect(runReadbackRow).toBeDefined();
+    expect(runReadbackRow?.check).toContain("candidate reviewability metadata");
+    expect(runReadbackRow?.guard).toContain("reviewability labels and reasons");
+    expect(runReadbackRow?.evidence).toContain("packages/cli/src/runRunShowCommand.test.ts");
+    expect(runReadbackRow?.evidence).toContain(
+      "docs/reviews/controlled-dogfood/2026-06-28-v207-best-pattern-intake-applied-proof/REPORT.md"
+    );
+    expect(runReadbackRow?.doesNotProve).toContain("candidate quality at scale");
+    expect(runReadbackRow?.doesNotProve).toContain("promotion readiness");
+  });
+
   it("keeps Promptfoo bounded as an integration smoke adapter", () => {
     const packageJson = readFileSync(packageJsonPath, "utf8");
     const boundary = readFileSync(promptfooBoundaryPath, "utf8");
