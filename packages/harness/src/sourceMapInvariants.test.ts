@@ -83,6 +83,18 @@ describe("KRN source map invariants", () => {
         findings.push(`${section.title}: missing Trust tier`);
       }
 
+      if (
+        !/^- Source class: (official docs|papers|high-quality public course page|practitioner writing|competitor docs|repo-local evidence|target-repo evidence|user-provided research)\.$/mu.test(
+          section.body
+        )
+      ) {
+        findings.push(`${section.title}: missing Source class`);
+      }
+
+      if (!/^- Decision kind: (adopt|reject|lab_test|defer)\.$/mu.test(section.body)) {
+        findings.push(`${section.title}: missing Decision kind`);
+      }
+
       if (!/^- Mechanism: .+/mu.test(section.body)) {
         findings.push(`${section.title}: missing Mechanism`);
       }

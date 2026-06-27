@@ -3,9 +3,9 @@
 Every source retained here must be mapped to mechanism, KRN implication,
 decision/rejection, and what it does not prove.
 
-Every retained source should also name its primary consumer and falsifier. If a
-source has no consumer or cannot be falsified locally, keep it out of active KRN
-guidance.
+Every retained source should also name source class, decision kind, primary
+consumer, and falsifier. If a source has no consumer or cannot be falsified
+locally, keep it out of active KRN guidance.
 
 ## Codex Native Surfaces
 
@@ -13,6 +13,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/guides/agents-md
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: Codex discovers durable project instructions from `AGENTS.md`
   layers before work.
 - KRN implication: keep `AGENTS.md` thin and use it for repo guidance only.
@@ -27,6 +29,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/skills
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: skills package reusable workflows with progressive disclosure.
 - KRN implication: repo-local KRN workflows belong in `.agents/skills/`.
 - Decision: create engineering-discipline skills, not custom prompts or stack
@@ -40,6 +44,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/subagents
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: lab_test.
 - Mechanism: Codex can explicitly spawn bounded agents with separate context and
   inherited sandbox/approval controls.
 - KRN implication: use subagents as organs for bounded review/exploration.
@@ -54,6 +60,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/hooks
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: defer.
 - Mechanism: lifecycle hooks can run deterministic command handlers and require
   trust review.
 - KRN implication: hooks are mechanical gates and audit surfaces.
@@ -68,6 +76,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/mcp
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: defer.
 - Mechanism: MCP gives Codex tools/resources/prompts with configuration,
   allowlists, auth, and approval modes.
 - KRN implication: MCP is a typed tool boundary, not memory.
@@ -81,6 +91,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/rules
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: reject.
 - Mechanism: rules control command prefixes outside the sandbox and are
   experimental.
 - KRN implication: rules are command-policy controls only.
@@ -96,6 +108,8 @@ guidance.
   - https://developers.openai.com/codex/permissions
   - https://developers.openai.com/codex/agent-approvals-security
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: sandbox, approvals, permission profiles, network policy, and
   destructive tool approval define the local trust boundary.
 - KRN implication: do not mix permission profiles and legacy sandbox settings in
@@ -112,6 +126,8 @@ guidance.
 
 - URL: https://developers.openai.com/codex/custom-prompts
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: reject.
 - Mechanism: custom prompts are deprecated in favor of skills.
 - KRN implication: reusable KRN workflows should be skills.
 - Decision: reject custom prompt library.
@@ -126,6 +142,8 @@ guidance.
 
 - URL: https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: goals support continuation with explicit objective and evidence.
 - KRN implication: `GOAL.md` should be a current execution contract.
 - Decision: keep goal compact and phase-oriented.
@@ -139,6 +157,8 @@ guidance.
 - URL:
   https://developers.openai.com/cookbook/examples/codex/build_iterative_repair_loops_with_codex
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: review, repair, and validation close the loop.
 - KRN implication: KRN needs review capture and small repair loops.
 - Decision: later dogfood starts with `krn doctor`.
@@ -151,6 +171,8 @@ guidance.
 
 - URL: https://developers.openai.com/cookbook/examples/agents_sdk/agent_improvement_loop
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: traces and feedback feed eval candidates and improvement.
 - KRN implication: eval candidates should come from real traces.
 - Decision: no broad benchmark lane before dogfood evidence.
@@ -164,6 +186,8 @@ guidance.
 - URL:
   https://developers.openai.com/cookbook/examples/agents_sdk/building_reliable_agents_memory_compaction
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: separate working context from durable memory and compact selected
   state.
 - KRN implication: runtime memory must be selected and store-backed.
@@ -177,6 +201,8 @@ guidance.
 
 - URL: https://developers.openai.com/cookbook/articles/codex_exec_plans
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: ExecPlans preserve objective, discoveries, decisions, validation,
   and next work for long-running implementation.
 - KRN implication: root `PLANS.md` is the detailed continuous ExecPlan, while
@@ -195,6 +221,8 @@ guidance.
 - URL:
   https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide
 - Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
 - Mechanism: Codex performs better when tasks, constraints, expected outputs,
   and verification are explicit.
 - KRN implication: every bounded KRN task needs non-goals, allowed writes,
@@ -214,6 +242,8 @@ guidance.
 - URL:
   https://www.totaltypescript.com/books/total-typescript-essentials/designing-your-types-in-typescript
 - Trust tier: medium.
+- Source class: high-quality public course page.
+- Decision kind: adopt.
 - Mechanism: Type design communicates business and domain logic, not just
   compiler satisfaction.
 - KRN implication: authority, provenance, lifecycle, and review state should be
@@ -230,6 +260,8 @@ guidance.
 - URL:
   https://www.totaltypescript.com/books/total-typescript-essentials/unions-literals-and-narrowing
 - Trust tier: medium.
+- Source class: high-quality public course page.
+- Decision kind: adopt.
 - Mechanism: literal unions and narrowing constrain finite states and valid
   transitions.
 - KRN implication: status, provenance, lifecycle, subject type, and candidate
@@ -246,6 +278,8 @@ guidance.
 
 - URL: https://www.totaltypescript.com/ts-reset
 - Trust tier: medium.
+- Source class: practitioner writing.
+- Decision kind: adopt.
 - Mechanism: stricter platform typings can turn unsafe defaults such as
   `JSON.parse` returning `any` into safer unknown-first behavior, but global
   type changes are application-scoped.

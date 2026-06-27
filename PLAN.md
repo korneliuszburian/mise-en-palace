@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V134 Post Promptfoo Adapter Boundary Guard Re-Gate
-current task: V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate
+active stream: V136 Post Source Classification Guard Re-Gate
+current task: V136-00 Post Source Classification Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,37 +43,37 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V133: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V135: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
-           source-to-decision skill, current-smoke description, and Promptfoo
-           adapter boundary guards complete.
+           source-to-decision skill, current-smoke description, Promptfoo
+           adapter boundary, and source classification guards complete.
 ```
 
 ## Active Stream
 
-### V134 Post Promptfoo Adapter Boundary Guard Re-Gate
+### V136 Post Source Classification Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding the Promptfoo adapter boundary
-without turning Promptfoo into a broad eval platform or behavior authority.
+Decide the next bounded task after guarding durable source classification
+without turning research/course/paper intake into a source archive or broad
+research subsystem.
 
 Current finding:
 
 ```txt
-V132 selected Promptfoo adapter boundary alignment as the next bounded eval
-surface. V133 strengthened the brain-battle matrix invariant so Promptfoo smoke
-must remain an integration smoke/result adapter and cannot be confused with KRN
-behavior proof.
+V134 selected durable source classification as the next bounded pattern surface.
+V135 strengthened the source-map invariant so retained KRN sources must name
+`Source class` and `Decision kind` before shaping behavior.
 ```
 
 Current action:
 
 ```txt
-Execute V134-00: select the next pattern surface from evidence. Do not broaden
-Promptfoo into a behavior authority, LLM judge, dashboard, benchmark lane, or
-hosted eval platform.
+Execute V136-00: select the next pattern surface from evidence. Do not broaden
+research intake into Research Foundry, source crawler, source archive, dashboard,
+or benchmark lane.
 ```
 
 Primary consumer:
@@ -85,8 +85,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused Promptfoo boundary guarding into Promptfoo authority
-or broad eval platform work without a concrete consumer.
+The re-gate turns focused source classification into broad research collection
+or course/paper hoarding without a concrete consumer and falsifier.
 ```
 
 ## External Input Blocker

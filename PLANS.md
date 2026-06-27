@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V133 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, and Promptfoo adapter boundary guard slices: complete
-active stream: V134 Post Promptfoo Adapter Boundary Guard Re-Gate
-current task: V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate
+V48..V135 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, and source classification guard slices: complete
+active stream: V136 Post Source Classification Guard Re-Gate
+current task: V136-00 Post Source Classification Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate.
+V136-00 Post Source Classification Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14266,6 +14266,82 @@ Next active stream:
 
 Next active task:
 - V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate.
+
+## Outcome 2026-06-27 V135 Source Classification Guard
+
+Completed tasks:
+- V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate.
+- V135-00 Durable Source Classification Guard.
+
+V134 decision:
+- Do not broaden Promptfoo or eval work after V133.
+- Select durable source classification because user/operator direction requires
+  best patterns, courses, papers, OpenAI docs, TypeScript standards, and local
+  evidence to improve KRN continuously, but the retained source map only
+  required trust tier, mechanism, implication, decision, consumer, falsifier,
+  and non-proof boundary.
+- The existing pattern-intake runbook already requires `source_class` and
+  `decision_kind`; durable sources should not be weaker than intake output.
+
+What changed:
+- `docs/KRN_SOURCES.md` now gives every retained source a `Source class` and
+  `Decision kind`.
+- `packages/harness/src/sourceMapInvariants.test.ts` fails if any retained
+  source lacks an allowed source class or decision kind.
+- `docs/architecture/brain-battle-eval-matrix.md` records the durable source
+  classification guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V136.
+
+Evidence:
+- `docs/KRN_SOURCES.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: user/operator direction to feed KRN with best patterns at every stage,
+  plus current `docs/runbooks/pattern-intake.md` and `docs/KRN_SOURCES.md`.
+- Mechanism: source class and decision kind distinguish official docs, courses,
+  practitioner writing, papers, repo evidence, adoption, rejection, lab-test,
+  and deferral before guidance shapes behavior.
+- KRN implication: durable source guidance must preserve classification and
+  decision status, not just look like a smart link list.
+- Decision: add focused source-map invariant coverage for retained source
+  `Source class` and `Decision kind`.
+- Does not prove: external docs are current, every future source is high
+  quality, course/practitioner guidance is locally sufficient, or research
+  creates product value by default.
+- Consumer: `packages/harness/src/sourceMapInvariants.test.ts`,
+  `docs/KRN_SOURCES.md`, and `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: a retained source can lose source classification or decision kind
+  without focused tests failing.
+
+What improved:
+- Research/course/paper/practitioner intake has a tighter durable landing
+  surface.
+- KRN is better positioned to ingest excellent patterns continuously without
+  turning them into context hoarding.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Research automation, crawler, or source discovery.
+
+New task:
+- V136-00 Post Source Classification Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V136 Post Source Classification Guard Re-Gate.
+
+Next active task:
+- V136-00 Post Source Classification Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
