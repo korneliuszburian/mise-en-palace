@@ -29,4 +29,17 @@ describe("KRN ADR invariants", () => {
       /verified through source -> mechanism -> KRN implication -> decision\/rejection\./u
     );
   });
+
+  it("keeps worker runtime boundary aligned with retained Postgres row-locking source", () => {
+    const workerBoundary = readRootFile("docs/decisions/ADR-0015-worker-runtime-boundary.md");
+
+    expect(workerBoundary).toContain("source_id: postgres-row-locking-skip-locked");
+    expect(workerBoundary).toContain("PostgreSQL Row Locking For Queue-Like Tables");
+    expect(workerBoundary).toContain("docs/KRN_SOURCES.md#postgresql-row-locking-for-queue-like-tables");
+    expect(workerBoundary).toContain("FOR UPDATE ... SKIP LOCKED");
+    expect(workerBoundary).toContain("inconsistent view");
+    expect(workerBoundary).toContain("consumer: this ADR and any successor worker-runtime ADR");
+    expect(workerBoundary).toContain("does_not_prove: worker daemon readiness");
+    expect(workerBoundary).toContain("do not treat `SKIP LOCKED` as permission to build a daemon");
+  });
 });

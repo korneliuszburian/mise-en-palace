@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V220 Post Infra Pattern Intake Re-Gate
+V221 Post Worker Boundary ADR Alignment Re-Gate
 ```
 
 Current product loop:
@@ -40,7 +40,7 @@ V100..V109: active-surface, handoff, and PLANS freshness guards complete.
 V110..V214: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
 target, evidence, compactness, smoke, onboarding current-state, and related
 regression guards complete; details stay in PLANS.md.
-current task: V220-00 Post Infra Pattern Intake Re-Gate.
+current task: V221-00 Post Worker Boundary ADR Alignment Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

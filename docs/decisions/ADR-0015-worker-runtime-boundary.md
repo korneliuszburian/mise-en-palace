@@ -45,6 +45,31 @@ falsifier: Postgres worker_jobs/outbox_events cannot support explicit locking,
 ```
 
 ```yaml
+source_id: postgres-row-locking-skip-locked
+title: PostgreSQL Row Locking For Queue-Like Tables
+source: docs/KRN_SOURCES.md#postgresql-row-locking-for-queue-like-tables
+trust_tier: high
+mechanism: PostgreSQL row locking supports `FOR UPDATE ... SKIP LOCKED` for
+  queue-like row claiming by concurrent consumers, while accepting an
+  inconsistent view that is not suitable for general reads.
+krn_implication: A future KRN worker executor proof should first test claim,
+  lock, retry, timeout, idempotency, and audit behavior over the existing
+  Postgres worker_jobs/outbox_events plane before adding Redis, Kafka, or
+  another queue service.
+decision: keep worker runtime deferred, but retain Postgres row locking as the
+  first candidate claim mechanism for a future one-shot/manual worker executor
+  proof.
+rejection: do not treat `SKIP LOCKED` as permission to build a daemon,
+  scheduler, broad queue service, or production worker runtime now.
+consumer: this ADR and any successor worker-runtime ADR.
+does_not_prove: worker daemon readiness, queue throughput, product readiness,
+  or that `SKIP LOCKED` is correct for every KRN read path.
+falsifier: a future one-shot/manual worker proof cannot express safe claim,
+  lock, retry, timeout, idempotency, and audit behavior over Postgres
+  worker-job/outbox tables without a separate queue service.
+```
+
+```yaml
 source_id: current-worker-contracts
 source: packages/workers/README.md and packages/workers/src/jobTypes.ts
 mechanism: worker jobs declare input schema, idempotency key, output event,
@@ -125,6 +150,8 @@ A worker runtime can be reconsidered only after all of these are true:
 - one concrete job type has a current self-hosting bottleneck or operator burden;
 - the job has a deterministic input builder and idempotency key;
 - the executor has explicit lock, retry, timeout, and failure semantics;
+- the first claim mechanism evaluates Postgres row locking over the existing
+  `worker_jobs` / `outbox_events` tables before any separate queue service;
 - command evidence records what ran and what it does not prove;
 - output writes stay inside the job's declared allowed writes;
 - Memory Core writes still go through reviewed candidate promotion;
@@ -158,6 +185,9 @@ This ADR is upheld when:
   gates;
 - DB smokes are described as storage/readback/lifecycle proof only;
 - any new worker execution path has a successor ADR or ADR update before code.
+- any successor ADR that claims Postgres worker-job rows concurrently cites the
+  retained PostgreSQL row-locking source and states why `SKIP LOCKED` is or is
+  not the right claim mechanism.
 
 This ADR is violated when:
 
@@ -168,6 +198,8 @@ This ADR is violated when:
   `source_decisions`;
 - a recurring scheduler runs before a one-shot/manual executor proof exists;
 - a separate queue store is introduced before Postgres worker jobs are falsified.
+- `SKIP LOCKED` is used as a generic consistency mechanism or as evidence that
+  a worker daemon should exist.
 
 ## Does Not Prove
 

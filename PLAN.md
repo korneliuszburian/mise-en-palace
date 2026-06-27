@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V220 Post Infra Pattern Intake Re-Gate
-current task: V220-00 Post Infra Pattern Intake Re-Gate
+active stream: V221 Post Worker Boundary ADR Alignment Re-Gate
+current task: V221-00 Post Worker Boundary ADR Alignment Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,39 +45,38 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V220 Post Infra Pattern Intake Re-Gate
+### V221 Post Worker Boundary ADR Alignment Re-Gate
 
 Goal:
 
-Select the next bounded task after retaining PostgreSQL row locking as future
-worker-queue mechanism evidence for ADR-0015.
+Select the next bounded task after aligning ADR-0015 with the retained
+PostgreSQL row-locking source.
 
 Current finding:
 
 ```txt
-V219 retained PostgreSQL `FOR UPDATE ... SKIP LOCKED` as future worker-queue
-mechanism evidence only. Worker runtime remains deferred.
+V220 aligned ADR-0015 and an ADR invariant with the retained PostgreSQL
+row-locking source. Worker runtime remains deferred.
 ```
 
 Current action:
 
 ```txt
-Execute V220-00: decide whether this infra intake needs one local guard, ADR
-alignment, or no further work. Do not build worker runtime.
+Execute V221-00: decide whether to move to another bounded pattern surface or
+defer. Do not build worker runtime, queue services, dashboard, API, or MCP.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision with source -> mechanism -> implication ->
-decision/rejection -> consumer -> falsifier.
+One next-task/defer decision with consumer and falsifier.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate treats PostgreSQL locking docs as permission to build a daemon or
-queue service instead of one bounded decision.
+The re-gate treats ADR alignment as worker readiness or starts runtime work
+without a concrete bottleneck and successor ADR.
 ```
 
 ## Pattern Gate
