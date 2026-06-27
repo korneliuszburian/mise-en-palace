@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V196 Post Onboarding Current-State Re-Gate
+V197 State Of The Art Current-State Repair
 ```
 
 Current product loop:
@@ -37,10 +37,10 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V195: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
+V110..V196: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
 target, evidence, compactness, smoke, onboarding current-state, and related
 regression guards complete; details stay in PLANS.md.
-current task: V196-00 Post Onboarding Current-State Re-Gate.
+current task: V197-00 State Of The Art Current-State Repair.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
