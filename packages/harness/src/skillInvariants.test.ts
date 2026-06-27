@@ -60,4 +60,31 @@ describe("KRN skill invariants", () => {
 
     expect(findings).toEqual([]);
   });
+
+  it("keeps handoff compact tied to resumable active-task state", () => {
+    const handoff = readFileSync(new URL("handoff-compact/SKILL.md", skillsRoot), "utf8");
+
+    expect(handoff).toContain("active PLANS.md stream/task");
+    expect(handoff).toContain("verified commit/push/CI state");
+    expect(handoff).toContain("before auto-compaction, resume, pause, or transfer");
+    expect(handoff).toContain("For continuous KRN goals, prefer the first incomplete active task");
+    expect(handoff).toContain("Do not reread:");
+
+    const requiredOutputFields = [
+      "Objective:",
+      "Active stream/task:",
+      "Last verified state:",
+      "Commit/push/CI:",
+      "Changed files:",
+      "Decisions:",
+      "Blockers/risks:",
+      "Context selectors:",
+      "Next action:",
+      "Do not reread:"
+    ];
+
+    for (const field of requiredOutputFields) {
+      expect(handoff).toContain(field);
+    }
+  });
 });

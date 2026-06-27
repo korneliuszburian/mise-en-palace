@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V102 Post Active Surface Compactness Guard Re-Gate
-current task: V102-00 Post Active Surface Compactness Guard Re-Gate
+active stream: V104 Post Handoff Compact Contract Guard Re-Gate
+current task: V104-00 Post Handoff Compact Contract Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,30 +43,32 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100-00: post source map full mapping guard re-gate complete.
 V101-00: active surface compactness guard complete.
+V102-00: post active surface compactness guard re-gate complete.
+V103-00: handoff compact contract guard complete.
 ```
 
 ## Active Stream
 
-### V102 Post Active Surface Compactness Guard Re-Gate
+### V104 Post Handoff Compact Contract Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after compacting root `GOAL.md` / `PLAN.md` and
-adding a guard that prevents active surfaces from growing into ledgers.
+Decide the next bounded task after guarding the handoff compact skill contract.
 
 Current finding:
 
 ```txt
-V100 selected a context-budget follow-up: root active surfaces were compact in
-principle, but both files had accumulated long completed-slice ledgers. V101
-returned detailed history to PLANS.md and added a line-count invariant.
+V102 rejected another compaction task and selected the handoff/resume surface.
+V103 added a deterministic skill invariant so handoff compact cannot lose active
+stream/task, verified state, decisions, context selectors, next action, or what
+not to reread.
 ```
 
 Current action:
 
 ```txt
-Execute V102-00: select the next pattern surface from evidence. Do not broaden
-compactness work into deleting historical evidence; preserve detail in PLANS.md.
+Execute V104-00: select the next pattern surface from evidence. Do not broaden
+handoff work into a hook or automation layer unless repeated failures require it.
 ```
 
 Primary consumer:
@@ -78,8 +80,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens another compaction task without a concrete active-context or
-resume-cost finding.
+The re-gate opens a handoff automation/hook without evidence that the skill
+contract and root active surfaces are insufficient.
 ```
 
 ## External Input Blocker

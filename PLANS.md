@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V101 continuous pattern, CI/eval, target, compactness, and re-gate slices: complete
-active stream: V102 Post Active Surface Compactness Guard Re-Gate
-current task: V102-00 Post Active Surface Compactness Guard Re-Gate
+V48..V103 continuous pattern, CI/eval, target, compactness, handoff, and re-gate slices: complete
+active stream: V104 Post Handoff Compact Contract Guard Re-Gate
+current task: V104-00 Post Handoff Compact Contract Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -13117,6 +13117,78 @@ Next active stream:
 
 Next active task:
 - V102-00 Post Active Surface Compactness Guard Re-Gate.
+
+## Outcome 2026-06-27 V103 Handoff Compact Contract Guard
+
+Completed tasks:
+- V102-00 Post Active Surface Compactness Guard Re-Gate.
+- V103-00 Handoff Compact Contract Guard.
+
+V102 decision:
+- Do not open another active-surface compaction task without a new concrete
+  active-context or resume-cost finding.
+- Select the handoff/resume surface because it is the repeated boundary that
+  must preserve current objective, active task, verified state, decisions,
+  context selectors, next action, and what not to reread across compaction.
+
+What changed:
+- `packages/harness/src/skillInvariants.test.ts` now includes a focused
+  `handoff-compact` contract test.
+- `docs/architecture/brain-battle-eval-matrix.md` now records handoff compact
+  as an implemented deterministic guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V104.
+
+Evidence:
+- `.agents/skills/handoff-compact/SKILL.md`.
+- `packages/harness/src/skillInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `GOAL.md`.
+- `PLAN.md`.
+- `PLANS.md`.
+
+Source-to-decision:
+- Source: V101 active-surface compactness result, V08 handoff skill decision,
+  and the repo-local `handoff-compact` skill.
+- Mechanism: compact root active truth works only if handoffs preserve the first
+  incomplete active task, verified commit/push/CI state, decisions, context
+  selectors, next action, and what not to reread.
+- KRN implication: handoff compact is the correct bounded continuation surface;
+  hooks or hidden automation remain unjustified until repeated failures prove
+  the skill/root-plan contract insufficient.
+- Decision: add a deterministic skill invariant for the `handoff-compact`
+  contract and record it in the brain-battle matrix.
+- Does not prove: Codex will always invoke the skill, every future handoff is
+  complete, product readiness, or second-operator usability.
+- Consumer: `packages/harness/src/skillInvariants.test.ts`.
+- Falsifier: `handoff-compact` can lose active `PLANS.md` stream/task routing,
+  verified commit/push/CI state, first-incomplete-task rule, required output
+  fields, or what-not-to-reread guidance without failing focused verification.
+
+What improved:
+- Resume safety after compaction.
+- Mechanical protection for the handoff contract.
+- Continuation quality without expanding `AGENTS.md` or adding a hook.
+
+What did not improve:
+- Product readiness.
+- Second-operator proof.
+- Activation quality.
+- Runtime automation around handoffs.
+
+New task:
+- V104-00 Post Handoff Compact Contract Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V104 Post Handoff Compact Contract Guard Re-Gate.
+
+Next active task:
+- V104-00 Post Handoff Compact Contract Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

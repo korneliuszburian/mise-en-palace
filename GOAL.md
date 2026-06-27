@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V102 Post Active Surface Compactness Guard Re-Gate
+V104 Post Handoff Compact Contract Guard Re-Gate
 ```
 
 Current product loop:
@@ -39,7 +39,9 @@ V02-01 real second-operator proof: blocked/deferred.
 recent checkpoint: V99 source map full mapping invariant guard complete.
 V100-00 Post Source Map Full Mapping Guard Re-Gate: complete.
 V101-00 Active Surface Compactness Guard: complete.
-current task: V102-00 Post Active Surface Compactness Guard Re-Gate.
+V102-00 Post Active Surface Compactness Guard Re-Gate: complete.
+V103-00 Handoff Compact Contract Guard: complete.
+current task: V104-00 Post Handoff Compact Contract Guard Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
