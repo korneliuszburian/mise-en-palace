@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V146 Post TypeScript Boundary Re-Scan Re-Gate
+V148 Post Stale Attachment Objective Guard Re-Gate
 ```
 
 Current product loop:
@@ -37,14 +37,14 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V145: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V147: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
 latest-outcome source-to-decision, source-to-decision skill output, and
 source-class vocabulary, verification TMPDIR, and TypeScript boundary re-scan
-complete.
-current task: V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
+plus stale attachment objective guards complete.
+current task: V148-00 Post Stale Attachment Objective Guard Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
@@ -107,11 +107,15 @@ After auto-compact, resume, context loss, or a new `/goal` continuation:
 
 3. Return to the first incomplete active task. Do not restart from conversation
    memory.
-4. If a previous slice was committed but not pushed or CI-checked, finish that
+4. If a pasted objective, attachment, old prompt, or conversation summary names
+   a stale active stream that conflicts with current `GOAL.md`, `PLAN.md`, and
+   `PLANS.md`, read it as historical evidence and keep the root active state as
+   authoritative. Do not roll the active stream backward.
+5. If a previous slice was committed but not pushed or CI-checked, finish that
    before starting unrelated work.
-5. If the current slice is complete, synthesize next tasks from evidence,
+6. If the current slice is complete, synthesize next tasks from evidence,
    append them to `PLANS.md`, update compact active state, and continue.
-6. Research is useful only when mapped through:
+7. Research is useful only when mapped through:
 
    ```txt
    source -> mechanism -> KRN implication -> decision/rejection -> falsifier

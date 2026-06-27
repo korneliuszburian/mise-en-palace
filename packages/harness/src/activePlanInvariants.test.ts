@@ -138,6 +138,21 @@ describe("KRN active plan invariants", () => {
     expect(plans).toContain("Surface Consumer Matrix");
   });
 
+  it("keeps stale pasted objectives subordinate to root active state", () => {
+    const goal = readRootFile("GOAL.md");
+    const plan = readRootFile("PLAN.md");
+    const plans = readRootFile("PLANS.md");
+    const planCurrentTask = requiredLine(plan, /^current task: (.+)$/mu, "PLAN current task");
+    const normalizedPlans = plans.replace(/\s+/gu, " ");
+
+    expect(goal).toContain("If a pasted objective, attachment, old prompt, or conversation summary");
+    expect(goal).toContain("read it as historical evidence");
+    expect(goal).toContain("Do not roll the active stream backward");
+    expect(goal).toContain(planCurrentTask);
+    expect(plans).toContain("stale attachment objective guard");
+    expect(normalizedPlans).toContain("attachments are evidence, not authority to roll the active stream backward");
+  });
+
   it("keeps pattern intake decision-oriented, reviewable, and legally bounded", () => {
     const runbook = readRootFile("docs/runbooks/pattern-intake.md");
     const outputTemplate = sectionBody(runbook, "## Output Template");

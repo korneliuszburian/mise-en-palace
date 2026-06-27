@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V145 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, and TypeScript boundary re-scan slices: complete
-active stream: V146 Post TypeScript Boundary Re-Scan Re-Gate
-current task: V146-00 Post TypeScript Boundary Re-Scan Re-Gate
+V48..V147 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, and stale attachment objective guard slices: complete
+active stream: V148 Post Stale Attachment Objective Guard Re-Gate
+current task: V148-00 Post Stale Attachment Objective Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
+V148-00 Post Stale Attachment Objective Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14741,6 +14741,87 @@ Next active stream:
 
 Next active task:
 - V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
+
+## Outcome 2026-06-27 V147 Stale Attachment Objective Guard
+
+Completed tasks:
+- V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
+- V147-00 Stale Attachment Objective Guard.
+
+V146 decision:
+- Do not broaden a clean TypeScript boundary re-scan into broad type rewrites,
+  audit theater, dashboard, or benchmark lane.
+- Select stale pasted objective handling because the latest continuation
+  required reading an attachment whose embedded active stream still named
+  `V05 — Target-Aware Evidence Capture Repair`, while current root
+  `GOAL.md`, root `PLAN.md`, and `PLANS.md` had advanced to V146.
+- The concrete failure mode is a resumed Codex run treating stale external
+  objective text as higher authority than current root active state and rolling
+  the plan backward.
+
+What changed:
+- Root `GOAL.md` continuation rules now say that a pasted objective, attachment,
+  old prompt, or conversation summary that conflicts with current root active
+  state must be read as historical evidence; attachments are evidence, not
+  authority to roll the active stream backward.
+- `packages/harness/src/activePlanInvariants.test.ts` guards that rule and
+  checks `PLANS.md` records the stale attachment objective guard.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V148.
+
+Evidence:
+- `/home/krn/.codex/attachments/7e4336bf-875e-413a-8fa4-489f4f11133a/pasted-text-1.txt`.
+- Current root `GOAL.md`.
+- Current root `PLAN.md`.
+- Current `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+
+Source-to-decision:
+- Source: current continuation evidence from the pasted objective attachment and
+  root active plan files.
+- Mechanism: continuation inputs can preserve older active-stream text after
+  the repo has advanced; if treated as current authority, they can regress
+  active work to historical slices.
+- KRN implication: resume logic must read required attachments, but root
+  `GOAL.md`, root `PLAN.md`, and `PLANS.md` remain the active product truth
+  when they conflict with stale external objective text.
+- Decision: add focused continuation guidance and an active-plan invariant so
+  stale pasted objectives are classified as historical evidence rather than
+  active-state authority.
+- Does not prove: every future external prompt is fresh, every stale attachment
+  will be harmless, or product readiness.
+- Consumer: root `GOAL.md`, `packages/harness/src/activePlanInvariants.test.ts`,
+  and `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: root continuation rules can omit stale pasted objective handling or
+  allow old attachments to roll active stream/task backward without focused
+  tests failing.
+
+What improved:
+- Future auto-compact/resume paths are less likely to regress active state from
+  stale copied goal text.
+- Required attachments are still read; they are just treated as evidence when
+  contradicted by root active truth.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- The quality or freshness of every future attachment.
+
+New task:
+- V148-00 Post Stale Attachment Objective Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V148 Post Stale Attachment Objective Guard Re-Gate.
+
+Next active task:
+- V148-00 Post Stale Attachment Objective Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
