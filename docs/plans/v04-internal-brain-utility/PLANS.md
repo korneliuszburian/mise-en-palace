@@ -836,8 +836,11 @@ Update this section during execution. Initial checklist:
   proves CLI/files/DB are insufficient.
 - [x] M14 internal brain usefulness metrics written.
   Evidence: same report metrics table.
-- [ ] M15 internal brain re-gate report written.
+- [x] M15 internal brain re-gate report written.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
 - [ ] M16 final verification/CI/handoff completed.
+  Status: final local verification passed; final report commit/push/CI still
+  pending.
 
 ## Surprises & Discoveries
 
@@ -917,6 +920,13 @@ Append observations here as they occur.
   maps official Codex manual sources through source-to-decision decisions.
   Impact: M11-M14 are complete and final V04 re-gate can proceed without adding
   new product surfaces.
+
+- Observation: V04 improved internal brain utility without proving product
+  readiness.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
+  Impact: V04 can close after final commit/push/CI, while V02-01 remains
+  blocked/deferred and the next best bounded goal is target-aware evidence
+  capture repair.
 
 Template:
 
@@ -1016,6 +1026,17 @@ Initial decisions:
   Consequence: record candidates/falsifiers, but do not build these surfaces in
   V04.
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
+
+- Decision: Recommend V05 target-aware evidence capture repair, not dashboard,
+  MCP, subagents, worker runtime, or broad eval work.
+  Rationale: V04-SC-003 confirmed target dirty-state proof remains the clearest
+  concrete product gap, and it can be repaired inside existing evidence capture
+  boundaries.
+  Alternatives considered: final product-readiness claim; real V02-01; hooks;
+  MCP; subagents.
+  Consequence: close V04 as internal brain utility improvement, keep V02-01
+  deferred, and start V05 only after final verification.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
 
 Append future decisions with this template:
 
@@ -1124,6 +1145,17 @@ Record commands, reports, commits, and CI here.
   Proves: AGENTS/skill compression, hook screening, MCP/subagent screening, and
     internal utility metrics are documented from current evidence.
   Does not prove: final V04 completion until M15/M16 and verification pass.
+
+- Evidence ID: E-20260627-10
+  Milestone: M15/M16
+  Command/report/commit: final local verification:
+    `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, `pnpm db:smoke`,
+    `pnpm eval:brain-battle:smoke`, `pnpm eval:promptfoo:smoke`,
+    `git diff --check`; final report
+    `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
+  Result: local verification pass; final commit/push/CI pending.
+  Proves: local V04 final verification passed before final report commit.
+  Does not prove: final remote CI until this final report is pushed and checked.
 
 Template:
 

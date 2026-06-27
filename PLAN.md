@@ -177,7 +177,7 @@ Evidence:
 
 ### V04-07 — Internal Brain Usefulness Re-Gate
 
-Status: in progress.
+Status: complete pending final commit/push/CI.
 
 Goal: create a final V04 report deciding whether KRN became materially more
 useful for our own workflows.
@@ -192,6 +192,17 @@ Preparation complete:
 Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
+
+Verdict:
+
+```txt
+internal brain utility: improved
+controlled-internal-alpha for technical operators: stronger
+product-ready: no
+V02-01 second-operator proof: still blocked/deferred
+next recommended goal: V05 target-aware evidence capture repair
+```
 
 ## Hard Non-Goals
 
