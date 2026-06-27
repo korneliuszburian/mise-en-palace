@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V16 — Activation Relevance Evidence Gate
+V17 — Target Owner-File Read-Model Contract Gate
 ```
 
 Current product loop:
@@ -56,8 +56,9 @@ V12 widened alpha trial launch packet: complete.
 V13 research-to-brain decision lane gate: complete.
 V14 TypeScript boundary drift gate: complete.
 V15 Promptfoo / Golden Behavior Role Gate: complete.
-active stream: V16 Activation Relevance Evidence Gate.
-current task: V16-00 — Activation Relevance Evidence Gate.
+V16 Activation Relevance Evidence Gate: complete.
+active stream: V17 Target Owner-File Read-Model Contract Gate.
+current task: V17-00 — Target Owner-File Read-Model Contract Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

@@ -41,12 +41,13 @@ V12 widened alpha trial launch packet: complete
 V13 research-to-brain decision lane gate: complete
 V14 TypeScript boundary drift gate: complete
 V15 Promptfoo / Golden Behavior Role Gate: complete
+V16 Activation Relevance Evidence Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V16 Activation Relevance Evidence Gate
-current task: V16-00 Activation Relevance Evidence Gate
+active stream: V17 Target Owner-File Read-Model Contract Gate
+current task: V17-00 Target Owner-File Read-Model Contract Gate
 ```
 
 Evidence already recorded in repo:
@@ -542,6 +543,23 @@ Expected end state:
 ```txt
 Activation relevance is either accepted as measurement-only for now, or one
 bounded repair is accepted with exact evidence and non-goals.
+```
+
+### Stream V17 — Target Owner-File Read-Model Contract Gate
+
+Why later:
+
+- V16 rejects activation scoring repair and identifies target read-model
+  completeness as the next activation blocker.
+- Exact owner-file recall works when `ownerFiles` are present, but product
+  readiness needs a clear contract for how those owner files enter the target
+  read model.
+
+Expected end state:
+
+```txt
+KRN either documents and verifies the existing owner-file read-model contract,
+or accepts one small repair so target owner files are not hidden operator lore.
 ```
 
 ## 12. Active Task Queue
@@ -1586,7 +1604,7 @@ Completion evidence:
 
 ### V16-00 — Activation Relevance Evidence Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: inspect activation relevance evidence and decide whether a bounded repair
 is justified.
@@ -1645,6 +1663,70 @@ change unless repeated evidence proves scoring is the owner.
 
 Next-task synthesis rule: if activation remains partial without enough repair
 evidence, choose the next bounded product blocker rather than guessing.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v16-activation-relevance-evidence-gate/REPORT.md`;
+- activation scoring rewrite rejected; target owner-file read-model contract
+  accepted as V17.
+
+### V17-00 — Target Owner-File Read-Model Contract Gate
+
+Status: active
+
+Goal: decide whether the target owner-file read-model contract is explicit
+enough for future target trials.
+
+Product rationale: activation cannot be judged fairly until exact owner-file
+data has a clear operator/code path into the target read model.
+
+Architectural rationale: missing owner-file data should be handled as typed
+read-model incompleteness, not scoring failure or crawler justification.
+
+Evidence source: `runPlanCommand` target read-model construction,
+`runInitCommand` source seed metadata, target-repo testing skill, second-operator
+packet, V06/V16 reports, owner-file recall tests.
+
+Official/external sources: none required.
+
+Inputs required: current target read-model source, current runbooks/skills,
+owner-file tests and reports.
+
+Files likely touched:
+
+- report under `docs/reviews/controlled-dogfood/`;
+- maybe target-repo testing skill or second-operator runbook if docs gap exists;
+- maybe a focused CLI/harness test if code contract gap exists;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: report/plans and one bounded docs/test/source repair if evidence
+proves a gap.
+
+Forbidden writes: source crawler, activation scoring rewrite, target repo
+writes, dashboard, MCP, broad eval platform.
+
+Output requirements: read-model contract verdict, evidence table,
+accepted/rejected repair, next task.
+
+Definition of Done: future target trials know how owner-file data enters or
+fails to enter `TargetActivationReadModel`.
+
+Verification commands: `git diff --check`; if source/test changes, targeted
+tests plus `pnpm typecheck` and `pnpm test`.
+
+Acceptance criteria: no hidden owner-file lore; no crawler by default.
+
+Risk: turning a contract gap into broad target discovery.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: prefer contract/doc/test clarity over discovery
+automation.
+
+Next-task synthesis rule: if owner-file contract is already explicit, move to
+the next product blocker; if not, repair the smallest owning surface.
 
 ## 13. Generated Task Backlog
 
@@ -1882,7 +1964,9 @@ Initial entry:
   authority and describe targeted boundary verification.
 - [x] V15-00 complete: Promptfoo kept as smoke/result adapter; golden behavior
   tests kept as behavior proof authority.
-- [ ] V16-00 active: Activation Relevance Evidence Gate.
+- [x] V16-00 complete: activation scoring rewrite rejected; target owner-file
+  read-model completeness accepted as next blocker.
+- [ ] V17-00 active: Target Owner-File Read-Model Contract Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2407,10 +2491,19 @@ Seed queue:
   Source evidence: V11 readiness partial activation verdict, V06 owner-file
     recall report, V07 memory/source usefulness reports
   Surface: activation evidence gate
-  Status: accepted as V16-00
+  Status: complete as V16-00
   Reason: activation quality remains partial and should be repaired only from
     repeated evidence, not vague dissatisfaction
   Task: V16-00
+
+- Candidate: target owner-file read-model contract gate
+  Source evidence: V16 activation gate, V06 owner-file recall report, current
+    target read-model construction
+  Surface: read-model contract gate
+  Status: accepted as V17-00
+  Reason: owner-file recall works when ownerFiles exist; the next gap is making
+    the owner-file input contract explicit for target trials
+  Task: V17-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2696,6 +2789,38 @@ Product readiness verdict:
 
 Next active stream:
 - V16 — Activation Relevance Evidence Gate.
+
+## Outcome 2026-06-27 V16
+
+Completed:
+- V16-00 inspected activation relevance evidence.
+- Activation scoring rewrite was rejected.
+- Target owner-file read-model completeness was accepted as the next blocker.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v16-activation-relevance-evidence-gate/REPORT.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v06-owner-file-recall/REPORT.md`.
+- `packages/harness/src/activation/ownerFileRecall.ts`.
+- `packages/harness/src/activation/ownerFileRecall.test.ts`.
+
+What improved:
+- Activation partial-readiness is now classified more precisely: current misses
+  point to target read-model completeness, not proven scoring failure.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- Target owner-file discovery/completeness.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V17 — Target Owner-File Read-Model Contract Gate.
 
 ## 21. Final Response Format For Codex Runs
 

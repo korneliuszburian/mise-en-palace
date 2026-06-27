@@ -42,7 +42,8 @@ V12 widened alpha trial launch packet: complete
 V13 research-to-brain decision lane gate: complete
 V14 TypeScript boundary drift gate: complete
 V15 Promptfoo / Golden Behavior Role Gate: complete
-active stream: V16 Activation Relevance Evidence Gate
+V16 Activation Relevance Evidence Gate: complete
+active stream: V17 Target Owner-File Read-Model Contract Gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -337,17 +338,36 @@ Evidence:
 - Promptfoo remains a smoke/result adapter; golden behavior tests remain the
   current behavior proof surface.
 
-## Active Stream: V16
+## Completed Stream: V16
 
 V16 gates whether activation relevance evidence now justifies repair or
 continued measurement.
 
 ### V16-00 — Activation Relevance Evidence Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect current activation relevance evidence after V05-V15 and decide
 whether owner-file recall/read-model/scoring needs a bounded repair.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v16-activation-relevance-evidence-gate/REPORT.md`;
+- V16 rejected activation scoring rewrite and accepted target owner-file
+  read-model completeness as the next blocker.
+
+## Active Stream: V17
+
+V17 gates how exact target owner files enter the target read model.
+
+### V17-00 — Target Owner-File Read-Model Contract Gate
+
+Status: active.
+
+Goal: decide whether existing init/connect metadata, runbooks, target-repo
+testing skill, and plan readback sufficiently define how target owner files
+enter `TargetActivationReadModel`, or whether a small CLI/docs/test repair is
+needed.
 
 ## Hard Non-Goals
 
