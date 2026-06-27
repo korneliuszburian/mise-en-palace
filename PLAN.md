@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V78 Post Source Map Falsifier Re-Gate
-current task: V78-00 Post Source Map Falsifier Re-Gate
+active stream: V80 Post Source Map Guard Re-Gate
+current task: V80-00 Post Source Map Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -111,33 +111,34 @@ V74-00 post security memory gate re-gate: complete
 V75-00 memory promotion untrusted-source CLI readback: complete
 V76-00 post memory promotion CLI gate re-gate: complete
 V77-00 source map consumer/falsifier normalization: complete
-V78 post source map falsifier re-gate: active
+V78-00 post source map falsifier re-gate: complete
+V79-00 source map invariant guard: complete
+V80 post source map guard re-gate: active
 ```
 
 ## Active Stream
 
-### V78 Post Source Map Falsifier Re-Gate
+### V80 Post Source Map Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after making retained KRN sources name their
-consumer and falsifier.
+Decide the next bounded task after adding a CI-covered guard for retained source
+consumer/falsifier fields.
 
 Current finding:
 
 ```txt
-V76 selected source-map normalization because continuous pattern intake requires
-source -> mechanism -> implication -> decision -> consumer -> falsifier, and
-`docs/KRN_SOURCES.md` had retained sources without explicit consumer/falsifier
-fields.
+V78 selected a source-map invariant guard because V77 normalized
+`docs/KRN_SOURCES.md`, but the requirement needed a failing test to prevent
+future source hoarding.
 ```
 
 Current action:
 
 ```txt
-Execute V78-00: decide whether the next bounded task should apply one retained
-source to a code/skill/eval consumer, run a targeted source-map spot-check, or
-stop on the external operator/target blocker.
+Execute V80-00: decide whether to apply one retained source to a concrete
+consumer, move to another pattern surface, or stop on the external
+operator/target blocker.
 ```
 
 Primary consumer:
@@ -149,8 +150,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate adds or consumes sources without naming mechanism, consumer,
-falsifier, and proof/non-proof boundary.
+The re-gate opens source/research work without a named consumer, falsifier,
+and verification command.
 ```
 
 ### External Input Blocker

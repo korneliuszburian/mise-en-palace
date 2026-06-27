@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V78 Post Source Map Falsifier Re-Gate
-current task: V78-00 Post Source Map Falsifier Re-Gate
+active stream: V80 Post Source Map Guard Re-Gate
+current task: V80-00 Post Source Map Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -7179,6 +7179,126 @@ Definition of Done:
 - Next active task is explicit or a blocker is explicit.
 - `git diff --check` passes.
 
+Outcome:
+
+- The next bounded task is a source-map invariant guard so V77 normalization is
+  protected by tests instead of plan intent.
+
+### V79-00 — Source Map Invariant Guard
+
+Status: complete
+
+Goal: Add a focused behavior guard that fails when retained KRN source decisions
+lack `Consumer` or `Falsifier` fields.
+
+Pattern surface: research-to-brain / continuous pattern intake; CI / eval /
+golden behavior.
+
+Product rationale: The operator wants best courses, papers, official docs, and
+practitioner standards to improve KRN continuously. A guard prevents that lane
+from degrading into decorative links or source hoarding.
+
+Architectural rationale: This is a tiny invariant test over the durable source
+map. It is not a research crawler, source indexer, or broad eval platform.
+
+Evidence source:
+
+- V77 source-map normalization.
+- `docs/KRN_SOURCES.md`.
+- `docs/runbooks/pattern-intake.md`.
+
+Primary consumer:
+
+- `packages/harness/src/sourceMapInvariants.test.ts`
+- `docs/architecture/brain-battle-eval-matrix.md`
+
+Does not prove:
+
+- source coverage is complete;
+- external docs are current;
+- every source decision is still correct;
+- a research subsystem is needed.
+
+Falsifier:
+
+- A `docs/KRN_SOURCES.md` source section can omit `Consumer` or `Falsifier`
+  while tests still pass.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- sourceMapInvariants
+pnpm -C packages/harness typecheck
+git diff --check
+```
+
+Outcome:
+
+- Added `packages/harness/src/sourceMapInvariants.test.ts`.
+- Added a brain-battle matrix row for retained source consumer/falsifier
+  discipline.
+
+### V80-00 — Post Source Map Guard Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after adding the source-map invariant guard.
+
+Pattern surface: research-to-brain / continuous pattern intake.
+
+Product rationale: V77/V79 made retained source guidance stricter and
+test-covered. The next move should apply one retained source to a concrete
+consumer, move to another pattern surface, or stop on the external
+operator/target blocker.
+
+Architectural rationale: Continue by evidence. Do not keep adding research
+scaffolding by momentum.
+
+Evidence source:
+
+- V77 source-map normalization.
+- V79 source-map invariant guard.
+- `docs/runbooks/pattern-intake.md`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- product readiness;
+- source coverage completeness;
+- need for source crawler or research archive.
+
+Falsifier:
+
+- The plan opens source/research work without a named consumer, falsifier, and
+  verification command.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- source crawler;
+- research archive;
+- copying paid/proprietary course content;
+- broad eval platform;
+- dashboard/API/MCP/server.
+
+Definition of Done:
+
+- Next active task is explicit or a blocker is explicit.
+- `git diff --check` passes.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -7577,7 +7697,10 @@ Initial entry:
   the next research-to-brain substrate repair.
 - [x] V77-00 complete: added consumer and falsifier fields to retained
   `docs/KRN_SOURCES.md` source decisions.
-- [ ] V78-00 active: re-gate after source-map normalization.
+- [x] V78-00 complete: selected source-map invariant guard.
+- [x] V79-00 complete: added test coverage for retained source consumer and
+  falsifier fields.
+- [ ] V80-00 active: re-gate after source-map guard.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8667,6 +8790,20 @@ Initial decisions:
     falsifier.
   Verification: `rg -n "Consumer:|Falsifier:" docs/KRN_SOURCES.md`;
     `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Guard retained source consumer/falsifier discipline in V79.
+  Rationale: V77 normalized the source map, but without a test future sources
+    could again become decorative links. A small harness invariant protects the
+    source-to-decision gate without creating a research subsystem.
+  Surface: research-to-brain / continuous pattern intake; CI / eval / golden
+    behavior.
+  Consumer: `packages/harness/src/sourceMapInvariants.test.ts`.
+  Does not prove: source coverage is complete or external docs are current.
+  Falsifier: a `docs/KRN_SOURCES.md` source section can omit `Consumer` or
+    `Falsifier` while tests still pass.
+  Verification: `pnpm --filter @krn/harness test -- sourceMapInvariants`;
+    `pnpm -C packages/harness typecheck`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -11966,6 +12103,45 @@ Next active stream:
 Next active task:
 - V78-00 Post Source Map Falsifier Re-Gate.
 
+## Outcome 2026-06-27 V79 Source Map Guard
+
+Completed:
+- V78-00 Post Source Map Falsifier Re-Gate.
+- V79-00 Source Map Invariant Guard.
+
+Evidence:
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+What improved:
+- Retained source decisions are now protected by a focused harness test.
+- Future source/course/paper/doc intake cannot omit `Consumer` or `Falsifier`
+  from `docs/KRN_SOURCES.md` without breaking the guard.
+- The brain-battle matrix now records source-map discipline as an implemented
+  behavior guard.
+
+What did not improve:
+- Product readiness.
+- Source coverage completeness.
+- External docs currentness.
+- Any new source decision.
+
+New task:
+- V80-00 Post Source Map Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V80 Post Source Map Guard Re-Gate.
+
+Next active task:
+- V80-00 Post Source Map Guard Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -12014,7 +12190,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V78 Post Source Map Falsifier Re-Gate.
+Active stream: V80 Post Source Map Guard Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
