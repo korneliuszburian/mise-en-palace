@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V51 Second Continuous Pattern Gate Selection
-current task: V51-00 Second Continuous Pattern Gate Selection
+active stream: V53 Brain-Battle CI Gate Re-Gate
+current task: V53-00 Brain-Battle CI Gate Re-Gate
 ```
 
 Completed stream summary:
@@ -80,30 +80,33 @@ V47 internal hardening re-gate after target coordination: complete
 V48 continuous pattern source-to-decision gate: complete
 V49 first continuous pattern gate application: complete
 V50 CI action modernization re-gate: complete
+V51 second continuous pattern gate selection: complete
+V52 brain-battle smoke CI gate: complete
 ```
 
 ## Active Stream
 
-### V51-00 — Second Continuous Pattern Gate Selection
+### V53-00 — Brain-Battle CI Gate Re-Gate
 
 Goal:
 
-Select the next bounded Continuous Pattern Gate application from current
-evidence.
+Consume the post-push CI result for V52 and decide whether the brain-battle CI
+gate is accepted, needs repair/revert, or creates a next bounded task.
 
 Current finding:
 
 ```txt
-V49 applied the Continuous Pattern Gate to CI action runtime modernization.
-V50 accepted it after GitHub Actions run `28291932071` passed DB readiness,
-DB smoke, typecheck, tests, Promptfoo smoke, and diff check.
+V51 selected `pnpm eval:brain-battle:smoke` as the second Continuous Pattern
+Gate application. V52 added it to GitHub Actions CI after `Test` and before
+`Promptfoo smoke`.
 ```
 
-Current V51 action:
+Current V53 action:
 
 ```txt
-Pick the next useful surface from evidence, or explicitly reject/defer if no
-consumer and falsifier exist. Do not force a paper/course topic.
+Check the post-push V52 CI run before unrelated work. If CI fails, repair or
+revert the workflow change first. If CI passes, accept the gate and select the
+next bounded task.
 ```
 
 ## V02-01 Boundary

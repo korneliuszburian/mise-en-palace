@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V51 Second Continuous Pattern Gate Selection
-current task: V51-00 Second Continuous Pattern Gate Selection
+active stream: V53 Brain-Battle CI Gate Re-Gate
+current task: V53-00 Brain-Battle CI Gate Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -4703,7 +4703,7 @@ Outcome:
 
 ### V51-00 — Second Continuous Pattern Gate Selection
 
-Status: active
+Status: complete
 
 Goal: select the next bounded Continuous Pattern Gate application from current
 evidence.
@@ -4775,6 +4775,152 @@ Acceptance criteria:
 - no broad plan;
 - consumer and falsifier exist before implementation;
 - next active task is explicit.
+
+Outcome:
+
+- V51 selected `pnpm eval:brain-battle:smoke` as the second Continuous Pattern
+  Gate application.
+- Selected surface: CI / release / eval.
+- Consumer: `.github/workflows/ci.yml`.
+- Falsifier: post-push KRN CI must run and pass a `Brain-battle smoke` step.
+
+### V52-00 — Add Brain-Battle Smoke To CI
+
+Status: complete
+
+Goal: add deterministic KRN behavior smoke to GitHub Actions CI.
+
+Product rationale: CI already runs Promptfoo smoke as adapter evidence. KRN
+should also run its deterministic brain-battle behavior gate in CI if the local
+step is cheap and passing.
+
+Architectural rationale: Promptfoo remains an adapter/result runner; brain-battle
+smoke remains KRN behavior proof. CI should keep that distinction visible.
+
+Evidence source: V51 report and local `pnpm eval:brain-battle:smoke` pass.
+
+Official/external sources: none needed; this is a repo-local evidence
+application.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v51-second-pattern-gate-selection/REPORT.md`;
+- `.github/workflows/ci.yml`;
+- `package.json` script `eval:brain-battle:smoke`.
+
+Files likely touched:
+
+- `.github/workflows/ci.yml`;
+- V52 report;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN CI workflow and plans/reports.
+
+Forbidden writes:
+
+- target repo edits;
+- broad eval platform;
+- Promptfoo authority expansion;
+- product-ready/V02-01 overclaim.
+
+Output requirements:
+
+- one CI step running `pnpm eval:brain-battle:smoke`;
+- proof/non-proof boundary;
+- post-push CI falsifier recorded as V53.
+
+Definition of Done: V52 adds the CI step and pushes a commit for CI
+falsification.
+
+Verification commands:
+
+```sh
+pnpm eval:brain-battle:smoke
+git diff --check
+```
+
+Acceptance criteria:
+
+- no broad eval platform;
+- no target writes;
+- post-push CI is the falsifier.
+
+Outcome:
+
+- V52 added `Brain-battle smoke` to `.github/workflows/ci.yml`.
+- The step runs `pnpm eval:brain-battle:smoke` after `Test` and before
+  `Promptfoo smoke`.
+
+### V53-00 — Brain-Battle CI Gate Re-Gate
+
+Status: active
+
+Goal: consume the post-push CI result for V52 and decide whether the
+brain-battle CI gate is accepted, needs repair/revert, or creates a next task.
+
+Product rationale: adding a deterministic behavior gate to CI is useful only if
+GitHub-hosted CI accepts it at current cost and behavior.
+
+Architectural rationale: every Continuous Pattern Gate application needs
+falsifier readback before unrelated work continues.
+
+Evidence source: V52 report, `.github/workflows/ci.yml`, and the GitHub Actions
+run for the V52 commit.
+
+Official/external sources: no new source unless CI failure requires official
+GitHub Actions/pnpm/Node documentation.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v52-brain-battle-ci-gate/REPORT.md`;
+- the post-push GitHub Actions run for V52.
+
+Files likely touched:
+
+- V53 report if non-trivial;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- `.github/workflows/ci.yml` only if repair/revert is required.
+
+Allowed writes:
+
+- KRN plans/reports;
+- CI repair/revert only if V52 CI fails.
+
+Forbidden writes:
+
+- unrelated source repairs before CI result is consumed;
+- target repo edits;
+- broad eval platform;
+- product-ready/V02-01 overclaim.
+
+Output requirements:
+
+- CI run id and conclusion;
+- accepted/repair/revert decision;
+- proof/non-proof boundary;
+- next active task from evidence.
+
+Definition of Done: V53 records whether V52's CI gate is accepted and selects
+the next bounded task.
+
+Verification commands:
+
+```sh
+git status --short --branch
+gh run view <run-id> --json conclusion,status,headSha,displayTitle,url
+```
+
+Acceptance criteria:
+
+- no unrelated work before CI result is consumed;
+- failed V52 CI gate is repaired or reverted before new work;
+- passing V52 CI records the gate as accepted.
 
 ## 13. Generated Task Backlog
 
@@ -5090,7 +5236,11 @@ Initial entry:
   falsifier.
 - [x] V50-00 complete: V49 accepted after CI run `28291932071` passed DB,
   typecheck, tests, Promptfoo smoke, and diff check.
-- [ ] V51-00 active: Second Continuous Pattern Gate Selection.
+- [x] V51-00 complete: selected `pnpm eval:brain-battle:smoke` as the second
+  Continuous Pattern Gate application with CI workflow as consumer.
+- [x] V52-00 complete: added `Brain-battle smoke` to GitHub Actions CI pending
+  post-push falsifier.
+- [ ] V53-00 active: Brain-Battle CI Gate Re-Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -5797,6 +5947,19 @@ Initial decisions:
   Falsifier: future CI runs fail due the v6 action update or reintroduce the
     same action-runtime warning.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Add brain-battle smoke to CI as the second Continuous Pattern Gate
+    application.
+  Rationale: `eval:brain-battle:smoke` is the repo's deterministic KRN behavior
+    smoke, while Promptfoo smoke is adapter evidence. CI currently runs the
+    adapter smoke but not the behavior smoke.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v51-second-pattern-gate-selection/REPORT.md`;
+    local `pnpm eval:brain-battle:smoke` pass; `.github/workflows/ci.yml`.
+  Does not prove: product readiness, V02-01, arbitrary target quality, or broad
+    eval-platform readiness.
+  Falsifier: the post-push CI run fails or does not execute the new
+    `Brain-battle smoke` step.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -6355,6 +6518,27 @@ Seed evidence:
   Does not prove: product readiness, V02-01, target safety, or all future gate
     applications.
   Follow-up task: V51-00.
+
+- Evidence ID: E-V51-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v51-second-pattern-gate-selection/REPORT.md`
+  Command/report/file: local `pnpm eval:brain-battle:smoke` pass and CI
+    workflow inspection.
+  Result: selected brain-battle smoke as the second Continuous Pattern Gate
+    application for the CI/eval surface.
+  Proves: current repo evidence identifies a bounded consumer and falsifier
+    without forcing a paper/course topic.
+  Does not prove: CI success after implementation, product readiness, or broad
+    eval-platform readiness.
+  Follow-up task: V52-00.
+
+- Evidence ID: E-V52-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v52-brain-battle-ci-gate/REPORT.md`
+  Command/report/file: `.github/workflows/ci.yml` update.
+  Result: added a `Brain-battle smoke` CI step running
+    `pnpm eval:brain-battle:smoke`.
+  Proves: V52 implemented the selected consumer.
+  Does not prove: post-push CI success, product readiness, or V02-01.
+  Follow-up task: V53-00.
 ```
 
 ## 19. Condensation Queue
@@ -6825,6 +7009,16 @@ Seed queue:
   Reason: prove the gate as repeatable execution behavior without forcing a
     decorative paper/course topic
   Task: V51-00
+
+- Candidate: brain-battle smoke in CI
+  Source evidence: V51 selected deterministic behavior smoke as the next
+    bounded CI/eval gate
+  Surface: `.github/workflows/ci.yml`
+  Status: implemented in V52-00; accepted only if V53 CI readback passes
+  Reason: Promptfoo smoke is adapter evidence; brain-battle smoke is KRN
+    deterministic behavior evidence and should run in CI if it remains cheap
+    and green
+  Task: V52-00..V53-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -8299,6 +8493,70 @@ Product readiness verdict:
 Next active stream:
 - V51 — Second Continuous Pattern Gate Selection.
 
+## Outcome 2026-06-27 V51
+
+Completed:
+- V51-00 selected brain-battle smoke as the second Continuous Pattern Gate
+  application.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v51-second-pattern-gate-selection/REPORT.md`.
+- Local `pnpm eval:brain-battle:smoke` passed.
+
+What improved:
+- The gate selected a real CI/eval consumer from current repo evidence.
+- V51 avoided broad research/source hoarding and did not force a course/paper
+  topic.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- CI success after implementation; V52/V53 handle that.
+
+New task:
+- Add brain-battle smoke to GitHub Actions CI.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V52 — Add Brain-Battle Smoke To CI.
+
+## Outcome 2026-06-27 V52
+
+Completed:
+- V52-00 added `Brain-battle smoke` to `.github/workflows/ci.yml`.
+- The step runs `pnpm eval:brain-battle:smoke` after `Test` and before
+  `Promptfoo smoke`.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v52-brain-battle-ci-gate/REPORT.md`.
+- Local `pnpm eval:brain-battle:smoke` passed before the CI edit.
+
+What improved:
+- CI now has a deterministic KRN behavior smoke candidate in addition to the
+  Promptfoo adapter smoke.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Post-push CI result; V53 must consume it before unrelated work.
+
+New task:
+- Inspect V52 post-push CI and accept, repair, or revert the workflow change.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V53 — Brain-Battle CI Gate Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -8347,7 +8605,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V51 Second Continuous Pattern Gate Selection.
+Active stream: V53 Brain-Battle CI Gate Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

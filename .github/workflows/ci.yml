@@ -43,6 +43,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Brain-battle smoke
+        run: pnpm eval:brain-battle:smoke
+
       - name: Promptfoo smoke
         run: |
           pnpm exec promptfoo --version
