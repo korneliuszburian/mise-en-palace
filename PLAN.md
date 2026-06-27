@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V221 Post Worker Boundary ADR Alignment Re-Gate
-current task: V221-00 Post Worker Boundary ADR Alignment Re-Gate
+active stream: V222 Security Pattern Intake Candidate Gate
+current task: V222-00 Security Pattern Intake Candidate Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,38 +45,40 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V221 Post Worker Boundary ADR Alignment Re-Gate
+### V222 Security Pattern Intake Candidate Gate
 
 Goal:
 
-Select the next bounded task after aligning ADR-0015 with the retained
-PostgreSQL row-locking source.
+Select one bounded security/permissions/trust-boundary pattern intake task or
+reject security intake for lack of immediate consumer.
 
 Current finding:
 
 ```txt
-V220 aligned ADR-0015 and an ADR invariant with the retained PostgreSQL
-row-locking source. Worker runtime remains deferred.
+Worker-boundary source intake is aligned and guarded. The next high-risk
+surface is security and permissions, especially before any future MCP, hooks,
+workers, connectors, or target-repo write expansion.
 ```
 
 Current action:
 
 ```txt
-Execute V221-00: decide whether to move to another bounded pattern surface or
-defer. Do not build worker runtime, queue services, dashboard, API, or MCP.
+Execute V222-00: inspect current security/trust sources and choose one bounded
+source decision, lab-test, or rejection.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision with consumer and falsifier.
+One security source-to-decision output with exactly one consumer or an explicit
+rejection.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate treats ADR alignment as worker readiness or starts runtime work
-without a concrete bottleneck and successor ADR.
+The gate starts MCP/hooks/workers/connectors or retains decorative security
+sources without a consumer/falsifier.
 ```
 
 ## Pattern Gate

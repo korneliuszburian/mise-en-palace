@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V220 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, post-observational-memory source re-gate, infra pattern intake, and worker-boundary ADR alignment slices: complete
-active stream: V221 Post Worker Boundary ADR Alignment Re-Gate
-current task: V221-00 Post Worker Boundary ADR Alignment Re-Gate
+V48..V221 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, post-observational-memory source re-gate, infra pattern intake, worker-boundary ADR alignment, and post-worker-boundary alignment re-gate slices: complete
+active stream: V222 Security Pattern Intake Candidate Gate
+current task: V222-00 Security Pattern Intake Candidate Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V221-00 Post Worker Boundary ADR Alignment Re-Gate.
+V222-00 Security Pattern Intake Candidate Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17774,6 +17774,58 @@ Next active stream:
 
 Next active task:
 - V221-00 Post Worker Boundary ADR Alignment Re-Gate.
+
+## Outcome 2026-06-28 V221 Post Worker Boundary ADR Alignment Re-Gate
+
+Completed task:
+- V221-00 Post Worker Boundary ADR Alignment Re-Gate.
+
+Decision:
+- Do not treat ADR-0015 alignment as worker readiness.
+- Do not start worker runtime, queue service, daemon, dashboard, API, or MCP
+  work.
+- Select security/permissions/trust-boundary pattern intake as the next bounded
+  surface because future MCP, hooks, workers, connectors, and target writes all
+  depend on explicit trust boundaries before expansion.
+
+Evidence:
+- `docs/decisions/ADR-0015-worker-runtime-boundary.md` now carries the retained
+  PostgreSQL row-locking mechanism and still defers worker runtime.
+- `packages/harness/src/adrInvariants.test.ts` guards the row-locking source and
+  non-proof boundary.
+- GitHub Actions run `28304806015` passed for commit `f21da8b`.
+- Root `PLAN.md` still rejects worker daemon, MCP, API, and dashboard surfaces
+  unless a bounded evidence-backed task authorizes them.
+
+Source-to-decision:
+- Source: ADR-0015 alignment, ADR invariant, CI run `28304806015`, and root
+  non-goals.
+- Mechanism: infra source intake is now tied to the worker boundary; the next
+  highest-risk surface is permission/trust guidance for future external
+  execution or tool surfaces.
+- KRN implication: security pattern intake should happen before any expansion
+  into MCP, hooks, worker runtime, connectors, or broader target writes.
+- Decision: open V222 Security Pattern Intake Candidate Gate.
+- Does not prove: product readiness, worker readiness, MCP readiness, or that
+  security guidance is complete.
+- Consumer: root `PLAN.md`, root `GOAL.md`, and `PLANS.md` next-task queue.
+- Falsifier: future work starts new external/runtime surfaces without a
+  source-to-decision trust boundary and local falsifier.
+
+New task:
+- V222-00 Security Pattern Intake Candidate Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V222 Security Pattern Intake Candidate Gate.
+
+Next active task:
+- V222-00 Security Pattern Intake Candidate Gate.
 
 ## 21. Final Response Format For Codex Runs
 
