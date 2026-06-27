@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V205 Source Map Iterative Repair Current-State Repair
-current task: V205-00 Source Map Iterative Repair Current-State Repair
+active stream: V206 Post Source Map Repair Re-Gate
+current task: V206-00 Post Source Map Repair Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V204: active-surface compactness, handoff, PLANS freshness,
+V100..V205: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,40 +49,38 @@ V100..V204: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V205 Source Map Iterative Repair Current-State Repair
+### V206 Post Source Map Repair Re-Gate
 
 Goal:
 
-Repair stale current-state wording in the retained Iterative Repair Loops source
-map entry.
+Decide the next bounded task after repairing iterative repair source-map entry.
 
 Current finding:
 
 ```txt
-V204 found docs/KRN_SOURCES.md still says KRN needs "review capture" and that
-later dogfood starts with `krn doctor`, while current repair loops use
-evidence/review/feedback commands and bounded active tasks.
+V205 updated docs/KRN_SOURCES.md so the Iterative Repair Loops entry maps to
+current evidence/review/feedback surfaces and PLANS next-task synthesis.
 ```
 
 Current action:
 
 ```txt
-Execute V205-00: update only that source-map entry and add a focused invariant.
-Do not broaden into source-map rewrite, Research Foundry, source crawler,
+Execute V206-00: select the next bounded evidence-backed task. Do not broaden
+source-map repair into source-map rewrite, Research Foundry, source crawler,
 dashboard, product-readiness claim, or docs sweep.
 ```
 
 Primary consumer:
 
 ```txt
-docs/KRN_SOURCES.md and focused source-map invariant.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The retained source map can again route iterative repair through stale review
-capture / doctor-first wording while tests pass.
+The re-gate turns one source-map repair into broad source/docs churn without a
+concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

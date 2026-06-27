@@ -163,9 +163,14 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Source class: official docs.
 - Decision kind: adopt.
 - Mechanism: review, repair, and validation close the loop.
-- KRN implication: KRN needs review capture and small repair loops.
-- Decision: later dogfood starts with `krn doctor`.
-- Consumer: bounded repair loop tasks and review/evidence commands.
+- KRN implication: KRN repair loops should move through bounded task, evidence,
+  review assessment, feedback delta, and verified repair instead of feature
+  momentum.
+- Decision: use current evidence/review/feedback surfaces for bounded repair
+  loops; do not route future work through stale review-capture or doctor-first
+  wording.
+- Consumer: bounded repair loop tasks, evidence/review/feedback commands, and
+  `PLANS.md` next-task synthesis.
 - Falsifier: KRN keeps adding features without a failing check, repair, and
   verification loop tied to one behavior.
 - Does not prove: that broad automation should run before kernel spine.

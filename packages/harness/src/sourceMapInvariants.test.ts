@@ -134,4 +134,16 @@ describe("KRN source map invariants", () => {
 
     expect(missing).toEqual([]);
   });
+
+  it("keeps iterative repair loops mapped to current evidence and feedback surfaces", () => {
+    const source = sourceSections().find((section) => section.title === "Iterative Repair Loops");
+
+    expect(source?.body).toContain("evidence");
+    expect(source?.body).toContain("review assessment");
+    expect(source?.body).toContain("feedback delta");
+    expect(source?.body).toContain("bounded repair loop tasks");
+    expect(source?.body).toContain("`PLANS.md` next-task synthesis");
+    expect(source?.body).not.toContain("review capture");
+    expect(source?.body).not.toContain("later dogfood starts with `krn doctor`");
+  });
 });
