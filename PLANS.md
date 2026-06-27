@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V169 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, and accepted-ADR chain guard slices: complete
-active stream: V170 Post Accepted ADR Chain Re-Gate
-current task: V170-00 Post Accepted ADR Chain Re-Gate
+V48..V171 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, and ADR line-wrap guard slices: complete
+active stream: V172 Post ADR Chain Line-Wrap Re-Gate
+current task: V172-00 Post ADR Chain Line-Wrap Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V170-00 Post Accepted ADR Chain Re-Gate.
+V172-00 Post ADR Chain Line-Wrap Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15631,6 +15631,63 @@ Next active stream:
 
 Next active task:
 - V170-00 Post Accepted ADR Chain Re-Gate.
+
+## Outcome 2026-06-27 V171 ADR Chain Line-Wrap Guard
+
+Completed tasks:
+- V170-00 Post Accepted ADR Chain Re-Gate.
+- V171-00 ADR Chain Line-Wrap Guard.
+
+V170 decision:
+- Do not broaden accepted-ADR preservation into Research Foundry, source
+  crawler, dashboard, or product-readiness claims.
+- Select ADR-0010 line-wrap repair because the full chain was present, but the
+  line break after `decision/rejection` made simple scans still report an
+  active shortened-chain hit.
+- The concrete failure mode is future re-gates wasting context on an already
+  repaired ADR because grep-visible wording still looks stale.
+
+What changed:
+- `docs/decisions/ADR-0010-brain-store-postgres-pgvector.md` now keeps the full
+  source-to-decision chain on one grep-visible line.
+- `packages/harness/src/adrInvariants.test.ts` now expects the grep-visible
+  full chain and avoids embedding the old exact stale sentence.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V172.
+
+Evidence:
+- The V170 post-repair scan still returned ADR-0010 because the line ended after
+  `decision/rejection`.
+- The semantic chain was correct, but the active re-gate selector was noisy.
+
+Source-to-decision:
+- Source: V170 scan output and accepted ADR-0010.
+- Mechanism: continuation selectors use simple text scans to identify stale
+  active surfaces; line-wrapped chain wording creates false positives that waste
+  context and can hide real active drift.
+- KRN implication: active chain guidance should be grep-visible when it is used
+  by re-gate selectors.
+- Decision: normalize ADR-0010 chain wording to one grep-visible line and update
+  the focused invariant.
+- Does not prove: all historical scan hits should be rewritten, every selector
+  is perfect, product readiness, or runtime behavior.
+- Consumer: ADR-0010 and `packages/harness/src/adrInvariants.test.ts`.
+- Falsifier: ADR-0010 can reintroduce a line-wrapped shortened-chain scan hit
+  without focused tests failing.
+
+New task:
+- V172-00 Post ADR Chain Line-Wrap Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V172 Post ADR Chain Line-Wrap Re-Gate.
+
+Next active task:
+- V172-00 Post ADR Chain Line-Wrap Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

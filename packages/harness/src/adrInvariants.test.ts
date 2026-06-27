@@ -23,10 +23,10 @@ describe("KRN ADR invariants", () => {
     );
 
     expect(brainStore).toContain(
-      "source -> mechanism -> KRN implication -> decision/rejection\n  -> consumer -> falsifier"
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
     );
-    expect(brainStore).not.toContain(
-      "verified through source -> mechanism -> KRN implication -> decision/rejection."
+    expect(brainStore).not.toMatch(
+      /verified through source -> mechanism -> KRN implication -> decision\/rejection\./u
     );
   });
 });

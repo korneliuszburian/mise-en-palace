@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V170 Post Accepted ADR Chain Re-Gate
-current task: V170-00 Post Accepted ADR Chain Re-Gate
+active stream: V172 Post ADR Chain Line-Wrap Re-Gate
+current task: V172-00 Post ADR Chain Line-Wrap Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V169: active-surface compactness, handoff, PLANS freshness,
+V100..V171: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,25 +48,25 @@ V100..V169: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V170 Post Accepted ADR Chain Re-Gate
+### V172 Post ADR Chain Line-Wrap Re-Gate
 
 Goal:
 
-Decide the next bounded task after preserving the full pattern-gate chain in
-accepted ADR guidance.
+Decide the next bounded task after preserving grep-visible full pattern-gate
+chain wording in accepted ADR guidance.
 
 Current finding:
 
 ```txt
-V168 selected accepted ADR wording repair because source-backed architecture
-decisions must not teach a shorter chain than current pattern-gate law.
+V170 selected ADR line-wrap repair because ADR-0010 had the full chain but line
+breaks made simple scans still see a shortened chain.
 ```
 
 Current action:
 
 ```txt
-Execute V170-00: select the next pattern surface from evidence. Do not broaden
-ADR-chain preservation into Research Foundry, source crawler, dashboard, or
+Execute V172-00: select the next pattern surface from evidence. Do not broaden
+ADR line-wrap preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -79,7 +79,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused ADR-chain preservation into research hoarding
+The re-gate turns focused ADR line-wrap preservation into research hoarding
 without a concrete consumer and falsifier.
 ```
 

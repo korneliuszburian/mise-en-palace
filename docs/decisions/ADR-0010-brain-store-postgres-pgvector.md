@@ -49,8 +49,7 @@ source_id: krn-kernel-runtime-truth
 title: docs/KRN_KERNEL.md Runtime Truth and Decision Rule
 trust_tier: high
 mechanism: Active context must be selected, task-specific, source-grounded, and
-  verified through source -> mechanism -> KRN implication -> decision/rejection
-  -> consumer -> falsifier.
+  verified through source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier.
 krn_implication: Source graph edges, claim support, context inclusions, and
   context exclusions must be first-class typed records.
 decision: represent graph and retrieval evidence in PostgreSQL tables first;
