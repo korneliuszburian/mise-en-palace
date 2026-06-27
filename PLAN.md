@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V224 Root Plan Compactness Headroom Repair
-current task: V224-00 Root Plan Compactness Headroom Repair
+active stream: V225 Post Root Plan Compactness Re-Gate
+current task: V225-00 Post Root Plan Compactness Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -25,55 +25,49 @@ current task: V224-00 Root Plan Compactness Headroom Repair
 Detailed history stays in `PLANS.md`.
 
 ```txt
-V02..V47: target-aware evidence, DB replay, activation, memory/source,
-          target workflow, and controlled internal alpha hardening complete.
-V48..V63: continuous pattern source-to-decision gate, CI/eval gates,
-          operator packet refresh, and pattern intake runbook complete.
-V64..V84: pattern surface matrix, TypeScript/security trust repairs,
-          source map guard, active plan guard, and skill invariant guard complete.
-V85..V92: authority ID branding for anti-memory, evidence spine,
-          source decisions, and eval/policy surfaces complete.
-V93..V99: brain-battle matrix guard, context hygiene guard,
-          active plan completion guard, and full source-map mapping guard complete.
-V100..V223: active-surface, handoff, PLANS freshness, pattern-gate,
+V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
+V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
+          source-map, skill, brain-battle, and context-hygiene guards complete.
+V100..V224: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
-           worker, security permission-boundary, and re-gate guards complete.
+           worker, security permission-boundary, root-plan headroom, and
+           re-gate guards complete.
 ```
 
 ## Active Stream
 
-### V224 Root Plan Compactness Headroom Repair
+### V225 Post Root Plan Compactness Re-Gate
 
 Goal:
 
-Restore root `PLAN.md` headroom so the compact product SSOT stays useful for
-auto-compact continuations.
+Decide the next bounded task after root plan headroom repair without adding
+context weight back into root active surfaces.
 
 Current finding:
 
 ```txt
-`PLAN.md` is still under the 170-line guard, but it is close enough that the
-next slice could fail context hygiene without adding product value.
+Root `PLAN.md` now has more headroom under the context-hygiene guard. The next
+task should come from evidence, not from filling the freed space.
 ```
 
 Current action:
 
 ```txt
-Execute V224-00: compact root `PLAN.md` without losing active state,
-hard non-goals, verification policy, pattern gate, or external blocker.
+Execute V225-00: inspect latest evidence and choose one bounded next task or
+explicitly defer if no immediate consumer exists.
 ```
 
 Primary consumer:
 
 ```txt
-Root `PLAN.md` and context-hygiene invariants.
+Root active state and one next-task decision in `PLANS.md`.
 ```
 
 Falsifier:
 
 ```txt
-The repair deletes active-state truth, weakens continuation rules, or opens a
-new product surface instead of reducing root-plan context weight.
+The gate re-expands root plan, starts a forbidden surface, or ignores the latest
+evidence when selecting next work.
 ```
 
 ## Pattern Gate
@@ -102,24 +96,11 @@ Do not substitute self/headless scenarios for V02-01.
 
 ## Hard Non-Goals
 
-Do not build or claim:
-
-- fake V02-01 proof;
-- product-ready status;
-- widened internal alpha;
-- dashboard;
-- API server;
-- MCP server;
-- worker daemon;
-- source crawler;
-- Research Foundry;
-- broad eval platform;
-- generic multi-agent system;
-- runtime markdown memory;
-- hidden semantic hooks;
-- living target repo writes without explicit scope;
-- large `AGENTS.md` expansion;
-- parallel roadmap.
+Do not build or claim: fake V02-01 proof, product-ready status, widened
+internal alpha, dashboard, API server, MCP server, worker daemon, source
+crawler, Research Foundry, broad eval platform, generic multi-agent system,
+runtime markdown memory, hidden semantic hooks, living target repo writes
+without explicit scope, large `AGENTS.md` expansion, or parallel roadmap.
 
 ## Verification Policy
 
@@ -135,27 +116,10 @@ TMPDIR=/home/krn/.cache/krn-tmp pnpm test
 Do not set `TMPDIR` under the repo checkout: CLI boundary tests rely on
 outside-workspace temporary directories.
 
-Docs/plan-only changes:
-
-```sh
-git diff --check
-```
-
-Source changes:
-
-```sh
-pnpm typecheck
-pnpm test
-git diff --check
-```
-
-DB/eval-affecting changes:
-
-```sh
-pnpm db:ready
-pnpm db:smoke
-pnpm eval:promptfoo:smoke
-```
+Docs/plan-only changes: `git diff --check`.
+Source changes: `pnpm typecheck`, `pnpm test`, `git diff --check`.
+DB/eval-affecting changes: `pnpm db:ready`, `pnpm db:smoke`,
+`pnpm eval:promptfoo:smoke`.
 
 After each bounded slice, commit, push, and confirm CI when appropriate. Use a
 full `git rev-parse HEAD` SHA for `gh run list --commit`; if that is empty, use

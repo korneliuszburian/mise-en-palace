@@ -77,11 +77,11 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V223 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V224 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
-and related re-gate slices: complete
-active stream: V224 Root Plan Compactness Headroom Repair
-current task: V224-00 Root Plan Compactness Headroom Repair
+root-plan headroom, and related re-gate slices: complete
+active stream: V225 Post Root Plan Compactness Re-Gate
+current task: V225-00 Post Root Plan Compactness Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -97,7 +97,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V224-00 Root Plan Compactness Headroom Repair.
+V225-00 Post Root Plan Compactness Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17940,6 +17940,56 @@ Next active stream:
 
 Next active task:
 - V224-00 Root Plan Compactness Headroom Repair.
+
+## Outcome 2026-06-28 V224 Root Plan Compactness Headroom Repair
+
+Completed task:
+- V224-00 Root Plan Compactness Headroom Repair.
+
+Decision:
+- Compact root `PLAN.md` rather than adding another task on top of a nearly full
+  active SSOT.
+- Preserve active stream/task, hard non-goals, verification policy, pattern
+  gate, and V02-01 external blocker while reducing completed-checkpoint,
+  hard-non-goal, and verification-policy line weight.
+- Open V225 as a re-gate so the next task is selected from evidence instead of
+  immediately refilling root context.
+
+Evidence:
+- Before V224 execution, root `PLAN.md` was 163 lines after the previous re-gate
+  and still close to the 170-line context-hygiene guard.
+- V224 compacts completed checkpoints, hard non-goals, and verification policy
+  while keeping the invariant-required strings in root active surfaces.
+- Targeted invariants for active plan, context hygiene, and pattern chain are
+  the required proof path for this slice.
+
+Source-to-decision:
+- Source: V223 outcome, context-hygiene invariant, and root line-count evidence.
+- Mechanism: active root files are loaded on every continuation; excess line
+  weight increases context cost and makes future updates fragile.
+- KRN implication: context condensation must be treated as maintenance of the
+  brain's operating surface, not as optional cleanup.
+- Decision: complete root plan headroom repair and re-gate.
+- Does not prove: product readiness, second-operator proof, or need for a new
+  context system.
+- Consumer: root `PLAN.md`, `GOAL.md`, and context-hygiene invariants.
+- Falsifier: root active files lose current-state truth, hard non-goals,
+  pattern gate, external blocker, or verification policy while becoming shorter.
+
+New task:
+- V225-00 Post Root Plan Compactness Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V225 Post Root Plan Compactness Re-Gate.
+
+Next active task:
+- V225-00 Post Root Plan Compactness Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
