@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V29 — TypeScript Boundary Research Application Gate
+V30 — Codex Surface Context-Budget Application Gate
 ```
 
 Current product loop:
@@ -69,8 +69,9 @@ V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete.
 V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete.
 V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete.
 V28 Research-To-Brain TypeScript/Codex Decision Trial: complete.
-active stream: V29 TypeScript Boundary Research Application Gate.
-current task: V29-00 — TypeScript Boundary Research Application Gate.
+V29 TypeScript Boundary Research Application Gate: complete.
+active stream: V30 Codex Surface Context-Budget Application Gate.
+current task: V30-00 — Codex Surface Context-Budget Application Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

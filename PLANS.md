@@ -54,12 +54,13 @@ V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
 V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
 V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
 V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
+V29 TypeScript Boundary Research Application Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V29 TypeScript Boundary Research Application Gate
-current task: V29-00 TypeScript Boundary Research Application Gate
+active stream: V30 Codex Surface Context-Budget Application Gate
+current task: V30-00 Codex Surface Context-Budget Application Gate
 ```
 
 Evidence already recorded in repo:
@@ -74,8 +75,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V29 must apply V28 TypeScript/Codex source decisions to current repo evidence
-without recreating a broad audit subsystem or doing cleanup by inertia.
+V30 must apply V28 Codex surface decisions to current repo instruction and skill
+surfaces without bloating context or creating a skill/hook/MCP zoo.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2803,7 +2804,7 @@ Completed evidence:
 
 ### V29-00 — TypeScript Boundary Research Application Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: apply the accepted V28 TypeScript source decisions to current code with a
 bounded boundary spot-check and either classify findings or perform one tiny
@@ -2872,6 +2873,89 @@ sufficient, whether one repair is needed, or whether a narrow guard/test should
 be added.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V29
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v29-typescript-boundary-research-application/REPORT.md`.
+- Production `JSON.parse` is limited to `packages/cli/src/cliFileBoundary.ts`
+  and already uses `unknown` plus a local object guard.
+- Targeted scans found no `as any`, `as unknown as`, `@ts-ignore`, or
+  `@ts-expect-error` under `packages`.
+- No TypeScript source repair was justified by V29 evidence.
+
+### V30-00 — Codex Surface Context-Budget Application Gate
+
+Status: active
+
+Goal: apply the accepted V28 Codex surface decisions to current repo instruction
+and skill surfaces, then decide whether any compactness, trigger, or context
+budget repair is needed.
+
+Product rationale: V28 accepted Codex surface decisions for `AGENTS.md`, Goals,
+ExecPlans, and skills. V30 checks whether the current durable instruction
+surfaces remain compact and useful, instead of becoming hidden context bloat.
+
+Architectural rationale: Codex surfaces are adapters over KRN truth. `AGENTS.md`
+should stay small, `GOAL.md`/`PLAN.md` should stay compact, `PLANS.md` should
+carry execution detail, and skills should cover repeated workflows without
+becoming a skill zoo.
+
+Evidence source: V28 report, V29 report, Codex manual source decisions in
+`docs/KRN_SOURCES.md`, current `AGENTS.md`, `.agents/skills/*`, `GOAL.md`,
+`PLAN.md`, and `PLANS.md`.
+
+Official/external sources: V28 source map only; do not expand research unless a
+finding depends on a new Codex surface claim.
+
+Inputs required: current instruction files, repo-local skills, and active plan
+surfaces.
+
+Files likely touched:
+
+- V30 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- optionally a tiny skill or instruction-file refinement only if a concrete
+  trigger/context-budget gap is found.
+
+Allowed writes: KRN report/plans; bounded skill/instruction docs only if direct
+evidence proves a compactness or trigger bug.
+
+Forbidden writes: new broad skill set, hook implementation, MCP server,
+subagent framework, dashboard/API/worker runtime, source crawler, Research
+Foundry, product-ready overclaim, large `AGENTS.md` expansion.
+
+Output requirements:
+
+- current size/shape summary for `AGENTS.md`, `GOAL.md`, `PLAN.md`,
+  `PLANS.md`, and repo-local skills;
+- classification of each surface as keep, refine, split, reject expansion, or
+  insufficient evidence;
+- proof/non-proof boundaries;
+- next task recommendation.
+
+Definition of Done: one compact V30 report exists and either no surface repair
+is needed or one tiny skill/instruction repair is implemented with focused
+verification.
+
+Verification commands: `git diff --check`; if skill/instruction files are
+touched, run relevant text checks and inspect trigger descriptions.
+
+Acceptance criteria: no new surface without evidence, no AGENTS bloat, no
+parallel roadmap, no broad hook/MCP/subagent implementation.
+
+Risk: V30 becomes meta-document churn. Mitigation: classify existing surfaces
+first and only edit if evidence shows a direct continuation/trigger problem.
+
+Rollback: focused report/plan revert, plus focused skill/instruction revert if
+needed.
+
+Condensation expectation: decide whether Codex surface hygiene is sufficient or
+whether a bounded trigger/context-budget repair is needed.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V30
 evidence.
 
 ## 13. Generated Task Backlog
@@ -3139,7 +3223,9 @@ Initial entry:
   product-ready remain unproved.
 - [x] V28-00 complete: research-to-brain trial mapped Codex/TypeScript sources
   into durable source decisions and rejected research subsystem expansion.
-- [ ] V29-00 active: TypeScript Boundary Research Application Gate.
+- [x] V29-00 complete: TypeScript boundary spot-check found no source repair
+  candidate; production JSON parsing already follows unknown-first narrowing.
+- [ ] V30-00 active: Codex Surface Context-Budget Application Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3564,6 +3650,19 @@ Initial decisions:
   Falsifier: V29 spot-check finds no boundary findings needing action or finds
     that existing tests/standards already cover the relevant risks.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote Codex surface context-budget application gate as V30.
+  Rationale: V28 accepted both TypeScript boundary decisions and Codex surface
+    decisions; V29 applied the TypeScript half, so the next bounded proof should
+    apply the Codex surface half to current instructions and skills.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v29-typescript-boundary-research-application/REPORT.md`;
+    `docs/reviews/controlled-dogfood/2026-06-27-v28-research-to-brain-typescript-codex/REPORT.md`;
+    `docs/KRN_SOURCES.md`.
+  Does not prove: a new skill, hook, MCP server, subagent framework, or AGENTS
+    expansion is needed.
+  Falsifier: V30 finds current surfaces are already compact, focused, and
+    triggerable enough.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -3856,6 +3955,19 @@ Seed evidence:
   Does not prove: current TypeScript code has no boundary drift, product
     readiness, or need for broad research intake.
   Follow-up task: V29-00.
+
+- Evidence ID: E-V29-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v29-typescript-boundary-research-application/REPORT.md`
+  Command/report/file: targeted `rg` scans for `JSON.parse`, unsafe casts, and
+    TypeScript suppressions.
+  Result: production direct `JSON.parse` is limited to
+    `packages/cli/src/cliFileBoundary.ts` and already uses `unknown` plus a
+    local object guard; unsafe cast/suppression scans found no matches.
+  Proves: V28 TypeScript boundary decisions are currently respected for the
+    scanned high-risk patterns under `packages`.
+  Does not prove: every public API is ideal, non-package scripts are clean, or
+    product readiness.
+  Follow-up task: V30-00.
 ```
 
 ## 19. Condensation Queue
@@ -4138,10 +4250,19 @@ Seed queue:
 - Candidate: TypeScript boundary research application gate
   Source evidence: V28 report and durable source map
   Surface: bounded TypeScript boundary report / optional tiny repair
-  Status: accepted as V29-00
+  Status: complete as V29-00
   Reason: accepted research decisions should be applied to current source
     evidence before adding more research or architecture
   Task: V29-00
+
+- Candidate: Codex surface context-budget application gate
+  Source evidence: V28 and V29 reports
+  Surface: instruction/skill surface report / optional tiny skill or instruction
+    refinement
+  Status: accepted as V30-00
+  Reason: V28 Codex surface decisions should be applied to current AGENTS,
+    goal/plan, and skill surfaces before adding more architecture
+  Task: V30-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4210,6 +4331,41 @@ Product readiness verdict:
 Next active stream:
 
 - V29 TypeScript Boundary Research Application Gate.
+
+## Outcome 2026-06-27 V29
+
+Completed:
+
+- V29 TypeScript boundary research application gate.
+- Bounded scans for `JSON.parse`, unsafe casts, TS suppressions, and direct
+  json-fetch patterns.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v29-typescript-boundary-research-application/REPORT.md`.
+- `packages/cli/src/cliFileBoundary.ts`.
+
+What improved:
+
+- V28 TypeScript decisions were checked against current source evidence.
+- No source repair was made without a direct boundary bug.
+
+What did not improve:
+
+- Product readiness.
+- V02-01 second-operator proof.
+- Codex surface/context-budget hygiene; V30 must inspect that separately.
+
+Product readiness verdict:
+
+- controlled-internal-alpha: yes / stronger TypeScript boundary confidence
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+
+- V30 Codex Surface Context-Budget Application Gate.
 
 ## Outcome 2026-06-27 V08
 
@@ -4826,7 +4982,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V29 TypeScript Boundary Research Application Gate.
+Active stream: V30 Codex Surface Context-Budget Application Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
