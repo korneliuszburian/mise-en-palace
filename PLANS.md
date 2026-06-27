@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V54 Post-CI Pattern Gate Re-Gate
-current task: V54-00 Post-CI Pattern Gate Re-Gate
+active stream: V55 Product Readiness Re-Gate After CI/Eval Pattern Gates
+current task: V55-00 Product Readiness Re-Gate After CI/Eval Pattern Gates
 ```
 
 Evidence already recorded in repo:
@@ -4930,7 +4930,7 @@ Outcome:
 
 ### V54-00 — Post-CI Pattern Gate Re-Gate
 
-Status: active
+Status: complete
 
 Goal: re-gate after two accepted Continuous Pattern Gate applications and pick
 the next bounded task from current evidence.
@@ -5001,6 +5001,83 @@ Acceptance criteria:
 - no broad roadmap;
 - no forced research topic;
 - no unrelated source work;
+- next active task is explicit.
+
+Outcome:
+
+- V54 selected product readiness re-gate as the next bounded task.
+- V54 rejected more CI/eval work by momentum, broad research intake, target repo
+  writes, and product-ready overclaim.
+
+### V55-00 — Product Readiness Re-Gate After CI/Eval Pattern Gates
+
+Status: active
+
+Goal: determine whether V48-V53 changed KRN product readiness or only
+strengthened controlled-internal-alpha.
+
+Product rationale: CI now runs DB readiness/smoke, typecheck, tests,
+brain-battle smoke, Promptfoo smoke, and diff check. KRN needs a readiness
+decision before adding more internal hardening.
+
+Architectural rationale: readiness gates prevent local confidence from becoming
+product claims. Stronger CI/eval evidence should update the product state only
+if it proves the relevant readiness criteria.
+
+Evidence source: V48-V54 reports, latest CI, target owner coordination packet,
+and current `PLAN.md`/`PLANS.md`.
+
+Official/external sources: none needed unless the readiness report needs to
+interpret a Codex/OpenAI surface not already in `docs/KRN_SOURCES.md`.
+
+Inputs required:
+
+- V48-V54 reports;
+- GitHub Actions run `28292296955`;
+- V46 owner coordination packet;
+- current `PLAN.md`, `GOAL.md`, and `PLANS.md`.
+
+Files likely touched:
+
+- V55 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN plans/reports only.
+
+Forbidden writes:
+
+- package source changes;
+- target repo edits;
+- product-ready overclaim;
+- V02-01 substitute proof;
+- broad research/source crawler/eval platform.
+
+Output requirements:
+
+- readiness verdict;
+- evidence table;
+- what changed after CI/eval gates;
+- what remains unproved;
+- next bounded task.
+
+Definition of Done: V55 records the readiness verdict and selects the next
+bounded task from evidence.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no product-ready claim unless evidence proves it;
+- no fake V02-01 proof;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -5323,7 +5400,9 @@ Initial entry:
   post-push falsifier.
 - [x] V53-00 complete: accepted V52 after CI run `28292197772` passed with the
   new `Brain-battle smoke` step.
-- [ ] V54-00 active: Post-CI Pattern Gate Re-Gate.
+- [x] V54-00 complete: selected product readiness re-gate and rejected more
+  CI/eval work by momentum.
+- [ ] V55-00 active: Product Readiness Re-Gate After CI/Eval Pattern Gates.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6054,6 +6133,16 @@ Initial decisions:
   Falsifier: future CI runs repeatedly fail due the brain-battle smoke step, or
     the step is removed without a replacement behavior proof.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote product readiness re-gate after CI/eval pattern gates.
+  Rationale: V49-V53 strengthened CI/eval evidence. The next question is
+    readiness impact, not another CI/eval task by momentum.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v54-post-ci-pattern-regate/REPORT.md`;
+    GitHub Actions run `28292296955`.
+  Does not prove: product readiness, V02-01, or target write safety.
+  Falsifier: V55 finds current evidence does not change readiness and selects a
+    different next blocker.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -6644,6 +6733,17 @@ Seed evidence:
   Does not prove: product readiness, V02-01, full brain quality, or target
     quality.
   Follow-up task: V54-00.
+
+- Evidence ID: E-V54-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v54-post-ci-pattern-regate/REPORT.md`
+  Command/report/file: post-CI pattern gate re-gate.
+  Result: selected product readiness re-gate and rejected more CI/eval work by
+    momentum.
+  Proves: next work is selected from evidence after the accepted pattern-gate
+    applications.
+  Does not prove: readiness changed, product readiness, V02-01, or target write
+    safety.
+  Follow-up task: V55-00.
 ```
 
 ## 19. Condensation Queue
@@ -7132,6 +7232,14 @@ Seed queue:
   Reason: after two successful CI/eval improvements, choose next work from
     evidence rather than momentum
   Task: V54-00
+
+- Candidate: product readiness re-gate after CI/eval pattern gates
+  Source evidence: V54 selected readiness impact as the next product question
+  Surface: readiness report / active plan
+  Status: accepted as V55-00
+  Reason: stronger CI/eval evidence may strengthen controlled-internal-alpha,
+    but must not become product-ready confidence without a readiness gate
+  Task: V55-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -8702,6 +8810,38 @@ Product readiness verdict:
 Next active stream:
 - V54 — Post-CI Pattern Gate Re-Gate.
 
+## Outcome 2026-06-27 V54
+
+Completed:
+- V54-00 selected product readiness re-gate as the next bounded task after two
+  accepted Continuous Pattern Gate applications.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v54-post-ci-pattern-regate/REPORT.md`.
+- GitHub Actions run `28292296955`.
+
+What improved:
+- KRN did not keep adding CI/eval work by momentum.
+- The next question is product state, not another internal improvement by
+  default.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Target owner/stability inputs.
+
+New task:
+- Product readiness re-gate after CI/eval pattern gates.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V55 — Product Readiness Re-Gate After CI/Eval Pattern Gates.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -8750,7 +8890,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V54 Post-CI Pattern Gate Re-Gate.
+Active stream: V55 Product Readiness Re-Gate After CI/Eval Pattern Gates.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

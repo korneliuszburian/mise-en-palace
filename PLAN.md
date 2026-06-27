@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V54 Post-CI Pattern Gate Re-Gate
-current task: V54-00 Post-CI Pattern Gate Re-Gate
+active stream: V55 Product Readiness Re-Gate After CI/Eval Pattern Gates
+current task: V55-00 Product Readiness Re-Gate After CI/Eval Pattern Gates
 ```
 
 Completed stream summary:
@@ -83,30 +83,31 @@ V50 CI action modernization re-gate: complete
 V51 second continuous pattern gate selection: complete
 V52 brain-battle smoke CI gate: complete
 V53 brain-battle CI gate re-gate: complete
+V54 post-CI pattern gate re-gate: complete
 ```
 
 ## Active Stream
 
-### V54-00 — Post-CI Pattern Gate Re-Gate
+### V55-00 — Product Readiness Re-Gate After CI/Eval Pattern Gates
 
 Goal:
 
-Re-gate after two accepted Continuous Pattern Gate applications and pick the
-next bounded task from current evidence.
+Determine whether V48-V53 changed KRN product readiness or only strengthened
+controlled-internal-alpha.
 
 Current finding:
 
 ```txt
-V53 accepted V52 after GitHub Actions run `28292197772` passed with the new
-`Brain-battle smoke` CI step. CI now runs deterministic KRN behavior smoke and
-Promptfoo adapter smoke.
+V54 selected product readiness re-gate after two accepted Continuous Pattern
+Gate applications. CI now runs DB readiness/smoke, typecheck, tests,
+brain-battle smoke, Promptfoo smoke, and diff check.
 ```
 
-Current V54 action:
+Current V55 action:
 
 ```txt
-Choose the next bounded task from current evidence, or explicitly defer if no
-consumer/falsifier exists. Do not continue CI/eval work by momentum alone.
+Record the readiness verdict from current evidence. Do not claim product-ready
+or V02-01 unless the evidence proves those exact claims.
 ```
 
 ## V02-01 Boundary
