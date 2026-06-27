@@ -25,7 +25,7 @@ product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V64 Continuous Pattern Distillation Gate
-current task: V64-02 First Surface-Matrix Pattern Application
+current task: V64-03 Post Surface-Matrix Application Re-Gate
 ```
 
 Completed stream summary:
@@ -95,7 +95,8 @@ V62 pattern intake skill linkage: complete
 V63 post-pattern-intake linkage re-gate: complete
 V64-00 pattern gate re-entry: complete
 V64-01 pattern surface consumer matrix: complete
-V64-02 first surface-matrix pattern application: active
+V64-02 first surface-matrix pattern application: complete
+V64-03 post surface-matrix application re-gate: active
 ```
 
 ## Active Stream
@@ -119,9 +120,8 @@ now exists with consumer and falsifier.
 Current action:
 
 ```txt
-Execute V64-02: apply the new surface matrix to one concrete source packet and
-route it to a single KRN consumer with mechanism, decision, does-not-prove
-boundary, and falsifier.
+Execute V64-03: decide the next bounded task after the first surface-matrix
+application, using evidence instead of momentum.
 ```
 
 Primary consumer:

@@ -79,7 +79,7 @@ V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
 active stream: V64 Continuous Pattern Distillation Gate
-current task: V64-02 First Surface-Matrix Pattern Application
+current task: V64-03 Post Surface-Matrix Application Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -5835,7 +5835,7 @@ git status --short --branch
 
 Acceptance criteria:
 
-- A fresh continuation can identify V64-02 as the first incomplete active task.
+- A fresh continuation can identify V64-03 as the first incomplete active task.
 - A future slice has a clear falsifier if it adopts a pattern without consumer
   and proof boundary.
 
@@ -5920,7 +5920,7 @@ Acceptance criteria:
 
 ### V64-02 — First Surface-Matrix Pattern Application
 
-Status: active
+Status: complete
 
 Goal: Apply the new surface consumer matrix to one concrete source packet and
 route it to exactly one durable KRN consumer.
@@ -5992,6 +5992,69 @@ Acceptance criteria:
 - The selected source packet changes a decision or is explicitly rejected.
 - No additional source packet is retained by momentum.
 
+### V64-03 — Post Surface-Matrix Application Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after the first surface-matrix pattern
+application, using evidence instead of momentum.
+
+Product rationale: Continuous pattern distillation should keep improving KRN,
+but only through a bounded consumer with a falsifier.
+
+Architectural rationale: After the first application, KRN should either select a
+new source packet, turn a candidate into a focused repair/eval/skill/standard
+slice, or stop with an honest blocker.
+
+Evidence source:
+
+- V64-01 surface matrix.
+- V64-02 source decision in the generated-task contract.
+
+Inputs required:
+
+- Current `PLANS.md` task contract and any source decision emitted by V64-02.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+- optional selected consumer if a bounded next task is promoted.
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- source hoarding;
+- broad research backlog;
+- package source unless a specific repair is selected;
+- product readiness overclaim.
+
+Output requirements:
+
+- Select one next bounded task or record an honest blocker.
+- Preserve V02-01 as external proof only.
+
+Definition of Done:
+
+- Next active task or blocker is explicit.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- The plan does not continue local work merely because the previous task was
+  completed.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -6018,11 +6081,15 @@ Template:
 ### <ID> — <Name>
 Status: proposed
 Goal:
+Pattern surface:
 Product rationale:
 Architectural rationale:
 Evidence source:
 Official/external sources:
 Inputs required:
+Primary consumer:
+Does not prove:
+Falsifier:
 Files likely touched:
 Allowed writes:
 Forbidden writes:
@@ -6354,8 +6421,9 @@ Initial entry:
   distillation the active stream and preserving V02-01 as external proof only.
 - [x] V64-01 complete: added a pattern surface consumer matrix to the pattern-intake
   runbook.
-- [ ] V64-02 active: apply the matrix to one concrete source packet and route it
-  to exactly one durable KRN consumer.
+- [x] V64-02 complete: applied the Codex task-contract source packet to the
+  `PLANS.md` generated task template.
+- [ ] V64-03 active: re-gate after the first surface-matrix application.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7217,6 +7285,23 @@ Initial decisions:
   Falsifier: future non-trivial infra, harness, CI, eval, Codex-surface,
     TypeScript, target-workflow, or research/paper-driven work adopts a pattern
     without mechanism, consumer, does-not-prove boundary, and falsifier.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Apply the Codex task-contract source packet to `PLANS.md`.
+  Source packet: OpenAI Cookbook `ExecPlans`, `Goals In Codex`, and `Codex
+    Prompting Guide` entries already retained in `docs/KRN_SOURCES.md`.
+  Surface: Codex surfaces / skills / hooks / MCP / subagents.
+  Mechanism: Codex long-running work improves when objective, constraints,
+    allowed writes, verification, evidence, and next action are explicit and
+    resumable.
+  KRN implication: Generated tasks in `PLANS.md` must name pattern surface,
+    primary consumer, does-not-prove boundary, and falsifier before execution.
+  Decision kind: adopt.
+  Consumer: `PLANS.md` generated task contract template.
+  Does not prove: every small edit needs a verbose prompt or that `PLANS.md`
+    should store raw logs/research dumps.
+  Falsifier: a future generated task is promoted without pattern surface,
+    primary consumer, does-not-prove boundary, and falsifier.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10324,6 +10409,7 @@ Next active stream:
 Completed:
 - V64-00 Pattern Gate Re-Entry.
 - V64-01 Pattern Surface Consumer Matrix.
+- V64-02 First Surface-Matrix Pattern Application.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10338,15 +10424,19 @@ What improved:
   of relying on chat memory.
 - Pattern intake now has a per-surface matrix for infra, harness, CI/eval,
   Codex surfaces, target workflow, TypeScript, security/trust, and operator UX.
+- The Codex task-contract source packet now changes the `PLANS.md` generated
+  task template: future generated tasks must name pattern surface, primary
+  consumer, does-not-prove boundary, and falsifier.
 
 What did not improve:
 - Product readiness.
 - V02-01 second-operator proof.
-- Any specific source, course, or paper adoption.
+- Any broad source, course, or paper adoption beyond the single Codex
+  task-contract source packet.
 - Package source behavior.
 
 New task:
-- V64-02 First Surface-Matrix Pattern Application.
+- V64-03 Post Surface-Matrix Application Re-Gate.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10358,7 +10448,7 @@ Next active stream:
 - V64 Continuous Pattern Distillation Gate.
 
 Next active task:
-- V64-02 First Surface-Matrix Pattern Application.
+- V64-03 Post Surface-Matrix Application Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
