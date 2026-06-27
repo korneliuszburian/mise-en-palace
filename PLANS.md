@@ -52,12 +52,13 @@ V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complet
 V24 Target Owner-File Recall Deduplication And Budget Priority: complete
 V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
 V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
+V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs
-current task: V27-00 Controlled Internal Alpha Re-Gate After Target Loop Repairs
+active stream: V28 Research-To-Brain TypeScript/Codex Decision Trial
+current task: V28-00 Research-To-Brain TypeScript/Codex Decision Trial
 ```
 
 Evidence already recorded in repo:
@@ -72,9 +73,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V27 must re-gate controlled-internal-alpha readiness after V20 through V26
-closed the real target loop, evidence/readback defaults, DB recovery, owner-file
-priority, and CLI friction repairs.
+V28 must test whether KRN can convert external/source knowledge into concrete
+decisions, falsifiers, skills, standards, eval candidates, or rejections without
+source hoarding or a new research subsystem.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2103,6 +2104,30 @@ resume, and what the next highest-ROI task is.
 - no new architecture;
 - no target repo writes.
 
+### Stream V28 — Research-To-Brain TypeScript/Codex Decision Trial
+
+Why now:
+
+- V27 concluded the target loop repair batch and kept KRN at
+  controlled-internal-alpha for technical operators.
+- The user wants KRN to continuously absorb high-quality engineering knowledge,
+  including Codex patterns, research, and TypeScript discipline, but only when
+  it maps to concrete decisions and falsifiers.
+
+Expected end state:
+
+```txt
+One bounded source-to-decision trial maps a small source set into KRN decisions,
+rejections, or candidates without building a research subsystem or source
+crawler.
+```
+
+- no source hoarding;
+- no Research Foundry;
+- no crawler;
+- no dashboard/API/MCP/worker runtime;
+- no product-ready overclaim.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
 Status: complete
@@ -2636,7 +2661,7 @@ Completed evidence:
 
 ### V27-00 — Controlled Internal Alpha Re-Gate After Target Loop Repairs
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: review V20 through V26 evidence and decide the next product step.
 
@@ -2692,6 +2717,80 @@ Condensation expectation: decide whether next work is V02-01 real operator
 intake, another controlled target trial, a bounded repair, or pause for inputs.
 
 Next-task synthesis rule: append the single highest-ROI next task after V27
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v27-controlled-internal-alpha-regate/REPORT.md`.
+- Readiness remains controlled-internal-alpha for technical operators, stronger.
+- V02-01 remains blocked/deferred until real operator inputs exist.
+
+### V28-00 — Research-To-Brain TypeScript/Codex Decision Trial
+
+Status: active
+
+Goal: run one bounded research-to-brain trial that maps a small source set
+through source -> mechanism -> KRN implication -> decision/rejection ->
+falsifier.
+
+Product rationale: after the target loop repair batch, KRN should prove it can
+condense external and practitioner knowledge into actionable brain decisions
+without becoming a research notebook.
+
+Architectural rationale: research is useful only when it changes a KRN rule,
+skill, standard, eval candidate, source decision, or explicit rejection with a
+falsifier.
+
+Evidence source: V27 report and user direction to use strong Codex/TypeScript
+patterns without slop.
+
+Official/external sources: official OpenAI Codex docs/Cookbook; TypeScript
+discipline sources; selected research papers only if directly decision-relevant.
+
+Inputs required: current KRN standards/skills, source-to-decision skill, current
+Codex docs if OpenAI behavior is referenced.
+
+Files likely touched:
+
+- V28 report under `docs/reviews/controlled-dogfood/`;
+- `docs/standards/*` or `.agents/skills/*` only if a decision is accepted;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN docs/standards/skills/plans only; source code only if the
+research-to-decision output identifies a tiny implementation guard.
+
+Forbidden writes: source crawler, Research Foundry, dashboard/API/MCP/worker
+runtime, broad eval platform, new memory subsystem, product-ready overclaim.
+
+Output requirements:
+
+- source list;
+- source -> mechanism -> KRN implication -> decision/rejection -> falsifier
+  table;
+- accepted decisions;
+- rejected/deferred decisions;
+- next task recommendation.
+
+Definition of Done: one compact report exists and any accepted decision is
+written to the smallest durable surface.
+
+Verification commands: `git diff --check`; if docs only, no typecheck required;
+if standards/skills or source are touched, run relevant checks.
+
+Acceptance criteria: no source hoarding, no broad architecture, no uncited
+research claims.
+
+Risk: turning research into decorative context. Mitigation: reject sources that
+do not produce a concrete KRN decision and falsifier.
+
+Rollback: focused report/plan revert.
+
+Condensation expectation: decide whether to update a skill/standard/eval,
+append a bounded implementation task, or reject research expansion.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V28
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2955,8 +3054,9 @@ Initial entry:
   observation-only target evidence defaults, and target clean state.
 - [x] V26-00 complete: CLI accepts run/run-id aliases for evidence/observe and
   explicit `--target-changed-file none`.
-- [ ] V27-00 active: Controlled Internal Alpha Re-Gate After Target Loop
-  Repairs.
+- [x] V27-00 complete: controlled-internal-alpha remains stronger; V02-01 and
+  product-ready remain unproved.
+- [ ] V28-00 active: Research-To-Brain TypeScript/Codex Decision Trial.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3358,6 +3458,16 @@ Initial decisions:
   Falsifier: V27 finds an unclosed blocking implementation bug that prevents
     honest re-gating.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote research-to-brain TypeScript/Codex decision trial as V28.
+  Rationale: after target-loop repairs, the next self-improving capability is
+    controlled knowledge condensation from strong external/practitioner sources
+    into KRN decisions and falsifiers.
+  Evidence: V27 report and user direction.
+  Does not prove: a crawler, Research Foundry, or broad eval platform is needed.
+  Falsifier: source review produces no concrete KRN decision or durable surface
+    update.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -3628,6 +3738,16 @@ Seed evidence:
   Does not prove: product readiness, V02-01, or universal CLI naming
     consistency.
   Follow-up task: V27-00.
+
+- Evidence ID: E-V27-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v27-controlled-internal-alpha-regate/REPORT.md`
+  Command/report/file: readiness re-gate after V20-V26.
+  Result: controlled-internal-alpha for technical operators is stronger;
+    product-ready, widened alpha, and V02-01 remain unproved.
+  Proves: target loop repair batch is coherent enough to re-gate and move to a
+    new self-improvement lane.
+  Does not prove: second-operator usability or product readiness.
+  Follow-up task: V28-00.
 ```
 
 ## 19. Condensation Queue
@@ -3898,6 +4018,14 @@ Seed queue:
   Reason: target loop repairs should be condensed into a product readiness and
     next-task decision before more implementation work
   Task: V27-00
+
+- Candidate: research-to-brain TypeScript/Codex decision trial
+  Source evidence: V27 report and user direction
+  Surface: source-to-decision report / standards / skills
+  Status: accepted as V28-00
+  Reason: KRN should condense strong external/practitioner knowledge into
+    decisions and falsifiers, but only through a bounded trial
+  Task: V28-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4546,7 +4674,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs.
+Active stream: V28 Research-To-Brain TypeScript/Codex Decision Trial.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

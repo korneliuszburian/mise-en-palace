@@ -53,7 +53,8 @@ V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complet
 V24 Target Owner-File Recall Deduplication And Budget Priority: complete
 V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
 V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
-active stream: V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs
+V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
+active stream: V28 Research-To-Brain TypeScript/Codex Decision Trial
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -544,16 +545,34 @@ Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v26-cli-run-reference-target-none-ergonomics/REPORT.md`.
 
-## Active Stream: V27
+## Completed Stream: V27
 
 V27 re-gates controlled-internal-alpha readiness after V20 through V26.
 
 ### V27-00 — Controlled Internal Alpha Re-Gate After Target Loop Repairs
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide the next product step after the real target loop, owner-file
 priority repair, and CLI ergonomics repairs.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v27-controlled-internal-alpha-regate/REPORT.md`.
+
+## Active Stream: V28
+
+V28 tests the source-to-decision research lane without building a research
+subsystem.
+
+### V28-00 — Research-To-Brain TypeScript/Codex Decision Trial
+
+Status: active.
+
+Goal: map a small set of official/practitioner/research sources through
+source -> mechanism -> KRN implication -> decision/rejection -> falsifier, then
+decide whether any KRN rule, skill, standard, eval candidate, or source decision
+should change.
 
 ## Hard Non-Goals
 
