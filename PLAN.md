@@ -25,7 +25,7 @@ product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V64 Continuous Pattern Distillation Gate
-current task: V64-01 Pattern Surface Consumer Matrix
+current task: V64-02 First Surface-Matrix Pattern Application
 ```
 
 Completed stream summary:
@@ -94,7 +94,8 @@ V61 post-pattern intake re-gate: complete
 V62 pattern intake skill linkage: complete
 V63 post-pattern-intake linkage re-gate: complete
 V64-00 pattern gate re-entry: complete
-V64-01 pattern surface consumer matrix: active
+V64-01 pattern surface consumer matrix: complete
+V64-02 first surface-matrix pattern application: active
 ```
 
 ## Active Stream
@@ -118,9 +119,9 @@ now exists with consumer and falsifier.
 Current action:
 
 ```txt
-Execute V64-01: update the pattern-intake runbook with a per-surface consumer
-matrix for infra, harness, CI/eval, Codex surfaces, TypeScript, target workflow,
-security/trust, and operator UX decisions.
+Execute V64-02: apply the new surface matrix to one concrete source packet and
+route it to a single KRN consumer with mechanism, decision, does-not-prove
+boundary, and falsifier.
 ```
 
 Primary consumer:

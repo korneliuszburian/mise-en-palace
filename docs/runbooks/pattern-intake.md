@@ -121,6 +121,34 @@ rejection:
 
 If there is no consumer, reject or defer.
 
+## Surface Consumer Matrix
+
+Use this matrix before adopting a source for a non-trivial KRN slice. Pick one
+primary surface first, then one primary consumer. If the source does not fit a
+surface and consumer, reject or defer it.
+
+| Surface | Preferred source classes | Preferred consumers | Proof / falsifier | Reject when |
+|---|---|---|---|---|
+| Infra / storage / migrations / queues | official docs, repo evidence, CI/DB evidence, target-run reports, papers as hypotheses | ADR, bounded repair, CI/readback behavior, eval/golden candidate | DB readiness, migration check, repository test, rollback path, or ADR falsifier proves the mechanism matters locally | it only names a tool, changes topology broadly, or lacks rollback/failure evidence |
+| Harness / activation / memory / review gates | repo evidence, dogfood reports, target evidence, papers as hypotheses, official docs for runtime mechanics | skill, eval/golden candidate, memory/source candidate, bounded repair | future run shows lower context waste, better recall, clearer reviewability, or a failing golden catches drift | it optimizes scoring without run evidence or treats persisted data as useful by default |
+| CI / release / eval / Promptfoo | official docs, CI evidence, repo evidence, controlled scenario reports | CI/readback behavior, eval/golden candidate, ADR when topology changes | CI catches a real regression or smoke result has a stated proof/non-proof boundary | it creates benchmark theater, broad lanes, or checks that do not protect a named behavior |
+| Codex surfaces / skills / hooks / MCP / subagents | official Codex docs, repo-local skill evidence, operator reports, controlled target reports | skill, ADR, CLI/readback behavior, bounded repair | repeated workflow becomes executable with less context, or a hook/MCP/subagent decision has a clear trust boundary | it expands AGENTS.md, creates agent zoo, or treats guardrails as full enforcement |
+| Target-repo workflow | target evidence, owner/operator input, repo evidence, CI evidence | skill, CLI/readback behavior, memory/source candidate, bounded repair | target trial preserves owner scope, dirty-state rules, patch lifecycle, and command proof | it writes to living repos without explicit scope or calls self/headless work second-operator proof |
+| TypeScript boundaries | repo evidence, TypeScript standards, public course pages, practitioner writing, compiler/test evidence | standard, bounded repair, eval/golden candidate, memory/source candidate | typecheck/tests prove unknown-first parsing, narrow unions, exported public types, or invalid-state prevention | it causes broad type rewrites, weakens types to pass, or adopts style without lifecycle evidence |
+| Security / permissions / trust boundaries | official docs, repo evidence, target evidence, CI evidence, papers as risk hypotheses | ADR, standard, skill, CI/readback behavior | permission boundary, sandbox rule, secret handling, or external IO path has explicit proof and rollback | it relies on convention, hidden behavior, or a claim that cannot be tested locally |
+| Operator UX / CLI / readback | operator reports, dogfood reports, target-run reports, CLI evidence, official docs for mechanics | CLI/readback behavior, skill, bounded repair, memory/source candidate | output reduces review burden, separates proof from non-proof, and survives a focused CLI test | it adds wording without changing a decision, hides weak evidence, or requires broad rereads |
+
+Matrix rules:
+
+- One retained source gets one primary surface and one primary consumer.
+- Cross-surface implications are notes, not extra consumers, unless a later slice
+  promotes them.
+- A course or paper normally starts as `lab_test` unless repo/target evidence
+  already falsifies or confirms the mechanism.
+- A source that only says "use best practices" is decorative.
+- A source that cannot name a local proof, falsifier, or rejection condition is
+  not ready.
+
 ## Output Template
 
 ```yaml

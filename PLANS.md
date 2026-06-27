@@ -79,7 +79,7 @@ V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
 active stream: V64 Continuous Pattern Distillation Gate
-current task: V64-01 Pattern Surface Consumer Matrix
+current task: V64-02 First Surface-Matrix Pattern Application
 ```
 
 Evidence already recorded in repo:
@@ -5835,13 +5835,13 @@ git status --short --branch
 
 Acceptance criteria:
 
-- A fresh continuation can identify V64-01 as the first incomplete active task.
+- A fresh continuation can identify V64-02 as the first incomplete active task.
 - A future slice has a clear falsifier if it adopts a pattern without consumer
   and proof boundary.
 
 ### V64-01 — Pattern Surface Consumer Matrix
 
-Status: active
+Status: complete
 
 Goal: Update the pattern-intake runbook with a compact per-surface consumer
 matrix so future slices know which source classes, consumers, proof boundaries,
@@ -5917,6 +5917,80 @@ Acceptance criteria:
 - A future continuation can choose the right consumer for a paper/course/doc
   source without rereading chat history.
 - The matrix makes it clear when to reject or defer a source.
+
+### V64-02 — First Surface-Matrix Pattern Application
+
+Status: active
+
+Goal: Apply the new surface consumer matrix to one concrete source packet and
+route it to exactly one durable KRN consumer.
+
+Product rationale: A matrix is only valuable if it changes a decision. The next
+slice must prove the matrix can turn a best-practice source packet into a
+bounded standard, skill, ADR, eval/golden candidate, memory/source candidate,
+CLI/readback behavior, or repair decision.
+
+Architectural rationale: KRN should continuously condense external and local
+knowledge into execution behavior, but each retained pattern must stay small,
+consumer-owned, and falsifiable.
+
+Evidence source:
+
+- `docs/runbooks/pattern-intake.md` surface consumer matrix.
+- `docs/KRN_KERNEL.md` decision rule.
+- Existing `docs/KRN_SOURCES.md` entries or one newly verified official/public
+  source packet.
+
+Inputs required:
+
+- One source packet selected from existing KRN sources or verified official/public
+  docs.
+
+Files likely touched:
+
+- `docs/KRN_SOURCES.md` or one standards/skill/ADR/eval/report file selected by
+  the consumer.
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- One durable consumer file plus compact plan updates.
+
+Forbidden writes:
+
+- package source unless the selected consumer is a bounded repair;
+- more than one primary consumer;
+- broad source archive;
+- copied paid/proprietary course content;
+- source crawler;
+- new product surface.
+
+Output requirements:
+
+- A source -> mechanism -> KRN implication -> decision/rejection -> consumer ->
+  falsifier record exists in the selected consumer.
+- The record states what the source does not prove.
+- The decision either adopts, rejects, defers, or lab-tests the source.
+
+Definition of Done:
+
+- The first matrix application is recorded in a durable KRN consumer.
+- `git diff --check` passes.
+- Commit and push the focused update.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- The selected source packet changes a decision or is explicitly rejected.
+- No additional source packet is retained by momentum.
 
 ### External Input Blocker
 
@@ -6278,8 +6352,10 @@ Initial entry:
   pattern-intake loop; no internal task promoted.
 - [x] V64-00 complete: re-entered continuous internal work by making pattern
   distillation the active stream and preserving V02-01 as external proof only.
-- [ ] V64-01 active: add a pattern surface consumer matrix to the pattern-intake
+- [x] V64-01 complete: added a pattern surface consumer matrix to the pattern-intake
   runbook.
+- [ ] V64-02 active: apply the matrix to one concrete source packet and route it
+  to exactly one durable KRN consumer.
 ```
 
 ## 16. Surprises & Discoveries
@@ -10247,6 +10323,7 @@ Next active stream:
 
 Completed:
 - V64-00 Pattern Gate Re-Entry.
+- V64-01 Pattern Surface Consumer Matrix.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10259,6 +10336,8 @@ What improved:
   supplied a bounded internal task with consumer and falsifier.
 - Future non-trivial slices now have an explicit pattern/research gate instead
   of relying on chat memory.
+- Pattern intake now has a per-surface matrix for infra, harness, CI/eval,
+  Codex surfaces, target workflow, TypeScript, security/trust, and operator UX.
 
 What did not improve:
 - Product readiness.
@@ -10267,7 +10346,7 @@ What did not improve:
 - Package source behavior.
 
 New task:
-- V64-01 Pattern Surface Consumer Matrix.
+- V64-02 First Surface-Matrix Pattern Application.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10279,7 +10358,7 @@ Next active stream:
 - V64 Continuous Pattern Distillation Gate.
 
 Next active task:
-- V64-01 Pattern Surface Consumer Matrix.
+- V64-02 First Surface-Matrix Pattern Application.
 
 ## 21. Final Response Format For Codex Runs
 
