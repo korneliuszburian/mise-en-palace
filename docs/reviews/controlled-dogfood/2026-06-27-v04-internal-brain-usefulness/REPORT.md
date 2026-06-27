@@ -56,8 +56,8 @@ Primary evidence:
 | At least one deterministic guard added from evidence | met | `targetRepoTestingSkill.test.ts`. |
 | At least two bounded product repairs or fewer-safe-repairs rationale | met | Target repo testing skill/guard; scenario/condensation factory; DB smoke repair rejected by current proof. |
 | Internal brain usefulness re-gate report exists | met | This report. |
-| Final verification passed | met locally; CI for this final report pending until pushed | Command evidence below. |
-| Worktree clean and branch pushed | pending for this final report until commit/push/CI | Must be checked after commit. |
+| Final verification passed | met | Local verification passed; CI runs `28273909247` and `28273956123` passed after final report/marker commits. |
+| Worktree clean and branch pushed | met | `git status --short --branch` showed `main...origin/main` clean after final marker push. |
 
 ## What Improved
 
@@ -110,7 +110,7 @@ markdown memory.
 | `pnpm eval:brain-battle:smoke` | passed | Existing deterministic brain-battle smoke surfaces pass. | Full brain quality. |
 | `pnpm eval:promptfoo:smoke` | passed | Promptfoo adapter smoke ran 2/2 cases successfully. | Promptfoo as behavior authority. |
 | `git diff --check` | passed | Current diff has no whitespace errors. | Semantic correctness. |
-| CI runs `28273514668`, `28273567791`, `28273709344`, `28273818047` | passed | Pushed V04 slices passed GitHub Actions with typecheck/tests/eval smoke and DB job. | CI for this final report until pushed. |
+| CI runs `28273514668`, `28273567791`, `28273709344`, `28273818047`, `28273909247`, `28273956123` | passed | Pushed V04 slices passed GitHub Actions with typecheck/tests/eval smoke and DB job. | Product readiness or second-operator usability. |
 
 ## Condensation Decisions
 
@@ -147,4 +147,3 @@ Run real V02-01 when second-operator inputs are available.
 ```
 
 Do not fake it with another local/headless run.
-
