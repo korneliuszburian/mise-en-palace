@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V59 — First Pattern Intake Runbook Application
+V60 — TypeScript Lifecycle Union Drift Spot-Check
 ```
 
 Current product loop:
@@ -99,8 +99,9 @@ V55 Product Readiness Re-Gate After CI/Eval Pattern Gates: complete.
 V56 Refresh Operator/Owner Launch Packet After CI/Eval Gates: complete.
 V57 Post-Packet Internal Work Re-Gate: complete.
 V58 Pattern Intake Runbook For Continuous Brain Growth: complete.
-active stream: V59 First Pattern Intake Runbook Application.
-current task: V59-00 — First Pattern Intake Runbook Application.
+V59 First Pattern Intake Runbook Application: complete.
+active stream: V60 TypeScript Lifecycle Union Drift Spot-Check.
+current task: V60-00 — TypeScript Lifecycle Union Drift Spot-Check.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

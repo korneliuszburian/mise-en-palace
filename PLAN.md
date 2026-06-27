@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V59 First Pattern Intake Runbook Application
-current task: V59-00 First Pattern Intake Runbook Application
+active stream: V60 TypeScript Lifecycle Union Drift Spot-Check
+current task: V60-00 TypeScript Lifecycle Union Drift Spot-Check
 ```
 
 Completed stream summary:
@@ -88,30 +88,31 @@ V55 product readiness re-gate after CI/eval gates: complete
 V56 operator/owner launch packet refresh: complete
 V57 post-packet internal work re-gate: complete
 V58 pattern intake runbook: complete
+V59 first pattern intake runbook application: complete
 ```
 
 ## Active Stream
 
-### V59-00 — First Pattern Intake Runbook Application
+### V60-00 — TypeScript Lifecycle Union Drift Spot-Check
 
 Goal:
 
-Use the new pattern intake runbook on one existing KRN source decision and
-produce one concrete consumer update, rejection, or eval/golden candidate.
+Inspect a small set of lifecycle/state-dependent TypeScript models and decide
+whether the V59 eval/golden candidate should become an implemented guard,
+standard-only reminder, or rejected/no-op finding.
 
 Current finding:
 
 ```txt
-V58 added `docs/runbooks/pattern-intake.md`, but the runbook still needs one
-bounded application to prove it changes behavior.
+V59 used the pattern intake runbook on the existing Total TypeScript
+union/narrowing source and created a candidate in the brain-battle eval matrix.
 ```
 
-Current V59 action:
+Current V60 action:
 
 ```txt
-Pick one existing source from `docs/KRN_SOURCES.md`, run it through
-`docs/runbooks/pattern-intake.md`, and create exactly one bounded consumer or
-explicit rejection.
+Run a bounded source spot-check for optional-object lifecycle drift before
+implementing any TypeScript guard or rewrite.
 ```
 
 ## V02-01 Boundary

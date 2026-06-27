@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V59 First Pattern Intake Runbook Application
-current task: V59-00 First Pattern Intake Runbook Application
+active stream: V60 TypeScript Lifecycle Union Drift Spot-Check
+current task: V60-00 TypeScript Lifecycle Union Drift Spot-Check
 ```
 
 Evidence already recorded in repo:
@@ -5339,7 +5339,7 @@ Outcome:
 
 ### V59-00 — First Pattern Intake Runbook Application
 
-Status: active
+Status: complete
 
 Goal: use `docs/runbooks/pattern-intake.md` on one existing source decision and
 produce one concrete consumer update, explicit rejection, or eval/golden
@@ -5412,6 +5412,91 @@ Acceptance criteria:
 - one consumer or explicit rejection;
 - no broad research;
 - next active task is explicit.
+
+Outcome:
+
+- V59 applied `docs/runbooks/pattern-intake.md` to
+  `docs/KRN_SOURCES.md#unions-literals-and-narrowing`.
+- V59 added one candidate row to `docs/architecture/brain-battle-eval-matrix.md`.
+- V59 selected a bounded TypeScript lifecycle union drift spot-check before any
+  guard implementation.
+
+### V60-00 — TypeScript Lifecycle Union Drift Spot-Check
+
+Status: active
+
+Goal: inspect a small set of lifecycle/state-dependent TypeScript models and
+decide whether the V59 candidate should become an implemented guard,
+standard-only reminder, or rejected/no-op finding.
+
+Product rationale: best-practice TypeScript patterns should improve KRN source
+only when local evidence shows drift or a valuable guard. The source decision is
+not enough by itself.
+
+Architectural rationale: pattern intake must produce falsifiable local evidence
+before implementation. A bounded spot-check protects KRN from broad type
+rewrites and from decorative TypeScript doctrine.
+
+Evidence source: V59 report, `docs/architecture/brain-battle-eval-matrix.md`,
+`docs/standards/typescript-excellence.md`, and selected current TypeScript
+domain models.
+
+Official/external sources: V59's existing source decision only; no new browsing
+or course intake.
+
+Inputs required:
+
+- V59 report;
+- `docs/architecture/brain-battle-eval-matrix.md`;
+- `docs/standards/typescript-excellence.md`;
+- focused TypeScript files found by local search.
+
+Files likely touched:
+
+- V60 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- optionally one consumer decision update if the candidate is accepted/rejected.
+
+Allowed writes:
+
+- KRN report/plans;
+- one docs consumer update if justified.
+
+Forbidden writes:
+
+- package source changes;
+- broad TypeScript rewrite;
+- broad audit/scanner;
+- new eval platform;
+- new source intake;
+- target repo edits.
+
+Output requirements:
+
+- inspected files/patterns;
+- evidence for drift or no drift;
+- decision: implement guard / keep standard-only / reject / defer;
+- falsifier;
+- next task or blocker.
+
+Definition of Done: V60 decides the lifecycle union candidate from local source
+evidence without changing package source.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- bounded source sample;
+- no package source edits;
+- decision grounded in local evidence;
+- next active task explicit.
 
 ## 13. Generated Task Backlog
 
@@ -5744,7 +5829,10 @@ Initial entry:
 - [x] V58-00 complete: added compact pattern-intake runbook with source classes,
   legal boundary, consumer routing, falsifier requirement, templates, examples,
   and rejection paths.
-- [ ] V59-00 active: First Pattern Intake Runbook Application.
+- [x] V59-00 complete: applied pattern intake runbook to the existing
+  Total TypeScript union/narrowing source and created one eval/golden candidate
+  in the brain-battle eval matrix.
+- [ ] V60-00 active: TypeScript Lifecycle Union Drift Spot-Check.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6533,6 +6621,17 @@ Initial decisions:
     intakes will be high quality.
   Falsifier: V59 cannot use the runbook on one existing source without expanding
     into broad research or no-op documentation.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote TypeScript lifecycle union drift spot-check as V60.
+  Rationale: V59 produced an eval/golden candidate from the Total TypeScript
+    union/narrowing source, but KRN must inspect local source before implementing
+    any guard or type rewrite.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v59-first-pattern-intake-runbook-application/REPORT.md`;
+    `docs/architecture/brain-battle-eval-matrix.md`.
+  Does not prove: current TypeScript drift or need for implementation.
+  Falsifier: V60 finds no repeated lifecycle optional-object drift, or the
+    candidate cannot be guarded deterministically without broad scanning.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -7685,6 +7784,14 @@ Seed queue:
   Reason: the runbook must be proven on one real source decision before further
     research/pattern intake work
   Task: V59-00
+
+- Candidate: TypeScript lifecycle union drift spot-check
+  Source evidence: V59 report and brain-battle eval matrix candidate
+  Surface: bounded TypeScript source evidence report
+  Status: accepted as V60-00
+  Reason: source-backed TypeScript patterns must be checked against local source
+    before becoming guards or repairs
+  Task: V60-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -9424,6 +9531,40 @@ Product readiness verdict:
 Next active stream:
 - V59 — First Pattern Intake Runbook Application.
 
+## Outcome 2026-06-27 V59
+
+Completed:
+- V59 First Pattern Intake Runbook Application.
+
+Evidence:
+- `docs/runbooks/pattern-intake.md`.
+- `docs/KRN_SOURCES.md#unions-literals-and-narrowing`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v59-first-pattern-intake-runbook-application/REPORT.md`.
+
+What improved:
+- Pattern intake runbook was applied to one existing source.
+- The source produced one bounded eval/golden candidate.
+- KRN avoided broad research intake and package source edits.
+
+What did not improve:
+- Product readiness.
+- V02-01.
+- TypeScript source quality.
+- The eval/golden candidate is not implemented.
+
+New task:
+- V60 TypeScript Lifecycle Union Drift Spot-Check.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V60 — TypeScript Lifecycle Union Drift Spot-Check.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -9472,7 +9613,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V59 First Pattern Intake Runbook Application.
+Active stream: V60 TypeScript Lifecycle Union Drift Spot-Check.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
