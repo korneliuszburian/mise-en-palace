@@ -47,8 +47,8 @@ widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V05 target-aware evidence capture repair: complete.
 V06 activation / owner-file / context ROI utility: complete.
-active stream: V07 memory / anti-memory / source usefulness loop.
-current task: V07-01 — Source Usefulness Application / Readback Path.
+active stream: V08 skill-first workflow expansion.
+current task: V08-00 — Skill-First Workflow Expansion Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

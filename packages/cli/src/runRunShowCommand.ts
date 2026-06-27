@@ -101,6 +101,8 @@ export interface RunReadbackResource {
     candidateCounts: {
       memory: number;
       source: number;
+      sourceClaim: number;
+      sourceDecision: number;
       antiMemory: number;
       eval: number;
       observation: number;
@@ -332,7 +334,7 @@ const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
   return [
     `- ${feedback.id}: status=${feedback.status}`,
     `  memoryRecordMutation: ${summary.memoryRecordMutation}`,
-    `  candidates: memory=${summary.counts.memoryCandidates}, source=${summary.counts.sourceClaimCandidates}, anti_memory=${summary.counts.antiMemoryCandidates}, eval=${summary.counts.evalCandidates}, observation=${summary.counts.observationCandidates}`,
+    `  candidates: memory=${summary.counts.memoryCandidates}, source=${summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates}, source_claim=${summary.counts.sourceClaimCandidates}, source_decision=${summary.counts.sourceDecisionCandidates}, anti_memory=${summary.counts.antiMemoryCandidates}, eval=${summary.counts.evalCandidates}, observation=${summary.counts.observationCandidates}`,
     ...(
       candidateDetails.length === 0
         ? ["  candidate details: none"]
@@ -452,7 +454,9 @@ export const buildRunReadbackResource = (
       memoryRecordMutation: summary.memoryRecordMutation,
       candidateCounts: {
         memory: summary.counts.memoryCandidates,
-        source: summary.counts.sourceClaimCandidates,
+        source: summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates,
+        sourceClaim: summary.counts.sourceClaimCandidates,
+        sourceDecision: summary.counts.sourceDecisionCandidates,
         antiMemory: summary.counts.antiMemoryCandidates,
         eval: summary.counts.evalCandidates,
         observation: summary.counts.observationCandidates

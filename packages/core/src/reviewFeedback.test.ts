@@ -148,6 +148,17 @@ describe("feedback candidate proposal summary", () => {
         createdAt: now,
         updatedAt: now
       }],
+      sourceDecisions: [{
+        id: "source-decision-candidate-1",
+        status: "defer",
+        decision: "Review source graph decision update.",
+        rationale: "Changed files imply a possible source decision.",
+        falsifier: "No SourceClaim with mechanism exists.",
+        consumer: "krn evidence capture",
+        metadata: {},
+        createdAt: now,
+        updatedAt: now
+      }],
       evalCandidates: [{
         id: "eval-candidate-1",
         projectId: "project-1",
@@ -178,6 +189,7 @@ describe("feedback candidate proposal summary", () => {
       counts: {
         memoryCandidates: 1,
         sourceClaimCandidates: 1,
+        sourceDecisionCandidates: 1,
         antiMemoryCandidates: 1,
         evalCandidates: 1,
         observationCandidates: 1
@@ -193,6 +205,12 @@ describe("feedback candidate proposal summary", () => {
           kind: "source_claim_candidate",
           id: "source-claim-candidate-1",
           summary: "Review feedback can propose source claims."
+        },
+        {
+          kind: "source_decision_candidate",
+          id: "source-decision-candidate-1",
+          summary: "Review source graph decision update.",
+          status: "defer"
         },
         {
           kind: "anti_memory_candidate",

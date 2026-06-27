@@ -33,7 +33,8 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 V05 target-aware evidence capture repair: complete
 V06 activation / owner-file / context ROI utility: complete
-active stream: V07 memory / anti-memory / source usefulness loop
+V07 memory / anti-memory / source usefulness loop: complete
+active stream: V08 skill-first workflow expansion
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -137,7 +138,7 @@ Evidence:
 - `docs/reviews/controlled-dogfood/2026-06-27-v06-owner-file-recall/REPORT.md`;
 - typed target owner-file recall assessment in plan output and metadata.
 
-## Active Stream: V07
+## Completed Stream: V07
 
 V07 validates whether memory, anti-memory, and source signals from recent
 controlled runs are selected, used, and marked helped/stale with evidence.
@@ -157,11 +158,40 @@ Evidence:
 
 ### V07-01 — Source Usefulness Application / Readback Path
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect and add or re-gate the smallest first-class source usefulness
 application/readback path, without creating a new source subsystem if existing
 SourceDecisionEdge or feedback metadata is enough.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v07-source-usefulness-readback/REPORT.md`;
+- FeedbackDelta proposal summary and run readback now count source decision
+  candidates separately from source claim candidates.
+
+### V07-02 — Memory/Source Usefulness Re-Gate
+
+Status: complete on 2026-06-27.
+
+Goal: decide whether V07 is sufficient to move to V08 skill-first workflow
+expansion, or whether another bounded memory/source repair is required.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`.
+
+## Active Stream: V08
+
+V08 checks whether repeated KRN/Codex workflows should be condensed into skills
+while keeping `AGENTS.md`, hooks, MCP, and subagents small/deferred.
+
+### V08-00 — Skill-First Workflow Expansion Gate
+
+Status: active.
+
+Goal: inspect existing project skills and recent repeated workflows, then decide
+whether to add/refine one bounded skill or reject expansion for now.
 
 ## Hard Non-Goals
 

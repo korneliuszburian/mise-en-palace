@@ -40,6 +40,7 @@ export interface FeedbackDelta {
 export type FeedbackCandidateProposalKind =
   | "memory_candidate"
   | "source_claim_candidate"
+  | "source_decision_candidate"
   | "anti_memory_candidate"
   | "eval_candidate"
   | "observation_candidate";
@@ -56,6 +57,7 @@ export interface FeedbackCandidateProposalSummary {
   counts: {
     memoryCandidates: number;
     sourceClaimCandidates: number;
+    sourceDecisionCandidates: number;
     antiMemoryCandidates: number;
     evalCandidates: number;
     observationCandidates: number;
@@ -155,6 +157,12 @@ export const summarizeFeedbackCandidateProposals = (
     "source_claim_candidate",
     "claim"
   );
+  const sourceDecisionCandidates = feedback.sourceDecisions.map((decision): FeedbackCandidateProposalRef => ({
+    kind: "source_decision_candidate",
+    id: decision.id,
+    summary: decision.decision,
+    status: decision.status
+  }));
   const antiMemoryCandidates = metadataCandidateRefs(
     feedback.metadata,
     "antiMemoryCandidates",
@@ -179,6 +187,7 @@ export const summarizeFeedbackCandidateProposals = (
     counts: {
       memoryCandidates: memoryCandidates.length,
       sourceClaimCandidates: sourceClaimCandidates.length,
+      sourceDecisionCandidates: sourceDecisionCandidates.length,
       antiMemoryCandidates: antiMemoryCandidates.length,
       evalCandidates: evalCandidates.length,
       observationCandidates: observationCandidates.length
@@ -186,6 +195,7 @@ export const summarizeFeedbackCandidateProposals = (
     candidates: [
       ...memoryCandidates,
       ...sourceClaimCandidates,
+      ...sourceDecisionCandidates,
       ...antiMemoryCandidates,
       ...evalCandidates,
       ...observationCandidates

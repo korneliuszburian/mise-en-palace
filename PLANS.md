@@ -867,7 +867,7 @@ Completion evidence:
 
 ### V07-01 — Source Usefulness Application / Readback Path
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: inspect and add or re-gate the smallest first-class source usefulness
 application/readback path.
@@ -918,6 +918,115 @@ append research/skill condensation task.
 
 Next-task synthesis rule: if complete, decide whether V08 skill-first workflow
 expansion is now justified.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v07-source-usefulness-readback/REPORT.md`;
+- `FeedbackDelta.sourceDecisions` now contributes `source_decision_candidate`
+  proposal summary/readback counts.
+
+### V07-02 — Memory/Source Usefulness Re-Gate
+
+Status: complete on 2026-06-27
+
+Goal: decide whether V07 is sufficient to move to V08 skill-first workflow
+expansion, or whether another bounded memory/source repair is required.
+
+Product rationale: do not expand skills/research surfaces until memory/source
+usefulness is no longer the active blocker.
+
+Architectural rationale: re-gates prevent continuous task generation from
+becoming feature drift.
+
+Evidence source: V07-00 and V07-01 reports, full verification, CI.
+
+Official/external sources: KRN compact plan doctrine; Codex Goals
+evidence-based completion.
+
+Inputs required: V07 reports, command results, current `PLAN.md`/`GOAL.md`.
+
+Files likely touched: reports and plans only unless verification exposes a bug.
+
+Allowed writes: KRN reports/plans only.
+
+Forbidden writes: new product surfaces, source/memory scoring changes, target
+repo writes.
+
+Output requirements: explicit move/defer decision for V08.
+
+Definition of Done: V07 verdict and next active stream recorded.
+
+Verification commands: `pnpm typecheck`, `pnpm test`,
+`pnpm eval:brain-battle:smoke`, `pnpm eval:promptfoo:smoke`,
+`pnpm db:smoke:target-repo-harness`, `git diff --check`.
+
+Acceptance criteria: no product-ready or V02-01 overclaim.
+
+Risk: premature expansion.
+
+Rollback: correction report.
+
+Condensation expectation: accept/reject V08 skill-first expansion.
+
+Next-task synthesis rule: if accepted, promote V08-00; otherwise append the
+smallest remaining V07 repair.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`;
+- V08 accepted as next stream.
+
+### V08-00 — Skill-First Workflow Expansion Gate
+
+Status: active
+
+Goal: inspect existing project skills and recent repeated workflows, then decide
+whether to add/refine one bounded skill or reject expansion for now.
+
+Product rationale: repeated KRN/Codex workflows should become progressive
+disclosure skills when that reduces context waste and keeps `AGENTS.md` compact.
+
+Architectural rationale: skills are the next lowest-risk Codex surface before
+hooks, MCP, or subagents because they are explicit and loaded on demand.
+
+Evidence source: V07 re-gate, existing `.agents/skills`, repeated
+target/evidence/source workflows.
+
+Official/external sources: Codex skills progressive disclosure guidance; KRN
+knowledge condensation gate.
+
+Inputs required: current `.agents/skills`, recent controlled reports,
+AGENTS/GOAL/PLAN conventions.
+
+Files likely touched: `.agents/skills/**` or report only.
+
+Allowed writes: one bounded skill update/addition plus tests/docs if accepted;
+otherwise report/plans only.
+
+Forbidden writes: hooks, MCP server, subagent framework, broad plugin, dashboard,
+runtime markdown memory, AGENTS bloat.
+
+Output requirements: accepted/rejected skill candidate with source ->
+mechanism -> KRN implication -> decision -> falsifier.
+
+Definition of Done: one skill is added/refined with clear trigger and bounded
+instructions, or expansion is rejected with evidence.
+
+Verification commands: skill file inspection, `pnpm typecheck`, `pnpm test` if
+source touched, `git diff --check`.
+
+Acceptance criteria: skill reduces repeated context load without becoming a
+parallel product brain.
+
+Risk: skill sprawl.
+
+Rollback: remove/refine skill and correction report.
+
+Condensation expectation: if accepted, next task may screen hooks/MCP/subagents
+only if repeated workflow still needs them.
+
+Next-task synthesis rule: append hook/MCP/subagent screening only from repeated
+evidence, not aspiration.
 
 ## 13. Generated Task Backlog
 
@@ -1136,7 +1245,10 @@ Initial entry:
   output and metadata.
 - [x] V07-00 complete: current-shell target harness smoke proved memory
   usefulness readback and identified source usefulness as lineage-only.
-- [ ] V07-01 active: source usefulness application/readback path.
+- [x] V07-01 complete: source decision candidates are now visible in feedback
+  proposal summary and run readback.
+- [x] V07-02 complete: V07 re-gate accepted V08 skill-first workflow expansion.
+- [ ] V08-00 active: skill-first workflow expansion gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1176,6 +1288,23 @@ Record every unexpected fact in this format:
   `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-usefulness/REPORT.md`.
   Impact: V07 should continue with source usefulness application/readback before
   moving to skill/research expansion.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Source decision candidates already existed in
+  `FeedbackDelta.sourceDecisions`, but proposal summary/readback omitted them
+  from candidate counts.
+  Evidence: `packages/core/src/feedbackDelta.ts`;
+  `packages/cli/src/runRunShowCommand.ts`;
+  `docs/reviews/controlled-dogfood/2026-06-27-v07-source-usefulness-readback/REPORT.md`.
+  Impact: V07-01 could repair source usefulness visibility without a new
+  persistence model.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: V07 memory/source usefulness no longer blocks skill-first workflow
+  expansion, but source helped/stale outcome feedback remains unproven.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`.
+  Impact: V08 can start as a bounded skill gate; do not build hooks/MCP/subagents
+  yet.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1250,6 +1379,26 @@ Initial decisions:
   Does not prove: source usefulness requires a new DB table or subsystem.
   Falsifier: source inspection shows an existing first-class source usefulness
   path already covers selected/used/helped/stale readback.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Represent source usefulness proposals through existing
+  `FeedbackDelta.sourceDecisions` before adding any source application subsystem.
+  Rationale: evidence capture already produces source decision candidates; the
+  missing piece was summary/readback visibility.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v07-source-usefulness-readback/REPORT.md`;
+  `packages/core/src/feedbackDelta.ts`; `packages/cli/src/runRunShowCommand.ts`.
+  Does not prove: helped/stale source application feedback is unnecessary.
+  Falsifier: repeated runs need source outcome feedback beyond proposal
+  visibility.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Move from V07 to V08 skill-first workflow expansion gate.
+  Rationale: controlled memory usefulness and source decision readback are
+  sufficient to stop treating memory/source usefulness as the active blocker.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`.
+  Does not prove: product readiness, V02-01, or need for hooks/MCP/subagents.
+  Falsifier: V08 inspection finds no repeated workflow that should become a
+  skill.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1341,6 +1490,25 @@ Seed evidence:
   Does not prove: product-wide memory usefulness, external target readiness, or
     first-class source usefulness feedback.
   Follow-up task: V07-01.
+
+- Evidence ID: E-V07-01
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v07-source-usefulness-readback/REPORT.md`
+  Command/report/file: core feedback summary and run readback source repair.
+  Result: source decision candidates now appear as
+    `source_decision_candidate` in feedback proposal summary and run readback.
+  Proves: existing source decision candidate path can be made reviewable without
+    new persistence surface.
+  Does not prove: source helped/stale outcome feedback or product readiness.
+  Follow-up task: V07-02.
+
+- Evidence ID: E-V07-02
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`
+  Command/report/file: V07 re-gate report.
+  Result: V07 accepted V08 skill-first workflow expansion as the next active
+    stream.
+  Proves: memory/source usefulness is no longer the highest active blocker.
+  Does not prove: product readiness, V02-01, or need for hooks/MCP/subagents.
+  Follow-up task: V08-00.
 ```
 
 ## 19. Condensation Queue
@@ -1419,10 +1587,24 @@ Seed queue:
 - Candidate: source usefulness application/readback path
   Source evidence: V07-00 current-shell smoke and report
   Surface: source/readback repair or re-gate
-  Status: accepted as V07-01
+  Status: complete as V07-01
   Reason: source usefulness is currently lineage-only; selected/used/helped
     source feedback is not first-class
   Task: V07-01
+
+- Candidate: V07 memory/source usefulness re-gate
+  Source evidence: V07-00 and V07-01
+  Surface: report + next stream selection
+  Status: complete as V07-02
+  Reason: after source decision readback repair, decide whether V08 can start
+  Task: V07-02
+
+- Candidate: skill-first workflow expansion
+  Source evidence: V07 re-gate and repeated controlled workflow patterns
+  Surface: skill gate
+  Status: accepted as V08
+  Reason: skills are the next lowest-risk Codex surface for repeated workflows
+  Task: V08-00
   Task: V06-00
 ```
 

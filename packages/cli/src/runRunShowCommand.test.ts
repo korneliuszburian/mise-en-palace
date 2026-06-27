@@ -162,7 +162,20 @@ const aggregate: HarnessRunAggregate = {
       createdAt: now,
       updatedAt: now
     }],
-    sourceDecisions: [],
+    sourceDecisions: [{
+      id: "source-decision-candidate-1",
+      status: "defer",
+      decision: "Review changed files for source graph decision updates.",
+      rationale: "Changed files imply a possible source decision.",
+      falsifier: "No SourceClaim with mechanism exists.",
+      consumer: "krn evidence capture",
+      metadata: {
+        reviewability: "needs_more_evidence",
+        reviewabilityReasons: ["Missing source claim."]
+      },
+      createdAt: now,
+      updatedAt: now
+    }],
     evalCandidates: [],
     metadata: {
       reviewability: "needs_more_evidence"
@@ -218,6 +231,8 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("pnpm typecheck: passed | provenance=operator_reported");
     expect(result.stdout).toContain("doesNotProve: This command result does not prove memory quality");
     expect(result.stdout).toContain("memory_candidate:memory-candidate-1");
+    expect(result.stdout).toContain("source_decision_candidate:source-decision-candidate-1");
+    expect(result.stdout).toContain("source_decision=1");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
     expect(result.stdout).toContain("What This Does Not Prove:");
     expect(closed).toBe(true);
@@ -293,10 +308,20 @@ describe("runRunShowCommand", () => {
       }],
       feedbackDeltas: [{
         memoryRecordMutation: "none",
+        candidateCounts: {
+          source: 1,
+          sourceClaim: 0,
+          sourceDecision: 1
+        },
         candidates: [{
           kind: "memory_candidate",
           reviewability: "needs_more_evidence",
           reviewabilityReasons: ["Missing source lineage."]
+        }, {
+          kind: "source_decision_candidate",
+          id: "source-decision-candidate-1",
+          status: "defer",
+          summary: "Review changed files for source graph decision updates."
         }]
       }],
       proof: {
