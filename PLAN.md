@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V70 Post Security Trust Boundary Re-Gate
-current task: V70-00 Post Security Trust Boundary Re-Gate
+active stream: V72 Post Security Redaction Corpus Re-Gate
+current task: V72-00 Post Security Redaction Corpus Re-Gate
 ```
 
 Completed stream summary:
@@ -103,30 +103,32 @@ V66-00 TypeScript boundary falsifier spot-check: complete
 V67-00 harness activation pattern application: complete
 V68-00 post harness activation pattern re-gate: complete
 V69-00 untrusted context warning pattern application: complete
-V70 post security trust boundary re-gate: active
+V70-00 post security trust boundary re-gate: complete
+V71-00 target-like redaction corpus repair: complete
+V72 post security redaction corpus re-gate: active
 ```
 
 ## Active Stream
 
-### V70 Post Security Trust Boundary Re-Gate
+### V72 Post Security Redaction Corpus Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding deterministic untrusted-context
-warnings to Codex briefs.
+Decide the next bounded task after adding target-like redaction corpus coverage.
 
 Current finding:
 
 ```txt
-V69 implemented SEC-01: `ExecutionBrief` now carries deterministic
-untrusted-context warnings and rendered briefs show an explicit warning section.
+V70 selected SEC-02 and V71 implemented target-like env/package output redaction
+coverage for observer input.
 ```
 
 Current action:
 
 ```txt
-Execute V70-00: decide whether the next task is another bounded security proof,
-another pattern surface, or an honest blocker.
+Execute V72-00: decide whether another bounded security task remains, whether to
+move to another pattern surface, or whether internal work is blocked on external
+operator/target input.
 ```
 
 Primary consumer:
@@ -138,7 +140,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate selects generic security work instead of a named consumer/falsifier.
+The re-gate selects more security work without concrete target evidence or a
+named bounded consumer.
 ```
 
 ### External Input Blocker

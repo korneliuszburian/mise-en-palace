@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V70 Post Security Trust Boundary Re-Gate
+V72 Post Security Redaction Corpus Re-Gate
 ```
 
 Current product loop:
@@ -115,7 +115,9 @@ V66-00 External Boundary Drift Spot-Check: complete.
 V67-00 Harness Activation Source Packet Application: complete.
 V68-00 Post Harness Activation Pattern Re-Gate: complete.
 V69-00 Untrusted Context Warning Pattern Application: complete.
-current task: V70-00 Post Security Trust Boundary Re-Gate.
+V70-00 Post Security Trust Boundary Re-Gate: complete.
+V71-00 Target-Like Redaction Corpus Repair: complete.
+current task: V72-00 Post Security Redaction Corpus Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

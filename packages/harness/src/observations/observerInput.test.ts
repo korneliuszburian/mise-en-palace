@@ -202,4 +202,42 @@ describe("observer input builder", () => {
       retainedCharacters: 120
     }]);
   });
+
+  it("redacts target-like env and package script secret values", () => {
+    const input = buildObserverInput({
+      executionRunId: "run-1",
+      generatedAt: capturedAt,
+      events: [{
+        id: "event-1",
+        sequence: 1,
+        type: "tool.result",
+        severity: "warning",
+        message: "target repo emitted env-shaped output",
+        payload: {
+          stdout: [
+            "DATABASE_URL=postgres://app:super-secret-pass@localhost:5432/app",
+            "NPM_TOKEN=npm_1234567890abcdef1234567890abcdef",
+            "OPENAI_API_KEY=sk-test-1234567890abcdef1234567890abcdef",
+            "Cookie: session=abcdef1234567890abcdef"
+          ].join("\n")
+        },
+        occurredAt: capturedAt
+      }],
+      evidenceBundles: [],
+      reviewAssessments: [],
+      feedbackDeltas: []
+    });
+
+    const payload = input.items[0]?.payload ?? "";
+
+    expect(payload).toContain("[REDACTED]");
+    expect(payload).not.toContain("super-secret-pass");
+    expect(payload).not.toContain("npm_1234567890abcdef");
+    expect(payload).not.toContain("sk-test-1234567890abcdef");
+    expect(payload).not.toContain("session=abcdef1234567890abcdef");
+    expect(input.redactions).toEqual([{
+      sourceId: "event-1",
+      paths: ["payload.stdout"]
+    }]);
+  });
 });

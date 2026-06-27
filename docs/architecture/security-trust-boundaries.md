@@ -39,7 +39,7 @@ Not reviewed in this slice:
 | File IO | `cliFileBoundary.ts` reads JSON as `unknown`, validates object shape, and target init reads known source seed paths. | Unknown-first `JSON.parse`; no target repo writes in dry-run; source seed output is visible. | Arbitrary operator-provided repo paths are trusted as operator intent; no sandbox claim. | Preserve dry-run/no-write output and do not add automatic file writes without explicit task scope. |
 | Command evidence | `krn evidence capture` records supplied outcomes; it does not execute verification commands. It only runs `git status --short` through `execFile` for changed-file detection. | Command provenance and `doesNotProve`; no hidden shell runner; weak default rows remain weak. | Operator-reported command proof can be false or stale; `git status` read boundary is implicit in source. | Keep command provenance visible; if more commands are executed later, require an allowlist and output refs. |
 | DB runtime | Persisted commands require `KRN_DATABASE_URL`; readiness redacts credentials and labels current-shell truth. | `runDbReadinessCommand` redacts endpoint credentials; DB truth is only claimed after runtime commands. | Local DB is a trust root; backup, restore, auth, and environment policy are not production-ready. | Defer to G-01 migration/backup policy and G-00 CI verification. |
-| Observation | `buildObserverInput` sanitizes secret-shaped keys/values before truncation. | Redaction tests cover tokens, bearer values, private keys, and delayed secret suffixes. | Redaction patterns are heuristic; unknown secret formats can still leak into persisted observations. | Add redaction corpus expansion when target-repo alpha introduces new secret patterns. |
+| Observation | `buildObserverInput` sanitizes secret-shaped keys/values before truncation. | Redaction tests cover tokens, bearer values, private keys, delayed secret suffixes, and target-like env/package output containing credentialed URLs. | Redaction patterns are heuristic; unknown secret formats can still leak into persisted observations. | Expand only from concrete target evidence. |
 | Source claims | `SourceClaimInputSchema` requires mechanism, KRN implication, `doesNotProve`, consumer, falsifier, and proposed status. | Source-to-decision discipline prevents decorative sources. | Hostile source text may still be selected into context or Codex brief if accepted by operator workflow. | Add untrusted-context/taint warning in Codex brief or policy gate before external repo alpha. |
 | Memory promotion | `MemoryReviewGate` requires review, source lineage/application guidance, candidate evidence provenance, evidence refs, and rejects `default_template`. | Promotion is explicit; observe/reflect do not mutate Memory Core. | Human reviewer can still promote poisoned or stale content if provenance is weak but non-default. | Add promotion checklist/policy gate for untrusted source lineage before broader target use. |
 | Reflection candidates | Reflection writer keeps candidate metadata and reviewability; policy candidates remain unsupported; eval candidates remain proposal-only. | Candidate-only contract; no automatic Memory Core mutation. | Candidate writer can create source claims if repository and artifact are supplied, so source claim review remains important. | Keep source claims proposed and require source decision review before use as authority. |
@@ -101,7 +101,7 @@ falsifier: Codex brief renders untrusted external text without warning labels on
 | ID | Threat | Current severity | Existing evidence | Required action |
 | --- | --- | --- | --- | --- |
 | E00-T1 | Untrusted source or memory text influences Codex through selected context. | reduced after V69 | Source claims and memory have trust/evidence metadata; Codex brief now renders deterministic untrusted-context warnings for non-trusted tiers. | Keep warning covered by adapter tests; do not claim prompt-injection resistance. |
-| E00-T2 | Secrets leak into persisted observation/evidence payloads. | medium | Observation redaction exists and is tested; evidence metadata can still carry operator text. | Add target-repo redaction corpus tests when first external repo trial starts. |
+| E00-T2 | Secrets leak into persisted observation/evidence payloads. | reduced after V71 | Observation redaction exists and now includes target-like env/package output corpus coverage; evidence metadata can still carry operator text. | Expand only from concrete target evidence. |
 | E00-T3 | Operator-reported command evidence is overtrusted. | medium | Evidence commands carry provenance and `doesNotProve`; readback shows proof/non-proof. | Keep review burden readback; do not add hidden execution without allowlist/output refs. |
 | E00-T4 | Memory promotion accepts poisoned or weakly sourced candidates. | medium | Review gate rejects missing evidence/source lineage and default template proof. | Add promotion checklist for untrusted source lineage before external target-repo use. |
 | E00-T5 | Future worker/API/MCP/dashboard bypasses read/propose/write boundaries. | high if built prematurely | Package boundaries and PLAN defer these surfaces. | Keep deferred until read-only boundary proof and policy gates exist. |
@@ -147,6 +147,8 @@ Outcome:
 
 ### SEC-02: Observation/Evidence Redaction Corpus For Target Repo Alpha
 
+Status: implemented in V71 for observer input target-like env/package output.
+
 Why:
 - Observation redaction exists, but target repos may introduce new secret
   shapes in command output, package scripts, env files, or logs.
@@ -162,6 +164,12 @@ Non-goals:
 Verification:
 - targeted observation/evidence tests;
 - target-repo dogfood report.
+
+Outcome:
+- observer input redacts credentialed URLs such as
+  `postgres://user:password@host/db`;
+- target-like env/package output test covers `DATABASE_URL`, `NPM_TOKEN`,
+  `OPENAI_API_KEY`, and cookie-shaped values.
 
 ### SEC-03: Memory Promotion Untrusted-Source Checklist
 

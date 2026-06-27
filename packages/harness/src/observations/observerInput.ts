@@ -72,6 +72,7 @@ const redactedValue = "[REDACTED]";
 const secretKeyPattern = /(?:password|secret|token|api[-_]?key|authorization|cookie|private[-_]?key)/i;
 const secretValuePatterns = [
   /-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----/u,
+  /\b[a-z][a-z0-9+.-]*:\/\/[^:\s/@]+:[^@\s]+@/iu,
   /\bBearer\s+[A-Za-z0-9._~+/-]{16,}={0,2}\b/iu,
   /\b[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/u,
   /\b(?:Api[-_ ]?Key|x-api-key|api_key)\s*[:=]?\s*[A-Za-z0-9._-]{16,}\b/iu,

@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V70 Post Security Trust Boundary Re-Gate
-current task: V70-00 Post Security Trust Boundary Re-Gate
+active stream: V72 Post Security Redaction Corpus Re-Gate
+current task: V72-00 Post Security Redaction Corpus Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -6595,7 +6595,7 @@ Acceptance criteria:
 
 ### V70-00 — Post Security Trust Boundary Re-Gate
 
-Status: active
+Status: complete
 
 Goal: Decide the next bounded task after implementing deterministic
 untrusted-context warnings in Codex briefs.
@@ -6674,6 +6674,150 @@ git status --short --branch
 Acceptance criteria:
 
 - Plan state can be resumed without chat context.
+
+### V71-00 — Target-Like Redaction Corpus Repair
+
+Status: complete
+
+Goal: Expand observation redaction corpus with target-like env/package output
+that includes credentialed URLs and common token/cookie shapes.
+
+Pattern surface: security / permissions / trust boundaries.
+
+Product rationale: V70 selected SEC-02 because observer redaction existed but
+target-like env/package output was a concrete remaining corpus gap before
+broader target alpha.
+
+Architectural rationale: Redaction should improve through bounded corpus tests
+from plausible target evidence, not through a broad DLP scanner.
+
+Evidence source:
+
+- `docs/architecture/security-trust-boundaries.md` SEC-02.
+- `packages/harness/src/observations/observerInput.ts`.
+- `packages/harness/src/observations/observerInput.test.ts`.
+
+Official/external sources:
+
+- none required.
+
+Inputs required:
+
+- Current observer input redaction behavior.
+
+Primary consumer:
+
+- `packages/harness/src/observations/observerInput.ts`
+- `packages/harness/src/observations/observerInput.test.ts`
+
+Does not prove:
+
+- all secret formats are known;
+- evidence metadata cannot carry operator text;
+- public security readiness.
+
+Falsifier:
+
+- A target-like payload containing a credentialed URL or common token survives
+  observer input redaction.
+
+Files touched:
+
+- `packages/harness/src/observations/observerInput.ts`
+- `packages/harness/src/observations/observerInput.test.ts`
+- security/eval docs;
+- compact plans.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- observerInput
+pnpm -C packages/harness typecheck
+git diff --check
+```
+
+Outcome:
+
+- Added credentialed URL redaction.
+- Added target-like env/package output corpus test covering `DATABASE_URL`,
+  `NPM_TOKEN`, `OPENAI_API_KEY`, and cookie-shaped values.
+
+### V72-00 — Post Security Redaction Corpus Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after SEC-02 redaction corpus repair.
+
+Pattern surface: security / permissions / trust boundaries.
+
+Product rationale: V69 and V71 closed the two concrete security/trust repair
+items that did not require external target evidence. Remaining security work
+should not continue without a named consumer/falsifier.
+
+Architectural rationale: After closing SEC-01 and SEC-02, the plan should either
+select SEC-03, move to another pattern surface, or stop with an honest external
+input blocker.
+
+Evidence source:
+
+- V69 untrusted-context warning repair.
+- V71 redaction corpus repair.
+- `docs/architecture/security-trust-boundaries.md`.
+
+Inputs required:
+
+- Current security trust-boundary doc and verification evidence.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- full security readiness;
+- target alpha readiness;
+- product readiness.
+
+Falsifier:
+
+- The re-gate selects another security task without a concrete boundary and
+  evidence source.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- broad security project;
+- DLP/scanner;
+- hooks/MCP/API/dashboard work.
+
+Output requirements:
+
+- One next bounded task or blocker.
+
+Definition of Done:
+
+- Next active task is explicit.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- Security work does not continue without a concrete consumer/falsifier.
 
 ### External Input Blocker
 
@@ -7057,6 +7201,11 @@ Initial entry:
   activation work by momentum.
 - [x] V69-00 complete: implemented deterministic untrusted-context warnings in
   Codex briefs and updated security/eval docs.
+- [x] V70-00 complete: selected SEC-02 target-like redaction corpus as the next
+  bounded security task.
+- [x] V71-00 complete: added credentialed URL redaction and target-like
+  env/package output corpus coverage.
+- [ ] V72-00 active: re-gate after SEC-02.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8052,6 +8201,33 @@ Initial decisions:
   Verification: `pnpm --filter @krn/codex-adapter test -- renderExecutionBrief
     codexBriefGoldenBehavior contracts`; `pnpm -C packages/codex-adapter
     typecheck`; `pnpm eval:brain-battle:smoke`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select SEC-02 target-like redaction corpus as V71.
+  Rationale: After SEC-01, the next named security/trust repair with a bounded
+    consumer was observation redaction corpus expansion. Source inspection found
+    existing redaction tests but no credentialed URL target-like output case.
+  Surface: security / permissions / trust boundaries.
+  Consumer: observer input redaction tests and pattern.
+  Does not prove: all secret formats are known or evidence metadata cannot carry
+    operator text.
+  Falsifier: a target-like payload containing a credentialed URL or common token
+    survives observer input redaction.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Implement target-like observer redaction corpus.
+  Rationale: Credentialed URLs such as `postgres://user:pass@host/db` are common
+    in target env output and were not covered by value-shape redaction when the
+    key is neutral or the line is embedded in stdout.
+  Surface: security / permissions / trust boundaries.
+  Consumer: `packages/harness/src/observations/observerInput.ts` and tests.
+  Does not prove: all target secret formats are covered or public security
+    readiness.
+  Falsifier: observer input payload still contains credentialed URL credentials,
+    npm token, OpenAI-style key, or cookie-shaped value from the target-like
+    corpus test.
+  Verification: `pnpm --filter @krn/harness test -- observerInput`;
+    `pnpm -C packages/harness typecheck`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -11167,6 +11343,8 @@ Completed:
 - V67-00 Harness Activation Source Packet Application.
 - V68-00 Post Harness Activation Pattern Re-Gate.
 - V69-00 Untrusted Context Warning Pattern Application.
+- V70-00 Post Security Trust Boundary Re-Gate.
+- V71-00 Target-Like Redaction Corpus Repair.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -11198,6 +11376,8 @@ What improved:
   security/trust untrusted-context warning.
 - V69 implemented deterministic untrusted-context warnings in Codex execution
   briefs and updated the security/eval docs.
+- V71 expanded observer input redaction for target-like env/package output,
+  including credentialed URLs.
 
 What did not improve:
 - Product readiness.
@@ -11208,9 +11388,10 @@ What did not improve:
 - Package source behavior.
 - Activation scoring or runtime behavior.
 - Prompt-injection resistance or public security readiness.
+- Exhaustive secret redaction.
 
 New task:
-- V70-00 Post Security Trust Boundary Re-Gate.
+- V72-00 Post Security Redaction Corpus Re-Gate.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -11219,10 +11400,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V70 Post Security Trust Boundary Re-Gate.
+- V72 Post Security Redaction Corpus Re-Gate.
 
 Next active task:
-- V70-00 Post Security Trust Boundary Re-Gate.
+- V72-00 Post Security Redaction Corpus Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -11272,7 +11453,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V70 Post Security Trust Boundary Re-Gate.
+Active stream: V72 Post Security Redaction Corpus Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
