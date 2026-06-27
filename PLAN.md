@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: External Input Blocker
-current task: none
+active stream: V64 Continuous Pattern Distillation Gate
+current task: V64-01 Pattern Surface Consumer Matrix
 ```
 
 Completed stream summary:
@@ -93,30 +93,68 @@ V60 TypeScript lifecycle union drift spot-check: complete
 V61 post-pattern intake re-gate: complete
 V62 pattern intake skill linkage: complete
 V63 post-pattern-intake linkage re-gate: complete
+V64-00 pattern gate re-entry: complete
+V64-01 pattern surface consumer matrix: active
 ```
 
 ## Active Stream
 
-### External Input Blocker
+### V64 Continuous Pattern Distillation Gate
 
 Goal:
 
-Resume only when external operator/owner input or a new explicit bounded
-internal task exists.
+Make best-practice, course, paper, official-doc, practitioner, target-evidence,
+and repo-evidence intake a permanent execution gate for non-trivial KRN work,
+without turning research into source hoarding or context bloat.
 
 Current finding:
 
 ```txt
-V63 found no evidence-backed internal task after the completed pattern-intake
-loop. Product-moving proof is blocked on external inputs.
+The operator explicitly selected continuous pattern distillation as the next
+internal product task. This satisfies the V63 falsifier: a bounded internal task
+now exists with consumer and falsifier.
 ```
 
 Current action:
 
 ```txt
-Await V02-01 second-operator inputs, WILQ owner scope, elektro patch lifecycle
-decision, or a new explicit bounded internal task with consumer/falsifier.
+Execute V64-01: update the pattern-intake runbook with a per-surface consumer
+matrix for infra, harness, CI/eval, Codex surfaces, TypeScript, target workflow,
+security/trust, and operator UX decisions.
 ```
+
+Primary consumer:
+
+```txt
+PLAN.md / GOAL.md / PLANS.md execution policy, then future standards, skills,
+ADRs, eval candidates, memory/source candidates, CLI/readback behavior, or
+bounded repairs.
+```
+
+Falsifier:
+
+```txt
+A future infra, harness, CI, eval, Codex-surface, TypeScript, target-workflow,
+or research/paper-driven slice adopts a pattern without mechanism, consumer,
+does-not-prove boundary, and falsifier.
+```
+
+### External Input Blocker
+
+Status: deferred boundary, not the current internal stream.
+
+V02-01 still requires real second-operator inputs:
+
+```txt
+operator:
+KRN source:
+target repo:
+DB mode:
+support boundary:
+operator transcript:
+```
+
+Do not substitute self/headless scenarios for V02-01.
 
 ## V02-01 Boundary
 

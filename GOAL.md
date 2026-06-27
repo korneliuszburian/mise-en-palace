@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-External Input Blocker
+V64 Continuous Pattern Distillation Gate
 ```
 
 Current product loop:
@@ -104,8 +104,9 @@ V60 TypeScript Lifecycle Union Drift Spot-Check: complete.
 V61 Post-Pattern Intake Re-Gate: complete.
 V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill: complete.
 V63 Post Pattern-Intake Linkage Re-Gate: complete.
-active stream: External Input Blocker.
-current task: none.
+V64 Continuous Pattern Distillation Gate: active.
+V64-00 Pattern Gate Re-Entry: complete.
+current task: V64-01 Pattern Surface Consumer Matrix.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
@@ -141,6 +142,10 @@ proof.
   repair, one skill, or one scenario.
 - After every completed slice, update `PLANS.md`, append any new tasks
   discovered from evidence, and continue with the next highest-ROI task.
+- For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
+  target-workflow, or research/paper/course-driven slice, apply the pattern
+  gate: source -> mechanism -> KRN implication -> decision/rejection ->
+  consumer -> falsifier.
 - Completion requires explicit operator stop, product-ready gate evidence, or an
   honest blocked/budget-limited handoff. Budget limit is not success.
 

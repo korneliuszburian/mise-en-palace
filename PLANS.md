@@ -77,8 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: External Input Blocker
-current task: none
+V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
+active stream: V64 Continuous Pattern Distillation Gate
+current task: V64-01 Pattern Surface Consumer Matrix
 ```
 
 Evidence already recorded in repo:
@@ -93,10 +94,13 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V47 selected continuous pattern source-to-decision as the next internal
-hardening task. TypeScript/Matt Pocock is only one example; the current gap is
-making best-practice condensation permanent across infra, harness, CI, skills,
-target workflow, TypeScript, Codex surfaces, evals, and research/papers.
+V63 recorded an external-input blocker after the first pattern-intake loop. The
+operator then supplied a new explicit internal task: make best-practice, course,
+paper, official-doc, practitioner, target-evidence, and repo-evidence
+distillation a permanent gate for every non-trivial KRN slice. TypeScript /
+Matt Pocock is only one example; the current active gap is making this gate
+unavoidable across infra, harness, CI, skills, target workflow, TypeScript,
+Codex surfaces, evals, and research/papers without source hoarding.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -5746,11 +5750,180 @@ Outcome:
 - Resume requires V02-01 inputs, WILQ owner scope, elektro patch lifecycle
   decision, or a new explicit bounded internal task with consumer/falsifier.
 
+### V64-00 — Pattern Gate Re-Entry
+
+Status: complete
+
+Goal: Replace the V63 external-input-blocker active stream with a bounded
+internal stream that makes continuous pattern distillation mandatory for every
+future non-trivial KRN slice.
+
+Product rationale: The operator wants KRN to continuously absorb the best
+courses, papers, official docs, practitioner patterns, target evidence, and repo
+evidence into senior engineering standards, TypeScript discipline, infra,
+harness, CI/eval, Codex surfaces, skills, MCP/subagent decisions, and future
+repairs. This is product-moving only if it becomes an execution gate, not a
+research archive.
+
+Architectural rationale: KRN's kernel law says not to build more context, but
+the machinery that selects, applies, verifies, and forgets context. Pattern
+distillation must therefore route through source -> mechanism -> KRN implication
+-> decision/rejection -> consumer -> falsifier, with a concrete consumer before
+any implementation.
+
+Evidence source:
+
+- Operator directive on 2026-06-27: "nasze najlepsze wzorce, najlepsze kursy,
+  realnie to chcemy stary pelny rozpierdol."
+- `docs/KRN_KERNEL.md` decision rule.
+- `.agents/skills/source-to-decision/SKILL.md` continuous pattern gate.
+- `docs/runbooks/pattern-intake.md`.
+- V58-V62 pattern-intake reports.
+
+Official/external sources:
+
+- Existing KRN source maps and future source packets only when mapped through
+  the pattern-intake runbook.
+
+Inputs required:
+
+- No external operator input required for V64-00.
+- Future pattern applications require a specific source packet or repo/target
+  finding.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact execution-plan updates only.
+
+Forbidden writes:
+
+- package source;
+- new research archive;
+- source crawler;
+- dashboard/API/MCP/worker runtime;
+- broad eval platform;
+- copying paid/proprietary course material;
+- target repo writes.
+
+Output requirements:
+
+- Root `PLAN.md` active stream set to V64.
+- Root `GOAL.md` active stream set to V64.
+- `PLANS.md` active task queue contains V64-00 with consumer/falsifier.
+- Future non-trivial slices explicitly require the pattern gate.
+
+Definition of Done:
+
+- Plan state no longer says local work is blocked when this internal task is
+  active.
+- V02-01 remains blocked/deferred and is not replaced by self/headless proof.
+- `git diff --check` passes.
+- Commit and push the focused plan update.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- A fresh continuation can identify V64-01 as the first incomplete active task.
+- A future slice has a clear falsifier if it adopts a pattern without consumer
+  and proof boundary.
+
+### V64-01 — Pattern Surface Consumer Matrix
+
+Status: active
+
+Goal: Update the pattern-intake runbook with a compact per-surface consumer
+matrix so future slices know which source classes, consumers, proof boundaries,
+and falsifiers are expected for each KRN work surface.
+
+Product rationale: "Best patterns" only improve KRN when they route into
+repeated execution behavior. A matrix reduces context waste by making the
+consumer obvious before a source is retained.
+
+Architectural rationale: KRN must distill patterns into standards, skills,
+ADRs, eval/golden candidates, memory/source candidates, CLI/readback behavior,
+or bounded repairs. It must reject patterns that are decorative, too broad, or
+cannot be falsified.
+
+Evidence source:
+
+- V64-00 plan re-entry.
+- `docs/runbooks/pattern-intake.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/KRN_KERNEL.md`.
+
+Inputs required:
+
+- No external source packet required; this slice structures the intake gate.
+
+Files likely touched:
+
+- `docs/runbooks/pattern-intake.md`
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+- optional dogfood report under `docs/reviews/controlled-dogfood/`
+
+Allowed writes:
+
+- Runbook and compact plan/report updates.
+
+Forbidden writes:
+
+- package source;
+- broad source archive;
+- copied course/paper content;
+- source crawler;
+- eval platform;
+- target repo writes.
+
+Output requirements:
+
+- `docs/runbooks/pattern-intake.md` includes a per-surface matrix covering:
+  infra/storage, harness/activation/memory/review, CI/release/eval/Promptfoo,
+  Codex surfaces/skills/hooks/MCP/subagents, target-repo workflow,
+  TypeScript boundaries, security/trust boundaries, and operator UX/CLI/readback.
+- Each surface maps to preferred source classes, preferred consumers, proof or
+  falsifier examples, and rejection triggers.
+- The runbook preserves the legal/content boundary and anti-hoarding rule.
+
+Definition of Done:
+
+- Matrix exists and is concise enough to be used during slice planning.
+- It does not introduce a new roadmap, research archive, or product surface.
+- `git diff --check` passes.
+- Commit and push the focused runbook update.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- A future continuation can choose the right consumer for a paper/course/doc
+  source without rereading chat history.
+- The matrix makes it clear when to reject or defer a source.
+
 ### External Input Blocker
 
-Status: active blocker
+Status: deferred blocker
 
-Current blocker: product-moving proof requires external operator/owner input.
+Current blocker: widened-product proof still requires external operator/owner
+input.
 
 Resume when one of these exists:
 
@@ -6103,6 +6276,10 @@ Initial entry:
   skill without duplicating the runbook.
 - [x] V63-00 complete: recorded honest external input blocker after completed
   pattern-intake loop; no internal task promoted.
+- [x] V64-00 complete: re-entered continuous internal work by making pattern
+  distillation the active stream and preserving V02-01 as external proof only.
+- [ ] V64-01 active: add a pattern surface consumer matrix to the pattern-intake
+  runbook.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6947,6 +7124,23 @@ Initial decisions:
   Does not prove: product readiness or V02-01.
   Falsifier: a new explicit bounded internal task appears with consumer and
     falsifier, or external operator/owner inputs arrive.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote continuous pattern distillation re-entry as V64.
+  Rationale: The operator supplied a new explicit internal task: KRN must
+    continuously condense best courses, papers, official docs, practitioner
+    writing, target evidence, and repo evidence into concrete standards, skills,
+    ADRs, eval/golden candidates, memory/source candidates, CLI/readback
+    behavior, or bounded repairs. This satisfies the V63 falsifier for local
+    internal work while preserving the V02-01 external-operator blocker.
+  Evidence: operator directive on 2026-06-27; `docs/KRN_KERNEL.md`;
+    `.agents/skills/source-to-decision/SKILL.md`;
+    `docs/runbooks/pattern-intake.md`.
+  Does not prove: product readiness, V02-01, or that any specific external
+    source should be adopted.
+  Falsifier: future non-trivial infra, harness, CI, eval, Codex-surface,
+    TypeScript, target-workflow, or research/paper-driven work adopts a pattern
+    without mechanism, consumer, does-not-prove boundary, and falsifier.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10047,7 +10241,45 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- External Input Blocker.
+- V64 Continuous Pattern Distillation Gate.
+
+## Outcome 2026-06-27 V64 Re-Entry
+
+Completed:
+- V64-00 Pattern Gate Re-Entry.
+
+Evidence:
+- operator directive on 2026-06-27.
+- `docs/KRN_KERNEL.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+
+What improved:
+- Local continuous work is no longer blocked after V63 because the operator
+  supplied a bounded internal task with consumer and falsifier.
+- Future non-trivial slices now have an explicit pattern/research gate instead
+  of relying on chat memory.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Any specific source, course, or paper adoption.
+- Package source behavior.
+
+New task:
+- V64-01 Pattern Surface Consumer Matrix.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V64 Continuous Pattern Distillation Gate.
+
+Next active task:
+- V64-01 Pattern Surface Consumer Matrix.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -10097,7 +10329,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: External Input Blocker.
+Active stream: V64 Continuous Pattern Distillation Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
