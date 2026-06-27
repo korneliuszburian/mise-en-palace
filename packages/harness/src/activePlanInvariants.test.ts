@@ -176,6 +176,18 @@ describe("KRN active plan invariants", () => {
     expect(normalizedPlans).toContain("attachments are evidence, not authority to roll the active stream backward");
   });
 
+  it("keeps continuation research guidance tied to a consumer before falsifier", () => {
+    const goal = readRootFile("GOAL.md");
+    const continuation = sectionBody(goal, "## Continuation After Compact");
+
+    expect(continuation).toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
+    );
+    expect(continuation).not.toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> falsifier"
+    );
+  });
+
   it("keeps pattern intake decision-oriented, reviewable, and legally bounded", () => {
     const runbook = readRootFile("docs/runbooks/pattern-intake.md");
     const outputTemplate = sectionBody(runbook, "## Output Template");

@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V158 Post Compact Pattern Gate Contract Re-Gate
-current task: V158-00 Post Compact Pattern Gate Contract Re-Gate
+active stream: V160 Post Continuation Pattern Gate Chain Re-Gate
+current task: V160-00 Post Continuation Pattern Gate Chain Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -41,35 +41,35 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V157: active-surface compactness, handoff, PLANS freshness,
+V100..V159: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
-           root/smoke/compact pattern-gate guards complete.
+           root/smoke/compact/continuation pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V158 Post Compact Pattern Gate Contract Re-Gate
+### V160 Post Continuation Pattern Gate Chain Re-Gate
 
 Goal:
 
-Decide the next bounded task after preserving the pattern gate in the compact
-`GOAL.md` contract template.
+Decide the next bounded task after preserving the full pattern-gate chain in
+compact continuation instructions.
 
 Current finding:
 
 ```txt
-V156 selected compact pattern-gate contract preservation because active root
-`GOAL.md` and `PLAN.md` carried the pattern gate, but the `PLANS.md` compact
-goal template did not.
+V158 selected continuation pattern-gate chain repair because root `GOAL.md`
+operating rules had the full consumer/falsifier chain, but the continuation
+research note still used the older no-consumer chain.
 ```
 
 Current action:
 
 ```txt
-Execute V158-00: select the next pattern surface from evidence. Do not broaden
-compact-contract preservation into prompt bureaucracy, Research Foundry, source
-crawler, dashboard, or product-readiness claims.
+Execute V160-00: select the next pattern surface from evidence. Do not broaden
+continuation-chain preservation into prompt bureaucracy, Research Foundry,
+source crawler, dashboard, or product-readiness claims.
 ```
 
 Primary consumer:
@@ -81,8 +81,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused compact-contract preservation into prompt bureaucracy
-or research hoarding without a concrete consumer and falsifier.
+The re-gate turns focused continuation-chain preservation into prompt
+bureaucracy or research hoarding without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V157 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, and compact pattern-gate contract guard slices: complete
-active stream: V158 Post Compact Pattern Gate Contract Re-Gate
-current task: V158-00 Post Compact Pattern Gate Contract Re-Gate
+V48..V159 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, and continuation pattern-gate chain guard slices: complete
+active stream: V160 Post Continuation Pattern Gate Chain Re-Gate
+current task: V160-00 Post Continuation Pattern Gate Chain Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V158-00 Post Compact Pattern Gate Contract Re-Gate.
+V160-00 Post Continuation Pattern Gate Chain Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -8072,6 +8072,8 @@ Initial entry:
   PLAN pattern-gate visibility as part of the active invariant smoke.
 - [x] V157-00 complete: compact `GOAL.md` contract now preserves the pattern
   gate for future compaction.
+- [x] V159-00 complete: root `GOAL.md` continuation research guidance now keeps
+  the full source-to-decision chain through consumer and falsifier.
 ```
 
 ## 16. Surprises & Discoveries
@@ -15213,6 +15215,86 @@ Next active stream:
 
 Next active task:
 - V158-00 Post Compact Pattern Gate Contract Re-Gate.
+
+## Outcome 2026-06-27 V159 Continuation Pattern Gate Chain Guard
+
+Completed tasks:
+- V158-00 Post Compact Pattern Gate Contract Re-Gate.
+- V159-00 Continuation Pattern Gate Chain Guard.
+
+V158 decision:
+- Do not broaden compact pattern-gate contract preservation into prompt
+  bureaucracy, Research Foundry, source crawler, dashboard, or product-readiness
+  claims.
+- Select continuation pattern-gate chain repair because root `GOAL.md` operating
+  rules had the full `consumer -> falsifier` chain, root `PLAN.md` had the full
+  Pattern Gate, and the compact template had been repaired, but the
+  `Continuation After Compact` research note still used the older no-consumer
+  chain.
+- The concrete failure mode is a resumed Codex run reading only the continuation
+  section and treating a source with mechanism/decision/falsifier but no
+  consumer as sufficient.
+
+What changed:
+- Root `GOAL.md` continuation guidance now uses:
+  `source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier`.
+- `packages/harness/src/activePlanInvariants.test.ts` now rejects the older
+  no-consumer continuation chain.
+- `docs/architecture/brain-battle-eval-matrix.md` records the continuation
+  pattern-gate chain guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V160.
+
+Evidence:
+- Root `GOAL.md` Operating Rules already included consumer before falsifier.
+- Root `PLAN.md` Pattern Gate included consumer before falsifier.
+- `PLANS.md` section 22 compact goal contract included consumer before
+  falsifier after V157.
+- Root `GOAL.md` Continuation After Compact still had the old chain ending at
+  falsifier.
+
+Source-to-decision:
+- Source: current root `GOAL.md`, root `PLAN.md`, `PLANS.md` compact contract,
+  and pattern-intake runbook.
+- Mechanism: continuation instructions are read during compaction/resume; if
+  they use a weaker chain than operating rules, they can reintroduce source
+  hoarding by letting a source skip the named consumer.
+- KRN implication: every active continuation surface must require a consumer
+  before falsifier so research/course/paper/practitioner input becomes a
+  standard, skill, ADR, eval, memory/source candidate, CLI/readback behavior,
+  bounded repair, or explicit rejection.
+- Decision: repair the continuation chain and guard against regression.
+- Does not prove: every future source has a useful consumer, every future run
+  applies the gate, source quality at scale, or product readiness.
+- Consumer: root `GOAL.md`, `packages/harness/src/activePlanInvariants.test.ts`,
+  and `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `GOAL.md` Continuation After Compact can return to the no-consumer
+  source-to-decision chain without focused tests failing.
+
+What improved:
+- The same full pattern-gate chain is now present in operating rules, root plan,
+  compact template, and continuation guidance.
+- Resumed runs are less likely to retain decorative sources without a consumer.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Actual source ingestion quality beyond continuation guidance.
+
+New task:
+- V160-00 Post Continuation Pattern Gate Chain Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V160 Post Continuation Pattern Gate Chain Re-Gate.
+
+Next active task:
+- V160-00 Post Continuation Pattern Gate Chain Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
