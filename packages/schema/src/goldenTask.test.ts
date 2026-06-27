@@ -108,7 +108,8 @@ describe("golden task fixtures", () => {
     expect(tasks.map((task) => task.id)).toEqual(["golden-task-evidence-capture-001"]);
     expect(tasks[0]?.cases.map((goldenCase) => goldenCase.id)).toEqual([
       "golden-case-evidence-dirty-context-001-a",
-      "golden-case-evidence-dirty-context-001-b"
+      "golden-case-evidence-dirty-context-001-b",
+      "golden-case-evidence-target-001-c"
     ]);
   });
 

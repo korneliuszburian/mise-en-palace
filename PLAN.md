@@ -101,14 +101,14 @@ V05-01 confirms the code gap.
 
 ### V05-03 — Target Evidence Guard And Replay Scenario
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: add deterministic guard coverage and a controlled replay scenario proving
 target-aware evidence capture preserves proof/non-proof boundaries.
 
 ### V05-04 — Target-Aware Evidence Re-Gate
 
-Status: pending.
+Status: active.
 
 Goal: decide whether V05 materially improved target trials and append the next
 active stream to `PLANS.md`.

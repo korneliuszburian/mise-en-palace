@@ -46,7 +46,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 active stream: V05 target-aware evidence capture repair.
-current task: V05-03 — Target Evidence Guard And Replay Scenario.
+current task: V05-04 — Target-Aware Evidence Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

@@ -69,6 +69,37 @@
           "docs/reviews/controlled-dogfood/2026-06-25-evidence-dirty-context/REPORT.md"
         ],
         "metadata": {}
+      },
+      {
+        "id": "golden-case-evidence-target-001-c",
+        "title": "target evidence is rendered separately from KRN changed files",
+        "input": {
+          "command": "krn evidence capture --target-repo ../wilq-seo --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-changed-file \"M apps/dashboard/src/App.tsx\" --target-command \"wilq-seo scripts/test.sh\" --verification \"wilq-seo scripts/test.sh=failed\"",
+          "gitStatus": "clean KRN repo with dirty target evidence supplied explicitly"
+        },
+        "expectedBehavior": {
+          "outcome": "flag",
+          "subject": "evidence_capture:target_evidence_boundary",
+          "rationale": "Target repo proof must remain visible as target evidence, not be collapsed into KRN changed files or command strings.",
+          "evidenceRefs": [
+            "docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md",
+            "packages/cli/src/runEvidenceCaptureCommand.ts"
+          ]
+        },
+        "protectedFailureModes": [
+          {
+            "id": "failure-mode-evidence-target-001-c",
+            "domain": "capability",
+            "severity": "blocking",
+            "title": "target dirty state disappears from evidence capture output",
+            "mustNot": "Evidence capture must not hide target repo mode, dirty state, ownership, target changed files, target commands, or target does-not-prove boundaries.",
+            "detection": "CLI output omits target evidence fields or treats target changed files as KRN repo changed files."
+          }
+        ],
+        "sourceRefs": [
+          "docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md"
+        ],
+        "metadata": {}
       }
     ],
     "metadata": {},

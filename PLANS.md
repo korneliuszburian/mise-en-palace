@@ -639,7 +639,7 @@ Next-task synthesis rule: execute V05-03 guard/replay.
 
 ### V05-03 — Target Evidence Guard And Replay Scenario
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: Add a deterministic guard and one controlled replay scenario proving target-aware evidence capture catches target dirty state/proof boundaries.
 
@@ -701,7 +701,7 @@ Next-task synthesis rule: proceed to V05-04 re-gate or append follow-up repair i
 
 ### V05-04 — Target-Aware Evidence Re-Gate
 
-Status: proposed
+Status: active
 
 Goal: Decide whether V05 materially improved target trials and what stream should run next.
 
@@ -973,8 +973,9 @@ Initial entry:
   confirmed the code/readback gap and selected minimal metadata-backed repair.
 - [x] V05-02 complete: minimal target-aware evidence capture/readback repair
   implemented with explicit CLI inputs, metadata persistence, readback, and tests.
-- [ ] V05-03 active: deterministic guard/replay scenario.
-- [ ] V05-04 pending: V05 re-gate and generate next active stream.
+- [x] V05-03 complete: deterministic golden guard/replay scenario added for
+  target-aware evidence capture.
+- [ ] V05-04 active: V05 re-gate and generate next active stream.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1095,6 +1096,14 @@ Seed evidence:
   Proves: explicit target evidence can be captured, rendered, persisted in metadata, and exposed by run readback.
   Does not prove: DB-backed replay in a live run, product readiness, V02-01 usability, target correctness, or target write safety.
   Follow-up task: V05-03.
+
+- Evidence ID: E-V05-03
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-replay/REPORT.md`
+  Command/report/file: golden fixture, CLI golden behavior test, schema fixture expectation, typecheck, full test suite, brain-battle smoke, diff check.
+  Result: target-aware evidence capture is guarded by deterministic real CLI execution.
+  Proves: target evidence output cannot disappear without failing the golden guard.
+  Does not prove: DB-backed live replay, product readiness, V02-01 usability, target correctness, or target write safety.
+  Follow-up task: V05-04.
 ```
 
 ## 19. Condensation Queue
@@ -1144,9 +1153,16 @@ Seed queue:
 - Candidate: target evidence persisted replay guard
   Source evidence: V05-02 target-aware capture/readback repair
   Surface: deterministic guard + controlled replay report
-  Status: accepted as V05-03
+  Status: complete as V05-03
   Reason: target evidence must be proven through persisted/readback behavior, not only unit tests and preview output
   Task: V05-03
+
+- Candidate: target-aware evidence stream re-gate
+  Source evidence: V05-01 through V05-03
+  Surface: re-gate report + next stream selection
+  Status: accepted as V05-04
+  Reason: source repair and guard are complete; KRN needs product decision before more feature work
+  Task: V05-04
 ```
 
 ## 20. Outcomes & Retrospective
