@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V166 Post Target Infra ADR Skill Chain Re-Gate
-current task: V166-00 Post Target Infra ADR Skill Chain Re-Gate
+active stream: V168 Post Durable Source Map Chain Re-Gate
+current task: V168-00 Post Durable Source Map Chain Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,34 +39,34 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V165: active-surface compactness, handoff, PLANS freshness,
+V100..V167: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
-           root/smoke/compact/continuation/kernel/scenario/infra-skill
+           root/smoke/compact/continuation/kernel/scenario/infra/source-map
            pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V166 Post Target Infra ADR Skill Chain Re-Gate
+### V168 Post Durable Source Map Chain Re-Gate
 
 Goal:
 
 Decide the next bounded task after preserving the full pattern-gate chain in the
-target infra ADR skill.
+durable source map intro.
 
 Current finding:
 
 ```txt
-V164 selected target infra ADR skill repair because infra/runtime decisions must
-not retain best-practice evidence without a named consumer.
+V166 selected durable source map intro repair because retained source guidance
+must not teach a shorter chain than current source-map section guards.
 ```
 
 Current action:
 
 ```txt
-Execute V166-00: select the next pattern surface from evidence. Do not broaden
-infra-skill preservation into Research Foundry, source crawler, dashboard, or
+Execute V168-00: select the next pattern surface from evidence. Do not broaden
+source-map preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -79,7 +79,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused infra-skill preservation into research hoarding
+The re-gate turns focused source-map preservation into research hoarding
 without a concrete consumer and falsifier.
 ```
 

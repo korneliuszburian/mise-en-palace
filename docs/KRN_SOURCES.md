@@ -1,11 +1,14 @@
 # KRN Sources
 
-Every source retained here must be mapped to mechanism, KRN implication,
-decision/rejection, and what it does not prove.
+Every source retained here must pass:
 
-Every retained source should also name source class, decision kind, primary
-consumer, and falsifier. If a source has no consumer or cannot be falsified
-locally, keep it out of active KRN guidance.
+```txt
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
+```
+
+Every retained source must also name source class, decision kind, primary
+consumer, falsifier, and what it does not prove. If a source has no consumer or
+cannot be falsified locally, keep it out of active KRN guidance.
 
 ## Codex Native Surfaces
 

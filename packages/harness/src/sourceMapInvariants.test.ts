@@ -63,6 +63,16 @@ const sourceLocations = (body: string): string[] => {
 };
 
 describe("KRN source map invariants", () => {
+  it("keeps the retained source map intro tied to a consumer before falsifier", () => {
+    const sourceMap = readFileSync(sourceMapPath, "utf8");
+
+    expect(sourceMap).toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
+    );
+    expect(sourceMap).toContain("Every retained source must also name source class");
+    expect(sourceMap).toContain("what it does not prove");
+  });
+
   it("keeps every retained source tied to a full source-to-decision mapping", () => {
     const missing = sourceSections().flatMap((section) => {
       const findings: string[] = [];

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V165 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, and target-infra-ADR chain guard slices: complete
-active stream: V166 Post Target Infra ADR Skill Chain Re-Gate
-current task: V166-00 Post Target Infra ADR Skill Chain Re-Gate
+V48..V167 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, and source-map chain guard slices: complete
+active stream: V168 Post Durable Source Map Chain Re-Gate
+current task: V168-00 Post Durable Source Map Chain Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V166-00 Post Target Infra ADR Skill Chain Re-Gate.
+V168-00 Post Durable Source Map Chain Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15504,6 +15504,69 @@ Next active stream:
 
 Next active task:
 - V166-00 Post Target Infra ADR Skill Chain Re-Gate.
+
+## Outcome 2026-06-27 V167 Durable Source Map Chain Guard
+
+Completed tasks:
+- V166-00 Post Target Infra ADR Skill Chain Re-Gate.
+- V167-00 Durable Source Map Chain Guard.
+
+V166 decision:
+- Do not broaden infra-skill preservation into Research Foundry, source crawler,
+  dashboard, or product-readiness claims.
+- Select durable source map intro repair because `docs/KRN_SOURCES.md` is the
+  retained-source authority, but its intro described a shorter mapping than its
+  section-level guards require.
+- The concrete failure mode is a future Codex run reading the source map intro
+  and treating retained source guidance as complete without a named consumer.
+
+What changed:
+- `docs/KRN_SOURCES.md` now states the full source-to-decision chain through
+  consumer and falsifier at the top of the durable source map.
+- `packages/harness/src/sourceMapInvariants.test.ts` now checks the source map
+  intro keeps the full chain and non-proof discipline.
+- `docs/architecture/brain-battle-eval-matrix.md` records the source-map intro
+  chain guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V168.
+
+Evidence:
+- `docs/KRN_SOURCES.md` is active retained-source guidance, not a historical
+  report.
+- Before this slice, its intro said retained sources must map to mechanism, KRN
+  implication, decision/rejection, and non-proof boundary, while the next
+  paragraph separately named consumer and falsifier.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md` and active source-map invariants.
+- Mechanism: the source map is the durable place where official docs, courses,
+  practitioner writing, papers, and repo evidence become KRN guidance; if its
+  intro uses a shorter rule, future pattern intake can regress before the
+  section-level guard is noticed.
+- KRN implication: retained-source guidance must lead with the full chain so
+  every source becomes a concrete consumer-backed decision or is rejected.
+- Decision: update and guard the source map intro.
+- Does not prove: every retained source is useful, external docs are current,
+  every future Codex run applies the source map, or product readiness.
+- Consumer: `docs/KRN_SOURCES.md`,
+  `packages/harness/src/sourceMapInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the source map intro can drop `consumer` from the chain without
+  focused tests failing.
+
+New task:
+- V168-00 Post Durable Source Map Chain Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V168 Post Durable Source Map Chain Re-Gate.
+
+Next active task:
+- V168-00 Post Durable Source Map Chain Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
