@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V179 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, and infra skill metadata guard slices: complete
-active stream: V180 Post Infra ADR Skill Metadata Re-Gate
-current task: V180-00 Post Infra ADR Skill Metadata Re-Gate
+V48..V181 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, and source-to-decision skill metadata guard slices: complete
+active stream: V182 Post Source-To-Decision Skill Metadata Re-Gate
+current task: V182-00 Post Source-To-Decision Skill Metadata Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V180-00 Post Infra ADR Skill Metadata Re-Gate.
+V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15932,6 +15932,70 @@ Next active stream:
 
 Next active task:
 - V180-00 Post Infra ADR Skill Metadata Re-Gate.
+
+## Outcome 2026-06-27 V181 Source-To-Decision Skill Metadata Guard
+
+Completed tasks:
+- V180-00 Post Infra ADR Skill Metadata Re-Gate.
+- V181-00 Source-To-Decision Skill Metadata Guard.
+
+V180 decision:
+- Do not broaden infra skill metadata preservation into Research Foundry, source
+  crawler, dashboard, or product-readiness claims.
+- Select source-to-decision skill metadata repair because this is the central
+  routing skill for official docs, courses, papers, practitioner writing, local
+  evidence, and user-provided research.
+- The concrete failure mode is a future best-practice/course/paper intake
+  selecting the skill from metadata that says "justify decisions" but does not
+  surface consumer/falsifier discipline.
+
+What changed:
+- `.agents/skills/source-to-decision/SKILL.md` frontmatter description now says
+  source-backed decisions need a consumer and falsifier.
+- `packages/harness/src/skillInvariants.test.ts` now guards that routing
+  metadata.
+- `docs/architecture/brain-battle-eval-matrix.md` records that the
+  source-to-decision skill guard includes frontmatter routing metadata.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V182.
+
+Evidence:
+- Before this slice, the skill body and output template carried consumer and
+  falsifier, but the frontmatter description only said sources justify KRN
+  decisions.
+- Frontmatter descriptions are the progressive-disclosure routing surface.
+
+Source-to-decision:
+- Source: `.agents/skills/source-to-decision/SKILL.md`, repo-local skill
+  invariant coverage, and the operator requirement that best patterns, courses,
+  papers, and senior standards shape KRN at every stage.
+- Mechanism: source routing metadata determines whether Codex treats research as
+  decorative justification or as a bounded decision with a consumer and
+  falsifier.
+- KRN implication: the central source-to-decision skill metadata must make the
+  consumer/falsifier gate visible before the full skill is loaded.
+- Decision: update and guard source-to-decision skill frontmatter.
+- Does not prove: every future source is high quality, every future Codex run
+  invokes the skill, or that broad research indexing is needed.
+- Consumer: `.agents/skills/source-to-decision/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the source-to-decision frontmatter can drop consumer/falsifier
+  routing language while tests pass.
+
+New task:
+- V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V182 Post Source-To-Decision Skill Metadata Re-Gate.
+
+Next active task:
+- V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -94,6 +94,7 @@ describe("KRN skill invariants", () => {
       "utf8"
     );
 
+    expect(sourceToDecision).toContain("decisions with a consumer and falsifier");
     expect(sourceToDecision).toContain("docs/runbooks/pattern-intake.md");
     expect(sourceToDecision).toContain("Source without mechanism is decoration.");
     expect(sourceToDecision).toContain("Decision without falsifier is dogma.");

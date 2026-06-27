@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V180 Post Infra ADR Skill Metadata Re-Gate
-current task: V180-00 Post Infra ADR Skill Metadata Re-Gate
+active stream: V182 Post Source-To-Decision Skill Metadata Re-Gate
+current task: V182-00 Post Source-To-Decision Skill Metadata Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V179: active-surface compactness, handoff, PLANS freshness,
+V100..V181: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,24 +48,24 @@ V100..V179: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V180 Post Infra ADR Skill Metadata Re-Gate
+### V182 Post Source-To-Decision Skill Metadata Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding consumer discipline to infra ADR skill
-frontmatter metadata.
+Decide the next bounded task after adding consumer/falsifier discipline to
+source-to-decision skill frontmatter metadata.
 
 Current finding:
 
 ```txt
-V178 selected infra ADR skill metadata repair because Codex sees frontmatter
-before loading the skill body.
+V180 selected source-to-decision skill metadata repair because Codex sees
+frontmatter before loading the skill body.
 ```
 
 Current action:
 
 ```txt
-Execute V180-00: select the next pattern surface from evidence. Do not broaden
+Execute V182-00: select the next pattern surface from evidence. Do not broaden
 skill metadata preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
