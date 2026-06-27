@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V104 Post Handoff Compact Contract Guard Re-Gate
+V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
 ```
 
 Current product loop:
@@ -41,7 +41,9 @@ V100-00 Post Source Map Full Mapping Guard Re-Gate: complete.
 V101-00 Active Surface Compactness Guard: complete.
 V102-00 Post Active Surface Compactness Guard Re-Gate: complete.
 V103-00 Handoff Compact Contract Guard: complete.
-current task: V104-00 Post Handoff Compact Contract Guard Re-Gate.
+V104-00 Post Handoff Compact Contract Guard Re-Gate: complete.
+V105-00 PLANS Compact GOAL Contract Freshness Guard: complete.
+current task: V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

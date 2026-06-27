@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V104 Post Handoff Compact Contract Guard Re-Gate
-current task: V104-00 Post Handoff Compact Contract Guard Re-Gate
+active stream: V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
+current task: V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,30 +45,32 @@ V100-00: post source map full mapping guard re-gate complete.
 V101-00: active surface compactness guard complete.
 V102-00: post active surface compactness guard re-gate complete.
 V103-00: handoff compact contract guard complete.
+V104-00: post handoff compact contract guard re-gate complete.
+V105-00: PLANS compact GOAL contract freshness guard complete.
 ```
 
 ## Active Stream
 
-### V104 Post Handoff Compact Contract Guard Re-Gate
+### V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding the handoff compact skill contract.
+Decide the next bounded task after removing stale active-stream guidance from
+the detailed plan's compact GOAL contract.
 
 Current finding:
 
 ```txt
-V102 rejected another compaction task and selected the handoff/resume surface.
-V103 added a deterministic skill invariant so handoff compact cannot lose active
-stream/task, verified state, decisions, context selectors, next action, or what
-not to reread.
+V104 found that `PLANS.md` section 22 still contained a concrete stale V86
+active-stream example. V105 replaced it with current-state placeholders and
+added a focused active-plan invariant.
 ```
 
 Current action:
 
 ```txt
-Execute V104-00: select the next pattern surface from evidence. Do not broaden
-handoff work into a hook or automation layer unless repeated failures require it.
+Execute V106-00: select the next pattern surface from evidence. Do not broaden
+PLANS freshness work into deleting historical outcomes or rewriting the ledger.
 ```
 
 Primary consumer:
@@ -80,8 +82,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens a handoff automation/hook without evidence that the skill
-contract and root active surfaces are insufficient.
+The re-gate opens a broad PLANS cleanup without a concrete stale-guidance
+falsifier.
 ```
 
 ## External Input Blocker

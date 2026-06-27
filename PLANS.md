@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V103 continuous pattern, CI/eval, target, compactness, handoff, and re-gate slices: complete
-active stream: V104 Post Handoff Compact Contract Guard Re-Gate
-current task: V104-00 Post Handoff Compact Contract Guard Re-Gate
+V48..V105 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
+active stream: V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
+current task: V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -13190,6 +13190,77 @@ Next active stream:
 Next active task:
 - V104-00 Post Handoff Compact Contract Guard Re-Gate.
 
+## Outcome 2026-06-27 V105 PLANS Compact GOAL Contract Freshness Guard
+
+Completed tasks:
+- V104-00 Post Handoff Compact Contract Guard Re-Gate.
+- V105-00 PLANS Compact GOAL Contract Freshness Guard.
+
+V104 decision:
+- Do not add a handoff hook or automation layer after V103; the skill contract
+  and root active surfaces are now guarded.
+- Fix the concrete stale active-stream guidance found in `PLANS.md` section 22,
+  because the detailed ExecPlan itself must not teach future continuations to
+  paste old active streams into compact `GOAL.md`.
+
+What changed:
+- `PLANS.md` section 22 now uses current-state placeholders rather than a
+  hard-coded V86 active stream.
+- `packages/harness/src/activePlanInvariants.test.ts` now fails if the compact
+  GOAL contract carries a concrete `V...` active stream or task.
+- `docs/architecture/brain-battle-eval-matrix.md` records the stale-contract
+  guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V106.
+
+Evidence:
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `GOAL.md`.
+- `PLAN.md`.
+
+Source-to-decision:
+- Source: V101/V103 compact-resume evidence and the discovered stale V86 compact
+  GOAL contract in `PLANS.md` section 22.
+- Mechanism: detailed ExecPlans can preserve history, but reusable continuation
+  templates must not encode old active stream/task values.
+- KRN implication: `PLANS.md` may remain detailed, but active-state templates
+  inside it must be placeholder/current-state driven.
+- Decision: replace the stale concrete stream with placeholders and add a
+  focused active-plan invariant for the section 22 contract.
+- Does not prove: all historical examples in `PLANS.md` are current, the ledger
+  should be shortened, product readiness, or second-operator readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts`.
+- Falsifier: section 22 can contain `Active stream: V...` or `current task:
+  V...` without failing focused verification.
+
+What improved:
+- Resume guidance freshness.
+- Protection against copying stale active streams from the detailed plan into
+  compact root `GOAL.md`.
+- Active-plan invariant coverage.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Broad historical ledger cleanliness.
+- Activation or target-repo behavior.
+
+New task:
+- V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V106 Post PLANS Compact GOAL Contract Freshness Re-Gate.
+
+Next active task:
+- V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -13238,7 +13309,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V86 Post Anti-Memory ID Branding Re-Gate.
+Active stream: <current active stream from PLAN.md>.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
