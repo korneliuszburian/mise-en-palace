@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V60 TypeScript Lifecycle Union Drift Spot-Check
-current task: V60-00 TypeScript Lifecycle Union Drift Spot-Check
+active stream: V61 Post-Pattern Intake Re-Gate
+current task: V61-00 Post-Pattern Intake Re-Gate
 ```
 
 Completed stream summary:
@@ -89,30 +89,31 @@ V56 operator/owner launch packet refresh: complete
 V57 post-packet internal work re-gate: complete
 V58 pattern intake runbook: complete
 V59 first pattern intake runbook application: complete
+V60 TypeScript lifecycle union drift spot-check: complete
 ```
 
 ## Active Stream
 
-### V60-00 — TypeScript Lifecycle Union Drift Spot-Check
+### V61-00 — Post-Pattern Intake Re-Gate
 
 Goal:
 
-Inspect a small set of lifecycle/state-dependent TypeScript models and decide
-whether the V59 eval/golden candidate should become an implemented guard,
-standard-only reminder, or rejected/no-op finding.
+Decide whether to continue internal pattern-intake hardening, return to
+external operator/owner blockers, or select one bounded source-backed repair
+from current evidence.
 
 Current finding:
 
 ```txt
-V59 used the pattern intake runbook on the existing Total TypeScript
-union/narrowing source and created a candidate in the brain-battle eval matrix.
+V60 rejected immediate TypeScript guard implementation because the bounded
+source sample did not show repeated lifecycle optional-object drift.
 ```
 
-Current V60 action:
+Current V61 action:
 
 ```txt
-Run a bounded source spot-check for optional-object lifecycle drift before
-implementing any TypeScript guard or rewrite.
+Re-gate after V58-V60 and choose the next bounded task, or record the honest
+external blocker.
 ```
 
 ## V02-01 Boundary

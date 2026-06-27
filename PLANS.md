@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V60 TypeScript Lifecycle Union Drift Spot-Check
-current task: V60-00 TypeScript Lifecycle Union Drift Spot-Check
+active stream: V61 Post-Pattern Intake Re-Gate
+current task: V61-00 Post-Pattern Intake Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -5423,7 +5423,7 @@ Outcome:
 
 ### V60-00 — TypeScript Lifecycle Union Drift Spot-Check
 
-Status: active
+Status: complete
 
 Goal: inspect a small set of lifecycle/state-dependent TypeScript models and
 decide whether the V59 candidate should become an implemented guard,
@@ -5497,6 +5497,90 @@ Acceptance criteria:
 - no package source edits;
 - decision grounded in local evidence;
 - next active task explicit.
+
+Outcome:
+
+- V60 kept the lifecycle union candidate as a standard/eval candidate, deferred
+  after spot-check.
+- V60 rejected immediate CI guard implementation, package source rewrite, broad
+  TypeScript audit/scanner, and more source intake.
+- V60 selected post-pattern-intake re-gate as the next task.
+
+### V61-00 — Post-Pattern Intake Re-Gate
+
+Status: active
+
+Goal: decide whether to continue internal pattern-intake hardening, return to
+external operator/owner blockers, or select one bounded source-backed repair
+from current evidence.
+
+Product rationale: V58-V60 proved a complete pattern-intake mini-loop: runbook,
+one source application, and local source spot-check. KRN should now re-gate
+instead of continuing pattern work by momentum.
+
+Architectural rationale: continuous improvement needs stop/go gates. After a
+pattern loop rejects implementation, the next step must come from evidence, not
+from a desire to keep researching.
+
+Evidence source: V58-V60 reports, V56 packet, V55 readiness report, and current
+CI state.
+
+Official/external sources: none unless the selected next task requires a fresh
+bounded source decision.
+
+Inputs required:
+
+- V58 report;
+- V59 report;
+- V60 report;
+- V56 packet;
+- V55 readiness report;
+- latest CI state.
+
+Files likely touched:
+
+- V61 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- one bounded consumer only if selected.
+
+Allowed writes:
+
+- KRN reports/plans;
+- one bounded consumer only with explicit consumer/falsifier.
+
+Forbidden writes:
+
+- target repo edits;
+- package source changes unless V61 explicitly selects a repair;
+- broad research/source crawler;
+- broad TypeScript audit/scanner;
+- dashboard/API/MCP/worker expansion;
+- product-ready or widened-alpha claim.
+
+Output requirements:
+
+- evidence summary;
+- rejected alternatives;
+- readiness impact;
+- selected next task or precise blocker.
+
+Definition of Done: V61 selects the next bounded task or records an honest
+blocker after the pattern-intake mini-loop.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no momentum-based research;
+- no local V02-01 substitute;
+- next active task or blocker explicit.
 
 ## 13. Generated Task Backlog
 
@@ -5832,7 +5916,9 @@ Initial entry:
 - [x] V59-00 complete: applied pattern intake runbook to the existing
   Total TypeScript union/narrowing source and created one eval/golden candidate
   in the brain-battle eval matrix.
-- [ ] V60-00 active: TypeScript Lifecycle Union Drift Spot-Check.
+- [x] V60-00 complete: bounded TypeScript lifecycle spot-check found no repeated
+  drift requiring a guard; candidate remains deferred/standard-only.
+- [ ] V61-00 active: Post-Pattern Intake Re-Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6632,6 +6718,18 @@ Initial decisions:
   Does not prove: current TypeScript drift or need for implementation.
   Falsifier: V60 finds no repeated lifecycle optional-object drift, or the
     candidate cannot be guarded deterministically without broad scanning.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Defer lifecycle union guard after bounded spot-check and promote
+    post-pattern-intake re-gate as V61.
+  Rationale: V60 found the sampled high-risk TypeScript lifecycle surfaces
+    already use narrow unions, Zod enums, or discriminated unions. Immediate
+    guard implementation would be weakly justified.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v60-typescript-lifecycle-union-drift-spot-check/REPORT.md`;
+    `docs/architecture/brain-battle-eval-matrix.md`.
+  Does not prove: exhaustive TypeScript quality or product readiness.
+  Falsifier: future source work finds repeated lifecycle optional-object drift
+    where valid fields differ by state.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -7792,6 +7890,14 @@ Seed queue:
   Reason: source-backed TypeScript patterns must be checked against local source
     before becoming guards or repairs
   Task: V60-00
+
+- Candidate: post-pattern-intake re-gate
+  Source evidence: V58-V60 completed a pattern-intake mini-loop
+  Surface: re-gate report / active plan
+  Status: accepted as V61-00
+  Reason: after runbook, application, and local spot-check, choose next work from
+    evidence rather than continuing pattern intake by momentum
+  Task: V61-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -9565,6 +9671,48 @@ Product readiness verdict:
 Next active stream:
 - V60 — TypeScript Lifecycle Union Drift Spot-Check.
 
+## Outcome 2026-06-27 V60
+
+Completed:
+- V60 TypeScript Lifecycle Union Drift Spot-Check.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v60-typescript-lifecycle-union-drift-spot-check/REPORT.md`.
+- `packages/core/src/evidenceBundle.ts`.
+- `packages/core/src/candidateReviewability.ts`.
+- `packages/core/src/source.ts`.
+- `packages/harness/src/repositories/types.ts`.
+- `packages/harness/src/activation/types.ts`.
+- `packages/workers/src/jobTypes.ts`.
+- `packages/workers/src/enqueueMaintenanceJob.ts`.
+- `packages/schema/src/reflection.ts`.
+- `packages/schema/src/memoryCandidate.ts`.
+- `packages/core/src/memory.ts`.
+- `packages/core/src/contextAssembly.ts`.
+
+What improved:
+- The pattern-intake candidate was checked against local TypeScript source.
+- The lifecycle union guard was deferred instead of implemented without evidence.
+- The eval matrix now records the candidate as deferred after spot-check.
+
+What did not improve:
+- Product readiness.
+- V02-01.
+- Package source behavior.
+- Exhaustive TypeScript quality.
+
+New task:
+- V61 Post-Pattern Intake Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V61 — Post-Pattern Intake Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -9613,7 +9761,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V60 TypeScript Lifecycle Union Drift Spot-Check.
+Active stream: V61 Post-Pattern Intake Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
