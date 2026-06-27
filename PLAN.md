@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V65 TypeScript Boundary Pattern Application
-current task: V65-01 Post TypeScript Pattern Application Re-Gate
+active stream: V66 TypeScript Boundary Falsifier Spot-Check
+current task: V66-00 External Boundary Drift Spot-Check
 ```
 
 Completed stream summary:
@@ -98,46 +98,46 @@ V64-01 pattern surface consumer matrix: complete
 V64-02 first surface-matrix pattern application: complete
 V64-03 post surface-matrix application re-gate: complete
 V65-00 TypeScript source packet application: complete
-V65-01 post TypeScript pattern application re-gate: active
+V65-01 post TypeScript pattern application re-gate: complete
+V66 TypeScript boundary falsifier spot-check: active
 ```
 
 ## Active Stream
 
-### V65 TypeScript Boundary Pattern Application
+### V66 TypeScript Boundary Falsifier Spot-Check
 
 Goal:
 
-Apply the new pattern surface matrix to the existing TypeScript source packet
-and either improve one durable TypeScript consumer or explicitly defer/reject
-the packet as already covered.
+Check whether the adopted TypeScript boundary pattern has an immediate falsifier
+in current package source.
 
 Current finding:
 
 ```txt
-V64 made pattern distillation a permanent execution gate and applied the Codex
-task-contract source packet to `PLANS.md`. The next best bounded source packet
-is the existing TypeScript boundary packet, because it maps directly to current
-standards and recurring KRN source work.
+V65 adopted the TypeScript boundary source packet into
+`docs/standards/typescript-boundaries.md`. That does not prove the current code
+respects the standard.
 ```
 
 Current action:
 
 ```txt
-Execute V65-01: decide the next bounded task after the TypeScript boundary
-source packet application, using evidence instead of momentum.
+Execute V66-00: run a bounded source inspection for external input boundary
+drift and either select one repair/eval task or explicitly defer.
 ```
 
 Primary consumer:
 
 ```txt
-One TypeScript standard/eval/decision surface only.
+One repair/eval/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The task duplicates existing TypeScript doctrine without changing a decision,
-or broadens standards without a local falsifier.
+Search finds repeated unchecked JSON/env/CLI/MCP/app/plugin input use, broad
+string status/provenance, or unjustified unsafe casts that cross external
+boundaries.
 ```
 
 ### External Input Blocker

@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V65 TypeScript Boundary Pattern Application
-current task: V65-01 Post TypeScript Pattern Application Re-Gate
+active stream: V66 TypeScript Boundary Falsifier Spot-Check
+current task: V66-00 External Boundary Drift Spot-Check
 ```
 
 Evidence already recorded in repo:
@@ -6157,7 +6157,7 @@ Acceptance criteria:
 
 ### V65-01 — Post TypeScript Pattern Application Re-Gate
 
-Status: active
+Status: complete
 
 Goal: Decide the next bounded task after the TypeScript boundary source packet
 application.
@@ -6234,6 +6234,99 @@ git status --short --branch
 Acceptance criteria:
 
 - Plan state can be resumed without chat context.
+
+### V66-00 — External Boundary Drift Spot-Check
+
+Status: active
+
+Goal: Inspect current package source for immediate falsifiers of the TypeScript
+boundary pattern decision.
+
+Pattern surface: TypeScript boundaries.
+
+Product rationale: A TypeScript standard matters only if it can constrain real
+source work. This slice checks whether the newly adopted boundary decision finds
+a current bounded repair/eval candidate or should remain standard-only.
+
+Architectural rationale: KRN should move from source packet -> standard ->
+falsifier. The falsifier must inspect external input boundaries without
+reintroducing broad audit theater.
+
+Evidence source:
+
+- `docs/standards/typescript-boundaries.md` Pattern Intake Decision.
+- `docs/KRN_SOURCES.md` TypeScript practitioner sources.
+- Current package source search results.
+
+Official/external sources:
+
+- none beyond sources already retained in `docs/KRN_SOURCES.md`.
+
+Inputs required:
+
+- Current worktree.
+
+Primary consumer:
+
+- one of:
+  - bounded repair task;
+  - eval/golden candidate;
+  - explicit defer decision in `PLANS.md`.
+
+Does not prove:
+
+- all TypeScript boundaries are correct;
+- code quality is product-ready;
+- broad `krn audit` should return.
+
+Falsifier:
+
+- Current source contains repeated unchecked external input use, broad finite
+  status/provenance strings crossing IO, or unjustified unsafe casts at external
+  boundaries.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+- optional selected report/consumer if a candidate is recorded.
+
+Allowed writes:
+
+- Compact plan/report updates.
+- No package source unless a separate repair task is promoted.
+
+Forbidden writes:
+
+- broad TypeScript cleanup;
+- audit subsystem;
+- source edits during the spot-check;
+- global `ts-reset` adoption.
+
+Output requirements:
+
+- Bounded search/inspection evidence.
+- One repair/eval/defer decision.
+
+Definition of Done:
+
+- Spot-check result is recorded.
+- Next active task or blocker is explicit.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+rg -n "JSON\\.parse|fetch\\([^\\n]*\\.json|process\\.env|as any|as unknown as|@ts-ignore|@ts-expect-error" packages
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- The spot-check does not claim broad TypeScript correctness.
+- Any follow-up is bounded to one owner surface.
 
 ### External Input Blocker
 
@@ -6607,7 +6700,9 @@ Initial entry:
   next bounded pattern application.
 - [x] V65-00 complete: applied the existing TypeScript source packet to one durable
   TypeScript consumer or explicitly defer/reject it.
-- [ ] V65-01 active: re-gate after the TypeScript boundary pattern application.
+- [x] V65-01 complete: selected a bounded TypeScript boundary falsifier
+  spot-check instead of more source intake.
+- [ ] V66-00 active: inspect current package source for external boundary drift.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7521,6 +7616,17 @@ Initial decisions:
     before validation, changes `ts-reset` without package-boundary
     classification, or keeps repeated external status/provenance values as broad
     strings where finite values govern behavior.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select TypeScript boundary falsifier spot-check as V66.
+  Rationale: V65 adopted the TypeScript source packet into a standard, but a
+    standard is not proof. The next bounded task should inspect source for
+    immediate falsifiers and either open one repair/eval candidate or defer.
+  Surface: TypeScript boundaries.
+  Consumer: one repair/eval/defer decision selected by V66-00.
+  Does not prove: complete TypeScript quality or need for broad audit.
+  Falsifier: V66-00 finds no repeated external-boundary drift and no bounded
+    repair/eval candidate.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10631,6 +10737,7 @@ Completed:
 - V64-02 First Surface-Matrix Pattern Application.
 - V64-03 Post Surface-Matrix Application Re-Gate.
 - V65-00 TypeScript Source Packet Application.
+- V65-01 Post TypeScript Pattern Application Re-Gate.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10652,6 +10759,8 @@ What improved:
   not broad research.
 - The TypeScript source packet now has one durable consumer:
   `docs/standards/typescript-boundaries.md`.
+- The next task is a bounded source spot-check against the new TypeScript
+  boundary falsifier, not another research intake.
 
 What did not improve:
 - Product readiness.
@@ -10662,7 +10771,7 @@ What did not improve:
 - Package source behavior.
 
 New task:
-- V65-01 Post TypeScript Pattern Application Re-Gate.
+- V66-00 External Boundary Drift Spot-Check.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10671,10 +10780,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V65 TypeScript Boundary Pattern Application.
+- V66 TypeScript Boundary Falsifier Spot-Check.
 
 Next active task:
-- V65-01 Post TypeScript Pattern Application Re-Gate.
+- V66-00 External Boundary Drift Spot-Check.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -10724,7 +10833,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V65 TypeScript Boundary Pattern Application.
+Active stream: V66 TypeScript Boundary Falsifier Spot-Check.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
