@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V64 Continuous Pattern Distillation Gate
-current task: V64-03 Post Surface-Matrix Application Re-Gate
+active stream: V65 TypeScript Boundary Pattern Application
+current task: V65-00 TypeScript Source Packet Application
 ```
 
 Evidence already recorded in repo:
@@ -5994,7 +5994,7 @@ Acceptance criteria:
 
 ### V64-03 — Post Surface-Matrix Application Re-Gate
 
-Status: active
+Status: complete
 
 Goal: Decide the next bounded task after the first surface-matrix pattern
 application, using evidence instead of momentum.
@@ -6054,6 +6054,106 @@ Acceptance criteria:
 
 - The plan does not continue local work merely because the previous task was
   completed.
+
+### V65-00 — TypeScript Source Packet Application
+
+Status: active
+
+Goal: Apply the surface consumer matrix to the existing TypeScript source packet
+and route it to one durable KRN consumer.
+
+Pattern surface: TypeScript boundaries.
+
+Product rationale: The operator wants best courses and senior TypeScript
+patterns continuously condensed into KRN's code standards. The first bounded
+TypeScript application should use existing retained sources instead of starting
+a broad research pass.
+
+Architectural rationale: TypeScript pattern intake should make wrong authority
+harder to express in code, not create style notes. The result must be a bounded
+standard/eval/decision change or an explicit defer/reject decision.
+
+Evidence source:
+
+- `docs/runbooks/pattern-intake.md` surface consumer matrix.
+- `docs/KRN_SOURCES.md` TypeScript practitioner sources.
+- `docs/standards/typescript-boundaries.md`.
+- `docs/standards/typescript-excellence.md`.
+
+Official/external sources:
+
+- Total TypeScript public pages already retained in `docs/KRN_SOURCES.md`:
+  Designing Your Types, Unions/Literals/Narrowing, and TS Reset.
+
+Inputs required:
+
+- Current TypeScript standards and retained source map only.
+
+Primary consumer:
+
+- Exactly one of:
+  - `docs/standards/typescript-boundaries.md`;
+  - `docs/standards/typescript-excellence.md`;
+  - an eval/golden candidate;
+  - an explicit defer/reject decision in `PLANS.md`.
+
+Does not prove:
+
+- That current TypeScript source has drift.
+- That broad TS refactors are valuable.
+- That paid/proprietary course content should be copied into KRN.
+
+Falsifier:
+
+- The task duplicates existing doctrine without changing a decision.
+- The task broadens TypeScript standards without a local proof/falsifier.
+- A future TypeScript source slice still has no clear consumer for a course or
+  practitioner pattern.
+
+Files likely touched:
+
+- one TypeScript standard/eval/decision file;
+- `PLAN.md`;
+- `GOAL.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- One durable TypeScript consumer plus compact plan updates.
+
+Forbidden writes:
+
+- package source;
+- broad TS cleanup;
+- copied course content;
+- global `ts-reset` decision without ADR-level evidence;
+- more than one primary consumer.
+
+Output requirements:
+
+- Source -> mechanism -> KRN implication -> decision/rejection -> consumer ->
+  falsifier record exists.
+- Decision is adopt, reject, defer, or lab-test.
+- If adopted, only one durable consumer changes.
+
+Definition of Done:
+
+- One bounded TypeScript source-packet decision exists.
+- `git diff --check` passes.
+- Commit and push the focused update.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- Future TypeScript slices can tell whether to apply, defer, or reject course
+  guidance without rereading chat history.
+- The task does not create a broad research backlog.
 
 ### External Input Blocker
 
@@ -6423,7 +6523,10 @@ Initial entry:
   runbook.
 - [x] V64-02 complete: applied the Codex task-contract source packet to the
   `PLANS.md` generated task template.
-- [ ] V64-03 active: re-gate after the first surface-matrix application.
+- [x] V64-03 complete: selected the TypeScript boundary source packet as the
+  next bounded pattern application.
+- [ ] V65-00 active: apply the existing TypeScript source packet to one durable
+  TypeScript consumer or explicitly defer/reject it.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7302,6 +7405,19 @@ Initial decisions:
     should store raw logs/research dumps.
   Falsifier: a future generated task is promoted without pattern surface,
     primary consumer, does-not-prove boundary, and falsifier.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select the TypeScript boundary source packet as V65.
+  Rationale: After V64 proved the matrix and task-contract consumer, the highest
+    ROI next source packet is the existing Total TypeScript / TypeScript boundary
+    packet. It has retained sources, durable consumers, and direct relevance to
+    KRN package/source quality without requiring broad research.
+  Surface: TypeScript boundaries.
+  Consumer: one TypeScript standard/eval/decision surface selected by V65-00.
+  Does not prove: current TypeScript source has drift or that broad TS refactors
+    are useful.
+  Falsifier: V65-00 finds the existing standards already cover the packet and
+    no new bounded decision should be retained.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10410,6 +10526,7 @@ Completed:
 - V64-00 Pattern Gate Re-Entry.
 - V64-01 Pattern Surface Consumer Matrix.
 - V64-02 First Surface-Matrix Pattern Application.
+- V64-03 Post Surface-Matrix Application Re-Gate.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10427,6 +10544,8 @@ What improved:
 - The Codex task-contract source packet now changes the `PLANS.md` generated
   task template: future generated tasks must name pattern surface, primary
   consumer, does-not-prove boundary, and falsifier.
+- The next source packet is selected by matrix evidence: TypeScript boundaries,
+  not broad research.
 
 What did not improve:
 - Product readiness.
@@ -10436,7 +10555,7 @@ What did not improve:
 - Package source behavior.
 
 New task:
-- V64-03 Post Surface-Matrix Application Re-Gate.
+- V65-00 TypeScript Source Packet Application.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10445,10 +10564,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V64 Continuous Pattern Distillation Gate.
+- V65 TypeScript Boundary Pattern Application.
 
 Next active task:
-- V64-03 Post Surface-Matrix Application Re-Gate.
+- V65-00 TypeScript Source Packet Application.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -10498,7 +10617,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V64 Continuous Pattern Distillation Gate.
+Active stream: V65 TypeScript Boundary Pattern Application.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

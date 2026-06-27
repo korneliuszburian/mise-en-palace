@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V64 Continuous Pattern Distillation Gate
+V65 TypeScript Boundary Pattern Application
 ```
 
 Current product loop:
@@ -108,7 +108,8 @@ V64 Continuous Pattern Distillation Gate: active.
 V64-00 Pattern Gate Re-Entry: complete.
 V64-01 Pattern Surface Consumer Matrix: complete.
 V64-02 First Surface-Matrix Pattern Application: complete.
-current task: V64-03 Post Surface-Matrix Application Re-Gate.
+V64-03 Post Surface-Matrix Application Re-Gate: complete.
+current task: V65-00 TypeScript Source Packet Application.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V64 Continuous Pattern Distillation Gate
-current task: V64-03 Post Surface-Matrix Application Re-Gate
+active stream: V65 TypeScript Boundary Pattern Application
+current task: V65-00 TypeScript Source Packet Application
 ```
 
 Completed stream summary:
@@ -96,48 +96,50 @@ V63 post-pattern-intake linkage re-gate: complete
 V64-00 pattern gate re-entry: complete
 V64-01 pattern surface consumer matrix: complete
 V64-02 first surface-matrix pattern application: complete
-V64-03 post surface-matrix application re-gate: active
+V64-03 post surface-matrix application re-gate: complete
+V65 TypeScript boundary pattern application: active
 ```
 
 ## Active Stream
 
-### V64 Continuous Pattern Distillation Gate
+### V65 TypeScript Boundary Pattern Application
 
 Goal:
 
-Make best-practice, course, paper, official-doc, practitioner, target-evidence,
-and repo-evidence intake a permanent execution gate for non-trivial KRN work,
-without turning research into source hoarding or context bloat.
+Apply the new pattern surface matrix to the existing TypeScript source packet
+and either improve one durable TypeScript consumer or explicitly defer/reject
+the packet as already covered.
 
 Current finding:
 
 ```txt
-The operator explicitly selected continuous pattern distillation as the next
-internal product task. This satisfies the V63 falsifier: a bounded internal task
-now exists with consumer and falsifier.
+V64 made pattern distillation a permanent execution gate and applied the Codex
+task-contract source packet to `PLANS.md`. The next best bounded source packet
+is the existing TypeScript boundary packet, because it maps directly to current
+standards and recurring KRN source work.
 ```
 
 Current action:
 
 ```txt
-Execute V64-03: decide the next bounded task after the first surface-matrix
-application, using evidence instead of momentum.
+Execute V65-00: apply the surface matrix to the existing Total TypeScript /
+TypeScript boundary source packet and route it to one durable consumer:
+`docs/standards/typescript-boundaries.md`,
+`docs/standards/typescript-excellence.md`, an eval/golden candidate, or an
+explicit defer/reject decision.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN.md / GOAL.md / PLANS.md execution policy, then future standards, skills,
-ADRs, eval candidates, memory/source candidates, CLI/readback behavior, or
-bounded repairs.
+One TypeScript standard/eval/decision surface only.
 ```
 
 Falsifier:
 
 ```txt
-A future infra, harness, CI, eval, Codex-surface, TypeScript, target-workflow,
-or research/paper-driven slice adopts a pattern without mechanism, consumer,
-does-not-prove boundary, and falsifier.
+The task duplicates existing TypeScript doctrine without changing a decision,
+or broadens standards without a local falsifier.
 ```
 
 ### External Input Blocker
