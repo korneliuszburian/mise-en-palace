@@ -5,7 +5,13 @@ For the active repo-wide quality gate, use this file together with
 `docs/standards/typescript-excellence.md`. General coding standards live in
 `docs/standards/code-quality.md`.
 
-KRN is TypeScript-first, but TypeScript code starts only after Commit 0/1.
+KRN is TypeScript-first. This standard applies to every current implementation
+slice that touches TypeScript source, public types, validators, config, CLI
+input, app/connector input, MCP/tool input, plugin output, or generated data.
+
+The goal is not broad type cleanup. The goal is continuous boundary discipline:
+external inputs stay `unknown` until validated, public contracts stay explicit,
+and type weakening is rejected unless isolated and justified.
 
 ## Doctrine
 

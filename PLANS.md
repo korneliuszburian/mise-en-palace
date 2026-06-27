@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V202 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, and TypeScript standard current-state re-gate slices: complete
-active stream: V203 TypeScript Boundary Current-State Repair
-current task: V203-00 TypeScript Boundary Current-State Repair
+V48..V203 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, and TypeScript boundary standard guard slices: complete
+active stream: V204 Post TypeScript Boundary Re-Gate
+current task: V204-00 Post TypeScript Boundary Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V203-00 TypeScript Boundary Current-State Repair.
+V204-00 Post TypeScript Boundary Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16851,6 +16851,59 @@ Next active stream:
 
 Next active task:
 - V203-00 TypeScript Boundary Current-State Repair.
+
+## Outcome 2026-06-28 V203 TypeScript Boundary Current-State Repair
+
+Completed task:
+- V203-00 TypeScript Boundary Current-State Repair.
+
+What changed:
+- `docs/standards/typescript-boundaries.md` no longer says TypeScript code
+  starts only after Commit 0/1.
+- The standard now states it applies to every current implementation slice that
+  touches TypeScript source, public types, validators, config, CLI input,
+  app/connector input, MCP/tool input, plugin output, or generated data.
+- The standard now frames the goal as continuous boundary discipline, not broad
+  type cleanup.
+- `packages/harness/src/typescriptBoundaryInvariants.test.ts` now guards the
+  standard against returning to Commit 0/1 stage language.
+
+Evidence:
+- Focused TypeScript boundary invariant test passed with TMPDIR outside the
+  repo.
+- The existing production TypeScript boundary scans remain in the same test
+  file.
+
+Source-to-decision:
+- Source: `docs/standards/typescript-boundaries.md`,
+  `.agents/skills/typescript-type-safety/SKILL.md`, and TypeScript boundary
+  invariants.
+- Mechanism: TypeScript implementation slices use this standard before source
+  changes; stale stage language can make current TS work look out-of-phase.
+- KRN implication: TypeScript boundary rules are current continuous discipline,
+  not bootstrap-only sequencing.
+- Decision: repair the standard and guard it.
+- Does not prove: every TypeScript model is ideal, product readiness, or need
+  for broad type rewrites.
+- Consumer: `docs/standards/typescript-boundaries.md` and
+  `packages/harness/src/typescriptBoundaryInvariants.test.ts`.
+- Falsifier: the standard can again describe Commit 0/1 as current coding stage
+  while tests pass.
+
+New task:
+- V204-00 Post TypeScript Boundary Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V204 Post TypeScript Boundary Re-Gate.
+
+Next active task:
+- V204-00 Post TypeScript Boundary Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

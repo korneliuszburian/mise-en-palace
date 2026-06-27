@@ -52,6 +52,20 @@ const packageSourceFiles = (): string[] =>
     .flatMap((sourcePath) => productionTypeScriptFiles(sourcePath));
 
 describe("KRN TypeScript boundary invariants", () => {
+  it("keeps the TypeScript boundary standard aligned with current continuous work", () => {
+    const standard = readFileSync(
+      path.join(repoRoot, "docs/standards/typescript-boundaries.md"),
+      "utf8"
+    );
+
+    expect(standard).toContain("This standard applies to every current implementation");
+    expect(standard).toContain("continuous boundary discipline");
+    expect(standard).toContain("external inputs stay `unknown` until validated");
+    expect(standard).toContain("type weakening is rejected unless isolated and justified");
+    expect(standard).not.toContain("TypeScript code starts only after Commit 0/1");
+    expect(standard).not.toContain("Commit 0/1");
+  });
+
   it("keeps production package source free of unsafe casts and TS suppressions", () => {
     const findings = packageSourceFiles().flatMap((filePath) => {
       const body = readFileSync(filePath, "utf8");
