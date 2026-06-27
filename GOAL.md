@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V120 Post Final Response Contract Guard Re-Gate
+V122 Post TypeScript Boundary Invariant Guard Re-Gate
 ```
 
 Current product loop:
@@ -37,9 +37,9 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V119: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-task-contract, and final-response active guards complete.
-current task: V120-00 Post Final Response Contract Guard Re-Gate.
+V110..V121: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+task-contract, final-response, and TypeScript boundary guards complete.
+current task: V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

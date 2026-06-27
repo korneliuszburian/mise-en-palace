@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V119 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, and final-response guard slices: complete
-active stream: V120 Post Final Response Contract Guard Re-Gate
-current task: V120-00 Post Final Response Contract Guard Re-Gate
+V48..V121 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, and TypeScript boundary guard slices: complete
+active stream: V122 Post TypeScript Boundary Invariant Guard Re-Gate
+current task: V122-00 Post TypeScript Boundary Invariant Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V120-00 Post Final Response Contract Guard Re-Gate.
+V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13756,6 +13756,79 @@ Next active stream:
 
 Next active task:
 - V120-00 Post Final Response Contract Guard Re-Gate.
+
+## Outcome 2026-06-27 V121 TypeScript Boundary Invariant Guard
+
+Completed tasks:
+- V120-00 Post Final Response Contract Guard Re-Gate.
+- V121-00 TypeScript Boundary Invariant Guard.
+
+V120 decision:
+- Do not add more reporting structure without a concrete resume or proof
+  falsifier.
+- Select TypeScript boundary hygiene because `docs/standards/typescript-excellence.md`
+  defines hard bans and V29/V66 evidence showed the current package source is
+  clean enough for a focused invariant, but the protection should not return as
+  broad `krn audit`.
+
+What changed:
+- Added `packages/harness/src/typescriptBoundaryInvariants.test.ts`.
+- Root `eval:brain-battle:smoke` now runs the TypeScript boundary invariant.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard and updated
+  current smoke description.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V122.
+
+Evidence:
+- `docs/standards/typescript-excellence.md`.
+- `docs/KRN_SOURCES.md#designing-your-types`.
+- `docs/KRN_SOURCES.md#unions-literals-and-narrowing`.
+- `docs/KRN_SOURCES.md#ts-reset`.
+- Baseline scan found only one production `JSON.parse`, already assigned to
+  `unknown` in `packages/cli/src/cliFileBoundary.ts`.
+
+Source-to-decision:
+- Source: Total TypeScript-derived KRN standards, V29/V66 TypeScript boundary
+  dogfood evidence, and current package-source scan.
+- Mechanism: TypeScript boundary discipline becomes durable only when risky
+  shortcuts fail deterministic verification before they become review debt.
+- KRN implication: production package source should reject unsafe casts,
+  TypeScript suppressions, explicit `any`, and direct trusted `JSON.parse`
+  without reintroducing a broad audit subsystem.
+- Decision: add a focused harness invariant and include it in brain-battle
+  smoke.
+- Does not prove: all type design is ideal, every external input boundary has
+  perfect domain validation, tests are production-safe, or product readiness.
+- Consumer: `packages/harness/src/typescriptBoundaryInvariants.test.ts`,
+  `package.json`, and `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: production package source can add `as any`, `as unknown as`,
+  `@ts-ignore`, `@ts-expect-error`, explicit `any`, or a direct `JSON.parse`
+  result not assigned to `unknown` without focused tests failing.
+
+What improved:
+- TypeScript hard bans now have focused smoke coverage.
+- The guard routes practitioner/course guidance into deterministic enforcement
+  without reviving `krn audit` or broad quality scanning.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Broad type-design quality.
+
+New task:
+- V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V122 Post TypeScript Boundary Invariant Guard Re-Gate.
+
+Next active task:
+- V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

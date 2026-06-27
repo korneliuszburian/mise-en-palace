@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V120 Post Final Response Contract Guard Re-Gate
-current task: V120-00 Post Final Response Contract Guard Re-Gate
+active stream: V122 Post TypeScript Boundary Invariant Guard Re-Gate
+current task: V122-00 Post TypeScript Boundary Invariant Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,33 +43,33 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V119: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-           task-contract, and final-response active guards complete.
+V110..V121: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+           task-contract, final-response, and TypeScript boundary guards
+           complete.
 ```
 
 ## Active Stream
 
-### V120 Post Final Response Contract Guard Re-Gate
+### V122 Post TypeScript Boundary Invariant Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding that final Codex run responses keep
-proof/non-proof, command, CI, condensation, next-task, and blocker fields.
+Decide the next bounded task after guarding production TypeScript boundary
+hygiene without reintroducing `krn audit`.
 
 Current finding:
 
 ```txt
-V118 selected final-response continuity as the next active surface. V119 guarded
-that `PLANS.md` keeps the final response fields needed for proof/non-proof,
-commands, artifacts, commits/CI, condensation, task appends, next active task,
-and blocked/budget status.
+V120 selected TypeScript boundary hygiene as the next product-facing pattern
+surface. V121 added a focused invariant for production package source unsafe
+casts, TypeScript suppressions, explicit `any`, and unchecked `JSON.parse`.
 ```
 
 Current action:
 
 ```txt
-Execute V120-00: select the next pattern surface from evidence. Do not convert
-final-response guards into broad reporting bureaucracy.
+Execute V122-00: select the next pattern surface from evidence. Do not broaden
+the TypeScript guard into `krn audit`, a quality scanner, or a broad cleanup.
 ```
 
 Primary consumer:
@@ -81,8 +81,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate adds more reporting structure without a concrete resume, proof, or
-operator-friction falsifier.
+The re-gate turns the focused TypeScript guard into broad style enforcement or
+repo-wide cleanup without a concrete failing pattern.
 ```
 
 ## External Input Blocker
