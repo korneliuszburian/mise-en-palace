@@ -798,18 +798,24 @@ Update this section during execution. Initial checklist:
 - [x] M3 first concrete product friction repaired or invalidated.
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
   Outcome: generic `db:smoke` fresh DB idempotency repair candidate rejected
-  for now because current CI, local DB, and scratch DB checks passed.
+  for now because current CI, local DB, and scratch DB checks passed. Persisted
+  in commit `046827b docs(v04): add scenario factory and target repo skill`;
+  GitHub Actions run `28273514668` passed.
 - [x] M4 Controlled Scenario Factory contract added.
-  Evidence: `docs/architecture/controlled-scenario-factory.md`.
+  Evidence: `docs/architecture/controlled-scenario-factory.md`; commit
+  `046827b`; GitHub Actions run `28273514668` passed.
 - [x] M5 Knowledge Condensation Gate added.
   Evidence: `docs/architecture/controlled-scenario-factory.md` and
-  `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+  `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`;
+  commit `046827b`; GitHub Actions run `28273514668` passed.
 - [x] M6 first one/two repo skills created or improved.
   Evidence: `.agents/skills/target-repo-testing/SKILL.md` and
-  `docs/architecture/skill-first-krn.md`.
+  `docs/architecture/skill-first-krn.md`; commit `046827b`; GitHub Actions run
+  `28273514668` passed.
 - [x] M7 deterministic guard expanded from real failure.
   Evidence: `packages/cli/src/targetRepoTestingSkill.test.ts` and focused
-  `pnpm --filter @krn/cli test -- targetRepoTestingSkill` pass.
+  `pnpm --filter @krn/cli test -- targetRepoTestingSkill` pass; commit
+  `046827b`; GitHub Actions run `28273514668` passed.
 - [ ] M8 first controlled scenario executed with condensation decision.
 - [ ] M9 second scenario executed or honestly deferred.
 - [ ] M10 accepted condensations implemented.
@@ -1018,7 +1024,8 @@ Record commands, reports, commits, and CI here.
   Milestone: M4/M5
   Command/report/commit: `docs/architecture/controlled-scenario-factory.md` and
     `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
-  Result: pass in working tree, pending commit/CI.
+  Result: committed as `046827b docs(v04): add scenario factory and target repo
+    skill`; GitHub Actions run `28273514668` passed.
   Proves: V04 now has a minimal scenario contract and mandatory condensation
     decision format.
   Does not prove: scenario factory adoption by future reports until used again.
@@ -1028,7 +1035,8 @@ Record commands, reports, commits, and CI here.
   Command/report/commit: `.agents/skills/target-repo-testing/SKILL.md`,
     `.agents/skills/target-repo-testing/agents/openai.yaml`, and
     `docs/architecture/skill-first-krn.md`.
-  Result: pass in working tree, pending commit/CI.
+  Result: committed as `046827b docs(v04): add scenario factory and target repo
+    skill`; GitHub Actions run `28273514668` passed.
   Proves: V04 has one repo skill that condenses the high-risk target write
     boundary workflow.
   Does not prove: future target scenarios will invoke the skill correctly.
@@ -1036,7 +1044,8 @@ Record commands, reports, commits, and CI here.
 - Evidence ID: E-20260627-07
   Milestone: M7
   Command/report/commit: `pnpm --filter @krn/cli test -- targetRepoTestingSkill`.
-  Result: pass.
+  Result: pass locally; committed as `046827b docs(v04): add scenario factory
+    and target repo skill`; GitHub Actions run `28273514668` passed.
   Proves: deterministic test coverage protects the target-repo-testing skill
     name, metadata, observation-only default, and forbidden target writes.
   Does not prove: target-aware CLI enforcement or arbitrary target repo safety.
