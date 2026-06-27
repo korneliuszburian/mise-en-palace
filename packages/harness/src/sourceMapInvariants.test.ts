@@ -38,9 +38,21 @@ const sourceSections = (): SourceSection[] => {
 };
 
 describe("KRN source map invariants", () => {
-  it("keeps every retained source tied to a consumer and falsifier", () => {
+  it("keeps every retained source tied to a full source-to-decision mapping", () => {
     const missing = sourceSections().flatMap((section) => {
       const findings: string[] = [];
+
+      if (!/^- Mechanism: .+/mu.test(section.body)) {
+        findings.push(`${section.title}: missing Mechanism`);
+      }
+
+      if (!/^- KRN implication: .+/mu.test(section.body)) {
+        findings.push(`${section.title}: missing KRN implication`);
+      }
+
+      if (!/^- Decision: .+/mu.test(section.body)) {
+        findings.push(`${section.title}: missing Decision`);
+      }
 
       if (!/^- Consumer: .+/mu.test(section.body)) {
         findings.push(`${section.title}: missing Consumer`);
@@ -48,6 +60,10 @@ describe("KRN source map invariants", () => {
 
       if (!/^- Falsifier: .+/mu.test(section.body)) {
         findings.push(`${section.title}: missing Falsifier`);
+      }
+
+      if (!/^- Does not prove: .+/mu.test(section.body)) {
+        findings.push(`${section.title}: missing Does not prove`);
       }
 
       return findings;

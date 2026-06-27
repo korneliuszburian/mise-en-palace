@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V98 Post Active Plan Completion Guard Re-Gate
-current task: V98-00 Post Active Plan Completion Guard Re-Gate
+active stream: V100 Post Source Map Full Mapping Guard Re-Gate
+current task: V100-00 Post Source Map Full Mapping Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12993,6 +12993,61 @@ Next active stream:
 
 Next active task:
 - V98-00 Post Active Plan Completion Guard Re-Gate.
+
+## Outcome 2026-06-27 V99 Source Map Full Mapping Invariant Guard
+
+Completed:
+- V98-00 Post Active Plan Completion Guard Re-Gate.
+- V99-00 Source Map Full Mapping Invariant Guard.
+
+Evidence:
+- `docs/KRN_SOURCES.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: KRN kernel source-to-decision law and the repo-local
+  `source-to-decision` skill.
+- Mechanism: retained sources should become local decisions only after naming
+  mechanism, KRN implication, decision/rejection, consumer, falsifier, and what
+  they do not prove.
+- KRN implication: `docs/KRN_SOURCES.md` must not retain decorative source
+  entries that only have partial routing metadata.
+- Decision: strengthen the source-map invariant from consumer/falsifier only to
+  full source-to-decision mapping.
+- Does not prove: source coverage is complete, external docs are current, or
+  every future pattern deserves retention.
+- Consumer: `packages/harness/src/sourceMapInvariants.test.ts`.
+- Falsifier: a retained source section can omit mechanism, KRN implication,
+  decision, consumer, falsifier, or does-not-prove without failing tests.
+
+What improved:
+- Retained source entries now have mechanical coverage for the full kernel
+  mapping fields.
+- Future course/paper/practitioner/doc entries are harder to retain as
+  decorative links.
+
+What did not improve:
+- Product readiness.
+- Source coverage completeness.
+- Currentness of external docs.
+
+New task:
+- V100-00 Post Source Map Full Mapping Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V100 Post Source Map Full Mapping Guard Re-Gate.
+
+Next active task:
+- V100-00 Post Source Map Full Mapping Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

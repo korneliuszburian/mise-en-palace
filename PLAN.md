@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V98 Post Active Plan Completion Guard Re-Gate
-current task: V98-00 Post Active Plan Completion Guard Re-Gate
+active stream: V100 Post Source Map Full Mapping Guard Re-Gate
+current task: V100-00 Post Source Map Full Mapping Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -131,31 +131,34 @@ V94-00 post brain-battle matrix guard re-gate: complete
 V95 context hygiene invariant guard: complete
 V96-00 post context hygiene guard re-gate: complete
 V97 active plan completion invariant guard: complete
-V98 post active plan completion guard re-gate: active
+V98-00 post active plan completion guard re-gate: complete
+V99 source map full mapping invariant guard: complete
+V100 post source map full mapping guard re-gate: active
 ```
 
 ## Active Stream
 
-### V98 Post Active Plan Completion Guard Re-Gate
+### V100 Post Source Map Full Mapping Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after strengthening the active plan invariant so
-current tasks cannot also be marked complete.
+Decide the next bounded task after strengthening the retained source map
+invariant to require full source-to-decision fields.
 
 Current finding:
 
 ```txt
-V96 selected a compaction/resume follow-up: root active state was synchronized,
-but the invariant did not reject a current task that was also marked complete.
-V97 strengthened the active-plan invariant with completion-state checks.
+V98 selected a source-to-decision follow-up: the retained source map invariant
+checked consumer and falsifier but did not yet enforce the full kernel mapping.
+V99 strengthened the invariant to require mechanism, KRN implication, decision,
+consumer, falsifier, and non-proof boundary.
 ```
 
 Current action:
 
 ```txt
-Execute V98-00: select the next pattern surface from evidence. Do not broaden
-plan invariants into a plan linter unless a concrete resume failure appears.
+Execute V100-00: select the next pattern surface from evidence. Do not broaden
+source-map work into source coverage expansion without a concrete consumer.
 ```
 
 Primary consumer:
