@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V159 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, and continuation pattern-gate chain guard slices: complete
-active stream: V160 Post Continuation Pattern Gate Chain Re-Gate
-current task: V160-00 Post Continuation Pattern Gate Chain Re-Gate
+V48..V161 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation pattern-gate chain guard, and kernel pattern-gate chain guard slices: complete
+active stream: V162 Post Kernel Pattern Gate Chain Re-Gate
+current task: V162-00 Post Kernel Pattern Gate Chain Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V160-00 Post Continuation Pattern Gate Chain Re-Gate.
+V162-00 Post Kernel Pattern Gate Chain Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -8074,6 +8074,8 @@ Initial entry:
   gate for future compaction.
 - [x] V159-00 complete: root `GOAL.md` continuation research guidance now keeps
   the full source-to-decision chain through consumer and falsifier.
+- [x] V161-00 complete: `docs/KRN_KERNEL.md` now preserves the consumer before
+  falsifier pattern-gate chain.
 ```
 
 ## 16. Surprises & Discoveries
@@ -15295,6 +15297,82 @@ Next active stream:
 
 Next active task:
 - V160-00 Post Continuation Pattern Gate Chain Re-Gate.
+
+## Outcome 2026-06-27 V161 Kernel Pattern Gate Chain Guard
+
+Completed tasks:
+- V160-00 Post Continuation Pattern Gate Chain Re-Gate.
+- V161-00 Kernel Pattern Gate Chain Guard.
+
+V160 decision:
+- Do not broaden continuation-chain preservation into prompt bureaucracy,
+  Research Foundry, source crawler, dashboard, or product-readiness claims.
+- Select kernel pattern-gate chain repair because root `GOAL.md`, root
+  `PLAN.md`, `PLANS.md` section 22, and continuation guidance now require a
+  consumer before falsifier, but `docs/KRN_KERNEL.md` still documented the older
+  source-to-decision chain without consumer.
+- The concrete failure mode is a future Codex run following the required kernel
+  read and treating a retained source as valid without a named consumer.
+
+What changed:
+- `docs/KRN_KERNEL.md` now states that every retained source needs a concrete
+  consumer before falsifier.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks the kernel
+  preserves the full source-to-decision chain through consumer and falsifier.
+- `docs/architecture/brain-battle-eval-matrix.md` records the kernel
+  pattern-gate chain guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V162.
+
+Evidence:
+- `docs/KRN_KERNEL.md` is required reading before editing.
+- Active root `GOAL.md`, root `PLAN.md`, and compact `GOAL.md` contract already
+  had the full consumer/falsifier chain.
+- Before this slice, `docs/KRN_KERNEL.md` still only stated:
+  `source -> mechanism -> KRN implication -> decision/rejection -> falsifier`.
+
+Source-to-decision:
+- Source: `docs/KRN_KERNEL.md` and the active pattern-gate surfaces.
+- Mechanism: the kernel contract is read before edits and shapes architecture
+  law; if it uses a weaker source-to-decision rule than active execution
+  surfaces, future decisions can regress to source retention without a consumer.
+- KRN implication: the kernel law must name consumer before falsifier so
+  best-practice/course/paper/practitioner evidence has to become a concrete KRN
+  surface or be rejected/deferred.
+- Decision: update the kernel rule and guard it with active-plan invariants.
+- Does not prove: every future source has a useful consumer, every future run
+  applies the gate, source quality at scale, or product readiness.
+- Consumer: `docs/KRN_KERNEL.md`,
+  `packages/harness/src/activePlanInvariants.test.ts`, root `GOAL.md`, and root
+  `PLAN.md`.
+- Falsifier: the kernel can drop consumer from the source-to-decision chain
+  without focused tests failing.
+
+What improved:
+- Kernel law now matches the active pattern-gate chain used by root goal, root
+  plan, compact template, and continuation guidance.
+- Required-reading architecture guidance no longer weakens the consumer
+  requirement.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Actual source ingestion quality beyond kernel guidance.
+
+New task:
+- V162-00 Post Kernel Pattern Gate Chain Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V162 Post Kernel Pattern Gate Chain Re-Gate.
+
+Next active task:
+- V162-00 Post Kernel Pattern Gate Chain Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

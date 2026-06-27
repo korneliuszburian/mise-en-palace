@@ -69,6 +69,12 @@ Every retained source or pattern must pass:
 source -> mechanism -> KRN implication -> decision/rejection -> falsifier
 ```
 
+Every retained source also needs a concrete consumer before its falsifier:
+
+```text
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
+```
+
 If a next step requires broad historical reread, copying old topology, or
 building dashboard/evals before typed primitives and dogfood traces, stop and
 re-scope.

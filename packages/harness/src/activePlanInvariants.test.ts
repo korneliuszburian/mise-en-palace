@@ -139,10 +139,13 @@ describe("KRN active plan invariants", () => {
   });
 
   it("keeps the continuous pattern gate visible in active execution surfaces", () => {
+    const kernel = readRootFile("docs/KRN_KERNEL.md");
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");
     const plans = readRootFile("PLANS.md");
 
+    expect(kernel).toContain("consumer -> falsifier");
+    expect(kernel).toContain("source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier");
     expect(goal).toMatch(/For every non-trivial infra, harness, CI[,/]\s+eval/u);
     expect(goal).toContain("Codex-surface, TypeScript");
     expect(goal).toContain("research/paper/course-driven slice");
