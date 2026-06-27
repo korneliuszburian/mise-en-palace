@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V185 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, and Codex adapter skill metadata guard slices: complete
-active stream: V186 Post Codex Adapter Skill Metadata Re-Gate
-current task: V186-00 Post Codex Adapter Skill Metadata Re-Gate
+V48..V187 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, and activation skill owner-file metadata guard slices: complete
+active stream: V188 Post Activation Skill Metadata Re-Gate
+current task: V188-00 Post Activation Skill Metadata Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V186-00 Post Codex Adapter Skill Metadata Re-Gate.
+V188-00 Post Activation Skill Metadata Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16124,6 +16124,71 @@ Next active stream:
 
 Next active task:
 - V186-00 Post Codex Adapter Skill Metadata Re-Gate.
+
+## Outcome 2026-06-27 V187 Activation Skill Owner-File Metadata Guard
+
+Completed tasks:
+- V186-00 Post Codex Adapter Skill Metadata Re-Gate.
+- V187-00 Activation Skill Owner-File Metadata Guard.
+
+V186 decision:
+- Do not broaden Codex adapter metadata preservation into Research Foundry,
+  source crawler, dashboard, or product-readiness claims.
+- Select activation-engine skill metadata repair because owner-file/read-model
+  recall was a repeated dogfood pain point and the skill body had a dedicated
+  Owner-File Recall Gate that was not visible in frontmatter routing metadata.
+- The concrete failure mode is a future activation repair selecting the skill
+  from metadata that only says context selection/ranking, then jumping to a
+  broad scoring rewrite instead of checking explicit owner-file/read-model
+  evidence and abstention first.
+
+What changed:
+- `.agents/skills/activation-engine/SKILL.md` frontmatter description now names
+  owner-file/read-model recall and abstention.
+- `packages/harness/src/skillInvariants.test.ts` now guards activation skill
+  metadata and the Owner-File Recall Gate.
+- `docs/architecture/brain-battle-eval-matrix.md` records the activation skill
+  metadata guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V188.
+
+Evidence:
+- Before this slice, the activation skill body required explicit owner-file
+  read-model evidence and missing-read-model/abstention reasons, but the
+  frontmatter did not surface that routing contract.
+- Recent KRN-on-KRN dogfood runs repeatedly distinguished guardrail selection
+  from owner-file recall.
+
+Source-to-decision:
+- Source: `.agents/skills/activation-engine/SKILL.md`, target owner-file recall
+  dogfood reports, and repo-local skill invariant coverage.
+- Mechanism: activation skill routing metadata determines whether Codex treats
+  activation work as generic scoring/ranking or as read-model-backed context
+  selection with explicit abstention.
+- KRN implication: activation repairs must first check owner-file/read-model
+  evidence and abstention before broad scoring rewrites.
+- Decision: update and guard activation-engine skill frontmatter.
+- Does not prove: activation scoring quality, every owner file is known,
+  filesystem crawling is needed, or product readiness.
+- Consumer: `.agents/skills/activation-engine/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the activation skill frontmatter can drop owner-file/read-model
+  recall or abstention language while tests pass.
+
+New task:
+- V188-00 Post Activation Skill Metadata Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V188 Post Activation Skill Metadata Re-Gate.
+
+Next active task:
+- V188-00 Post Activation Skill Metadata Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

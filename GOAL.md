@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V186 Post Codex Adapter Skill Metadata Re-Gate
+V188 Post Activation Skill Metadata Re-Gate
 ```
 
 Current product loop:
@@ -37,7 +37,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V185: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V187: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
@@ -48,9 +48,10 @@ plus progress stale-active, root PLAN pattern-gate, and brain-battle smoke
 description plus compact pattern-gate contract, continuation, kernel,
 controlled-scenario, target-infra-ADR, source-map, ADR chain, ADR line-wrap,
 kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata,
-source-to-decision skill metadata, evidence review skill provenance, and Codex
-adapter skill metadata guards complete.
-current task: V186-00 Post Codex Adapter Skill Metadata Re-Gate.
+source-to-decision skill metadata, evidence review skill provenance, Codex
+adapter skill metadata, and activation skill owner-file metadata guards
+complete.
+current task: V188-00 Post Activation Skill Metadata Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

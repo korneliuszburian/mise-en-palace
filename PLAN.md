@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V186 Post Codex Adapter Skill Metadata Re-Gate
-current task: V186-00 Post Codex Adapter Skill Metadata Re-Gate
+active stream: V188 Post Activation Skill Metadata Re-Gate
+current task: V188-00 Post Activation Skill Metadata Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V185: active-surface compactness, handoff, PLANS freshness,
+V100..V187: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,27 +48,26 @@ V100..V185: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V186 Post Codex Adapter Skill Metadata Re-Gate
+### V188 Post Activation Skill Metadata Re-Gate
 
 Goal:
 
-Decide the next bounded task after aligning the Codex adapter plan skill
-metadata with bounded context, non-goals, proof boundaries, and non-mutating
-adapter behavior.
+Decide the next bounded task after aligning activation skill metadata with
+owner-file/read-model recall and abstention behavior.
 
 Current finding:
 
 ```txt
-V184 selected Codex adapter skill metadata repair because Codex sees frontmatter
-before loading the skill body.
+V186 selected activation skill metadata repair because owner-file recall was
+documented in the skill body but missing from frontmatter routing metadata.
 ```
 
 Current action:
 
 ```txt
-Execute V186-00: select the next pattern surface from evidence. Do not broaden
-Codex adapter metadata preservation into Research Foundry, source crawler,
-dashboard, or product-readiness claims.
+Execute V188-00: select the next pattern surface from evidence. Do not broaden
+activation metadata preservation into Research Foundry, source crawler,
+dashboard, scoring rewrite, or product-readiness claims.
 ```
 
 Primary consumer:
@@ -80,8 +79,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused Codex adapter metadata preservation into research
-hoarding without a concrete consumer and falsifier.
+The re-gate turns focused activation metadata preservation into research
+hoarding or scoring rewrite pressure without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

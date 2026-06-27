@@ -175,4 +175,18 @@ describe("KRN skill invariants", () => {
     expect(codexAdapterPlan).toContain("Keep adapter output plain, inspectable, and non-mutating.");
     expect(codexAdapterPlan).toContain("Do not make Codex surfaces the product brain.");
   });
+
+  it("keeps activation skill routed to owner-file read-model recall and abstention", () => {
+    const activationEngine = readFileSync(
+      new URL("activation-engine/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(activationEngine).toContain("owner-file/read-model recall");
+    expect(activationEngine).toContain("abstention");
+    expect(activationEngine).toContain("## Owner-File Recall Gate");
+    expect(activationEngine).toContain("Prefer explicit owner-file/read-model evidence");
+    expect(activationEngine).toContain("missing-read-model or abstention");
+    expect(activationEngine).toContain("not a broad activation scoring rewrite");
+  });
 });

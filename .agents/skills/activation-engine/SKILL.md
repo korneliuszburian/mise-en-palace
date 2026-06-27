@@ -1,6 +1,6 @@
 ---
 name: activation-engine
-description: Use when implementing or changing KRN context selection, retrieval candidate ranking, memory/source activation, context exclusions, trust filters, temporal filters, or context ROI behavior.
+description: Use when implementing or changing KRN context selection, retrieval candidate ranking, memory/source activation, owner-file/read-model recall, context exclusions, trust filters, temporal filters, abstention, or context ROI behavior.
 ---
 
 # Activation Engine
