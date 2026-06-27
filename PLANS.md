@@ -57,12 +57,13 @@ V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
 V29 TypeScript Boundary Research Application Gate: complete
 V30 Codex Surface Context-Budget Application Gate: complete
 V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
+V32 Controlled Target Repair Trial: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V32 Controlled Target Repair Trial
-current task: V32-00 Controlled Target Repair Trial
+active stream: V33 Reused Project Owner-File Refresh Repair
+current task: V33-00 Reused Project Owner-File Refresh Repair
 ```
 
 Evidence already recorded in repo:
@@ -77,8 +78,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V32 must test one bounded KRN-guided target repair with explicit scope,
-rollback, target evidence, and no product-ready/V02-01 overclaim.
+V32 proved one bounded target repair, but reused-project owner-file refresh is
+not proven: init/connect accepted new owner-file inputs while plan selected
+older/stale target owner files.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3044,7 +3046,7 @@ Completed evidence:
 
 ### V32-00 — Controlled Target Repair Trial
 
-Status: active
+Status: complete
 
 Goal: run one bounded KRN-guided repair against a safe target checkout with
 explicit allowed files, forbidden files, pre/post dirty state, rollback, target
@@ -3138,6 +3140,110 @@ whether real operator intake is again the next blocker.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V32
 evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v32-controlled-target-repair/REPORT.md`.
+- Target repo `/home/krn/coding/krn/active/krn-elektroinstal-ogar` remained
+  uncommitted with exactly two KRN-owned target file edits.
+- DB-backed KRN flow persisted plan, evidence, observe, reflect, and readback.
+- Main finding: reused project init/connect printed new FAQ owner-file inputs,
+  but subsequent plan selected older/stale owner files and omitted both FAQ
+  files.
+
+### V33-00 — Reused Project Owner-File Refresh Repair
+
+Status: active
+
+Goal: inspect and repair the reused-project owner-file refresh/read-model path
+so new `krn init --owner-file` entries are available to planning or stale
+owner-file/read-model state is reported explicitly.
+
+Product rationale: V32 proved a governed target repair, but the planning
+context did not include the exact newly supplied owner files for the reused
+target project. This raises review burden and weakens KRN target-repair
+usefulness before any wider alpha.
+
+Architectural rationale: owner-file recall should depend on explicit typed
+read-model state, not stale persisted project metadata. The repair should
+target owner-file refresh/readback before any activation scoring rewrite or
+target source crawler.
+
+Evidence source: V32 report, V17 owner-file contract, V24 owner-file priority
+repair, and DB-backed run `e6c68ed8-4c90-436c-bb33-7673f7ed683b`.
+
+Official/external sources: none required unless source inspection proves a
+current external API/tooling decision is needed.
+
+Inputs required:
+
+- current KRN DB ready;
+- V32 reused target project ID `e83b4509-6889-426c-90e2-bc4e6394ba26`;
+- two FAQ owner-file entries from V32;
+- source inspection of init/connect persistence and plan read-model assembly.
+
+Files likely touched:
+
+- V33 report under `docs/reviews/controlled-dogfood/`;
+- `packages/cli/src/runInitCommand.ts` or adjacent init persistence code if the
+  refresh gap is there;
+- `packages/cli/src/runPlanCommand.ts` or adjacent read-model code if the gap is
+  there;
+- focused tests for reused project owner-file refresh;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN source only if source inspection confirms the refresh/read-model bug;
+- KRN report/plans.
+
+Forbidden writes:
+
+- target repo edits;
+- target commits;
+- target `git reset` or `git clean`;
+- activation scoring rewrite;
+- source crawler;
+- dashboard/API/MCP/worker runtime/Research Foundry;
+- product-ready/V02-01/widened-alpha overclaim.
+
+Output requirements:
+
+- source finding: where owner files are created, updated, merged, or ignored for
+  reused projects;
+- minimal repair or explicit stale-state warning if repair is not correct yet;
+- DB-backed replay proving the two FAQ owner files become selected/visible or
+  stale-state warning is emitted;
+- proof/non-proof boundaries;
+- next-task decision.
+
+Definition of Done: V33 either repairs reused-project owner-file refresh with
+tests and DB-backed replay, or records the exact blocker/source reason that
+prevents a safe repair.
+
+Verification commands: targeted tests for touched package, `pnpm typecheck`,
+`pnpm test`, `pnpm db:ready`, DB-backed init/connect/plan replay, and
+`git diff --check`.
+
+Acceptance criteria:
+
+- no target repo writes;
+- no activation scoring rewrite;
+- no source crawler;
+- no product-ready/V02-01/widened-alpha overclaim;
+- reused-project owner-file behavior is proven by current-state evidence.
+
+Risk: fixing a symptom in plan ranking instead of the real owner-file refresh
+path. Mitigation: inspect persistence/read-model path first and keep scoring
+out of scope unless source evidence proves it is the only owner.
+
+Rollback: revert the focused KRN source/report/plan commit if necessary.
+
+Condensation expectation: decide whether owner-file refresh is now sufficient
+for another controlled target repair or whether target planning still needs a
+separate read-model visibility repair.
 
 ## 13. Generated Task Backlog
 
@@ -3410,7 +3516,9 @@ Initial entry:
   context-budget drift and kept skills/AGENTS unchanged.
 - [x] V31-00 complete: readiness remains controlled-internal-alpha stronger;
   V32 controlled target repair trial accepted as the next product proof.
-- [ ] V32-00 active: Controlled Target Repair Trial.
+- [x] V32-00 complete: controlled target repair trial succeeded as governed
+  headless repair, but exposed reused-project owner-file refresh/selection gap.
+- [ ] V33-00 active: Reused Project Owner-File Refresh Repair.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3441,6 +3549,15 @@ Record every unexpected fact in this format:
   Evidence: `packages/harness/src/activation/ownerFileRecall.ts`;
   `packages/cli/src/runPlanCommand.ts`; V06 report.
   Impact: V06-00 should add typed assessment/readback before any scoring rewrite.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Reused target project init/connect can print newly supplied
+  owner-file inputs while subsequent planning still selects older/stale owner
+  files.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v32-controlled-target-repair/REPORT.md`;
+  V32 run `e6c68ed8-4c90-436c-bb33-7673f7ed683b`.
+  Impact: V33 should inspect/repair owner-file refresh/read-model state before
+  any activation scoring rewrite or target source crawler.
   Date/Author: 2026-06-27 / Codex
 
 - Discovery: Current target harness smoke proves memory usefulness but source
@@ -3873,6 +3990,18 @@ Initial decisions:
   Falsifier: V32 cannot identify a safe target checkout/task, or the trial
     shows KRN cannot preserve scope/rollback/evidence during a target repair.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote reused project owner-file refresh repair as V33.
+  Rationale: V32 proved the target repair workflow, but the DB-backed plan
+    omitted the two exact FAQ owner files supplied through init/connect for the
+    reused target project and selected older/stale owner files instead.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v32-controlled-target-repair/REPORT.md`;
+    V32 run `e6c68ed8-4c90-436c-bb33-7673f7ed683b`.
+  Does not prove: activation scoring is broadly wrong, source crawling is
+    needed, or product-ready/widened-alpha/V02-01 is achieved.
+  Falsifier: V33 source inspection proves the V32 owner-file miss came from
+    operator input misuse rather than reused-project read-model refresh.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4203,6 +4332,23 @@ Seed evidence:
   Does not prove: target repair success, product readiness, V02-01, or widened
     alpha.
   Follow-up task: V32-00.
+
+- Evidence ID: E-V32-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v32-controlled-target-repair/REPORT.md`
+  Command/report/file: bounded headless repair in
+    `/home/krn/coding/krn/active/krn-elektroinstal-ogar`, DB-backed
+    init/connect/plan/evidence/observe/reflect/readback, target PHP/JS syntax
+    checks, and target diff check.
+  Result: FAQ trigger `aria-expanded` target repair was made in exactly two
+    allowed target files without target commit; target evidence persisted
+    allowed/forbidden writes, dirty state, command proof, observe, reflect, and
+    no Memory Core mutation. Planning missed the two newly supplied FAQ owner
+    files for the reused project.
+  Proves: KRN can govern one bounded target repair with explicit target
+    evidence and rollback boundaries.
+  Does not prove: product readiness, V02-01, widened alpha, full target runtime
+    correctness, or reused-project owner-file refresh correctness.
+  Follow-up task: V33-00.
 ```
 
 ## 19. Condensation Queue
@@ -4510,10 +4656,20 @@ Seed queue:
 - Candidate: controlled target repair trial
   Source evidence: V31 readiness re-gate and V20-V26 target loop evidence
   Surface: target repair trial report / optional target working-tree diff
-  Status: accepted as V32-00
+  Status: complete as V32-00
   Reason: the next product proof should test whether KRN can govern a bounded
     target change, not only observe target state
   Task: V32-00
+
+- Candidate: reused project owner-file refresh repair
+  Source evidence: V32 controlled target repair trial
+  Surface: init/connect persistence + planning read-model repair or explicit
+    stale-state warning
+  Status: accepted as V33-00
+  Reason: V32 supplied two exact FAQ owner files to init/connect for a reused
+    target project, but the subsequent plan omitted both and selected older
+    owner files; fix refresh/read-model before activation scoring rewrite
+  Task: V33-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -5256,6 +5412,51 @@ Product readiness verdict:
 Next active stream:
 - V24 — Target Owner-File Recall Deduplication And Budget Priority.
 
+## Outcome 2026-06-27 V32
+
+Completed:
+- V32-00 ran one bounded headless repair in
+  `/home/krn/coding/krn/active/krn-elektroinstal-ogar`.
+- Target edits were limited to the two predeclared FAQ files.
+- KRN DB-backed plan/evidence/observe/reflect/readback completed.
+- No target commit, target reset, target clean, KRN source change, product-ready
+  overclaim, widened-alpha overclaim, or V02-01 overclaim occurred.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v32-controlled-target-repair/REPORT.md`.
+- DB-backed run `e6c68ed8-4c90-436c-bb33-7673f7ed683b`.
+- Evidence bundle `2fa1837c-82d7-4ed2-8735-9bd563d806f5`.
+- Observation group `9e1b444d-6469-4cc2-bf6a-615085dd6e90`.
+- Reflection record `88616d08-eba9-4af8-a339-af65e4dcf3c0`.
+
+What improved:
+- KRN proved it can govern one bounded target repair with explicit allowed
+  writes, forbidden writes, target dirty state, command proof, rollback, and DB
+  readback.
+- The target FAQ accordion trigger now carries and updates `aria-expanded`
+  while preserving item state for existing CSS.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Full target runtime/browser/accessibility verification.
+- Reused-project owner-file refresh.
+
+New blocker:
+- `krn init --owner-file` for a reused target project printed the newly supplied
+  FAQ owner files, but the subsequent plan selected older/stale owner files and
+  omitted both FAQ files.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V33 — Reused Project Owner-File Refresh Repair.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -5304,7 +5505,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V32 Controlled Target Repair Trial.
+Active stream: V33 Reused Project Owner-File Refresh Repair.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

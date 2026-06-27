@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V32 Controlled Target Repair Trial
-current task: V32-00 Controlled Target Repair Trial
+active stream: V33 Reused Project Owner-File Refresh Repair
+current task: V33-00 Reused Project Owner-File Refresh Repair
 ```
 
 Completed stream summary:
@@ -61,34 +61,36 @@ V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
 V29 TypeScript Boundary Research Application Gate: complete
 V30 Codex Surface Context-Budget Application Gate: complete
 V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
+V32 Controlled Target Repair Trial: complete
 ```
 
 ## Active Stream
 
-### V32-00 — Controlled Target Repair Trial
+### V33-00 — Reused Project Owner-File Refresh Repair
 
 Goal:
 
-Run one bounded KRN-guided repair against a safe target checkout with explicit
-allowed files, forbidden files, pre/post dirty state, rollback, target commands,
-KRN plan/evidence/readback, and a report.
+Inspect and repair the reused-project owner-file refresh/read-model path so new
+`krn init --owner-file` entries are available to planning or the CLI clearly
+reports stale owner-file/read-model state.
 
 Current finding:
 
 ```txt
-V27-V31 keep KRN controlled-internal-alpha for technical operators.
-Product-ready, widened alpha, and V02-01 remain unproved.
-The next product proof should move beyond observation-only target loops.
+V32 proved KRN can govern one bounded headless target repair with target
+allowed/forbidden writes, persisted evidence, observe, reflect, and readback.
+However, after init/connect accepted two exact FAQ owner-file inputs for a
+reused target project, the subsequent plan selected older/stale owner files and
+omitted both FAQ files.
 ```
 
-Current V32 action:
+Current V33 action:
 
 ```txt
-Select a safe target checkout and bounded target task.
-Record allowed files, forbidden files, rollback, and pre/post status before any
-target edit.
-If no safe target exists, write a blocker report instead of substituting another
-local/meta task.
+Inspect the init/connect persistence and planning read-model path for reused
+projects. Add the smallest repair or explicit warning that makes newly supplied
+owner-file inputs visible to planning or honestly reports stale read-model
+state. Prove with DB-backed replay.
 ```
 
 ## V02-01 Boundary
