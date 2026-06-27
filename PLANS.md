@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V153 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, and root PLAN pattern-gate guard slices: complete
-active stream: V154 Post Root PLAN Pattern Gate Guard Re-Gate
-current task: V154-00 Post Root PLAN Pattern Gate Guard Re-Gate
+V48..V155 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, and brain-battle smoke description guard slices: complete
+active stream: V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
+current task: V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V154-00 Post Root PLAN Pattern Gate Guard Re-Gate.
+V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -8068,6 +8068,8 @@ Initial entry:
   into authority-ID separation guard work.
 - [x] V153-00 complete: root `PLAN.md` now preserves the continuous pattern
   gate so compact-only resumes keep source-to-decision pressure visible.
+- [x] V155-00 complete: brain-battle Current Smoke description now names root
+  PLAN pattern-gate visibility as part of the active invariant smoke.
 ```
 
 ## 16. Surprises & Discoveries
@@ -15052,6 +15054,83 @@ Next active stream:
 
 Next active task:
 - V154-00 Post Root PLAN Pattern Gate Guard Re-Gate.
+
+## Outcome 2026-06-27 V155 Brain-Battle Pattern-Gate Smoke Description Guard
+
+Completed tasks:
+- V154-00 Post Root PLAN Pattern Gate Guard Re-Gate.
+- V155-00 Brain-Battle Pattern-Gate Smoke Description Guard.
+
+V154 decision:
+- Do not broaden root `PLAN.md` pattern-gate visibility into Research Foundry,
+  source crawler, dashboard, benchmark lane, or product-readiness claims.
+- Select brain-battle Current Smoke description alignment because
+  `pnpm eval:brain-battle:smoke` already runs `activePlanInvariants`, and V153
+  added root `PLAN.md` pattern-gate coverage there, but the matrix Current Smoke
+  text did not name that protected behavior.
+- The concrete failure mode is a future operator or Codex run reading the smoke
+  description and missing that compact root-plan pattern-gate visibility is
+  part of the deterministic smoke.
+
+What changed:
+- `docs/architecture/brain-battle-eval-matrix.md` Current Smoke now names root
+  PLAN pattern-gate visibility.
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts` now requires that
+  description phrase.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V156.
+
+Evidence:
+- `package.json` `eval:brain-battle:smoke` runs `activePlanInvariants`.
+- V153 added root `PLAN.md` pattern-gate coverage to
+  `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md` Current Smoke listed active
+  plan freshness and other invariant surfaces but not root PLAN pattern-gate
+  visibility.
+
+Source-to-decision:
+- Source: current smoke script, brain-battle matrix Current Smoke text, and
+  V153 root PLAN pattern-gate invariant.
+- Mechanism: smoke descriptions shape operator trust; if the description omits a
+  guarded behavior, future runs can under-value or accidentally remove the guard
+  despite the smoke still executing it.
+- KRN implication: deterministic smoke documentation must name the active
+  pattern-gate guard so research/course/paper condensation remains visible as a
+  bounded proof surface, not a hidden test detail.
+- Decision: align the Current Smoke description and invariant test with the
+  newly guarded root PLAN pattern-gate behavior.
+- Does not prove: benchmark quality, product readiness, source quality at scale,
+  or that future slices will apply the pattern gate correctly.
+- Consumer: `docs/architecture/brain-battle-eval-matrix.md`,
+  `packages/harness/src/brainBattleMatrixInvariants.test.ts`, and
+  `pnpm eval:brain-battle:smoke`.
+- Falsifier: Current Smoke can omit root PLAN pattern-gate visibility while the
+  focused matrix invariant still passes.
+
+What improved:
+- The smoke description now matches the guard surface it actually runs.
+- Pattern-gate protection is visible in the eval matrix without turning
+  Promptfoo or brain-battle smoke into broad benchmark theater.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Actual source ingestion quality beyond the guarded description alignment.
+
+New task:
+- V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
+
+Next active task:
+- V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

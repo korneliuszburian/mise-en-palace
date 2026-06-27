@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V154 Post Root PLAN Pattern Gate Guard Re-Gate
-current task: V154-00 Post Root PLAN Pattern Gate Guard Re-Gate
+active stream: V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
+current task: V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -41,35 +41,35 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V153: active-surface compactness, handoff, PLANS freshness,
+V100..V155: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
-           verification TMPDIR, stale-objective, progress stale-active, and
-           root PLAN pattern-gate guards complete.
+           verification TMPDIR, stale-objective, progress stale-active, root
+           PLAN pattern-gate, and smoke-description guards complete.
 ```
 
 ## Active Stream
 
-### V154 Post Root PLAN Pattern Gate Guard Re-Gate
+### V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding root `PLAN.md` pattern-gate
-visibility without turning research intake into source hoarding.
+Decide the next bounded task after aligning brain-battle smoke description with
+the root `PLAN.md` pattern-gate guard.
 
 Current finding:
 
 ```txt
-V152 selected root PLAN pattern-gate visibility because `GOAL.md` and
-`PLANS.md` already preserved the research/paper/course source-to-decision rule,
-but root `PLAN.md` did not say it directly.
+V154 selected brain-battle smoke description alignment because the smoke already
+runs `activePlanInvariants`, but the matrix Current Smoke text did not name the
+root `PLAN.md` pattern-gate guard.
 ```
 
 Current action:
 
 ```txt
-Execute V154-00: select the next pattern surface from evidence. Do not broaden
-pattern-gate visibility into Research Foundry, source crawler, dashboard, or
-benchmark lane.
+Execute V156-00: select the next pattern surface from evidence. Do not broaden
+smoke-description alignment into benchmark theater, Research Foundry, source
+crawler, dashboard, or product-readiness claims.
 ```
 
 Primary consumer:
@@ -81,8 +81,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused root-plan pattern-gate visibility into research
-hoarding without a concrete consumer and falsifier.
+The re-gate turns focused smoke-description alignment into benchmark theater or
+research hoarding without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

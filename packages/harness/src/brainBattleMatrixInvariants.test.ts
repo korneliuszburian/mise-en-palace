@@ -147,6 +147,7 @@ describe("KRN brain-battle eval matrix invariants", () => {
       "pattern-intake output contract",
       "repo-local skill routability",
       "source-to-decision skill contract",
+      "root PLAN pattern-gate visibility",
       "TypeScript boundary hygiene",
       "matrix guard/proof boundaries"
     ]) {
