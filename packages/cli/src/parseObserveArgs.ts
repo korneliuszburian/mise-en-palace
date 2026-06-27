@@ -5,7 +5,7 @@ import {
   optionValue
 } from "./parseArgHelpers.js";
 
-const observeUsage = "Usage: krn observe --run <id> [--project <id>] [--persist]";
+const observeUsage = "Usage: krn observe --run <id>|--run-id <id> [--project <id>] [--persist]";
 
 export const parseObserveArgs = (rest: readonly string[]): ParseArgsResult => {
   let persist = false;
@@ -20,8 +20,14 @@ export const parseObserveArgs = (rest: readonly string[]): ParseArgsResult => {
       continue;
     }
 
-    if (arg === "--run" || arg?.startsWith("--run=") === true) {
-      const valueResult = optionValue(rest, index, "--run");
+    if (
+      arg === "--run" ||
+      arg === "--run-id" ||
+      arg?.startsWith("--run=") === true ||
+      arg?.startsWith("--run-id=") === true
+    ) {
+      const flag = arg === "--run-id" || arg.startsWith("--run-id=") ? "--run-id" : "--run";
+      const valueResult = optionValue(rest, index, flag);
 
       if (valueResult.error !== undefined || valueResult.value === undefined) {
         return {

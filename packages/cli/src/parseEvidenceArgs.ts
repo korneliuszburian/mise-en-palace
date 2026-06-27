@@ -12,7 +12,7 @@ import type {
 } from "./parseArgs.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-changed-file <status path>] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
@@ -110,8 +110,15 @@ const parseVerification = (value: string): { command?: EvidenceCommand; error?: 
 
 const parseTargetChangedFile = (
   value: string
-): { changedFile?: TargetEvidenceChangedFileInput; error?: string } => {
+): { changedFile?: TargetEvidenceChangedFileInput; none?: true; error?: string } => {
   const trimmed = value.trim();
+
+  if (normalizeToken(trimmed) === "none") {
+    return {
+      none: true
+    };
+  }
+
   const separatorIndex = trimmed.search(/\s/);
 
   if (separatorIndex < 0) {
@@ -157,6 +164,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   const targetAllowedWrites: string[] = [];
   const targetForbiddenWrites: string[] = [];
   const targetChangedFiles: TargetEvidenceChangedFileInput[] = [];
+  let targetChangedFilesExplicitNone = false;
   const targetCommands: string[] = [];
 
   for (let index = 1; index < rest.length; index += 1) {
@@ -167,14 +175,23 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       continue;
     }
 
-    if (arg === "--run-id") {
-      runId = rest[index + 1];
-      index += 1;
-      continue;
-    }
+    if (
+      arg === "--run-id" ||
+      arg === "--run" ||
+      arg?.startsWith("--run-id=") === true ||
+      arg?.startsWith("--run=") === true
+    ) {
+      const flag = arg === "--run" || arg.startsWith("--run=") ? "--run" : "--run-id";
+      const valueResult = optionValue(rest, index, flag);
 
-    if (arg?.startsWith("--run-id=") === true) {
-      runId = arg.slice("--run-id=".length);
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      runId = valueResult.value.trim();
+      index = valueResult.nextIndex;
       continue;
     }
 
@@ -312,13 +329,18 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
 
       const parseResult = parseTargetChangedFile(valueResult.value);
 
-      if (parseResult.error !== undefined || parseResult.changedFile === undefined) {
+      if (parseResult.error !== undefined) {
         return {
           error: parseResult.error ?? evidenceUsage
         };
       }
 
-      targetChangedFiles.push(parseResult.changedFile);
+      if (parseResult.none === true) {
+        targetChangedFilesExplicitNone = true;
+      } else if (parseResult.changedFile !== undefined) {
+        targetChangedFiles.push(parseResult.changedFile);
+      }
+
       index = valueResult.nextIndex;
       continue;
     }
@@ -549,6 +571,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     targetOwnedChanges !== undefined ||
     targetAllowedWrites.length > 0 ||
     targetForbiddenWrites.length > 0 ||
+    targetChangedFilesExplicitNone ||
     targetChangedFiles.length > 0 ||
     targetCommands.length > 0;
 

@@ -51,12 +51,13 @@ V22 Persisted CLI DB URL Default Consistency: complete
 V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete
 V24 Target Owner-File Recall Deduplication And Budget Priority: complete
 V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
+V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V26 CLI Run Reference And Empty Target Changed Files Ergonomics
-current task: V26-00 CLI Run Reference And Empty Target Changed Files Ergonomics
+active stream: V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs
+current task: V27-00 Controlled Internal Alpha Re-Gate After Target Loop Repairs
 ```
 
 Evidence already recorded in repo:
@@ -71,9 +72,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V26 must repair or explicitly reject small CLI friction found in V24/V25:
-`evidence capture --run-id` vs `observe --run`, and no explicit accepted
-spelling for zero target changed files.
+V27 must re-gate controlled-internal-alpha readiness after V20 through V26
+closed the real target loop, evidence/readback defaults, DB recovery, owner-file
+priority, and CLI friction repairs.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2079,6 +2080,29 @@ that state.
 - no activation scoring change;
 - no V02-01/product-ready overclaim.
 
+### Stream V27 — Controlled Internal Alpha Re-Gate After Target Loop Repairs
+
+Why now:
+
+- V20 through V26 produced a coherent target loop: real target observation,
+  target evidence defaults, DB recovery guidance, owner-file priority, target
+  rerun after repair, and CLI ergonomics.
+- The next decision should be a product re-gate, not another automatic source
+  repair.
+
+Expected end state:
+
+```txt
+KRN records whether the current state is still controlled-internal-alpha for
+technical operators, whether widened alpha is allowed, whether V02-01 should
+resume, and what the next highest-ROI task is.
+```
+
+- no product-ready overclaim;
+- no fake V02-01 proof;
+- no new architecture;
+- no target repo writes.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
 Status: complete
@@ -2537,7 +2561,7 @@ Completed evidence:
 
 ### V26-00 — CLI Run Reference And Empty Target Changed Files Ergonomics
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: repair or explicitly reject small CLI ergonomics gaps from V24/V25:
 `krn evidence capture --run-id` vs `krn observe --run`, and invalid
@@ -2601,6 +2625,73 @@ Condensation expectation: decide whether next work is real operator intake,
 another target trial, or a re-gate after V26.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V26
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v26-cli-run-reference-target-none-ergonomics/REPORT.md`.
+- `krn evidence capture --run` and `krn observe --run-id` aliases are covered.
+- `--target-changed-file none` is accepted as explicit empty target changed-file
+  evidence without changing persisted evidence semantics.
+
+### V27-00 — Controlled Internal Alpha Re-Gate After Target Loop Repairs
+
+Status: active
+
+Goal: review V20 through V26 evidence and decide the next product step.
+
+Product rationale: the target loop has now accumulated enough repairs that the
+plan should re-gate readiness instead of endlessly appending local fixes.
+
+Architectural rationale: KRN's continuous loop must periodically condense
+completed repairs into product readiness decisions and stop carrying completed
+context.
+
+Evidence source: V20, V21, V22, V23, V24, V25, and V26 reports plus remote CI.
+
+Official/external sources: none required.
+
+Inputs required: current reports, current `PLAN.md`/`GOAL.md`/`PLANS.md`,
+latest commit/CI state.
+
+Files likely touched:
+
+- V27 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN reports/plans only unless re-gate discovers a tiny blocking
+source bug.
+
+Forbidden writes: target repo edits, new architecture, dashboard/API/MCP/worker
+runtime, source crawler, product-ready overclaim, fake V02-01 proof.
+
+Output requirements:
+
+- readiness verdict;
+- what V20-V26 proved;
+- what remains unproved;
+- next task decision;
+- explicit V02-01/widened-alpha/product-ready boundary.
+
+Definition of Done: one compact re-gate report exists and the active queue
+points to exactly one next task or a documented blocker.
+
+Verification commands: `git diff --check`; if source is touched, `pnpm
+typecheck` and `pnpm test`.
+
+Acceptance criteria: no new implementation plan unless evidence identifies one
+bounded next task.
+
+Risk: report-only churn. Mitigation: keep the report short and decision-driven.
+
+Rollback: focused report/plan revert.
+
+Condensation expectation: decide whether next work is V02-01 real operator
+intake, another controlled target trial, a bounded repair, or pause for inputs.
+
+Next-task synthesis rule: append the single highest-ROI next task after V27
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2862,8 +2953,10 @@ Initial entry:
   seeds and adjacent agent guidance in owner-file-heavy target planning.
 - [x] V25-00 complete: real target rerun proved repaired owner-file priority,
   observation-only target evidence defaults, and target clean state.
-- [ ] V26-00 active: CLI Run Reference And Empty Target Changed Files
-  Ergonomics.
+- [x] V26-00 complete: CLI accepts run/run-id aliases for evidence/observe and
+  explicit `--target-changed-file none`.
+- [ ] V27-00 active: Controlled Internal Alpha Re-Gate After Target Loop
+  Repairs.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3254,6 +3347,17 @@ Initial decisions:
   Falsifier: source inspection proves aliases would create ambiguity or current
     help already documents the intended spelling clearly enough.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote controlled internal alpha re-gate after target loop repairs
+    as V27.
+  Rationale: after V20-V26, the target loop has enough evidence to make a
+    readiness/next-task decision instead of continuing source repairs by
+    inertia.
+  Evidence: V20 through V26 reports and CI.
+  Does not prove: product readiness or V02-01 second-operator usability.
+  Falsifier: V27 finds an unclosed blocking implementation bug that prevents
+    honest re-gating.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -3513,6 +3617,17 @@ Seed evidence:
   Does not prove: V02-01, product readiness, widened alpha, or full target
     runtime correctness.
   Follow-up task: V26-00.
+
+- Evidence ID: E-V26-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v26-cli-run-reference-target-none-ergonomics/REPORT.md`
+  Command/report/file: bounded CLI parser repair.
+  Result: evidence capture accepts `--run`; observe accepts `--run-id`;
+    evidence capture accepts explicit `--target-changed-file none`.
+  Proves: repeated V24/V25 operator-friction items were repaired without
+    evidence semantic changes.
+  Does not prove: product readiness, V02-01, or universal CLI naming
+    consistency.
+  Follow-up task: V27-00.
 ```
 
 ## 19. Condensation Queue
@@ -3775,6 +3890,14 @@ Seed queue:
   Reason: `--run-id` vs `--run` and invalid `--target-changed-file none`
     created avoidable operator friction during successful dogfood loops
   Task: V26-00
+
+- Candidate: controlled internal alpha re-gate after target loop repairs
+  Source evidence: V20-V26 reports and CI
+  Surface: readiness report / plan gate
+  Status: accepted as V27-00
+  Reason: target loop repairs should be condensed into a product readiness and
+    next-task decision before more implementation work
+  Task: V27-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4423,7 +4546,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V26 CLI Run Reference And Empty Target Changed Files Ergonomics.
+Active stream: V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
