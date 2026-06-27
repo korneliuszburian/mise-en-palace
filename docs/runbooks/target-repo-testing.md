@@ -141,6 +141,44 @@ KRN EvidenceBundle did not classify target changed files.
 
 This is a KRN product gap, not target proof.
 
+## Owner-File Read-Model Contract
+
+Target owner files are explicit read-model inputs. KRN must not claim it
+discovered exact owner files unless they were provided through checked-in
+metadata, a fixture, or the operator-facing init contract.
+
+Use `--owner-file` during init when a target scenario has known owner files:
+
+```sh
+krn init --dry-run --repo <target-repo-path> \
+  --owner-file "src/index.ts|src|implementation_entry|implementation entry point"
+
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn \
+  pnpm krn init --connect --repo <target-repo-path> --persist \
+  --owner-file "src/index.ts|src|implementation_entry|implementation entry point" \
+  --owner-file "tests/readiness.test.ts|tests|behavior_test|readiness behavior proof"
+```
+
+Each owner-file entry is:
+
+```txt
+path|root|kind|reason
+```
+
+Rules:
+
+- `path` is the exact target-relative owner file.
+- `root` is the source seed/root that owns the file, such as `src`, `tests`,
+  `docs`, or `.`.
+- `kind` is a short operator-defined classification, such as
+  `implementation_entry`, `behavior_test`, `target_runbook`, or
+  `agent_guidance`.
+- `reason` says why the file is relevant to the bounded target task.
+- Do not use `--owner-file` as a crawler substitute or broad file inventory.
+- If owner files are absent, `krn plan --project ... --persist` should report
+  `missing_owner_file_read_model`. That proves only that exact owner-file data
+  was unavailable to the read model; it does not prove owner files do not exist.
+
 ## Failure Rules
 
 If target verification fails in observation-only mode:

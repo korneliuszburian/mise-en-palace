@@ -43,7 +43,8 @@ V13 research-to-brain decision lane gate: complete
 V14 TypeScript boundary drift gate: complete
 V15 Promptfoo / Golden Behavior Role Gate: complete
 V16 Activation Relevance Evidence Gate: complete
-active stream: V17 Target Owner-File Read-Model Contract Gate
+V17 Target Owner-File Read-Model Contract Gate: complete
+active stream: V18 Target Owner-File Contract Re-Gate / Trial Application
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -362,12 +363,31 @@ V17 gates how exact target owner files enter the target read model.
 
 ### V17-00 — Target Owner-File Read-Model Contract Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide whether existing init/connect metadata, runbooks, target-repo
 testing skill, and plan readback sufficiently define how target owner files
 enter `TargetActivationReadModel`, or whether a small CLI/docs/test repair is
 needed.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`;
+- `krn init --owner-file "path|root|kind|reason"` now provides an
+  operator-facing owner-file read-model input without a crawler.
+
+## Active Stream: V18
+
+V18 applies or re-gates the explicit owner-file contract in one bounded target
+trial path.
+
+### V18-00 — Target Owner-File Contract Re-Gate / Trial Application
+
+Status: active.
+
+Goal: use or re-gate the new `--owner-file` init contract in a bounded target
+trial path and decide whether the next blocker is operator friction,
+owner-file quality, or activation selection after owner files are available.
 
 ## Hard Non-Goals
 

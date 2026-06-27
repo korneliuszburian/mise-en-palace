@@ -1,14 +1,47 @@
 import type {
-  ParseArgsResult
+  ParseArgsResult,
+  TargetOwnerFileInput
 } from "./parseArgs.js";
 
-const initUsage = "Usage: krn init --dry-run --repo <path>|krn init --connect --repo <path> --persist";
+const initUsage =
+  "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]";
+
+const parseOwnerFile = (value: string): TargetOwnerFileInput | undefined => {
+  const parts = value.split("|").map((part) => part.trim());
+
+  if (parts.length !== 4) {
+    return undefined;
+  }
+
+  const [ownerPath, root, kind, reason] = parts;
+
+  if (
+    ownerPath === undefined ||
+    ownerPath.length === 0 ||
+    root === undefined ||
+    root.length === 0 ||
+    kind === undefined ||
+    kind.length === 0 ||
+    reason === undefined ||
+    reason.length === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    path: ownerPath,
+    root,
+    kind,
+    reason
+  };
+};
 
 export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
   let dryRun = false;
   let connect = false;
   let persist = false;
   let repo: string | undefined;
+  const ownerFiles: TargetOwnerFileInput[] = [];
 
   for (let index = 0; index < rest.length; index += 1) {
     const arg = rest[index];
@@ -39,6 +72,41 @@ export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
       continue;
     }
 
+    if (arg === "--owner-file") {
+      const value = rest[index + 1];
+
+      if (value === undefined) {
+        return {
+          error: initUsage
+        };
+      }
+
+      const parsed = parseOwnerFile(value);
+
+      if (parsed === undefined) {
+        return {
+          error: initUsage
+        };
+      }
+
+      ownerFiles.push(parsed);
+      index += 1;
+      continue;
+    }
+
+    if (arg?.startsWith("--owner-file=") === true) {
+      const parsed = parseOwnerFile(arg.slice("--owner-file=".length));
+
+      if (parsed === undefined) {
+        return {
+          error: initUsage
+        };
+      }
+
+      ownerFiles.push(parsed);
+      continue;
+    }
+
     return {
       error: initUsage
     };
@@ -62,7 +130,8 @@ export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
         kind: "init",
         mode: "connect",
         repo: repo.trim(),
-        persist
+        persist,
+        ...(ownerFiles.length === 0 ? {} : { ownerFiles })
       }
     };
   }
@@ -71,7 +140,8 @@ export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
     command: {
       kind: "init",
       mode: "dryRun",
-      repo: repo.trim()
+      repo: repo.trim(),
+      ...(ownerFiles.length === 0 ? {} : { ownerFiles })
     }
   };
 };

@@ -74,6 +74,9 @@ Target repo:
 - path or URL:
 - read-only / writable:
 - contains secrets? yes/no/unknown:
+- owner files known? yes/no:
+- owner files if known:
+  - path|root|kind|reason
 
 DB mode:
 - local Docker/Postgres
@@ -97,6 +100,9 @@ target_repo_dirty_state:
   clean / dirty / unknown
 target_repo_contains_secrets:
   yes / no / unknown
+target_owner_files:
+  none / listed below
+  - path|root|kind|reason
 
 DB mode:
   local Docker/Postgres / no DB preview only
@@ -292,6 +298,15 @@ Dry run:
 KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm krn init --dry-run --repo <target-repo-path>
 ```
 
+If exact owner files are known for the chosen bounded scenario, pass them
+explicitly. This is an operator-provided read-model contract, not crawler proof:
+
+```sh
+KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm krn init --dry-run --repo <target-repo-path> \
+  --owner-file "src/index.ts|src|implementation_entry|implementation entry point" \
+  --owner-file "tests/readiness.test.ts|tests|behavior_test|readiness behavior proof"
+```
+
 Connect only if the dry-run source seed and forbidden-surface output are
 acceptable:
 
@@ -299,11 +314,14 @@ acceptable:
 KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn pnpm krn init --connect --repo <target-repo-path> --persist
 ```
 
+Use the same `--owner-file` entries on connect when they were used in dry-run.
+
 Record:
 
 ```txt
 dry-run result:
 source seeds:
+owner files:
 forbidden surfaces:
 files written:
 connect result:

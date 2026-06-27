@@ -171,6 +171,7 @@ export const runCli = async (
         env: runtime.env,
         mode: parsed.command.mode,
         repo: parsed.command.repo,
+        ...(parsed.command.ownerFiles === undefined ? {} : { ownerFiles: parsed.command.ownerFiles }),
         ...(parsed.command.mode === "connect" ? { persist: parsed.command.persist } : {}),
         ...(runtime.createInitConnectRuntime === undefined
           ? {}

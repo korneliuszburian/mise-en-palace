@@ -183,6 +183,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- docs | kind=docs_root | reason=seed target documentation and runbook context");
     expect(result.stdout).toContain("- src | kind=source_root | reason=seed source owner-file recall");
     expect(result.stdout).toContain("- tests | kind=test_root | reason=seed target repo verification surface");
+    expect(result.stdout).toContain("Owner-file proposal:");
+    expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("ProjectKernel proposal:");
     expect(result.stdout).toContain("Codex overlay proposal:");
     expect(result.stdout).toContain("No files written");
@@ -314,7 +316,17 @@ describe("runCli", () => {
       "typescript-basic"
     );
     const result = await runCli(
-      ["init", "--connect", "--repo", fixtureRepo, "--persist"],
+      [
+        "init",
+        "--connect",
+        "--repo",
+        fixtureRepo,
+        "--owner-file",
+        "src/index.ts|src|implementation_entry|implementation entry point",
+        "--owner-file",
+        "tests/readiness.test.ts|tests|behavior_test|readiness behavior proof",
+        "--persist"
+      ],
       {
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
@@ -342,6 +354,20 @@ describe("runCli", () => {
                 })
               ])
             );
+            expect(input.ownerFiles).toEqual([
+              {
+                path: "src/index.ts",
+                root: "src",
+                kind: "implementation_entry",
+                reason: "implementation entry point"
+              },
+              {
+                path: "tests/readiness.test.ts",
+                root: "tests",
+                kind: "behavior_test",
+                reason: "readiness behavior proof"
+              }
+            ]);
 
             return {
               project: {
@@ -404,6 +430,13 @@ describe("runCli", () => {
       "- package.json | kind=package_manifest | reason=detect package identity and scripts"
     );
     expect(result.stdout).toContain("- src | kind=source_root | reason=seed source owner-file recall");
+    expect(result.stdout).toContain("Owner files:");
+    expect(result.stdout).toContain(
+      "- src/index.ts | root=src | kind=implementation_entry | reason=implementation entry point"
+    );
+    expect(result.stdout).toContain(
+      "- tests/readiness.test.ts | root=tests | kind=behavior_test | reason=readiness behavior proof"
+    );
     expect(result.stdout).toContain("Files written: none");
     expect(result.stdout).toContain(
       "Next command: krn plan --project project-target-1 --task \"improve test script readiness\" --persist"
@@ -643,6 +676,108 @@ describe("runCli", () => {
           reason: "target_read_model_has_no_owner_files",
           sourceSeedPaths: ["evals", "scripts"],
           ownerFilePaths: []
+        }
+      }
+    });
+  });
+
+  it("loads explicit target owner files from project metadata for persisted planning", async () => {
+    let executionRunMetadata: Record<string, unknown> | undefined;
+
+    const result = await runCli(
+      [
+        "plan",
+        "--project",
+        "project-target-1",
+        "--task",
+        "improve readiness test owner path",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              executionRunMetadata = runInput.metadata ?? {};
+
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-target-1",
+            projectId: "project-target-1",
+            projectKernel: {
+              id: "project-kernel-1",
+              projectId: "project-target-1",
+              version: 1,
+              summary: "Target repo kernel",
+              activeContextRule: "Use target repo context only.",
+              metadata: {
+                sourceSeeds: [
+                  {
+                    path: "tests",
+                    kind: "test_root",
+                    reason: "seed target repo verification surface"
+                  }
+                ],
+                ownerFiles: [
+                  {
+                    path: "tests/readiness.test.ts",
+                    root: "tests",
+                    kind: "behavior_test",
+                    reason: "readiness behavior proof"
+                  }
+                ]
+              },
+              createdAt: now,
+              updatedAt: now
+            },
+            repoInstallations: [],
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Target read model: sourceSeeds=1, ownerFiles=1, trustExclusions=7");
+    expect(result.stdout).toContain("Target owner-file recall: owner_files_available");
+    expect(result.stdout).toContain("Target owner files: tests/readiness.test.ts");
+    expect(executionRunMetadata).toMatchObject({
+      targetReadModel: {
+        sourceSeedCount: 1,
+        ownerFileCount: 1,
+        ownerFilePaths: ["tests/readiness.test.ts"],
+        ownerFileRecall: {
+          status: "owner_files_available",
+          ownerFilePaths: ["tests/readiness.test.ts"]
         }
       }
     });

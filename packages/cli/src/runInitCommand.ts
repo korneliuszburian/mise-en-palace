@@ -25,6 +25,7 @@ export interface InitCommandRuntime {
   env: Record<string, string | undefined>;
   mode: "dryRun" | "connect";
   repo: string;
+  ownerFiles?: readonly TargetOwnerFileProposal[];
   persist?: boolean;
   createInitConnectRuntime?: CreateInitConnectRuntime;
 }
@@ -40,6 +41,7 @@ interface TargetRepoDetection {
   typescriptPresent: boolean;
   scripts: string[];
   sourceSeeds: SourceSeedProposal[];
+  ownerFiles: readonly TargetOwnerFileProposal[];
   agentsPresent: boolean;
   codexPresent: boolean;
   agentSkillsPresent: boolean;
@@ -64,6 +66,13 @@ export interface SourceSeedProposal {
   reason: string;
 }
 
+export interface TargetOwnerFileProposal {
+  path: string;
+  root: string;
+  kind: string;
+  reason: string;
+}
+
 export interface InitConnectRuntimeInput {
   databaseUrl: string;
 }
@@ -77,6 +86,7 @@ export interface ConnectTargetRepoInput {
   typescriptPresent: boolean;
   scripts: string[];
   sourceSeeds: SourceSeedProposal[];
+  ownerFiles: readonly TargetOwnerFileProposal[];
 }
 
 export interface ConnectTargetRepoResult {
@@ -296,7 +306,8 @@ const resolveRepoPath = async (cwd: string, repo: string): Promise<string> => {
 
 const detectTargetRepo = async (
   cwd: string,
-  repo: string
+  repo: string,
+  ownerFiles: readonly TargetOwnerFileProposal[]
 ): Promise<TargetRepoDetection> => {
   const repoPath = await resolveRepoPath(cwd, repo);
 
@@ -331,6 +342,7 @@ const detectTargetRepo = async (
     typescriptPresent,
     scripts: sortedScriptNames(packageJson),
     sourceSeeds,
+    ownerFiles,
     agentsPresent,
     codexPresent,
     agentSkillsPresent,
@@ -352,6 +364,13 @@ const sourceSeedLines = (sourceSeeds: readonly SourceSeedProposal[]): string[] =
     ? ["- none"]
     : sourceSeeds.map((seed) => `- ${seed.path} | kind=${seed.kind} | reason=${seed.reason}`);
 
+const ownerFileLines = (ownerFiles: readonly TargetOwnerFileProposal[]): string[] =>
+  ownerFiles.length === 0
+    ? ["- none"]
+    : ownerFiles.map((ownerFile) =>
+        `- ${ownerFile.path} | root=${ownerFile.root} | kind=${ownerFile.kind} | reason=${ownerFile.reason}`
+      );
+
 const renderDryRun = (detection: TargetRepoDetection): string =>
   [
     "KRN Init Dry Run",
@@ -368,6 +387,8 @@ const renderDryRun = (detection: TargetRepoDetection): string =>
     `Forbidden surfaces: ${forbiddenSurfacesLabel(detection.forbiddenSurfaces)}`,
     "Source seed proposal:",
     ...sourceSeedLines(detection.sourceSeeds),
+    "Owner-file proposal:",
+    ...ownerFileLines(detection.ownerFiles),
     "ProjectKernel proposal:",
     `- summary: ${detection.packageName} target repo connected for KRN harness planning`,
     "- activeContextRule: select project-scoped source, memory, retrieval, and anti-memory only",
@@ -397,6 +418,8 @@ const renderConnect = (
     `- scripts: ${scriptsLabel(detection.scripts)}`,
     "Source seed:",
     ...sourceSeedLines(detection.sourceSeeds),
+    "Owner files:",
+    ...ownerFileLines(detection.ownerFiles),
     "Files written: none",
     `Next command: krn plan --project ${result.project.id} --task "improve test script readiness" --persist`
   ].join("\n") + "\n";
@@ -444,7 +467,8 @@ const createPostgresInitConnectRuntime = async (
             packageManager: repoInput.packageManager,
             typescriptPresent: repoInput.typescriptPresent,
             scripts: repoInput.scripts,
-            sourceSeeds: repoInput.sourceSeeds
+            sourceSeeds: repoInput.sourceSeeds,
+            ownerFiles: repoInput.ownerFiles
           }
         }));
       const installations = await projectRepository.listRepoInstallationsForProject(project.id);
@@ -468,7 +492,8 @@ const createPostgresInitConnectRuntime = async (
             packageManager: repoInput.packageManager,
             typescriptPresent: repoInput.typescriptPresent,
             scripts: repoInput.scripts,
-            sourceSeeds: repoInput.sourceSeeds
+            sourceSeeds: repoInput.sourceSeeds,
+            ownerFiles: repoInput.ownerFiles
           }
         }));
       const existingKernel = await projectRepository.getLatestProjectKernel(project.id);
@@ -484,7 +509,8 @@ const createPostgresInitConnectRuntime = async (
             createdBy: "krn init --connect",
             repoFingerprint: repoInput.repoFingerprint,
             repoPath: repoInput.repoPath,
-            sourceSeeds: repoInput.sourceSeeds
+            sourceSeeds: repoInput.sourceSeeds,
+            ownerFiles: repoInput.ownerFiles
           }
         }));
 
@@ -506,7 +532,7 @@ const createPostgresInitConnectRuntime = async (
 export const runInitCommand = async (
   runtime: InitCommandRuntime
 ): Promise<InitCommandResult> => {
-  const detection = await detectTargetRepo(runtime.cwd, runtime.repo);
+  const detection = await detectTargetRepo(runtime.cwd, runtime.repo, runtime.ownerFiles ?? []);
 
   if (runtime.mode === "connect") {
     if (runtime.persist !== true) {
@@ -531,7 +557,8 @@ export const runInitCommand = async (
         packageManager: detection.packageManager,
         typescriptPresent: detection.typescriptPresent,
         scripts: detection.scripts,
-        sourceSeeds: detection.sourceSeeds
+        sourceSeeds: detection.sourceSeeds,
+        ownerFiles: detection.ownerFiles
       });
 
       return {

@@ -44,12 +44,14 @@ export type CliCommand =
       kind: "init";
       mode: "dryRun";
       repo: string;
+      ownerFiles?: readonly TargetOwnerFileInput[];
     }
   | {
       kind: "init";
       mode: "connect";
       repo: string;
       persist: boolean;
+      ownerFiles?: readonly TargetOwnerFileInput[];
     }
   | {
       kind: "plan";
@@ -305,14 +307,21 @@ export interface ParseArgsResult {
   error?: string;
 }
 
+export interface TargetOwnerFileInput {
+  path: string;
+  root: string;
+  kind: string;
+  reason: string;
+}
+
 const usage = [
-  "Usage: krn init --dry-run --repo <path>",
-  "Usage: krn init --connect --repo <path> --persist",
+  "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
+  "Usage: krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
   "Usage: krn plan [--project <project-id>] --task \"...\" [--persist]",
   "",
   "Public operator commands:",
-  "krn init --dry-run --repo <path>",
-  "krn init --connect --repo <path> --persist",
+  "krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
+  "krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
   "krn doctor",
   "krn evidence capture [--run-id <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--persist]",
   "  example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",

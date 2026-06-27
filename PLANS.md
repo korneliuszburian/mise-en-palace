@@ -42,12 +42,13 @@ V13 research-to-brain decision lane gate: complete
 V14 TypeScript boundary drift gate: complete
 V15 Promptfoo / Golden Behavior Role Gate: complete
 V16 Activation Relevance Evidence Gate: complete
+V17 Target Owner-File Read-Model Contract Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V17 Target Owner-File Read-Model Contract Gate
-current task: V17-00 Target Owner-File Read-Model Contract Gate
+active stream: V18 Target Owner-File Contract Re-Gate / Trial Application
+current task: V18-00 Target Owner-File Contract Re-Gate / Trial Application
 ```
 
 Evidence already recorded in repo:
@@ -62,8 +63,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V12 must turn the V11 readiness verdict into an operator-ready launch packet
-for a real second-operator or widened-alpha trial without creating fake proof.
+V18 must apply or re-gate the explicit target owner-file contract so future
+target trials can distinguish operator friction, owner-file quality, and
+activation selection after ownerFiles are available.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -560,6 +562,24 @@ Expected end state:
 ```txt
 KRN either documents and verifies the existing owner-file read-model contract,
 or accepts one small repair so target owner files are not hidden operator lore.
+```
+
+### Stream V18 — Target Owner-File Contract Re-Gate / Trial Application
+
+Why now:
+
+- V17 made exact target owner files an explicit `krn init --owner-file`
+  contract instead of fixture-only metadata or operator lore.
+- The next product question is whether this contract makes bounded target
+  trials clearer, or whether the remaining bottleneck is operator friction,
+  owner-file quality, or activation selection after owner files are available.
+
+Expected end state:
+
+```txt
+KRN uses or re-gates the explicit owner-file contract in one bounded target
+trial path, without creating a source crawler or pretending headless proof is
+V02-01.
 ```
 
 ## 12. Active Task Queue
@@ -1672,7 +1692,7 @@ Completion evidence:
 
 ### V17-00 — Target Owner-File Read-Model Contract Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: decide whether the target owner-file read-model contract is explicit
 enough for future target trials.
@@ -1727,6 +1747,77 @@ automation.
 
 Next-task synthesis rule: if owner-file contract is already explicit, move to
 the next product blocker; if not, repair the smallest owning surface.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`;
+- `krn init --owner-file "path|root|kind|reason"` implemented, documented,
+  tested, and replayed against the target fixture with `ownerFiles=2` and
+  `owner_files_available`.
+
+### V18-00 — Target Owner-File Contract Re-Gate / Trial Application
+
+Status: active
+
+Goal: apply or re-gate the explicit `--owner-file` contract in a bounded target
+trial path and decide whether the next blocker is operator friction,
+owner-file quality, or activation selection after owner files are available.
+
+Product rationale: after V17, owner files are no longer hidden metadata, but
+future target proof must show whether operators can use the contract and whether
+activation improves once exact owner files are available.
+
+Architectural rationale: target owner files remain explicit read-model inputs,
+not inferred crawler output; missing owner files remain read-model
+incompleteness, not scoring failure.
+
+Evidence source: V17 report, target repo testing runbook, second-operator
+packet, current `krn init --owner-file` live replay, V06/V16 activation
+reports.
+
+Official/external sources: none required unless this becomes an operator
+surface/design decision beyond existing Codex/KRN guidance.
+
+Inputs required: current repo state, V17 report, one bounded target trial path
+or an explicit re-gate rejecting another local substitute.
+
+Files likely touched:
+
+- target trial/re-gate report under `docs/reviews/controlled-dogfood/`;
+- `PLAN.md`;
+- `GOAL.md`;
+- `PLANS.md`;
+- maybe runbook/skill docs if V18 finds operator friction.
+
+Allowed writes: KRN reports/plans and one bounded KRN docs/source repair only
+if evidence proves a gap.
+
+Forbidden writes: living target repo writes unless explicitly scoped; source
+crawler; activation scoring rewrite; dashboard/API/MCP/worker runtime.
+
+Output requirements: report states whether `--owner-file` is usable enough for
+the next target trial step and separates operator friction, owner-file quality,
+activation selection, and product-readiness claims.
+
+Definition of Done: V18 either runs a bounded target application of the
+owner-file contract or records why that would be a fake substitute; next blocker
+is named with evidence.
+
+Verification commands: `git diff --check`; if source changes, `pnpm typecheck`
+and `pnpm test`.
+
+Acceptance criteria: no source crawler by default; no hidden owner-file lore; no
+fake second-operator proof.
+
+Risk: another local-only proof could be overstated.
+
+Rollback: focused V18 report/plan revert.
+
+Condensation expectation: decide whether the next durable surface is operator
+docs, trial packet, activation repair, or no further local substitute.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V18
+evidence.
 
 ## 13. Generated Task Backlog
 
@@ -1966,7 +2057,9 @@ Initial entry:
   tests kept as behavior proof authority.
 - [x] V16-00 complete: activation scoring rewrite rejected; target owner-file
   read-model completeness accepted as next blocker.
-- [ ] V17-00 active: Target Owner-File Read-Model Contract Gate.
+- [x] V17-00 complete: `krn init --owner-file` now provides an explicit
+  owner-file read-model contract without source crawler or scoring rewrite.
+- [ ] V18-00 active: Target Owner-File Contract Re-Gate / Trial Application.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2052,6 +2145,16 @@ Record every unexpected fact in this format:
   `.codex/agents/ts-type-critic.toml`.
   Impact: V10 should reject/defer MCP/subagent implementation and move to V11
   product readiness re-gate.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: `TargetActivationReadModel.ownerFiles` had fixture and metadata
+  support, but `krn init --connect` had no operator-facing input for exact
+  owner files.
+  Evidence: `packages/cli/src/runInitCommand.ts`;
+  `packages/cli/src/runPlanCommand.ts`;
+  `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`.
+  Impact: V17 repaired init/connect with explicit `--owner-file` input instead
+  of adding crawler inference or activation scoring changes.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2177,6 +2280,21 @@ Initial decisions:
   Does not prove: MCP/subagents will never be useful.
   Falsifier: repeated scenarios need live typed resources or parallel read-heavy
   roles with stable output contracts.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Implement explicit `krn init --owner-file` instead of a target
+  source crawler or activation scoring rewrite.
+  Rationale: V17 found `ownerFiles` were already consumed from metadata, but
+  normal init/connect had no operator-facing input path. Explicit input keeps
+  owner-file recall honest and bounded.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`;
+  `packages/cli/src/runInitCommand.ts`; `packages/cli/src/runPlanCommand.ts`;
+  live init/connect/plan replay.
+  Does not prove: owner-file completeness, activation product quality, or
+  second-operator usability.
+  Falsifier: future target trials provide owner files through init but planning
+  still reports `missing_owner_file_read_model` or operators cannot use the
+  contract from checked-in docs.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2321,6 +2439,20 @@ Seed evidence:
   Does not prove: MCP/subagents will never be useful, product readiness, or
     V02-01.
   Follow-up task: V11-00.
+
+- Evidence ID: E-V17-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`
+  Command/report/file: source repair, CLI/parser tests, typecheck, full tests,
+    DB readiness, target harness smoke, live init/connect/plan owner-file replay,
+    evidence/observe/reflect persisted run.
+  Result: `krn init --owner-file "path|root|kind|reason"` provides explicit
+    operator owner-file input and `krn plan --project` reads it as
+    `ownerFiles=2` with `owner_files_available`.
+  Proves: exact target owner files can enter the read model through a normal
+    operator CLI path without crawler inference.
+  Does not prove: owner-file completeness, activation product quality, V02-01,
+    widened alpha, or product readiness.
+  Follow-up task: V18-00.
 ```
 
 ## 19. Condensation Queue
@@ -2500,10 +2632,20 @@ Seed queue:
   Source evidence: V16 activation gate, V06 owner-file recall report, current
     target read-model construction
   Surface: read-model contract gate
-  Status: accepted as V17-00
+  Status: complete as V17-00
   Reason: owner-file recall works when ownerFiles exist; the next gap is making
     the owner-file input contract explicit for target trials
   Task: V17-00
+
+- Candidate: target owner-file contract re-gate / trial application
+  Source evidence: V17 owner-file contract repair and live init/connect/plan
+    replay
+  Surface: target trial/re-gate report
+  Status: accepted as V18-00
+  Reason: after owner files can enter through normal init, the next question is
+    whether a bounded target trial benefits or exposes operator friction,
+    owner-file quality issues, or activation misses after ownerFiles exist
+  Task: V18-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2822,6 +2964,47 @@ Product readiness verdict:
 Next active stream:
 - V17 — Target Owner-File Read-Model Contract Gate.
 
+## Outcome 2026-06-27 V17
+
+Completed:
+- V17-00 inspected target owner-file read-model construction and repaired the
+  missing operator-facing input contract.
+- `krn init` now accepts repeatable
+  `--owner-file "path|root|kind|reason"` entries.
+- Owner files are persisted through project, repo installation, and project
+  kernel metadata without DB migration.
+- Target runbook, second-operator packet, and target-repo testing skill now
+  describe the owner-file read-model contract.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`.
+- Targeted CLI/parser tests, full typecheck, full tests, DB readiness, target
+  harness smoke, live init/connect/plan replay, evidence capture, observe, and
+  reflect.
+
+What improved:
+- Exact target owner files are no longer fixture-only metadata or hidden
+  operator lore.
+- `krn plan --project` can report `owner_files_available` from owner files
+  provided through normal init/connect flow.
+- Missing owner files remain read-model incompleteness, not scoring failure.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- Owner-file completeness on arbitrary target repos.
+- Activation scoring quality.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V18 — Target Owner-File Contract Re-Gate / Trial Application.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -2870,7 +3053,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V12 Widened Alpha Trial Launch Packet.
+Active stream: V18 Target Owner-File Contract Re-Gate / Trial Application.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

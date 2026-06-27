@@ -95,6 +95,25 @@ dirty, state:
 KRN EvidenceBundle did not classify target changed files.
 ```
 
+## Owner-File Read-Model Contract
+
+Exact target owner files are explicit read-model inputs, not automatic crawler
+output. If the bounded target task has known owner files, pass them through
+`krn init`:
+
+```sh
+krn init --dry-run --repo <target> \
+  --owner-file "src/index.ts|src|implementation_entry|implementation entry point"
+
+krn init --connect --repo <target> --persist \
+  --owner-file "src/index.ts|src|implementation_entry|implementation entry point"
+```
+
+Each entry is `path|root|kind|reason`. If no owner files are provided, record
+`missing_owner_file_read_model` as read-model incompleteness. Do not treat it as
+proof that owner files do not exist, and do not repair activation scoring from
+that signal alone.
+
 ## Step 5: Stop Conditions
 
 Stop and report instead of patching when:
