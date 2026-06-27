@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V37 — Target Patch Lifecycle Rule Condensation
+V38 — Clean Target Selection Gate
 ```
 
 Current product loop:
@@ -77,8 +77,9 @@ V33 Reused Project Owner-File Refresh Repair: complete.
 V34 Target Repair Re-Gate After Owner-File Refresh: complete.
 V35 Target Patch Handoff Packet: complete.
 V36 Target Patch Handoff Re-Gate: complete.
-active stream: V37 Target Patch Lifecycle Rule Condensation.
-current task: V37-00 — Target Patch Lifecycle Rule Condensation.
+V37 Target Patch Lifecycle Rule Condensation: complete.
+active stream: V38 Clean Target Selection Gate.
+current task: V38-00 — Clean Target Selection Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

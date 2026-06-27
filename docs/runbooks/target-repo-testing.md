@@ -117,6 +117,48 @@ If target repo is dirty after the trial:
 - never claim target verification belongs only to KRN-made changes unless the
   target dirty state was clean or classified.
 
+## Target Patch Lifecycle Rules
+
+When a headless repair leaves KRN-made target changes dirty, KRN must create or
+reference a handoff artifact in the KRN repo before starting unrelated target
+work.
+
+Classify target patch lifecycle as exactly one:
+
+```txt
+none:
+  no KRN-made target patch is pending.
+
+accepted_by_target_owner:
+  target owner/operator accepted, committed, or explicitly kept the patch.
+
+rejected_by_target_owner:
+  target owner/operator rejected or reverted the patch.
+
+stronger_verification_requested:
+  target owner/operator asked for observation-only verification before deciding.
+
+handed_off_unresolved:
+  KRN handed off the patch, but no owner/operator decision is visible.
+```
+
+If lifecycle is `handed_off_unresolved`, KRN must not start another repair in
+that same target repo. Allowed next actions are:
+
+- wait for owner/operator decision;
+- run observation-only verification requested for the handed-off patch;
+- select a different clean/safe target;
+- record the blocker in KRN plans/reports.
+
+Required report fields:
+
+```txt
+target_patch_lifecycle:
+handoff_artifact:
+target_owner_decision:
+same_target_repair_allowed: yes/no
+```
+
 ## Evidence Rules
 
 KRN evidence capture currently records the KRN repo worktree by default. If a
@@ -205,6 +247,7 @@ Current high-value KRN repairs:
 3. DB smoke idempotency after fresh Docker volume recovery;
 4. owner-file read model support for real target repos beyond root source
    seeds.
+5. target patch lifecycle reporting for unresolved handed-off repairs.
 
 Do not create V04 as another local substitute for V02-01. Use target trials only
 when they answer a specific product question or repair a concrete KRN gap.

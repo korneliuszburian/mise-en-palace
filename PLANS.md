@@ -62,12 +62,13 @@ V33 Reused Project Owner-File Refresh Repair: complete
 V34 Target Repair Re-Gate After Owner-File Refresh: complete
 V35 Target Patch Handoff Packet: complete
 V36 Target Patch Handoff Re-Gate: complete
+V37 Target Patch Lifecycle Rule Condensation: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V37 Target Patch Lifecycle Rule Condensation
-current task: V37-00 Target Patch Lifecycle Rule Condensation
+active stream: V38 Clean Target Selection Gate
+current task: V38-00 Clean Target Selection Gate
 ```
 
 Evidence already recorded in repo:
@@ -82,9 +83,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V36 found the V32 target patch remains handed off but unresolved. The next task
-must condense this into durable target-repo workflow rules so KRN does not start
-another same-target repair while patch ownership is ambiguous.
+V37 encoded target patch lifecycle handling into the target-repo workflow. The
+next task must decide whether there is another clean/safe target proof path or
+whether target owner/operator action is the honest blocker.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3490,7 +3491,7 @@ Outcome:
 
 ### V37-00 — Target Patch Lifecycle Rule Condensation
 
-Status: active
+Status: complete
 
 Goal: condense V32-V36 target patch lifecycle evidence into durable target-repo
 workflow rules.
@@ -3557,6 +3558,83 @@ Acceptance criteria:
 - no target writes;
 - unresolved target patch state is represented explicitly;
 - same-target repair stop condition is durable;
+- next active task is explicit.
+
+Evidence:
+
+- `.agents/skills/target-repo-testing/SKILL.md`.
+- `docs/runbooks/target-repo-testing.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v37-target-patch-lifecycle-rule/REPORT.md`.
+
+Outcome:
+
+- V37 added `target_patch_lifecycle` states to the target-repo skill/runbook.
+- V37 added `handed_off_unresolved` as a same-target repair stop condition.
+- V37 promoted clean target selection as the next bounded gate.
+
+### V38-00 — Clean Target Selection Gate
+
+Status: active
+
+Goal: decide whether another clean/safe target proof path exists without
+touching the unresolved `krn-elektroinstal-ogar` FAQ patch.
+
+Product rationale: KRN should continue learning from target trials, but not by
+mixing evidence with an unresolved handed-off patch in the same living target.
+
+Architectural rationale: target selection is a gate, not a crawler or broad
+benchmark lane. It should choose one safe path or record an honest blocker.
+
+Evidence source: V36 re-gate, V37 lifecycle rule, current target availability.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- current KRN status and latest CI;
+- target repo status for `krn-elektroinstal-ogar`;
+- read-only listing of plausible target repos under `active/`;
+- V02-01 input availability check.
+
+Files likely touched:
+
+- V38 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit;
+- target reset/clean;
+- same-target repair on `krn-elektroinstal-ogar` while FAQ patch is
+  `handed_off_unresolved`;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim;
+- new dashboard/API/MCP/worker/eval platform.
+
+Output requirements:
+
+- selected next target path or explicit blocker;
+- target patch lifecycle status for any inspected target;
+- proof/non-proof boundaries;
+- active plan update.
+
+Definition of Done: V38 either selects one clean/safe target path for the next
+bounded proof or records target owner/operator decision as the honest blocker.
+
+Verification commands: `git diff --check`; read-only target status/listing.
+
+Acceptance criteria:
+
+- no target writes;
+- no same-target repair while FAQ patch remains unresolved;
+- no fake V02-01;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -3842,7 +3920,10 @@ Initial entry:
 - [x] V36-00 complete: re-gate rejected same-target repair while the target FAQ
   patch remains handed off but unresolved, and promoted target patch lifecycle
   rule condensation.
-- [ ] V37-00 active: Target Patch Lifecycle Rule Condensation.
+- [x] V37-00 complete: target patch lifecycle states and
+  `handed_off_unresolved` stop condition added to the target-repo workflow
+  skill/runbook.
+- [ ] V38-00 active: Clean Target Selection Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4385,6 +4466,21 @@ Initial decisions:
   Falsifier: V37 finds the existing skill/runbook already fully prevents
     same-target repair with handed-off unresolved patches.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote clean target selection gate as V38.
+  Rationale: V37 encoded the lifecycle rule, but the current target FAQ patch
+    remains `handed_off_unresolved`. The next proof must either select a clean
+    target path or explicitly record target owner/operator action as the honest
+    blocker.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v37-target-patch-lifecycle-rule/REPORT.md`;
+    `.agents/skills/target-repo-testing/SKILL.md`;
+    `docs/runbooks/target-repo-testing.md`.
+  Does not prove: another target is safe, product readiness is achieved,
+    widened alpha is ready, or V02-01 is complete.
+  Falsifier: V38 finds no clean/safe target path and no real second-operator
+    inputs, in which case the honest result is a blocker/handoff rather than a
+    substitute proof.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4786,6 +4882,17 @@ Seed evidence:
   Does not prove: target owner acceptance, product readiness, V02-01, widened
     alpha, or target browser/runtime correctness.
   Follow-up task: V37-00.
+
+- Evidence ID: E-V37-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v37-target-patch-lifecycle-rule/REPORT.md`
+  Command/report/file: target-repo testing skill and runbook edits.
+  Result: target patch lifecycle states are now part of the reusable target repo
+    workflow, including a `handed_off_unresolved` stop condition for same-target
+    repair.
+  Proves: the V32-V36 lifecycle lesson is durable in workflow guidance.
+  Does not prove: target owner acceptance, V02-01, product readiness, or that
+    another target path is safe.
+  Follow-up task: V38-00.
 ```
 
 ## 19. Condensation Queue
@@ -5141,6 +5248,14 @@ Seed queue:
   Reason: prevent unresolved dirty target patches from becoming ambiguous state
     before same-target repair, readiness claims, or future target trials
   Task: V37-00
+
+- Candidate: clean target selection gate
+  Source evidence: V37 lifecycle rule and unresolved current target patch
+  Surface: target selection report / active plan gate
+  Status: accepted as V38-00
+  Reason: continue product proof only through a clean/safe target path or honest
+    blocker, not by reusing the unresolved same target
+  Task: V38-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6090,6 +6205,45 @@ Product readiness verdict:
 Next active stream:
 - V37 — Target Patch Lifecycle Rule Condensation.
 
+## Outcome 2026-06-27 V37
+
+Completed:
+- V37-00 condensed target patch lifecycle handling into
+  `.agents/skills/target-repo-testing/SKILL.md`.
+- Updated `docs/runbooks/target-repo-testing.md` with target patch lifecycle
+  states and required report fields.
+- Added `handed_off_unresolved` as a stop condition for same-target repair.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v37-target-patch-lifecycle-rule/REPORT.md`.
+- `.agents/skills/target-repo-testing/SKILL.md`.
+- `docs/runbooks/target-repo-testing.md`.
+
+What improved:
+- The target patch ownership lesson is no longer only in reports.
+- Future Codex continuations can detect unresolved handed-off target patches
+  before starting another target repair.
+
+What did not improve:
+- Target owner acceptance.
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Target runtime/browser/accessibility proof.
+
+New task:
+- Decide whether a clean/safe target proof path exists without touching the
+  unresolved `krn-elektroinstal-ogar` FAQ patch.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V38 — Clean Target Selection Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -6138,7 +6292,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V37 Target Patch Lifecycle Rule Condensation.
+Active stream: V38 Clean Target Selection Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

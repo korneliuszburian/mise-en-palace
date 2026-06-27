@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V37 Target Patch Lifecycle Rule Condensation
-current task: V37-00 Target Patch Lifecycle Rule Condensation
+active stream: V38 Clean Target Selection Gate
+current task: V38-00 Clean Target Selection Gate
 ```
 
 Completed stream summary:
@@ -66,32 +66,30 @@ V33 Reused Project Owner-File Refresh Repair: complete
 V34 Target Repair Re-Gate After Owner-File Refresh: complete
 V35 Target Patch Handoff Packet: complete
 V36 Target Patch Handoff Re-Gate: complete
+V37 Target Patch Lifecycle Rule Condensation: complete
 ```
 
 ## Active Stream
 
-### V37-00 — Target Patch Lifecycle Rule Condensation
+### V38-00 — Clean Target Selection Gate
 
 Goal:
 
-Condense V32-V36 target patch lifecycle evidence into the target-repo workflow
-surface so future headless target repairs cannot leave unresolved dirty target
-patches as ambiguous state.
+Decide whether another clean/safe target proof path exists without touching the
+unresolved `krn-elektroinstal-ogar` FAQ patch.
 
 Current finding:
 
 ```txt
-V36 found the target FAQ patch remains handed off but unresolved. KRN must not
-start another repair in the same dirty target repo until target owner action or
-stronger observation-only verification is requested.
+V37 encoded the unresolved target patch lifecycle rule. The current target FAQ
+patch remains handed off but unresolved, so same-target repair is forbidden.
 ```
 
-Current V37 action:
+Current V38 action:
 
 ```txt
-Update the target-repo-testing skill/runbook and active plans with a durable
-patch lifecycle rule. Keep the rule small, explicit, and limited to target repo
-workflow hygiene.
+Select a clean/safe next target path, run only observation-only discovery, or
+record target owner/operator action as the honest blocker.
 ```
 
 ## V02-01 Boundary

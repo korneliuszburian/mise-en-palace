@@ -43,12 +43,27 @@ Classify:
 ```txt
 target_dirty_before: yes/no
 owned_by_current_krn_run: no / partial / yes
+target_patch_lifecycle:
+  none
+  accepted_by_target_owner
+  rejected_by_target_owner
+  stronger_verification_requested
+  handed_off_unresolved
 allowed_writes:
 forbidden_writes:
 ```
 
 If the target is dirty and the mode is observation-only, treat the dirty state
 as external operator context.
+
+If a previous headless repair left a KRN-made target patch dirty and that patch
+has only been handed off, classify it as `handed_off_unresolved`. Do not start
+another repair in that same target repo. Allowed next actions are:
+
+- wait for target owner/operator decision;
+- run observation-only verification requested for that patch;
+- choose a different clean/safe target;
+- record a blocked handoff if no useful progress is possible.
 
 ## Step 3: Run Only Mode-Compatible Commands
 
@@ -73,6 +88,7 @@ Headless repair additionally requires:
 - rollback path;
 - focused verification;
 - separation of pre-existing dirty files from KRN-made changes.
+- a handoff artifact when KRN-made target changes remain dirty after the run.
 
 ## Step 4: Capture Evidence Honestly
 
@@ -122,6 +138,9 @@ Stop and report instead of patching when:
 - target writes are needed but not explicitly allowed;
 - secrets or generated runtime surfaces appear;
 - another active operator/instance is evolving the target;
+- the target has a previous KRN-made patch with
+  `target_patch_lifecycle: handed_off_unresolved` and the current task is
+  another same-target repair;
 - the trial would be renamed into V02-01 without a real second operator.
 
 ## Required Output
@@ -131,6 +150,8 @@ Every target trial report must include:
 ```txt
 mode:
 target_dirty_before:
+target_patch_lifecycle:
+handoff_artifact:
 allowed_writes:
 forbidden_writes:
 commands:
