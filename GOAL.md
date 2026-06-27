@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V124 Post Retained Source Trust Metadata Guard Re-Gate
+V126 Post Pattern Intake Output Contract Guard Re-Gate
 ```
 
 Current product loop:
@@ -37,10 +37,10 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V123: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-task-contract, final-response, TypeScript boundary, and source trust metadata
-guards complete.
-current task: V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
+V110..V125: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+task-contract, final-response, TypeScript boundary, source trust metadata, and
+pattern-intake output guards complete.
+current task: V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

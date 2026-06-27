@@ -115,6 +115,50 @@ describe("KRN active plan invariants", () => {
     expect(plans).toContain("Surface Consumer Matrix");
   });
 
+  it("keeps pattern intake decision-oriented, reviewable, and legally bounded", () => {
+    const runbook = readRootFile("docs/runbooks/pattern-intake.md");
+    const outputTemplate = sectionBody(runbook, "## Output Template");
+    const rejectionReasons = sectionBody(runbook, "## Rejection Reasons");
+
+    expect(runbook).toContain("Do not copy paid or proprietary course material into KRN.");
+    expect(runbook).toContain("Forbidden:");
+    expect(runbook).toContain("transcripts of paid course lessons");
+    expect(runbook).toContain("source dumps");
+    expect(runbook).toContain("scraped course modules");
+    expect(runbook).toContain("retaining a source with no consumer");
+    expect(runbook).toContain("source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier");
+    expect(runbook).toContain("Surface Consumer Matrix");
+
+    expectFieldLines(outputTemplate, [
+      "source_id",
+      "title",
+      "url_or_ref",
+      "trust_tier",
+      "source_class",
+      "mechanism",
+      "krn_implication",
+      "decision_kind",
+      "decision",
+      "consumer",
+      "falsifier",
+      "does_not_prove",
+      "candidate_output",
+      "next_action"
+    ]);
+    expect(outputTemplate).toContain("decision_kind: adopt | reject | lab_test | defer");
+    expect(outputTemplate).toContain(
+      "reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown"
+    );
+    expect(outputTemplate).toContain("type: MemoryCandidate | SourceDecision | EvalCandidate | SkillCandidate | none");
+
+    expect(rejectionReasons).toContain("decorative:");
+    expect(rejectionReasons).toContain("no_consumer:");
+    expect(rejectionReasons).toContain("no_falsifier:");
+    expect(rejectionReasons).toContain("copyright_or_access:");
+    expect(rejectionReasons).toContain("stale_or_conflicting:");
+    expect(rejectionReasons).toContain("too_broad:");
+  });
+
   it("keeps future task contracts explicit enough for Codex continuation", () => {
     const plans = readRootFile("PLANS.md");
     const taskContract = sectionBody(plans, "## 9. Task Contract Schema");

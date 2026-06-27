@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V123 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, and source trust metadata guard slices: complete
-active stream: V124 Post Retained Source Trust Metadata Guard Re-Gate
-current task: V124-00 Post Retained Source Trust Metadata Guard Re-Gate
+V48..V125 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, and pattern-intake output guard slices: complete
+active stream: V126 Post Pattern Intake Output Contract Guard Re-Gate
+current task: V126-00 Post Pattern Intake Output Contract Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
+V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13898,6 +13898,80 @@ Next active stream:
 
 Next active task:
 - V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
+
+## Outcome 2026-06-27 V125 Pattern Intake Output Contract Guard
+
+Completed tasks:
+- V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
+- V125-00 Pattern Intake Output Contract Guard.
+
+V124 decision:
+- Do not broaden retained source metadata into Research Foundry, crawler,
+  decorative source archive, or paid-course transcription.
+- Select pattern-intake output contracts because `docs/runbooks/pattern-intake.md`
+  already defines how best courses, papers, official docs, practitioner writing,
+  repo evidence, and user-provided research become KRN decisions, but the
+  output/rejection contract should be mechanically protected.
+
+What changed:
+- `packages/harness/src/activePlanInvariants.test.ts` now checks that
+  `docs/runbooks/pattern-intake.md` keeps legal/content boundaries, the
+  source-to-decision chain, output template fields, candidate reviewability,
+  `next_action`, and explicit rejection reasons.
+- `docs/architecture/brain-battle-eval-matrix.md` records the pattern-intake
+  output guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V126.
+
+Evidence:
+- `docs/runbooks/pattern-intake.md`.
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: `docs/runbooks/pattern-intake.md`, retained source-map discipline,
+  and user direction to keep best courses, papers, infrastructure patterns,
+  harness patterns, CI, and TypeScript doctrine active at every stage.
+- Mechanism: research only improves KRN when it ends in adoption, rejection,
+  lab-test, defer, a primary consumer, a falsifier, candidate reviewability, and
+  a next action; otherwise it becomes context load or source hoarding.
+- KRN implication: pattern intake must preserve output and rejection structure,
+  not only a high-level source-to-decision slogan.
+- Decision: add a focused active-plan invariant for pattern-intake output and
+  rejection contracts.
+- Does not prove: every future source intake is high quality, external docs are
+  current, course/paper guidance is adoptable by default, or product readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `docs/runbooks/pattern-intake.md` can drop decision kind,
+  source class, candidate reviewability, next action, legal/content boundary, or
+  rejection reasons without focused tests failing.
+
+What improved:
+- Best-pattern intake is harder to degrade into decorative research notes.
+- Paid/proprietary course content boundaries stay mechanically visible.
+- Future source candidates must preserve reviewability and next-action routing.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- External source freshness or source judgment quality.
+
+New task:
+- V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V126 Post Pattern Intake Output Contract Guard Re-Gate.
+
+Next active task:
+- V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

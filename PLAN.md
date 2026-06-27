@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V124 Post Retained Source Trust Metadata Guard Re-Gate
-current task: V124-00 Post Retained Source Trust Metadata Guard Re-Gate
+active stream: V126 Post Pattern Intake Output Contract Guard Re-Gate
+current task: V126-00 Post Pattern Intake Output Contract Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,33 +43,34 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V123: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-           task-contract, final-response, TypeScript boundary, and source trust
-           metadata guards complete.
+V110..V125: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+           task-contract, final-response, TypeScript boundary, source trust
+           metadata, and pattern-intake output guards complete.
 ```
 
 ## Active Stream
 
-### V124 Post Retained Source Trust Metadata Guard Re-Gate
+### V126 Post Pattern Intake Output Contract Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding retained source URL/trust-tier
-metadata without turning research intake into a crawler or source hoard.
+Decide the next bounded task after guarding pattern-intake output contracts
+without turning research intake into a crawler, source hoard, or paid-course
+transcription path.
 
 Current finding:
 
 ```txt
-V122 selected source-map trust metadata as the next bounded pattern surface.
-V123 strengthened the retained source invariant so every `docs/KRN_SOURCES.md`
-source section must include URL/URLs and Trust tier in addition to the full
-source-to-decision mapping fields.
+V124 selected pattern-intake output contracts as the next bounded pattern
+surface. V125 strengthened the active-plan invariant so `docs/runbooks/pattern-intake.md`
+must keep legal/content boundaries, decision kind, source class,
+candidate-output reviewability, next action, and explicit rejection reasons.
 ```
 
 Current action:
 
 ```txt
-Execute V124-00: select the next pattern surface from evidence. Do not broaden
+Execute V126-00: select the next pattern surface from evidence. Do not broaden
 source intake into Research Foundry, crawler, decorative source archive, or
 paid-course transcription.
 ```
@@ -83,7 +84,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source metadata guarding into broad research
+The re-gate turns focused pattern-intake output guarding into broad research
 collection, source hoarding, or crawler work without a concrete consumer.
 ```
 
