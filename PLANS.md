@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V214 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, and Promptfoo smoke proof slices: complete
-active stream: V215 Post Promptfoo Smoke Re-Gate
-current task: V215-00 Post Promptfoo Smoke Re-Gate
+V48..V215 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, and post-Promptfoo re-gate slices: complete
+active stream: V216 CI Visibility Lookup Normalization
+current task: V216-00 CI Visibility Lookup Normalization
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V215-00 Post Promptfoo Smoke Re-Gate.
+V216-00 CI Visibility Lookup Normalization.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17456,6 +17456,59 @@ Next active stream:
 
 Next active task:
 - V215-00 Post Promptfoo Smoke Re-Gate.
+
+## Outcome 2026-06-28 V215 Post Promptfoo Smoke Re-Gate
+
+Completed task:
+- V215-00 Post Promptfoo Smoke Re-Gate.
+
+Decision:
+- Do not treat the green Promptfoo smoke as KRN behavior proof, Memory Brain
+  readiness, product readiness, or a reason to build a broad eval platform.
+- Select CI visibility lookup normalization as the next bounded task because
+  recent post-push checks used short commit SHAs and produced false negative
+  "no visible workflow run" results even though KRN CI was active and green.
+
+Evidence:
+- `.github/workflows/ci.yml` defines active `KRN CI` on push to `main`,
+  pull requests, and workflow dispatch.
+- `gh workflow list` reported `KRN CI active`.
+- `gh run list --commit 94acf27 --limit 10 --json ...` returned `[]`.
+- `gh run list --commit
+  94acf2729dee8e9e1e4fe3d0a38914a063f2b362 --limit 5 --json ...` returned
+  successful run `28304318476`.
+- `gh run list --branch main --limit 5 --json ...` returned successful runs for
+  recent commits `94acf27`, `94fecdc`, `d32136c`, `962cea4`, and `96776f9`.
+
+Source-to-decision:
+- Source: `.github/workflows/ci.yml`, `gh workflow list`, `gh run list`
+  branch output, short-SHA lookup output, and full-SHA lookup output.
+- Mechanism: GitHub Actions CI is real and green, but ambiguous short-SHA
+  lookup can hide existing runs from operator readback.
+- KRN implication: post-slice CI confirmation should use full commit SHA or
+  branch-run readback and should not record a missing CI run from short-SHA
+  lookup alone.
+- Decision: add V216 as a compact process-guidance repair for CI lookup.
+- Does not prove: product readiness, V02-01, or that future CI runs will pass.
+- Consumer: root `PLAN.md`, root `GOAL.md`, `PLANS.md`, and any reusable
+  handoff/verification guidance that owns commit/push/CI evidence.
+- Falsifier: future slices again report missing CI from short-SHA lookup while
+  branch/full-SHA run lookup shows a matching successful run.
+
+New task:
+- V216-00 CI Visibility Lookup Normalization.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V216 CI Visibility Lookup Normalization.
+
+Next active task:
+- V216-00 CI Visibility Lookup Normalization.
 
 ## 21. Final Response Format For Codex Runs
 

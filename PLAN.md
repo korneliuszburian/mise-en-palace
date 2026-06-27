@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V215 Post Promptfoo Smoke Re-Gate
-current task: V215-00 Post Promptfoo Smoke Re-Gate
+active stream: V216 CI Visibility Lookup Normalization
+current task: V216-00 CI Visibility Lookup Normalization
 ```
 
 ## Compact Completed Checkpoints
@@ -45,39 +45,40 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V215 Post Promptfoo Smoke Re-Gate
+### V216 CI Visibility Lookup Normalization
 
 Goal:
 
-Select the next bounded task after the Promptfoo adapter smoke passed.
+Normalize the post-push CI lookup after recent short-SHA checks produced false
+negative "no visible workflow run" results.
 
 Current finding:
 
 ```txt
-V214 ran `pnpm eval:promptfoo:smoke`; the local Promptfoo fixture passed 2/2
-and wrote `.local-lab/promptfoo/krn-golden-smoke-results.jsonl`.
+`gh run list --commit 94acf27` returned no runs, while `gh run list --commit
+94acf2729dee8e9e1e4fe3d0a38914a063f2b362` and branch run lookup found the
+successful KRN CI run `28304318476` for the same commit.
 ```
 
 Current action:
 
 ```txt
-Execute V215-00: select the next bounded evidence-backed task from the recent
-brain-battle and Promptfoo smoke results. Do not treat Promptfoo as KRN behavior
-proof or broaden into dashboard, worker runtime, activation rewrite, product
-readiness, or new eval platform.
+Execute V216-00: update the compact process guidance so CI confirmation uses
+full commit SHA or branch-run readback, not ambiguous short-SHA lookup. Keep it
+as CI evidence hygiene, not workflow expansion.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+Post-slice commit/push/CI confirmation guidance.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate treats a green Promptfoo smoke as KRN behavior proof/product
-readiness or starts broad feature work without a concrete consumer/falsifier.
+Future slices report "no CI visible" from short-SHA lookup while a successful
+run exists for the full head SHA or latest branch run.
 ```
 
 ## Pattern Gate
