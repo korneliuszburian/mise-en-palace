@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V96 Post Context Hygiene Guard Re-Gate
-current task: V96-00 Post Context Hygiene Guard Re-Gate
+active stream: V98 Post Active Plan Completion Guard Re-Gate
+current task: V98-00 Post Active Plan Completion Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -129,32 +129,33 @@ V92-00 post eval and policy ID branding re-gate: complete
 V93 brain-battle matrix invariant guard: complete
 V94-00 post brain-battle matrix guard re-gate: complete
 V95 context hygiene invariant guard: complete
-V96 post context hygiene guard re-gate: active
+V96-00 post context hygiene guard re-gate: complete
+V97 active plan completion invariant guard: complete
+V98 post active plan completion guard re-gate: active
 ```
 
 ## Active Stream
 
-### V96 Post Context Hygiene Guard Re-Gate
+### V98 Post Active Plan Completion Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding a deterministic invariant guard for
-active context hygiene.
+Decide the next bounded task after strengthening the active plan invariant so
+current tasks cannot also be marked complete.
 
 Current finding:
 
 ```txt
-V94 selected a context-hygiene follow-up: raw materials and historical ledgers
-must stay out of default active/resume context. V95 added a focused invariant
-for the AGENTS/KERNEL quarantine rules and root GOAL/PLAN active truth.
+V96 selected a compaction/resume follow-up: root active state was synchronized,
+but the invariant did not reject a current task that was also marked complete.
+V97 strengthened the active-plan invariant with completion-state checks.
 ```
 
 Current action:
 
 ```txt
-Execute V96-00: select the next pattern surface from evidence. Do not broaden
-context hygiene into historical doc cleanup unless a concrete active-context
-leak appears.
+Execute V98-00: select the next pattern surface from evidence. Do not broaden
+plan invariants into a plan linter unless a concrete resume failure appears.
 ```
 
 Primary consumer:

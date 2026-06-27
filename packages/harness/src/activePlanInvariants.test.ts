@@ -20,6 +20,9 @@ const requiredLine = (body: string, pattern: RegExp, label: string): string => {
   return value;
 };
 
+const escapeRegExp = (value: string): string =>
+  value.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+
 describe("KRN active plan invariants", () => {
   it("keeps GOAL, PLAN, and PLANS pointed at the same active stream and task", () => {
     const goal = readRootFile("GOAL.md");
@@ -35,5 +38,8 @@ describe("KRN active plan invariants", () => {
     expect(plansCurrentTask).toBe(planCurrentTask);
     expect(goal).toContain(`${planActiveStream}\n`);
     expect(goal).toContain(`current task: ${planCurrentTask}.`);
+    expect(goal).not.toContain(`${planCurrentTask}: complete.`);
+    expect(plan).not.toMatch(new RegExp(`^${escapeRegExp(planCurrentTask)}.*complete$`, "mu"));
+    expect(plan).not.toMatch(new RegExp(`^${escapeRegExp(planActiveStream)}.*complete$`, "mu"));
   });
 });

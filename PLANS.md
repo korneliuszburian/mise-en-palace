@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V96 Post Context Hygiene Guard Re-Gate
-current task: V96-00 Post Context Hygiene Guard Re-Gate
+active stream: V98 Post Active Plan Completion Guard Re-Gate
+current task: V98-00 Post Active Plan Completion Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12940,6 +12940,59 @@ Next active stream:
 
 Next active task:
 - V96-00 Post Context Hygiene Guard Re-Gate.
+
+## Outcome 2026-06-27 V97 Active Plan Completion Invariant Guard
+
+Completed:
+- V96-00 Post Context Hygiene Guard Re-Gate.
+- V97-00 Active Plan Completion Invariant Guard.
+
+Evidence:
+- `GOAL.md`.
+- `PLAN.md`.
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: OpenAI Cookbook Goals and ExecPlans retained in `docs/KRN_SOURCES.md`.
+- Mechanism: long-running goals resume from explicit current objective,
+  discoveries, decisions, validation, and next work.
+- KRN implication: compact active truth must not point at a completed slice after
+  compaction or resume.
+- Decision: extend the active-plan invariant so GOAL/PLAN/PLANS still match and
+  the current task/stream is not simultaneously marked complete in compact
+  active truth.
+- Does not prove: the selected next task is strategically correct or that every
+  historical ledger entry is current.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts`.
+- Falsifier: root files all agree on a current task that compact active truth
+  also marks complete.
+
+What improved:
+- Compaction/resume can no longer pass the invariant while pointing at a
+  completed current task.
+- The guard now protects both synchronization and completion-state drift.
+
+What did not improve:
+- Product readiness.
+- Next-task strategy quality.
+- Historical plan cleanliness.
+
+New task:
+- V98-00 Post Active Plan Completion Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V98 Post Active Plan Completion Guard Re-Gate.
+
+Next active task:
+- V98-00 Post Active Plan Completion Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
