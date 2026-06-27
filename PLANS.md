@@ -55,12 +55,13 @@ V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
 V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
 V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
 V29 TypeScript Boundary Research Application Gate: complete
+V30 Codex Surface Context-Budget Application Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V30 Codex Surface Context-Budget Application Gate
-current task: V30-00 Codex Surface Context-Budget Application Gate
+active stream: V31 Product Readiness Re-Gate After Research And Surface Hygiene
+current task: V31-00 Product Readiness Re-Gate After Research And Surface Hygiene
 ```
 
 Evidence already recorded in repo:
@@ -75,8 +76,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V30 must apply V28 Codex surface decisions to current repo instruction and skill
-surfaces without bloating context or creating a skill/hook/MCP zoo.
+V31 must re-gate product readiness and next task after V27-V30, without
+starting another meta-surface pass by inertia.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2886,7 +2887,7 @@ Completed evidence:
 
 ### V30-00 — Codex Surface Context-Budget Application Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: apply the accepted V28 Codex surface decisions to current repo instruction
 and skill surfaces, then decide whether any compactness, trigger, or context
@@ -2956,6 +2957,80 @@ Condensation expectation: decide whether Codex surface hygiene is sufficient or
 whether a bounded trigger/context-budget repair is needed.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V30
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v30-codex-surface-context-budget/REPORT.md`.
+- Root `PLAN.md` was condensed from 19,877 bytes to 4,004 bytes.
+- Stale active V28 lower section was removed from `PLAN.md`.
+- No new skill, hook, MCP, subagent framework, or `AGENTS.md` expansion was
+  justified.
+
+### V31-00 — Product Readiness Re-Gate After Research And Surface Hygiene
+
+Status: active
+
+Goal: inspect V27 through V30 evidence and decide the next product step after
+target loop repairs, research-to-brain source decisions, TypeScript boundary
+application, and Codex surface context-budget repair.
+
+Product rationale: after V27-V30, KRN needs a product decision rather than
+another meta-surface cleanup. The next work should be selected from evidence:
+real operator intake, target trial, activation/read-model repair, or an
+explicit pause/blocker.
+
+Architectural rationale: KRN's continuous loop must periodically condense
+completed slices into readiness and next-task decisions. Otherwise the plan
+becomes self-referential maintenance.
+
+Evidence source: V27, V28, V29, and V30 reports plus current remote CI.
+
+Official/external sources: none required unless a readiness claim depends on a
+new Codex/OpenAI surface.
+
+Inputs required: V27-V30 reports, current `GOAL.md`, `PLAN.md`, `PLANS.md`,
+latest commit/CI state.
+
+Files likely touched:
+
+- V31 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN reports/plans only unless re-gate finds a tiny blocking
+source bug.
+
+Forbidden writes: target repo edits, new architecture, dashboard/API/MCP/worker
+runtime, source crawler, Research Foundry, product-ready overclaim, fake V02-01
+proof, broad activation/reflection rewrite.
+
+Output requirements:
+
+- readiness verdict;
+- what V27-V30 proved;
+- what remains unproved;
+- exactly one next task decision;
+- explicit V02-01/widened-alpha/product-ready boundary.
+
+Definition of Done: one compact V31 re-gate report exists and the active queue
+points to exactly one next task or a documented blocker.
+
+Verification commands: `git diff --check`; if source is touched, `pnpm
+typecheck` and `pnpm test`.
+
+Acceptance criteria: no new implementation plan unless evidence identifies one
+bounded next task.
+
+Risk: report-only churn. Mitigation: keep the report short and decision-driven.
+
+Rollback: focused report/plan revert.
+
+Condensation expectation: decide whether next work is V02-01 real operator
+intake, another controlled target trial, a bounded repair, or pause for inputs.
+
+Next-task synthesis rule: append the single highest-ROI next task after V31
 evidence.
 
 ## 13. Generated Task Backlog
@@ -3225,7 +3300,10 @@ Initial entry:
   into durable source decisions and rejected research subsystem expansion.
 - [x] V29-00 complete: TypeScript boundary spot-check found no source repair
   candidate; production JSON parsing already follows unknown-first narrowing.
-- [ ] V30-00 active: Codex Surface Context-Budget Application Gate.
+- [x] V30-00 complete: Codex surface gate repaired root `PLAN.md`
+  context-budget drift and kept skills/AGENTS unchanged.
+- [ ] V31-00 active: Product Readiness Re-Gate After Research And Surface
+  Hygiene.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3663,6 +3741,19 @@ Initial decisions:
   Falsifier: V30 finds current surfaces are already compact, focused, and
     triggerable enough.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote product readiness re-gate after research and surface
+    hygiene as V31.
+  Rationale: V28-V30 completed a research/context-hygiene loop; the next
+    product move should be a readiness and next-task decision, not another
+    meta-surface cleanup by inertia.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v30-codex-surface-context-budget/REPORT.md`;
+    V27-V29 reports; current green CI.
+  Does not prove: product readiness, V02-01, widened alpha, or a new
+    implementation stream.
+  Falsifier: V31 finds a concrete blocking source bug that must be repaired
+    before any readiness decision.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -3968,6 +4059,19 @@ Seed evidence:
   Does not prove: every public API is ideal, non-package scripts are clean, or
     product readiness.
   Follow-up task: V30-00.
+
+- Evidence ID: E-V30-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v30-codex-surface-context-budget/REPORT.md`
+  Command/report/file: Codex surface size/shape inspection and root `PLAN.md`
+    condensation.
+  Result: `PLAN.md` was reduced from 19,877 bytes to 4,004 bytes and stale
+    active V28 plan detail was removed; `AGENTS.md` and repo-local skills were
+    kept unchanged.
+  Proves: the active root plan is again compact enough to serve as product SSOT
+    while `PLANS.md` carries detailed execution history.
+  Does not prove: product readiness, V02-01 usability, or future surface drift
+    cannot recur.
+  Follow-up task: V31-00.
 ```
 
 ## 19. Condensation Queue
@@ -4259,10 +4363,18 @@ Seed queue:
   Source evidence: V28 and V29 reports
   Surface: instruction/skill surface report / optional tiny skill or instruction
     refinement
-  Status: accepted as V30-00
+  Status: complete as V30-00
   Reason: V28 Codex surface decisions should be applied to current AGENTS,
     goal/plan, and skill surfaces before adding more architecture
   Task: V30-00
+
+- Candidate: product readiness re-gate after research and surface hygiene
+  Source evidence: V27-V30 reports and current CI
+  Surface: readiness report / next-task decision
+  Status: accepted as V31-00
+  Reason: after target repairs plus research/context hygiene, the next step
+    should be a product decision rather than more meta cleanup
+  Task: V31-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4366,6 +4478,42 @@ Product readiness verdict:
 Next active stream:
 
 - V30 Codex Surface Context-Budget Application Gate.
+
+## Outcome 2026-06-27 V30
+
+Completed:
+
+- V30 Codex surface context-budget application gate.
+- Root `PLAN.md` compactness repair.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v30-codex-surface-context-budget/REPORT.md`.
+- `PLAN.md`.
+
+What improved:
+
+- Root `PLAN.md` returned to compact current-state SSOT.
+- Historical completed-stream details remain in `PLANS.md`, not duplicated in
+  active context.
+- Repo-local skills and `AGENTS.md` were inspected and kept unchanged.
+
+What did not improve:
+
+- Product readiness.
+- V02-01 second-operator proof.
+- Target/operator evidence; V31 must decide the next product step.
+
+Product readiness verdict:
+
+- controlled-internal-alpha: yes / stronger context hygiene
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+
+- V31 Product Readiness Re-Gate After Research And Surface Hygiene.
 
 ## Outcome 2026-06-27 V08
 
@@ -4982,7 +5130,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V30 Codex Surface Context-Budget Application Gate.
+Active stream: V31 Product Readiness Re-Gate After Research And Surface Hygiene.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
