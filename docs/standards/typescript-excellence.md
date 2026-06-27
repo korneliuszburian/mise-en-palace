@@ -127,15 +127,19 @@ expected compiler failure. It is normally a test-only tool.
 - owns bounded job contracts/skeletons only until execution slices explicitly
   accept runtime worker behavior.
 
-## Audit Enforcement
+## Boundary Verification
 
-`runTypeSafetyAudit` now reports:
+Do not rely on a broad audit subsystem as the source of truth for TypeScript
+quality. Current enforcement is intentionally smaller and evidence-based:
 
-- unchecked `any` usage;
-- unchecked `JSON.parse`;
-- double assertion shortcuts;
-- `@ts-ignore`;
-- undocumented `@ts-expect-error`.
+- `pnpm typecheck` for compiler-level strictness;
+- targeted `rg` scans for unchecked `any`, unchecked `JSON.parse`, double
+  assertions, `@ts-ignore`, and undocumented `@ts-expect-error`;
+- schema/parser tests for external input boundaries;
+- golden behavior tests for typed boundary expectations;
+- `ts-type-critic` as a read-only/proposal-only review aid when a slice touches
+  TypeScript source, public types, validators, or CLI/file/env input.
 
-QG-03 and QG-04 must extend the quality surface for dead exports, zombie code,
-smell/bloat, and over-broad metadata once tooling is selected.
+If a repeated type-safety drift pattern appears, add a bounded test, parser, or
+standard update. Do not reintroduce a broad `krn audit` or semantic quality
+engine to compensate for unclear ownership.

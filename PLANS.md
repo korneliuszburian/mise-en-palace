@@ -39,12 +39,13 @@ V10 MCP / subagent candidate gate: complete
 V11 product readiness re-gate: complete
 V12 widened alpha trial launch packet: complete
 V13 research-to-brain decision lane gate: complete
+V14 TypeScript boundary drift gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V14 TypeScript boundary drift gate
-current task: V14-00 TypeScript Boundary Drift Gate
+active stream: V15 Promptfoo / Golden Behavior Role Gate
+current task: V15-00 Promptfoo / Golden Behavior Role Gate
 ```
 
 Evidence already recorded in repo:
@@ -507,6 +508,22 @@ Expected end state:
 ```txt
 Current TypeScript boundary drift is either rejected as already covered, or a
 small source/test repair is accepted with exact files and verification.
+```
+
+### Stream V15 — Promptfoo / Golden Behavior Role Gate
+
+Why later:
+
+- CI runs Promptfoo smoke, but recent product proof mostly comes from golden
+  behavior tests, DB smokes, reports, and readback.
+- KRN must avoid turning Promptfoo into a broad eval platform or false product
+  authority.
+
+Expected end state:
+
+```txt
+Promptfoo is explicitly classified as smoke adapter, bounded behavior gate, or
+deferred candidate, with no broad eval platform.
 ```
 
 ## 12. Active Task Queue
@@ -1421,7 +1438,7 @@ Completion evidence:
 
 ### V14-00 — TypeScript Boundary Drift Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: inspect current TypeScript boundary drift and decide whether a small
 source/test repair is needed.
@@ -1480,6 +1497,68 @@ cleanup.
 
 Next-task synthesis rule: if a repeated drift pattern is found, append a bounded
 repair; otherwise move to the next product blocker.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v14-typescript-boundary-drift/REPORT.md`;
+- `docs/standards/typescript-excellence.md` now describes actual targeted
+  boundary verification instead of missing broad audit enforcement.
+
+### V15-00 — Promptfoo / Golden Behavior Role Gate
+
+Status: active
+
+Goal: decide the current role of Promptfoo relative to golden behavior tests,
+DB smokes, and source-backed reports.
+
+Product rationale: Promptfoo appears in CI and previous verification, but KRN
+must not treat a smoke adapter as product-quality proof.
+
+Architectural rationale: eval surfaces must stay bounded adapters over typed
+behavior evidence, not become broad benchmark lanes or quality theater.
+
+Evidence source: Promptfoo config/scripts, CI workflow, golden behavior tests,
+recent reports that cite `pnpm eval:promptfoo:smoke`.
+
+Official/external sources: use current official Promptfoo/OpenAI docs only if a
+decision depends on current external behavior; otherwise rely on local config
+and CI evidence.
+
+Inputs required: current package scripts, CI workflow, Promptfoo config, golden
+behavior tests, recent reports.
+
+Files likely touched:
+
+- report under `docs/reviews/controlled-dogfood/`;
+- maybe docs/runbook/PLAN updates only;
+- no source unless a tiny mismatch is proven.
+
+Allowed writes: report/plans and at most one bounded docs/config repair if
+evidence proves mismatch.
+
+Forbidden writes: broad eval platform, dashboard, benchmark lane, model-scoring
+suite, product-ready claim from Promptfoo smoke, unrelated golden test rewrite.
+
+Output requirements: role decision, evidence table, proof/non-proof boundaries,
+next task.
+
+Definition of Done: Promptfoo's current role is explicit and cannot be confused
+with product readiness proof.
+
+Verification commands: `git diff --check`; if config/scripts change, run
+`pnpm eval:promptfoo:smoke`.
+
+Acceptance criteria: no eval theater; no broad benchmark lane.
+
+Risk: overvaluing green Promptfoo smoke.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: prefer role clarification over new eval work unless a
+specific failing behavior is found.
+
+Next-task synthesis rule: if Promptfoo remains smoke-only, move to the next
+evidence-backed engineering blocker.
 
 ## 13. Generated Task Backlog
 
@@ -1713,7 +1792,9 @@ Initial entry:
   modes, transcript schema, failure taxonomy, and evidence checklist.
 - [x] V13-00 complete: source-to-decision skill refined with research intake
   rules and consumer boundaries.
-- [ ] V14-00 active: TypeScript boundary drift gate.
+- [x] V14-00 complete: TypeScript standard repaired to remove missing audit
+  authority and describe targeted boundary verification.
+- [ ] V15-00 active: Promptfoo / Golden Behavior Role Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2220,10 +2301,19 @@ Seed queue:
   Source evidence: V13 research-to-brain decision lane and existing TypeScript
     excellence/boundary standards
   Surface: TypeScript boundary report or bounded repair
-  Status: accepted as V14-00
+  Status: complete as V14-00
   Reason: practitioner/standards guidance should be proven through current code
     boundary health, not passive citation
   Task: V14-00
+
+- Candidate: Promptfoo / golden behavior role gate
+  Source evidence: V14 next recommendation, CI Promptfoo smoke, existing golden
+    behavior tests
+  Surface: eval role gate
+  Status: accepted as V15-00
+  Reason: Promptfoo smoke needs an explicit proof/non-proof boundary before it
+    is mistaken for product-quality evidence
+  Task: V15-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2442,6 +2532,40 @@ Product readiness verdict:
 
 Next active stream:
 - V14 — TypeScript Boundary Drift Gate.
+
+## Outcome 2026-06-27 V14
+
+Completed:
+- V14-00 inspected TypeScript boundary drift.
+- No production TypeScript source repair was needed from the scanned patterns.
+- `docs/standards/typescript-excellence.md` was repaired to remove a missing
+  `runTypeSafetyAudit` enforcement claim.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v14-typescript-boundary-drift/REPORT.md`.
+- `docs/standards/typescript-excellence.md`.
+
+What improved:
+- TypeScript standard now names actual targeted verification surfaces:
+  typecheck, targeted scans, parser/schema tests, golden behavior tests, and
+  `ts-type-critic`.
+- The standard explicitly rejects reintroducing broad `krn audit` or semantic
+  quality engine as a substitute for ownership.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- Exhaustive manual review of every public TypeScript boundary.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V15 — Promptfoo / Golden Behavior Role Gate.
 
 ## 21. Final Response Format For Codex Runs
 

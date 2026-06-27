@@ -40,7 +40,8 @@ V10 MCP / subagent candidate gate: complete
 V11 product readiness re-gate: complete
 V12 widened alpha trial launch packet: complete
 V13 research-to-brain decision lane gate: complete
-active stream: V14 TypeScript boundary drift gate
+V14 TypeScript boundary drift gate: complete
+active stream: V15 Promptfoo / Golden Behavior Role Gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -298,18 +299,36 @@ Evidence:
 - `.agents/skills/source-to-decision/SKILL.md` refined with research intake
   rules, consumer boundaries, decision kinds, and candidate output guidance.
 
-## Active Stream: V14
+## Completed Stream: V14
 
 V14 checks whether TypeScript boundary standards are still enforced in current
 code instead of merely documented.
 
 ### V14-00 — TypeScript Boundary Drift Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect current TypeScript boundary drift signals and decide whether a
 small source/test repair is needed for unknown-first input, public type
 boundaries, JSON parsing, unsafe casts, or candidate TypeScript quality gates.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v14-typescript-boundary-drift/REPORT.md`;
+- `docs/standards/typescript-excellence.md` no longer claims a missing
+  `runTypeSafetyAudit`; it now names targeted boundary verification.
+
+## Active Stream: V15
+
+V15 gates Promptfoo's role against golden behavior tests and source-backed
+reports.
+
+### V15-00 — Promptfoo / Golden Behavior Role Gate
+
+Status: active.
+
+Goal: decide whether Promptfoo remains a smoke/adapter check, needs one bounded
+behavior case, or should be rejected/deferred as a broader eval surface.
 
 ## Hard Non-Goals
 
