@@ -1,6 +1,8 @@
 import type {
   FeedbackDeltaId,
-  ReviewAssessmentId
+  ReviewAssessmentId,
+  SourceClaimId,
+  SourceDecisionId
 } from "./ids.js";
 import type { EvalCandidateProposal } from "./eval.js";
 import type { MemoryCandidate } from "./memory.js";
@@ -65,6 +67,34 @@ export interface FeedbackCandidateProposalSummary {
   candidates: FeedbackCandidateProposalRef[];
 }
 
+export type SourceUsefulnessOutcome =
+  | "selected"
+  | "used"
+  | "helped"
+  | "neutral"
+  | "noise"
+  | "stale"
+  | "unknown";
+
+export interface SourceUsefulnessOutcomeFeedback {
+  sourceClaimId?: SourceClaimId;
+  sourceDecisionId?: SourceDecisionId;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
+}
+
+const sourceUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
+  "selected",
+  "used",
+  "helped",
+  "neutral",
+  "noise",
+  "stale",
+  "unknown"
+]);
+
 const objectListMetadata = (
   metadata: Record<string, unknown>,
   key: string
@@ -87,6 +117,58 @@ const stringField = (
   const value = input[key];
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 };
+
+const stringListField = (
+  input: Record<string, unknown>,
+  key: string
+): string[] => {
+  const value = input[key];
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string =>
+    typeof item === "string" && item.trim().length > 0
+  );
+};
+
+const sourceUsefulnessOutcomeField = (
+  input: Record<string, unknown>
+): SourceUsefulnessOutcome => {
+  const value = stringField(input, "outcome");
+
+  return value !== undefined && sourceUsefulnessOutcomes.has(value as SourceUsefulnessOutcome)
+    ? value as SourceUsefulnessOutcome
+    : "unknown";
+};
+
+export const sourceUsefulnessOutcomesFromMetadata = (
+  metadata: Record<string, unknown>
+): SourceUsefulnessOutcomeFeedback[] =>
+  objectListMetadata(metadata, "sourceUsefulnessOutcomes").flatMap((item) => {
+    const sourceClaimId = stringField(item, "sourceClaimId") as SourceClaimId | undefined;
+    const sourceDecisionId = stringField(item, "sourceDecisionId") as SourceDecisionId | undefined;
+    const reason = stringField(item, "reason");
+    const doesNotProve = stringField(item, "doesNotProve");
+
+    if (sourceClaimId === undefined && sourceDecisionId === undefined) {
+      return [];
+    }
+
+    if (reason === undefined || doesNotProve === undefined) {
+      return [];
+    }
+
+    return [{
+      ...(sourceClaimId === undefined ? {} : { sourceClaimId }),
+      ...(sourceDecisionId === undefined ? {} : { sourceDecisionId }),
+      outcome: sourceUsefulnessOutcomeField(item),
+      reason,
+      evidenceRefs: stringListField(item, "evidenceRefs"),
+      doesNotProve
+    }];
+  });
 
 const metadataCandidateRefs = (
   metadata: Record<string, unknown>,

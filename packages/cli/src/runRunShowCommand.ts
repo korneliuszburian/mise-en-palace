@@ -7,6 +7,7 @@ import {
 } from "@krn/db/adapters";
 import {
   normalizeEvidenceCommand,
+  sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata
 } from "@krn/core";
@@ -16,6 +17,7 @@ import type {
   FeedbackDelta,
   FeedbackCandidateProposalKind,
   NormalizedEvidenceCommand,
+  SourceUsefulnessOutcome,
   TargetEvidence
 } from "@krn/core";
 import type {
@@ -110,6 +112,7 @@ export interface RunReadbackResource {
       observation: number;
     };
     candidates: RunReadbackCandidateResource[];
+    sourceUsefulnessOutcomes: RunReadbackSourceUsefulnessOutcomeResource[];
   }[];
   proof: {
     proves: string[];
@@ -124,6 +127,15 @@ export interface RunReadbackCandidateResource {
   summary: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: string[];
+}
+
+export interface RunReadbackSourceUsefulnessOutcomeResource {
+  sourceClaimId?: string;
+  sourceDecisionId?: string;
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
 }
 
 interface ReadOnlyHarnessRuntime {
@@ -442,6 +454,40 @@ const runReadbackCandidateResources = (
   )
 ];
 
+const runReadbackSourceUsefulnessOutcomes = (
+  feedback: FeedbackDelta
+): RunReadbackSourceUsefulnessOutcomeResource[] =>
+  sourceUsefulnessOutcomesFromMetadata(feedback.metadata).map((outcome) => ({
+    ...(outcome.sourceClaimId === undefined ? {} : { sourceClaimId: outcome.sourceClaimId }),
+    ...(outcome.sourceDecisionId === undefined ? {} : { sourceDecisionId: outcome.sourceDecisionId }),
+    outcome: outcome.outcome,
+    reason: outcome.reason,
+    evidenceRefs: outcome.evidenceRefs,
+    doesNotProve: outcome.doesNotProve
+  }));
+
+const renderSourceUsefulnessOutcomes = (
+  feedback: FeedbackDelta
+): string[] => {
+  const outcomes = runReadbackSourceUsefulnessOutcomes(feedback);
+
+  if (outcomes.length === 0) {
+    return ["  source usefulness outcomes: none"];
+  }
+
+  return [
+    "  source usefulness outcomes:",
+    ...outcomes.flatMap((outcome) => [
+      `  - outcome=${outcome.outcome} sourceClaim=${outcome.sourceClaimId ?? "none"} sourceDecision=${outcome.sourceDecisionId ?? "none"}`,
+      `    reason: ${outcome.reason}`,
+      ...(outcome.evidenceRefs.length === 0
+        ? ["    evidenceRef: none"]
+        : outcome.evidenceRefs.map((evidenceRef) => `    evidenceRef: ${evidenceRef}`)),
+      `    doesNotProve: ${outcome.doesNotProve}`
+    ])
+  ];
+};
+
 const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
   const summary = summarizeFeedbackCandidateProposals(feedback);
   const candidateDetails = runReadbackCandidateResources(feedback).flatMap((candidate) => [
@@ -454,6 +500,7 @@ const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
     `- ${feedback.id}: status=${feedback.status}`,
     `  memoryRecordMutation: ${summary.memoryRecordMutation}`,
     `  candidates: memory=${summary.counts.memoryCandidates}, source=${summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates}, source_claim=${summary.counts.sourceClaimCandidates}, source_decision=${summary.counts.sourceDecisionCandidates}, anti_memory=${summary.counts.antiMemoryCandidates}, eval=${summary.counts.evalCandidates}, observation=${summary.counts.observationCandidates}`,
+    ...renderSourceUsefulnessOutcomes(feedback),
     ...(
       candidateDetails.length === 0
         ? ["  candidate details: none"]
@@ -560,7 +607,8 @@ export const buildRunReadbackResource = (
         eval: summary.counts.evalCandidates,
         observation: summary.counts.observationCandidates
       },
-      candidates: runReadbackCandidateResources(feedback)
+      candidates: runReadbackCandidateResources(feedback),
+      sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback)
     };
   }),
   proof: {

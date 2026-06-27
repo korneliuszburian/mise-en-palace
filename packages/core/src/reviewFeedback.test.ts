@@ -6,6 +6,7 @@ import {
 } from "./reviewAssessment.js";
 import {
   normalizeFeedbackDelta,
+  sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   type FeedbackDeltaCreateStatus,
   type FeedbackDeltaLifecycleStatus,
@@ -115,6 +116,63 @@ describe("review and feedback normalization", () => {
       diffRisk: "low",
       correctionLabels: ["feedback_delta"]
     });
+  });
+});
+
+describe("source usefulness outcome feedback", () => {
+  test("parses complete outcome feedback and drops malformed metadata rows", () => {
+    expect(sourceUsefulnessOutcomesFromMetadata({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        sourceDecisionId: "source-decision-1",
+        outcome: "helped",
+        reason: "Source claim prevented overclaiming command proof.",
+        evidenceRefs: ["evidence-1", "feedback-1"],
+        doesNotProve:
+          "This outcome does not prove source selection quality across future runs."
+      }, {
+        sourceClaimId: "source-claim-stale",
+        outcome: "stale",
+        reason: "Source claim is past its revisit boundary.",
+        evidenceRefs: ["context-1"],
+        doesNotProve:
+          "This outcome does not alter SourceClaim truth or deprecate the claim automatically."
+      }, {
+        sourceClaimId: "source-claim-invalid",
+        outcome: "helped",
+        reason: "Missing doesNotProve should be rejected."
+      }, {
+        outcome: "helped",
+        reason: "Missing source id should be rejected.",
+        doesNotProve: "No source id exists."
+      }, {
+        sourceClaimId: "source-claim-unknown",
+        outcome: "decorative",
+        reason: "Unknown labels should narrow to unknown.",
+        doesNotProve: "Unknown outcome does not prove usefulness."
+      }]
+    })).toEqual([{
+      sourceClaimId: "source-claim-1",
+      sourceDecisionId: "source-decision-1",
+      outcome: "helped",
+      reason: "Source claim prevented overclaiming command proof.",
+      evidenceRefs: ["evidence-1", "feedback-1"],
+      doesNotProve:
+        "This outcome does not prove source selection quality across future runs."
+    }, {
+      sourceClaimId: "source-claim-stale",
+      outcome: "stale",
+      reason: "Source claim is past its revisit boundary.",
+      evidenceRefs: ["context-1"],
+      doesNotProve:
+        "This outcome does not alter SourceClaim truth or deprecate the claim automatically."
+    }, {
+      sourceClaimId: "source-claim-unknown",
+      outcome: "unknown",
+      reason: "Unknown labels should narrow to unknown.",
+      evidenceRefs: [],
+      doesNotProve: "Unknown outcome does not prove usefulness."
+    }]);
   });
 });
 

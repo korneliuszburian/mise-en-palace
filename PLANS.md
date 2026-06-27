@@ -77,11 +77,12 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V225 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V226 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
-root-plan headroom, and related re-gate slices: complete
-active stream: V226 Source Usefulness Outcome Feedback Gate
-current task: V226-00 Source Usefulness Outcome Feedback Gate
+root-plan headroom, source-usefulness readback, and related re-gate slices:
+complete
+active stream: V227 Pattern Intake Source Usefulness Producer Gate
+current task: V227-00 Pattern Intake Source Usefulness Producer Gate
 ```
 
 Evidence already recorded in repo:
@@ -97,7 +98,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V226-00 Source Usefulness Outcome Feedback Gate.
+V227-00 Pattern Intake Source Usefulness Producer Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18043,6 +18044,73 @@ Next active stream:
 
 Next active task:
 - V226-00 Source Usefulness Outcome Feedback Gate.
+
+## Outcome 2026-06-28 V226 Source Usefulness Outcome Feedback Gate
+
+Completed task:
+- V226-00 Source Usefulness Outcome Feedback Gate.
+
+Decision:
+- Implement first-class source usefulness outcome feedback as typed feedback
+  metadata parsing plus `krn run show` readback.
+- Keep the repair on the existing `FeedbackDelta.metadata` JSON path; no DB
+  migration, no source-truth mutation, no source crawler, and no research
+  archive.
+- Treat malformed source usefulness rows as absent instead of trusting loose
+  metadata.
+
+Changed:
+- `packages/core/src/feedbackDelta.ts` now exports:
+  - `SourceUsefulnessOutcome`;
+  - `SourceUsefulnessOutcomeFeedback`;
+  - `sourceUsefulnessOutcomesFromMetadata`.
+- `packages/cli/src/runRunShowCommand.ts` now exposes
+  `sourceUsefulnessOutcomes` in typed JSON readback and text readback.
+- Tests cover complete source usefulness outcome rows, malformed row rejection,
+  unknown label narrowing, and JSON/text readback.
+
+Evidence:
+- `pnpm --filter @krn/core test -- reviewFeedback`: passed.
+- `pnpm --filter @krn/cli test -- runRunShowCommand`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `git diff --check`: passed.
+
+Source-to-decision:
+- Source: V07 source usefulness gap, V225 source usefulness re-gate, current
+  user direction to feed best courses/papers/patterns into KRN continuously.
+- Mechanism: source retention is only useful if KRN can later report whether a
+  source was selected, used, helped, stale, or noise.
+- KRN implication: pattern/course/paper intake needs outcome feedback before it
+  scales, otherwise retained sources become decorative authority.
+- Decision: adopt bounded source usefulness outcome feedback readback on
+  `FeedbackDelta` metadata.
+- Does not prove: source selector quality, source truth, product readiness, or
+  that any specific course/paper pattern helped yet.
+- Consumer: `krn run show` readback, future pattern-intake slices, source
+  usefulness reporting.
+- Falsifier: future pattern-intake runs cannot produce this metadata without a
+  broad subsystem or the readback causes source truth mutation.
+
+New finding:
+- Source usefulness outcome readback exists, but no bounded producer yet records
+  whether pattern/course/paper guidance was selected, used, helped, stale, or
+  noise during a real pattern-intake slice.
+
+New task:
+- V227-00 Pattern Intake Source Usefulness Producer Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V227 Pattern Intake Source Usefulness Producer Gate.
+
+Next active task:
+- V227-00 Pattern Intake Source Usefulness Producer Gate.
 
 ## 21. Final Response Format For Codex Runs
 

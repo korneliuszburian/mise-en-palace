@@ -182,7 +182,28 @@ const aggregate: HarnessRunAggregate = {
     }],
     evalCandidates: [],
     metadata: {
-      reviewability: "needs_more_evidence"
+      reviewability: "needs_more_evidence",
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "claim-1",
+        sourceDecisionId: "source-decision-candidate-1",
+        outcome: "helped",
+        reason: "Source claim kept command proof boundaries visible in the run readback.",
+        evidenceRefs: ["evidence-1", "feedback-1"],
+        doesNotProve:
+          "This source outcome does not prove the source selector will choose the same claim in future runs."
+      }, {
+        sourceClaimId: "claim-weak",
+        outcome: "stale",
+        reason: "Weak source was excluded and should not guide future evidence proof claims.",
+        evidenceRefs: ["context-1"],
+        doesNotProve:
+          "This stale outcome does not alter or deprecate SourceClaim truth."
+      }, {
+        sourceClaimId: "claim-incomplete",
+        outcome: "helped",
+        reason: "Missing doesNotProve should drop this malformed feedback row.",
+        evidenceRefs: ["feedback-1"]
+      }]
     },
     createdAt: now,
     updatedAt: now
@@ -241,6 +262,19 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("memory_candidate:memory-candidate-1");
     expect(result.stdout).toContain("source_decision_candidate:source-decision-candidate-1");
     expect(result.stdout).toContain("source_decision=1");
+    expect(result.stdout).toContain("source usefulness outcomes:");
+    expect(result.stdout).toContain(
+      "outcome=helped sourceClaim=claim-1 sourceDecision=source-decision-candidate-1"
+    );
+    expect(result.stdout).toContain(
+      "reason: Source claim kept command proof boundaries visible in the run readback."
+    );
+    expect(result.stdout).toContain("evidenceRef: evidence-1");
+    expect(result.stdout).toContain(
+      "doesNotProve: This source outcome does not prove the source selector will choose the same claim in future runs."
+    );
+    expect(result.stdout).toContain("outcome=stale sourceClaim=claim-weak sourceDecision=none");
+    expect(result.stdout).not.toContain("claim-incomplete");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
     expect(result.stdout).toContain("reviewabilityReason: Missing source claim.");
     expect(result.stdout).not.toContain("reviewability: see candidate metadata or source evidence");
@@ -339,6 +373,22 @@ describe("runRunShowCommand", () => {
           summary: "Review changed files for source graph decision updates.",
           reviewability: "needs_more_evidence",
           reviewabilityReasons: ["Missing source claim."]
+        }],
+        sourceUsefulnessOutcomes: [{
+          sourceClaimId: "claim-1",
+          sourceDecisionId: "source-decision-candidate-1",
+          outcome: "helped",
+          reason: "Source claim kept command proof boundaries visible in the run readback.",
+          evidenceRefs: ["evidence-1", "feedback-1"],
+          doesNotProve:
+            "This source outcome does not prove the source selector will choose the same claim in future runs."
+        }, {
+          sourceClaimId: "claim-weak",
+          outcome: "stale",
+          reason: "Weak source was excluded and should not guide future evidence proof claims.",
+          evidenceRefs: ["context-1"],
+          doesNotProve:
+            "This stale outcome does not alter or deprecate SourceClaim truth."
         }]
       }],
       proof: {

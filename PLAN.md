@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V226 Source Usefulness Outcome Feedback Gate
-current task: V226-00 Source Usefulness Outcome Feedback Gate
+active stream: V227 Pattern Intake Source Usefulness Producer Gate
+current task: V227-00 Pattern Intake Source Usefulness Producer Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -28,46 +28,50 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V225: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V226: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
-           re-gate guards complete.
+           re-gate plus source-usefulness readback guards complete.
 ```
 
 ## Active Stream
 
-### V226 Source Usefulness Outcome Feedback Gate
+### V227 Pattern Intake Source Usefulness Producer Gate
 
 Goal:
 
-Inspect and either implement or explicitly defer the smallest first-class source
-usefulness outcome feedback path.
+Inspect and either implement or explicitly defer the smallest producer path for
+source usefulness outcome feedback during bounded pattern intake.
 
 Current finding:
 
 ```txt
-Source decision readback exists, but selected/used/helped/stale source outcome
-feedback remains unproven; this limits pattern/course/paper usefulness loops.
+Source usefulness outcome readback exists, but no bounded producer yet records
+whether pattern/course/paper guidance was selected, used, helped, stale, or
+noise during a real pattern-intake slice.
 ```
 
 Current action:
 
 ```txt
-Execute V226-00: inspect source claim/decision/readback/feedback paths and add
-one bounded outcome-feedback repair only if the existing model can support it.
+Execute V227-00: inspect pattern-intake and feedback producer surfaces and add
+one bounded producer repair only if the existing flow can support it without a
+new research subsystem.
 ```
 
 Primary consumer:
 
 ```txt
-Source usefulness reporting/readback or an explicit defer decision.
+Pattern-intake source usefulness feedback for future course/paper/practitioner
+source decisions, or an explicit defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The slice creates a source crawler/research archive/new subsystem, mutates
-source truth automatically, or claims product readiness from source feedback.
+The slice creates a source crawler/research archive/new subsystem, copies paid
+course material, mutates source truth automatically, or claims product readiness
+from source feedback.
 ```
 
 ## Pattern Gate
