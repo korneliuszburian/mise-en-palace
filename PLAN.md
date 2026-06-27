@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V142 Post Source-Class Vocabulary Guard Re-Gate
-current task: V142-00 Post Source-Class Vocabulary Guard Re-Gate
+active stream: V144 Post Verification TMPDIR Guard Re-Gate
+current task: V144-00 Post Verification TMPDIR Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,39 +43,38 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V141: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V143: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
            adapter boundary, source classification, and latest-outcome
            source-to-decision, source-to-decision skill output, and
-           source-class vocabulary guards complete.
+           source-class vocabulary and verification TMPDIR guards complete.
 ```
 
 ## Active Stream
 
-### V142 Post Source-Class Vocabulary Guard Re-Gate
+### V144 Post Verification TMPDIR Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding source-class vocabulary consistency
-without turning pattern intake into taxonomy bureaucracy.
+Decide the next bounded task after guarding local verification TMPDIR guidance
+without turning environment work into tooling bureaucracy.
 
 Current finding:
 
 ```txt
-V140 selected source-class vocabulary consistency as the next bounded pattern
-surface. V141 aligned the `high-quality public course page` source class and
-guarded the vocabulary across pattern intake, source-to-decision skill, durable
-source map, and source-map invariant.
+V142 selected local verification TMPDIR guidance as the next bounded pattern
+surface. V143 recorded that TMPDIR overrides must stay outside the repo checkout
+because CLI boundary tests rely on outside-workspace temporary directories.
 ```
 
 Current action:
 
 ```txt
-Execute V142-00: select the next pattern surface from evidence. Do not broaden
-source-class vocabulary into taxonomy bureaucracy, research archive, dashboard,
-or benchmark lane.
+Execute V144-00: select the next pattern surface from evidence. Do not broaden
+verification environment guidance into tooling bureaucracy, dashboard, or
+benchmark lane.
 ```
 
 Primary consumer:
@@ -87,8 +86,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source-class vocabulary guarding into taxonomy
-bureaucracy without a concrete consumer and falsifier.
+The re-gate turns focused TMPDIR verification guidance into tooling bureaucracy
+without a concrete consumer and falsifier.
 ```
 
 ## External Input Blocker
@@ -132,6 +131,16 @@ Do not build or claim:
 ## Verification Policy
 
 Use the narrowest relevant verification for each slice.
+
+If local Vitest or workspace tests fail with a temporary-directory write error,
+set `TMPDIR` to a path outside this repository, for example:
+
+```sh
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test
+```
+
+Do not set `TMPDIR` under the repo checkout: CLI boundary tests rely on
+outside-workspace temporary directories.
 
 Docs/plan-only changes:
 

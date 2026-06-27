@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V141 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, and source-class vocabulary guard slices: complete
-active stream: V142 Post Source-Class Vocabulary Guard Re-Gate
-current task: V142-00 Post Source-Class Vocabulary Guard Re-Gate
+V48..V143 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, and verification TMPDIR guard slices: complete
+active stream: V144 Post Verification TMPDIR Guard Re-Gate
+current task: V144-00 Post Verification TMPDIR Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V142-00 Post Source-Class Vocabulary Guard Re-Gate.
+V144-00 Post Verification TMPDIR Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14582,6 +14582,85 @@ Next active stream:
 
 Next active task:
 - V142-00 Post Source-Class Vocabulary Guard Re-Gate.
+
+## Outcome 2026-06-27 V143 Verification TMPDIR Guard
+
+Completed tasks:
+- V142-00 Post Source-Class Vocabulary Guard Re-Gate.
+- V143-00 Verification TMPDIR Guard.
+
+V142 decision:
+- Do not broaden source-class vocabulary guarding into taxonomy bureaucracy,
+  research archive, dashboard, or benchmark lane.
+- Select local verification TMPDIR guidance because this run hit a Vitest
+  `Unknown system error -122, write` using the default temp path.
+- A first workaround used `TMPDIR` inside the repo checkout and made
+  `cliFileBoundary.test.ts` fail, because the test's outside-workspace temp
+  directory became nested under the current workspace.
+
+What changed:
+- `PLAN.md` Verification Policy now says that local temporary-directory write
+  failures may use `TMPDIR=/home/krn/.cache/krn-tmp`, outside the repo checkout.
+- The same policy warns not to set `TMPDIR` under the repo checkout because CLI
+  boundary tests rely on outside-workspace temporary directories.
+- `packages/harness/src/activePlanInvariants.test.ts` guards this policy.
+- `docs/architecture/brain-battle-eval-matrix.md` records the verification
+  TMPDIR guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V144.
+
+Evidence:
+- Failed local verification with default temp path:
+  `Unknown system error -122, write`.
+- Failed local verification with repo-local `TMPDIR`:
+  `cliFileBoundary.test.ts` expected fallback to the outside path but received
+  the repo root.
+- Passing local verification with `TMPDIR=/home/krn/.cache/krn-tmp`.
+- `PLAN.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `packages/cli/src/cliFileBoundary.test.ts`.
+
+Source-to-decision:
+- Source: current local verification evidence from V143 and
+  `packages/cli/src/cliFileBoundary.test.ts`.
+- Mechanism: Vitest/local tooling may need an alternate temporary directory, but
+  CLI file-boundary tests intentionally rely on temp directories being outside
+  the repo workspace.
+- KRN implication: local verification workarounds must preserve the semantics of
+  tests that distinguish repo/workspace paths from outside paths.
+- Decision: add focused compact-plan guidance and active-plan invariant coverage
+  for using an out-of-repo `TMPDIR` when local temporary writes fail.
+- Does not prove: every local environment has enough temp space, CI needs the
+  override, or environment tuning is product readiness.
+- Consumer: `PLAN.md`, `packages/harness/src/activePlanInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: compact verification policy can drop the out-of-repo `TMPDIR`
+  guidance or recommend a repo-local temp path without focused tests failing.
+
+What improved:
+- Future local verification has a documented recovery path for temp write errors
+  that does not invalidate CLI boundary tests.
+- The recovery is captured in compact active truth instead of chat memory.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- CI configuration.
+
+New task:
+- V144-00 Post Verification TMPDIR Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V144 Post Verification TMPDIR Guard Re-Gate.
+
+Next active task:
+- V144-00 Post Verification TMPDIR Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

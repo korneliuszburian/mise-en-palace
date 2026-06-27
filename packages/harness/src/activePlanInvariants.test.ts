@@ -262,6 +262,19 @@ describe("KRN active plan invariants", () => {
     expect(finalResponse).toContain("Blocked/budget-limited:");
   });
 
+  it("keeps local TMPDIR verification guidance outside the repo workspace", () => {
+    const plan = readRootFile("PLAN.md");
+    const verificationPolicy = sectionBody(plan, "## Verification Policy");
+    const normalizedVerificationPolicy = verificationPolicy.replace(/\s+/gu, " ");
+
+    expect(verificationPolicy).toContain("temporary-directory write error");
+    expect(verificationPolicy).toContain("TMPDIR=/home/krn/.cache/krn-tmp pnpm test");
+    expect(verificationPolicy).toContain("Do not set `TMPDIR` under the repo checkout");
+    expect(normalizedVerificationPolicy).toContain(
+      "CLI boundary tests rely on outside-workspace temporary directories"
+    );
+  });
+
   it("keeps the latest PLANS outcome tied to a reviewable source-to-decision record", () => {
     const plans = readRootFile("PLANS.md");
     const latestOutcome = latestOutcomeBody(plans);
