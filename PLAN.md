@@ -49,7 +49,8 @@ V19 Product Readiness Re-Gate After Owner-File Contract: complete
 V20 Real Target Observation-Only Owner-File Trial: complete
 V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
 V22 Persisted CLI DB URL Default Consistency: complete
-active stream: V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
+V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete
+active stream: V24 Target Owner-File Recall Deduplication And Budget Priority
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -473,18 +474,34 @@ Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`.
 
-## Active Stream: V23
+## Completed Stream: V23
 
 V23 reruns a real target observation-only trial after V21/V22 ergonomics repairs.
 
 ### V23-00 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: rerun a real target observation-only owner-file trial, prove
 observation-only target evidence defaults persist correctly when explicit
 forbidden-write flags are omitted, and preserve no-target-writes/no-V02-01
 boundaries.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v23-real-target-rerun-after-ergonomics/REPORT.md`.
+
+## Active Stream: V24
+
+V24 repairs or rejects the owner-file recall precision gap found by V23.
+
+### V24-00 — Target Owner-File Recall Deduplication And Budget Priority
+
+Status: active.
+
+Goal: inspect target owner-file candidate assembly and source seed interaction,
+then add a bounded repair if explicit owner files can be prioritized or
+deduplicated without broad activation scoring rewrite or source crawler.
 
 ## Hard Non-Goals
 

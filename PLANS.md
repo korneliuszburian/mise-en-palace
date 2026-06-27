@@ -48,12 +48,13 @@ V19 Product Readiness Re-Gate After Owner-File Contract: complete
 V20 Real Target Observation-Only Owner-File Trial: complete
 V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
 V22 Persisted CLI DB URL Default Consistency: complete
+V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
-current task: V23-00 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
+active stream: V24 Target Owner-File Recall Deduplication And Budget Priority
+current task: V24-00 Target Owner-File Recall Deduplication And Budget Priority
 ```
 
 Evidence already recorded in repo:
@@ -68,9 +69,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V23 must rerun a real target observation-only trial after V21/V22 so the newly
-repaired target evidence defaults and DB recovery guidance are proven in the
-target workflow, not only in isolated source tests.
+V24 must inspect and repair or reject owner-file recall precision after V23:
+the real target plan selected useful context, but spent budget on adjacent agent
+guidance while some direct owner files were not included.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2004,6 +2005,30 @@ and DB recovery guidance work in the end-to-end operator loop.
 - no activation scoring rewrite;
 - readiness remains controlled-internal-alpha for technical operators, stronger.
 
+### Stream V24 — Target Owner-File Recall Deduplication And Budget Priority
+
+Why now:
+
+- V23 proved target evidence/DB ergonomics in the real target workflow.
+- V23 also showed owner-file recall is useful but imprecise: adjacent agent
+  guidance consumed context budget while some direct owner files were not
+  included.
+- This should be treated as a bounded read-model/candidate assembly repair, not
+  a broad activation scoring rewrite.
+
+Expected end state:
+
+```txt
+Explicit target owner files are prioritized and obvious duplicate/adjacent agent
+guidance does not crowd out direct owner files in owner-file-heavy target tasks,
+or source inspection proves current behavior is intentionally sufficient.
+```
+
+- no source crawler;
+- no broad activation scoring rewrite;
+- no target repo writes;
+- readiness remains controlled-internal-alpha for technical operators, stronger.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
 Status: complete
@@ -2233,7 +2258,7 @@ Completed evidence:
 
 ### V23-00 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
 
-Status: active
+Status: complete
 
 Goal: rerun a real target observation-only owner-file trial after V21/V22 and
 prove the repaired target evidence defaults and DB recovery guidance in the
@@ -2297,6 +2322,80 @@ activation owner-file recall repair, target runbook update, or another bounded
 source repair.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V23
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v23-real-target-rerun-after-ergonomics/REPORT.md`.
+- Real target evidence defaults persisted correctly without explicit forbidden
+  write flags.
+- Target repo stayed clean before and after.
+
+### V24-00 — Target Owner-File Recall Deduplication And Budget Priority
+
+Status: active
+
+Goal: inspect and repair or explicitly reject the V23 owner-file recall
+precision gap.
+
+Product rationale: real target tasks should not lose direct owner files because
+adjacent or duplicate agent guidance consumes the inclusion budget.
+
+Architectural rationale: explicit owner files are operator-provided read-model
+truth. They should have stronger priority than broad source seeds for
+owner-file-heavy target tasks unless there is a concrete reason not to include
+them.
+
+Evidence source: V23 report and plan output for run
+`43e08455-6123-465b-990b-5d7abaf842b3`.
+
+Official/external sources: none required unless current Codex/OpenAI docs are
+needed for source-to-decision.
+
+Inputs required: activation/read-model source that assembles target source
+seeds, owner files, trust exclusions, and context inclusions.
+
+Files likely touched:
+
+- activation/read-model source discovered by search;
+- activation/target owner-file tests;
+- V24 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN source/tests/docs/plans only.
+
+Forbidden writes: target repo edits, source crawler, broad activation scoring
+rewrite, generic ranking engine, dashboard/API/MCP/worker runtime, product-ready
+or V02-01 overclaim.
+
+Output requirements:
+
+- source inspection finding;
+- decision: repair or explicit rejection;
+- focused tests if repaired;
+- proof that explicit owner files are not crowded out by duplicate/adjacent
+  agent guidance in owner-file-heavy target tasks.
+
+Definition of Done: either bounded source repair with tests or documented
+rejection with evidence.
+
+Verification commands: targeted tests, `pnpm typecheck`, `pnpm test`,
+`git diff --check`; if DB-backed proof is used, `pnpm db:ready`.
+
+Acceptance criteria: no target writes, no source crawler, no broad scoring
+rewrite.
+
+Risk: overfitting to one target repo. Mitigation: keep rule narrow to explicit
+owner-file priority/deduplication and test with target fixture/read-model.
+
+Rollback: focused revert.
+
+Condensation expectation: decide whether next work is another real target trial,
+real operator intake, or activation/read-model follow-up.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V24
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2552,8 +2651,9 @@ Initial entry:
   boundaries and run readback list clarity improved.
 - [x] V22-00 complete: missing DB config errors now include copyable recovery
   guidance without silent direct-CLI DB defaulting.
-- [ ] V23-00 active: Real Target Observation Re-Run After Evidence/DB
-  Ergonomics Repairs.
+- [x] V23-00 complete: real target rerun proved observation-only target
+  evidence defaults persist without explicit forbidden-write flags.
+- [ ] V24-00 active: Target Owner-File Recall Deduplication And Budget Priority.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2696,6 +2796,21 @@ Record every unexpected fact in this format:
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`.
   Impact: V22 repaired operator friction with copyable recovery guidance while
   preserving explicit DB env override and avoiding hidden local writes.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: V21 target evidence defaults work in a real persisted target
+  workflow.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v23-real-target-rerun-after-ergonomics/REPORT.md`;
+  evidence bundle `42d6853a-367a-4dfc-993e-10457f0751cb`.
+  Impact: target safety evidence defaults are no longer only unit/golden proof.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: target owner-file recall is useful but can spend budget on
+  adjacent/duplicate agent guidance before all direct owner files are included.
+  Evidence: V23 plan output for run
+  `43e08455-6123-465b-990b-5d7abaf842b3`.
+  Impact: V24 should inspect owner-file candidate assembly/deduplication before
+  any broad activation scoring rewrite.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2891,6 +3006,17 @@ Initial decisions:
   Does not prove: V02-01, product readiness, or real operator usability.
   Falsifier: V23 cannot find a safe real target checkout or the target becomes
   actively dirty in a way that prevents observation-only proof.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote owner-file recall deduplication/budget priority as V24.
+  Rationale: after V23, the next observed gap is not evidence or DB ergonomics
+  but direct owner-file inclusion precision.
+  Evidence: V23 report and plan output.
+  Does not prove: broad activation scoring is wrong or source crawling is
+  needed.
+  Falsifier: V24 source inspection proves owner-file/source-seed behavior is
+  already intentionally prioritized and V23 was a task-specific acceptable
+  tradeoff.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -3117,6 +3243,16 @@ Seed evidence:
   Does not prove: DB readiness, product readiness, V02-01, or command-specific
     persistence success.
   Follow-up task: V23-00.
+
+- Evidence ID: E-V23-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v23-real-target-rerun-after-ergonomics/REPORT.md`
+  Command/report/file: real target observation-only rerun after V21/V22 repairs.
+  Result: target evidence omitted explicit write-boundary flags but persisted
+    and read back safe observation-only defaults; target repo stayed clean.
+  Proves: V21 target evidence defaults work in the real target workflow.
+  Does not prove: V02-01, product readiness, full target runtime verification,
+    or general activation quality.
+  Follow-up task: V24-00.
 ```
 
 ## 19. Condensation Queue
@@ -3353,6 +3489,15 @@ Seed queue:
   Reason: prove the newly repaired target evidence defaults and DB recovery
     guidance in the real target workflow before more source repairs
   Task: V23-00
+
+- Candidate: target owner-file recall deduplication and budget priority
+  Source evidence: V23 real target rerun
+  Surface: activation/read-model source
+  Status: accepted as V24-00
+  Reason: V23 selected useful owner-file context but spent budget on adjacent
+    agent guidance while some direct owner files were absent; inspect bounded
+    read-model precision before broad activation scoring changes
+  Task: V24-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -3912,6 +4057,47 @@ Product readiness verdict:
 Next active stream:
 - V23 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs.
 
+## Outcome 2026-06-27 V23
+
+Completed:
+- V23-00 reran a real target observation-only owner-file trial after V21/V22.
+- Evidence capture omitted explicit target write-boundary flags and still
+  persisted safe observation-only defaults.
+- Target repo stayed clean before and after.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v23-real-target-rerun-after-ergonomics/REPORT.md`.
+- DB-backed run `43e08455-6123-465b-990b-5d7abaf842b3`.
+- Evidence bundle `42d6853a-367a-4dfc-993e-10457f0751cb`.
+- Observation group `a6cd29fa-003f-4628-ae8c-56dc68814c83`.
+- Reflection record `49be01ca-aa00-4a29-a203-03a35233dff9`.
+
+What improved:
+- V21/V22 repairs are proven in the real target workflow.
+- Target evidence readback is clearer and safer.
+- No target writes occurred.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Full target runtime verification.
+- Owner-file recall precision.
+
+New blocker:
+- Owner-file recall should avoid spending budget on duplicate/adjacent agent
+  guidance when direct owner files are available for an owner-file-heavy target
+  task.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V24 — Target Owner-File Recall Deduplication And Budget Priority.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -3960,7 +4146,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs.
+Active stream: V24 Target Owner-File Recall Deduplication And Budget Priority.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
