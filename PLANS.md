@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill
-current task: V62-00 Wire Pattern Intake Runbook Into Source-To-Decision Skill
+active stream: V63 Post Pattern-Intake Linkage Re-Gate
+current task: V63-00 Post Pattern-Intake Linkage Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -5590,7 +5590,7 @@ Outcome:
 
 ### V62-00 — Wire Pattern Intake Runbook Into Source-To-Decision Skill
 
-Status: active
+Status: complete
 
 Goal: add a compact pointer from `.agents/skills/source-to-decision/SKILL.md`
 to `docs/runbooks/pattern-intake.md` so future source-to-decision tasks know
@@ -5658,6 +5658,86 @@ Acceptance criteria:
 - runbook is not duplicated;
 - trigger/pointer is clear;
 - next active task explicit.
+
+Outcome:
+
+- V62 added a compact pointer from `source-to-decision` skill to
+  `docs/runbooks/pattern-intake.md`.
+- V62 kept the skill small and did not duplicate the runbook.
+- V62 selected post-linkage re-gate as the next task.
+
+### V63-00 — Post Pattern-Intake Linkage Re-Gate
+
+Status: active
+
+Goal: decide whether internal KRN work should continue or whether current
+progress should pause on external operator/owner blockers.
+
+Product rationale: V58-V62 completed the pattern-intake mini-loop and wired the
+runbook into the triggering skill. KRN should now re-gate rather than continue
+docs/pattern work by momentum.
+
+Architectural rationale: continuous improvement needs explicit stop/go points.
+If no bounded internal task has a consumer/falsifier, KRN should record the
+blocker instead of inventing work.
+
+Evidence source: V58-V62 reports, V56 packet, V55 readiness report, and latest
+CI state.
+
+Official/external sources: none unless the selected next task requires a fresh
+source decision.
+
+Inputs required:
+
+- V58-V62 reports;
+- V56 packet;
+- V55 readiness report;
+- latest CI state.
+
+Files likely touched:
+
+- V63 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- one bounded consumer only if selected.
+
+Allowed writes:
+
+- KRN reports/plans;
+- one bounded consumer only with explicit consumer/falsifier.
+
+Forbidden writes:
+
+- target repo edits;
+- package source changes unless V63 explicitly selects a repair;
+- broad research/source crawler;
+- broad TypeScript audit/scanner;
+- dashboard/API/MCP/worker expansion;
+- product-ready or widened-alpha claim.
+
+Output requirements:
+
+- evidence summary;
+- rejected alternatives;
+- readiness impact;
+- selected next task or precise blocker.
+
+Definition of Done: V63 selects the next bounded task or records an honest
+external blocker.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no momentum-based pattern work;
+- no local V02-01 substitute;
+- next active task or blocker explicit.
 
 ## 13. Generated Task Backlog
 
@@ -5997,7 +6077,9 @@ Initial entry:
   drift requiring a guard; candidate remains deferred/standard-only.
 - [x] V61-00 complete: selected compact source-to-decision skill/runbook
   linkage and rejected further pattern work by momentum.
-- [ ] V62-00 active: Wire Pattern Intake Runbook Into Source-To-Decision Skill.
+- [x] V62-00 complete: linked pattern-intake runbook from source-to-decision
+  skill without duplicating the runbook.
+- [ ] V63-00 active: Post Pattern-Intake Linkage Re-Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6820,6 +6902,17 @@ Initial decisions:
     quality.
   Falsifier: the update bloats the skill, duplicates the runbook, or fails to
     route multi-source/course/paper/pattern intake to the runbook.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote post-pattern-intake linkage re-gate as V63.
+  Rationale: V58-V62 completed the pattern-intake runbook, first application,
+    TypeScript spot-check, re-gate, and skill linkage. Continuing pattern work
+    now requires a new evidence-backed consumer.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v62-pattern-intake-skill-linkage/REPORT.md`;
+    `.agents/skills/source-to-decision/SKILL.md`.
+  Does not prove: product readiness, V02-01, or future source intake quality.
+  Falsifier: V63 identifies no bounded internal task and still continues local
+    work by momentum.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -7996,6 +8089,14 @@ Seed queue:
   Reason: future source-to-decision work should discover the fuller operator
     runbook through progressive disclosure
   Task: V62-00
+
+- Candidate: post-pattern-intake linkage re-gate
+  Source evidence: V62 report and completed pattern-intake mini-loop
+  Surface: re-gate report / active plan
+  Status: accepted as V63-00
+  Reason: after wiring the runbook into the skill, choose next work from
+    evidence or stop on external blockers
+  Task: V63-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -9847,6 +9948,39 @@ Product readiness verdict:
 Next active stream:
 - V62 — Wire Pattern Intake Runbook Into Source-To-Decision Skill.
 
+## Outcome 2026-06-27 V62
+
+Completed:
+- V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill.
+
+Evidence:
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v62-pattern-intake-skill-linkage/REPORT.md`.
+
+What improved:
+- Future source-to-decision tasks can discover the pattern intake runbook from
+  the triggering skill.
+- The skill remains compact and the runbook owns the detailed workflow.
+
+What did not improve:
+- Product readiness.
+- V02-01.
+- Target owner/stability inputs.
+- Package source behavior.
+
+New task:
+- V63 Post Pattern-Intake Linkage Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V63 — Post Pattern-Intake Linkage Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -9895,7 +10029,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill.
+Active stream: V63 Post Pattern-Intake Linkage Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

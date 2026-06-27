@@ -29,6 +29,10 @@ Use this skill to prevent source hoarding.
 Use this lane for official docs, papers, practitioner writing, course material,
 competitor docs, local evidence, and user-provided research.
 
+For multi-source, course, paper, practitioner-pattern, or operator-facing
+intake, use `docs/runbooks/pattern-intake.md` as the fuller procedure. Keep
+this skill as the trigger/gate; keep the runbook as the workflow.
+
 Keep the gate strict:
 
 - Source without mechanism is decoration.

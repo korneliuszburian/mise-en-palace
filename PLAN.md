@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill
-current task: V62-00 Wire Pattern Intake Runbook Into Source-To-Decision Skill
+active stream: V63 Post Pattern-Intake Linkage Re-Gate
+current task: V63-00 Post Pattern-Intake Linkage Re-Gate
 ```
 
 Completed stream summary:
@@ -91,29 +91,30 @@ V58 pattern intake runbook: complete
 V59 first pattern intake runbook application: complete
 V60 TypeScript lifecycle union drift spot-check: complete
 V61 post-pattern intake re-gate: complete
+V62 pattern intake skill linkage: complete
 ```
 
 ## Active Stream
 
-### V62-00 — Wire Pattern Intake Runbook Into Source-To-Decision Skill
+### V63-00 — Post Pattern-Intake Linkage Re-Gate
 
 Goal:
 
-Add a compact pointer from `source-to-decision` skill to the pattern intake
-runbook so future source work can use the fuller operator workflow.
+Decide whether internal KRN work should continue or whether current progress
+should pause on external operator/owner blockers.
 
 Current finding:
 
 ```txt
-V61 selected a small skill/runbook linkage instead of more source intake,
-TypeScript guard work, target work, or product-readiness overclaim.
+V62 linked the pattern intake runbook from the source-to-decision skill without
+duplicating the runbook.
 ```
 
-Current V62 action:
+Current V63 action:
 
 ```txt
-Update `.agents/skills/source-to-decision/SKILL.md` with a compact pointer to
-`docs/runbooks/pattern-intake.md` without duplicating the runbook.
+Re-gate after V58-V62 and choose the next bounded task or record the honest
+external blocker.
 ```
 
 ## V02-01 Boundary
