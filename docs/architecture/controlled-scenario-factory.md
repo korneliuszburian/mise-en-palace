@@ -146,7 +146,7 @@ External research, papers, courses, practitioner writing, and OpenAI docs enter
 KRN only through:
 
 ```txt
-source -> mechanism -> KRN implication -> decision/rejection -> falsifier
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
 ```
 
 If a source does not produce a decision, rejection, falsifier, durable surface,

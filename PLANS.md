@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V161 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation pattern-gate chain guard, and kernel pattern-gate chain guard slices: complete
-active stream: V162 Post Kernel Pattern Gate Chain Re-Gate
-current task: V162-00 Post Kernel Pattern Gate Chain Re-Gate
+V48..V163 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, and controlled-scenario pattern-gate chain guard slices: complete
+active stream: V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
+current task: V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V162-00 Post Kernel Pattern Gate Chain Re-Gate.
+V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15373,6 +15373,71 @@ Next active stream:
 
 Next active task:
 - V162-00 Post Kernel Pattern Gate Chain Re-Gate.
+
+## Outcome 2026-06-27 V163 Controlled Scenario Pattern Gate Chain Guard
+
+Completed tasks:
+- V162-00 Post Kernel Pattern Gate Chain Re-Gate.
+- V163-00 Controlled Scenario Pattern Gate Chain Guard.
+
+V162 decision:
+- Do not broaden kernel-chain preservation into Research Foundry, source crawler,
+  dashboard, or product-readiness claims.
+- Select controlled scenario factory chain repair because scenario generation is
+  the active surface where research, courses, practitioner writing, OpenAI docs,
+  and repo evidence become bounded dogfood scenarios.
+- The concrete failure mode is a future controlled scenario retaining a pattern
+  with decision/rejection and falsifier but no named consumer.
+
+What changed:
+- `docs/architecture/controlled-scenario-factory.md` now routes research intake
+  through `consumer -> falsifier`.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks the controlled
+  scenario research rule rejects the older no-consumer chain.
+- `docs/architecture/brain-battle-eval-matrix.md` records the controlled
+  scenario pattern-gate chain guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V164.
+
+Evidence:
+- `docs/architecture/controlled-scenario-factory.md` is an active scenario
+  contract, not an archived report.
+- Before this slice, its Research Rule still stated:
+  `source -> mechanism -> KRN implication -> decision/rejection -> falsifier`.
+- Historical reports, archived plans, and `docs/handoff/decisions.md` remain
+  historical evidence and were not rewritten.
+
+Source-to-decision:
+- Source: `docs/architecture/controlled-scenario-factory.md` and active
+  pattern-gate surfaces.
+- Mechanism: controlled scenarios are how KRN tests and condenses research,
+  course, paper, practitioner, and repo-local patterns into bounded product
+  evidence; a weaker research rule permits retained patterns without consumers.
+- KRN implication: scenario research intake must require a concrete consumer
+  before falsifier so best-practice material becomes a rule, skill, guard, eval,
+  candidate, source decision, or explicit rejection.
+- Decision: update and guard the controlled scenario Research Rule.
+- Does not prove: every future scenario applies the rule, every source is high
+  quality, product readiness, or that a broad Research Foundry is needed.
+- Consumer: `docs/architecture/controlled-scenario-factory.md`,
+  `packages/harness/src/activePlanInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the controlled scenario Research Rule can drop `consumer` from the
+  chain without focused tests failing.
+
+New task:
+- V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V164 Post Controlled Scenario Pattern Gate Chain Re-Gate.
+
+Next active task:
+- V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

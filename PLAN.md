@@ -1,8 +1,6 @@
 # KRN Active Plan
 
-Status: active compact root plan.
-
-Date: 2026-06-27.
+Status: active compact root plan. Date: 2026-06-27.
 
 Repository: `/home/krn/coding/krn/active/mise-en-palace`.
 
@@ -22,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V162 Post Kernel Pattern Gate Chain Re-Gate
-current task: V162-00 Post Kernel Pattern Gate Chain Re-Gate
+active stream: V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
+current task: V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -41,34 +39,35 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V161: active-surface compactness, handoff, PLANS freshness,
+V100..V163: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
-           root/smoke/compact/continuation/kernel pattern-gate guards complete.
+           root/smoke/compact/continuation/kernel/controlled-scenario
+           pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V162 Post Kernel Pattern Gate Chain Re-Gate
+### V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
 
 Goal:
 
-Decide the next bounded task after preserving the full pattern-gate chain in
-the kernel contract.
+Decide the next bounded task after preserving the full pattern-gate chain in the
+controlled scenario research rule.
 
 Current finding:
 
 ```txt
-V160 selected kernel pattern-gate chain repair because active surfaces now
-require consumer before falsifier, but `docs/KRN_KERNEL.md` still documented the
-older no-consumer decision rule.
+V162 selected controlled scenario factory chain repair because active surfaces
+now require consumer before falsifier, but the scenario research rule still
+documented the older no-consumer decision rule.
 ```
 
 Current action:
 
 ```txt
-Execute V162-00: select the next pattern surface from evidence. Do not broaden
-kernel-chain preservation into Research Foundry, source crawler, dashboard, or
+Execute V164-00: select the next pattern surface from evidence. Do not broaden
+scenario-chain preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -81,7 +80,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused kernel-chain preservation into research hoarding
+The re-gate turns focused scenario-chain preservation into research hoarding
 without a concrete consumer and falsifier.
 ```
 

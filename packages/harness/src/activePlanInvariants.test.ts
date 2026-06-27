@@ -235,6 +235,18 @@ describe("KRN active plan invariants", () => {
     expect(rejectionReasons).toContain("too_broad:");
   });
 
+  it("keeps controlled scenario research intake tied to a consumer before falsifier", () => {
+    const scenarioFactory = readRootFile("docs/architecture/controlled-scenario-factory.md");
+    const researchRule = sectionBody(scenarioFactory, "## Research Rule");
+
+    expect(researchRule).toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
+    );
+    expect(researchRule).not.toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> falsifier"
+    );
+  });
+
   it("keeps source-class vocabulary aligned across intake, skills, and source guidance", () => {
     const runbook = readRootFile("docs/runbooks/pattern-intake.md");
     const sourceSkill = readRootFile(".agents/skills/source-to-decision/SKILL.md");

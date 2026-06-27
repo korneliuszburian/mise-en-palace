@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V162 Post Kernel Pattern Gate Chain Re-Gate
+V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
 ```
 
 Current product loop:
@@ -37,7 +37,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V161: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V163: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
@@ -46,8 +46,8 @@ source-class vocabulary, verification TMPDIR, and TypeScript boundary re-scan
 plus stale attachment objective and compact stale-objective contract guards
 plus progress stale-active, root PLAN pattern-gate, and brain-battle smoke
 description plus compact pattern-gate contract and continuation-chain guards
-plus kernel pattern-gate chain guards complete.
-current task: V162-00 Post Kernel Pattern Gate Chain Re-Gate.
+plus kernel and controlled-scenario pattern-gate chain guards complete.
+current task: V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
