@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
-current task: V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate
+active stream: V108 Post PLANS Known Current Gap Freshness Re-Gate
+current task: V108-00 Post PLANS Known Current Gap Freshness Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -47,30 +47,32 @@ V102-00: post active surface compactness guard re-gate complete.
 V103-00: handoff compact contract guard complete.
 V104-00: post handoff compact contract guard re-gate complete.
 V105-00: PLANS compact GOAL contract freshness guard complete.
+V106-00: post PLANS compact GOAL contract freshness re-gate complete.
+V107-00: PLANS known current gap freshness guard complete.
 ```
 
 ## Active Stream
 
-### V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
+### V108 Post PLANS Known Current Gap Freshness Re-Gate
 
 Goal:
 
-Decide the next bounded task after removing stale active-stream guidance from
-the detailed plan's compact GOAL contract.
+Decide the next bounded task after removing stale known-current-gap guidance
+from the detailed plan's opening baseline.
 
 Current finding:
 
 ```txt
-V104 found that `PLANS.md` section 22 still contained a concrete stale V86
-active-stream example. V105 replaced it with current-state placeholders and
-added a focused active-plan invariant.
+V106 found that `PLANS.md` still described V63 as the current active gap in the
+opening baseline. V107 replaced that with current-task guidance and added a
+focused active-plan invariant.
 ```
 
 Current action:
 
 ```txt
-Execute V106-00: select the next pattern surface from evidence. Do not broaden
-PLANS freshness work into deleting historical outcomes or rewriting the ledger.
+Execute V108-00: select the next pattern surface from evidence. Do not broaden
+PLANS freshness work into rewriting historical outcomes.
 ```
 
 Primary consumer:
@@ -82,8 +84,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens a broad PLANS cleanup without a concrete stale-guidance
-falsifier.
+The re-gate opens another PLANS freshness task without a concrete stale-guidance
+falsifier in default resume context.
 ```
 
 ## External Input Blocker

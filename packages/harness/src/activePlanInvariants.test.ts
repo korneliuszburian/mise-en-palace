@@ -66,4 +66,21 @@ describe("KRN active plan invariants", () => {
     expect(compactGoalContract).not.toMatch(/Active stream: V\d+/u);
     expect(compactGoalContract).not.toMatch(/current task: V\d+/iu);
   });
+
+  it("keeps the PLANS known current gap tied to the current task", () => {
+    const plans = readRootFile("PLANS.md");
+    const plansCurrentTask = requiredLine(plans, /^current task: (.+)$/mu, "PLANS current task");
+    const knownCurrentGapStart = plans.indexOf("Known current gap:");
+    const sectionTwoStart = plans.indexOf("\n## 2. Product Thesis", knownCurrentGapStart);
+
+    if (knownCurrentGapStart === -1 || sectionTwoStart === -1) {
+      throw new Error("Could not find PLANS known current gap section");
+    }
+
+    const knownCurrentGap = plans.slice(knownCurrentGapStart, sectionTwoStart);
+
+    expect(knownCurrentGap).toContain(plansCurrentTask);
+    expect(knownCurrentGap).not.toContain("V63 recorded");
+    expect(knownCurrentGap).not.toContain("current active gap is making");
+  });
 });

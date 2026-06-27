@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V105 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
-active stream: V106 Post PLANS Compact GOAL Contract Freshness Re-Gate
-current task: V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate
+V48..V107 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
+active stream: V108 Post PLANS Known Current Gap Freshness Re-Gate
+current task: V108-00 Post PLANS Known Current Gap Freshness Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -94,13 +94,11 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V63 recorded an external-input blocker after the first pattern-intake loop. The
-operator then supplied a new explicit internal task: make best-practice, course,
-paper, official-doc, practitioner, target-evidence, and repo-evidence
-distillation a permanent gate for every non-trivial KRN slice. TypeScript /
-Matt Pocock is only one example; the current active gap is making this gate
-unavoidable across infra, harness, CI, skills, target workflow, TypeScript,
-Codex surfaces, evals, and research/papers without source hoarding.
+The current gap is the active task above:
+V108-00 Post PLANS Known Current Gap Freshness Re-Gate.
+
+Use the latest outcome entry before the final-response format section to choose
+the next bounded slice. Older gaps remain historical evidence, not active truth.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -13260,6 +13258,74 @@ Next active stream:
 
 Next active task:
 - V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate.
+
+## Outcome 2026-06-27 V107 PLANS Known Current Gap Freshness Guard
+
+Completed tasks:
+- V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate.
+- V107-00 PLANS Known Current Gap Freshness Guard.
+
+V106 decision:
+- Do not broaden PLANS freshness into historical ledger cleanup.
+- Fix the opening `Known current gap` section because it was default resume
+  context and still described the old V63 pattern-intake gap as current.
+
+What changed:
+- `PLANS.md` opening baseline now points the known current gap at the current
+  active task instead of old V63 wording.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks that the known
+  current gap contains the current task and rejects the stale V63 current-gap
+  wording.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V108.
+
+Evidence:
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `GOAL.md`.
+- `PLAN.md`.
+
+Source-to-decision:
+- Source: V105 freshness guard plus repo evidence that `PLANS.md` opening
+  baseline carried stale V63 current-gap guidance.
+- Mechanism: default resume context can preserve history only if current-gap
+  guidance is tied to the current active task, not an old generated task.
+- KRN implication: `PLANS.md` can remain detailed, but the opening baseline must
+  be safe to read after compaction without reviving stale active work.
+- Decision: replace stale known-gap wording and add a focused active-plan
+  invariant.
+- Does not prove: all historical gaps are current, historical ledger cleanup is
+  needed, product readiness, or second-operator readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts`.
+- Falsifier: the opening known-current-gap section can omit the current task or
+  reintroduce stale V63 current-gap wording without failing focused verification.
+
+What improved:
+- Default resume context freshness.
+- Protection against old generated gaps becoming active truth.
+- Active-plan invariant coverage.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Historical ledger size.
+- Runtime activation or target-repo behavior.
+
+New task:
+- V108-00 Post PLANS Known Current Gap Freshness Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V108 Post PLANS Known Current Gap Freshness Re-Gate.
+
+Next active task:
+- V108-00 Post PLANS Known Current Gap Freshness Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
