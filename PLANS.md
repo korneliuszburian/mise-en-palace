@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V196 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, and state-of-the-art re-gate slices: complete
-active stream: V197 State Of The Art Current-State Repair
-current task: V197-00 State Of The Art Current-State Repair
+V48..V197 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, and state doctrine repair guard slices: complete
+active stream: V198 Post State Doctrine Re-Gate
+current task: V198-00 Post State Doctrine Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V197-00 State Of The Art Current-State Repair.
+V198-00 Post State Doctrine Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16553,6 +16553,56 @@ Next active stream:
 
 Next active task:
 - V197-00 State Of The Art Current-State Repair.
+
+## Outcome 2026-06-27 V197 State Doctrine Current-State Repair
+
+Completed task:
+- V197-00 State Of The Art Current-State Repair.
+
+What changed:
+- `docs/STATE_OF_THE_ART.md` now frames itself as compact product doctrine, not
+  active execution truth.
+- The doctrine replacement path now follows the current KRN loop: compact root
+  goal/plan, source-to-decision/pattern gate, repo-local skill, typed harness
+  spine, bounded Codex run, evidence bundle, review assessment, feedback delta,
+  reviewable candidates, dogfood/target trial, and guarded repair/rejection/
+  promotion.
+- `packages/harness/src/contextHygieneInvariants.test.ts` now rejects stale
+  `context packet`, `review capture`, and "active project doctrine" wording.
+
+Evidence:
+- Focused context hygiene test passed.
+- The repaired doc now matches `docs/KRN_KERNEL.md` and current root plan
+  execution boundaries.
+
+Source-to-decision:
+- Source: `docs/STATE_OF_THE_ART.md`, `docs/KRN_KERNEL.md`, and V196 re-gate.
+- Mechanism: state doctrine is durable operator framing; stale path terms can
+  imply old command surfaces or an earlier product stage.
+- KRN implication: compact doctrine should express product direction while root
+  `GOAL.md` / `PLAN.md` remain active execution truth.
+- Decision: repair state doctrine path and guard against stale path regression.
+- Does not prove: every historical doc is current, product readiness, or need
+  for broad docs sweep.
+- Consumer: `docs/STATE_OF_THE_ART.md` and
+  `packages/harness/src/contextHygieneInvariants.test.ts`.
+- Falsifier: the doctrine can again route operators through stale context/review
+  capture language while tests pass.
+
+New task:
+- V198-00 Post State Doctrine Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V198 Post State Doctrine Re-Gate.
+
+Next active task:
+- V198-00 Post State Doctrine Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

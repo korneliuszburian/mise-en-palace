@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V197 State Of The Art Current-State Repair
-current task: V197-00 State Of The Art Current-State Repair
+active stream: V198 Post State Doctrine Re-Gate
+current task: V198-00 Post State Doctrine Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,50 +39,48 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V196: active-surface compactness, handoff, PLANS freshness,
+V100..V197: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
            pattern-gate guards, onboarding current-state re-gate, and onboarding
-           repair guard complete.
+           plus state doctrine repair guards complete.
 ```
 
 ## Active Stream
 
-### V197 State Of The Art Current-State Repair
+### V198 Post State Doctrine Re-Gate
 
 Goal:
 
-Repair stale active doctrine wording in docs/STATE_OF_THE_ART.md without a broad
-docs sweep.
+Decide the next bounded task after repairing onboarding and state doctrine.
 
 Current finding:
 
 ```txt
-V196 found docs/STATE_OF_THE_ART.md is still labeled active doctrine while its
-replacement path uses older `context packet` / `review capture` language.
+V197 aligned docs/STATE_OF_THE_ART.md with the current harness spine and added
+a focused context hygiene guard against stale doctrine paths.
 ```
 
 Current action:
 
 ```txt
-Execute V197-00: align the doctrine path with current KRN spine and add a
-focused invariant if needed. Do not broaden into a docs sweep, Research
-Foundry, source crawler, dashboard, product-readiness claim, or architecture
-rewrite.
+Execute V198-00: select the next bounded evidence-backed task. Do not broaden
+doctrine repair into a docs sweep, Research Foundry, source crawler, dashboard,
+product-readiness claim, or architecture rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-docs/STATE_OF_THE_ART.md and focused context/doctrine invariant if needed.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-State-of-the-art doctrine can again route operators through stale context/review
-capture language while tests pass.
+The re-gate turns doctrine repair into broad docs churn without a concrete
+consumer and falsifier.
 ```
 
 ## Pattern Gate

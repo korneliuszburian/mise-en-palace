@@ -62,4 +62,22 @@ describe("KRN context hygiene invariants", () => {
     expect(onboarding).not.toContain("krn context build");
     expect(onboarding).not.toContain("krn review capture");
   });
+
+  it("keeps state-of-the-art doctrine aligned with the current harness spine", () => {
+    const doctrine = readRootFile("docs/STATE_OF_THE_ART.md");
+
+    expect(doctrine).toContain("Root `GOAL.md` and");
+    expect(doctrine).toContain("`PLAN.md` remain active execution truth");
+    expect(doctrine).toContain("source-to-decision / pattern gate");
+    expect(doctrine).toContain("typed harness spine");
+    expect(doctrine).toContain("evidence bundle");
+    expect(doctrine).toContain("review assessment");
+    expect(doctrine).toContain("feedback delta");
+    expect(doctrine).toContain("reviewable Memory/Source/Eval candidates");
+    expect(doctrine).toContain("Controlled Internal Alpha Before Product Readiness");
+
+    expect(doctrine).not.toContain("context packet");
+    expect(doctrine).not.toContain("review capture");
+    expect(doctrine).not.toContain("This is the active project doctrine");
+  });
 });

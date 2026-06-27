@@ -2,9 +2,8 @@
 
 ## Status
 
-This is the active project doctrine for the clean KRN direction. It is derived
-from the raw onboarding source in `docs/materials/` and should stay smaller
-than the raw source.
+This is compact doctrine for the clean KRN direction. Root `GOAL.md` and
+`PLAN.md` remain active execution truth; this file explains the product shape.
 
 ## Product Promise
 
@@ -33,20 +32,20 @@ The previous KRN direction failed when it became an artifact factory:
 - eval theater;
 - broad agent taxonomy before output contracts.
 
-The replacement path is:
+The current replacement path is:
 
 ```text
-kernel contract
-  -> pattern selection
-  -> engineering skills
-  -> typed primitives
-  -> dry-run init
-  -> context packet
-  -> Codex run
-  -> review capture
-  -> Memory/Source/Eval candidates
-  -> dogfood
-  -> promotion
+compact root goal/plan
+  -> source-to-decision / pattern gate
+  -> repo-local skill when workflow repeats
+  -> typed harness spine
+  -> bounded Codex run
+  -> evidence bundle
+  -> review assessment
+  -> feedback delta
+  -> reviewable Memory/Source/Eval candidates
+  -> dogfood or target trial
+  -> guarded repair / rejection / promotion
 ```
 
 ## Operating Brain
@@ -89,6 +88,7 @@ the brain.
 - Review / Repair / Validate Loop.
 - Evidence-Checked Continuous Goal.
 - TypeScript Boundary Discipline.
+- Controlled Internal Alpha Before Product Readiness.
 
 ## Later Only
 
@@ -98,4 +98,3 @@ the brain.
 - KRN MCP server;
 - multi-project registry;
 - dashboard over typed objects.
-
