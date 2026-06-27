@@ -177,14 +177,21 @@ Evidence:
 
 ### V04-07 — Internal Brain Usefulness Re-Gate
 
-Status: pending.
+Status: in progress.
 
 Goal: create a final V04 report deciding whether KRN became materially more
 useful for our own workflows.
 
-Before final re-gate, finish the detailed V04 ExecPlan compression/screening
-steps: AGENTS/skill compression pass, hook candidate screening, MCP/subagent
-candidate screening, and internal brain usefulness metrics.
+Preparation complete:
+
+- AGENTS/skill compression pass;
+- hook candidate screening;
+- MCP/subagent candidate screening;
+- internal brain usefulness metrics.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
 
 ## Hard Non-Goals
 

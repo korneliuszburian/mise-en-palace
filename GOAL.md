@@ -49,8 +49,8 @@ V04-03 knowledge condensation gate: complete.
 V04-04 skill-first KRN: complete.
 V04-06 deterministic guard from real evidence: complete.
 V04-05 controlled scenario batch: complete.
-Current active slice: V04 re-gate preparation — AGENTS/skill compression,
-hook/MCP/subagent screening, usefulness metrics, then final V04 report.
+V04 re-gate preparation: complete.
+Current active slice: V04-07 — Internal Brain Usefulness Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

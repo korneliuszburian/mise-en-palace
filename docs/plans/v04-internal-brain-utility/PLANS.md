@@ -826,10 +826,16 @@ Update this section during execution. Initial checklist:
   Evidence: scenario factory/condensation gate, `target-repo-testing` skill,
   and deterministic target skill guard are implemented; `evidence-review-loop`
   new-skill candidate was rejected in favor of existing skill reuse.
-- [ ] M11 AGENTS/skill surface compression pass completed.
-- [ ] M12 hook candidates screened.
-- [ ] M13 MCP/subagent candidates screened.
-- [ ] M14 internal brain usefulness metrics written.
+- [x] M11 AGENTS/skill surface compression pass completed.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
+- [x] M12 hook candidates screened.
+  Evidence: same report; hooks remain deferred and target write prevention is a
+  hook candidate only.
+- [x] M13 MCP/subagent candidates screened.
+  Evidence: same report; MCP and subagents remain deferred until a scenario
+  proves CLI/files/DB are insufficient.
+- [x] M14 internal brain usefulness metrics written.
+  Evidence: same report metrics table.
 - [ ] M15 internal brain re-gate report written.
 - [ ] M16 final verification/CI/handoff completed.
 
@@ -904,6 +910,13 @@ Append observations here as they occur.
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
   Impact: Do not create a second evidence review skill until a scenario exposes
   a concrete missing field or workflow.
+
+- Observation: Current V04 evidence supports skills and deterministic guards,
+  not hooks, MCP, or subagents.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`
+  maps official Codex manual sources through source-to-decision decisions.
+  Impact: M11-M14 are complete and final V04 re-gate can proceed without adding
+  new product surfaces.
 
 Template:
 
@@ -992,6 +1005,17 @@ Initial decisions:
   Consequence: V04 scenario reports reuse the existing skill and condensation
   gate; changes wait for a concrete scenario gap.
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-evidence-review-loop-skill-fit/REPORT.md`.
+
+- Decision: Defer hooks, MCP, and subagents after V04 screening.
+  Rationale: official Codex docs position skills as reusable workflow packages,
+  MCP as live external tool/context access, hooks as lifecycle command handlers,
+  and subagents as explicit parallel workflows with added cost. Current V04
+  scenarios do not prove a need beyond skills, reports, CLI, DB, and tests.
+  Alternatives considered: target-write prevention hook; KRN MCP server; custom
+  scenario-audit subagent.
+  Consequence: record candidates/falsifiers, but do not build these surfaces in
+  V04.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
 
 Append future decisions with this template:
 
@@ -1093,6 +1117,14 @@ Record commands, reports, commits, and CI here.
   Does not prove: final V04 re-gate, product readiness, or second-operator
     usability.
 
+- Evidence ID: E-20260627-09
+  Milestone: M11/M12/M13/M14
+  Command/report/commit: `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
+  Result: pass as source-to-decision report in working tree.
+  Proves: AGENTS/skill compression, hook screening, MCP/subagent screening, and
+    internal utility metrics are documented from current evidence.
+  Does not prove: final V04 completion until M15/M16 and verification pass.
+
 Template:
 
 ```txt
@@ -1163,6 +1195,15 @@ Initial candidate placeholders to verify from repo evidence:
   Reason: current scenario proves the boundary need but does not yet inspect
   owner files or implementation cost.
   Implemented in: N/A.
+
+- Finding: Hooks, MCP, and subagents are not justified by current V04 evidence.
+  Source scenario/report: `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
+  Frequency: repeated as non-goal across V04, now source-backed.
+  Candidate target: hook-candidate / MCP-candidate / subagent-candidate.
+  Decision: deferred/rejected for implementation now.
+  Reason: current workflows are handled by skills, reports, CLI, DB, and tests;
+  heavier surfaces need a falsifying scenario first.
+  Implemented in: report only.
 
 ## Interfaces And Dependencies
 
