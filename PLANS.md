@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V76 Post Memory Promotion CLI Gate Re-Gate
-current task: V76-00 Post Memory Promotion CLI Gate Re-Gate
+active stream: V78 Post Source Map Falsifier Re-Gate
+current task: V78-00 Post Source Map Falsifier Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -7064,6 +7064,121 @@ Definition of Done:
 - Next active task is explicit or a blocker is explicit.
 - `git diff --check` passes.
 
+Outcome:
+
+- The next bounded task is source-map normalization, because continuous pattern
+  intake requires retained sources to name consumers and falsifiers.
+
+### V77-00 — Source Map Consumer/Falsifier Normalization
+
+Status: complete
+
+Goal: Make `docs/KRN_SOURCES.md` match the current pattern-intake contract:
+retained sources must name consumer and falsifier, not only mechanism and
+decision.
+
+Pattern surface: Codex surfaces / skills / hooks / MCP / subagents; TypeScript
+boundaries; research-to-brain.
+
+Product rationale: The operator wants best courses, papers, official docs,
+senior standards, and repo evidence to improve KRN continuously. That only works
+if retained sources are routed to concrete consumers and can be falsified.
+
+Architectural rationale: This is source-map condensation, not source hoarding.
+No new research archive, crawler, or broad backlog is created.
+
+Evidence source:
+
+- `docs/KRN_SOURCES.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+
+Primary consumer:
+
+- `docs/KRN_SOURCES.md`.
+
+Does not prove:
+
+- source coverage is complete;
+- any course/paper should be indexed wholesale;
+- all retained source decisions are still current forever.
+
+Falsifier:
+
+- A retained source in `docs/KRN_SOURCES.md` has no consumer or no falsifier.
+
+Verification commands:
+
+```sh
+rg -n "Consumer:|Falsifier:" docs/KRN_SOURCES.md
+git diff --check
+```
+
+Outcome:
+
+- Existing retained sources now include `Consumer` and `Falsifier` fields.
+- The source map explicitly rejects consumerless or unfalsifiable source
+  retention as active KRN guidance.
+
+### V78-00 — Post Source Map Falsifier Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after normalizing retained source decisions.
+
+Pattern surface: research-to-brain / continuous pattern intake.
+
+Product rationale: V77 improves the source substrate. The next task should
+either apply one retained source to a consumer, run a spot-check against source
+map drift, or stop on the external operator/target blocker.
+
+Architectural rationale: Continue by evidence. Do not broaden into a research
+foundry, source crawler, course archive, or paper backlog.
+
+Evidence source:
+
+- V77 source-map normalization.
+- `docs/runbooks/pattern-intake.md` surface consumer matrix.
+- `docs/KRN_SOURCES.md`.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- product readiness;
+- source coverage completeness;
+- need for a research subsystem.
+
+Falsifier:
+
+- The plan adds more sources or tasks without mechanism, consumer, falsifier,
+  and proof/non-proof boundary.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- source crawler;
+- research archive;
+- copying paid/proprietary course content;
+- broad benchmark/eval platform;
+- dashboard/API/MCP/server.
+
+Definition of Done:
+
+- Next active task is explicit or a blocker is explicit.
+- `git diff --check` passes.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -7458,7 +7573,11 @@ Initial entry:
   untrusted-source review refs.
 - [x] V75-00 complete: wired `--untrusted-source-review-ref` through memory
   candidate promotion CLI output and persisted promote path.
-- [ ] V76-00 active: re-gate after memory promotion CLI repair.
+- [x] V76-00 complete: selected source-map consumer/falsifier normalization as
+  the next research-to-brain substrate repair.
+- [x] V77-00 complete: added consumer and falsifier fields to retained
+  `docs/KRN_SOURCES.md` source decisions.
+- [ ] V78-00 active: re-gate after source-map normalization.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8534,6 +8653,20 @@ Initial decisions:
   Verification: `pnpm --filter @krn/cli test -- parseMemoryArgs runCli`;
     `pnpm --filter @krn/harness test -- memoryReviewGate`;
     `pnpm -C packages/cli typecheck`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select source-map consumer/falsifier normalization as V77.
+  Rationale: Continuous pattern intake requires retained sources to map to a
+    consumer and falsifier. `docs/KRN_SOURCES.md` had useful source decisions
+    but did not consistently expose those fields.
+  Surface: research-to-brain / continuous pattern intake.
+  Consumer: `docs/KRN_SOURCES.md`.
+  Does not prove: source coverage is complete or that course/paper/source
+    indexing should be broad.
+  Falsifier: a retained source in `docs/KRN_SOURCES.md` has no consumer or no
+    falsifier.
+  Verification: `rg -n "Consumer:|Falsifier:" docs/KRN_SOURCES.md`;
+    `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -11794,6 +11927,45 @@ Next active stream:
 Next active task:
 - V76-00 Post Memory Promotion CLI Gate Re-Gate.
 
+## Outcome 2026-06-27 V77 Source Map Normalization
+
+Completed:
+- V76-00 Post Memory Promotion CLI Gate Re-Gate.
+- V77-00 Source Map Consumer/Falsifier Normalization.
+
+Evidence:
+- `docs/KRN_SOURCES.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+
+What improved:
+- Retained source decisions now name a primary consumer and falsifier.
+- Future research/course/paper/doc intake has a smaller durable source map to
+  check before adding sources.
+- `docs/KRN_SOURCES.md` now explicitly rejects consumerless or unfalsifiable
+  source retention as active KRN guidance.
+
+What did not improve:
+- Product readiness.
+- Source coverage completeness.
+- Currentness of external docs.
+- Any new code behavior.
+
+New task:
+- V78-00 Post Source Map Falsifier Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V78 Post Source Map Falsifier Re-Gate.
+
+Next active task:
+- V78-00 Post Source Map Falsifier Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -11842,7 +12014,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V76 Post Memory Promotion CLI Gate Re-Gate.
+Active stream: V78 Post Source Map Falsifier Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

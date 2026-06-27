@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V76 Post Memory Promotion CLI Gate Re-Gate
-current task: V76-00 Post Memory Promotion CLI Gate Re-Gate
+active stream: V78 Post Source Map Falsifier Re-Gate
+current task: V78-00 Post Source Map Falsifier Re-Gate
 ```
 
 Completed stream summary:
@@ -109,31 +109,35 @@ V72-00 post security redaction corpus re-gate: complete
 V73-00 memory promotion untrusted-source checklist: complete
 V74-00 post security memory gate re-gate: complete
 V75-00 memory promotion untrusted-source CLI readback: complete
-V76 post memory promotion CLI gate re-gate: active
+V76-00 post memory promotion CLI gate re-gate: complete
+V77-00 source map consumer/falsifier normalization: complete
+V78 post source map falsifier re-gate: active
 ```
 
 ## Active Stream
 
-### V76 Post Memory Promotion CLI Gate Re-Gate
+### V78 Post Source Map Falsifier Re-Gate
 
 Goal:
 
-Decide the next bounded task after making untrusted-source review refs usable
-from the memory candidate promotion CLI.
+Decide the next bounded task after making retained KRN sources name their
+consumer and falsifier.
 
 Current finding:
 
 ```txt
-V74 deferred SEC-04 because command execution behavior is not accepted.
-V75 connected the V73 MemoryReviewGate untrusted-source review ref to the
-operator-facing CLI promote path.
+V76 selected source-map normalization because continuous pattern intake requires
+source -> mechanism -> implication -> decision -> consumer -> falsifier, and
+`docs/KRN_SOURCES.md` had retained sources without explicit consumer/falsifier
+fields.
 ```
 
 Current action:
 
 ```txt
-Execute V76-00: decide whether to move to another pattern surface, run a small
-readback/golden proof, or stop on the external operator/target blocker.
+Execute V78-00: decide whether the next bounded task should apply one retained
+source to a code/skill/eval consumer, run a targeted source-map spot-check, or
+stop on the external operator/target blocker.
 ```
 
 Primary consumer:
@@ -145,8 +149,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate keeps building security/CLI affordances without a named consumer,
-falsifier, or evidence from the latest slice.
+The re-gate adds or consumes sources without naming mechanism, consumer,
+falsifier, and proof/non-proof boundary.
 ```
 
 ### External Input Blocker

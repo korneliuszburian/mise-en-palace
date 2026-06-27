@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V76 Post Memory Promotion CLI Gate Re-Gate
+V78 Post Source Map Falsifier Re-Gate
 ```
 
 Current product loop:
@@ -121,7 +121,9 @@ V72-00 Post Security Redaction Corpus Re-Gate: complete.
 V73-00 Memory Promotion Untrusted-Source Checklist: complete.
 V74-00 Post Security Memory Gate Re-Gate: complete.
 V75-00 Memory Promotion Untrusted-Source CLI Readback: complete.
-current task: V76-00 Post Memory Promotion CLI Gate Re-Gate.
+V76-00 Post Memory Promotion CLI Gate Re-Gate: complete.
+V77-00 Source Map Consumer/Falsifier Normalization: complete.
+current task: V78-00 Post Source Map Falsifier Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
