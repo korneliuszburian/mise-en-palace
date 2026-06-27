@@ -37,12 +37,13 @@ V08 skill-first workflow expansion: complete
 V09 deterministic hooks candidate decision: complete
 V10 MCP / subagent candidate gate: complete
 V11 product readiness re-gate: complete
+V12 widened alpha trial launch packet: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V12 widened alpha trial launch packet
-current task: V12-00 Real Operator / Widened Alpha Trial Launch Packet
+active stream: V13 research-to-brain decision lane gate
+current task: V13-00 Research-To-Brain Decision Lane Gate
 ```
 
 Evidence already recorded in repo:
@@ -469,6 +470,25 @@ support boundary, transcript schema, evidence checklist, failure taxonomy, and
 verdict labels.
 If required operator inputs are absent, the packet states exact missing fields
 and forbids calling self/headless work second-operator proof.
+```
+
+### Stream V13 — Research-To-Brain Decision Lane Gate
+
+Why later:
+
+- V11/V12 leave product readiness blocked on real operator evidence, but the
+  internal engineering loop can still improve how KRN imports external
+  knowledge.
+- The user wants papers, official docs, practitioner standards, and senior
+  TypeScript guidance to shape KRN without becoming source hoarding or another
+  architecture product.
+
+Expected end state:
+
+```txt
+KRN has a current decision on whether `source-to-decision` and existing docs are
+enough, or one bounded repair is needed so research inputs become decisions,
+falsifiers, candidates, or code standards instead of passive notes.
 ```
 
 ## 12. Active Task Queue
@@ -1241,7 +1261,7 @@ Completion evidence:
 
 ### V12-00 — Real Operator / Widened Alpha Trial Launch Packet
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: prepare the smallest operator-ready packet that can launch V02-01 or a
 widened internal-alpha trial without relying on author chat context.
@@ -1301,6 +1321,79 @@ Next-task synthesis rule: if the packet reveals a small blocking operator
 setup defect, append a bounded setup/runbook repair; otherwise await real
 operator inputs or run a clearly labeled engineering scenario that does not
 claim widened-alpha proof.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v12-widened-alpha-trial-launch-packet/REPORT.md`;
+- `docs/runbooks/second-operator-alpha-trial.md` refreshed with V12 intake,
+  trial modes and claim boundaries, transcript schema, support classification,
+  failure taxonomy, evidence checklist, and expanded verdict labels.
+
+### V13-00 — Research-To-Brain Decision Lane Gate
+
+Status: active
+
+Goal: decide whether KRN's current research/source-to-decision lane is enough
+for official docs, papers, practitioner writing, and TypeScript standards, or
+whether one bounded repair is needed.
+
+Product rationale: while real operator evidence is unavailable, the highest-ROI
+internal improvement is making knowledge ingestion disciplined enough to affect
+code and policy without source hoarding.
+
+Architectural rationale: KRN already requires `source -> mechanism -> KRN
+implication -> decision/rejection -> falsifier`; V13 checks whether that rule
+is operational through skills/docs/reports and not merely written down.
+
+Evidence source: `docs/KRN_KERNEL.md`, `.agents/skills/source-to-decision`,
+recent V08/V10 source-to-decision reports, TypeScript standards docs, and any
+existing research/source docs.
+
+Official/external sources: only browse or use official/current sources if a
+decision depends on them; map each retained source through mechanism,
+implication, decision/rejection, and falsifier.
+
+Inputs required: source-to-decision skill, KRN source map/docs, TypeScript
+standards, recent reports that used official Codex docs.
+
+Files likely touched:
+
+- report under `docs/reviews/controlled-dogfood/`;
+- possibly `.agents/skills/source-to-decision/SKILL.md` or a runbook if a small
+  repair is proven;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: report/plans and at most one bounded skill/runbook refinement if
+evidence proves a gap.
+
+Forbidden writes: product feature work, source crawler, research database,
+dashboard/API/MCP/subagent framework, broad eval platform, passive research
+archive, fake product-ready claim.
+
+Output requirements: current research-to-brain verdict, evidence table, accepted
+or rejected repair, and next bounded stream.
+
+Definition of Done: future Codex runs know how to turn sources into decisions
+or reject them without rereading chat.
+
+Verification commands: `git diff --check`; if a skill is edited, run a
+frontmatter sanity check or available skill validator.
+
+Acceptance criteria: no source hoarding; every retained source has mechanism,
+KRN implication, decision/rejection, and falsifier.
+
+Risk: building a research foundry instead of tightening the decision lane.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: prefer refining existing `source-to-decision` over
+creating a new skill or subsystem.
+
+Next-task synthesis rule: if the current lane is sufficient, reject new
+research surface and choose the next engineering blocker; if not, append the
+smallest repair.
 
 ## 13. Generated Task Backlog
 
@@ -1530,7 +1623,9 @@ Initial entry:
   existing `ts-type-critic` remains read-only/proposal-only.
 - [x] V11-00 complete: product readiness re-gate kept KRN controlled-internal-alpha
   stronger, not widened-alpha, not product-ready.
-- [ ] V12-00 active: real operator / widened alpha trial launch packet.
+- [x] V12-00 complete: second-operator packet refreshed with V12 intake, trial
+  modes, transcript schema, failure taxonomy, and evidence checklist.
+- [ ] V13-00 active: research-to-brain decision lane gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2018,10 +2113,20 @@ Seed queue:
 - Candidate: widened alpha trial launch packet
   Source evidence: V11 product readiness re-gate
   Surface: operator launch packet / trial boundary
-  Status: accepted as V12-00
+  Status: complete as V12-00
   Reason: V11 found the next blocker is missing operator-trial evidence, not
     another architecture surface
   Task: V12-00
+
+- Candidate: research-to-brain decision lane gate
+  Source evidence: user requirement for research/standards-backed senior
+    engineering patterns; KRN kernel source-to-decision law; V08/V10 official
+    docs source decisions
+  Surface: research/source decision gate
+  Status: accepted as V13-00
+  Reason: if real operator inputs remain unavailable, the internal engineering
+    loop should improve knowledge ingestion without creating a research hoard
+  Task: V13-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2176,6 +2281,38 @@ Product readiness verdict:
 
 Next active stream:
 - V12 — Widened Alpha Trial Launch Packet.
+
+## Outcome 2026-06-27 V12
+
+Completed:
+- V12-00 refreshed the existing second-operator alpha packet.
+- The packet now includes V12 intake, trial modes and claim boundaries,
+  transcript schema, support classification, failure taxonomy, evidence
+  checklist, and expanded verdict labels.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v12-widened-alpha-trial-launch-packet/REPORT.md`.
+- `docs/runbooks/second-operator-alpha-trial.md`.
+
+What improved:
+- A future real operator or widened-alpha trial can start or block from
+  checked-in docs without reconstructing chat context.
+- Self/headless and observation-only modes are explicitly prevented from being
+  renamed into V02-01 or widened-alpha proof.
+
+What did not improve:
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Product readiness.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V13 — Research-To-Brain Decision Lane Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -38,7 +38,8 @@ V08 skill-first workflow expansion: complete
 V09 deterministic hooks candidate decision: complete
 V10 MCP / subagent candidate gate: complete
 V11 product readiness re-gate: complete
-active stream: V12 widened alpha trial launch packet
+V12 widened alpha trial launch packet: complete
+active stream: V13 research-to-brain decision lane gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -257,19 +258,38 @@ Evidence:
   widened internal alpha/product-ready claims, and promoted V12 as the next
   bounded blocker stream.
 
-## Active Stream: V12
+## Completed Stream: V12
 
 V12 prepares the real operator / widened-alpha trial boundary without faking
 second-operator proof.
 
 ### V12-00 — Real Operator / Widened Alpha Trial Launch Packet
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: create the smallest operator-ready packet for V02-01 or widened internal
 alpha trial execution, with explicit setup, DB mode, target repo mode, support
 boundary, transcript schema, evidence checklist, failure taxonomy, and verdict
 labels.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v12-widened-alpha-trial-launch-packet/REPORT.md`;
+- `docs/runbooks/second-operator-alpha-trial.md` now includes V12 intake,
+  trial modes, transcript schema, failure taxonomy, and evidence checklist.
+
+## Active Stream: V13
+
+V13 gates how external research, official docs, practitioner standards, and
+local evidence become KRN decisions without creating a research hoard.
+
+### V13-00 — Research-To-Brain Decision Lane Gate
+
+Status: active.
+
+Goal: inspect whether the current `source -> mechanism -> KRN implication ->
+decision/rejection -> falsifier` lane is sufficient for papers/docs/standards,
+or whether a small skill/runbook/ADR repair is needed.
 
 ## Hard Non-Goals
 

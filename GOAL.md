@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V12 — Widened Alpha Trial Launch Packet
+V13 — Research-To-Brain Decision Lane Gate
 ```
 
 Current product loop:
@@ -52,8 +52,9 @@ V08 skill-first workflow expansion: complete.
 V09 deterministic hooks candidate decision: complete.
 V10 MCP / subagent candidate gate: complete.
 V11 product readiness re-gate: complete.
-active stream: V12 widened alpha trial launch packet.
-current task: V12-00 — Real Operator / Widened Alpha Trial Launch Packet.
+V12 widened alpha trial launch packet: complete.
+active stream: V13 research-to-brain decision lane gate.
+current task: V13-00 — Research-To-Brain Decision Lane Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

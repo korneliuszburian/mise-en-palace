@@ -80,8 +80,52 @@ DB mode:
 - no DB, preview only
 ```
 
+V12 intake form:
+
+```txt
+operator_name:
+operator_machine_os:
+operator_timezone:
+trial_date:
+support_channel:
+
+KRN source:
+target_repo:
+target_repo_mode:
+  read-only / writable
+target_repo_dirty_state:
+  clean / dirty / unknown
+target_repo_contains_secrets:
+  yes / no / unknown
+
+DB mode:
+  local Docker/Postgres / no DB preview only
+support boundary:
+bounded target task:
+success criteria:
+stop conditions:
+```
+
+If any required V12 intake field is missing, do not start a real
+second-operator or widened-alpha trial. Record the missing fields and keep
+`V02-01` blocked/deferred.
+
 If using a target repo with secrets or generated runtime directories, do not
 ingest broad target content. Use narrow seed/read-model paths only.
+
+## Trial Modes And Claim Boundaries
+
+Choose exactly one trial mode before starting:
+
+| Mode | Who operates | Target writes | What it can prove | What it cannot prove |
+| --- | --- | --- | --- | --- |
+| `real-second-operator` | A real operator beyond the author runs or directs the flow. | Only within the chosen scenario's allowed writes. | Can satisfy `V02-01` if transcript/evidence are complete. | Does not prove product readiness by itself. |
+| `widened-alpha` | A non-author or explicitly delegated technical operator runs the packet with bounded support. | Only if `target_repo_mode=writable` and allowed writes are named. | Can support widened internal-alpha readiness. | Does not satisfy product-ready alone. |
+| `headless-engineering` | Codex/author runs a controlled local scenario. | Only under an explicit headless repair scope. | Engineering proof and knowledge distillation. | Does not satisfy `V02-01` or widened-alpha proof. |
+| `observation-only` | Codex/operator observes and runs read-only commands. | None. | Target evidence and friction discovery. | Does not prove repair success or second-operator usability. |
+
+Do not upgrade a trial's claim after the fact. If the run started as
+`headless-engineering` or `observation-only`, it stays that way.
 
 ## Trial Scenario Menu
 
@@ -110,6 +154,64 @@ does-not-prove:
 
 If KRN-selected context does not match the chosen scenario roots, record the
 miss and continue only if manual source inspection can keep the trial bounded.
+
+## Transcript Schema
+
+Capture the transcript as structured notes. Exact chat logs may be appended,
+but the report must include this normalized shape:
+
+```txt
+trial_mode:
+operator:
+KRN source:
+target repo:
+target repo mode:
+DB mode:
+support boundary:
+scenario:
+bounded target task:
+
+step:
+command_or_action:
+operator_observation:
+result:
+support_used:
+evidence_ref:
+what_this_proves:
+what_this_does_not_prove:
+next_decision:
+```
+
+Support must be classified:
+
+```txt
+none:
+documented_support:
+environment_recovery:
+hidden_author_context:
+author_ran_commands:
+```
+
+Any `hidden_author_context` or `author_ran_commands` entry prevents the run from
+counting as unaided second-operator proof.
+
+## Failure Taxonomy
+
+Classify every failure with one primary cause:
+
+| Failure | Meaning | Next action |
+| --- | --- | --- |
+| `environment_setup` | Machine, Docker, package manager, or shell setup blocked the run. | Improve setup docs or support boundary. |
+| `db_runtime` | Postgres, migrations, pgvector, or smoke commands failed. | Use `docs/runbooks/local-brain-store.md`; do not claim DB-backed truth. |
+| `target_repo_state` | Target repo dirty state, secrets, generated files, or active concurrent work blocked safe progress. | Switch to observation-only or choose another target. |
+| `krn_docs_gap` | Checked-in docs did not tell the operator what to do. | Repair runbook/docs before rerun. |
+| `krn_cli_behavior` | CLI output or command behavior blocked the trial despite correct usage. | Open bounded KRN repair. |
+| `context_selection` | KRN selected missing/stale/noisy context for the bounded task. | Record selected/used/helped/missing context. |
+| `support_boundary_breach` | Trial required hidden author context or author-run commands. | Do not count as V02-01; repair packet/support boundary. |
+| `inconclusive` | Evidence is insufficient to classify the failure. | Record missing evidence and rerun only with clearer capture. |
+
+Do not collapse failures into "operator error" unless the packet clearly stated
+the correct action and the transcript proves it was ignored.
 
 ## Step 1: Clone And Install
 
@@ -256,6 +358,45 @@ Record command evidence:
 | `pnpm krn init --connect ... --persist` |  |  |  |
 | `pnpm krn plan --project ... --persist` |  |  |  |
 
+Evidence checklist:
+
+```txt
+preflight:
+  KRN repo commit:
+  KRN repo clean/aligned:
+  operator machine/os:
+  support boundary recorded:
+
+target:
+  target repo path/url:
+  target repo mode:
+  target dirty before:
+  allowed writes:
+  forbidden writes:
+  target dirty after:
+
+DB:
+  DB mode:
+  db:ready result:
+  db:smoke result:
+  target harness smoke result:
+
+KRN:
+  init dry-run result:
+  init connect result:
+  project id:
+  plan run id:
+  evidence captured:
+  observe/reflect used:
+
+review:
+  selected context used/helped/missing:
+  command proof strength:
+  review burden:
+  support used:
+  failure taxonomy:
+```
+
 ## Trial Verdict
 
 Choose one:
@@ -264,8 +405,11 @@ Choose one:
 completed unaided
 completed with documented support
 failed due to environment
+failed due to DB runtime
+failed due to target repo state
 failed due to KRN docs
 failed due to KRN behavior
+failed due to support boundary breach
 inconclusive
 ```
 
