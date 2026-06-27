@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V57 Post-Packet Internal Work Re-Gate
-current task: V57-00 Post-Packet Internal Work Re-Gate
+active stream: V58 Pattern Intake Runbook For Continuous Brain Growth
+current task: V58-00 Pattern Intake Runbook For Continuous Brain Growth
 ```
 
 Completed stream summary:
@@ -86,30 +86,31 @@ V53 brain-battle CI gate re-gate: complete
 V54 post-CI pattern gate re-gate: complete
 V55 product readiness re-gate after CI/eval gates: complete
 V56 operator/owner launch packet refresh: complete
+V57 post-packet internal work re-gate: complete
 ```
 
 ## Active Stream
 
-### V57-00 — Post-Packet Internal Work Re-Gate
+### V58-00 — Pattern Intake Runbook For Continuous Brain Growth
 
 Goal:
 
-Choose the next bounded internal KRN task after refreshing the external
-operator/owner packet, or record that no useful internal work exists before
-external input.
+Create a compact operator runbook for turning best-practice sources into KRN
+decisions without broad source hoarding.
 
 Current finding:
 
 ```txt
-V56 refreshed the external operator/owner packet with current CI/eval evidence,
-V02-01 inputs, WILQ owner inputs, and elektro patch lifecycle inputs.
+V57 selected pattern-intake operationalization as the only useful internal task
+before external operator/owner inputs arrive.
 ```
 
-Current V57 action:
+Current V58 action:
 
 ```txt
-Pick one bounded internal task with consumer/falsifier, or record an honest
-input blocker. No local substitute for V02-01 or target owner decisions.
+Add `docs/runbooks/pattern-intake.md` so official docs, papers, courses,
+practitioner writing, local evidence, and target evidence become decisions,
+rejections, consumers, and falsifiers instead of context sludge.
 ```
 
 ## V02-01 Boundary

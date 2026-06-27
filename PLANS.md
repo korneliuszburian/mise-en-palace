@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V57 Post-Packet Internal Work Re-Gate
-current task: V57-00 Post-Packet Internal Work Re-Gate
+active stream: V58 Pattern Intake Runbook For Continuous Brain Growth
+current task: V58-00 Pattern Intake Runbook For Continuous Brain Growth
 ```
 
 Evidence already recorded in repo:
@@ -5168,7 +5168,7 @@ Outcome:
 
 ### V57-00 — Post-Packet Internal Work Re-Gate
 
-Status: active
+Status: complete
 
 Goal: choose the next bounded internal KRN task after refreshing the external
 operator/owner packet, or record that no useful internal work exists before
@@ -5239,6 +5239,96 @@ Acceptance criteria:
 - no target writes;
 - no broad roadmap;
 - next active task or blocker is explicit.
+
+Outcome:
+
+- V57 selected Pattern Intake Runbook as the next bounded internal task.
+- V57 rejected another local V02-01 substitute, target repo writes, broad
+  research indexing, Research Foundry, activation scoring repair, and product
+  readiness overclaim.
+
+### V58-00 — Pattern Intake Runbook For Continuous Brain Growth
+
+Status: active
+
+Goal: create a compact runbook for turning high-quality sources into KRN
+decisions, rejections, candidates, standards, skills, ADRs, evals, CI/readback
+behavior, or bounded repairs without creating context sludge.
+
+Product rationale: the user wants best courses, papers, senior engineering
+patterns, TypeScript discipline, infra patterns, harness patterns, CI/eval
+patterns, and target evidence to improve KRN at every stage. V48 created the
+gate, but operators still need a compact repeatable intake workflow.
+
+Architectural rationale: research is useful only when it changes behavior
+through a consumer and a falsifier. A runbook is the smallest operator-facing
+surface that can make the source-to-decision lane executable without a new
+research subsystem.
+
+Evidence source: V57 report, V48 Continuous Pattern Gate, `docs/KRN_SOURCES.md`,
+`source-to-decision` skill, and user direction to continuously feed the brain
+with best patterns.
+
+Official/external sources: no fresh browsing needed unless the runbook cites a
+new source. Existing `docs/KRN_SOURCES.md` source decisions are enough for this
+task.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v57-post-packet-internal-work-regate/REPORT.md`;
+- `.agents/skills/source-to-decision/SKILL.md`;
+- `docs/KRN_SOURCES.md`;
+- current runbooks.
+
+Files likely touched:
+
+- `docs/runbooks/pattern-intake.md`;
+- V58 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN runbook/plans/report only.
+
+Forbidden writes:
+
+- target repo edits;
+- package source changes;
+- broad research archive;
+- source crawler;
+- copied paid/proprietary course content;
+- dashboard/API/MCP/worker expansion;
+- product-ready or widened-alpha claim.
+
+Output requirements:
+
+- source intake workflow;
+- legal/content boundary;
+- source trust tiers;
+- consumer routing;
+- falsifier requirement;
+- template for source decisions;
+- examples that do not copy paid/proprietary material;
+- explicit rejection/defer path.
+
+Definition of Done: V58 adds a compact pattern-intake runbook and keeps active
+plans current with the next bounded task or external blocker.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no broad research archive;
+- no new subsystem;
+- every retained source maps to consumer/falsifier;
+- runbook is compact enough for repeated operator use.
 
 ## 13. Generated Task Backlog
 
@@ -5566,7 +5656,9 @@ Initial entry:
   stronger, widened-alpha no, product-ready no, V02-01 blocked/deferred.
 - [x] V56-00 complete: refreshed operator/owner launch packet after CI/eval
   gates with current CI evidence and exact missing external inputs.
-- [ ] V57-00 active: Post-Packet Internal Work Re-Gate.
+- [x] V57-00 complete: selected Pattern Intake Runbook and rejected local
+  substitutes, broad research, target writes, and product overclaims.
+- [ ] V58-00 active: Pattern Intake Runbook For Continuous Brain Growth.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6330,6 +6422,20 @@ Initial decisions:
     acceptance.
   Falsifier: packet omits current CI/eval evidence or implies target write/V02-01
     permission not actually granted.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote Pattern Intake Runbook as V58.
+  Rationale: V57 found no honest local substitute for external product blockers,
+    but the user's current direction requires best-practice/course/paper/pattern
+    intake at every KRN stage. The existing Continuous Pattern Gate needs an
+    operator-facing runbook so sources become decisions, consumers, and
+    falsifiers instead of research sludge.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v57-post-packet-internal-work-regate/REPORT.md`;
+    `.agents/skills/source-to-decision/SKILL.md`; `docs/KRN_SOURCES.md`.
+  Does not prove: product readiness, V02-01, or that all best sources are
+    already known.
+  Falsifier: V58 cannot define a compact workflow without creating a broad
+    research archive or copied course content.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -7465,6 +7571,15 @@ Seed queue:
   Reason: after refreshing the packet, choose one bounded internal task or
     record an honest input blocker without local substitutes
   Task: V57-00
+
+- Candidate: pattern intake runbook for continuous brain growth
+  Source evidence: V57 report, V48 Continuous Pattern Gate, user direction that
+    best patterns/courses/papers should improve every KRN stage
+  Surface: `docs/runbooks/pattern-intake.md`
+  Status: accepted as V58-00
+  Reason: operators need a compact way to convert sources into decisions,
+    rejections, consumers, and falsifiers without broad source hoarding
+  Task: V58-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -9132,6 +9247,42 @@ Product readiness verdict:
 
 Next active stream:
 - V57 — Post-Packet Internal Work Re-Gate.
+
+## Outcome 2026-06-27 V57
+
+Completed:
+- V57 Post-Packet Internal Work Re-Gate.
+
+Evidence:
+- V56 packet.
+- V55 readiness report.
+- `source-to-decision` Continuous Pattern Gate.
+- `docs/KRN_SOURCES.md`.
+- GitHub Actions run `28292675341`.
+
+What improved:
+- The next internal task is selected from evidence instead of momentum.
+- Broad course/paper/source intake is rejected unless it maps to a consumer and
+  falsifier.
+- Pattern-intake operationalization is selected as the next bounded improvement.
+
+What did not improve:
+- V02-01.
+- Product readiness.
+- Target owner/stability inputs.
+- Any package source behavior.
+
+New task:
+- V58 Pattern Intake Runbook For Continuous Brain Growth.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V58 — Pattern Intake Runbook For Continuous Brain Growth.
 
 ## 21. Final Response Format For Codex Runs
 
