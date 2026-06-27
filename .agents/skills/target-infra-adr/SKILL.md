@@ -18,7 +18,7 @@ surface.
 ## Workflow
 
 1. State the architecture choice in one sentence.
-2. Map evidence as source -> mechanism -> KRN implication.
+2. Map evidence as source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier.
 3. Choose `adopt_now`, `defer`, `lab`, or `reject`.
 4. List rejected alternatives and why they fail the current kernel boundary.
 5. Name package/runtime boundaries and migration impact.
@@ -31,6 +31,7 @@ decision:
 status: adopt_now | defer | lab | reject
 source_mechanisms:
 krn_implication:
+consumer:
 accepted_boundary:
 rejected_alternatives:
 verification:

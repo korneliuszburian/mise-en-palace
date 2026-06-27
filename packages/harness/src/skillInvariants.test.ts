@@ -125,4 +125,17 @@ describe("KRN skill invariants", () => {
       "reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown"
     );
   });
+
+  it("keeps target infra ADR decisions tied to a consumer before falsifier", () => {
+    const targetInfraAdr = readFileSync(
+      new URL("target-infra-adr/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(targetInfraAdr).toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
+    );
+    expect(targetInfraAdr).toContain("consumer:");
+    expect(targetInfraAdr).toContain("falsifier:");
+  });
 });

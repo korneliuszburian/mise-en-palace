@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V163 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, and controlled-scenario pattern-gate chain guard slices: complete
-active stream: V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
-current task: V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate
+V48..V165 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, and target-infra-ADR chain guard slices: complete
+active stream: V166 Post Target Infra ADR Skill Chain Re-Gate
+current task: V166-00 Post Target Infra ADR Skill Chain Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
+V166-00 Post Target Infra ADR Skill Chain Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15438,6 +15438,72 @@ Next active stream:
 
 Next active task:
 - V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
+
+## Outcome 2026-06-27 V165 Target Infra ADR Skill Chain Guard
+
+Completed tasks:
+- V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate.
+- V165-00 Target Infra ADR Skill Chain Guard.
+
+V164 decision:
+- Do not broaden scenario-chain preservation into Research Foundry, source
+  crawler, dashboard, or product-readiness claims.
+- Select target infra ADR skill chain repair because infra, storage, runtime,
+  package-topology, MCP, hooks, worker, and subagent choices are high-risk
+  surfaces where course/paper/practitioner patterns can otherwise become
+  decorative architecture pressure.
+- The concrete failure mode is an infra ADR workflow retaining evidence as
+  `source -> mechanism -> KRN implication` without naming a consumer or
+  falsifier.
+
+What changed:
+- `.agents/skills/target-infra-adr/SKILL.md` now maps evidence through the full
+  `source -> mechanism -> KRN implication -> decision/rejection -> consumer ->
+  falsifier` chain.
+- The target infra ADR output template now includes `consumer`.
+- `packages/harness/src/skillInvariants.test.ts` now checks the target infra ADR
+  skill preserves the full chain and consumer/falsifier output fields.
+- `docs/architecture/brain-battle-eval-matrix.md` records the skill guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V166.
+
+Evidence:
+- `.agents/skills/target-infra-adr/SKILL.md` is a live repo-local skill for
+  architecture choices that could create runtime surface area.
+- Before this slice, it only required:
+  `source -> mechanism -> KRN implication`.
+
+Source-to-decision:
+- Source: `.agents/skills/target-infra-adr/SKILL.md`, active pattern-gate
+  surfaces, and the user requirement that best patterns apply at every stage.
+- Mechanism: infra/runtime decisions have long-lived blast radius; a skill that
+  stops before consumer/falsifier can turn external patterns into architecture
+  pressure without a concrete KRN surface or rollback boundary.
+- KRN implication: infra ADR workflows must require consumer before falsifier so
+  best-practice material becomes an auditable boundary decision or is
+  rejected/deferred.
+- Decision: update and guard the target infra ADR skill.
+- Does not prove: every future infra decision invokes the skill, any new runtime
+  surface should be adopted, product readiness, or research quality at scale.
+- Consumer: `.agents/skills/target-infra-adr/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the target infra ADR skill can drop the full chain or `consumer`
+  output field without focused tests failing.
+
+New task:
+- V166-00 Post Target Infra ADR Skill Chain Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V166 Post Target Infra ADR Skill Chain Re-Gate.
+
+Next active task:
+- V166-00 Post Target Infra ADR Skill Chain Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

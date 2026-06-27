@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
-current task: V164-00 Post Controlled Scenario Pattern Gate Chain Re-Gate
+active stream: V166 Post Target Infra ADR Skill Chain Re-Gate
+current task: V166-00 Post Target Infra ADR Skill Chain Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,35 +39,34 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V163: active-surface compactness, handoff, PLANS freshness,
+V100..V165: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
-           root/smoke/compact/continuation/kernel/controlled-scenario
+           root/smoke/compact/continuation/kernel/scenario/infra-skill
            pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V164 Post Controlled Scenario Pattern Gate Chain Re-Gate
+### V166 Post Target Infra ADR Skill Chain Re-Gate
 
 Goal:
 
 Decide the next bounded task after preserving the full pattern-gate chain in the
-controlled scenario research rule.
+target infra ADR skill.
 
 Current finding:
 
 ```txt
-V162 selected controlled scenario factory chain repair because active surfaces
-now require consumer before falsifier, but the scenario research rule still
-documented the older no-consumer decision rule.
+V164 selected target infra ADR skill repair because infra/runtime decisions must
+not retain best-practice evidence without a named consumer.
 ```
 
 Current action:
 
 ```txt
-Execute V164-00: select the next pattern surface from evidence. Do not broaden
-scenario-chain preservation into Research Foundry, source crawler, dashboard, or
+Execute V166-00: select the next pattern surface from evidence. Do not broaden
+infra-skill preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -80,7 +79,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused scenario-chain preservation into research hoarding
+The re-gate turns focused infra-skill preservation into research hoarding
 without a concrete consumer and falsifier.
 ```
 
