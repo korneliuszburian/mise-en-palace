@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V40 Target Selection Freshness Rule Condensation
-current task: V40-00 Target Selection Freshness Rule Condensation
+active stream: V41 Target Trial Availability Re-Gate
+current task: V41-00 Target Trial Availability Re-Gate
 ```
 
 Completed stream summary:
@@ -69,29 +69,30 @@ V36 Target Patch Handoff Re-Gate: complete
 V37 Target Patch Lifecycle Rule Condensation: complete
 V38 Clean Target Selection Gate: complete
 V39 WILQ Clean Target Observation-Only Baseline: complete
+V40 Target Selection Freshness Rule Condensation: complete
 ```
 
 ## Active Stream
 
-### V40-00 — Target Selection Freshness Rule Condensation
+### V41-00 — Target Trial Availability Re-Gate
 
 Goal:
 
-Condense V39 target volatility into the target-repo workflow: a clean target
-selection must be revalidated immediately before use.
+Decide whether target trials should continue immediately or pause until a clean
+or explicitly writable target state exists.
 
 Current finding:
 
 ```txt
-V39 found `wilq-seo` became dirty between V38 selection and V39 baseline. KRN
-must not treat target clean state as durable across tasks.
+V40 encoded target status freshness. `krn-elektroinstal-ogar` is blocked by an
+unresolved handed-off patch, and `wilq-seo` became dirty before baseline.
 ```
 
-Current V40 action:
+Current V41 action:
 
 ```txt
-Update the target-repo workflow surface with a freshness/revalidation rule for
-selected clean targets.
+Re-gate target trial availability and choose the next evidence-backed direction
+without target writes.
 ```
 
 ## V02-01 Boundary

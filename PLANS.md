@@ -65,12 +65,13 @@ V36 Target Patch Handoff Re-Gate: complete
 V37 Target Patch Lifecycle Rule Condensation: complete
 V38 Clean Target Selection Gate: complete
 V39 WILQ Clean Target Observation-Only Baseline: complete
+V40 Target Selection Freshness Rule Condensation: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V40 Target Selection Freshness Rule Condensation
-current task: V40-00 Target Selection Freshness Rule Condensation
+active stream: V41 Target Trial Availability Re-Gate
+current task: V41-00 Target Trial Availability Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -85,9 +86,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V39 found `wilq-seo` became dirty between target selection and observation
-baseline. The next task must condense target selection freshness/revalidation
-into the target-repo workflow.
+V40 encoded target status freshness into the target workflow. The next task must
+re-gate whether target trials should continue immediately or pause until a clean
+or explicitly writable target state exists.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3737,7 +3738,7 @@ Outcome:
 
 ### V40-00 — Target Selection Freshness Rule Condensation
 
-Status: active
+Status: complete
 
 Goal: condense V39 target volatility into the target-repo workflow: clean target
 selection must be revalidated immediately before use.
@@ -3798,6 +3799,86 @@ Acceptance criteria:
 
 - no target writes;
 - stale clean-state assumption is forbidden;
+- next active task is explicit.
+
+Evidence:
+
+- `.agents/skills/target-repo-testing/SKILL.md`.
+- `docs/runbooks/target-repo-testing.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v40-target-selection-freshness-rule/REPORT.md`.
+
+Outcome:
+
+- V40 added `target_status_freshness` states to target-repo workflow guidance.
+- V40 made stale clean-state assumptions invalid for target repair/readiness
+  proof.
+- V40 promoted target trial availability re-gate.
+
+### V41-00 — Target Trial Availability Re-Gate
+
+Status: active
+
+Goal: decide whether target trials should continue immediately or pause until a
+clean or explicitly writable target state exists.
+
+Product rationale: The current target loop found two separate target-state
+boundaries: unresolved target patch ownership and selected-clean target
+volatility. Continuing target work without re-gating would create false product
+confidence.
+
+Architectural rationale: target trial availability is a product gate. It should
+choose one evidence-backed next direction, not grow into target crawling or
+substitute V02-01.
+
+Evidence source: V36-V40 target patch lifecycle, clean target selection, WILQ
+volatility, and target workflow rule updates.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- V36-V40 reports;
+- current KRN status and latest CI;
+- current status of `krn-elektroinstal-ogar`;
+- current status of `wilq-seo`;
+- V02-01 input availability check.
+
+Files likely touched:
+
+- V41 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- target repair;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim.
+
+Output requirements:
+
+- next product direction;
+- target availability status;
+- proof/non-proof boundaries;
+- active plan update.
+
+Definition of Done: V41 either selects a safe next target/KRN path or records
+target-owner/clean-target availability as the honest blocker.
+
+Verification commands: `git diff --check`; read-only target status.
+
+Acceptance criteria:
+
+- no target writes;
+- no fake V02-01;
+- no product-ready overclaim;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -4090,7 +4171,9 @@ Initial entry:
   promoted observation-only baseline before any repair.
 - [x] V39-00 complete: WILQ baseline found target became dirty before use,
   rejected immediate repair, and promoted target selection freshness rule.
-- [ ] V40-00 active: Target Selection Freshness Rule Condensation.
+- [x] V40-00 complete: target status freshness states added to target workflow
+  guidance and stale clean-state assumptions forbidden.
+- [ ] V41-00 active: Target Trial Availability Re-Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4674,6 +4757,18 @@ Initial decisions:
   Falsifier: V40 finds the existing skill/runbook already states clean target
     selection expires and must be revalidated before use.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target trial availability re-gate as V41.
+  Rationale: V40 completed the freshness rule, but the current target evidence
+    now says `krn-elektroinstal-ogar` is blocked by unresolved patch ownership
+    and `wilq-seo` became dirty before baseline. KRN needs a product direction
+    gate before more target work.
+  Evidence: V36-V40 reports and target workflow rule updates.
+  Does not prove: no target can ever be used, product readiness is blocked
+    permanently, or V02-01 is complete.
+  Falsifier: V41 finds a clean/explicitly writable target state or real
+    second-operator input that safely unlocks target work.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5108,6 +5203,17 @@ Seed evidence:
   Does not prove: WILQ repair is unsafe forever, target owner intent, V02-01, or
     product readiness.
   Follow-up task: V40-00.
+
+- Evidence ID: E-V40-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v40-target-selection-freshness-rule/REPORT.md`
+  Command/report/file: target-repo testing skill and runbook edits.
+  Result: target status freshness states are part of the reusable target
+    workflow.
+  Proves: stale clean-state evidence cannot authorize future target repair or
+    readiness proof.
+  Does not prove: a clean target exists, V02-01, product readiness, or target
+    repair safety.
+  Follow-up task: V41-00.
 ```
 
 ## 19. Condensation Queue
@@ -5487,6 +5593,14 @@ Seed queue:
   Reason: prevent stale clean-state assumptions from authorizing target repair
     or product proof
   Task: V40-00
+
+- Candidate: target trial availability re-gate
+  Source evidence: V36-V40 target ownership and freshness gates
+  Surface: readiness/next-direction report
+  Status: accepted as V41-00
+  Reason: after target workflow rule condensation, decide whether target trials
+    can continue or should pause until a clean/explicitly writable target exists
+  Task: V41-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6552,6 +6666,44 @@ Product readiness verdict:
 Next active stream:
 - V40 — Target Selection Freshness Rule Condensation.
 
+## Outcome 2026-06-27 V40
+
+Completed:
+- V40-00 added target status freshness guidance to
+  `.agents/skills/target-repo-testing/SKILL.md`.
+- Updated `docs/runbooks/target-repo-testing.md` with freshness states:
+  `fresh_current_task`, `stale_prior_selection`, and
+  `changed_since_selection`.
+- Required downgrade to observation-only when selected clean target becomes
+  dirty at task start.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v40-target-selection-freshness-rule/REPORT.md`.
+- `.agents/skills/target-repo-testing/SKILL.md`.
+- `docs/runbooks/target-repo-testing.md`.
+
+What improved:
+- Target selection freshness is durable workflow guidance.
+- Stale clean-state evidence cannot justify target repair.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Availability of a clean target.
+- WILQ repair safety.
+
+New task:
+- Re-gate target trial availability and pick the next product direction.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V41 — Target Trial Availability Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -6600,7 +6752,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V40 Target Selection Freshness Rule Condensation.
+Active stream: V41 Target Trial Availability Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

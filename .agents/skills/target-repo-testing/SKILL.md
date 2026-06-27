@@ -38,10 +38,18 @@ If the user did not explicitly authorize target writes, default to
 Run target `git status --short --branch` before any target command when the
 target is a Git repo.
 
+A previous clean target selection expires at the next target task. Revalidate
+status immediately before using the target for observation, planning, evidence,
+or repair. Do not rely on a clean status from an earlier slice or report.
+
 Classify:
 
 ```txt
 target_dirty_before: yes/no
+target_status_freshness:
+  fresh_current_task
+  stale_prior_selection
+  changed_since_selection
 owned_by_current_krn_run: no / partial / yes
 target_patch_lifecycle:
   none
@@ -55,6 +63,11 @@ forbidden_writes:
 
 If the target is dirty and the mode is observation-only, treat the dirty state
 as external operator context.
+
+If a target was selected as clean but is dirty at task start, classify
+`target_status_freshness: changed_since_selection`, downgrade to
+observation-only, and do not run a repair until a new clean state or explicit
+write scope is established.
 
 If a previous headless repair left a KRN-made target patch dirty and that patch
 has only been handed off, classify it as `handed_off_unresolved`. Do not start
@@ -150,6 +163,7 @@ Every target trial report must include:
 ```txt
 mode:
 target_dirty_before:
+target_status_freshness:
 target_patch_lifecycle:
 handoff_artifact:
 allowed_writes:

@@ -99,8 +99,31 @@ If target repo is dirty before the trial:
 
 ```txt
 target_dirty_before: yes
+target_status_freshness: fresh_current_task / stale_prior_selection / changed_since_selection
 owned_by_current_krn_run: no / partial / yes
 ```
+
+Clean target selection is not durable. A target that was clean in one slice can
+become dirty before the next slice starts.
+
+Before using a selected target, rerun target `git status --short --branch` and
+record:
+
+```txt
+target_status_freshness:
+  fresh_current_task:
+    status was checked immediately before this task's target commands.
+
+  stale_prior_selection:
+    only an older report/selection says the target was clean.
+
+  changed_since_selection:
+    target status differs from the previous selection assumption.
+```
+
+If status is `changed_since_selection`, downgrade to observation-only and do not
+start target repair unless the new task explicitly authorizes writes against
+the current dirty state.
 
 If files change during the trial and the mode is observation-only:
 
