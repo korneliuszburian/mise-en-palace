@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V39 WILQ Clean Target Observation-Only Baseline
-current task: V39-00 WILQ Clean Target Observation-Only Baseline
+active stream: V40 Target Selection Freshness Rule Condensation
+current task: V40-00 Target Selection Freshness Rule Condensation
 ```
 
 Completed stream summary:
@@ -68,31 +68,30 @@ V35 Target Patch Handoff Packet: complete
 V36 Target Patch Handoff Re-Gate: complete
 V37 Target Patch Lifecycle Rule Condensation: complete
 V38 Clean Target Selection Gate: complete
+V39 WILQ Clean Target Observation-Only Baseline: complete
 ```
 
 ## Active Stream
 
-### V39-00 — WILQ Clean Target Observation-Only Baseline
+### V40-00 — Target Selection Freshness Rule Condensation
 
 Goal:
 
-Run an observation-only baseline on the clean `wilq-seo` target before any
-bounded repair.
+Condense V39 target volatility into the target-repo workflow: a clean target
+selection must be revalidated immediately before use.
 
 Current finding:
 
 ```txt
-V38 selected `wilq-seo` as the next clean/safe target path. It is clean and
-synced with origin. This is not V02-01 and must remain observation-only unless a
-later task explicitly authorizes writes.
+V39 found `wilq-seo` became dirty between V38 selection and V39 baseline. KRN
+must not treat target clean state as durable across tasks.
 ```
 
-Current V39 action:
+Current V40 action:
 
 ```txt
-Inspect WILQ target instructions, scripts, active plans, and candidate owner
-files. Record target dirty state before/after and decide whether a bounded
-repair trial is safe later.
+Update the target-repo workflow surface with a freshness/revalidation rule for
+selected clean targets.
 ```
 
 ## V02-01 Boundary

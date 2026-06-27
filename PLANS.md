@@ -64,12 +64,13 @@ V35 Target Patch Handoff Packet: complete
 V36 Target Patch Handoff Re-Gate: complete
 V37 Target Patch Lifecycle Rule Condensation: complete
 V38 Clean Target Selection Gate: complete
+V39 WILQ Clean Target Observation-Only Baseline: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V39 WILQ Clean Target Observation-Only Baseline
-current task: V39-00 WILQ Clean Target Observation-Only Baseline
+active stream: V40 Target Selection Freshness Rule Condensation
+current task: V40-00 Target Selection Freshness Rule Condensation
 ```
 
 Evidence already recorded in repo:
@@ -84,8 +85,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V38 selected `wilq-seo` as the next clean/safe target path. The next task must
-run an observation-only baseline before any bounded target repair.
+V39 found `wilq-seo` became dirty between target selection and observation
+baseline. The next task must condense target selection freshness/revalidation
+into the target-repo workflow.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3653,7 +3655,7 @@ Outcome:
 
 ### V39-00 — WILQ Clean Target Observation-Only Baseline
 
-Status: active
+Status: complete
 
 Goal: run an observation-only baseline on the clean `wilq-seo` target before
 any bounded repair.
@@ -3718,6 +3720,84 @@ Acceptance criteria:
 - no target writes;
 - no fake V02-01;
 - no product-ready overclaim;
+- next active task is explicit.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v39-wilq-observation-baseline/REPORT.md`.
+- `wilq-seo` target status before baseline.
+- `wilq-seo` AGENTS, README, context/progress/goal/plan files, package and
+  Python config.
+
+Outcome:
+
+- V39 found `wilq-seo` became dirty between V38 selection and V39 baseline.
+- V39 kept the work observation-only and rejected immediate WILQ repair.
+- V39 promoted target selection freshness rule condensation.
+
+### V40-00 — Target Selection Freshness Rule Condensation
+
+Status: active
+
+Goal: condense V39 target volatility into the target-repo workflow: clean target
+selection must be revalidated immediately before use.
+
+Product rationale: Active target repos can change between selection and
+execution. KRN must not use stale clean-state assumptions to justify target
+repair or readiness proof.
+
+Architectural rationale: target clean/dirty state is runtime evidence, not a
+durable property. The workflow surface should require fresh status before
+target commands and before promotion from selection to repair.
+
+Evidence source: V38 selected `wilq-seo` as clean; V39 found it dirty before
+baseline.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- V38 selection report;
+- V39 WILQ observation baseline report;
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/runbooks/target-repo-testing.md`.
+
+Files likely touched:
+
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/runbooks/target-repo-testing.md`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN workflow docs/skills/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- target repair;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim;
+- broad target crawler/benchmark lane.
+
+Output requirements:
+
+- target clean-state freshness rule;
+- explicit downgrade behavior when selected target becomes dirty;
+- active plan update.
+
+Definition of Done: V40 makes target selection freshness durable so a clean
+selection cannot be reused after target state changes.
+
+Verification commands: `git diff --check`.
+
+Acceptance criteria:
+
+- no target writes;
+- stale clean-state assumption is forbidden;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -4008,7 +4088,9 @@ Initial entry:
   skill/runbook.
 - [x] V38-00 complete: selected clean `wilq-seo` as next target path and
   promoted observation-only baseline before any repair.
-- [ ] V39-00 active: WILQ Clean Target Observation-Only Baseline.
+- [x] V39-00 complete: WILQ baseline found target became dirty before use,
+  rejected immediate repair, and promoted target selection freshness rule.
+- [ ] V40-00 active: Target Selection Freshness Rule Condensation.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4579,6 +4661,19 @@ Initial decisions:
   Falsifier: V39 finds WILQ target context is unsafe for further KRN work or
     becomes dirty/active before the baseline completes.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target selection freshness rule condensation as V40.
+  Rationale: V39 found `wilq-seo` changed from clean at selection time to dirty
+    at baseline time. Clean target selection is not durable evidence and must be
+    revalidated immediately before use.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v38-clean-target-selection-gate/REPORT.md`;
+    `docs/reviews/controlled-dogfood/2026-06-27-v39-wilq-observation-baseline/REPORT.md`;
+    `wilq-seo` `git status --short --branch`.
+  Does not prove: WILQ is unsafe as a product, target owner caused the changes,
+    product readiness is achieved, or V02-01 is complete.
+  Falsifier: V40 finds the existing skill/runbook already states clean target
+    selection expires and must be revalidated before use.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5003,6 +5098,16 @@ Seed evidence:
   Does not prove: WILQ repair scope, target verification, V02-01, widened alpha,
     or product readiness.
   Follow-up task: V39-00.
+
+- Evidence ID: E-V39-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v39-wilq-observation-baseline/REPORT.md`
+  Command/report/file: WILQ target status and read-only baseline inspection.
+  Result: `wilq-seo` became dirty between V38 selection and V39 baseline.
+  Proves: clean target selection must be revalidated immediately before target
+    use.
+  Does not prove: WILQ repair is unsafe forever, target owner intent, V02-01, or
+    product readiness.
+  Follow-up task: V40-00.
 ```
 
 ## 19. Condensation Queue
@@ -5374,6 +5479,14 @@ Seed queue:
   Reason: inspect clean target context before any repair and preserve target
     dirty-state discipline
   Task: V39-00
+
+- Candidate: target selection freshness rule
+  Source evidence: V39 WILQ baseline found target changed after clean selection
+  Surface: target-repo skill/runbook
+  Status: accepted as V40-00
+  Reason: prevent stale clean-state assumptions from authorizing target repair
+    or product proof
+  Task: V40-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6401,6 +6514,44 @@ Product readiness verdict:
 Next active stream:
 - V39 — WILQ Clean Target Observation-Only Baseline.
 
+## Outcome 2026-06-27 V39
+
+Completed:
+- V39-00 started WILQ observation-only baseline.
+- Found `wilq-seo` dirty before any V39 target write.
+- Inspected WILQ recovery docs, active goal/plan, package scripts and Python
+  config read-only.
+- Rejected immediate WILQ repair because the clean target premise expired.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v39-wilq-observation-baseline/REPORT.md`.
+- `wilq-seo` `git status --short --branch`.
+- WILQ AGENTS, README, CONTEXT, PROGRESS, goal/plan, package and pyproject
+  reads.
+
+What improved:
+- KRN caught target volatility before editing.
+- The plan now distinguishes clean target selection from fresh target state at
+  execution time.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- WILQ target repair safety.
+- Target command verification.
+
+New task:
+- Condense target selection freshness into the target-repo workflow.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V40 — Target Selection Freshness Rule Condensation.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -6449,7 +6600,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V39 WILQ Clean Target Observation-Only Baseline.
+Active stream: V40 Target Selection Freshness Rule Condensation.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
