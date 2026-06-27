@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V67 Harness Activation Pattern Application
+V68 Post Harness Activation Pattern Re-Gate
 ```
 
 Current product loop:
@@ -112,7 +112,8 @@ V64-03 Post Surface-Matrix Application Re-Gate: complete.
 V65-00 TypeScript Source Packet Application: complete.
 V65-01 Post TypeScript Pattern Application Re-Gate: complete.
 V66-00 External Boundary Drift Spot-Check: complete.
-current task: V67-00 Harness Activation Source Packet Application.
+V67-00 Harness Activation Source Packet Application: complete.
+current task: V68-00 Post Harness Activation Pattern Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V67 Harness Activation Pattern Application
-current task: V67-00 Harness Activation Source Packet Application
+active stream: V68 Post Harness Activation Pattern Re-Gate
+current task: V68-00 Post Harness Activation Pattern Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -6330,7 +6330,7 @@ Acceptance criteria:
 
 ### V67-00 — Harness Activation Source Packet Application
 
-Status: active
+Status: complete
 
 Goal: Apply the surface consumer matrix to existing harness/activation evidence
 and route one repeated activation pattern to exactly one consumer.
@@ -6420,6 +6420,88 @@ Acceptance criteria:
 
 - Future activation work knows whether the next step is skill guidance,
   eval/golden proof, bounded read-model repair, or defer.
+
+### V68-00 — Post Harness Activation Pattern Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after routing owner-file/read-model activation
+evidence into the activation-engine skill.
+
+Pattern surface: harness / activation / memory / review gates.
+
+Product rationale: Skill guidance is useful only if it changes future execution
+or points to a falsifiable behavior proof.
+
+Architectural rationale: The re-gate should choose between a golden/eval proof,
+another pattern surface, or an honest blocker. It must not turn the skill update
+into an activation scoring rewrite by momentum.
+
+Evidence source:
+
+- `.agents/skills/activation-engine/SKILL.md` Owner-File Recall Gate.
+- V67-00 activation source packet application.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Official/external sources:
+
+- none required.
+
+Inputs required:
+
+- Current skill update and existing eval matrix.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- activation scoring quality;
+- target owner-file recall completeness;
+- product readiness.
+
+Falsifier:
+
+- The re-gate selects more activation work without a named proof, consumer, and
+  rollback/defer path.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+- optional eval matrix if a proof candidate is selected.
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- activation scoring rewrite;
+- package source;
+- broad retrieval rebuild.
+
+Output requirements:
+
+- One next bounded task or blocker.
+
+Definition of Done:
+
+- Next active task is explicit.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- The next task is not selected by activation momentum alone.
 
 ### External Input Blocker
 
@@ -6797,7 +6879,9 @@ Initial entry:
   spot-check instead of more source intake.
 - [x] V66-00 complete: inspected current package source for external boundary
   drift and deferred repair.
-- [ ] V67-00 active: apply harness/activation evidence to one consumer.
+- [x] V67-00 complete: routed owner-file/read-model activation evidence into
+  the activation-engine skill.
+- [ ] V68-00 active: re-gate after the activation skill update.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7747,6 +7831,21 @@ Initial decisions:
     needed.
   Falsifier: V67-00 cannot identify a repeated activation evidence pattern with
     one consumer and a narrow falsifier.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Route owner-file/read-model activation evidence to the
+  activation-engine skill.
+  Rationale: Existing target runbooks, eval matrix rows, and dogfood reports
+    already encode the repeated pattern: activation should prefer explicit
+    owner-file/read-model signals, abstain or report missing read-model evidence
+    when absent, and avoid broad scoring rewrites without repeated misses.
+  Surface: harness / activation / memory / review gates.
+  Consumer: `.agents/skills/activation-engine/SKILL.md`.
+  Does not prove: activation scoring is wrong, filesystem crawling is needed, or
+    owner-file recall is complete.
+  Falsifier: a future activation task changes scoring before checking task
+    contract, target init/connect data, run readback, source seeds, and
+    owner-file/read-model availability.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10859,6 +10958,7 @@ Completed:
 - V65-00 TypeScript Source Packet Application.
 - V65-01 Post TypeScript Pattern Application Re-Gate.
 - V66-00 External Boundary Drift Spot-Check.
+- V67-00 Harness Activation Source Packet Application.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10884,6 +10984,8 @@ What improved:
   boundary falsifier, not another research intake.
 - V66 found no immediate TypeScript boundary repair candidate and recorded an
   explicit defer decision.
+- Activation owner-file/read-model evidence now has a compact execution gate in
+  `.agents/skills/activation-engine/SKILL.md`.
 
 What did not improve:
 - Product readiness.
@@ -10892,10 +10994,10 @@ What did not improve:
   task-contract source packet.
 - Current TypeScript source drift.
 - Package source behavior.
-- Activation/harness behavior.
+- Activation scoring or runtime behavior.
 
 New task:
-- V67-00 Harness Activation Source Packet Application.
+- V68-00 Post Harness Activation Pattern Re-Gate.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10904,10 +11006,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V67 Harness Activation Pattern Application.
+- V68 Post Harness Activation Pattern Re-Gate.
 
 Next active task:
-- V67-00 Harness Activation Source Packet Application.
+- V68-00 Post Harness Activation Pattern Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -10957,7 +11059,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V67 Harness Activation Pattern Application.
+Active stream: V68 Post Harness Activation Pattern Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

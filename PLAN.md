@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V67 Harness Activation Pattern Application
-current task: V67-00 Harness Activation Source Packet Application
+active stream: V68 Post Harness Activation Pattern Re-Gate
+current task: V68-00 Post Harness Activation Pattern Re-Gate
 ```
 
 Completed stream summary:
@@ -100,44 +100,44 @@ V64-03 post surface-matrix application re-gate: complete
 V65-00 TypeScript source packet application: complete
 V65-01 post TypeScript pattern application re-gate: complete
 V66-00 TypeScript boundary falsifier spot-check: complete
-V67 harness activation pattern application: active
+V67-00 harness activation pattern application: complete
+V68 post harness activation pattern re-gate: active
 ```
 
 ## Active Stream
 
-### V67 Harness Activation Pattern Application
+### V68 Post Harness Activation Pattern Re-Gate
 
 Goal:
 
-Apply the surface matrix to harness/activation evidence and route one repeated
-pattern into a skill, eval/golden candidate, bounded repair, or defer decision.
+Decide the next bounded task after applying harness/activation owner-file recall
+guidance to the activation skill.
 
 Current finding:
 
 ```txt
-V66 found no immediate TypeScript boundary repair. The next highest-ROI surface
-is harness/activation because prior dogfoods showed useful guardrail selection
-but weaker owner-file/source recall.
+V67 routed repeated owner-file/read-model activation evidence into the
+activation-engine skill without changing scoring.
 ```
 
 Current action:
 
 ```txt
-Execute V67-00: apply the pattern matrix to existing activation/harness evidence
-and select exactly one consumer.
+Execute V68-00: decide whether the next task is a golden/eval proof, another
+pattern surface, or an honest blocker.
 ```
 
 Primary consumer:
 
 ```txt
-One skill, eval/golden candidate, bounded repair, or defer decision.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The task turns prior activation findings into broad scoring work without a
-specific consumer/falsifier.
+The re-gate selects more activation work without evidence that the skill update
+needs proof or repair.
 ```
 
 ### External Input Blocker

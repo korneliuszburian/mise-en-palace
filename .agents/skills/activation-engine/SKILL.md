@@ -25,6 +25,29 @@ Use this skill to keep active context small, justified, and reviewable.
 5. Abstain when context is weak instead of padding the packet.
 6. Emit inclusions and exclusions with expected use and evidence requirement.
 
+## Owner-File Recall Gate
+
+Use this gate when a task targets a repo, package, source root, CLI command,
+test, or behavior with likely owner files.
+
+Before changing scoring or widening recall:
+
+1. Check whether the task contract, target init/connect data, run readback, or
+   source seeds provide exact owner-file signals.
+2. Prefer explicit owner-file/read-model evidence over broad lexical proximity.
+3. If exact owner-file data is missing, emit a missing-read-model or abstention
+   reason instead of inventing files.
+4. Use manual source inspection only as execution evidence, not as proof that
+   activation selected the owner file.
+5. Turn repeated owner-file misses into a bounded read-model/eval/skill repair,
+   not a broad activation scoring rewrite.
+
+Does not prove:
+
+- activation scoring is wrong;
+- filesystem crawling is needed;
+- broad target repo inference is safe.
+
 ## Output
 
 - Query terms and filters.
@@ -32,6 +55,7 @@ Use this skill to keep active context small, justified, and reviewable.
 - Context inclusions.
 - Context exclusions.
 - Abstention reason if applicable.
+- Owner-file/read-model source or missing-read-model reason when relevant.
 - Test or proof command.
 
 ## Forbidden
