@@ -810,7 +810,7 @@ Completion evidence:
 
 ### V07-00 — Target Memory/Source Usefulness Loop
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: prove a bounded memory/source usefulness loop after target evidence and
 owner-file recall state are explicit enough to evaluate.
@@ -857,6 +857,67 @@ Condensation expectation: promote only evidence-backed memory/source rules.
 
 Next-task synthesis rule: if useful, append skill/research condensation task; if
 not, append bounded memory/source readback repair.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-usefulness/REPORT.md`;
+- current-shell `pnpm db:smoke:target-repo-harness` passed with memory included,
+  `MemoryApplication outcome=helped`, positive feedback readback, no automatic
+  MemoryRecord mutation, and cleanup count zero.
+
+### V07-01 — Source Usefulness Application / Readback Path
+
+Status: active
+
+Goal: inspect and add or re-gate the smallest first-class source usefulness
+application/readback path.
+
+Product rationale: source grounding is useful as lineage today, but operators
+need selected/used/helped/stale source usefulness evidence, not just existence
+of SourceClaims.
+
+Architectural rationale: source usefulness should map through existing
+SourceDecisionEdge or feedback metadata before adding a new source subsystem.
+
+Evidence source: V07-00 current-shell smoke proved memory usefulness and named
+source usefulness as lineage-only.
+
+Official/external sources: KRN source-to-decision rule; Codex Goals
+evidence-based completion.
+
+Inputs required: source claim/decision models, feedback delta model, run
+readback, target harness smoke.
+
+Files likely touched: source/review/readback code, tests, report; no schema
+unless source inspection proves existing metadata cannot represent the loop.
+
+Allowed writes: KRN source/tests/reports only.
+
+Forbidden writes: new source crawler, automatic source promotion, broad scoring
+rewrite, dashboard, MCP server, target repo writes.
+
+Output requirements: selected/used/helped/stale source usefulness evidence or
+typed reason why existing model cannot represent it.
+
+Definition of Done: controlled scenario proves source usefulness readback or
+records exact missing model boundary.
+
+Verification commands: `pnpm typecheck`, `pnpm test`, relevant source/readback
+tests, `pnpm db:smoke:target-repo-harness` if touched, `git diff --check`.
+
+Acceptance criteria: no source truth mutation as a side effect of usefulness
+feedback.
+
+Risk: inventing source subsystem before inspecting existing decision/readback
+models.
+
+Rollback: focused revert.
+
+Condensation expectation: if source usefulness path is added, guard it and
+append research/skill condensation task.
+
+Next-task synthesis rule: if complete, decide whether V08 skill-first workflow
+expansion is now justified.
 
 ## 13. Generated Task Backlog
 
@@ -1073,7 +1134,9 @@ Initial entry:
 - [x] V06-00 complete: target owner-file recall now reports typed
   `owner_files_available` or `missing_owner_file_read_model` assessment in plan
   output and metadata.
-- [ ] V07-00 active: target memory/source usefulness loop.
+- [x] V07-00 complete: current-shell target harness smoke proved memory
+  usefulness readback and identified source usefulness as lineage-only.
+- [ ] V07-01 active: source usefulness application/readback path.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1104,6 +1167,15 @@ Record every unexpected fact in this format:
   Evidence: `packages/harness/src/activation/ownerFileRecall.ts`;
   `packages/cli/src/runPlanCommand.ts`; V06 report.
   Impact: V06-00 should add typed assessment/readback before any scoring rewrite.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Current target harness smoke proves memory usefulness but source
+  usefulness remains source-lineage support, not first-class selected/used/helped
+  feedback.
+  Evidence: `pnpm db:smoke:target-repo-harness`;
+  `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-usefulness/REPORT.md`.
+  Impact: V07 should continue with source usefulness application/readback before
+  moving to skill/research expansion.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1166,6 +1238,18 @@ Initial decisions:
   or product readiness.
   Falsifier: future DB-backed target run has owner files available but activation
   repeatedly fails to surface them.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Continue V07 with source usefulness readback instead of moving
+  directly to skill/research expansion.
+  Rationale: current-shell DB smoke already proves memory helped feedback, while
+  SourceClaim remains lineage/support rather than its own usefulness feedback
+  path.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-usefulness/REPORT.md`;
+  `packages/cli/src/targetRepoHarnessSmoke.ts`.
+  Does not prove: source usefulness requires a new DB table or subsystem.
+  Falsifier: source inspection shows an existing first-class source usefulness
+  path already covers selected/used/helped/stale readback.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1245,6 +1329,18 @@ Seed evidence:
   Does not prove: owner-file discovery completeness, product readiness, V02-01,
     live DB readback, or activation scoring quality.
   Follow-up task: V07-00.
+
+- Evidence ID: E-V07-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-usefulness/REPORT.md`
+  Command/report/file: current-shell `pnpm db:smoke:target-repo-harness`.
+  Result: memory included, `MemoryApplication outcome=helped`, usefulness
+    readback matched, positive feedback count 1, automatic MemoryRecord mutation
+    none, cleanup remaining marker count 0.
+  Proves: controlled target-like memory usefulness loop remains working after
+    V05/V06.
+  Does not prove: product-wide memory usefulness, external target readiness, or
+    first-class source usefulness feedback.
+  Follow-up task: V07-01.
 ```
 
 ## 19. Condensation Queue
@@ -1315,10 +1411,18 @@ Seed queue:
 - Candidate: memory/source usefulness loop
   Source evidence: V06 owner-file recall assessment and prior controlled runs
   Surface: controlled scenario + possible readback/rendering repair
-  Status: accepted as V07
+  Status: partially complete as V07-00; source usefulness follow-up active
   Reason: after target evidence and owner-file recall are explicit, next product
     question is whether memory/source signals are later selected and useful
-  Task: V07-00
+  Task: V07-00..V07-01
+
+- Candidate: source usefulness application/readback path
+  Source evidence: V07-00 current-shell smoke and report
+  Surface: source/readback repair or re-gate
+  Status: accepted as V07-01
+  Reason: source usefulness is currently lineage-only; selected/used/helped
+    source feedback is not first-class
+  Task: V07-01
   Task: V06-00
 ```
 

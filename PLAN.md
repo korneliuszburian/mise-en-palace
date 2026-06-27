@@ -144,10 +144,24 @@ controlled runs are selected, used, and marked helped/stale with evidence.
 
 ### V07-00 — Target Memory/Source Usefulness Loop
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: prove a bounded memory/source usefulness loop after V05/V06 made target
 evidence and owner-file recall state replayable.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-usefulness/REPORT.md`;
+- current-shell `pnpm db:smoke:target-repo-harness` proved memory usefulness
+  readback and exposed first-class source usefulness as the next gap.
+
+### V07-01 — Source Usefulness Application / Readback Path
+
+Status: active.
+
+Goal: inspect and add or re-gate the smallest first-class source usefulness
+application/readback path, without creating a new source subsystem if existing
+SourceDecisionEdge or feedback metadata is enough.
 
 ## Hard Non-Goals
 
