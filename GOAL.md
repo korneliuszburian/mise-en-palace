@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V223 Post Security Boundary Alignment Re-Gate
+V224 Root Plan Compactness Headroom Repair
 ```
 
 Current product loop:
@@ -37,11 +37,11 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V222: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
+V110..V223: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
 target, evidence, compactness, smoke, onboarding current-state, and related
-regression guards plus security permission-boundary alignment complete; details
-stay in PLANS.md.
-current task: V223-00 Post Security Boundary Alignment Re-Gate.
+regression guards plus security permission-boundary alignment and re-gate
+complete; details stay in PLANS.md.
+current task: V224-00 Root Plan Compactness Headroom Repair.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

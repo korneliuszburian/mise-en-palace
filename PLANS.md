@@ -77,9 +77,11 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V222 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, post-observational-memory source re-gate, infra pattern intake, worker-boundary ADR alignment, post-worker-boundary alignment re-gate, and security permission-boundary alignment slices: complete
-active stream: V223 Post Security Boundary Alignment Re-Gate
-current task: V223-00 Post Security Boundary Alignment Re-Gate
+V48..V223 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+skills, context hygiene, onboarding, infra, worker, security permission-boundary,
+and related re-gate slices: complete
+active stream: V224 Root Plan Compactness Headroom Repair
+current task: V224-00 Root Plan Compactness Headroom Repair
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +97,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V223-00 Post Security Boundary Alignment Re-Gate.
+V224-00 Root Plan Compactness Headroom Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17888,6 +17890,56 @@ Next active stream:
 
 Next active task:
 - V223-00 Post Security Boundary Alignment Re-Gate.
+
+## Outcome 2026-06-28 V223 Post Security Boundary Alignment Re-Gate
+
+Completed task:
+- V223-00 Post Security Boundary Alignment Re-Gate.
+
+Decision:
+- Do not treat security permission-boundary alignment as product/security
+  readiness or permission to build MCP, hooks, workers, connectors, or target
+  writes.
+- Select root plan compactness headroom repair as the next bounded slice because
+  `PLAN.md` was still under the context-hygiene limit but close enough to make
+  the next normal update fragile.
+
+Evidence:
+- Commit `f918ca4` pushed security permission-boundary alignment.
+- GitHub Actions run `28305054689` passed for commit
+  `f918ca4632932d596fac0a578b2090f5cc6b0a98`.
+- `PLAN.md` measured 168 lines after V222, below but close to the 170-line
+  context-hygiene guard.
+
+Source-to-decision:
+- Source: V222 outcome, CI run `28305054689`, root context-hygiene invariant,
+  and active root plan line-count evidence.
+- Mechanism: compact active-state surfaces are part of the working brain; when
+  the root SSOT has no headroom, future slices either fail invariants or add
+  context weight instead of product value.
+- KRN implication: before the next pattern/source/security/product slice, reduce
+  root `PLAN.md` weight while keeping active truth intact.
+- Decision: open V224 Root Plan Compactness Headroom Repair.
+- Does not prove: product readiness, second-operator proof, or need for a new
+  context subsystem.
+- Consumer: root `PLAN.md` and context-hygiene invariants.
+- Falsifier: V224 deletes active-state truth, weakens hard non-goals, or opens a
+  new product surface instead of reducing root-plan context weight.
+
+New task:
+- V224-00 Root Plan Compactness Headroom Repair.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V224 Root Plan Compactness Headroom Repair.
+
+Next active task:
+- V224-00 Root Plan Compactness Headroom Repair.
 
 ## 21. Final Response Format For Codex Runs
 
