@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V31 — Product Readiness Re-Gate After Research And Surface Hygiene
+V32 — Controlled Target Repair Trial
 ```
 
 Current product loop:
@@ -71,8 +71,9 @@ V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete.
 V28 Research-To-Brain TypeScript/Codex Decision Trial: complete.
 V29 TypeScript Boundary Research Application Gate: complete.
 V30 Codex Surface Context-Budget Application Gate: complete.
-active stream: V31 Product Readiness Re-Gate After Research And Surface Hygiene.
-current task: V31-00 — Product Readiness Re-Gate After Research And Surface Hygiene.
+V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete.
+active stream: V32 Controlled Target Repair Trial.
+current task: V32-00 — Controlled Target Repair Trial.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

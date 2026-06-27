@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V31 Product Readiness Re-Gate After Research And Surface Hygiene
-current task: V31-00 Product Readiness Re-Gate After Research And Surface Hygiene
+active stream: V32 Controlled Target Repair Trial
+current task: V32-00 Controlled Target Repair Trial
 ```
 
 Completed stream summary:
@@ -60,33 +60,35 @@ V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
 V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
 V29 TypeScript Boundary Research Application Gate: complete
 V30 Codex Surface Context-Budget Application Gate: complete
+V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 ```
 
 ## Active Stream
 
-### V31-00 — Product Readiness Re-Gate After Research And Surface Hygiene
+### V32-00 — Controlled Target Repair Trial
 
 Goal:
 
-Inspect V27 through V30 evidence and decide the next product step after target
-loop repairs, research-to-brain source decisions, TypeScript boundary
-application, and Codex surface context-budget repair.
+Run one bounded KRN-guided repair against a safe target checkout with explicit
+allowed files, forbidden files, pre/post dirty state, rollback, target commands,
+KRN plan/evidence/readback, and a report.
 
 Current finding:
 
 ```txt
-V27 kept KRN controlled-internal-alpha for technical operators.
-V28 accepted source-to-decision research discipline without Research Foundry.
-V29 found no high-confidence TypeScript boundary repair.
-V30 repaired root PLAN.md context-budget drift.
+V27-V31 keep KRN controlled-internal-alpha for technical operators.
+Product-ready, widened alpha, and V02-01 remain unproved.
+The next product proof should move beyond observation-only target loops.
 ```
 
-Current V31 action:
+Current V32 action:
 
 ```txt
-Write V31 compact readiness re-gate.
-Select exactly one next highest-ROI task.
-Do not start another meta-surface pass unless evidence requires it.
+Select a safe target checkout and bounded target task.
+Record allowed files, forbidden files, rollback, and pre/post status before any
+target edit.
+If no safe target exists, write a blocker report instead of substituting another
+local/meta task.
 ```
 
 ## V02-01 Boundary

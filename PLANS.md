@@ -56,12 +56,13 @@ V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
 V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
 V29 TypeScript Boundary Research Application Gate: complete
 V30 Codex Surface Context-Budget Application Gate: complete
+V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V31 Product Readiness Re-Gate After Research And Surface Hygiene
-current task: V31-00 Product Readiness Re-Gate After Research And Surface Hygiene
+active stream: V32 Controlled Target Repair Trial
+current task: V32-00 Controlled Target Repair Trial
 ```
 
 Evidence already recorded in repo:
@@ -76,8 +77,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V31 must re-gate product readiness and next task after V27-V30, without
-starting another meta-surface pass by inertia.
+V32 must test one bounded KRN-guided target repair with explicit scope,
+rollback, target evidence, and no product-ready/V02-01 overclaim.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2969,7 +2970,7 @@ Completed evidence:
 
 ### V31-00 — Product Readiness Re-Gate After Research And Surface Hygiene
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: inspect V27 through V30 evidence and decide the next product step after
 target loop repairs, research-to-brain source decisions, TypeScript boundary
@@ -3031,6 +3032,111 @@ Condensation expectation: decide whether next work is V02-01 real operator
 intake, another controlled target trial, a bounded repair, or pause for inputs.
 
 Next-task synthesis rule: append the single highest-ROI next task after V31
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v31-product-readiness-regate-after-research-surface/REPORT.md`.
+- V31 kept readiness at controlled-internal-alpha for technical operators:
+  stronger.
+- Product-ready, widened alpha, and V02-01 remain unproved.
+- V31 promoted one next product proof: V32 controlled target repair trial.
+
+### V32-00 — Controlled Target Repair Trial
+
+Status: active
+
+Goal: run one bounded KRN-guided repair against a safe target checkout with
+explicit allowed files, forbidden files, pre/post dirty state, rollback, target
+commands, KRN plan/evidence/readback, and a report.
+
+Product rationale: previous real target loops were observation-only. The next
+product question is whether KRN can guide a small target change while preserving
+scope, evidence, target safety, and rollback.
+
+Architectural rationale: target repair proof must be explicit and governed.
+KRN should not mutate living repos casually, and target writes must be tied to a
+bounded task contract, evidence capture, and rollback path.
+
+Evidence source: V31 report, V20-V26 target loop reports, target-repo testing
+skill, and current target checkout state.
+
+Official/external sources: none required unless target tooling requires current
+external docs.
+
+Inputs required:
+
+- one safe target checkout under the local workspace;
+- target preflight `git status --short --branch`;
+- one bounded target task;
+- explicit allowed files;
+- explicit forbidden files;
+- rollback method before editing.
+
+Files likely touched:
+
+- V32 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- a bounded set of target repo files only after allowed files and rollback are
+  recorded.
+
+Allowed writes:
+
+- KRN reports/plans;
+- target repo files explicitly listed in the V32 report before editing.
+
+Forbidden writes:
+
+- target commits;
+- target `git reset`, `git clean`, or destructive cleanup;
+- target files not listed as allowed;
+- target production/runtime secrets;
+- broad target refactor;
+- KRN package source unless the trial exposes a tiny blocking KRN bug and the
+  plan is updated first;
+- product-ready/V02-01/widened-alpha overclaim;
+- dashboard/API/MCP/worker runtime/source crawler/Research Foundry.
+
+Output requirements:
+
+- target path and mode;
+- target pre/post dirty state;
+- allowed files and forbidden files;
+- rollback method;
+- KRN plan/evidence/readback commands if DB/CLI are available;
+- target commands and proof/non-proof boundaries;
+- repair diff summary;
+- readiness implication and next-task decision.
+
+Definition of Done: V32 either completes one bounded target repair trial or
+records the exact blocker preventing a safe repair trial.
+
+Verification commands: target-specific commands selected before editing,
+`git diff --check` in KRN repo; if KRN source changes, `pnpm typecheck` and
+`pnpm test`; if DB-backed KRN flow is used, `pnpm db:ready`.
+
+Acceptance criteria:
+
+- no target write before allowed files and rollback are recorded;
+- no target commit;
+- no destructive target cleanup;
+- no V02-01/product-ready/widened-alpha overclaim;
+- target pre/post state is recorded.
+
+Risk: accidental target damage or product overclaim. Mitigation: target
+preflight, explicit allowed writes, rollback before edit, and report-only
+blocker if no safe target exists.
+
+Rollback: restore only the explicitly edited target files using the recorded
+method; revert KRN report/plan commit if necessary.
+
+Condensation expectation: decide whether KRN target repair is useful enough to
+run another controlled target repair, whether a KRN repair is needed, or
+whether real operator intake is again the next blocker.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V32
 evidence.
 
 ## 13. Generated Task Backlog
@@ -3302,8 +3408,9 @@ Initial entry:
   candidate; production JSON parsing already follows unknown-first narrowing.
 - [x] V30-00 complete: Codex surface gate repaired root `PLAN.md`
   context-budget drift and kept skills/AGENTS unchanged.
-- [ ] V31-00 active: Product Readiness Re-Gate After Research And Surface
-  Hygiene.
+- [x] V31-00 complete: readiness remains controlled-internal-alpha stronger;
+  V32 controlled target repair trial accepted as the next product proof.
+- [ ] V32-00 active: Controlled Target Repair Trial.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3754,6 +3861,18 @@ Initial decisions:
   Falsifier: V31 finds a concrete blocking source bug that must be repaired
     before any readiness decision.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote controlled target repair trial as V32.
+  Rationale: V31 found KRN remains controlled-internal-alpha stronger, but the
+    last real target loops were observation-only; the next product proof should
+    test one bounded target change with explicit allowed writes and rollback.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v31-product-readiness-regate-after-research-surface/REPORT.md`;
+    V20-V26 target loop reports; current green CI.
+  Does not prove: product readiness, V02-01, widened alpha, or arbitrary target
+    repair safety.
+  Falsifier: V32 cannot identify a safe target checkout/task, or the trial
+    shows KRN cannot preserve scope/rollback/evidence during a target repair.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4072,6 +4191,18 @@ Seed evidence:
   Does not prove: product readiness, V02-01 usability, or future surface drift
     cannot recur.
   Follow-up task: V31-00.
+
+- Evidence ID: E-V31-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v31-product-readiness-regate-after-research-surface/REPORT.md`
+  Command/report/file: readiness re-gate over V27-V30 plus current CI.
+  Result: controlled-internal-alpha remains yes / stronger; product-ready,
+    widened alpha, and V02-01 remain unproved; controlled target repair trial
+    promoted as the next product proof.
+  Proves: the research/context-hygiene loop should stop and the next task
+    should test bounded target repair utility.
+  Does not prove: target repair success, product readiness, V02-01, or widened
+    alpha.
+  Follow-up task: V32-00.
 ```
 
 ## 19. Condensation Queue
@@ -4371,10 +4502,18 @@ Seed queue:
 - Candidate: product readiness re-gate after research and surface hygiene
   Source evidence: V27-V30 reports and current CI
   Surface: readiness report / next-task decision
-  Status: accepted as V31-00
+  Status: complete as V31-00
   Reason: after target repairs plus research/context hygiene, the next step
     should be a product decision rather than more meta cleanup
   Task: V31-00
+
+- Candidate: controlled target repair trial
+  Source evidence: V31 readiness re-gate and V20-V26 target loop evidence
+  Surface: target repair trial report / optional target working-tree diff
+  Status: accepted as V32-00
+  Reason: the next product proof should test whether KRN can govern a bounded
+    target change, not only observe target state
+  Task: V32-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4514,6 +4653,41 @@ Product readiness verdict:
 Next active stream:
 
 - V31 Product Readiness Re-Gate After Research And Surface Hygiene.
+
+## Outcome 2026-06-27 V31
+
+Completed:
+
+- V31 product readiness re-gate after research and surface hygiene.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v31-product-readiness-regate-after-research-surface/REPORT.md`.
+- Current green CI on `faf8ee1`.
+
+What improved:
+
+- V27-V30 were condensed into one readiness and next-task decision.
+- The plan exits the research/context hygiene loop and returns to target product
+  proof.
+
+What did not improve:
+
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened alpha readiness.
+- Actual target repair usefulness; V32 must test that separately.
+
+Product readiness verdict:
+
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+
+- V32 Controlled Target Repair Trial.
 
 ## Outcome 2026-06-27 V08
 
@@ -5130,7 +5304,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V31 Product Readiness Re-Gate After Research And Surface Hygiene.
+Active stream: V32 Controlled Target Repair Trial.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
