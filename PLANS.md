@@ -67,12 +67,13 @@ V38 Clean Target Selection Gate: complete
 V39 WILQ Clean Target Observation-Only Baseline: complete
 V40 Target Selection Freshness Rule Condensation: complete
 V41 Target Trial Availability Re-Gate: complete
+V42 WILQ Fresh Observation-Only Baseline Retry: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V42 WILQ Fresh Observation-Only Baseline Retry
-current task: V42-00 WILQ Fresh Observation-Only Baseline Retry
+active stream: V43 Target Stability Window Gate
+current task: V43-00 Target Stability Window Gate
 ```
 
 Evidence already recorded in repo:
@@ -87,9 +88,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V41 found WILQ is currently clean again and selected a fresh observation-only
-baseline retry. The next task must re-check WILQ status at start and stop if it
-is dirty again.
+V42 found WILQ dirty again at task start. The next task must gate target
+stability instead of chasing actively changing target repos.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3896,7 +3896,7 @@ Outcome:
 
 ### V42-00 — WILQ Fresh Observation-Only Baseline Retry
 
-Status: active
+Status: complete
 
 Goal: retry WILQ observation-only baseline with fresh target status at task
 start.
@@ -3949,6 +3949,80 @@ target remains clean, or stops and records volatility if it becomes dirty again.
 
 Verification commands: `git diff --check`; read-only WILQ target status before
 and after.
+
+Acceptance criteria:
+
+- no target writes;
+- no fake V02-01;
+- no product-ready overclaim;
+- next active task is explicit.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v42-wilq-baseline-retry-stop/REPORT.md`.
+- Fresh KRN, WILQ and elektroinstal target statuses.
+
+Outcome:
+
+- V42 found WILQ dirty again at task start.
+- V42 stopped before baseline or repair.
+- V42 promoted target stability window gate.
+
+### V43-00 — Target Stability Window Gate
+
+Status: active
+
+Goal: decide the next target work only after a stable clean target window,
+explicit dirty-state permission, real second-operator input, or switch back to
+KRN internal source hardening.
+
+Product rationale: actively changing target repos are useful evidence, but not
+safe repair targets without owner coordination or a stable window.
+
+Architectural rationale: target volatility is an availability constraint. KRN
+should not chase moving target states as if they were product proof.
+
+Evidence source: V39 and V42 WILQ volatility; elektroinstal unresolved patch
+lifecycle; V40 freshness rule.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- V39-V42 reports;
+- current target status only if needed;
+- V02-01 input availability check.
+
+Files likely touched:
+
+- V43 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- target repair;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim.
+
+Output requirements:
+
+- target stability decision;
+- next product direction;
+- proof/non-proof boundaries;
+- active plan update.
+
+Definition of Done: V43 selects a stable target protocol, target owner request,
+V02-01 wait, or KRN internal hardening direction.
+
+Verification commands: `git diff --check`.
 
 Acceptance criteria:
 
@@ -4251,7 +4325,9 @@ Initial entry:
   guidance and stale clean-state assumptions forbidden.
 - [x] V41-00 complete: WILQ is clean again at fresh status check, elektroinstal
   remains blocked by unresolved patch lifecycle, and V42 was promoted.
-- [ ] V42-00 active: WILQ Fresh Observation-Only Baseline Retry.
+- [x] V42-00 complete: WILQ was dirty again at task start, so the baseline
+  stopped and target stability window gate was promoted.
+- [ ] V43-00 active: Target Stability Window Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4858,6 +4934,18 @@ Initial decisions:
     V02-01 is complete, or product readiness is achieved.
   Falsifier: V42 start status finds WILQ dirty again.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target stability window gate as V43.
+  Rationale: V42 found WILQ dirty again at task start. Together with the
+    unresolved elektroinstal patch, this means current target work needs a
+    stability/owner-coordination gate before more target trials.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v42-wilq-baseline-retry-stop/REPORT.md`;
+    fresh target statuses.
+  Does not prove: target work should stop forever, product readiness is blocked
+    permanently, or V02-01 is complete.
+  Falsifier: V43 receives explicit stable target window, dirty-state permission,
+    or real second-operator inputs.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5314,6 +5402,17 @@ Seed evidence:
   Does not prove: WILQ repair scope, WILQ verification, V02-01, or product
     readiness.
   Follow-up task: V42-00.
+
+- Evidence ID: E-V42-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v42-wilq-baseline-retry-stop/REPORT.md`
+  Command/report/file: fresh WILQ and elektroinstal status checks.
+  Result: WILQ was dirty again at V42 task start, so baseline stopped before
+    target reads/repair.
+  Proves: target trials need stability window or owner coordination before
+    continuing.
+  Does not prove: target work is impossible, V02-01, product readiness, or WILQ
+    code quality.
+  Follow-up task: V43-00.
 ```
 
 ## 19. Condensation Queue
@@ -5709,6 +5808,14 @@ Seed queue:
   Reason: use current clean WILQ state only after revalidating freshness at V42
     start
   Task: V42-00
+
+- Candidate: target stability window gate
+  Source evidence: V42 WILQ baseline stop
+  Surface: readiness/next-direction report
+  Status: accepted as V43-00
+  Reason: avoid chasing actively changing target repos without owner
+    coordination or a stable window
+  Task: V43-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6849,6 +6956,42 @@ Product readiness verdict:
 Next active stream:
 - V42 — WILQ Fresh Observation-Only Baseline Retry.
 
+## Outcome 2026-06-27 V42
+
+Completed:
+- V42-00 checked WILQ target status at task start.
+- Found WILQ dirty again with four changed files.
+- Stopped before baseline or repair.
+- Confirmed elektroinstal remains blocked by unresolved patch lifecycle.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v42-wilq-baseline-retry-stop/REPORT.md`.
+- KRN, WILQ and elektroinstal `git status --short --branch`.
+- KRN CI run list.
+
+What improved:
+- KRN obeyed the freshness rule immediately.
+- Target volatility is now an explicit product availability issue.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- WILQ baseline completion.
+- Target repair availability.
+
+New task:
+- Decide target stability window / owner coordination / internal hardening
+  direction.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V43 — Target Stability Window Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -6897,7 +7040,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V42 WILQ Fresh Observation-Only Baseline Retry.
+Active stream: V43 Target Stability Window Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

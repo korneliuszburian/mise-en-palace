@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V42 WILQ Fresh Observation-Only Baseline Retry
-current task: V42-00 WILQ Fresh Observation-Only Baseline Retry
+active stream: V43 Target Stability Window Gate
+current task: V43-00 Target Stability Window Gate
 ```
 
 Completed stream summary:
@@ -71,29 +71,32 @@ V38 Clean Target Selection Gate: complete
 V39 WILQ Clean Target Observation-Only Baseline: complete
 V40 Target Selection Freshness Rule Condensation: complete
 V41 Target Trial Availability Re-Gate: complete
+V42 WILQ Fresh Observation-Only Baseline Retry: complete
 ```
 
 ## Active Stream
 
-### V42-00 — WILQ Fresh Observation-Only Baseline Retry
+### V43-00 — Target Stability Window Gate
 
 Goal:
 
-Retry WILQ observation-only baseline with fresh target status at task start.
+Decide the next target work only after a stable clean target window, explicit
+dirty-state permission, real second-operator input, or switch back to KRN
+internal source hardening.
 
 Current finding:
 
 ```txt
-V41 found `wilq-seo` is clean again, while `krn-elektroinstal-ogar` remains
-blocked by handed-off unresolved patch state. WILQ can be retried only with a
-fresh status check at V42 start.
+V42 found `wilq-seo` dirty again at task start. Elektroinstal remains blocked
+by unresolved patch lifecycle. Active target repos are too volatile for another
+target trial without a stability window or explicit permission.
 ```
 
-Current V42 action:
+Current V43 action:
 
 ```txt
-Re-run WILQ status, then complete observation-only baseline or stop if WILQ is
-dirty again.
+Re-gate target stability and choose either a stable target protocol, target
+owner request, V02-01 input wait, or KRN internal hardening direction.
 ```
 
 ## V02-01 Boundary
