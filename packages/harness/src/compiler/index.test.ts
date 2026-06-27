@@ -255,6 +255,7 @@ class FakeSourceRepository implements Pick<SourceRepository, "listClaimsForProje
 class FakeRetrievalRepository implements RetrievalRepository {
   readonly candidates: AddRetrievalCandidateInput[] = [];
   readonly decisions: RecordActivationDecisionInput[] = [];
+  startedRunMetadata: Record<string, unknown> | undefined;
   storedSelection: ContextAssembly | undefined;
 
   constructor(private readonly searchResults: readonly SearchDocumentSearchResult[] = []) {}
@@ -280,6 +281,8 @@ class FakeRetrievalRepository implements RetrievalRepository {
   }
 
   async startRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
+    this.startedRunMetadata = input.metadata ?? {};
+
     return {
       id: "retrieval-1",
       ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
@@ -834,6 +837,19 @@ describe("compileHarnessPlan", () => {
         })
       ])
     );
+    expect(retrievalRepository.startedRunMetadata).toMatchObject({
+      targetReadModel: {
+        sourceSeedCount: 2,
+        ownerFileCount: 0,
+        trustExclusionCount: 2,
+        ownerFileRecall: {
+          status: "missing_owner_file_read_model",
+          reason: "target_read_model_has_no_owner_files",
+          sourceSeedPaths: ["evals", "mcp"],
+          ownerFilePaths: []
+        }
+      }
+    });
   });
 
   it("uses target owner-file candidates below named roots when the read model provides them", async () => {
@@ -914,6 +930,19 @@ describe("compileHarnessPlan", () => {
         })
       ])
     );
+    expect(retrievalRepository.startedRunMetadata).toMatchObject({
+      targetReadModel: {
+        sourceSeedCount: 2,
+        ownerFileCount: 2,
+        trustExclusionCount: 0,
+        ownerFileRecall: {
+          status: "owner_files_available",
+          reason: "target_read_model_provided_owner_files",
+          sourceSeedPaths: ["src", "tests"],
+          ownerFilePaths: ["src/index.ts", "tests/readiness.test.ts"]
+        }
+      }
+    });
   });
 
   it("creates evidence expectations for reviewable engineering work", async () => {

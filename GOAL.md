@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V06 — Activation / Owner-File / Context ROI Utility
+V07 — Memory / Anti-Memory / Source Usefulness Loop
 ```
 
 Current product loop:
@@ -46,8 +46,9 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V05 target-aware evidence capture repair: complete.
-active stream: V06 activation / owner-file / context ROI utility.
-current task: V06-00 — Activation / Owner-File Recall Below Target Roots.
+V06 activation / owner-file / context ROI utility: complete.
+active stream: V07 memory / anti-memory / source usefulness loop.
+current task: V07-00 — Target Memory/Source Usefulness Loop.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

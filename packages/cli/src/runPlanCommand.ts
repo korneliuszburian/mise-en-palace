@@ -7,6 +7,7 @@ import type {
   ContextInclusion
 } from "@krn/core";
 import {
+  assessTargetOwnerFileRecall,
   compileHarnessPlan
 } from "@krn/harness";
 import type {
@@ -426,12 +427,20 @@ const formatPlanSummary = (
         ]),
     ...(targetReadModel === undefined
       ? []
-      : [
-          `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, ownerFiles=${targetReadModel.ownerFiles?.length ?? 0}, trustExclusions=${targetReadModel.trustExclusions.length}`,
-          ...(targetReadModel.ownerFiles === undefined || targetReadModel.ownerFiles.length === 0
-            ? ["Target owner files: unavailable; using root-level source seeds only"]
-            : [`Target owner files: ${targetReadModel.ownerFiles.map((ownerFile) => ownerFile.path).join(", ")}`])
-        ]),
+      : (() => {
+          const ownerFileRecall = assessTargetOwnerFileRecall(targetReadModel);
+
+          return [
+            `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, ownerFiles=${targetReadModel.ownerFiles?.length ?? 0}, trustExclusions=${targetReadModel.trustExclusions.length}`,
+            `Target owner-file recall: ${ownerFileRecall.status}`,
+            `Target owner-file reason: ${ownerFileRecall.reason}`,
+            `Target owner-file explanation: ${ownerFileRecall.explanation}`,
+            `Target owner-file does not prove: ${ownerFileRecall.doesNotProve}`,
+            ...(ownerFileRecall.status === "missing_owner_file_read_model"
+              ? ["Target owner files: unavailable; using root-level source seeds only"]
+              : [`Target owner files: ${ownerFileRecall.ownerFilePaths.join(", ")}`])
+          ];
+        })()),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
     ...formatActivationSummary(contextAssembly, nextAction),
@@ -525,6 +534,8 @@ export const runPlanCommand = async (
       },
       compilerRuntime.compilerDependencies
     );
+    const targetOwnerFileRecall =
+      targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(targetReadModel);
     const executionBrief = renderExecutionBrief({
       taskContract: result.taskContract,
       harnessPlan: result.harnessPlan,
@@ -579,7 +590,10 @@ export const runPlanCommand = async (
                       ownerFileCount: targetReadModel.ownerFiles?.length ?? 0,
                       trustExclusionCount: targetReadModel.trustExclusions.length,
                       sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path),
-                      ownerFilePaths: (targetReadModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path)
+                      ownerFilePaths: (targetReadModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path),
+                      ...(targetOwnerFileRecall === undefined
+                        ? {}
+                        : { ownerFileRecall: targetOwnerFileRecall })
                     }
                   }),
               evidenceContract: result.evidenceContract,

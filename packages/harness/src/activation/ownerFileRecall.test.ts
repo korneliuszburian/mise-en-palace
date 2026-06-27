@@ -5,6 +5,7 @@ import type {
 } from "@krn/core";
 
 import {
+  assessTargetOwnerFileRecall,
   buildOwnerFileRecallCandidates
 } from "./ownerFileRecall.js";
 import type {
@@ -180,5 +181,62 @@ describe("owner-file recall", () => {
         })
       ])
     );
+  });
+
+  it("assesses missing target owner-file read-model as typed abstention evidence", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/typescript-basic"],
+      sourceSeeds: [
+        {
+          path: "src",
+          kind: "source_root",
+          reason: "implementation owner-file root"
+        }
+      ],
+      trustExclusions: []
+    };
+
+    expect(assessTargetOwnerFileRecall(targetReadModel)).toEqual({
+      status: "missing_owner_file_read_model",
+      reason: "target_read_model_has_no_owner_files",
+      explanation: "Target read model has source seeds but no exact owner-file entries, so KRN can only surface root-level target context.",
+      sourceSeedPaths: ["src"],
+      ownerFilePaths: [],
+      doesNotProve: "Missing owner-file entries do not prove owner files do not exist; it proves only that the current read model cannot name them."
+    });
+  });
+
+  it("assesses available target owner files with proof boundary", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/typescript-basic"],
+      sourceSeeds: [
+        {
+          path: "tests",
+          kind: "test_root",
+          reason: "behavior proof and test owner-file root"
+        }
+      ],
+      ownerFiles: [
+        {
+          path: "tests/readiness.test.ts",
+          root: "tests",
+          kind: "behavior_test",
+          reason: "test readiness owner file"
+        }
+      ],
+      trustExclusions: []
+    };
+
+    expect(assessTargetOwnerFileRecall(targetReadModel)).toMatchObject({
+      status: "owner_files_available",
+      reason: "target_read_model_provided_owner_files",
+      sourceSeedPaths: ["tests"],
+      ownerFilePaths: ["tests/readiness.test.ts"],
+      doesNotProve: "Owner-file candidates do not prove the files are correct, complete, current, or sufficient for the task."
+    });
   });
 });

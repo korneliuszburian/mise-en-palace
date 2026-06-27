@@ -766,7 +766,7 @@ Next-task synthesis rule: if target evidence is improved, move to V06 activation
 
 ### V06-00 — Activation / Owner-File Recall Below Target Roots
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: Improve or re-gate target owner-file recall below named source roots after target-aware evidence capture is stable.
 
@@ -801,6 +801,62 @@ Rollback: focused revert.
 Condensation expectation: guard if behavior is accepted.
 
 Next-task synthesis rule: if successful, append memory/source usefulness task.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v06-owner-file-recall/REPORT.md`;
+- typed `owner_files_available | missing_owner_file_read_model` assessment;
+- CLI plan output and execution/retrieval metadata now expose owner-file recall status and proof boundary.
+
+### V07-00 — Target Memory/Source Usefulness Loop
+
+Status: active
+
+Goal: prove a bounded memory/source usefulness loop after target evidence and
+owner-file recall state are explicit enough to evaluate.
+
+Product rationale: KRN must show that memory/source signals from controlled runs
+are later selected, used, and marked helped/stale, not merely stored.
+
+Architectural rationale: memory/source usefulness should be evidence-backed
+before adding MCP, subagents, broader evals, or scoring changes.
+
+Evidence source: V05 target evidence, V06 owner-file recall assessment, recent
+controlled dogfood reports.
+
+Official/external sources: KRN context supply chain doctrine; Codex Goals
+evidence-based completion.
+
+Inputs required: recent memory/source candidates, review gate behavior,
+activation records, controlled reports.
+
+Files likely touched: memory/source usefulness tests or reports; possibly small
+readback/rendering code if inspection proves a gap.
+
+Allowed writes: KRN source/tests/reports only.
+
+Forbidden writes: automatic memory promotion, broad scoring rewrite, dashboard,
+MCP server, worker daemon, target repo writes.
+
+Output requirements: selected/used/helped/stale memory/source evidence or typed
+reason why the loop cannot yet be proven.
+
+Definition of Done: a controlled scenario proves a memory/source item can move
+through review/usefulness assessment or records the exact missing path.
+
+Verification commands: `pnpm typecheck`, `pnpm test`, relevant DB/activation
+smoke, `git diff --check`.
+
+Acceptance criteria: improvement measured by controlled scenario.
+
+Risk: producing another ledger without reuse proof.
+
+Rollback: focused revert.
+
+Condensation expectation: promote only evidence-backed memory/source rules.
+
+Next-task synthesis rule: if useful, append skill/research condensation task; if
+not, append bounded memory/source readback repair.
 
 ## 13. Generated Task Backlog
 
@@ -1014,7 +1070,10 @@ Initial entry:
 - [x] V05-03 complete: deterministic golden guard/replay scenario added for
   target-aware evidence capture.
 - [x] V05-04 complete: target-aware evidence re-gate selected V06.
-- [ ] V06-00 active: activation / owner-file recall below target roots.
+- [x] V06-00 complete: target owner-file recall now reports typed
+  `owner_files_available` or `missing_owner_file_read_model` assessment in plan
+  output and metadata.
+- [ ] V07-00 active: target memory/source usefulness loop.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1037,6 +1096,14 @@ Record every unexpected fact in this format:
 - Discovery: Target-aware evidence capture preview caught a missing intended-file entry while target evidence was present.
   Evidence: first V05-02 preview capture classified `packages/cli/src/parseArgs.ts` as unrelated; second preview capture marked it intended after explicit `--intended-file`.
   Impact: target evidence did not weaken existing KRN dirty-context review-burden behavior.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Owner-file recall already surfaced exact target owner files when
+  `ownerFiles` existed, but missing owner-file read-model state was only prose in
+  plan output.
+  Evidence: `packages/harness/src/activation/ownerFileRecall.ts`;
+  `packages/cli/src/runPlanCommand.ts`; V06 report.
+  Impact: V06-00 should add typed assessment/readback before any scoring rewrite.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1084,6 +1151,21 @@ Initial decisions:
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-current-state/REPORT.md`; `packages/cli/src/runEvidenceCaptureCommand.ts`; `packages/cli/src/runRunShowCommand.ts`; `docs/runbooks/target-repo-testing.md`.
   Does not prove: automatic target status execution is unnecessary forever, product readiness, or V02-01 usability.
   Falsifier: V05-02 source implementation proves explicit inputs cannot preserve target evidence reliably.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Close V06 with typed owner-file recall assessment, not an activation
+  scoring rewrite.
+  Rationale: source inspection showed exact owner-file candidates already work
+  when the read model has `ownerFiles`; the live gap was missing-read-model
+  visibility and replayability.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v06-owner-file-recall/REPORT.md`;
+  `packages/harness/src/activation/ownerFileRecall.ts`;
+  `packages/harness/src/compiler/index.test.ts`;
+  `packages/cli/src/runCli.test.ts`.
+  Does not prove: owner-file discovery completeness, activation scoring quality,
+  or product readiness.
+  Falsifier: future DB-backed target run has owner files available but activation
+  repeatedly fails to surface them.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1151,6 +1233,18 @@ Seed evidence:
   Proves: target-aware evidence representation/guard work is sufficient to move to owner-file/context ROI.
   Does not prove: product readiness, V02-01, target correctness, or owner-file recall quality.
   Follow-up task: V06-00.
+
+- Evidence ID: E-V06-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v06-owner-file-recall/REPORT.md`
+  Command/report/file: V06 source repair, targeted harness/CLI tests.
+  Result: target owner-file recall now exposes typed
+    `owner_files_available | missing_owner_file_read_model` assessment in plan
+    output, execution metadata, and retrieval metadata.
+  Proves: target planning can expose exact owner-file availability or explicit
+    missing-read-model reason without scoring rewrite.
+  Does not prove: owner-file discovery completeness, product readiness, V02-01,
+    live DB readback, or activation scoring quality.
+  Follow-up task: V07-00.
 ```
 
 ## 19. Condensation Queue
@@ -1214,8 +1308,17 @@ Seed queue:
 - Candidate: activation / owner-file / context ROI utility
   Source evidence: V05 re-gate and prior target owner-file recall gaps
   Surface: V06 source repair or re-gate
-  Status: accepted as V06
+  Status: complete as V06-00
   Reason: target evidence is clearer; next repeated bottleneck is exact owner-file recall below target roots
+  Task: V06-00
+
+- Candidate: memory/source usefulness loop
+  Source evidence: V06 owner-file recall assessment and prior controlled runs
+  Surface: controlled scenario + possible readback/rendering repair
+  Status: accepted as V07
+  Reason: after target evidence and owner-file recall are explicit, next product
+    question is whether memory/source signals are later selected and useful
+  Task: V07-00
   Task: V06-00
 ```
 

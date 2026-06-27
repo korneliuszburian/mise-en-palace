@@ -32,7 +32,8 @@ product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 V05 target-aware evidence capture repair: complete
-active stream: V06 activation / owner-file / context ROI utility
+V06 activation / owner-file / context ROI utility: complete
+active stream: V07 memory / anti-memory / source usefulness loop
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -114,7 +115,7 @@ Status: complete on 2026-06-27.
 Goal: decide whether V05 materially improved target trials and append the next
 active stream to `PLANS.md`.
 
-## Active Stream: V06
+## Completed Stream: V06
 
 V06 improves activation/context ROI after target evidence capture became
 clearer:
@@ -126,10 +127,27 @@ or clearly abstain with typed reasons.
 
 ### V06-00 — Activation / Owner-File Recall Below Target Roots
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: improve or re-gate target owner-file recall below named source roots after
 target-aware evidence capture is stable.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v06-owner-file-recall/REPORT.md`;
+- typed target owner-file recall assessment in plan output and metadata.
+
+## Active Stream: V07
+
+V07 validates whether memory, anti-memory, and source signals from recent
+controlled runs are selected, used, and marked helped/stale with evidence.
+
+### V07-00 — Target Memory/Source Usefulness Loop
+
+Status: active.
+
+Goal: prove a bounded memory/source usefulness loop after V05/V06 made target
+evidence and owner-file recall state replayable.
 
 ## Hard Non-Goals
 

@@ -44,6 +44,19 @@ export interface TargetActivationReadModel {
   trustExclusions: readonly TargetActivationTrustExclusion[];
 }
 
+export type TargetOwnerFileRecallStatus =
+  | "owner_files_available"
+  | "missing_owner_file_read_model";
+
+export interface TargetOwnerFileRecallAssessment {
+  status: TargetOwnerFileRecallStatus;
+  reason: string;
+  explanation: string;
+  sourceSeedPaths: readonly string[];
+  ownerFilePaths: readonly string[];
+  doesNotProve: string;
+}
+
 export interface BuildOwnerFileRecallCandidatesOptions {
   targetReadModel?: TargetActivationReadModel;
 }
@@ -311,6 +324,33 @@ const buildTargetProjectRecallCandidates = (
     ...sourceSeedCandidates,
     ...(trustExclusionCandidate === undefined ? [] : [trustExclusionCandidate])
   ];
+};
+
+export const assessTargetOwnerFileRecall = (
+  readModel: TargetActivationReadModel
+): TargetOwnerFileRecallAssessment => {
+  const ownerFilePaths = (readModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path);
+  const sourceSeedPaths = readModel.sourceSeeds.map((seed) => seed.path);
+
+  if (ownerFilePaths.length > 0) {
+    return {
+      status: "owner_files_available",
+      reason: "target_read_model_provided_owner_files",
+      explanation: "Target read model can surface exact owner-file candidates below named source roots.",
+      sourceSeedPaths,
+      ownerFilePaths,
+      doesNotProve: "Owner-file candidates do not prove the files are correct, complete, current, or sufficient for the task."
+    };
+  }
+
+  return {
+    status: "missing_owner_file_read_model",
+    reason: "target_read_model_has_no_owner_files",
+    explanation: "Target read model has source seeds but no exact owner-file entries, so KRN can only surface root-level target context.",
+    sourceSeedPaths,
+    ownerFilePaths,
+    doesNotProve: "Missing owner-file entries do not prove owner files do not exist; it proves only that the current read model cannot name them."
+  };
 };
 
 export const buildOwnerFileRecallCandidates = (

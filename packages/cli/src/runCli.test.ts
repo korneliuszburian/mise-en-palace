@@ -519,6 +519,7 @@ describe("runCli", () => {
 
   it("uses explicit project identity for persisted planning", async () => {
     let observedProjectId: string | undefined;
+    let executionRunMetadata: Record<string, unknown> | undefined;
 
     const result = await runCli(
       [
@@ -541,6 +542,8 @@ describe("runCli", () => {
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
+              executionRunMetadata = runInput.metadata ?? {};
+
               return {
                 id: "execution-run-1",
                 harnessPlanId: runInput.harnessPlanId,
@@ -620,8 +623,29 @@ describe("runCli", () => {
     expect(result.stdout).toContain("ProjectKernel: project-kernel-1");
     expect(result.stdout).toContain("Repo installations: repo-installation-1");
     expect(result.stdout).toContain("Target read model: sourceSeeds=2, ownerFiles=0, trustExclusions=7");
+    expect(result.stdout).toContain("Target owner-file recall: missing_owner_file_read_model");
+    expect(result.stdout).toContain("Target owner-file reason: target_read_model_has_no_owner_files");
+    expect(result.stdout).toContain(
+      "Target owner-file explanation: Target read model has source seeds but no exact owner-file entries, so KRN can only surface root-level target context."
+    );
+    expect(result.stdout).toContain(
+      "Target owner-file does not prove: Missing owner-file entries do not prove owner files do not exist; it proves only that the current read model cannot name them."
+    );
     expect(result.stdout).toContain("Target owner files: unavailable; using root-level source seeds only");
     expect(result.stdout).toContain("executionRun: execution-run-1");
+    expect(executionRunMetadata).toMatchObject({
+      targetReadModel: {
+        sourceSeedCount: 2,
+        ownerFileCount: 0,
+        trustExclusionCount: 7,
+        ownerFileRecall: {
+          status: "missing_owner_file_read_model",
+          reason: "target_read_model_has_no_owner_files",
+          sourceSeedPaths: ["evals", "scripts"],
+          ownerFilePaths: []
+        }
+      }
+    });
   });
 
   it("does not fallback to the default project when an explicit project is missing", async () => {

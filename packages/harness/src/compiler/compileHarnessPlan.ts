@@ -17,6 +17,9 @@ import {
   persistActivationTrace,
   retrieveActivationCandidates
 } from "../activation/index.js";
+import {
+  assessTargetOwnerFileRecall
+} from "../activation/ownerFileRecall.js";
 import type {
   TargetActivationReadModel
 } from "../activation/index.js";
@@ -149,6 +152,8 @@ export const compileHarnessPlan = async (
       retrievalRepository: dependencies.retrievalRepository
     }
   });
+  const targetOwnerFileRecall =
+    input.targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(input.targetReadModel);
   const retrievalRun = await dependencies.retrievalRepository.startRetrievalRun({
     ...(taskContract.projectId === undefined ? {} : { projectId: taskContract.projectId }),
     taskContractId: taskContract.id,
@@ -162,7 +167,11 @@ export const compileHarnessPlan = async (
             targetReadModel: {
               repoInstallationIds: input.targetReadModel.repoInstallationIds,
               sourceSeedCount: input.targetReadModel.sourceSeeds.length,
-              trustExclusionCount: input.targetReadModel.trustExclusions.length
+              trustExclusionCount: input.targetReadModel.trustExclusions.length,
+              ownerFileCount: input.targetReadModel.ownerFiles?.length ?? 0,
+              ...(targetOwnerFileRecall === undefined
+                ? {}
+                : { ownerFileRecall: targetOwnerFileRecall })
             }
           })
     }
