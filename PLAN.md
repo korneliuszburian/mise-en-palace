@@ -82,7 +82,7 @@ Evidence:
 
 ### V05-01 — Target Evidence Capture Current-State Investigation
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect current evidence capture, run readback, target repo testing skill,
 and V04 target reports to define the smallest target-aware evidence repair.
@@ -94,7 +94,7 @@ Expected output:
 
 ### V05-02 — Implement Minimal Target-Aware Evidence Capture
 
-Status: pending.
+Status: active.
 
 Goal: add the smallest typed support for target-repo evidence capture/readback if
 V05-01 confirms the code gap.

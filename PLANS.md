@@ -507,7 +507,7 @@ Next-task synthesis rule: proceed to V05-01.
 
 ### V05-01 — Target Evidence Capture Current-State Investigation
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: Inspect current evidence capture, run readback, target repo testing skill, and V04 target reports to define the smallest target-aware evidence repair.
 
@@ -568,7 +568,7 @@ Next-task synthesis rule: if code gap confirmed, execute V05-02; if rejected, ap
 
 ### V05-02 — Implement Minimal Target-Aware Evidence Capture
 
-Status: proposed
+Status: active
 
 Goal: Add the smallest typed support for target-repo evidence capture/readback.
 
@@ -969,8 +969,9 @@ Initial entry:
 ```txt
 - [x] V05-00 complete: reconciled completed V04 goal into continuous
   `PLANS.md`-driven V05+ goal.
-- [ ] V05-01 active: target evidence capture current-state investigation.
-- [ ] V05-02 pending: minimal target-aware evidence capture repair if V05-01 confirms gap.
+- [x] V05-01 complete: target evidence capture current-state investigation
+  confirmed the code/readback gap and selected minimal metadata-backed repair.
+- [ ] V05-02 active: minimal target-aware evidence capture repair.
 - [ ] V05-03 pending: deterministic guard/replay scenario.
 - [ ] V05-04 pending: V05 re-gate and generate next active stream.
 ```
@@ -984,6 +985,13 @@ Record every unexpected fact in this format:
   Evidence: <file/command/report>
   Impact: <how this changes task choice>
   Date/Author: <date / Codex>
+```
+
+```txt
+- Discovery: EvidenceBundle persistence can carry first target evidence through existing JSON metadata, but no typed target evidence/readback surface exists.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-current-state/REPORT.md`; `packages/db/src/schema/harness.ts`; `packages/cli/src/runRunShowCommand.ts`.
+  Impact: V05-02 should avoid a DB migration and focus on typed metadata helpers, CLI inputs, capture rendering, and readback rendering.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 17. Decision Log
@@ -1024,6 +1032,13 @@ Initial decisions:
   Does not prove: KRN will never need them.
   Falsifier: repeated scenario needs live external state, deterministic enforcement, or parallel read-heavy roles.
   Date/Author: 2026-06-27 / planner
+
+- Decision: Implement target-aware evidence capture as explicit operator-supplied metadata before any hidden target git runner.
+  Rationale: V05-01 found current capture only reads KRN `runtime.cwd`, while target reports need target repo mode, dirty state, ownership, allowed/forbidden writes, and proof/non-proof boundaries. Existing DB metadata can carry the first repair without migration.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-current-state/REPORT.md`; `packages/cli/src/runEvidenceCaptureCommand.ts`; `packages/cli/src/runRunShowCommand.ts`; `docs/runbooks/target-repo-testing.md`.
+  Does not prove: automatic target status execution is unnecessary forever, product readiness, or V02-01 usability.
+  Falsifier: V05-02 source implementation proves explicit inputs cannot preserve target evidence reliably.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -1052,12 +1067,20 @@ Seed evidence:
 
 - Evidence ID: E-V05-00
   Source: root `GOAL.md`, root `PLAN.md`, root `PLANS.md`
-  Command/report/file: V05 baseline reconciliation in working tree.
-  Result: complete pending commit/CI.
+  Command/report/file: commit `02c83d2`; CI run `28282925114`.
+  Result: committed, pushed, CI passed.
   Proves: active repo state now points to V05 target-aware evidence capture and
     root `PLANS.md` as the detailed continuous ExecPlan.
   Does not prove: V05-01 investigation or V05-02 implementation.
   Follow-up task: V05-01.
+
+- Evidence ID: E-V05-01
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-current-state/REPORT.md`
+  Command/report/file: V05-01 current-state investigation.
+  Result: current evidence capture/readback can persist target facts only as unstructured metadata/prose; no CLI/readback target evidence surface exists.
+  Proves: V05-02 should implement minimal target-aware evidence capture/readback.
+  Does not prove: V05-02 implementation, product readiness, V02-01 usability, or need for automatic target git execution.
+  Follow-up task: V05-02.
 ```
 
 ## 19. Condensation Queue
@@ -1096,6 +1119,13 @@ Seed queue:
   Status: deferred
   Reason: CLI/files/DB suffice for current scenarios
   Task: revisit only if live typed state/tool access becomes blocking
+
+- Candidate: explicit target evidence metadata/readback
+  Source evidence: V05-01 current-state investigation
+  Surface: source repair + CLI/readback tests
+  Status: accepted as V05-02
+  Reason: target trial proof boundaries currently live in report prose, not EvidenceBundle/readback output
+  Task: V05-02
 ```
 
 ## 20. Outcomes & Retrospective
