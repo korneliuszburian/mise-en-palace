@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V216 CI Visibility Lookup Normalization
-current task: V216-00 CI Visibility Lookup Normalization
+active stream: V217 Best-Pattern Intake Next-Source Re-Gate
+current task: V217-00 Best-Pattern Intake Next-Source Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,40 +45,40 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V216 CI Visibility Lookup Normalization
+### V217 Best-Pattern Intake Next-Source Re-Gate
 
 Goal:
 
-Normalize the post-push CI lookup after recent short-SHA checks produced false
-negative "no visible workflow run" results.
+Select the next bounded source/pattern intake task after CI lookup guidance was
+normalized.
 
 Current finding:
 
 ```txt
-`gh run list --commit 94acf27` returned no runs, while `gh run list --commit
-94acf2729dee8e9e1e4fe3d0a38914a063f2b362` and branch run lookup found the
-successful KRN CI run `28304318476` for the same commit.
+The user wants KRN to keep absorbing best patterns, courses, papers, and senior
+engineering standards continuously, but only through source -> mechanism -> KRN
+implication -> decision/rejection -> consumer -> falsifier.
 ```
 
 Current action:
 
 ```txt
-Execute V216-00: update the compact process guidance so CI confirmation uses
-full commit SHA or branch-run readback, not ambiguous short-SHA lookup. Keep it
-as CI evidence hygiene, not workflow expansion.
+Execute V217-00: choose one bounded pattern-intake source or reject/defer if no
+immediate consumer exists. Do not create a research crawler, Research Foundry,
+course archive, broad backlog, or decorative source pile.
 ```
 
 Primary consumer:
 
 ```txt
-Post-slice commit/push/CI confirmation guidance.
+One source-to-decision output with exactly one consumer or an explicit rejection.
 ```
 
 Falsifier:
 
 ```txt
-Future slices report "no CI visible" from short-SHA lookup while a successful
-run exists for the full head SHA or latest branch run.
+The re-gate retains sources without a consumer/falsifier or broadens into a
+research subsystem instead of one bounded decision.
 ```
 
 ## Pattern Gate
@@ -162,4 +162,7 @@ pnpm db:smoke
 pnpm eval:promptfoo:smoke
 ```
 
-After each bounded slice, commit, push, and confirm CI when appropriate.
+After each bounded slice, commit, push, and confirm CI when appropriate. Use a
+full `git rev-parse HEAD` SHA for `gh run list --commit`; if that is empty, use
+branch readback and match `headSha`. Do not claim missing CI from short-SHA
+lookup alone.

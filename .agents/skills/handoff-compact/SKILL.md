@@ -19,6 +19,11 @@ Use this skill to keep continuation state small and useful.
 1. State the current objective.
 2. State the active stream and current task from `PLAN.md` / `PLANS.md`.
 3. State the last verified commit, push, CI, DB, and worktree state.
+   - For GitHub Actions CI, prefer `gh run list --commit "$(git rev-parse HEAD)"
+     --json databaseId,status,conclusion,headSha,workflowName,url,createdAt`.
+   - If commit lookup is empty, use branch readback and match `headSha` to the
+     full local SHA.
+   - Do not report missing CI from short-SHA lookup alone.
 4. List changed files only if relevant.
 5. List decisions made.
 6. List blockers or risks.
