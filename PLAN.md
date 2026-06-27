@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V35 Target Patch Handoff Packet
-current task: V35-00 Target Patch Handoff Packet
+active stream: V36 Target Patch Handoff Re-Gate
+current task: V36-00 Target Patch Handoff Re-Gate
 ```
 
 Completed stream summary:
@@ -64,32 +64,33 @@ V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 V32 Controlled Target Repair Trial: complete
 V33 Reused Project Owner-File Refresh Repair: complete
 V34 Target Repair Re-Gate After Owner-File Refresh: complete
+V35 Target Patch Handoff Packet: complete
 ```
 
 ## Active Stream
 
-### V35-00 — Target Patch Handoff Packet
+### V36-00 — Target Patch Handoff Re-Gate
 
 Goal:
 
-Create a KRN-side handoff packet for the still-dirty V32 target patch, including
-exact diff, commands already run, proof/non-proof boundaries, and operator
-choices.
+Decide whether to wait for target owner/operator decision, run stronger
+observation-only target verification, choose another clean target proof, or
+resume V02-01 only if real second-operator inputs exist.
 
 Current finding:
 
 ```txt
-V34 kept readiness at controlled-internal-alpha for technical operators, not
-widened alpha/product-ready/V02-01. The immediate blocker is that the living
-target repo still has the V32 patch dirty and uncommitted. KRN must not commit
-or revert that patch silently.
+V35 captured the V32 target patch as a KRN-side handoff artifact and preserved
+operator choices. KRN still must not commit/revert target code. Product-ready,
+widened alpha, and V02-01 remain unproved.
 ```
 
-Current V35 action:
+Current V36 action:
 
 ```txt
-Write a target patch handoff packet under KRN docs. Do not edit, commit, reset,
-or clean the target repo.
+Re-gate after handoff. Promote only the next evidence-backed task; do not start
+another target repair while target ownership is unresolved unless a clean/safe
+target path is selected.
 ```
 
 ## V02-01 Boundary

@@ -60,12 +60,13 @@ V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
 V32 Controlled Target Repair Trial: complete
 V33 Reused Project Owner-File Refresh Repair: complete
 V34 Target Repair Re-Gate After Owner-File Refresh: complete
+V35 Target Patch Handoff Packet: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V35 Target Patch Handoff Packet
-current task: V35-00 Target Patch Handoff Packet
+active stream: V36 Target Patch Handoff Re-Gate
+current task: V36-00 Target Patch Handoff Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -80,9 +81,10 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V34 decided the immediate blocker is target patch ownership. The V32 target
-patch remains dirty in the target repo; KRN must hand it off explicitly before
-another target repair.
+V35 captured the V32 target patch as a KRN-side handoff artifact. The next task
+must decide whether to wait for target owner/operator action, run stronger
+observation-only target verification, select another clean target proof, or
+resume V02-01 only if real second-operator inputs exist.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3332,7 +3334,7 @@ Completed evidence:
 
 ### V35-00 — Target Patch Handoff Packet
 
-Status: active
+Status: complete
 
 Goal: create a KRN-side handoff packet for the V32 target patch so the target
 dirty state is explicit, reviewable, and operator-owned before any next target
@@ -3400,6 +3402,78 @@ Acceptance criteria:
 - no target commit/revert;
 - no product-ready/V02-01 overclaim;
 - patch ownership is explicit.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/REPORT.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/FAQ_ARIA_PATCH.diff`.
+- Target repo remained dirty with exactly the two V32 patch files; KRN did not
+  edit/commit/revert target code in V35.
+
+### V36-00 — Target Patch Handoff Re-Gate
+
+Status: active
+
+Goal: decide the next product move after target patch handoff.
+
+Product rationale: V35 made the V32 target patch explicit and handoff-safe.
+KRN now needs a decision: wait for target owner/operator action, run stronger
+observation-only verification, pick another clean target proof, or resume
+V02-01 only if real second-operator inputs exist.
+
+Architectural rationale: KRN should not continue target work while target patch
+ownership is ambiguous. Re-gate before any additional target repair or product
+readiness claim.
+
+Evidence source: V35 handoff report, target status, current KRN CI.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- V35 report and patch artifact;
+- target `git status --short --branch`;
+- KRN status and latest CI;
+- V02-01 input availability check.
+
+Files likely touched:
+
+- V36 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit;
+- target reset/clean;
+- KRN source changes unless a new task is promoted first;
+- product-ready/V02-01/widened-alpha overclaim.
+
+Output requirements:
+
+- next product/task decision;
+- target ownership status;
+- proof/non-proof boundaries;
+- active plan update.
+
+Definition of Done: V36 either promotes the next bounded task or records target
+owner/operator decision as the honest blocker.
+
+Verification commands: `git diff --check`; inspect target status; check CI if
+V36 is committed.
+
+Acceptance criteria:
+
+- no target writes;
+- no fake V02-01;
+- no product-ready overclaim;
+- next active task is explicit.
 
 ## 13. Generated Task Backlog
 
@@ -3679,7 +3753,9 @@ Initial entry:
   kernel owner files as the active snapshot.
 - [x] V34-00 complete: re-gate kept readiness at controlled-internal-alpha
   stronger and promoted target patch handoff as the next blocker.
-- [ ] V35-00 active: Target Patch Handoff Packet.
+- [x] V35-00 complete: target patch handoff packet and KRN-side patch artifact
+  created without target writes/commit/revert.
+- [ ] V36-00 active: Target Patch Handoff Re-Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4196,6 +4272,18 @@ Initial decisions:
   Falsifier: V35 shows the target patch has already been resolved by the target
     owner before handoff is needed.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target patch handoff re-gate as V36.
+  Rationale: V35 made the target patch explicit but did not resolve target owner
+    acceptance or target repo dirty state. KRN should decide the next product
+    step from that evidence before touching another target.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/REPORT.md`;
+    `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/FAQ_ARIA_PATCH.diff`.
+  Does not prove: target owner accepted the patch, V02-01 is complete, or
+    product readiness is achieved.
+  Falsifier: V36 finds target owner/operator has already resolved the patch and
+    a new bounded target proof is safe.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4572,6 +4660,18 @@ Seed evidence:
   Does not prove: target owner accepted the patch, product readiness, V02-01, or
     full target runtime correctness.
   Follow-up task: V35-00.
+
+- Evidence ID: E-V35-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/REPORT.md`
+  Command/report/file: V35 report and KRN-side patch artifact
+    `FAQ_ARIA_PATCH.diff`.
+  Result: the V32 target patch is captured as explicit KRN-side handoff
+    evidence with operator choices and proof/non-proof boundaries; target repo
+    remains dirty and uncommitted.
+  Proves: KRN no longer relies on implicit target dirty state for the V32 patch.
+  Does not prove: target owner accepted the patch, product readiness, V02-01, or
+    full target runtime correctness.
+  Follow-up task: V36-00.
 ```
 
 ## 19. Condensation Queue
@@ -4906,10 +5006,18 @@ Seed queue:
 - Candidate: target patch handoff packet
   Source evidence: V34 re-gate and current target dirty state
   Surface: target patch handoff report + optional patch artifact
-  Status: accepted as V35-00
+  Status: complete as V35-00
   Reason: KRN must not leave target code changes as implicit dirty state before
     another target repair or readiness claim
   Task: V35-00
+
+- Candidate: target patch handoff re-gate
+  Source evidence: V35 handoff packet
+  Surface: readiness/next-task report
+  Status: accepted as V36-00
+  Reason: after making the patch explicit, decide whether target owner action is
+    the blocker or another bounded target proof is safe
+  Task: V36-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -5782,6 +5890,45 @@ Product readiness verdict:
 Next active stream:
 - V35 — Target Patch Handoff Packet.
 
+## Outcome 2026-06-27 V35
+
+Completed:
+- V35-00 created a KRN-side target patch handoff packet.
+- Captured exact V32 target patch in
+  `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/FAQ_ARIA_PATCH.diff`.
+- Recorded operator choices and proof/non-proof boundaries.
+- Did not edit, commit, reset, clean, or normalize the target repo.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/REPORT.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/FAQ_ARIA_PATCH.diff`.
+- Target `git status --short --branch`.
+
+What improved:
+- The V32 target patch is no longer hidden dirty state.
+- Target patch ownership is explicit and operator-facing.
+
+What did not improve:
+- Target owner acceptance.
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Full target browser/runtime/accessibility verification.
+
+New blocker:
+- Decide whether to wait for target owner/operator action, run stronger
+  observation-only verification, select another clean target proof, or resume
+  V02-01 only with real operator inputs.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V36 — Target Patch Handoff Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -5830,7 +5977,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V35 Target Patch Handoff Packet.
+Active stream: V36 Target Patch Handoff Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

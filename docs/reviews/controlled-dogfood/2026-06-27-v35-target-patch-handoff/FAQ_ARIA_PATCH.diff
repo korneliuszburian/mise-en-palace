@@ -1,0 +1,30 @@
+diff --git i/bedrock/web/app/themes/elektroinstal/src/css/blocks/faq-accordion.js w/bedrock/web/app/themes/elektroinstal/src/css/blocks/faq-accordion.js
+index 2eaee75..fdb76f0 100644
+--- i/bedrock/web/app/themes/elektroinstal/src/css/blocks/faq-accordion.js
++++ w/bedrock/web/app/themes/elektroinstal/src/css/blocks/faq-accordion.js
+@@ -3,8 +3,10 @@ document.addEventListener('DOMContentLoaded', () => {
+         trigger.addEventListener('click', () => {
+             const item = trigger.closest('.faq__item');
+             if (!item) return;
+-            const expanded = item.getAttribute('aria-expanded') === 'true';
+-            item.setAttribute('aria-expanded', expanded ? 'false' : 'true');
++            const expanded = trigger.getAttribute('aria-expanded') === 'true';
++            const nextExpanded = expanded ? 'false' : 'true';
++            trigger.setAttribute('aria-expanded', nextExpanded);
++            item.setAttribute('aria-expanded', nextExpanded);
+         });
+     });
+ });
+diff --git i/bedrock/web/app/themes/elektroinstal/template-parts/flex/faq-help.php w/bedrock/web/app/themes/elektroinstal/template-parts/flex/faq-help.php
+index e721d02..1291179 100644
+--- i/bedrock/web/app/themes/elektroinstal/template-parts/flex/faq-help.php
++++ w/bedrock/web/app/themes/elektroinstal/template-parts/flex/faq-help.php
+@@ -36,7 +36,7 @@ if ([] === $items) {
+             <?php foreach ($items as $i => $item) : ?>
+                 <?php if (! is_array($item)) { continue; } ?>
+                 <article class="faq__item" aria-expanded="false">
+-                    <button class="faq__trigger" type="button" aria-controls="faq-answer-<?php echo esc_attr((string) $i); ?>">
++                    <button class="faq__trigger" type="button" aria-expanded="false" aria-controls="faq-answer-<?php echo esc_attr((string) $i); ?>">
+                         <span><?php echo esc_html((string) ($item['question'] ?? '')); ?></span>
+                         <?php get_template_part('template-parts/components/icon', null, ['name' => 'chevron-down']); ?>
+                     </button>
