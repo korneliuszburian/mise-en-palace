@@ -66,12 +66,13 @@ V37 Target Patch Lifecycle Rule Condensation: complete
 V38 Clean Target Selection Gate: complete
 V39 WILQ Clean Target Observation-Only Baseline: complete
 V40 Target Selection Freshness Rule Condensation: complete
+V41 Target Trial Availability Re-Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V41 Target Trial Availability Re-Gate
-current task: V41-00 Target Trial Availability Re-Gate
+active stream: V42 WILQ Fresh Observation-Only Baseline Retry
+current task: V42-00 WILQ Fresh Observation-Only Baseline Retry
 ```
 
 Evidence already recorded in repo:
@@ -86,9 +87,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V40 encoded target status freshness into the target workflow. The next task must
-re-gate whether target trials should continue immediately or pause until a clean
-or explicitly writable target state exists.
+V41 found WILQ is currently clean again and selected a fresh observation-only
+baseline retry. The next task must re-check WILQ status at start and stop if it
+is dirty again.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3816,7 +3817,7 @@ Outcome:
 
 ### V41-00 — Target Trial Availability Re-Gate
 
-Status: active
+Status: complete
 
 Goal: decide whether target trials should continue immediately or pause until a
 clean or explicitly writable target state exists.
@@ -3873,6 +3874,81 @@ Definition of Done: V41 either selects a safe next target/KRN path or records
 target-owner/clean-target availability as the honest blocker.
 
 Verification commands: `git diff --check`; read-only target status.
+
+Acceptance criteria:
+
+- no target writes;
+- no fake V02-01;
+- no product-ready overclaim;
+- next active task is explicit.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v41-target-trial-availability-regate/REPORT.md`.
+- Current KRN status, latest CI, and target statuses.
+
+Outcome:
+
+- V41 found `krn-elektroinstal-ogar` remains blocked by
+  `handed_off_unresolved`.
+- V41 found `wilq-seo` is clean again at fresh check time.
+- V41 promoted a WILQ fresh observation-only baseline retry.
+
+### V42-00 — WILQ Fresh Observation-Only Baseline Retry
+
+Status: active
+
+Goal: retry WILQ observation-only baseline with fresh target status at task
+start.
+
+Product rationale: WILQ is currently the only clean/safe target candidate. KRN
+should complete a read-only baseline before any bounded repair.
+
+Architectural rationale: this task applies the V40 freshness rule. It must
+re-check target state at start instead of trusting V41.
+
+Evidence source: V41 availability re-gate found WILQ clean at fresh check time.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- WILQ target status at V42 start;
+- WILQ AGENTS, README, context/progress/goal/plan;
+- WILQ package/verification surfaces;
+- V40 target freshness rule.
+
+Files likely touched:
+
+- V42 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- WILQ target edits;
+- target commit/push/reset/clean;
+- target repair;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim.
+
+Output requirements:
+
+- target status freshness;
+- observation-only baseline;
+- repair safety decision;
+- active plan update.
+
+Definition of Done: V42 completes a fresh WILQ observation-only baseline if the
+target remains clean, or stops and records volatility if it becomes dirty again.
+
+Verification commands: `git diff --check`; read-only WILQ target status before
+and after.
 
 Acceptance criteria:
 
@@ -4173,7 +4249,9 @@ Initial entry:
   rejected immediate repair, and promoted target selection freshness rule.
 - [x] V40-00 complete: target status freshness states added to target workflow
   guidance and stale clean-state assumptions forbidden.
-- [ ] V41-00 active: Target Trial Availability Re-Gate.
+- [x] V41-00 complete: WILQ is clean again at fresh status check, elektroinstal
+  remains blocked by unresolved patch lifecycle, and V42 was promoted.
+- [ ] V42-00 active: WILQ Fresh Observation-Only Baseline Retry.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4769,6 +4847,17 @@ Initial decisions:
   Falsifier: V41 finds a clean/explicitly writable target state or real
     second-operator input that safely unlocks target work.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote WILQ fresh observation-only baseline retry as V42.
+  Rationale: V41 found WILQ is clean again at fresh check time, while
+    elektroinstal remains blocked by unresolved patch lifecycle. The safe next
+    target step is a fresh observation-only baseline, not repair.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v41-target-trial-availability-regate/REPORT.md`;
+    WILQ and elektroinstal `git status --short --branch`; KRN CI `28290281793`.
+  Does not prove: WILQ will remain clean at V42 start, WILQ repair is safe,
+    V02-01 is complete, or product readiness is achieved.
+  Falsifier: V42 start status finds WILQ dirty again.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5214,6 +5303,17 @@ Seed evidence:
   Does not prove: a clean target exists, V02-01, product readiness, or target
     repair safety.
   Follow-up task: V41-00.
+
+- Evidence ID: E-V41-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v41-target-trial-availability-regate/REPORT.md`
+  Command/report/file: current KRN/WILQ/elektroinstal statuses and CI.
+  Result: WILQ is clean again at fresh check time; elektroinstal remains blocked
+    by unresolved target patch lifecycle.
+  Proves: WILQ fresh observation-only baseline retry is currently the safest
+    target path.
+  Does not prove: WILQ repair scope, WILQ verification, V02-01, or product
+    readiness.
+  Follow-up task: V42-00.
 ```
 
 ## 19. Condensation Queue
@@ -5601,6 +5701,14 @@ Seed queue:
   Reason: after target workflow rule condensation, decide whether target trials
     can continue or should pause until a clean/explicitly writable target exists
   Task: V41-00
+
+- Candidate: WILQ fresh observation-only baseline retry
+  Source evidence: V41 availability re-gate
+  Surface: target baseline report
+  Status: accepted as V42-00
+  Reason: use current clean WILQ state only after revalidating freshness at V42
+    start
+  Task: V42-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6704,6 +6812,43 @@ Product readiness verdict:
 Next active stream:
 - V41 — Target Trial Availability Re-Gate.
 
+## Outcome 2026-06-27 V41
+
+Completed:
+- V41-00 re-gated target trial availability.
+- Confirmed KRN latest commit `a4d6ce5` had CI `28290281793` passed.
+- Confirmed WILQ is clean again at fresh status check.
+- Confirmed elektroinstal remains dirty with the V32 FAQ patch and is not
+  available for same-target repair.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v41-target-trial-availability-regate/REPORT.md`.
+- KRN, WILQ and elektroinstal `git status --short --branch`.
+- KRN CI run list.
+
+What improved:
+- Target availability is no longer based on stale V39 state.
+- WILQ can be retried safely as observation-only if V42 start status remains
+  clean.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- WILQ repair safety.
+- Target runtime verification.
+
+New task:
+- Retry WILQ observation-only baseline with fresh status at task start.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V42 — WILQ Fresh Observation-Only Baseline Retry.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -6752,7 +6897,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V41 Target Trial Availability Re-Gate.
+Active stream: V42 WILQ Fresh Observation-Only Baseline Retry.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

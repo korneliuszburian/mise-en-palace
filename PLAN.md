@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V41 Target Trial Availability Re-Gate
-current task: V41-00 Target Trial Availability Re-Gate
+active stream: V42 WILQ Fresh Observation-Only Baseline Retry
+current task: V42-00 WILQ Fresh Observation-Only Baseline Retry
 ```
 
 Completed stream summary:
@@ -70,29 +70,30 @@ V37 Target Patch Lifecycle Rule Condensation: complete
 V38 Clean Target Selection Gate: complete
 V39 WILQ Clean Target Observation-Only Baseline: complete
 V40 Target Selection Freshness Rule Condensation: complete
+V41 Target Trial Availability Re-Gate: complete
 ```
 
 ## Active Stream
 
-### V41-00 — Target Trial Availability Re-Gate
+### V42-00 — WILQ Fresh Observation-Only Baseline Retry
 
 Goal:
 
-Decide whether target trials should continue immediately or pause until a clean
-or explicitly writable target state exists.
+Retry WILQ observation-only baseline with fresh target status at task start.
 
 Current finding:
 
 ```txt
-V40 encoded target status freshness. `krn-elektroinstal-ogar` is blocked by an
-unresolved handed-off patch, and `wilq-seo` became dirty before baseline.
+V41 found `wilq-seo` is clean again, while `krn-elektroinstal-ogar` remains
+blocked by handed-off unresolved patch state. WILQ can be retried only with a
+fresh status check at V42 start.
 ```
 
-Current V41 action:
+Current V42 action:
 
 ```txt
-Re-gate target trial availability and choose the next evidence-backed direction
-without target writes.
+Re-run WILQ status, then complete observation-only baseline or stop if WILQ is
+dirty again.
 ```
 
 ## V02-01 Boundary
