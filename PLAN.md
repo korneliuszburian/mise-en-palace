@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V92 Post Eval And Policy ID Branding Re-Gate
-current task: V92-00 Post Eval And Policy ID Branding Re-Gate
+active stream: V94 Post Brain-Battle Matrix Guard Re-Gate
+current task: V94-00 Post Brain-Battle Matrix Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -125,31 +125,34 @@ V88-00 post evidence spine ID branding re-gate: complete
 V89 source decision/rejection ID branding: complete
 V90-00 post source decision ID branding re-gate: complete
 V91 eval and policy ID branding: complete
-V92 post eval and policy ID branding re-gate: active
+V92-00 post eval and policy ID branding re-gate: complete
+V93 brain-battle matrix invariant guard: complete
+V94 post brain-battle matrix guard re-gate: active
 ```
 
 ## Active Stream
 
-### V92 Post Eval And Policy ID Branding Re-Gate
+### V94 Post Brain-Battle Matrix Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after branding eval/golden/policy IDs in core
-domain types.
+Decide the next bounded task after adding a deterministic invariant guard for
+the brain-battle eval matrix.
 
 Current finding:
 
 ```txt
-V90 selected one final bounded TypeScript retained-source application:
-eval/golden/policy IDs are authority surfaces but were mutually type-compatible
-plain strings. V91 tightened them with type-level separation proof.
+V92 selected a non-TypeScript-ID follow-up: the brain-battle matrix had become a
+durable eval/readiness surface and needed a guard against decorative rows. V93
+added a focused invariant that implemented rows must name guard, evidence, and
+proof/non-proof boundaries.
 ```
 
 Current action:
 
 ```txt
-Execute V92-00: move to another pattern surface unless another TypeScript
-repair has stronger evidence than "this ID alias is still a string".
+Execute V94-00: select the next pattern surface from evidence. Do not continue
+the ID-branding streak unless a stronger consumer/falsifier appears.
 ```
 
 Primary consumer:

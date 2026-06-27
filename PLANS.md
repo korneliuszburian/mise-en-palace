@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V92 Post Eval And Policy ID Branding Re-Gate
-current task: V92-00 Post Eval And Policy ID Branding Re-Gate
+active stream: V94 Post Brain-Battle Matrix Guard Re-Gate
+current task: V94-00 Post Brain-Battle Matrix Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12828,6 +12828,60 @@ Next active stream:
 
 Next active task:
 - V92-00 Post Eval And Policy ID Branding Re-Gate.
+
+## Outcome 2026-06-27 V93 Brain-Battle Matrix Invariant Guard
+
+Completed:
+- V92-00 Post Eval And Policy ID Branding Re-Gate.
+- V93-00 Brain-Battle Matrix Invariant Guard.
+
+Evidence:
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+
+Source-to-decision:
+- Source: OpenAI Cookbook Agent Improvement Loop and KRN retained eval
+  boundary decisions.
+- Mechanism: traces/checks should feed falsifiable eval candidates and
+  improvement loops; green evals are not product truth without proof/non-proof
+  boundaries.
+- KRN implication: the brain-battle matrix must not become decorative eval
+  theater as more checks are added.
+- Decision: add a deterministic invariant that implemented matrix rows require
+  guard, evidence, and a proof/non-proof boundary, and every row requires a
+  non-proof boundary.
+- Does not prove: strategic completeness of the matrix, eval quality, product
+  readiness, or real operator readiness.
+- Consumer: `packages/harness/src/brainBattleMatrixInvariants.test.ts`.
+- Falsifier: an implemented matrix row can be added without substantive guard
+  or evidence, or any row can omit the non-proof boundary.
+
+What improved:
+- Brain-battle matrix rows are now mechanically constrained against decorative
+  evidence theater.
+- Future eval/readiness rows must keep guard/evidence/non-proof separation.
+
+What did not improve:
+- Product readiness.
+- Whether the current eval matrix covers all important brain behavior.
+- Whether Promptfoo proves behavior quality.
+
+New task:
+- V94-00 Post Brain-Battle Matrix Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V94 Post Brain-Battle Matrix Guard Re-Gate.
+
+Next active task:
+- V94-00 Post Brain-Battle Matrix Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
