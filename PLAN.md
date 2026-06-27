@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V47 Internal Hardening Re-Gate After Target Coordination
-current task: V47-00 Internal Hardening Re-Gate After Target Coordination
+active stream: V48 Continuous Pattern Source-To-Decision Gate
+current task: V48-00 Continuous Pattern Source-To-Decision Gate
 ```
 
 Completed stream summary:
@@ -76,30 +76,33 @@ V43 Target Stability Window Gate: complete
 V44 target evidence lifecycle/freshness fields: complete
 V45 target availability re-gate with typed lifecycle evidence: complete
 V46 target owner coordination packet: complete
+V47 internal hardening re-gate after target coordination: complete
 ```
 
 ## Active Stream
 
-### V47-00 — Internal Hardening Re-Gate After Target Coordination
+### V48-00 — Continuous Pattern Source-To-Decision Gate
 
 Goal:
 
-Choose the next internal KRN hardening task while target repair and V02-01 wait
-for owner/operator inputs.
+Create a standing gate for applying high-quality source-backed patterns to every
+KRN stage: infra, harness, CI, memory, skills, target workflow, TypeScript,
+Codex surfaces, evals, and research/papers.
 
 Current finding:
 
 ```txt
-V46 produced the owner/stability packet. Until those inputs arrive, KRN should
-continue only with internal hardening that reduces future target/review/context
-burden.
+V47 selected pattern source-to-decision as the next internal hardening task.
+TypeScript/Matt Pocock was only an example; the real requirement is continuous
+condensation of strong patterns and papers at every stage of KRN development.
 ```
 
-Current V47 action:
+Current V48 action:
 
 ```txt
-Inspect recent evidence and pick one bounded internal hardening task. Do not
-create another target substitute and do not touch target repos.
+Define the permanent pattern-intake gate: every non-trivial slice must state
+whether it needs sources/research, what pattern applies, what consumer receives
+it, and what falsifier proves misuse or drift.
 ```
 
 ## V02-01 Boundary

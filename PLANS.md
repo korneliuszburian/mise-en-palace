@@ -76,8 +76,9 @@ V02-01 real second-operator proof: blocked/deferred
 V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
-active stream: V47 Internal Hardening Re-Gate After Target Coordination
-current task: V47-00 Internal Hardening Re-Gate After Target Coordination
+V47 Internal Hardening Re-Gate After Target Coordination: complete
+active stream: V48 Continuous Pattern Source-To-Decision Gate
+current task: V48-00 Continuous Pattern Source-To-Decision Gate
 ```
 
 Evidence already recorded in repo:
@@ -92,9 +93,10 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V46 produced the owner/stability coordination packet. Until owner/operator
-inputs arrive, the current gap is choosing the next bounded internal KRN
-hardening task without creating another local target substitute.
+V47 selected continuous pattern source-to-decision as the next internal
+hardening task. TypeScript/Matt Pocock is only one example; the current gap is
+making best-practice condensation permanent across infra, harness, CI, skills,
+target workflow, TypeScript, Codex surfaces, evals, and research/papers.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -4305,7 +4307,7 @@ Outcome:
 
 ### V47-00 — Internal Hardening Re-Gate After Target Coordination
 
-Status: active
+Status: complete
 
 Goal: choose the next bounded internal KRN hardening task while target repair
 and V02-01 wait for owner/operator inputs.
@@ -4372,6 +4374,109 @@ Acceptance criteria:
 - no target writes;
 - no new local substitute;
 - no giant roadmap;
+- next active task is explicit.
+
+Outcome:
+
+- V47 selected continuous pattern source-to-decision as the next internal
+  hardening task.
+- V47 rejected another target substitute, activation scoring repair, reflection
+  rewrite, and dashboard/API/MCP/worker work for the current moment.
+
+### V48-00 — Continuous Pattern Source-To-Decision Gate
+
+Status: active
+
+Goal: create a standing gate for applying high-quality source-backed patterns
+to every KRN stage.
+
+Product rationale: KRN should continuously improve from the strongest
+available patterns: our own standards, public docs, high-quality courses,
+papers, battle-tested infra practices, harness/eval patterns, CI/release
+patterns, and target-repo evidence. Every significant slice should ask whether
+there is a better known pattern and either adopt, reject, or lab-test it.
+
+Architectural rationale: patterns should enter KRN through the existing
+source-to-decision lane and become durable only when they change future
+execution behavior through a consumer: standard, skill, ADR, eval/golden test,
+memory/source candidate, CLI/readback behavior, CI check, or bounded repair.
+
+Evidence source: V47 report, `docs/KRN_SOURCES.md`, source-to-decision skill,
+target-repo testing skill, TypeScript standards, OpenAI Codex/Cookbook source
+decisions, and user direction that pattern condensation must exist at every
+stage.
+
+Official/external sources: use only legal/public or user-provided sources. Do
+not copy paid course content into KRN. Convert accessible sources into
+mechanisms, decisions, and falsifiers.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v47-internal-hardening-regate/REPORT.md`;
+- `docs/KRN_SOURCES.md`;
+- `.agents/skills/source-to-decision/SKILL.md`;
+- `.agents/skills/typescript-type-safety/SKILL.md`;
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- current standards, ADRs, CI/eval docs, and runbooks as needed.
+
+Files likely touched:
+
+- V48 report under `docs/reviews/controlled-dogfood/`;
+- `PLANS.md` operating rules;
+- `GOAL.md`;
+- `PLAN.md`;
+- optionally one small skill/standard/runbook update if directly justified;
+
+Allowed writes:
+
+- KRN reports/plans;
+- one small standards, skill, runbook, ADR, or eval-candidate update if
+  directly justified by V48.
+
+Forbidden writes:
+
+- target repo edits;
+- broad course indexing;
+- copying paid/proprietary course material into KRN;
+- broad quality scanner or audit subsystem;
+- broad source rewrite;
+- product-ready/V02-01 overclaim;
+- dashboard/API/MCP/worker/new eval platform.
+
+Output requirements:
+
+- a permanent per-slice pattern-intake rule;
+- source categories and trust tiers;
+- consumer routing: standard / skill / ADR / eval / memory-source candidate /
+  CLI behavior / CI check / bounded repair / reject;
+- falsifier rule for pattern misuse;
+- context-condensation rule so research does not become active-context sludge;
+- one chosen durable consumer or explicit rejection;
+- proof/non-proof boundaries.
+
+Definition of Done: V48 creates a usable gate for continuous pattern
+condensation across future KRN slices without source hoarding.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+If source or skill files change:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no broad source archive;
+- no target writes;
+- no product-ready or V02-01 overclaim;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -7661,7 +7766,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V47 Internal Hardening Re-Gate After Target Coordination.
+Active stream: V48 Continuous Pattern Source-To-Decision Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

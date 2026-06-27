@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V47 — Internal Hardening Re-Gate After Target Coordination
+V48 — Continuous Pattern Source-To-Decision Gate
 ```
 
 Current product loop:
@@ -87,8 +87,9 @@ V43 Target Stability Window Gate: complete.
 V44 Target Evidence Lifecycle And Freshness Fields: complete.
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete.
 V46 Target Owner Coordination Packet: complete.
-active stream: V47 Internal Hardening Re-Gate After Target Coordination.
-current task: V47-00 — Internal Hardening Re-Gate After Target Coordination.
+V47 Internal Hardening Re-Gate After Target Coordination: complete.
+active stream: V48 Continuous Pattern Source-To-Decision Gate.
+current task: V48-00 — Continuous Pattern Source-To-Decision Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
