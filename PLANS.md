@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V129 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, and source-to-decision skill guard slices: complete
-active stream: V130 Post Source-To-Decision Skill Contract Guard Re-Gate
-current task: V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate
+V48..V131 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, and current-smoke description guard slices: complete
+active stream: V132 Post Brain-Battle Current Smoke Description Guard Re-Gate
+current task: V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate.
+V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14120,6 +14120,80 @@ Next active stream:
 
 Next active task:
 - V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate.
+
+## Outcome 2026-06-27 V131 Brain-Battle Current Smoke Description Guard
+
+Completed tasks:
+- V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate.
+- V131-00 Brain-Battle Current Smoke Description Guard.
+
+V130 decision:
+- Do not broaden source-to-decision skill guarding into source crawling, source
+  archival work, or skill sprawl.
+- Select brain-battle current-smoke description alignment because the smoke
+  command already runs the newer invariant guards, but the matrix prose still
+  summarized only the older guard surfaces.
+
+What changed:
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts` now checks that
+  the root `eval:brain-battle:smoke` script keeps the invariant guard filters
+  and that the matrix `Current Smoke` section names active plan freshness,
+  active context hygiene, source-map mapping, source location scheme,
+  pattern-intake output contract, repo-local skill routability,
+  source-to-decision skill contract, TypeScript boundary hygiene, and matrix
+  guard/proof boundaries.
+- `docs/architecture/brain-battle-eval-matrix.md` now names those current smoke
+  guard surfaces.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V132.
+
+Evidence:
+- `package.json`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts`.
+- recent V115..V129 guard outcomes.
+
+Source-to-decision:
+- Source: current root `eval:brain-battle:smoke` script and brain-battle matrix.
+- Mechanism: deterministic smoke documentation becomes false authority when it
+  omits guard surfaces that the command actually runs.
+- KRN implication: eval/readback surfaces must preserve proof/non-proof and
+  coverage alignment without becoming a broad eval platform.
+- Decision: add focused matrix invariant coverage for current-smoke description
+  alignment.
+- Does not prove: eval quality is sufficient, all behavior is covered, the smoke
+  proves product readiness, or future task choice is strategically correct.
+- Consumer: `packages/harness/src/brainBattleMatrixInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `docs/architecture/brain-battle-eval-matrix.md` can omit newer
+  invariant guard surfaces from the `Current Smoke` section while focused tests
+  still pass.
+
+What improved:
+- Brain-battle smoke docs are harder to drift from the actual deterministic
+  guard surface.
+- Newer source/pattern/skill invariant guards are visible in the current smoke
+  proof boundary.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Eval platform breadth or LLM-as-judge quality.
+
+New task:
+- V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V132 Post Brain-Battle Current Smoke Description Guard Re-Gate.
+
+Next active task:
+- V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

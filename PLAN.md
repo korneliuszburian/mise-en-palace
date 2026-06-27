@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V130 Post Source-To-Decision Skill Contract Guard Re-Gate
-current task: V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate
+active stream: V132 Post Brain-Battle Current Smoke Description Guard Re-Gate
+current task: V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,38 +43,35 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V129: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V131: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
-           metadata, pattern-intake output, source location scheme, and
-           source-to-decision skill guards complete.
+           metadata, pattern-intake output, source location scheme,
+           source-to-decision skill, and current-smoke description guards
+           complete.
 ```
 
 ## Active Stream
 
-### V130 Post Source-To-Decision Skill Contract Guard Re-Gate
+### V132 Post Brain-Battle Current Smoke Description Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding the source-to-decision skill
-contract without turning source intake into a crawler, freshness scanner, source
-archive, or skill sprawl.
+Decide the next bounded task after guarding the brain-battle current-smoke
+description without turning eval documentation into a broad eval platform.
 
 Current finding:
 
 ```txt
-V128 selected the source-to-decision skill as the next bounded pattern surface.
-V129 strengthened the skill invariant so the skill must keep pattern-intake
-routing, anti-source-hoarding rules, legal/course boundaries, output fields,
-decision kind, consumer/falsifier gate, and candidate reviewability labels.
+V130 selected current-smoke description alignment as the next bounded pattern
+surface. V131 strengthened the brain-battle matrix invariant so the current
+smoke description must name the newer invariant guard surfaces.
 ```
 
 Current action:
 
 ```txt
-Execute V130-00: select the next pattern surface from evidence. Do not broaden
-source intake into Research Foundry, crawler, decorative source archive,
-freshness scanner, paid-course transcription, or extra skills without repeated
-workflow evidence.
+Execute V132-00: select the next pattern surface from evidence. Do not broaden
+the matrix into a broad eval platform, LLM judge, dashboard, or benchmark lane.
 ```
 
 Primary consumer:
@@ -86,8 +83,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source-to-decision skill guarding into source crawling,
-source archival work, or skill sprawl without a concrete consumer.
+The re-gate turns focused current-smoke description guarding into broad eval
+platform work without a concrete consumer.
 ```
 
 ## External Input Blocker

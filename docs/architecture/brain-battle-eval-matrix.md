@@ -63,9 +63,10 @@ owner-file-below-roots case, the V02-03 decorative source rejection case, the
 V02-03 CLI run-readback proof/non-proof guard, the V02-04 CLI memory feedback /
 anti-memory candidate guards, and the V02-05 Codex brief / ContextROI guards.
 It also runs focused harness invariants for active plan freshness, active
-context hygiene, source-map source-to-decision mapping, repo-local skill
-routability, TypeScript boundary hygiene, and matrix guard/proof boundaries. It
-is deterministic and does not call an LLM judge.
+context hygiene, source-map source-to-decision mapping, source location scheme,
+pattern-intake output contract, repo-local skill routability,
+source-to-decision skill contract, TypeScript boundary hygiene, and matrix
+guard/proof boundaries. It is deterministic and does not call an LLM judge.
 
 ## Promptfoo Boundary
 
