@@ -167,6 +167,7 @@ describe("renderExecutionBrief", () => {
     });
     expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
     expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
+    expect(brief.untrustedContextWarnings).toEqual([]);
     expect(brief.antiMemoryWarnings).toEqual([
       "anti_memory_record:anti-1 | unsafe | Do not treat old markdown memory as runtime truth."
     ]);
@@ -195,6 +196,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
     expect(rendered).toContain("Context Inclusions:");
+    expect(rendered).toContain("Untrusted Context Warnings:");
     expect(rendered).toContain("Constraints:");
     expect(rendered).toContain("- no runtime markdown memory");
     expect(rendered).toContain("Acceptance:");
@@ -225,6 +227,40 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain("- Codex executed the work.");
     expect(rendered).toContain("Goal: final harness spine");
     expect(rendered).toContain("PLAN.md Milestone 14");
+  });
+
+  it("warns when selected context is not a trusted tier", () => {
+    const brief = createExecutionBrief({
+      taskContract,
+      harnessPlan,
+      contextAssembly: {
+        ...contextAssembly,
+        inclusions: [
+          ...contextAssembly.inclusions,
+          {
+            subjectType: "source_claim",
+            subjectId: "claim-hypothesis",
+            reason: "Hypothesis source may help identify risk.",
+            expectedUse: "Use only as a risk hypothesis.",
+            tokenEstimate: 20,
+            trustTier: "hypothesis"
+          }
+        ]
+      },
+      capabilityPlan,
+      evidenceContract,
+      nextAction: "Implement the smallest missing doctor check."
+    });
+
+    expect(brief.untrustedContextWarnings).toEqual([
+      "source_claim:claim-hypothesis | trust=hypothesis | treat as untrusted selected context; verify before using as implementation authority"
+    ]);
+
+    const rendered = renderExecutionBriefText(brief);
+
+    expect(rendered).toContain("Untrusted Context Warnings:");
+    expect(rendered).toContain("source_claim:claim-hypothesis");
+    expect(rendered).toContain("treat as untrusted selected context");
   });
 
   it("keeps the existing renderExecutionBrief wrapper stable", () => {

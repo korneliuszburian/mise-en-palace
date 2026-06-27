@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V69 Security Trust Boundary Pattern Application
-current task: V69-00 Untrusted Context Warning Pattern Application
+active stream: V70 Post Security Trust Boundary Re-Gate
+current task: V70-00 Post Security Trust Boundary Re-Gate
 ```
 
 Completed stream summary:
@@ -102,46 +102,43 @@ V65-01 post TypeScript pattern application re-gate: complete
 V66-00 TypeScript boundary falsifier spot-check: complete
 V67-00 harness activation pattern application: complete
 V68-00 post harness activation pattern re-gate: complete
-V69 security trust boundary pattern application: active
+V69-00 untrusted context warning pattern application: complete
+V70 post security trust boundary re-gate: active
 ```
 
 ## Active Stream
 
-### V69 Security Trust Boundary Pattern Application
+### V70 Post Security Trust Boundary Re-Gate
 
 Goal:
 
-Apply the security/trust boundary pattern to the existing untrusted selected
-context risk and route it to one bounded consumer.
+Decide the next bounded task after adding deterministic untrusted-context
+warnings to Codex briefs.
 
 Current finding:
 
 ```txt
-Activation owner-file recall already has skill guidance and deterministic eval
-coverage. The next high-ROI pattern surface is security/trust: current threat
-model says selected source/memory context can enter Codex briefs without an
-explicit untrusted-context warning.
+V69 implemented SEC-01: `ExecutionBrief` now carries deterministic
+untrusted-context warnings and rendered briefs show an explicit warning section.
 ```
 
 Current action:
 
 ```txt
-Execute V69-00: route the security/trust source packet to exactly one consumer:
-a bounded Codex adapter warning repair, an eval/golden candidate, or an explicit
-defer decision.
+Execute V70-00: decide whether the next task is another bounded security proof,
+another pattern surface, or an honest blocker.
 ```
 
 Primary consumer:
 
 ```txt
-One bounded repair/eval/defer decision.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The task creates a generic security project instead of the named untrusted
-context warning consumer.
+The re-gate selects generic security work instead of a named consumer/falsifier.
 ```
 
 ### External Input Blocker

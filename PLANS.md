@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V69 Security Trust Boundary Pattern Application
-current task: V69-00 Untrusted Context Warning Pattern Application
+active stream: V70 Post Security Trust Boundary Re-Gate
+current task: V70-00 Post Security Trust Boundary Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -6505,7 +6505,7 @@ Acceptance criteria:
 
 ### V69-00 — Untrusted Context Warning Pattern Application
 
-Status: active
+Status: complete
 
 Goal: Apply the security/trust boundary pattern to the existing untrusted
 selected-context risk and route it to one bounded consumer.
@@ -6592,6 +6592,88 @@ git status --short --branch
 Acceptance criteria:
 
 - The next step is bounded to untrusted context warning behavior.
+
+### V70-00 — Post Security Trust Boundary Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after implementing deterministic
+untrusted-context warnings in Codex briefs.
+
+Pattern surface: security / permissions / trust boundaries.
+
+Product rationale: The security/trust pattern application produced a bounded
+adapter repair. The next step should be selected from evidence, not from a
+generic desire to keep adding security work.
+
+Architectural rationale: Security work must stay tied to a named boundary,
+consumer, and falsifier. If no bounded proof/repair remains, move to the next
+pattern surface or record a blocker.
+
+Evidence source:
+
+- `packages/codex-adapter/src/renderExecutionBrief.ts`
+- `packages/codex-adapter/src/contracts.ts`
+- `docs/architecture/security-trust-boundaries.md`
+- `docs/architecture/brain-battle-eval-matrix.md`
+
+Official/external sources:
+
+- none beyond sources already retained in `docs/KRN_SOURCES.md`.
+
+Inputs required:
+
+- V69 diff and verification evidence.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- prompt-injection resistance;
+- public security readiness;
+- product readiness.
+
+Falsifier:
+
+- The re-gate selects generic security work without a named boundary and proof.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- broad security project;
+- hooks/MCP/API/dashboard work;
+- package source unless a bounded repair is selected.
+
+Output requirements:
+
+- One next bounded task or blocker.
+
+Definition of Done:
+
+- Next active task is explicit.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- Plan state can be resumed without chat context.
 
 ### External Input Blocker
 
@@ -6973,8 +7055,9 @@ Initial entry:
   the activation-engine skill.
 - [x] V68-00 complete: selected security/trust boundary work instead of more
   activation work by momentum.
-- [ ] V69-00 active: apply the untrusted-context warning pattern to one
-  bounded consumer.
+- [x] V69-00 complete: implemented deterministic untrusted-context warnings in
+  Codex briefs and updated security/eval docs.
+- [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7954,6 +8037,21 @@ Initial decisions:
     hooks/MCP/API/dashboard.
   Falsifier: V69-00 cannot select a bounded consumer for the named untrusted
     context warning risk.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Implement deterministic untrusted-context warnings in Codex briefs.
+  Rationale: E00-T1/SEC-01 identified that selected external or untrusted
+    source/memory context could enter Codex briefs without an explicit warning.
+    The bounded consumer is the Codex adapter brief contract and renderer.
+  Surface: security / permissions / trust boundaries.
+  Consumer: `packages/codex-adapter` execution brief contract/rendering.
+  Does not prove: prompt-injection resistance, Codex follows the brief, or
+    public security readiness.
+  Falsifier: a rendered brief includes non-trusted selected context without an
+    `Untrusted Context Warnings` entry.
+  Verification: `pnpm --filter @krn/codex-adapter test -- renderExecutionBrief
+    codexBriefGoldenBehavior contracts`; `pnpm -C packages/codex-adapter
+    typecheck`; `pnpm eval:brain-battle:smoke`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -11068,6 +11166,7 @@ Completed:
 - V66-00 External Boundary Drift Spot-Check.
 - V67-00 Harness Activation Source Packet Application.
 - V68-00 Post Harness Activation Pattern Re-Gate.
+- V69-00 Untrusted Context Warning Pattern Application.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -11097,6 +11196,8 @@ What improved:
   `.agents/skills/activation-engine/SKILL.md`.
 - V68 selected the next pattern surface from existing risk evidence:
   security/trust untrusted-context warning.
+- V69 implemented deterministic untrusted-context warnings in Codex execution
+  briefs and updated the security/eval docs.
 
 What did not improve:
 - Product readiness.
@@ -11106,10 +11207,10 @@ What did not improve:
 - Current TypeScript source drift.
 - Package source behavior.
 - Activation scoring or runtime behavior.
-- Codex adapter security behavior.
+- Prompt-injection resistance or public security readiness.
 
 New task:
-- V69-00 Untrusted Context Warning Pattern Application.
+- V70-00 Post Security Trust Boundary Re-Gate.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -11118,10 +11219,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V69 Security Trust Boundary Pattern Application.
+- V70 Post Security Trust Boundary Re-Gate.
 
 Next active task:
-- V69-00 Untrusted Context Warning Pattern Application.
+- V70-00 Post Security Trust Boundary Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -11171,7 +11272,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V69 Security Trust Boundary Pattern Application.
+Active stream: V70 Post Security Trust Boundary Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

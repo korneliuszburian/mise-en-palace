@@ -126,6 +126,7 @@ export interface ExecutionBrief {
   nonGoals: string[];
   currentTaskContract: ExecutionBriefTaskContract;
   includedContext: ExecutionBriefContextInclusion[];
+  untrustedContextWarnings: string[];
   explicitExclusions: ExecutionBriefContextExclusion[];
   sourceClaimsUsed: string[];
   memoryRecordsUsed: string[];

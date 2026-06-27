@@ -87,6 +87,7 @@ describe("Codex adapter contracts", () => {
           trustTier: "high"
         }
       ],
+      untrustedContextWarnings: [],
       explicitExclusions: [
         {
           subjectType: "source_claim",

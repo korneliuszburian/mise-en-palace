@@ -43,7 +43,7 @@ Not reviewed in this slice:
 | Source claims | `SourceClaimInputSchema` requires mechanism, KRN implication, `doesNotProve`, consumer, falsifier, and proposed status. | Source-to-decision discipline prevents decorative sources. | Hostile source text may still be selected into context or Codex brief if accepted by operator workflow. | Add untrusted-context/taint warning in Codex brief or policy gate before external repo alpha. |
 | Memory promotion | `MemoryReviewGate` requires review, source lineage/application guidance, candidate evidence provenance, evidence refs, and rejects `default_template`. | Promotion is explicit; observe/reflect do not mutate Memory Core. | Human reviewer can still promote poisoned or stale content if provenance is weak but non-default. | Add promotion checklist/policy gate for untrusted source lineage before broader target use. |
 | Reflection candidates | Reflection writer keeps candidate metadata and reviewability; policy candidates remain unsupported; eval candidates remain proposal-only. | Candidate-only contract; no automatic Memory Core mutation. | Candidate writer can create source claims if repository and artifact are supplied, so source claim review remains important. | Keep source claims proposed and require source decision review before use as authority. |
-| Codex adapter | Brief renderer includes context inclusions, exclusions, source claims used, memory records used, tool boundaries, evidence contract, hooks, and does-not-prove. | Adapter does not invoke Codex, mutate memory, or create MCP resources. | Brief can carry untrusted source/memory text into Codex execution context without a visible taint label. | First E-01 policy/hook design should include deterministic untrusted-context warning. |
+| Codex adapter | Brief renderer includes context inclusions, untrusted-context warnings, exclusions, source claims used, memory records used, tool boundaries, evidence contract, hooks, and does-not-prove. | Adapter does not invoke Codex, mutate memory, or create MCP resources. | Warning is trust-tier based and does not prove prompt-injection resistance. | Keep deterministic warning covered by Codex adapter tests; expand only with target evidence. |
 | Workers/API/MCP/dashboard | Not built. | Package boundary docs forbid treating absent surfaces as product proof. | Future interfaces could bypass read/propose/write unless designed over typed read models and policy gates. | Keep deferred until E-00/E-01/G gates are satisfied. |
 
 ## Source-To-Decision Entries
@@ -90,17 +90,17 @@ title: Codex brief rendering boundary
 trust_tier: high
 mechanism: the adapter renders selected context, exclusions, tool boundaries, evidence expectations, hooks, and does-not-prove without invoking Codex.
 krn_implication: Codex execution remains external, but untrusted selected context still enters the brief as text.
-decision: adopt current adapter boundary and add a deterministic untrusted-context warning before broader target-repo alpha.
+decision: adopt current adapter boundary with deterministic untrusted-context warning before broader target-repo alpha.
 does_not_prove: prompt-injection resistance or safe execution by Codex.
 consumer: E-01 policy gate design, Codex adapter.
-falsifier: Codex brief renders untrusted external text without trust labels once target-repo alpha starts.
+falsifier: Codex brief renders untrusted external text without warning labels once target-repo alpha starts.
 ```
 
 ## Threats And Required Follow-Up
 
 | ID | Threat | Current severity | Existing evidence | Required action |
 | --- | --- | --- | --- | --- |
-| E00-T1 | Untrusted source or memory text influences Codex through selected context. | high before target-repo alpha | Source claims and memory have trust/evidence metadata, but brief lacks explicit taint warning. | E-01: add deterministic untrusted-context warning/policy expectation in Codex brief or hook design. |
+| E00-T1 | Untrusted source or memory text influences Codex through selected context. | reduced after V69 | Source claims and memory have trust/evidence metadata; Codex brief now renders deterministic untrusted-context warnings for non-trusted tiers. | Keep warning covered by adapter tests; do not claim prompt-injection resistance. |
 | E00-T2 | Secrets leak into persisted observation/evidence payloads. | medium | Observation redaction exists and is tested; evidence metadata can still carry operator text. | Add target-repo redaction corpus tests when first external repo trial starts. |
 | E00-T3 | Operator-reported command evidence is overtrusted. | medium | Evidence commands carry provenance and `doesNotProve`; readback shows proof/non-proof. | Keep review burden readback; do not add hidden execution without allowlist/output refs. |
 | E00-T4 | Memory promotion accepts poisoned or weakly sourced candidates. | medium | Review gate rejects missing evidence/source lineage and default template proof. | Add promotion checklist for untrusted source lineage before external target-repo use. |
@@ -112,16 +112,18 @@ No critical source fix is required in E-00. Current KRN is acceptable for
 continued DB-backed dogfood with operator oversight.
 
 KRN is not ready for public product use or external target-repo alpha until
-untrusted-context warning/policy design is added and secret redaction is
-validated against target repo evidence.
+secret redaction is validated against target repo evidence and untrusted-context
+warning behavior is exercised in target-like runs.
 
 ## Bounded Repair Queue
 
 ### SEC-01: Untrusted Context Warning In Codex Brief
 
+Status: implemented in V69.
+
 Why:
 - Codex brief currently renders selected source/memory context with trust data,
-  but without an explicit warning when the context is external or untrusted.
+  but needs an explicit warning when the context is external or untrusted.
 
 Files likely touched:
 - `packages/codex-adapter/src/renderExecutionBrief.ts`;
@@ -136,6 +138,12 @@ Non-goals:
 Verification:
 - codex adapter tests;
 - golden behavior proof if the brief contract changes.
+
+Outcome:
+- `ExecutionBrief` now carries `untrustedContextWarnings`.
+- Rendered briefs include an `Untrusted Context Warnings` section.
+- Warning is deterministic from selected-context trust tier and does not inspect
+  source text.
 
 ### SEC-02: Observation/Evidence Redaction Corpus For Target Repo Alpha
 
