@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V199 Kernel Current-Boundary Repair
-current task: V199-00 Kernel Current-Boundary Repair
+active stream: V200 Post Kernel Boundary Re-Gate
+current task: V200-00 Post Kernel Boundary Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V198: active-surface compactness, handoff, PLANS freshness,
+V100..V199: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,39 +49,38 @@ V100..V198: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V199 Kernel Current-Boundary Repair
+### V200 Post Kernel Boundary Re-Gate
 
 Goal:
 
-Repair stale current-boundary wording in docs/KRN_KERNEL.md.
+Decide the next bounded task after repairing required kernel current boundary.
 
 Current finding:
 
 ```txt
-V198 found docs/KRN_KERNEL.md is required reading before edits but still labels
-the project as "Current Bootstrap Boundary" with Commit 0/1 wording.
+V199 repaired docs/KRN_KERNEL.md and added a context hygiene guard so required
+kernel reading stays aligned with current controlled-internal-alpha state.
 ```
 
 Current action:
 
 ```txt
-Execute V199-00: align docs/KRN_KERNEL.md with the current controlled-internal-
-alpha boundary and add a focused invariant. Do not broaden into a docs sweep,
-Research Foundry, source crawler, dashboard, product-readiness claim, or
-architecture rewrite.
+Execute V200-00: select the next bounded evidence-backed task. Do not broaden
+kernel cleanup into a docs sweep, Research Foundry, source crawler, dashboard,
+product-readiness claim, or architecture rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-docs/KRN_KERNEL.md and focused context/active-plan invariant.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-Kernel required reading can again claim bootstrap/Commit 0/1 state while tests
-pass.
+The re-gate turns kernel repair into broad docs churn without a concrete
+consumer and falsifier.
 ```
 
 ## Pattern Gate

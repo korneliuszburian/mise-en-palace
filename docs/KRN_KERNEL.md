@@ -21,11 +21,21 @@ Codex executes. KRN supplies:
 Do not build more context. Build the machinery that selects, applies, verifies,
 and forgets context.
 
-## Current Bootstrap Boundary
+## Current Product Boundary
 
-This repo starts as a kernel workspace, not an application. Commit 0/1 encodes
-the language, hard stops, source map, pattern gate, repo-local skills, and one
-read-only TypeScript critic.
+This repo is a controlled-internal-alpha KRN harness workspace for technical
+operators. It is not product-ready and not widened internal alpha.
+
+The current durable boundary is:
+
+- compact root `GOAL.md` and `PLAN.md` for active execution truth;
+- `PLANS.md` for detailed continuous execution history and next-task synthesis;
+- source-to-decision and pattern-intake gates for retained patterns;
+- repo-local skills for repeated execution workflows;
+- typed harness spine from operator intent through feedback/candidate outputs;
+- store-backed memory/source/evidence/review behavior with markdown as docs,
+  exports, seeds, or audit trails only;
+- deterministic guards and smoke paths before broad product surfaces.
 
 ## What KRN Is Not
 

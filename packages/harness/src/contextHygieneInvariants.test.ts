@@ -29,6 +29,23 @@ describe("KRN context hygiene invariants", () => {
     expect(activeTruth).not.toMatch(/docs\/plans\/historical-ledgers/u);
   });
 
+  it("keeps the required kernel boundary aligned with current product state", () => {
+    const kernel = readRootFile("docs/KRN_KERNEL.md");
+
+    expect(kernel).toContain("## Current Product Boundary");
+    expect(kernel).toContain("controlled-internal-alpha");
+    expect(kernel).toContain("not product-ready");
+    expect(kernel).toContain("not widened internal alpha");
+    expect(kernel).toContain("compact root `GOAL.md` and `PLAN.md`");
+    expect(kernel).toContain("PLANS.md");
+    expect(kernel).toContain("source-to-decision and pattern-intake gates");
+    expect(kernel).toContain("typed harness spine");
+    expect(kernel).toContain("store-backed memory/source/evidence/review behavior");
+
+    expect(kernel).not.toContain("## Current Bootstrap Boundary");
+    expect(kernel).not.toContain("Commit 0/1");
+  });
+
   it("keeps root active surfaces compact enough for resume context", () => {
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");

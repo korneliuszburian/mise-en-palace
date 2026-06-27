@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V198 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, and kernel current-boundary re-gate slices: complete
-active stream: V199 Kernel Current-Boundary Repair
-current task: V199-00 Kernel Current-Boundary Repair
+V48..V199 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, and kernel boundary repair guard slices: complete
+active stream: V200 Post Kernel Boundary Re-Gate
+current task: V200-00 Post Kernel Boundary Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V199-00 Kernel Current-Boundary Repair.
+V200-00 Post Kernel Boundary Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16651,6 +16651,60 @@ Next active stream:
 
 Next active task:
 - V199-00 Kernel Current-Boundary Repair.
+
+## Outcome 2026-06-28 V199 Kernel Current-Boundary Repair
+
+Completed task:
+- V199-00 Kernel Current-Boundary Repair.
+
+What changed:
+- `docs/KRN_KERNEL.md` now uses `Current Product Boundary` instead of
+  `Current Bootstrap Boundary`.
+- The kernel required-reading boundary now states controlled-internal-alpha,
+  not product-ready, not widened internal alpha.
+- The kernel now names active root `GOAL.md` / `PLAN.md`, detailed `PLANS.md`,
+  source-to-decision/pattern-intake gates, repo-local skills, typed harness
+  spine, store-backed memory/source/evidence/review behavior, and deterministic
+  guards/smoke paths.
+- `packages/harness/src/contextHygieneInvariants.test.ts` now fails if the
+  kernel returns to bootstrap/Commit 0/1 wording.
+
+Evidence:
+- Focused context hygiene test passed with TMPDIR outside the repo.
+- The updated kernel preserves raw material quarantine, small active context,
+  runtime truth, canonical harness spine, and the full consumer/falsifier
+  decision rule.
+
+Source-to-decision:
+- Source: `docs/KRN_KERNEL.md`, `AGENTS.md`, V198 kernel re-gate, and context
+  hygiene invariants.
+- Mechanism: every implementation slice reads the kernel before editing, so
+  stale boundary language propagates into execution more directly than normal
+  docs drift.
+- KRN implication: kernel law should be durable, but current product boundary
+  must reflect controlled-internal-alpha state and the current typed spine.
+- Decision: repair the kernel current-boundary language and guard it.
+- Does not prove: product readiness, widened internal alpha, or that all docs
+  are current.
+- Consumer: `docs/KRN_KERNEL.md` and
+  `packages/harness/src/contextHygieneInvariants.test.ts`.
+- Falsifier: required kernel reading can again claim bootstrap/Commit 0/1 state
+  while tests pass.
+
+New task:
+- V200-00 Post Kernel Boundary Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V200 Post Kernel Boundary Re-Gate.
+
+Next active task:
+- V200-00 Post Kernel Boundary Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
