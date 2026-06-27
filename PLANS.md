@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V49 First Continuous Pattern Gate Application
-current task: V49-00 First Continuous Pattern Gate Application
+active stream: V50 CI Action Modernization Re-Gate
+current task: V50-00 CI Action Modernization Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -4517,7 +4517,7 @@ Outcome:
 
 ### V49-00 — First Continuous Pattern Gate Application
 
-Status: active
+Status: complete
 
 Goal: apply the new Continuous Pattern Gate to one bounded real KRN slice and
 record whether it changes a decision, rejects a decorative source, creates a
@@ -4606,6 +4606,92 @@ Acceptance criteria:
 - no product-ready or V02-01 overclaim;
 - gate output has consumer and falsifier;
 - next active task is explicit.
+
+Outcome:
+
+- V49 applied the Continuous Pattern Gate to the CI/release surface.
+- V49 selected the GitHub Actions Node20 deprecation annotation from CI run
+  `28291779255` as the source.
+- V49 routed the decision into `.github/workflows/ci.yml`, updating
+  `pnpm/action-setup@v4` to `@v6` and `actions/setup-node@v4` to `@v6` while
+  keeping project execution on Node 22.
+- The falsifier is the post-push KRN CI run or the same deprecation warning
+  remaining for the same actions.
+
+### V50-00 — CI Action Modernization Re-Gate
+
+Status: active
+
+Goal: inspect the post-push CI result for V49 and decide whether the action
+modernization is accepted, needs repair/revert, or creates a next bounded task.
+
+Product rationale: V49's source-backed decision is valid only if GitHub-hosted
+CI accepts the workflow update. The next step must consume the CI result before
+unrelated work starts.
+
+Architectural rationale: Continuous Pattern Gate applications need explicit
+falsifier readback. CI is the falsifier for this slice.
+
+Evidence source: V49 report, `.github/workflows/ci.yml`, and the GitHub Actions
+run for the V49 commit.
+
+Official/external sources: no new source unless CI fails and the error requires
+official action docs/release notes.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v49-continuous-pattern-gate-application/REPORT.md`;
+- the post-push GitHub Actions run for V49;
+- current `.github/workflows/ci.yml`.
+
+Files likely touched:
+
+- `PLANS.md`;
+- `GOAL.md`;
+- `PLAN.md`;
+- V50 report if the result creates a non-trivial decision;
+- `.github/workflows/ci.yml` only if CI fails and repair/revert is required.
+
+Allowed writes:
+
+- KRN plans/reports;
+- CI workflow repair/revert only if V49 CI fails.
+
+Forbidden writes:
+
+- target repo edits;
+- unrelated source repairs;
+- broad CI modernization beyond the failed/accepted action update;
+- product-ready/V02-01 overclaim.
+
+Output requirements:
+
+- CI run id and conclusion;
+- accepted/repair/revert decision;
+- proof/non-proof boundary;
+- next active task from evidence.
+
+Definition of Done: V50 records whether V49's gate application was accepted by
+CI and selects the next bounded task.
+
+Verification commands:
+
+```sh
+git status --short --branch
+gh run view <run-id> --json conclusion,status,headSha,displayTitle,url
+```
+
+If CI repair/revert is required:
+
+```sh
+git diff --check
+```
+
+Acceptance criteria:
+
+- no unrelated work before CI result is consumed;
+- failed V49 action update is repaired or reverted before new work;
+- passing V49 CI records the gate application as accepted.
 
 ## 13. Generated Task Backlog
 
@@ -4916,7 +5002,10 @@ Initial entry:
 - [x] V48-00 complete: Continuous Pattern Gate added to `source-to-decision`
   skill and root plans; high-quality patterns now require mechanism, consumer,
   and falsifier instead of becoming source hoarding.
-- [ ] V49-00 active: First Continuous Pattern Gate Application.
+- [x] V49-00 complete: Continuous Pattern Gate applied to CI action runtime
+  modernization with `.github/workflows/ci.yml` as consumer and post-push CI as
+  falsifier.
+- [ ] V50-00 active: CI Action Modernization Re-Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -5601,6 +5690,18 @@ Initial decisions:
   Falsifier: the first application adds no decision, no rejection, no consumer,
     and no falsifier.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Apply the Continuous Pattern Gate to CI action runtime
+    modernization.
+  Rationale: the V48 CI run produced a fresh Node20 action-runtime deprecation
+    annotation for `actions/setup-node@v4` and `pnpm/action-setup@v4`. The
+    pattern surface is CI/release, the consumer is `.github/workflows/ci.yml`,
+    and post-push CI can falsify the repair.
+  Evidence: GitHub Actions run `28291779255`; `.github/workflows/ci.yml`.
+  Does not prove: product readiness, V02-01, or full CI modernization.
+  Falsifier: V49 post-push CI fails, or the same Node20 deprecation warning
+    remains for the updated actions.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -6135,6 +6236,19 @@ Seed evidence:
   Does not prove: the gate improves code before a real application, that all
     best sources are ingested, product readiness, or V02-01.
   Follow-up task: V49-00.
+
+- Evidence ID: E-V49-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v49-continuous-pattern-gate-application/REPORT.md`
+  Command/report/file: CI annotation from run `28291779255` and
+    `.github/workflows/ci.yml` update.
+  Result: Continuous Pattern Gate applied to CI/release surface; setup actions
+    moved from Node20-runtime majors to `pnpm/action-setup@v6` and
+    `actions/setup-node@v6`.
+  Proves: the gate can route a fresh platform warning into a bounded consumer
+    with explicit falsifier.
+  Does not prove: post-push CI success, product readiness, V02-01, or broad CI
+    modernization.
+  Follow-up task: V50-00.
 ```
 
 ## 19. Condensation Queue
@@ -6588,6 +6702,15 @@ Seed queue:
   Reason: the gate must be applied to prove it changes decisions, rejects
     decorative sources, creates consumers, or exposes friction
   Task: V49-00
+
+- Candidate: CI action runtime modernization
+  Source evidence: V49 CI warning source decision
+  Surface: `.github/workflows/ci.yml`
+  Status: implemented in V49-00; accepted only if V50 CI readback passes
+  Reason: CI should not retain avoidable Node20 action-runtime deprecation
+    warnings when a bounded action-major update is available and falsifiable
+    by CI
+  Task: V49-00..V50-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -7989,6 +8112,44 @@ Product readiness verdict:
 Next active stream:
 - V49 — First Continuous Pattern Gate Application.
 
+## Outcome 2026-06-27 V49
+
+Completed:
+- V49-00 applied the Continuous Pattern Gate to CI action runtime
+  modernization.
+- `.github/workflows/ci.yml` now uses `pnpm/action-setup@v6` and
+  `actions/setup-node@v6`.
+- Project execution remains Node 22; the repair targets action internals, not
+  package runtime.
+
+Evidence:
+- GitHub Actions run `28291779255` emitted Node20 action-runtime deprecation
+  warnings for `pnpm/action-setup@v4` and `actions/setup-node@v4`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v49-continuous-pattern-gate-application/REPORT.md`.
+
+What improved:
+- V48's pattern gate was applied to a real bounded slice.
+- A fresh CI platform warning was routed to a concrete consumer and falsifier.
+- Broad source/research work was rejected.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Full CI modernization beyond this warning.
+- Post-push CI result; V50 must consume it before unrelated work.
+
+New task:
+- Inspect V49 post-push CI and accept, repair, or revert the action update.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V50 — CI Action Modernization Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -8037,7 +8198,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V49 First Continuous Pattern Gate Application.
+Active stream: V50 CI Action Modernization Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

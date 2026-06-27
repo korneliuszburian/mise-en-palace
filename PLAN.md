@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V49 First Continuous Pattern Gate Application
-current task: V49-00 First Continuous Pattern Gate Application
+active stream: V50 CI Action Modernization Re-Gate
+current task: V50-00 CI Action Modernization Re-Gate
 ```
 
 Completed stream summary:
@@ -78,33 +78,32 @@ V45 target availability re-gate with typed lifecycle evidence: complete
 V46 target owner coordination packet: complete
 V47 internal hardening re-gate after target coordination: complete
 V48 continuous pattern source-to-decision gate: complete
+V49 first continuous pattern gate application: complete
 ```
 
 ## Active Stream
 
-### V49-00 — First Continuous Pattern Gate Application
+### V50-00 — CI Action Modernization Re-Gate
 
 Goal:
 
-Apply the new Continuous Pattern Gate to one bounded real KRN slice and record
-whether it changes a decision, rejects a decorative source, creates a durable
-consumer, or exposes friction.
+Inspect the post-push CI result for V49 and decide whether the action
+modernization is accepted, needs repair/revert, or creates a next bounded task.
 
 Current finding:
 
 ```txt
-V48 created the standing gate for continuous source-backed pattern condensation.
-The gate is product-wide and covers infra, harness, CI, memory, skills, target
-workflow, TypeScript, Codex surfaces, evals, security, operator UX, and
-research/papers.
+V49 applied the Continuous Pattern Gate to CI action runtime modernization.
+The consumer is `.github/workflows/ci.yml`; the falsifier is the post-push KRN
+CI run for the V49 commit.
 ```
 
-Current V49 action:
+Current V50 action:
 
 ```txt
-Use the gate on one real bounded slice. The output must name the selected
-surface, source decision or rejection, consumer, falsifier, and next task if
-evidence creates one.
+Check the V49 CI run before unrelated work. If CI fails, repair or revert the
+workflow action update first. If CI passes, record the gate application as
+accepted and select the next bounded task.
 ```
 
 ## V02-01 Boundary
