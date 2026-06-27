@@ -135,6 +135,7 @@ describe("KRN skill invariants", () => {
     expect(targetInfraAdr).toContain(
       "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
     );
+    expect(targetInfraAdr).toContain("explicit adoption, rejection, consumer, and falsifier");
     expect(targetInfraAdr).toContain("consumer:");
     expect(targetInfraAdr).toContain("falsifier:");
   });

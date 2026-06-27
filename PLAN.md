@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V178 Post Pattern Chain Smoke Re-Gate
-current task: V178-00 Post Pattern Chain Smoke Re-Gate
+active stream: V180 Post Infra ADR Skill Metadata Re-Gate
+current task: V180-00 Post Infra ADR Skill Metadata Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V177: active-surface compactness, handoff, PLANS freshness,
+V100..V179: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,25 +48,25 @@ V100..V177: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V178 Post Pattern Chain Smoke Re-Gate
+### V180 Post Infra ADR Skill Metadata Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding active pattern-chain coverage to the
-brain-battle smoke.
+Decide the next bounded task after adding consumer discipline to infra ADR skill
+frontmatter metadata.
 
 Current finding:
 
 ```txt
-V176 selected brain-battle smoke coverage because the new pattern-chain guard
-existed but was not part of the documented smoke.
+V178 selected infra ADR skill metadata repair because Codex sees frontmatter
+before loading the skill body.
 ```
 
 Current action:
 
 ```txt
-Execute V178-00: select the next pattern surface from evidence. Do not broaden
-smoke coverage into Research Foundry, source crawler, dashboard, or
+Execute V180-00: select the next pattern surface from evidence. Do not broaden
+skill metadata preservation into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -79,7 +79,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused smoke coverage into research hoarding
+The re-gate turns focused skill metadata preservation into research hoarding
 without a concrete consumer and falsifier.
 ```
 

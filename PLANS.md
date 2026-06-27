@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V177 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, and smoke coverage guard slices: complete
-active stream: V178 Post Pattern Chain Smoke Re-Gate
-current task: V178-00 Post Pattern Chain Smoke Re-Gate
+V48..V179 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, and infra skill metadata guard slices: complete
+active stream: V180 Post Infra ADR Skill Metadata Re-Gate
+current task: V180-00 Post Infra ADR Skill Metadata Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V178-00 Post Pattern Chain Smoke Re-Gate.
+V180-00 Post Infra ADR Skill Metadata Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15872,6 +15872,66 @@ Next active stream:
 
 Next active task:
 - V178-00 Post Pattern Chain Smoke Re-Gate.
+
+## Outcome 2026-06-27 V179 Infra ADR Skill Metadata Guard
+
+Completed tasks:
+- V178-00 Post Pattern Chain Smoke Re-Gate.
+- V179-00 Infra ADR Skill Metadata Guard.
+
+V178 decision:
+- Do not broaden smoke coverage into Research Foundry, source crawler,
+  dashboard, or product-readiness claims.
+- Select target infra ADR skill metadata repair because Codex sees frontmatter
+  routing metadata before loading the full skill body, and the description still
+  named adoption/rejection/falsifier without consumer.
+- The concrete failure mode is a future infra decision selecting the skill from
+  metadata that does not surface consumer discipline.
+
+What changed:
+- `.agents/skills/target-infra-adr/SKILL.md` frontmatter description now names
+  explicit adoption, rejection, consumer, and falsifier.
+- `packages/harness/src/skillInvariants.test.ts` now guards that routing
+  metadata.
+- `docs/architecture/brain-battle-eval-matrix.md` records that the target infra
+  ADR skill guard includes frontmatter routing metadata.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V180.
+
+Evidence:
+- Before this slice, the skill body and output template carried `consumer`, but
+  the frontmatter description only named adoption, rejection, and falsifier.
+- Frontmatter descriptions are the progressive-disclosure routing surface.
+
+Source-to-decision:
+- Source: `.agents/skills/target-infra-adr/SKILL.md` and repo-local skill
+  invariant coverage.
+- Mechanism: skill descriptions determine when Codex loads the skill; if routing
+  metadata omits consumer, the first visible contract is weaker than the skill
+  body and pattern gate.
+- KRN implication: high-risk infra/runtimes skill metadata must include
+  consumer before falsifier, not only the loaded workflow.
+- Decision: update and guard target infra ADR skill frontmatter.
+- Does not prove: every future infra decision invokes the skill, product
+  readiness, or that a new runtime surface should be adopted.
+- Consumer: `.agents/skills/target-infra-adr/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the target infra ADR frontmatter can drop consumer while tests pass.
+
+New task:
+- V180-00 Post Infra ADR Skill Metadata Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V180 Post Infra ADR Skill Metadata Re-Gate.
+
+Next active task:
+- V180-00 Post Infra ADR Skill Metadata Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

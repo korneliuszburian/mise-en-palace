@@ -1,6 +1,6 @@
 ---
 name: target-infra-adr
-description: Use when KRN architecture chooses storage, queues, retrieval, runtime boundaries, external services, migrations, or package topology that must become an ADR with explicit adoption, rejection, and falsifier.
+description: Use when KRN architecture chooses storage, queues, retrieval, runtime boundaries, external services, migrations, or package topology that must become an ADR with explicit adoption, rejection, consumer, and falsifier.
 ---
 
 # Target Infra ADR
