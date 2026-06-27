@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V152 Post Progress Stale Active Guard Re-Gate
-current task: V152-00 Post Progress Stale Active Guard Re-Gate
+active stream: V154 Post Root PLAN Pattern Gate Guard Re-Gate
+current task: V154-00 Post Root PLAN Pattern Gate Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -41,41 +41,35 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V109: active-surface compactness, handoff contract, and PLANS freshness
-           guards complete.
-V110..V151: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-           task-contract, final-response, TypeScript boundary, source trust
-           metadata, pattern-intake output, source location scheme,
-           source-to-decision skill, current-smoke description, Promptfoo
-           adapter boundary, source classification, and latest-outcome
-           source-to-decision, source-to-decision skill output, and
-           source-class vocabulary, verification TMPDIR, and TypeScript
-           boundary re-scan plus stale attachment objective and compact
-           stale-objective contract plus progress stale-active guards complete.
+V100..V153: active-surface compactness, handoff, PLANS freshness,
+           source-to-decision, TypeScript, source trust/classification,
+           verification TMPDIR, stale-objective, progress stale-active, and
+           root PLAN pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V152 Post Progress Stale Active Guard Re-Gate
+### V154 Post Root PLAN Pattern Gate Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding stale active entries in `PLANS.md`
-Progress without turning progress maintenance into ledger bureaucracy.
+Decide the next bounded task after guarding root `PLAN.md` pattern-gate
+visibility without turning research intake into source hoarding.
 
 Current finding:
 
 ```txt
-V150 selected progress stale-active cleanup because `PLANS.md` Progress still
-contained old unchecked active entries for completed V70 and V86 work. V151
-cleaned those entries and added an invariant.
+V152 selected root PLAN pattern-gate visibility because `GOAL.md` and
+`PLANS.md` already preserved the research/paper/course source-to-decision rule,
+but root `PLAN.md` did not say it directly.
 ```
 
 Current action:
 
 ```txt
-Execute V152-00: select the next pattern surface from evidence. Do not broaden
-progress maintenance into ledger bureaucracy, dashboard, or benchmark lane.
+Execute V154-00: select the next pattern surface from evidence. Do not broaden
+pattern-gate visibility into Research Foundry, source crawler, dashboard, or
+benchmark lane.
 ```
 
 Primary consumer:
@@ -87,9 +81,16 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused progress stale-active cleanup into ledger bureaucracy
-without a concrete consumer and falsifier.
+The re-gate turns focused root-plan pattern-gate visibility into research
+hoarding without a concrete consumer and falsifier.
 ```
+
+## Pattern Gate
+
+For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
+target-workflow, security, operator-UX, or research/paper/course-driven work,
+apply: source -> mechanism -> KRN implication -> decision/rejection -> consumer
+-> falsifier.
 
 ## External Input Blocker
 

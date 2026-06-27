@@ -135,6 +135,7 @@ describe("KRN active plan invariants", () => {
 
   it("keeps the continuous pattern gate visible in active execution surfaces", () => {
     const goal = readRootFile("GOAL.md");
+    const plan = readRootFile("PLAN.md");
     const plans = readRootFile("PLANS.md");
 
     expect(goal).toMatch(/For every non-trivial infra, harness, CI[,/]\s+eval/u);
@@ -142,6 +143,12 @@ describe("KRN active plan invariants", () => {
     expect(goal).toContain("research/paper/course-driven slice");
     expect(goal).toContain("source -> mechanism -> KRN implication -> decision/rejection ->");
     expect(goal).toContain("consumer -> falsifier");
+    expect(plan).toContain("## Pattern Gate");
+    expect(plan).toContain("infra, harness, CI/eval, Codex-surface, TypeScript");
+    expect(plan).toContain("target-workflow, security, operator-UX");
+    expect(plan).toContain("research/paper/course-driven work");
+    expect(plan).toContain("source -> mechanism -> KRN implication -> decision/rejection -> consumer");
+    expect(plan).toContain("-> falsifier");
     expect(plans).toContain("docs/runbooks/pattern-intake.md");
     expect(plans).toMatch(
       /source\s*->\s*mechanism\s*->\s*KRN implication\s*->\s*decision\/rejection\s*->\s*consumer\s*->\s*falsifier/u

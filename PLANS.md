@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V151 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, and progress stale-active guard slices: complete
-active stream: V152 Post Progress Stale Active Guard Re-Gate
-current task: V152-00 Post Progress Stale Active Guard Re-Gate
+V48..V153 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, and root PLAN pattern-gate guard slices: complete
+active stream: V154 Post Root PLAN Pattern Gate Guard Re-Gate
+current task: V154-00 Post Root PLAN Pattern Gate Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V152-00 Post Progress Stale Active Guard Re-Gate.
+V154-00 Post Root PLAN Pattern Gate Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -8066,6 +8066,8 @@ Initial entry:
   condensed into source/trust, redaction, and memory-promotion guard work.
 - [x] V86-00 complete: anti-memory ID branding was re-gated and later condensed
   into authority-ID separation guard work.
+- [x] V153-00 complete: root `PLAN.md` now preserves the continuous pattern
+  gate so compact-only resumes keep source-to-decision pressure visible.
 ```
 
 ## 16. Surprises & Discoveries
@@ -14969,6 +14971,87 @@ Next active stream:
 
 Next active task:
 - V152-00 Post Progress Stale Active Guard Re-Gate.
+
+## Outcome 2026-06-27 V153 Root PLAN Pattern Gate Guard
+
+Completed tasks:
+- V152-00 Post Progress Stale Active Guard Re-Gate.
+- V153-00 Root PLAN Pattern Gate Guard.
+
+V152 decision:
+- Do not broaden Progress cleanup into ledger bureaucracy, dashboard, benchmark
+  lane, Research Foundry, or source crawler.
+- Select root `PLAN.md` pattern-gate visibility because `GOAL.md` and
+  `PLANS.md` already preserved the research/paper/course source-to-decision
+  rule, but the compact root `PLAN.md` did not state the rule directly.
+- The concrete failure mode is a compact-only resume or operator scan that sees
+  the active task but misses the rule that non-trivial infra, harness, CI/eval,
+  Codex-surface, TypeScript, target-workflow, security, operator-UX, and
+  research/paper/course-driven work must map source to mechanism, decision,
+  consumer, and falsifier.
+
+What changed:
+- Root `PLAN.md` now includes a compact Pattern Gate section.
+- `packages/harness/src/activePlanInvariants.test.ts` now requires root
+  `PLAN.md`, root `GOAL.md`, and `PLANS.md` to preserve the pattern-gate chain.
+- `docs/architecture/brain-battle-eval-matrix.md` records the root PLAN
+  pattern-gate guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V154.
+
+Evidence:
+- Root `GOAL.md` already preserved the continuous pattern-gate rule.
+- `PLANS.md` already preserved `docs/runbooks/pattern-intake.md` and the
+  Surface Consumer Matrix.
+- Root `PLAN.md` was the compact product SSOT but did not directly state the
+  pattern-gate chain.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+
+Source-to-decision:
+- Source: current root `PLAN.md`, root `GOAL.md`, `PLANS.md`, and
+  `docs/runbooks/pattern-intake.md`.
+- Mechanism: best-practice, course, paper, official-doc, practitioner, local,
+  and target evidence only improves KRN when it is retained as a mechanism with
+  a KRN implication, decision or rejection, consumer, and falsifier.
+- KRN implication: the compact root plan must carry enough pattern-gate pressure
+  that future continuations keep senior standards and research condensation
+  active without creating source hoarding or a broad research subsystem.
+- Decision: add root `PLAN.md` pattern-gate visibility and guard it with the
+  active-plan invariant.
+- Does not prove: every future source is high quality, every future slice will
+  invoke the gate correctly, product readiness, or that Research Foundry/source
+  crawler work is useful now.
+- Consumer: root `PLAN.md`, root `GOAL.md`, `PLANS.md`,
+  `packages/harness/src/activePlanInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: root `PLAN.md` can drop the pattern-gate chain or omit the relevant
+  pattern surfaces without focused tests failing.
+
+What improved:
+- Compact-only resumes now keep the “best patterns become decisions with
+  falsifiers” rule visible in the active product SSOT.
+- Pattern intake remains bounded and decision-oriented instead of becoming a
+  research archive, course index, or source crawler.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Source quality at scale.
+
+New task:
+- V154-00 Post Root PLAN Pattern Gate Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V154 Post Root PLAN Pattern Gate Guard Re-Gate.
+
+Next active task:
+- V154-00 Post Root PLAN Pattern Gate Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
