@@ -177,7 +177,7 @@ Evidence:
 
 ### V04-07 — Internal Brain Usefulness Re-Gate
 
-Status: complete pending final commit/push/CI.
+Status: complete on 2026-06-27.
 
 Goal: create a final V04 report deciding whether KRN became materially more
 useful for our own workflows.
@@ -193,6 +193,9 @@ Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v04-compression-screening/REPORT.md`.
 - `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
+- commit `c52d08b docs(v04): re-gate internal brain usefulness`;
+- GitHub Actions run `28273909247` passed KRN CI, including typecheck, tests,
+  Promptfoo smoke, diff check, DB ready, Drizzle check, and DB smoke.
 
 Verdict:
 

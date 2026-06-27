@@ -50,8 +50,9 @@ V04-04 skill-first KRN: complete.
 V04-06 deterministic guard from real evidence: complete.
 V04-05 controlled scenario batch: complete.
 V04 re-gate preparation: complete.
-V04-07 internal brain usefulness re-gate: complete pending final commit/push/CI.
-Current active slice: V04 final verification, push, and handoff.
+V04-07 internal brain usefulness re-gate: complete.
+Current active slice: V04 complete; next recommended goal is V05 target-aware
+evidence capture repair.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

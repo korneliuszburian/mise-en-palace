@@ -838,9 +838,10 @@ Update this section during execution. Initial checklist:
   Evidence: same report metrics table.
 - [x] M15 internal brain re-gate report written.
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
-- [ ] M16 final verification/CI/handoff completed.
-  Status: final local verification passed; final report commit/push/CI still
-  pending.
+- [x] M16 final verification/CI/handoff completed.
+  Evidence: final local verification passed; commit
+  `c52d08b docs(v04): re-gate internal brain usefulness` pushed; GitHub Actions
+  run `28273909247` passed KRN CI.
 
 ## Surprises & Discoveries
 
@@ -1153,9 +1154,12 @@ Record commands, reports, commits, and CI here.
     `pnpm eval:brain-battle:smoke`, `pnpm eval:promptfoo:smoke`,
     `git diff --check`; final report
     `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md`.
-  Result: local verification pass; final commit/push/CI pending.
-  Proves: local V04 final verification passed before final report commit.
-  Does not prove: final remote CI until this final report is pushed and checked.
+  Result: local verification pass; committed as
+    `c52d08b docs(v04): re-gate internal brain usefulness`; GitHub Actions run
+    `28273909247` passed.
+  Proves: V04 final report and local verification are persisted remotely and
+    passed CI.
+  Does not prove: product readiness or V02-01 second-operator usability.
 
 Template:
 
