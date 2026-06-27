@@ -1,28 +1,40 @@
-# KRN Product Push V03 Plan
+# KRN Active Plan
 
-Status: complete root `PLAN.md` for the operator-authorized V03 product-forward
-continuation while V02-01 is blocked.
+Status: active compact root plan.
 
-Date: 2026-06-26.
+Date: 2026-06-27.
 
-Repository target: `/home/krn/coding/krn/active/mise-en-palace`.
+Repository: `/home/krn/coding/krn/active/mise-en-palace`.
 
-This file is the checked-in execution map. Do not create `PLANS.md`,
-`ROADMAP.md`, or another parallel roadmap.
+Root `PLAN.md` is the product single source of truth. Long-running execution
+details for the current goal live in:
 
----
+```txt
+docs/plans/v04-internal-brain-utility/PLANS.md
+```
 
-## 1. Current Baseline
+Do not create another parallel roadmap.
 
-The previous product autopilot queue is complete:
+## Current Product State
 
-- V02-03 through V02-08 are complete, pushed, and CI-confirmed.
-- KRN remains `controlled-internal-alpha for technical operators`.
-- KRN is not product-ready.
-- KRN is not widened-internal-alpha.
-- V02-01 remains blocked/deferred because it requires real external inputs.
+Completed:
 
-V02-01 must not be marked complete without:
+- V02-03 through V02-08 product-forward slices.
+- V03-00 through V03-06 controlled-internal-alpha hardening.
+- Headless `wilq-seo` target trial report as engineering evidence, not
+  second-operator proof.
+
+Current readiness:
+
+```txt
+controlled-internal-alpha for technical operators: yes
+product-ready: no
+widened internal alpha: no
+V02-01 real second-operator proof: blocked/deferred
+V04 internal brain utility: active
+```
+
+V02-01 can resume only with real second-operator inputs:
 
 ```txt
 operator:
@@ -33,401 +45,137 @@ support boundary:
 operator transcript:
 ```
 
-Latest product state: V03 repaired the V02 local DB bootstrap caveat and added
-target fixture, owner-file, evidence readback, memory usefulness, and first-run
-operator guidance proofs. V02-01 remains blocked/deferred because it still
-requires real second-operator inputs.
+Do not substitute self/headless scenarios for V02-01.
 
----
+## Active Goal: V04
 
-## 2. V03 Product Thesis
-
-V03 is a product-reality push, not another planning layer.
-
-The sequence is:
+V04 turns KRN into a more useful internal Codex operating layer by running a
+repeatable improvement loop:
 
 ```txt
-local DB bootstrap clarity
-  -> target fixture battle harness
-  -> exact target owner-file recall below roots
-  -> target evidence/readback loop
-  -> target memory usefulness loop
-  -> first-run/operator friction repair
-  -> re-gate
+controlled scenario
+  -> evidence
+  -> finding
+  -> condensation decision
+  -> rule / skill / test / eval / memory candidate / source decision / repair
+  -> next scenario
 ```
 
-This continues the product north star:
+V04 is an internal engineering-proof stream. It is allowed to use self/headless
+scenarios to improve KRN for our own workflows. It is not allowed to claim
+product readiness or complete V02-01.
 
-```txt
-krn init turns any repo into an agent-ready, source-grounded,
-memory-aware, eval-driven, reviewable Codex CLI working environment.
-```
+## V04 Queue
 
----
+### V04-00 — Baseline Governance Reconciliation
 
-## 3. Hard Guardrails
+Status: in progress.
 
-Do not build unless a named V03 task authorizes it:
+Goal: reconcile dirty target-testing/runbook/report state and ensure root plan
+points to the V04 ExecPlan without turning the root plan into a long ledger.
 
+Expected outputs:
+
+- `docs/plans/v04-internal-brain-utility/PLANS.md`;
+- compact `PLAN.md` and `GOAL.md`;
+- target repo testing runbook;
+- corrected headless `wilq-seo` report boundary;
+- second-operator runbook pointer to target repo testing rules.
+
+### V04-01 — First Concrete Product Friction Repair
+
+Status: pending.
+
+Candidate: inspect whether generic `db:smoke` idempotency after fresh Docker
+volume recovery is still a real friction. Repair it only if current evidence
+confirms the gap.
+
+### V04-02 — Controlled Scenario Factory
+
+Status: pending.
+
+Goal: define the minimal scenario contract for observation-only, repair-trial,
+source-repair, and db-backed-replay modes.
+
+### V04-03 — Knowledge Condensation Gate
+
+Status: pending.
+
+Goal: require every scenario report to decide whether findings stay as report
+evidence or condense into AGENTS, skill, guard, eval, memory/source candidate,
+hook candidate, or bounded repair.
+
+### V04-04 — Skill-First KRN
+
+Status: pending.
+
+Goal: create or improve at most two repo skills/stable workflow surfaces,
+starting with `target-repo-testing` and `evidence-review-loop` if evidence
+still supports them.
+
+### V04-05 — Controlled Scenario Batch
+
+Status: pending.
+
+Goal: plan at least six controlled scenarios and execute at least four unless
+blocked.
+
+Required coverage:
+
+- KRN-on-KRN repair;
+- DB-backed replay/readiness/smoke;
+- headless target observation;
+- skill/evidence-review loop.
+
+### V04-06 — Guard/Eval From Real Evidence
+
+Status: pending.
+
+Goal: add or expand at least one deterministic guard/golden/eval case from V04
+scenario evidence.
+
+### V04-07 — Internal Brain Usefulness Re-Gate
+
+Status: pending.
+
+Goal: create a final V04 report deciding whether KRN became materially more
+useful for our own workflows.
+
+## Hard Non-Goals
+
+Do not build or claim:
+
+- fake V02-01 proof;
+- product-ready status;
 - dashboard;
 - API server;
 - MCP server;
-- worker daemon/background loop;
+- worker daemon;
 - source crawler;
 - broad eval platform;
-- broad benchmark lane;
-- `krn audit` resurrection;
-- anti-slop scanner;
-- generic multi-agent framework;
-- stack-specific agent zoo;
-- LLM-as-judge release gate;
-- automatic memory/source mutation;
-- npm/global distribution;
-- alpha tag movement;
-- Codex execution automation;
-- fake second-operator proof.
+- generic multi-agent system;
+- runtime markdown memory;
+- hidden semantic hooks;
+- living target repo writes without explicit scope.
 
-Do not fake local DB truth. If local Postgres is unavailable, KRN must say that
-honestly and provide the smallest next command/remediation.
+## Verification Policy
 
-Do not fake external target-repo proof. A local fixture repo is allowed only as
-a deterministic product behavior guard, not as V02-01 or broad external proof.
-
----
-
-## 4. Authorized V03 Queue
-
-### V03-00 — Local DB Bootstrap And Doctor Recovery
-
-Goal: reduce the most recent operator friction: local DB readiness failed with
-`CONNECT_TIMEOUT localhost:54329` even though CI DB passed.
-
-Status: complete on 2026-06-26.
-
-Required behavior:
-
-1. Inspect current DB readiness, DB smoke, doctor, `compose.yaml`, runbooks,
-   package scripts, and CI DB workflow.
-2. Improve the operator-facing diagnosis for missing/unreachable local Postgres.
-3. Ensure output distinguishes preview/no-DB mode, DB configured but
-   unreachable, DB connected but migrations/extensions not ready, and DB ready.
-4. Provide actionable next commands without mutating state unexpectedly.
-5. Add deterministic tests where possible.
-
-Expected outputs:
-
-- compact `PLAN.md` and `GOAL.md` updates. Status: complete.
-- source or docs changes only where product friction requires them. Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-local-db-bootstrap-doctor-recovery/REPORT.md`.
-  Status: complete.
-
-Verification:
+Use the narrowest relevant verification for each slice. For source changes,
+run:
 
 ```sh
 pnpm typecheck
 pnpm test
-pnpm alpha:verify
-pnpm eval:brain-battle:smoke
-pnpm eval:promptfoo:smoke
 git diff --check
-git status --short --branch
 ```
 
-Optional if local DB is available:
+For DB/eval-affecting changes, add relevant commands:
 
 ```sh
 pnpm db:ready
 pnpm db:smoke
-```
-
-If local DB remains unreachable, record it honestly and rely on remote CI DB
-after push.
-
-Acceptance:
-
-- Missing local Postgres no longer looks like ambiguous product failure. Status: complete.
-- Operator sees exactly what to run next. Status: complete.
-- No DB mutation is hidden inside doctor/diagnosis. Status: complete.
-- No product-ready or external-proof claim. Status: complete.
-
-Outcome: `krn db readiness` now reports `DB mode` and recovery commands for
-preview/no-DB, configured-but-unreachable, connected-but-not-ready, and ready
-states. `krn doctor` now reports `Postgres mode` and `Postgres next action`.
-The V02-08 local `CONNECT_TIMEOUT localhost:54329` state was reproduced and
-recovered by starting `krn-postgres`; local `pnpm db:ready`, `pnpm db:smoke`,
-and DB-backed doctor then passed.
-
-Evidence: `packages/cli/src/dbRecoveryGuidance.ts`;
-`packages/cli/src/runDbReadinessCommand.ts`;
-`packages/cli/src/doctorDbChecks.ts`; `docs/runbooks/local-brain-store.md`;
-`docs/reviews/controlled-dogfood/2026-06-26-local-db-bootstrap-doctor-recovery/REPORT.md`.
-
----
-
-### V03-01 — Target Fixture Battle Harness
-
-Goal: create a deterministic, local target-repo fixture that protects target
-init/connect/plan behavior without pretending it is a real external operator
-trial.
-
-Status: complete on 2026-06-26.
-
-Expected outputs:
-
-- fixture/test/guard updates;
-  Status: complete.
-- optional brain-battle matrix update;
-  Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-target-fixture-battle-harness/REPORT.md`.
-  Status: complete.
-
-Acceptance:
-
-- Fixture guard is deterministic and CI-runnable.
-  Status: complete.
-- It does not claim external target proof or V02-01 completion.
-  Status: complete.
-- It does not introduce a crawler or broad eval platform.
-  Status: complete.
-
-Outcome: `tests/fixtures/target-repos/typescript-basic` now includes
-target-local agent guidance, README, runbook docs, source, tests,
-secret-shaped example config, and generated/runtime-shaped fixture paths.
-`db:smoke:target-repo-harness` now persists and readbacks target source seeds
-and trust exclusions. `eval:brain-battle:smoke` now includes
-`golden-case-target-fixture-battle-001-a` to guard fixture planning behavior.
-
-Evidence: `tests/fixtures/target-repos/typescript-basic/AGENTS.md`;
-`packages/cli/src/targetRepoHarnessSmoke.ts`;
-`packages/harness/src/goldenKrnBehaviorGate.ts`;
-`docs/architecture/brain-battle-eval-matrix.md`;
-`docs/reviews/controlled-dogfood/2026-06-26-target-fixture-battle-harness/REPORT.md`.
-
----
-
-### V03-02 — Target Owner-File Recall Below Named Roots
-
-Goal: address the known remaining limit that target read-model can surface
-named roots while exact file recall below roots remains weak/unknown.
-
-Status: complete on 2026-06-26.
-
-Expected outputs:
-
-- targeted implementation or guard-only proof;
-  Status: complete.
-- tests/brain-battle guard;
-  Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-target-owner-file-recall-below-roots/REPORT.md`.
-  Status: complete.
-
-Acceptance:
-
-- Target project planning no longer stops at vague root-level hints when a
-  bounded owner-file candidate can be inferred.
-  Status: complete when `ownerFiles` are present in the target read model.
-- If exact owner-file inference is not safe, output explains the missing signal.
-  Status: complete.
-- No crawler, scoring rewrite, or broad retrieval rewrite.
-  Status: complete.
-
-Outcome: `TargetActivationReadModel` now accepts explicit `ownerFiles`.
-Target activation emits `targetReadModelKind=owner_file` candidates below named
-roots when that signal is present, and `krn plan --project` reports
-`ownerFiles=0` plus an unavailable-owner-files warning when exact owner-file
-signals are absent. The target harness smoke now persists and readbacks fixture
-owner files alongside source seeds and trust exclusions.
-
-Evidence: `packages/harness/src/activation/ownerFileRecall.ts`;
-`packages/harness/src/compiler/index.test.ts`;
-`packages/harness/src/goldenKrnBehaviorGate.ts`;
-`packages/cli/src/runPlanCommand.ts`;
-`packages/cli/src/targetRepoHarnessSmoke.ts`;
-`docs/reviews/controlled-dogfood/2026-06-26-target-owner-file-recall-below-roots/REPORT.md`.
-
----
-
-### V03-03 — Target Evidence Capture And Readback Loop
-
-Goal: prove a target-like run can move from plan to evidence capture to readback
-with honest proof/non-proof boundaries.
-
-Status: complete on 2026-06-26.
-
-Expected outputs:
-
-- source/test/guard changes if required;
-  Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-target-evidence-readback-loop/REPORT.md`.
-  Status: complete.
-
-Acceptance:
-
-- Target-like evidence can be read back without ad hoc SQL.
-  Status: complete.
-- Proof/non-proof boundaries survive the full loop.
-  Status: complete.
-- No automatic memory/source mutation.
-  Status: complete.
-
-Outcome: `db:smoke:target-repo-harness` now readbacks the evidence bundle,
-review assessment, and feedback delta after write. It verifies command evidence
-remains `default_template/not_run`, the target evidence/review/feedback records
-match, and no memory/source/eval candidate mutation path was produced.
-
-Evidence: `packages/cli/src/targetRepoHarnessSmoke.ts`;
-`packages/cli/src/targetRepoHarnessSmoke.test.ts`;
-`docs/reviews/controlled-dogfood/2026-06-26-target-evidence-readback-loop/REPORT.md`.
-
----
-
-### V03-04 — Target Memory Usefulness Loop
-
-Goal: make memory usefulness measurable for target-like tasks without
-auto-promoting memory.
-
-Status: complete on 2026-06-26.
-
-Expected outputs:
-
-- deterministic tests/guards;
-  Status: complete.
-- optional eval matrix update;
-  Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-target-memory-usefulness-loop/REPORT.md`.
-  Status: complete.
-
-Acceptance:
-
-- KRN can measure whether memory helped a target-like task.
-  Status: complete.
-- Stale/hurt memory does not silently remain trusted.
-  Status: unchanged from existing memory feedback/anti-memory guards; this
-  slice did not weaken them.
-- No automatic Memory Core mutation bypasses review.
-  Status: complete.
-
-Outcome: `db:smoke:target-repo-harness` now seeds an explicit smoke-scoped
-MemoryRecord, proves target planning included it, records
-`MemoryApplication outcome=helped`, readbacks the incremented positive feedback
-count, and reports `Automatic MemoryRecord mutation: none`. This measures
-target-like memory usefulness without promoting new memory candidates.
-
-Evidence: `packages/cli/src/targetRepoHarnessSmoke.ts`;
-`packages/cli/src/targetRepoHarnessSmoke.test.ts`;
-`docs/reviews/controlled-dogfood/2026-06-26-target-memory-usefulness-loop/REPORT.md`.
-
----
-
-### V03-05 — First-Run Operator Friction Repair
-
-Goal: reduce first-run ambiguity before a real second operator tries V02-01.
-
-Status: complete on 2026-06-26.
-
-Expected outputs:
-
-- source/docs changes as needed;
-  Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-first-run-operator-friction-repair/REPORT.md`.
-  Status: complete.
-
-Acceptance:
-
-- A technical operator has fewer ambiguous states before V02-01.
-  Status: complete.
-- No product-ready, npm/global install, alpha tag move, dashboard, API, MCP, or
-  worker runtime.
-  Status: complete.
-
-Outcome: `krn doctor` target repo readiness now names the concrete guarded
-target surfaces: source seeds, owner files, evidence readback, and memory
-usefulness. The local DB and second-operator runbooks now include
-`pnpm db:smoke:init-connect` and `pnpm db:smoke:target-repo-harness` before a
-real V02-01 attempt.
-
-Evidence: `packages/cli/src/doctorReadiness.ts`;
-`docs/runbooks/local-brain-store.md`;
-`docs/runbooks/second-operator-alpha-trial.md`;
-`docs/reviews/controlled-dogfood/2026-06-26-first-run-operator-friction-repair/REPORT.md`.
-
----
-
-### V03-06 — Controlled Alpha Re-Gate After V03
-
-Goal: convert V03 evidence into the next honest readiness decision.
-
-Status: complete on 2026-06-26.
-
-Expected outputs:
-
-- compact `PLAN.md` and `GOAL.md` updates;
-  Status: complete.
-- report:
-  `docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-v03/REPORT.md`.
-  Status: complete.
-
-Acceptance:
-
-- Readiness classification is honest.
-  Status: complete.
-- The next action is specific.
-  Status: complete.
-- No product-ready claim unless evidence actually satisfies product-ready gates.
-  Status: complete.
-
-Outcome: V03 strengthens `controlled-internal-alpha for technical operators`
-without widening the readiness class. The next real action is V02-01 with a
-second operator, explicit target repo, DB mode, support boundary, and transcript.
-If those inputs are unavailable, the product-forward autopilot queue stops here
-instead of inventing another local substitute.
-
-Evidence:
-`docs/reviews/controlled-dogfood/2026-06-26-controlled-alpha-re-gate-after-v03/REPORT.md`.
-
----
-
-## 5. Shared Verification
-
-Unless a slice states a narrower docs-only verification, run:
-
-```sh
-pnpm typecheck
-pnpm test
 pnpm eval:brain-battle:smoke
 pnpm eval:promptfoo:smoke
-git diff --check
-git status --short --branch
 ```
 
-Use `pnpm alpha:verify` when operator install/readiness behavior is touched or
-when the slice explicitly requires it.
-
-Use DB commands only when meaningful:
-
-```sh
-pnpm db:ready
-pnpm db:smoke
-```
-
-Do not claim current-shell DB truth unless those commands pass in the current
-shell.
-
----
-
-## 6. Completion Rule
-
-This continuous product push is complete only when one of these is true:
-
-- V03-00 through V03-06 are complete, verified, pushed, and CI-confirmed where
-  relevant;
-- V02-01 receives real external setup and supersedes this rescope queue;
-- verification blocks further safe work;
-- the next step requires an unauthorized product surface or external input;
-- the operator explicitly stops or rescopes.
+After each bounded slice, commit, push, and confirm CI when appropriate.

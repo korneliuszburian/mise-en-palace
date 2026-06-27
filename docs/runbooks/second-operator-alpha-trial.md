@@ -28,6 +28,12 @@ Not allowed:
 - automatic Memory Core mutation;
 - moving or creating a tag unless the operator explicitly requests it.
 
+Target repo reads, writes, and dirty-state handling are governed by
+`docs/runbooks/target-repo-testing.md`.
+
+`V02-01` requires a real second operator. A local/headless target run may produce
+useful evidence, but it must not be used as a substitute for this trial.
+
 ## Operator Setup
 
 Operator:
