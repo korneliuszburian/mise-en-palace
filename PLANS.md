@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V131 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, and current-smoke description guard slices: complete
-active stream: V132 Post Brain-Battle Current Smoke Description Guard Re-Gate
-current task: V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate
+V48..V133 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, and Promptfoo adapter boundary guard slices: complete
+active stream: V134 Post Promptfoo Adapter Boundary Guard Re-Gate
+current task: V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate.
+V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14194,6 +14194,78 @@ Next active stream:
 
 Next active task:
 - V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate.
+
+## Outcome 2026-06-27 V133 Promptfoo Adapter Boundary Guard
+
+Completed tasks:
+- V132-00 Post Brain-Battle Current Smoke Description Guard Re-Gate.
+- V133-00 Promptfoo Adapter Boundary Guard.
+
+V132 decision:
+- Do not broaden brain-battle matrix work into a broad eval platform, LLM judge,
+  dashboard, or benchmark lane.
+- Select Promptfoo adapter boundary because CI runs `eval:promptfoo:smoke`, but
+  KRN must preserve the distinction between Promptfoo integration smoke and KRN
+  behavior proof.
+
+What changed:
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts` now checks the
+  Promptfoo smoke script, fixture, provider, and boundary doc keep local JSONL
+  output, `doesNotExecuteKrnBehavior=true`, `promptfoo_integration_smoke`,
+  runner/config/provider/result mapping language, and the rule that only
+  `krn_behavior_execution` satisfies GoldenTask behavior proof.
+- `docs/architecture/brain-battle-eval-matrix.md` records the Promptfoo adapter
+  boundary guard and tightens the Promptfoo Boundary prose.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V134.
+
+Evidence:
+- `package.json`.
+- `tests/fixtures/promptfoo/krn-golden-smoke.yaml`.
+- `tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs`.
+- `docs/architecture/promptfoo-adapter-boundary.md`.
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts`.
+
+Source-to-decision:
+- Source: V15 Promptfoo role gate evidence, Promptfoo adapter boundary doc, and
+  current Promptfoo smoke fixture/provider.
+- Mechanism: an external eval runner can prove integration/result mapping while
+  still not executing KRN behavior.
+- KRN implication: Promptfoo must remain bounded as adapter evidence unless a
+  future behavior failure explicitly requires Promptfoo as the right consumer.
+- Decision: add focused matrix invariant coverage for the Promptfoo adapter
+  boundary.
+- Does not prove: Promptfoo executes KRN behavior, Memory Brain readiness, eval
+  quality, or product readiness.
+- Consumer: `packages/harness/src/brainBattleMatrixInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: Promptfoo smoke can drop `doesNotExecuteKrnBehavior=true`, boundary
+  docs can imply Promptfoo proves KRN behavior, or the package smoke can stop
+  writing local JSONL output without focused tests failing.
+
+What improved:
+- Promptfoo's adapter-only role is mechanically harder to overclaim.
+- The CI eval lane remains useful without becoming product proof theater.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Promptfoo behavior authority.
+
+New task:
+- V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V134 Post Promptfoo Adapter Boundary Guard Re-Gate.
+
+Next active task:
+- V134-00 Post Promptfoo Adapter Boundary Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

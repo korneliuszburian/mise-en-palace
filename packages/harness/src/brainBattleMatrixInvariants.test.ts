@@ -11,6 +11,18 @@ const matrixPath = new URL(
   import.meta.url
 );
 const packageJsonPath = new URL("../../../package.json", import.meta.url);
+const promptfooBoundaryPath = new URL(
+  "../../../docs/architecture/promptfoo-adapter-boundary.md",
+  import.meta.url
+);
+const promptfooFixturePath = new URL(
+  "../../../tests/fixtures/promptfoo/krn-golden-smoke.yaml",
+  import.meta.url
+);
+const promptfooProviderPath = new URL(
+  "../../../tests/fixtures/promptfoo/krn-golden-smoke-provider.mjs",
+  import.meta.url
+);
 
 interface MatrixRow {
   check: string;
@@ -140,5 +152,31 @@ describe("KRN brain-battle eval matrix invariants", () => {
     ]) {
       expect(normalizedCurrentSmoke).toContain(phrase);
     }
+  });
+
+  it("keeps Promptfoo bounded as an integration smoke adapter", () => {
+    const packageJson = readFileSync(packageJsonPath, "utf8");
+    const boundary = readFileSync(promptfooBoundaryPath, "utf8");
+    const fixture = readFileSync(promptfooFixturePath, "utf8");
+    const provider = readFileSync(promptfooProviderPath, "utf8");
+
+    expect(packageJson).toContain("eval:promptfoo:smoke");
+    expect(packageJson).toContain("promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml");
+    expect(packageJson).toContain(".local-lab/promptfoo/krn-golden-smoke-results.jsonl");
+
+    expect(boundary).toContain("bounded runner/result adapter");
+    expect(boundary).toContain("not a\nKRN behavior proof authority");
+    expect(boundary).toContain("prove runner/config/provider/result mapping");
+    expect(boundary).toContain("promptfoo_integration_smoke");
+    expect(boundary).toContain("Only `krn_behavior_execution` can satisfy GoldenTask behavior proof today.");
+    expect(boundary).toContain("imply Memory Brain product readiness");
+
+    expect(fixture).toContain("KRN official Promptfoo integration smoke");
+    expect(fixture).toContain("share: false");
+    expect(fixture).toContain("write: false");
+    expect(fixture).toContain("integrationSmoke=passed");
+
+    expect(provider).toContain("doesNotExecuteKrnBehavior=true");
+    expect(provider).toContain("KRN Promptfoo integration smoke");
   });
 });
