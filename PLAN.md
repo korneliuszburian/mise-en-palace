@@ -46,7 +46,8 @@ V16 Activation Relevance Evidence Gate: complete
 V17 Target Owner-File Read-Model Contract Gate: complete
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete
 V19 Product Readiness Re-Gate After Owner-File Contract: complete
-active stream: V20 Real Target Observation-Only Owner-File Trial
+V20 Real Target Observation-Only Owner-File Trial: complete
+active stream: V21 Target Evidence Observation-Only Defaults And Readback Clarity
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -417,19 +418,37 @@ Evidence:
 - verdict remains controlled-internal-alpha for technical operators, stronger;
   widened alpha and product-ready remain unproven.
 
-## Active Stream: V20
+## Completed Stream: V20
 
 V20 runs or blocks on a real target checkout in observation-only mode after the
 owner-file contract repair.
 
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: use a real target checkout, not a checked-in fixture, with no target
 writes; provide owner files if known; capture target evidence; and decide
 whether the next blocker is target selection, owner-file quality, activation
 selection, operator friction, or a bounded KRN repair.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v20-real-target-observation-only-owner-file-trial/REPORT.md`.
+
+## Active Stream: V21
+
+V21 repairs the target evidence ergonomics gap found by V20.
+
+### V21-00 — Target Evidence Observation-Only Defaults And Readback Clarity
+
+Status: active.
+
+Goal: make observation-only target evidence harder to under-specify and easier
+to review. Source inspection should decide whether to add safer defaults,
+warnings, or readback rendering improvements for target allowed/forbidden write
+boundaries. Do not change target repos, activation scoring, source crawling, or
+DB schema unless source inspection proves it is required.
 
 ## Hard Non-Goals
 

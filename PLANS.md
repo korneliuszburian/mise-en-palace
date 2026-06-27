@@ -45,18 +45,19 @@ V16 Activation Relevance Evidence Gate: complete
 V17 Target Owner-File Read-Model Contract Gate: complete
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete
 V19 Product Readiness Re-Gate After Owner-File Contract: complete
+V20 Real Target Observation-Only Owner-File Trial: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V20 Real Target Observation-Only Owner-File Trial
-current task: V20-00 Real Target Observation-Only Owner-File Trial
+active stream: V21 Target Evidence Observation-Only Defaults And Readback Clarity
+current task: V21-00 Target Evidence Observation-Only Defaults And Readback Clarity
 ```
 
 Evidence already recorded in repo:
 
-- `PLAN.md` current product state and V04 queue.
-- `GOAL.md` current V04 completion state and continuation rules.
+- `PLAN.md` current product state and active stream.
+- `GOAL.md` current active stream and continuation rules.
 - `docs/plans/v04-internal-brain-utility/PLANS.md` V04 long-run execution record.
 - `docs/reviews/controlled-dogfood/2026-06-27-v04-internal-brain-usefulness/REPORT.md` final V04 re-gate.
 - `.agents/skills/target-repo-testing/SKILL.md` first durable target-repo workflow skill.
@@ -65,9 +66,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V20 must use or block on a real target checkout in observation-only mode after
-the owner-file contract repair. Do not use another checked-in fixture as the
-proof.
+V21 must repair or explicitly reject the target evidence ergonomics gap found
+by V20: observation-only evidence can preserve forbidden write boundaries, but
+only if the operator supplies explicit flags.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -1930,9 +1931,35 @@ Completion evidence:
 - readiness remains controlled-internal-alpha for technical operators, stronger;
   widened alpha and product-ready remain unproven.
 
+### Stream V21 — Target Evidence Observation-Only Defaults And Readback Clarity
+
+Why now:
+
+- V20 proved real-target observation-only evidence can be persisted and read
+  back.
+- V20 also showed the operator can under-specify observation-only write
+  boundaries: without explicit `--target-forbidden-write`, evidence readback
+  says `forbiddenWrites: none`.
+- Target safety evidence is more important than activation scoring for the next
+  product step.
+
+Expected end state:
+
+```txt
+Observation-only target evidence is harder to under-specify and easier to read
+back. Either source inspection proves current behavior is sufficient and records
+why, or KRN adds a focused CLI/source repair with tests.
+```
+
+- no target repos are edited;
+- no activation scoring, source crawler, dashboard, API, MCP, or worker runtime
+  is added;
+- readiness remains controlled-internal-alpha for technical operators, stronger;
+  widened alpha and product-ready remain unproven.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
-Status: active
+Status: complete
 
 Goal: use a real target checkout, not a checked-in fixture, in observation-only
 mode; provide explicit owner files if known; run KRN init/plan/evidence; and
@@ -1995,6 +2022,85 @@ target owner-file quality repair, activation repair, evidence ergonomics, or
 blocked target selection.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V20
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v20-real-target-observation-only-owner-file-trial/REPORT.md`.
+- Target repo: `/home/krn/coding/krn/active/krn-elektroinstal-ogar`.
+- Mode: observation-only.
+- Target status before/after: clean.
+- DB-backed run: `dd69eb5a-8552-46d1-89fc-4a7617acb59c`.
+
+### V21-00 — Target Evidence Observation-Only Defaults And Readback Clarity
+
+Status: active
+
+Goal: repair or explicitly reject the target evidence ergonomics gap found by
+V20. Observation-only target evidence should not be easy to read back as
+`forbiddenWrites: none` when the mode itself forbids target edits, commits,
+resets, cleans, and production/runtime writes.
+
+Product rationale: real-target trials are useful only if target safety
+boundaries are obvious in persisted evidence and readback.
+
+Architectural rationale: target evidence is review authority. It must say what
+was allowed, forbidden, proven, and not proven without requiring hidden operator
+memory.
+
+Evidence source: V20 report and run readback for
+`dd69eb5a-8552-46d1-89fc-4a7617acb59c`.
+
+Official/external sources: none required unless source inspection needs current
+Codex/OpenAI docs for goal/ExecPlan semantics.
+
+Inputs required: current CLI evidence parsing/rendering source and tests.
+
+Files likely touched:
+
+- `packages/cli/src/parseEvidenceArgs.ts`;
+- `packages/cli/src/runEvidenceCaptureCommand.ts`;
+- `packages/cli/src/runRunShowCommand.ts`;
+- related CLI/golden tests;
+- V21 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN package source/tests/docs/plans only.
+
+Forbidden writes: target repo edits, activation scoring rewrite, source crawler,
+DB schema migration unless source inspection proves it is necessary, dashboard,
+API, MCP, worker runtime, fake V02-01/widened-alpha/product-ready claim.
+
+Output requirements:
+
+- source inspection finding;
+- selected implementation or explicit rejection;
+- tests proving observation-only target evidence defaults/warnings/readback;
+- proof that explicit target write flags still work;
+- report describing what improved and what remains unproven.
+
+Definition of Done: observation-only target evidence is safer/clearer by source
+repair with tests, or the current behavior is explicitly defended with evidence
+and a documented reason.
+
+Verification commands: targeted CLI tests, `pnpm typecheck`, `pnpm test`,
+`git diff --check`.
+
+Acceptance criteria: no target writes, no hidden policy engine, no target trial
+overclaim, no broad refactor.
+
+Risk: silently changing existing target evidence semantics. Mitigation: preserve
+explicit `--target-allowed-write` / `--target-forbidden-write` behavior and add
+focused regression tests.
+
+Rollback: focused revert of the implementation/report commit.
+
+Condensation expectation: decide whether the next work is DB env ergonomics,
+real operator intake, target runbook update, or another real-target trial.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V21
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2243,7 +2349,11 @@ Initial entry:
 - [x] V19-00 complete: readiness remains controlled-internal-alpha stronger;
   widened alpha/product-ready/V02-01 remain unproven; V20 real target
   observation-only trial accepted.
-- [ ] V20-00 active: Real Target Observation-Only Owner-File Trial.
+- [x] V20-00 complete: real target observation-only owner-file trial succeeded
+  on `krn-elektroinstal-ogar` without target writes; V21 target evidence
+  defaults/readback repair accepted.
+- [ ] V21-00 active: Target Evidence Observation-Only Defaults And Readback
+  Clarity.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2354,6 +2464,24 @@ Record every unexpected fact in this format:
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`.
   Impact: V20 should use a real target checkout in observation-only mode instead
   of adding another fixture or product surface.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Real target owner-file recall works on `krn-elektroinstal-ogar`
+  when explicit owner files are provided.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v20-real-target-observation-only-owner-file-trial/REPORT.md`;
+  DB-backed run `dd69eb5a-8552-46d1-89fc-4a7617acb59c`.
+  Impact: the next blocker is not target selection for this proof; it is target
+  evidence ergonomics and safety-boundary readback clarity.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: `--target-mode observation-only` can still read back
+  `forbiddenWrites: none` unless the operator supplies explicit
+  `--target-forbidden-write` flags.
+  Evidence: V20 first evidence bundle
+  `8f3a0c8f-24a0-45dc-ae00-5026806ef342` vs corrected bundle
+  `7f01243f-cf81-4caa-b819-b4443188177e`.
+  Impact: V21 should repair or explicitly reject observation-only target
+  evidence defaults/readback behavior before more target trials.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2518,6 +2646,18 @@ Initial decisions:
   owner-file quality.
   Falsifier: V20 cannot identify a safe real target checkout; then the blocker
   becomes target selection/intake.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target evidence observation-only defaults/readback clarity
+  as V21.
+  Rationale: V20 proved a real target observation-only trial can work, but also
+  showed a safety evidence footgun: omitted forbidden-write flags make readback
+  say `forbiddenWrites: none` despite observation-only mode.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v20-real-target-observation-only-owner-file-trial/REPORT.md`.
+  Does not prove: source repair shape, product readiness, V02-01, or activation
+  quality.
+  Falsifier: V21 source inspection proves current behavior is already
+  intentionally sufficient and better documented than changing defaults.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2704,6 +2844,21 @@ Seed evidence:
   Does not prove: real target success, real operator usability, widened alpha,
     or product readiness.
   Follow-up task: V20-00.
+
+- Evidence ID: E-V20-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v20-real-target-observation-only-owner-file-trial/REPORT.md`
+  Command/report/file: DB-backed real target observation-only trial on
+    `/home/krn/coding/krn/active/krn-elektroinstal-ogar`.
+  Result: `krn init --connect --persist`, `krn plan --persist`,
+    target checks, evidence capture, observe, reflect, and run readback
+    completed without target writes.
+  Proves: explicit owner-file read model works on a real target checkout in
+    observation-only mode, and target evidence can persist mode, dirty state,
+    target commands, allowed writes, forbidden writes, and does-not-prove
+    boundaries.
+  Does not prove: V02-01, real second-operator usability, product readiness,
+    full target verification, or reflection extraction quality.
+  Follow-up task: V21-00.
 ```
 
 ## 19. Condensation Queue
@@ -2913,6 +3068,15 @@ Seed queue:
   Reason: after fixture/local owner-file proof, the next product evidence must
     come from a real target checkout without target writes or V02-01 overclaim
   Task: V20-00
+
+- Candidate: target evidence observation-only defaults and readback clarity
+  Source evidence: V20 real target observation-only trial
+  Surface: CLI evidence capture/readback
+  Status: accepted as V21-00
+  Reason: observation-only target evidence can preserve forbidden write
+    boundaries, but omitted flags read back as `forbiddenWrites: none`; target
+    safety evidence should be harder to under-specify before more target trials
+  Task: V21-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -3344,6 +3508,50 @@ Product readiness verdict:
 Next active stream:
 - V20 — Real Target Observation-Only Owner-File Trial.
 
+## Outcome 2026-06-27 V20
+
+Completed:
+- V20-00 ran a real target observation-only owner-file trial on
+  `/home/krn/coding/krn/active/krn-elektroinstal-ogar`.
+- The target repo stayed clean before and after the trial.
+- KRN persisted init/connect, plan, evidence, observe, reflect, and run readback
+  for execution run `dd69eb5a-8552-46d1-89fc-4a7617acb59c`.
+- DB-backed activation selected useful target owner files and trust exclusions.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v20-real-target-observation-only-owner-file-trial/REPORT.md`.
+- Evidence bundle `7f01243f-cf81-4caa-b819-b4443188177e`.
+- Observation group `389ee6a3-4437-43af-861a-1cc57494e9f9`.
+- Reflection record `75dce5dc-6ce8-4ebd-af06-a7f334b64cd0`.
+
+What improved:
+- Owner-file read model is now proven on a real target checkout, not just a
+  checked-in fixture.
+- Target evidence preserved observation-only mode, clean dirty state, target
+  commands, and explicit allowed/forbidden write boundaries.
+- No target writes were made.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Full target runtime verification.
+- Reflection extraction quality.
+
+New blocker:
+- Observation-only target evidence can be under-specified. If the operator omits
+  explicit `--target-forbidden-write` flags, readback can show
+  `forbiddenWrites: none`.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V21 — Target Evidence Observation-Only Defaults And Readback Clarity.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -3392,7 +3600,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V20 Real Target Observation-Only Owner-File Trial.
+Active stream: V21 Target Evidence Observation-Only Defaults And Readback Clarity.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
