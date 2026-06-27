@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V84 Post Skill Invariant Guard Re-Gate
-current task: V84-00 Post Skill Invariant Guard Re-Gate
+active stream: V86 Post Anti-Memory ID Branding Re-Gate
+current task: V86-00 Post Anti-Memory ID Branding Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -7538,6 +7538,122 @@ Definition of Done:
 - Next active task is explicit or a blocker is explicit.
 - `git diff --check` passes.
 
+Outcome:
+
+- The next bounded task is anti-memory ID branding. This applies the retained
+  TypeScript source decisions to a concrete domain type drift.
+
+### V85-00 — Anti-Memory ID Branding
+
+Status: complete
+
+Goal: Brand anti-memory candidate and record IDs so they are not
+type-compatible with memory candidate/record IDs.
+
+Pattern surface: TypeScript boundaries.
+
+Product rationale: Anti-memory and memory write paths have different authority.
+Their IDs should not be freely interchangeable in core domain types.
+
+Architectural rationale: This is a narrow type-only repair using the existing
+`BrandedKrnId` pattern and type-level proofs. It does not change runtime IDs or
+start a whole-repo ID rewrite.
+
+Evidence source:
+
+- `docs/KRN_SOURCES.md` TypeScript practitioner sources.
+- `packages/core/src/ids.ts`.
+- `packages/core/src/ids.typecheck.ts`.
+
+Primary consumer:
+
+- `packages/core/src/ids.ts`
+- `packages/core/src/ids.typecheck.ts`
+- `docs/architecture/brain-battle-eval-matrix.md`
+
+Does not prove:
+
+- every ID alias should be branded;
+- runtime IDs changed;
+- broad type rewrite is valuable.
+
+Falsifier:
+
+- `AntiMemoryCandidateId` is assignable to `MemoryCandidateId`, or
+  `AntiMemoryRecordId` is assignable to `MemoryRecordId`.
+
+Verification commands:
+
+```sh
+pnpm -C packages/core typecheck
+pnpm --filter @krn/core test -- ids memory
+git diff --check
+```
+
+Outcome:
+
+- `AntiMemoryCandidateId` and `AntiMemoryRecordId` now use `BrandedKrnId`.
+- `ids.typecheck.ts` proves compatibility with strings and separation from the
+  matching memory IDs.
+
+### V86-00 — Post Anti-Memory ID Branding Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after anti-memory ID branding.
+
+Pattern surface: TypeScript boundaries.
+
+Product rationale: V85 fixed a concrete drift. The next task should either
+identify one more bounded TypeScript drift with a consumer/falsifier, move to
+another pattern surface, or stop on the external operator/target blocker.
+
+Architectural rationale: Do not broaden into an ID rewrite or type-audit
+campaign. Continue by evidence.
+
+Evidence source:
+
+- V85 anti-memory ID branding.
+- `docs/KRN_SOURCES.md` TypeScript source decisions.
+- `docs/standards/typescript-boundaries.md`.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- all ID aliases are wrong;
+- product readiness;
+- need for global type rewrite.
+
+Falsifier:
+
+- The plan opens another TypeScript repair without source evidence, a bounded
+  consumer, and typecheck/test proof.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- broad ID rewrite;
+- broad type audit;
+- type weakening;
+- dashboard/API/MCP/server.
+
+Definition of Done:
+
+- Next active task is explicit or a blocker is explicit.
+- `git diff --check` passes.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -7944,7 +8060,11 @@ Initial entry:
 - [x] V82-00 complete: selected repo-local skill invariant guard.
 - [x] V83-00 complete: added skill invariant test and repaired
   `target-repo-testing` skill section drift.
-- [ ] V84-00 active: re-gate after skill invariant guard.
+- [x] V84-00 complete: selected anti-memory ID branding as the next bounded
+  TypeScript source application.
+- [x] V85-00 complete: branded anti-memory candidate/record IDs and added
+  type-level separation proofs.
+- [ ] V86-00 active: re-gate after anti-memory ID branding.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -9074,6 +9194,19 @@ Initial decisions:
     missing `Workflow`, or missing `Verification` while tests still pass.
   Verification: `pnpm --filter @krn/harness test -- skillInvariants`;
     `pnpm -C packages/harness typecheck`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Brand anti-memory IDs in V85.
+  Rationale: Anti-memory candidate/record IDs cross a different authority path
+    than memory candidate/record IDs. They should not remain plain strings when
+    adjacent high-risk IDs already use `BrandedKrnId`.
+  Surface: TypeScript boundaries.
+  Consumer: `packages/core/src/ids.ts`.
+  Does not prove: every ID alias should be branded or runtime IDs changed.
+  Falsifier: `AntiMemoryCandidateId` remains assignable to `MemoryCandidateId`
+    or `AntiMemoryRecordId` remains assignable to `MemoryRecordId`.
+  Verification: `pnpm -C packages/core typecheck`;
+    `pnpm --filter @krn/core test -- ids memory`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -12489,6 +12622,42 @@ Next active stream:
 Next active task:
 - V84-00 Post Skill Invariant Guard Re-Gate.
 
+## Outcome 2026-06-27 V85 Anti-Memory ID Branding
+
+Completed:
+- V84-00 Post Skill Invariant Guard Re-Gate.
+- V85-00 Anti-Memory ID Branding.
+
+Evidence:
+- `packages/core/src/ids.ts`.
+- `packages/core/src/ids.typecheck.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+What improved:
+- `AntiMemoryCandidateId` and `AntiMemoryRecordId` are now branded domain IDs.
+- Core typecheck proofs preserve string compatibility while proving separation
+  from the matching memory IDs.
+
+What did not improve:
+- Runtime ID format.
+- Every remaining ID alias.
+- Product readiness.
+
+New task:
+- V86-00 Post Anti-Memory ID Branding Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V86 Post Anti-Memory ID Branding Re-Gate.
+
+Next active task:
+- V86-00 Post Anti-Memory ID Branding Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -12537,7 +12706,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V84 Post Skill Invariant Guard Re-Gate.
+Active stream: V86 Post Anti-Memory ID Branding Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

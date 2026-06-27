@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V84 Post Skill Invariant Guard Re-Gate
-current task: V84-00 Post Skill Invariant Guard Re-Gate
+active stream: V86 Post Anti-Memory ID Branding Re-Gate
+current task: V86-00 Post Anti-Memory ID Branding Re-Gate
 ```
 
 Completed stream summary:
@@ -117,33 +117,34 @@ V80-00 post source map guard re-gate: complete
 V81-00 active plan invariant guard: complete
 V82-00 post active plan guard re-gate: complete
 V83-00 skill invariant guard: complete
-V84 post skill invariant guard re-gate: active
+V84-00 post skill invariant guard re-gate: complete
+V85-00 anti-memory ID branding: complete
+V86 post anti-memory ID branding re-gate: active
 ```
 
 ## Active Stream
 
-### V84 Post Skill Invariant Guard Re-Gate
+### V86 Post Anti-Memory ID Branding Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding CI-covered guardrails for repo-local
-skill routability and verification sections.
+Decide the next bounded task after branding anti-memory candidate/record IDs in
+core domain types.
 
 Current finding:
 
 ```txt
-V82 selected a skill invariant guard because retained Codex Skills source
-decisions require repo-local skills to remain routable, workflow-oriented, and
-verifiable. The guard caught and repaired a real section drift in
-`target-repo-testing`.
+V84 selected a concrete TypeScript retained-source application: anti-memory
+candidate and record IDs were still plain strings while related memory IDs were
+branded. V85 tightened them with type-level separation proof.
 ```
 
 Current action:
 
 ```txt
-Execute V84-00: decide whether to apply one retained source to a concrete
-consumer, move to another pattern surface, or stop on the external
-operator/target blocker.
+Execute V86-00: decide whether another bounded TypeScript ID/lifecycle repair
+is justified by evidence, move to another pattern surface, or stop on the
+external operator/target blocker.
 ```
 
 Primary consumer:
@@ -155,8 +156,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens another meta-guard or implementation task without a named
-consumer, falsifier, and verification command.
+The re-gate opens another TypeScript repair without source evidence, a bounded
+consumer, and typecheck/test proof.
 ```
 
 ### External Input Blocker
