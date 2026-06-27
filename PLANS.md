@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V217 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, and observational-memory source-intake slices: complete
-active stream: V218 Post Observational Memory Source Intake Re-Gate
-current task: V218-00 Post Observational Memory Source Intake Re-Gate
+V48..V218 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, and post-observational-memory source re-gate slices: complete
+active stream: V219 Infra Pattern Intake Candidate Gate
+current task: V219-00 Infra Pattern Intake Candidate Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V218-00 Post Observational Memory Source Intake Re-Gate.
+V219-00 Infra Pattern Intake Candidate Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17614,6 +17614,61 @@ Next active stream:
 
 Next active task:
 - V218-00 Post Observational Memory Source Intake Re-Gate.
+
+## Outcome 2026-06-28 V218 Post Observational Memory Source Intake Re-Gate
+
+Completed task:
+- V218-00 Post Observational Memory Source Intake Re-Gate.
+
+Decision:
+- Do not add a separate Mastra-specific matrix row or guard now.
+- Existing source-map invariants already guard every retained source for URL,
+  trust tier, source class, decision kind, mechanism, KRN implication,
+  decision, consumer, falsifier, and non-proof boundary.
+- Existing brain-battle smoke already includes source-map source-to-decision
+  mapping and source location scheme checks.
+- Select infra pattern intake as the next bounded area so KRN continuously
+  absorbs best patterns across infra as well as TypeScript and memory.
+
+Evidence:
+- `docs/KRN_SOURCES.md` now contains `Mastra Observational Memory` with a
+  medium-trust competitor-doc classification and ADR-0011 consumer.
+- `packages/harness/src/sourceMapInvariants.test.ts` guards all retained source
+  map entries generically.
+- `docs/architecture/brain-battle-eval-matrix.md` says the current smoke runs
+  source-map source-to-decision mapping and source location scheme guards.
+- GitHub Actions run `28304568103` passed for commit `312930a`.
+
+Source-to-decision:
+- Source: V217 source-map change, source-map invariant, brain-battle matrix, and
+  CI run `28304568103`.
+- Mechanism: a generic retained-source guard is sufficient when the risk is
+  source-decision shape, while specific matrix rows are reserved for distinct
+  protected behavior.
+- KRN implication: avoid duplicating guard surfaces just because a source was
+  retained; move to the next highest-ROI pattern surface.
+- Decision: defer Mastra-specific guard/matrix work and open V219 infra pattern
+  intake candidate gate.
+- Does not prove: observational memory quality at scale, product readiness, or
+  that future memory slices cannot need more specific guards.
+- Consumer: root `PLAN.md`, root `GOAL.md`, and `PLANS.md` next-task queue.
+- Falsifier: future source-map changes bypass generic invariant coverage or a
+  Mastra-derived claim becomes product proof without local behavior evidence.
+
+New task:
+- V219-00 Infra Pattern Intake Candidate Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V219 Infra Pattern Intake Candidate Gate.
+
+Next active task:
+- V219-00 Infra Pattern Intake Candidate Gate.
 
 ## 21. Final Response Format For Codex Runs
 

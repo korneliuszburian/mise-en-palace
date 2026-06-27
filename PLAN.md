@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V218 Post Observational Memory Source Intake Re-Gate
-current task: V218-00 Post Observational Memory Source Intake Re-Gate
+active stream: V219 Infra Pattern Intake Candidate Gate
+current task: V219-00 Infra Pattern Intake Candidate Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -45,39 +45,40 @@ V100..V214: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V218 Post Observational Memory Source Intake Re-Gate
+### V219 Infra Pattern Intake Candidate Gate
 
 Goal:
 
-Select the next bounded task after retaining Mastra Observational Memory for
-ADR-0011.
+Select one bounded infrastructure/source-pattern intake candidate or reject
+infra intake for lack of immediate consumer.
 
 Current finding:
 
 ```txt
-V217 retained Mastra Observational Memory only as staging-layer mechanism
-evidence, not product proof or permission for new runtime surfaces.
+TypeScript and memory pattern intake now have durable source decisions. The
+next gap is whether infrastructure patterns need the same source-to-decision
+treatment without starting new runtime services.
 ```
 
 Current action:
 
 ```txt
-Execute V218-00: decide whether this intake needs one local guard, matrix
-alignment, or no further work. Do not broaden into runtime surfaces.
+Execute V219-00: inspect current infra ADR/source-map coverage and choose one
+bounded infra source decision, lab-test, or rejection.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision with source -> mechanism -> implication ->
-decision/rejection -> consumer -> falsifier.
+One infra source-to-decision output with exactly one consumer or an explicit
+rejection.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate treats Mastra's source-reported results as KRN proof or starts a
-broad memory subsystem instead of one bounded decision.
+The gate starts worker/runtime/dashboard/API/storage expansion or retains
+decorative infra sources without a consumer/falsifier.
 ```
 
 ## Pattern Gate
