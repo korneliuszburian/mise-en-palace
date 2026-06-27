@@ -39,7 +39,8 @@ V09 deterministic hooks candidate decision: complete
 V10 MCP / subagent candidate gate: complete
 V11 product readiness re-gate: complete
 V12 widened alpha trial launch packet: complete
-active stream: V13 research-to-brain decision lane gate
+V13 research-to-brain decision lane gate: complete
+active stream: V14 TypeScript boundary drift gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -278,18 +279,37 @@ Evidence:
 - `docs/runbooks/second-operator-alpha-trial.md` now includes V12 intake,
   trial modes, transcript schema, failure taxonomy, and evidence checklist.
 
-## Active Stream: V13
+## Completed Stream: V13
 
 V13 gates how external research, official docs, practitioner standards, and
 local evidence become KRN decisions without creating a research hoard.
 
 ### V13-00 — Research-To-Brain Decision Lane Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect whether the current `source -> mechanism -> KRN implication ->
 decision/rejection -> falsifier` lane is sufficient for papers/docs/standards,
 or whether a small skill/runbook/ADR repair is needed.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v13-research-to-brain-decision-lane/REPORT.md`;
+- `.agents/skills/source-to-decision/SKILL.md` refined with research intake
+  rules, consumer boundaries, decision kinds, and candidate output guidance.
+
+## Active Stream: V14
+
+V14 checks whether TypeScript boundary standards are still enforced in current
+code instead of merely documented.
+
+### V14-00 — TypeScript Boundary Drift Gate
+
+Status: active.
+
+Goal: inspect current TypeScript boundary drift signals and decide whether a
+small source/test repair is needed for unknown-first input, public type
+boundaries, JSON parsing, unsafe casts, or candidate TypeScript quality gates.
 
 ## Hard Non-Goals
 

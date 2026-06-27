@@ -38,12 +38,13 @@ V09 deterministic hooks candidate decision: complete
 V10 MCP / subagent candidate gate: complete
 V11 product readiness re-gate: complete
 V12 widened alpha trial launch packet: complete
+V13 research-to-brain decision lane gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V13 research-to-brain decision lane gate
-current task: V13-00 Research-To-Brain Decision Lane Gate
+active stream: V14 TypeScript boundary drift gate
+current task: V14-00 TypeScript Boundary Drift Gate
 ```
 
 Evidence already recorded in repo:
@@ -489,6 +490,23 @@ Expected end state:
 KRN has a current decision on whether `source-to-decision` and existing docs are
 enough, or one bounded repair is needed so research inputs become decisions,
 falsifiers, candidates, or code standards instead of passive notes.
+```
+
+### Stream V14 — TypeScript Boundary Drift Gate
+
+Why later:
+
+- V13 confirms practitioner and course guidance should land in standards,
+  tests, skills, or source decisions, not passive links.
+- The next practical consumer is TypeScript boundary enforcement: unknown-first
+  inputs, explicit public types, discriminated unions, no unchecked `any`, and
+  no unsafe parsing/casts.
+
+Expected end state:
+
+```txt
+Current TypeScript boundary drift is either rejected as already covered, or a
+small source/test repair is accepted with exact files and verification.
 ```
 
 ## 12. Active Task Queue
@@ -1331,7 +1349,7 @@ Completion evidence:
 
 ### V13-00 — Research-To-Brain Decision Lane Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: decide whether KRN's current research/source-to-decision lane is enough
 for official docs, papers, practitioner writing, and TypeScript standards, or
@@ -1394,6 +1412,74 @@ creating a new skill or subsystem.
 Next-task synthesis rule: if the current lane is sufficient, reject new
 research surface and choose the next engineering blocker; if not, append the
 smallest repair.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v13-research-to-brain-decision-lane/REPORT.md`;
+- `.agents/skills/source-to-decision/SKILL.md` refined with research intake
+  rules and consumer boundaries.
+
+### V14-00 — TypeScript Boundary Drift Gate
+
+Status: active
+
+Goal: inspect current TypeScript boundary drift and decide whether a small
+source/test repair is needed.
+
+Product rationale: KRN's research-to-brain lane should feed real engineering
+standards; TypeScript boundary health is the most direct current code-quality
+consumer.
+
+Architectural rationale: KRN TypeScript should make wrong authority hard to
+express through unknown-first boundaries, explicit public types, typed metadata
+promotion when repeated, and no type weakening.
+
+Evidence source: `docs/standards/typescript-excellence.md`,
+`docs/standards/typescript-boundaries.md`, `.codex/agents/ts-type-critic.toml`,
+current `rg` results for unsafe casts/JSON parse/any, and existing audit tests.
+
+Official/external sources: no browsing required unless a TypeScript or Codex
+product claim depends on current external docs.
+
+Inputs required: current repo, TypeScript standards, type-safety audit source,
+current search results.
+
+Files likely touched:
+
+- report under `docs/reviews/controlled-dogfood/`;
+- maybe one small source/test repair if drift is proven;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: report/plans and one bounded TypeScript boundary repair if
+evidence proves drift.
+
+Forbidden writes: broad cleanup, package-wide refactor, public API churn without
+need, disabling strictness, `any`/double assertions to pass quickly, dashboard,
+MCP, subagents, hooks, research product.
+
+Output requirements: drift verdict, evidence table, accepted/rejected repair,
+commands that prove and do not prove boundary health.
+
+Definition of Done: either no current drift requires repair, or one small repair
+is implemented, tested, committed, pushed, and CI-checked.
+
+Verification commands: at minimum `git diff --check`; if source changes,
+targeted tests plus `pnpm typecheck` and `pnpm test`.
+
+Acceptance criteria: no broad cleanup; every changed line must trace to a
+specific boundary drift finding.
+
+Risk: turning TS quality into audit theater or repo-wide cleanup.
+
+Rollback: source revert or correction report.
+
+Condensation expectation: record any unrelated drift as backlog, not adjacent
+cleanup.
+
+Next-task synthesis rule: if a repeated drift pattern is found, append a bounded
+repair; otherwise move to the next product blocker.
 
 ## 13. Generated Task Backlog
 
@@ -1625,7 +1711,9 @@ Initial entry:
   stronger, not widened-alpha, not product-ready.
 - [x] V12-00 complete: second-operator packet refreshed with V12 intake, trial
   modes, transcript schema, failure taxonomy, and evidence checklist.
-- [ ] V13-00 active: research-to-brain decision lane gate.
+- [x] V13-00 complete: source-to-decision skill refined with research intake
+  rules and consumer boundaries.
+- [ ] V14-00 active: TypeScript boundary drift gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2123,10 +2211,19 @@ Seed queue:
     engineering patterns; KRN kernel source-to-decision law; V08/V10 official
     docs source decisions
   Surface: research/source decision gate
-  Status: accepted as V13-00
+  Status: complete as V13-00
   Reason: if real operator inputs remain unavailable, the internal engineering
     loop should improve knowledge ingestion without creating a research hoard
   Task: V13-00
+
+- Candidate: TypeScript boundary drift gate
+  Source evidence: V13 research-to-brain decision lane and existing TypeScript
+    excellence/boundary standards
+  Surface: TypeScript boundary report or bounded repair
+  Status: accepted as V14-00
+  Reason: practitioner/standards guidance should be proven through current code
+    boundary health, not passive citation
+  Task: V14-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2313,6 +2410,38 @@ Product readiness verdict:
 
 Next active stream:
 - V13 — Research-To-Brain Decision Lane Gate.
+
+## Outcome 2026-06-27 V13
+
+Completed:
+- V13-00 refined existing `source-to-decision`.
+- New research subsystem, research crawler, MCP, subagent workflow, and passive
+  research archive were rejected.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v13-research-to-brain-decision-lane/REPORT.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+
+What improved:
+- Research-like inputs now have explicit intake rules, preferred consumers,
+  decision kinds, and candidate output guidance.
+- Papers/docs/practitioner writing must become decisions, rejections,
+  hypotheses, candidates, standards, skills, or falsifiers.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- TypeScript boundary health in source code.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V14 — TypeScript Boundary Drift Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V13 — Research-To-Brain Decision Lane Gate
+V14 — TypeScript Boundary Drift Gate
 ```
 
 Current product loop:
@@ -53,8 +53,9 @@ V09 deterministic hooks candidate decision: complete.
 V10 MCP / subagent candidate gate: complete.
 V11 product readiness re-gate: complete.
 V12 widened alpha trial launch packet: complete.
-active stream: V13 research-to-brain decision lane gate.
-current task: V13-00 — Research-To-Brain Decision Lane Gate.
+V13 research-to-brain decision lane gate: complete.
+active stream: V14 TypeScript boundary drift gate.
+current task: V14-00 — TypeScript Boundary Drift Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
