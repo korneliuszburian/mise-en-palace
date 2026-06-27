@@ -220,6 +220,45 @@ describe("runCli", () => {
     );
   });
 
+  it("keeps owner-file inputs in the dry-run connect next command", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const fixtureRepo = path.join(
+      repoRoot,
+      "tests",
+      "fixtures",
+      "target-repos",
+      "typescript-basic"
+    );
+    const result = await runCli(
+      [
+        "init",
+        "--dry-run",
+        "--repo",
+        fixtureRepo,
+        "--owner-file",
+        "src/index.ts|src|implementation_entry|implementation entry point",
+        "--owner-file",
+        "tests/readiness.test.ts|tests|behavior_test|readiness behavior proof"
+      ],
+      {
+        env: {},
+        cwd: repoRoot,
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Owner-file proposal:");
+    expect(result.stdout).toContain(
+      "- src/index.ts | root=src | kind=implementation_entry | reason=implementation entry point"
+    );
+    expect(result.stdout).toContain(
+      `Next command: krn init --connect --repo ${fixtureRepo} --owner-file "src/index.ts|src|implementation_entry|implementation entry point" --owner-file "tests/readiness.test.ts|tests|behavior_test|readiness behavior proof" --persist`
+    );
+  });
+
   it("requires database config for init --connect --persist", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const result = await runCli(

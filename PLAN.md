@@ -44,7 +44,8 @@ V14 TypeScript boundary drift gate: complete
 V15 Promptfoo / Golden Behavior Role Gate: complete
 V16 Activation Relevance Evidence Gate: complete
 V17 Target Owner-File Read-Model Contract Gate: complete
-active stream: V18 Target Owner-File Contract Re-Gate / Trial Application
+V18 Target Owner-File Contract Re-Gate / Trial Application: complete
+active stream: V19 Product Readiness Re-Gate After Owner-File Contract
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -383,11 +384,31 @@ trial path.
 
 ### V18-00 — Target Owner-File Contract Re-Gate / Trial Application
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: use or re-gate the new `--owner-file` init contract in a bounded target
 trial path and decide whether the next blocker is operator friction,
 owner-file quality, or activation selection after owner files are available.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v18-target-owner-file-contract-regate/REPORT.md`;
+- owner-file-heavy target fixture planning selected `tests/readiness.test.ts`
+  as the first context inclusion;
+- dry-run `Next command` now preserves `--owner-file` flags.
+
+## Active Stream: V19
+
+V19 re-gates product readiness after V17/V18 removed the explicit owner-file
+contract blocker.
+
+### V19-00 — Product Readiness Re-Gate After Owner-File Contract
+
+Status: active.
+
+Goal: decide whether V17/V18 move KRN from controlled-internal-alpha toward
+widened-alpha readiness, or whether the next required proof is a real
+second-operator / real target trial instead of another local substitute.
 
 ## Hard Non-Goals
 

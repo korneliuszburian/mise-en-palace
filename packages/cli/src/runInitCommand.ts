@@ -371,6 +371,13 @@ const ownerFileLines = (ownerFiles: readonly TargetOwnerFileProposal[]): string[
         `- ${ownerFile.path} | root=${ownerFile.root} | kind=${ownerFile.kind} | reason=${ownerFile.reason}`
       );
 
+const ownerFileCliArgs = (ownerFiles: readonly TargetOwnerFileProposal[]): string =>
+  ownerFiles
+    .map((ownerFile) =>
+      ` --owner-file "${ownerFile.path}|${ownerFile.root}|${ownerFile.kind}|${ownerFile.reason}"`
+    )
+    .join("");
+
 const renderDryRun = (detection: TargetRepoDetection): string =>
   [
     "KRN Init Dry Run",
@@ -396,7 +403,7 @@ const renderDryRun = (detection: TargetRepoDetection): string =>
     "- AGENTS.md: propose thin KRN target repo instructions",
     "- .codex: no runtime overlay write proposed in dry-run",
     "No files written",
-    `Next command: krn init --connect --repo ${detection.repoPath} --persist`
+    `Next command: krn init --connect --repo ${detection.repoPath}${ownerFileCliArgs(detection.ownerFiles)} --persist`
   ].join("\n") + "\n";
 
 const createdLabel = (created: boolean): string => (created ? "created" : "reused");

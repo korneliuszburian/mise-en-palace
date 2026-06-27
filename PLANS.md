@@ -43,12 +43,13 @@ V14 TypeScript boundary drift gate: complete
 V15 Promptfoo / Golden Behavior Role Gate: complete
 V16 Activation Relevance Evidence Gate: complete
 V17 Target Owner-File Read-Model Contract Gate: complete
+V18 Target Owner-File Contract Re-Gate / Trial Application: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V18 Target Owner-File Contract Re-Gate / Trial Application
-current task: V18-00 Target Owner-File Contract Re-Gate / Trial Application
+active stream: V19 Product Readiness Re-Gate After Owner-File Contract
+current task: V19-00 Product Readiness Re-Gate After Owner-File Contract
 ```
 
 Evidence already recorded in repo:
@@ -63,9 +64,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V18 must apply or re-gate the explicit target owner-file contract so future
-target trials can distinguish operator friction, owner-file quality, and
-activation selection after ownerFiles are available.
+V19 must re-gate readiness after the owner-file contract application and decide
+whether the next proof should be real operator / real target evidence rather
+than another local substitute.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -580,6 +581,24 @@ Expected end state:
 KRN uses or re-gates the explicit owner-file contract in one bounded target
 trial path, without creating a source crawler or pretending headless proof is
 V02-01.
+```
+
+### Stream V19 — Product Readiness Re-Gate After Owner-File Contract
+
+Why now:
+
+- V17 made owner files explicit operator inputs.
+- V18 proved the contract works in a DB-backed target fixture, fixed dry-run
+  next-command friction, and showed exact owner-file selection when the task
+  names the owner file.
+- The remaining question is readiness, not another architecture feature.
+
+Expected end state:
+
+```txt
+KRN re-gates readiness after V17/V18 and decides whether further local
+substitutes are useful or whether the next proof must be real
+operator / real target evidence.
 ```
 
 ## 12. Active Task Queue
@@ -1757,7 +1776,7 @@ Completion evidence:
 
 ### V18-00 — Target Owner-File Contract Re-Gate / Trial Application
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: apply or re-gate the explicit `--owner-file` contract in a bounded target
 trial path and decide whether the next blocker is operator friction,
@@ -1817,6 +1836,70 @@ Condensation expectation: decide whether the next durable surface is operator
 docs, trial packet, activation repair, or no further local substitute.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V18
+evidence.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v18-target-owner-file-contract-regate/REPORT.md`;
+- owner-file-heavy target task selected `tests/readiness.test.ts` first;
+- dry-run `Next command` now preserves `--owner-file` flags.
+
+### V19-00 — Product Readiness Re-Gate After Owner-File Contract
+
+Status: active
+
+Goal: decide whether V17/V18 move KRN from controlled-internal-alpha toward
+widened-alpha readiness, or whether the next required proof is a real
+second-operator / real target trial instead of another local substitute.
+
+Product rationale: the owner-file contract blocker is now repaired and applied
+in a target fixture, so product claims must be re-gated before starting another
+local proof.
+
+Architectural rationale: readiness gates prevent source repairs, target
+fixtures, and local dogfood runs from being mistaken for product proof.
+
+Evidence source: V11 readiness gate, V12 launch packet, V17 owner-file contract
+report, V18 target fixture application report, current CI state.
+
+Official/external sources: none required unless readiness criteria are changed.
+
+Inputs required: current reports and current remote/CI state.
+
+Files likely touched:
+
+- readiness report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN reports/plans only, unless readiness evidence exposes one
+bounded docs/source repair.
+
+Forbidden writes: target repos, source crawler, activation scoring rewrite,
+dashboard/API/MCP/worker runtime, fake V02-01/product-ready claims.
+
+Output requirements: readiness verdict for controlled-internal-alpha,
+widened-alpha, product-ready, and V02-01; next task chosen from evidence.
+
+Definition of Done: readiness is re-gated after V17/V18 and the next active
+stream is explicit.
+
+Verification commands: `git diff --check`; if source changes, `pnpm typecheck`
+and `pnpm test`.
+
+Acceptance criteria: no overclaim; real operator proof remains distinct from
+target fixture proof.
+
+Risk: readiness report could become another local substitute instead of a claim
+boundary.
+
+Rollback: focused V19 report/plan revert.
+
+Condensation expectation: decide whether to stop local substitutes, request real
+operator/target evidence, or open one specific repair.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V19
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2059,7 +2142,10 @@ Initial entry:
   read-model completeness accepted as next blocker.
 - [x] V17-00 complete: `krn init --owner-file` now provides an explicit
   owner-file read-model contract without source crawler or scoring rewrite.
-- [ ] V18-00 active: Target Owner-File Contract Re-Gate / Trial Application.
+- [x] V18-00 complete: owner-file contract works in target fixture, exact
+  owner-file task selects `tests/readiness.test.ts`, and dry-run next command
+  preserves owner-file flags.
+- [ ] V19-00 active: Product Readiness Re-Gate After Owner-File Contract.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2155,6 +2241,14 @@ Record every unexpected fact in this format:
   `docs/reviews/controlled-dogfood/2026-06-27-v17-target-owner-file-read-model-contract/REPORT.md`.
   Impact: V17 repaired init/connect with explicit `--owner-file` input instead
   of adding crawler inference or activation scoring changes.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: `krn init --dry-run` showed owner-file proposals but omitted
+  `--owner-file` flags from its generated `Next command`.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v18-target-owner-file-contract-regate/REPORT.md`;
+  `packages/cli/src/runInitCommand.ts`; `packages/cli/src/runCli.test.ts`.
+  Impact: V18 repaired the dry-run next command so operators do not lose
+  owner-file inputs when copying the connect command.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2295,6 +2389,18 @@ Initial decisions:
   Falsifier: future target trials provide owner files through init but planning
   still reports `missing_owner_file_read_model` or operators cannot use the
   contract from checked-in docs.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Re-gate product readiness after V18 instead of starting another
+  local substitute.
+  Rationale: V18 proved the owner-file contract in a target fixture and fixed
+  one operator-friction issue; the next honest question is claim boundary and
+  readiness, not more local confidence.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v18-target-owner-file-contract-regate/REPORT.md`.
+  Does not prove: widened alpha, V02-01, product readiness, or arbitrary target
+  owner-file completeness.
+  Falsifier: V19 finds a concrete local repair still blocks real operator or
+  real target execution.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2453,6 +2559,21 @@ Seed evidence:
   Does not prove: owner-file completeness, activation product quality, V02-01,
     widened alpha, or product readiness.
   Follow-up task: V18-00.
+
+- Evidence ID: E-V18-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v18-target-owner-file-contract-regate/REPORT.md`
+  Command/report/file: target fixture init/connect/plan/evidence/observe/reflect,
+    target fixture test, CLI dry-run next-command repair, targeted CLI tests,
+    typecheck, full tests, diff check.
+  Result: owner-file-heavy target task selected `tests/readiness.test.ts` first,
+    target evidence persisted cleanly, and dry-run next command now preserves
+    `--owner-file` flags.
+  Proves: explicit owner-file contract works in a controlled DB-backed target
+    fixture and exact owner-file activation works when the task names the owner
+    file.
+  Does not prove: real operator usability, product readiness, V02-01, or
+    owner-file completeness on arbitrary repos.
+  Follow-up task: V19-00.
 ```
 
 ## 19. Condensation Queue
@@ -2641,11 +2762,19 @@ Seed queue:
   Source evidence: V17 owner-file contract repair and live init/connect/plan
     replay
   Surface: target trial/re-gate report
-  Status: accepted as V18-00
+  Status: complete as V18-00
   Reason: after owner files can enter through normal init, the next question is
     whether a bounded target trial benefits or exposes operator friction,
     owner-file quality issues, or activation misses after ownerFiles exist
   Task: V18-00
+
+- Candidate: product readiness re-gate after owner-file contract
+  Source evidence: V18 target owner-file contract application and friction fix
+  Surface: readiness gate
+  Status: accepted as V19-00
+  Reason: the immediate owner-file contract blocker is gone; readiness and next
+    proof boundary must be re-evaluated before another local substitute
+  Task: V19-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -3005,6 +3134,45 @@ Product readiness verdict:
 Next active stream:
 - V18 — Target Owner-File Contract Re-Gate / Trial Application.
 
+## Outcome 2026-06-27 V18
+
+Completed:
+- V18-00 applied the explicit owner-file contract in a DB-backed target fixture
+  flow.
+- A generic target task proved `ownerFiles=2` and target evidence persistence.
+- An owner-file-heavy target task selected `tests/readiness.test.ts` as the
+  first context inclusion.
+- `krn init --dry-run` now preserves `--owner-file` flags in its generated
+  `Next command`.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v18-target-owner-file-contract-regate/REPORT.md`.
+- Persisted runs `c7aadb3a-43e9-4cfd-ac5e-3250a886d41e` and
+  `d833dfa0-eb8f-40e8-8e3e-eeddde9ee303`.
+- Targeted CLI tests, typecheck, full test suite, and diff check.
+
+What improved:
+- Owner-file contract has a full controlled target application, not just a
+  source repair.
+- Owner-file-heavy activation works when the target task names the exact file.
+- Operator copy-path friction in init dry-run was repaired.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- Owner-file quality/completeness for arbitrary repos.
+- Real operator comprehension of owner-file entries.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V19 — Product Readiness Re-Gate After Owner-File Contract.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -3053,7 +3221,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V18 Target Owner-File Contract Re-Gate / Trial Application.
+Active stream: V19 Product Readiness Re-Gate After Owner-File Contract.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
