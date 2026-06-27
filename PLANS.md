@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V149 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, and compact stale-objective contract guard slices: complete
-active stream: V150 Post Compact Stale Objective Contract Guard Re-Gate
-current task: V150-00 Post Compact Stale Objective Contract Guard Re-Gate
+V48..V151 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, and progress stale-active guard slices: complete
+active stream: V152 Post Progress Stale Active Guard Re-Gate
+current task: V152-00 Post Progress Stale Active Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V150-00 Post Compact Stale Objective Contract Guard Re-Gate.
+V152-00 Post Progress Stale Active Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -8062,8 +8062,10 @@ Initial entry:
   TypeScript source application.
 - [x] V85-00 complete: branded anti-memory candidate/record IDs and added
   type-level separation proofs.
-- [ ] V86-00 active: re-gate after anti-memory ID branding.
-- [ ] V70-00 active: re-gate after the security trust-boundary repair.
+- [x] V70-00 complete: security trust-boundary repair was re-gated and later
+  condensed into source/trust, redaction, and memory-promotion guard work.
+- [x] V86-00 complete: anti-memory ID branding was re-gated and later condensed
+  into authority-ID separation guard work.
 ```
 
 ## 16. Surprises & Discoveries
@@ -14892,6 +14894,81 @@ Next active stream:
 
 Next active task:
 - V150-00 Post Compact Stale Objective Contract Guard Re-Gate.
+
+## Outcome 2026-06-27 V151 Progress Stale Active Guard
+
+Completed tasks:
+- V150-00 Post Compact Stale Objective Contract Guard Re-Gate.
+- V151-00 Progress Stale Active Guard.
+
+V150 decision:
+- Do not broaden compact stale-objective handling into prompt bureaucracy,
+  dashboard, or benchmark lane.
+- Select `PLANS.md` Progress stale-active cleanup because the Progress section
+  still contained unchecked `V70-00 active` and `V86-00 active` entries even
+  though compact root state and baseline history had advanced to V150.
+- The concrete failure mode is a resumed Codex run inspecting Progress, seeing
+  stale unchecked active work, and choosing an old task instead of the root
+  active task.
+
+What changed:
+- `PLANS.md` Progress now marks V70 and V86 as complete rollup entries instead
+  of unchecked active tasks.
+- `packages/harness/src/activePlanInvariants.test.ts` now rejects unchecked
+  active task lines in the Progress section and explicitly rejects stale
+  V70/V86 active text.
+- `docs/architecture/brain-battle-eval-matrix.md` records the progress
+  stale-active guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V152.
+
+Evidence:
+- `PLANS.md` Progress section had `- [ ] V86-00 active` and
+  `- [ ] V70-00 active`.
+- Current root `PLAN.md` active task was V150 before this slice.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+
+Source-to-decision:
+- Source: current `PLANS.md` Progress section and root active state.
+- Mechanism: progress ledgers can preserve stale unchecked active entries after
+  compact active state advances; if continuations inspect those entries, they can
+  resume old work incorrectly.
+- KRN implication: Progress can remain a historical ledger, but it must not
+  carry stale unchecked active task markers that compete with root active state.
+- Decision: convert stale V70/V86 active entries to completed rollups and guard
+  Progress against unchecked active task lines.
+- Does not prove: every historical progress entry is exhaustive, every completed
+  task is described in Progress, or product readiness.
+- Consumer: `PLANS.md` Progress and
+  `packages/harness/src/activePlanInvariants.test.ts`.
+- Falsifier: `PLANS.md` Progress can regain stale unchecked active task lines
+  without focused tests failing.
+
+What improved:
+- Resumed Codex runs are less likely to confuse old Progress entries with the
+  current active task.
+- Detailed outcomes remain the authoritative history; Progress stays compact and
+  non-competing.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Exhaustive historical summary quality.
+
+New task:
+- V152-00 Post Progress Stale Active Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V152 Post Progress Stale Active Guard Re-Gate.
+
+Next active task:
+- V152-00 Post Progress Stale Active Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V150 Post Compact Stale Objective Contract Guard Re-Gate
-current task: V150-00 Post Compact Stale Objective Contract Guard Re-Gate
+active stream: V152 Post Progress Stale Active Guard Re-Gate
+current task: V152-00 Post Progress Stale Active Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,7 +43,7 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V149: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V151: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
@@ -51,32 +51,31 @@ V110..V149: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            source-to-decision, source-to-decision skill output, and
            source-class vocabulary, verification TMPDIR, and TypeScript
            boundary re-scan plus stale attachment objective and compact
-           stale-objective contract guards complete.
+           stale-objective contract plus progress stale-active guards complete.
 ```
 
 ## Active Stream
 
-### V150 Post Compact Stale Objective Contract Guard Re-Gate
+### V152 Post Progress Stale Active Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding stale-objective handling in the
-compact GOAL template without turning continuation recovery into prompt bureaucracy.
+Decide the next bounded task after guarding stale active entries in `PLANS.md`
+Progress without turning progress maintenance into ledger bureaucracy.
 
 Current finding:
 
 ```txt
-V148 selected compact contract preservation because V147 added stale objective
-handling to root `GOAL.md`, but `PLANS.md` section 22 is the template future
-compactions use to recreate compact goals. V149 guarded that template.
+V150 selected progress stale-active cleanup because `PLANS.md` Progress still
+contained old unchecked active entries for completed V70 and V86 work. V151
+cleaned those entries and added an invariant.
 ```
 
 Current action:
 
 ```txt
-Execute V150-00: select the next pattern surface from evidence. Do not broaden
-compact stale-objective handling into prompt bureaucracy, dashboard, or
-benchmark lane.
+Execute V152-00: select the next pattern surface from evidence. Do not broaden
+progress maintenance into ledger bureaucracy, dashboard, or benchmark lane.
 ```
 
 Primary consumer:
@@ -88,7 +87,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused compact-contract preservation into prompt bureaucracy
+The re-gate turns focused progress stale-active cleanup into ledger bureaucracy
 without a concrete consumer and falsifier.
 ```
 

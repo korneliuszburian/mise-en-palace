@@ -115,6 +115,15 @@ describe("KRN active plan invariants", () => {
     expect(knownCurrentGap).not.toContain("current active gap is making");
   });
 
+  it("keeps PLANS progress free of stale unchecked active tasks", () => {
+    const plans = readRootFile("PLANS.md");
+    const progress = sectionBody(plans, "## 15. Progress");
+
+    expect(progress).not.toMatch(/^- \[ \] V\d+.*active:/mu);
+    expect(progress).not.toContain("V70-00 active");
+    expect(progress).not.toContain("V86-00 active");
+  });
+
   it("keeps the PLANS revision note historical instead of active", () => {
     const plans = readRootFile("PLANS.md");
     const revisionNote = sectionBody(plans, "## 23. Plan Revision Note");
