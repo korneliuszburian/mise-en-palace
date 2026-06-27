@@ -1,5 +1,6 @@
 import type {
-  EvidenceCommand
+  EvidenceCommand,
+  TargetEvidenceInput
 } from "@krn/core";
 import {
   parseCodexArgs
@@ -86,6 +87,7 @@ export type CliCommand =
       runId?: string;
       intendedFiles?: readonly string[];
       commandOutcomes?: readonly EvidenceCommand[];
+      targetEvidence?: TargetEvidenceInput;
     }
   | {
       kind: "reviewAssess";
@@ -312,8 +314,9 @@ const usage = [
   "krn init --dry-run --repo <path>",
   "krn init --connect --repo <path> --persist",
   "krn doctor",
-  "krn evidence capture [--run-id <id>] [--intended-file <path>] [--verification \"pnpm typecheck=passed\"] [--persist]",
+  "krn evidence capture [--run-id <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--persist]",
   "  example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+  "  target: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "  persisted: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
   "  note: evidence capture records outcomes; it does not execute commands",
   "krn observe --run <id> [--project <id>] [--persist]",

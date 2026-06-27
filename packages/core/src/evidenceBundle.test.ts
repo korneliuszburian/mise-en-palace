@@ -4,7 +4,9 @@ import {
   assessEvidenceBundleCompleteness,
   assessEvidenceBundleRollbackPath,
   normalizeEvidenceCommand,
+  normalizeTargetEvidence,
   scoreEvidenceBundleReviewRisk,
+  targetEvidenceFromMetadata,
   type EvidenceBundle
 } from "./evidenceBundle.js";
 
@@ -124,6 +126,77 @@ describe("evidence bundle completeness", () => {
       doesNotProve:
         "This command row does not prove the command executed; it is default template evidence only."
     });
+  });
+
+  test("normalizes target evidence without treating it as product proof", () => {
+    const targetEvidence = normalizeTargetEvidence({
+      targetRepo: " ../wilq-seo ",
+      mode: "observation-only",
+      dirtyBefore: "dirty",
+      dirtyAfter: "dirty",
+      ownedChanges: "external",
+      forbiddenWrites: [" wilq-seo/** "],
+      changedFiles: [{
+        status: "M",
+        path: "apps/dashboard/src/App.tsx"
+      }],
+      commands: [" wilq-seo scripts/test.sh "]
+    });
+
+    expect(targetEvidence).toEqual({
+      targetRepo: "../wilq-seo",
+      mode: "observation_only",
+      dirtyBefore: "dirty",
+      dirtyAfter: "dirty",
+      ownedChanges: "external",
+      allowedWrites: [],
+      forbiddenWrites: ["wilq-seo/**"],
+      changedFiles: [{
+        status: "M",
+        path: "apps/dashboard/src/App.tsx",
+        ownership: "external"
+      }],
+      commands: ["wilq-seo scripts/test.sh"],
+      doesNotProve: [
+        "Target evidence does not prove KRN source correctness.",
+        "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
+        "Target evidence does not prove product readiness or V02-01 second-operator usability."
+      ]
+    });
+  });
+
+  test("reads target evidence back from metadata defensively", () => {
+    expect(targetEvidenceFromMetadata({
+      targetRepo: "../wilq-seo",
+      mode: "real-second-operator",
+      dirtyBefore: "clean",
+      dirtyAfter: "dirty",
+      ownedChanges: "partial",
+      changedFiles: [{
+        status: "M",
+        path: "src/app.ts",
+        ownership: "owned-by-current-krn-run"
+      }],
+      commands: ["target pnpm test"],
+      doesNotProve: ["Target evidence does not prove product readiness."]
+    })).toMatchObject({
+      targetRepo: "../wilq-seo",
+      mode: "real_second_operator",
+      dirtyBefore: "clean",
+      dirtyAfter: "dirty",
+      ownedChanges: "partial",
+      changedFiles: [{
+        status: "M",
+        path: "src/app.ts",
+        ownership: "owned_by_current_krn_run"
+      }],
+      commands: ["target pnpm test"],
+      doesNotProve: ["Target evidence does not prove product readiness."]
+    });
+
+    expect(targetEvidenceFromMetadata({
+      mode: "observation-only"
+    })).toBeUndefined();
   });
 
   test("accepts a complete implementation evidence bundle", () => {

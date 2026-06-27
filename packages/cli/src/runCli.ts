@@ -707,6 +707,9 @@ export const runCli = async (
         ...(parsed.command.commandOutcomes === undefined
           ? {}
           : { commandOutcomes: parsed.command.commandOutcomes }),
+        ...(parsed.command.targetEvidence === undefined
+          ? {}
+          : { targetEvidence: parsed.command.targetEvidence }),
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime }),

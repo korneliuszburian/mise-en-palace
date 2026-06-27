@@ -14,6 +14,17 @@ export type EvidenceCommandProvenance =
   | "external_log";
 export type DiffRisk = "low" | "medium" | "high";
 export type ReviewBurdenScore = "low" | "medium" | "high";
+export type TargetEvidenceMode =
+  | "observation_only"
+  | "headless_repair"
+  | "real_second_operator"
+  | "unknown";
+export type TargetDirtyState = "clean" | "dirty" | "unknown";
+export type TargetChangeOwnership =
+  | "external"
+  | "owned_by_current_krn_run"
+  | "partial"
+  | "unknown";
 
 export interface EvidenceCommand {
   command: string;
@@ -25,6 +36,44 @@ export interface EvidenceCommand {
   capturedAt?: IsoTimestamp;
   assertedBy?: string;
   doesNotProve?: string;
+}
+
+export interface TargetEvidenceChangedFileInput {
+  status: string;
+  path: string;
+  ownership?: string;
+}
+
+export interface TargetEvidenceChangedFile {
+  status: string;
+  path: string;
+  ownership: TargetChangeOwnership;
+}
+
+export interface TargetEvidenceInput {
+  targetRepo: string;
+  mode?: string;
+  dirtyBefore?: string;
+  dirtyAfter?: string;
+  ownedChanges?: string;
+  allowedWrites?: readonly string[];
+  forbiddenWrites?: readonly string[];
+  changedFiles?: readonly TargetEvidenceChangedFileInput[];
+  commands?: readonly string[];
+  doesNotProve?: readonly string[];
+}
+
+export interface TargetEvidence {
+  targetRepo: string;
+  mode: TargetEvidenceMode;
+  dirtyBefore: TargetDirtyState;
+  dirtyAfter: TargetDirtyState;
+  ownedChanges: TargetChangeOwnership;
+  allowedWrites: string[];
+  forbiddenWrites: string[];
+  changedFiles: TargetEvidenceChangedFile[];
+  commands: string[];
+  doesNotProve: string[];
 }
 
 interface BaseNormalizedEvidenceCommand {
@@ -111,9 +160,184 @@ export const defaultTemplateCommandDoesNotProve =
 
 export const commandResultDoesNotProve =
   "This command result does not prove memory quality, source truth, review correctness, or production readiness.";
+export const targetEvidenceDoesNotProve = [
+  "Target evidence does not prove KRN source correctness.",
+  "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
+  "Target evidence does not prove product readiness or V02-01 second-operator usability."
+] as const;
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
+
+const normalizeToken = (value: string | undefined): string =>
+  value?.trim().toLowerCase().replaceAll("-", "_") ?? "";
+
+const targetEvidenceModes = new Set<TargetEvidenceMode>([
+  "observation_only",
+  "headless_repair",
+  "real_second_operator",
+  "unknown"
+]);
+
+const targetDirtyStates = new Set<TargetDirtyState>(["clean", "dirty", "unknown"]);
+
+const targetChangeOwnerships = new Set<TargetChangeOwnership>([
+  "external",
+  "owned_by_current_krn_run",
+  "partial",
+  "unknown"
+]);
+
+export const normalizeTargetEvidenceMode = (
+  value: string | undefined
+): TargetEvidenceMode => {
+  const normalized = normalizeToken(value);
+
+  return targetEvidenceModes.has(normalized as TargetEvidenceMode)
+    ? normalized as TargetEvidenceMode
+    : "unknown";
+};
+
+export const normalizeTargetDirtyState = (
+  value: string | undefined
+): TargetDirtyState => {
+  const normalized = normalizeToken(value);
+
+  return targetDirtyStates.has(normalized as TargetDirtyState)
+    ? normalized as TargetDirtyState
+    : "unknown";
+};
+
+export const normalizeTargetChangeOwnership = (
+  value: string | undefined
+): TargetChangeOwnership => {
+  const normalized = normalizeToken(value);
+
+  return targetChangeOwnerships.has(normalized as TargetChangeOwnership)
+    ? normalized as TargetChangeOwnership
+    : "unknown";
+};
+
+const normalizedStringList = (values: readonly string[] | undefined): string[] => [
+  ...new Set((values ?? [])
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0))
+];
+
+export const normalizeTargetEvidence = (
+  input: TargetEvidenceInput
+): TargetEvidence => {
+  const ownedChanges = normalizeTargetChangeOwnership(input.ownedChanges);
+
+  return {
+    targetRepo: input.targetRepo.trim(),
+    mode: normalizeTargetEvidenceMode(input.mode),
+    dirtyBefore: normalizeTargetDirtyState(input.dirtyBefore),
+    dirtyAfter: normalizeTargetDirtyState(input.dirtyAfter),
+    ownedChanges,
+    allowedWrites: normalizedStringList(input.allowedWrites),
+    forbiddenWrites: normalizedStringList(input.forbiddenWrites),
+    changedFiles: (input.changedFiles ?? [])
+      .map((file) => ({
+        status: file.status.trim(),
+        path: file.path.trim(),
+        ownership: normalizeTargetChangeOwnership(file.ownership ?? ownedChanges)
+      }))
+      .filter((file) => file.status.length > 0 && file.path.length > 0),
+    commands: normalizedStringList(input.commands),
+    doesNotProve: normalizedStringList(input.doesNotProve).length === 0
+      ? [...targetEvidenceDoesNotProve]
+      : normalizedStringList(input.doesNotProve)
+  };
+};
+
+const stringField = (
+  record: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = record[key];
+
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+};
+
+const stringListField = (
+  record: Record<string, unknown>,
+  key: string
+): string[] => {
+  const value = record[key];
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is string =>
+    typeof item === "string" && item.trim().length > 0
+  );
+};
+
+const targetChangedFilesField = (
+  record: Record<string, unknown>
+): TargetEvidenceChangedFileInput[] => {
+  const value = record.changedFiles;
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.flatMap((item): TargetEvidenceChangedFileInput[] => {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      return [];
+    }
+
+    const changedFile = item as Record<string, unknown>;
+    const status = stringField(changedFile, "status");
+    const path = stringField(changedFile, "path");
+
+    if (status === undefined || path === undefined) {
+      return [];
+    }
+
+    const ownership = stringField(changedFile, "ownership");
+
+    return [{
+      status,
+      path,
+      ...(ownership === undefined ? {} : { ownership })
+    }];
+  });
+};
+
+export const targetEvidenceFromMetadata = (
+  input: unknown
+): TargetEvidence | undefined => {
+  if (typeof input !== "object" || input === null || Array.isArray(input)) {
+    return undefined;
+  }
+
+  const record = input as Record<string, unknown>;
+  const targetRepo = stringField(record, "targetRepo");
+
+  if (targetRepo === undefined) {
+    return undefined;
+  }
+  const mode = stringField(record, "mode");
+  const dirtyBefore = stringField(record, "dirtyBefore");
+  const dirtyAfter = stringField(record, "dirtyAfter");
+  const ownedChanges = stringField(record, "ownedChanges");
+
+  return normalizeTargetEvidence({
+    targetRepo,
+    ...(mode === undefined ? {} : { mode }),
+    ...(dirtyBefore === undefined ? {} : { dirtyBefore }),
+    ...(dirtyAfter === undefined ? {} : { dirtyAfter }),
+    ...(ownedChanges === undefined ? {} : { ownedChanges }),
+    allowedWrites: stringListField(record, "allowedWrites"),
+    forbiddenWrites: stringListField(record, "forbiddenWrites"),
+    changedFiles: targetChangedFilesField(record),
+    commands: stringListField(record, "commands"),
+    doesNotProve: stringListField(record, "doesNotProve")
+  });
+};
 
 const isPassedOrFailed = (status: EvidenceCommandStatus): status is "passed" | "failed" =>
   status === "passed" || status === "failed";

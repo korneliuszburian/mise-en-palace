@@ -99,6 +99,25 @@ const aggregate: HarnessRunAggregate = {
         intended: ["packages/cli/src/runRunShowCommand.ts"],
         unrelated: [],
         unknown: []
+      },
+      targetEvidence: {
+        targetRepo: "../wilq-seo",
+        mode: "observation_only",
+        dirtyBefore: "dirty",
+        dirtyAfter: "dirty",
+        ownedChanges: "external",
+        allowedWrites: [],
+        forbiddenWrites: ["wilq-seo/**"],
+        changedFiles: [{
+          status: "M",
+          path: "apps/dashboard/src/App.tsx",
+          ownership: "external"
+        }],
+        commands: ["wilq-seo scripts/test.sh"],
+        doesNotProve: [
+          "Target evidence does not prove KRN source correctness.",
+          "Target evidence does not prove product readiness or V02-01 second-operator usability."
+        ]
       }
     },
     createdAt: now,
@@ -191,6 +210,11 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("- intended=1");
     expect(result.stdout).toContain("- unrelated=0");
     expect(result.stdout).toContain("- unknown=0");
+    expect(result.stdout).toContain("targetEvidence:");
+    expect(result.stdout).toContain("- repo: ../wilq-seo");
+    expect(result.stdout).toContain("- mode: observation_only");
+    expect(result.stdout).toContain("- dirtyBefore: dirty");
+    expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
     expect(result.stdout).toContain("pnpm typecheck: passed | provenance=operator_reported");
     expect(result.stdout).toContain("doesNotProve: This command result does not prove memory quality");
     expect(result.stdout).toContain("memory_candidate:memory-candidate-1");
@@ -244,6 +268,20 @@ describe("runRunShowCommand", () => {
             unrelated: [],
             unknown: []
           }
+        },
+        targetEvidence: {
+          targetRepo: "../wilq-seo",
+          mode: "observation_only",
+          dirtyBefore: "dirty",
+          dirtyAfter: "dirty",
+          ownedChanges: "external",
+          forbiddenWrites: ["wilq-seo/**"],
+          changedFiles: [{
+            status: "M",
+            path: "apps/dashboard/src/App.tsx",
+            ownership: "external"
+          }],
+          commands: ["wilq-seo scripts/test.sh"]
         },
         commands: [{
           command: "pnpm typecheck",

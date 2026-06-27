@@ -7,12 +7,14 @@ import {
 } from "@krn/db/adapters";
 import {
   normalizeEvidenceCommand,
-  summarizeFeedbackCandidateProposals
+  summarizeFeedbackCandidateProposals,
+  targetEvidenceFromMetadata
 } from "@krn/core";
 import type {
   EvidenceCommand,
   FeedbackDelta,
-  NormalizedEvidenceCommand
+  NormalizedEvidenceCommand,
+  TargetEvidence
 } from "@krn/core";
 import type {
   HarnessRunAggregate,
@@ -85,6 +87,7 @@ export interface RunReadbackResource {
     rollbackPath: string;
     changedFiles: RunReadbackChangedFilesResource;
     commands: RunReadbackCommandResource[];
+    targetEvidence?: TargetEvidence;
   }[];
   reviewAssessments: {
     id: string;
@@ -253,6 +256,43 @@ const renderCommands = (commands: readonly EvidenceCommand[]): string[] =>
     ? ["- none"]
     : commands.flatMap(renderCommand);
 
+const renderList = (values: readonly string[]): string[] =>
+  values.length === 0
+    ? ["  - none"]
+    : values.map((value) => `  - ${value}`);
+
+const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): string[] => {
+  if (targetEvidence === undefined) {
+    return [
+      "  targetEvidence:",
+      "  - none"
+    ];
+  }
+
+  return [
+    "  targetEvidence:",
+    `  - repo: ${targetEvidence.targetRepo}`,
+    `  - mode: ${targetEvidence.mode}`,
+    `  - dirtyBefore: ${targetEvidence.dirtyBefore}`,
+    `  - dirtyAfter: ${targetEvidence.dirtyAfter}`,
+    `  - ownedChanges: ${targetEvidence.ownedChanges}`,
+    "  - allowedWrites:",
+    ...renderList(targetEvidence.allowedWrites),
+    "  - forbiddenWrites:",
+    ...renderList(targetEvidence.forbiddenWrites),
+    "  - changedFiles:",
+    ...(targetEvidence.changedFiles.length === 0
+      ? ["  - none"]
+      : targetEvidence.changedFiles.map((file) =>
+          `  - ${file.status} ${file.path} | ownership=${file.ownership}`
+        )),
+    "  - commands:",
+    ...renderList(targetEvidence.commands),
+    "  - doesNotProve:",
+    ...renderList(targetEvidence.doesNotProve)
+  ];
+};
+
 const commandResource = (command: EvidenceCommand): RunReadbackCommandResource => {
   const normalized = normalizeEvidenceCommand(command) as NormalizedEvidenceCommand;
 
@@ -310,18 +350,23 @@ const renderEvidenceBundle = (
 
   return [
     "Evidence Bundles:",
-    ...aggregate.evidenceBundles.flatMap((bundle) => [
-      `- ${bundle.id}: status=${bundle.status} diffRisk=${bundle.diffRisk}`,
-      `  changedFiles: ${bundle.changedFiles.length}`,
-      "  changed file classification:",
-      `  - intended=${metadataArrayLength(bundle.metadata, "changedFileClassification", "intended")}`,
-      `  - unrelated=${metadataArrayLength(bundle.metadata, "changedFileClassification", "unrelated")}`,
-      `  - unknown=${metadataArrayLength(bundle.metadata, "changedFileClassification", "unknown")}`,
-      `  reviewBurden: ${bundle.reviewBurden}`,
-      `  rollbackPath: ${bundle.rollbackPath}`,
-      "  commands:",
-      ...renderCommands(bundle.commands).map((line) => `  ${line}`)
-    ])
+    ...aggregate.evidenceBundles.flatMap((bundle) => {
+      const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
+
+      return [
+        `- ${bundle.id}: status=${bundle.status} diffRisk=${bundle.diffRisk}`,
+        `  changedFiles: ${bundle.changedFiles.length}`,
+        "  changed file classification:",
+        `  - intended=${metadataArrayLength(bundle.metadata, "changedFileClassification", "intended")}`,
+        `  - unrelated=${metadataArrayLength(bundle.metadata, "changedFileClassification", "unrelated")}`,
+        `  - unknown=${metadataArrayLength(bundle.metadata, "changedFileClassification", "unknown")}`,
+        `  reviewBurden: ${bundle.reviewBurden}`,
+        `  rollbackPath: ${bundle.rollbackPath}`,
+        "  commands:",
+        ...renderCommands(bundle.commands).map((line) => `  ${line}`),
+        ...renderTargetEvidence(targetEvidence)
+      ];
+    })
   ];
 };
 
@@ -356,18 +401,23 @@ export const buildRunReadbackResource = (
     inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
     exclusions: aggregate.contextAssembly?.exclusions.length ?? 0
   },
-  evidenceBundles: aggregate.evidenceBundles.map((bundle) => ({
-    id: bundle.id,
-    status: bundle.status,
-    diffRisk: bundle.diffRisk,
-    reviewBurden: bundle.reviewBurden,
-    rollbackPath: bundle.rollbackPath,
-    changedFiles: {
-      all: bundle.changedFiles,
-      classification: changedFileClassification(bundle)
-    },
-    commands: bundle.commands.map(commandResource)
-  })),
+  evidenceBundles: aggregate.evidenceBundles.map((bundle) => {
+    const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
+
+    return {
+      id: bundle.id,
+      status: bundle.status,
+      diffRisk: bundle.diffRisk,
+      reviewBurden: bundle.reviewBurden,
+      rollbackPath: bundle.rollbackPath,
+      changedFiles: {
+        all: bundle.changedFiles,
+        classification: changedFileClassification(bundle)
+      },
+      commands: bundle.commands.map(commandResource),
+      ...(targetEvidence === undefined ? {} : { targetEvidence })
+    };
+  }),
   reviewAssessments: aggregate.reviewAssessments.map((assessment) => ({
     id: assessment.id,
     status: assessment.status,

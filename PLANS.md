@@ -568,7 +568,7 @@ Next-task synthesis rule: if code gap confirmed, execute V05-02; if rejected, ap
 
 ### V05-02 — Implement Minimal Target-Aware Evidence Capture
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: Add the smallest typed support for target-repo evidence capture/readback.
 
@@ -639,7 +639,7 @@ Next-task synthesis rule: execute V05-03 guard/replay.
 
 ### V05-03 — Target Evidence Guard And Replay Scenario
 
-Status: proposed
+Status: active
 
 Goal: Add a deterministic guard and one controlled replay scenario proving target-aware evidence capture catches target dirty state/proof boundaries.
 
@@ -971,8 +971,9 @@ Initial entry:
   `PLANS.md`-driven V05+ goal.
 - [x] V05-01 complete: target evidence capture current-state investigation
   confirmed the code/readback gap and selected minimal metadata-backed repair.
-- [ ] V05-02 active: minimal target-aware evidence capture repair.
-- [ ] V05-03 pending: deterministic guard/replay scenario.
+- [x] V05-02 complete: minimal target-aware evidence capture/readback repair
+  implemented with explicit CLI inputs, metadata persistence, readback, and tests.
+- [ ] V05-03 active: deterministic guard/replay scenario.
 - [ ] V05-04 pending: V05 re-gate and generate next active stream.
 ```
 
@@ -991,6 +992,11 @@ Record every unexpected fact in this format:
 - Discovery: EvidenceBundle persistence can carry first target evidence through existing JSON metadata, but no typed target evidence/readback surface exists.
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-current-state/REPORT.md`; `packages/db/src/schema/harness.ts`; `packages/cli/src/runRunShowCommand.ts`.
   Impact: V05-02 should avoid a DB migration and focus on typed metadata helpers, CLI inputs, capture rendering, and readback rendering.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Target-aware evidence capture preview caught a missing intended-file entry while target evidence was present.
+  Evidence: first V05-02 preview capture classified `packages/cli/src/parseArgs.ts` as unrelated; second preview capture marked it intended after explicit `--intended-file`.
+  Impact: target evidence did not weaken existing KRN dirty-context review-burden behavior.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1081,6 +1087,14 @@ Seed evidence:
   Proves: V05-02 should implement minimal target-aware evidence capture/readback.
   Does not prove: V05-02 implementation, product readiness, V02-01 usability, or need for automatic target git execution.
   Follow-up task: V05-02.
+
+- Evidence ID: E-V05-02
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-target-aware-evidence-capture-repair/REPORT.md`
+  Command/report/file: source diff plus targeted tests, full tests, typecheck, diff check, and CLI preview capture.
+  Result: target-aware evidence capture/readback implemented without DB migration or automatic target git execution.
+  Proves: explicit target evidence can be captured, rendered, persisted in metadata, and exposed by run readback.
+  Does not prove: DB-backed replay in a live run, product readiness, V02-01 usability, target correctness, or target write safety.
+  Follow-up task: V05-03.
 ```
 
 ## 19. Condensation Queue
@@ -1123,9 +1137,16 @@ Seed queue:
 - Candidate: explicit target evidence metadata/readback
   Source evidence: V05-01 current-state investigation
   Surface: source repair + CLI/readback tests
-  Status: accepted as V05-02
+  Status: complete as V05-02
   Reason: target trial proof boundaries currently live in report prose, not EvidenceBundle/readback output
   Task: V05-02
+
+- Candidate: target evidence persisted replay guard
+  Source evidence: V05-02 target-aware capture/readback repair
+  Surface: deterministic guard + controlled replay report
+  Status: accepted as V05-03
+  Reason: target evidence must be proven through persisted/readback behavior, not only unit tests and preview output
+  Task: V05-03
 ```
 
 ## 20. Outcomes & Retrospective

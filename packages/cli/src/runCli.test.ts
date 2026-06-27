@@ -1138,11 +1138,12 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>] [--intended-file <path>] [--verification \"pnpm typecheck=passed\"] [--persist]"
+      "krn evidence capture [--run-id <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
+    expect(result.stdout).toContain("target: krn evidence capture --target-repo ../target");
     expect(result.stdout).toContain(
       "evidence capture records outcomes; it does not execute commands"
     );
@@ -3793,6 +3794,52 @@ describe("runCli", () => {
     );
   });
 
+  it("renders target evidence separately from KRN changed files", async () => {
+    const result = await runCli([
+      "evidence",
+      "capture",
+      "--target-repo",
+      "../wilq-seo",
+      "--target-mode",
+      "observation-only",
+      "--target-dirty-before",
+      "dirty",
+      "--target-dirty-after",
+      "dirty",
+      "--target-owned-changes",
+      "external",
+      "--target-changed-file",
+      "M apps/dashboard/src/App.tsx",
+      "--target-command",
+      "wilq-seo scripts/test.sh",
+      "--target-forbidden-write",
+      "wilq-seo/**",
+      "--verification",
+      "wilq-seo scripts/test.sh=failed"
+    ], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      readGitStatus: async () => ""
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Changed files:\n- none");
+    expect(result.stdout).toContain("wilq-seo scripts/test.sh: failed | provenance=operator_reported");
+    expect(result.stdout).toContain("Target evidence:");
+    expect(result.stdout).toContain("- repo: ../wilq-seo");
+    expect(result.stdout).toContain("- mode: observation_only");
+    expect(result.stdout).toContain("- dirtyBefore: dirty");
+    expect(result.stdout).toContain("- dirtyAfter: dirty");
+    expect(result.stdout).toContain("- ownedChanges: external");
+    expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
+    expect(result.stdout).toContain("- wilq-seo scripts/test.sh");
+    expect(result.stdout).toContain("- wilq-seo/**");
+    expect(result.stdout).toContain("Target evidence does not prove KRN source correctness.");
+    expect(result.stdout).toContain("Review target repo mode, dirty state, ownership");
+  });
+
   it("surfaces proposal-only source decision candidates from source evidence", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},
@@ -3989,6 +4036,20 @@ describe("runCli", () => {
         "execution-run-1",
         "--intended-file",
         "docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md",
+        "--target-repo",
+        "../wilq-seo",
+        "--target-mode",
+        "observation-only",
+        "--target-dirty-before",
+        "dirty",
+        "--target-dirty-after",
+        "dirty",
+        "--target-owned-changes",
+        "external",
+        "--target-changed-file",
+        "M apps/dashboard/src/App.tsx",
+        "--target-command",
+        "wilq-seo scripts/test.sh",
         "--persist"
       ],
       {
@@ -4049,7 +4110,7 @@ describe("runCli", () => {
       reviewabilityReasons: ["Candidate does not name a concrete future use."]
     });
     expect(capturedEvidenceBundle?.reviewBurden).toBe(
-      "Review changed files, command proof, residual risk, and rollback path."
+      "Review changed files, command proof, residual risk, and rollback path. Review target repo mode, dirty state, ownership, allowed/forbidden writes, target command proof, and target does-not-prove boundaries separately."
     );
     expect(capturedEvidenceBundle?.metadata).toMatchObject({
       intendedFiles: ["docs/runs/2026-06-21-source-graph-persistence/DECISIONS.md"],
@@ -4062,6 +4123,26 @@ describe("runCli", () => {
       dirtyContext: {
         hasUnrelatedFiles: false,
         unrelatedFileCount: 0
+      },
+      targetEvidence: {
+        targetRepo: "../wilq-seo",
+        mode: "observation_only",
+        dirtyBefore: "dirty",
+        dirtyAfter: "dirty",
+        ownedChanges: "external",
+        allowedWrites: [],
+        forbiddenWrites: [],
+        changedFiles: [{
+          status: "M",
+          path: "apps/dashboard/src/App.tsx",
+          ownership: "external"
+        }],
+        commands: ["wilq-seo scripts/test.sh"],
+        doesNotProve: [
+          "Target evidence does not prove KRN source correctness.",
+          "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
+          "Target evidence does not prove product readiness or V02-01 second-operator usability."
+        ]
       }
     });
     expect(capturedCommands).toEqual([

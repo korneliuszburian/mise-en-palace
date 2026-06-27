@@ -94,14 +94,14 @@ Expected output:
 
 ### V05-02 — Implement Minimal Target-Aware Evidence Capture
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: add the smallest typed support for target-repo evidence capture/readback if
 V05-01 confirms the code gap.
 
 ### V05-03 — Target Evidence Guard And Replay Scenario
 
-Status: pending.
+Status: active.
 
 Goal: add deterministic guard coverage and a controlled replay scenario proving
 target-aware evidence capture preserves proof/non-proof boundaries.
