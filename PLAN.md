@@ -35,7 +35,8 @@ V05 target-aware evidence capture repair: complete
 V06 activation / owner-file / context ROI utility: complete
 V07 memory / anti-memory / source usefulness loop: complete
 V08 skill-first workflow expansion: complete
-active stream: V09 deterministic hooks candidate decision
+V09 deterministic hooks candidate decision: complete
+active stream: V10 MCP / subagent candidate gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -199,7 +200,7 @@ Evidence:
 - `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`;
 - existing `handoff-compact` skill refined for continuous goal resume state.
 
-## Active Stream: V09
+## Completed Stream: V09
 
 V09 screens deterministic hook candidates after V08. It must not implement a
 hook unless repeated evidence proves a tiny mechanical boundary that skills,
@@ -207,10 +208,28 @@ tests, and runbooks cannot cover.
 
 ### V09-00 — Deterministic Hooks Candidate Decision
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: screen whether repeated deterministic violations after V05-V08 justify a
 tiny trusted hook, or reject/defer hooks with evidence.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v09-hooks-candidate-decision/REPORT.md`;
+- hooks rejected/deferred as runtime implementation; projection-first boundary
+  remains.
+
+## Active Stream: V10
+
+V10 screens MCP and subagent candidates. Candidate status does not authorize
+implementation.
+
+### V10-00 — MCP / Subagent Candidate Gate
+
+Status: active.
+
+Goal: decide whether any current product bottleneck requires MCP or subagents,
+or reject/defer them with source-backed evidence.
 
 ## Hard Non-Goals
 

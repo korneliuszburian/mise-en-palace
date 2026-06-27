@@ -34,12 +34,13 @@ V05 target-aware evidence capture repair: complete
 V06 activation / owner-file / context ROI utility: complete
 V07 memory / anti-memory / source usefulness loop: complete
 V08 skill-first workflow expansion: complete
+V09 deterministic hooks candidate decision: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V09 deterministic hooks candidate decision
-current task: V09-00 Deterministic Hooks Candidate Decision
+active stream: V10 MCP / subagent candidate gate
+current task: V10-00 MCP / Subagent Candidate Gate
 ```
 
 Evidence already recorded in repo:
@@ -54,8 +55,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V09 must decide whether any repeated deterministic violation still justifies a
-tiny trusted hook after V08 refined the skill-first continuation path.
+V10 must decide whether CLI/files/DB are insufficient for any current useful
+product question, and whether any subagent role has a stable read-heavy output
+contract.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -1038,7 +1040,7 @@ Completion evidence:
 
 ### V09-00 — Deterministic Hooks Candidate Decision
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: screen whether repeated deterministic violations after V05-V08 justify a
 tiny trusted hook, or reject/defer hooks with evidence.
@@ -1088,6 +1090,67 @@ subagent candidate gate.
 
 Next-task synthesis rule: if no hook is justified, promote V10 candidate
 screening; if a hook is implemented, add guard/replay before moving on.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v09-hooks-candidate-decision/REPORT.md`;
+- hooks rejected/deferred as runtime implementation; existing projection-first
+  boundary preserved.
+
+### V10-00 — MCP / Subagent Candidate Gate
+
+Status: active
+
+Goal: decide whether any current product bottleneck requires MCP or subagents,
+or reject/defer those surfaces with source-backed evidence.
+
+Product rationale: MCP and subagents should answer proven bottlenecks, not
+product ambition or architecture theater.
+
+Architectural rationale: KRN should prefer CLI/files/DB, skills, tests, and
+reports until live external context or parallel read-heavy roles are proven
+insufficient.
+
+Evidence source: V04 compression screening, V09 hook rejection, current CLI/DB
+readback state, existing `.codex/agents`.
+
+Official/external sources: Codex MCP/subagent guidance already mapped in V04
+compression screening.
+
+Inputs required: current MCP/subagent candidates, `.codex/agents`, V04/V09
+reports, CLI/DB/readback evidence.
+
+Files likely touched: report and plans only unless one bounded surface is
+accepted with evidence.
+
+Allowed writes: V10 report/plans; no MCP server or subagent implementation
+unless report first proves CLI/files/DB or single-agent workflow is insufficient.
+
+Forbidden writes: MCP server by aspiration, generic subagent framework,
+write-heavy subagents, dashboard/API, worker runtime, broad eval platform.
+
+Output requirements: accept/reject/defer decision for MCP and each subagent
+candidate with source -> mechanism -> KRN implication -> decision -> falsifier.
+
+Definition of Done: MCP/subagents are either rejected/deferred with evidence or
+one tiny candidate is promoted to a future bounded task without implementation.
+
+Verification commands: `git diff --check`; if config/source changes, run
+relevant focused tests plus `pnpm typecheck` and `pnpm test`.
+
+Acceptance criteria: no MCP/subagent implementation is added without a concrete
+repeated bottleneck and a stable output contract.
+
+Risk: agent zoo or live tool surface before product need.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: if MCP/subagents are rejected/deferred, move to V11
+product readiness re-gate.
+
+Next-task synthesis rule: if no MCP/subagent surface is justified, promote V11;
+if a candidate is justified, append a bounded design/proof task, not broad
+implementation.
 
 Next-task synthesis rule: append hook/MCP/subagent screening only from repeated
 evidence, not aspiration.
@@ -1314,7 +1377,9 @@ Initial entry:
 - [x] V07-02 complete: V07 re-gate accepted V08 skill-first workflow expansion.
 - [x] V08-00 complete: refined existing `handoff-compact` skill for continuous
   `PLANS.md` resume state and rejected new skill/hook/MCP/subagent work now.
-- [ ] V09-00 active: deterministic hooks candidate decision.
+- [x] V09-00 complete: runtime hooks rejected/deferred; hook projection-first
+  boundary preserved.
+- [ ] V10-00 active: MCP / subagent candidate gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1380,6 +1445,16 @@ Record every unexpected fact in this format:
   `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`.
   Impact: V08 should refine the existing skill instead of creating a new
   continuous-goal skill.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: KRN has hook expectation projections and hook policy ADRs, but no
+  repo-local `.codex/hooks` runtime surface and no repeated post-V08 mechanical
+  failure that survived skills/tests/projections.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v09-hooks-candidate-decision/REPORT.md`;
+  `docs/decisions/ADR-0022-policy-hooks-boundary.md`;
+  `packages/codex-adapter/src/renderHookExpectations.ts`.
+  Impact: V09 should reject/defer hook implementation and move to V10 MCP /
+  subagent candidate screening.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1484,6 +1559,17 @@ Initial decisions:
   Does not prove: hooks, MCP, or subagents are never needed.
   Falsifier: future compact/resume failures persist despite using the refined
   skill.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Reject/defer runtime hooks in V09.
+  Rationale: current candidates are covered by skills, tests, runbooks, or
+  adapter projections; no repeated deterministic failure justifies trusted hook
+  implementation.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v09-hooks-candidate-decision/REPORT.md`;
+  ADR-0022; V04 compression screening; target repo testing skill guard.
+  Does not prove: hooks will never be useful.
+  Falsifier: future repeated mechanical violations occur despite current
+  guidance and can be blocked by a tiny trusted hook.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1606,6 +1692,16 @@ Seed evidence:
   Does not prove: product readiness, V02-01, automatic future skill triggering,
     or needlessness of hooks forever.
   Follow-up task: V09-00.
+
+- Evidence ID: E-V09-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v09-hooks-candidate-decision/REPORT.md`
+  Command/report/file: V09 hook candidate screening.
+  Result: runtime hooks rejected/deferred; hook projection-first boundary
+    preserved; no repo-local `.codex/hooks` runtime surface found.
+  Proves: no current hook candidate has enough repeated deterministic evidence
+    for implementation.
+  Does not prove: hooks will never be useful, product readiness, or V02-01.
+  Follow-up task: V10-00.
 ```
 
 ## 19. Condensation Queue
@@ -1715,10 +1811,18 @@ Seed queue:
 - Candidate: deterministic hooks screening
   Source evidence: V04 compression screening, V08 handoff skill refinement
   Surface: hook candidate decision
-  Status: accepted as V09
+  Status: complete as V09-00
   Reason: after skill-first refinement, screen whether any repeated mechanical
     boundary still needs a hook; do not implement by default
   Task: V09-00
+
+- Candidate: MCP / subagent screening
+  Source evidence: V04 compression screening and V09 hook rejection
+  Surface: MCP/subagent candidate gate
+  Status: accepted as V10
+  Reason: after hooks remain deferred, screen whether live tool/read-model or
+    parallel read-heavy role bottlenecks exist
+  Task: V10-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -1781,6 +1885,34 @@ Product readiness verdict:
 
 Next active stream:
 - V09 — Deterministic Hooks Candidate Decision.
+
+## Outcome 2026-06-27 V09
+
+Completed:
+- V09-00 rejected/deferred runtime hook implementation.
+- Hook expectation projection remains the correct current surface.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v09-hooks-candidate-decision/REPORT.md`.
+- `docs/decisions/ADR-0022-policy-hooks-boundary.md`.
+
+What improved:
+- Hook candidates are no longer vague backlog pressure; each candidate has a
+  current decision and falsifier.
+
+What did not improve:
+- Runtime hook enforcement.
+- Product readiness.
+- V02-01 second-operator proof.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V10 — MCP / Subagent Candidate Gate.
 
 ## 21. Final Response Format For Codex Runs
 

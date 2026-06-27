@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V09 — Deterministic Hooks Candidate Decision
+V10 — MCP / Subagent Candidate Gate
 ```
 
 Current product loop:
@@ -49,8 +49,9 @@ V05 target-aware evidence capture repair: complete.
 V06 activation / owner-file / context ROI utility: complete.
 V07 memory / anti-memory / source usefulness loop: complete.
 V08 skill-first workflow expansion: complete.
-active stream: V09 deterministic hooks candidate decision.
-current task: V09-00 — Deterministic Hooks Candidate Decision.
+V09 deterministic hooks candidate decision: complete.
+active stream: V10 MCP / subagent candidate gate.
+current task: V10-00 — MCP / Subagent Candidate Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
