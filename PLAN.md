@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V63 Post Pattern-Intake Linkage Re-Gate
-current task: V63-00 Post Pattern-Intake Linkage Re-Gate
+active stream: External Input Blocker
+current task: none
 ```
 
 Completed stream summary:
@@ -92,29 +92,30 @@ V59 first pattern intake runbook application: complete
 V60 TypeScript lifecycle union drift spot-check: complete
 V61 post-pattern intake re-gate: complete
 V62 pattern intake skill linkage: complete
+V63 post-pattern-intake linkage re-gate: complete
 ```
 
 ## Active Stream
 
-### V63-00 — Post Pattern-Intake Linkage Re-Gate
+### External Input Blocker
 
 Goal:
 
-Decide whether internal KRN work should continue or whether current progress
-should pause on external operator/owner blockers.
+Resume only when external operator/owner input or a new explicit bounded
+internal task exists.
 
 Current finding:
 
 ```txt
-V62 linked the pattern intake runbook from the source-to-decision skill without
-duplicating the runbook.
+V63 found no evidence-backed internal task after the completed pattern-intake
+loop. Product-moving proof is blocked on external inputs.
 ```
 
-Current V63 action:
+Current action:
 
 ```txt
-Re-gate after V58-V62 and choose the next bounded task or record the honest
-external blocker.
+Await V02-01 second-operator inputs, WILQ owner scope, elektro patch lifecycle
+decision, or a new explicit bounded internal task with consumer/falsifier.
 ```
 
 ## V02-01 Boundary

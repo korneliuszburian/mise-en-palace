@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V63 — Post Pattern-Intake Linkage Re-Gate
+External Input Blocker
 ```
 
 Current product loop:
@@ -103,8 +103,9 @@ V59 First Pattern Intake Runbook Application: complete.
 V60 TypeScript Lifecycle Union Drift Spot-Check: complete.
 V61 Post-Pattern Intake Re-Gate: complete.
 V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill: complete.
-active stream: V63 Post Pattern-Intake Linkage Re-Gate.
-current task: V63-00 — Post Pattern-Intake Linkage Re-Gate.
+V63 Post Pattern-Intake Linkage Re-Gate: complete.
+active stream: External Input Blocker.
+current task: none.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
