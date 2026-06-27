@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V61 Post-Pattern Intake Re-Gate
-current task: V61-00 Post-Pattern Intake Re-Gate
+active stream: V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill
+current task: V62-00 Wire Pattern Intake Runbook Into Source-To-Decision Skill
 ```
 
 Completed stream summary:
@@ -90,30 +90,30 @@ V57 post-packet internal work re-gate: complete
 V58 pattern intake runbook: complete
 V59 first pattern intake runbook application: complete
 V60 TypeScript lifecycle union drift spot-check: complete
+V61 post-pattern intake re-gate: complete
 ```
 
 ## Active Stream
 
-### V61-00 — Post-Pattern Intake Re-Gate
+### V62-00 — Wire Pattern Intake Runbook Into Source-To-Decision Skill
 
 Goal:
 
-Decide whether to continue internal pattern-intake hardening, return to
-external operator/owner blockers, or select one bounded source-backed repair
-from current evidence.
+Add a compact pointer from `source-to-decision` skill to the pattern intake
+runbook so future source work can use the fuller operator workflow.
 
 Current finding:
 
 ```txt
-V60 rejected immediate TypeScript guard implementation because the bounded
-source sample did not show repeated lifecycle optional-object drift.
+V61 selected a small skill/runbook linkage instead of more source intake,
+TypeScript guard work, target work, or product-readiness overclaim.
 ```
 
-Current V61 action:
+Current V62 action:
 
 ```txt
-Re-gate after V58-V60 and choose the next bounded task, or record the honest
-external blocker.
+Update `.agents/skills/source-to-decision/SKILL.md` with a compact pointer to
+`docs/runbooks/pattern-intake.md` without duplicating the runbook.
 ```
 
 ## V02-01 Boundary

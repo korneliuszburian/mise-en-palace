@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V61 Post-Pattern Intake Re-Gate
-current task: V61-00 Post-Pattern Intake Re-Gate
+active stream: V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill
+current task: V62-00 Wire Pattern Intake Runbook Into Source-To-Decision Skill
 ```
 
 Evidence already recorded in repo:
@@ -5508,7 +5508,7 @@ Outcome:
 
 ### V61-00 — Post-Pattern Intake Re-Gate
 
-Status: active
+Status: complete
 
 Goal: decide whether to continue internal pattern-intake hardening, return to
 external operator/owner blockers, or select one bounded source-backed repair
@@ -5581,6 +5581,83 @@ Acceptance criteria:
 - no momentum-based research;
 - no local V02-01 substitute;
 - next active task or blocker explicit.
+
+Outcome:
+
+- V61 selected a compact skill/runbook linkage as the next bounded task.
+- V61 rejected more TypeScript guard work, more source intake, target repo work,
+  local V02-01 substitutes, and product-ready/widened-alpha claims.
+
+### V62-00 — Wire Pattern Intake Runbook Into Source-To-Decision Skill
+
+Status: active
+
+Goal: add a compact pointer from `.agents/skills/source-to-decision/SKILL.md`
+to `docs/runbooks/pattern-intake.md` so future source-to-decision tasks know
+when to use the fuller operator workflow.
+
+Product rationale: V58 created the runbook and V59-V60 proved it can influence
+and reject bounded work. The skill that triggers source-to-decision should route
+multi-source/course/paper/pattern intake to that runbook without copying it.
+
+Architectural rationale: skills should remain small and progressive-disclosure
+oriented. The runbook owns detailed procedure; the skill owns the trigger and
+pointer.
+
+Evidence source: V61 report, V58 runbook, and `source-to-decision` skill.
+
+Official/external sources: no new external source needed.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v61-post-pattern-intake-regate/REPORT.md`;
+- `.agents/skills/source-to-decision/SKILL.md`;
+- `docs/runbooks/pattern-intake.md`.
+
+Files likely touched:
+
+- `.agents/skills/source-to-decision/SKILL.md`;
+- V62 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- skill doc;
+- KRN plans/report.
+
+Forbidden writes:
+
+- duplicating the runbook inside the skill;
+- broad source intake;
+- package source changes;
+- target repo edits;
+- product-ready or widened-alpha claim.
+
+Output requirements:
+
+- compact skill pointer;
+- when-to-use rule for the runbook;
+- proof/non-proof boundary;
+- next task or blocker.
+
+Definition of Done: V62 links the runbook from the skill without bloating the
+skill and keeps active plans current.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- skill stays compact;
+- runbook is not duplicated;
+- trigger/pointer is clear;
+- next active task explicit.
 
 ## 13. Generated Task Backlog
 
@@ -5918,7 +5995,9 @@ Initial entry:
   in the brain-battle eval matrix.
 - [x] V60-00 complete: bounded TypeScript lifecycle spot-check found no repeated
   drift requiring a guard; candidate remains deferred/standard-only.
-- [ ] V61-00 active: Post-Pattern Intake Re-Gate.
+- [x] V61-00 complete: selected compact source-to-decision skill/runbook
+  linkage and rejected further pattern work by momentum.
+- [ ] V62-00 active: Wire Pattern Intake Runbook Into Source-To-Decision Skill.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6730,6 +6809,17 @@ Initial decisions:
   Does not prove: exhaustive TypeScript quality or product readiness.
   Falsifier: future source work finds repeated lifecycle optional-object drift
     where valid fields differ by state.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote source-to-decision skill/runbook linkage as V62.
+  Rationale: V58-V60 proved the pattern-intake runbook mini-loop, but the skill
+    that triggers source-to-decision work does not yet point to the runbook.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v61-post-pattern-intake-regate/REPORT.md`;
+    `docs/runbooks/pattern-intake.md`; `.agents/skills/source-to-decision/SKILL.md`.
+  Does not prove: product readiness or that future source intake will be high
+    quality.
+  Falsifier: the update bloats the skill, duplicates the runbook, or fails to
+    route multi-source/course/paper/pattern intake to the runbook.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -7898,6 +7988,14 @@ Seed queue:
   Reason: after runbook, application, and local spot-check, choose next work from
     evidence rather than continuing pattern intake by momentum
   Task: V61-00
+
+- Candidate: source-to-decision skill/runbook linkage
+  Source evidence: V61 report and V58 pattern intake runbook
+  Surface: `.agents/skills/source-to-decision/SKILL.md`
+  Status: accepted as V62-00
+  Reason: future source-to-decision work should discover the fuller operator
+    runbook through progressive disclosure
+  Task: V62-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -9713,6 +9811,42 @@ Product readiness verdict:
 Next active stream:
 - V61 — Post-Pattern Intake Re-Gate.
 
+## Outcome 2026-06-27 V61
+
+Completed:
+- V61 Post-Pattern Intake Re-Gate.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v61-post-pattern-intake-regate/REPORT.md`.
+- V58-V60 reports.
+- GitHub Actions run `28293123754`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+
+What improved:
+- KRN selected a small progressive-disclosure linkage instead of continuing
+  research by momentum.
+- The pattern-intake runbook will be discoverable from the relevant skill after
+  V62.
+
+What did not improve:
+- Product readiness.
+- V02-01.
+- Target owner/stability inputs.
+- Package source behavior.
+
+New task:
+- V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V62 — Wire Pattern Intake Runbook Into Source-To-Decision Skill.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -9761,7 +9895,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V61 Post-Pattern Intake Re-Gate.
+Active stream: V62 Wire Pattern Intake Runbook Into Source-To-Decision Skill.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
