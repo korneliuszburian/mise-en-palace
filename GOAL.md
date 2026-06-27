@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V110 Post PLANS Revision Note Freshness Re-Gate
+V112 Post Root Active Checkpoint Rolling Summary Re-Gate
 ```
 
 Current product loop:
@@ -37,17 +37,9 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 recent checkpoint: V99 source map full mapping invariant guard complete.
-V100-00 Post Source Map Full Mapping Guard Re-Gate: complete.
-V101-00 Active Surface Compactness Guard: complete.
-V102-00 Post Active Surface Compactness Guard Re-Gate: complete.
-V103-00 Handoff Compact Contract Guard: complete.
-V104-00 Post Handoff Compact Contract Guard Re-Gate: complete.
-V105-00 PLANS Compact GOAL Contract Freshness Guard: complete.
-V106-00 Post PLANS Compact GOAL Contract Freshness Re-Gate: complete.
-V107-00 PLANS Known Current Gap Freshness Guard: complete.
-V108-00 Post PLANS Known Current Gap Freshness Re-Gate: complete.
-V109-00 PLANS Revision Note Freshness Guard: complete.
-current task: V110-00 Post PLANS Revision Note Freshness Re-Gate.
+V100..V109: active-surface, handoff, and PLANS freshness guards complete.
+V110..V111: revision-note re-gate and root checkpoint rolling summary complete.
+current task: V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

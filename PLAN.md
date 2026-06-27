@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V110 Post PLANS Revision Note Freshness Re-Gate
-current task: V110-00 Post PLANS Revision Note Freshness Re-Gate
+active stream: V112 Post Root Active Checkpoint Rolling Summary Re-Gate
+current task: V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -41,40 +41,34 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100-00: post source map full mapping guard re-gate complete.
-V101-00: active surface compactness guard complete.
-V102-00: post active surface compactness guard re-gate complete.
-V103-00: handoff compact contract guard complete.
-V104-00: post handoff compact contract guard re-gate complete.
-V105-00: PLANS compact GOAL contract freshness guard complete.
-V106-00: post PLANS compact GOAL contract freshness re-gate complete.
-V107-00: PLANS known current gap freshness guard complete.
-V108-00: post PLANS known current gap freshness re-gate complete.
-V109-00: PLANS revision note freshness guard complete.
+V100..V109: active-surface compactness, handoff contract, and PLANS freshness
+           guards complete.
+V110..V111: revision-note re-gate and root checkpoint rolling summary complete.
 ```
 
 ## Active Stream
 
-### V110 Post PLANS Revision Note Freshness Re-Gate
+### V112 Post Root Active Checkpoint Rolling Summary Re-Gate
 
 Goal:
 
-Decide the next bounded task after reframing stale revision-note active-stream
-wording as historical creation-time context.
+Decide the next bounded task after replacing individual V100+ completed root
+entries with rolling summaries.
 
 Current finding:
 
 ```txt
-V108 found that `PLANS.md` section 23 still said the plan sets V05 as the next
-active stream. V109 reframed that note as creation-time history and added a
-focused active-plan invariant.
+V110 found that root `GOAL.md` and `PLAN.md` were again approaching their
+line-count guards because V100+ completed slices were listed individually. V111
+replaced them with rolling checkpoint summaries and tightened the active-surface
+guard against individual three-digit completed-slice ledgers.
 ```
 
 Current action:
 
 ```txt
-Execute V110-00: select the next pattern surface from evidence. Do not broaden
-revision-note freshness into rewriting historical outcomes.
+Execute V112-00: select the next pattern surface from evidence. Do not broaden
+root checkpoint compaction into deleting detailed outcomes from `PLANS.md`.
 ```
 
 Primary consumer:
@@ -86,8 +80,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens another PLANS freshness task without a concrete stale-guidance
-falsifier in default resume context.
+The re-gate opens another root compaction task without a concrete active-surface
+budget or resume-cost finding.
 ```
 
 ## External Input Blocker

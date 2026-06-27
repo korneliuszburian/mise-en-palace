@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V109 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
-active stream: V110 Post PLANS Revision Note Freshness Re-Gate
-current task: V110-00 Post PLANS Revision Note Freshness Re-Gate
+V48..V111 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
+active stream: V112 Post Root Active Checkpoint Rolling Summary Re-Gate
+current task: V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V110-00 Post PLANS Revision Note Freshness Re-Gate.
+V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13392,6 +13392,77 @@ Next active stream:
 
 Next active task:
 - V110-00 Post PLANS Revision Note Freshness Re-Gate.
+
+## Outcome 2026-06-27 V111 Root Active Checkpoint Rolling Summary Guard
+
+Completed tasks:
+- V110-00 Post PLANS Revision Note Freshness Re-Gate.
+- V111-00 Root Active Checkpoint Rolling Summary Guard.
+
+V110 decision:
+- Stop PLANS freshness work unless a new default-context stale-guidance
+  falsifier appears.
+- Select root active-surface budget repair because `GOAL.md` and `PLAN.md` were
+  again approaching their own line-count guards from individual V100+ completed
+  slice entries.
+
+What changed:
+- Root `GOAL.md` and root `PLAN.md` now summarize V100+ completed work in
+  rolling checkpoint ranges instead of individual completed-slice lines.
+- `packages/harness/src/contextHygieneInvariants.test.ts` now rejects individual
+  three-digit completed-slice entries in root active truth.
+- `docs/architecture/brain-battle-eval-matrix.md` records the stronger
+  active-surface guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V112.
+
+Evidence:
+- `GOAL.md`.
+- `PLAN.md`.
+- `PLANS.md`.
+- `packages/harness/src/contextHygieneInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: V101 active-surface compactness guard plus current root line counts
+  near the guard thresholds.
+- Mechanism: root active truth remains useful only when completed-slice detail is
+  rolled up and detailed evidence stays in `PLANS.md`.
+- KRN implication: V100+ completed task lines should not accumulate
+  individually in `GOAL.md` or `PLAN.md`.
+- Decision: compact V100+ root checkpoint lists and add a focused invariant
+  against individual three-digit completed-slice ledger entries in root active
+  truth.
+- Does not prove: `PLANS.md` is small, historical detail should be deleted,
+  product readiness, or second-operator readiness.
+- Consumer: `packages/harness/src/contextHygieneInvariants.test.ts`.
+- Falsifier: root active truth can contain an individual `V...-00 ... complete.`
+  three-digit completed-slice line without failing focused verification.
+
+What improved:
+- Root active-surface context budget.
+- Resume readability after long continuous runs.
+- Mechanical protection against completed-slice ledger creep.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Historical ledger size.
+- Runtime activation or target-repo behavior.
+
+New task:
+- V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V112 Post Root Active Checkpoint Rolling Summary Re-Gate.
+
+Next active task:
+- V112-00 Post Root Active Checkpoint Rolling Summary Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

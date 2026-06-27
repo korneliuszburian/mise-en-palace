@@ -37,5 +37,9 @@ describe("KRN context hygiene invariants", () => {
     expect(lineCount(plan)).toBeLessThanOrEqual(170);
     expect(goal).toContain("Detailed completed history, evidence, outcomes, and next-task synthesis live in");
     expect(plan).toContain("Detailed history stays in `PLANS.md`.");
+
+    const activeTruth = `${goal}\n${plan}`;
+
+    expect(activeTruth).not.toMatch(/^V\d{3,}-00.*complete\.$/mu);
   });
 });
