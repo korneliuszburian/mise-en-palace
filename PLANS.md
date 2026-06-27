@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V86 Post Anti-Memory ID Branding Re-Gate
-current task: V86-00 Post Anti-Memory ID Branding Re-Gate
+active stream: V88 Post Evidence Spine ID Branding Re-Gate
+current task: V88-00 Post Evidence Spine ID Branding Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12657,6 +12657,61 @@ Next active stream:
 
 Next active task:
 - V86-00 Post Anti-Memory ID Branding Re-Gate.
+
+## Outcome 2026-06-27 V87 Evidence Spine ID Branding
+
+Completed:
+- V86-00 Post Anti-Memory ID Branding Re-Gate.
+- V87-00 Evidence Spine ID Branding.
+
+Evidence:
+- `packages/core/src/ids.ts`.
+- `packages/core/src/ids.typecheck.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `docs/KRN_SOURCES.md#designing-your-types`.
+
+Source-to-decision:
+- Source: Total TypeScript "Designing Your Types" retained in
+  `docs/KRN_SOURCES.md`.
+- Mechanism: domain type design communicates authority and lifecycle, not only
+  compiler satisfaction.
+- KRN implication: evidence, review, and feedback spine IDs should not be
+  freely interchangeable in core domain types.
+- Decision: brand `EvidenceBundleId`, `ReviewAssessmentId`, and
+  `FeedbackDeltaId` using the existing `BrandedKrnId` pattern.
+- Does not prove: runtime IDs changed, evidence/review correctness, or that
+  every remaining ID alias should be branded.
+- Consumer: `packages/core/src/ids.ts` and `packages/core/src/ids.typecheck.ts`.
+- Falsifier: any evidence spine ID is assignable to another evidence spine ID
+  while string compatibility is still expected.
+
+What improved:
+- Evidence, review, and feedback record IDs are now separated at the type
+  boundary.
+- Core typecheck proofs preserve string compatibility while proving cross-spine
+  separation.
+
+What did not improve:
+- Runtime ID format.
+- Evidence capture correctness.
+- Review assessment correctness.
+- Every remaining ID alias.
+- Product readiness.
+
+New task:
+- V88-00 Post Evidence Spine ID Branding Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V88 Post Evidence Spine ID Branding Re-Gate.
+
+Next active task:
+- V88-00 Post Evidence Spine ID Branding Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

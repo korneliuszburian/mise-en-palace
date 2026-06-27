@@ -1,9 +1,12 @@
 import type {
   AntiMemoryCandidateId,
   AntiMemoryRecordId,
+  EvidenceBundleId,
   ExecutionRunId,
+  FeedbackDeltaId,
   MemoryCandidateId,
   MemoryRecordId,
+  ReviewAssessmentId,
   SourceClaimId
 } from "./ids.js";
 
@@ -15,6 +18,9 @@ type Assert<TValue extends true> = TValue;
 export type BrandedKrnIdCompatibilityProof = [
   Assert<IsAssignable<string, ExecutionRunId>>,
   Assert<IsAssignable<ExecutionRunId, string>>,
+  Assert<IsAssignable<string, EvidenceBundleId>>,
+  Assert<IsAssignable<string, ReviewAssessmentId>>,
+  Assert<IsAssignable<string, FeedbackDeltaId>>,
   Assert<IsAssignable<string, MemoryRecordId>>,
   Assert<IsAssignable<string, MemoryCandidateId>>,
   Assert<IsAssignable<string, AntiMemoryCandidateId>>,
@@ -25,6 +31,11 @@ export type BrandedKrnIdCompatibilityProof = [
 export type BrandedKrnIdSeparationProof = [
   Assert<IsNotAssignable<ExecutionRunId, SourceClaimId>>,
   Assert<IsNotAssignable<SourceClaimId, ExecutionRunId>>,
+  Assert<IsNotAssignable<EvidenceBundleId, ReviewAssessmentId>>,
+  Assert<IsNotAssignable<ReviewAssessmentId, EvidenceBundleId>>,
+  Assert<IsNotAssignable<ReviewAssessmentId, FeedbackDeltaId>>,
+  Assert<IsNotAssignable<FeedbackDeltaId, ReviewAssessmentId>>,
+  Assert<IsNotAssignable<EvidenceBundleId, FeedbackDeltaId>>,
   Assert<IsNotAssignable<MemoryRecordId, MemoryCandidateId>>,
   Assert<IsNotAssignable<MemoryCandidateId, MemoryRecordId>>,
   Assert<IsNotAssignable<MemoryRecordId, SourceClaimId>>,

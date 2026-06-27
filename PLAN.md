@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V86 Post Anti-Memory ID Branding Re-Gate
-current task: V86-00 Post Anti-Memory ID Branding Re-Gate
+active stream: V88 Post Evidence Spine ID Branding Re-Gate
+current task: V88-00 Post Evidence Spine ID Branding Re-Gate
 ```
 
 Completed stream summary:
@@ -119,30 +119,32 @@ V82-00 post active plan guard re-gate: complete
 V83-00 skill invariant guard: complete
 V84-00 post skill invariant guard re-gate: complete
 V85-00 anti-memory ID branding: complete
-V86 post anti-memory ID branding re-gate: active
+V86-00 post anti-memory ID branding re-gate: complete
+V87 evidence spine ID branding: complete
+V88 post evidence spine ID branding re-gate: active
 ```
 
 ## Active Stream
 
-### V86 Post Anti-Memory ID Branding Re-Gate
+### V88 Post Evidence Spine ID Branding Re-Gate
 
 Goal:
 
-Decide the next bounded task after branding anti-memory candidate/record IDs in
-core domain types.
+Decide the next bounded task after branding evidence/review/feedback spine IDs
+in core domain types.
 
 Current finding:
 
 ```txt
-V84 selected a concrete TypeScript retained-source application: anti-memory
-candidate and record IDs were still plain strings while related memory IDs were
-branded. V85 tightened them with type-level separation proof.
+V86 selected one more bounded TypeScript retained-source application: evidence,
+review, and feedback IDs form a proof spine but were mutually type-compatible
+plain strings. V87 tightened them with type-level separation proof.
 ```
 
 Current action:
 
 ```txt
-Execute V86-00: decide whether another bounded TypeScript ID/lifecycle repair
+Execute V88-00: decide whether another bounded TypeScript ID/lifecycle repair
 is justified by evidence, move to another pattern surface, or stop on the
 external operator/target blocker.
 ```

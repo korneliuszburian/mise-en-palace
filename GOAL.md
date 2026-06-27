@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V86 Post Anti-Memory ID Branding Re-Gate
+V88 Post Evidence Spine ID Branding Re-Gate
 ```
 
 Current product loop:
@@ -131,7 +131,9 @@ V82-00 Post Active Plan Guard Re-Gate: complete.
 V83-00 Skill Invariant Guard: complete.
 V84-00 Post Skill Invariant Guard Re-Gate: complete.
 V85-00 Anti-Memory ID Branding: complete.
-current task: V86-00 Post Anti-Memory ID Branding Re-Gate.
+V86-00 Post Anti-Memory ID Branding Re-Gate: complete.
+V87-00 Evidence Spine ID Branding: complete.
+current task: V88-00 Post Evidence Spine ID Branding Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
