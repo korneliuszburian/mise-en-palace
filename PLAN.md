@@ -36,7 +36,8 @@ V06 activation / owner-file / context ROI utility: complete
 V07 memory / anti-memory / source usefulness loop: complete
 V08 skill-first workflow expansion: complete
 V09 deterministic hooks candidate decision: complete
-active stream: V10 MCP / subagent candidate gate
+V10 MCP / subagent candidate gate: complete
+active stream: V11 product readiness re-gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -219,17 +220,34 @@ Evidence:
 - hooks rejected/deferred as runtime implementation; projection-first boundary
   remains.
 
-## Active Stream: V10
+## Completed Stream: V10
 
 V10 screens MCP and subagent candidates. Candidate status does not authorize
 implementation.
 
 ### V10-00 — MCP / Subagent Candidate Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide whether any current product bottleneck requires MCP or subagents,
 or reject/defer them with source-backed evidence.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v10-mcp-subagent-candidate-gate/REPORT.md`;
+- MCP server and new subagent framework rejected/deferred; existing
+  `ts-type-critic` remains read-only/proposal-only.
+
+## Active Stream: V11
+
+V11 re-gates readiness after V05-V10.
+
+### V11-00 — Product Readiness Re-Gate
+
+Status: active.
+
+Goal: decide whether current evidence supports controlled-internal-alpha,
+widened internal alpha, product-ready, or blocked/deferred status.
 
 ## Hard Non-Goals
 

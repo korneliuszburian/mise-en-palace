@@ -35,12 +35,13 @@ V06 activation / owner-file / context ROI utility: complete
 V07 memory / anti-memory / source usefulness loop: complete
 V08 skill-first workflow expansion: complete
 V09 deterministic hooks candidate decision: complete
+V10 MCP / subagent candidate gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V10 MCP / subagent candidate gate
-current task: V10-00 MCP / Subagent Candidate Gate
+active stream: V11 product readiness re-gate
+current task: V11-00 Product Readiness Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -55,9 +56,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V10 must decide whether CLI/files/DB are insufficient for any current useful
-product question, and whether any subagent role has a stable read-heavy output
-contract.
+V11 must decide whether V05-V10 evidence supports readiness movement or whether
+KRN remains controlled-internal-alpha with explicit blockers.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -1099,7 +1099,7 @@ Completion evidence:
 
 ### V10-00 — MCP / Subagent Candidate Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: decide whether any current product bottleneck requires MCP or subagents,
 or reject/defer those surfaces with source-backed evidence.
@@ -1151,6 +1151,62 @@ product readiness re-gate.
 Next-task synthesis rule: if no MCP/subagent surface is justified, promote V11;
 if a candidate is justified, append a bounded design/proof task, not broad
 implementation.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v10-mcp-subagent-candidate-gate/REPORT.md`;
+- MCP server and new subagent framework rejected/deferred; existing
+  `ts-type-critic` remains read-only/proposal-only.
+
+### V11-00 — Product Readiness Re-Gate
+
+Status: active
+
+Goal: decide whether V05-V10 evidence supports controlled-internal-alpha,
+widened internal alpha, product-ready, or blocked/deferred status.
+
+Product rationale: after several bounded surface gates, KRN needs a product
+readiness verdict instead of another architecture surface.
+
+Architectural rationale: readiness must come from evidence across target-aware
+evidence, activation, memory/source usefulness, skills, hooks, MCP, and
+subagent gates.
+
+Evidence source: V05 through V10 reports, CI runs, DB smoke evidence, current
+PLAN/GOAL/PLANS state.
+
+Official/external sources: Codex Goals/ExecPlan completion doctrine already
+captured in this plan.
+
+Inputs required: V05-V10 reports, current CI status, current product state.
+
+Files likely touched: report and plans only.
+
+Allowed writes: V11 report/plans.
+
+Forbidden writes: product feature work, dashboard/API/MCP/subagent/hooks,
+product-ready claim without evidence, fake V02-01 proof.
+
+Output requirements: readiness verdict with evidence table, remaining blockers,
+next recommended bounded stream or stop condition.
+
+Definition of Done: repo has a current readiness verdict and next active task,
+or the continuous goal is explicitly stopped by operator/product-ready evidence.
+
+Verification commands: `git diff --check`; optionally `gh run list --branch main
+--limit 5` for latest remote CI status.
+
+Acceptance criteria: no overclaim; product-ready requires stronger evidence than
+current controlled self/headless runs.
+
+Risk: self-congratulation or endless plan generation.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: choose next stream only from observed blockers.
+
+Next-task synthesis rule: if not product-ready, append the highest-ROI bounded
+blocker stream; if blocked only by V02-01, record exact missing inputs.
 
 Next-task synthesis rule: append hook/MCP/subagent screening only from repeated
 evidence, not aspiration.
@@ -1379,7 +1435,9 @@ Initial entry:
   `PLANS.md` resume state and rejected new skill/hook/MCP/subagent work now.
 - [x] V09-00 complete: runtime hooks rejected/deferred; hook projection-first
   boundary preserved.
-- [ ] V10-00 active: MCP / subagent candidate gate.
+- [x] V10-00 complete: MCP server and new subagent framework rejected/deferred;
+  existing `ts-type-critic` remains read-only/proposal-only.
+- [ ] V11-00 active: product readiness re-gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1455,6 +1513,16 @@ Record every unexpected fact in this format:
   `packages/codex-adapter/src/renderHookExpectations.ts`.
   Impact: V09 should reject/defer hook implementation and move to V10 MCP /
   subagent candidate screening.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Current KRN product questions are still served by CLI/files/DB
+  readback, reports, skills, and one narrow read-only custom agent; no V10
+  evidence proves a need for KRN MCP server or new subagent framework.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v10-mcp-subagent-candidate-gate/REPORT.md`;
+  `docs/decisions/ADR-0023-read-only-run-readback-boundary.md`;
+  `.codex/agents/ts-type-critic.toml`.
+  Impact: V10 should reject/defer MCP/subagent implementation and move to V11
+  product readiness re-gate.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1570,6 +1638,16 @@ Initial decisions:
   Does not prove: hooks will never be useful.
   Falsifier: future repeated mechanical violations occur despite current
   guidance and can be blocked by a tiny trusted hook.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Reject KRN MCP server and new subagent framework in V10.
+  Rationale: CLI/files/DB readback and reports cover current product questions;
+  subagent evidence supports only the existing read-only `ts-type-critic`.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v10-mcp-subagent-candidate-gate/REPORT.md`;
+  Codex manual MCP/subagent sections; ADR-0023; `.codex/agents/ts-type-critic.toml`.
+  Does not prove: MCP/subagents will never be useful.
+  Falsifier: repeated scenarios need live typed resources or parallel read-heavy
+  roles with stable output contracts.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1702,6 +1780,18 @@ Seed evidence:
     for implementation.
   Does not prove: hooks will never be useful, product readiness, or V02-01.
   Follow-up task: V10-00.
+
+- Evidence ID: E-V10-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v10-mcp-subagent-candidate-gate/REPORT.md`
+  Command/report/file: V10 MCP/subagent candidate screening and current Codex
+    manual read.
+  Result: KRN MCP server and new subagent framework rejected/deferred; existing
+    `ts-type-critic` kept as read-only/proposal-only.
+  Proves: no current MCP/subagent candidate has enough evidence for
+    implementation.
+  Does not prove: MCP/subagents will never be useful, product readiness, or
+    V02-01.
+  Follow-up task: V11-00.
 ```
 
 ## 19. Condensation Queue
@@ -1819,10 +1909,18 @@ Seed queue:
 - Candidate: MCP / subagent screening
   Source evidence: V04 compression screening and V09 hook rejection
   Surface: MCP/subagent candidate gate
-  Status: accepted as V10
+  Status: complete as V10-00
   Reason: after hooks remain deferred, screen whether live tool/read-model or
     parallel read-heavy role bottlenecks exist
   Task: V10-00
+
+- Candidate: product readiness re-gate
+  Source evidence: V05-V10 completed stream reports
+  Surface: readiness gate
+  Status: accepted as V11
+  Reason: major post-V04 surface candidates have been repaired, bounded, or
+    rejected; readiness must be re-evaluated before more architecture work
+  Task: V11-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -1913,6 +2011,37 @@ Product readiness verdict:
 
 Next active stream:
 - V10 — MCP / Subagent Candidate Gate.
+
+## Outcome 2026-06-27 V10
+
+Completed:
+- V10-00 rejected/deferred KRN MCP server implementation.
+- V10-00 rejected/deferred new subagent framework.
+- Existing `ts-type-critic` remains the only accepted custom agent surface,
+  read-only and proposal-only.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v10-mcp-subagent-candidate-gate/REPORT.md`.
+- Current Codex manual MCP/subagent sections.
+- `docs/decisions/ADR-0023-read-only-run-readback-boundary.md`.
+
+What improved:
+- MCP/subagent backlog pressure now has current source-backed decisions and
+  falsifiers.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- External live MCP integration.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V11 — Product Readiness Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
