@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V182 Post Source-To-Decision Skill Metadata Re-Gate
+V184 Post Evidence Review Skill Provenance Re-Gate
 ```
 
 Current product loop:
@@ -37,7 +37,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V181: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V183: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
@@ -48,8 +48,9 @@ plus progress stale-active, root PLAN pattern-gate, and brain-battle smoke
 description plus compact pattern-gate contract, continuation, kernel,
 controlled-scenario, target-infra-ADR, source-map, ADR chain, ADR line-wrap,
 kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata,
-and source-to-decision skill metadata guards complete.
-current task: V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
+source-to-decision skill metadata, and evidence review skill provenance guards
+complete.
+current task: V184-00 Post Evidence Review Skill Provenance Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

@@ -1,6 +1,6 @@
 ---
 name: evidence-review-loop
-description: Use when capturing KRN execution evidence, assessing review risk, deriving feedback deltas, or proposing memory, source, skill, policy, or eval candidates after a run.
+description: Use when capturing KRN execution evidence with command provenance, proof/non-proof boundaries, review risk, feedback deltas, or memory/source/skill/policy/eval candidates after a run.
 ---
 
 # Evidence Review Loop
@@ -17,7 +17,10 @@ state without mutating memory automatically.
 ## Workflow
 
 1. Record changed files and scope.
-2. Record each command with status: passed, failed, or skipped.
+2. Record each command with status and provenance; distinguish statuses
+   `passed`, `failed`, `skipped`, `missing`, and `not_run`, plus provenance
+   `operator_reported`, `captured_output_file`, `command_runner`, and
+   `default_template`.
 3. State diff risk and review burden.
 4. State rollback path.
 5. Separate hard evidence from interpretation.
@@ -27,7 +30,7 @@ state without mutating memory automatically.
 ## Output
 
 - Evidence summary.
-- Command proof.
+- Command proof with provenance and what it does not prove.
 - Diff risk.
 - Review burden.
 - Rollback path.
@@ -37,6 +40,8 @@ state without mutating memory automatically.
 ## Forbidden
 
 - Do not claim skipped commands passed.
+- Do not treat default_template, skipped, missing, or not_run command rows
+  as strong verification proof.
 - Do not mutate Memory Core without explicit acceptance.
 - Do not invent execution runs when DB/run IDs are absent.
 - Do not promote eval/source/memory candidates as a side effect of capture.

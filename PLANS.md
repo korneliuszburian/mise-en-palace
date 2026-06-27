@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V181 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, and source-to-decision skill metadata guard slices: complete
-active stream: V182 Post Source-To-Decision Skill Metadata Re-Gate
-current task: V182-00 Post Source-To-Decision Skill Metadata Re-Gate
+V48..V183 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, and evidence review skill provenance guard slices: complete
+active stream: V184 Post Evidence Review Skill Provenance Re-Gate
+current task: V184-00 Post Evidence Review Skill Provenance Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
+V184-00 Post Evidence Review Skill Provenance Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15996,6 +15996,70 @@ Next active stream:
 
 Next active task:
 - V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
+
+## Outcome 2026-06-27 V183 Evidence Review Skill Provenance Guard
+
+Completed tasks:
+- V182-00 Post Source-To-Decision Skill Metadata Re-Gate.
+- V183-00 Evidence Review Skill Provenance Guard.
+
+V182 decision:
+- Do not broaden source-to-decision metadata preservation into Research Foundry,
+  source crawler, dashboard, or product-readiness claims.
+- Select evidence-review-loop skill repair because it still described command
+  evidence as coarse `passed`, `failed`, or `skipped` proof after evidence
+  integrity introduced provenance and proof/non-proof boundaries.
+- The concrete failure mode is a future evidence/review slice following the
+  skill and losing `operator_reported`, `captured_output_file`,
+  `command_runner`, `default_template`, `missing`, `not_run`, and
+  `doesNotProve` discipline.
+
+What changed:
+- `.agents/skills/evidence-review-loop/SKILL.md` now routes execution evidence
+  through command provenance and proof/non-proof boundaries.
+- `packages/harness/src/skillInvariants.test.ts` now guards evidence-review
+  skill provenance terms and weak-proof handling.
+- `docs/architecture/brain-battle-eval-matrix.md` records the evidence review
+  skill provenance guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V184.
+
+Evidence:
+- Before this slice, evidence-review-loop workflow said to record each command
+  only as `passed`, `failed`, or `skipped`.
+- Current KRN evidence integrity requires provenance and explicit non-proof
+  boundaries so weak rows cannot masquerade as verification proof.
+
+Source-to-decision:
+- Source: `.agents/skills/evidence-review-loop/SKILL.md`, evidence integrity
+  slices, and repo-local skill invariant coverage.
+- Mechanism: skills are executable guidance; if the evidence skill keeps the old
+  status-only model, future Codex runs can regress from provenance-aware review
+  back to coarse proof language.
+- KRN implication: evidence/review guidance must preserve command provenance,
+  weak-proof labels, and "what it does not prove" at the skill layer.
+- Decision: update and guard evidence-review-loop skill provenance language.
+- Does not prove: every future evidence bundle is truthful, commands actually
+  executed, review burden is lower by default, or product readiness.
+- Consumer: `.agents/skills/evidence-review-loop/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the evidence-review-loop skill can drop command provenance,
+  weak-proof handling, or "what it does not prove" while tests pass.
+
+New task:
+- V184-00 Post Evidence Review Skill Provenance Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V184 Post Evidence Review Skill Provenance Re-Gate.
+
+Next active task:
+- V184-00 Post Evidence Review Skill Provenance Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -140,4 +140,24 @@ describe("KRN skill invariants", () => {
     expect(targetInfraAdr).toContain("consumer:");
     expect(targetInfraAdr).toContain("falsifier:");
   });
+
+  it("keeps evidence review loop tied to command provenance and proof boundaries", () => {
+    const evidenceReviewLoop = readFileSync(
+      new URL("evidence-review-loop/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(evidenceReviewLoop).toContain("command provenance");
+    expect(evidenceReviewLoop).toContain("proof/non-proof boundaries");
+    expect(evidenceReviewLoop).toContain("operator_reported");
+    expect(evidenceReviewLoop).toContain("captured_output_file");
+    expect(evidenceReviewLoop).toContain("command_runner");
+    expect(evidenceReviewLoop).toContain("default_template");
+    expect(evidenceReviewLoop).toContain("not_run");
+    expect(evidenceReviewLoop).toContain("missing");
+    expect(evidenceReviewLoop).toContain("what it does not prove");
+    expect(evidenceReviewLoop).toContain(
+      "Do not treat default_template, skipped, missing, or not_run command rows"
+    );
+  });
 });
