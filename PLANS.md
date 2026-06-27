@@ -36,12 +36,13 @@ V07 memory / anti-memory / source usefulness loop: complete
 V08 skill-first workflow expansion: complete
 V09 deterministic hooks candidate decision: complete
 V10 MCP / subagent candidate gate: complete
+V11 product readiness re-gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V11 product readiness re-gate
-current task: V11-00 Product Readiness Re-Gate
+active stream: V12 widened alpha trial launch packet
+current task: V12-00 Real Operator / Widened Alpha Trial Launch Packet
 ```
 
 Evidence already recorded in repo:
@@ -56,8 +57,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V11 must decide whether V05-V10 evidence supports readiness movement or whether
-KRN remains controlled-internal-alpha with explicit blockers.
+V12 must turn the V11 readiness verdict into an operator-ready launch packet
+for a real second-operator or widened-alpha trial without creating fake proof.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -449,6 +450,25 @@ Expected end state:
 ```txt
 KRN remains controlled-internal-alpha, upgrades to widened internal alpha, or explicitly stays limited with blockers.
 No product-ready claim without multiple target repos and second-operator proof.
+```
+
+### Stream V12 — Widened Alpha Trial Launch Packet
+
+Why later:
+
+- V11 found that V05-V10 strengthen controlled-internal-alpha but do not prove
+  widened internal alpha or product readiness.
+- The next missing product evidence is a real operator or widened-alpha trial,
+  not another local substitute.
+
+Expected end state:
+
+```txt
+An operator-ready launch packet exists with setup, DB mode, target repo mode,
+support boundary, transcript schema, evidence checklist, failure taxonomy, and
+verdict labels.
+If required operator inputs are absent, the packet states exact missing fields
+and forbids calling self/headless work second-operator proof.
 ```
 
 ## 12. Active Task Queue
@@ -1160,7 +1180,7 @@ Completion evidence:
 
 ### V11-00 — Product Readiness Re-Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: decide whether V05-V10 evidence supports controlled-internal-alpha,
 widened internal alpha, product-ready, or blocked/deferred status.
@@ -1210,6 +1230,77 @@ blocker stream; if blocked only by V02-01, record exact missing inputs.
 
 Next-task synthesis rule: append hook/MCP/subagent screening only from repeated
 evidence, not aspiration.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v11-product-readiness-re-gate/REPORT.md`;
+- V11 kept product readiness conservative:
+  controlled-internal-alpha for technical operators is stronger, widened
+  internal alpha is not ready, product-ready is no, and V02-01 remains
+  blocked/deferred.
+
+### V12-00 — Real Operator / Widened Alpha Trial Launch Packet
+
+Status: active
+
+Goal: prepare the smallest operator-ready packet that can launch V02-01 or a
+widened internal-alpha trial without relying on author chat context.
+
+Product rationale: V11 found that the current blocker is missing operator-trial
+evidence, not another KRN architecture surface.
+
+Architectural rationale: launch evidence must preserve source/evidence/review
+discipline and prevent self/headless work from being renamed into
+second-operator proof.
+
+Evidence source: V11 readiness report; V02-01 missing input contract in
+`GOAL.md` and `PLAN.md`; existing controlled dogfood reports.
+
+Official/external sources: use existing Codex Goal/ExecPlan doctrine only if
+needed; do not browse unless the launch packet needs current official Codex
+operator guidance.
+
+Inputs required: current V11 report, current product state, existing V02-01
+missing fields, existing target-repo testing skill.
+
+Files likely touched:
+
+- `docs/runbooks/` or `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: launch packet/report/plans only.
+
+Forbidden writes: product source, target repo writes, dashboard/API/MCP/hooks,
+subagent framework, fake transcript, fake second-operator proof.
+
+Output requirements: operator launch packet with setup, DB mode, target repo
+mode, support boundary, transcript schema, evidence checklist, failure
+taxonomy, verdict labels, and exact missing-input stop condition.
+
+Definition of Done: a future operator or Codex continuation can run or block
+V02-01/widened-alpha trial from the packet without reconstructing context from
+chat.
+
+Verification commands: `git diff --check`; optionally `rg` for required packet
+sections.
+
+Acceptance criteria: no fake proof; no self/headless substitute; missing
+operator fields are explicit.
+
+Risk: turning the launch packet into another large roadmap.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: if the packet is complete and real operator inputs
+are absent, keep V02-01 blocked/deferred with exact missing fields instead of
+launching a substitute.
+
+Next-task synthesis rule: if the packet reveals a small blocking operator
+setup defect, append a bounded setup/runbook repair; otherwise await real
+operator inputs or run a clearly labeled engineering scenario that does not
+claim widened-alpha proof.
 
 ## 13. Generated Task Backlog
 
@@ -1437,7 +1528,9 @@ Initial entry:
   boundary preserved.
 - [x] V10-00 complete: MCP server and new subagent framework rejected/deferred;
   existing `ts-type-critic` remains read-only/proposal-only.
-- [ ] V11-00 active: product readiness re-gate.
+- [x] V11-00 complete: product readiness re-gate kept KRN controlled-internal-alpha
+  stronger, not widened-alpha, not product-ready.
+- [ ] V12-00 active: real operator / widened alpha trial launch packet.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1917,10 +2010,18 @@ Seed queue:
 - Candidate: product readiness re-gate
   Source evidence: V05-V10 completed stream reports
   Surface: readiness gate
-  Status: accepted as V11
+  Status: complete as V11-00
   Reason: major post-V04 surface candidates have been repaired, bounded, or
     rejected; readiness must be re-evaluated before more architecture work
   Task: V11-00
+
+- Candidate: widened alpha trial launch packet
+  Source evidence: V11 product readiness re-gate
+  Surface: operator launch packet / trial boundary
+  Status: accepted as V12-00
+  Reason: V11 found the next blocker is missing operator-trial evidence, not
+    another architecture surface
+  Task: V12-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2043,6 +2144,39 @@ Product readiness verdict:
 Next active stream:
 - V11 — Product Readiness Re-Gate.
 
+## Outcome 2026-06-27 V11
+
+Completed:
+- V11-00 re-gated product readiness after V05-V10.
+- KRN remains controlled-internal-alpha for technical operators, stronger than
+  before, but not widened-alpha or product-ready.
+- V12 was accepted as the next bounded blocker stream.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v11-product-readiness-re-gate/REPORT.md`.
+- Latest listed `main` CI runs were green through V10.
+
+What improved:
+- Product readiness is now explicitly re-gated after target evidence,
+  owner-file recall, memory/source usefulness, skill, hook, MCP, and subagent
+  gates.
+- The next work is constrained to real operator / widened-alpha launch
+  evidence instead of another architecture surface.
+
+What did not improve:
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Product readiness.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V12 — Widened Alpha Trial Launch Packet.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -2091,7 +2225,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V05 Target-Aware Evidence Capture Repair.
+Active stream: V12 Widened Alpha Trial Launch Packet.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

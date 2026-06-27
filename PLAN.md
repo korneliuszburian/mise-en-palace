@@ -37,7 +37,8 @@ V07 memory / anti-memory / source usefulness loop: complete
 V08 skill-first workflow expansion: complete
 V09 deterministic hooks candidate decision: complete
 V10 MCP / subagent candidate gate: complete
-active stream: V11 product readiness re-gate
+V11 product readiness re-gate: complete
+active stream: V12 widened alpha trial launch packet
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -238,16 +239,37 @@ Evidence:
 - MCP server and new subagent framework rejected/deferred; existing
   `ts-type-critic` remains read-only/proposal-only.
 
-## Active Stream: V11
+## Completed Stream: V11
 
 V11 re-gates readiness after V05-V10.
 
 ### V11-00 — Product Readiness Re-Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide whether current evidence supports controlled-internal-alpha,
 widened internal alpha, product-ready, or blocked/deferred status.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v11-product-readiness-re-gate/REPORT.md`;
+- V11 kept KRN at controlled-internal-alpha for technical operators, rejected
+  widened internal alpha/product-ready claims, and promoted V12 as the next
+  bounded blocker stream.
+
+## Active Stream: V12
+
+V12 prepares the real operator / widened-alpha trial boundary without faking
+second-operator proof.
+
+### V12-00 — Real Operator / Widened Alpha Trial Launch Packet
+
+Status: active.
+
+Goal: create the smallest operator-ready packet for V02-01 or widened internal
+alpha trial execution, with explicit setup, DB mode, target repo mode, support
+boundary, transcript schema, evidence checklist, failure taxonomy, and verdict
+labels.
 
 ## Hard Non-Goals
 

@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V11 — Product Readiness Re-Gate
+V12 — Widened Alpha Trial Launch Packet
 ```
 
 Current product loop:
@@ -51,8 +51,9 @@ V07 memory / anti-memory / source usefulness loop: complete.
 V08 skill-first workflow expansion: complete.
 V09 deterministic hooks candidate decision: complete.
 V10 MCP / subagent candidate gate: complete.
-active stream: V11 product readiness re-gate.
-current task: V11-00 — Product Readiness Re-Gate.
+V11 product readiness re-gate: complete.
+active stream: V12 widened alpha trial launch packet.
+current task: V12-00 — Real Operator / Widened Alpha Trial Launch Packet.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
