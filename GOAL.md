@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V82 Post Active Plan Guard Re-Gate
+V84 Post Skill Invariant Guard Re-Gate
 ```
 
 Current product loop:
@@ -127,7 +127,9 @@ V78-00 Post Source Map Falsifier Re-Gate: complete.
 V79-00 Source Map Invariant Guard: complete.
 V80-00 Post Source Map Guard Re-Gate: complete.
 V81-00 Active Plan Invariant Guard: complete.
-current task: V82-00 Post Active Plan Guard Re-Gate.
+V82-00 Post Active Plan Guard Re-Gate: complete.
+V83-00 Skill Invariant Guard: complete.
+current task: V84-00 Post Skill Invariant Guard Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

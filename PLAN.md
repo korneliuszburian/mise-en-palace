@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V82 Post Active Plan Guard Re-Gate
-current task: V82-00 Post Active Plan Guard Re-Gate
+active stream: V84 Post Skill Invariant Guard Re-Gate
+current task: V84-00 Post Skill Invariant Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -115,30 +115,33 @@ V78-00 post source map falsifier re-gate: complete
 V79-00 source map invariant guard: complete
 V80-00 post source map guard re-gate: complete
 V81-00 active plan invariant guard: complete
-V82 post active plan guard re-gate: active
+V82-00 post active plan guard re-gate: complete
+V83-00 skill invariant guard: complete
+V84 post skill invariant guard re-gate: active
 ```
 
 ## Active Stream
 
-### V82 Post Active Plan Guard Re-Gate
+### V84 Post Skill Invariant Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding a CI-covered guard for active
-GOAL/PLAN/PLANS consistency.
+Decide the next bounded task after adding CI-covered guardrails for repo-local
+skill routability and verification sections.
 
 Current finding:
 
 ```txt
-V80 selected an active-plan invariant guard because current continuation must
-resume from root `GOAL.md`, `PLAN.md`, and `PLANS.md` instead of stale objective
-attachments or conversation memory.
+V82 selected a skill invariant guard because retained Codex Skills source
+decisions require repo-local skills to remain routable, workflow-oriented, and
+verifiable. The guard caught and repaired a real section drift in
+`target-repo-testing`.
 ```
 
 Current action:
 
 ```txt
-Execute V82-00: decide whether to apply one retained source to a concrete
+Execute V84-00: decide whether to apply one retained source to a concrete
 consumer, move to another pattern surface, or stop on the external
 operator/target blocker.
 ```
@@ -152,8 +155,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens implementation work without a named consumer, falsifier,
-and verification command.
+The re-gate opens another meta-guard or implementation task without a named
+consumer, falsifier, and verification command.
 ```
 
 ### External Input Blocker

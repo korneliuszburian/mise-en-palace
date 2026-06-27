@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V82 Post Active Plan Guard Re-Gate
-current task: V82-00 Post Active Plan Guard Re-Gate
+active stream: V84 Post Skill Invariant Guard Re-Gate
+current task: V84-00 Post Skill Invariant Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -7419,6 +7419,125 @@ Definition of Done:
 - Next active task is explicit or a blocker is explicit.
 - `git diff --check` passes.
 
+Outcome:
+
+- The next bounded task is a repo-local skill invariant guard. It applies the
+  retained Codex Skills source decision to the `.agents/skills` consumer.
+
+### V83-00 — Skill Invariant Guard
+
+Status: complete
+
+Goal: Add a focused guard that keeps repo-local KRN skills routable and
+verifiable.
+
+Pattern surface: Codex surfaces / skills.
+
+Product rationale: Best patterns only help if repeated workflows are packaged
+as small skills with clear routing and verification, not as hidden prompt
+ledgers or giant active-context blocks.
+
+Architectural rationale: Skills are progressive-disclosure workflow surfaces.
+This guard validates minimal structure; it does not judge all skill content or
+create a new skill platform.
+
+Evidence source:
+
+- `docs/KRN_SOURCES.md` Skills decision.
+- `.agents/skills/*/SKILL.md`.
+
+Primary consumer:
+
+- `packages/harness/src/skillInvariants.test.ts`
+- `.agents/skills/target-repo-testing/SKILL.md`
+- `docs/architecture/brain-battle-eval-matrix.md`
+
+Does not prove:
+
+- every skill is complete;
+- more skills are useful;
+- skill content is always current.
+
+Falsifier:
+
+- A repo-local skill has mismatched frontmatter name, missing description,
+  missing `Workflow`, or missing `Verification` while tests still pass.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- skillInvariants
+pnpm -C packages/harness typecheck
+git diff --check
+```
+
+Outcome:
+
+- Added `packages/harness/src/skillInvariants.test.ts`.
+- Repaired `.agents/skills/target-repo-testing/SKILL.md` by adding standard
+  `Workflow` and `Verification` sections.
+
+### V84-00 — Post Skill Invariant Guard Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after adding repo-local skill invariant
+coverage.
+
+Pattern surface: Codex surfaces / skills.
+
+Product rationale: Source-map, active-plan, and skill-surface drift now have
+guards. The next move should apply one retained source to a concrete consumer,
+move to another pattern surface, or stop on the external operator/target
+blocker.
+
+Architectural rationale: Continue by evidence. Do not keep adding meta-guards by
+momentum.
+
+Evidence source:
+
+- V83 skill invariant guard.
+- `docs/KRN_SOURCES.md` Skills decision.
+- `docs/runbooks/pattern-intake.md`.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- product readiness;
+- need for more skills;
+- skill content completeness.
+
+Falsifier:
+
+- The plan opens another meta-guard or implementation task without a named
+  consumer, falsifier, and verification command.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- new skill unless a repeated workflow has evidence;
+- source crawler;
+- research archive;
+- broad eval platform;
+- dashboard/API/MCP/server.
+
+Definition of Done:
+
+- Next active task is explicit or a blocker is explicit.
+- `git diff --check` passes.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -7822,7 +7941,10 @@ Initial entry:
   falsifier fields.
 - [x] V80-00 complete: selected active-plan invariant guard.
 - [x] V81-00 complete: added active GOAL/PLAN/PLANS consistency test.
-- [ ] V82-00 active: re-gate after active-plan guard.
+- [x] V82-00 complete: selected repo-local skill invariant guard.
+- [x] V83-00 complete: added skill invariant test and repaired
+  `target-repo-testing` skill section drift.
+- [ ] V84-00 active: re-gate after skill invariant guard.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8938,6 +9060,19 @@ Initial decisions:
   Falsifier: root `GOAL.md`, `PLAN.md`, and `PLANS.md` can disagree about active
     stream or current task while tests still pass.
   Verification: `pnpm --filter @krn/harness test -- activePlanInvariants`;
+    `pnpm -C packages/harness typecheck`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Guard repo-local skill structure in V83.
+  Rationale: Skills are the accepted repeated-workflow surface. They need
+    routable frontmatter and explicit workflow/verification sections to avoid
+    becoming hidden prompt ledgers.
+  Surface: Codex surfaces / skills.
+  Consumer: `packages/harness/src/skillInvariants.test.ts`.
+  Does not prove: every skill is complete or more skills are useful.
+  Falsifier: a repo-local skill has mismatched name, missing description,
+    missing `Workflow`, or missing `Verification` while tests still pass.
+  Verification: `pnpm --filter @krn/harness test -- skillInvariants`;
     `pnpm -C packages/harness typecheck`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
@@ -12316,6 +12451,44 @@ Next active stream:
 Next active task:
 - V82-00 Post Active Plan Guard Re-Gate.
 
+## Outcome 2026-06-27 V83 Skill Guard
+
+Completed:
+- V82-00 Post Active Plan Guard Re-Gate.
+- V83-00 Skill Invariant Guard.
+
+Evidence:
+- `.agents/skills/*/SKILL.md`.
+- `.agents/skills/target-repo-testing/SKILL.md`.
+- `packages/harness/src/skillInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+What improved:
+- Repo-local skills now have a focused invariant for name/directory alignment,
+  routable descriptions, `Workflow`, and `Verification`.
+- The guard caught and repaired missing standard sections in
+  `target-repo-testing`.
+
+What did not improve:
+- Product readiness.
+- Whether every skill is complete or current.
+- Whether more skills are useful.
+
+New task:
+- V84-00 Post Skill Invariant Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V84 Post Skill Invariant Guard Re-Gate.
+
+Next active task:
+- V84-00 Post Skill Invariant Guard Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -12364,7 +12537,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V82 Post Active Plan Guard Re-Gate.
+Active stream: V84 Post Skill Invariant Guard Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

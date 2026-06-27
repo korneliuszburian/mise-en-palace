@@ -15,6 +15,10 @@ Target repositories are not disposable fixtures.
 Do not edit, commit, push, reset, clean, or normalize a target repo unless the
 current task explicitly allows target writes.
 
+## Workflow
+
+Follow these steps before treating target-repo output as KRN evidence.
+
 ## Step 1: Classify The Mode
 
 Choose exactly one mode before running target commands:
@@ -155,6 +159,11 @@ Stop and report instead of patching when:
   `target_patch_lifecycle: handed_off_unresolved` and the current task is
   another same-target repair;
 - the trial would be renamed into V02-01 without a real second operator.
+
+## Verification
+
+Target-repo work is verified only when mode, dirty state, write authority,
+commands, proof/non-proof boundaries, and handoff state are recorded.
 
 ## Required Output
 
