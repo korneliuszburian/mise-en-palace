@@ -106,8 +106,10 @@ describe("KRN skill invariants", () => {
       "title:",
       "url:",
       "trust_tier: high | medium | low",
+      "source_class: official docs | papers | high-quality public course page | practitioner writing | competitor docs | repo-local evidence | target-repo evidence | user-provided research",
       "mechanism:",
       "krn_implication:",
+      "decision_kind: adopt | reject | lab_test | defer",
       "decision:",
       "does_not_prove:",
       "consumer:",
@@ -118,7 +120,7 @@ describe("KRN skill invariants", () => {
       expect(sourceToDecision).toContain(field);
     }
 
-    expect(sourceToDecision).toContain("decision_kind: adopt | reject | lab_test | defer");
+    expect(sourceToDecision).toContain("high-quality public course page");
     expect(sourceToDecision).toContain(
       "reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown"
     );

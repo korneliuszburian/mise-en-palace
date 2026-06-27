@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V138 Post Outcome Source-To-Decision Guard Re-Gate
-current task: V138-00 Post Outcome Source-To-Decision Guard Re-Gate
+active stream: V140 Post Source-To-Decision Skill Output Guard Re-Gate
+current task: V140-00 Post Source-To-Decision Skill Output Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,37 +43,39 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V137: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V139: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
            adapter boundary, source classification, and latest-outcome
-           source-to-decision guards complete.
+           source-to-decision and source-to-decision skill output guards
+           complete.
 ```
 
 ## Active Stream
 
-### V138 Post Outcome Source-To-Decision Guard Re-Gate
+### V140 Post Source-To-Decision Skill Output Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding latest-outcome source-to-decision
-records without turning outcome tracking into broad research bureaucracy.
+Decide the next bounded task after aligning the source-to-decision skill output
+with guarded source classification without turning skill work into prompt
+bloat.
 
 Current finding:
 
 ```txt
-V136 selected latest-outcome source-to-decision completeness as the next bounded
-pattern surface. V137 strengthened the active-plan invariant so the latest
-`PLANS.md` outcome must keep reviewable source-to-decision fields.
+V138 selected source-to-decision skill output alignment as the next bounded
+pattern surface. V139 made the skill require `source_class` and `decision_kind`
+in its primary output and guarded it with skill invariants.
 ```
 
 Current action:
 
 ```txt
-Execute V138-00: select the next pattern surface from evidence. Do not broaden
-outcome tracking into research bureaucracy, source archive, dashboard, or
-benchmark lane.
+Execute V140-00: select the next pattern surface from evidence. Do not broaden
+the skill into a long prompt ledger, research bureaucracy, source archive,
+dashboard, or benchmark lane.
 ```
 
 Primary consumer:
@@ -85,8 +87,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused outcome source-to-decision guarding into broad
-research bureaucracy without a concrete consumer and falsifier.
+The re-gate turns focused source-to-decision skill output alignment into skill
+bloat or research bureaucracy without a concrete consumer and falsifier.
 ```
 
 ## External Input Blocker

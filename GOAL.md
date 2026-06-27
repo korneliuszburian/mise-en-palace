@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V138 Post Outcome Source-To-Decision Guard Re-Gate
+V140 Post Source-To-Decision Skill Output Guard Re-Gate
 ```
 
 Current product loop:
@@ -37,12 +37,13 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V137: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V139: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, and source classification
-and latest-outcome source-to-decision guards complete.
-current task: V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
+latest-outcome source-to-decision, and source-to-decision skill output guards
+complete.
+current task: V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

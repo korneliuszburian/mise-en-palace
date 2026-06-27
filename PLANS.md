@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V137 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, and latest-outcome source-to-decision guard slices: complete
-active stream: V138 Post Outcome Source-To-Decision Guard Re-Gate
-current task: V138-00 Post Outcome Source-To-Decision Guard Re-Gate
+V48..V139 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, and source-to-decision skill output guard slices: complete
+active stream: V140 Post Source-To-Decision Skill Output Guard Re-Gate
+current task: V140-00 Post Source-To-Decision Skill Output Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
+V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14418,6 +14418,86 @@ Next active stream:
 
 Next active task:
 - V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
+
+## Outcome 2026-06-27 V139 Source-To-Decision Skill Output Guard
+
+Completed tasks:
+- V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
+- V139-00 Source-To-Decision Skill Output Guard.
+
+V138 decision:
+- Do not broaden outcome source-to-decision guarding into research bureaucracy,
+  source archive, dashboard, or benchmark lane.
+- Select source-to-decision skill output alignment because V135 made durable
+  source guidance require `Source class` and `Decision kind`, while the
+  `source-to-decision` skill still treated `decision_kind` as optional and did
+  not require `source_class` in its primary output.
+
+What changed:
+- `.agents/skills/source-to-decision/SKILL.md` now requires `source_class` and
+  `decision_kind` in the main YAML output.
+- The skill's allowed source class list now uses `high-quality public course
+  page`, matching `docs/runbooks/pattern-intake.md` and `docs/KRN_SOURCES.md`.
+- `packages/harness/src/skillInvariants.test.ts` now guards the required
+  `source_class` and `decision_kind` output fields.
+- `docs/architecture/brain-battle-eval-matrix.md` records the tightened skill
+  output guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V140.
+
+Evidence:
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/skillInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: V135 retained source classification guard, V137 latest-outcome
+  source-to-decision guard, and current `.agents/skills/source-to-decision/SKILL.md`.
+- Mechanism: Codex uses the skill as the first trigger/gate for external docs,
+  papers, practitioner writing, courses, local evidence, and user-provided
+  research; if the skill output is weaker than the runbook/source map, future
+  pattern intake can omit classification before becoming guidance.
+- KRN implication: the repeated execution skill must require the same source
+  class and decision kind that durable source guidance and pattern intake now
+  require.
+- Decision: add focused skill invariant coverage for required `source_class` and
+  `decision_kind` in `source-to-decision` output.
+- Does not prove: every future Codex run will invoke the skill, every source is
+  high quality, skill output guarantees correct judgment, or research creates
+  product value by default.
+- Consumer: `.agents/skills/source-to-decision/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the source-to-decision skill can make `source_class` or
+  `decision_kind` optional/missing without focused tests failing.
+
+What improved:
+- The skill, pattern-intake runbook, and durable source map now agree on required
+  source classification and decision status.
+- Best-pattern intake is less likely to degrade into vague source notes during
+  future Codex continuations.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Research automation, crawler, or source discovery.
+
+New task:
+- V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V140 Post Source-To-Decision Skill Output Guard Re-Gate.
+
+Next active task:
+- V140-00 Post Source-To-Decision Skill Output Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

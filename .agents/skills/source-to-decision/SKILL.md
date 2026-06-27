@@ -64,8 +64,10 @@ source_id:
 title:
 url:
 trust_tier: high | medium | low
+source_class: official docs | papers | high-quality public course page | practitioner writing | competitor docs | repo-local evidence | target-repo evidence | user-provided research
 mechanism:
 krn_implication:
+decision_kind: adopt | reject | lab_test | defer
 decision:
 does_not_prove:
 consumer:
@@ -75,7 +77,6 @@ falsifier:
 Optional when useful:
 
 ```yaml
-decision_kind: adopt | reject | lab_test | defer
 candidate_output:
   type: MemoryCandidate | SourceDecision | EvalCandidate | SkillCandidate | none
   reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown
@@ -120,7 +121,7 @@ Allowed source classes:
 ```txt
 official docs
 papers
-high-quality courses
+high-quality public course page
 practitioner writing
 competitor docs
 repo-local evidence
