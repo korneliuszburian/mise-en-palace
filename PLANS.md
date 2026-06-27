@@ -33,12 +33,13 @@ V04-00..V04-07: complete
 V05 target-aware evidence capture repair: complete
 V06 activation / owner-file / context ROI utility: complete
 V07 memory / anti-memory / source usefulness loop: complete
+V08 skill-first workflow expansion: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V08 skill-first workflow expansion
-current task: V08-00 Skill-First Workflow Expansion Gate
+active stream: V09 deterministic hooks candidate decision
+current task: V09-00 Deterministic Hooks Candidate Decision
 ```
 
 Evidence already recorded in repo:
@@ -53,8 +54,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-Repeated KRN/Codex workflows may need condensation into skills, but V08 must
-avoid skill sprawl and accept only evidence-backed bounded skill refinement.
+V09 must decide whether any repeated deterministic violation still justifies a
+tiny trusted hook after V08 refined the skill-first continuation path.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -982,7 +983,7 @@ Completion evidence:
 
 ### V08-00 — Skill-First Workflow Expansion Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: inspect existing project skills and recent repeated workflows, then decide
 whether to add/refine one bounded skill or reject expansion for now.
@@ -1028,6 +1029,65 @@ Rollback: remove/refine skill and correction report.
 
 Condensation expectation: if accepted, next task may screen hooks/MCP/subagents
 only if repeated workflow still needs them.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`;
+- `.agents/skills/handoff-compact/SKILL.md` refined with active stream/task and
+  commit/push/CI fields.
+
+### V09-00 — Deterministic Hooks Candidate Decision
+
+Status: active
+
+Goal: screen whether repeated deterministic violations after V05-V08 justify a
+tiny trusted hook, or reject/defer hooks with evidence.
+
+Product rationale: hooks can protect mechanical boundaries, but semantic hidden
+hooks would add trust risk and product theater.
+
+Architectural rationale: KRN should use hooks only for deterministic lifecycle
+guardrails after skills, tests, and runbooks are insufficient.
+
+Evidence source: V04 compression screening, V08 handoff skill refinement,
+target-write boundary history.
+
+Official/external sources: Codex hooks guidance already mapped in V04
+compression screening.
+
+Inputs required: current hook candidates, V04/V08 reports, current project
+configuration.
+
+Files likely touched: report and plans only unless one tiny hook is accepted.
+
+Allowed writes: V09 report/plans; a hook only if the report first proves a
+repeated deterministic violation and defines trust/rollback.
+
+Forbidden writes: semantic hooks, hidden quality scanners, MCP, subagent
+framework, dashboard, broad policy engine.
+
+Output requirements: accept/reject/defer decision for each hook candidate with
+evidence and falsifier.
+
+Definition of Done: hooks are either rejected/deferred with evidence or one tiny
+mechanical hook is implemented with verification.
+
+Verification commands: `git diff --check`; if source/config changes, run
+relevant focused tests plus `pnpm typecheck` and `pnpm test`.
+
+Acceptance criteria: no hook exists just because it sounds useful; every
+accepted hook has deterministic inputs and rollback.
+
+Risk: hidden enforcement surface that Codex can route around or operators do
+not trust.
+
+Rollback: remove hook/config and keep rejection report.
+
+Condensation expectation: if hooks are rejected/deferred, move to V10 MCP /
+subagent candidate gate.
+
+Next-task synthesis rule: if no hook is justified, promote V10 candidate
+screening; if a hook is implemented, add guard/replay before moving on.
 
 Next-task synthesis rule: append hook/MCP/subagent screening only from repeated
 evidence, not aspiration.
@@ -1252,7 +1312,9 @@ Initial entry:
 - [x] V07-01 complete: source decision candidates are now visible in feedback
   proposal summary and run readback.
 - [x] V07-02 complete: V07 re-gate accepted V08 skill-first workflow expansion.
-- [ ] V08-00 active: skill-first workflow expansion gate.
+- [x] V08-00 complete: refined existing `handoff-compact` skill for continuous
+  `PLANS.md` resume state and rejected new skill/hook/MCP/subagent work now.
+- [ ] V09-00 active: deterministic hooks candidate decision.
 ```
 
 ## 16. Surprises & Discoveries
@@ -1309,6 +1371,15 @@ Record every unexpected fact in this format:
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`.
   Impact: V08 can start as a bounded skill gate; do not build hooks/MCP/subagents
   yet.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: `handoff-compact` already owns continuation after compaction, but
+  did not explicitly require active stream/task or verified commit/push/CI
+  state.
+  Evidence: `.agents/skills/handoff-compact/SKILL.md`; `GOAL.md`;
+  `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`.
+  Impact: V08 should refine the existing skill instead of creating a new
+  continuous-goal skill.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -1402,6 +1473,16 @@ Initial decisions:
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`.
   Does not prove: product readiness, V02-01, or need for hooks/MCP/subagents.
   Falsifier: V08 inspection finds no repeated workflow that should become a
+  skill.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Refine existing `handoff-compact` rather than creating a new skill.
+  Rationale: continuation/compaction is repeated and high-risk for the
+  continuous goal, and `handoff-compact` is the existing owning surface.
+  Evidence: `GOAL.md`; `PLANS.md`; `.agents/skills/handoff-compact/SKILL.md`;
+  `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`.
+  Does not prove: hooks, MCP, or subagents are never needed.
+  Falsifier: future compact/resume failures persist despite using the refined
   skill.
   Date/Author: 2026-06-27 / Codex
 ```
@@ -1513,6 +1594,18 @@ Seed evidence:
   Proves: memory/source usefulness is no longer the highest active blocker.
   Does not prove: product readiness, V02-01, or need for hooks/MCP/subagents.
   Follow-up task: V08-00.
+
+- Evidence ID: E-V08-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`
+  Command/report/file: V08 skill-first workflow gate and
+    `.agents/skills/handoff-compact/SKILL.md` refinement.
+  Result: existing `handoff-compact` skill now preserves active stream/task and
+    verified commit/push/CI state for continuous `PLANS.md` goals.
+  Proves: one repeated workflow was condensed into a bounded existing skill
+    without AGENTS bloat or new hook/MCP/subagent surfaces.
+  Does not prove: product readiness, V02-01, automatic future skill triggering,
+    or needlessness of hooks forever.
+  Follow-up task: V09-00.
 ```
 
 ## 19. Condensation Queue
@@ -1606,10 +1699,26 @@ Seed queue:
 - Candidate: skill-first workflow expansion
   Source evidence: V07 re-gate and repeated controlled workflow patterns
   Surface: skill gate
-  Status: accepted as V08
+  Status: complete as V08-00
   Reason: skills are the next lowest-risk Codex surface for repeated workflows
   Task: V08-00
-  Task: V06-00
+
+- Candidate: handoff compact continuation refinement
+  Source evidence: GOAL continuation rules, continuous `PLANS.md` protocol, and
+    V08 skill-first workflow gate
+  Surface: existing skill refinement
+  Status: complete as V08-00
+  Reason: active stream/task and verified commit/push/CI state reduce future
+    context loss without a new skill
+  Task: V08-00
+
+- Candidate: deterministic hooks screening
+  Source evidence: V04 compression screening, V08 handoff skill refinement
+  Surface: hook candidate decision
+  Status: accepted as V09
+  Reason: after skill-first refinement, screen whether any repeated mechanical
+    boundary still needs a hook; do not implement by default
+  Task: V09-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -1642,6 +1751,36 @@ Product readiness verdict:
 Next active stream:
 - ...
 ```
+
+## Outcome 2026-06-27 V08
+
+Completed:
+- V08-00 refined existing `handoff-compact` for continuous `PLANS.md` resume
+  state.
+- New skill, AGENTS expansion, hooks, MCP, and subagents were rejected/deferred
+  for V08.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`.
+- `.agents/skills/handoff-compact/SKILL.md`.
+
+What improved:
+- Future compact/resume handoffs now preserve active stream/task and verified
+  commit/push/CI state explicitly.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Runtime enforcement through hooks.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V09 — Deterministic Hooks Candidate Decision.
 
 ## 21. Final Response Format For Codex Runs
 

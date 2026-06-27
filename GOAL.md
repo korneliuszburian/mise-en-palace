@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V08 — Skill-First Workflow Expansion
+V09 — Deterministic Hooks Candidate Decision
 ```
 
 Current product loop:
@@ -47,8 +47,10 @@ widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V05 target-aware evidence capture repair: complete.
 V06 activation / owner-file / context ROI utility: complete.
-active stream: V08 skill-first workflow expansion.
-current task: V08-00 — Skill-First Workflow Expansion Gate.
+V07 memory / anti-memory / source usefulness loop: complete.
+V08 skill-first workflow expansion: complete.
+active stream: V09 deterministic hooks candidate decision.
+current task: V09-00 — Deterministic Hooks Candidate Decision.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

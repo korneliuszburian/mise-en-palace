@@ -34,7 +34,8 @@ V02-01 real second-operator proof: blocked/deferred
 V05 target-aware evidence capture repair: complete
 V06 activation / owner-file / context ROI utility: complete
 V07 memory / anti-memory / source usefulness loop: complete
-active stream: V08 skill-first workflow expansion
+V08 skill-first workflow expansion: complete
+active stream: V09 deterministic hooks candidate decision
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -181,17 +182,35 @@ Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v07-memory-source-re-gate/REPORT.md`.
 
-## Active Stream: V08
+## Completed Stream: V08
 
 V08 checks whether repeated KRN/Codex workflows should be condensed into skills
 while keeping `AGENTS.md`, hooks, MCP, and subagents small/deferred.
 
 ### V08-00 — Skill-First Workflow Expansion Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect existing project skills and recent repeated workflows, then decide
 whether to add/refine one bounded skill or reject expansion for now.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v08-skill-first-workflow-gate/REPORT.md`;
+- existing `handoff-compact` skill refined for continuous goal resume state.
+
+## Active Stream: V09
+
+V09 screens deterministic hook candidates after V08. It must not implement a
+hook unless repeated evidence proves a tiny mechanical boundary that skills,
+tests, and runbooks cannot cover.
+
+### V09-00 — Deterministic Hooks Candidate Decision
+
+Status: active.
+
+Goal: screen whether repeated deterministic violations after V05-V08 justify a
+tiny trusted hook, or reject/defer hooks with evidence.
 
 ## Hard Non-Goals
 
