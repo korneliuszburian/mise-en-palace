@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V147 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, and stale attachment objective guard slices: complete
-active stream: V148 Post Stale Attachment Objective Guard Re-Gate
-current task: V148-00 Post Stale Attachment Objective Guard Re-Gate
+V48..V149 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, and compact stale-objective contract guard slices: complete
+active stream: V150 Post Compact Stale Objective Contract Guard Re-Gate
+current task: V150-00 Post Compact Stale Objective Contract Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V148-00 Post Stale Attachment Objective Guard Re-Gate.
+V150-00 Post Compact Stale Objective Contract Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14823,6 +14823,76 @@ Next active stream:
 Next active task:
 - V148-00 Post Stale Attachment Objective Guard Re-Gate.
 
+## Outcome 2026-06-27 V149 Compact Stale Objective Contract Guard
+
+Completed tasks:
+- V148-00 Post Stale Attachment Objective Guard Re-Gate.
+- V149-00 Compact Stale Objective Contract Guard.
+
+V148 decision:
+- Do not broaden stale attachment handling into prompt bureaucracy, dashboard,
+  or benchmark lane.
+- Select compact contract preservation because V147 added the stale pasted
+  objective rule to root `GOAL.md`, but `PLANS.md` section 22 is the compact
+  `GOAL.md` contract future continuations use after compaction.
+- Without the template update, a future condensation could recreate a compact
+  goal that omits the stale-objective guard while tests still pass.
+
+What changed:
+- `PLANS.md` section 22 now includes the stale pasted objective rule in the
+  compact `GOAL.md` contract template.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks the compact
+  contract template preserves stale-objective handling.
+- `docs/architecture/brain-battle-eval-matrix.md` now says the stale-objective
+  guard covers both root `GOAL.md` and the compact goal template.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V150.
+
+Evidence:
+- Current root `GOAL.md` stale objective rule.
+- `PLANS.md` section 22 compact `GOAL.md` contract.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: V147 stale objective guard and current compact goal contract template.
+- Mechanism: root `GOAL.md` rules can be lost during future compaction if the
+  template used to regenerate compact goals does not carry the same rule.
+- KRN implication: durable continuation behavior needs both the active goal file
+  and its template contract to preserve stale-objective handling.
+- Decision: add the stale objective rule to the compact `GOAL.md` contract
+  template and guard it with the active-plan invariant.
+- Does not prove: future prompts are fresh, every future compaction is correct,
+  or product readiness.
+- Consumer: `PLANS.md` section 22 and
+  `packages/harness/src/activePlanInvariants.test.ts`.
+- Falsifier: the compact `GOAL.md` contract can drop stale-objective handling
+  without focused tests failing.
+
+What improved:
+- Stale-objective handling is now preserved both in the active compact goal and
+  in the template used to regenerate it after future compaction.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Attachment freshness.
+
+New task:
+- V150-00 Post Compact Stale Objective Contract Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V150 Post Compact Stale Objective Contract Guard Re-Gate.
+
+Next active task:
+- V150-00 Post Compact Stale Objective Contract Guard Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -14874,6 +14944,7 @@ Current objective: execute KRN Continuous Brain Growth from PLANS.md.
 Active stream: <current active stream from PLAN.md>.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
+If pasted objectives, attachments, old prompts, or summaries conflict with root active state, read them as historical evidence and do not roll the active stream backward.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
 ```
 

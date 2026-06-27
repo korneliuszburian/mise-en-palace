@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V148 Post Stale Attachment Objective Guard Re-Gate
-current task: V148-00 Post Stale Attachment Objective Guard Re-Gate
+active stream: V150 Post Compact Stale Objective Contract Guard Re-Gate
+current task: V150-00 Post Compact Stale Objective Contract Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,39 +43,40 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V147: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V149: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
            adapter boundary, source classification, and latest-outcome
            source-to-decision, source-to-decision skill output, and
            source-class vocabulary, verification TMPDIR, and TypeScript
-           boundary re-scan plus stale attachment objective guards complete.
+           boundary re-scan plus stale attachment objective and compact
+           stale-objective contract guards complete.
 ```
 
 ## Active Stream
 
-### V148 Post Stale Attachment Objective Guard Re-Gate
+### V150 Post Compact Stale Objective Contract Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding stale pasted objective handling
-without turning continuation recovery into prompt bureaucracy.
+Decide the next bounded task after guarding stale-objective handling in the
+compact GOAL template without turning continuation recovery into prompt bureaucracy.
 
 Current finding:
 
 ```txt
-V146 selected stale attachment objective handling because the latest continuation
-required reading a pasted objective that still named V05, while root active
-truth had already advanced to V146. V147 guarded the rule that attachments are
-evidence, not authority to roll active state backward.
+V148 selected compact contract preservation because V147 added stale objective
+handling to root `GOAL.md`, but `PLANS.md` section 22 is the template future
+compactions use to recreate compact goals. V149 guarded that template.
 ```
 
 Current action:
 
 ```txt
-Execute V148-00: select the next pattern surface from evidence. Do not broaden
-stale attachment handling into prompt bureaucracy, dashboard, or benchmark lane.
+Execute V150-00: select the next pattern surface from evidence. Do not broaden
+compact stale-objective handling into prompt bureaucracy, dashboard, or
+benchmark lane.
 ```
 
 Primary consumer:
@@ -87,7 +88,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused stale objective handling into prompt bureaucracy
+The re-gate turns focused compact-contract preservation into prompt bureaucracy
 without a concrete consumer and falsifier.
 ```
 
