@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V55 — Product Readiness Re-Gate After CI/Eval Pattern Gates
+V56 — Refresh Operator/Owner Launch Packet After CI/Eval Gates
 ```
 
 Current product loop:
@@ -95,8 +95,9 @@ V51 Second Continuous Pattern Gate Selection: complete.
 V52 Add Brain-Battle Smoke To CI: complete.
 V53 Brain-Battle CI Gate Re-Gate: complete.
 V54 Post-CI Pattern Gate Re-Gate: complete.
-active stream: V55 Product Readiness Re-Gate After CI/Eval Pattern Gates.
-current task: V55-00 — Product Readiness Re-Gate After CI/Eval Pattern Gates.
+V55 Product Readiness Re-Gate After CI/Eval Pattern Gates: complete.
+active stream: V56 Refresh Operator/Owner Launch Packet After CI/Eval Gates.
+current task: V56-00 — Refresh Operator/Owner Launch Packet After CI/Eval Gates.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
