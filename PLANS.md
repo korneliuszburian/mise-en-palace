@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V115 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, and pattern-gate active-contract slices: complete
-active stream: V116 Post Continuous Pattern Gate Active Contract Re-Gate
-current task: V116-00 Post Continuous Pattern Gate Active Contract Re-Gate
+V48..V117 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, and task-contract guard slices: complete
+active stream: V118 Post Task Contract Schema Guard Re-Gate
+current task: V118-00 Post Task Contract Schema Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V116-00 Post Continuous Pattern Gate Active Contract Re-Gate.
+V118-00 Post Task Contract Schema Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13614,6 +13614,80 @@ Next active stream:
 
 Next active task:
 - V116-00 Post Continuous Pattern Gate Active Contract Re-Gate.
+
+## Outcome 2026-06-27 V117 Task Contract Schema Guard
+
+Completed tasks:
+- V116-00 Post Continuous Pattern Gate Active Contract Re-Gate.
+- V117-00 Task Contract Schema Guard.
+
+V116 decision:
+- Do not broaden pattern intake into a Research Foundry, crawler, or source
+  archive.
+- Select task-contract continuity because `PLANS.md` already requires generated
+  tasks to carry explicit constraints, allowed/forbidden writes, verification,
+  rollback, condensation, and next-task synthesis, but no focused invariant
+  protected that contract.
+
+What changed:
+- `packages/harness/src/activePlanInvariants.test.ts` now checks that
+  `PLANS.md` keeps the Task Contract Schema for future Active Task Queue and
+  Generated Task Backlog entries.
+- The same invariant checks that the Generated Task Backlog template keeps
+  pattern surface, primary consumer, does-not-prove, and falsifier fields.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V118.
+
+Evidence:
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `docs/KRN_SOURCES.md#codex-prompting-guide`.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md#codex-prompting-guide`,
+  `docs/KRN_SOURCES.md#execplans`, and current `PLANS.md` Task Contract Schema.
+- Mechanism: Codex continuation quality depends on explicit tasks,
+  constraints, outputs, allowed/forbidden writes, verification, rollback, and
+  next-task synthesis rather than vague backlog notes.
+- KRN implication: generated KRN tasks must preserve full task contracts so
+  compaction/resume can keep pushing the product forward without slop or
+  widened scope.
+- Decision: add a focused active-plan invariant and matrix row guarding task
+  contract templates.
+- Does not prove: every historical task follows the schema, future task
+  selection is strategically correct, product readiness, or second-operator
+  readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `PLANS.md` can drop required Task Contract Schema or backlog
+  template fields without focused tests failing.
+
+What improved:
+- Future generated tasks are harder to degrade into vague TODOs.
+- Codex continuation after compaction has stronger mechanical protection around
+  constraints, verification, rollback, and next-task synthesis.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- The quality of any specific future task choice.
+
+New task:
+- V118-00 Post Task Contract Schema Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V118 Post Task Contract Schema Guard Re-Gate.
+
+Next active task:
+- V118-00 Post Task Contract Schema Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

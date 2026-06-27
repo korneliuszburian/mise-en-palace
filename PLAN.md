@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V116 Post Continuous Pattern Gate Active Contract Re-Gate
-current task: V116-00 Post Continuous Pattern Gate Active Contract Re-Gate
+active stream: V118 Post Task Contract Schema Guard Re-Gate
+current task: V118-00 Post Task Contract Schema Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,34 +43,33 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V115: revision-note, checkpoint rollup, smoke coverage, and pattern-gate
-           active-contract guards complete.
+V110..V117: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+           and task-contract active guards complete.
 ```
 
 ## Active Stream
 
-### V116 Post Continuous Pattern Gate Active Contract Re-Gate
+### V118 Post Task Contract Schema Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding that active execution surfaces keep
-the continuous pattern gate visible for non-trivial KRN work.
+Decide the next bounded task after guarding that future generated tasks keep
+explicit Codex continuation contracts.
 
 Current finding:
 
 ```txt
-V114 selected the user-requested best-pattern discipline as the next active
-surface. V115 guarded that root active execution still requires infra, harness,
-CI/eval, Codex-surface, TypeScript, target-workflow, and research/course-driven
-slices to pass source-to-decision instead of retaining decorative best-practice
-claims.
+V116 selected task-contract continuity as the next active surface. V117 guarded
+that `PLANS.md` keeps the Task Contract Schema and Generated Task Backlog
+template fields for writes, outputs, verification, acceptance, rollback,
+condensation, next-task synthesis, consumer, falsifier, and non-proof boundary.
 ```
 
 Current action:
 
 ```txt
-Execute V116-00: select the next pattern surface from evidence. Do not broaden
-pattern intake into a Research Foundry, crawler, or source archive.
+Execute V118-00: select the next pattern surface from evidence. Do not convert
+task-contract guards into a broad historical ledger rewrite.
 ```
 
 Primary consumer:
@@ -82,8 +81,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate creates research backlog or source hoarding without a concrete
-consumer, falsifier, and bounded local proof.
+The re-gate rewrites historical tasks for consistency instead of adding one
+bounded guard or product-facing improvement.
 ```
 
 ## External Input Blocker

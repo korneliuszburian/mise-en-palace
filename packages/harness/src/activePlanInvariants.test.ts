@@ -35,6 +35,12 @@ const sectionBody = (body: string, heading: string): string => {
   return body.slice(start, nextHeading === -1 ? undefined : nextHeading);
 };
 
+const expectFieldLines = (body: string, fields: string[]): void => {
+  for (const field of fields) {
+    expect(body).toMatch(new RegExp(`^${escapeRegExp(field)}:?`, "mu"));
+  }
+};
+
 describe("KRN active plan invariants", () => {
   it("keeps GOAL, PLAN, and PLANS pointed at the same active stream and task", () => {
     const goal = readRootFile("GOAL.md");
@@ -107,5 +113,46 @@ describe("KRN active plan invariants", () => {
       /source\s*->\s*mechanism\s*->\s*KRN implication\s*->\s*decision\/rejection\s*->\s*consumer\s*->\s*falsifier/u
     );
     expect(plans).toContain("Surface Consumer Matrix");
+  });
+
+  it("keeps future task contracts explicit enough for Codex continuation", () => {
+    const plans = readRootFile("PLANS.md");
+    const taskContract = sectionBody(plans, "## 9. Task Contract Schema");
+    const backlog = sectionBody(plans, "## 13. Generated Task Backlog");
+    const requiredFields = [
+      "ID",
+      "Name",
+      "Status",
+      "Goal",
+      "Product rationale",
+      "Architectural rationale",
+      "Evidence source",
+      "Official/external sources",
+      "Inputs required",
+      "Files likely touched",
+      "Allowed writes",
+      "Forbidden writes",
+      "Output requirements",
+      "Definition of Done",
+      "Verification commands",
+      "Acceptance criteria",
+      "Risk",
+      "Rollback",
+      "Condensation expectation",
+      "Next-task synthesis rule"
+    ];
+
+    expect(taskContract).toContain("Every new task appended to `Active Task Queue` or `Generated Task Backlog` must use this schema.");
+    expect(taskContract).toContain("If a task cannot satisfy the schema, it is not ready for execution.");
+    expectFieldLines(taskContract, requiredFields);
+    expect(backlog).toContain("Template:");
+    expect(backlog).toMatch(/^### <ID> — <Name>$/mu);
+    expectFieldLines(backlog, [
+      ...requiredFields.filter((field) => field !== "ID" && field !== "Name"),
+      "Pattern surface",
+      "Primary consumer",
+      "Does not prove",
+      "Falsifier"
+    ]);
   });
 });
