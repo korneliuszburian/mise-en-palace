@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V225 Post Root Plan Compactness Re-Gate
-current task: V225-00 Post Root Plan Compactness Re-Gate
+active stream: V226 Source Usefulness Outcome Feedback Gate
+current task: V226-00 Source Usefulness Outcome Feedback Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -28,7 +28,7 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V224: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V225: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate guards complete.
@@ -36,38 +36,38 @@ V100..V224: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V225 Post Root Plan Compactness Re-Gate
+### V226 Source Usefulness Outcome Feedback Gate
 
 Goal:
 
-Decide the next bounded task after root plan headroom repair without adding
-context weight back into root active surfaces.
+Inspect and either implement or explicitly defer the smallest first-class source
+usefulness outcome feedback path.
 
 Current finding:
 
 ```txt
-Root `PLAN.md` now has more headroom under the context-hygiene guard. The next
-task should come from evidence, not from filling the freed space.
+Source decision readback exists, but selected/used/helped/stale source outcome
+feedback remains unproven; this limits pattern/course/paper usefulness loops.
 ```
 
 Current action:
 
 ```txt
-Execute V225-00: inspect latest evidence and choose one bounded next task or
-explicitly defer if no immediate consumer exists.
+Execute V226-00: inspect source claim/decision/readback/feedback paths and add
+one bounded outcome-feedback repair only if the existing model can support it.
 ```
 
 Primary consumer:
 
 ```txt
-Root active state and one next-task decision in `PLANS.md`.
+Source usefulness reporting/readback or an explicit defer decision.
 ```
 
 Falsifier:
 
 ```txt
-The gate re-expands root plan, starts a forbidden surface, or ignores the latest
-evidence when selecting next work.
+The slice creates a source crawler/research archive/new subsystem, mutates
+source truth automatically, or claims product readiness from source feedback.
 ```
 
 ## Pattern Gate

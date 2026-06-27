@@ -77,11 +77,11 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V224 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V225 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, and related re-gate slices: complete
-active stream: V225 Post Root Plan Compactness Re-Gate
-current task: V225-00 Post Root Plan Compactness Re-Gate
+active stream: V226 Source Usefulness Outcome Feedback Gate
+current task: V226-00 Source Usefulness Outcome Feedback Gate
 ```
 
 Evidence already recorded in repo:
@@ -97,7 +97,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V225-00 Post Root Plan Compactness Re-Gate.
+V226-00 Source Usefulness Outcome Feedback Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17990,6 +17990,59 @@ Next active stream:
 
 Next active task:
 - V225-00 Post Root Plan Compactness Re-Gate.
+
+## Outcome 2026-06-28 V225 Post Root Plan Compactness Re-Gate
+
+Completed task:
+- V225-00 Post Root Plan Compactness Re-Gate.
+
+Decision:
+- Do not refill root `PLAN.md` after the headroom repair.
+- Select source usefulness outcome feedback as the next bounded internal gate.
+- The next task must inspect existing source claim, source decision, feedback
+  delta, and run readback paths before adding behavior.
+
+Evidence:
+- V224 reduced root `PLAN.md` to 127 lines and CI passed for commit `7cedaf0`.
+- `PLANS.md` V07 evidence says memory usefulness reached
+  `MemoryApplication outcome=helped`, while source usefulness remained
+  lineage/support and source-decision candidate visibility.
+- V07-01 improved source decision proposal/readback visibility but explicitly
+  did not prove helped/stale source application feedback.
+- Current user direction asks for best courses, papers, infrastructure patterns,
+  and senior standards to improve every stage, which requires source usefulness
+  feedback instead of source hoarding.
+
+Source-to-decision:
+- Source: V07 memory/source usefulness outcomes, V224 compactness outcome, and
+  current continuous pattern-gate rules.
+- Mechanism: retained sources can shape KRN only if future runs can report
+  whether selected source guidance was used, helped, stale, or noise.
+- KRN implication: before adding more research/paper/course intake, KRN should
+  test whether existing source usefulness can be represented and read back as
+  outcome feedback.
+- Decision: open V226 Source Usefulness Outcome Feedback Gate.
+- Does not prove: source usefulness needs a new DB table, source selection is
+  good, every retained source is useful, or product readiness.
+- Consumer: source usefulness reporting/readback or an explicit defer decision.
+- Falsifier: source inspection shows existing feedback/readback already covers
+  selected/used/helped/stale source outcomes, or a repair would require a broad
+  source subsystem.
+
+New task:
+- V226-00 Source Usefulness Outcome Feedback Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V226 Source Usefulness Outcome Feedback Gate.
+
+Next active task:
+- V226-00 Source Usefulness Outcome Feedback Gate.
 
 ## 21. Final Response Format For Codex Runs
 
