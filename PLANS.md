@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V206 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, and post-source-map re-gate slices: complete
-active stream: V207 Best-Pattern Intake Applied Proof
-current task: V207-00 Best-Pattern Intake Applied Proof
+V48..V207 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, and best-pattern intake applied proof slices: complete
+active stream: V208 Run Readback Candidate Reviewability Metadata Repair
+current task: V208-00 Run Readback Candidate Reviewability Metadata Repair
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V207-00 Best-Pattern Intake Applied Proof.
+V208-00 Run Readback Candidate Reviewability Metadata Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17078,6 +17078,72 @@ Next active stream:
 
 Next active task:
 - V207-00 Best-Pattern Intake Applied Proof.
+
+## Outcome 2026-06-28 V207 Best-Pattern Intake Applied Proof
+
+Completed task:
+- V207-00 Best-Pattern Intake Applied Proof.
+
+What changed:
+- Added
+  `docs/reviews/controlled-dogfood/2026-06-28-v207-best-pattern-intake-applied-proof/REPORT.md`.
+- The report maps retained TypeScript/pattern-intake guidance to one bounded
+  local consumer instead of creating broad research work.
+
+Evidence:
+- Source inspection found `krn run show` preserves memory candidate
+  reviewability metadata but falls back to `unknown` / prose for other
+  candidate summaries even when metadata contains reviewability labels and
+  reasons.
+- Existing tests include a source decision candidate with reviewability metadata
+  but do not require that metadata to survive into readback JSON/text.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md#designing-your-types`,
+  `docs/KRN_SOURCES.md#unions-literals-and-narrowing`,
+  `docs/runbooks/pattern-intake.md`, and `packages/cli/src/runRunShowCommand.ts`.
+- Mechanism: domain/readback types should preserve authority, lifecycle, and
+  finite review states when those states already exist in metadata.
+- KRN implication: run readback should not erase candidate reviewability for
+  non-memory candidates.
+- Decision: open a bounded run-readback repair instead of broad TypeScript
+  cleanup or research indexing.
+- Does not prove: product readiness, exhaustive TypeScript quality, or that
+  course/paper material should be copied into KRN.
+- Consumer: `packages/cli/src/runRunShowCommand.ts` and
+  `packages/cli/src/runRunShowCommand.test.ts`.
+- Falsifier: source inspection proves non-memory candidate summaries cannot
+  expose reviewability metadata without a broader model/schema change.
+
+New task:
+- V208-00 Run Readback Candidate Reviewability Metadata Repair.
+
+Task contract:
+- Preserve reviewability labels and reasons for non-memory candidates in
+  `krn run show` text and JSON output when candidate metadata already carries
+  those fields.
+- Do not change MemoryReviewGate, promotion behavior, reflection extraction,
+  activation scoring, DB schema, or persistence semantics.
+- Keep source changes restricted to the smallest CLI readback surface and
+  focused tests unless source inspection proves another owner.
+
+Verification:
+- `pnpm --filter @krn/cli test -- runRunShowCommand`
+- `pnpm typecheck`
+- `pnpm test`
+- `git diff --check`
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V208 Run Readback Candidate Reviewability Metadata Repair.
+
+Next active task:
+- V208-00 Run Readback Candidate Reviewability Metadata Repair.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V207 Best-Pattern Intake Applied Proof
-current task: V207-00 Best-Pattern Intake Applied Proof
+active stream: V208 Run Readback Candidate Reviewability Metadata Repair
+current task: V208-00 Run Readback Candidate Reviewability Metadata Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -35,7 +35,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V206: active-surface compactness, handoff, PLANS freshness,
+V100..V207: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -45,41 +45,39 @@ V100..V206: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V207 Best-Pattern Intake Applied Proof
+### V208 Run Readback Candidate Reviewability Metadata Repair
 
 Goal:
 
-Prove that best-pattern intake can drive one bounded KRN decision or repair
-without source hoarding.
+Preserve candidate reviewability metadata in `krn run show` readback.
 
 Current finding:
 
 ```txt
-V206 found active pattern surfaces already guard the source-to-decision chain,
-but the next proof should apply the gate to one concrete pattern source or local
-evidence gap and produce a consumer, falsifier, and next action.
+V207 mapped retained TypeScript pattern guidance to one local readback gap:
+non-memory candidates can carry reviewability metadata, but run readback falls
+back to unknown/prose instead of preserving labels and reasons.
 ```
 
 Current action:
 
 ```txt
-Execute V207-00: select one existing retained source, public pattern, paper,
-course page, or local report and map it to exactly one durable consumer:
-standard, skill, ADR, eval/golden candidate, memory/source candidate, CLI
-behavior, or bounded repair. Reject/defer if no consumer exists.
+Execute V208-00: update the smallest run-readback surface so candidate
+reviewability labels and reasons survive text and JSON output when metadata
+already contains them. Do not change promotion, review gates, or persistence.
 ```
 
 Primary consumer:
 
 ```txt
-One reviewable source-to-decision output with a local falsifier.
+`packages/cli/src/runRunShowCommand.ts` and focused tests.
 ```
 
 Falsifier:
 
 ```txt
-The task retains decorative research, creates a crawler/archive/backlog, or
-adopts a pattern without a consumer, falsifier, and proof/non-proof boundary.
+Source inspection proves non-memory candidate summaries cannot expose
+reviewability metadata without a broader model/schema change.
 ```
 
 ## Pattern Gate
