@@ -35,6 +35,18 @@ const sectionBody = (body: string, heading: string): string => {
   return body.slice(start, nextHeading === -1 ? undefined : nextHeading);
 };
 
+const latestOutcomeBody = (body: string): string => {
+  const finalResponseStart = body.indexOf("\n## 21. Final Response Format For Codex Runs");
+  const searchable = finalResponseStart === -1 ? body : body.slice(0, finalResponseStart);
+  const lastOutcomeStart = searchable.lastIndexOf("\n## Outcome ");
+
+  if (lastOutcomeStart === -1) {
+    throw new Error("Could not find latest PLANS outcome");
+  }
+
+  return searchable.slice(lastOutcomeStart);
+};
+
 const expectFieldLines = (body: string, fields: string[]): void => {
   for (const field of fields) {
     expect(body).toMatch(new RegExp(`^${escapeRegExp(field)}:?`, "mu"));
@@ -215,5 +227,19 @@ describe("KRN active plan invariants", () => {
     expect(finalResponse).toContain("Tasks appended to PLANS.md:");
     expect(finalResponse).toContain("Next active task:");
     expect(finalResponse).toContain("Blocked/budget-limited:");
+  });
+
+  it("keeps the latest PLANS outcome tied to a reviewable source-to-decision record", () => {
+    const plans = readRootFile("PLANS.md");
+    const latestOutcome = latestOutcomeBody(plans);
+
+    expect(latestOutcome).toContain("Source-to-decision:");
+    expect(latestOutcome).toContain("- Source:");
+    expect(latestOutcome).toContain("- Mechanism:");
+    expect(latestOutcome).toContain("- KRN implication:");
+    expect(latestOutcome).toContain("- Decision:");
+    expect(latestOutcome).toContain("- Does not prove:");
+    expect(latestOutcome).toContain("- Consumer:");
+    expect(latestOutcome).toContain("- Falsifier:");
   });
 });

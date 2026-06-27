@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V135 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, and source classification guard slices: complete
-active stream: V136 Post Source Classification Guard Re-Gate
-current task: V136-00 Post Source Classification Guard Re-Gate
+V48..V137 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, and latest-outcome source-to-decision guard slices: complete
+active stream: V138 Post Outcome Source-To-Decision Guard Re-Gate
+current task: V138-00 Post Outcome Source-To-Decision Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V136-00 Post Source Classification Guard Re-Gate.
+V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14342,6 +14342,82 @@ Next active stream:
 
 Next active task:
 - V136-00 Post Source Classification Guard Re-Gate.
+
+## Outcome 2026-06-27 V137 Latest Outcome Source-To-Decision Guard
+
+Completed tasks:
+- V136-00 Post Source Classification Guard Re-Gate.
+- V137-00 Latest Outcome Source-To-Decision Guard.
+
+V136 decision:
+- Do not broaden source classification into source archives, research crawler,
+  Research Foundry, dashboard, or benchmark lane.
+- Select latest-outcome source-to-decision completeness because every continuous
+  slice should preserve the mechanism, implication, decision, consumer, and
+  falsifier that justified the task.
+- The retained source map and pattern intake are now guarded, but the active
+  loop's newest `PLANS.md` outcome also needs a mechanical check so compaction
+  cannot lose why the latest slice exists.
+
+What changed:
+- `packages/harness/src/activePlanInvariants.test.ts` now checks the latest
+  `PLANS.md` outcome before section 21 keeps `Source-to-decision` plus Source,
+  Mechanism, KRN implication, Decision, Does not prove, Consumer, and Falsifier.
+- `docs/architecture/brain-battle-eval-matrix.md` records the latest-outcome
+  source-to-decision guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V138.
+
+Evidence:
+- `PLANS.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: user/operator direction to apply best patterns at every stage, current
+  `PLANS.md` outcome format, and `.agents/skills/source-to-decision/SKILL.md`.
+- Mechanism: the active loop only stays self-improving when the latest outcome
+  retains the source, mechanism, KRN implication, decision, non-proof boundary,
+  consumer, and falsifier that produced the next task.
+- KRN implication: compaction and continuation must preserve why the newest
+  slice was justified, not merely that it happened.
+- Decision: add focused active-plan invariant coverage for latest-outcome
+  source-to-decision completeness.
+- Does not prove: the source judgment is correct, every historical outcome is
+  complete, every future Codex run will invoke the skill, or research creates
+  product value by default.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts`, `PLANS.md`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the latest `PLANS.md` outcome can drop Source, Mechanism, KRN
+  implication, Decision, Does not prove, Consumer, or Falsifier without focused
+  tests failing.
+
+What improved:
+- The current continuous loop has stronger protection against losing the reason
+  behind the latest slice after compaction.
+- Best-pattern intake is now guarded at source map, runbook, skill, and newest
+  outcome surfaces.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Research automation, crawler, or source discovery.
+
+New task:
+- V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V138 Post Outcome Source-To-Decision Guard Re-Gate.
+
+Next active task:
+- V138-00 Post Outcome Source-To-Decision Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

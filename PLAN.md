@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V136 Post Source Classification Guard Re-Gate
-current task: V136-00 Post Source Classification Guard Re-Gate
+active stream: V138 Post Outcome Source-To-Decision Guard Re-Gate
+current task: V138-00 Post Outcome Source-To-Decision Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,37 +43,37 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V135: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V137: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
-           adapter boundary, and source classification guards complete.
+           adapter boundary, source classification, and latest-outcome
+           source-to-decision guards complete.
 ```
 
 ## Active Stream
 
-### V136 Post Source Classification Guard Re-Gate
+### V138 Post Outcome Source-To-Decision Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding durable source classification
-without turning research/course/paper intake into a source archive or broad
-research subsystem.
+Decide the next bounded task after guarding latest-outcome source-to-decision
+records without turning outcome tracking into broad research bureaucracy.
 
 Current finding:
 
 ```txt
-V134 selected durable source classification as the next bounded pattern surface.
-V135 strengthened the source-map invariant so retained KRN sources must name
-`Source class` and `Decision kind` before shaping behavior.
+V136 selected latest-outcome source-to-decision completeness as the next bounded
+pattern surface. V137 strengthened the active-plan invariant so the latest
+`PLANS.md` outcome must keep reviewable source-to-decision fields.
 ```
 
 Current action:
 
 ```txt
-Execute V136-00: select the next pattern surface from evidence. Do not broaden
-research intake into Research Foundry, source crawler, source archive, dashboard,
-or benchmark lane.
+Execute V138-00: select the next pattern surface from evidence. Do not broaden
+outcome tracking into research bureaucracy, source archive, dashboard, or
+benchmark lane.
 ```
 
 Primary consumer:
@@ -85,8 +85,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source classification into broad research collection
-or course/paper hoarding without a concrete consumer and falsifier.
+The re-gate turns focused outcome source-to-decision guarding into broad
+research bureaucracy without a concrete consumer and falsifier.
 ```
 
 ## External Input Blocker
