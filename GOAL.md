@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V172 Post ADR Chain Line-Wrap Re-Gate
+V174 Post Kernel Short-Chain Removal Re-Gate
 ```
 
 Current product loop:
@@ -37,7 +37,7 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V171: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V173: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
 task-contract, final-response, TypeScript boundary, source trust metadata,
 pattern-intake output, source location scheme, source-to-decision skill, and
 current-smoke description, Promptfoo adapter boundary, source classification,
@@ -46,8 +46,9 @@ source-class vocabulary, verification TMPDIR, and TypeScript boundary re-scan
 plus stale attachment objective and compact stale-objective contract guards
 plus progress stale-active, root PLAN pattern-gate, and brain-battle smoke
 description plus compact pattern-gate contract, continuation, kernel,
-controlled-scenario, target-infra-ADR, source-map, ADR chain, and ADR line-wrap
-guards complete. current task: V172-00 Post ADR Chain Line-Wrap Re-Gate.
+controlled-scenario, target-infra-ADR, source-map, ADR chain, ADR line-wrap,
+and kernel short-chain guards complete.
+current task: V174-00 Post Kernel Short-Chain Removal Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

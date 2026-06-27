@@ -63,13 +63,7 @@ domain model. Skill needs are `CapabilityRequirement` in core and
 
 ## Decision Rule
 
-Every retained source or pattern must pass:
-
-```text
-source -> mechanism -> KRN implication -> decision/rejection -> falsifier
-```
-
-Every retained source also needs a concrete consumer before its falsifier:
+Every retained source or pattern must pass the full chain:
 
 ```text
 source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier

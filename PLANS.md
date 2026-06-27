@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V171 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, and ADR line-wrap guard slices: complete
-active stream: V172 Post ADR Chain Line-Wrap Re-Gate
-current task: V172-00 Post ADR Chain Line-Wrap Re-Gate
+V48..V173 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, and kernel short-chain guard slices: complete
+active stream: V174 Post Kernel Short-Chain Removal Re-Gate
+current task: V174-00 Post Kernel Short-Chain Removal Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V172-00 Post ADR Chain Line-Wrap Re-Gate.
+V174-00 Post Kernel Short-Chain Removal Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15688,6 +15688,68 @@ Next active stream:
 
 Next active task:
 - V172-00 Post ADR Chain Line-Wrap Re-Gate.
+
+## Outcome 2026-06-27 V173 Kernel Short-Chain Removal Guard
+
+Completed tasks:
+- V172-00 Post ADR Chain Line-Wrap Re-Gate.
+- V173-00 Kernel Short-Chain Removal Guard.
+
+V172 decision:
+- Do not broaden ADR line-wrap preservation into Research Foundry, source
+  crawler, dashboard, or product-readiness claims.
+- Select kernel short-chain removal because `docs/KRN_KERNEL.md` is required
+  reading before edits and still stated the older no-consumer chain before the
+  corrected full chain.
+- The concrete failure mode is a future continuation reading the kernel Decision
+  Rule and treating the first shortened chain as sufficient.
+
+What changed:
+- `docs/KRN_KERNEL.md` now presents one full source-to-decision chain through
+  consumer and falsifier.
+- `packages/harness/src/activePlanInvariants.test.ts` now rejects the older
+  no-consumer chain inside the kernel Decision Rule section.
+- `docs/architecture/brain-battle-eval-matrix.md` records the kernel
+  short-chain removal guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V174.
+
+Evidence:
+- `docs/KRN_KERNEL.md` is required reading before editing.
+- Before this slice, its Decision Rule kept the shortened chain and then added a
+  second sentence requiring a concrete consumer.
+- Post V172 grep still surfaced this active required-reading hit.
+
+Source-to-decision:
+- Source: `docs/KRN_KERNEL.md` and V172 post-repair scan output.
+- Mechanism: the kernel contract shapes every future edit; if it teaches a
+  shortened rule first, future research/course/paper/practitioner evidence can
+  become accepted without a named consumer.
+- KRN implication: kernel law should state only the current full chain, not a
+  historical base chain plus correction.
+- Decision: remove the no-consumer chain from the active kernel Decision Rule
+  and guard the section.
+- Does not prove: historical ledgers should be rewritten, every future source is
+  useful, every future run applies the gate, or product readiness.
+- Consumer: `docs/KRN_KERNEL.md`,
+  `packages/harness/src/activePlanInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the kernel Decision Rule can reintroduce the shortened no-consumer
+  chain without focused tests failing.
+
+New task:
+- V174-00 Post Kernel Short-Chain Removal Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V174 Post Kernel Short-Chain Removal Re-Gate.
+
+Next active task:
+- V174-00 Post Kernel Short-Chain Removal Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

@@ -143,9 +143,13 @@ describe("KRN active plan invariants", () => {
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");
     const plans = readRootFile("PLANS.md");
+    const kernelDecisionRule = sectionBody(kernel, "## Decision Rule");
 
     expect(kernel).toContain("consumer -> falsifier");
     expect(kernel).toContain("source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier");
+    expect(kernelDecisionRule).not.toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> falsifier"
+    );
     expect(goal).toMatch(/For every non-trivial infra, harness, CI[,/]\s+eval/u);
     expect(goal).toContain("Codex-surface, TypeScript");
     expect(goal).toContain("research/paper/course-driven slice");
