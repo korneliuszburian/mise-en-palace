@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V100 Post Source Map Full Mapping Guard Re-Gate
-current task: V100-00 Post Source Map Full Mapping Guard Re-Gate
+V48..V101 continuous pattern, CI/eval, target, compactness, and re-gate slices: complete
+active stream: V102 Post Active Surface Compactness Guard Re-Gate
+current task: V102-00 Post Active Surface Compactness Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -13048,6 +13048,75 @@ Next active stream:
 
 Next active task:
 - V100-00 Post Source Map Full Mapping Guard Re-Gate.
+
+## Outcome 2026-06-27 V101 Active Surface Compactness Guard
+
+Completed tasks:
+- V100-00 Post Source Map Full Mapping Guard Re-Gate.
+- V101-00 Active Surface Compactness Guard.
+
+What changed:
+- Root `GOAL.md` was compacted back into a small current objective, external
+  boundary, operating rules, and compact-resume protocol.
+- Root `PLAN.md` was compacted back into product state, checkpoint summary,
+  current active stream, non-goals, and verification policy.
+- `PLANS.md` remains the detailed continuous ExecPlan and now records this
+  outcome instead of forcing completed-slice history into root active surfaces.
+- `packages/harness/src/contextHygieneInvariants.test.ts` now guards root
+  active surface line counts.
+- `docs/architecture/brain-battle-eval-matrix.md` now records active-surface
+  compactness as an implemented deterministic guard.
+
+Evidence:
+- `GOAL.md`.
+- `PLAN.md`.
+- `PLANS.md`.
+- `packages/harness/src/contextHygieneInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: OpenAI Cookbook ExecPlan/Goal patterns already retained in this
+  plan, plus repo evidence that compact active files had grown into completed
+  slice ledgers.
+- Mechanism: Goals should preserve current objective and continuation contract,
+  while detailed ExecPlans carry evidence, outcomes, surprises, and next-task
+  synthesis.
+- KRN implication: root active surfaces must stay cheap to reread after
+  compaction; completed history belongs in `PLANS.md`.
+- Decision: compact `GOAL.md` and `PLAN.md`, and add a context-hygiene invariant
+  that fails when either grows beyond its active-surface budget.
+- Does not prove: `PLANS.md` is small, historical evidence should be deleted,
+  the next selected task is strategically optimal, or KRN is product-ready.
+- Consumer: `packages/harness/src/contextHygieneInvariants.test.ts`.
+- Falsifier: root `GOAL.md` exceeds 130 lines, root `PLAN.md` exceeds 170
+  lines, or completed-slice ledgers return to active surfaces without failing
+  focused verification.
+
+What improved:
+- Active context size.
+- Resume cost after auto-compaction.
+- Mechanical protection against turning root active truth into a history ledger.
+
+What did not improve:
+- Product readiness.
+- `PLANS.md` size.
+- External operator proof.
+- Broad historical evidence volume.
+
+New task:
+- V102-00 Post Active Surface Compactness Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V102 Post Active Surface Compactness Guard Re-Gate.
+
+Next active task:
+- V102-00 Post Active Surface Compactness Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

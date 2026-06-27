@@ -17,148 +17,56 @@ Do not create another parallel roadmap.
 
 ## Current Product State
 
-Current readiness:
-
 ```txt
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V100 Post Source Map Full Mapping Guard Re-Gate
-current task: V100-00 Post Source Map Full Mapping Guard Re-Gate
+active stream: V102 Post Active Surface Compactness Guard Re-Gate
+current task: V102-00 Post Active Surface Compactness Guard Re-Gate
 ```
 
-Completed stream summary:
+## Compact Completed Checkpoints
+
+Detailed history stays in `PLANS.md`.
 
 ```txt
-V02-03..V02-08: complete
-V03-00..V03-06: complete
-V04-00..V04-07: complete
-V05 target-aware evidence capture repair: complete
-V06 activation / owner-file / context ROI utility: complete
-V07 memory / anti-memory / source usefulness loop: complete
-V08 skill-first workflow expansion: complete
-V09 deterministic hooks candidate decision: complete
-V10 MCP / subagent candidate gate: complete
-V11 product readiness re-gate: complete
-V12 widened alpha trial launch packet: complete
-V13 research-to-brain decision lane gate: complete
-V14 TypeScript boundary drift gate: complete
-V15 Promptfoo / Golden Behavior Role Gate: complete
-V16 Activation Relevance Evidence Gate: complete
-V17 Target Owner-File Read-Model Contract Gate: complete
-V18 Target Owner-File Contract Re-Gate / Trial Application: complete
-V19 Product Readiness Re-Gate After Owner-File Contract: complete
-V20 Real Target Observation-Only Owner-File Trial: complete
-V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
-V22 Persisted CLI DB URL Default Consistency: complete
-V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs: complete
-V24 Target Owner-File Recall Deduplication And Budget Priority: complete
-V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
-V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
-V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
-V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
-V29 TypeScript Boundary Research Application Gate: complete
-V30 Codex Surface Context-Budget Application Gate: complete
-V31 Product Readiness Re-Gate After Research And Surface Hygiene: complete
-V32 Controlled Target Repair Trial: complete
-V33 Reused Project Owner-File Refresh Repair: complete
-V34 Target Repair Re-Gate After Owner-File Refresh: complete
-V35 Target Patch Handoff Packet: complete
-V36 Target Patch Handoff Re-Gate: complete
-V37 Target Patch Lifecycle Rule Condensation: complete
-V38 Clean Target Selection Gate: complete
-V39 WILQ Clean Target Observation-Only Baseline: complete
-V40 Target Selection Freshness Rule Condensation: complete
-V41 Target Trial Availability Re-Gate: complete
-V42 WILQ Fresh Observation-Only Baseline Retry: complete
-V43 Target Stability Window Gate: complete
-V44 target evidence lifecycle/freshness fields: complete
-V45 target availability re-gate with typed lifecycle evidence: complete
-V46 target owner coordination packet: complete
-V47 internal hardening re-gate after target coordination: complete
-V48 continuous pattern source-to-decision gate: complete
-V49 first continuous pattern gate application: complete
-V50 CI action modernization re-gate: complete
-V51 second continuous pattern gate selection: complete
-V52 brain-battle smoke CI gate: complete
-V53 brain-battle CI gate re-gate: complete
-V54 post-CI pattern gate re-gate: complete
-V55 product readiness re-gate after CI/eval gates: complete
-V56 operator/owner launch packet refresh: complete
-V57 post-packet internal work re-gate: complete
-V58 pattern intake runbook: complete
-V59 first pattern intake runbook application: complete
-V60 TypeScript lifecycle union drift spot-check: complete
-V61 post-pattern intake re-gate: complete
-V62 pattern intake skill linkage: complete
-V63 post-pattern-intake linkage re-gate: complete
-V64-00 pattern gate re-entry: complete
-V64-01 pattern surface consumer matrix: complete
-V64-02 first surface-matrix pattern application: complete
-V64-03 post surface-matrix application re-gate: complete
-V65-00 TypeScript source packet application: complete
-V65-01 post TypeScript pattern application re-gate: complete
-V66-00 TypeScript boundary falsifier spot-check: complete
-V67-00 harness activation pattern application: complete
-V68-00 post harness activation pattern re-gate: complete
-V69-00 untrusted context warning pattern application: complete
-V70-00 post security trust boundary re-gate: complete
-V71-00 target-like redaction corpus repair: complete
-V72-00 post security redaction corpus re-gate: complete
-V73-00 memory promotion untrusted-source checklist: complete
-V74-00 post security memory gate re-gate: complete
-V75-00 memory promotion untrusted-source CLI readback: complete
-V76-00 post memory promotion CLI gate re-gate: complete
-V77-00 source map consumer/falsifier normalization: complete
-V78-00 post source map falsifier re-gate: complete
-V79-00 source map invariant guard: complete
-V80-00 post source map guard re-gate: complete
-V81-00 active plan invariant guard: complete
-V82-00 post active plan guard re-gate: complete
-V83-00 skill invariant guard: complete
-V84-00 post skill invariant guard re-gate: complete
-V85-00 anti-memory ID branding: complete
-V86-00 post anti-memory ID branding re-gate: complete
-V87 evidence spine ID branding: complete
-V88-00 post evidence spine ID branding re-gate: complete
-V89 source decision/rejection ID branding: complete
-V90-00 post source decision ID branding re-gate: complete
-V91 eval and policy ID branding: complete
-V92-00 post eval and policy ID branding re-gate: complete
-V93 brain-battle matrix invariant guard: complete
-V94-00 post brain-battle matrix guard re-gate: complete
-V95 context hygiene invariant guard: complete
-V96-00 post context hygiene guard re-gate: complete
-V97 active plan completion invariant guard: complete
-V98-00 post active plan completion guard re-gate: complete
-V99 source map full mapping invariant guard: complete
-V100 post source map full mapping guard re-gate: active
+V02..V47: target-aware evidence, DB replay, activation, memory/source,
+          target workflow, and controlled internal alpha hardening complete.
+V48..V63: continuous pattern source-to-decision gate, CI/eval gates,
+          operator packet refresh, and pattern intake runbook complete.
+V64..V84: pattern surface matrix, TypeScript/security trust repairs,
+          source map guard, active plan guard, and skill invariant guard complete.
+V85..V92: authority ID branding for anti-memory, evidence spine,
+          source decisions, and eval/policy surfaces complete.
+V93..V99: brain-battle matrix guard, context hygiene guard,
+          active plan completion guard, and full source-map mapping guard complete.
+V100-00: post source map full mapping guard re-gate complete.
+V101-00: active surface compactness guard complete.
 ```
 
 ## Active Stream
 
-### V100 Post Source Map Full Mapping Guard Re-Gate
+### V102 Post Active Surface Compactness Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after strengthening the retained source map
-invariant to require full source-to-decision fields.
+Decide the next bounded task after compacting root `GOAL.md` / `PLAN.md` and
+adding a guard that prevents active surfaces from growing into ledgers.
 
 Current finding:
 
 ```txt
-V98 selected a source-to-decision follow-up: the retained source map invariant
-checked consumer and falsifier but did not yet enforce the full kernel mapping.
-V99 strengthened the invariant to require mechanism, KRN implication, decision,
-consumer, falsifier, and non-proof boundary.
+V100 selected a context-budget follow-up: root active surfaces were compact in
+principle, but both files had accumulated long completed-slice ledgers. V101
+returned detailed history to PLANS.md and added a line-count invariant.
 ```
 
 Current action:
 
 ```txt
-Execute V100-00: select the next pattern surface from evidence. Do not broaden
-source-map work into source coverage expansion without a concrete consumer.
+Execute V102-00: select the next pattern surface from evidence. Do not broaden
+compactness work into deleting historical evidence; preserve detail in PLANS.md.
 ```
 
 Primary consumer:
@@ -170,30 +78,15 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens another TypeScript repair without source evidence, a bounded
-consumer, and typecheck/test proof.
+The re-gate opens another compaction task without a concrete active-context or
+resume-cost finding.
 ```
 
-### External Input Blocker
+## External Input Blocker
 
 Status: deferred boundary, not the current internal stream.
 
 V02-01 still requires real second-operator inputs:
-
-```txt
-operator:
-KRN source:
-target repo:
-DB mode:
-support boundary:
-operator transcript:
-```
-
-Do not substitute self/headless scenarios for V02-01.
-
-## V02-01 Boundary
-
-V02-01 can resume only with real second-operator inputs:
 
 ```txt
 operator:
