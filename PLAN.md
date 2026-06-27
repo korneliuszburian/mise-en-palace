@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V118 Post Task Contract Schema Guard Re-Gate
-current task: V118-00 Post Task Contract Schema Guard Re-Gate
+active stream: V120 Post Final Response Contract Guard Re-Gate
+current task: V120-00 Post Final Response Contract Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,33 +43,33 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V117: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-           and task-contract active guards complete.
+V110..V119: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+           task-contract, and final-response active guards complete.
 ```
 
 ## Active Stream
 
-### V118 Post Task Contract Schema Guard Re-Gate
+### V120 Post Final Response Contract Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding that future generated tasks keep
-explicit Codex continuation contracts.
+Decide the next bounded task after guarding that final Codex run responses keep
+proof/non-proof, command, CI, condensation, next-task, and blocker fields.
 
 Current finding:
 
 ```txt
-V116 selected task-contract continuity as the next active surface. V117 guarded
-that `PLANS.md` keeps the Task Contract Schema and Generated Task Backlog
-template fields for writes, outputs, verification, acceptance, rollback,
-condensation, next-task synthesis, consumer, falsifier, and non-proof boundary.
+V118 selected final-response continuity as the next active surface. V119 guarded
+that `PLANS.md` keeps the final response fields needed for proof/non-proof,
+commands, artifacts, commits/CI, condensation, task appends, next active task,
+and blocked/budget status.
 ```
 
 Current action:
 
 ```txt
-Execute V118-00: select the next pattern surface from evidence. Do not convert
-task-contract guards into a broad historical ledger rewrite.
+Execute V120-00: select the next pattern surface from evidence. Do not convert
+final-response guards into broad reporting bureaucracy.
 ```
 
 Primary consumer:
@@ -81,8 +81,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate rewrites historical tasks for consistency instead of adding one
-bounded guard or product-facing improvement.
+The re-gate adds more reporting structure without a concrete resume, proof, or
+operator-friction falsifier.
 ```
 
 ## External Input Blocker

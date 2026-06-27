@@ -155,4 +155,21 @@ describe("KRN active plan invariants", () => {
       "Falsifier"
     ]);
   });
+
+  it("keeps the final response contract proof-oriented", () => {
+    const plans = readRootFile("PLANS.md");
+    const finalResponse = sectionBody(plans, "## 21. Final Response Format For Codex Runs");
+
+    expect(finalResponse).toContain("Every continuation or completed slice must end with:");
+    expect(finalResponse).toContain("DB used:");
+    expect(finalResponse).toContain("Commands run:");
+    expect(finalResponse).toContain("Reports/artifacts:");
+    expect(finalResponse).toContain("Commits/CI:");
+    expect(finalResponse).toContain("What this proves:");
+    expect(finalResponse).toContain("What this does not prove:");
+    expect(finalResponse).toContain("Condensation decisions:");
+    expect(finalResponse).toContain("Tasks appended to PLANS.md:");
+    expect(finalResponse).toContain("Next active task:");
+    expect(finalResponse).toContain("Blocked/budget-limited:");
+  });
 });

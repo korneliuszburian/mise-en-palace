@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V117 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, and task-contract guard slices: complete
-active stream: V118 Post Task Contract Schema Guard Re-Gate
-current task: V118-00 Post Task Contract Schema Guard Re-Gate
+V48..V119 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, and final-response guard slices: complete
+active stream: V120 Post Final Response Contract Guard Re-Gate
+current task: V120-00 Post Final Response Contract Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V118-00 Post Task Contract Schema Guard Re-Gate.
+V120-00 Post Final Response Contract Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13688,6 +13688,74 @@ Next active stream:
 
 Next active task:
 - V118-00 Post Task Contract Schema Guard Re-Gate.
+
+## Outcome 2026-06-27 V119 Final Response Contract Guard
+
+Completed tasks:
+- V118-00 Post Task Contract Schema Guard Re-Gate.
+- V119-00 Final Response Contract Guard.
+
+V118 decision:
+- Do not rewrite historical task entries for consistency.
+- Select final-response continuity because `PLANS.md` already requires every
+  continuation or completed slice to end with proof/non-proof, command,
+  artifact, CI, condensation, next-task, and blocker fields, but no focused
+  invariant protected that resume contract.
+
+What changed:
+- `packages/harness/src/activePlanInvariants.test.ts` now checks that
+  `PLANS.md` section 21 keeps the required final response fields.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V120.
+
+Evidence:
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `.agents/skills/handoff-compact/SKILL.md`.
+
+Source-to-decision:
+- Source: existing `PLANS.md` final response contract and handoff compact skill.
+- Mechanism: long-running Codex work remains resumable only when each turn
+  reports read scope, changed files, DB use, commands, artifacts, commits/CI,
+  proof/non-proof, condensation decisions, appended tasks, next task, and
+  blockers.
+- KRN implication: the final response format is an active resume boundary, not
+  prose preference, and should be guarded against future compaction drift.
+- Decision: add a focused active-plan invariant and matrix row guarding the
+  final response contract.
+- Does not prove: every future assistant response follows the contract, the next
+  task is strategically correct, product readiness, or second-operator readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `PLANS.md` can drop proof/non-proof, command, CI, condensation,
+  next-task, or blocker fields from section 21 without focused tests failing.
+
+What improved:
+- Future handoffs are harder to degrade into vague summaries.
+- Proof/non-proof and next-task continuity are mechanically protected in the
+  detailed ExecPlan.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Whether future final responses always comply.
+
+New task:
+- V120-00 Post Final Response Contract Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V120 Post Final Response Contract Guard Re-Gate.
+
+Next active task:
+- V120-00 Post Final Response Contract Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
