@@ -11,8 +11,10 @@ import {
   targetEvidenceFromMetadata
 } from "@krn/core";
 import type {
+  CandidateReviewability,
   EvidenceCommand,
   FeedbackDelta,
+  FeedbackCandidateProposalKind,
   NormalizedEvidenceCommand,
   TargetEvidence
 } from "@krn/core";
@@ -107,19 +109,21 @@ export interface RunReadbackResource {
       eval: number;
       observation: number;
     };
-    candidates: {
-      kind: string;
-      id: string;
-      status: string;
-      summary: string;
-      reviewability: string;
-      reviewabilityReasons: string[];
-    }[];
+    candidates: RunReadbackCandidateResource[];
   }[];
   proof: {
     proves: string[];
     doesNotProve: string[];
   };
+}
+
+export interface RunReadbackCandidateResource {
+  kind: FeedbackCandidateProposalKind;
+  id: string;
+  status: string;
+  summary: string;
+  reviewability: CandidateReviewability;
+  reviewabilityReasons: string[];
 }
 
 interface ReadOnlyHarnessRuntime {
@@ -314,26 +318,137 @@ const candidateReviewabilityReasons = (
   metadata: Record<string, unknown>
 ): string[] => metadataStringList(metadata, "reviewabilityReasons");
 
+const candidateReviewabilityLabels = new Set<CandidateReviewability>([
+  "ready",
+  "needs_more_evidence",
+  "too_vague",
+  "duplicate",
+  "not_useful",
+  "unknown"
+]);
+
 const candidateReviewability = (
   metadata: Record<string, unknown>
-): string => metadataString(metadata, "reviewability") ?? "unknown";
+): CandidateReviewability => {
+  const value = metadataString(metadata, "reviewability");
+
+  return value !== undefined && candidateReviewabilityLabels.has(value as CandidateReviewability)
+    ? value as CandidateReviewability
+    : "unknown";
+};
+
+const objectListMetadata = (
+  metadata: Record<string, unknown>,
+  key: string
+): Record<string, unknown>[] => {
+  const value = metadata[key];
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((item): item is Record<string, unknown> =>
+    typeof item === "object" && item !== null && !Array.isArray(item)
+  );
+};
+
+const candidateResource = (input: {
+  kind: FeedbackCandidateProposalKind;
+  id: string;
+  status: string | undefined;
+  summary: string;
+  metadata: Record<string, unknown>;
+}): RunReadbackCandidateResource => {
+  const reviewability = candidateReviewability(input.metadata);
+  const reviewabilityReasons = candidateReviewabilityReasons(input.metadata);
+
+  return {
+    kind: input.kind,
+    id: input.id,
+    status: input.status ?? "unknown",
+    summary: input.summary,
+    reviewability,
+    reviewabilityReasons:
+      reviewabilityReasons.length > 0
+        ? reviewabilityReasons
+        : ["Reviewability reasons were not present in candidate metadata."]
+  };
+};
+
+const metadataCandidateResources = (
+  metadata: Record<string, unknown>,
+  key: string,
+  kind: FeedbackCandidateProposalKind,
+  summaryField: string
+): RunReadbackCandidateResource[] =>
+  objectListMetadata(metadata, key).flatMap((item) => {
+    const id = metadataString(item, "id");
+    const summary = metadataString(item, summaryField) ?? metadataString(item, "summary");
+
+    if (id === undefined || summary === undefined) {
+      return [];
+    }
+
+    return [candidateResource({
+      kind,
+      id,
+      status: metadataString(item, "status"),
+      summary,
+      metadata: item
+    })];
+  });
+
+const runReadbackCandidateResources = (
+  feedback: FeedbackDelta
+): RunReadbackCandidateResource[] => [
+  ...feedback.memoryCandidates.map((candidate) => candidateResource({
+    kind: "memory_candidate",
+    id: candidate.id,
+    status: candidate.status,
+    summary: candidate.summary,
+    metadata: candidate.metadata
+  })),
+  ...metadataCandidateResources(
+    feedback.metadata,
+    "sourceClaimCandidates",
+    "source_claim_candidate",
+    "claim"
+  ),
+  ...feedback.sourceDecisions.map((decision) => candidateResource({
+    kind: "source_decision_candidate",
+    id: decision.id,
+    status: decision.status,
+    summary: decision.decision,
+    metadata: decision.metadata
+  })),
+  ...metadataCandidateResources(
+    feedback.metadata,
+    "antiMemoryCandidates",
+    "anti_memory_candidate",
+    "rejectedClaim"
+  ),
+  ...feedback.evalCandidates.map((candidate) => candidateResource({
+    kind: "eval_candidate",
+    id: candidate.id,
+    status: candidate.status,
+    summary: candidate.title,
+    metadata: candidate.metadata
+  })),
+  ...metadataCandidateResources(
+    feedback.metadata,
+    "observationCandidates",
+    "observation_candidate",
+    "summary"
+  )
+];
 
 const renderFeedbackDelta = (feedback: FeedbackDelta): string[] => {
   const summary = summarizeFeedbackCandidateProposals(feedback);
-  const memoryCandidateDetails = feedback.memoryCandidates.map((candidate) => [
-    `  - memory_candidate:${candidate.id} | status=${candidate.status} | ${candidate.summary}`,
-    `    reviewability: ${metadataString(candidate.metadata, "reviewability") ?? "unknown"}`
-  ]).flat();
-  const otherCandidateDetails = summary.candidates
-    .filter((candidate) => candidate.kind !== "memory_candidate")
-    .flatMap((candidate) => [
-      `  - ${candidate.kind}:${candidate.id} | status=${candidate.status ?? "unknown"} | ${candidate.summary}`,
-      "    reviewability: see candidate metadata or source evidence"
-    ]);
-  const candidateDetails = [
-    ...memoryCandidateDetails,
-    ...otherCandidateDetails
-  ];
+  const candidateDetails = runReadbackCandidateResources(feedback).flatMap((candidate) => [
+    `  - ${candidate.kind}:${candidate.id} | status=${candidate.status} | ${candidate.summary}`,
+    `    reviewability: ${candidate.reviewability}`,
+    ...candidate.reviewabilityReasons.map((reason) => `    reviewabilityReason: ${reason}`)
+  ]);
 
   return [
     `- ${feedback.id}: status=${feedback.status}`,
@@ -431,26 +546,6 @@ export const buildRunReadbackResource = (
   })),
   feedbackDeltas: aggregate.feedbackDeltas.map((feedback) => {
     const summary = summarizeFeedbackCandidateProposals(feedback);
-    const memoryCandidates = feedback.memoryCandidates.map((candidate) => ({
-      kind: "memory_candidate",
-      id: candidate.id,
-      status: candidate.status,
-      summary: candidate.summary,
-      reviewability: candidateReviewability(candidate.metadata),
-      reviewabilityReasons: candidateReviewabilityReasons(candidate.metadata)
-    }));
-    const otherCandidates = summary.candidates
-      .filter((candidate) => candidate.kind !== "memory_candidate")
-      .map((candidate) => ({
-        kind: candidate.kind,
-        id: candidate.id,
-        status: candidate.status ?? "unknown",
-        summary: candidate.summary,
-        reviewability: "unknown",
-        reviewabilityReasons: [
-          "Reviewability was not present in the persisted candidate summary."
-        ]
-      }));
 
     return {
       id: feedback.id,
@@ -465,10 +560,7 @@ export const buildRunReadbackResource = (
         eval: summary.counts.evalCandidates,
         observation: summary.counts.observationCandidates
       },
-      candidates: [
-        ...memoryCandidates,
-        ...otherCandidates
-      ]
+      candidates: runReadbackCandidateResources(feedback)
     };
   }),
   proof: {

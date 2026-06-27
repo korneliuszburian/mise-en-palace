@@ -242,6 +242,8 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("source_decision_candidate:source-decision-candidate-1");
     expect(result.stdout).toContain("source_decision=1");
     expect(result.stdout).toContain("reviewability: needs_more_evidence");
+    expect(result.stdout).toContain("reviewabilityReason: Missing source claim.");
+    expect(result.stdout).not.toContain("reviewability: see candidate metadata or source evidence");
     expect(result.stdout).toContain("What This Does Not Prove:");
     expect(closed).toBe(true);
   });
@@ -334,7 +336,9 @@ describe("runRunShowCommand", () => {
           kind: "source_decision_candidate",
           id: "source-decision-candidate-1",
           status: "defer",
-          summary: "Review changed files for source graph decision updates."
+          summary: "Review changed files for source graph decision updates.",
+          reviewability: "needs_more_evidence",
+          reviewabilityReasons: ["Missing source claim."]
         }]
       }],
       proof: {

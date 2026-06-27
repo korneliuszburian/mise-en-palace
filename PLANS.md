@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V207 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, and best-pattern intake applied proof slices: complete
-active stream: V208 Run Readback Candidate Reviewability Metadata Repair
-current task: V208-00 Run Readback Candidate Reviewability Metadata Repair
+V48..V208 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, and run-readback reviewability repair slices: complete
+active stream: V209 Post Run Readback Reviewability Repair Re-Gate
+current task: V209-00 Post Run Readback Reviewability Repair Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V208-00 Run Readback Candidate Reviewability Metadata Repair.
+V209-00 Post Run Readback Reviewability Repair Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17144,6 +17144,59 @@ Next active stream:
 
 Next active task:
 - V208-00 Run Readback Candidate Reviewability Metadata Repair.
+
+## Outcome 2026-06-28 V208 Run Readback Candidate Reviewability Metadata Repair
+
+Completed task:
+- V208-00 Run Readback Candidate Reviewability Metadata Repair.
+
+What changed:
+- `packages/cli/src/runRunShowCommand.ts` now builds a typed
+  `RunReadbackCandidateResource` for memory and non-memory candidates.
+- `krn run show` text output now renders `reviewability` plus
+  `reviewabilityReason` lines for candidates when metadata carries them.
+- `krn run show --format json` now preserves reviewability labels and reasons
+  for source-decision candidates instead of collapsing them to `unknown`.
+- `packages/cli/src/runRunShowCommand.test.ts` now guards the source-decision
+  candidate case and rejects the old prose fallback.
+
+Evidence:
+- Focused CLI run-show tests passed.
+- Workspace typecheck passed.
+- Full workspace tests passed.
+- `git diff --check` passed.
+
+Source-to-decision:
+- Source: V207 report, `docs/KRN_SOURCES.md#designing-your-types`,
+  `docs/KRN_SOURCES.md#unions-literals-and-narrowing`, and
+  `packages/cli/src/runRunShowCommand.ts`.
+- Mechanism: operator readback types should preserve authority and finite
+  review states when the persisted candidate metadata already includes them.
+- KRN implication: candidate reviewability must survive readback across memory
+  and non-memory candidate surfaces.
+- Decision: preserve existing candidate reviewability metadata in run readback
+  text/JSON without changing review gates or persistence.
+- Does not prove: product readiness, candidate quality at scale, or that every
+  candidate type has ideal metadata.
+- Consumer: `packages/cli/src/runRunShowCommand.ts` and
+  `packages/cli/src/runRunShowCommand.test.ts`.
+- Falsifier: a future `krn run show` readback with metadata-backed non-memory
+  candidate reviewability renders `unknown` or hides reasons while tests pass.
+
+New task:
+- V209-00 Post Run Readback Reviewability Repair Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V209 Post Run Readback Reviewability Repair Re-Gate.
+
+Next active task:
+- V209-00 Post Run Readback Reviewability Repair Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

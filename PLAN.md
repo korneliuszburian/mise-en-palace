@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V208 Run Readback Candidate Reviewability Metadata Repair
-current task: V208-00 Run Readback Candidate Reviewability Metadata Repair
+active stream: V209 Post Run Readback Reviewability Repair Re-Gate
+current task: V209-00 Post Run Readback Reviewability Repair Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -35,7 +35,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V207: active-surface compactness, handoff, PLANS freshness,
+V100..V208: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -45,39 +45,40 @@ V100..V207: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V208 Run Readback Candidate Reviewability Metadata Repair
+### V209 Post Run Readback Reviewability Repair Re-Gate
 
 Goal:
 
-Preserve candidate reviewability metadata in `krn run show` readback.
+Select the next bounded task after preserving run-readback candidate
+reviewability metadata.
 
 Current finding:
 
 ```txt
-V207 mapped retained TypeScript pattern guidance to one local readback gap:
-non-memory candidates can carry reviewability metadata, but run readback falls
-back to unknown/prose instead of preserving labels and reasons.
+V208 made `krn run show` preserve existing reviewability labels and reasons for
+memory and non-memory candidate output without changing promotion behavior,
+review gates, persistence, or DB schema.
 ```
 
 Current action:
 
 ```txt
-Execute V208-00: update the smallest run-readback surface so candidate
-reviewability labels and reasons survive text and JSON output when metadata
-already contains them. Do not change promotion, review gates, or persistence.
+Execute V209-00: select the next bounded evidence-backed task from the V207/V208
+evidence. Do not broaden into TypeScript cleanup, research indexing, dashboard,
+worker runtime, activation rewrite, or product-readiness claim.
 ```
 
 Primary consumer:
 
 ```txt
-`packages/cli/src/runRunShowCommand.ts` and focused tests.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-Source inspection proves non-memory candidate summaries cannot expose
-reviewability metadata without a broader model/schema change.
+The re-gate turns one readback repair into broad source/docs churn or feature
+momentum without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate
