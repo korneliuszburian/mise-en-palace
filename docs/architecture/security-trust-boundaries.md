@@ -44,6 +44,7 @@ Not reviewed in this slice:
 | Memory promotion | `MemoryReviewGate` requires review, source lineage/application guidance, candidate evidence provenance, evidence refs, rejects `default_template`, and requires an untrusted-source review ref for non-trusted source lineage. | Promotion is explicit; `krn memory candidate promote` accepts and renders `--untrusted-source-review-ref`; observe/reflect do not mutate Memory Core. | Human reviewer can still make a bad judgment after the checklist. | Keep untrusted-source review metadata covered by CLI and memory gate tests. |
 | Reflection candidates | Reflection writer keeps candidate metadata and reviewability; policy candidates remain unsupported; eval candidates remain proposal-only. | Candidate-only contract; no automatic Memory Core mutation. | Candidate writer can create source claims if repository and artifact are supplied, so source claim review remains important. | Keep source claims proposed and require source decision review before use as authority. |
 | Codex adapter | Brief renderer includes context inclusions, untrusted-context warnings, exclusions, source claims used, memory records used, tool boundaries, evidence contract, hooks, and does-not-prove. | Adapter does not invoke Codex, mutate memory, or create MCP resources. | Warning is trust-tier based and does not prove prompt-injection resistance. | Keep deterministic warning covered by Codex adapter tests; expand only with target evidence. |
+| Codex permission profile | Official Codex permissions docs separate filesystem profiles, network rules, local/private network guards, sandbox mode, and approval policy. | `docs/KRN_SOURCES.md#permissions-and-security` retains the source; root plans defer MCP/hooks/workers/connectors/target writes unless a bounded task authorizes them. | Future surfaces could widen local/network/tool authority through stale sandbox settings, broad `danger-full-access`, or unscoped network/local bindings. | Any future MCP, hook, worker executor, connector, or target-write slice must state its permission profile, network posture, approval mode, allowed writes, rollback, and falsifier before implementation. |
 | Workers/API/MCP/dashboard | Not built. | Package boundary docs forbid treating absent surfaces as product proof. | Future interfaces could bypass read/propose/write unless designed over typed read models and policy gates. | Keep deferred until E-00/E-01/G gates are satisfied. |
 
 ## Source-To-Decision Entries
@@ -96,6 +97,21 @@ consumer: E-01 policy gate design, Codex adapter.
 falsifier: Codex brief renders untrusted external text without warning labels once target-repo alpha starts.
 ```
 
+```yaml
+source_id: codex-permissions-and-security
+title: Codex permission profile boundary
+url_or_ref: docs/KRN_SOURCES.md#permissions-and-security
+trust_tier: high
+source_class: official docs
+mechanism: Codex separates filesystem permissions, network policy, sandbox mode, and approval policy; permission profiles replace older sandbox settings when one reusable filesystem/network posture is needed.
+krn_implication: future KRN tool or target-write surfaces must describe local authority explicitly instead of assuming the current session posture is safe.
+decision_kind: adopt
+decision: use Codex permissions as the trust-boundary gate for future MCP, hook, worker executor, connector, and target-write slices; do not mix permission profiles and legacy sandbox settings in one active config path.
+does_not_prove: broad access is acceptable for speed, current KRN is product-ready, or hidden semantic hooks/MCP/workers should be built now.
+consumer: this security/trust-boundary document.
+falsifier: a future KRN surface grants broader filesystem, network, MCP, hook, connector, worker, or target-repo write authority without explicit permission profile, approval mode, rollback, and proof/non-proof boundary.
+```
+
 ## Threats And Required Follow-Up
 
 | ID | Threat | Current severity | Existing evidence | Required action |
@@ -105,6 +121,7 @@ falsifier: Codex brief renders untrusted external text without warning labels on
 | E00-T3 | Operator-reported command evidence is overtrusted. | medium | Evidence commands carry provenance and `doesNotProve`; readback shows proof/non-proof. | Keep review burden readback; do not add hidden execution without allowlist/output refs. |
 | E00-T4 | Memory promotion accepts poisoned or weakly sourced candidates. | reduced after V73 | Review gate rejects missing evidence/source lineage, default-template proof, and untrusted source lineage without `untrustedSourceReviewRef`. | Keep checklist covered by memory gate tests. |
 | E00-T5 | Future worker/API/MCP/dashboard bypasses read/propose/write boundaries. | high if built prematurely | Package boundaries and PLAN defer these surfaces. | Keep deferred until read-only boundary proof and policy gates exist. |
+| E00-T6 | Future Codex-surface expansion widens filesystem, network, local/private, MCP, hook, connector, worker, or target-write authority without a named permission posture. | high if built prematurely | Official Codex permissions source is retained; this document now maps the mechanism to a single consumer and falsifier. | Require explicit permission profile, network posture, approval mode, allowed writes, rollback, and proof/non-proof boundary before any such slice starts. |
 
 ## Security Posture Verdict
 

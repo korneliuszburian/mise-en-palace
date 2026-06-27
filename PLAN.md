@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V222 Security Pattern Intake Candidate Gate
-current task: V222-00 Security Pattern Intake Candidate Gate
+active stream: V223 Post Security Boundary Alignment Re-Gate
+current task: V223-00 Post Security Boundary Alignment Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -35,50 +35,50 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V214: active-surface compactness, handoff, PLANS freshness,
+V100..V222: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
            pattern-gate guards, onboarding current-state re-gate, and onboarding
-           plus state doctrine repair guards complete.
+           plus state doctrine, source-map, Promptfoo, CI, infra, worker, and
+           security permission-boundary repair guards complete.
 ```
 
 ## Active Stream
 
-### V222 Security Pattern Intake Candidate Gate
+### V223 Post Security Boundary Alignment Re-Gate
 
 Goal:
 
-Select one bounded security/permissions/trust-boundary pattern intake task or
-reject security intake for lack of immediate consumer.
+Decide the next highest-ROI bounded task after security permission-boundary
+alignment, without starting MCP, hooks, workers, connectors, or target writes.
 
 Current finding:
 
 ```txt
-Worker-boundary source intake is aligned and guarded. The next high-risk
-surface is security and permissions, especially before any future MCP, hooks,
-workers, connectors, or target-repo write expansion.
+Codex permissions/security source is now mapped into the security trust-boundary
+consumer and guarded. This strengthens future external/runtime-surface gates but
+does not authorize any new surface.
 ```
 
 Current action:
 
 ```txt
-Execute V222-00: inspect current security/trust sources and choose one bounded
-source decision, lab-test, or rejection.
+Execute V223-00: inspect the latest outcome and choose one bounded next task or
+explicitly defer if no immediate consumer exists.
 ```
 
 Primary consumer:
 
 ```txt
-One security source-to-decision output with exactly one consumer or an explicit
-rejection.
+Root active state and one next-task decision in PLANS.md.
 ```
 
 Falsifier:
 
 ```txt
-The gate starts MCP/hooks/workers/connectors or retains decorative security
-sources without a consumer/falsifier.
+The gate starts MCP/hooks/workers/connectors/target writes or treats permission
+source alignment as product/security readiness.
 ```
 
 ## Pattern Gate

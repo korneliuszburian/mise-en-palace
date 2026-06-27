@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V221 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, post-observational-memory source re-gate, infra pattern intake, worker-boundary ADR alignment, and post-worker-boundary alignment re-gate slices: complete
-active stream: V222 Security Pattern Intake Candidate Gate
-current task: V222-00 Security Pattern Intake Candidate Gate
+V48..V222 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, brain-battle smoke proof, post-brain-battle-smoke re-gate, Promptfoo smoke proof, post-Promptfoo re-gate, CI visibility lookup normalization, observational-memory source-intake, post-observational-memory source re-gate, infra pattern intake, worker-boundary ADR alignment, post-worker-boundary alignment re-gate, and security permission-boundary alignment slices: complete
+active stream: V223 Post Security Boundary Alignment Re-Gate
+current task: V223-00 Post Security Boundary Alignment Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V222-00 Security Pattern Intake Candidate Gate.
+V223-00 Post Security Boundary Alignment Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17826,6 +17826,68 @@ Next active stream:
 
 Next active task:
 - V222-00 Security Pattern Intake Candidate Gate.
+
+## Outcome 2026-06-28 V222 Security Pattern Intake Candidate Gate
+
+Completed task:
+- V222-00 Security Pattern Intake Candidate Gate.
+
+Decision:
+- Adopt the retained OpenAI Codex permissions/security source as a security
+  trust-boundary gate, not as permission to build new runtime/tool surfaces.
+- Align `docs/architecture/security-trust-boundaries.md` with
+  `docs/KRN_SOURCES.md#permissions-and-security`.
+- Add a focused harness invariant so future MCP, hook, worker executor,
+  connector, or target-write slices must carry an explicit permission profile,
+  network posture, approval mode, allowed writes, rollback, and falsifier before
+  implementation.
+
+Evidence:
+- Fresh Codex manual fetch wrote
+  `/home/krn/.cache/openai-docs-cache/codex-manual.md`.
+- Manual sections `Agent approvals & security`, `Permissions`, and `Sandbox`
+  describe sandbox mode, approval policy, permission profiles, filesystem rules,
+  network posture, local/private network guards, and the permission-profile
+  migration boundary.
+- `docs/KRN_SOURCES.md` already retained `Permissions And Security` as a
+  high-trust official-docs source with consumer and falsifier.
+- `docs/architecture/security-trust-boundaries.md` now carries
+  `source_id: codex-permissions-and-security`.
+- `packages/harness/src/securityTrustBoundaryInvariants.test.ts` guards the
+  source-map/security-boundary alignment and future surface preconditions.
+
+Source-to-decision:
+- Source: official Codex permissions/security documentation and retained source
+  map entry.
+- Mechanism: Codex separates filesystem permissions, network policy, sandbox
+  mode, and approval policy; permission profiles replace older sandbox settings
+  when a reusable filesystem/network posture is needed.
+- KRN implication: future KRN tool or target-write surfaces must describe local
+  authority explicitly instead of inheriting the current shell/session posture.
+- Decision: use Codex permissions as the trust-boundary gate for future MCP,
+  hook, worker executor, connector, and target-write slices.
+- Does not prove: product readiness, public security readiness, or that broad
+  access is acceptable for speed.
+- Consumer: `docs/architecture/security-trust-boundaries.md` and
+  `packages/harness/src/securityTrustBoundaryInvariants.test.ts`.
+- Falsifier: a future surface grants broader filesystem, network, MCP, hook,
+  connector, worker, or target-repo write authority without explicit permission
+  profile, approval mode, rollback, and proof/non-proof boundary.
+
+New task:
+- V223-00 Post Security Boundary Alignment Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V223 Post Security Boundary Alignment Re-Gate.
+
+Next active task:
+- V223-00 Post Security Boundary Alignment Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
