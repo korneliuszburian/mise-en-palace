@@ -42,4 +42,24 @@ describe("KRN context hygiene invariants", () => {
 
     expect(activeTruth).not.toMatch(/^V\d{3,}-00.*complete\.$/mu);
   });
+
+  it("keeps onboarding aligned with current controlled-internal-alpha state", () => {
+    const onboarding = readRootFile("docs/KRN_ONBOARDING.md");
+
+    expect(onboarding).toContain("controlled-internal-alpha");
+    expect(onboarding).toContain("not product-ready");
+    expect(onboarding).toContain("not widened internal alpha");
+    expect(onboarding).toContain("GOAL.md` / `PLAN.md");
+    expect(onboarding).toContain("PLANS.md");
+    expect(onboarding).toContain("source-to-decision and pattern-intake gates");
+    expect(onboarding).toContain("DB-backed replay and smoke paths");
+    expect(onboarding).toContain("External second-operator proof remains blocked/deferred");
+    expect(onboarding).toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
+    );
+
+    expect(onboarding).not.toContain("This repo currently contains only Commit 0/1 surfaces");
+    expect(onboarding).not.toContain("krn context build");
+    expect(onboarding).not.toContain("krn review capture");
+  });
 });

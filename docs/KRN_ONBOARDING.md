@@ -9,17 +9,26 @@
 Do not start from `docs/materials/` unless the task is source audit,
 reconciliation, or doctrine recovery.
 
-## Bootstrap State
+## Current State
 
-This repo currently contains only Commit 0/1 surfaces:
+This repo is past bootstrap. It is a controlled-internal-alpha KRN workspace for
+technical operators, not product-ready and not widened internal alpha.
 
-- kernel contract;
-- raw source quarantine;
-- source map;
-- pattern selection;
-- ADRs;
-- repo-local skills;
-- one TypeScript critic subagent.
+Current durable surfaces include:
+
+- compact root `GOAL.md` / `PLAN.md` active truth;
+- detailed continuous execution in `PLANS.md`;
+- kernel contract and raw source quarantine;
+- source-to-decision and pattern-intake gates;
+- repo-local skills for repeated KRN workflows;
+- store-backed memory/source/evidence/review primitives;
+- DB-backed replay and smoke paths;
+- target-repo testing guidance;
+- brain-battle/golden behavior guards;
+- TypeScript boundary and skill invariants.
+
+External second-operator proof remains blocked/deferred until real operator
+inputs and a transcript exist.
 
 ## How To Work Here
 
@@ -34,16 +43,22 @@ This repo currently contains only Commit 0/1 surfaces:
 
 ## First Dogfood Path
 
-The later dogfood path is:
+Use the current active stream in root `PLAN.md`; do not start from an old
+dogfood recipe. A normal KRN-on-KRN slice now follows:
 
 ```text
-krn context build --task "add doctor command"
-Codex implements a small doctor command
-typecheck/test
-krn review capture
-memory/source/eval candidates
-handoff-compact
+read active GOAL.md / PLAN.md / PLANS.md
+apply the relevant skill and pattern gate
+make one bounded repair or guard
+run focused verification plus typecheck/test when source changes
+capture evidence or record proof/non-proof boundaries
+append outcome and next task to PLANS.md
+commit, push, and check CI when relevant
 ```
 
-Do not start this path until the TypeScript spine and typed primitives exist.
+If the work depends on courses, papers, official docs, practitioner writing,
+target evidence, or local reports, route it through:
 
+```text
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
+```

@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V195 Onboarding Current-State Repair
-current task: V195-00 Onboarding Current-State Repair
+active stream: V196 Post Onboarding Current-State Re-Gate
+current task: V196-00 Post Onboarding Current-State Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,48 +39,49 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V194: active-surface compactness, handoff, PLANS freshness,
+V100..V195: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
-           pattern-gate guards and onboarding current-state re-gate complete.
+           pattern-gate guards, onboarding current-state re-gate, and onboarding
+           repair guard complete.
 ```
 
 ## Active Stream
 
-### V195 Onboarding Current-State Repair
+### V196 Post Onboarding Current-State Re-Gate
 
 Goal:
 
-Repair stale operator-facing onboarding so it reflects the current controlled
-internal-alpha KRN state instead of Commit 0/1 bootstrap language.
+Decide the next bounded task after repairing and guarding current onboarding.
 
 Current finding:
 
 ```txt
-V194 found the pattern-intake and source-to-decision gates are already guarded,
-but docs/KRN_ONBOARDING.md still claims the repo contains only Commit 0/1
-surfaces and shows old dogfood commands.
+V195 updated docs/KRN_ONBOARDING.md and added a context hygiene guard so
+onboarding stays aligned with controlled-internal-alpha state and the pattern
+gate.
 ```
 
 Current action:
 
 ```txt
-Execute V195-00: update docs/KRN_ONBOARDING.md to current-state orientation and
-add a focused invariant so stale bootstrap/dogfood claims do not return.
+Execute V196-00: select the next bounded evidence-backed task. Do not broaden
+onboarding cleanup into a docs sweep, Research Foundry, source crawler,
+dashboard, product-readiness claim, or broad architecture rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-docs/KRN_ONBOARDING.md and a focused invariant.
+One next-task/defer decision.
 ```
 
 Falsifier:
 
 ```txt
-Onboarding can again claim Commit 0/1-only state or route first dogfood through
-stale commands while tests pass.
+The re-gate turns one onboarding repair into broad docs churn without a concrete
+consumer and falsifier.
 ```
 
 ## Pattern Gate

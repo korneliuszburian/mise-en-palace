@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V195 Onboarding Current-State Repair
+V196 Post Onboarding Current-State Re-Gate
 ```
 
 Current product loop:
@@ -37,21 +37,10 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V194: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-task-contract, final-response, TypeScript boundary, source trust metadata,
-pattern-intake output, source location scheme, source-to-decision skill, and
-current-smoke description, Promptfoo adapter boundary, source classification,
-latest-outcome source-to-decision, source-to-decision skill output, and
-source-class vocabulary, verification TMPDIR, and TypeScript boundary re-scan
-plus stale attachment objective and compact stale-objective contract guards
-plus progress stale-active, root PLAN pattern-gate, and brain-battle smoke
-description plus compact pattern-gate contract, continuation, kernel,
-controlled-scenario, target-infra-ADR, source-map, ADR chain, ADR line-wrap,
-kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata,
-source-to-decision skill metadata, evidence review skill provenance, Codex
-adapter skill metadata, activation skill owner-file metadata, brain store skill
-metadata, target repo skill metadata, TypeScript skill guard, and onboarding current-state re-gate complete.
-current task: V195-00 Onboarding Current-State Repair.
+V110..V195: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
+target, evidence, compactness, smoke, onboarding current-state, and related
+regression guards complete; details stay in PLANS.md.
+current task: V196-00 Post Onboarding Current-State Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
