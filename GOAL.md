@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V38 — Clean Target Selection Gate
+V39 — WILQ Clean Target Observation-Only Baseline
 ```
 
 Current product loop:
@@ -78,8 +78,9 @@ V34 Target Repair Re-Gate After Owner-File Refresh: complete.
 V35 Target Patch Handoff Packet: complete.
 V36 Target Patch Handoff Re-Gate: complete.
 V37 Target Patch Lifecycle Rule Condensation: complete.
-active stream: V38 Clean Target Selection Gate.
-current task: V38-00 — Clean Target Selection Gate.
+V38 Clean Target Selection Gate: complete.
+active stream: V39 WILQ Clean Target Observation-Only Baseline.
+current task: V39-00 — WILQ Clean Target Observation-Only Baseline.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

@@ -63,12 +63,13 @@ V34 Target Repair Re-Gate After Owner-File Refresh: complete
 V35 Target Patch Handoff Packet: complete
 V36 Target Patch Handoff Re-Gate: complete
 V37 Target Patch Lifecycle Rule Condensation: complete
+V38 Clean Target Selection Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V38 Clean Target Selection Gate
-current task: V38-00 Clean Target Selection Gate
+active stream: V39 WILQ Clean Target Observation-Only Baseline
+current task: V39-00 WILQ Clean Target Observation-Only Baseline
 ```
 
 Evidence already recorded in repo:
@@ -83,9 +84,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V37 encoded target patch lifecycle handling into the target-repo workflow. The
-next task must decide whether there is another clean/safe target proof path or
-whether target owner/operator action is the honest blocker.
+V38 selected `wilq-seo` as the next clean/safe target path. The next task must
+run an observation-only baseline before any bounded target repair.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3574,7 +3574,7 @@ Outcome:
 
 ### V38-00 — Clean Target Selection Gate
 
-Status: active
+Status: complete
 
 Goal: decide whether another clean/safe target proof path exists without
 touching the unresolved `krn-elektroinstal-ogar` FAQ patch.
@@ -3635,6 +3635,89 @@ Acceptance criteria:
 - no target writes;
 - no same-target repair while FAQ patch remains unresolved;
 - no fake V02-01;
+- next active task is explicit.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v38-clean-target-selection-gate/REPORT.md`.
+- Active repo status inventory.
+- `wilq-seo` status, README, AGENTS, package scripts.
+
+Outcome:
+
+- V38 selected `/home/krn/coding/krn/active/wilq-seo` as the next clean/safe
+  target path.
+- V38 rejected same-target `krn-elektroinstal-ogar` repair while FAQ patch is
+  `handed_off_unresolved`.
+- V38 promoted an observation-only WILQ baseline before any target repair.
+
+### V39-00 — WILQ Clean Target Observation-Only Baseline
+
+Status: active
+
+Goal: run an observation-only baseline on the clean `wilq-seo` target before
+any bounded repair.
+
+Product rationale: KRN should prove it can read and plan against another real
+clean target without touching it before attempting another controlled repair.
+
+Architectural rationale: target baseline separates discovery from repair and
+keeps target owner/context rules visible.
+
+Evidence source: V38 selected `wilq-seo` as clean/safe target; target
+`AGENTS.md`, README, package scripts, and active plans.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- `wilq-seo` target status before/after;
+- `wilq-seo/AGENTS.md`;
+- `wilq-seo/README.md`;
+- `wilq-seo/package.json`;
+- `wilq-seo/PLAN.md` and `wilq-seo/PLANS.md` if needed;
+- optional non-destructive command list, but do not run heavy verification
+  unless it is explicitly useful and reported.
+
+Files likely touched:
+
+- V39 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans only.
+
+Forbidden writes:
+
+- `wilq-seo` edits;
+- target commit/push/reset/clean;
+- target repair;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim;
+- broad benchmark lane.
+
+Output requirements:
+
+- mode: observation-only;
+- target dirty before/after;
+- target patch lifecycle;
+- command evidence and proof/non-proof boundaries;
+- candidate owner files or missing owner-file read-model note;
+- decision whether a bounded WILQ repair trial is safe later.
+
+Definition of Done: V39 records a WILQ baseline and either promotes a bounded
+repair/prep task or records why no safe target work should proceed.
+
+Verification commands: `git diff --check`; read-only target status before/after.
+
+Acceptance criteria:
+
+- no target writes;
+- no fake V02-01;
+- no product-ready overclaim;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -3923,7 +4006,9 @@ Initial entry:
 - [x] V37-00 complete: target patch lifecycle states and
   `handed_off_unresolved` stop condition added to the target-repo workflow
   skill/runbook.
-- [ ] V38-00 active: Clean Target Selection Gate.
+- [x] V38-00 complete: selected clean `wilq-seo` as next target path and
+  promoted observation-only baseline before any repair.
+- [ ] V39-00 active: WILQ Clean Target Observation-Only Baseline.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4481,6 +4566,19 @@ Initial decisions:
     inputs, in which case the honest result is a blocker/handoff rather than a
     substitute proof.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote WILQ clean target observation-only baseline as V39.
+  Rationale: V38 found `wilq-seo` is the only clearly clean/synced non-KRN
+    target under `active/`. The next step should inspect it in observation-only
+    mode before any target repair.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v38-clean-target-selection-gate/REPORT.md`;
+    `wilq-seo` `git status --short --branch`; `wilq-seo` README/AGENTS/package
+    scripts.
+  Does not prove: WILQ repair scope is safe, target commands pass, V02-01 is
+    complete, or product readiness is achieved.
+  Falsifier: V39 finds WILQ target context is unsafe for further KRN work or
+    becomes dirty/active before the baseline completes.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4893,6 +4991,18 @@ Seed evidence:
   Does not prove: target owner acceptance, V02-01, product readiness, or that
     another target path is safe.
   Follow-up task: V38-00.
+
+- Evidence ID: E-V38-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v38-clean-target-selection-gate/REPORT.md`
+  Command/report/file: active repo status inventory; WILQ target status and
+    read-only file inspection.
+  Result: `wilq-seo` is clean and synced; most other active repos are dirty,
+    ahead, or untracked; `krn-elektroinstal-ogar` remains blocked for same-target
+    repair by `handed_off_unresolved`.
+  Proves: WILQ is the next clean/safe target path for observation-only baseline.
+  Does not prove: WILQ repair scope, target verification, V02-01, widened alpha,
+    or product readiness.
+  Follow-up task: V39-00.
 ```
 
 ## 19. Condensation Queue
@@ -5256,6 +5366,14 @@ Seed queue:
   Reason: continue product proof only through a clean/safe target path or honest
     blocker, not by reusing the unresolved same target
   Task: V38-00
+
+- Candidate: WILQ clean target observation-only baseline
+  Source evidence: V38 target selection report
+  Surface: target baseline report
+  Status: accepted as V39-00
+  Reason: inspect clean target context before any repair and preserve target
+    dirty-state discipline
+  Task: V39-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6244,6 +6362,45 @@ Product readiness verdict:
 Next active stream:
 - V38 — Clean Target Selection Gate.
 
+## Outcome 2026-06-27 V38
+
+Completed:
+- V38-00 inspected active repo statuses read-only.
+- Rejected `krn-elektroinstal-ogar` for same-target repair while its FAQ patch
+  remains `handed_off_unresolved`.
+- Selected `/home/krn/coding/krn/active/wilq-seo` as the next clean/safe target
+  path.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v38-clean-target-selection-gate/REPORT.md`.
+- Active repo `git status --short --branch` inventory.
+- `wilq-seo` README, AGENTS, package scripts, and status.
+
+What improved:
+- KRN has a clean target path that does not depend on unresolved target patch
+  ownership.
+- The next task is observation-only, so target repair is not smuggled into
+  selection.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- WILQ target repair safety.
+- Target command verification.
+
+New task:
+- Run a WILQ observation-only baseline before any bounded repair.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V39 — WILQ Clean Target Observation-Only Baseline.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -6292,7 +6449,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V38 Clean Target Selection Gate.
+Active stream: V39 WILQ Clean Target Observation-Only Baseline.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

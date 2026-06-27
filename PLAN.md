@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V38 Clean Target Selection Gate
-current task: V38-00 Clean Target Selection Gate
+active stream: V39 WILQ Clean Target Observation-Only Baseline
+current task: V39-00 WILQ Clean Target Observation-Only Baseline
 ```
 
 Completed stream summary:
@@ -67,29 +67,32 @@ V34 Target Repair Re-Gate After Owner-File Refresh: complete
 V35 Target Patch Handoff Packet: complete
 V36 Target Patch Handoff Re-Gate: complete
 V37 Target Patch Lifecycle Rule Condensation: complete
+V38 Clean Target Selection Gate: complete
 ```
 
 ## Active Stream
 
-### V38-00 — Clean Target Selection Gate
+### V39-00 — WILQ Clean Target Observation-Only Baseline
 
 Goal:
 
-Decide whether another clean/safe target proof path exists without touching the
-unresolved `krn-elektroinstal-ogar` FAQ patch.
+Run an observation-only baseline on the clean `wilq-seo` target before any
+bounded repair.
 
 Current finding:
 
 ```txt
-V37 encoded the unresolved target patch lifecycle rule. The current target FAQ
-patch remains handed off but unresolved, so same-target repair is forbidden.
+V38 selected `wilq-seo` as the next clean/safe target path. It is clean and
+synced with origin. This is not V02-01 and must remain observation-only unless a
+later task explicitly authorizes writes.
 ```
 
-Current V38 action:
+Current V39 action:
 
 ```txt
-Select a clean/safe next target path, run only observation-only discovery, or
-record target owner/operator action as the honest blocker.
+Inspect WILQ target instructions, scripts, active plans, and candidate owner
+files. Record target dirty state before/after and decide whether a bounded
+repair trial is safe later.
 ```
 
 ## V02-01 Boundary
