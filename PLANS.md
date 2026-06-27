@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V187 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, and activation skill owner-file metadata guard slices: complete
-active stream: V188 Post Activation Skill Metadata Re-Gate
-current task: V188-00 Post Activation Skill Metadata Re-Gate
+V48..V189 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, and brain store skill metadata guard slices: complete
+active stream: V190 Post Brain Store Skill Metadata Re-Gate
+current task: V190-00 Post Brain Store Skill Metadata Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V188-00 Post Activation Skill Metadata Re-Gate.
+V190-00 Post Brain Store Skill Metadata Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16189,6 +16189,72 @@ Next active stream:
 
 Next active task:
 - V188-00 Post Activation Skill Metadata Re-Gate.
+
+## Outcome 2026-06-27 V189 Brain Store Skill Metadata Guard
+
+Completed tasks:
+- V188-00 Post Activation Skill Metadata Re-Gate.
+- V189-00 Brain Store Skill Metadata Guard.
+
+V188 decision:
+- Do not broaden activation metadata preservation into Research Foundry, source
+  crawler, dashboard, scoring rewrite, or product-readiness claims.
+- Select brain-store-schema skill metadata repair because DB/schema work is the
+  runtime spine of KRN memory/source/evidence and the skill body had unknown
+  narrowing, JSONB boundary, migration evidence, and rollback guidance that was
+  not visible in frontmatter routing metadata.
+- The concrete failure mode is future persistence work selecting the skill from
+  metadata that only says schema/repository/migration work, then weakening DB
+  JSON boundaries or skipping migration/rollback evidence.
+
+What changed:
+- `.agents/skills/brain-store-schema/SKILL.md` frontmatter description now names
+  unknown narrowing, migration evidence, and rollback risk.
+- `packages/harness/src/skillInvariants.test.ts` now guards brain-store skill
+  metadata and body guidance.
+- `docs/architecture/brain-battle-eval-matrix.md` records the brain-store skill
+  metadata guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V190.
+
+Evidence:
+- Before this slice, the brain-store skill body carried JSONB limits, unknown
+  narrowing, migration/SQL inspection, and rollback guidance, but frontmatter
+  did not surface those constraints.
+- KRN's brain store remains the store-backed runtime spine; persistence guidance
+  must not regress to "schema change" without proof boundaries.
+
+Source-to-decision:
+- Source: `.agents/skills/brain-store-schema/SKILL.md`, DB/schema dogfood
+  evidence, and repo-local skill invariant coverage.
+- Mechanism: brain-store skill routing metadata determines whether Codex treats
+  DB changes as durable lifecycle design with validation/rollback evidence or
+  as generic schema edits.
+- KRN implication: persistence work must surface unknown narrowing, JSONB
+  boundary discipline, migration evidence, SQL inspection, and rollback risk
+  before the full skill is loaded.
+- Decision: update and guard brain-store-schema skill frontmatter.
+- Does not prove: every migration is correct, DB runtime is available in every
+  shell, or product readiness.
+- Consumer: `.agents/skills/brain-store-schema/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the brain-store skill frontmatter can drop unknown narrowing,
+  migration evidence, or rollback risk while tests pass.
+
+New task:
+- V190-00 Post Brain Store Skill Metadata Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V190 Post Brain Store Skill Metadata Re-Gate.
+
+Next active task:
+- V190-00 Post Brain Store Skill Metadata Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

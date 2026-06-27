@@ -1,6 +1,6 @@
 ---
 name: brain-store-schema
-description: Use when designing or changing KRN Drizzle/Postgres schema, migrations, repository adapters, memory/source/run ledgers, retrieval tables, outbox events, or worker job persistence.
+description: Use when designing or changing KRN Drizzle/Postgres schema, migrations, repository adapters, memory/source/run ledgers, retrieval tables, outbox events, or worker job persistence with unknown narrowing, migration evidence, and rollback risk.
 ---
 
 # Brain Store Schema

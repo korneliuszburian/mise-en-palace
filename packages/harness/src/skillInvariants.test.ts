@@ -189,4 +189,20 @@ describe("KRN skill invariants", () => {
     expect(activationEngine).toContain("missing-read-model or abstention");
     expect(activationEngine).toContain("not a broad activation scoring rewrite");
   });
+
+  it("keeps brain store schema routed to DB boundary evidence and rollback risk", () => {
+    const brainStoreSchema = readFileSync(
+      new URL("brain-store-schema/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(brainStoreSchema).toContain("unknown narrowing");
+    expect(brainStoreSchema).toContain("migration evidence");
+    expect(brainStoreSchema).toContain("rollback risk");
+    expect(brainStoreSchema).toContain("use JSONB only for unstable metadata");
+    expect(brainStoreSchema).toContain("narrow `unknown` before domain");
+    expect(brainStoreSchema).toContain("Do not make markdown or `.krn` runtime truth.");
+    expect(brainStoreSchema).toContain("Do not trust raw DB JSON as a domain object.");
+    expect(brainStoreSchema).toContain("SQL inspection");
+  });
 });
