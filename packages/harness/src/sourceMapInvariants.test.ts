@@ -37,18 +37,46 @@ const sourceSections = (): SourceSection[] => {
   return sections;
 };
 
-const hasSourceLocation = (body: string): boolean =>
-  /^- URL: .+/mu.test(body) ||
-  /^- URL:\n\s+\S+/mu.test(body) ||
-  /^- URLs:\n(?:\s+- .+\n?)+/mu.test(body);
+const sourceLocations = (body: string): string[] => {
+  const inlineUrl = body.match(/^- URL: (?<url>\S+)$/mu)?.groups?.url;
+
+  if (inlineUrl !== undefined) {
+    return [inlineUrl];
+  }
+
+  const blockUrl = body.match(/^- URL:\n\s+(?<url>\S+)$/mu)?.groups?.url;
+
+  if (blockUrl !== undefined) {
+    return [blockUrl];
+  }
+
+  const urlsBlock = body.match(/^- URLs:\n(?<urls>(?:\s+- .+\n?)+)/mu)?.groups?.urls;
+
+  if (urlsBlock === undefined) {
+    return [];
+  }
+
+  return urlsBlock
+    .split("\n")
+    .map((line) => line.match(/^\s+- (?<url>\S+)$/u)?.groups?.url)
+    .filter((url): url is string => url !== undefined);
+};
 
 describe("KRN source map invariants", () => {
   it("keeps every retained source tied to a full source-to-decision mapping", () => {
     const missing = sourceSections().flatMap((section) => {
       const findings: string[] = [];
 
-      if (!hasSourceLocation(section.body)) {
+      const locations = sourceLocations(section.body);
+
+      if (locations.length === 0) {
         findings.push(`${section.title}: missing URL/URLs`);
+      }
+
+      for (const location of locations) {
+        if (!location.startsWith("https://")) {
+          findings.push(`${section.title}: source location must be https URL`);
+        }
       }
 
       if (!/^- Trust tier: (high|medium|low)\.$/mu.test(section.body)) {

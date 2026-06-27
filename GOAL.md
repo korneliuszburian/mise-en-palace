@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V126 Post Pattern Intake Output Contract Guard Re-Gate
+V128 Post Retained Source Location Scheme Guard Re-Gate
 ```
 
 Current product loop:
@@ -37,10 +37,10 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V125: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-task-contract, final-response, TypeScript boundary, source trust metadata, and
-pattern-intake output guards complete.
-current task: V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
+V110..V127: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+task-contract, final-response, TypeScript boundary, source trust metadata,
+pattern-intake output, and source location scheme guards complete.
+current task: V128-00 Post Retained Source Location Scheme Guard Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V125 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, and pattern-intake output guard slices: complete
-active stream: V126 Post Pattern Intake Output Contract Guard Re-Gate
-current task: V126-00 Post Pattern Intake Output Contract Guard Re-Gate
+V48..V127 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, and source location scheme guard slices: complete
+active stream: V128 Post Retained Source Location Scheme Guard Re-Gate
+current task: V128-00 Post Retained Source Location Scheme Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
+V128-00 Post Retained Source Location Scheme Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13972,6 +13972,76 @@ Next active stream:
 
 Next active task:
 - V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
+
+## Outcome 2026-06-27 V127 Retained Source Location Scheme Guard
+
+Completed tasks:
+- V126-00 Post Pattern Intake Output Contract Guard Re-Gate.
+- V127-00 Retained Source Location Scheme Guard.
+
+V126 decision:
+- Do not broaden pattern-intake output guarding into Research Foundry, crawler,
+  decorative source archive, freshness scanner, or paid-course transcription.
+- Select retained source location scheme because V123 required URL/URLs, but
+  the source-map invariant still accepted arbitrary indented text as a source
+  location.
+
+What changed:
+- `packages/harness/src/sourceMapInvariants.test.ts` now extracts source
+  locations from inline `URL`, multiline `URL`, and `URLs` blocks and requires
+  every retained location to start with `https://`.
+- `docs/architecture/brain-battle-eval-matrix.md` records the stronger
+  retrievable source-location guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V128.
+
+Evidence:
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+
+Source-to-decision:
+- Source: retained source map discipline in `docs/KRN_SOURCES.md` and
+  repo-local `source-to-decision` skill.
+- Mechanism: a source location that is present but not a retrievable URL can
+  still become decorative or unreviewable research context.
+- KRN implication: retained external sources should use public `https://`
+  locations unless a future bounded task explicitly adds a separate local-ref
+  source class.
+- Decision: add focused source-map invariant coverage for source location
+  scheme.
+- Does not prove: external docs are current, URLs are reachable, source
+  coverage is complete, trust-tier judgment is correct, or product readiness.
+- Consumer: `packages/harness/src/sourceMapInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: a `docs/KRN_SOURCES.md` source section can use a non-`https://`
+  source location without focused tests failing.
+
+What improved:
+- Retained public docs/course/practitioner sources are harder to make
+  unreviewable through vague or malformed source locations.
+- Source map refresh/review has a stronger local format guard.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- URL reachability or external source freshness.
+
+New task:
+- V128-00 Post Retained Source Location Scheme Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V128 Post Retained Source Location Scheme Guard Re-Gate.
+
+Next active task:
+- V128-00 Post Retained Source Location Scheme Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
