@@ -46,12 +46,13 @@ V17 Target Owner-File Read-Model Contract Gate: complete
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete
 V19 Product Readiness Re-Gate After Owner-File Contract: complete
 V20 Real Target Observation-Only Owner-File Trial: complete
+V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V21 Target Evidence Observation-Only Defaults And Readback Clarity
-current task: V21-00 Target Evidence Observation-Only Defaults And Readback Clarity
+active stream: V22 Persisted CLI DB URL Default Consistency
+current task: V22-00 Persisted CLI DB URL Default Consistency
 ```
 
 Evidence already recorded in repo:
@@ -66,9 +67,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V21 must repair or explicitly reject the target evidence ergonomics gap found
-by V20: observation-only evidence can preserve forbidden write boundaries, but
-only if the operator supplies explicit flags.
+V22 must repair or explicitly reject the DB URL ergonomics gap found by V20:
+`pnpm db:ready` has a default DB URL, but persisted CLI commands fail without an
+explicit `KRN_DATABASE_URL`.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -1957,6 +1958,29 @@ why, or KRN adds a focused CLI/source repair with tests.
 - readiness remains controlled-internal-alpha for technical operators, stronger;
   widened alpha and product-ready remain unproven.
 
+### Stream V22 — Persisted CLI DB URL Default Consistency
+
+Why now:
+
+- V20 showed `pnpm db:ready` can use the default local DB URL, but
+  `krn init --connect --persist` failed until `KRN_DATABASE_URL` was set
+  explicitly.
+- V21 repaired target evidence safety, leaving DB persistence ergonomics as the
+  next visible operator-friction item.
+
+Expected end state:
+
+```txt
+Persisted CLI commands either share a consistent default DB URL behavior or
+print exact remediation that makes the required env obvious and copyable.
+```
+
+- explicit `KRN_DATABASE_URL` override remains supported;
+- no DB schema migration is introduced unless source inspection proves it is
+  required;
+- readiness remains controlled-internal-alpha for technical operators, stronger;
+  widened alpha and product-ready remain unproven.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
 Status: complete
@@ -2034,7 +2058,7 @@ Completed evidence:
 
 ### V21-00 — Target Evidence Observation-Only Defaults And Readback Clarity
 
-Status: active
+Status: complete
 
 Goal: repair or explicitly reject the target evidence ergonomics gap found by
 V20. Observation-only target evidence should not be easy to read back as
@@ -2101,6 +2125,81 @@ Condensation expectation: decide whether the next work is DB env ergonomics,
 real operator intake, target runbook update, or another real-target trial.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V21
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v21-target-evidence-observation-only-defaults/REPORT.md`.
+- Observation-only target evidence defaults now preserve safe write boundaries
+  when operator flags are omitted.
+- CLI usage examples and run readback clarity were improved.
+
+### V22-00 — Persisted CLI DB URL Default Consistency
+
+Status: active
+
+Goal: inspect and repair or explicitly reject inconsistent local DB URL
+ergonomics for persisted CLI commands.
+
+Product rationale: target trials and dogfood runs depend on persisted CLI flows.
+If some commands use a default DB URL while others require a hidden env value,
+operator friction and false blockers increase.
+
+Architectural rationale: DB runtime configuration is an adapter boundary. It
+must be explicit, typed, and predictable without weakening production override
+behavior.
+
+Evidence source: V20 `krn init --connect --persist` failed until
+`KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn` was set, while
+`pnpm db:ready` succeeded with the default URL.
+
+Official/external sources: none required unless source inspection needs current
+OpenAI/Codex guidance for Goals/ExecPlans.
+
+Inputs required: CLI database runtime source, persisted command source, tests,
+and package scripts.
+
+Files likely touched:
+
+- `packages/cli/src/databaseRuntime.ts`;
+- persisted command runners that check `KRN_DATABASE_URL`;
+- CLI tests;
+- V22 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN package source/tests/docs/plans only.
+
+Forbidden writes: target repo edits, DB schema migration unless source proves it
+is required, product-ready/V02-01 overclaim, dashboard/API/MCP/worker runtime.
+
+Output requirements:
+
+- source inspection finding;
+- decision: default URL behavior or exact remediation;
+- focused tests for missing env and explicit env override;
+- verification commands and proof/non-proof boundaries.
+
+Definition of Done: persisted CLI DB URL behavior is consistent or explicitly
+defended with stronger operator-facing remediation.
+
+Verification commands: targeted CLI tests, `pnpm typecheck`, `pnpm test`,
+`git diff --check`; if DB behavior changes, `pnpm db:ready`.
+
+Acceptance criteria: no hidden production config, no schema change unless
+necessary, explicit env override remains supported.
+
+Risk: masking real DB misconfiguration. Mitigation: keep endpoint printed and
+preserve explicit override behavior.
+
+Rollback: focused revert of implementation/report commit.
+
+Condensation expectation: decide whether the next work is another real target
+trial, target runbook update, activation context repair, or real operator
+intake.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V22
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2352,8 +2451,9 @@ Initial entry:
 - [x] V20-00 complete: real target observation-only owner-file trial succeeded
   on `krn-elektroinstal-ogar` without target writes; V21 target evidence
   defaults/readback repair accepted.
-- [ ] V21-00 active: Target Evidence Observation-Only Defaults And Readback
-  Clarity.
+- [x] V21-00 complete: observation-only target evidence now defaults safe write
+  boundaries and run readback list clarity improved.
+- [ ] V22-00 active: Persisted CLI DB URL Default Consistency.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2482,6 +2582,13 @@ Record every unexpected fact in this format:
   `7f01243f-cf81-4caa-b819-b4443188177e`.
   Impact: V21 should repair or explicitly reject observation-only target
   evidence defaults/readback behavior before more target trials.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Target evidence safety defaults belong in core normalization, not
+  CLI rendering only.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v21-target-evidence-observation-only-defaults/REPORT.md`.
+  Impact: V21 repaired observation-only defaults once for capture, persistence,
+  and readback instead of adding a separate display-only warning.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2658,6 +2765,16 @@ Initial decisions:
   quality.
   Falsifier: V21 source inspection proves current behavior is already
   intentionally sufficient and better documented than changing defaults.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote persisted CLI DB URL default consistency as V22.
+  Rationale: after target evidence safety defaults were repaired, the next
+  observed operator-friction gap is inconsistent DB URL handling between
+  `pnpm db:ready` and persisted CLI commands.
+  Evidence: V20 report and V21 report.
+  Does not prove: the correct fix shape, DB schema needs, or product readiness.
+  Falsifier: V22 source inspection proves the explicit env requirement is
+  intentional and already accompanied by exact operator remediation.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2859,6 +2976,19 @@ Seed evidence:
   Does not prove: V02-01, real second-operator usability, product readiness,
     full target verification, or reflection extraction quality.
   Follow-up task: V21-00.
+
+- Evidence ID: E-V21-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v21-target-evidence-observation-only-defaults/REPORT.md`
+  Command/report/file: source repair for target evidence observation-only
+    defaults and readback clarity.
+  Result: core target evidence normalization now supplies safe observation-only
+    write-boundary defaults; CLI usage/readback tests and golden behavior cover
+    the output.
+  Proves: omitted `--target-forbidden-write` flags no longer make
+    observation-only target evidence read back as no forbidden writes.
+  Does not prove: product readiness, V02-01, target runtime correctness, or
+    activation quality.
+  Follow-up task: V22-00.
 ```
 
 ## 19. Condensation Queue
@@ -3077,6 +3207,15 @@ Seed queue:
     boundaries, but omitted flags read back as `forbiddenWrites: none`; target
     safety evidence should be harder to under-specify before more target trials
   Task: V21-00
+
+- Candidate: persisted CLI DB URL default consistency
+  Source evidence: V20 real target observation-only trial and V21 report
+  Surface: CLI database runtime / persisted command ergonomics
+  Status: accepted as V22-00
+  Reason: `pnpm db:ready` uses a default local DB URL, but persisted CLI
+    commands can fail without explicit `KRN_DATABASE_URL`; this is the next
+    operator-friction item in target/dogfood loops
+  Task: V22-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -3552,6 +3691,49 @@ Product readiness verdict:
 Next active stream:
 - V21 — Target Evidence Observation-Only Defaults And Readback Clarity.
 
+## Outcome 2026-06-27 V21
+
+Completed:
+- V21-00 repaired target evidence observation-only defaults and run readback
+  clarity.
+- Observation-only target evidence now defaults `allowedWrites` to `none` and
+  supplies standard forbidden write boundaries when omitted.
+- CLI usage examples now model target safety boundaries explicitly.
+- `run show` target evidence nested lists are easier to scan.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v21-target-evidence-observation-only-defaults/REPORT.md`.
+- DB-backed run `ecf288e9-b8e7-400a-b34b-222bbc61769c`.
+- Evidence bundle `69620092-fb5a-4f6d-bde8-78481196bbd5`.
+- Observation group `87302501-a9a6-4cd7-bb5b-be3779f365d8`.
+- Reflection record `3e9f7cfd-63a4-4fbf-b41c-b179fad507c6`.
+
+What improved:
+- Target evidence safety boundaries are harder to under-specify.
+- The fix lives in core normalization and therefore applies to capture,
+  persistence, and readback.
+- Explicit operator-provided write boundaries still work.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- General activation quality; V21 plan abstained.
+
+New blocker:
+- Persisted CLI commands still have DB URL ergonomics friction: `pnpm db:ready`
+  has a default URL, while persisted commands can require explicit
+  `KRN_DATABASE_URL`.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V22 — Persisted CLI DB URL Default Consistency.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -3600,7 +3782,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V21 Target Evidence Observation-Only Defaults And Readback Clarity.
+Active stream: V22 Persisted CLI DB URL Default Consistency.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

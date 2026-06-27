@@ -149,7 +149,7 @@ describe("evidence bundle completeness", () => {
       dirtyBefore: "dirty",
       dirtyAfter: "dirty",
       ownedChanges: "external",
-      allowedWrites: [],
+      allowedWrites: ["none"],
       forbiddenWrites: ["wilq-seo/**"],
       changedFiles: [{
         status: "M",
@@ -163,6 +163,21 @@ describe("evidence bundle completeness", () => {
         "Target evidence does not prove product readiness or V02-01 second-operator usability."
       ]
     });
+  });
+
+  test("defaults observation-only target evidence write boundaries", () => {
+    const targetEvidence = normalizeTargetEvidence({
+      targetRepo: "../target",
+      mode: "observation-only"
+    });
+
+    expect(targetEvidence.allowedWrites).toEqual(["none"]);
+    expect(targetEvidence.forbiddenWrites).toEqual([
+      "target source edits",
+      "target commits",
+      "target resets or cleans",
+      "target production/runtime writes"
+    ]);
   });
 
   test("reads target evidence back from metadata defensively", () => {

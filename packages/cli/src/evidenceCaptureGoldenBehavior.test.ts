@@ -129,6 +129,8 @@ describe("evidence capture golden behavior", () => {
       targetEvidenceOutput.includes("- dirtyBefore: dirty") &&
       targetEvidenceOutput.includes("- dirtyAfter: dirty") &&
       targetEvidenceOutput.includes("- ownedChanges: external") &&
+      targetEvidenceOutput.includes("- target source edits") &&
+      targetEvidenceOutput.includes("- target commits") &&
       targetEvidenceOutput.includes("- M apps/dashboard/src/App.tsx | ownership=external") &&
       targetEvidenceOutput.includes("Target evidence does not prove KRN source correctness.") &&
       targetEvidenceOutput.includes(

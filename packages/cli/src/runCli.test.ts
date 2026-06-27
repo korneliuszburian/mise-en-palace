@@ -4328,8 +4328,13 @@ describe("runCli", () => {
         dirtyBefore: "dirty",
         dirtyAfter: "dirty",
         ownedChanges: "external",
-        allowedWrites: [],
-        forbiddenWrites: [],
+        allowedWrites: ["none"],
+        forbiddenWrites: [
+          "target source edits",
+          "target commits",
+          "target resets or cleans",
+          "target production/runtime writes"
+        ],
         changedFiles: [{
           status: "M",
           path: "apps/dashboard/src/App.tsx",

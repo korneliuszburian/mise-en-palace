@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V21 — Target Evidence Observation-Only Defaults And Readback Clarity
+V22 — Persisted CLI DB URL Default Consistency
 ```
 
 Current product loop:
@@ -61,8 +61,9 @@ V17 Target Owner-File Read-Model Contract Gate: complete.
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete.
 V19 Product Readiness Re-Gate After Owner-File Contract: complete.
 V20 Real Target Observation-Only Owner-File Trial: complete.
-active stream: V21 Target Evidence Observation-Only Defaults And Readback Clarity.
-current task: V21-00 — Target Evidence Observation-Only Defaults And Readback Clarity.
+V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete.
+active stream: V22 Persisted CLI DB URL Default Consistency.
+current task: V22-00 — Persisted CLI DB URL Default Consistency.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

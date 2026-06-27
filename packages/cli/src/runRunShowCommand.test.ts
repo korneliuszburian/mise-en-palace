@@ -290,6 +290,7 @@ describe("runRunShowCommand", () => {
           dirtyBefore: "dirty",
           dirtyAfter: "dirty",
           ownedChanges: "external",
+          allowedWrites: ["none"],
           forbiddenWrites: ["wilq-seo/**"],
           changedFiles: [{
             status: "M",

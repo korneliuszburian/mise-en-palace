@@ -260,8 +260,8 @@ const renderCommands = (commands: readonly EvidenceCommand[]): string[] =>
 
 const renderList = (values: readonly string[]): string[] =>
   values.length === 0
-    ? ["  - none"]
-    : values.map((value) => `  - ${value}`);
+    ? ["    - none"]
+    : values.map((value) => `    - ${value}`);
 
 const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): string[] => {
   if (targetEvidence === undefined) {
@@ -284,9 +284,9 @@ const renderTargetEvidence = (targetEvidence: TargetEvidence | undefined): strin
     ...renderList(targetEvidence.forbiddenWrites),
     "  - changedFiles:",
     ...(targetEvidence.changedFiles.length === 0
-      ? ["  - none"]
+      ? ["    - none"]
       : targetEvidence.changedFiles.map((file) =>
-          `  - ${file.status} ${file.path} | ownership=${file.ownership}`
+          `    - ${file.status} ${file.path} | ownership=${file.ownership}`
         )),
     "  - commands:",
     ...renderList(targetEvidence.commands),

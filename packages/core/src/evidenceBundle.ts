@@ -165,6 +165,13 @@ export const targetEvidenceDoesNotProve = [
   "Target evidence does not prove full target verification unless every target gate is represented by command evidence.",
   "Target evidence does not prove product readiness or V02-01 second-operator usability."
 ] as const;
+const observationOnlyDefaultAllowedWrites = ["none"] as const;
+const observationOnlyDefaultForbiddenWrites = [
+  "target source edits",
+  "target commits",
+  "target resets or cleans",
+  "target production/runtime writes"
+] as const;
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
@@ -227,16 +234,23 @@ const normalizedStringList = (values: readonly string[] | undefined): string[] =
 export const normalizeTargetEvidence = (
   input: TargetEvidenceInput
 ): TargetEvidence => {
+  const mode = normalizeTargetEvidenceMode(input.mode);
   const ownedChanges = normalizeTargetChangeOwnership(input.ownedChanges);
+  const allowedWrites = normalizedStringList(input.allowedWrites);
+  const forbiddenWrites = normalizedStringList(input.forbiddenWrites);
 
   return {
     targetRepo: input.targetRepo.trim(),
-    mode: normalizeTargetEvidenceMode(input.mode),
+    mode,
     dirtyBefore: normalizeTargetDirtyState(input.dirtyBefore),
     dirtyAfter: normalizeTargetDirtyState(input.dirtyAfter),
     ownedChanges,
-    allowedWrites: normalizedStringList(input.allowedWrites),
-    forbiddenWrites: normalizedStringList(input.forbiddenWrites),
+    allowedWrites: mode === "observation_only" && allowedWrites.length === 0
+      ? [...observationOnlyDefaultAllowedWrites]
+      : allowedWrites,
+    forbiddenWrites: mode === "observation_only" && forbiddenWrites.length === 0
+      ? [...observationOnlyDefaultForbiddenWrites]
+      : forbiddenWrites,
     changedFiles: (input.changedFiles ?? [])
       .map((file) => ({
         status: file.status.trim(),
