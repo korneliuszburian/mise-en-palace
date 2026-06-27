@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V46 Target Owner Coordination Packet
-current task: V46-00 Target Owner Coordination Packet
+active stream: V47 Internal Hardening Re-Gate After Target Coordination
+current task: V47-00 Internal Hardening Re-Gate After Target Coordination
 ```
 
 Completed stream summary:
@@ -75,32 +75,31 @@ V42 WILQ Fresh Observation-Only Baseline Retry: complete
 V43 Target Stability Window Gate: complete
 V44 target evidence lifecycle/freshness fields: complete
 V45 target availability re-gate with typed lifecycle evidence: complete
+V46 target owner coordination packet: complete
 ```
 
 ## Active Stream
 
-### V46-00 — Target Owner Coordination Packet
+### V47-00 — Internal Hardening Re-Gate After Target Coordination
 
 Goal:
 
-Create a compact coordination packet listing the exact owner/stability inputs
-required to resume target repair or V02-01 without inventing another local
-substitute.
+Choose the next internal KRN hardening task while target repair and V02-01 wait
+for owner/operator inputs.
 
 Current finding:
 
 ```txt
-V45 found no live target repo is currently safe for headless repair. WILQ is
-dirty/external-context only, elektroinstal is still handed_off_unresolved, and
-the wider active checkout inventory is dirty/noisy.
+V46 produced the owner/stability packet. Until those inputs arrive, KRN should
+continue only with internal hardening that reduces future target/review/context
+burden.
 ```
 
-Current V46 action:
+Current V47 action:
 
 ```txt
-Write the minimal owner/stability packet that states what exact input unlocks
-target repair, observation-only verification, or real V02-01. Do not edit
-target repos.
+Inspect recent evidence and pick one bounded internal hardening task. Do not
+create another target substitute and do not touch target repos.
 ```
 
 ## V02-01 Boundary

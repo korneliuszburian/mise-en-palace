@@ -75,8 +75,9 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
-active stream: V46 Target Owner Coordination Packet
-current task: V46-00 Target Owner Coordination Packet
+V46 Target Owner Coordination Packet: complete
+active stream: V47 Internal Hardening Re-Gate After Target Coordination
+current task: V47-00 Internal Hardening Re-Gate After Target Coordination
 ```
 
 Evidence already recorded in repo:
@@ -91,9 +92,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V45 found no live target repo is currently safe for repair. The current gap is
-the exact owner/stability packet required to resume target repair or V02-01
-without inventing another local substitute.
+V46 produced the owner/stability coordination packet. Until owner/operator
+inputs arrive, the current gap is choosing the next bounded internal KRN
+hardening task without creating another local target substitute.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -4224,7 +4225,7 @@ Outcome:
 
 ### V46-00 — Target Owner Coordination Packet
 
-Status: active
+Status: complete
 
 Goal: create a compact coordination packet listing the exact owner/stability
 inputs required to resume target repair or V02-01 without inventing another
@@ -4293,6 +4294,84 @@ Acceptance criteria:
 - no target writes;
 - no new local substitute;
 - no product-ready or V02-01 overclaim;
+- next active task is explicit.
+
+Outcome:
+
+- V46 produced a compact owner/stability coordination packet.
+- The packet states exact WILQ dirty-state repair inputs, elektroinstal patch
+  lifecycle decision inputs, V02-01 real second-operator inputs, and allowed
+  internal work while waiting.
+
+### V47-00 — Internal Hardening Re-Gate After Target Coordination
+
+Status: active
+
+Goal: choose the next bounded internal KRN hardening task while target repair
+and V02-01 wait for owner/operator inputs.
+
+Product rationale: V46 prevents more local target substitutes. KRN should keep
+improving internally, but only by selecting one bounded task that reduces
+future target/review/context burden.
+
+Architectural rationale: when external proof is blocked by missing owner input,
+the loop should re-gate and pick a small internal repair from evidence rather
+than grow plan sprawl.
+
+Evidence source: V44-V46 target evidence, target availability, and coordination
+reports.
+
+Official/external sources: none required unless the selected internal hardening
+task depends on a source decision.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v45-target-availability-regate-typed-evidence/REPORT.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-v46-target-owner-coordination-packet/PACKET.md`;
+- `PLANS.md` Generated Task Backlog and Condensation Queue.
+
+Files likely touched:
+
+- V47 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN reports/plans only unless the selected next task is promoted after V47.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- fake V02-01 proof;
+- another local target substitute;
+- product-ready/widened-alpha overclaim;
+- dashboard/API/MCP/worker/new eval platform.
+
+Output requirements:
+
+- one selected next internal hardening task;
+- rationale from evidence;
+- explicit rejected alternatives;
+- exact non-goals and verification for the selected task.
+
+Definition of Done: V47 picks one next active internal hardening task or records
+that owner/operator input is required before any useful progress.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no target writes;
+- no new local substitute;
+- no giant roadmap;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -4598,7 +4677,8 @@ Initial entry:
   evidence and round-trip through CLI capture/readback without DB migration.
 - [x] V45-00 complete: fresh target availability was re-gated with typed
   lifecycle evidence; no safe headless repair target is available right now.
-- [ ] V46-00 active: Target Owner Coordination Packet.
+- [x] V46-00 complete: target owner/stability coordination packet created.
+- [ ] V47-00 active: Internal Hardening Re-Gate After Target Coordination.
 ```
 
 ## 16. Surprises & Discoveries
@@ -5758,6 +5838,18 @@ Seed evidence:
   Does not prove: target work should stop forever, target repos are bad, V02-01
     is impossible, or product readiness.
   Follow-up task: V46-00.
+
+- Evidence ID: E-V46-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v46-target-owner-coordination-packet/PACKET.md`
+  Command/report/file: owner/stability coordination packet.
+  Result: exact WILQ dirty-state repair inputs, elektroinstal patch lifecycle
+    decision inputs, V02-01 real second-operator inputs, and allowed internal
+    waiting work are explicit.
+  Proves: missing owner/operator inputs are now concrete and do not require
+    rereading V35-V45.
+  Does not prove: any owner has accepted a patch, target repair is safe, V02-01
+    is complete, or product readiness.
+  Follow-up task: V47-00.
 ```
 
 ## 19. Condensation Queue
@@ -6181,10 +6273,18 @@ Seed queue:
 - Candidate: target owner coordination packet
   Source evidence: V45 target availability re-gate
   Surface: operator-facing coordination packet
-  Status: accepted as V46-00
+  Status: implemented in V46-00
   Reason: the next target proof depends on owner/stability inputs, and local
     substitutes would overstate readiness
   Task: V46-00
+
+- Candidate: internal hardening re-gate after target coordination
+  Source evidence: V46 owner coordination packet
+  Surface: controlled dogfood report / active plan
+  Status: accepted as V47-00
+  Reason: while owner/operator inputs are missing, KRN should choose one
+    bounded internal hardening task instead of another target substitute
+  Task: V47-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -7477,6 +7577,42 @@ Product readiness verdict:
 Next active stream:
 - V46 — Target Owner Coordination Packet.
 
+## Outcome 2026-06-27 V46
+
+Completed:
+- V46-00 created the target owner/stability coordination packet.
+- The packet lists exact WILQ dirty-state repair inputs, elektroinstal patch
+  lifecycle decision inputs, V02-01 real second-operator inputs, and allowed
+  internal waiting work.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v46-target-owner-coordination-packet/PACKET.md`.
+- V45 target availability re-gate.
+- Target repo testing skill/runbook.
+
+What improved:
+- Missing owner/operator inputs are explicit and operator-facing.
+- KRN no longer needs another local substitute to explain target blockers.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Target owner decision for elektroinstal.
+- WILQ dirty-state write permission.
+
+New task:
+- Re-gate internal hardening and pick one bounded next task while waiting for
+  target owner/operator inputs.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V47 — Internal Hardening Re-Gate After Target Coordination.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -7525,7 +7661,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V46 Target Owner Coordination Packet.
+Active stream: V47 Internal Hardening Re-Gate After Target Coordination.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
