@@ -40,12 +40,13 @@ V11 product readiness re-gate: complete
 V12 widened alpha trial launch packet: complete
 V13 research-to-brain decision lane gate: complete
 V14 TypeScript boundary drift gate: complete
+V15 Promptfoo / Golden Behavior Role Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V15 Promptfoo / Golden Behavior Role Gate
-current task: V15-00 Promptfoo / Golden Behavior Role Gate
+active stream: V16 Activation Relevance Evidence Gate
+current task: V16-00 Activation Relevance Evidence Gate
 ```
 
 Evidence already recorded in repo:
@@ -524,6 +525,23 @@ Expected end state:
 ```txt
 Promptfoo is explicitly classified as smoke adapter, bounded behavior gate, or
 deferred candidate, with no broad eval platform.
+```
+
+### Stream V16 — Activation Relevance Evidence Gate
+
+Why later:
+
+- V11 listed activation quality as partial.
+- V06 improved owner-file recall state but did not prove discovery/ranking
+  quality.
+- V15 clarified eval roles, so activation evidence should be evaluated through
+  existing reports/tests rather than a broad benchmark lane.
+
+Expected end state:
+
+```txt
+Activation relevance is either accepted as measurement-only for now, or one
+bounded repair is accepted with exact evidence and non-goals.
 ```
 
 ## 12. Active Task Queue
@@ -1506,7 +1524,7 @@ Completion evidence:
 
 ### V15-00 — Promptfoo / Golden Behavior Role Gate
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: decide the current role of Promptfoo relative to golden behavior tests,
 DB smokes, and source-backed reports.
@@ -1559,6 +1577,74 @@ specific failing behavior is found.
 
 Next-task synthesis rule: if Promptfoo remains smoke-only, move to the next
 evidence-backed engineering blocker.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v15-promptfoo-golden-role-gate/REPORT.md`;
+- Promptfoo kept as smoke/result adapter; golden behavior tests kept as behavior
+  proof authority.
+
+### V16-00 — Activation Relevance Evidence Gate
+
+Status: active
+
+Goal: inspect activation relevance evidence and decide whether a bounded repair
+is justified.
+
+Product rationale: activation remains the most important partial brain-quality
+area after evidence, memory/source usefulness, skills, research intake,
+TypeScript boundary, and eval-role gates.
+
+Architectural rationale: activation repair must target owner-file read models,
+context ROI, or scoring only if evidence shows repeated misses; do not rewrite
+retrieval from vague dissatisfaction.
+
+Evidence source: V06 owner-file recall report, V07 memory/source usefulness
+reports, V11 readiness report, recent activation-related tests/smokes, and
+current activation package source.
+
+Official/external sources: none required unless a new activation/retrieval
+pattern is proposed.
+
+Inputs required: activation reports, activation skill, owner-file recall source
+and tests, recent plan/readback metadata.
+
+Files likely touched:
+
+- report under `docs/reviews/controlled-dogfood/`;
+- maybe a small activation/read-model test or docs repair if evidence proves a
+  gap;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: report/plans and at most one bounded activation/read-model
+repair if evidence proves it.
+
+Forbidden writes: activation scoring rewrite without repeated evidence, source
+crawler, broad retrieval platform, MCP, dashboard, eval platform, target repo
+writes.
+
+Output requirements: activation relevance verdict, evidence table, accepted or
+rejected repair, next task.
+
+Definition of Done: KRN either has a bounded activation repair queued/done or a
+clear reason to continue measuring.
+
+Verification commands: `git diff --check`; if source changes, targeted tests
+plus `pnpm typecheck` and `pnpm test`.
+
+Acceptance criteria: no scoring rewrite from one-off misses.
+
+Risk: mistaking missing target read-model data for bad activation scoring.
+
+Rollback: correction report and plan revert.
+
+Condensation expectation: prefer read-model/measurement repair over scoring
+change unless repeated evidence proves scoring is the owner.
+
+Next-task synthesis rule: if activation remains partial without enough repair
+evidence, choose the next bounded product blocker rather than guessing.
 
 ## 13. Generated Task Backlog
 
@@ -1794,7 +1880,9 @@ Initial entry:
   rules and consumer boundaries.
 - [x] V14-00 complete: TypeScript standard repaired to remove missing audit
   authority and describe targeted boundary verification.
-- [ ] V15-00 active: Promptfoo / Golden Behavior Role Gate.
+- [x] V15-00 complete: Promptfoo kept as smoke/result adapter; golden behavior
+  tests kept as behavior proof authority.
+- [ ] V16-00 active: Activation Relevance Evidence Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2310,10 +2398,19 @@ Seed queue:
   Source evidence: V14 next recommendation, CI Promptfoo smoke, existing golden
     behavior tests
   Surface: eval role gate
-  Status: accepted as V15-00
+  Status: complete as V15-00
   Reason: Promptfoo smoke needs an explicit proof/non-proof boundary before it
     is mistaken for product-quality evidence
   Task: V15-00
+
+- Candidate: activation relevance evidence gate
+  Source evidence: V11 readiness partial activation verdict, V06 owner-file
+    recall report, V07 memory/source usefulness reports
+  Surface: activation evidence gate
+  Status: accepted as V16-00
+  Reason: activation quality remains partial and should be repaired only from
+    repeated evidence, not vague dissatisfaction
+  Task: V16-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -2566,6 +2663,39 @@ Product readiness verdict:
 
 Next active stream:
 - V15 — Promptfoo / Golden Behavior Role Gate.
+
+## Outcome 2026-06-27 V15
+
+Completed:
+- V15-00 clarified Promptfoo's current role.
+- Promptfoo remains a smoke/result adapter.
+- Golden behavior tests remain behavior proof authority.
+- Broad eval platform and Promptfoo authority layer were rejected.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v15-promptfoo-golden-role-gate/REPORT.md`.
+- `docs/architecture/promptfoo-adapter-boundary.md`.
+- `docs/architecture/golden-task-promotion.md`.
+- `docs/decisions/ADR-0016-eval-candidates-remain-proposal-only.md`.
+
+What improved:
+- Promptfoo smoke cannot be confused with product-quality or KRN behavior proof.
+- The next eval-related work now needs a protected failure, not aspiration.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- Activation quality.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V16 — Activation Relevance Evidence Gate.
 
 ## 21. Final Response Format For Codex Runs
 

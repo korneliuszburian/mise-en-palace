@@ -41,7 +41,8 @@ V11 product readiness re-gate: complete
 V12 widened alpha trial launch packet: complete
 V13 research-to-brain decision lane gate: complete
 V14 TypeScript boundary drift gate: complete
-active stream: V15 Promptfoo / Golden Behavior Role Gate
+V15 Promptfoo / Golden Behavior Role Gate: complete
+active stream: V16 Activation Relevance Evidence Gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -318,17 +319,35 @@ Evidence:
 - `docs/standards/typescript-excellence.md` no longer claims a missing
   `runTypeSafetyAudit`; it now names targeted boundary verification.
 
-## Active Stream: V15
+## Completed Stream: V15
 
 V15 gates Promptfoo's role against golden behavior tests and source-backed
 reports.
 
 ### V15-00 — Promptfoo / Golden Behavior Role Gate
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide whether Promptfoo remains a smoke/adapter check, needs one bounded
 behavior case, or should be rejected/deferred as a broader eval surface.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v15-promptfoo-golden-role-gate/REPORT.md`;
+- Promptfoo remains a smoke/result adapter; golden behavior tests remain the
+  current behavior proof surface.
+
+## Active Stream: V16
+
+V16 gates whether activation relevance evidence now justifies repair or
+continued measurement.
+
+### V16-00 — Activation Relevance Evidence Gate
+
+Status: active.
+
+Goal: inspect current activation relevance evidence after V05-V15 and decide
+whether owner-file recall/read-model/scoring needs a bounded repair.
 
 ## Hard Non-Goals
 
