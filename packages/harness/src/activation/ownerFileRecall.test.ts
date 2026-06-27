@@ -183,6 +183,92 @@ describe("owner-file recall", () => {
     );
   });
 
+  it("prioritizes explicit owner files over covered source seeds and adjacent agent guidance", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/target"],
+      sourceSeeds: [
+        {
+          path: "AGENTS.md",
+          kind: "agent_instructions",
+          reason: "target-local agent guidance"
+        },
+        {
+          path: "CLAUDE.md",
+          kind: "agent_instructions",
+          reason: "adjacent agent guidance"
+        },
+        {
+          path: "bedrock",
+          kind: "source_root",
+          reason: "Bedrock application root"
+        },
+        {
+          path: "docs",
+          kind: "docs_root",
+          reason: "target documentation root"
+        }
+      ],
+      ownerFiles: [
+        {
+          path: "AGENTS.md",
+          root: ".",
+          kind: "agent_instructions",
+          reason: "operator guidance owner file"
+        },
+        {
+          path: "bedrock/composer.json",
+          root: "bedrock",
+          kind: "package_manifest",
+          reason: "Bedrock dependency manifest"
+        },
+        {
+          path: "woohub_gateway_v1/main.py",
+          root: "woohub_gateway_v1",
+          kind: "implementation_entry",
+          reason: "gateway implementation entry point"
+        }
+      ],
+      trustExclusions: []
+    };
+    const candidates = buildOwnerFileRecallCandidates(
+      taskContract("Run observation-only owner-file target trial"),
+      { targetReadModel }
+    );
+
+    expect(candidates.map((candidate) => candidate.metadata.targetPath)).toEqual(
+      expect.arrayContaining([
+        "AGENTS.md",
+        "bedrock/composer.json",
+        "woohub_gateway_v1/main.py",
+        "docs"
+      ])
+    );
+    expect(candidates).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: "Target source seed: AGENTS.md"
+        }),
+        expect.objectContaining({
+          reason: "Target source seed: CLAUDE.md"
+        }),
+        expect.objectContaining({
+          reason: "Target source seed: bedrock"
+        })
+      ])
+    );
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: "Target owner file: woohub_gateway_v1/main.py",
+          lexicalScore: 45,
+          contextRoiScore: 100
+        })
+      ])
+    );
+  });
+
   it("assesses missing target owner-file read-model as typed abstention evidence", () => {
     const targetReadModel: TargetActivationReadModel = {
       projectKernelId: "kernel-1",

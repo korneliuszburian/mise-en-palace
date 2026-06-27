@@ -945,6 +945,156 @@ describe("compileHarnessPlan", () => {
     });
   });
 
+  it("keeps explicit target owner files ahead of covered seeds under the context budget", async () => {
+    const retrievalRepository = new FakeRetrievalRepository();
+
+    const result = await compileHarnessPlan(
+      {
+        ...compileInput,
+        tokenBudget: 400,
+        taskContract: {
+          ...compileInput.taskContract,
+          title: "Run observation-only owner-file target trial",
+          objective: "Run observation-only owner-file target trial without writing target source.",
+          constraints: ["do not write the target repo"],
+          acceptance: ["explicit owner files are not crowded out by adjacent guidance"]
+        },
+        targetReadModel: {
+          projectKernelId: "kernel-target",
+          repoInstallationIds: ["repo-installation-target"],
+          localPathHints: ["/tmp/krn-elektroinstal-ogar"],
+          sourceSeeds: [
+            {
+              path: "AGENTS.md",
+              kind: "agent_instructions",
+              reason: "target-local agent guidance"
+            },
+            {
+              path: "CLAUDE.md",
+              kind: "agent_instructions",
+              reason: "adjacent agent guidance"
+            },
+            {
+              path: "bedrock",
+              kind: "source_root",
+              reason: "Bedrock source root"
+            },
+            {
+              path: "woohub_gateway_v1",
+              kind: "source_root",
+              reason: "gateway source root"
+            },
+            {
+              path: "README.md",
+              kind: "project_readme",
+              reason: "target overview"
+            }
+          ],
+          ownerFiles: [
+            {
+              path: "AGENTS.md",
+              root: ".",
+              kind: "agent_instructions",
+              reason: "target operator guidance"
+            },
+            {
+              path: "bedrock/composer.json",
+              root: "bedrock",
+              kind: "package_manifest",
+              reason: "Bedrock dependency manifest"
+            },
+            {
+              path: "bedrock/README.md",
+              root: "bedrock",
+              kind: "project_readme",
+              reason: "Bedrock runbook"
+            },
+            {
+              path: "woohub_gateway_v1/main.py",
+              root: "woohub_gateway_v1",
+              kind: "implementation_entry",
+              reason: "gateway implementation entry"
+            },
+            {
+              path: "woohub_gateway_v1/README.md",
+              root: "woohub_gateway_v1",
+              kind: "project_readme",
+              reason: "gateway runbook"
+            }
+          ],
+          trustExclusions: [
+            {
+              pathPattern: ".env*",
+              reason: "secret-shaped files must stay out of context"
+            }
+          ]
+        }
+      },
+      {
+        harnessRunRepository: new FakeHarnessRunRepository(),
+        memoryRepository: new FakeMemoryRepository([]),
+        sourceRepository: new FakeSourceRepository([]),
+        retrievalRepository,
+        now: () => now,
+        createId: (prefix) => `${prefix}-target-owner-priority`
+      }
+    );
+
+    expect(result.contextAssembly.inclusions.map((item) => item.reason)).toEqual(
+      expect.arrayContaining([
+        "Target owner file: AGENTS.md",
+        "Target owner file: bedrock/composer.json",
+        "Target owner file: bedrock/README.md",
+        "Target owner file: woohub_gateway_v1/main.py",
+        "Target owner file: woohub_gateway_v1/README.md"
+      ])
+    );
+    expect(result.contextAssembly.inclusions).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: "Target source seed: AGENTS.md"
+        }),
+        expect.objectContaining({
+          reason: "Target source seed: CLAUDE.md"
+        }),
+        expect.objectContaining({
+          reason: "Target source seed: bedrock"
+        }),
+        expect.objectContaining({
+          reason: "Target source seed: woohub_gateway_v1"
+        })
+      ])
+    );
+    expect(result.contextAssembly.exclusions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          reason: "over_budget",
+          subjectType: "search_document"
+        })
+      ])
+    );
+    expect(retrievalRepository.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          metadata: expect.objectContaining({
+            targetReadModelKind: "owner_file",
+            targetPath: "bedrock/composer.json"
+          })
+        }),
+        expect.objectContaining({
+          kind: "search",
+          status: "included",
+          metadata: expect.objectContaining({
+            targetReadModelKind: "owner_file",
+            targetPath: "woohub_gateway_v1/main.py"
+          })
+        })
+      ])
+    );
+  });
+
   it("creates evidence expectations for reviewable engineering work", async () => {
     const result = await compileHarnessPlan(compileInput, {
       harnessRunRepository: new FakeHarnessRunRepository(),

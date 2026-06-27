@@ -182,6 +182,39 @@ const targetSeedMatchCount = (
     seed.reason
   ].join(" ")).filter((term) => taskTerms.has(term)).length;
 
+const normalizeTargetPath = (targetPath: string): string =>
+  targetPath.trim().replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/\/+$/, "").toLowerCase();
+
+const targetPathBasename = (targetPath: string): string => {
+  const normalized = normalizeTargetPath(targetPath);
+  const parts = normalized.split("/");
+
+  return parts[parts.length - 1] ?? normalized;
+};
+
+const isAgentGuidancePath = (targetPath: string): boolean => {
+  const basename = targetPathBasename(targetPath);
+
+  return basename === "agents.md" || basename === "claude.md";
+};
+
+const sourceSeedCoveredByOwnerFile = (
+  seed: TargetActivationSourceSeed,
+  ownerFiles: readonly TargetActivationOwnerFile[]
+): boolean => {
+  const seedPath = normalizeTargetPath(seed.path);
+  const ownerFilePaths = new Set(ownerFiles.map((ownerFile) => normalizeTargetPath(ownerFile.path)));
+  const ownerFileRoots = new Set(ownerFiles.map((ownerFile) => normalizeTargetPath(ownerFile.root)));
+
+  if (ownerFilePaths.has(seedPath) || ownerFileRoots.has(seedPath)) {
+    return true;
+  }
+
+  return isAgentGuidancePath(seed.path) && ownerFiles.some((ownerFile) =>
+    isAgentGuidancePath(ownerFile.path)
+  );
+};
+
 const toTargetSeedCandidate = (
   seed: TargetActivationSourceSeed,
   matchCount: number,
@@ -253,7 +286,8 @@ const toTargetOwnerFileCandidate = (
     reason: `Target owner file: ${ownerFile.path}`,
     expectedUse: `Inspect target owner file ${ownerFile.path} for ${ownerFile.reason}.`,
     tokenEstimate: 56,
-    lexicalScore: matchCount * 45,
+    lexicalScore: Math.max(45, matchCount * 45),
+    contextRoiScore: 100,
     metadata: {
       source: "target_project_read_model",
       targetReadModelKind: "owner_file",
@@ -307,12 +341,17 @@ const buildTargetProjectRecallCandidates = (
   readModel: TargetActivationReadModel
 ): ActivationCandidate[] => {
   const taskTerms = new Set(tokenizeActivationText([task.title, task.objective].join(" ")));
-  const ownerFileCandidates = (readModel.ownerFiles ?? []).flatMap((ownerFile) => {
+  const ownerFiles = readModel.ownerFiles ?? [];
+  const ownerFileCandidates = ownerFiles.map((ownerFile) => {
     const matchCount = targetOwnerFileMatchCount(taskTerms, ownerFile);
 
-    return matchCount >= 1 ? [toTargetOwnerFileCandidate(ownerFile, matchCount, readModel)] : [];
+    return toTargetOwnerFileCandidate(ownerFile, matchCount, readModel);
   });
   const sourceSeedCandidates = readModel.sourceSeeds.flatMap((seed) => {
+    if (sourceSeedCoveredByOwnerFile(seed, ownerFiles)) {
+      return [];
+    }
+
     const matchCount = targetSeedMatchCount(taskTerms, seed);
 
     return matchCount >= 1 ? [toTargetSeedCandidate(seed, matchCount, readModel)] : [];
