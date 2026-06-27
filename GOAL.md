@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V58 — Pattern Intake Runbook For Continuous Brain Growth
+V59 — First Pattern Intake Runbook Application
 ```
 
 Current product loop:
@@ -98,8 +98,9 @@ V54 Post-CI Pattern Gate Re-Gate: complete.
 V55 Product Readiness Re-Gate After CI/Eval Pattern Gates: complete.
 V56 Refresh Operator/Owner Launch Packet After CI/Eval Gates: complete.
 V57 Post-Packet Internal Work Re-Gate: complete.
-active stream: V58 Pattern Intake Runbook For Continuous Brain Growth.
-current task: V58-00 — Pattern Intake Runbook For Continuous Brain Growth.
+V58 Pattern Intake Runbook For Continuous Brain Growth: complete.
+active stream: V59 First Pattern Intake Runbook Application.
+current task: V59-00 — First Pattern Intake Runbook Application.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

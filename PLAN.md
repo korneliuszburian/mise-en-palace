@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V58 Pattern Intake Runbook For Continuous Brain Growth
-current task: V58-00 Pattern Intake Runbook For Continuous Brain Growth
+active stream: V59 First Pattern Intake Runbook Application
+current task: V59-00 First Pattern Intake Runbook Application
 ```
 
 Completed stream summary:
@@ -87,30 +87,31 @@ V54 post-CI pattern gate re-gate: complete
 V55 product readiness re-gate after CI/eval gates: complete
 V56 operator/owner launch packet refresh: complete
 V57 post-packet internal work re-gate: complete
+V58 pattern intake runbook: complete
 ```
 
 ## Active Stream
 
-### V58-00 — Pattern Intake Runbook For Continuous Brain Growth
+### V59-00 — First Pattern Intake Runbook Application
 
 Goal:
 
-Create a compact operator runbook for turning best-practice sources into KRN
-decisions without broad source hoarding.
+Use the new pattern intake runbook on one existing KRN source decision and
+produce one concrete consumer update, rejection, or eval/golden candidate.
 
 Current finding:
 
 ```txt
-V57 selected pattern-intake operationalization as the only useful internal task
-before external operator/owner inputs arrive.
+V58 added `docs/runbooks/pattern-intake.md`, but the runbook still needs one
+bounded application to prove it changes behavior.
 ```
 
-Current V58 action:
+Current V59 action:
 
 ```txt
-Add `docs/runbooks/pattern-intake.md` so official docs, papers, courses,
-practitioner writing, local evidence, and target evidence become decisions,
-rejections, consumers, and falsifiers instead of context sludge.
+Pick one existing source from `docs/KRN_SOURCES.md`, run it through
+`docs/runbooks/pattern-intake.md`, and create exactly one bounded consumer or
+explicit rejection.
 ```
 
 ## V02-01 Boundary

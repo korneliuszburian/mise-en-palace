@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V58 Pattern Intake Runbook For Continuous Brain Growth
-current task: V58-00 Pattern Intake Runbook For Continuous Brain Growth
+active stream: V59 First Pattern Intake Runbook Application
+current task: V59-00 First Pattern Intake Runbook Application
 ```
 
 Evidence already recorded in repo:
@@ -5249,7 +5249,7 @@ Outcome:
 
 ### V58-00 — Pattern Intake Runbook For Continuous Brain Growth
 
-Status: active
+Status: complete
 
 Goal: create a compact runbook for turning high-quality sources into KRN
 decisions, rejections, candidates, standards, skills, ADRs, evals, CI/readback
@@ -5329,6 +5329,89 @@ Acceptance criteria:
 - no new subsystem;
 - every retained source maps to consumer/falsifier;
 - runbook is compact enough for repeated operator use.
+
+Outcome:
+
+- V58 added `docs/runbooks/pattern-intake.md`.
+- V58 kept pattern intake constrained to legal/public/user-provided summaries,
+  consumer routing, falsifiers, rejection paths, and compact retained notes.
+- V58 selected first runbook application as the next bounded proof.
+
+### V59-00 — First Pattern Intake Runbook Application
+
+Status: active
+
+Goal: use `docs/runbooks/pattern-intake.md` on one existing source decision and
+produce one concrete consumer update, explicit rejection, or eval/golden
+candidate.
+
+Product rationale: a runbook is not useful until it changes behavior. The first
+application should prove pattern intake can turn a source into a bounded KRN
+consumer without source hoarding.
+
+Architectural rationale: source-to-decision must stay falsifiable. Applying the
+runbook to one existing source is the smallest proof that V58 is operational.
+
+Evidence source: V58 report, `docs/runbooks/pattern-intake.md`, and
+`docs/KRN_SOURCES.md`.
+
+Official/external sources: use one source already present in
+`docs/KRN_SOURCES.md`; do not browse or add fresh research unless the selected
+consumer cannot be evaluated from existing source decisions.
+
+Inputs required:
+
+- `docs/runbooks/pattern-intake.md`;
+- `docs/KRN_SOURCES.md`;
+- V58 report.
+
+Files likely touched:
+
+- V59 report under `docs/reviews/controlled-dogfood/`;
+- exactly one bounded consumer if justified;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN report/plans;
+- one bounded consumer only if the runbook application justifies it.
+
+Forbidden writes:
+
+- package source changes;
+- target repo edits;
+- new source crawler or archive;
+- broad research intake;
+- copied paid/proprietary course content;
+- product-ready or widened-alpha claim.
+
+Output requirements:
+
+- selected source;
+- runbook template filled out;
+- decision/rejection;
+- consumer/falsifier;
+- proof/non-proof boundary;
+- next task or blocker.
+
+Definition of Done: V59 proves the pattern intake runbook on one existing
+source decision without broadening scope.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- one source only;
+- one consumer or explicit rejection;
+- no broad research;
+- next active task is explicit.
 
 ## 13. Generated Task Backlog
 
@@ -5658,7 +5741,10 @@ Initial entry:
   gates with current CI evidence and exact missing external inputs.
 - [x] V57-00 complete: selected Pattern Intake Runbook and rejected local
   substitutes, broad research, target writes, and product overclaims.
-- [ ] V58-00 active: Pattern Intake Runbook For Continuous Brain Growth.
+- [x] V58-00 complete: added compact pattern-intake runbook with source classes,
+  legal boundary, consumer routing, falsifier requirement, templates, examples,
+  and rejection paths.
+- [ ] V59-00 active: First Pattern Intake Runbook Application.
 ```
 
 ## 16. Surprises & Discoveries
@@ -6436,6 +6522,17 @@ Initial decisions:
     already known.
   Falsifier: V58 cannot define a compact workflow without creating a broad
     research archive or copied course content.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote first Pattern Intake Runbook application as V59.
+  Rationale: V58 created the runbook, but KRN only accepts a workflow as useful
+    after it changes a bounded decision, rejection, or consumer.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v58-pattern-intake-runbook/REPORT.md`;
+    `docs/runbooks/pattern-intake.md`.
+  Does not prove: product readiness, broad research coverage, or that future
+    intakes will be high quality.
+  Falsifier: V59 cannot use the runbook on one existing source without expanding
+    into broad research or no-op documentation.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -7580,6 +7677,14 @@ Seed queue:
   Reason: operators need a compact way to convert sources into decisions,
     rejections, consumers, and falsifiers without broad source hoarding
   Task: V58-00
+
+- Candidate: first pattern intake runbook application
+  Source evidence: V58 report and `docs/runbooks/pattern-intake.md`
+  Surface: one existing source decision and one bounded consumer/rejection
+  Status: accepted as V59-00
+  Reason: the runbook must be proven on one real source decision before further
+    research/pattern intake work
+  Task: V59-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -9284,6 +9389,41 @@ Product readiness verdict:
 Next active stream:
 - V58 — Pattern Intake Runbook For Continuous Brain Growth.
 
+## Outcome 2026-06-27 V58
+
+Completed:
+- V58 Pattern Intake Runbook For Continuous Brain Growth.
+
+Evidence:
+- `docs/runbooks/pattern-intake.md`.
+- `docs/reviews/controlled-dogfood/2026-06-27-v58-pattern-intake-runbook/REPORT.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/KRN_SOURCES.md`.
+
+What improved:
+- KRN now has an operator runbook for feeding best patterns into the brain
+  without broad source hoarding.
+- Pattern intake has explicit legal/content boundaries.
+- Sources must route to consumer and falsifier or be rejected/deferred.
+
+What did not improve:
+- Product readiness.
+- V02-01.
+- Target owner/stability inputs.
+- Package source behavior.
+
+New task:
+- V59 First Pattern Intake Runbook Application.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V59 — First Pattern Intake Runbook Application.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -9332,7 +9472,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V57 Post-Packet Internal Work Re-Gate.
+Active stream: V59 First Pattern Intake Runbook Application.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
