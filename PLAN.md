@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V45 Target Availability Re-Gate With Typed Lifecycle Evidence
-current task: V45-00 Target Availability Re-Gate With Typed Lifecycle Evidence
+active stream: V46 Target Owner Coordination Packet
+current task: V46-00 Target Owner Coordination Packet
 ```
 
 Completed stream summary:
@@ -74,32 +74,33 @@ V41 Target Trial Availability Re-Gate: complete
 V42 WILQ Fresh Observation-Only Baseline Retry: complete
 V43 Target Stability Window Gate: complete
 V44 target evidence lifecycle/freshness fields: complete
+V45 target availability re-gate with typed lifecycle evidence: complete
 ```
 
 ## Active Stream
 
-### V45-00 — Target Availability Re-Gate With Typed Lifecycle Evidence
+### V46-00 — Target Owner Coordination Packet
 
 Goal:
 
-Run a fresh observation-only target availability gate using the new typed target
-evidence lifecycle/freshness fields.
+Create a compact coordination packet listing the exact owner/stability inputs
+required to resume target repair or V02-01 without inventing another local
+substitute.
 
 Current finding:
 
 ```txt
-V44 made target status freshness and patch lifecycle first-class target
-evidence. The next decision is whether any live target repo is now available for
-safe observation or repair, recorded with typed target evidence instead of prose
-only.
+V45 found no live target repo is currently safe for headless repair. WILQ is
+dirty/external-context only, elektroinstal is still handed_off_unresolved, and
+the wider active checkout inventory is dirty/noisy.
 ```
 
-Current V45 action:
+Current V46 action:
 
 ```txt
-Check fresh target status and patch lifecycle for candidate target repos. Do
-not repair target repos unless a fresh clean/stable window or explicit write
-scope exists.
+Write the minimal owner/stability packet that states what exact input unlocks
+target repair, observation-only verification, or real V02-01. Do not edit
+target repos.
 ```
 
 ## V02-01 Boundary

@@ -74,8 +74,9 @@ product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 V44 Target Evidence Lifecycle And Freshness Fields: complete
-active stream: V45 Target Availability Re-Gate With Typed Lifecycle Evidence
-current task: V45-00 Target Availability Re-Gate With Typed Lifecycle Evidence
+V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
+active stream: V46 Target Owner Coordination Packet
+current task: V46-00 Target Owner Coordination Packet
 ```
 
 Evidence already recorded in repo:
@@ -90,9 +91,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V44 made target lifecycle/freshness typed evidence. The current gap is whether
-any live target repo is available for safe observation or repair when recorded
-with these first-class target evidence fields.
+V45 found no live target repo is currently safe for repair. The current gap is
+the exact owner/stability packet required to resume target repair or V02-01
+without inventing another local substitute.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -4141,7 +4142,7 @@ Outcome:
 
 ### V45-00 — Target Availability Re-Gate With Typed Lifecycle Evidence
 
-Status: active
+Status: complete
 
 Goal: run a fresh observation-only target availability gate using the new typed
 target evidence lifecycle/freshness fields.
@@ -4209,6 +4210,88 @@ Acceptance criteria:
 
 - no target writes;
 - no stale target state used as current evidence;
+- no product-ready or V02-01 overclaim;
+- next active task is explicit.
+
+Outcome:
+
+- V45 re-checked WILQ and elektroinstal with fresh target status.
+- V45 used typed target evidence fields in `krn evidence capture` preview for
+  both target states.
+- V45 found no safe headless repair target: WILQ is dirty/external-context
+  only, elektroinstal remains `handed_off_unresolved`, and the broader active
+  checkout inventory is dirty/noisy.
+
+### V46-00 — Target Owner Coordination Packet
+
+Status: active
+
+Goal: create a compact coordination packet listing the exact owner/stability
+inputs required to resume target repair or V02-01 without inventing another
+local substitute.
+
+Product rationale: repeated target gates now show KRN can inspect and classify
+target state, but repair/product proof needs external owner/stability input.
+The next useful artifact is a minimal packet that makes those missing inputs
+explicit.
+
+Architectural rationale: KRN should not create more local substitutes when the
+next proof depends on owner acceptance, explicit dirty-state write scope, a
+stable clean target window, or real second-operator transcript.
+
+Evidence source: V45 target availability re-gate.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v45-target-availability-regate-typed-evidence/REPORT.md`;
+- V35 target patch handoff report if referenced;
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/runbooks/target-repo-testing.md`.
+
+Files likely touched:
+
+- coordination packet under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN reports/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- fake V02-01 proof;
+- another local substitute for missing operator inputs;
+- product-ready/widened-alpha overclaim;
+- dashboard/API/MCP/worker/new eval platform.
+
+Output requirements:
+
+- exact inputs needed for WILQ dirty-state repair permission;
+- exact inputs needed for elektroinstal patch lifecycle decision;
+- exact inputs needed for V02-01 real second-operator proof;
+- what KRN may do while waiting;
+- what KRN must not do while waiting.
+
+Definition of Done: V46 produces a compact operator-facing packet that can be
+used to unblock the next target proof without rereading V35-V45.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no target writes;
+- no new local substitute;
 - no product-ready or V02-01 overclaim;
 - next active task is explicit.
 
@@ -4513,7 +4596,9 @@ Initial entry:
   promoted.
 - [x] V44-00 complete: target lifecycle/freshness fields are typed target
   evidence and round-trip through CLI capture/readback without DB migration.
-- [ ] V45-00 active: Target Availability Re-Gate With Typed Lifecycle Evidence.
+- [x] V45-00 complete: fresh target availability was re-gated with typed
+  lifecycle evidence; no safe headless repair target is available right now.
+- [ ] V46-00 active: Target Owner Coordination Packet.
 ```
 
 ## 16. Surprises & Discoveries
@@ -5160,6 +5245,20 @@ Initial decisions:
     task; then the next task must remain KRN internal hardening or wait for
     operator inputs.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target owner coordination packet as V46.
+  Rationale: V45 used typed lifecycle evidence and found no safe repair target:
+    WILQ is dirty/external-context only, elektroinstal is
+    `handed_off_unresolved`, and the wider active checkout inventory is
+    dirty/noisy. The next unlock requires owner/stability inputs, not another
+    local substitute.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v45-target-availability-regate-typed-evidence/REPORT.md`.
+  Does not prove: target work should stop forever, V02-01 is impossible, or
+    product readiness.
+  Falsifier: operator provides explicit dirty-state write scope, target owner
+    patch lifecycle decision, stable clean target window, or real V02-01
+    inputs.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5647,6 +5746,18 @@ Seed evidence:
   Does not prove: target repo readiness, target owner acceptance, V02-01, or
     product readiness.
   Follow-up task: V45-00.
+
+- Evidence ID: E-V45-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v45-target-availability-regate-typed-evidence/REPORT.md`
+  Command/report/file: fresh target statuses, active checkout inventory, and
+    typed target evidence capture previews.
+  Result: WILQ remains dirty/external-context only; elektroinstal remains
+    handed_off_unresolved; no obvious clean idle product target was found.
+  Proves: no safe headless repair target is currently available from the
+    inspected local checkout set.
+  Does not prove: target work should stop forever, target repos are bad, V02-01
+    is impossible, or product readiness.
+  Follow-up task: V46-00.
 ```
 
 ## 19. Condensation Queue
@@ -6062,10 +6173,18 @@ Seed queue:
 - Candidate: target availability re-gate with typed lifecycle evidence
   Source evidence: V44 target evidence source repair
   Surface: observation-only target report + typed evidence capture inputs
-  Status: accepted as V45-00
+  Status: implemented in V45-00
   Reason: target trials should resume only after fresh target status/lifecycle
     evidence, not stale prior selection
   Task: V45-00
+
+- Candidate: target owner coordination packet
+  Source evidence: V45 target availability re-gate
+  Surface: operator-facing coordination packet
+  Status: accepted as V46-00
+  Reason: the next target proof depends on owner/stability inputs, and local
+    substitutes would overstate readiness
+  Task: V46-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -7321,6 +7440,43 @@ Product readiness verdict:
 Next active stream:
 - V45 — Target Availability Re-Gate With Typed Lifecycle Evidence.
 
+## Outcome 2026-06-27 V45
+
+Completed:
+- V45-00 re-gated target availability using fresh target status checks.
+- Used typed target evidence fields in `krn evidence capture` preview for WILQ
+  and elektroinstal.
+- Confirmed no safe headless repair target is currently available from the
+  inspected local checkout set.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v45-target-availability-regate-typed-evidence/REPORT.md`.
+- Fresh `git status --short --branch` in WILQ and elektroinstal.
+- Read-only active checkout inventory.
+- Typed target evidence capture previews.
+
+What improved:
+- Target availability decisions now use first-class lifecycle/freshness fields.
+- KRN avoided target writes while target state is unresolved or external.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Availability of a clean/stable target repair window.
+- Target owner decision for the elektroinstal patch.
+
+New task:
+- Create a compact owner/stability coordination packet.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V46 — Target Owner Coordination Packet.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -7369,7 +7525,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V45 Target Availability Re-Gate With Typed Lifecycle Evidence.
+Active stream: V46 Target Owner Coordination Packet.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
