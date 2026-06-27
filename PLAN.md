@@ -48,7 +48,8 @@ V18 Target Owner-File Contract Re-Gate / Trial Application: complete
 V19 Product Readiness Re-Gate After Owner-File Contract: complete
 V20 Real Target Observation-Only Owner-File Trial: complete
 V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
-active stream: V22 Persisted CLI DB URL Default Consistency
+V22 Persisted CLI DB URL Default Consistency: complete
+active stream: V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -455,18 +456,35 @@ Evidence:
 
 - `docs/reviews/controlled-dogfood/2026-06-27-v21-target-evidence-observation-only-defaults/REPORT.md`.
 
-## Active Stream: V22
+## Completed Stream: V22
 
 V22 repairs the DB URL ergonomics gap found during target-trial persistence.
 
 ### V22-00 — Persisted CLI DB URL Default Consistency
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: inspect persisted CLI commands that require `KRN_DATABASE_URL` and decide
 whether they should share the same default DB URL behavior as `pnpm db:ready` or
 emit a stronger exact remediation. Preserve explicit env override. Do not change
 DB schema or product readiness claims.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`.
+
+## Active Stream: V23
+
+V23 reruns a real target observation-only trial after V21/V22 ergonomics repairs.
+
+### V23-00 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
+
+Status: active.
+
+Goal: rerun a real target observation-only owner-file trial, prove
+observation-only target evidence defaults persist correctly when explicit
+forbidden-write flags are omitted, and preserve no-target-writes/no-V02-01
+boundaries.
 
 ## Hard Non-Goals
 

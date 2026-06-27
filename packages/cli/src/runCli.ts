@@ -94,6 +94,9 @@ import {
 import {
   runMemoryAntiReviewCommand
 } from "./runMemoryAntiReviewCommand.js";
+import {
+  missingDbConfigRecovery
+} from "./dbRecoveryGuidance.js";
 
 export interface CliRuntime {
   env: Record<string, string | undefined>;
@@ -114,6 +117,24 @@ export interface CliResult {
   stdout: string;
   stderr: string;
 }
+
+const dbConfigRequiredPrefix = "KRN_DATABASE_URL is required";
+
+const formatCliError = (message: string): string => {
+  if (!message.startsWith(dbConfigRequiredPrefix)) {
+    return `${message}\n`;
+  }
+
+  if (message.includes("Next action:")) {
+    return `${message}\n`;
+  }
+
+  return [
+    message,
+    `Next action: ${missingDbConfigRecovery()}`,
+    "Does not prove: setting KRN_DATABASE_URL does not prove the requested persisted command is valid, commands executed, or Memory Core mutated"
+  ].join("\n") + "\n";
+};
 
 const createDefaultIdFactory = (): ((prefix: string) => string) => {
   let counter = 0;
@@ -189,7 +210,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -297,7 +318,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -326,7 +347,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -354,7 +375,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -382,7 +403,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -410,7 +431,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -438,7 +459,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -470,7 +491,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -499,7 +520,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -528,7 +549,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -560,7 +581,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -589,7 +610,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -612,7 +633,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -635,7 +656,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -660,7 +681,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -688,7 +709,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -728,7 +749,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -755,7 +776,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }
@@ -783,7 +804,7 @@ export const runCli = async (
       return {
         exitCode: 1,
         stdout: "",
-        stderr: `${message}\n`
+        stderr: formatCliError(message)
       };
     }
   }

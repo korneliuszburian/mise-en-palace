@@ -47,12 +47,13 @@ V18 Target Owner-File Contract Re-Gate / Trial Application: complete
 V19 Product Readiness Re-Gate After Owner-File Contract: complete
 V20 Real Target Observation-Only Owner-File Trial: complete
 V21 Target Evidence Observation-Only Defaults And Readback Clarity: complete
+V22 Persisted CLI DB URL Default Consistency: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V22 Persisted CLI DB URL Default Consistency
-current task: V22-00 Persisted CLI DB URL Default Consistency
+active stream: V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
+current task: V23-00 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
 ```
 
 Evidence already recorded in repo:
@@ -67,9 +68,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V22 must repair or explicitly reject the DB URL ergonomics gap found by V20:
-`pnpm db:ready` has a default DB URL, but persisted CLI commands fail without an
-explicit `KRN_DATABASE_URL`.
+V23 must rerun a real target observation-only trial after V21/V22 so the newly
+repaired target evidence defaults and DB recovery guidance are proven in the
+target workflow, not only in isolated source tests.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -1981,6 +1982,28 @@ print exact remediation that makes the required env obvious and copyable.
 - readiness remains controlled-internal-alpha for technical operators, stronger;
   widened alpha and product-ready remain unproven.
 
+### Stream V23 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
+
+Why now:
+
+- V20 proved a real target observation-only owner-file trial.
+- V21 repaired observation-only target evidence defaults.
+- V22 repaired missing DB config recovery guidance.
+- The next proof should exercise the repaired ergonomics in the target workflow,
+  not add another isolated source repair.
+
+Expected end state:
+
+```txt
+One real target observation-only trial confirms that target evidence defaults
+and DB recovery guidance work in the end-to-end operator loop.
+```
+
+- no target repo writes;
+- no fake V02-01 claim;
+- no activation scoring rewrite;
+- readiness remains controlled-internal-alpha for technical operators, stronger.
+
 ### V20-00 — Real Target Observation-Only Owner-File Trial
 
 Status: complete
@@ -2136,7 +2159,7 @@ Completed evidence:
 
 ### V22-00 — Persisted CLI DB URL Default Consistency
 
-Status: active
+Status: complete
 
 Goal: inspect and repair or explicitly reject inconsistent local DB URL
 ergonomics for persisted CLI commands.
@@ -2200,6 +2223,80 @@ trial, target runbook update, activation context repair, or real operator
 intake.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V22
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`.
+- Missing DB config errors now include copyable recovery guidance without
+  silently defaulting direct persisted commands to local Postgres.
+
+### V23-00 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs
+
+Status: active
+
+Goal: rerun a real target observation-only owner-file trial after V21/V22 and
+prove the repaired target evidence defaults and DB recovery guidance in the
+target workflow.
+
+Product rationale: source repairs are only useful if they reduce friction in the
+next real target trial.
+
+Architectural rationale: target evidence and DB config are operator boundaries.
+They need end-to-end proof under the real target workflow.
+
+Evidence source: V20, V21, and V22 reports.
+
+Official/external sources: none required unless target tooling requires external
+docs.
+
+Inputs required: one safe real target checkout, preferably the same
+`krn-elektroinstal-ogar` checkout if still clean.
+
+Files likely touched:
+
+- V23 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes: KRN reports/plans only unless evidence proves a bounded KRN
+source repair is required.
+
+Forbidden writes: target repo edits, target commits, target resets/cleans,
+activation scoring rewrite, source crawler, product-ready/V02-01 overclaim,
+dashboard/API/MCP/worker runtime.
+
+Output requirements:
+
+- target pre/post dirty state;
+- owner files;
+- KRN init/plan/evidence commands;
+- one target evidence capture that omits explicit target forbidden-write flags
+  and still persists observation-only defaults;
+- DB missing-env behavior if encountered;
+- proof/non-proof boundaries;
+- next task decision.
+
+Definition of Done: V23 either completes one real target observation-only rerun
+with repaired ergonomics or records the exact blocker.
+
+Verification commands: `git diff --check`; if source changes, `pnpm typecheck`
+and `pnpm test`; if DB-backed, `pnpm db:ready`.
+
+Acceptance criteria: no target writes; no fixture substitute; no V02-01/product
+overclaim.
+
+Risk: rerun becomes redundant. Mitigation: explicitly test the repaired
+ergonomics from V21/V22.
+
+Rollback: focused report/plan revert; no target rollback should be needed.
+
+Condensation expectation: decide whether next work is real operator intake,
+activation owner-file recall repair, target runbook update, or another bounded
+source repair.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V23
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2453,7 +2550,10 @@ Initial entry:
   defaults/readback repair accepted.
 - [x] V21-00 complete: observation-only target evidence now defaults safe write
   boundaries and run readback list clarity improved.
-- [ ] V22-00 active: Persisted CLI DB URL Default Consistency.
+- [x] V22-00 complete: missing DB config errors now include copyable recovery
+  guidance without silent direct-CLI DB defaulting.
+- [ ] V23-00 active: Real Target Observation Re-Run After Evidence/DB
+  Ergonomics Repairs.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2589,6 +2689,13 @@ Record every unexpected fact in this format:
   Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v21-target-evidence-observation-only-defaults/REPORT.md`.
   Impact: V21 repaired observation-only defaults once for capture, persistence,
   and readback instead of adding a separate display-only warning.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: Missing DB config should not silently default direct persisted CLI
+  writes to local Postgres.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`.
+  Impact: V22 repaired operator friction with copyable recovery guidance while
+  preserving explicit DB env override and avoiding hidden local writes.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2775,6 +2882,15 @@ Initial decisions:
   Does not prove: the correct fix shape, DB schema needs, or product readiness.
   Falsifier: V22 source inspection proves the explicit env requirement is
   intentional and already accompanied by exact operator remediation.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote real target observation rerun after V21/V22 repairs as V23.
+  Rationale: target evidence defaults and DB recovery guidance should be proven
+  in the target workflow before adding more source repairs.
+  Evidence: V20, V21, and V22 reports.
+  Does not prove: V02-01, product readiness, or real operator usability.
+  Falsifier: V23 cannot find a safe real target checkout or the target becomes
+  actively dirty in a way that prevents observation-only proof.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2989,6 +3105,18 @@ Seed evidence:
   Does not prove: product readiness, V02-01, target runtime correctness, or
     activation quality.
   Follow-up task: V22-00.
+
+- Evidence ID: E-V22-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`
+  Command/report/file: source repair for centralized missing DB config recovery
+    guidance in `runCli`.
+  Result: missing `KRN_DATABASE_URL` errors now include exact recovery guidance
+    and does-not-prove boundary while preserving explicit env override.
+  Proves: direct persisted CLI commands are less likely to stall operators on a
+    bare missing-env error.
+  Does not prove: DB readiness, product readiness, V02-01, or command-specific
+    persistence success.
+  Follow-up task: V23-00.
 ```
 
 ## 19. Condensation Queue
@@ -3216,6 +3344,15 @@ Seed queue:
     commands can fail without explicit `KRN_DATABASE_URL`; this is the next
     operator-friction item in target/dogfood loops
   Task: V22-00
+
+- Candidate: real target observation rerun after evidence and DB ergonomics
+    repairs
+  Source evidence: V20, V21, and V22 reports
+  Surface: target trial report
+  Status: accepted as V23-00
+  Reason: prove the newly repaired target evidence defaults and DB recovery
+    guidance in the real target workflow before more source repairs
+  Task: V23-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -3734,6 +3871,47 @@ Product readiness verdict:
 Next active stream:
 - V22 — Persisted CLI DB URL Default Consistency.
 
+## Outcome 2026-06-27 V22
+
+Completed:
+- V22-00 repaired missing DB config recovery guidance for direct persisted CLI
+  commands.
+- `runCli` now appends copyable recovery guidance and a does-not-prove boundary
+  when command runners throw `KRN_DATABASE_URL is required...`.
+- Existing command-specific remediation is not duplicated when it already
+  includes `Next action:`.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v22-persisted-cli-db-url-recovery/REPORT.md`.
+- DB-backed run `3c56703d-9570-4ba1-8e35-71cd935d3427`.
+- Evidence bundle `22bad4a4-277c-4ed8-a141-b299b1e85661`.
+- Observation group `d4a3d864-1d6d-4492-824b-038ae1f24d63`.
+- Reflection record `aca9bfa0-8528-4334-ac3b-6b6d4c554cf8`.
+
+What improved:
+- Operators get exact DB recovery guidance instead of a bare missing-env error.
+- Direct persisted commands still do not silently default to local Postgres.
+- Explicit DB env override remains the write boundary.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- DB readiness itself.
+
+New blocker:
+- V21/V22 repairs should be proven together in one real target observation-only
+  rerun before further source repairs.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V23 — Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -3782,7 +3960,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V22 Persisted CLI DB URL Default Consistency.
+Active stream: V23 Real Target Observation Re-Run After Evidence/DB Ergonomics Repairs.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
