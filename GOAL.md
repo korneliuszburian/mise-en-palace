@@ -109,7 +109,8 @@ V64-00 Pattern Gate Re-Entry: complete.
 V64-01 Pattern Surface Consumer Matrix: complete.
 V64-02 First Surface-Matrix Pattern Application: complete.
 V64-03 Post Surface-Matrix Application Re-Gate: complete.
-current task: V65-00 TypeScript Source Packet Application.
+V65-00 TypeScript Source Packet Application: complete.
+current task: V65-01 Post TypeScript Pattern Application Re-Gate.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

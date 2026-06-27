@@ -25,7 +25,7 @@ product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V65 TypeScript Boundary Pattern Application
-current task: V65-00 TypeScript Source Packet Application
+current task: V65-01 Post TypeScript Pattern Application Re-Gate
 ```
 
 Completed stream summary:
@@ -97,7 +97,8 @@ V64-00 pattern gate re-entry: complete
 V64-01 pattern surface consumer matrix: complete
 V64-02 first surface-matrix pattern application: complete
 V64-03 post surface-matrix application re-gate: complete
-V65 TypeScript boundary pattern application: active
+V65-00 TypeScript source packet application: complete
+V65-01 post TypeScript pattern application re-gate: active
 ```
 
 ## Active Stream
@@ -122,11 +123,8 @@ standards and recurring KRN source work.
 Current action:
 
 ```txt
-Execute V65-00: apply the surface matrix to the existing Total TypeScript /
-TypeScript boundary source packet and route it to one durable consumer:
-`docs/standards/typescript-boundaries.md`,
-`docs/standards/typescript-excellence.md`, an eval/golden candidate, or an
-explicit defer/reject decision.
+Execute V65-01: decide the next bounded task after the TypeScript boundary
+source packet application, using evidence instead of momentum.
 ```
 
 Primary consumer:

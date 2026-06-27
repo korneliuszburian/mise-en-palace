@@ -79,7 +79,7 @@ V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
 active stream: V65 TypeScript Boundary Pattern Application
-current task: V65-00 TypeScript Source Packet Application
+current task: V65-01 Post TypeScript Pattern Application Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -6057,7 +6057,7 @@ Acceptance criteria:
 
 ### V65-00 — TypeScript Source Packet Application
 
-Status: active
+Status: complete
 
 Goal: Apply the surface consumer matrix to the existing TypeScript source packet
 and route it to one durable KRN consumer.
@@ -6154,6 +6154,86 @@ Acceptance criteria:
 - Future TypeScript slices can tell whether to apply, defer, or reject course
   guidance without rereading chat history.
 - The task does not create a broad research backlog.
+
+### V65-01 — Post TypeScript Pattern Application Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after the TypeScript boundary source packet
+application.
+
+Pattern surface: TypeScript boundaries / continuous pattern distillation.
+
+Product rationale: The TypeScript packet now has one durable consumer. The next
+task should be selected from evidence, not from a desire to keep adding source
+notes.
+
+Architectural rationale: A completed source application should either produce a
+bounded repair/eval/skill/standard follow-up or stop with an explicit blocker.
+
+Evidence source:
+
+- `docs/standards/typescript-boundaries.md` Pattern Intake Decision.
+- V64 surface matrix.
+- V65-00 source packet application.
+
+Official/external sources:
+
+- none beyond sources already retained in `docs/KRN_SOURCES.md`.
+
+Inputs required:
+
+- Current plan state and V65-00 diff.
+
+Primary consumer:
+
+- `PLAN.md` / `GOAL.md` / `PLANS.md` next-task selection.
+
+Does not prove:
+
+- current TypeScript source has drift;
+- more course/paper intake is useful by default;
+- product readiness.
+
+Falsifier:
+
+- The re-gate selects another source task without a consumer/falsifier.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- package source;
+- broad research backlog;
+- extra source intake by momentum.
+
+Output requirements:
+
+- One next bounded task or honest blocker selected.
+
+Definition of Done:
+
+- Next active task is explicit.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- Plan state can be resumed without chat context.
 
 ### External Input Blocker
 
@@ -6525,8 +6605,9 @@ Initial entry:
   `PLANS.md` generated task template.
 - [x] V64-03 complete: selected the TypeScript boundary source packet as the
   next bounded pattern application.
-- [ ] V65-00 active: apply the existing TypeScript source packet to one durable
+- [x] V65-00 complete: applied the existing TypeScript source packet to one durable
   TypeScript consumer or explicitly defer/reject it.
+- [ ] V65-01 active: re-gate after the TypeScript boundary pattern application.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7418,6 +7499,28 @@ Initial decisions:
     are useful.
   Falsifier: V65-00 finds the existing standards already cover the packet and
     no new bounded decision should be retained.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Adopt the TypeScript source packet for external boundary work.
+  Source packet: `docs/KRN_SOURCES.md` TypeScript practitioner sources:
+    Designing Your Types, Unions/Literals/Narrowing, and TS Reset.
+  Surface: TypeScript boundaries.
+  Mechanism: Type design communicates authority and lifecycle; narrow unions
+    make finite external states visible; `ts-reset` shows why unsafe platform
+    defaults should be treated as unknown-first but global type changes are
+    application-scoped.
+  KRN implication: external TypeScript inputs must parse/narrow before domain
+    use, finite status/provenance values crossing IO should use narrow unions,
+    and global `ts-reset` remains rejected in core/schema/public APIs without
+    ADR-level package-boundary evidence.
+  Decision kind: adopt.
+  Consumer: `docs/standards/typescript-boundaries.md`.
+  Does not prove: current source has TypeScript drift, broad type rewrites are
+    useful, or every object needs a discriminant.
+  Falsifier: a future TypeScript slice trusts JSON/env/CLI/MCP/app/plugin data
+    before validation, changes `ts-reset` without package-boundary
+    classification, or keeps repeated external status/provenance values as broad
+    strings where finite values govern behavior.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10527,6 +10630,7 @@ Completed:
 - V64-01 Pattern Surface Consumer Matrix.
 - V64-02 First Surface-Matrix Pattern Application.
 - V64-03 Post Surface-Matrix Application Re-Gate.
+- V65-00 TypeScript Source Packet Application.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10546,16 +10650,19 @@ What improved:
   consumer, does-not-prove boundary, and falsifier.
 - The next source packet is selected by matrix evidence: TypeScript boundaries,
   not broad research.
+- The TypeScript source packet now has one durable consumer:
+  `docs/standards/typescript-boundaries.md`.
 
 What did not improve:
 - Product readiness.
 - V02-01 second-operator proof.
 - Any broad source, course, or paper adoption beyond the single Codex
   task-contract source packet.
+- Current TypeScript source drift.
 - Package source behavior.
 
 New task:
-- V65-00 TypeScript Source Packet Application.
+- V65-01 Post TypeScript Pattern Application Re-Gate.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10567,7 +10674,7 @@ Next active stream:
 - V65 TypeScript Boundary Pattern Application.
 
 Next active task:
-- V65-00 TypeScript Source Packet Application.
+- V65-01 Post TypeScript Pattern Application Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
