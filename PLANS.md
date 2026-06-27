@@ -77,8 +77,8 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-active stream: V48 Continuous Pattern Source-To-Decision Gate
-current task: V48-00 Continuous Pattern Source-To-Decision Gate
+active stream: V49 First Continuous Pattern Gate Application
+current task: V49-00 First Continuous Pattern Gate Application
 ```
 
 Evidence already recorded in repo:
@@ -296,6 +296,33 @@ source
 ```
 
 Official OpenAI/Codex docs are primary for Codex surface behavior. Practitioner sources are hypothesis unless verified by local code, official docs, or controlled scenario evidence. Papers inform principles, not architecture cloning. Competitor docs are comparators, not product authority.
+
+### Continuous Pattern Gate
+
+Every non-trivial KRN slice must ask whether it touches a reusable pattern
+surface:
+
+```txt
+infra / storage / migrations / queues
+harness / activation / memory / review gates
+CI / release / eval / Promptfoo
+Codex surfaces / skills / hooks / MCP / subagents
+target-repo workflow
+TypeScript boundaries
+security / permissions / trust boundaries
+operator UX / CLI / readback
+```
+
+If a surface applies, Codex must either cite an existing KRN source, standard,
+ADR, or skill; add a bounded source decision; or explicitly reject/defer source
+work with a reason. The source must route to a consumer: standard, skill, ADR,
+eval/golden candidate, memory/source candidate, CLI/readback/CI behavior,
+bounded repair, or rejection.
+
+Do not index courses, papers, or docs into active context by default. Legal,
+public, or user-provided material may be condensed only as mechanism ->
+decision -> consumer -> falsifier. Paid/proprietary course material must not be
+copied into KRN.
 
 ## 8. Controlled Scenario Contract
 
@@ -4385,7 +4412,7 @@ Outcome:
 
 ### V48-00 — Continuous Pattern Source-To-Decision Gate
 
-Status: active
+Status: complete
 
 Goal: create a standing gate for applying high-quality source-backed patterns
 to every KRN stage.
@@ -4477,6 +4504,107 @@ Acceptance criteria:
 - no broad source archive;
 - no target writes;
 - no product-ready or V02-01 overclaim;
+- next active task is explicit.
+
+Outcome:
+
+- V48 added the Continuous Pattern Gate to the `source-to-decision` skill.
+- V48 generalized pattern condensation beyond TypeScript into infra, harness,
+  CI, memory, skills, target workflow, Codex surfaces, evals, security, and
+  operator UX.
+- V48 rejected broad course indexing, source crawler, research archive, and
+  decorative source hoarding.
+
+### V49-00 — First Continuous Pattern Gate Application
+
+Status: active
+
+Goal: apply the new Continuous Pattern Gate to one bounded real KRN slice and
+record whether it changes a decision, rejects a decorative source, creates a
+durable consumer, or exposes friction.
+
+Product rationale: the pattern gate has value only if it improves future KRN
+work. The next slice must use it in practice instead of stopping at skill text.
+
+Architectural rationale: KRN should condense patterns into standards, skills,
+ADRs, eval/golden candidates, memory/source candidates, CLI/readback/CI
+behavior, or bounded repairs. The first application should prove the gate
+selects a consumer and falsifier without source hoarding.
+
+Evidence source: V48 report and updated `source-to-decision` skill.
+
+Official/external sources: use only sources required by the selected slice.
+Prefer existing `docs/KRN_SOURCES.md`, standards, ADRs, skills, and local repo
+evidence before browsing. If a fresh external source is needed, route it
+through source -> mechanism -> KRN implication -> decision/rejection ->
+consumer -> falsifier.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v48-continuous-pattern-source-gate/REPORT.md`;
+- `.agents/skills/source-to-decision/SKILL.md`;
+- current `PLANS.md` Progress, Evidence Ledger, Decision Log, Condensation
+  Queue, and Active Task Queue.
+
+Files likely touched:
+
+- V49 report under `docs/reviews/controlled-dogfood/`;
+- `PLANS.md`;
+- `GOAL.md`;
+- `PLAN.md`;
+- optionally one bounded source/standard/skill/ADR/eval-candidate/CLI or test
+  file if the selected application requires it.
+
+Allowed writes:
+
+- KRN reports/plans;
+- one bounded KRN source, standard, skill, ADR, eval/golden candidate, or
+  readback/CI behavior update if directly justified by the gate.
+
+Forbidden writes:
+
+- target repo edits;
+- broad course/paper indexing;
+- source crawler;
+- research archive;
+- product-ready/V02-01 overclaim;
+- dashboard/API/MCP/worker/new eval platform;
+- active-context expansion without consumer and falsifier.
+
+Output requirements:
+
+- selected surface;
+- source decision or explicit source rejection;
+- consumer;
+- falsifier;
+- what changed because of the gate;
+- what was not changed;
+- next task, if evidence creates one.
+
+Definition of Done: V49 proves the Continuous Pattern Gate on one real bounded
+slice or rejects the slice with a concrete reason.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+If source or skill files change:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no broad source archive;
+- no target writes;
+- no product-ready or V02-01 overclaim;
+- gate output has consumer and falsifier;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -4783,7 +4911,12 @@ Initial entry:
 - [x] V45-00 complete: fresh target availability was re-gated with typed
   lifecycle evidence; no safe headless repair target is available right now.
 - [x] V46-00 complete: target owner/stability coordination packet created.
-- [ ] V47-00 active: Internal Hardening Re-Gate After Target Coordination.
+- [x] V47-00 complete: selected continuous pattern source-to-decision as the
+  next internal hardening task while target/operator inputs remain blocked.
+- [x] V48-00 complete: Continuous Pattern Gate added to `source-to-decision`
+  skill and root plans; high-quality patterns now require mechanism, consumer,
+  and falsifier instead of becoming source hoarding.
+- [ ] V49-00 active: First Continuous Pattern Gate Application.
 ```
 
 ## 16. Surprises & Discoveries
@@ -5444,6 +5577,30 @@ Initial decisions:
     patch lifecycle decision, stable clean target window, or real V02-01
     inputs.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote continuous pattern source-to-decision as V48.
+  Rationale: V47 selected internal hardening while target/operator inputs are
+    blocked, and the user clarified that strong patterns must apply at every
+    KRN stage, not only TypeScript.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v47-internal-hardening-regate/REPORT.md`;
+    user direction; `source-to-decision` skill.
+  Does not prove: all patterns are ingested, product readiness, or that a
+    written gate improves future code.
+  Falsifier: V49 cannot identify a consumer/falsifier or the gate encourages
+    source hoarding instead of decisions.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote first Continuous Pattern Gate application as V49.
+  Rationale: a durable rule is not useful until applied to a real bounded KRN
+    slice and judged by whether it changes a decision, creates a consumer, or
+    rejects decorative source work.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v48-continuous-pattern-source-gate/REPORT.md`;
+    `.agents/skills/source-to-decision/SKILL.md`.
+  Does not prove: product readiness, V02-01, or that activation/target work is
+    unblocked.
+  Falsifier: the first application adds no decision, no rejection, no consumer,
+    and no falsifier.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5955,6 +6112,29 @@ Seed evidence:
   Does not prove: any owner has accepted a patch, target repair is safe, V02-01
     is complete, or product readiness.
   Follow-up task: V47-00.
+
+- Evidence ID: E-V47-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v47-internal-hardening-regate/REPORT.md`
+  Command/report/file: internal hardening re-gate.
+  Result: selected continuous pattern source-to-decision as the next internal
+    hardening task while target/operator inputs remain blocked.
+  Proves: KRN should use waiting time to strengthen source-backed pattern
+    condensation instead of making another target substitute.
+  Does not prove: the pattern gate is implemented, product readiness, or
+    V02-01.
+  Follow-up task: V48-00.
+
+- Evidence ID: E-V48-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v48-continuous-pattern-source-gate/REPORT.md`
+  Command/report/file: `source-to-decision` skill update and root plan rule.
+  Result: every non-trivial slice now has a Continuous Pattern Gate for
+    reusable infra, harness, CI, memory, skills, target workflow, TypeScript,
+    Codex surface, eval, security, and operator UX patterns.
+  Proves: KRN has a reusable source-to-decision gate for continuous pattern
+    condensation without source hoarding.
+  Does not prove: the gate improves code before a real application, that all
+    best sources are ingested, product readiness, or V02-01.
+  Follow-up task: V49-00.
 ```
 
 ## 19. Condensation Queue
@@ -6390,6 +6570,24 @@ Seed queue:
   Reason: while owner/operator inputs are missing, KRN should choose one
     bounded internal hardening task instead of another target substitute
   Task: V47-00
+
+- Candidate: continuous pattern source-to-decision gate
+  Source evidence: V47 internal hardening re-gate and user direction that
+    pattern condensation must apply beyond TypeScript to infra, harness, CI,
+    skills, target workflow, Codex surfaces, evals, and research/papers
+  Surface: `source-to-decision` skill + root plan operating rule
+  Status: implemented in V48-00
+  Reason: KRN needs a standing per-slice gate for best-pattern intake without
+    broad source hoarding or active-context sludge
+  Task: V48-00
+
+- Candidate: first continuous pattern gate application
+  Source evidence: V48 gate report and skill update
+  Surface: bounded real KRN slice selected by gate
+  Status: accepted as V49-00
+  Reason: the gate must be applied to prove it changes decisions, rejects
+    decorative sources, creates consumers, or exposes friction
+  Task: V49-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -7718,6 +7916,79 @@ Product readiness verdict:
 Next active stream:
 - V47 — Internal Hardening Re-Gate After Target Coordination.
 
+## Outcome 2026-06-27 V47
+
+Completed:
+- V47-00 re-gated internal hardening while target owner/operator inputs remain
+  blocked.
+- V47 selected continuous pattern source-to-decision as the next internal
+  hardening task.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v47-internal-hardening-regate/REPORT.md`.
+- V46 owner coordination packet.
+
+What improved:
+- KRN did not create another local target substitute.
+- The next internal task was selected from evidence rather than roadmap
+  pressure.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Target owner/stability inputs.
+
+New task:
+- Create a permanent per-slice pattern-intake gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V48 — Continuous Pattern Source-To-Decision Gate.
+
+## Outcome 2026-06-27 V48
+
+Completed:
+- V48-00 added the Continuous Pattern Gate to the `source-to-decision` skill.
+- V48 added the same rule to root `PLANS.md` as an operating rule.
+- V48 created the report:
+  `docs/reviews/controlled-dogfood/2026-06-27-v48-continuous-pattern-source-gate/REPORT.md`.
+
+Evidence:
+- `.agents/skills/source-to-decision/SKILL.md`.
+- Root `PLANS.md` Source-To-Decision Rule.
+- V48 report.
+
+What improved:
+- Pattern condensation is product-wide: infra, harness, CI, memory, skills,
+  target workflow, TypeScript, Codex surfaces, evals, security, and operator UX.
+- High-quality sources, courses, papers, and local evidence must now map to a
+  mechanism, decision/rejection, consumer, and falsifier.
+- Broad course indexing, research archives, source crawlers, and decorative
+  source hoarding are explicitly rejected.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Target owner/stability inputs.
+- Proof that the gate improves code; that requires V49.
+
+New task:
+- Apply the Continuous Pattern Gate to one real bounded KRN slice.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V49 — First Continuous Pattern Gate Application.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -7766,7 +8037,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V48 Continuous Pattern Source-To-Decision Gate.
+Active stream: V49 First Continuous Pattern Gate Application.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

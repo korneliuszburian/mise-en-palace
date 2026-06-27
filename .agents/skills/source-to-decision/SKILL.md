@@ -87,6 +87,81 @@ candidate_output:
 - Do not create a research archive, source crawler, or broad research backlog
   from a source that has no immediate consumer.
 
+## Continuous Pattern Gate
+
+Use this gate at every non-trivial KRN slice, not only research-labeled tasks.
+
+Before adopting, rejecting, or implementing a pattern, classify whether the
+slice touches one of these pattern surfaces:
+
+```txt
+infra / storage / migrations / queues
+harness / activation / memory / review gates
+CI / release / eval / Promptfoo
+Codex surfaces / skills / hooks / MCP / subagents
+target-repo workflow
+TypeScript boundaries
+security / permissions / trust boundaries
+operator UX / CLI / readback
+```
+
+If it does, either:
+
+- cite an existing KRN source/standard/ADR/skill and state the mechanism; or
+- add a bounded source decision; or
+- explicitly reject/defer source work with a reason.
+
+Allowed source classes:
+
+```txt
+official docs
+papers
+high-quality courses
+practitioner writing
+competitor docs
+repo-local evidence
+target-repo evidence
+user-provided research
+```
+
+Legal/content boundary:
+
+- Do not copy paid/proprietary course material into KRN.
+- Use public pages, personal notes supplied by the user, or short source
+  summaries that map to mechanisms and decisions.
+- Prefer links and mechanisms over transcripts.
+
+Consumer routing:
+
+```txt
+standard:
+  durable coding or review rule
+
+skill:
+  repeated execution workflow
+
+ADR:
+  architecture or infrastructure decision
+
+eval/golden candidate:
+  behavior can be falsified
+
+memory/source candidate:
+  useful future recall, still review-gated
+
+CLI/readback/CI behavior:
+  operator-facing or enforcement surface
+
+bounded repair:
+  one small source change with verification
+
+reject:
+  source is decorative, unsupported, stale, or mismatched to KRN
+```
+
+Do not proceed from pattern to implementation unless the consumer and falsifier
+are explicit.
+
 ## Verification
 
 The mapped source must change a decision, reject a path, define a risk, create a

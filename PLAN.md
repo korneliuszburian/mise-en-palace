@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V48 Continuous Pattern Source-To-Decision Gate
-current task: V48-00 Continuous Pattern Source-To-Decision Gate
+active stream: V49 First Continuous Pattern Gate Application
+current task: V49-00 First Continuous Pattern Gate Application
 ```
 
 Completed stream summary:
@@ -77,32 +77,34 @@ V44 target evidence lifecycle/freshness fields: complete
 V45 target availability re-gate with typed lifecycle evidence: complete
 V46 target owner coordination packet: complete
 V47 internal hardening re-gate after target coordination: complete
+V48 continuous pattern source-to-decision gate: complete
 ```
 
 ## Active Stream
 
-### V48-00 — Continuous Pattern Source-To-Decision Gate
+### V49-00 — First Continuous Pattern Gate Application
 
 Goal:
 
-Create a standing gate for applying high-quality source-backed patterns to every
-KRN stage: infra, harness, CI, memory, skills, target workflow, TypeScript,
-Codex surfaces, evals, and research/papers.
+Apply the new Continuous Pattern Gate to one bounded real KRN slice and record
+whether it changes a decision, rejects a decorative source, creates a durable
+consumer, or exposes friction.
 
 Current finding:
 
 ```txt
-V47 selected pattern source-to-decision as the next internal hardening task.
-TypeScript/Matt Pocock was only an example; the real requirement is continuous
-condensation of strong patterns and papers at every stage of KRN development.
+V48 created the standing gate for continuous source-backed pattern condensation.
+The gate is product-wide and covers infra, harness, CI, memory, skills, target
+workflow, TypeScript, Codex surfaces, evals, security, operator UX, and
+research/papers.
 ```
 
-Current V48 action:
+Current V49 action:
 
 ```txt
-Define the permanent pattern-intake gate: every non-trivial slice must state
-whether it needs sources/research, what pattern applies, what consumer receives
-it, and what falsifier proves misuse or drift.
+Use the gate on one real bounded slice. The output must name the selected
+surface, source decision or rejection, consumer, falsifier, and next task if
+evidence creates one.
 ```
 
 ## V02-01 Boundary
