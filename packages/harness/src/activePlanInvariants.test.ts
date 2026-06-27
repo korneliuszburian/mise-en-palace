@@ -83,4 +83,13 @@ describe("KRN active plan invariants", () => {
     expect(knownCurrentGap).not.toContain("V63 recorded");
     expect(knownCurrentGap).not.toContain("current active gap is making");
   });
+
+  it("keeps the PLANS revision note historical instead of active", () => {
+    const plans = readRootFile("PLANS.md");
+    const revisionNote = sectionBody(plans, "## 23. Plan Revision Note");
+
+    expect(revisionNote).toContain("At creation time");
+    expect(revisionNote).not.toContain("as the next active stream");
+    expect(revisionNote).not.toMatch(/sets V\d+.*next active stream/u);
+  });
 });

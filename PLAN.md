@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V108 Post PLANS Known Current Gap Freshness Re-Gate
-current task: V108-00 Post PLANS Known Current Gap Freshness Re-Gate
+active stream: V110 Post PLANS Revision Note Freshness Re-Gate
+current task: V110-00 Post PLANS Revision Note Freshness Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -49,30 +49,32 @@ V104-00: post handoff compact contract guard re-gate complete.
 V105-00: PLANS compact GOAL contract freshness guard complete.
 V106-00: post PLANS compact GOAL contract freshness re-gate complete.
 V107-00: PLANS known current gap freshness guard complete.
+V108-00: post PLANS known current gap freshness re-gate complete.
+V109-00: PLANS revision note freshness guard complete.
 ```
 
 ## Active Stream
 
-### V108 Post PLANS Known Current Gap Freshness Re-Gate
+### V110 Post PLANS Revision Note Freshness Re-Gate
 
 Goal:
 
-Decide the next bounded task after removing stale known-current-gap guidance
-from the detailed plan's opening baseline.
+Decide the next bounded task after reframing stale revision-note active-stream
+wording as historical creation-time context.
 
 Current finding:
 
 ```txt
-V106 found that `PLANS.md` still described V63 as the current active gap in the
-opening baseline. V107 replaced that with current-task guidance and added a
+V108 found that `PLANS.md` section 23 still said the plan sets V05 as the next
+active stream. V109 reframed that note as creation-time history and added a
 focused active-plan invariant.
 ```
 
 Current action:
 
 ```txt
-Execute V108-00: select the next pattern surface from evidence. Do not broaden
-PLANS freshness work into rewriting historical outcomes.
+Execute V110-00: select the next pattern surface from evidence. Do not broaden
+revision-note freshness into rewriting historical outcomes.
 ```
 
 Primary consumer:

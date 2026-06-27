@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V107 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
-active stream: V108 Post PLANS Known Current Gap Freshness Re-Gate
-current task: V108-00 Post PLANS Known Current Gap Freshness Re-Gate
+V48..V109 continuous pattern, CI/eval, target, compactness, handoff, and active-contract slices: complete
+active stream: V110 Post PLANS Revision Note Freshness Re-Gate
+current task: V110-00 Post PLANS Revision Note Freshness Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V108-00 Post PLANS Known Current Gap Freshness Re-Gate.
+V110-00 Post PLANS Revision Note Freshness Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13327,6 +13327,72 @@ Next active stream:
 Next active task:
 - V108-00 Post PLANS Known Current Gap Freshness Re-Gate.
 
+## Outcome 2026-06-27 V109 PLANS Revision Note Freshness Guard
+
+Completed tasks:
+- V108-00 Post PLANS Known Current Gap Freshness Re-Gate.
+- V109-00 PLANS Revision Note Freshness Guard.
+
+V108 decision:
+- Do not broaden PLANS freshness into historical outcome rewriting.
+- Fix section 23 because it was default tail context and still said the plan
+  sets V05 as the next active stream.
+
+What changed:
+- `PLANS.md` section 23 now frames V05 as creation-time history, not current
+  active guidance.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks that section
+  23 is historical and does not claim an old `V...` next active stream.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V110.
+
+Evidence:
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `GOAL.md`.
+- `PLAN.md`.
+
+Source-to-decision:
+- Source: V107 known-gap freshness guard plus repo evidence that section 23
+  still carried creation-era V05 next-active wording.
+- Mechanism: historical revision notes can stay in the detailed ExecPlan, but
+  must not present old stream selections as current active guidance.
+- KRN implication: default resume tail can keep plan history only when old
+  next-active choices are explicitly scoped to creation time.
+- Decision: reword section 23 and add a focused active-plan invariant.
+- Does not prove: every historical note is current, old V05 history should be
+  deleted, product readiness, or second-operator readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts`.
+- Falsifier: section 23 can claim `sets V... next active stream` without
+  failing focused verification.
+
+What improved:
+- Default resume tail freshness.
+- Protection against old revision notes becoming active truth.
+- Active-plan invariant coverage.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Historical ledger size.
+- Runtime activation or target-repo behavior.
+
+New task:
+- V110-00 Post PLANS Revision Note Freshness Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V110 Post PLANS Revision Note Freshness Re-Gate.
+
+Next active task:
+- V110-00 Post PLANS Revision Note Freshness Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -13383,4 +13449,4 @@ Do not mark complete after one slice. Complete only on explicit operator stop, p
 
 ## 23. Plan Revision Note
 
-2026-06-27: Created generic continuous `PLANS.md` after V04 completed. This revision converts KRN from one-off long-run batches into a continuously growing evidence-driven product plan. It sets V05 target-aware evidence capture as the next active stream, preserves V02-01 as external second-operator proof, and requires Codex to append new tasks from evidence before stopping.
+2026-06-27: Created generic continuous `PLANS.md` after V04 completed. This revision converted KRN from one-off long-run batches into a continuously growing evidence-driven product plan. At creation time it selected V05 target-aware evidence capture as the first stream for this continuous plan, preserved V02-01 as external second-operator proof, and required Codex to append new tasks from evidence before stopping.
