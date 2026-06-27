@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V211 Post Matrix Readback Alignment Re-Gate
-current task: V211-00 Post Matrix Readback Alignment Re-Gate
+active stream: V213 Post Brain-Battle Smoke Re-Gate
+current task: V213-00 Post Brain-Battle Smoke Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -35,7 +35,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V210: active-surface compactness, handoff, PLANS freshness,
+V100..V212: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -45,26 +45,26 @@ V100..V210: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V211 Post Matrix Readback Alignment Re-Gate
+### V213 Post Brain-Battle Smoke Re-Gate
 
 Goal:
 
-Select the next bounded task after aligning the matrix with run-readback
-candidate reviewability.
+Select the next bounded task after the brain-battle smoke passed with run
+readback reviewability coverage.
 
 Current finding:
 
 ```txt
-V210 updated the durable brain-battle matrix and invariant so run readback
-coverage includes candidate reviewability labels and reasons.
+V212 ran `pnpm eval:brain-battle:smoke` after V207-V210; harness, CLI run
+readback, and Codex adapter smoke checks passed.
 ```
 
 Current action:
 
 ```txt
-Execute V211-00: select the next bounded evidence-backed task. Do not broaden
-one matrix alignment into broad eval work, Promptfoo authority, dashboard,
-worker runtime, activation rewrite, or product-readiness claim.
+Execute V213-00: select the next bounded evidence-backed task from smoke
+results. Do not broaden into Promptfoo authority, dashboard, worker runtime,
+activation rewrite, product-readiness claim, or new eval platform.
 ```
 
 Primary consumer:
@@ -76,8 +76,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns one matrix alignment into broad eval/platform/source churn
-without a concrete consumer and falsifier.
+The re-gate treats a green smoke as product readiness or starts broad feature
+work without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

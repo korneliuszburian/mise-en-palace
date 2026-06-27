@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V211 Post Matrix Readback Alignment Re-Gate
+V213 Post Brain-Battle Smoke Re-Gate
 ```
 
 Current product loop:
@@ -37,10 +37,10 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V210: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
+V110..V212: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
 target, evidence, compactness, smoke, onboarding current-state, and related
 regression guards complete; details stay in PLANS.md.
-current task: V211-00 Post Matrix Readback Alignment Re-Gate.
+current task: V213-00 Post Brain-Battle Smoke Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

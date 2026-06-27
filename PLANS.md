@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V210 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, and matrix readback reviewability alignment slices: complete
-active stream: V211 Post Matrix Readback Alignment Re-Gate
-current task: V211-00 Post Matrix Readback Alignment Re-Gate
+V48..V212 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, post-source-map re-gate, best-pattern intake applied proof, run-readback reviewability repair, post-readback-reviewability re-gate, matrix readback reviewability alignment, post-matrix-readback re-gate, and brain-battle smoke proof slices: complete
+active stream: V213 Post Brain-Battle Smoke Re-Gate
+current task: V213-00 Post Brain-Battle Smoke Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V211-00 Post Matrix Readback Alignment Re-Gate.
+V213-00 Post Brain-Battle Smoke Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17304,6 +17304,82 @@ Next active stream:
 
 Next active task:
 - V211-00 Post Matrix Readback Alignment Re-Gate.
+
+## Outcome 2026-06-28 V211 Post Matrix Readback Alignment Re-Gate
+
+Completed task:
+- V211-00 Post Matrix Readback Alignment Re-Gate.
+
+Decision:
+- Do not broaden V210 into broad eval work, Promptfoo authority, dashboard,
+  worker runtime, activation rewrite, or product-readiness claim.
+- Select one bounded smoke proof because the matrix now claims
+  `pnpm eval:brain-battle:smoke` protects the readback/matrix/skill/TypeScript
+  guard set after V207-V210.
+
+Evidence:
+- `package.json` defines `eval:brain-battle:smoke` as harness golden/invariant
+  tests plus CLI `runRunShowCommand`/`runCli` tests and Codex adapter golden
+  behavior tests.
+- `docs/architecture/brain-battle-eval-matrix.md` current-smoke section claims
+  the smoke covers matrix guard/proof boundaries and run-readback behavior.
+
+Source-to-decision:
+- Source: `package.json`, `docs/architecture/brain-battle-eval-matrix.md`, and
+  V210 matrix invariant.
+- Mechanism: the bounded smoke is the existing aggregate behavior/invariant
+  proof surface; after changing a matrix-protected behavior, the aggregate smoke
+  should be run once to prove the selected guard set still composes.
+- KRN implication: run the smoke as proof, not as a broad eval platform.
+- Decision: execute `pnpm eval:brain-battle:smoke`.
+- Does not prove: product readiness, live DB runtime, Promptfoo behavior proof,
+  or external operator usability.
+- Consumer: V212 smoke proof outcome.
+- Falsifier: the smoke fails, or a green smoke is treated as product readiness.
+
+New task:
+- V212-00 Brain-Battle Smoke After Readback Reviewability Alignment.
+
+## Outcome 2026-06-28 V212 Brain-Battle Smoke After Readback Reviewability Alignment
+
+Completed task:
+- V212-00 Brain-Battle Smoke After Readback Reviewability Alignment.
+
+Evidence:
+- `pnpm eval:brain-battle:smoke` passed.
+- Harness slice: 29 files / 142 tests passed for GoldenGate, active plan,
+  context hygiene, source map, skill, pattern-chain, brain-battle matrix, and
+  TypeScript boundary invariants.
+- CLI slice: 28 files / 169 tests passed for `runRunShowCommand` and `runCli`.
+- Codex adapter slice: 4 files / 9 tests passed for `codexBriefGoldenBehavior`.
+
+Source-to-decision:
+- Source: `pnpm eval:brain-battle:smoke` output and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Mechanism: aggregate smoke composes the current deterministic KRN behavior
+  guards without using Promptfoo or LLM judging as product authority.
+- KRN implication: the V207-V210 readback/matrix work is now covered by the
+  existing bounded smoke path.
+- Decision: record the smoke proof and re-gate; do not add a new eval platform.
+- Does not prove: live DB readback, external target readiness, V02-01,
+  candidate quality at scale, or product readiness.
+- Consumer: root `PLAN.md`, root `GOAL.md`, and the next V213 re-gate.
+- Falsifier: future smoke fails or the smoke is used to claim product readiness.
+
+New task:
+- V213-00 Post Brain-Battle Smoke Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V213 Post Brain-Battle Smoke Re-Gate.
+
+Next active task:
+- V213-00 Post Brain-Battle Smoke Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
