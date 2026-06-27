@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V197 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, and state doctrine repair guard slices: complete
-active stream: V198 Post State Doctrine Re-Gate
-current task: V198-00 Post State Doctrine Re-Gate
+V48..V198 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, and kernel current-boundary re-gate slices: complete
+active stream: V199 Kernel Current-Boundary Repair
+current task: V199-00 Kernel Current-Boundary Repair
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V198-00 Post State Doctrine Re-Gate.
+V199-00 Kernel Current-Boundary Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16603,6 +16603,54 @@ Next active stream:
 
 Next active task:
 - V198-00 Post State Doctrine Re-Gate.
+
+## Outcome 2026-06-28 V198 Kernel Current-Boundary Re-Gate
+
+Completed task:
+- V198-00 Post State Doctrine Re-Gate.
+
+Decision:
+- Do not broaden onboarding/state-doctrine repair into a docs sweep, Research
+  Foundry, source crawler, dashboard, product-readiness claim, or architecture
+  rewrite.
+- Select kernel current-boundary repair because `docs/KRN_KERNEL.md` is required
+  reading before edits and still labels the project as `Current Bootstrap
+  Boundary` with Commit 0/1 wording.
+
+Evidence:
+- `docs/KRN_ONBOARDING.md` and `docs/STATE_OF_THE_ART.md` are now current and
+  guarded.
+- `docs/KRN_KERNEL.md` remains active required reading and still contains stale
+  bootstrap wording.
+
+Source-to-decision:
+- Source: `docs/KRN_KERNEL.md`, `AGENTS.md`, context hygiene invariants, V195
+  onboarding repair, and V197 state doctrine repair.
+- Mechanism: kernel guidance is loaded before edits; stale stage language can
+  misframe every continuation even when root active state is correct.
+- KRN implication: the kernel must distinguish durable law from current product
+  stage and must not keep Commit 0/1 as current truth.
+- Decision: repair `docs/KRN_KERNEL.md` current boundary and guard it.
+- Does not prove: every kernel statement is complete, product readiness, or
+  need for broad docs sweep.
+- Consumer: `docs/KRN_KERNEL.md` and focused invariant.
+- Falsifier: required kernel reading can again claim bootstrap/Commit 0/1 state
+  while tests pass.
+
+New task:
+- V199-00 Kernel Current-Boundary Repair.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V199 Kernel Current-Boundary Repair.
+
+Next active task:
+- V199-00 Kernel Current-Boundary Repair.
 
 ## 21. Final Response Format For Codex Runs
 

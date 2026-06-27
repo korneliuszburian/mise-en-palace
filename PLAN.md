@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V198 Post State Doctrine Re-Gate
-current task: V198-00 Post State Doctrine Re-Gate
+active stream: V199 Kernel Current-Boundary Repair
+current task: V199-00 Kernel Current-Boundary Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V197: active-surface compactness, handoff, PLANS freshness,
+V100..V198: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,38 +49,39 @@ V100..V197: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V198 Post State Doctrine Re-Gate
+### V199 Kernel Current-Boundary Repair
 
 Goal:
 
-Decide the next bounded task after repairing onboarding and state doctrine.
+Repair stale current-boundary wording in docs/KRN_KERNEL.md.
 
 Current finding:
 
 ```txt
-V197 aligned docs/STATE_OF_THE_ART.md with the current harness spine and added
-a focused context hygiene guard against stale doctrine paths.
+V198 found docs/KRN_KERNEL.md is required reading before edits but still labels
+the project as "Current Bootstrap Boundary" with Commit 0/1 wording.
 ```
 
 Current action:
 
 ```txt
-Execute V198-00: select the next bounded evidence-backed task. Do not broaden
-doctrine repair into a docs sweep, Research Foundry, source crawler, dashboard,
-product-readiness claim, or architecture rewrite.
+Execute V199-00: align docs/KRN_KERNEL.md with the current controlled-internal-
+alpha boundary and add a focused invariant. Do not broaden into a docs sweep,
+Research Foundry, source crawler, dashboard, product-readiness claim, or
+architecture rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+docs/KRN_KERNEL.md and focused context/active-plan invariant.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate turns doctrine repair into broad docs churn without a concrete
-consumer and falsifier.
+Kernel required reading can again claim bootstrap/Commit 0/1 state while tests
+pass.
 ```
 
 ## Pattern Gate
