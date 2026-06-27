@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V53 Brain-Battle CI Gate Re-Gate
-current task: V53-00 Brain-Battle CI Gate Re-Gate
+active stream: V54 Post-CI Pattern Gate Re-Gate
+current task: V54-00 Post-CI Pattern Gate Re-Gate
 ```
 
 Completed stream summary:
@@ -82,31 +82,31 @@ V49 first continuous pattern gate application: complete
 V50 CI action modernization re-gate: complete
 V51 second continuous pattern gate selection: complete
 V52 brain-battle smoke CI gate: complete
+V53 brain-battle CI gate re-gate: complete
 ```
 
 ## Active Stream
 
-### V53-00 — Brain-Battle CI Gate Re-Gate
+### V54-00 — Post-CI Pattern Gate Re-Gate
 
 Goal:
 
-Consume the post-push CI result for V52 and decide whether the brain-battle CI
-gate is accepted, needs repair/revert, or creates a next bounded task.
+Re-gate after two accepted Continuous Pattern Gate applications and pick the
+next bounded task from current evidence.
 
 Current finding:
 
 ```txt
-V51 selected `pnpm eval:brain-battle:smoke` as the second Continuous Pattern
-Gate application. V52 added it to GitHub Actions CI after `Test` and before
-`Promptfoo smoke`.
+V53 accepted V52 after GitHub Actions run `28292197772` passed with the new
+`Brain-battle smoke` CI step. CI now runs deterministic KRN behavior smoke and
+Promptfoo adapter smoke.
 ```
 
-Current V53 action:
+Current V54 action:
 
 ```txt
-Check the post-push V52 CI run before unrelated work. If CI fails, repair or
-revert the workflow change first. If CI passes, accept the gate and select the
-next bounded task.
+Choose the next bounded task from current evidence, or explicitly defer if no
+consumer/falsifier exists. Do not continue CI/eval work by momentum alone.
 ```
 
 ## V02-01 Boundary

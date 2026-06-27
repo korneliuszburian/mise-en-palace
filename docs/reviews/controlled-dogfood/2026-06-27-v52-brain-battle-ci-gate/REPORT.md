@@ -1,6 +1,6 @@
 # V52 Add Brain-Battle Smoke To CI
 
-Status: complete pending CI result.
+Status: complete; accepted by V53 CI readback.
 
 Date: 2026-06-27.
 
@@ -77,7 +77,7 @@ broad eval-platform readiness.
 |---|---|---|---|
 | `pnpm eval:brain-battle:smoke` | passed before implementation | Candidate step currently passes locally | GitHub-hosted CI success |
 | `git diff --check` | passed | Workflow/report/plan diff has no whitespace errors | CI success |
-| post-push GitHub Actions CI | pending | New CI step works in GitHub-hosted CI when passed | Product readiness |
+| post-push GitHub Actions CI `28292197772` | passed | New CI step works in GitHub-hosted CI and the `Brain-battle smoke` step executed | Product readiness |
 
 ## Next Required Step
 
