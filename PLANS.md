@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V94 Post Brain-Battle Matrix Guard Re-Gate
-current task: V94-00 Post Brain-Battle Matrix Guard Re-Gate
+active stream: V96 Post Context Hygiene Guard Re-Gate
+current task: V96-00 Post Context Hygiene Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12882,6 +12882,64 @@ Next active stream:
 
 Next active task:
 - V94-00 Post Brain-Battle Matrix Guard Re-Gate.
+
+## Outcome 2026-06-27 V95 Context Hygiene Invariant Guard
+
+Completed:
+- V94-00 Post Brain-Battle Matrix Guard Re-Gate.
+- V95-00 Context Hygiene Invariant Guard.
+
+Evidence:
+- `AGENTS.md`.
+- `docs/KRN_KERNEL.md`.
+- `GOAL.md`.
+- `PLAN.md`.
+- `packages/harness/src/contextHygieneInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: KRN kernel law, AGENTS durable guidance, and Codex ExecPlan/Goals
+  retained source decisions.
+- Mechanism: Codex should resume from compact active state and selected context,
+  not raw materials, historical ledgers, or broad rereads.
+- KRN implication: raw `docs/materials/` and historical-ledger paths must not
+  become default active truth through root `GOAL.md` or `PLAN.md`.
+- Decision: add a deterministic invariant that preserves raw material
+  quarantine in `AGENTS.md`/`docs/KRN_KERNEL.md` and rejects root active-truth
+  references to raw material or historical-ledger paths.
+- Does not prove: every historical doc is clean, raw materials are never useful
+  for explicitly scoped audits, or context selection quality.
+- Consumer: `packages/harness/src/contextHygieneInvariants.test.ts`.
+- Falsifier: root `GOAL.md` or `PLAN.md` routes active truth to
+  `docs/materials/` or historical-ledger paths, or AGENTS/KERNEL lose the
+  quarantine/small-context rule.
+
+What improved:
+- Active resume context now has a guard against raw material and historical
+  ledger creep.
+- Future context hygiene regressions fail in the harness test suite instead of
+  relying only on operator memory.
+
+What did not improve:
+- Product readiness.
+- Target/operator readiness.
+- Every historical doc.
+- Activation quality.
+
+New task:
+- V96-00 Post Context Hygiene Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V96 Post Context Hygiene Guard Re-Gate.
+
+Next active task:
+- V96-00 Post Context Hygiene Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

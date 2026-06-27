@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V94 Post Brain-Battle Matrix Guard Re-Gate
-current task: V94-00 Post Brain-Battle Matrix Guard Re-Gate
+active stream: V96 Post Context Hygiene Guard Re-Gate
+current task: V96-00 Post Context Hygiene Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -127,32 +127,34 @@ V90-00 post source decision ID branding re-gate: complete
 V91 eval and policy ID branding: complete
 V92-00 post eval and policy ID branding re-gate: complete
 V93 brain-battle matrix invariant guard: complete
-V94 post brain-battle matrix guard re-gate: active
+V94-00 post brain-battle matrix guard re-gate: complete
+V95 context hygiene invariant guard: complete
+V96 post context hygiene guard re-gate: active
 ```
 
 ## Active Stream
 
-### V94 Post Brain-Battle Matrix Guard Re-Gate
+### V96 Post Context Hygiene Guard Re-Gate
 
 Goal:
 
 Decide the next bounded task after adding a deterministic invariant guard for
-the brain-battle eval matrix.
+active context hygiene.
 
 Current finding:
 
 ```txt
-V92 selected a non-TypeScript-ID follow-up: the brain-battle matrix had become a
-durable eval/readiness surface and needed a guard against decorative rows. V93
-added a focused invariant that implemented rows must name guard, evidence, and
-proof/non-proof boundaries.
+V94 selected a context-hygiene follow-up: raw materials and historical ledgers
+must stay out of default active/resume context. V95 added a focused invariant
+for the AGENTS/KERNEL quarantine rules and root GOAL/PLAN active truth.
 ```
 
 Current action:
 
 ```txt
-Execute V94-00: select the next pattern surface from evidence. Do not continue
-the ID-branding streak unless a stronger consumer/falsifier appears.
+Execute V96-00: select the next pattern surface from evidence. Do not broaden
+context hygiene into historical doc cleanup unless a concrete active-context
+leak appears.
 ```
 
 Primary consumer:
