@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V80 Post Source Map Guard Re-Gate
-current task: V80-00 Post Source Map Guard Re-Gate
+active stream: V82 Post Active Plan Guard Re-Gate
+current task: V82-00 Post Active Plan Guard Re-Gate
 ```
 
 Completed stream summary:
@@ -113,30 +113,32 @@ V76-00 post memory promotion CLI gate re-gate: complete
 V77-00 source map consumer/falsifier normalization: complete
 V78-00 post source map falsifier re-gate: complete
 V79-00 source map invariant guard: complete
-V80 post source map guard re-gate: active
+V80-00 post source map guard re-gate: complete
+V81-00 active plan invariant guard: complete
+V82 post active plan guard re-gate: active
 ```
 
 ## Active Stream
 
-### V80 Post Source Map Guard Re-Gate
+### V82 Post Active Plan Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding a CI-covered guard for retained source
-consumer/falsifier fields.
+Decide the next bounded task after adding a CI-covered guard for active
+GOAL/PLAN/PLANS consistency.
 
 Current finding:
 
 ```txt
-V78 selected a source-map invariant guard because V77 normalized
-`docs/KRN_SOURCES.md`, but the requirement needed a failing test to prevent
-future source hoarding.
+V80 selected an active-plan invariant guard because current continuation must
+resume from root `GOAL.md`, `PLAN.md`, and `PLANS.md` instead of stale objective
+attachments or conversation memory.
 ```
 
 Current action:
 
 ```txt
-Execute V80-00: decide whether to apply one retained source to a concrete
+Execute V82-00: decide whether to apply one retained source to a concrete
 consumer, move to another pattern surface, or stop on the external
 operator/target blocker.
 ```
@@ -150,7 +152,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate opens source/research work without a named consumer, falsifier,
+The re-gate opens implementation work without a named consumer, falsifier,
 and verification command.
 ```
 

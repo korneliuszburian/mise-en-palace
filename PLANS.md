@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V80 Post Source Map Guard Re-Gate
-current task: V80-00 Post Source Map Guard Re-Gate
+active stream: V82 Post Active Plan Guard Re-Gate
+current task: V82-00 Post Active Plan Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -7299,6 +7299,126 @@ Definition of Done:
 - Next active task is explicit or a blocker is explicit.
 - `git diff --check` passes.
 
+Outcome:
+
+- The next bounded task is an active-plan invariant guard so compaction/resume
+  returns to the current slice instead of stale objective files or conversation
+  memory.
+
+### V81-00 — Active Plan Invariant Guard
+
+Status: complete
+
+Goal: Add a focused behavior guard that fails when root `GOAL.md`, `PLAN.md`,
+and `PLANS.md` disagree about the active stream or current task.
+
+Pattern surface: Codex surfaces / Goals / ExecPlans; CI / eval / golden
+behavior.
+
+Product rationale: The active goal can survive compaction only if Codex resumes
+from current root files. Divergent active-state files cause context waste,
+completed-slice restarts, and stale task execution.
+
+Architectural rationale: This is a small invariant over existing execution
+state files. It is not a new plan surface and does not make plans the product
+brain.
+
+Evidence source:
+
+- current continuation rule in root `GOAL.md`.
+- root `PLAN.md`.
+- root `PLANS.md`.
+- `docs/KRN_SOURCES.md` Goal/ExecPlan source decisions.
+
+Primary consumer:
+
+- `packages/harness/src/activePlanInvariants.test.ts`
+- `docs/architecture/brain-battle-eval-matrix.md`
+
+Does not prove:
+
+- selected next task is strategically correct;
+- product readiness;
+- external operator readiness.
+
+Falsifier:
+
+- Root `GOAL.md`, `PLAN.md`, and `PLANS.md` can point to different active
+  streams or current tasks while tests still pass.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- activePlanInvariants
+pnpm -C packages/harness typecheck
+git diff --check
+```
+
+Outcome:
+
+- Added `packages/harness/src/activePlanInvariants.test.ts`.
+- Added a brain-battle matrix row for active GOAL/PLAN/PLANS consistency.
+
+### V82-00 — Post Active Plan Guard Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after adding active-plan consistency
+coverage.
+
+Pattern surface: Codex surfaces / Goals / ExecPlans.
+
+Product rationale: Active-state drift is now guarded. The next move should
+apply one retained source to a concrete consumer, move to another pattern
+surface, or stop on the external operator/target blocker.
+
+Architectural rationale: Continue by evidence. Do not create another plan
+surface or keep adding meta-guards by momentum.
+
+Evidence source:
+
+- V81 active-plan invariant guard.
+- `docs/KRN_SOURCES.md` Goal/ExecPlan source decisions.
+- `docs/runbooks/pattern-intake.md`.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- product readiness;
+- active task quality;
+- need for more planning infrastructure.
+
+Falsifier:
+
+- The plan opens implementation work without a named consumer, falsifier, and
+  verification command.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- new plan surface;
+- source crawler;
+- research archive;
+- broad eval platform;
+- dashboard/API/MCP/server.
+
+Definition of Done:
+
+- Next active task is explicit or a blocker is explicit.
+- `git diff --check` passes.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -7700,7 +7820,9 @@ Initial entry:
 - [x] V78-00 complete: selected source-map invariant guard.
 - [x] V79-00 complete: added test coverage for retained source consumer and
   falsifier fields.
-- [ ] V80-00 active: re-gate after source-map guard.
+- [x] V80-00 complete: selected active-plan invariant guard.
+- [x] V81-00 complete: added active GOAL/PLAN/PLANS consistency test.
+- [ ] V82-00 active: re-gate after active-plan guard.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8803,6 +8925,19 @@ Initial decisions:
   Falsifier: a `docs/KRN_SOURCES.md` source section can omit `Consumer` or
     `Falsifier` while tests still pass.
   Verification: `pnpm --filter @krn/harness test -- sourceMapInvariants`;
+    `pnpm -C packages/harness typecheck`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Guard active GOAL/PLAN/PLANS consistency in V81.
+  Rationale: Continuation after compaction must return to the current active
+    slice, not stale objective attachments or old conversation memory. A small
+    invariant test protects active stream/current task alignment.
+  Surface: Codex surfaces / Goals / ExecPlans.
+  Consumer: `packages/harness/src/activePlanInvariants.test.ts`.
+  Does not prove: the selected next task is strategically correct.
+  Falsifier: root `GOAL.md`, `PLAN.md`, and `PLANS.md` can disagree about active
+    stream or current task while tests still pass.
+  Verification: `pnpm --filter @krn/harness test -- activePlanInvariants`;
     `pnpm -C packages/harness typecheck`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
@@ -12142,6 +12277,45 @@ Next active stream:
 Next active task:
 - V80-00 Post Source Map Guard Re-Gate.
 
+## Outcome 2026-06-27 V81 Active Plan Guard
+
+Completed:
+- V80-00 Post Source Map Guard Re-Gate.
+- V81-00 Active Plan Invariant Guard.
+
+Evidence:
+- `GOAL.md`.
+- `PLAN.md`.
+- `PLANS.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+What improved:
+- Active stream/current task consistency across the root execution files is now
+  protected by a focused harness test.
+- Future compaction/resume drift between `GOAL.md`, `PLAN.md`, and `PLANS.md`
+  will fail the guard.
+
+What did not improve:
+- Product readiness.
+- Whether the active task is strategically correct.
+- External operator proof.
+
+New task:
+- V82-00 Post Active Plan Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V82 Post Active Plan Guard Re-Gate.
+
+Next active task:
+- V82-00 Post Active Plan Guard Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -12190,7 +12364,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V80 Post Source Map Guard Re-Gate.
+Active stream: V82 Post Active Plan Guard Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
