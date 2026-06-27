@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V66 TypeScript Boundary Falsifier Spot-Check
-current task: V66-00 External Boundary Drift Spot-Check
+active stream: V67 Harness Activation Pattern Application
+current task: V67-00 Harness Activation Source Packet Application
 ```
 
 Completed stream summary:
@@ -99,45 +99,45 @@ V64-02 first surface-matrix pattern application: complete
 V64-03 post surface-matrix application re-gate: complete
 V65-00 TypeScript source packet application: complete
 V65-01 post TypeScript pattern application re-gate: complete
-V66 TypeScript boundary falsifier spot-check: active
+V66-00 TypeScript boundary falsifier spot-check: complete
+V67 harness activation pattern application: active
 ```
 
 ## Active Stream
 
-### V66 TypeScript Boundary Falsifier Spot-Check
+### V67 Harness Activation Pattern Application
 
 Goal:
 
-Check whether the adopted TypeScript boundary pattern has an immediate falsifier
-in current package source.
+Apply the surface matrix to harness/activation evidence and route one repeated
+pattern into a skill, eval/golden candidate, bounded repair, or defer decision.
 
 Current finding:
 
 ```txt
-V65 adopted the TypeScript boundary source packet into
-`docs/standards/typescript-boundaries.md`. That does not prove the current code
-respects the standard.
+V66 found no immediate TypeScript boundary repair. The next highest-ROI surface
+is harness/activation because prior dogfoods showed useful guardrail selection
+but weaker owner-file/source recall.
 ```
 
 Current action:
 
 ```txt
-Execute V66-00: run a bounded source inspection for external input boundary
-drift and either select one repair/eval task or explicitly defer.
+Execute V67-00: apply the pattern matrix to existing activation/harness evidence
+and select exactly one consumer.
 ```
 
 Primary consumer:
 
 ```txt
-One repair/eval/defer decision.
+One skill, eval/golden candidate, bounded repair, or defer decision.
 ```
 
 Falsifier:
 
 ```txt
-Search finds repeated unchecked JSON/env/CLI/MCP/app/plugin input use, broad
-string status/provenance, or unjustified unsafe casts that cross external
-boundaries.
+The task turns prior activation findings into broad scoring work without a
+specific consumer/falsifier.
 ```
 
 ### External Input Blocker

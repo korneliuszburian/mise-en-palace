@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V66 TypeScript Boundary Falsifier Spot-Check
-current task: V66-00 External Boundary Drift Spot-Check
+active stream: V67 Harness Activation Pattern Application
+current task: V67-00 Harness Activation Source Packet Application
 ```
 
 Evidence already recorded in repo:
@@ -6237,7 +6237,7 @@ Acceptance criteria:
 
 ### V66-00 — External Boundary Drift Spot-Check
 
-Status: active
+Status: complete
 
 Goal: Inspect current package source for immediate falsifiers of the TypeScript
 boundary pattern decision.
@@ -6327,6 +6327,99 @@ Acceptance criteria:
 
 - The spot-check does not claim broad TypeScript correctness.
 - Any follow-up is bounded to one owner surface.
+
+### V67-00 — Harness Activation Source Packet Application
+
+Status: active
+
+Goal: Apply the surface consumer matrix to existing harness/activation evidence
+and route one repeated activation pattern to exactly one consumer.
+
+Pattern surface: harness / activation / memory / review gates.
+
+Product rationale: Prior dogfood runs showed activation can select useful
+guardrails, but owner-file/source recall and context ROI still need evidence.
+The next pattern application should convert that repeated evidence into one
+bounded consumer, not a scoring rewrite.
+
+Architectural rationale: Activation is admission control. Any improvement must
+come from run evidence, owner-file/read-model proof, eval/golden candidate,
+skill guidance, or bounded repair, not from a broad selector rewrite.
+
+Evidence source:
+
+- V32-V34 target owner-file evidence.
+- V39-V45 target observation/readback evidence.
+- V64 surface consumer matrix.
+- Current activation-engine skill.
+
+Official/external sources:
+
+- none required unless source inspection selects an external activation/retrieval
+  pattern.
+
+Inputs required:
+
+- Existing run reports and activation-related skills/docs.
+
+Primary consumer:
+
+- exactly one of:
+  - `.agents/skills/activation-engine/SKILL.md`;
+  - eval/golden candidate;
+  - bounded repair task;
+  - explicit defer decision in `PLANS.md`.
+
+Does not prove:
+
+- activation scoring is wrong;
+- broad retrieval/indexing rewrite is needed;
+- product readiness.
+
+Falsifier:
+
+- The task selects broad scoring work without repeated owner-file/source recall
+  evidence and a narrow falsifier.
+
+Files likely touched:
+
+- one selected consumer;
+- `PLAN.md`;
+- `GOAL.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- One durable consumer plus compact plan updates.
+
+Forbidden writes:
+
+- activation scoring rewrite;
+- source crawler;
+- broad retrieval rebuild;
+- package source unless a separate bounded repair is selected.
+
+Output requirements:
+
+- One source -> mechanism -> KRN implication -> decision/rejection -> consumer ->
+  falsifier record for activation/harness evidence.
+
+Definition of Done:
+
+- One consumer selected and updated or an explicit defer decision recorded.
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+git status --short --branch
+```
+
+Acceptance criteria:
+
+- Future activation work knows whether the next step is skill guidance,
+  eval/golden proof, bounded read-model repair, or defer.
 
 ### External Input Blocker
 
@@ -6702,7 +6795,9 @@ Initial entry:
   TypeScript consumer or explicitly defer/reject it.
 - [x] V65-01 complete: selected a bounded TypeScript boundary falsifier
   spot-check instead of more source intake.
-- [ ] V66-00 active: inspect current package source for external boundary drift.
+- [x] V66-00 complete: inspected current package source for external boundary
+  drift and deferred repair.
+- [ ] V67-00 active: apply harness/activation evidence to one consumer.
 ```
 
 ## 16. Surprises & Discoveries
@@ -7627,6 +7722,31 @@ Initial decisions:
   Does not prove: complete TypeScript quality or need for broad audit.
   Falsifier: V66-00 finds no repeated external-boundary drift and no bounded
     repair/eval candidate.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Defer TypeScript boundary repair after V66 spot-check.
+  Rationale: The bounded search found production `JSON.parse` parsing into
+    `unknown` with an object guard, env access at CLI/config boundaries, and no
+    unsafe cast/ignored diagnostic hits from the selected query.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v66-typescript-boundary-spot-check/REPORT.md`.
+  Does not prove: complete TypeScript quality or that no unsafe boundary exists
+    under another spelling.
+  Falsifier: future source work finds external input used as domain data before
+    parser/validator/type guard, or repeated finite status/provenance values
+    crossing IO as broad strings.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select harness/activation evidence application as V67.
+  Rationale: After TypeScript repair was deferred, the next highest-ROI surface
+    is harness/activation because prior dogfoods repeatedly distinguished
+    useful guardrail selection from weaker owner-file/source recall.
+  Surface: harness / activation / memory / review gates.
+  Consumer: one skill, eval/golden candidate, bounded repair, or defer decision
+    selected by V67-00.
+  Does not prove: activation scoring is wrong or broad retrieval rewrite is
+    needed.
+  Falsifier: V67-00 cannot identify a repeated activation evidence pattern with
+    one consumer and a narrow falsifier.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -10738,6 +10858,7 @@ Completed:
 - V64-03 Post Surface-Matrix Application Re-Gate.
 - V65-00 TypeScript Source Packet Application.
 - V65-01 Post TypeScript Pattern Application Re-Gate.
+- V66-00 External Boundary Drift Spot-Check.
 
 Evidence:
 - operator directive on 2026-06-27.
@@ -10761,6 +10882,8 @@ What improved:
   `docs/standards/typescript-boundaries.md`.
 - The next task is a bounded source spot-check against the new TypeScript
   boundary falsifier, not another research intake.
+- V66 found no immediate TypeScript boundary repair candidate and recorded an
+  explicit defer decision.
 
 What did not improve:
 - Product readiness.
@@ -10769,9 +10892,10 @@ What did not improve:
   task-contract source packet.
 - Current TypeScript source drift.
 - Package source behavior.
+- Activation/harness behavior.
 
 New task:
-- V66-00 External Boundary Drift Spot-Check.
+- V67-00 Harness Activation Source Packet Application.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -10780,10 +10904,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V66 TypeScript Boundary Falsifier Spot-Check.
+- V67 Harness Activation Pattern Application.
 
 Next active task:
-- V66-00 External Boundary Drift Spot-Check.
+- V67-00 Harness Activation Source Packet Application.
 
 ## 21. Final Response Format For Codex Runs
 
@@ -10833,7 +10957,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V66 TypeScript Boundary Falsifier Spot-Check.
+Active stream: V67 Harness Activation Pattern Application.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

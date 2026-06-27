@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V66 TypeScript Boundary Falsifier Spot-Check
+V67 Harness Activation Pattern Application
 ```
 
 Current product loop:
@@ -111,7 +111,8 @@ V64-02 First Surface-Matrix Pattern Application: complete.
 V64-03 Post Surface-Matrix Application Re-Gate: complete.
 V65-00 TypeScript Source Packet Application: complete.
 V65-01 Post TypeScript Pattern Application Re-Gate: complete.
-current task: V66-00 External Boundary Drift Spot-Check.
+V66-00 External Boundary Drift Spot-Check: complete.
+current task: V67-00 Harness Activation Source Packet Application.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
