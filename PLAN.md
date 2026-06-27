@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
-current task: V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
+active stream: V158 Post Compact Pattern Gate Contract Re-Gate
+current task: V158-00 Post Compact Pattern Gate Contract Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -41,34 +41,34 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V155: active-surface compactness, handoff, PLANS freshness,
+V100..V157: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
-           verification TMPDIR, stale-objective, progress stale-active, root
-           PLAN pattern-gate, and smoke-description guards complete.
+           verification TMPDIR, stale-objective, progress stale-active,
+           root/smoke/compact pattern-gate guards complete.
 ```
 
 ## Active Stream
 
-### V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
+### V158 Post Compact Pattern Gate Contract Re-Gate
 
 Goal:
 
-Decide the next bounded task after aligning brain-battle smoke description with
-the root `PLAN.md` pattern-gate guard.
+Decide the next bounded task after preserving the pattern gate in the compact
+`GOAL.md` contract template.
 
 Current finding:
 
 ```txt
-V154 selected brain-battle smoke description alignment because the smoke already
-runs `activePlanInvariants`, but the matrix Current Smoke text did not name the
-root `PLAN.md` pattern-gate guard.
+V156 selected compact pattern-gate contract preservation because active root
+`GOAL.md` and `PLAN.md` carried the pattern gate, but the `PLANS.md` compact
+goal template did not.
 ```
 
 Current action:
 
 ```txt
-Execute V156-00: select the next pattern surface from evidence. Do not broaden
-smoke-description alignment into benchmark theater, Research Foundry, source
+Execute V158-00: select the next pattern surface from evidence. Do not broaden
+compact-contract preservation into prompt bureaucracy, Research Foundry, source
 crawler, dashboard, or product-readiness claims.
 ```
 
@@ -81,8 +81,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused smoke-description alignment into benchmark theater or
-research hoarding without a concrete consumer and falsifier.
+The re-gate turns focused compact-contract preservation into prompt bureaucracy
+or research hoarding without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

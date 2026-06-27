@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V155 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, and brain-battle smoke description guard slices: complete
-active stream: V156 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
-current task: V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate
+V48..V157 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, and compact pattern-gate contract guard slices: complete
+active stream: V158 Post Compact Pattern Gate Contract Re-Gate
+current task: V158-00 Post Compact Pattern Gate Contract Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
+V158-00 Post Compact Pattern Gate Contract Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -8070,6 +8070,8 @@ Initial entry:
   gate so compact-only resumes keep source-to-decision pressure visible.
 - [x] V155-00 complete: brain-battle Current Smoke description now names root
   PLAN pattern-gate visibility as part of the active invariant smoke.
+- [x] V157-00 complete: compact `GOAL.md` contract now preserves the pattern
+  gate for future compaction.
 ```
 
 ## 16. Surprises & Discoveries
@@ -15132,6 +15134,86 @@ Next active stream:
 Next active task:
 - V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
 
+## Outcome 2026-06-27 V157 Compact Pattern Gate Contract Guard
+
+Completed tasks:
+- V156-00 Post Brain-Battle Pattern-Gate Smoke Description Re-Gate.
+- V157-00 Compact Pattern Gate Contract Guard.
+
+V156 decision:
+- Do not broaden brain-battle smoke description alignment into benchmark
+  theater, Research Foundry, source crawler, dashboard, or product-readiness
+  claims.
+- Select compact pattern-gate contract preservation because active root
+  `GOAL.md` and `PLAN.md` now carry the pattern gate, but `PLANS.md` section 22
+  is the compact `GOAL.md` contract future compactions use to recreate the
+  active goal.
+- Without the template update, a future compaction could recreate a compact goal
+  that omits the research/paper/course source-to-decision rule while current
+  files and tests had previously looked healthy.
+
+What changed:
+- `PLANS.md` section 22 now includes the compact pattern-gate rule.
+- `packages/harness/src/activePlanInvariants.test.ts` now checks the compact
+  `GOAL.md` contract preserves the pattern surfaces and the full
+  source-to-decision chain through consumer and falsifier.
+- `docs/architecture/brain-battle-eval-matrix.md` records the compact
+  pattern-gate contract guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V158.
+
+Evidence:
+- Active root `GOAL.md` includes the non-trivial slice pattern gate.
+- Root `PLAN.md` includes the compact Pattern Gate section.
+- Before this slice, `PLANS.md` section 22 compact `GOAL.md` contract did not
+  include the pattern gate.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+
+Source-to-decision:
+- Source: active root `GOAL.md`, root `PLAN.md`, `PLANS.md` compact goal
+  contract, and V153/V155 pattern-gate guards.
+- Mechanism: future compaction often rebuilds compact active guidance from the
+  template contract; if the template omits the pattern gate, research/course/
+  paper condensation can silently degrade even if current active files are
+  correct.
+- KRN implication: durable best-pattern pressure must be preserved both in the
+  active compact files and in the template that recreates them.
+- Decision: add the pattern-gate rule to the compact `GOAL.md` contract and
+  guard it with active-plan invariants.
+- Does not prove: every future compaction is correct, every future source is
+  high quality, every future slice applies the gate, or product readiness.
+- Consumer: `PLANS.md` section 22,
+  `packages/harness/src/activePlanInvariants.test.ts`, root `GOAL.md`, and root
+  `PLAN.md`.
+- Falsifier: section 22 can drop the compact pattern-gate rule without focused
+  tests failing.
+
+What improved:
+- Pattern-gate discipline survives both active root files and the compact
+  contract used to regenerate them after future context loss.
+- This keeps course/paper/practitioner/local evidence as decision pressure, not
+  as source hoarding.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Actual source ingestion quality beyond template preservation.
+
+New task:
+- V158-00 Post Compact Pattern Gate Contract Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V158 Post Compact Pattern Gate Contract Re-Gate.
+
+Next active task:
+- V158-00 Post Compact Pattern Gate Contract Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -15183,6 +15265,7 @@ Current objective: execute KRN Continuous Brain Growth from PLANS.md.
 Active stream: <current active stream from PLAN.md>.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
+For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript, target-workflow, or research/paper/course-driven slice, apply the pattern gate: source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier.
 If pasted objectives, attachments, old prompts, or summaries conflict with root active state, read them as historical evidence and do not roll the active stream backward.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.
 ```

@@ -92,6 +92,11 @@ describe("KRN active plan invariants", () => {
     );
 
     expect(compactGoalContract).toContain("Active stream: <current active stream from PLAN.md>.");
+    expect(compactGoalContract).toContain("For every non-trivial infra, harness, CI, eval");
+    expect(compactGoalContract).toContain("research/paper/course-driven slice");
+    expect(compactGoalContract).toContain(
+      "source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier"
+    );
     expect(compactGoalContract).toContain("read them as historical evidence");
     expect(compactGoalContract).toContain("do not roll the active stream backward");
     expect(compactGoalContract).not.toMatch(/Active stream: V\d+/u);
