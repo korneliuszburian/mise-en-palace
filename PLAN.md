@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V202 Post README Current-State Re-Gate
-current task: V202-00 Post README Current-State Re-Gate
+active stream: V203 TypeScript Boundary Current-State Repair
+current task: V203-00 TypeScript Boundary Current-State Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V201: active-surface compactness, handoff, PLANS freshness,
+V100..V202: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,38 +49,39 @@ V100..V201: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V202 Post README Current-State Re-Gate
+### V203 TypeScript Boundary Current-State Repair
 
 Goal:
 
-Decide the next bounded task after repairing README current-state framing.
+Repair stale Commit 0/1 stage language in the TypeScript boundary standard.
 
 Current finding:
 
 ```txt
-V201 aligned README.md with compact active truth, controlled-internal-alpha
-status, and the continuous evidence-driven loop.
+V202 found docs/standards/typescript-boundaries.md is an active implementation
+standard but still says TypeScript code starts only after Commit 0/1.
 ```
 
 Current action:
 
 ```txt
-Execute V202-00: select the next bounded evidence-backed task. Do not broaden
-README repair into a docs sweep, Research Foundry, source crawler, dashboard,
-product-readiness claim, or architecture rewrite.
+Execute V203-00: align the standard with current continuous TypeScript boundary
+discipline and add a focused invariant. Do not broaden into a type rewrite,
+Research Foundry, source crawler, dashboard, product-readiness claim, or docs
+sweep.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+docs/standards/typescript-boundaries.md and focused invariant.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate turns README repair into broad docs churn without a concrete
-consumer and falsifier.
+The TypeScript standard can again describe Commit 0/1 as the current coding
+stage while tests pass.
 ```
 
 ## Pattern Gate
