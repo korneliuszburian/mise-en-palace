@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V122 Post TypeScript Boundary Invariant Guard Re-Gate
-current task: V122-00 Post TypeScript Boundary Invariant Guard Re-Gate
+active stream: V124 Post Retained Source Trust Metadata Guard Re-Gate
+current task: V124-00 Post Retained Source Trust Metadata Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,33 +43,35 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V121: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
-           task-contract, final-response, and TypeScript boundary guards
-           complete.
+V110..V123: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+           task-contract, final-response, TypeScript boundary, and source trust
+           metadata guards complete.
 ```
 
 ## Active Stream
 
-### V122 Post TypeScript Boundary Invariant Guard Re-Gate
+### V124 Post Retained Source Trust Metadata Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding production TypeScript boundary
-hygiene without reintroducing `krn audit`.
+Decide the next bounded task after guarding retained source URL/trust-tier
+metadata without turning research intake into a crawler or source hoard.
 
 Current finding:
 
 ```txt
-V120 selected TypeScript boundary hygiene as the next product-facing pattern
-surface. V121 added a focused invariant for production package source unsafe
-casts, TypeScript suppressions, explicit `any`, and unchecked `JSON.parse`.
+V122 selected source-map trust metadata as the next bounded pattern surface.
+V123 strengthened the retained source invariant so every `docs/KRN_SOURCES.md`
+source section must include URL/URLs and Trust tier in addition to the full
+source-to-decision mapping fields.
 ```
 
 Current action:
 
 ```txt
-Execute V122-00: select the next pattern surface from evidence. Do not broaden
-the TypeScript guard into `krn audit`, a quality scanner, or a broad cleanup.
+Execute V124-00: select the next pattern surface from evidence. Do not broaden
+source intake into Research Foundry, crawler, decorative source archive, or
+paid-course transcription.
 ```
 
 Primary consumer:
@@ -81,8 +83,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns the focused TypeScript guard into broad style enforcement or
-repo-wide cleanup without a concrete failing pattern.
+The re-gate turns focused source metadata guarding into broad research
+collection, source hoarding, or crawler work without a concrete consumer.
 ```
 
 ## External Input Blocker

@@ -37,10 +37,23 @@ const sourceSections = (): SourceSection[] => {
   return sections;
 };
 
+const hasSourceLocation = (body: string): boolean =>
+  /^- URL: .+/mu.test(body) ||
+  /^- URL:\n\s+\S+/mu.test(body) ||
+  /^- URLs:\n(?:\s+- .+\n?)+/mu.test(body);
+
 describe("KRN source map invariants", () => {
   it("keeps every retained source tied to a full source-to-decision mapping", () => {
     const missing = sourceSections().flatMap((section) => {
       const findings: string[] = [];
+
+      if (!hasSourceLocation(section.body)) {
+        findings.push(`${section.title}: missing URL/URLs`);
+      }
+
+      if (!/^- Trust tier: (high|medium|low)\.$/mu.test(section.body)) {
+        findings.push(`${section.title}: missing Trust tier`);
+      }
 
       if (!/^- Mechanism: .+/mu.test(section.body)) {
         findings.push(`${section.title}: missing Mechanism`);

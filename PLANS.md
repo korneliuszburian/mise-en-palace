@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V121 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, and TypeScript boundary guard slices: complete
-active stream: V122 Post TypeScript Boundary Invariant Guard Re-Gate
-current task: V122-00 Post TypeScript Boundary Invariant Guard Re-Gate
+V48..V123 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, and source trust metadata guard slices: complete
+active stream: V124 Post Retained Source Trust Metadata Guard Re-Gate
+current task: V124-00 Post Retained Source Trust Metadata Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
+V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13829,6 +13829,75 @@ Next active stream:
 
 Next active task:
 - V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
+
+## Outcome 2026-06-27 V123 Retained Source Trust Metadata Guard
+
+Completed tasks:
+- V122-00 Post TypeScript Boundary Invariant Guard Re-Gate.
+- V123-00 Retained Source Trust Metadata Guard.
+
+V122 decision:
+- Do not broaden TypeScript boundary hygiene into `krn audit`, a quality
+  scanner, or repo-wide cleanup.
+- Select source-map trust metadata because source-to-decision already requires
+  retained sources to be mechanism-bearing, but every retained source also needs
+  URL/URLs and trust tier to avoid decorative or anonymous research.
+
+What changed:
+- `packages/harness/src/sourceMapInvariants.test.ts` now checks URL/URLs and
+  Trust tier for every `docs/KRN_SOURCES.md` source section.
+- `docs/architecture/brain-battle-eval-matrix.md` records the stronger
+  source-map guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V124.
+
+Evidence:
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/sourceMapInvariants.test.ts`.
+- `docs/runbooks/pattern-intake.md`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+
+Source-to-decision:
+- Source: `docs/runbooks/pattern-intake.md`, `docs/KRN_SOURCES.md`, and the
+  repo-local `source-to-decision` skill.
+- Mechanism: a retained source without retrievable location and trust tier
+  cannot be reviewed, refreshed, or rejected reliably.
+- KRN implication: source-to-decision must include source identity/trust
+  metadata, not only mechanism/decision fields.
+- Decision: add focused source-map invariant coverage for URL/URLs and Trust
+  tier.
+- Does not prove: external docs are current, every source is correct, source
+  selection quality, or product readiness.
+- Consumer: `packages/harness/src/sourceMapInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: a `docs/KRN_SOURCES.md` `###` source section can omit URL/URLs or
+  Trust tier without focused tests failing.
+
+What improved:
+- Retained best-pattern, course, paper, and docs sources are harder to become
+  anonymous decorative context.
+- Source refresh/review has stronger metadata.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- External source freshness.
+
+New task:
+- V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V124 Post Retained Source Trust Metadata Guard Re-Gate.
+
+Next active task:
+- V124-00 Post Retained Source Trust Metadata Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
