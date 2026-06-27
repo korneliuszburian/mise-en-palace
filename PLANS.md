@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V113 continuous pattern, CI/eval, target, compactness, handoff, active-contract, and brain-battle smoke coverage slices: complete
-active stream: V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
-current task: V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate
+V48..V115 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, and pattern-gate active-contract slices: complete
+active stream: V116 Post Continuous Pattern Gate Active Contract Re-Gate
+current task: V116-00 Post Continuous Pattern Gate Active Contract Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
+V116-00 Post Continuous Pattern Gate Active Contract Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -13535,6 +13535,85 @@ Next active stream:
 
 Next active task:
 - V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
+
+## Outcome 2026-06-27 V115 Continuous Pattern Gate Active Contract Guard
+
+Completed tasks:
+- V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate.
+- V115-00 Continuous Pattern Gate Active Contract Guard.
+
+V114 decision:
+- Keep the new brain-battle smoke coverage as-is and do not expand it into a
+  broad eval platform.
+- Select active pattern-gate preservation because the next product requirement
+  is that best courses, papers, official docs, and repo evidence continuously
+  become decisions, standards, skills, guards, eval candidates, or explicit
+  rejections instead of decorative context.
+
+What changed:
+- `packages/harness/src/activePlanInvariants.test.ts` now checks that root
+  `GOAL.md` keeps the non-trivial-slice pattern rule for infra, harness,
+  CI/eval, Codex surfaces, TypeScript, target workflow, and research/course
+  work.
+- The same invariant checks that `PLANS.md` still points at
+  `docs/runbooks/pattern-intake.md`, keeps the full source-to-decision chain,
+  and retains the Surface Consumer Matrix.
+- `docs/architecture/brain-battle-eval-matrix.md` records the guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V116.
+
+Evidence:
+- `GOAL.md`.
+- `PLANS.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `packages/harness/src/activePlanInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: user direction to keep best patterns, courses, papers, TypeScript
+  doctrine, infra, harness, CI, and continuous research condensation active at
+  every stage; existing `docs/runbooks/pattern-intake.md`.
+- Mechanism: retained research or practitioner guidance only improves KRN when
+  it is mapped to a mechanism, KRN implication, decision/rejection, consumer,
+  falsifier, and non-proof boundary.
+- KRN implication: active execution surfaces must preserve the pattern gate so
+  future compaction or root simplification cannot turn best-practice intake into
+  vibes, backlog pressure, or source hoarding.
+- Decision: add a focused active-plan invariant and matrix row guarding the
+  continuous pattern gate.
+- Does not prove: every future slice applies the gate correctly, every source is
+  high quality, research creates product value by default, or product readiness.
+- Consumer: `packages/harness/src/activePlanInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: root active execution can drop the pattern-surface rule or
+  `PLANS.md` can lose the pattern intake runbook/source-to-decision chain
+  without focused tests failing.
+
+What improved:
+- Best-pattern intake is mechanically harder to lose during future compaction.
+- Course/paper/practitioner guidance remains routed to standards, skills, ADRs,
+  evals, memory/source candidates, CLI/readback behavior, bounded repairs, or
+  explicit rejection.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- The quality of any specific future source intake.
+
+New task:
+- V116-00 Post Continuous Pattern Gate Active Contract Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V116 Post Continuous Pattern Gate Active Contract Re-Gate.
+
+Next active task:
+- V116-00 Post Continuous Pattern Gate Active Contract Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

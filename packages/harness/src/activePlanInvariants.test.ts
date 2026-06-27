@@ -92,4 +92,20 @@ describe("KRN active plan invariants", () => {
     expect(revisionNote).not.toContain("as the next active stream");
     expect(revisionNote).not.toMatch(/sets V\d+.*next active stream/u);
   });
+
+  it("keeps the continuous pattern gate visible in active execution surfaces", () => {
+    const goal = readRootFile("GOAL.md");
+    const plans = readRootFile("PLANS.md");
+
+    expect(goal).toMatch(/For every non-trivial infra, harness, CI[,/]\s+eval/u);
+    expect(goal).toContain("Codex-surface, TypeScript");
+    expect(goal).toContain("research/paper/course-driven slice");
+    expect(goal).toContain("source -> mechanism -> KRN implication -> decision/rejection ->");
+    expect(goal).toContain("consumer -> falsifier");
+    expect(plans).toContain("docs/runbooks/pattern-intake.md");
+    expect(plans).toMatch(
+      /source\s*->\s*mechanism\s*->\s*KRN implication\s*->\s*decision\/rejection\s*->\s*consumer\s*->\s*falsifier/u
+    );
+    expect(plans).toContain("Surface Consumer Matrix");
+  });
 });

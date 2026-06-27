@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
-current task: V114-00 Post Brain-Battle Smoke Invariant Coverage Re-Gate
+active stream: V116 Post Continuous Pattern Gate Active Contract Re-Gate
+current task: V116-00 Post Continuous Pattern Gate Active Contract Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,32 +43,34 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V113: revision-note, checkpoint rollup, and smoke invariant coverage
-           complete.
+V110..V115: revision-note, checkpoint rollup, smoke coverage, and pattern-gate
+           active-contract guards complete.
 ```
 
 ## Active Stream
 
-### V114 Post Brain-Battle Smoke Invariant Coverage Re-Gate
+### V116 Post Continuous Pattern Gate Active Contract Re-Gate
 
 Goal:
 
-Decide the next bounded task after wiring active-plan, context-hygiene,
-source-map, skill, and matrix invariants into `eval:brain-battle:smoke`.
+Decide the next bounded task after guarding that active execution surfaces keep
+the continuous pattern gate visible for non-trivial KRN work.
 
 Current finding:
 
 ```txt
-V112 found no reason to keep compacting root active truth. V113 instead closed
-the eval-surface gap where recently important deterministic invariants were
-guarded by full test/CI but not by the named brain-battle smoke command.
+V114 selected the user-requested best-pattern discipline as the next active
+surface. V115 guarded that root active execution still requires infra, harness,
+CI/eval, Codex-surface, TypeScript, target-workflow, and research/course-driven
+slices to pass source-to-decision instead of retaining decorative best-practice
+claims.
 ```
 
 Current action:
 
 ```txt
-Execute V114-00: select the next pattern surface from evidence. Do not broaden
-brain-battle smoke into a new eval platform.
+Execute V116-00: select the next pattern surface from evidence. Do not broaden
+pattern intake into a Research Foundry, crawler, or source archive.
 ```
 
 Primary consumer:
@@ -80,8 +82,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate expands eval scope without a concrete deterministic guard,
-source-to-decision consumer, or product-readiness caveat.
+The re-gate creates research backlog or source hoarding without a concrete
+consumer, falsifier, and bounded local proof.
 ```
 
 ## External Input Blocker
