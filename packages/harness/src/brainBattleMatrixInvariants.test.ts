@@ -133,6 +133,7 @@ describe("KRN brain-battle eval matrix invariants", () => {
       "contextHygieneInvariants",
       "sourceMapInvariants",
       "skillInvariants",
+      "patternChainInvariants",
       "brainBattleMatrixInvariants",
       "typescriptBoundaryInvariants"
     ]) {
@@ -147,6 +148,7 @@ describe("KRN brain-battle eval matrix invariants", () => {
       "pattern-intake output contract",
       "repo-local skill routability",
       "source-to-decision skill contract",
+      "active pattern-chain regression guard",
       "root PLAN pattern-gate visibility",
       "TypeScript boundary hygiene",
       "matrix guard/proof boundaries"

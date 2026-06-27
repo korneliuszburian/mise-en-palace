@@ -82,8 +82,9 @@ anti-memory candidate guards, and the V02-05 Codex brief / ContextROI guards.
 It also runs focused harness invariants for active plan freshness, active
 context hygiene, source-map source-to-decision mapping, source location scheme,
 pattern-intake output contract, repo-local skill routability,
-source-to-decision skill contract, root PLAN pattern-gate visibility,
-TypeScript boundary hygiene, and matrix guard/proof boundaries. It is
+source-to-decision skill contract, active pattern-chain regression guard, root
+PLAN pattern-gate visibility, TypeScript boundary hygiene, and matrix
+guard/proof boundaries. It is
 deterministic and does not call an LLM judge.
 
 ## Promptfoo Boundary

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V175 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, and active pattern-chain guard slices: complete
-active stream: V176 Post Pattern Chain Guard Re-Gate
-current task: V176-00 Post Pattern Chain Guard Re-Gate
+V48..V177 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, and smoke coverage guard slices: complete
+active stream: V178 Post Pattern Chain Smoke Re-Gate
+current task: V178-00 Post Pattern Chain Smoke Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V176-00 Post Pattern Chain Guard Re-Gate.
+V178-00 Post Pattern Chain Smoke Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15809,6 +15809,69 @@ Next active stream:
 
 Next active task:
 - V176-00 Post Pattern Chain Guard Re-Gate.
+
+## Outcome 2026-06-27 V177 Pattern Chain Smoke Coverage Guard
+
+Completed tasks:
+- V176-00 Post Pattern Chain Guard Re-Gate.
+- V177-00 Pattern Chain Smoke Coverage Guard.
+
+V176 decision:
+- Do not broaden pattern-chain guarding into Research Foundry, source crawler,
+  dashboard, or product-readiness claims.
+- Select brain-battle smoke coverage because the active pattern-chain invariant
+  existed, but the smoke script and Current Smoke description did not name or
+  execute it.
+- The concrete failure mode is future CI smoke passing without running the guard
+  that prevents active pattern surfaces from regressing to the no-consumer
+  chain.
+
+What changed:
+- `package.json` now includes `patternChainInvariants` in
+  `eval:brain-battle:smoke`.
+- `packages/harness/src/brainBattleMatrixInvariants.test.ts` now checks the
+  smoke script and Current Smoke description mention the active pattern-chain
+  guard.
+- `docs/architecture/brain-battle-eval-matrix.md` Current Smoke now documents
+  active pattern-chain regression guard coverage.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V178.
+
+Evidence:
+- Before this slice, `packages/harness/src/patternChainInvariants.test.ts`
+  existed and had a matrix row, but `eval:brain-battle:smoke` did not run it.
+- The Current Smoke section did not mention active pattern-chain regression
+  coverage.
+
+Source-to-decision:
+- Source: `package.json`, `docs/architecture/brain-battle-eval-matrix.md`, and
+  V176 active pattern-chain guard.
+- Mechanism: a guard that is not part of the smoke lane can silently drift away
+  from the documented brain-battle proof boundary.
+- KRN implication: active pattern-chain protection belongs in the brain-battle
+  smoke and its description.
+- Decision: add `patternChainInvariants` to the smoke and guard the description.
+- Does not prove: smoke coverage is exhaustive, source quality at scale, product
+  readiness, or every historical doc should be rewritten.
+- Consumer: `package.json`,
+  `packages/harness/src/brainBattleMatrixInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `eval:brain-battle:smoke` can omit `patternChainInvariants` or the
+  Current Smoke description can stop naming it without focused tests failing.
+
+New task:
+- V178-00 Post Pattern Chain Smoke Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V178 Post Pattern Chain Smoke Re-Gate.
+
+Next active task:
+- V178-00 Post Pattern Chain Smoke Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
