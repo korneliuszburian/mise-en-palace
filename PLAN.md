@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V190 Post Brain Store Skill Metadata Re-Gate
-current task: V190-00 Post Brain Store Skill Metadata Re-Gate
+active stream: V192 Post Target Repo Skill Metadata Re-Gate
+current task: V192-00 Post Target Repo Skill Metadata Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V189: active-surface compactness, handoff, PLANS freshness,
+V100..V191: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,27 +48,26 @@ V100..V189: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V190 Post Brain Store Skill Metadata Re-Gate
+### V192 Post Target Repo Skill Metadata Re-Gate
 
 Goal:
 
-Decide the next bounded task after aligning brain-store skill metadata with
-unknown narrowing, migration evidence, JSONB boundary discipline, and rollback
-risk.
+Decide the next bounded task after aligning target-repo skill metadata with
+mode, dirty-state, write-authority, proof/non-proof, and handoff boundaries.
 
 Current finding:
 
 ```txt
-V188 selected brain-store skill metadata repair because DB/schema work is the
-runtime spine and Codex sees frontmatter before loading the skill body.
+V190 selected target-repo skill metadata repair because target work is a high
+risk boundary and Codex sees frontmatter before loading the skill body.
 ```
 
 Current action:
 
 ```txt
-Execute V190-00: select the next pattern surface from evidence. Do not broaden
-brain-store metadata preservation into Research Foundry, source crawler,
-dashboard, runtime rewrite, or product-readiness claims.
+Execute V192-00: select the next pattern surface from evidence. Do not broaden
+target-repo metadata preservation into Research Foundry, source crawler,
+dashboard, target writes by default, or product-readiness claims.
 ```
 
 Primary consumer:
@@ -80,8 +79,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused brain-store metadata preservation into research
-hoarding or runtime rewrite pressure without a concrete consumer and falsifier.
+The re-gate turns focused target-repo metadata preservation into research
+hoarding or target-write pressure without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

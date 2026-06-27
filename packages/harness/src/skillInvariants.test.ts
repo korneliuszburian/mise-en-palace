@@ -205,4 +205,23 @@ describe("KRN skill invariants", () => {
     expect(brainStoreSchema).toContain("Do not trust raw DB JSON as a domain object.");
     expect(brainStoreSchema).toContain("SQL inspection");
   });
+
+  it("keeps target repo testing routed through mode, dirty state, write authority, and handoff", () => {
+    const targetRepoTesting = readFileSync(
+      new URL("target-repo-testing/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(targetRepoTesting).toContain("explicit mode");
+    expect(targetRepoTesting).toContain("dirty-state");
+    expect(targetRepoTesting).toContain("write-authority");
+    expect(targetRepoTesting).toContain("proof/non-proof");
+    expect(targetRepoTesting).toContain("handoff boundaries");
+    expect(targetRepoTesting).toContain("observation-only");
+    expect(targetRepoTesting).toContain("headless-repair");
+    expect(targetRepoTesting).toContain("real-second-operator");
+    expect(targetRepoTesting).toContain("allowed_writes:");
+    expect(targetRepoTesting).toContain("forbidden_writes:");
+    expect(targetRepoTesting).toContain("target_patch_lifecycle:");
+  });
 });

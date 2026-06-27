@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V189 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, and brain store skill metadata guard slices: complete
-active stream: V190 Post Brain Store Skill Metadata Re-Gate
-current task: V190-00 Post Brain Store Skill Metadata Re-Gate
+V48..V191 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, and target repo skill metadata guard slices: complete
+active stream: V192 Post Target Repo Skill Metadata Re-Gate
+current task: V192-00 Post Target Repo Skill Metadata Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V190-00 Post Brain Store Skill Metadata Re-Gate.
+V192-00 Post Target Repo Skill Metadata Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16255,6 +16255,74 @@ Next active stream:
 
 Next active task:
 - V190-00 Post Brain Store Skill Metadata Re-Gate.
+
+## Outcome 2026-06-27 V191 Target Repo Skill Metadata Guard
+
+Completed tasks:
+- V190-00 Post Brain Store Skill Metadata Re-Gate.
+- V191-00 Target Repo Skill Metadata Guard.
+
+V190 decision:
+- Do not broaden brain-store metadata preservation into Research Foundry, source
+  crawler, dashboard, runtime rewrite, or product-readiness claims.
+- Select target-repo-testing skill metadata repair because target repositories
+  are high-risk boundaries and the skill body had mode, dirty-state,
+  write-authority, proof/non-proof, and handoff guidance that was not visible in
+  frontmatter routing metadata.
+- The concrete failure mode is future target work selecting the skill from
+  metadata that only says inspect/test/repair target repos, then writing to a
+  living target without explicit mode, dirty-state, allowed/forbidden writes,
+  target patch lifecycle, or handoff boundaries.
+
+What changed:
+- `.agents/skills/target-repo-testing/SKILL.md` frontmatter description now
+  names explicit mode, dirty-state, write-authority, proof/non-proof, and
+  handoff boundaries.
+- `packages/harness/src/skillInvariants.test.ts` now guards target-repo skill
+  metadata and core mode/write/handoff fields.
+- `docs/architecture/brain-battle-eval-matrix.md` records the target-repo skill
+  metadata guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V192.
+
+Evidence:
+- Before this slice, target-repo-testing body enforced observation-only,
+  headless-repair, real-second-operator, dirty state, allowed/forbidden writes,
+  target patch lifecycle, and handoff fields, but frontmatter did not surface
+  those constraints.
+- Recent target/dogfood work showed target repositories must not be treated as
+  disposable fixtures.
+
+Source-to-decision:
+- Source: `.agents/skills/target-repo-testing/SKILL.md`, target-repo dogfood
+  evidence, and repo-local skill invariant coverage.
+- Mechanism: target-repo skill routing metadata determines whether Codex treats
+  target work as explicit bounded mode/evidence handling or generic repo repair.
+- KRN implication: target work must surface mode, dirty-state, write-authority,
+  proof/non-proof, and handoff boundaries before the full skill is loaded.
+- Decision: update and guard target-repo-testing skill frontmatter.
+- Does not prove: external target readiness, second-operator proof, or that
+  target writes are safe by default.
+- Consumer: `.agents/skills/target-repo-testing/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the target-repo-testing frontmatter can drop mode, dirty-state,
+  write-authority, proof/non-proof, or handoff boundary language while tests
+  pass.
+
+New task:
+- V192-00 Post Target Repo Skill Metadata Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V192 Post Target Repo Skill Metadata Re-Gate.
+
+Next active task:
+- V192-00 Post Target Repo Skill Metadata Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
