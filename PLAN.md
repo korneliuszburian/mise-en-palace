@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V174 Post Kernel Short-Chain Removal Re-Gate
-current task: V174-00 Post Kernel Short-Chain Removal Re-Gate
+active stream: V176 Post Pattern Chain Guard Re-Gate
+current task: V176-00 Post Pattern Chain Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V173: active-surface compactness, handoff, PLANS freshness,
+V100..V175: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,25 +48,25 @@ V100..V173: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V174 Post Kernel Short-Chain Removal Re-Gate
+### V176 Post Pattern Chain Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after removing the older no-consumer chain from
-kernel required reading.
+Decide the next bounded task after guarding active pattern surfaces against the
+older no-consumer chain.
 
 Current finding:
 
 ```txt
-V172 selected kernel short-chain removal because required reading still taught
-the older no-consumer chain before the full chain.
+V174 selected a consolidated active-surface guard because raw grep re-gates
+still mixed real active drift with historical and negative-test hits.
 ```
 
 Current action:
 
 ```txt
-Execute V174-00: select the next pattern surface from evidence. Do not broaden
-kernel wording preservation into Research Foundry, source crawler, dashboard, or
+Execute V176-00: select the next pattern surface from evidence. Do not broaden
+pattern-chain guarding into Research Foundry, source crawler, dashboard, or
 product-readiness claims.
 ```
 
@@ -79,7 +79,7 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused kernel wording preservation into research hoarding
+The re-gate turns focused pattern-chain guarding into research hoarding
 without a concrete consumer and falsifier.
 ```
 

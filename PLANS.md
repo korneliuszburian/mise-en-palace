@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V173 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, and kernel short-chain guard slices: complete
-active stream: V174 Post Kernel Short-Chain Removal Re-Gate
-current task: V174-00 Post Kernel Short-Chain Removal Re-Gate
+V48..V175 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, and active pattern-chain guard slices: complete
+active stream: V176 Post Pattern Chain Guard Re-Gate
+current task: V176-00 Post Pattern Chain Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V174-00 Post Kernel Short-Chain Removal Re-Gate.
+V176-00 Post Pattern Chain Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -15750,6 +15750,65 @@ Next active stream:
 
 Next active task:
 - V174-00 Post Kernel Short-Chain Removal Re-Gate.
+
+## Outcome 2026-06-27 V175 Active Pattern Chain Guard
+
+Completed tasks:
+- V174-00 Post Kernel Short-Chain Removal Re-Gate.
+- V175-00 Active Pattern Chain Guard.
+
+V174 decision:
+- Do not broaden kernel wording preservation into Research Foundry, source
+  crawler, dashboard, or product-readiness claims.
+- Select a consolidated active pattern-chain guard because raw grep re-gates
+  still returned historical hits, negative-test fixtures, and full-chain
+  prefixes alongside real active drift.
+- The concrete failure mode is future continuations spending context on noisy
+  scans instead of using a deterministic active-surface guard.
+
+What changed:
+- `packages/harness/src/patternChainInvariants.test.ts` now scans active pattern
+  surfaces and rejects the old no-consumer chain while requiring the full
+  consumer/falsifier chain.
+- `docs/architecture/brain-battle-eval-matrix.md` records the active
+  pattern-chain guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V176.
+
+Evidence:
+- Post V174 scan still returned historical ledgers, negative test assertions,
+  and ADR full-chain prefix hits.
+- Active surfaces now need a scoped guard instead of repeating manual
+  historical filtering.
+
+Source-to-decision:
+- Source: post V174 grep output and active pattern-gate surfaces.
+- Mechanism: unscoped text scans mix active guidance with historical and
+  intentional negative evidence; a focused active-surface invariant reduces
+  context waste while still catching real regressions.
+- KRN implication: active source/pattern guidance should be guarded by a
+  deterministic active-surface test, not by broad historical rewrites.
+- Decision: add a focused active pattern-chain invariant.
+- Does not prove: historical docs should be rewritten, every future source is
+  useful, product readiness, or every future active surface is listed forever.
+- Consumer: `packages/harness/src/patternChainInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: an active pattern surface can reintroduce the no-consumer chain
+  without focused tests failing.
+
+New task:
+- V176-00 Post Pattern Chain Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V176 Post Pattern Chain Guard Re-Gate.
+
+Next active task:
+- V176-00 Post Pattern Chain Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
