@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V128 Post Retained Source Location Scheme Guard Re-Gate
-current task: V128-00 Post Retained Source Location Scheme Guard Re-Gate
+active stream: V130 Post Source-To-Decision Skill Contract Guard Re-Gate
+current task: V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,36 +43,38 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V127: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V129: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
-           metadata, pattern-intake output, and source location scheme guards
-           complete.
+           metadata, pattern-intake output, source location scheme, and
+           source-to-decision skill guards complete.
 ```
 
 ## Active Stream
 
-### V128 Post Retained Source Location Scheme Guard Re-Gate
+### V130 Post Source-To-Decision Skill Contract Guard Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding retained source location schemes
-without turning source intake into a crawler, freshness scanner, or source
-archive.
+Decide the next bounded task after guarding the source-to-decision skill
+contract without turning source intake into a crawler, freshness scanner, source
+archive, or skill sprawl.
 
 Current finding:
 
 ```txt
-V126 selected retained source location format as the next bounded pattern
-surface. V127 strengthened the source-map invariant so retained
-`docs/KRN_SOURCES.md` locations must be `https://` URLs.
+V128 selected the source-to-decision skill as the next bounded pattern surface.
+V129 strengthened the skill invariant so the skill must keep pattern-intake
+routing, anti-source-hoarding rules, legal/course boundaries, output fields,
+decision kind, consumer/falsifier gate, and candidate reviewability labels.
 ```
 
 Current action:
 
 ```txt
-Execute V128-00: select the next pattern surface from evidence. Do not broaden
+Execute V130-00: select the next pattern surface from evidence. Do not broaden
 source intake into Research Foundry, crawler, decorative source archive,
-freshness scanner, or paid-course transcription.
+freshness scanner, paid-course transcription, or extra skills without repeated
+workflow evidence.
 ```
 
 Primary consumer:
@@ -84,8 +86,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused source-location guarding into broad source crawling,
-freshness scanning, or source archival work without a concrete consumer.
+The re-gate turns focused source-to-decision skill guarding into source crawling,
+source archival work, or skill sprawl without a concrete consumer.
 ```
 
 ## External Input Blocker

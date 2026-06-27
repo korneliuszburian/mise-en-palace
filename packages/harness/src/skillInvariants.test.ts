@@ -87,4 +87,40 @@ describe("KRN skill invariants", () => {
       expect(handoff).toContain(field);
     }
   });
+
+  it("keeps source-to-decision skill strict enough to prevent source hoarding", () => {
+    const sourceToDecision = readFileSync(
+      new URL("source-to-decision/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(sourceToDecision).toContain("docs/runbooks/pattern-intake.md");
+    expect(sourceToDecision).toContain("Source without mechanism is decoration.");
+    expect(sourceToDecision).toContain("Decision without falsifier is dogma.");
+    expect(sourceToDecision).toContain("Do not copy paid/proprietary course material into KRN.");
+    expect(sourceToDecision).toContain("Do not create a research archive, source crawler, or broad research backlog");
+    expect(sourceToDecision).toContain("Do not proceed from pattern to implementation unless the consumer and falsifier");
+
+    const requiredOutputFields = [
+      "source_id:",
+      "title:",
+      "url:",
+      "trust_tier: high | medium | low",
+      "mechanism:",
+      "krn_implication:",
+      "decision:",
+      "does_not_prove:",
+      "consumer:",
+      "falsifier:"
+    ];
+
+    for (const field of requiredOutputFields) {
+      expect(sourceToDecision).toContain(field);
+    }
+
+    expect(sourceToDecision).toContain("decision_kind: adopt | reject | lab_test | defer");
+    expect(sourceToDecision).toContain(
+      "reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown"
+    );
+  });
 });

@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V127 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, and source location scheme guard slices: complete
-active stream: V128 Post Retained Source Location Scheme Guard Re-Gate
-current task: V128-00 Post Retained Source Location Scheme Guard Re-Gate
+V48..V129 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, and source-to-decision skill guard slices: complete
+active stream: V130 Post Source-To-Decision Skill Contract Guard Re-Gate
+current task: V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V128-00 Post Retained Source Location Scheme Guard Re-Gate.
+V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14042,6 +14042,84 @@ Next active stream:
 
 Next active task:
 - V128-00 Post Retained Source Location Scheme Guard Re-Gate.
+
+## Outcome 2026-06-27 V129 Source-To-Decision Skill Contract Guard
+
+Completed tasks:
+- V128-00 Post Retained Source Location Scheme Guard Re-Gate.
+- V129-00 Source-To-Decision Skill Contract Guard.
+
+V128 decision:
+- Do not broaden retained source-location guarding into Research Foundry,
+  crawler, freshness scanner, source archive, or paid-course transcription.
+- Select the source-to-decision skill contract because `docs/runbooks/pattern-intake.md`
+  and `docs/KRN_SOURCES.md` are now guarded, but the repo-local skill that
+  triggers source intake should also stay strict enough to prevent source
+  hoarding.
+
+What changed:
+- `packages/harness/src/skillInvariants.test.ts` now checks that
+  `.agents/skills/source-to-decision/SKILL.md` keeps the pattern-intake runbook
+  reference, anti-decoration rules, paid/proprietary course boundary,
+  source-hoarding ban, consumer/falsifier gate, required output fields, decision
+  kind, and candidate reviewability labels.
+- `docs/architecture/brain-battle-eval-matrix.md` records the
+  source-to-decision skill guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V130.
+
+Evidence:
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+- `docs/KRN_SOURCES.md`.
+- `packages/harness/src/skillInvariants.test.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: repo-local `source-to-decision` skill and pattern-intake runbook.
+- Mechanism: best-practice/course/paper/doc intake only stays useful if the
+  execution skill keeps routing sources through mechanism, implication,
+  decision/rejection, consumer, falsifier, non-proof boundary, and reviewable
+  candidate output.
+- KRN implication: the skill itself is part of the continuous brain gate and
+  must not drift into decorative source collection.
+- Decision: add focused skill invariant coverage for source-to-decision output
+  and anti-hoarding contract.
+- Does not prove: future Codex runs always invoke the skill, every source is
+  high quality, research creates product value by default, or product readiness.
+- Consumer: `packages/harness/src/skillInvariants.test.ts` and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: `.agents/skills/source-to-decision/SKILL.md` can drop
+  pattern-intake routing, legal/course boundary, output fields,
+  consumer/falsifier gate, or reviewability labels without focused tests
+  failing.
+
+What improved:
+- The execution surface for research/pattern intake is harder to weaken during
+  future skill edits.
+- Best-pattern intake remains routed to standards, skills, ADRs, evals,
+  memory/source candidates, CLI/readback behavior, bounded repairs, or explicit
+  rejection.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Source quality judgment or external source freshness.
+
+New task:
+- V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V130 Post Source-To-Decision Skill Contract Guard Re-Gate.
+
+Next active task:
+- V130-00 Post Source-To-Decision Skill Contract Guard Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
