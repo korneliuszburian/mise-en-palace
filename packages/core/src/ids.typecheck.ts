@@ -2,10 +2,15 @@ import type {
   AntiMemoryCandidateId,
   AntiMemoryRecordId,
   EvidenceBundleId,
+  EvalCandidateId,
   ExecutionRunId,
   FeedbackDeltaId,
+  GoldenCaseId,
+  GoldenTaskId,
   MemoryCandidateId,
   MemoryRecordId,
+  PolicyGateId,
+  ProtectedFailureModeId,
   ReviewAssessmentId,
   SourceClaimId,
   SourceDecisionId,
@@ -29,7 +34,12 @@ export type BrandedKrnIdCompatibilityProof = [
   Assert<IsAssignable<string, AntiMemoryRecordId>>,
   Assert<IsAssignable<string, SourceClaimId>>,
   Assert<IsAssignable<string, SourceDecisionId>>,
-  Assert<IsAssignable<string, SourceRejectionId>>
+  Assert<IsAssignable<string, SourceRejectionId>>,
+  Assert<IsAssignable<string, PolicyGateId>>,
+  Assert<IsAssignable<string, EvalCandidateId>>,
+  Assert<IsAssignable<string, GoldenTaskId>>,
+  Assert<IsAssignable<string, GoldenCaseId>>,
+  Assert<IsAssignable<string, ProtectedFailureModeId>>
 ];
 
 export type BrandedKrnIdSeparationProof = [
@@ -47,6 +57,12 @@ export type BrandedKrnIdSeparationProof = [
   Assert<IsNotAssignable<SourceDecisionId, SourceClaimId>>,
   Assert<IsNotAssignable<SourceDecisionId, SourceRejectionId>>,
   Assert<IsNotAssignable<SourceRejectionId, SourceDecisionId>>,
+  Assert<IsNotAssignable<PolicyGateId, EvalCandidateId>>,
+  Assert<IsNotAssignable<EvalCandidateId, PolicyGateId>>,
+  Assert<IsNotAssignable<EvalCandidateId, GoldenTaskId>>,
+  Assert<IsNotAssignable<GoldenTaskId, GoldenCaseId>>,
+  Assert<IsNotAssignable<GoldenCaseId, ProtectedFailureModeId>>,
+  Assert<IsNotAssignable<ProtectedFailureModeId, GoldenCaseId>>,
   Assert<IsNotAssignable<MemoryCandidateId, AntiMemoryCandidateId>>,
   Assert<IsNotAssignable<AntiMemoryCandidateId, MemoryCandidateId>>,
   Assert<IsNotAssignable<AntiMemoryRecordId, MemoryRecordId>>

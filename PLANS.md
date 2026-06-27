@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V90 Post Source Decision ID Branding Re-Gate
-current task: V90-00 Post Source Decision ID Branding Re-Gate
+active stream: V92 Post Eval And Policy ID Branding Re-Gate
+current task: V92-00 Post Eval And Policy ID Branding Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12769,6 +12769,65 @@ Next active stream:
 
 Next active task:
 - V90-00 Post Source Decision ID Branding Re-Gate.
+
+## Outcome 2026-06-27 V91 Eval And Policy ID Branding
+
+Completed:
+- V90-00 Post Source Decision ID Branding Re-Gate.
+- V91-00 Eval And Policy ID Branding.
+
+Evidence:
+- `packages/core/src/ids.ts`.
+- `packages/core/src/ids.typecheck.ts`.
+- `packages/core/src/eval.ts`.
+- `packages/core/src/goldenTask.ts`.
+- `packages/core/src/policy.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+
+Source-to-decision:
+- Source: Total TypeScript "Designing Your Types" retained in
+  `docs/KRN_SOURCES.md`.
+- Mechanism: domain type design communicates authority and lifecycle, not only
+  compiler satisfaction.
+- KRN implication: eval candidates, golden tasks/cases, protected failure
+  modes, and policy gates carry different authority and should not be freely
+  interchangeable in core domain types.
+- Decision: brand `PolicyGateId`, `EvalCandidateId`, `GoldenTaskId`,
+  `GoldenCaseId`, and `ProtectedFailureModeId` using the existing
+  `BrandedKrnId` pattern.
+- Does not prove: eval quality, policy judgment, runtime ID changes, or product
+  readiness.
+- Consumer: `packages/core/src/ids.ts` and `packages/core/src/ids.typecheck.ts`.
+- Falsifier: eval/golden/policy IDs are assignable to each other while string
+  compatibility is still expected.
+
+What improved:
+- Eval, golden behavior, protected failure mode, and policy gate IDs are now
+  separated at the type boundary.
+- The eval/policy lane now makes authority boundaries harder to mix up in
+  TypeScript.
+
+What did not improve:
+- Runtime ID format.
+- Eval quality.
+- Policy gate judgment.
+- Every remaining ID alias.
+- Product readiness.
+
+New task:
+- V92-00 Post Eval And Policy ID Branding Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V92 Post Eval And Policy ID Branding Re-Gate.
+
+Next active task:
+- V92-00 Post Eval And Policy ID Branding Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

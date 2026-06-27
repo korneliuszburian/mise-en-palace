@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V90 Post Source Decision ID Branding Re-Gate
-current task: V90-00 Post Source Decision ID Branding Re-Gate
+active stream: V92 Post Eval And Policy ID Branding Re-Gate
+current task: V92-00 Post Eval And Policy ID Branding Re-Gate
 ```
 
 Completed stream summary:
@@ -123,33 +123,33 @@ V86-00 post anti-memory ID branding re-gate: complete
 V87 evidence spine ID branding: complete
 V88-00 post evidence spine ID branding re-gate: complete
 V89 source decision/rejection ID branding: complete
-V90 post source decision ID branding re-gate: active
+V90-00 post source decision ID branding re-gate: complete
+V91 eval and policy ID branding: complete
+V92 post eval and policy ID branding re-gate: active
 ```
 
 ## Active Stream
 
-### V90 Post Source Decision ID Branding Re-Gate
+### V92 Post Eval And Policy ID Branding Re-Gate
 
 Goal:
 
-Decide the next bounded task after branding source decision/rejection IDs in
-core domain types.
+Decide the next bounded task after branding eval/golden/policy IDs in core
+domain types.
 
 Current finding:
 
 ```txt
-V88 selected one more bounded TypeScript retained-source application: retained
-source claims were branded, but source decisions and source rejections were
-still mutually type-compatible plain strings. V89 tightened them with
-type-level separation proof.
+V90 selected one final bounded TypeScript retained-source application:
+eval/golden/policy IDs are authority surfaces but were mutually type-compatible
+plain strings. V91 tightened them with type-level separation proof.
 ```
 
 Current action:
 
 ```txt
-Execute V90-00: decide whether another bounded TypeScript ID/lifecycle repair
-is justified by evidence, move to another pattern surface, or stop on the
-external operator/target blocker.
+Execute V92-00: move to another pattern surface unless another TypeScript
+repair has stronger evidence than "this ID alias is still a string".
 ```
 
 Primary consumer:
