@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V144 Post Verification TMPDIR Guard Re-Gate
-current task: V144-00 Post Verification TMPDIR Guard Re-Gate
+active stream: V146 Post TypeScript Boundary Re-Scan Re-Gate
+current task: V146-00 Post TypeScript Boundary Re-Scan Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -43,38 +43,40 @@ V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
 V100..V109: active-surface compactness, handoff contract, and PLANS freshness
            guards complete.
-V110..V143: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
+V110..V145: revision-note, checkpoint rollup, smoke coverage, pattern-gate,
            task-contract, final-response, TypeScript boundary, source trust
            metadata, pattern-intake output, source location scheme,
            source-to-decision skill, current-smoke description, Promptfoo
            adapter boundary, source classification, and latest-outcome
            source-to-decision, source-to-decision skill output, and
-           source-class vocabulary and verification TMPDIR guards complete.
+           source-class vocabulary, verification TMPDIR, and TypeScript
+           boundary re-scan complete.
 ```
 
 ## Active Stream
 
-### V144 Post Verification TMPDIR Guard Re-Gate
+### V146 Post TypeScript Boundary Re-Scan Re-Gate
 
 Goal:
 
-Decide the next bounded task after guarding local verification TMPDIR guidance
-without turning environment work into tooling bureaucracy.
+Decide the next bounded task after re-scanning TypeScript boundary drift without
+turning practitioner/course guidance into broad type-audit bureaucracy.
 
 Current finding:
 
 ```txt
-V142 selected local verification TMPDIR guidance as the next bounded pattern
-surface. V143 recorded that TMPDIR overrides must stay outside the repo checkout
-because CLI boundary tests rely on outside-workspace temporary directories.
+V144 selected a TypeScript boundary re-scan because the next best-pattern
+concern was whether Matt Pocock-style unknown-first and narrow-type discipline
+still holds in production source. V145 found no production drift from the
+guarded boundary rules.
 ```
 
 Current action:
 
 ```txt
-Execute V144-00: select the next pattern surface from evidence. Do not broaden
-verification environment guidance into tooling bureaucracy, dashboard, or
-benchmark lane.
+Execute V146-00: select the next pattern surface from evidence. Do not broaden
+TypeScript boundary hygiene into broad type rewrites, audit theater, dashboard,
+or benchmark lane.
 ```
 
 Primary consumer:
@@ -86,8 +88,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused TMPDIR verification guidance into tooling bureaucracy
-without a concrete consumer and falsifier.
+The re-gate turns a clean TypeScript boundary re-scan into broad type-audit
+bureaucracy without a concrete consumer and falsifier.
 ```
 
 ## External Input Blocker

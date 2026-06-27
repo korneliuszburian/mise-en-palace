@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V143 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, and verification TMPDIR guard slices: complete
-active stream: V144 Post Verification TMPDIR Guard Re-Gate
-current task: V144-00 Post Verification TMPDIR Guard Re-Gate
+V48..V145 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, and TypeScript boundary re-scan slices: complete
+active stream: V146 Post TypeScript Boundary Re-Scan Re-Gate
+current task: V146-00 Post TypeScript Boundary Re-Scan Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V144-00 Post Verification TMPDIR Guard Re-Gate.
+V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -14661,6 +14661,86 @@ Next active stream:
 
 Next active task:
 - V144-00 Post Verification TMPDIR Guard Re-Gate.
+
+## Outcome 2026-06-27 V145 TypeScript Boundary Drift Re-Scan
+
+Completed tasks:
+- V144-00 Post Verification TMPDIR Guard Re-Gate.
+- V145-00 TypeScript Boundary Drift Re-Scan.
+
+V144 decision:
+- Do not broaden local TMPDIR verification guidance into tooling bureaucracy,
+  dashboard, or benchmark lane.
+- Select TypeScript boundary re-scan because the operator requirement is that
+  best patterns, courses, practitioner guidance, and senior TypeScript standards
+  stay active at every stage.
+- The concrete next question was whether production source still follows the
+  retained Matt Pocock-style doctrine: no unchecked `any`, no double assertions,
+  no TS suppressions, and unknown-first `JSON.parse` boundaries.
+
+What changed:
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V146.
+- No package source changed.
+- No new TypeScript guard was needed because
+  `packages/harness/src/typescriptBoundaryInvariants.test.ts` already checks
+  production package source for unsafe casts, TS suppressions, `: any`, and
+  non-unknown-first `JSON.parse`.
+
+Evidence:
+- `rg -n "\bas any\b|as unknown as|@ts-ignore|@ts-expect-error|JSON\.parse|fetch\(.+\.json\(|: any\b|<any>" packages --glob '*.ts'`.
+- `rg -n "JSON\.parse|as any|as unknown as|@ts-ignore|@ts-expect-error|: any\b" packages/cli packages/core packages/schema packages/harness packages/db --glob '*.ts'`.
+- `packages/harness/src/typescriptBoundaryInvariants.test.ts`.
+- `docs/KRN_SOURCES.md#typescript-practitioner-sources`.
+- `docs/standards/typescript-excellence.md`.
+- `docs/standards/typescript-boundaries.md`.
+
+Source-to-decision:
+- Source: retained TypeScript practitioner sources in `docs/KRN_SOURCES.md`,
+  the local TypeScript boundary standard, and current repository scan evidence.
+- Mechanism: TypeScript quality guidance only improves KRN when it is connected
+  to code-level falsifiers such as unknown-first IO boundaries, narrow domain
+  states, and mechanically guarded unsafe-cast bans.
+- KRN implication: best-practice/course guidance should keep driving bounded
+  TypeScript source checks, but a clean scan should not create a broad type
+  rewrite or audit theater.
+- Decision: record the clean TypeScript boundary re-scan, keep the existing
+  invariant as the consumer, and defer new TypeScript repair until scan evidence
+  or a future slice exposes real drift.
+- Does not prove: all domain modeling is ideal, every lifecycle model is a
+  perfect discriminated union, external course guidance is complete, or product
+  readiness.
+- Consumer: `packages/harness/src/typescriptBoundaryInvariants.test.ts`,
+  `docs/standards/typescript-excellence.md`, and future bounded TypeScript
+  repair slices.
+- Falsifier: production package source introduces unchecked `any`, double
+  assertions, TS suppressions, or trusted `JSON.parse` without focused tests
+  failing or the next scan reporting drift.
+
+What improved:
+- The current best-pattern loop did not stop at documentation; it checked real
+  package source against retained TypeScript doctrine.
+- The clean result was condensed without adding a redundant audit layer.
+
+What did not improve:
+- Product readiness.
+- External operator proof.
+- Runtime activation or target-repo behavior.
+- Deeper domain-model quality beyond the guarded boundary scan.
+
+New task:
+- V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V146 Post TypeScript Boundary Re-Scan Re-Gate.
+
+Next active task:
+- V146-00 Post TypeScript Boundary Re-Scan Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 
