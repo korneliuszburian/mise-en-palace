@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V74 Post Security Memory Gate Re-Gate
-current task: V74-00 Post Security Memory Gate Re-Gate
+active stream: V76 Post Memory Promotion CLI Gate Re-Gate
+current task: V76-00 Post Memory Promotion CLI Gate Re-Gate
 ```
 
 Completed stream summary:
@@ -107,31 +107,33 @@ V70-00 post security trust boundary re-gate: complete
 V71-00 target-like redaction corpus repair: complete
 V72-00 post security redaction corpus re-gate: complete
 V73-00 memory promotion untrusted-source checklist: complete
-V74 post security memory gate re-gate: active
+V74-00 post security memory gate re-gate: complete
+V75-00 memory promotion untrusted-source CLI readback: complete
+V76 post memory promotion CLI gate re-gate: active
 ```
 
 ## Active Stream
 
-### V74 Post Security Memory Gate Re-Gate
+### V76 Post Memory Promotion CLI Gate Re-Gate
 
 Goal:
 
-Decide the next bounded task after adding untrusted-source review gating to
-MemoryReviewGate.
+Decide the next bounded task after making untrusted-source review refs usable
+from the memory candidate promotion CLI.
 
 Current finding:
 
 ```txt
-V72 selected SEC-03 and V73 implemented untrusted-source review refs for Memory
-Core promotion through MemoryReviewGate.
+V74 deferred SEC-04 because command execution behavior is not accepted.
+V75 connected the V73 MemoryReviewGate untrusted-source review ref to the
+operator-facing CLI promote path.
 ```
 
 Current action:
 
 ```txt
-Execute V74-00: decide whether any bounded security task remains before command
-execution allowlist work, whether to move to another pattern surface, or whether
-internal work is blocked on external operator/target input.
+Execute V76-00: decide whether to move to another pattern surface, run a small
+readback/golden proof, or stop on the external operator/target blocker.
 ```
 
 Primary consumer:
@@ -143,8 +145,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate selects command execution/security work without a concrete behavior
-change that would execute commands.
+The re-gate keeps building security/CLI affordances without a named consumer,
+falsifier, or evidence from the latest slice.
 ```
 
 ### External Input Blocker

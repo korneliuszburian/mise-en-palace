@@ -87,6 +87,8 @@ describe("parseMemoryArgs", () => {
       "accepted",
       "--evidence-reviewed-ref",
       "review-1",
+      "--untrusted-source-review-ref",
+      "security-review:source-lineage-1",
       "--metadata",
       "gate=memory-review",
       "--persist"
@@ -98,6 +100,7 @@ describe("parseMemoryArgs", () => {
         reviewer: "operator",
         decision: "accepted",
         evidenceReviewedRef: "review-1",
+        untrustedSourceReviewRef: "security-review:source-lineage-1",
         metadata: {
           gate: "memory-review"
         }

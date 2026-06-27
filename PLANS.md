@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V74 Post Security Memory Gate Re-Gate
-current task: V74-00 Post Security Memory Gate Re-Gate
+active stream: V76 Post Memory Promotion CLI Gate Re-Gate
+current task: V76-00 Post Memory Promotion CLI Gate Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -6938,6 +6938,132 @@ Definition of Done:
 - Next active task is explicit.
 - `git diff --check` passes.
 
+Outcome:
+
+- SEC-04 is deferred because KRN evidence capture still does not execute
+  verification commands.
+- The next bounded consumer is operator UX / CLI readback for the V73
+  `untrustedSourceReviewRef` gate.
+
+### V75-00 — Memory Promotion Untrusted-Source CLI Readback
+
+Status: complete
+
+Goal: Make the V73 untrusted-source review gate usable from the operator-facing
+`krn memory candidate promote` CLI path.
+
+Pattern surface: operator UX / CLI / readback.
+
+Product rationale: A high-authority Memory Core gate is not useful if the
+operator cannot provide the required review reference through the normal promote
+command.
+
+Architectural rationale: This is not a new memory subsystem. The CLI adapter
+accepts and renders the review ref; `MemoryReviewGate` remains the authority
+that decides when the ref is required.
+
+Evidence source:
+
+- V73 MemoryReviewGate untrusted-source checklist.
+- `docs/architecture/security-trust-boundaries.md` SEC-03 next action.
+- `packages/cli/src/runMemoryCandidateReviewCommand.ts`.
+- `packages/cli/src/parseMemoryArgs.ts`.
+
+Primary consumer:
+
+- `packages/cli/src/parseMemoryArgs.ts`
+- `packages/cli/src/runMemoryCandidateReviewCommand.ts`
+- `packages/cli/src/runCli.test.ts`
+- `packages/cli/src/parseMemoryArgs.test.ts`
+
+Does not prove:
+
+- reviewer judgment is correct;
+- every future memory promotion uses trustworthy source lineage;
+- broad product security readiness.
+
+Falsifier:
+
+- `krn memory candidate promote --persist` cannot pass
+  `--untrusted-source-review-ref` into `MemoryReviewGate`, or persisted promote
+  output hides the review ref used for untrusted source lineage.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli test -- parseMemoryArgs runCli
+pnpm --filter @krn/harness test -- memoryReviewGate
+pnpm -C packages/cli typecheck
+git diff --check
+```
+
+Outcome:
+
+- `krn memory candidate promote` accepts `--untrusted-source-review-ref`.
+- Preview and persisted promote output render the supplied review ref.
+- Persisted promote tests cover an untrusted source claim and assert promotion
+  metadata includes `untrustedSourceClaimIds` and `untrustedSourceReviewRef`.
+
+### V76-00 — Post Memory Promotion CLI Gate Re-Gate
+
+Status: active
+
+Goal: Decide the next bounded task after making untrusted-source promotion refs
+available through the CLI.
+
+Pattern surface: operator UX / CLI / readback.
+
+Product rationale: V73 and V75 now close the immediate Memory Core untrusted
+source lineage loop from gate to operator command. The next step should move by
+evidence, not continue security work by momentum.
+
+Architectural rationale: Re-gate before creating more checks. Candidate next
+work must name one consumer, one falsifier, and one proof/non-proof boundary.
+
+Evidence source:
+
+- V73 MemoryReviewGate untrusted-source checklist.
+- V75 CLI/readback repair.
+- `docs/runbooks/pattern-intake.md` surface consumer matrix.
+
+Primary consumer:
+
+- one next-task/defer decision.
+
+Does not prove:
+
+- product readiness;
+- external operator readiness;
+- a need for command execution allowlists;
+- a need for activation/scoring rewrites.
+
+Falsifier:
+
+- The plan opens another implementation slice without a named consumer and
+  falsifier.
+
+Files likely touched:
+
+- `PLAN.md`
+- `GOAL.md`
+- `PLANS.md`
+
+Allowed writes:
+
+- Compact plan/re-gate updates.
+
+Forbidden writes:
+
+- broad security project;
+- command runner;
+- activation scoring rewrite;
+- dashboard/API/MCP/server.
+
+Definition of Done:
+
+- Next active task is explicit or a blocker is explicit.
+- `git diff --check` passes.
+
 ### External Input Blocker
 
 Status: deferred blocker
@@ -7328,7 +7454,11 @@ Initial entry:
   checklist.
 - [x] V73-00 complete: required untrusted-source review refs for Memory Core
   promotion from non-trusted source lineage.
-- [ ] V74-00 active: re-gate after SEC-03.
+- [x] V74-00 complete: deferred SEC-04 and selected CLI/readback consumer for
+  untrusted-source review refs.
+- [x] V75-00 complete: wired `--untrusted-source-review-ref` through memory
+  candidate promotion CLI output and persisted promote path.
+- [ ] V76-00 active: re-gate after memory promotion CLI repair.
 - [ ] V70-00 active: re-gate after the security trust-boundary repair.
 ```
 
@@ -8378,6 +8508,32 @@ Initial decisions:
     `untrustedSourceReviewRef`.
   Verification: `pnpm --filter @krn/harness test -- memoryReviewGate`;
     `pnpm -C packages/harness typecheck`; `git diff --check`.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Defer SEC-04 command execution allowlist.
+  Rationale: KRN evidence capture records operator-reported command outcomes and
+    does not execute verification commands. Building an allowlist now would be a
+    guardrail for behavior KRN has not accepted.
+  Surface: security / permissions / trust boundaries.
+  Consumer: defer decision.
+  Does not prove: a future command runner is unnecessary.
+  Falsifier: KRN accepts command execution behavior without an ADR/tested
+    allowlist, output refs, capturedAt, exitCode, and does-not-prove boundary.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Select untrusted-source CLI/readback as V75.
+  Rationale: V73 added a MemoryReviewGate requirement, but the normal operator
+    promote command also needs to accept and display the review ref.
+  Surface: operator UX / CLI / readback.
+  Consumer: `packages/cli/src/runMemoryCandidateReviewCommand.ts`.
+  Does not prove: reviewer judgment is correct or every future promotion is
+    safe.
+  Falsifier: `krn memory candidate promote --persist` cannot pass an
+    `--untrusted-source-review-ref` to the reviewed promotion gate for
+    non-trusted source lineage.
+  Verification: `pnpm --filter @krn/cli test -- parseMemoryArgs runCli`;
+    `pnpm --filter @krn/harness test -- memoryReviewGate`;
+    `pnpm -C packages/cli typecheck`; `git diff --check`.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -11595,6 +11751,49 @@ Next active stream:
 Next active task:
 - V74-00 Post Security Memory Gate Re-Gate.
 
+## Outcome 2026-06-27 V75 Memory Promotion CLI Readback
+
+Completed:
+- V74-00 Post Security Memory Gate Re-Gate.
+- V75-00 Memory Promotion Untrusted-Source CLI Readback.
+
+Evidence:
+- `packages/cli/src/parseArgs.ts`.
+- `packages/cli/src/parseMemoryArgs.ts`.
+- `packages/cli/src/runMemoryCandidateReviewCommand.ts`.
+- `packages/cli/src/parseMemoryArgs.test.ts`.
+- `packages/cli/src/runCli.test.ts`.
+- `packages/harness/src/memory/memoryReviewGate.ts`.
+
+What improved:
+- SEC-04 was explicitly deferred until KRN accepts command execution behavior.
+- `krn memory candidate promote` can now accept
+  `--untrusted-source-review-ref`.
+- Preview and persisted promote output render the supplied review ref.
+- Persisted promote tests prove the ref reaches the reviewed promotion gate for
+  non-trusted source lineage.
+
+What did not improve:
+- Product readiness.
+- Reviewer judgment correctness.
+- Future command execution allowlist behavior.
+- External operator proof.
+
+New task:
+- V76-00 Post Memory Promotion CLI Gate Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V76 Post Memory Promotion CLI Gate Re-Gate.
+
+Next active task:
+- V76-00 Post Memory Promotion CLI Gate Re-Gate.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -11643,7 +11842,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V74 Post Security Memory Gate Re-Gate.
+Active stream: V76 Post Memory Promotion CLI Gate Re-Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

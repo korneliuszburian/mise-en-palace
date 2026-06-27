@@ -2245,7 +2245,9 @@ describe("runCli", () => {
         "--reviewer",
         "operator",
         "--decision",
-        "accepted"
+        "accepted",
+        "--untrusted-source-review-ref",
+        "security-review:source-lineage-1"
       ],
       {
         env: {},
@@ -2262,6 +2264,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("candidateId: memory-candidate-1");
     expect(result.stdout).toContain("reviewer: operator");
     expect(result.stdout).toContain("decision: accepted");
+    expect(result.stdout).toContain("untrustedSourceReviewRef: security-review:source-lineage-1");
     expect(result.stdout).toContain("No MemoryRecord created");
     expect(result.stdout).toContain("No memory application recorded");
   });
@@ -2347,6 +2350,8 @@ describe("runCli", () => {
         "accepted",
         "--evidence-reviewed-ref",
         "raw-evidence:run-event-1",
+        "--untrusted-source-review-ref",
+        "security-review:source-lineage-1",
         "--metadata",
         "reviewNote=inspected raw run event",
         "--persist"
@@ -2376,7 +2381,7 @@ describe("runCli", () => {
                 mechanism: "Postgres stores harness state transactionally",
                 krnImplication: "KRN can link promoted memory to source claims",
                 doesNotProve: "This does not prove graph retrieval quality",
-                trustTier: "project-decision",
+                trustTier: "paper",
                 supportType: "implementation-boundary",
                 consumer: "MM-27",
                 status: "accepted",
@@ -2467,6 +2472,7 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Review gate: passed");
     expect(result.stdout).toContain("memoryRecord: memory-record-1");
     expect(result.stdout).toContain("evidenceReviewedRef: raw-evidence:run-event-1");
+    expect(result.stdout).toContain("untrustedSourceReviewRef: security-review:source-lineage-1");
     expect(result.stdout).toContain("sourceClaimId: source-claim-1");
     expect(capturedPromotion).toMatchObject({
       candidateId: "memory-candidate-1",
@@ -2482,7 +2488,9 @@ describe("runCli", () => {
           },
           evidenceReviewedRef: "raw-evidence:run-event-1",
           sourceClaimIds: ["source-claim-1"],
-          reviewedSourceClaimIds: ["source-claim-1"]
+          reviewedSourceClaimIds: ["source-claim-1"],
+          untrustedSourceClaimIds: ["source-claim-1"],
+          untrustedSourceReviewRef: "security-review:source-lineage-1"
         }
       }
     });

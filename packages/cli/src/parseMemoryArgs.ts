@@ -32,7 +32,7 @@ export const formatMemoryCandidateAddUsage = (): string =>
 
 export const formatMemoryCandidatePromoteUsage = (): string =>
   [
-    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--persist]",
+    "Usage: krn memory candidate promote --candidate-id <id> --reviewer <name> --decision accepted --evidence-reviewed-ref <ref> [--untrusted-source-review-ref <ref>] [--persist]",
     "",
     "Required:",
     "--candidate-id",
@@ -41,6 +41,7 @@ export const formatMemoryCandidatePromoteUsage = (): string =>
     "--evidence-reviewed-ref",
     "",
     "Optional:",
+    "--untrusted-source-review-ref <ref> (required by the review gate for non-trusted source lineage)",
     "--metadata key=value",
     "--persist"
   ].join("\n") + "\n";
@@ -336,7 +337,8 @@ const parseMemoryCandidatePromoteArgs = (rest: readonly string[]): ParseArgsResu
       "--candidate-id": "candidateId",
       "--reviewer": "reviewer",
       "--decision": "decision",
-      "--evidence-reviewed-ref": "evidenceReviewedRef"
+      "--evidence-reviewed-ref": "evidenceReviewedRef",
+      "--untrusted-source-review-ref": "untrustedSourceReviewRef"
     } as const;
     const option = Object.keys(optionMap).find((candidate) =>
       arg === candidate || arg?.startsWith(`${candidate}=`) === true

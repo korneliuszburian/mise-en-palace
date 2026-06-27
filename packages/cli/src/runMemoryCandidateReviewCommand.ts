@@ -47,7 +47,8 @@ const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
 const formatPromotePreview = (
-  review: ReturnType<typeof parseMemoryPromotionInput>
+  review: ReturnType<typeof parseMemoryPromotionInput>,
+  untrustedSourceReviewRef: string | undefined
 ): string =>
   [
     "KRN Memory Candidate Promote",
@@ -58,6 +59,9 @@ const formatPromotePreview = (
     `candidateId: ${review.candidateId}`,
     `reviewer: ${review.reviewer}`,
     `decision: ${review.decision}`,
+    ...(untrustedSourceReviewRef === undefined
+      ? []
+      : [`untrustedSourceReviewRef: ${untrustedSourceReviewRef}`]),
     "No MemoryRecord created",
     "No memory application recorded"
   ].join("\n");
@@ -109,6 +113,7 @@ const formatPromoted = (input: {
   memoryRecordId: string;
   reviewer: string;
   evidenceReviewedRef: string;
+  untrustedSourceReviewRef: string | undefined;
   sourceClaimIds: string[];
 }): string =>
   [
@@ -121,6 +126,9 @@ const formatPromoted = (input: {
     `memoryRecord: ${input.memoryRecordId}`,
     `reviewer: ${input.reviewer}`,
     `evidenceReviewedRef: ${input.evidenceReviewedRef}`,
+    ...(input.untrustedSourceReviewRef === undefined
+      ? []
+      : [`untrustedSourceReviewRef: ${input.untrustedSourceReviewRef}`]),
     ...(input.sourceClaimIds.length === 0
       ? []
       : [
@@ -168,7 +176,10 @@ const runPromote = async (
 
   if (!command.persist) {
     return {
-      stdout: formatPromotePreview(reviewInput)
+      stdout: formatPromotePreview(
+        reviewInput,
+        trimmedOptional(command.untrustedSourceReviewRef)
+      )
     };
   }
 
@@ -181,6 +192,7 @@ const runPromote = async (
   }
 
   const databaseRuntime = await createRuntime(runtime, "krn memory candidate promote");
+  const untrustedSourceReviewRef = trimmedOptional(command.untrustedSourceReviewRef);
 
   try {
     const result = await promoteMemoryCandidateThroughGate({
@@ -190,6 +202,7 @@ const runPromote = async (
         candidateId: reviewInput.candidateId,
         reviewer: reviewInput.reviewer,
         evidenceReviewedRef,
+        ...(untrustedSourceReviewRef === undefined ? {} : { untrustedSourceReviewRef }),
         metadata: reviewInput.metadata
       }
     });
@@ -200,12 +213,19 @@ const runPromote = async (
         memoryRecordId: result.memoryRecord.id,
         reviewer: reviewInput.reviewer,
         evidenceReviewedRef,
+        untrustedSourceReviewRef,
         sourceClaimIds: result.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id)
       })
     };
   } finally {
     await databaseRuntime.close();
   }
+};
+
+const trimmedOptional = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
 };
 
 const runReject = async (
