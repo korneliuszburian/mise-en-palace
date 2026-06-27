@@ -53,12 +53,13 @@ V24 Target Owner-File Recall Deduplication And Budget Priority: complete
 V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
 V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
 V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
+V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V28 Research-To-Brain TypeScript/Codex Decision Trial
-current task: V28-00 Research-To-Brain TypeScript/Codex Decision Trial
+active stream: V29 TypeScript Boundary Research Application Gate
+current task: V29-00 TypeScript Boundary Research Application Gate
 ```
 
 Evidence already recorded in repo:
@@ -73,9 +74,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V28 must test whether KRN can convert external/source knowledge into concrete
-decisions, falsifiers, skills, standards, eval candidates, or rejections without
-source hoarding or a new research subsystem.
+V29 must apply V28 TypeScript/Codex source decisions to current repo evidence
+without recreating a broad audit subsystem or doing cleanup by inertia.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -2727,7 +2727,7 @@ Completed evidence:
 
 ### V28-00 — Research-To-Brain TypeScript/Codex Decision Trial
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: run one bounded research-to-brain trial that maps a small source set
 through source -> mechanism -> KRN implication -> decision/rejection ->
@@ -2791,6 +2791,87 @@ Condensation expectation: decide whether to update a skill/standard/eval,
 append a bounded implementation task, or reject research expansion.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V28
+evidence.
+
+Completed evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v28-research-to-brain-typescript-codex/REPORT.md`.
+- `docs/KRN_SOURCES.md` updated with durable Codex ExecPlan, Codex prompting,
+  and TypeScript practitioner source decisions.
+- V28 rejected Research Foundry/crawler/new research subsystem work and
+  promoted a bounded TypeScript boundary application gate.
+
+### V29-00 — TypeScript Boundary Research Application Gate
+
+Status: active
+
+Goal: apply the accepted V28 TypeScript source decisions to current code with a
+bounded boundary spot-check and either classify findings or perform one tiny
+high-confidence repair.
+
+Product rationale: research-to-brain is only useful if accepted knowledge
+changes future code review, verification, or repair decisions. V29 checks
+whether KRN's current TypeScript code still respects the source-backed boundary
+rules without creating a broad audit subsystem.
+
+Architectural rationale: TypeScript boundary quality belongs to standards,
+tests, parsers, and targeted repairs. It must not resurrect `krn audit`,
+quality theater, broad semantic scanners, or cleanup by inertia.
+
+Evidence source: V28 report, `docs/KRN_SOURCES.md`, and current TypeScript
+standards.
+
+Official/external sources: V28 source map only; do not expand research unless a
+finding depends on a new source.
+
+Inputs required: current TypeScript standards, current package source, targeted
+`rg` scans for high-risk boundary patterns.
+
+Files likely touched:
+
+- V29 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- optionally a tiny TypeScript source/test repair only if the spot-check finds
+  a high-confidence boundary bug.
+
+Allowed writes: KRN report/plans; bounded TypeScript source/tests only if
+directly justified by a concrete finding.
+
+Forbidden writes: broad audit subsystem, `krn audit`, source crawler, Research
+Foundry, dashboard/API/MCP/worker runtime, broad eval platform, global
+`ts-reset` in core/schema/public APIs, broad cleanup/refactor.
+
+Output requirements:
+
+- bounded scan commands and results;
+- classification of each finding as accepted boundary, test-only, repair
+  candidate, no issue, or insufficient evidence;
+- proof/non-proof boundaries;
+- source-to-decision implication for any accepted repair or rejection;
+- next task recommendation.
+
+Definition of Done: one compact V29 report exists, and either no source repair
+is needed or one tiny source repair is implemented with focused verification.
+
+Verification commands: targeted `rg` scans, `git diff --check`; if source is
+touched, run relevant tests and `pnpm typecheck`.
+
+Acceptance criteria: no broad audit, no generic cleanup, no uncited research
+claim, no source repair without a direct boundary finding.
+
+Risk: V29 becomes old audit theater under a new name. Mitigation: scan only the
+patterns named by V28/standards and classify rather than fixing by aesthetics.
+
+Rollback: focused report/plan revert, plus focused source revert if a tiny
+repair is made.
+
+Condensation expectation: decide whether current TypeScript boundary health is
+sufficient, whether one repair is needed, or whether a narrow guard/test should
+be added.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V29
 evidence.
 
 ## 13. Generated Task Backlog
@@ -3056,7 +3137,9 @@ Initial entry:
   explicit `--target-changed-file none`.
 - [x] V27-00 complete: controlled-internal-alpha remains stronger; V02-01 and
   product-ready remain unproved.
-- [ ] V28-00 active: Research-To-Brain TypeScript/Codex Decision Trial.
+- [x] V28-00 complete: research-to-brain trial mapped Codex/TypeScript sources
+  into durable source decisions and rejected research subsystem expansion.
+- [ ] V29-00 active: TypeScript Boundary Research Application Gate.
 ```
 
 ## 16. Surprises & Discoveries
@@ -3468,6 +3551,19 @@ Initial decisions:
   Falsifier: source review produces no concrete KRN decision or durable surface
     update.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote TypeScript boundary research application gate as V29.
+  Rationale: V28 accepted TypeScript source decisions mostly by confirming
+    existing standards; the next proof should apply those decisions to current
+    source evidence without recreating `krn audit`.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v28-research-to-brain-typescript-codex/REPORT.md`;
+    `docs/KRN_SOURCES.md`; `docs/standards/typescript-excellence.md`;
+    `docs/standards/typescript-boundaries.md`.
+  Does not prove: a broad cleanup/refactor, global `ts-reset`, or quality
+    scanner is needed.
+  Falsifier: V29 spot-check finds no boundary findings needing action or finds
+    that existing tests/standards already cover the relevant risks.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -3748,6 +3844,18 @@ Seed evidence:
     new self-improvement lane.
   Does not prove: second-operator usability or product readiness.
   Follow-up task: V28-00.
+
+- Evidence ID: E-V28-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v28-research-to-brain-typescript-codex/REPORT.md`
+  Command/report/file: V28 source-to-decision report and
+    `docs/KRN_SOURCES.md` update.
+  Result: Codex/TypeScript sources were mapped to concrete KRN decisions,
+    rejections, consumers, and falsifiers without creating a research subsystem.
+  Proves: KRN can retain useful external/practitioner knowledge only when it
+    changes a durable decision or rejection.
+  Does not prove: current TypeScript code has no boundary drift, product
+    readiness, or need for broad research intake.
+  Follow-up task: V29-00.
 ```
 
 ## 19. Condensation Queue
@@ -4022,10 +4130,18 @@ Seed queue:
 - Candidate: research-to-brain TypeScript/Codex decision trial
   Source evidence: V27 report and user direction
   Surface: source-to-decision report / standards / skills
-  Status: accepted as V28-00
+  Status: complete as V28-00
   Reason: KRN should condense strong external/practitioner knowledge into
     decisions and falsifiers, but only through a bounded trial
   Task: V28-00
+
+- Candidate: TypeScript boundary research application gate
+  Source evidence: V28 report and durable source map
+  Surface: bounded TypeScript boundary report / optional tiny repair
+  Status: accepted as V29-00
+  Reason: accepted research decisions should be applied to current source
+    evidence before adding more research or architecture
+  Task: V29-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -4058,6 +4174,42 @@ Product readiness verdict:
 Next active stream:
 - ...
 ```
+
+## Outcome 2026-06-27 V28
+
+Completed:
+
+- V28 research-to-brain TypeScript/Codex decision trial.
+- Durable source decisions added to `docs/KRN_SOURCES.md`.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v28-research-to-brain-typescript-codex/REPORT.md`.
+- `docs/KRN_SOURCES.md`.
+
+What improved:
+
+- External/practitioner source intake is now explicitly mapped to KRN
+  decisions, consumers, rejections, and falsifiers.
+- Codex ExecPlan/Goal/skill/AGENTS and TypeScript boundary choices have clearer
+  source-backed proof/non-proof boundaries.
+
+What did not improve:
+
+- Product readiness.
+- V02-01 second-operator proof.
+- Current TypeScript source boundary health; V29 must inspect that separately.
+
+Product readiness verdict:
+
+- controlled-internal-alpha: yes / stronger source discipline
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+
+- V29 TypeScript Boundary Research Application Gate.
 
 ## Outcome 2026-06-27 V08
 
@@ -4674,7 +4826,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V28 Research-To-Brain TypeScript/Codex Decision Trial.
+Active stream: V29 TypeScript Boundary Research Application Gate.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

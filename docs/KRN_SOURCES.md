@@ -131,3 +131,72 @@ decision/rejection, and what it does not prove.
 - Decision: files are export/audit/seed, not Memory Core.
 - Does not prove: that local markdown memory is enough.
 
+### ExecPlans
+
+- URL: https://developers.openai.com/cookbook/articles/codex_exec_plans
+- Trust tier: high.
+- Mechanism: ExecPlans preserve objective, discoveries, decisions, validation,
+  and next work for long-running implementation.
+- KRN implication: root `PLANS.md` is the detailed continuous ExecPlan, while
+  root `PLAN.md` stays compact product truth.
+- Decision: keep the current `GOAL.md` + compact `PLAN.md` + detailed
+  `PLANS.md` split.
+- Does not prove: that `PLANS.md` should carry raw logs, old ledgers, or
+  decorative research forever.
+
+### Codex Prompting Guide
+
+- URL:
+  https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide
+- Trust tier: high.
+- Mechanism: Codex performs better when tasks, constraints, expected outputs,
+  and verification are explicit.
+- KRN implication: every bounded KRN task needs non-goals, allowed writes,
+  forbidden writes, verification, proof/non-proof boundaries, rollback, and
+  next-task synthesis.
+- Decision: keep `PLANS.md` task contracts mandatory for generated active
+  tasks.
+- Does not prove: that every small edit needs a verbose prompt.
+
+## TypeScript Practitioner Sources
+
+### Designing Your Types
+
+- URL:
+  https://www.totaltypescript.com/books/total-typescript-essentials/designing-your-types-in-typescript
+- Trust tier: medium.
+- Mechanism: Type design communicates business and domain logic, not just
+  compiler satisfaction.
+- KRN implication: authority, provenance, lifecycle, and review state should be
+  visible in domain types where those facts govern behavior.
+- Decision: keep `docs/standards/typescript-excellence.md` doctrine that KRN
+  TypeScript should make wrong authority hard to express.
+- Does not prove: that a broad type rewrite is valuable.
+
+### Unions, Literals, And Narrowing
+
+- URL:
+  https://www.totaltypescript.com/books/total-typescript-essentials/unions-literals-and-narrowing
+- Trust tier: medium.
+- Mechanism: literal unions and narrowing constrain finite states and valid
+  transitions.
+- KRN implication: status, provenance, lifecycle, subject type, and candidate
+  states should use narrow unions or discriminated unions when valid fields
+  differ by state.
+- Decision: keep discriminated-union guidance in
+  `docs/standards/typescript-excellence.md`.
+- Does not prove: that every object needs a discriminant.
+
+### TS Reset
+
+- URL: https://www.totaltypescript.com/ts-reset
+- Trust tier: medium.
+- Mechanism: stricter platform typings can turn unsafe defaults such as
+  `JSON.parse` returning `any` into safer unknown-first behavior, but global
+  type changes are application-scoped.
+- KRN implication: use unknown-first parsing at CLI/file/env/JSON boundaries,
+  but reject global `ts-reset` in `packages/core`, `packages/schema`, and public
+  package APIs.
+- Decision: keep the current `ts-reset` policy in
+  `docs/standards/typescript-boundaries.md`.
+- Does not prove: that `ts-reset` is forbidden in every private app/test scope.

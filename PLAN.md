@@ -54,7 +54,8 @@ V24 Target Owner-File Recall Deduplication And Budget Priority: complete
 V25 Real Target Observation Re-Run After Owner-File Priority Repair: complete
 V26 CLI Run Reference And Empty Target Changed Files Ergonomics: complete
 V27 Controlled Internal Alpha Re-Gate After Target Loop Repairs: complete
-active stream: V28 Research-To-Brain TypeScript/Codex Decision Trial
+V28 Research-To-Brain TypeScript/Codex Decision Trial: complete
+active stream: V29 TypeScript Boundary Research Application Gate
 ```
 
 V02-01 can resume only with real second-operator inputs:
