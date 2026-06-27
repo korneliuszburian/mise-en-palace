@@ -4015,6 +4015,14 @@ describe("runCli", () => {
       "dirty",
       "--target-owned-changes",
       "external",
+      "--target-status-freshness",
+      "changed-since-selection",
+      "--target-patch-lifecycle",
+      "handed-off-unresolved",
+      "--target-handoff-artifact",
+      "docs/reviews/target/HANDOFF.md",
+      "--target-owner-decision",
+      "stronger verification requested",
       "--target-changed-file",
       "M apps/dashboard/src/App.tsx",
       "--target-command",
@@ -4040,6 +4048,10 @@ describe("runCli", () => {
     expect(result.stdout).toContain("- dirtyBefore: dirty");
     expect(result.stdout).toContain("- dirtyAfter: dirty");
     expect(result.stdout).toContain("- ownedChanges: external");
+    expect(result.stdout).toContain("- targetStatusFreshness: changed_since_selection");
+    expect(result.stdout).toContain("- targetPatchLifecycle: handed_off_unresolved");
+    expect(result.stdout).toContain("- handoffArtifact: docs/reviews/target/HANDOFF.md");
+    expect(result.stdout).toContain("- targetOwnerDecision: stronger verification requested");
     expect(result.stdout).toContain("- M apps/dashboard/src/App.tsx | ownership=external");
     expect(result.stdout).toContain("- wilq-seo scripts/test.sh");
     expect(result.stdout).toContain("- wilq-seo/**");
@@ -4253,6 +4265,12 @@ describe("runCli", () => {
         "dirty",
         "--target-owned-changes",
         "external",
+        "--target-status-freshness",
+        "fresh-current-task",
+        "--target-patch-lifecycle",
+        "none",
+        "--target-owner-decision",
+        "no target patch",
         "--target-changed-file",
         "M apps/dashboard/src/App.tsx",
         "--target-command",
@@ -4337,6 +4355,9 @@ describe("runCli", () => {
         dirtyBefore: "dirty",
         dirtyAfter: "dirty",
         ownedChanges: "external",
+        targetStatusFreshness: "fresh_current_task",
+        targetPatchLifecycle: "none",
+        targetOwnerDecision: "no target patch",
         allowedWrites: ["none"],
         forbiddenWrites: [
           "target source edits",

@@ -73,8 +73,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V44 Target Evidence Lifecycle And Freshness Fields
-current task: V44-00 Target Evidence Lifecycle And Freshness Fields
+V44 Target Evidence Lifecycle And Freshness Fields: complete
+active stream: V45 Target Availability Re-Gate With Typed Lifecycle Evidence
+current task: V45-00 Target Availability Re-Gate With Typed Lifecycle Evidence
 ```
 
 Evidence already recorded in repo:
@@ -89,8 +90,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V43 paused live target trials and selected KRN internal hardening: target
-status freshness and patch lifecycle must become typed target evidence fields.
+V44 made target lifecycle/freshness typed evidence. The current gap is whether
+any live target repo is available for safe observation or repair when recorded
+with these first-class target evidence fields.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -4047,7 +4049,7 @@ Outcome:
 
 ### V44-00 — Target Evidence Lifecycle And Freshness Fields
 
-Status: active
+Status: complete
 
 Goal: make target status freshness and patch lifecycle first-class target
 evidence fields in KRN source/CLI/readback.
@@ -4127,6 +4129,87 @@ Acceptance criteria:
 - no target writes;
 - no DB migration unless justified;
 - target lifecycle/freshness fields round-trip through target evidence;
+- next active task is explicit.
+
+Outcome:
+
+- V44 added typed `targetStatusFreshness` and `targetPatchLifecycle` fields to
+  target evidence.
+- V44 added optional `handoffArtifact` and `targetOwnerDecision`.
+- V44 covered CLI parse, evidence capture render, run show readback, JSON
+  readback, and golden behavior without DB migration.
+
+### V45-00 — Target Availability Re-Gate With Typed Lifecycle Evidence
+
+Status: active
+
+Goal: run a fresh observation-only target availability gate using the new typed
+target evidence lifecycle/freshness fields.
+
+Product rationale: V43 paused live target trials because candidate target repos
+were dirty or had unresolved patch lifecycle state. V44 made that state
+first-class evidence. The next step is to re-check availability and record it
+with typed target evidence before any further target trial or repair.
+
+Architectural rationale: target selection and repair safety must depend on
+fresh evidence, not stale clean-state assumptions or prose-only lifecycle notes.
+
+Evidence source: V43 target stability gate and V44 target evidence source
+repair.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v44-target-evidence-lifecycle-freshness/REPORT.md`;
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/runbooks/target-repo-testing.md`;
+- fresh `git status --short --branch` for candidate target repos.
+
+Files likely touched:
+
+- V45 report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN reports/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- same-target repair when patch lifecycle is `handed_off_unresolved`;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim;
+- dashboard/API/MCP/worker/new eval platform.
+
+Output requirements:
+
+- fresh target availability status;
+- target status freshness classification;
+- target patch lifecycle classification;
+- handoff artifact/owner decision if applicable;
+- decision: repair target / observation-only target / wait / choose different
+  target / internal KRN hardening.
+
+Definition of Done: V45 states whether a safe next target trial exists and
+records the decision with typed target evidence fields.
+
+Verification commands:
+
+```sh
+git status --short --branch
+git diff --check
+```
+
+Acceptance criteria:
+
+- no target writes;
+- no stale target state used as current evidence;
+- no product-ready or V02-01 overclaim;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -4428,7 +4511,9 @@ Initial entry:
 - [x] V43-00 complete: live target trials paused, target evidence
   lifecycle/freshness source gap identified, and V44 internal hardening
   promoted.
-- [ ] V44-00 active: Target Evidence Lifecycle And Freshness Fields.
+- [x] V44-00 complete: target lifecycle/freshness fields are typed target
+  evidence and round-trip through CLI capture/readback without DB migration.
+- [ ] V45-00 active: Target Availability Re-Gate With Typed Lifecycle Evidence.
 ```
 
 ## 16. Surprises & Discoveries
@@ -5061,6 +5146,20 @@ Initial decisions:
   Falsifier: V44 source inspection finds target evidence already carries these
     fields through parse/capture/readback.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target availability re-gate with typed lifecycle evidence
+    as V45.
+  Rationale: V44 closed the source gap by making lifecycle/freshness first-class
+    target evidence. The next product question is whether any live target repo
+    is safe for observation or repair under the new evidence model.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v44-target-evidence-lifecycle-freshness/REPORT.md`;
+    focused core/CLI tests.
+  Does not prove: target repair safety, target owner acceptance, V02-01, or
+    product readiness.
+  Falsifier: V45 finds no safe target window and no useful observation-only
+    task; then the next task must remain KRN internal hardening or wait for
+    operator inputs.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5537,6 +5636,17 @@ Seed evidence:
   Proves: the next highest-ROI move is KRN internal target evidence hardening.
   Does not prove: product readiness, V02-01, or target repair safety.
   Follow-up task: V44-00.
+
+- Evidence ID: E-V44-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v44-target-evidence-lifecycle-freshness/REPORT.md`
+  Command/report/file: core/CLI source repair and focused tests.
+  Result: target lifecycle/freshness fields now round-trip through typed target
+    evidence, CLI capture output, run show text/JSON readback, and golden
+    behavior without DB migration.
+  Proves: V44 source gap is closed for existing target evidence metadata.
+  Does not prove: target repo readiness, target owner acceptance, V02-01, or
+    product readiness.
+  Follow-up task: V45-00.
 ```
 
 ## 19. Condensation Queue
@@ -5944,10 +6054,18 @@ Seed queue:
 - Candidate: target evidence lifecycle/freshness fields
   Source evidence: V43 target stability gate and source inspection
   Surface: core target evidence + CLI capture/readback
-  Status: accepted as V44-00
+  Status: implemented in V44-00
   Reason: workflow-required target availability state should be typed evidence,
     not report prose
   Task: V44-00
+
+- Candidate: target availability re-gate with typed lifecycle evidence
+  Source evidence: V44 target evidence source repair
+  Surface: observation-only target report + typed evidence capture inputs
+  Status: accepted as V45-00
+  Reason: target trials should resume only after fresh target status/lifecycle
+    evidence, not stale prior selection
+  Task: V45-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -7162,6 +7280,47 @@ Product readiness verdict:
 Next active stream:
 - V44 — Target Evidence Lifecycle And Freshness Fields.
 
+## Outcome 2026-06-27 V44
+
+Completed:
+- V44-00 added typed target lifecycle/freshness fields to core target evidence.
+- Added CLI flags for `--target-status-freshness`,
+  `--target-patch-lifecycle`, `--target-handoff-artifact`, and
+  `--target-owner-decision`.
+- Added capture output and run show readback for the new fields.
+- Covered core normalization, metadata readback, CLI parse, capture render,
+  run show text/JSON, and golden behavior.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v44-target-evidence-lifecycle-freshness/REPORT.md`.
+- `packages/core/src/evidenceBundle.ts`.
+- `packages/cli/src/parseEvidenceArgs.ts`.
+- `packages/cli/src/runEvidenceCaptureCommand.ts`.
+- `packages/cli/src/runRunShowCommand.ts`.
+
+What improved:
+- Target lifecycle/freshness state is no longer prose-only.
+- Future target availability gates can record first-class evidence for stale,
+  changed, unresolved, accepted, or rejected target states.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Target repo availability.
+- Target owner acceptance of any patch.
+
+New task:
+- Re-gate target availability using typed lifecycle/freshness evidence.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V45 — Target Availability Re-Gate With Typed Lifecycle Evidence.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -7210,7 +7369,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V44 Target Evidence Lifecycle And Freshness Fields.
+Active stream: V45 Target Availability Re-Gate With Typed Lifecycle Evidence.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

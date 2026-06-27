@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V44 Target Evidence Lifecycle And Freshness Fields
-current task: V44-00 Target Evidence Lifecycle And Freshness Fields
+active stream: V45 Target Availability Re-Gate With Typed Lifecycle Evidence
+current task: V45-00 Target Availability Re-Gate With Typed Lifecycle Evidence
 ```
 
 Completed stream summary:
@@ -73,30 +73,33 @@ V40 Target Selection Freshness Rule Condensation: complete
 V41 Target Trial Availability Re-Gate: complete
 V42 WILQ Fresh Observation-Only Baseline Retry: complete
 V43 Target Stability Window Gate: complete
+V44 target evidence lifecycle/freshness fields: complete
 ```
 
 ## Active Stream
 
-### V44-00 — Target Evidence Lifecycle And Freshness Fields
+### V45-00 — Target Availability Re-Gate With Typed Lifecycle Evidence
 
 Goal:
 
-Make target status freshness and patch lifecycle first-class target evidence
-fields in KRN source/CLI/readback.
+Run a fresh observation-only target availability gate using the new typed target
+evidence lifecycle/freshness fields.
 
 Current finding:
 
 ```txt
-V43 found both live target repos unavailable for repair and identified an
-internal KRN hardening gap: workflow-required target lifecycle/freshness fields
-exist in docs/skills but not in typed target evidence.
+V44 made target status freshness and patch lifecycle first-class target
+evidence. The next decision is whether any live target repo is now available for
+safe observation or repair, recorded with typed target evidence instead of prose
+only.
 ```
 
-Current V44 action:
+Current V45 action:
 
 ```txt
-Add typed metadata-backed target evidence fields without DB migration; cover
-parse, capture render, run show readback, and tests.
+Check fresh target status and patch lifecycle for candidate target repos. Do
+not repair target repos unless a fresh clean/stable window or explicit write
+scope exists.
 ```
 
 ## V02-01 Boundary

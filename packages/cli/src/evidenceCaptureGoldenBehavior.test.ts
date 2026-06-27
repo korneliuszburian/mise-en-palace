@@ -86,6 +86,14 @@ describe("evidence capture golden behavior", () => {
       "dirty",
       "--target-owned-changes",
       "external",
+      "--target-status-freshness",
+      "changed-since-selection",
+      "--target-patch-lifecycle",
+      "handed-off-unresolved",
+      "--target-handoff-artifact",
+      "docs/reviews/target/HANDOFF.md",
+      "--target-owner-decision",
+      "stronger verification requested",
       "--target-changed-file",
       "M apps/dashboard/src/App.tsx",
       "--target-command",
@@ -129,6 +137,10 @@ describe("evidence capture golden behavior", () => {
       targetEvidenceOutput.includes("- dirtyBefore: dirty") &&
       targetEvidenceOutput.includes("- dirtyAfter: dirty") &&
       targetEvidenceOutput.includes("- ownedChanges: external") &&
+      targetEvidenceOutput.includes("- targetStatusFreshness: changed_since_selection") &&
+      targetEvidenceOutput.includes("- targetPatchLifecycle: handed_off_unresolved") &&
+      targetEvidenceOutput.includes("- handoffArtifact: docs/reviews/target/HANDOFF.md") &&
+      targetEvidenceOutput.includes("- targetOwnerDecision: stronger verification requested") &&
       targetEvidenceOutput.includes("- target source edits") &&
       targetEvidenceOutput.includes("- target commits") &&
       targetEvidenceOutput.includes("- M apps/dashboard/src/App.tsx | ownership=external") &&

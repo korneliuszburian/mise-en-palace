@@ -25,6 +25,18 @@ export type TargetChangeOwnership =
   | "owned_by_current_krn_run"
   | "partial"
   | "unknown";
+export type TargetStatusFreshness =
+  | "fresh_current_task"
+  | "stale_prior_selection"
+  | "changed_since_selection"
+  | "unknown";
+export type TargetPatchLifecycle =
+  | "none"
+  | "accepted_by_target_owner"
+  | "rejected_by_target_owner"
+  | "stronger_verification_requested"
+  | "handed_off_unresolved"
+  | "unknown";
 
 export interface EvidenceCommand {
   command: string;
@@ -56,6 +68,10 @@ export interface TargetEvidenceInput {
   dirtyBefore?: string;
   dirtyAfter?: string;
   ownedChanges?: string;
+  targetStatusFreshness?: string;
+  targetPatchLifecycle?: string;
+  handoffArtifact?: string;
+  targetOwnerDecision?: string;
   allowedWrites?: readonly string[];
   forbiddenWrites?: readonly string[];
   changedFiles?: readonly TargetEvidenceChangedFileInput[];
@@ -69,6 +85,10 @@ export interface TargetEvidence {
   dirtyBefore: TargetDirtyState;
   dirtyAfter: TargetDirtyState;
   ownedChanges: TargetChangeOwnership;
+  targetStatusFreshness: TargetStatusFreshness;
+  targetPatchLifecycle: TargetPatchLifecycle;
+  handoffArtifact?: string;
+  targetOwnerDecision?: string;
   allowedWrites: string[];
   forbiddenWrites: string[];
   changedFiles: TargetEvidenceChangedFile[];
@@ -195,6 +215,22 @@ const targetChangeOwnerships = new Set<TargetChangeOwnership>([
   "unknown"
 ]);
 
+const targetStatusFreshnesses = new Set<TargetStatusFreshness>([
+  "fresh_current_task",
+  "stale_prior_selection",
+  "changed_since_selection",
+  "unknown"
+]);
+
+const targetPatchLifecycles = new Set<TargetPatchLifecycle>([
+  "none",
+  "accepted_by_target_owner",
+  "rejected_by_target_owner",
+  "stronger_verification_requested",
+  "handed_off_unresolved",
+  "unknown"
+]);
+
 export const normalizeTargetEvidenceMode = (
   value: string | undefined
 ): TargetEvidenceMode => {
@@ -225,11 +261,37 @@ export const normalizeTargetChangeOwnership = (
     : "unknown";
 };
 
+export const normalizeTargetStatusFreshness = (
+  value: string | undefined
+): TargetStatusFreshness => {
+  const normalized = normalizeToken(value);
+
+  return targetStatusFreshnesses.has(normalized as TargetStatusFreshness)
+    ? normalized as TargetStatusFreshness
+    : "unknown";
+};
+
+export const normalizeTargetPatchLifecycle = (
+  value: string | undefined
+): TargetPatchLifecycle => {
+  const normalized = normalizeToken(value);
+
+  return targetPatchLifecycles.has(normalized as TargetPatchLifecycle)
+    ? normalized as TargetPatchLifecycle
+    : "unknown";
+};
+
 const normalizedStringList = (values: readonly string[] | undefined): string[] => [
   ...new Set((values ?? [])
     .map((value) => value.trim())
     .filter((value) => value.length > 0))
 ];
+
+const normalizedOptionalString = (value: string | undefined): string | undefined => {
+  const normalized = value?.trim();
+
+  return normalized === undefined || normalized.length === 0 ? undefined : normalized;
+};
 
 export const normalizeTargetEvidence = (
   input: TargetEvidenceInput
@@ -238,6 +300,8 @@ export const normalizeTargetEvidence = (
   const ownedChanges = normalizeTargetChangeOwnership(input.ownedChanges);
   const allowedWrites = normalizedStringList(input.allowedWrites);
   const forbiddenWrites = normalizedStringList(input.forbiddenWrites);
+  const handoffArtifact = normalizedOptionalString(input.handoffArtifact);
+  const targetOwnerDecision = normalizedOptionalString(input.targetOwnerDecision);
 
   return {
     targetRepo: input.targetRepo.trim(),
@@ -245,6 +309,10 @@ export const normalizeTargetEvidence = (
     dirtyBefore: normalizeTargetDirtyState(input.dirtyBefore),
     dirtyAfter: normalizeTargetDirtyState(input.dirtyAfter),
     ownedChanges,
+    targetStatusFreshness: normalizeTargetStatusFreshness(input.targetStatusFreshness),
+    targetPatchLifecycle: normalizeTargetPatchLifecycle(input.targetPatchLifecycle),
+    ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
+    ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
     allowedWrites: mode === "observation_only" && allowedWrites.length === 0
       ? [...observationOnlyDefaultAllowedWrites]
       : allowedWrites,
@@ -338,6 +406,10 @@ export const targetEvidenceFromMetadata = (
   const dirtyBefore = stringField(record, "dirtyBefore");
   const dirtyAfter = stringField(record, "dirtyAfter");
   const ownedChanges = stringField(record, "ownedChanges");
+  const targetStatusFreshness = stringField(record, "targetStatusFreshness");
+  const targetPatchLifecycle = stringField(record, "targetPatchLifecycle");
+  const handoffArtifact = stringField(record, "handoffArtifact");
+  const targetOwnerDecision = stringField(record, "targetOwnerDecision");
 
   return normalizeTargetEvidence({
     targetRepo,
@@ -345,6 +417,10 @@ export const targetEvidenceFromMetadata = (
     ...(dirtyBefore === undefined ? {} : { dirtyBefore }),
     ...(dirtyAfter === undefined ? {} : { dirtyAfter }),
     ...(ownedChanges === undefined ? {} : { ownedChanges }),
+    ...(targetStatusFreshness === undefined ? {} : { targetStatusFreshness }),
+    ...(targetPatchLifecycle === undefined ? {} : { targetPatchLifecycle }),
+    ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
+    ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
     allowedWrites: stringListField(record, "allowedWrites"),
     forbiddenWrites: stringListField(record, "forbiddenWrites"),
     changedFiles: targetChangedFilesField(record),

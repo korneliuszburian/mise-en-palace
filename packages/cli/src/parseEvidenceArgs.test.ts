@@ -10,7 +10,7 @@ import {
 
 const evidenceUsage =
   [
-    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+    "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
     "Example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
     "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
     "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
@@ -145,6 +145,14 @@ describe("parseEvidenceArgs", () => {
       "dirty",
       "--target-owned-changes",
       "external",
+      "--target-status-freshness",
+      "changed-since-selection",
+      "--target-patch-lifecycle",
+      "handed-off-unresolved",
+      "--target-handoff-artifact",
+      "docs/reviews/target/HANDOFF.md",
+      "--target-owner-decision",
+      "stronger verification requested",
       "--target-changed-file",
       "M src/app.ts",
       "--target-command",
@@ -163,6 +171,10 @@ describe("parseEvidenceArgs", () => {
           dirtyBefore: "dirty",
           dirtyAfter: "dirty",
           ownedChanges: "external",
+          targetStatusFreshness: "changed-since-selection",
+          targetPatchLifecycle: "handed-off-unresolved",
+          handoffArtifact: "docs/reviews/target/HANDOFF.md",
+          targetOwnerDecision: "stronger verification requested",
           allowedWrites: ["none"],
           forbiddenWrites: ["src/**"],
           changedFiles: [{
@@ -229,6 +241,18 @@ describe("parseEvidenceArgs", () => {
     });
     expect(parseEvidenceArgs(["capture", "--target-owned-changes", "mine"])).toEqual({
       error: "--target-owned-changes must be external, owned-by-current-krn-run, partial, or unknown"
+    });
+    expect(parseEvidenceArgs(["capture", "--target-status-freshness", "fresh"])).toEqual({
+      error: "--target-status-freshness must be fresh-current-task, stale-prior-selection, changed-since-selection, or unknown"
+    });
+    expect(parseEvidenceArgs(["capture", "--target-patch-lifecycle", "waiting"])).toEqual({
+      error: "--target-patch-lifecycle must be none, accepted-by-target-owner, rejected-by-target-owner, stronger-verification-requested, handed-off-unresolved, or unknown"
+    });
+    expect(parseEvidenceArgs(["capture", "--target-handoff-artifact", "   "])).toEqual({
+      error: "--target-handoff-artifact requires a non-empty value"
+    });
+    expect(parseEvidenceArgs(["capture", "--target-owner-decision", "   "])).toEqual({
+      error: "--target-owner-decision requires a non-empty value"
     });
     expect(parseEvidenceArgs(["capture", "--target-changed-file", "M"])).toEqual({
       error: "--target-changed-file requires <status path>"

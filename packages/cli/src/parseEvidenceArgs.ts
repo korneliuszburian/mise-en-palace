@@ -12,7 +12,7 @@ import type {
 } from "./parseArgs.js";
 
 const evidenceUsage = [
-  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
+  "Usage: krn evidence capture [--run-id <id>|--run <id>] [--persist] [--intended-file <path>] [--verification <command=status>] [--target-repo <path>] [--target-mode observation-only|headless-repair|real-second-operator|unknown] [--target-dirty-before clean|dirty|unknown] [--target-dirty-after clean|dirty|unknown] [--target-owned-changes external|owned-by-current-krn-run|partial|unknown] [--target-status-freshness fresh-current-task|stale-prior-selection|changed-since-selection|unknown] [--target-patch-lifecycle none|accepted-by-target-owner|rejected-by-target-owner|stronger-verification-requested|handed-off-unresolved|unknown] [--target-handoff-artifact <path>] [--target-owner-decision <text>] [--target-changed-file <status path>|none] [--target-command <cmd>] [--command <cmd> --status passed|failed|skipped|missing|not_run [--exit-code <code>] [--output <path>]]",
   "Example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
   "Target example: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-owned-changes external --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "Persisted example: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
@@ -23,6 +23,15 @@ const evidenceStatuses = ["passed", "failed", "skipped", "missing", "not_run"] a
 const targetModes = ["observation-only", "headless-repair", "real-second-operator", "unknown"] as const;
 const targetDirtyStates = ["clean", "dirty", "unknown"] as const;
 const targetOwnerships = ["external", "owned-by-current-krn-run", "partial", "unknown"] as const;
+const targetStatusFreshnesses = ["fresh-current-task", "stale-prior-selection", "changed-since-selection", "unknown"] as const;
+const targetPatchLifecycles = [
+  "none",
+  "accepted-by-target-owner",
+  "rejected-by-target-owner",
+  "stronger-verification-requested",
+  "handed-off-unresolved",
+  "unknown"
+] as const;
 
 const isEvidenceStatus = (value: string): value is EvidenceCommandStatus =>
   evidenceStatuses.some((status) => status === value);
@@ -161,6 +170,10 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   let targetDirtyBefore: string | undefined;
   let targetDirtyAfter: string | undefined;
   let targetOwnedChanges: string | undefined;
+  let targetStatusFreshness: string | undefined;
+  let targetPatchLifecycle: string | undefined;
+  let handoffArtifact: string | undefined;
+  let targetOwnerDecision: string | undefined;
   const targetAllowedWrites: string[] = [];
   const targetForbiddenWrites: string[] = [];
   const targetChangedFiles: TargetEvidenceChangedFileInput[] = [];
@@ -314,6 +327,96 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       }
 
       targetOwnedChanges = valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (
+      arg === "--target-status-freshness" ||
+      arg?.startsWith("--target-status-freshness=") === true
+    ) {
+      const valueResult = optionValue(rest, index, "--target-status-freshness");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      if (!isAllowed(valueResult.value, targetStatusFreshnesses)) {
+        return {
+          error: "--target-status-freshness must be fresh-current-task, stale-prior-selection, changed-since-selection, or unknown"
+        };
+      }
+
+      targetStatusFreshness = valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (
+      arg === "--target-patch-lifecycle" ||
+      arg?.startsWith("--target-patch-lifecycle=") === true
+    ) {
+      const valueResult = optionValue(rest, index, "--target-patch-lifecycle");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      if (!isAllowed(valueResult.value, targetPatchLifecycles)) {
+        return {
+          error: "--target-patch-lifecycle must be none, accepted-by-target-owner, rejected-by-target-owner, stronger-verification-requested, handed-off-unresolved, or unknown"
+        };
+      }
+
+      targetPatchLifecycle = valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--target-handoff-artifact" || arg?.startsWith("--target-handoff-artifact=") === true) {
+      const valueResult = optionValue(rest, index, "--target-handoff-artifact");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      const artifact = valueResult.value.trim();
+
+      if (artifact.length === 0) {
+        return {
+          error: "--target-handoff-artifact requires a non-empty value"
+        };
+      }
+
+      handoffArtifact = artifact;
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--target-owner-decision" || arg?.startsWith("--target-owner-decision=") === true) {
+      const valueResult = optionValue(rest, index, "--target-owner-decision");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? evidenceUsage
+        };
+      }
+
+      const ownerDecision = valueResult.value.trim();
+
+      if (ownerDecision.length === 0) {
+        return {
+          error: "--target-owner-decision requires a non-empty value"
+        };
+      }
+
+      targetOwnerDecision = ownerDecision;
       index = valueResult.nextIndex;
       continue;
     }
@@ -569,6 +672,10 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     targetDirtyBefore !== undefined ||
     targetDirtyAfter !== undefined ||
     targetOwnedChanges !== undefined ||
+    targetStatusFreshness !== undefined ||
+    targetPatchLifecycle !== undefined ||
+    handoffArtifact !== undefined ||
+    targetOwnerDecision !== undefined ||
     targetAllowedWrites.length > 0 ||
     targetForbiddenWrites.length > 0 ||
     targetChangedFilesExplicitNone ||
@@ -589,6 +696,10 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
           ...(targetDirtyBefore === undefined ? {} : { dirtyBefore: targetDirtyBefore }),
           ...(targetDirtyAfter === undefined ? {} : { dirtyAfter: targetDirtyAfter }),
           ...(targetOwnedChanges === undefined ? {} : { ownedChanges: targetOwnedChanges }),
+          ...(targetStatusFreshness === undefined ? {} : { targetStatusFreshness }),
+          ...(targetPatchLifecycle === undefined ? {} : { targetPatchLifecycle }),
+          ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
+          ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
           ...(targetAllowedWrites.length === 0 ? {} : { allowedWrites: targetAllowedWrites }),
           ...(targetForbiddenWrites.length === 0 ? {} : { forbiddenWrites: targetForbiddenWrites }),
           ...(targetChangedFiles.length === 0 ? {} : { changedFiles: targetChangedFiles }),
