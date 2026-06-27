@@ -68,12 +68,13 @@ V39 WILQ Clean Target Observation-Only Baseline: complete
 V40 Target Selection Freshness Rule Condensation: complete
 V41 Target Trial Availability Re-Gate: complete
 V42 WILQ Fresh Observation-Only Baseline Retry: complete
+V43 Target Stability Window Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V43 Target Stability Window Gate
-current task: V43-00 Target Stability Window Gate
+active stream: V44 Target Evidence Lifecycle And Freshness Fields
+current task: V44-00 Target Evidence Lifecycle And Freshness Fields
 ```
 
 Evidence already recorded in repo:
@@ -88,8 +89,8 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V42 found WILQ dirty again at task start. The next task must gate target
-stability instead of chasing actively changing target repos.
+V43 paused live target trials and selected KRN internal hardening: target
+status freshness and patch lifecycle must become typed target evidence fields.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3970,7 +3971,7 @@ Outcome:
 
 ### V43-00 — Target Stability Window Gate
 
-Status: active
+Status: complete
 
 Goal: decide the next target work only after a stable clean target window,
 explicit dirty-state permission, real second-operator input, or switch back to
@@ -4029,6 +4030,103 @@ Acceptance criteria:
 - no target writes;
 - no fake V02-01;
 - no product-ready overclaim;
+- next active task is explicit.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v43-target-stability-window-gate/REPORT.md`.
+- Current target statuses and source inspection for target evidence fields.
+
+Outcome:
+
+- V43 paused live target repair/baseline trials because both real targets are
+  currently unavailable for safe repair.
+- V43 found target workflow lifecycle/freshness fields are not yet first-class
+  target evidence.
+- V43 promoted V44 KRN internal source hardening.
+
+### V44-00 — Target Evidence Lifecycle And Freshness Fields
+
+Status: active
+
+Goal: make target status freshness and patch lifecycle first-class target
+evidence fields in KRN source/CLI/readback.
+
+Product rationale: target workflow now requires lifecycle/freshness state, but
+target evidence persistence/readback does not carry those fields. Operators
+should not have to reconstruct them from prose reports.
+
+Architectural rationale: this belongs in the existing target evidence metadata
+path, not a DB migration or new product surface.
+
+Evidence source: V37-V43 target lifecycle/freshness reports and V43 source
+inspection.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- `packages/core/src/evidenceBundle.ts`;
+- `packages/core/src/evidenceBundle.test.ts`;
+- `packages/cli/src/parseEvidenceArgs.ts`;
+- `packages/cli/src/parseEvidenceArgs.test.ts`;
+- `packages/cli/src/runEvidenceCaptureCommand.ts`;
+- `packages/cli/src/runRunShowCommand.ts`;
+- related CLI tests.
+
+Files likely touched:
+
+- `packages/core/src/evidenceBundle.ts`;
+- `packages/core/src/evidenceBundle.test.ts`;
+- `packages/cli/src/parseEvidenceArgs.ts`;
+- `packages/cli/src/parseEvidenceArgs.test.ts`;
+- `packages/cli/src/runEvidenceCaptureCommand.ts`;
+- `packages/cli/src/runRunShowCommand.ts`;
+- focused CLI tests;
+- V44 report;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN source/tests/docs/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit/push/reset/clean;
+- DB migration unless source proves metadata cannot carry fields;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim;
+- dashboard/API/MCP/worker/new eval platform.
+
+Output requirements:
+
+- typed target status freshness field;
+- typed target patch lifecycle field;
+- optional handoff artifact and target owner decision text;
+- CLI parse/render/readback coverage;
+- focused tests.
+
+Definition of Done: V44 can capture and read back target lifecycle/freshness in
+target evidence without relying on report prose.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/core test -- evidenceBundle
+pnpm --filter @krn/cli test -- parseEvidenceArgs runRunShowCommand runCli evidenceCaptureGoldenBehavior
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no target writes;
+- no DB migration unless justified;
+- target lifecycle/freshness fields round-trip through target evidence;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -4327,7 +4425,10 @@ Initial entry:
   remains blocked by unresolved patch lifecycle, and V42 was promoted.
 - [x] V42-00 complete: WILQ was dirty again at task start, so the baseline
   stopped and target stability window gate was promoted.
-- [ ] V43-00 active: Target Stability Window Gate.
+- [x] V43-00 complete: live target trials paused, target evidence
+  lifecycle/freshness source gap identified, and V44 internal hardening
+  promoted.
+- [ ] V44-00 active: Target Evidence Lifecycle And Freshness Fields.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4946,6 +5047,20 @@ Initial decisions:
   Falsifier: V43 receives explicit stable target window, dirty-state permission,
     or real second-operator inputs.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target evidence lifecycle and freshness fields as V44.
+  Rationale: V43 paused live target trials and found the new workflow-required
+    target lifecycle/freshness state is still prose-only. It should round-trip
+    through existing target evidence metadata/readback.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v43-target-stability-window-gate/REPORT.md`;
+    `packages/core/src/evidenceBundle.ts`;
+    `packages/cli/src/parseEvidenceArgs.ts`;
+    target workflow skill/runbook.
+  Does not prove: product readiness, target repair safety, V02-01, or that live
+    targets are stable.
+  Falsifier: V44 source inspection finds target evidence already carries these
+    fields through parse/capture/readback.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -5413,6 +5528,15 @@ Seed evidence:
   Does not prove: target work is impossible, V02-01, product readiness, or WILQ
     code quality.
   Follow-up task: V43-00.
+
+- Evidence ID: E-V43-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v43-target-stability-window-gate/REPORT.md`
+  Command/report/file: target statuses and target evidence source inspection.
+  Result: live target trials are paused; lifecycle/freshness fields exist in
+    workflow docs but not target evidence domain/CLI/readback.
+  Proves: the next highest-ROI move is KRN internal target evidence hardening.
+  Does not prove: product readiness, V02-01, or target repair safety.
+  Follow-up task: V44-00.
 ```
 
 ## 19. Condensation Queue
@@ -5816,6 +5940,14 @@ Seed queue:
   Reason: avoid chasing actively changing target repos without owner
     coordination or a stable window
   Task: V43-00
+
+- Candidate: target evidence lifecycle/freshness fields
+  Source evidence: V43 target stability gate and source inspection
+  Surface: core target evidence + CLI capture/readback
+  Status: accepted as V44-00
+  Reason: workflow-required target availability state should be typed evidence,
+    not report prose
+  Task: V44-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -6992,6 +7124,44 @@ Product readiness verdict:
 Next active stream:
 - V43 — Target Stability Window Gate.
 
+## Outcome 2026-06-27 V43
+
+Completed:
+- V43-00 re-gated target stability.
+- Confirmed `wilq-seo` and `krn-elektroinstal-ogar` are unavailable for safe
+  target repair.
+- Inspected KRN target evidence source and found lifecycle/freshness fields are
+  not first-class target evidence.
+- Promoted V44 internal source hardening.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v43-target-stability-window-gate/REPORT.md`.
+- KRN, WILQ and elektroinstal statuses.
+- Target evidence source inspection in `packages/core` and `packages/cli`.
+
+What improved:
+- KRN stopped chasing volatile target repos.
+- The next task is a concrete source hardening gap, not another docs-only
+  target loop.
+
+What did not improve:
+- Product readiness.
+- V02-01 second-operator proof.
+- Target repair availability.
+- Target runtime verification.
+
+New task:
+- Add lifecycle/freshness fields to typed target evidence.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V44 — Target Evidence Lifecycle And Freshness Fields.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -7040,7 +7210,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V43 Target Stability Window Gate.
+Active stream: V44 Target Evidence Lifecycle And Freshness Fields.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

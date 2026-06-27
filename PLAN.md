@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V43 Target Stability Window Gate
-current task: V43-00 Target Stability Window Gate
+active stream: V44 Target Evidence Lifecycle And Freshness Fields
+current task: V44-00 Target Evidence Lifecycle And Freshness Fields
 ```
 
 Completed stream summary:
@@ -72,31 +72,31 @@ V39 WILQ Clean Target Observation-Only Baseline: complete
 V40 Target Selection Freshness Rule Condensation: complete
 V41 Target Trial Availability Re-Gate: complete
 V42 WILQ Fresh Observation-Only Baseline Retry: complete
+V43 Target Stability Window Gate: complete
 ```
 
 ## Active Stream
 
-### V43-00 — Target Stability Window Gate
+### V44-00 — Target Evidence Lifecycle And Freshness Fields
 
 Goal:
 
-Decide the next target work only after a stable clean target window, explicit
-dirty-state permission, real second-operator input, or switch back to KRN
-internal source hardening.
+Make target status freshness and patch lifecycle first-class target evidence
+fields in KRN source/CLI/readback.
 
 Current finding:
 
 ```txt
-V42 found `wilq-seo` dirty again at task start. Elektroinstal remains blocked
-by unresolved patch lifecycle. Active target repos are too volatile for another
-target trial without a stability window or explicit permission.
+V43 found both live target repos unavailable for repair and identified an
+internal KRN hardening gap: workflow-required target lifecycle/freshness fields
+exist in docs/skills but not in typed target evidence.
 ```
 
-Current V43 action:
+Current V44 action:
 
 ```txt
-Re-gate target stability and choose either a stable target protocol, target
-owner request, V02-01 input wait, or KRN internal hardening direction.
+Add typed metadata-backed target evidence fields without DB migration; cover
+parse, capture render, run show readback, and tests.
 ```
 
 ## V02-01 Boundary
