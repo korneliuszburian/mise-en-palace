@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V184 Post Evidence Review Skill Provenance Re-Gate
-current task: V184-00 Post Evidence Review Skill Provenance Re-Gate
+active stream: V186 Post Codex Adapter Skill Metadata Re-Gate
+current task: V186-00 Post Codex Adapter Skill Metadata Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V183: active-surface compactness, handoff, PLANS freshness,
+V100..V185: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -48,26 +48,27 @@ V100..V183: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V184 Post Evidence Review Skill Provenance Re-Gate
+### V186 Post Codex Adapter Skill Metadata Re-Gate
 
 Goal:
 
-Decide the next bounded task after aligning the evidence review skill with
-command provenance and proof/non-proof boundaries.
+Decide the next bounded task after aligning the Codex adapter plan skill
+metadata with bounded context, non-goals, proof boundaries, and non-mutating
+adapter behavior.
 
 Current finding:
 
 ```txt
-V182 selected evidence review skill provenance repair because the skill still
-described command evidence as coarse passed/failed/skipped proof.
+V184 selected Codex adapter skill metadata repair because Codex sees frontmatter
+before loading the skill body.
 ```
 
 Current action:
 
 ```txt
-Execute V184-00: select the next pattern surface from evidence. Do not broaden
-skill provenance preservation into Research Foundry, source crawler, dashboard,
-or product-readiness claims.
+Execute V186-00: select the next pattern surface from evidence. Do not broaden
+Codex adapter metadata preservation into Research Foundry, source crawler,
+dashboard, or product-readiness claims.
 ```
 
 Primary consumer:
@@ -79,8 +80,8 @@ One next-task/defer decision.
 Falsifier:
 
 ```txt
-The re-gate turns focused skill provenance preservation into research hoarding
-without a concrete consumer and falsifier.
+The re-gate turns focused Codex adapter metadata preservation into research
+hoarding without a concrete consumer and falsifier.
 ```
 
 ## Pattern Gate

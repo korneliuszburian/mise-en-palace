@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V183 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, and evidence review skill provenance guard slices: complete
-active stream: V184 Post Evidence Review Skill Provenance Re-Gate
-current task: V184-00 Post Evidence Review Skill Provenance Re-Gate
+V48..V185 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, and Codex adapter skill metadata guard slices: complete
+active stream: V186 Post Codex Adapter Skill Metadata Re-Gate
+current task: V186-00 Post Codex Adapter Skill Metadata Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V184-00 Post Evidence Review Skill Provenance Re-Gate.
+V186-00 Post Codex Adapter Skill Metadata Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -16060,6 +16060,70 @@ Next active stream:
 
 Next active task:
 - V184-00 Post Evidence Review Skill Provenance Re-Gate.
+
+## Outcome 2026-06-27 V185 Codex Adapter Skill Metadata Guard
+
+Completed tasks:
+- V184-00 Post Evidence Review Skill Provenance Re-Gate.
+- V185-00 Codex Adapter Skill Metadata Guard.
+
+V184 decision:
+- Do not broaden evidence skill provenance preservation into Research Foundry,
+  source crawler, dashboard, or product-readiness claims.
+- Select Codex adapter plan skill metadata repair because this is the boundary
+  where KRN harness output becomes Codex-facing execution instructions.
+- The concrete failure mode is a future Codex-facing brief/rendering change
+  selecting the skill from metadata that only says "render execution
+  instructions" without surfacing bounded context, non-goals, proof boundaries,
+  and non-mutating adapter behavior.
+
+What changed:
+- `.agents/skills/codex-adapter-plan/SKILL.md` frontmatter description now
+  names bounded context, non-goals, proof boundaries, and non-mutating adapter
+  behavior.
+- `packages/harness/src/skillInvariants.test.ts` now guards Codex adapter skill
+  metadata and body guidance.
+- `docs/architecture/brain-battle-eval-matrix.md` records the Codex adapter
+  skill metadata guard.
+- Root `GOAL.md`, root `PLAN.md`, and `PLANS.md` now point at V186.
+
+Evidence:
+- Before this slice, the Codex adapter skill body carried evidence contracts,
+  non-goals, and non-mutating output, but the frontmatter description did not.
+- Frontmatter descriptions are the progressive-disclosure routing surface.
+
+Source-to-decision:
+- Source: `.agents/skills/codex-adapter-plan/SKILL.md`, Codex adapter golden
+  behavior, and repo-local skill invariant coverage.
+- Mechanism: Codex adapter metadata influences whether Codex treats a rendering
+  task as a bounded proof-aware bridge or as generic prompt/instruction text.
+- KRN implication: Codex-facing brief generation must surface bounded context,
+  non-goals, proof boundaries, and non-mutating adapter behavior before the full
+  skill is loaded.
+- Decision: update and guard Codex adapter plan skill frontmatter.
+- Does not prove: Codex follows the brief, prompt-injection resistance, or
+  product readiness.
+- Consumer: `.agents/skills/codex-adapter-plan/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and
+  `docs/architecture/brain-battle-eval-matrix.md`.
+- Falsifier: the Codex adapter plan frontmatter can drop bounded context,
+  non-goals, proof boundaries, or non-mutating adapter language while tests
+  pass.
+
+New task:
+- V186-00 Post Codex Adapter Skill Metadata Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V186 Post Codex Adapter Skill Metadata Re-Gate.
+
+Next active task:
+- V186-00 Post Codex Adapter Skill Metadata Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

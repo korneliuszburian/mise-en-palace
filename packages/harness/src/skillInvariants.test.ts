@@ -160,4 +160,19 @@ describe("KRN skill invariants", () => {
       "Do not treat default_template, skipped, missing, or not_run command rows"
     );
   });
+
+  it("keeps codex adapter planning tied to bounded proof-aware rendering", () => {
+    const codexAdapterPlan = readFileSync(
+      new URL("codex-adapter-plan/SKILL.md", skillsRoot),
+      "utf8"
+    );
+
+    expect(codexAdapterPlan).toContain("bounded context");
+    expect(codexAdapterPlan).toContain("non-goals");
+    expect(codexAdapterPlan).toContain("proof boundaries");
+    expect(codexAdapterPlan).toContain("non-mutating adapter behavior");
+    expect(codexAdapterPlan).toContain("evidence contract");
+    expect(codexAdapterPlan).toContain("Keep adapter output plain, inspectable, and non-mutating.");
+    expect(codexAdapterPlan).toContain("Do not make Codex surfaces the product brain.");
+  });
 });

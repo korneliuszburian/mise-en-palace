@@ -1,6 +1,6 @@
 ---
 name: codex-adapter-plan
-description: Use when rendering KRN harness output into Codex-facing briefs, Goal/ExecPlan references, AGENTS pointers, skill hints, hooks, MCP references, or execution instructions.
+description: Use when rendering KRN harness output into Codex-facing briefs, Goal/ExecPlan references, AGENTS pointers, skill hints, hooks, MCP references, or execution instructions with bounded context, non-goals, proof boundaries, and non-mutating adapter behavior.
 ---
 
 # Codex Adapter Plan
