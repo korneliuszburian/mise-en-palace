@@ -20,8 +20,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V200 Post Kernel Boundary Re-Gate
-current task: V200-00 Post Kernel Boundary Re-Gate
+active stream: V201 README Current-State Repair
+current task: V201-00 README Current-State Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +39,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V199: active-surface compactness, handoff, PLANS freshness,
+V100..V200: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,38 +49,39 @@ V100..V199: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V200 Post Kernel Boundary Re-Gate
+### V201 README Current-State Repair
 
 Goal:
 
-Decide the next bounded task after repairing required kernel current boundary.
+Repair stale current-truth framing in README.md.
 
 Current finding:
 
 ```txt
-V199 repaired docs/KRN_KERNEL.md and added a context hygiene guard so required
-kernel reading stays aligned with current controlled-internal-alpha state.
+V200 found README.md still frames the repo around current reset direction,
+QG/anti-slop/audit cleanup, and Memory Brain spine hardening rather than the
+current continuous controlled-internal-alpha loop.
 ```
 
 Current action:
 
 ```txt
-Execute V200-00: select the next bounded evidence-backed task. Do not broaden
-kernel cleanup into a docs sweep, Research Foundry, source crawler, dashboard,
-product-readiness claim, or architecture rewrite.
+Execute V201-00: align README.md with the current compact active truth and add a
+focused invariant. Do not broaden into a docs sweep, Research Foundry, source
+crawler, dashboard, product-readiness claim, or architecture rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+README.md and focused context hygiene invariant.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate turns kernel repair into broad docs churn without a concrete
-consumer and falsifier.
+README can again describe reset/QG/audit cleanup as the current direction while
+tests pass.
 ```
 
 ## Pattern Gate
