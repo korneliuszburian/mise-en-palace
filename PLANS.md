@@ -61,12 +61,13 @@ V32 Controlled Target Repair Trial: complete
 V33 Reused Project Owner-File Refresh Repair: complete
 V34 Target Repair Re-Gate After Owner-File Refresh: complete
 V35 Target Patch Handoff Packet: complete
+V36 Target Patch Handoff Re-Gate: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V36 Target Patch Handoff Re-Gate
-current task: V36-00 Target Patch Handoff Re-Gate
+active stream: V37 Target Patch Lifecycle Rule Condensation
+current task: V37-00 Target Patch Lifecycle Rule Condensation
 ```
 
 Evidence already recorded in repo:
@@ -81,10 +82,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V35 captured the V32 target patch as a KRN-side handoff artifact. The next task
-must decide whether to wait for target owner/operator action, run stronger
-observation-only target verification, select another clean target proof, or
-resume V02-01 only if real second-operator inputs exist.
+V36 found the V32 target patch remains handed off but unresolved. The next task
+must condense this into durable target-repo workflow rules so KRN does not start
+another same-target repair while patch ownership is ambiguous.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -3412,7 +3412,7 @@ Completed evidence:
 
 ### V36-00 — Target Patch Handoff Re-Gate
 
-Status: active
+Status: complete
 
 Goal: decide the next product move after target patch handoff.
 
@@ -3473,6 +3473,90 @@ Acceptance criteria:
 - no target writes;
 - no fake V02-01;
 - no product-ready overclaim;
+- next active task is explicit.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v36-target-patch-handoff-regate/REPORT.md`.
+- KRN latest CI `28289750736` passed for V35.
+- Target repo remains dirty with exactly the two V32 patch files.
+
+Outcome:
+
+- V36 rejected same-target repair while the target patch is unresolved.
+- V36 rejected V02-01 without real second-operator inputs.
+- V36 promoted V37 to make target patch lifecycle handling durable in the
+  target-repo workflow surface.
+
+### V37-00 — Target Patch Lifecycle Rule Condensation
+
+Status: active
+
+Goal: condense V32-V36 target patch lifecycle evidence into durable target-repo
+workflow rules.
+
+Product rationale: V32 proved a controlled headless target repair, V35 made the
+patch handoff-safe, and V36 showed the handed-off patch remains unresolved.
+Future target trials need a small durable rule so unresolved dirty target
+patches do not become ambiguous state before another repair.
+
+Architectural rationale: KRN target workflows must separate target patch
+ownership from KRN product evidence. The right surface is the existing
+target-repo skill/runbook, not a new subsystem.
+
+Evidence source: V32 repair report, V35 handoff packet, V36 re-gate report,
+current target status.
+
+Official/external sources: none required.
+
+Inputs required:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v35-target-patch-handoff/REPORT.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-v36-target-patch-handoff-regate/REPORT.md`;
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/runbooks/target-repo-testing.md` if present/relevant.
+
+Files likely touched:
+
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/runbooks/target-repo-testing.md`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`.
+
+Allowed writes:
+
+- KRN workflow docs/skills/plans only.
+
+Forbidden writes:
+
+- target repo edits;
+- target commit;
+- target reset/clean;
+- KRN source changes;
+- fake V02-01 proof;
+- product-ready/widened-alpha overclaim;
+- new dashboard/API/MCP/worker/eval platform.
+
+Output requirements:
+
+- durable patch lifecycle rule;
+- explicit unresolved-patch stop condition;
+- target report fields for patch lifecycle state;
+- active plan update.
+
+Definition of Done: V37 updates the target-repo workflow surface so a future
+Codex continuation can identify `handed_off_unresolved` target patches and avoid
+same-target repair unless owner action, stronger observation-only verification,
+or clean target selection is explicit.
+
+Verification commands: `git diff --check`; inspect target status only if needed.
+
+Acceptance criteria:
+
+- no target writes;
+- unresolved target patch state is represented explicitly;
+- same-target repair stop condition is durable;
 - next active task is explicit.
 
 ## 13. Generated Task Backlog
@@ -3755,7 +3839,10 @@ Initial entry:
   stronger and promoted target patch handoff as the next blocker.
 - [x] V35-00 complete: target patch handoff packet and KRN-side patch artifact
   created without target writes/commit/revert.
-- [ ] V36-00 active: Target Patch Handoff Re-Gate.
+- [x] V36-00 complete: re-gate rejected same-target repair while the target FAQ
+  patch remains handed off but unresolved, and promoted target patch lifecycle
+  rule condensation.
+- [ ] V37-00 active: Target Patch Lifecycle Rule Condensation.
 ```
 
 ## 16. Surprises & Discoveries
@@ -4284,6 +4371,20 @@ Initial decisions:
   Falsifier: V36 finds target owner/operator has already resolved the patch and
     a new bounded target proof is safe.
   Date/Author: 2026-06-27 / Codex
+
+- Decision: Promote target patch lifecycle rule condensation as V37.
+  Rationale: V36 found the target FAQ patch remains handed off but unresolved.
+    KRN must not start another repair in the same dirty target, and this rule
+    should live in the reusable target-repo workflow surface rather than chat
+    memory.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v36-target-patch-handoff-regate/REPORT.md`;
+    target `git status --short --branch`; KRN CI `28289750736`.
+  Does not prove: target owner accepted the patch, product readiness is
+    achieved, V02-01 is complete, or a new target repair is safe in the same
+    unresolved target.
+  Falsifier: V37 finds the existing skill/runbook already fully prevents
+    same-target repair with handed-off unresolved patches.
+  Date/Author: 2026-06-27 / Codex
 ```
 
 ## 18. Evidence Ledger
@@ -4672,6 +4773,19 @@ Seed evidence:
   Does not prove: target owner accepted the patch, product readiness, V02-01, or
     full target runtime correctness.
   Follow-up task: V36-00.
+
+- Evidence ID: E-V36-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v36-target-patch-handoff-regate/REPORT.md`
+  Command/report/file: V36 re-gate report; KRN status; target status; GitHub
+    Actions run list.
+  Result: the V32 target patch remains handed off but unresolved; V35 CI passed;
+    KRN worktree is clean; same-target repair is rejected until ownership or
+    stronger observation-only verification is explicit.
+  Proves: KRN must condense target patch lifecycle handling before additional
+    target repair work.
+  Does not prove: target owner acceptance, product readiness, V02-01, widened
+    alpha, or target browser/runtime correctness.
+  Follow-up task: V37-00.
 ```
 
 ## 19. Condensation Queue
@@ -5018,6 +5132,15 @@ Seed queue:
   Reason: after making the patch explicit, decide whether target owner action is
     the blocker or another bounded target proof is safe
   Task: V36-00
+
+- Candidate: target patch lifecycle rule
+  Source evidence: V36 re-gate and unresolved handed-off target patch state
+  Surface: `.agents/skills/target-repo-testing/SKILL.md` and target testing
+    runbook
+  Status: accepted as V37-00
+  Reason: prevent unresolved dirty target patches from becoming ambiguous state
+    before same-target repair, readiness claims, or future target trials
+  Task: V37-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -5929,6 +6052,44 @@ Product readiness verdict:
 Next active stream:
 - V36 — Target Patch Handoff Re-Gate.
 
+## Outcome 2026-06-27 V36
+
+Completed:
+- V36-00 re-gated after the V35 target patch handoff.
+- Confirmed KRN HEAD `2144644` was clean and latest CI `28289750736` passed.
+- Confirmed the target repo still has exactly the two V32 FAQ patch files dirty.
+- Rejected same-target repair while the patch is handed off but unresolved.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v36-target-patch-handoff-regate/REPORT.md`.
+- KRN `rtk git status --short --branch`.
+- Target `rtk git status --short --branch`.
+- `rtk gh run list --branch main --limit 8`.
+
+What improved:
+- The next product move is explicit.
+- Target owner/operator ownership remains separated from KRN product proof.
+
+What did not improve:
+- Target owner acceptance.
+- Product readiness.
+- V02-01 second-operator proof.
+- Widened internal alpha.
+- Target runtime/browser/accessibility proof.
+
+New task:
+- Condense target patch lifecycle state into the target-repo testing workflow
+  surface so future target trials cannot bypass unresolved patch ownership.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V37 — Target Patch Lifecycle Rule Condensation.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -5977,7 +6138,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V36 Target Patch Handoff Re-Gate.
+Active stream: V37 Target Patch Lifecycle Rule Condensation.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

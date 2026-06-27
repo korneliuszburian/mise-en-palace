@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V36 Target Patch Handoff Re-Gate
-current task: V36-00 Target Patch Handoff Re-Gate
+active stream: V37 Target Patch Lifecycle Rule Condensation
+current task: V37-00 Target Patch Lifecycle Rule Condensation
 ```
 
 Completed stream summary:
@@ -65,32 +65,33 @@ V32 Controlled Target Repair Trial: complete
 V33 Reused Project Owner-File Refresh Repair: complete
 V34 Target Repair Re-Gate After Owner-File Refresh: complete
 V35 Target Patch Handoff Packet: complete
+V36 Target Patch Handoff Re-Gate: complete
 ```
 
 ## Active Stream
 
-### V36-00 — Target Patch Handoff Re-Gate
+### V37-00 — Target Patch Lifecycle Rule Condensation
 
 Goal:
 
-Decide whether to wait for target owner/operator decision, run stronger
-observation-only target verification, choose another clean target proof, or
-resume V02-01 only if real second-operator inputs exist.
+Condense V32-V36 target patch lifecycle evidence into the target-repo workflow
+surface so future headless target repairs cannot leave unresolved dirty target
+patches as ambiguous state.
 
 Current finding:
 
 ```txt
-V35 captured the V32 target patch as a KRN-side handoff artifact and preserved
-operator choices. KRN still must not commit/revert target code. Product-ready,
-widened alpha, and V02-01 remain unproved.
+V36 found the target FAQ patch remains handed off but unresolved. KRN must not
+start another repair in the same dirty target repo until target owner action or
+stronger observation-only verification is requested.
 ```
 
-Current V36 action:
+Current V37 action:
 
 ```txt
-Re-gate after handoff. Promote only the next evidence-backed task; do not start
-another target repair while target ownership is unresolved unless a clean/safe
-target path is selected.
+Update the target-repo-testing skill/runbook and active plans with a durable
+patch lifecycle rule. Keep the rule small, explicit, and limited to target repo
+workflow hygiene.
 ```
 
 ## V02-01 Boundary
