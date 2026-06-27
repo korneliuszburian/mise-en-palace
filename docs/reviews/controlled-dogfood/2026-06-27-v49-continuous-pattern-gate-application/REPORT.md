@@ -1,6 +1,6 @@
 # V49 First Continuous Pattern Gate Application
 
-Status: complete pending CI result.
+Status: complete; accepted by V50 CI readback.
 
 Date: 2026-06-27.
 
@@ -112,7 +112,7 @@ because the warning is about action internals, not KRN's package runtime.
 | Command | Result | What it proves | What it does not prove |
 |---|---|---|---|
 | `git diff --check` | pending | Workflow/report diff has no whitespace errors when run | CI compatibility |
-| post-push GitHub Actions CI | pending | The workflow action updates work in GitHub-hosted CI when passed | Product readiness or full CI modernization |
+| post-push GitHub Actions CI `28291932071` | passed | The workflow action updates work in GitHub-hosted CI | Product readiness or full CI modernization |
 
 ## What This Proves
 

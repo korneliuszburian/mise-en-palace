@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V50 CI Action Modernization Re-Gate
-current task: V50-00 CI Action Modernization Re-Gate
+active stream: V51 Second Continuous Pattern Gate Selection
+current task: V51-00 Second Continuous Pattern Gate Selection
 ```
 
 Completed stream summary:
@@ -79,31 +79,31 @@ V46 target owner coordination packet: complete
 V47 internal hardening re-gate after target coordination: complete
 V48 continuous pattern source-to-decision gate: complete
 V49 first continuous pattern gate application: complete
+V50 CI action modernization re-gate: complete
 ```
 
 ## Active Stream
 
-### V50-00 — CI Action Modernization Re-Gate
+### V51-00 — Second Continuous Pattern Gate Selection
 
 Goal:
 
-Inspect the post-push CI result for V49 and decide whether the action
-modernization is accepted, needs repair/revert, or creates a next bounded task.
+Select the next bounded Continuous Pattern Gate application from current
+evidence.
 
 Current finding:
 
 ```txt
 V49 applied the Continuous Pattern Gate to CI action runtime modernization.
-The consumer is `.github/workflows/ci.yml`; the falsifier is the post-push KRN
-CI run for the V49 commit.
+V50 accepted it after GitHub Actions run `28291932071` passed DB readiness,
+DB smoke, typecheck, tests, Promptfoo smoke, and diff check.
 ```
 
-Current V50 action:
+Current V51 action:
 
 ```txt
-Check the V49 CI run before unrelated work. If CI fails, repair or revert the
-workflow action update first. If CI passes, record the gate application as
-accepted and select the next bounded task.
+Pick the next useful surface from evidence, or explicitly reject/defer if no
+consumer and falsifier exist. Do not force a paper/course topic.
 ```
 
 ## V02-01 Boundary

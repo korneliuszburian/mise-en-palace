@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V50 — CI Action Modernization Re-Gate
+V51 — Second Continuous Pattern Gate Selection
 ```
 
 Current product loop:
@@ -90,8 +90,9 @@ V46 Target Owner Coordination Packet: complete.
 V47 Internal Hardening Re-Gate After Target Coordination: complete.
 V48 Continuous Pattern Source-To-Decision Gate: complete.
 V49 First Continuous Pattern Gate Application: complete.
-active stream: V50 CI Action Modernization Re-Gate.
-current task: V50-00 — CI Action Modernization Re-Gate.
+V50 CI Action Modernization Re-Gate: complete.
+active stream: V51 Second Continuous Pattern Gate Selection.
+current task: V51-00 — Second Continuous Pattern Gate Selection.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
