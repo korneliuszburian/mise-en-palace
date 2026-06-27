@@ -45,7 +45,8 @@ V15 Promptfoo / Golden Behavior Role Gate: complete
 V16 Activation Relevance Evidence Gate: complete
 V17 Target Owner-File Read-Model Contract Gate: complete
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete
-active stream: V19 Product Readiness Re-Gate After Owner-File Contract
+V19 Product Readiness Re-Gate After Owner-File Contract: complete
+active stream: V20 Real Target Observation-Only Owner-File Trial
 ```
 
 V02-01 can resume only with real second-operator inputs:
@@ -404,11 +405,31 @@ contract blocker.
 
 ### V19-00 — Product Readiness Re-Gate After Owner-File Contract
 
-Status: active.
+Status: complete on 2026-06-27.
 
 Goal: decide whether V17/V18 move KRN from controlled-internal-alpha toward
 widened-alpha readiness, or whether the next required proof is a real
 second-operator / real target trial instead of another local substitute.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`;
+- verdict remains controlled-internal-alpha for technical operators, stronger;
+  widened alpha and product-ready remain unproven.
+
+## Active Stream: V20
+
+V20 runs or blocks on a real target checkout in observation-only mode after the
+owner-file contract repair.
+
+### V20-00 — Real Target Observation-Only Owner-File Trial
+
+Status: active.
+
+Goal: use a real target checkout, not a checked-in fixture, with no target
+writes; provide owner files if known; capture target evidence; and decide
+whether the next blocker is target selection, owner-file quality, activation
+selection, operator friction, or a bounded KRN repair.
 
 ## Hard Non-Goals
 

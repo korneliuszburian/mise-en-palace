@@ -44,12 +44,13 @@ V15 Promptfoo / Golden Behavior Role Gate: complete
 V16 Activation Relevance Evidence Gate: complete
 V17 Target Owner-File Read-Model Contract Gate: complete
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete
+V19 Product Readiness Re-Gate After Owner-File Contract: complete
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V19 Product Readiness Re-Gate After Owner-File Contract
-current task: V19-00 Product Readiness Re-Gate After Owner-File Contract
+active stream: V20 Real Target Observation-Only Owner-File Trial
+current task: V20-00 Real Target Observation-Only Owner-File Trial
 ```
 
 Evidence already recorded in repo:
@@ -64,9 +65,9 @@ Evidence already recorded in repo:
 Known current gap:
 
 ```txt
-V19 must re-gate readiness after the owner-file contract application and decide
-whether the next proof should be real operator / real target evidence rather
-than another local substitute.
+V20 must use or block on a real target checkout in observation-only mode after
+the owner-file contract repair. Do not use another checked-in fixture as the
+proof.
 ```
 
 ## 2. Product Thesis And Strategic Direction
@@ -599,6 +600,27 @@ Expected end state:
 KRN re-gates readiness after V17/V18 and decides whether further local
 substitutes are useful or whether the next proof must be real
 operator / real target evidence.
+```
+
+### Stream V20 — Real Target Observation-Only Owner-File Trial
+
+Why now:
+
+- V19 keeps KRN at controlled-internal-alpha, stronger, and rejects widened-alpha
+  or product-ready claims.
+- The next missing proof is real target behavior after the owner-file contract,
+  not another checked-in fixture.
+- Real second-operator proof is still blocked/deferred until operator inputs
+  exist, but a real target observation-only trial can test target selection,
+  owner-file quality, activation, and evidence boundaries without target writes.
+
+Expected end state:
+
+```txt
+KRN runs or blocks on one safe real target checkout in observation-only mode,
+with explicit owner files if known, and records whether the next blocker is
+target selection, owner-file quality, activation selection, operator friction,
+or a bounded KRN repair.
 ```
 
 ## 12. Active Task Queue
@@ -1846,7 +1868,7 @@ Completion evidence:
 
 ### V19-00 — Product Readiness Re-Gate After Owner-File Contract
 
-Status: active
+Status: complete on 2026-06-27
 
 Goal: decide whether V17/V18 move KRN from controlled-internal-alpha toward
 widened-alpha readiness, or whether the next required proof is a real
@@ -1900,6 +1922,79 @@ Condensation expectation: decide whether to stop local substitutes, request real
 operator/target evidence, or open one specific repair.
 
 Next-task synthesis rule: append the highest-ROI next blocker after V19
+evidence.
+
+Completion evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`;
+- readiness remains controlled-internal-alpha for technical operators, stronger;
+  widened alpha and product-ready remain unproven.
+
+### V20-00 — Real Target Observation-Only Owner-File Trial
+
+Status: active
+
+Goal: use a real target checkout, not a checked-in fixture, in observation-only
+mode; provide explicit owner files if known; run KRN init/plan/evidence; and
+decide whether the next blocker is target selection, owner-file quality,
+activation selection, operator friction, or a bounded KRN repair.
+
+Product rationale: after V17/V18, owner-file contract behavior is proven only
+on a fixture; V20 must gather real target evidence without pretending to satisfy
+V02-01.
+
+Architectural rationale: target trials must preserve read-only target state,
+proof/non-proof boundaries, and explicit owner-file inputs before product
+readiness or scoring claims.
+
+Evidence source: V19 readiness gate, V18 target fixture application, V12
+second-operator packet, target repo testing runbook.
+
+Official/external sources: none required unless a target tool/source decision
+depends on external docs.
+
+Inputs required: one safe real target checkout under the local workspace or an
+explicit blocker report saying no safe target exists.
+
+Files likely touched:
+
+- target trial report under `docs/reviews/controlled-dogfood/`;
+- `GOAL.md`;
+- `PLAN.md`;
+- `PLANS.md`;
+- maybe target-repo testing runbook/skill if the trial exposes friction.
+
+Allowed writes: KRN reports/plans and bounded KRN docs/source repair only if
+evidence proves a gap.
+
+Forbidden writes: target repo edits, target commits, target resets/cleans,
+source crawler, activation scoring rewrite, fake V02-01/widened-alpha claim,
+dashboard/API/MCP/worker runtime.
+
+Output requirements: target mode, target dirty state, owner files, KRN commands,
+target commands, target evidence, selected/used/helped/missing context, proof
+boundaries, readiness implication, next task.
+
+Definition of Done: V20 either completes one observation-only real target trial
+or records the exact blocker preventing a safe real target trial.
+
+Verification commands: `git diff --check`; if source changes, `pnpm typecheck`
+and `pnpm test`; if DB-backed, `pnpm db:ready`.
+
+Acceptance criteria: no target writes; no fixture substitute; no V02-01/product
+overclaim.
+
+Risk: accidentally touching a living target repo. Mitigation: observation-only
+mode and pre/post target `git status`.
+
+Rollback: focused report/plan revert; no target rollback should be needed
+because target writes are forbidden.
+
+Condensation expectation: decide whether next work is real operator intake,
+target owner-file quality repair, activation repair, evidence ergonomics, or
+blocked target selection.
+
+Next-task synthesis rule: append the highest-ROI next blocker after V20
 evidence.
 
 ## 13. Generated Task Backlog
@@ -2145,7 +2240,10 @@ Initial entry:
 - [x] V18-00 complete: owner-file contract works in target fixture, exact
   owner-file task selects `tests/readiness.test.ts`, and dry-run next command
   preserves owner-file flags.
-- [ ] V19-00 active: Product Readiness Re-Gate After Owner-File Contract.
+- [x] V19-00 complete: readiness remains controlled-internal-alpha stronger;
+  widened alpha/product-ready/V02-01 remain unproven; V20 real target
+  observation-only trial accepted.
+- [ ] V20-00 active: Real Target Observation-Only Owner-File Trial.
 ```
 
 ## 16. Surprises & Discoveries
@@ -2249,6 +2347,13 @@ Record every unexpected fact in this format:
   `packages/cli/src/runInitCommand.ts`; `packages/cli/src/runCli.test.ts`.
   Impact: V18 repaired the dry-run next command so operators do not lose
   owner-file inputs when copying the connect command.
+  Date/Author: 2026-06-27 / Codex
+
+- Discovery: After V17/V18, the immediate owner-file contract blocker is gone,
+  but all proof is still local/fixture or self-operated.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`.
+  Impact: V20 should use a real target checkout in observation-only mode instead
+  of adding another fixture or product surface.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2401,6 +2506,18 @@ Initial decisions:
   owner-file completeness.
   Falsifier: V19 finds a concrete local repair still blocks real operator or
   real target execution.
+  Date/Author: 2026-06-27 / Codex
+
+- Decision: Keep readiness at controlled-internal-alpha and move to real target
+  observation-only evidence.
+  Rationale: owner-file contract work strengthened target readiness, but did
+  not produce real operator or real target proof.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`;
+  latest green CI on `main`.
+  Does not prove: widened alpha, V02-01, product readiness, or arbitrary target
+  owner-file quality.
+  Falsifier: V20 cannot identify a safe real target checkout; then the blocker
+  becomes target selection/intake.
   Date/Author: 2026-06-27 / Codex
 ```
 
@@ -2574,6 +2691,19 @@ Seed evidence:
   Does not prove: real operator usability, product readiness, V02-01, or
     owner-file completeness on arbitrary repos.
   Follow-up task: V19-00.
+
+- Evidence ID: E-V19-00
+  Source: `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`
+  Command/report/file: readiness report inspecting V11/V12/V17/V18 and current
+    remote CI.
+  Result: controlled-internal-alpha for technical operators remains yes /
+    stronger; widened alpha, V02-01, and product-ready remain unproven; V20 real
+    target observation-only trial accepted.
+  Proves: owner-file contract work changed the next blocker from fixture
+    contract repair to real target evidence.
+  Does not prove: real target success, real operator usability, widened alpha,
+    or product readiness.
+  Follow-up task: V20-00.
 ```
 
 ## 19. Condensation Queue
@@ -2771,10 +2901,18 @@ Seed queue:
 - Candidate: product readiness re-gate after owner-file contract
   Source evidence: V18 target owner-file contract application and friction fix
   Surface: readiness gate
-  Status: accepted as V19-00
+  Status: complete as V19-00
   Reason: the immediate owner-file contract blocker is gone; readiness and next
     proof boundary must be re-evaluated before another local substitute
   Task: V19-00
+
+- Candidate: real target observation-only owner-file trial
+  Source evidence: V19 readiness re-gate
+  Surface: target trial report
+  Status: accepted as V20-00
+  Reason: after fixture/local owner-file proof, the next product evidence must
+    come from a real target checkout without target writes or V02-01 overclaim
+  Task: V20-00
 ```
 
 ## 20. Outcomes & Retrospective
@@ -3173,6 +3311,39 @@ Product readiness verdict:
 Next active stream:
 - V19 — Product Readiness Re-Gate After Owner-File Contract.
 
+## Outcome 2026-06-27 V19
+
+Completed:
+- V19-00 re-gated readiness after V17/V18 owner-file contract work.
+- KRN remains controlled-internal-alpha for technical operators, stronger.
+- Widened alpha, V02-01, and product-ready claims remain unproven.
+- V20 real target observation-only owner-file trial was accepted as the next
+  evidence step.
+
+Evidence:
+- `docs/reviews/controlled-dogfood/2026-06-27-v19-product-readiness-after-owner-file-contract/REPORT.md`.
+- V11/V12/V17/V18 reports and latest green main CI.
+
+What improved:
+- Readiness claims now account for the owner-file contract and dry-run handoff
+  repair.
+- The next proof is no longer another checked-in fixture.
+
+What did not improve:
+- Product readiness.
+- Widened internal alpha.
+- V02-01 second-operator proof.
+- Real target behavior after owner-file contract.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no / ready to attempt only with real operator inputs
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V20 — Real Target Observation-Only Owner-File Trial.
+
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
@@ -3221,7 +3392,7 @@ The root `GOAL.md` should not duplicate this file. It should say only:
 
 ```txt
 Current objective: execute KRN Continuous Brain Growth from PLANS.md.
-Active stream: V19 Product Readiness Re-Gate After Owner-File Contract.
+Active stream: V20 Real Target Observation-Only Owner-File Trial.
 Read: PLAN.md, GOAL.md, PLANS.md.
 Continue by evidence. After every slice, update PLANS.md and append next tasks.
 Do not mark complete after one slice. Complete only on explicit operator stop, product-ready gate, or budget/blocker handoff.

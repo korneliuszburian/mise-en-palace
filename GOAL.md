@@ -20,7 +20,7 @@ Use root `PLAN.md` as the compact product single source of truth and use root
 Active stream:
 
 ```txt
-V19 — Product Readiness Re-Gate After Owner-File Contract
+V20 — Real Target Observation-Only Owner-File Trial
 ```
 
 Current product loop:
@@ -59,8 +59,9 @@ V15 Promptfoo / Golden Behavior Role Gate: complete.
 V16 Activation Relevance Evidence Gate: complete.
 V17 Target Owner-File Read-Model Contract Gate: complete.
 V18 Target Owner-File Contract Re-Gate / Trial Application: complete.
-active stream: V19 Product Readiness Re-Gate After Owner-File Contract.
-current task: V19-00 — Product Readiness Re-Gate After Owner-File Contract.
+V19 Product Readiness Re-Gate After Owner-File Contract: complete.
+active stream: V20 Real Target Observation-Only Owner-File Trial.
+current task: V20-00 — Real Target Observation-Only Owner-File Trial.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:
