@@ -7,7 +7,9 @@ import type {
   MemoryCandidateId,
   MemoryRecordId,
   ReviewAssessmentId,
-  SourceClaimId
+  SourceClaimId,
+  SourceDecisionId,
+  SourceRejectionId
 } from "./ids.js";
 
 type IsAssignable<TValue, TTarget> = [TValue] extends [TTarget] ? true : false;
@@ -25,7 +27,9 @@ export type BrandedKrnIdCompatibilityProof = [
   Assert<IsAssignable<string, MemoryCandidateId>>,
   Assert<IsAssignable<string, AntiMemoryCandidateId>>,
   Assert<IsAssignable<string, AntiMemoryRecordId>>,
-  Assert<IsAssignable<string, SourceClaimId>>
+  Assert<IsAssignable<string, SourceClaimId>>,
+  Assert<IsAssignable<string, SourceDecisionId>>,
+  Assert<IsAssignable<string, SourceRejectionId>>
 ];
 
 export type BrandedKrnIdSeparationProof = [
@@ -39,6 +43,10 @@ export type BrandedKrnIdSeparationProof = [
   Assert<IsNotAssignable<MemoryRecordId, MemoryCandidateId>>,
   Assert<IsNotAssignable<MemoryCandidateId, MemoryRecordId>>,
   Assert<IsNotAssignable<MemoryRecordId, SourceClaimId>>,
+  Assert<IsNotAssignable<SourceClaimId, SourceDecisionId>>,
+  Assert<IsNotAssignable<SourceDecisionId, SourceClaimId>>,
+  Assert<IsNotAssignable<SourceDecisionId, SourceRejectionId>>,
+  Assert<IsNotAssignable<SourceRejectionId, SourceDecisionId>>,
   Assert<IsNotAssignable<MemoryCandidateId, AntiMemoryCandidateId>>,
   Assert<IsNotAssignable<AntiMemoryCandidateId, MemoryCandidateId>>,
   Assert<IsNotAssignable<AntiMemoryRecordId, MemoryRecordId>>

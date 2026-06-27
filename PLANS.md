@@ -78,8 +78,8 @@ V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
 V48..V63 continuous pattern, CI/eval, target, and re-gate slices: complete
-active stream: V88 Post Evidence Spine ID Branding Re-Gate
-current task: V88-00 Post Evidence Spine ID Branding Re-Gate
+active stream: V90 Post Source Decision ID Branding Re-Gate
+current task: V90-00 Post Source Decision ID Branding Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -12712,6 +12712,63 @@ Next active stream:
 
 Next active task:
 - V88-00 Post Evidence Spine ID Branding Re-Gate.
+
+## Outcome 2026-06-27 V89 Source Decision ID Branding
+
+Completed:
+- V88-00 Post Evidence Spine ID Branding Re-Gate.
+- V89-00 Source Decision ID Branding.
+
+Evidence:
+- `packages/core/src/ids.ts`.
+- `packages/core/src/ids.typecheck.ts`.
+- `packages/core/src/source.ts`.
+- `docs/architecture/brain-battle-eval-matrix.md`.
+- `docs/runbooks/pattern-intake.md`.
+
+Source-to-decision:
+- Source: Total TypeScript "Designing Your Types" retained in
+  `docs/KRN_SOURCES.md`.
+- Mechanism: domain type design communicates authority and lifecycle, not only
+  compiler satisfaction.
+- KRN implication: retained source claims, source decisions, and source
+  rejections carry different authority and should not be freely interchangeable
+  in core domain types.
+- Decision: brand `SourceDecisionId` and `SourceRejectionId` using the existing
+  `BrandedKrnId` pattern.
+- Does not prove: source review judgment, source retrieval quality, runtime ID
+  changes, or that every source-related ID alias should be branded.
+- Consumer: `packages/core/src/ids.ts` and `packages/core/src/ids.typecheck.ts`.
+- Falsifier: `SourceDecisionId` is assignable to `SourceClaimId` or
+  `SourceRejectionId`, while string compatibility is still expected.
+
+What improved:
+- Source decisions and source rejections are now separated at the type boundary
+  from retained source claims and from each other.
+- The source-to-decision lane has a tighter type-level distinction between
+  accepted guidance and rejected source material.
+
+What did not improve:
+- Runtime ID format.
+- Source selection quality.
+- Source review correctness.
+- Every remaining ID alias.
+- Product readiness.
+
+New task:
+- V90-00 Post Source Decision ID Branding Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V90 Post Source Decision ID Branding Re-Gate.
+
+Next active task:
+- V90-00 Post Source Decision ID Branding Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

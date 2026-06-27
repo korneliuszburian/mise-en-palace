@@ -24,8 +24,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V88 Post Evidence Spine ID Branding Re-Gate
-current task: V88-00 Post Evidence Spine ID Branding Re-Gate
+active stream: V90 Post Source Decision ID Branding Re-Gate
+current task: V90-00 Post Source Decision ID Branding Re-Gate
 ```
 
 Completed stream summary:
@@ -121,30 +121,33 @@ V84-00 post skill invariant guard re-gate: complete
 V85-00 anti-memory ID branding: complete
 V86-00 post anti-memory ID branding re-gate: complete
 V87 evidence spine ID branding: complete
-V88 post evidence spine ID branding re-gate: active
+V88-00 post evidence spine ID branding re-gate: complete
+V89 source decision/rejection ID branding: complete
+V90 post source decision ID branding re-gate: active
 ```
 
 ## Active Stream
 
-### V88 Post Evidence Spine ID Branding Re-Gate
+### V90 Post Source Decision ID Branding Re-Gate
 
 Goal:
 
-Decide the next bounded task after branding evidence/review/feedback spine IDs
-in core domain types.
+Decide the next bounded task after branding source decision/rejection IDs in
+core domain types.
 
 Current finding:
 
 ```txt
-V86 selected one more bounded TypeScript retained-source application: evidence,
-review, and feedback IDs form a proof spine but were mutually type-compatible
-plain strings. V87 tightened them with type-level separation proof.
+V88 selected one more bounded TypeScript retained-source application: retained
+source claims were branded, but source decisions and source rejections were
+still mutually type-compatible plain strings. V89 tightened them with
+type-level separation proof.
 ```
 
 Current action:
 
 ```txt
-Execute V88-00: decide whether another bounded TypeScript ID/lifecycle repair
+Execute V90-00: decide whether another bounded TypeScript ID/lifecycle repair
 is justified by evidence, move to another pattern surface, or stop on the
 external operator/target blocker.
 ```
