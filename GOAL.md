@@ -42,7 +42,13 @@ V02-03..V02-08: complete.
 V03-00..V03-06: complete.
 V02-01 real second-operator trial: blocked/deferred.
 V04 internal brain utility: active.
-Current active slice: V04-00 — Baseline Governance Reconciliation.
+V04-00 baseline governance reconciliation: complete.
+V04-01 first concrete product friction repair/rejection: complete.
+V04-02 controlled scenario factory: complete.
+V04-03 knowledge condensation gate: complete.
+V04-04 skill-first KRN: complete.
+V04-06 deterministic guard from real evidence: complete.
+Current active slice: V04-05 — Controlled Scenario Batch.
 ```
 
 V02-01 can resume only after real second-operator inputs exist:

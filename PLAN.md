@@ -69,7 +69,7 @@ product readiness or complete V02-01.
 
 ### V04-00 — Baseline Governance Reconciliation
 
-Status: in progress.
+Status: complete on 2026-06-27.
 
 Goal: reconcile dirty target-testing/runbook/report state and ensure root plan
 points to the V04 ExecPlan without turning the root plan into a long ledger.
@@ -82,40 +82,68 @@ Expected outputs:
 - corrected headless `wilq-seo` report boundary;
 - second-operator runbook pointer to target repo testing rules.
 
+Evidence:
+
+- commit `9849754 docs(plan): authorize v04 internal brain utility`;
+- GitHub Actions run `28273097780` passed KRN CI, including typecheck, tests,
+  Promptfoo smoke, diff check, DB ready, Drizzle check, and DB smoke.
+
 ### V04-01 — First Concrete Product Friction Repair
 
-Status: pending.
+Status: complete on 2026-06-27.
 
 Candidate: inspect whether generic `db:smoke` idempotency after fresh Docker
 volume recovery is still a real friction. Repair it only if current evidence
 confirms the gap.
 
+Outcome: rejected as active source repair candidate. Current `main` passed
+generic DB smoke in CI, on the local main DB, and on a fresh scratch DB after
+`db:ready`; repeated scratch `db:smoke` also passed.
+
+Evidence:
+
+- `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+
 ### V04-02 — Controlled Scenario Factory
 
-Status: pending.
+Status: complete on 2026-06-27.
 
 Goal: define the minimal scenario contract for observation-only, repair-trial,
 source-repair, and db-backed-replay modes.
 
+Evidence:
+
+- `docs/architecture/controlled-scenario-factory.md`.
+
 ### V04-03 — Knowledge Condensation Gate
 
-Status: pending.
+Status: complete on 2026-06-27.
 
 Goal: require every scenario report to decide whether findings stay as report
 evidence or condense into AGENTS, skill, guard, eval, memory/source candidate,
 hook candidate, or bounded repair.
 
+Evidence:
+
+- `docs/architecture/controlled-scenario-factory.md`;
+- `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+
 ### V04-04 — Skill-First KRN
 
-Status: pending.
+Status: complete on 2026-06-27.
 
 Goal: create or improve at most two repo skills/stable workflow surfaces,
 starting with `target-repo-testing` and `evidence-review-loop` if evidence
 still supports them.
 
+Evidence:
+
+- `.agents/skills/target-repo-testing/SKILL.md`;
+- `docs/architecture/skill-first-krn.md`.
+
 ### V04-05 — Controlled Scenario Batch
 
-Status: pending.
+Status: in progress.
 
 Goal: plan at least six controlled scenarios and execute at least four unless
 blocked.
@@ -129,10 +157,15 @@ Required coverage:
 
 ### V04-06 — Guard/Eval From Real Evidence
 
-Status: pending.
+Status: complete on 2026-06-27.
 
 Goal: add or expand at least one deterministic guard/golden/eval case from V04
 scenario evidence.
+
+Evidence:
+
+- `packages/cli/src/targetRepoTestingSkill.test.ts`;
+- `pnpm --filter @krn/cli test -- targetRepoTestingSkill`.
 
 ### V04-07 — Internal Brain Usefulness Re-Gate
 

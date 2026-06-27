@@ -1,0 +1,4 @@
+interface:
+  display_name: "Target Repo Testing"
+  short_description: "Run KRN target-repo trials without corrupting living checkouts."
+  default_prompt: "Use $target-repo-testing to classify target repo testing mode, dirty state, allowed writes, evidence, and stop conditions before running target commands."

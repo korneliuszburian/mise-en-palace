@@ -786,19 +786,30 @@ Update this section during execution. Initial checklist:
   Evidence: `git status --short --branch`, `git log --oneline -5`,
   `sed -n '1,180p' GOAL.md`, required `rg` searches, and dirty governance diff
   inspection on 2026-06-27.
-- [ ] M1 dirty governance work closed or rejected.
-  Status: pending commit/push/CI for the reconciled target-testing runbook,
-  second-operator runbook pointer, corrected headless target report, compact
-  root `PLAN.md`, compact `GOAL.md`, and this V04 ExecPlan relocation.
+- [x] M1 dirty governance work closed or rejected.
+  Evidence: commit `9849754 docs(plan): authorize v04 internal brain utility`
+  pushed to `origin/main`; GitHub Actions run `28273097780` passed KRN CI,
+  including typecheck, tests, Promptfoo smoke, diff check, DB ready, Drizzle
+  check, and DB smoke.
 - [x] M2 V04 authorized in PLAN/GOAL.
   Evidence: root `PLAN.md` now names V04 as active and points to
   `docs/plans/v04-internal-brain-utility/PLANS.md`; `GOAL.md` points to the
   same ExecPlan and keeps V02-01 blocked/deferred.
-- [ ] M3 first concrete product friction repaired or invalidated.
-- [ ] M4 Controlled Scenario Factory contract added.
-- [ ] M5 Knowledge Condensation Gate added.
-- [ ] M6 first one/two repo skills created or improved.
-- [ ] M7 deterministic guard expanded from real failure.
+- [x] M3 first concrete product friction repaired or invalidated.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+  Outcome: generic `db:smoke` fresh DB idempotency repair candidate rejected
+  for now because current CI, local DB, and scratch DB checks passed.
+- [x] M4 Controlled Scenario Factory contract added.
+  Evidence: `docs/architecture/controlled-scenario-factory.md`.
+- [x] M5 Knowledge Condensation Gate added.
+  Evidence: `docs/architecture/controlled-scenario-factory.md` and
+  `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+- [x] M6 first one/two repo skills created or improved.
+  Evidence: `.agents/skills/target-repo-testing/SKILL.md` and
+  `docs/architecture/skill-first-krn.md`.
+- [x] M7 deterministic guard expanded from real failure.
+  Evidence: `packages/cli/src/targetRepoTestingSkill.test.ts` and focused
+  `pnpm --filter @krn/cli test -- targetRepoTestingSkill` pass.
 - [ ] M8 first controlled scenario executed with condensation decision.
 - [ ] M9 second scenario executed or honestly deferred.
 - [ ] M10 accepted condensations implemented.
@@ -844,6 +855,29 @@ Append observations here as they occur.
   Impact: V04 must not normalize, commit, or revert that target state. Target
   dirty files are external context unless a later target-repair slice explicitly
   authorizes target writes.
+
+- Observation: Generic `pnpm db:smoke` fresh DB idempotency did not reproduce as
+  a current failure.
+  Evidence: CI run `28273097780` passed DB ready/check/smoke; local main DB
+  `pnpm db:ready` and `pnpm db:smoke` passed; scratch DB `krn_v04_smoke`
+  passed `db:ready` and repeated `db:smoke`.
+  Impact: M3 rejects DB smoke source repair for now and preserves the historical
+  failure as a scenario report, not source churn.
+
+- Observation: Scenario reports need a mandatory condensation decision to keep
+  V04 from becoming report sprawl.
+  Evidence: `docs/architecture/controlled-scenario-factory.md` defines required
+  report fields and `## Condensation Decision`.
+  Impact: M4/M5 are complete as a minimal scenario/condensation operating
+  contract.
+
+- Observation: `target-repo-testing` is the first V04 skill-worthy workflow
+  because the `wilq-seo` trial exposed a high-risk mode confusion: observation
+  proof drifted into target repair.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-headless-wilq-seo-target-trial/REPORT.md`
+  and `docs/runbooks/target-repo-testing.md`.
+  Impact: M6 created a repo skill and M7 added a deterministic CLI-package test
+  that protects the skill's target write boundary.
 
 Template:
 
@@ -900,6 +934,29 @@ Initial decisions:
   Evidence: `GOAL.md` Continuation After Compact and this plan's
   Continuation / Auto-Compact Recovery Rule.
 
+- Decision: Do not modify DB migration/smoke code for the historical fresh-volume
+  enum re-create failure without a current reproducer.
+  Rationale: V04 scratch DB replay and CI both show current generic DB smoke
+  passes; source changes would be speculative.
+  Alternatives considered: make migration readiness skip migrator when
+  migrations are already applied; rewrite enum migrations to `IF NOT EXISTS`;
+  broaden DB smoke cleanup.
+  Consequence: M3 is closed as a rejected repair candidate; future failures must
+  include exact command output before source changes.
+  Evidence: `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+
+- Decision: Condense the target repo write-boundary finding into a repo skill
+  plus deterministic text guard.
+  Rationale: target repo mode confusion is high-risk and repeated guidance in
+  `AGENTS.md` would bloat startup context.
+  Alternatives considered: keep only the runbook; add a hook; build target-aware
+  CLI enforcement immediately.
+  Consequence: future target trials can trigger `$target-repo-testing`; hook/CLI
+  enforcement remains candidate-only until more scenarios prove the need.
+  Evidence: `.agents/skills/target-repo-testing/SKILL.md`,
+  `docs/architecture/skill-first-krn.md`, and
+  `packages/cli/src/targetRepoTestingSkill.test.ts`.
+
 Append future decisions with this template:
 
 ```txt
@@ -932,11 +989,57 @@ Record commands, reports, commits, and CI here.
     `docs/runbooks/target-repo-testing.md`,
     `docs/runbooks/second-operator-alpha-trial.md`, and
     `docs/reviews/controlled-dogfood/2026-06-27-headless-wilq-seo-target-trial/REPORT.md`.
-  Result: pending commit/push/CI.
-  Proves: current diff reconciles the plan topology and target-testing boundary
-    in working tree.
-  Does not prove: remote persistence or CI until this slice is committed,
-    pushed, and checked.
+  Result: pass; committed as `9849754 docs(plan): authorize v04 internal brain
+    utility`, pushed to `origin/main`, CI run `28273097780` passed.
+  Proves: V04-00/M1 governance reconciliation is persisted remotely and did not
+    break KRN CI, including DB smoke.
+  Does not prove: V04 completion, product readiness, or the next product repair.
+
+- Evidence ID: E-20260627-03
+  Milestone: M1
+  Command/report/commit: `gh run watch 28273097780 --exit-status`.
+  Result: pass.
+  Proves: pushed commit `9849754` passed typecheck, tests, Promptfoo smoke, diff
+    check, DB ready, Drizzle check, and DB smoke in CI.
+  Does not prove: local DB truth for the current shell or `db:smoke`
+    idempotency under fresh-volume edge cases beyond CI's configured flow.
+
+- Evidence ID: E-20260627-04
+  Milestone: M3
+  Command/report/commit: local main DB `pnpm db:ready`; local main DB
+    `pnpm db:smoke`; scratch DB `krn_v04_smoke` create, `db:ready`, repeated
+    `db:smoke`, and drop.
+  Result: pass.
+  Proves: current generic DB smoke passes locally and is repeatable after fresh
+    scratch DB migration.
+  Does not prove: every named DB smoke target or future Docker volume recreation.
+
+- Evidence ID: E-20260627-05
+  Milestone: M4/M5
+  Command/report/commit: `docs/architecture/controlled-scenario-factory.md` and
+    `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
+  Result: pass in working tree, pending commit/CI.
+  Proves: V04 now has a minimal scenario contract and mandatory condensation
+    decision format.
+  Does not prove: scenario factory adoption by future reports until used again.
+
+- Evidence ID: E-20260627-06
+  Milestone: M6
+  Command/report/commit: `.agents/skills/target-repo-testing/SKILL.md`,
+    `.agents/skills/target-repo-testing/agents/openai.yaml`, and
+    `docs/architecture/skill-first-krn.md`.
+  Result: pass in working tree, pending commit/CI.
+  Proves: V04 has one repo skill that condenses the high-risk target write
+    boundary workflow.
+  Does not prove: future target scenarios will invoke the skill correctly.
+
+- Evidence ID: E-20260627-07
+  Milestone: M7
+  Command/report/commit: `pnpm --filter @krn/cli test -- targetRepoTestingSkill`.
+  Result: pass.
+  Proves: deterministic test coverage protects the target-repo-testing skill
+    name, metadata, observation-only default, and forbidden target writes.
+  Does not prove: target-aware CLI enforcement or arbitrary target repo safety.
 
 Template:
 
@@ -969,20 +1072,26 @@ Initial candidate placeholders to verify from repo evidence:
 
 - Finding: DB smoke idempotency/remediation after fresh Docker volume recovery may be weak.
   Source scenario/report: verify from recent target/headless report.
-  Frequency: Unknown until inspected.
+  Frequency: historical one-off; current V04 scenario did not reproduce.
   Candidate target: product repair + guard.
-  Decision: deferred until M0/M3 inspection.
+  Decision: rejected for source repair now.
+  Reason: current CI, local main DB, and fresh scratch DB replay all pass
+  generic `db:smoke`; source changes would be speculative without exact current
+  failure output.
+  Implemented in: `docs/reviews/controlled-dogfood/2026-06-27-db-smoke-fresh-db-idempotency/REPORT.md`.
 
 - Finding: Target repo testing needs strict write/dirty-state handling.
   Source scenario/report: verify from `target-repo-testing.md` and headless target report.
   Frequency: high-risk after the `wilq-seo` headless trial overstepped target
   write scope.
-  Candidate target: runbook now; skill candidate for M6; possible guard later if
-  a deterministic boundary emerges.
-  Decision: accepted for runbook, deferred for skill/guard.
+  Candidate target: runbook + skill + deterministic guard.
+  Decision: accepted and implemented.
   Reason: target repo writes can damage a living checkout; the first durable
-  surface is a clear runbook mode split before automation.
-  Implemented in: `docs/runbooks/target-repo-testing.md`.
+  surfaces are a clear runbook mode split, repo skill, and text guard before
+  automation.
+  Implemented in: `docs/runbooks/target-repo-testing.md`;
+  `.agents/skills/target-repo-testing/SKILL.md`;
+  `packages/cli/src/targetRepoTestingSkill.test.ts`.
 
 - Finding: Evidence/review loop needs compact repeated workflow.
   Source scenario/report: prior V02/V03 reports.
