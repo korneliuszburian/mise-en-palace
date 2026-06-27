@@ -77,9 +77,9 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V205 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, and source-map iterative repair guard slices: complete
-active stream: V206 Post Source Map Repair Re-Gate
-current task: V206-00 Post Source Map Repair Re-Gate
+V48..V206 continuous pattern, CI/eval, target, compactness, handoff, active-contract, brain-battle smoke coverage, pattern-gate, task-contract, final-response, TypeScript boundary, source trust metadata, pattern-intake output, source location scheme, source-to-decision skill, current-smoke description, Promptfoo adapter boundary, source classification, latest-outcome source-to-decision, source-to-decision skill output, source-class vocabulary, verification TMPDIR guard, TypeScript boundary re-scan, stale attachment objective guard, compact stale-objective contract guard, progress stale-active guard, root PLAN pattern-gate guard, brain-battle smoke description guard, compact pattern-gate contract guard, continuation, kernel, controlled-scenario, target-infra-ADR, source-map, accepted-ADR, ADR line-wrap, kernel short-chain, active pattern-chain, smoke coverage, infra skill metadata, source-to-decision skill metadata, evidence review skill provenance, Codex adapter skill metadata, activation skill owner-file metadata, brain store skill metadata, target repo skill metadata, TypeScript skill guard, onboarding current-state re-gate, onboarding repair guard, state-of-the-art re-gate, state doctrine repair guard, kernel current-boundary re-gate, kernel boundary repair guard, README current-state re-gate, README current-state guard, TypeScript standard current-state re-gate, TypeScript boundary standard guard, source-map iterative repair re-gate, source-map iterative repair guard, and post-source-map re-gate slices: complete
+active stream: V207 Best-Pattern Intake Applied Proof
+current task: V207-00 Best-Pattern Intake Applied Proof
 ```
 
 Evidence already recorded in repo:
@@ -95,7 +95,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V206-00 Post Source Map Repair Re-Gate.
+V207-00 Best-Pattern Intake Applied Proof.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -17002,6 +17002,82 @@ Next active stream:
 
 Next active task:
 - V206-00 Post Source Map Repair Re-Gate.
+
+## Outcome 2026-06-28 V206 Post Source Map Repair Re-Gate
+
+Completed task:
+- V206-00 Post Source Map Repair Re-Gate.
+
+Decision:
+- Do not broaden the source-map repair into a broad source/docs sweep,
+  Research Foundry, source crawler, dashboard, product-readiness claim, or
+  decorative research backlog.
+- Select a bounded best-pattern intake applied proof because the active pattern
+  surfaces already guard the source-to-decision chain, but the next product
+  question is whether a concrete source/pattern can drive exactly one durable
+  consumer or an explicit rejection.
+
+Evidence:
+- Active stale-surface scan found remaining bootstrap/audit/context-packet terms
+  only in regression guards, removed-command documentation, or historical
+  failure reporting.
+- `docs/runbooks/pattern-intake.md`, `.agents/skills/source-to-decision/SKILL.md`,
+  `docs/KRN_SOURCES.md`, and active-plan invariants already require source
+  class, decision kind, consumer, falsifier, non-proof boundary, legal/course
+  boundaries, and reviewable candidate output.
+- TypeScript practitioner sources are already retained as public mechanism
+  summaries, not copied course material.
+
+Source-to-decision:
+- Source: `docs/runbooks/pattern-intake.md`,
+  `.agents/skills/source-to-decision/SKILL.md`, `docs/KRN_SOURCES.md`, and
+  active pattern-chain invariants.
+- Mechanism: best external or local patterns become useful only when reduced to
+  a mechanism, KRN implication, decision/rejection, consumer, falsifier, and
+  proof/non-proof boundary.
+- KRN implication: the next slice should prove applied pattern condensation,
+  not build a research archive or crawler.
+- Decision: run one bounded best-pattern intake applied proof and accept,
+  reject, lab-test, or defer exactly one source/pattern against one local
+  consumer.
+- Does not prove: product readiness, that every future source is high quality,
+  or that course/paper material should be copied into KRN.
+- Consumer: root `PLAN.md`, root `GOAL.md`, and the next V207 task contract.
+- Falsifier: the next task retains decorative research, adopts a pattern without
+  a consumer/falsifier, or creates a broad research backlog.
+
+New task:
+- V207-00 Best-Pattern Intake Applied Proof.
+
+Task contract:
+- Pick one concrete existing retained source, public pattern, paper, course
+  page, repo-local report, or target-run finding.
+- Map it through `source -> mechanism -> KRN implication -> decision/rejection
+  -> consumer -> falsifier`.
+- Choose exactly one consumer: standard, skill, ADR, eval/golden candidate,
+  memory/source candidate, CLI/readback behavior, or bounded repair.
+- If no consumer or falsifier exists, explicitly reject/defer the source and do
+  not retain extra context.
+- Do not build Research Foundry, source crawler, broad eval lane, dashboard,
+  MCP/API/worker runtime, anti-slop scanner, or hidden semantic hook.
+
+Verification:
+- For docs/plan-only output: `git diff --check`.
+- If a guard/eval/source change is made: run focused tests plus
+  `pnpm typecheck`, `pnpm test`, and `git diff --check` with `TMPDIR` outside
+  the repo if Vitest needs it.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V207 Best-Pattern Intake Applied Proof.
+
+Next active task:
+- V207-00 Best-Pattern Intake Applied Proof.
 
 ## 21. Final Response Format For Codex Runs
 

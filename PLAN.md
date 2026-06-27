@@ -5,11 +5,7 @@ Status: active compact root plan. Date: 2026-06-27.
 Repository: `/home/krn/coding/krn/active/mise-en-palace`.
 
 Root `PLAN.md` is the compact product single source of truth. Detailed
-continuous execution lives in:
-
-```txt
-PLANS.md
-```
+continuous execution lives in `PLANS.md`.
 
 Do not create another parallel roadmap.
 
@@ -20,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V206 Post Source Map Repair Re-Gate
-current task: V206-00 Post Source Map Repair Re-Gate
+active stream: V207 Best-Pattern Intake Applied Proof
+current task: V207-00 Best-Pattern Intake Applied Proof
 ```
 
 ## Compact Completed Checkpoints
@@ -39,7 +35,7 @@ V85..V92: authority ID branding for anti-memory, evidence spine,
           source decisions, and eval/policy surfaces complete.
 V93..V99: brain-battle matrix guard, context hygiene guard,
           active plan completion guard, and full source-map mapping guard complete.
-V100..V205: active-surface compactness, handoff, PLANS freshness,
+V100..V206: active-surface compactness, handoff, PLANS freshness,
            source-to-decision, TypeScript, source trust/classification,
            verification TMPDIR, stale-objective, progress stale-active,
            root/smoke/compact/continuation/kernel/scenario/infra/source-map/ADR
@@ -49,38 +45,41 @@ V100..V205: active-surface compactness, handoff, PLANS freshness,
 
 ## Active Stream
 
-### V206 Post Source Map Repair Re-Gate
+### V207 Best-Pattern Intake Applied Proof
 
 Goal:
 
-Decide the next bounded task after repairing iterative repair source-map entry.
+Prove that best-pattern intake can drive one bounded KRN decision or repair
+without source hoarding.
 
 Current finding:
 
 ```txt
-V205 updated docs/KRN_SOURCES.md so the Iterative Repair Loops entry maps to
-current evidence/review/feedback surfaces and PLANS next-task synthesis.
+V206 found active pattern surfaces already guard the source-to-decision chain,
+but the next proof should apply the gate to one concrete pattern source or local
+evidence gap and produce a consumer, falsifier, and next action.
 ```
 
 Current action:
 
 ```txt
-Execute V206-00: select the next bounded evidence-backed task. Do not broaden
-source-map repair into source-map rewrite, Research Foundry, source crawler,
-dashboard, product-readiness claim, or docs sweep.
+Execute V207-00: select one existing retained source, public pattern, paper,
+course page, or local report and map it to exactly one durable consumer:
+standard, skill, ADR, eval/golden candidate, memory/source candidate, CLI
+behavior, or bounded repair. Reject/defer if no consumer exists.
 ```
 
 Primary consumer:
 
 ```txt
-One next-task/defer decision.
+One reviewable source-to-decision output with a local falsifier.
 ```
 
 Falsifier:
 
 ```txt
-The re-gate turns one source-map repair into broad source/docs churn without a
-concrete consumer and falsifier.
+The task retains decorative research, creates a crawler/archive/backlog, or
+adopts a pattern without a consumer, falsifier, and proof/non-proof boundary.
 ```
 
 ## Pattern Gate
