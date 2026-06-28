@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V295 Source-To-Decision Retention Gate Usefulness Feedback
-current task: V295-00 Source-To-Decision Retention Gate Usefulness Feedback
-latest pushed commit before V294: 6d2f756 docs(review): triage missing pattern feedback
-latest CI checked before V294: KRN CI success for 6d2f7563ef698444ead3e0c96a82e007343a3d90
+active stream: V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+current task: V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+latest pushed commit before V295: c34dad6 docs(knowledge): mark skill routing pattern useful
+latest CI checked before V295: KRN CI success for c34dad68eebd463ebfbb6c3e9dc42d46599ca99f
 ```
 
 Known current gap:
 
 ```txt
-V295-00 Source-To-Decision Retention Gate Usefulness Feedback is the current
-gap. V294 marked skill routing as helped and reduced no-feedback cards from 8
-to 7. The next highest-ROI no-feedback card is source-to-decision retention,
-which governs research/paper/course condensation.
+V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback is the current
+gap. V295 marked source-to-decision retention as helped and reduced no-feedback
+cards from 7 to 6. The next highest-ROI no-feedback card is evidence
+proof/non-proof boundary.
 ```
 
 ## 2. Product Thesis
@@ -2671,6 +2671,32 @@ Source-to-decision:
 - Consumer: V295 research/pattern condensation usefulness proof.
 - Falsifier: source-to-decision retention cannot be tied to a recent slice where
   it prevented source hoarding, vague pattern intake, or ungrounded decisions.
+
+## Outcome V295-00 Source-To-Decision Retention Gate Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v295-source-to-decision-retention-gate.json`;
+- attached `helped` feedback to
+  `pattern:source-to-decision-retention-gate`;
+- confirmed `--usefulness-outcome helped` returns 5 cards;
+- confirmed `--usefulness-outcome none` decreased from 7 to 6 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v295-source-to-decision-retention-gate-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V257 pattern intake trial and V265 card producer.
+- Mechanism: source-to-decision prevented repeated repair evidence from staying
+  as narrative reports and turned it into a retained, typed, falsifiable pattern.
+- KRN implication: research and best-practice intake should continue through
+  this gate before becoming brain knowledge.
+- Decision: open V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback.
+- Does not prove: source-to-decision alone enforces quality without evidence
+  proof boundaries.
+- Consumer: V296 usefulness feedback for
+  `pattern:evidence-proof-non-proof-boundary`.
+- Falsifier: evidence proof/non-proof cannot be tied to a recent slice where it
+  prevented overclaiming or clarified what a command/report did not prove.
 
 ## Condensation Rules
 

@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V295 Source-To-Decision Retention Gate Usefulness Feedback
+V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
 ```
 
 Current product loop:
@@ -48,10 +48,11 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V294: target repair, pattern intake/enforcement, skill pack, knowledge
-cards, usefulness feedback, no-feedback filtering, triage, and skill feedback
+V245..V295: target repair, pattern intake/enforcement, skill pack, knowledge
+cards, usefulness feedback, no-feedback filtering, triage, skill feedback, and
+source-to-decision feedback
 complete.
-current task: V295-00 Source-To-Decision Retention Gate Usefulness Feedback.
+current task: V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

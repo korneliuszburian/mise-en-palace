@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V295 Source-To-Decision Retention Gate Usefulness Feedback
-current task: V295-00 Source-To-Decision Retention Gate Usefulness Feedback
+active stream: V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+current task: V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V295 Source-To-Decision Retention Gate Usefulness Feedback
+### V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
 
 Goal:
 
-Add explicit usefulness feedback for the source-to-decision retention gate if
-recent evidence shows it materially helped research/pattern condensation.
+Add explicit usefulness feedback for the evidence proof/non-proof boundary if
+recent evidence shows it prevented overclaiming or clarified proof limits.
 
 Current finding:
 
 ```txt
-V294 marked skill routing as helped and reduced no-feedback cards from 8 to 7.
-The next highest-ROI no-feedback pattern is source-to-decision retention,
-because it governs research, papers, courses, and best-pattern intake.
+V295 marked source-to-decision retention as helped and reduced no-feedback cards
+from 7 to 6. The next highest-ROI no-feedback pattern is evidence proof/non-proof
+boundary because the brain must not turn commands, reports, or retained patterns
+into false certainty.
 ```
 
 Current action:
 
 ```txt
-Execute V295-00: inspect recent source/pattern intake evidence and add
-usefulness feedback for `pattern:source-to-decision-retention-gate` only if it
-can be tied to a real helped/neutral/noise/stale outcome. Do not add new source
+Execute V296-00: inspect recent evidence/reporting slices and add usefulness
+feedback for `pattern:evidence-proof-non-proof-boundary` only if it can be tied
+to a real helped/neutral/noise/stale outcome. Do not add implementation, source
 intake, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge research-condensation usefulness gate.
+brain knowledge evidence-boundary usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-Source-to-decision usefulness cannot be supported by evidence, or feedback is
-added without proof boundaries and does-not-prove.
+Evidence proof/non-proof usefulness cannot be supported by evidence, or feedback
+is added without proof boundaries and does-not-prove.
 ```
 
 ## Pattern Gate
