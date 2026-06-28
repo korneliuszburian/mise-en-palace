@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V304 Pattern-Gated Source Slice Trial
-current task: V304-00 Pattern-Gated Source Slice Trial
+active stream: V305 Knowledge Cards No-Match Guidance
+current task: V305-00 Knowledge Cards No-Match Guidance
 latest pushed commit before V301: 5279e37 docs(knowledge): mark target write authority useful
 latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db60216cf8a0a3d
 ```
@@ -32,9 +32,10 @@ latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db602
 Known current gap:
 
 ```txt
-V304-00 Pattern-Gated Source Slice Trial is the current gap. V303 added the
-Pattern Application Gate to the runbook and invariants. The next proof is using
-that gate on one real bounded source slice.
+V305-00 Knowledge Cards No-Match Guidance is the current gap. V304 proved the
+Pattern Application Gate on a bounded source slice and added `--limit` to
+`krn knowledge cards`; the next gap is useful zero-result guidance for pattern
+queries.
 ```
 
 ## 2. Product Thesis
@@ -2910,6 +2911,34 @@ Source-to-decision:
 - Consumer: V304 source-slice dogfood.
 - Falsifier: V304 completes without selected/rejected pattern application
   evidence or selected patterns do not affect implementation/review decisions.
+
+## Outcome V304-00 Pattern-Gated Source Slice Trial
+
+Summary:
+- used the Pattern Application Gate on a real bounded TypeScript source slice;
+- added `--limit <positive-integer>` to `krn knowledge cards`;
+- preserved read-only behavior and explicit `totalCards`, `returnedCards`, and
+  `limit` output so bounded readback cannot masquerade as complete recall;
+- added parser/runtime tests for valid limits, invalid limits, JSON output, and
+  text output.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v304-pattern-gated-source-slice-trial/REPORT.md`.
+
+Source-to-decision:
+- Source: V303 Pattern Application Gate, retained helped-pattern readback,
+  TypeScript boundary skill, and V304 command evidence.
+- Mechanism: pattern selection before coding is only usable when readback can be
+  bounded without hiding proof/non-proof boundaries.
+- KRN implication: `krn knowledge cards` should support small pre-coding pattern
+  packets while preserving total result count and mutation boundaries.
+- Decision: keep the repair in read-only CLI output and open V305 no-match
+  guidance before considering semantic ranking or UI/API/MCP.
+- Does not prove: semantic ranking quality, DB-backed search, product UI,
+  automatic pattern selection, or product readiness.
+- Consumer: V305 pattern query operator UX.
+- Falsifier: zero-result pattern queries still leave operators without bounded
+  next steps, or limited output hides total result count.
 
 ## Condensation Rules
 

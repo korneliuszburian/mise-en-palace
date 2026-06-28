@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V304 Pattern-Gated Source Slice Trial
-current task: V304-00 Pattern-Gated Source Slice Trial
+active stream: V305 Knowledge Cards No-Match Guidance
+current task: V305-00 Knowledge Cards No-Match Guidance
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,43 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V304 Pattern-Gated Source Slice Trial
+### V305 Knowledge Cards No-Match Guidance
 
 Goal:
 
-Use the new Pattern Application Gate on one real bounded source slice and record
-whether selected helped patterns changed implementation or review decisions.
+Make zero-result `krn knowledge cards` output useful for Pattern Application
+Gate operators without adding semantic ranking, UI, API, MCP, or mutation.
 
 Current finding:
 
 ```txt
-V303 added the Pattern Application Gate to the pattern-intake runbook and
-guarded it with active-plan invariants. The next proof is a real source slice
-that uses the gate before coding and classifies patterns after verification.
+V304 used the Pattern Application Gate on a bounded source slice and added
+`--limit` to `krn knowledge cards`. The first pre-coding query was too narrow
+and returned zero cards; useful patterns appeared only after broader follow-up
+queries.
 ```
 
 Current action:
 
 ```txt
-Execute V304-00: select a small source slice, query helped patterns before
-coding, implement only the bounded change, verify, and report pattern
-application outcomes. Do not add semantic ranking, API/MCP/dashboard, source
-crawler, target writes, or Memory Core mutation.
+Execute V305-00: add clear no-match guidance when `krn knowledge cards` returns
+zero cards, keeping the command read-only and proof-bounded. The guidance should
+help operators broaden filters or record an explicit rejection before coding.
+Do not add semantic ranking, API/MCP/dashboard, source crawler, target writes,
+or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-pattern application gate dogfood for a source slice.
+pattern application gate operator UX.
 ```
 
 Falsifier:
 
 ```txt
-The source slice can complete without selected/rejected pattern application
-evidence, or selected patterns do not affect implementation/review decisions.
+Zero-result pattern queries still leave operators without bounded next steps, or
+the command suggests stronger search/ranking guarantees than it actually has.
 ```
 
 ## Pattern Gate

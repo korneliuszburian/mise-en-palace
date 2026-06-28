@@ -28,6 +28,7 @@ export interface KnowledgeCardsCommandRuntime {
   catalogFiles: readonly string[];
   filter: BrainKnowledgeSearchFilter;
   format: KnowledgeCardsOutputFormat;
+  limit?: number;
 }
 
 export interface KnowledgeCardsCommandResult {
@@ -44,6 +45,9 @@ export interface KnowledgeCardsPreviewResource {
   patternFiles: string[];
   usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
+  totalCards: number;
+  returnedCards: number;
+  limit?: number;
   cards: BrainKnowledgeReadModel[];
   proof: {
     proves: string[];
@@ -123,6 +127,10 @@ export const runKnowledgeCardsCommand = async (
   }
 
   const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(loadedCards, loadedFeedback);
+  const matchingCards = searchBrainKnowledgeCards(cardsWithFeedback, runtime.filter);
+  const cards = runtime.limit === undefined
+    ? matchingCards
+    : matchingCards.slice(0, runtime.limit);
 
   const resource: KnowledgeCardsPreviewResource = {
     kind: "krn.brainKnowledge.cards.preview.v1",
@@ -134,7 +142,10 @@ export const runKnowledgeCardsCommand = async (
     patternFiles: resolvedPatternFiles,
     usefulnessFeedbackFiles: resolvedUsefulnessFeedbackFiles,
     catalogFiles: resolvedCatalogFiles,
-    cards: searchBrainKnowledgeCards(cardsWithFeedback, runtime.filter),
+    totalCards: matchingCards.length,
+    returnedCards: cards.length,
+    ...(runtime.limit === undefined ? {} : { limit: runtime.limit }),
+    cards,
     proof: {
       proves: [...proof.proves],
       doesNotProve: [...proof.doesNotProve]
@@ -172,6 +183,10 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
     `Pattern files: ${formatList(resource.patternFiles)}`,
     `Usefulness feedback files: ${formatList(resource.usefulnessFeedbackFiles)}`,
     `Results: ${resource.cards.length}`,
+    `Total filtered results: ${resource.totalCards}`,
+    ...(resource.limit === undefined ? [] : [
+      `Limit: ${resource.limit}`
+    ]),
     "",
     ...resource.cards.flatMap(formatCard),
     "Proof:",

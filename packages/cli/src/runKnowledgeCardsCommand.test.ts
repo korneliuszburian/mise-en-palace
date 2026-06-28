@@ -476,6 +476,47 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(noisePreview)).toEqual([]);
   });
 
+  it("limits filtered catalog readback without hiding total result count", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "helped"
+      },
+      format: "json",
+      limit: 2
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(preview.totalCards).toBe(11);
+    expect(preview.returnedCards).toBe(2);
+    expect(preview.limit).toBe(2);
+    expect(preview.cards).toHaveLength(2);
+    expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(preview.mutation).toBe("none");
+  });
+
+  it("renders text preview limit with total filtered result boundary", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "helped"
+      },
+      format: "text",
+      limit: 1
+    });
+
+    expect(result.stdout).toContain("Results: 1");
+    expect(result.stdout).toContain("Total filtered results: 11");
+    expect(result.stdout).toContain("Limit: 1");
+    expect(result.stdout).toContain("does not prove: search ranking quality is good");
+  });
+
   it("filters retained pattern cards with no usefulness feedback", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -589,6 +630,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 type PreviewResourceForTest = {
   access: "read_only";
   mutation: "none";
+  totalCards?: number;
+  returnedCards?: number;
+  limit?: number;
   cards: {
     id: string;
   }[];
@@ -606,11 +650,32 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
 
   const access = parsed["access"];
   const mutation = parsed["mutation"];
+  const totalCards = parsed["totalCards"];
+  const returnedCards = parsed["returnedCards"];
+  const limit = parsed["limit"];
   const cards = parsed["cards"];
   const proof = parsed["proof"];
 
   if (access !== "read_only" || mutation !== "none" || !Array.isArray(cards) || !isRecord(proof)) {
     throw new Error("knowledge cards JSON output does not match preview resource shape");
+  }
+
+  if (
+    totalCards !== undefined &&
+    (typeof totalCards !== "number" || !Number.isSafeInteger(totalCards))
+  ) {
+    throw new Error("knowledge cards JSON output totalCards must be an integer when present");
+  }
+
+  if (
+    returnedCards !== undefined &&
+    (typeof returnedCards !== "number" || !Number.isSafeInteger(returnedCards))
+  ) {
+    throw new Error("knowledge cards JSON output returnedCards must be an integer when present");
+  }
+
+  if (limit !== undefined && (typeof limit !== "number" || !Number.isSafeInteger(limit))) {
+    throw new Error("knowledge cards JSON output limit must be an integer when present");
   }
 
   const doesNotProve = proof["doesNotProve"];
@@ -622,6 +687,9 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
   return {
     access,
     mutation,
+    ...(totalCards === undefined ? {} : { totalCards }),
+    ...(returnedCards === undefined ? {} : { returnedCards }),
+    ...(limit === undefined ? {} : { limit }),
     cards: cards.map((card) => {
       if (!isRecord(card) || typeof card["id"] !== "string") {
         throw new Error("knowledge cards JSON output cards must include ids");

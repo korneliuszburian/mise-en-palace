@@ -374,7 +374,8 @@ export const runCli = async (
         patternFiles: parsed.command.patternFiles,
         catalogFiles: parsed.command.catalogFiles,
         filter: parsed.command.filter,
-        format: parsed.command.format
+        format: parsed.command.format,
+        ...(parsed.command.limit === undefined ? {} : { limit: parsed.command.limit })
       });
 
       return {

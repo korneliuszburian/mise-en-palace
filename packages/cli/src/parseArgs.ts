@@ -131,6 +131,7 @@ export type CliCommand =
       catalogFiles: readonly string[];
       filter: BrainKnowledgeSearchFilter;
       format: "text" | "json" | "html";
+      limit?: number;
     }
   | {
       kind: "observeRun";

@@ -12,7 +12,7 @@ import type {
 } from "./parseArgs.js";
 
 const knowledgeUsage = [
-  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--json|--html]",
+  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn knowledge cards --card-file docs-or-fixture-card.json [--text unknown-first]",
@@ -79,6 +79,33 @@ const requiredOption = (
 ): { ok: true; value: string } | { ok: false; error: string } =>
   value === undefined ? { ok: false, error: usage } : { ok: true, value };
 
+const parsePositiveInteger = (
+  value: string
+): { ok: true; value: number } | { ok: false; error: string } => {
+  const trimmed = value.trim();
+
+  if (!/^[1-9]\d*$/u.test(trimmed)) {
+    return {
+      ok: false,
+      error: `Unsupported knowledge cards limit: ${value}`
+    };
+  }
+
+  const parsed = Number(trimmed);
+
+  if (!Number.isSafeInteger(parsed)) {
+    return {
+      ok: false,
+      error: `Unsupported knowledge cards limit: ${value}`
+    };
+  }
+
+  return {
+    ok: true,
+    value: parsed
+  };
+};
+
 export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => {
   const [action, ...args] = rest;
 
@@ -105,6 +132,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   let usefulnessOutcome: BrainKnowledgeUsefulnessOutcomeFilter | undefined;
   let text: string | undefined;
   let format: "text" | "json" | "html" = "text";
+  let limit: number | undefined;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -309,6 +337,36 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
       continue;
     }
 
+    if (arg === "--limit") {
+      const valueResult = optionValue(args, index, "--limit");
+
+      if (valueResult.error !== undefined) {
+        return {
+          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
+        };
+      }
+
+      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
+
+      if (!required.ok) {
+        return {
+          error: required.error
+        };
+      }
+
+      const parsedLimit = parsePositiveInteger(required.value);
+
+      if (!parsedLimit.ok) {
+        return {
+          error: `${parsedLimit.error}\n${formatKnowledgeUsage()}`
+        };
+      }
+
+      limit = parsedLimit.value;
+      index += 1;
+      continue;
+    }
+
     if (arg === "--json") {
       format = "json";
       continue;
@@ -348,7 +406,8 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
         ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
         ...(text === undefined || text.length === 0 ? {} : { text })
       },
-      format
+      format,
+      ...(limit === undefined ? {} : { limit })
     }
   };
 };

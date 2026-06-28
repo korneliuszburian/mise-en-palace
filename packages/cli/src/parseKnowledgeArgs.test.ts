@@ -58,6 +58,31 @@ describe("parseKnowledgeArgs", () => {
     });
   });
 
+  it("parses a positive result limit", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--catalog-file",
+      "docs/brain-knowledge/catalog.json",
+      "--usefulness-outcome",
+      "helped",
+      "--limit",
+      "3",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "knowledgeCards",
+        cardFiles: [],
+        patternFiles: [],
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        filter: {
+          usefulnessOutcome: "helped"
+        },
+        format: "json",
+        limit: 3
+      }
+    });
+  });
+
   it("parses missing usefulness feedback filter", () => {
     expect(parseKnowledgeArgs([
       "cards",
@@ -170,5 +195,19 @@ describe("parseKnowledgeArgs", () => {
     ])).toEqual({
       error: expect.stringContaining("Unsupported knowledge usefulness outcome: maybe")
     });
+  });
+
+  it("rejects invalid result limits", () => {
+    for (const limit of ["0", "-1", "1.5", "many"]) {
+      expect(parseKnowledgeArgs([
+        "cards",
+        "--card-file",
+        "card.json",
+        "--limit",
+        limit
+      ])).toEqual({
+        error: expect.stringContaining(`Unsupported knowledge cards limit: ${limit}`)
+      });
+    }
   });
 });
