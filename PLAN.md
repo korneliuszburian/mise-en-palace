@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V252 Normalized Target Trial Substrate
-current task: V252-00 Normalized Target Trial Substrate
+active stream: V253 Normalized Target Repair Trial
+current task: V253-00 Repair Weak TypeScript Boundary In Normalized Target
 ```
 
 ## Compact Completed Checkpoints
@@ -48,40 +48,39 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V252 Normalized Target Trial Substrate
+### V253 Normalized Target Repair Trial
 
 Goal:
 
-Create a KRN-owned normalized target trial substrate before using living
-`active/` repos as product evidence.
+Use the normalized target substrate to run one bounded repair trial and measure
+whether KRN applies best-pattern pressure to target code.
 
 Current finding:
 
 ```txt
-V251 inspected active target candidates and rejected a random living repo as the
-first post-activation product proof. A normalized substrate is needed so target
-trials are reproducible, resettable, and falsifiable.
+V252 created `tests/fixtures/target-repos/normalized-weak-typescript` with
+explicit owner files, weak TypeScript boundaries, rollback, and verification.
+The next proof is whether KRN can repair one weakness in that substrate.
 ```
 
 Current action:
 
 ```txt
-Execute V252-00: design and create the smallest controlled target repo/worktree
-or fixture substrate with explicit reset, owner files, allowed writes, rollback,
-verification, and best-pattern pressure.
+Execute V253-00: repair the unsafe JSON/any external input boundary in the
+normalized target fixture with focused tests, evidence, and dogfood reporting.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN/PLANS next product stream and normalized target-trial substrate.
+PLAN/PLANS next product stream and normalized target repair evidence.
 ```
 
 Falsifier:
 
 ```txt
-V252 creates benchmark theater, broad eval platform, or a target fixture that
-cannot falsify KRN workflow quality.
+V253 modifies broad unrelated target files, claims product readiness, or repairs
+the fixture without measuring whether KRN applied the intended pattern pressure.
 ```
 
 ## Pattern Gate

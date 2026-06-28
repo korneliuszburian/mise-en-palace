@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V251 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V252 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -90,10 +90,11 @@ finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
 repair plus observe-reflect sequencing guard, skill owner-file seed repair,
 activation surface re-gate after seed repairs, activation budget-priority
-guard, product-readiness re-gate, and fresh target trial gate:
+guard, product-readiness re-gate, fresh target trial gate, and normalized
+target trial substrate:
 complete
-active stream: V252 Normalized Target Trial Substrate
-current task: V252-00 Normalized Target Trial Substrate
+active stream: V253 Normalized Target Repair Trial
+current task: V253-00 Repair Weak TypeScript Boundary In Normalized Target
 ```
 
 Evidence already recorded in repo:
@@ -109,7 +110,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V252-00 Normalized Target Trial Substrate.
+V253-00 Repair Weak TypeScript Boundary In Normalized Target.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -20388,6 +20389,101 @@ Acceptance criteria:
 Risk: building a toy benchmark that looks clean but does not stress KRN.
 Rollback: remove the substrate/report and return to V251 target gate.
 
+V252 outcome:
+- V252-00 complete: created KRN-owned normalized weak TypeScript target
+  substrate.
+- Substrate:
+  `tests/fixtures/target-repos/normalized-weak-typescript/`.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v252-normalized-target-trial-substrate/REPORT.md`.
+
+V252 evidence:
+- `pnpm --dir tests/fixtures/target-repos/normalized-weak-typescript test`:
+  passed.
+- `krn init --dry-run --repo tests/fixtures/target-repos/normalized-weak-typescript`
+  with owner files: passed.
+
+V252 source-to-decision:
+- Source: V251 target gate, user correction, target-repo-testing skill, and
+  TypeScript best-pattern standards.
+- Mechanism: normalized substrates make weak patterns, expected repairs,
+  allowed writes, rollback, owner files, and evidence falsifiable before living
+  target repos are touched.
+- KRN implication: use a controlled weak target to test whether KRN applies
+  best-pattern pressure.
+- Decision: add normalized weak TypeScript fixture and open V253 repair trial.
+- Consumer: V253 target repair trial.
+- Falsifier: KRN cannot repair the weak boundary or the fixture becomes
+  decorative benchmark theater.
+- Does not prove: product readiness, real target success, or second-operator
+  usability.
+
+New task:
+- V253-00 Repair Weak TypeScript Boundary In Normalized Target.
+
+ID: V253-00
+Name: Repair Weak TypeScript Boundary In Normalized Target
+Status: active
+Goal: use KRN against the normalized target substrate to repair one weak
+external input boundary with best-pattern pressure.
+Product rationale: KRN must prove it can improve target code, not only create a
+fixture or write readiness reports.
+Architectural rationale: the substrate isolates source-to-decision,
+owner-file recall, evidence capture, and TypeScript boundary repair in a
+repeatable target.
+Evidence source:
+- V252 report;
+- `tests/fixtures/target-repos/normalized-weak-typescript/`;
+- `docs/standards/typescript-excellence.md`;
+- `docs/standards/typescript-boundaries.md`;
+- source-to-decision and target-repo-testing skills.
+Inputs required:
+- current-state preflight;
+- KRN target init/plan dry-run or persisted run if DB is available;
+- repair only `src/config.ts`, `src/userService.ts`, and
+  `tests/userService.test.ts` unless evidence proves another file is required;
+- capture target evidence and report proof/non-proof.
+Files likely touched:
+- normalized target fixture source/tests;
+- V253 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- `tests/fixtures/target-repos/normalized-weak-typescript/src/**`;
+- `tests/fixtures/target-repos/normalized-weak-typescript/tests/**`;
+- V253 report and compact plan updates.
+Forbidden writes:
+- living target repos;
+- broad fixture redesign;
+- KRN package source unless a blocker is proven separately;
+- dashboard/API/MCP/worker/source crawler/broad eval platform;
+- product-ready claim.
+Output requirements:
+- target diff summary;
+- best-pattern pressure used;
+- command evidence;
+- what tests prove/do not prove;
+- dogfood assessment of whether KRN helped.
+Definition of Done:
+- weak JSON/any boundary is repaired in the target fixture;
+- invalid-input tests exist;
+- fixture test passes;
+- KRN docs/plan invariants pass;
+- report exists;
+- commit is pushed and CI checked if triggered.
+Verification commands:
+- `pnpm --dir tests/fixtures/target-repos/normalized-weak-typescript test`;
+- `git diff --check`;
+- active plan/context hygiene invariants.
+Acceptance criteria:
+- no `any` remains in the target external input boundary;
+- `JSON.parse` output is treated as `unknown` before domain use;
+- create-user result is explicit enough for callers to distinguish invalid
+  input from success;
+- no unrelated target cleanup.
+Risk: over-engineering the tiny fixture or turning it into a toy that does not
+teach target transfer.
+Rollback: revert the V253 target fixture source/test changes.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20395,10 +20491,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V252 Normalized Target Trial Substrate.
+- V253 Normalized Target Repair Trial.
 
 Next active task:
-- V252-00 Normalized Target Trial Substrate.
+- V253-00 Repair Weak TypeScript Boundary In Normalized Target.
 
 ## 21. Final Response Format For Codex Runs
 
