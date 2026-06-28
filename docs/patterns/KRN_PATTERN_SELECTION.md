@@ -39,6 +39,7 @@ removal_condition:
 | Review / Repair / Validate Loop | dogfood loop later | Agent speed increases review burden. |
 | Evidence-Checked Continuous Goal | compact `GOAL.md` | Goal absorbs product brain. |
 | TypeScript Boundary Discipline | strict TS spine later | Type weakening makes implementation easier. |
+| Unknown-First External Boundary With Explicit Result State | `docs/patterns/typescript-boundary-patterns.md` | Target repair trusts parsed external input or hides invalid input as null/boolean. |
 | Canonical Harness Spine | `OperatorIntent` through `FeedbackDelta` | `ContextPacket` becomes central domain model again. |
 
 ## Lab Or Later

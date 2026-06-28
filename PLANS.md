@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V257 Pattern Intake Trial
-current task: V257-00 Pattern Intake Trial
+active stream: V258 Pattern Enforcement Gate
+current task: V258-00 Pattern Enforcement Gate
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,10 +32,9 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V257-00 Pattern Intake Trial is the current gap. V256 proved the replayable
-target substrate can drive a weak-baseline repair; now the repeated TypeScript
-boundary pattern must become durable brain knowledge with consumer, falsifier,
-and enforcement/eval candidate.
+V258-00 Pattern Enforcement Gate is the current gap. V257 made the repeated
+TypeScript boundary pattern durable brain knowledge; now KRN needs the smallest
+falsifiable guard/eval that fails when the replayable target violates it.
 ```
 
 ## 2. Product Thesis
@@ -154,6 +153,15 @@ green test != product value
   recorded that `krn init` surfaced target owner files while `krn plan` still
   selected unrelated context without connected target read-model context.
 
+### V257 Pattern Intake Trial
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v257-pattern-intake-trial/REPORT.md`.
+- Outcome: retained `ts-boundary-unknown-first-result-state` in
+  `docs/patterns/typescript-boundary-patterns.md` with source mechanisms,
+  consumer, falsifier, and eval candidate.
+
 ## Active Task Queue
 
 ### V255-00 Condense PLANS Active Ledger
@@ -216,7 +224,7 @@ git diff --check
 
 ### V257-00 Pattern Intake Trial
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -269,13 +277,19 @@ Expected output:
 
 ### V258-00 Pattern Enforcement Gate
 
-Status: queued.
+Status: active.
 
 Goal:
 
 ```txt
 Add the smallest falsifiable guard/eval/test that checks whether a selected
 pattern is applied in a target repair scenario.
+```
+
+Selected pattern:
+
+```txt
+ts-boundary-unknown-first-result-state
 ```
 
 Examples:
@@ -412,8 +426,9 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   archived.
 - V256-00 complete: replayed and repaired the weak TypeScript target in
   `.local-lab`.
-- V257-00 active: turn the repeated TypeScript boundary pattern into a
+- V257-00 complete: turned the repeated TypeScript boundary pattern into a
   source-to-decision object and enforcement/eval candidate.
+- V258-00 active: add the smallest falsifiable pattern enforcement gate.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -467,6 +482,31 @@ Source-to-decision:
   trials.
 - Falsifier: future target repairs cannot reproduce or verify the pattern
   without manual source archaeology.
+
+## Outcome V257-00 Pattern Intake Trial
+
+Summary:
+- added `docs/patterns/typescript-boundary-patterns.md`;
+- registered `Unknown-First External Boundary With Explicit Result State` in
+  `docs/patterns/KRN_PATTERN_SELECTION.md`;
+- selected V258 as the enforcement consumer.
+
+Source-to-decision:
+- Source: TypeScript official narrowing/exhaustiveness source, public Total
+  TypeScript pattern sources already retained in `docs/KRN_SOURCES.md`, TS Reset
+  source, V253 local repair report, and V256 replay repair report.
+- Mechanism: external inputs should enter as `unknown`, narrow near the
+  boundary, and return explicit finite states when caller behavior depends on
+  failure reason.
+- KRN implication: pattern brain needs small durable pattern objects plus
+  enforcement candidates, not repeated prose explanations.
+- Decision: adopt `ts-boundary-unknown-first-result-state` as active pattern
+  knowledge and open V258 to guard it.
+- Does not prove: automated enforcement, product readiness, real target
+  transfer, or UI/search readiness.
+- Consumer: V258 Pattern Enforcement Gate.
+- Falsifier: the replayable target can retain raw `any`/trusted `JSON.parse` or
+  nullable invalid-input result while the future pattern gate passes.
 
 ## Condensation Rules
 

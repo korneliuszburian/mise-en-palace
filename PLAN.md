@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V257 Pattern Intake Trial
-current task: V257-00 Pattern Intake Trial
+active stream: V258 Pattern Enforcement Gate
+current task: V258-00 Pattern Enforcement Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,39 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V257 Pattern Intake Trial
+### V258 Pattern Enforcement Gate
 
 Goal:
 
-Convert the repeated TypeScript boundary pattern proven by V253/V256 into a
-source-to-decision object with consumer, falsifier, and an enforcement/eval
-candidate.
+Add the smallest falsifiable guard/eval/test for the retained TypeScript
+boundary pattern.
 
 Current finding:
 
 ```txt
-V256 replayed the weak JSON-boundary target into `.local-lab`, repaired it with
-unknown-first JSON and discriminated result states, and showed the next gap:
-the pattern must become durable brain knowledge rather than human memory.
+V257 retained `ts-boundary-unknown-first-result-state` as active pattern
+knowledge with sources, consumer, falsifier, and eval candidate. The next gap is
+enforcement: the pattern should fail when the replayable target violates it.
 ```
 
 Current action:
 
 ```txt
-Execute V257-00: run the unknown-first external boundary / discriminated
-result-state pattern through source -> mechanism -> KRN implication ->
-decision/rejection -> consumer -> falsifier, then produce a reviewable
-enforcement/eval candidate.
+Execute V258-00: add the smallest guard or test for
+`ts-boundary-unknown-first-result-state`.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / source-to-decision intake loop.
+pattern brain / enforcement loop.
 ```
 
 Falsifier:
 
 ```txt
-V257 produces decorative source notes without a consumer/falsifier, or fails to
-create a testable enforcement/eval candidate.
+V258 adds decorative docs only, or the retained target pattern can regress
+without a failing check.
 ```
 
 ## Pattern Gate
