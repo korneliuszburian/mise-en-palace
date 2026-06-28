@@ -8,12 +8,14 @@ import {
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
+const patternFile = "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json";
 
 describe("runKnowledgeCardsCommand", () => {
   it("renders a read-only knowledge card preview", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [cardFile],
+      patternFiles: [],
       filter: {
         kind: "pattern",
         status: "active",
@@ -26,7 +28,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("KRN Brain Knowledge Cards Preview");
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
-    expect(result.stdout).toContain("Source: explicit card files");
+    expect(result.stdout).toContain("Source: explicit files");
     expect(result.stdout).toContain("Results: 1");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
@@ -41,6 +43,7 @@ describe("runKnowledgeCardsCommand", () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [cardFile],
+      patternFiles: [],
       filter: {
         text: "unknown-first"
       },
@@ -56,7 +59,7 @@ describe("runKnowledgeCardsCommand", () => {
       kind: "krn.brainKnowledge.cards.preview.v1",
       access: "read_only",
       mutation: "none",
-      source: "explicit_card_files"
+      source: "explicit_files"
     });
 
     const cards = parsed["cards"];
@@ -76,9 +79,37 @@ describe("runKnowledgeCardsCommand", () => {
     await expect(runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: ["package.json"],
+      patternFiles: [],
       filter: {},
       format: "text"
     })).rejects.toThrow("Invalid BrainKnowledgeReadModel card file: package.json");
+  });
+
+  it("renders knowledge cards produced from retained pattern files", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [patternFile],
+      filter: {
+        text: "unknown-first"
+      },
+      format: "text"
+    });
+
+    expect(result.stdout).toContain("Pattern files: docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("reviewability: ready");
+    expect(result.stdout).toContain("does not prove: knowledge cards were produced from live DB state");
+  });
+
+  it("rejects invalid retained pattern files", async () => {
+    await expect(runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: ["package.json"],
+      filter: {},
+      format: "text"
+    })).rejects.toThrow("Invalid retained pattern decision file: package.json");
   });
 });
 

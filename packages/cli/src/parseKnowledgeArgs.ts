@@ -11,12 +11,13 @@ import type {
 } from "./parseArgs.js";
 
 const knowledgeUsage = [
-  "Usage: krn knowledge cards --card-file <path> [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json]",
+  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json]",
   "",
   "Read-only preview commands:",
   "krn knowledge cards --card-file docs-or-fixture-card.json [--text unknown-first]",
-  "  note: knowledge cards preview reads explicit card files only; it does not scan, rank, persist, or mutate Memory Core",
-  "  proof boundary: valid output proves only that supplied card files match BrainKnowledgeReadModel and local filters"
+  "krn knowledge cards --pattern-file docs/patterns/retained-patterns/pattern.json [--text unknown-first]",
+  "  note: knowledge cards preview reads explicit card or retained-pattern files only; it does not scan, rank, persist, or mutate Memory Core",
+  "  proof boundary: valid output proves only that supplied files match known read-model inputs and local filters"
 ].join("\n");
 
 export const formatKnowledgeUsage = (): string => `${knowledgeUsage}\n`;
@@ -85,6 +86,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   }
 
   const cardFiles: string[] = [];
+  const patternFiles: string[] = [];
   let kind: BrainKnowledgeKind | undefined;
   let status: BrainKnowledgeStatus | undefined;
   let reviewability: BrainKnowledgeReviewability | undefined;
@@ -112,6 +114,28 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
       }
 
       cardFiles.push(required.value.trim());
+      index += 1;
+      continue;
+    }
+
+    if (arg === "--pattern-file") {
+      const valueResult = optionValue(args, index, "--pattern-file");
+
+      if (valueResult.error !== undefined) {
+        return {
+          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
+        };
+      }
+
+      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
+
+      if (!required.ok) {
+        return {
+          error: required.error
+        };
+      }
+
+      patternFiles.push(required.value.trim());
       index += 1;
       continue;
     }
@@ -232,9 +256,13 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
     };
   }
 
-  if (cardFiles.length === 0 || cardFiles.some((cardFile) => cardFile.length === 0)) {
+  if (
+    (cardFiles.length === 0 && patternFiles.length === 0) ||
+    cardFiles.some((cardFile) => cardFile.length === 0) ||
+    patternFiles.some((patternFile) => patternFile.length === 0)
+  ) {
     return {
-      error: `Missing required --card-file\n${formatKnowledgeUsage()}`
+      error: `Missing required --card-file or --pattern-file\n${formatKnowledgeUsage()}`
     };
   }
 
@@ -242,6 +270,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
     command: {
       kind: "knowledgeCards",
       cardFiles,
+      patternFiles,
       filter: {
         ...(kind === undefined ? {} : { kind }),
         ...(status === undefined ? {} : { status }),

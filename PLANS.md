@@ -23,19 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V266 Brain Knowledge Pattern-File CLI Preview
-current task: V266-00 Brain Knowledge Pattern-File CLI Preview
-latest pushed commit before V265: e227ff0 feat(readmodel): preview brain knowledge cards
-latest CI checked before V265: KRN CI success for e227ff047610a3ecbbb700d4e65f48ab5b76b823
+active stream: V267 Brain Knowledge Explicit Catalog Preview
+current task: V267-00 Brain Knowledge Explicit Catalog Preview
+latest pushed commit before V266: 393dae1 feat(readmodel): produce cards from retained patterns
+latest CI checked before V266: KRN CI success for 393dae17c9522cf3c42f8c001d6b0d3e688c135c
 ```
 
 Known current gap:
 
 ```txt
-V266-00 Brain Knowledge Pattern-File CLI Preview is the current gap. V265 added
-a deterministic retained-pattern -> BrainKnowledgeReadModel producer; now the
-CLI preview should read explicit retained-pattern files directly, or reject
-that surface if it would become broad ingestion.
+V267-00 Brain Knowledge Explicit Catalog Preview is the current gap. V266 added
+explicit retained-pattern file readback; now KRN needs a small explicit catalog
+file so operators do not pass every card/pattern file manually.
 ```
 
 ## 2. Product Thesis
@@ -620,7 +619,7 @@ Falsifier:
 
 ### V266-00 Brain Knowledge Pattern-File CLI Preview
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -680,6 +679,63 @@ Falsifier:
 
 - CLI accepts broad directories, parses markdown, or trusts pattern JSON
   without `parseRetainedPatternDecision`.
+
+### V267-00 Brain Knowledge Explicit Catalog Preview
+
+Status: active.
+
+Goal:
+
+```txt
+Add or reject explicit `--catalog-file <path>` support for `krn knowledge cards`
+where the catalog lists exact card/pattern files to read.
+```
+
+Rationale:
+
+```txt
+V266 can render retained-pattern files, but operators still pass files one by
+one. An explicit catalog gives multi-card search without directory crawling,
+ranking, DB persistence, UI, API, or MCP.
+```
+
+Inputs:
+
+- `packages/cli/src/parseKnowledgeArgs.ts`
+- `packages/cli/src/runKnowledgeCardsCommand.ts`
+- retained pattern/card fixtures
+
+Forbidden writes:
+
+- directory crawling;
+- ranking engine;
+- DB schema/migration;
+- web UI/API/MCP;
+- source crawler;
+- memory/source mutation.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli test -- parseKnowledgeArgs runKnowledgeCardsCommand runCli
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Next-task synthesis rule:
+
+- if catalog preview works, next task should add a second retained pattern or a
+  basic search-quality/readback fixture; if rejected, fix the exact catalog
+  input boundary.
+
+Does not prove:
+
+- ranking quality, DB-backed card store, web UI, or product readiness.
+
+Falsifier:
+
+- catalog support becomes implicit repo scanning or accepts unvalidated JSON.
 
 ## Decision Log
 
@@ -774,7 +830,8 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V264-00 complete: added the read-only `krn knowledge cards` preview.
 - V265-00 complete: added retained-pattern source JSON and deterministic card
   producer.
-- V266-00 active: connect explicit retained pattern files to CLI readback.
+- V266-00 complete: connected explicit retained pattern files to CLI readback.
+- V267-00 active: add or reject explicit catalog-file preview.
 
 ## Outcome V264-00 Brain Knowledge CLI Readback Preview
 
@@ -824,6 +881,28 @@ Source-to-decision:
   quality, or UI readiness.
 - Consumer: V266 pattern-file CLI preview and future catalog/index work.
 - Falsifier: cards drift from retained pattern source while tests pass.
+
+## Outcome V266-00 Brain Knowledge Pattern-File CLI Preview
+
+Summary:
+- added `--pattern-file` to `krn knowledge cards`;
+- retained-pattern files are parsed through `parseRetainedPatternDecision`;
+- produced cards reuse the same read-only CLI filter/output path;
+- kept the surface explicit-file only with no directory crawling, ranking, DB,
+  UI, API, MCP, or mutation authority.
+
+Source-to-decision:
+- Source: V264 CLI preview and V265 retained-pattern producer.
+- Mechanism: operators should inspect retained knowledge without hand-authored
+  card files, but preview inputs must stay explicit and typed.
+- KRN implication: CLI readback can consume retained pattern decisions directly
+  before product UI/search exists.
+- Decision: add `--pattern-file`; open V267 for an explicit catalog file so
+  multi-card readback does not require manual file repetition.
+- Does not prove: product search, ranking quality, DB-backed card store, or UI
+  readiness.
+- Consumer: V267 explicit catalog preview.
+- Falsifier: CLI starts crawling directories or trusting unparsed pattern JSON.
 
 ## Outcome V255-00 Active Ledger Condensation
 

@@ -24,6 +24,7 @@ describe("parseKnowledgeArgs", () => {
         cardFiles: [
           "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
         ],
+        patternFiles: [],
         filter: {
           kind: "pattern",
           status: "active",
@@ -45,15 +46,38 @@ describe("parseKnowledgeArgs", () => {
       command: {
         kind: "knowledgeCards",
         cardFiles: ["card.json"],
+        patternFiles: [],
         filter: {},
         format: "json"
       }
     });
   });
 
+  it("parses retained pattern files", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--pattern-file",
+      "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json",
+      "--text",
+      "unknown-first"
+    ])).toEqual({
+      command: {
+        kind: "knowledgeCards",
+        cardFiles: [],
+        patternFiles: [
+          "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+        ],
+        filter: {
+          text: "unknown-first"
+        },
+        format: "text"
+      }
+    });
+  });
+
   it("requires a card file", () => {
     expect(parseKnowledgeArgs(["cards"])).toEqual({
-      error: expect.stringContaining("Missing required --card-file")
+      error: expect.stringContaining("Missing required --card-file or --pattern-file")
     });
   });
 

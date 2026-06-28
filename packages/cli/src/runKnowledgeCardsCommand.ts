@@ -5,7 +5,9 @@ import type {
   BrainKnowledgeSearchFilter
 } from "@krn/harness";
 import {
+  brainKnowledgeCardFromRetainedPatternDecision,
   parseBrainKnowledgeReadModel,
+  parseRetainedPatternDecision,
   searchBrainKnowledgeCards
 } from "@krn/harness";
 import {
@@ -17,6 +19,7 @@ export type KnowledgeCardsOutputFormat = "text" | "json";
 export interface KnowledgeCardsCommandRuntime {
   cwd?: string;
   cardFiles: readonly string[];
+  patternFiles: readonly string[];
   filter: BrainKnowledgeSearchFilter;
   format: KnowledgeCardsOutputFormat;
 }
@@ -29,9 +32,10 @@ export interface KnowledgeCardsPreviewResource {
   kind: "krn.brainKnowledge.cards.preview.v1";
   access: "read_only";
   mutation: "none";
-  source: "explicit_card_files";
+  source: "explicit_files";
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
+  patternFiles: string[];
   cards: BrainKnowledgeReadModel[];
   proof: {
     proves: string[];
@@ -41,7 +45,7 @@ export interface KnowledgeCardsPreviewResource {
 
 const proof = {
   proves: [
-    "supplied card files parse as BrainKnowledgeReadModel",
+    "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
@@ -59,6 +63,7 @@ export const runKnowledgeCardsCommand = async (
   const cwd = runtime.cwd ?? process.cwd();
   const loadedCards: BrainKnowledgeReadModel[] = [];
   const resolvedFiles: string[] = [];
+  const resolvedPatternFiles: string[] = [];
 
   for (const cardFile of runtime.cardFiles) {
     const resolvedFile = path.resolve(cwd, cardFile);
@@ -73,13 +78,27 @@ export const runKnowledgeCardsCommand = async (
     resolvedFiles.push(cardFile);
   }
 
+  for (const patternFile of runtime.patternFiles) {
+    const resolvedFile = path.resolve(cwd, patternFile);
+    const parsed = await readJsonObject(resolvedFile);
+    const pattern = parseRetainedPatternDecision(parsed);
+
+    if (pattern === undefined) {
+      throw new Error(`Invalid retained pattern decision file: ${patternFile}`);
+    }
+
+    loadedCards.push(brainKnowledgeCardFromRetainedPatternDecision(pattern));
+    resolvedPatternFiles.push(patternFile);
+  }
+
   const resource: KnowledgeCardsPreviewResource = {
     kind: "krn.brainKnowledge.cards.preview.v1",
     access: "read_only",
     mutation: "none",
-    source: "explicit_card_files",
+    source: "explicit_files",
     filter: runtime.filter,
     cardFiles: resolvedFiles,
+    patternFiles: resolvedPatternFiles,
     cards: searchBrainKnowledgeCards(loadedCards, runtime.filter),
     proof: {
       proves: [...proof.proves],
@@ -99,8 +118,9 @@ const formatKnowledgeCardsPreview = (resource: KnowledgeCardsPreviewResource): s
     "KRN Brain Knowledge Cards Preview",
     "Access: read-only",
     "Mutation: none",
-    "Source: explicit card files",
-    `Card files: ${resource.cardFiles.join(", ")}`,
+    "Source: explicit files",
+    `Card files: ${formatList(resource.cardFiles)}`,
+    `Pattern files: ${formatList(resource.patternFiles)}`,
     `Results: ${resource.cards.length}`,
     "",
     ...resource.cards.flatMap(formatCard),
@@ -125,3 +145,6 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `  doesNotProve: ${card.doesNotProve}`,
   ""
 ];
+
+const formatList = (items: readonly string[]): string =>
+  items.length === 0 ? "none" : items.join(", ");

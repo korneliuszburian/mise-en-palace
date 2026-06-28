@@ -1169,7 +1169,7 @@ describe("runCli", () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
-    expect(result.stdout).toContain("Usage: krn knowledge cards --card-file <path>");
+    expect(result.stdout).toContain("Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>]");
     expect(result.stdout).toContain("Read-only preview commands:");
     expect(result.stdout).toContain("does not scan, rank, persist, or mutate Memory Core");
   });
@@ -1196,6 +1196,29 @@ describe("runCli", () => {
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("does not prove: KRN is product-ready");
+  });
+
+  it("renders retained pattern files through the knowledge cards CLI preview", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const result = await runCli([
+      "knowledge",
+      "cards",
+      "--pattern-file",
+      "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json",
+      "--text",
+      "unknown-first"
+    ], {
+      cwd: repoRoot,
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Pattern files: docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Mutation: none");
   });
 
   it("explains how to unblock run show without database config", async () => {

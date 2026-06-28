@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V266 Brain Knowledge Pattern-File CLI Preview
-current task: V266-00 Brain Knowledge Pattern-File CLI Preview
+active stream: V267 Brain Knowledge Explicit Catalog Preview
+current task: V267-00 Brain Knowledge Explicit Catalog Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -50,27 +50,26 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V266 Brain Knowledge Pattern-File CLI Preview
+### V267 Brain Knowledge Explicit Catalog Preview
 
 Goal:
 
-Let the existing `krn knowledge cards` preview read explicit retained pattern
-decision files and render produced `BrainKnowledgeReadModel` cards.
+Let the existing `krn knowledge cards` preview read an explicit catalog file
+that lists card and retained-pattern files.
 
 Current finding:
 
 ```txt
-V265 added a retained-pattern source JSON and deterministic producer. The next
-gap is that the CLI preview still accepts card files only, so operators cannot
-read retained patterns directly through the preview surface.
+V266 added explicit retained-pattern file readback. The next gap is that
+operators must pass every card/pattern file manually; a small explicit catalog
+can support multi-card search without directory crawling or ranking.
 ```
 
 Current action:
 
 ```txt
-Execute V266-00: add explicit `--pattern-file` support or reject it if it
-would leak a broader ingestion surface. Do not build broad ingestion, UI, API,
-MCP, DB schema, or ranking.
+Execute V267-00: add or reject explicit `--catalog-file` support. Do not crawl
+directories, rank cards, build UI/API/MCP, add DB schema, or broaden ingestion.
 ```
 
 Primary consumer:
@@ -82,8 +81,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V266 becomes directory crawling, ranking, DB persistence, UI/API/MCP work, or
-accepts untyped pattern input without unknown-first parsing.
+V267 becomes directory crawling, ranking, DB persistence, UI/API/MCP work, or
+accepts untyped catalog input without unknown-first parsing.
 ```
 
 ## Pattern Gate

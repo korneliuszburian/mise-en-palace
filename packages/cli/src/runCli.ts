@@ -371,6 +371,7 @@ export const runCli = async (
       const result = await runKnowledgeCardsCommand({
         cwd: runtime.cwd ?? process.cwd(),
         cardFiles: parsed.command.cardFiles,
+        patternFiles: parsed.command.patternFiles,
         filter: parsed.command.filter,
         format: parsed.command.format
       });
