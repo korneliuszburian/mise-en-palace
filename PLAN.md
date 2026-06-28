@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V261 Brain Knowledge Read Model Contract Guard
-current task: V261-00 Brain Knowledge Read Model Contract Guard
+active stream: V262 Brain Knowledge Card Fixture
+current task: V262-00 Brain Knowledge Card Fixture
 ```
 
 ## Compact Completed Checkpoints
@@ -50,39 +50,38 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V261 Brain Knowledge Read Model Contract Guard
+### V262 Brain Knowledge Card Fixture
 
 Goal:
 
-Guard the minimal typed read-model shape needed for future UI/search over brain
-knowledge.
+Create one concrete brain knowledge card fixture for the retained TypeScript
+boundary pattern.
 
 Current finding:
 
 ```txt
-V260 added `BrainKnowledgeReadModel` as a read-only docs/contract shape for
-future UI/search. The next gap is a small guard so future UI/search cannot drop
-source/evidence/reviewability/falsifier/does-not-prove fields.
+V261 guarded the `BrainKnowledgeReadModel` contract. The next gap is a concrete
+card object future UI/search can render and test.
 ```
 
 Current action:
 
 ```txt
-Execute V261-00: add the smallest invariant protecting the
-`BrainKnowledgeReadModel` contract. Do not build UI/API/MCP yet.
+Execute V262-00: create one reviewable `BrainKnowledgeReadModel` fixture/card
+for `ts-boundary-unknown-first-result-state`. Do not build UI/API/MCP yet.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / read-model guard loop.
+pattern brain / read-model fixture loop.
 ```
 
 Falsifier:
 
 ```txt
-V261 becomes dashboard/API/MCP work or fails to protect the required read-model
-fields.
+V262 becomes UI/API/MCP work or produces a decorative card without source refs,
+evidence refs, reviewability, falsifier, and does-not-prove boundaries.
 ```
 
 ## Pattern Gate

@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V261 Brain Knowledge Read Model Contract Guard
-current task: V261-00 Brain Knowledge Read Model Contract Guard
+active stream: V262 Brain Knowledge Card Fixture
+current task: V262-00 Brain Knowledge Card Fixture
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,9 +32,9 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V261-00 Brain Knowledge Read Model Contract Guard is the current gap. V260
-defined the read-only knowledge card contract; now it needs a small guard before
-future UI/search work can build on it.
+V262-00 Brain Knowledge Card Fixture is the current gap. V261 guarded the
+read-only knowledge card contract; now KRN needs one concrete card fixture for
+the retained TypeScript boundary pattern.
 ```
 
 ## 2. Product Thesis
@@ -188,6 +188,14 @@ green test != product value
 - Outcome: added `BrainKnowledgeReadModel` to
   `docs/architecture/observability-read-models.md` as the read-only contract
   for future UI/search over brain knowledge.
+
+### V261 Brain Knowledge Read Model Contract Guard
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v261-brain-knowledge-read-model-contract-guard/REPORT.md`.
+- Outcome: added `packages/harness/src/brainKnowledgeReadModelInvariants.test.ts`
+  to guard required knowledge card fields and the read-only UI/search boundary.
 
 ## Active Task Queue
 
@@ -376,7 +384,7 @@ Non-goals:
 
 ### V261-00 Brain Knowledge Read Model Contract Guard
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -392,6 +400,25 @@ Non-goals:
 - no API/MCP;
 - no dashboard package;
 - no new persistence.
+
+### V262-00 Brain Knowledge Card Fixture
+
+Status: active.
+
+Goal:
+
+```txt
+Create one reviewable BrainKnowledgeReadModel fixture/card for
+`ts-boundary-unknown-first-result-state` so future UI/search has a concrete
+object to render and test.
+```
+
+Non-goals:
+
+- no UI implementation;
+- no API/MCP;
+- no database schema;
+- no broad knowledge ingestion.
 
 ## Decision Log
 
@@ -480,7 +507,8 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   TypeScript skill to route retained patterns.
 - V260-00 complete: sketched the minimal brain knowledge read model for future
   UI/search.
-- V261-00 active: guard the brain knowledge read-model contract.
+- V261-00 complete: guarded the brain knowledge read-model contract.
+- V262-00 active: create one concrete brain knowledge card fixture.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -630,6 +658,27 @@ Source-to-decision:
 - Consumer: V261 read-model contract guard and future UI/search slices.
 - Falsifier: UI/search can display knowledge without source/evidence refs,
   consumer, falsifier, reviewability, or does-not-prove boundary.
+
+## Outcome V261-00 Brain Knowledge Read Model Contract Guard
+
+Summary:
+- added `packages/harness/src/brainKnowledgeReadModelInvariants.test.ts`;
+- protected required `BrainKnowledgeReadModel` fields;
+- kept UI/search behind read-only cards.
+
+Source-to-decision:
+- Source: V260 read-model contract and ADR-0025 dashboard readiness gate.
+- Mechanism: future UI/search needs a protected read-only knowledge card
+  contract before implementation.
+- KRN implication: brain UI/search should render guarded read models, not raw
+  reports or mutable memory surfaces.
+- Decision: add a harness invariant for `BrainKnowledgeReadModel` and open V262
+  for one concrete card fixture.
+- Does not prove: UI/search implementation, search ranking, product readiness,
+  or real operator usefulness.
+- Consumer: V262 Brain Knowledge Card Fixture.
+- Falsifier: a future UI/search slice can remove required fields or introduce a
+  mutation path while the invariant still passes.
 
 ## Condensation Rules
 
