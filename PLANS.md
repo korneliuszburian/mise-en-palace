@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V260 Brain Knowledge Read Model Sketch
-current task: V260-00 Brain Knowledge Read Model Sketch
+active stream: V261 Brain Knowledge Read Model Contract Guard
+current task: V261-00 Brain Knowledge Read Model Contract Guard
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,9 +32,9 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V260-00 Brain Knowledge Read Model Sketch is the current gap. V259 routed
-TypeScript boundary work through retained patterns; now KRN needs the minimal
-typed read-model shape that can later power UI/search over brain knowledge.
+V261-00 Brain Knowledge Read Model Contract Guard is the current gap. V260
+defined the read-only knowledge card contract; now it needs a small guard before
+future UI/search work can build on it.
 ```
 
 ## 2. Product Thesis
@@ -179,6 +179,15 @@ green test != product value
 - Outcome: kept the minimal skill pack and updated
   `.agents/skills/typescript-type-safety/SKILL.md` to route external input
   boundary work through retained TypeScript patterns.
+
+### V260 Brain Knowledge Read Model Sketch
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v260-brain-knowledge-read-model-sketch/REPORT.md`.
+- Outcome: added `BrainKnowledgeReadModel` to
+  `docs/architecture/observability-read-models.md` as the read-only contract
+  for future UI/search over brain knowledge.
 
 ## Active Task Queue
 
@@ -343,7 +352,7 @@ Expected outcome:
 
 ### V260-00 Brain Knowledge Read Model Sketch
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -364,6 +373,25 @@ Non-goals:
 - no dashboard implementation yet;
 - no API/MCP yet;
 - no source crawler.
+
+### V261-00 Brain Knowledge Read Model Contract Guard
+
+Status: active.
+
+Goal:
+
+```txt
+Add the smallest guard that fails if BrainKnowledgeReadModel loses required
+source/evidence/reviewability/falsifier/does-not-prove fields or if UI/search is
+authorized before the read-only contract is protected.
+```
+
+Non-goals:
+
+- no UI implementation;
+- no API/MCP;
+- no dashboard package;
+- no new persistence.
 
 ## Decision Log
 
@@ -450,8 +478,9 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   TypeScript boundary pattern.
 - V259-00 complete: re-gated the minimal Codex skills pack and updated the
   TypeScript skill to route retained patterns.
-- V260-00 active: sketch the minimal brain knowledge read model for future
+- V260-00 complete: sketched the minimal brain knowledge read model for future
   UI/search.
+- V261-00 active: guard the brain knowledge read-model contract.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -577,6 +606,30 @@ Source-to-decision:
 - Consumer: V260 read model sketch and future target repair trials.
 - Falsifier: future TypeScript boundary work ignores retained pattern IDs and
   reverts to untracked prose.
+
+## Outcome V260-00 Brain Knowledge Read Model Sketch
+
+Summary:
+- added `BrainKnowledgeReadModel` to
+  `docs/architecture/observability-read-models.md`;
+- kept it read-only and explicitly pre-UI/pre-API/pre-MCP;
+- selected V261 as the guard before future UI/search.
+
+Source-to-decision:
+- Source: user UI/search requirement, V257 retained pattern object, V258
+  enforcement gate, V259 skill routing, and ADR-0025 dashboard readiness gate.
+- Mechanism: searchable brain knowledge needs typed read-only cards with source
+  refs, evidence refs, consumer, falsifier, reviewability, and does-not-prove
+  boundary.
+- KRN implication: future UI/search should render read models, not mutate memory
+  or scrape raw reports.
+- Decision: add docs/contract-only `BrainKnowledgeReadModel` and open V261 to
+  guard required fields.
+- Does not prove: UI/search implementation, product readiness, or ranking
+  quality.
+- Consumer: V261 read-model contract guard and future UI/search slices.
+- Falsifier: UI/search can display knowledge without source/evidence refs,
+  consumer, falsifier, reviewability, or does-not-prove boundary.
 
 ## Condensation Rules
 

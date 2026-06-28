@@ -167,6 +167,138 @@ If memory was selected but no application feedback exists, usefulness is
 unknown. Selected does not mean helped.
 ```
 
+## BrainKnowledgeReadModel
+
+Owner: source-to-decision / pattern brain / evidence-review loop.
+
+Purpose: define the minimum read-only card shape needed before UI/search over
+KRN knowledge. This model is for retrieval and operator review. It is not a
+write path to Memory Core, SourceDecision, or candidates.
+
+Data sources:
+
+- `SourceClaim`;
+- `SourceDecision`;
+- pattern catalog entries;
+- `MemoryRecord`;
+- `MemoryCandidate`;
+- `AntiMemoryCandidate`;
+- `EvalCandidate`;
+- evidence bundles and run reports;
+- ADRs, standards, skills, and source-to-decision records.
+
+Fields:
+
+```ts
+type BrainKnowledgeKind =
+  | "source_claim"
+  | "source_decision"
+  | "pattern"
+  | "memory"
+  | "memory_candidate"
+  | "anti_memory_candidate"
+  | "eval_candidate"
+  | "adr"
+  | "standard"
+  | "skill"
+  | "run_evidence";
+
+type BrainKnowledgeStatus =
+  | "active"
+  | "candidate"
+  | "accepted"
+  | "rejected"
+  | "deferred"
+  | "stale"
+  | "superseded"
+  | "unknown";
+
+type BrainKnowledgeConfidence = "high" | "medium" | "low" | "unknown";
+
+type BrainKnowledgeReviewability =
+  | "ready"
+  | "needs_more_evidence"
+  | "too_vague"
+  | "duplicate"
+  | "not_useful"
+  | "unknown";
+
+type BrainKnowledgeReadModel = {
+  id: string;
+  kind: BrainKnowledgeKind;
+  status: BrainKnowledgeStatus;
+  title: string;
+  summary: string;
+  confidence: BrainKnowledgeConfidence;
+  reviewability: BrainKnowledgeReviewability;
+  sourceRefs: string[];
+  evidenceRefs: string[];
+  consumers: string[];
+  falsifier: string;
+  doesNotProve: string;
+  temporal:
+    | {
+        kind: "current";
+        observedAt?: string;
+      }
+    | {
+        kind: "historical";
+        validFrom?: string;
+        validUntil?: string;
+        observedAt?: string;
+      }
+    | {
+        kind: "unknown";
+      };
+  dissent:
+    | {
+        kind: "none";
+      }
+    | {
+        kind: "conflict";
+        refs: string[];
+        summary: string;
+      }
+    | {
+        kind: "unknown";
+      };
+  nextAction:
+    | "use"
+    | "review"
+    | "promote"
+    | "demote"
+    | "invalidate"
+    | "add_evidence"
+    | "reject"
+    | "defer"
+    | "unknown";
+};
+```
+
+Operator action:
+
+- use a retained pattern during a repair;
+- review a candidate;
+- add missing evidence;
+- reject stale/decorative knowledge;
+- open a bounded enforcement gate;
+- decide whether a UI/search card is actionable.
+
+Falsifier:
+
+```txt
+If a knowledge card cannot show evidence refs, source refs, consumer,
+falsifier, reviewability, and does-not-prove boundary, it is not ready for UI
+or search surfacing.
+```
+
+UI/search readiness rule:
+
+```txt
+Search may rank and display only read-only BrainKnowledgeReadModel cards. It
+must not mutate Memory Core, SourceDecision, candidate status, or evidence.
+```
+
 ## Deferred Models
 
 Deferred until more product evidence exists:

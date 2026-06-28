@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V260 Brain Knowledge Read Model Sketch
-current task: V260-00 Brain Knowledge Read Model Sketch
+active stream: V261 Brain Knowledge Read Model Contract Guard
+current task: V261-00 Brain Knowledge Read Model Contract Guard
 ```
 
 ## Compact Completed Checkpoints
@@ -50,40 +50,39 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V260 Brain Knowledge Read Model Sketch
+### V261 Brain Knowledge Read Model Contract Guard
 
 Goal:
 
-Define the minimal typed read-model shape needed for future UI/search over
-brain knowledge.
+Guard the minimal typed read-model shape needed for future UI/search over brain
+knowledge.
 
 Current finding:
 
 ```txt
-V259 updated the TypeScript skill so external input boundary work routes through
-retained patterns. The next gap is a compact read model for sources, decisions,
-patterns, candidates, evidence refs, confidence, dissent, and does-not-prove
-boundaries.
+V260 added `BrainKnowledgeReadModel` as a read-only docs/contract shape for
+future UI/search. The next gap is a small guard so future UI/search cannot drop
+source/evidence/reviewability/falsifier/does-not-prove fields.
 ```
 
 Current action:
 
 ```txt
-Execute V260-00: define a minimal brain knowledge read model as docs/contract
-only. Do not build UI/API/MCP yet.
+Execute V261-00: add the smallest invariant protecting the
+`BrainKnowledgeReadModel` contract. Do not build UI/API/MCP yet.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / future UI-search read-model loop.
+pattern brain / read-model guard loop.
 ```
 
 Falsifier:
 
 ```txt
-V260 becomes dashboard design, broad API planning, or a decorative schema with
-no source/evidence/reviewability fields.
+V261 becomes dashboard/API/MCP work or fails to protect the required read-model
+fields.
 ```
 
 ## Pattern Gate
