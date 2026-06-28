@@ -9,24 +9,15 @@ feedback.
 ## Current Objective
 
 Use root `PLAN.md` as the compact product single source of truth and root
-`PLANS.md` as the detailed continuous ExecPlan.
+`PLANS.md` as the compact continuous execution ledger.
+
+Detailed completed history, evidence, outcomes, and next-task synthesis live in
+`PLANS.md` and archived report/ledger paths.
 
 Active stream:
 
 ```txt
 V306 Knowledge Cards Tokenized Text Search
-```
-
-Current product loop:
-
-```txt
-controlled scenario
-  -> evidence
-  -> finding
-  -> condensation decision
-  -> rule / skill / guard / eval / memory candidate / source decision / repair
-  -> append next task to PLANS.md
-  -> continue
 ```
 
 Current state:
@@ -36,25 +27,61 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V235: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
-target, evidence, compactness, smoke, onboarding current-state, and related
-regression guards plus security permission-boundary, root-plan headroom,
-re-gate, source-usefulness readback/producer, preview dogfood, and persisted
-readback dogfood plus repo-root path normalization complete; details stay in
-PLANS.md.
-V236..V239: activation abstention re-gate, diagnostics/readback,
-current-state activation seed, and default connected-project resolution
-complete.
-V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
-decision, and best-pattern re-gate complete.
-V245..V305: target repair, pattern intake/enforcement, skills, knowledge cards,
-usefulness feedback, no-feedback triage, pattern coverage, pattern application
-gate, pattern-gated source slice, and no-match guidance complete.
 current task: V306-00 Knowledge Cards Tokenized Text Search.
 ```
 
-Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
+Current task:
+
+```txt
+Improve `krn knowledge cards --text` so pattern-card search uses deterministic
+tokenized matching instead of brittle whole-query substring matching.
+```
+
+## Remaining Work
+
+The product is not a full living brain yet. The only current high-level blocks
+to preserve are:
+
+1. Pattern Brain execution/readback hardening: finish V306 and keep pattern
+   search useful for pre-coding gates.
+2. Research/paper/course source decisions: ingest public high-quality sources
+   through source-to-decision, not source hoarding.
+3. Mini brain-QA benchmark: start with 30 KRN questions, later expand corpus
+   QA and compare memory/source/hybrid/anti-memory/graph paths.
+4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
+   or search document with temporal and permission metadata.
+5. Graph brain v0: entities, events, claims, relations, duplicates,
+   contradictions, supersession, and temporal slices.
+6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
+   mutation without review.
+7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous
+   truth runtime.
+8. Product surfaces: web UI/search/API/MCP only after usefulness, security, and
+   read-model gates.
+
+## Operating Rules
+
+- Keep `GOAL.md`, `PLAN.md`, and `PLANS.md` compact.
+- Archive historical detail instead of appending walls of completed work.
+- Do not create another parallel roadmap.
+- Do not reopen archived plans as active context.
+- Do not build dashboard, API, MCP server, worker runtime, source crawler,
+  broad eval platform, `krn audit`, anti-slop scanner, generic multi-agent
+  system, runtime markdown memory, or hidden semantic hooks unless `PLANS.md`
+  explicitly authorizes a bounded evidence-backed task.
+- Do not write to living target repos unless the active task explicitly allows
+  target writes, allowed files, rollback, and verification.
+- After each bounded slice, verify, commit, push, check CI when relevant, update
+  compact root state, and continue with the next highest-ROI task.
+- Do not mark this continuous goal complete after one slice, one report, one
+  repair, one skill, or one scenario.
+- For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
+  target-workflow, security, operator-UX, or research/paper/course-driven slice,
+  apply the pattern gate:
+
+  ```txt
+  source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
+  ```
 
 ## External Boundary
 
@@ -70,33 +97,7 @@ operator transcript:
 ```
 
 Self/headless scenarios are engineering proof and knowledge-distillation
-material. They must not be described as second-operator proof or product-ready
-proof.
-
-## Operating Rules
-
-- Keep `GOAL.md` compact.
-- Keep root `PLAN.md` compact and authoritative.
-- Keep detailed work in root `PLANS.md`.
-- Do not create another parallel roadmap.
-- Do not reopen archived plans as active context.
-- Do not build dashboard, API, MCP server, worker runtime, source crawler,
-  broad eval platform, `krn audit`, anti-slop scanner, generic multi-agent
-  system, runtime markdown memory, or hidden semantic hooks unless `PLANS.md`
-  explicitly authorizes a bounded evidence-backed task.
-- Do not write to living target repos unless the active task explicitly allows
-  target writes, allowed files, rollback, and verification.
-- After each bounded slice, verify, commit, push, and check CI when relevant.
-- Do not mark this continuous goal complete after one slice, one report, one
-  repair, one skill, or one scenario.
-- After every completed slice, update `PLANS.md`, append any new tasks
-  discovered from evidence, and continue with the next highest-ROI task.
-- For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
-  target-workflow, or research/paper/course-driven slice, apply the pattern
-  gate: source -> mechanism -> KRN implication -> decision/rejection ->
-  consumer -> falsifier.
-- Completion requires explicit operator stop, product-ready gate evidence, or an
-  honest blocked/budget-limited handoff. Budget limit is not success.
+material. They are not second-operator proof or product-ready proof.
 
 ## Continuation After Compact
 
@@ -119,9 +120,9 @@ After auto-compact, resume, context loss, or a new `/goal` continuation:
    authoritative. Do not roll the active stream backward.
 5. If a previous slice was committed but not pushed or CI-checked, finish that
    before starting unrelated work.
-6. If the current slice is complete, synthesize next tasks from evidence,
-   append them to `PLANS.md`, update compact active state, and continue.
-7. Research is useful only when mapped through:
+6. If the current slice is complete, synthesize next tasks from evidence, update
+   compact active state, and continue.
+7. Research or pattern input must still use:
 
    ```txt
    source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier

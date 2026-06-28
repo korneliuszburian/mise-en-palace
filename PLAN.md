@@ -25,27 +25,24 @@ current task: V306-00 Knowledge Cards Tokenized Text Search
 Detailed history stays in `PLANS.md`.
 
 ```txt
-V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
-V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
-          source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
-           TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
-           worker, security permission-boundary, root-plan headroom, and
-           re-gate plus source-usefulness readback/producer and preview
-           dogfood plus persisted readback dogfood and repo-root path
-           normalization/readback guards plus best-pattern usefulness closure
-           and closure dogfood plus TS best-pattern application and sibling
-           package path normalization plus activation abstention re-gate,
-           abstention diagnostics/readback, current-state activation seed, and
-           default connected-project resolution, and project resolution
-           readback plus external TypeScript best-pattern intake,
-           finite-state exhaustiveness application, Codex ExecPlan source
-           decision guard, best-pattern surface re-gate, and source-decision
-           owner-file seed repair plus observe-reflect sequencing guard and
-           skill owner-file seed repair, activation surface re-gate,
-           budget-priority guard, product-readiness re-gate, normalized target
-           substrate/repair/replay baseline, and active ledger condensation
-           complete.
+repo/current-truth hygiene: complete enough for continuation
+evidence/review loop: DB-backed and useful for dogfood
+candidate reviewability: core primitive
+pattern gate/readback: active hardening stream
+product-ready brain: not complete
+```
+
+Remaining product gaps:
+
+```txt
+1. pattern search/readback hardening
+2. research/paper/course source decisions
+3. mini brain-QA benchmark
+4. ingest v0
+5. graph brain v0
+6. heartbeat/dreaming v0 as candidate generator
+7. consensus v0 as eval/candidate layer
+8. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Active Stream
