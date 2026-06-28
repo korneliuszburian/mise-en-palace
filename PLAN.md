@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V314 Executable Brain-QA Case BQ-025
-current task: V314-00 Executable Brain-QA Case BQ-025
+active stream: V315 Executable Brain-QA Case BQ-028
+current task: V315-00 Executable Brain-QA Case BQ-028
 ```
 
 ## Compact Completed Checkpoints
@@ -47,26 +47,27 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V314 Executable Brain-QA Case BQ-025
+### V315 Executable Brain-QA Case BQ-028
 
 Goal:
 
-Execute report proof/non-proof boundary readback for BQ-025.
+Execute compact-root product-gap readback for BQ-028.
 
 Current finding:
 
 ```txt
-V313 proved dirty-context classification readback through existing evidence
-capture golden behavior. The next adjacent evidence/review case should inspect
-whether reports keep proof and non-proof boundaries explicit.
+V314 proved recent reports preserve proof/non-proof boundaries. The next
+docs/readback case should check whether KRN can identify unresolved product
+gaps from compact root state and selected reports without historical ledgers.
 ```
 
 Current action:
 
 ```txt
-Execute V314-00: inspect the smallest current report/readback path for BQ-025.
-Do not add DB schema, runtime platform, dashboard, API/MCP, source crawler,
-embeddings, ranking, or Memory Core mutation.
+Execute V315-00: inspect compact root state and selected current reports for
+BQ-028. Do not read historical ledgers or add DB schema, runtime platform,
+dashboard, API/MCP, source crawler, embeddings, ranking, or Memory Core
+mutation.
 ```
 
 Primary consumer:
@@ -78,8 +79,8 @@ future brain-QA and evidence/review validation.
 Falsifier:
 
 ```txt
-BQ-025 cannot show explicit "what this proves" and "what this does not prove"
-boundaries in current report/readback artifacts.
+BQ-028 cannot identify the main unresolved product gaps from compact current
+state and selected reports without historical ledger rereads.
 ```
 
 ## Pattern Gate

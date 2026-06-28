@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V314 Executable Brain-QA Case BQ-025
+V315 Executable Brain-QA Case BQ-028
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V314-00 Executable Brain-QA Case BQ-025.
+current task: V315-00 Executable Brain-QA Case BQ-028.
 ```
 
 Current task:
 
 ```txt
-Execute report proof/non-proof boundary readback for BQ-025 without new
-runtime, schema, dashboard, API/MCP, or broad eval platform.
+Execute compact-root product-gap readback for BQ-028 without historical ledger
+rereads, new runtime, schema, dashboard, API/MCP, or broad eval platform.
 ```
 
 ## Remaining Work
@@ -46,8 +46,8 @@ to preserve are:
    loop; keep future search changes evidence-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023 and BQ-024
-   are executed; execute BQ-025 report proof boundaries next.
+3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
+   and BQ-025 are executed; execute BQ-028 compact product-gap readback next.
 4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
    or search document with temporal and permission metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,

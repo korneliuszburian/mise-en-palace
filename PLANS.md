@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V314 Executable Brain-QA Case BQ-025
-current task: V314-00 Executable Brain-QA Case BQ-025
+active stream: V315 Executable Brain-QA Case BQ-028
+current task: V315-00 Executable Brain-QA Case BQ-028
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,10 +31,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V314-00 Executable Brain-QA Case BQ-025 is the current gap. BQ-015 is executed
-and covered, BQ-023 command provenance readback is executed, and BQ-024
-dirty-context classification is executed; now the next brain-QA lane should
-prove report proof/non-proof boundaries without new runtime/platform work.
+V315-00 Executable Brain-QA Case BQ-028 is the current gap. BQ-015 is executed
+and covered; BQ-023, BQ-024, and BQ-025 are executed. Now the next brain-QA
+lane should prove compact product-gap readback without historical ledgers or
+new runtime/platform work.
 ```
 
 ## 2. Product Thesis
@@ -81,8 +81,8 @@ green test != product value
    usefulness-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: BQ-015 is executed and covered, BQ-023 and BQ-024
-   are executed; execute BQ-025 report proof boundaries next.
+3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
+   and BQ-025 are executed; execute BQ-028 compact product-gap readback next.
 4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
    -> embedding/search document with permission and temporal metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
@@ -459,7 +459,7 @@ existing evidence/readback surfaces.
 
 ### V314-00 — Executable Brain-QA Case BQ-025
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -543,6 +543,12 @@ Definition of Done:
 - no runtime/eval platform is built;
 - `git diff --check` passes.
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v314-executable-brain-qa-bq-025/REPORT.md
+```
+
 Verification commands:
 
 ```sh
@@ -572,8 +578,7 @@ identified without new runtime.
 Next-task synthesis rule:
 
 ```txt
-After V314, add focused coverage if missing or execute the next docs/CLI-only
-brain-QA case.
+After V314, execute the next docs/readback brain-QA case.
 ```
 
 Primary consumer:
@@ -594,6 +599,148 @@ Falsifier:
 ```txt
 BQ-025 cannot show explicit proof/non-proof boundaries in current
 report/readback artifacts.
+```
+
+### V315-00 — Executable Brain-QA Case BQ-028
+
+Status: active.
+
+Goal:
+
+```txt
+Execute compact-root product-gap readback for BQ-028.
+```
+
+Product rationale:
+
+```txt
+After evidence/review readbacks, the next product-facing brain-QA case should
+show whether compact root state is sufficient to recover unresolved product
+gaps without rereading historical ledgers.
+```
+
+Architectural rationale:
+
+```txt
+Use compact root state and selected current reports before new runtime, DB
+schema, eval platform, dashboard, API/MCP, source crawler, or graph work.
+```
+
+Evidence source:
+
+```txt
+V309 BQ-028, GOAL.md, PLAN.md, PLANS.md, V312-V314 reports, and selected current
+reports only if needed.
+```
+
+Official/external sources:
+
+```txt
+`pattern:active-context-compact-current-truth` and `pattern:evidence-proof-non-proof-boundary`.
+```
+
+Inputs required:
+
+```txt
+GOAL.md
+PLAN.md
+PLANS.md
+docs/benchmarks/brain-qa/V309_BRAIN_QA_SKETCH.md
+docs/reviews/controlled-dogfood/2026-06-28-v314-executable-brain-qa-bq-025/REPORT.md
+selected current reports only if compact root state is insufficient
+```
+
+Files likely touched:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v315-executable-brain-qa-bq-028/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+focused docs/test guard only if BQ-028 exposes missing coverage
+```
+
+Allowed writes:
+
+```txt
+docs/report/root updates; focused guard only if missing coverage is found.
+```
+
+Forbidden writes:
+
+```txt
+historical ledger rereads, broad eval platform, Promptfoo expansion, source
+crawler, embeddings, ranking, graph runtime, DB schema, dashboard, API/MCP,
+worker daemon, Memory Core mutation, target repo writes, paid/proprietary
+course ingestion.
+```
+
+Output requirements:
+
+```txt
+record product gaps recovered from compact state, any selected report refs,
+proof/non-proof boundaries, mutation boundary, and whether BQ-028 needs focused
+coverage.
+```
+
+Definition of Done:
+
+- compact product-gap readback is executed or missing coverage is recorded;
+- report states what the evidence proves and does not prove;
+- no runtime/eval platform or historical-ledger reread is used;
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+```
+
+Acceptance criteria:
+
+```txt
+BQ-028 has a concrete compact-root product-gap readback path or a precise
+missing-coverage finding.
+```
+
+Risk:
+
+```txt
+claiming arbitrary corpus QA or product readiness from compact root state.
+```
+
+Rollback:
+
+```txt
+Remove report/root updates if no compact product-gap readback path can be
+identified without historical ledgers or new runtime.
+```
+
+Next-task synthesis rule:
+
+```txt
+After V315, add focused coverage if missing or execute the next docs/CLI-only
+brain-QA case.
+```
+
+Primary consumer:
+
+```txt
+future compact-state continuation and product-gap planning.
+```
+
+Does not prove:
+
+```txt
+arbitrary corpus QA, graph retrieval, product readiness, or full benchmark
+execution.
+```
+
+Falsifier:
+
+```txt
+BQ-028 cannot identify the main unresolved product gaps from compact current
+state and selected reports without historical ledger rereads.
 ```
 
 ## Pattern Gate
@@ -682,7 +829,8 @@ Falsifier:
 - [x] V311 BQ-015 Fixture Coverage
 - [x] V312 Executable Brain-QA Case BQ-023
 - [x] V313 Executable Brain-QA Case BQ-024
-- [ ] V314 Executable Brain-QA Case BQ-025
+- [x] V314 Executable Brain-QA Case BQ-025
+- [ ] V315 Executable Brain-QA Case BQ-028
 
 ## Recent Evidence Pointers
 
@@ -702,6 +850,27 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v312-executable-brain-qa-bq-023/REPORT.md`
 - V313 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v313-executable-brain-qa-bq-024/REPORT.md`
+- V314 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v314-executable-brain-qa-bq-025/REPORT.md`
+
+## Outcome V314 Executable Brain-QA Case BQ-025
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V309 BQ-025 and V310-V313 mini brain-QA reports.
+- Mechanism: report evidence is reviewable only when each proof states both what
+  it proves and what it does not prove.
+- KRN implication: brain-QA report artifacts can preserve proof boundaries
+  without adding a new guard platform.
+- Decision: record BQ-025 as executed and activate BQ-028 compact product-gap
+  readback.
+- Does not prove: report truth, future report compliance, product value,
+  product readiness, reviewer correctness, or full benchmark quality.
+- Consumer: V315 BQ-028 compact product-gap readback.
+- Falsifier: reports omit non-proof boundaries while root state claims
+  evidence/review proof quality.
 
 ## Outcome V313 Executable Brain-QA Case BQ-024
 
