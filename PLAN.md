@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V285 Brain Knowledge Static Preview Browser Smoke
-current task: V285-00 Brain Knowledge Static Preview Browser Smoke
+active stream: V286 Brain Knowledge Catalog Coverage Expansion
+current task: V286-00 Brain Knowledge Catalog Coverage Expansion
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,43 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V285 Brain Knowledge Static Preview Browser Smoke
+### V286 Brain Knowledge Catalog Coverage Expansion
 
 Goal:
 
-Execute the static brain knowledge preview filter behavior in a browser or
-DOM-capable smoke without leaving the static/read-only artifact boundary.
+Increase useful brain knowledge coverage from existing retained KRN evidence
+before adding more UI/search surface.
 
 Current finding:
 
 ```txt
-V284 added static preview field filters for `kind`, `status`, `reviewability`,
-and `nextAction`, but current proof is string/readback plus tests, not executed
-browser/DOM behavior.
+V285 proved static preview text and field filters execute in a DOM-capable
+smoke. The next bottleneck is catalog breadth: the current catalog has only four
+retained pattern cards.
 ```
 
 Current action:
 
 ```txt
-Execute V285-00: add or run the smallest browser/DOM-capable smoke proving that
-the generated static preview can filter visible cards by text plus field
-filters. Keep the artifact self-contained and read-only. Do not add API, MCP,
-dashboard package, DB search service, persistence, or mutation.
+Execute V286-00: add a small number of high-value knowledge cards or retained
+decisions from existing reviewed KRN sources/evidence. Use source-to-decision
+with consumer and falsifier, update catalog/readback guards, and preserve
+read-only reviewability. Do not crawl sources, ingest broad raw materials, add
+API/MCP/dashboard, or claim product readiness.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge static preview browser smoke loop.
+brain knowledge catalog growth loop.
 ```
 
 Falsifier:
 
 ```txt
-The static preview renders filter controls but browser/DOM execution does not
-reduce visible cards correctly, or testing it requires a server/API/DB path.
+The static preview remains useful as a UI shell but cannot answer more KRN
+pattern questions because the catalog is too small or missing high-value
+retained decisions.
 ```
 
 ## Pattern Gate

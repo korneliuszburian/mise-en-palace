@@ -403,7 +403,7 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     card.doesNotProve
   ].join(" ").toLowerCase();
 
-  return `<article data-card data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
+  return `<article data-card data-card-id="${escapeHtml(card.id)}" data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
   <h2>${escapeHtml(card.title)}</h2>
   <div class="refs"><code>${escapeHtml(card.id)}</code></div>
   <div class="chips">

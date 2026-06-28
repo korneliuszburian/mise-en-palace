@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V285 Brain Knowledge Static Preview Browser Smoke
-current task: V285-00 Brain Knowledge Static Preview Browser Smoke
-latest pushed commit before V284: 36a8284 docs(ui): dogfood brain knowledge static preview
-latest CI checked before V284: KRN CI success for 36a8284c20965c05338adf8f9e5bc648873ae0cd
+active stream: V286 Brain Knowledge Catalog Coverage Expansion
+current task: V286-00 Brain Knowledge Catalog Coverage Expansion
+latest pushed commit before V285: a0b8349 feat(ui): filter brain knowledge static preview
+latest CI checked before V285: KRN CI success for a0b83491c6c796bb8b36bddc5f75512a84f41604
 ```
 
 Known current gap:
 
 ```txt
-V285-00 Brain Knowledge Static Preview Browser Smoke is the current gap. V284
-added static preview field filters for `kind`, `status`, `reviewability`, and
-`nextAction`, but proof is still string/readback plus tests. Execute the filter
-behavior in a browser/DOM-capable smoke before any wider UI/search surface.
+V286-00 Brain Knowledge Catalog Coverage Expansion is the current gap. V285
+proved static preview text and field filters execute in a DOM-capable smoke.
+The next bottleneck is catalog breadth: the current catalog has only four
+retained pattern cards.
 ```
 
 ## 2. Product Thesis
@@ -2384,6 +2384,33 @@ Source-to-decision:
 - Consumer: V285 Brain Knowledge Static Preview Browser Smoke.
 - Falsifier: rendered filters exist but do not reduce visible cards under
   executed browser/DOM behavior.
+
+## Outcome V285-00 Brain Knowledge Static Preview Browser Smoke
+
+Summary:
+- added a DOM-capable smoke for generated static HTML;
+- used two controlled knowledge cards with different stable fields;
+- executed the embedded filter script through a fake DOM;
+- proved default count, free-text filtering, `kind` filtering, and empty-state
+  behavior;
+- added `data-card-id` to rendered cards for visible-card assertions.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v285-brain-knowledge-static-preview-browser-smoke/REPORT.md`.
+
+Source-to-decision:
+- Source: V284 field-filter implementation and report.
+- Mechanism: string tests prove markup exists, but not that embedded client-side
+  filter behavior works.
+- KRN implication: execute a no-server DOM smoke before claiming the static
+  preview is usable as a web/search artifact.
+- Decision: open V286 Brain Knowledge Catalog Coverage Expansion.
+- Does not prove: real browser visual polish, accessibility completeness,
+  ranking quality, larger-catalog usefulness, product readiness, or need for
+  API/MCP/dashboard.
+- Consumer: V286 Brain Knowledge Catalog Coverage Expansion.
+- Falsifier: static preview works mechanically but cannot answer more KRN
+  pattern questions because catalog breadth is too small.
 
 ## Condensation Rules
 

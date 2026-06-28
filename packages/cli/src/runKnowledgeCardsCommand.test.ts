@@ -1,4 +1,11 @@
+import {
+  mkdtemp,
+  writeFile
+} from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { runInNewContext } from "node:vm";
 
 import { describe, expect, it } from "vitest";
 
@@ -210,6 +217,57 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("This card does not prove command truth");
   });
 
+  it("executes static html text and field filters in a DOM-capable smoke", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-knowledge-preview-"));
+    const patternCardPath = path.join(directory, "pattern-card.json");
+    const memoryCardPath = path.join(directory, "memory-card.json");
+
+    await writeFile(patternCardPath, JSON.stringify(knowledgeCard({
+      id: "pattern:skill-routing",
+      kind: "pattern",
+      status: "active",
+      title: "Skill routing",
+      summary: "Use progressive-disclosure skills for repeated workflows.",
+      reviewability: "ready",
+      nextAction: "use"
+    })));
+    await writeFile(memoryCardPath, JSON.stringify(knowledgeCard({
+      id: "memory:stale-dashboard",
+      kind: "memory",
+      status: "stale",
+      title: "Stale dashboard plan",
+      summary: "Do not treat old dashboard plans as active product truth.",
+      reviewability: "needs_more_evidence",
+      nextAction: "defer"
+    })));
+
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [patternCardPath, memoryCardPath],
+      patternFiles: [],
+      catalogFiles: [],
+      filter: {},
+      format: "html"
+    });
+    const smoke = executeKnowledgePreviewHtml(result.stdout);
+
+    expect(smoke.count()).toBe("Results: 2");
+
+    smoke.setSearch("skill");
+    expect(smoke.visibleIds()).toEqual(["pattern:skill-routing"]);
+    expect(smoke.count()).toBe("Results: 1");
+
+    smoke.setSearch("");
+    smoke.setFilter("kindFilter", "memory");
+    expect(smoke.visibleIds()).toEqual(["memory:stale-dashboard"]);
+    expect(smoke.count()).toBe("Results: 1");
+
+    smoke.setFilter("reviewabilityFilter", "ready");
+    expect(smoke.visibleIds()).toEqual([]);
+    expect(smoke.count()).toBe("Results: 0");
+    expect(smoke.emptyDisplay()).toBe("block");
+  });
+
   it("resolves root-relative catalog files from a package cwd", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: cliPackageRoot,
@@ -402,4 +460,144 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
 
 function cardIds(resource: PreviewResourceForTest): string[] {
   return resource.cards.map((card) => card.id);
+}
+
+type KnowledgeCardInputForTest = {
+  id: string;
+  kind: string;
+  status: string;
+  title: string;
+  summary: string;
+  reviewability: string;
+  nextAction: string;
+};
+
+function knowledgeCard(input: KnowledgeCardInputForTest): Record<string, unknown> {
+  return {
+    ...input,
+    confidence: "high",
+    sourceRefs: ["test:source"],
+    evidenceRefs: ["test:evidence"],
+    consumers: ["test consumer"],
+    falsifier: "A filter smoke cannot find this card by its stable fields.",
+    doesNotProve: "This card does not prove product readiness.",
+    temporal: {
+      kind: "current",
+      observedAt: "2026-06-28"
+    },
+    dissent: {
+      kind: "none"
+    }
+  };
+}
+
+type FakeControl = {
+  value: string;
+  textContent: string;
+  style: {
+    display: string;
+  };
+  addEventListener: (event: string, listener: () => void) => void;
+  dispatch: (event: string) => void;
+};
+
+type FakeCard = {
+  hidden: boolean;
+  dataset: {
+    id: string;
+    search: string;
+    kind: string;
+    status: string;
+    reviewability: string;
+    nextAction: string;
+  };
+};
+
+type KnowledgePreviewSmoke = {
+  count: () => string;
+  emptyDisplay: () => string;
+  setFilter: (id: string, value: string) => void;
+  setSearch: (value: string) => void;
+  visibleIds: () => string[];
+};
+
+function executeKnowledgePreviewHtml(html: string): KnowledgePreviewSmoke {
+  const scriptStart = html.indexOf("<script>\n    const cards");
+  const scriptEnd = html.indexOf("\n  </script>", scriptStart);
+
+  if (scriptStart === -1 || scriptEnd === -1) {
+    throw new Error("Expected knowledge preview HTML to include executable filter script.");
+  }
+
+  const script = html.slice(scriptStart + "<script>\n".length, scriptEnd);
+  const cards: FakeCard[] = [...html.matchAll(/<article data-card ([^>]+)>/gu)].map((match) => {
+    const attributes = match[1] ?? "";
+
+    return {
+      hidden: false,
+      dataset: {
+        id: attr(attributes, "data-card-id"),
+        search: attr(attributes, "data-search"),
+        kind: attr(attributes, "data-kind"),
+        status: attr(attributes, "data-status"),
+        reviewability: attr(attributes, "data-reviewability"),
+        nextAction: attr(attributes, "data-next-action")
+      }
+    };
+  });
+
+  const controls: Record<string, FakeControl> = {
+    search: fakeControl(),
+    kindFilter: fakeControl(),
+    statusFilter: fakeControl(),
+    reviewabilityFilter: fakeControl(),
+    nextActionFilter: fakeControl(),
+    count: fakeControl(),
+    empty: fakeControl()
+  };
+
+  runInNewContext(script, {
+    document: {
+      querySelectorAll: (selector: string): FakeCard[] => selector === "[data-card]" ? cards : [],
+      getElementById: (id: string): FakeControl => controls[id] ?? fakeControl()
+    }
+  });
+
+  return {
+    count: () => controls.count.textContent,
+    emptyDisplay: () => controls.empty.style.display,
+    setFilter: (id, value) => {
+      controls[id]!.value = value;
+      controls[id]!.dispatch("change");
+    },
+    setSearch: (value) => {
+      controls.search.value = value;
+      controls.search.dispatch("input");
+    },
+    visibleIds: () => cards.filter((card) => !card.hidden).map((card) => card.dataset.id)
+  };
+}
+
+function fakeControl(): FakeControl {
+  const listeners = new Map<string, () => void>();
+
+  return {
+    value: "",
+    textContent: "",
+    style: {
+      display: ""
+    },
+    addEventListener: (event, listener) => {
+      listeners.set(event, listener);
+    },
+    dispatch: (event) => {
+      listeners.get(event)?.();
+    }
+  };
+}
+
+function attr(attributes: string, name: string): string {
+  const match = new RegExp(`${name}="([^"]*)"`, "u").exec(attributes);
+
+  return match?.[1] ?? "";
 }
