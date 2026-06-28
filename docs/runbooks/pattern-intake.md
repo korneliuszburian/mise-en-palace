@@ -76,19 +76,28 @@ irrelevant, and a medium-trust source can still create a useful lab-test.
 
 1. Identify the exact source.
 2. Classify trust tier.
-3. Extract the mechanism, not the vibe.
-4. State the KRN implication.
-5. Decide one of:
+3. Query the retained pattern catalog when a retained pattern may already cover
+   the mechanism:
+
+   ```sh
+   pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text <pattern-or-mechanism>
+   ```
+
+   Use catalog output as read-only context. Do not treat it as ranking, product
+   search, DB truth, memory promotion, or source authority by itself.
+4. Extract the mechanism, not the vibe.
+5. State the KRN implication.
+6. Decide one of:
    - adopt;
    - reject;
    - lab-test;
    - defer.
-6. Pick exactly one primary consumer.
-7. Add a falsifier.
-8. State what the source does not prove.
-9. Decide whether a candidate should be emitted.
-10. Keep the retained note as small as possible.
-11. After execution, record source usefulness feedback or explain why it was not
+7. Pick exactly one primary consumer.
+8. Add a falsifier.
+9. State what the source does not prove.
+10. Decide whether a candidate should be emitted.
+11. Keep the retained note as small as possible.
+12. After execution, record source usefulness feedback or explain why it was not
     measured.
 
 ## Consumer Routing

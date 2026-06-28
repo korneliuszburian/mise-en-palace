@@ -22,11 +22,19 @@ Use this skill before or during TypeScript changes.
 4. Avoid `any`; isolate and justify it if unavoidable.
 5. Avoid double assertions unless no better option exists.
 6. Put runtime validation near external boundaries.
-7. If the work touches an external input boundary, check
-   `docs/patterns/typescript-boundary-patterns.md` and state whether
-   `ts-boundary-unknown-first-result-state` applies.
-8. Decide whether `ts-type-critic` should review.
-9. Run typecheck before completion.
+7. If the work touches an external input boundary, query the retained pattern
+   catalog before implementation when the catalog is available:
+
+   ```sh
+   pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text unknown-first
+   ```
+
+   Use the catalog result as read-only pattern context. If the command is not
+   available, fall back to `docs/patterns/typescript-boundary-patterns.md` and
+   record that catalog readback was not used.
+8. State whether `ts-boundary-unknown-first-result-state` applies.
+9. Decide whether `ts-type-critic` should review.
+10. Run typecheck before completion.
 
 ## Output
 

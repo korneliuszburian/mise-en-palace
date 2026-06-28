@@ -31,6 +31,17 @@ Use this skill to prevent source hoarding.
 Use this lane for official docs, papers, practitioner writing, course material,
 competitor docs, local evidence, and user-provided research.
 
+Before retaining or applying a source/pattern, query the explicit brain
+knowledge catalog when retained pattern context is relevant:
+
+```sh
+pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text source-to-decision
+```
+
+Use catalog results as read-only context. They can guide adoption, rejection,
+consumer routing, and falsifiers, but they do not promote memory, mutate source
+truth, rank knowledge, or prove product readiness.
+
 For multi-source, course, paper, practitioner-pattern, or operator-facing
 intake, use `docs/runbooks/pattern-intake.md` as the fuller procedure. Keep
 this skill as the trigger/gate; keep the runbook as the workflow.

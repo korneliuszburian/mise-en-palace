@@ -23,18 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V270 Brain Knowledge Skill Readback Hook
-current task: V270-00 Brain Knowledge Skill Readback Hook
-latest pushed commit before V269: a41a959 docs(readmodel): add source decision pattern card
-latest CI checked before V269: KRN CI success for a41a9591d1dff2f0c79915e2b38f68d64b90d91b
+active stream: V271 Brain Knowledge Skill Readback Usefulness Trial
+current task: V271-00 Brain Knowledge Skill Readback Usefulness Trial
+latest pushed commit before V270: ff28af0 test(readmodel): guard brain knowledge catalog search
+latest CI checked before V270: KRN CI success for ff28af01a59cf0c686b7d8f42326d0b11f29928f
 ```
 
 Known current gap:
 
 ```txt
-V270-00 Brain Knowledge Skill Readback Hook is the current gap. V269 guarded
-catalog search/readback; now relevant skills should instruct Codex when to query
-the explicit catalog for pattern context.
+V271-00 Brain Knowledge Skill Readback Usefulness Trial is the current gap.
+V270 connected relevant skills/runbook guidance to explicit catalog readback;
+now one real slice should prove whether the returned card is used and helpful.
 ```
 
 ## 2. Product Thesis
@@ -825,7 +825,7 @@ git diff --check
 
 ### V270-00 Brain Knowledge Skill Readback Hook
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -858,6 +858,136 @@ Verification commands:
 pnpm --filter @krn/harness test -- contextHygieneInvariants activePlanInvariants patternChainInvariants
 git diff --check
 ```
+
+### V271-00 Brain Knowledge Skill Readback Usefulness Trial
+
+Status: active.
+
+Goal:
+
+```txt
+Run one bounded TypeScript-boundary or source-to-decision slice through the
+updated skill guidance and record whether the explicit catalog readback card was
+selected, used, helped, neutral, noise, or missing.
+```
+
+Product rationale:
+
+```txt
+V270 made the catalog reachable from skills. The next useful proof is whether a
+real slice benefits from that readback before building UI/search.
+```
+
+Architectural rationale:
+
+```txt
+Pattern brain should grow through measured skill usage, not hidden routing or
+dashboard-first surfaces.
+```
+
+Evidence source:
+
+- V269 catalog search guard.
+- V270 skill readback hook report.
+- `.agents/skills/typescript-type-safety/SKILL.md`.
+- `.agents/skills/source-to-decision/SKILL.md`.
+- `docs/runbooks/pattern-intake.md`.
+
+Official/external sources:
+
+- no new external source required unless the chosen slice introduces one.
+
+Inputs required:
+
+- `docs/brain-knowledge/catalog.json`
+- one bounded TypeScript-boundary or source-to-decision task selected from
+  current repo evidence.
+
+Files likely touched:
+
+- only files required by the chosen bounded task;
+- one V271 report under `docs/reviews/controlled-dogfood/`.
+
+Allowed writes:
+
+- focused source/docs/test changes required by the chosen slice;
+- V271 report;
+- compact plan updates.
+
+Forbidden writes:
+
+- UI/API/MCP;
+- ranking engine;
+- hidden semantic hooks;
+- broad research ingestion;
+- DB schema/migration unless the chosen slice independently requires it;
+- memory/source mutation;
+- living target repo writes.
+
+Output requirements:
+
+- report records the exact catalog command run;
+- report classifies each returned card as helped / neutral / noise / missing;
+- report states what the card proved and did not prove.
+
+Definition of Done:
+
+- one bounded slice uses the updated skill/runbook catalog readback;
+- verification for touched files passes;
+- report explains whether catalog readback reduced review burden or improved
+  the decision;
+- active plan advances to the next bounded task.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text <chosen-query>
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no claim of product search or product readiness;
+- no docs-only assertion without a real catalog command;
+- no broad roadmap expansion.
+
+Risk:
+
+- choosing a slice too trivial to measure usefulness.
+
+Rollback:
+
+- revert the focused V271 commit.
+
+Condensation expectation:
+
+- one compact outcome block plus linked report.
+
+Next-task synthesis rule:
+
+- if catalog readback helped, next task may gate UI/search readiness or add one
+  more retained pattern; if it did not help, next task should repair catalog
+  query/usefulness reporting before UI.
+
+Pattern surface:
+
+- skills / pattern brain / TypeScript or source-to-decision.
+
+Primary consumer:
+
+- future Codex skill execution and UI/search readiness gate.
+
+Does not prove:
+
+- ranking quality, DB-backed knowledge store, UI readiness, product readiness,
+  or automatic skill selection.
+
+Falsifier:
+
+- the slice cannot show whether the card was used/helpful, or proceeds without
+  running the catalog command.
 
 ## Decision Log
 
@@ -956,7 +1086,37 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V267-00 complete: added explicit catalog-file preview.
 - V268-00 complete: added a second retained pattern to the catalog.
 - V269-00 complete: guarded deterministic catalog search/readback behavior.
-- V270-00 active: route relevant skills to brain knowledge catalog readback.
+- V270-00 complete: routed TypeScript/source-to-decision/pattern-intake
+  workflows to explicit brain knowledge catalog readback.
+- V271-00 active: prove whether skill-routed catalog readback helps one bounded
+  source or pattern decision.
+
+## Outcome V270-00 Brain Knowledge Skill Readback Hook
+
+Summary:
+- updated `typescript-type-safety` to query the catalog for unknown-first
+  boundary context;
+- updated `source-to-decision` to query the catalog before retaining or applying
+  source/pattern context;
+- updated `docs/runbooks/pattern-intake.md` to query the catalog before
+  retaining another pattern;
+- guarded the skill guidance in `skillInvariants`.
+
+Source-to-decision:
+- Source: V267 explicit catalog preview, V268 second retained pattern, V269
+  catalog search guard, existing TypeScript and source-to-decision skills, and
+  the pattern intake runbook.
+- Mechanism: retained patterns only influence future work when execution
+  workflows read them before implementation or retention decisions.
+- KRN implication: skills should route to read-only catalog context before
+  UI/search or hidden automation.
+- Decision: add explicit catalog readback guidance to the smallest relevant
+  skills/runbook and open V271 to measure usefulness in a real slice.
+- Does not prove: automatic skill selection, product readiness, ranking,
+  DB-backed knowledge, UI/search, or broad research condensation.
+- Consumer: V271 skill readback usefulness trial.
+- Falsifier: future slices cannot say whether the catalog card was used,
+  helped, neutral, noise, or missing.
 
 ## Outcome V264-00 Brain Knowledge CLI Readback Preview
 

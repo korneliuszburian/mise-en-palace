@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V270 Brain Knowledge Skill Readback Hook
-current task: V270-00 Brain Knowledge Skill Readback Hook
+active stream: V271 Brain Knowledge Skill Readback Usefulness Trial
+current task: V271-00 Brain Knowledge Skill Readback Usefulness Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -50,26 +50,29 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V270 Brain Knowledge Skill Readback Hook
+### V271 Brain Knowledge Skill Readback Usefulness Trial
 
 Goal:
 
-Route relevant Codex skill workflows to the explicit brain knowledge catalog
-readback when pattern context is needed.
+Run one bounded TypeScript or source-to-decision task through the updated skill
+guidance and record whether catalog readback was used, helped, neutral, noise,
+or missing.
 
 Current finding:
 
 ```txt
-V269 guarded deterministic catalog readback over multiple retained patterns.
-The next gap is that skills do not yet tell Codex when to query the catalog.
+V270 connected the retained pattern catalog to relevant skills and runbooks.
+The next gap is usefulness: prove that a real slice actually queries and uses
+the catalog instead of merely documenting the hook.
 ```
 
 Current action:
 
 ```txt
-Execute V270-00: update the smallest relevant skill/runbook guidance to use
-`krn knowledge cards --catalog-file ...` for pattern context. Do not build
-automatic skill routing, hidden hooks, UI/API/MCP, DB schema, or ranking.
+Execute V271-00: choose one bounded TS-boundary or source-to-decision slice,
+query `krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json`,
+and report whether the returned card helped the implementation/review decision.
+Do not build UI/API/MCP, ranking, hidden hooks, or broad research ingestion.
 ```
 
 Primary consumer:
@@ -81,8 +84,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V270 becomes automatic semantic routing, hidden hooks, product search, or broad
-skill sprawl.
+V271 becomes another docs-only assertion, or the report cannot state whether the
+catalog card was used, helped, neutral, noise, or missing.
 ```
 
 ## Pattern Gate

@@ -96,6 +96,10 @@ describe("KRN skill invariants", () => {
 
     expect(sourceToDecision).toContain("decisions with a consumer and falsifier");
     expect(sourceToDecision).toContain("docs/runbooks/pattern-intake.md");
+    expect(sourceToDecision).toContain(
+      "pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text source-to-decision"
+    );
+    expect(sourceToDecision).toContain("Use catalog results as read-only context.");
     expect(sourceToDecision).toContain("Source without mechanism is decoration.");
     expect(sourceToDecision).toContain("Decision without falsifier is dogma.");
     expect(sourceToDecision).toContain("Do not copy paid/proprietary course material into KRN.");
@@ -243,6 +247,10 @@ describe("KRN skill invariants", () => {
     expect(typeSafety).toContain("unknown narrowing");
     expect(typeSafety).toContain("any usage");
     expect(typeSafety).toContain("fixes that might weaken type safety");
+    expect(typeSafety).toContain(
+      "pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text unknown-first"
+    );
+    expect(typeSafety).toContain("Use the catalog result as read-only pattern context.");
     expect(typeSafety).toContain("Keep external data as `unknown` until validated.");
     expect(typeSafety).toContain("Avoid `any`; isolate and justify it if unavoidable.");
     expect(typeSafety).toContain("Do not trust `JSON.parse`, `fetch().json()`, file reads, env vars, CLI args");
