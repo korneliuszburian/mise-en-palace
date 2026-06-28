@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V233 Best-Pattern Source Usefulness Closure Dogfood
-current task: V233-00 Best-Pattern Source Usefulness Closure Dogfood
+active stream: V234 TypeScript Best-Pattern Application Trial
+current task: V234-00 TypeScript Best-Pattern Application Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -28,50 +28,52 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V232: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V233: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
            normalization/readback guards plus best-pattern usefulness closure
-           complete.
+           and closure dogfood complete.
 ```
 
 ## Active Stream
 
-### V233 Best-Pattern Source Usefulness Closure Dogfood
+### V234 TypeScript Best-Pattern Application Trial
 
 Goal:
 
-Dogfood the V232 best-pattern usefulness closure by recording source usefulness
-for the source/runbook/skill evidence that shaped V232.
+Apply one retained high-quality TypeScript pattern to a narrow real KRN source
+surface, or record that the inspected surface has no actionable drift.
 
 Current finding:
 
 ```txt
-V232 updated source-to-decision, pattern-intake, evidence-review-loop, and
-invariant tests so sources that materially shape work must close the source
-usefulness loop. The new closure rule still needs one explicit dogfood capture.
+V232/V233 made best-pattern source usefulness measurable. The next proof should
+show the pattern loop improving a real TypeScript boundary rather than only
+guarding docs/skills.
 ```
 
 Current action:
 
 ```txt
-Execute V233-00: capture/report source usefulness for the V232 source evidence,
-prefer persisted evidence if DB is available, and verify readback if persisted.
+Execute V234-00: use retained TypeScript source/standards to inspect one narrow
+source boundary, apply the smallest final-pattern repair if drift exists, and
+capture source usefulness after verification.
 ```
 
 Primary consumer:
 
 ```txt
-Pattern/course/paper/source-driven KRN slices and future evidence review.
+KRN TypeScript source boundaries and future pattern-intake source application.
 ```
 
 Falsifier:
 
 ```txt
-V233 cannot record source usefulness for V232, records it only as decorative
-prose, or fails to preserve proof/non-proof boundaries.
+The slice becomes a broad type cleanup, weakens types, copies course material,
+touches unrelated surfaces, or cannot name a concrete source mechanism and
+proof/non-proof boundary.
 ```
 
 ## Pattern Gate

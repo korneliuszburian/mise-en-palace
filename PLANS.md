@@ -77,13 +77,14 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V232 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V233 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
-best-pattern usefulness closure, and related re-gate slices: complete
-active stream: V233 Best-Pattern Source Usefulness Closure Dogfood
-current task: V233-00 Best-Pattern Source Usefulness Closure Dogfood
+best-pattern usefulness closure and closure dogfood, and related re-gate
+slices: complete
+active stream: V234 TypeScript Best-Pattern Application Trial
+current task: V234-00 TypeScript Best-Pattern Application Trial
 ```
 
 Evidence already recorded in repo:
@@ -99,7 +100,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V233-00 Best-Pattern Source Usefulness Closure Dogfood.
+V234-00 TypeScript Best-Pattern Application Trial.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18521,6 +18522,77 @@ Next active stream:
 
 Next active task:
 - V233-00 Best-Pattern Source Usefulness Closure Dogfood.
+
+## Outcome 2026-06-28 V233 Best-Pattern Source Usefulness Closure Dogfood
+
+Completed task:
+- V233-00 Best-Pattern Source Usefulness Closure Dogfood.
+
+Decision:
+- Dogfood V232 by recording source usefulness outcomes for the two durable
+  source surfaces that shaped V232:
+  - `source-to-decision-skill`;
+  - `pattern-intake-runbook`.
+- Use DB-backed evidence capture and readback.
+
+Artifact:
+- `docs/reviews/controlled-dogfood/2026-06-28-v233-best-pattern-source-usefulness-closure/REPORT.md`
+
+DB evidence:
+- `pnpm db:ready`: passed.
+- migrations: 14/14.
+- pgvector: available.
+- executionRun: `0bba403e-1b77-43bb-8957-0b640bc6981c`.
+- evidenceBundle: `78c9901b-d4c6-4516-b410-641c21c824f3`.
+- reviewAssessment: `c0b55d91-16fc-4cbd-84b6-8af6c4c9f727`.
+- feedbackDelta: `9bd5f270-3f08-464f-9f27-7ec1a77c1ece`.
+
+Evidence:
+- `krn plan --persist`: passed.
+- `krn evidence capture --persist --source-usefulness ...`: passed.
+- `krn run show --run-id 0bba403e-1b77-43bb-8957-0b640bc6981c`: passed.
+- `krn run show --run-id 0bba403e-1b77-43bb-8957-0b640bc6981c --json`: passed.
+
+Readback result:
+- `source-to-decision-skill`: `outcome=helped`.
+- `pattern-intake-runbook`: `outcome=helped`.
+- Both outcomes retained evidence refs and does-not-prove boundaries.
+- Memory Core mutation: none.
+
+Source-to-decision:
+- Source: V232 source-to-decision skill and pattern-intake runbook updates.
+- Mechanism: source usefulness closure turns best-pattern guidance into
+  measurable run feedback instead of decorative authority.
+- KRN implication: KRN can now dogfood whether a retained pattern/source helped
+  a slice and read that outcome back from DB state.
+- Decision: accept best-pattern source usefulness closure as DB-backed for
+  future source-shaped work.
+- Does not prove: source selector quality, research quality, product readiness,
+  candidate quality, or automatic memory promotion.
+- Consumer: future TypeScript, infra, harness, CI/eval, Codex-surface, and
+  operator-UX slices that use source patterns.
+- Falsifier: future source-shaped work omits source usefulness feedback or
+  stores only decorative source prose without evidence refs and does-not-prove.
+
+New finding:
+- The source usefulness loop is now closed for durable best-pattern workflow
+  rules. The next proof should apply a retained high-quality pattern to a narrow
+  real TypeScript boundary in source code.
+
+New task:
+- V234-00 TypeScript Best-Pattern Application Trial.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V234 TypeScript Best-Pattern Application Trial.
+
+Next active task:
+- V234-00 TypeScript Best-Pattern Application Trial.
 
 ## 21. Final Response Format For Codex Runs
 
