@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V269 Brain Knowledge Catalog Search Guard
-current task: V269-00 Brain Knowledge Catalog Search Guard
+active stream: V270 Brain Knowledge Skill Readback Hook
+current task: V270-00 Brain Knowledge Skill Readback Hook
 ```
 
 ## Compact Completed Checkpoints
@@ -50,25 +50,26 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V269 Brain Knowledge Catalog Search Guard
+### V270 Brain Knowledge Skill Readback Hook
 
 Goal:
 
-Guard catalog search/readback behavior across multiple retained patterns.
+Route relevant Codex skill workflows to the explicit brain knowledge catalog
+readback when pattern context is needed.
 
 Current finding:
 
 ```txt
-V268 added a second retained pattern to the catalog. The next gap is a focused
-guard that proves distinct catalog queries return distinct cards and preserve
-proof/non-proof boundaries.
+V269 guarded deterministic catalog readback over multiple retained patterns.
+The next gap is that skills do not yet tell Codex when to query the catalog.
 ```
 
 Current action:
 
 ```txt
-Execute V269-00: add a focused catalog search/readback guard. Do not build
-ranking, UI/API/MCP, DB schema, broad ingestion, or directory crawling.
+Execute V270-00: update the smallest relevant skill/runbook guidance to use
+`krn knowledge cards --catalog-file ...` for pattern context. Do not build
+automatic skill routing, hidden hooks, UI/API/MCP, DB schema, or ranking.
 ```
 
 Primary consumer:
@@ -80,7 +81,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V269 becomes ranking/search-engine work or loses proof/non-proof boundaries.
+V270 becomes automatic semantic routing, hidden hooks, product search, or broad
+skill sprawl.
 ```
 
 ## Pattern Gate

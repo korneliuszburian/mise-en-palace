@@ -23,18 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V269 Brain Knowledge Catalog Search Guard
-current task: V269-00 Brain Knowledge Catalog Search Guard
-latest pushed commit before V268: 5782281 feat(readmodel): preview brain knowledge catalog
-latest CI checked before V268: KRN CI success for 57822811007aba2b68911fd428e79728570b3caa
+active stream: V270 Brain Knowledge Skill Readback Hook
+current task: V270-00 Brain Knowledge Skill Readback Hook
+latest pushed commit before V269: a41a959 docs(readmodel): add source decision pattern card
+latest CI checked before V269: KRN CI success for a41a9591d1dff2f0c79915e2b38f68d64b90d91b
 ```
 
 Known current gap:
 
 ```txt
-V269-00 Brain Knowledge Catalog Search Guard is the current gap. V268 added a
-second retained pattern; now KRN needs a focused guard proving distinct catalog
-queries return distinct cards and keep proof/non-proof boundaries.
+V270-00 Brain Knowledge Skill Readback Hook is the current gap. V269 guarded
+catalog search/readback; now relevant skills should instruct Codex when to query
+the explicit catalog for pattern context.
 ```
 
 ## 2. Product Thesis
@@ -790,7 +790,7 @@ Next-task synthesis rule:
 
 ### V269-00 Brain Knowledge Catalog Search Guard
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -820,6 +820,42 @@ Verification commands:
 pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
 pnpm typecheck
 pnpm test
+git diff --check
+```
+
+### V270-00 Brain Knowledge Skill Readback Hook
+
+Status: active.
+
+Goal:
+
+```txt
+Update the smallest relevant skill/runbook guidance so TypeScript boundary,
+source-to-decision, or pattern-intake work can query
+`krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json` before
+implementation when retained pattern context is needed.
+```
+
+Rationale:
+
+```txt
+V269 proves catalog readback works. The next brain step is not UI; it is making
+Codex execution workflows use the catalog intentionally.
+```
+
+Forbidden writes:
+
+- automatic semantic hooks;
+- hidden skill routing;
+- broad skill zoo;
+- UI/API/MCP;
+- DB schema/migration;
+- ranking engine.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- contextHygieneInvariants activePlanInvariants patternChainInvariants
 git diff --check
 ```
 
@@ -919,7 +955,8 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V266-00 complete: connected explicit retained pattern files to CLI readback.
 - V267-00 complete: added explicit catalog-file preview.
 - V268-00 complete: added a second retained pattern to the catalog.
-- V269-00 active: guard deterministic catalog search/readback behavior.
+- V269-00 complete: guarded deterministic catalog search/readback behavior.
+- V270-00 active: route relevant skills to brain knowledge catalog readback.
 
 ## Outcome V264-00 Brain Knowledge CLI Readback Preview
 
@@ -1041,6 +1078,28 @@ Source-to-decision:
 - Consumer: future pattern intake, research condensation, and catalog reviews.
 - Falsifier: retained pattern cards can omit source-to-decision requirements
   while tests still pass.
+
+## Outcome V269-00 Brain Knowledge Catalog Search Guard
+
+Summary:
+- added a JSON readback guard in `runKnowledgeCardsCommand.test.ts`;
+- verified `unknown-first` returns the TypeScript boundary pattern card;
+- verified `source-to-decision` returns the source-to-decision retention card;
+- verified read-only/no-mutation/proof boundaries are preserved.
+
+Source-to-decision:
+- Source: V267 catalog preview and V268 second retained pattern.
+- Mechanism: multi-card catalog search needs deterministic readback guards
+  before future UI/search or skill usage.
+- KRN implication: the catalog can be used by operators/skills as a bounded
+  readback surface, but not as ranking/product search.
+- Decision: guard deterministic catalog readback and open V270 to route relevant
+  skills to use the catalog intentionally.
+- Does not prove: ranking quality, DB-backed card store, UI readiness, or
+  product readiness.
+- Consumer: V270 skill readback guidance and future search/readback fixtures.
+- Falsifier: distinct queries return wrong cards or lose proof boundaries while
+  tests still pass.
 
 ## Outcome V255-00 Active Ledger Condensation
 

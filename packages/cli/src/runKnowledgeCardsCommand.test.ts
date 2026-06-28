@@ -157,6 +157,58 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("Source-to-decision retention gate");
   });
 
+  it("guards deterministic catalog search results and proof boundaries", async () => {
+    const typeScriptResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "unknown-first"
+      },
+      format: "json"
+    });
+    const sourceDecisionResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "source-to-decision"
+      },
+      format: "json"
+    });
+
+    const typeScriptPreview = parsePreviewResource(typeScriptResult.stdout);
+    const sourceDecisionPreview = parsePreviewResource(sourceDecisionResult.stdout);
+
+    expect(cardIds(typeScriptPreview)).toEqual(["pattern:ts-boundary-unknown-first-result-state"]);
+    expect(cardIds(sourceDecisionPreview)).toEqual(["pattern:source-to-decision-retention-gate"]);
+    expect(typeScriptPreview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(sourceDecisionPreview.proof.doesNotProve).toContain("KRN is product-ready");
+    expect(typeScriptPreview.access).toBe("read_only");
+    expect(typeScriptPreview.mutation).toBe("none");
+    expect(sourceDecisionPreview.access).toBe("read_only");
+    expect(sourceDecisionPreview.mutation).toBe("none");
+  });
+
+  it("returns both catalog cards without a text filter", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {},
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview).sort()).toEqual([
+      "pattern:source-to-decision-retention-gate",
+      "pattern:ts-boundary-unknown-first-result-state"
+    ]);
+  });
+
   it("rejects invalid catalog files", async () => {
     await expect(runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -171,4 +223,59 @@ describe("runKnowledgeCardsCommand", () => {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+type PreviewResourceForTest = {
+  access: "read_only";
+  mutation: "none";
+  cards: {
+    id: string;
+  }[];
+  proof: {
+    doesNotProve: string[];
+  };
+};
+
+function parsePreviewResource(value: string): PreviewResourceForTest {
+  const parsed: unknown = JSON.parse(value);
+
+  if (!isRecord(parsed)) {
+    throw new Error("knowledge cards JSON output must be an object");
+  }
+
+  const access = parsed["access"];
+  const mutation = parsed["mutation"];
+  const cards = parsed["cards"];
+  const proof = parsed["proof"];
+
+  if (access !== "read_only" || mutation !== "none" || !Array.isArray(cards) || !isRecord(proof)) {
+    throw new Error("knowledge cards JSON output does not match preview resource shape");
+  }
+
+  const doesNotProve = proof["doesNotProve"];
+
+  if (!Array.isArray(doesNotProve) || !doesNotProve.every((item) => typeof item === "string")) {
+    throw new Error("knowledge cards JSON output must include doesNotProve proof boundaries");
+  }
+
+  return {
+    access,
+    mutation,
+    cards: cards.map((card) => {
+      if (!isRecord(card) || typeof card["id"] !== "string") {
+        throw new Error("knowledge cards JSON output cards must include ids");
+      }
+
+      return {
+        id: card["id"]
+      };
+    }),
+    proof: {
+      doesNotProve
+    }
+  };
+}
+
+function cardIds(resource: PreviewResourceForTest): string[] {
+  return resource.cards.map((card) => card.id);
 }
