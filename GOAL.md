@@ -33,9 +33,8 @@ current task: V316-00 Ingest v0 Local Source Artifact Preview.
 Current task:
 
 ```txt
-Inspect and implement or record the smallest local source artifact -> hash ->
-chunk/source-range preview path without source crawler, DB schema, dashboard,
-API/MCP, worker daemon, or broad eval platform.
+Inspect or implement the smallest local source artifact preview path without
+source crawler, DB schema, dashboard, API/MCP, worker, or broad eval platform.
 ```
 
 ## Remaining Work
