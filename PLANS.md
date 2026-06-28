@@ -77,14 +77,14 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V233 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V234 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
-slices: complete
-active stream: V234 TypeScript Best-Pattern Application Trial
-current task: V234-00 TypeScript Best-Pattern Application Trial
+slices plus TS best-pattern application: complete
+active stream: V235 Evidence Capture Sibling Package Path Normalization
+current task: V235-00 Evidence Capture Sibling Package Path Normalization
 ```
 
 Evidence already recorded in repo:
@@ -100,7 +100,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V234-00 TypeScript Best-Pattern Application Trial.
+V235-00 Evidence Capture Sibling Package Path Normalization.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18593,6 +18593,77 @@ Next active stream:
 
 Next active task:
 - V234-00 TypeScript Best-Pattern Application Trial.
+
+## Outcome 2026-06-28 V234 TypeScript Best-Pattern Application Trial
+
+Completed task:
+- V234-00 TypeScript Best-Pattern Application Trial.
+
+Decision:
+- Apply retained TypeScript pattern guidance to one narrow core boundary.
+- Replace `CandidateReviewabilityInput.sourceLineage?: readonly unknown[]` with
+  `readonly SourceLineageRef[]`.
+- Add a core test proving typed source lineage can serve as review evidence.
+- Do not run broad TypeScript cleanup and do not change metadata persistence
+  boundaries.
+
+Artifact:
+- `docs/reviews/controlled-dogfood/2026-06-28-v234-typescript-best-pattern-application/REPORT.md`
+
+DB evidence:
+- executionRun: `4b01b223-d6aa-4754-9784-6c28b41562e6`.
+- evidenceBundle: `bd86dbf6-a8a5-4440-9691-c7bd0d268e51`.
+- reviewAssessment: `316820e9-89f8-4292-bced-d6d4a7481906`.
+- feedbackDelta: `6497ec95-f6aa-49a7-8a6c-d8a24601345d`.
+
+Evidence:
+- `pnpm --filter @krn/core test -- candidateReviewability`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `git diff --check`: passed.
+- `krn evidence capture --persist --source-usefulness ...`: passed.
+- `krn run show --json`: passed.
+
+Source usefulness:
+- `total-typescript-designing-types`: `helped`.
+- `total-typescript-unions-narrowing`: `helped`.
+
+Source-to-decision:
+- Source: retained Total TypeScript practitioner sources in `docs/KRN_SOURCES.md`
+  and KRN TypeScript Excellence Standard.
+- Mechanism: domain types should expose meaningful authority/lifecycle/review
+  facts instead of accepting arbitrary unknown values where a domain type
+  already exists.
+- KRN implication: candidate reviewability source lineage is a typed review
+  fact and should use `SourceLineageRef[]`.
+- Decision: typed source lineage in `CandidateReviewabilityInput`.
+- Does not prove: broad TypeScript quality, source selector quality, product
+  readiness, or that all metadata fields should become typed.
+- Consumer: core candidate reviewability and future source-grounded candidate
+  review.
+- Falsifier: future candidate reviewability inputs accept arbitrary lineage
+  values or source-lineage evidence cannot be represented with the core source
+  lineage type.
+
+New finding:
+- V234 persisted changed-file readback still produced sibling package paths as
+  `core/src/...` instead of full repo-root-relative paths
+  `packages/core/src/...` when evidence capture ran from `packages/cli`.
+
+New task:
+- V235-00 Evidence Capture Sibling Package Path Normalization.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V235 Evidence Capture Sibling Package Path Normalization.
+
+Next active task:
+- V235-00 Evidence Capture Sibling Package Path Normalization.
 
 ## 21. Final Response Format For Codex Runs
 

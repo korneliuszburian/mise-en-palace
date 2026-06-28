@@ -1,3 +1,7 @@
+import type {
+  SourceLineageRef
+} from "./memory.js";
+
 export type CandidateReviewability =
   | "ready"
   | "needs_more_evidence"
@@ -10,7 +14,7 @@ export interface CandidateReviewabilityInput {
   summary: string;
   body?: string;
   evidenceRefs?: readonly string[];
-  sourceLineage?: readonly unknown[];
+  sourceLineage?: readonly SourceLineageRef[];
   applicationGuidance?: string;
   doesNotProve?: string;
   missingFields?: readonly string[];
@@ -26,7 +30,7 @@ export interface CandidateReviewabilityAssessment {
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
 
-const hasItems = (values: readonly unknown[] | undefined): boolean =>
+const hasItems = <T>(values: readonly T[] | undefined): boolean =>
   values !== undefined && values.length > 0;
 
 const vaguePhrases = [

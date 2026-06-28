@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V234 TypeScript Best-Pattern Application Trial
-current task: V234-00 TypeScript Best-Pattern Application Trial
+active stream: V235 Evidence Capture Sibling Package Path Normalization
+current task: V235-00 Evidence Capture Sibling Package Path Normalization
 ```
 
 ## Compact Completed Checkpoints
@@ -28,52 +28,53 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V233: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V234: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
            normalization/readback guards plus best-pattern usefulness closure
-           and closure dogfood complete.
+           and closure dogfood plus TS best-pattern application complete.
 ```
 
 ## Active Stream
 
-### V234 TypeScript Best-Pattern Application Trial
+### V235 Evidence Capture Sibling Package Path Normalization
 
 Goal:
 
-Apply one retained high-quality TypeScript pattern to a narrow real KRN source
-surface, or record that the inspected surface has no actionable drift.
+Normalize evidence changed-file paths to full repo-root-relative paths for
+sibling package files when evidence capture runs from `packages/cli`.
 
 Current finding:
 
 ```txt
-V232/V233 made best-pattern source usefulness measurable. The next proof should
-show the pattern loop improving a real TypeScript boundary rather than only
-guarding docs/skills.
+V234 proved TypeScript source usefulness, but persisted changed-file readback
+stored sibling package paths as `core/src/...` instead of
+`packages/core/src/...` when capture ran through `pnpm --filter @krn/cli`.
 ```
 
 Current action:
 
 ```txt
-Execute V234-00: use retained TypeScript source/standards to inspect one narrow
-source boundary, apply the smallest final-pattern repair if drift exists, and
-capture source usefulness after verification.
+Execute V235-00: repair evidence changed-file path normalization relative to the
+actual repo root and add focused tests for sibling package, current package, and
+docs paths.
 ```
 
 Primary consumer:
 
 ```txt
-KRN TypeScript source boundaries and future pattern-intake source application.
+Evidence capture, run readback, source usefulness reports, and dirty-context
+review.
 ```
 
 Falsifier:
 
 ```txt
-The slice becomes a broad type cleanup, weakens types, copies course material,
-touches unrelated surfaces, or cannot name a concrete source mechanism and
-proof/non-proof boundary.
+Readback still stores `core/src/...` for `packages/core` files, breaks existing
+intended/unrelated/unknown classification, or changes target-repo evidence
+semantics.
 ```
 
 ## Pattern Gate

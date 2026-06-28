@@ -29,6 +29,18 @@ describe("candidate reviewability", () => {
     });
   });
 
+  it("accepts typed source lineage as review evidence", () => {
+    expect(assessCandidateReviewability({
+      summary: "Use source-grounded candidate review.",
+      sourceLineage: [{ sourceId: "source-claim-1", note: "review source" }],
+      applicationGuidance: "Use when reviewing source-grounded candidates.",
+      doesNotProve: "This does not prove the candidate should be promoted."
+    })).toEqual({
+      reviewability: "ready",
+      reasons: ["Candidate has review evidence, application guidance, and doesNotProve boundary."]
+    });
+  });
+
   it("classifies vague candidates as too_vague", () => {
     expect(assessCandidateReviewability({
       summary: "Review changed files for reusable memory.",
