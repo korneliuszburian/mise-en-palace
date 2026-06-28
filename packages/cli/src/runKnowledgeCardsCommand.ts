@@ -11,6 +11,8 @@ import {
   searchBrainKnowledgeCards
 } from "@krn/harness";
 import {
+  findRepoRoot,
+  pathExists,
   readJsonObject
 } from "./cliFileBoundary.js";
 
@@ -69,17 +71,17 @@ export const runKnowledgeCardsCommand = async (
   const resolvedCatalogFiles: string[] = [];
 
   for (const cardFile of runtime.cardFiles) {
-    await loadCardFile(cardFile, path.resolve(cwd, cardFile), loadedCards);
+    await loadCardFile(cardFile, await resolveInputFile(cwd, cardFile), loadedCards);
     resolvedFiles.push(cardFile);
   }
 
   for (const patternFile of runtime.patternFiles) {
-    await loadPatternFile(patternFile, path.resolve(cwd, patternFile), loadedCards);
+    await loadPatternFile(patternFile, await resolveInputFile(cwd, patternFile), loadedCards);
     resolvedPatternFiles.push(patternFile);
   }
 
   for (const catalogFile of runtime.catalogFiles) {
-    const resolvedCatalogFile = path.resolve(cwd, catalogFile);
+    const resolvedCatalogFile = await resolveInputFile(cwd, catalogFile);
     const catalog = parseKnowledgeCatalog(await readJsonObject(resolvedCatalogFile));
 
     if (catalog === undefined) {
@@ -162,6 +164,19 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
 
 const formatList = (items: readonly string[]): string =>
   items.length === 0 ? "none" : items.join(", ");
+
+const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {
+  const cwdPath = path.resolve(cwd, filePath);
+
+  if (await pathExists(cwdPath)) {
+    return cwdPath;
+  }
+
+  const repoRoot = await findRepoRoot(cwd);
+  const repoRootPath = path.resolve(repoRoot, filePath);
+
+  return repoRootPath;
+};
 
 type KnowledgeCatalogInput = {
   cardFiles: string[];

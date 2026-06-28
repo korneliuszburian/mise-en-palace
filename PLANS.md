@@ -23,18 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V271 Brain Knowledge Skill Readback Usefulness Trial
-current task: V271-00 Brain Knowledge Skill Readback Usefulness Trial
-latest pushed commit before V270: ff28af0 test(readmodel): guard brain knowledge catalog search
-latest CI checked before V270: KRN CI success for ff28af01a59cf0c686b7d8f42326d0b11f29928f
+active stream: V272 Brain Knowledge UI/Search Readiness Gate
+current task: V272-00 Brain Knowledge UI/Search Readiness Gate
+latest pushed commit before V271: 903643a docs(skills): route pattern catalog readback
+latest CI checked before V271: KRN CI success for 903643a762e5a1dc19d0f984ba4a6ea754fc94af
 ```
 
 Known current gap:
 
 ```txt
-V271-00 Brain Knowledge Skill Readback Usefulness Trial is the current gap.
-V270 connected relevant skills/runbook guidance to explicit catalog readback;
-now one real slice should prove whether the returned card is used and helpful.
+V272-00 Brain Knowledge UI/Search Readiness Gate is the current gap. V271
+proved skill-routed catalog readback is useful by finding and fixing package-cwd
+path resolution; now decide whether the same read-only card resource is ready
+for the smallest UI/search preview.
 ```
 
 ## 2. Product Thesis
@@ -861,7 +862,7 @@ git diff --check
 
 ### V271-00 Brain Knowledge Skill Readback Usefulness Trial
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -989,6 +990,141 @@ Falsifier:
 - the slice cannot show whether the card was used/helpful, or proceeds without
   running the catalog command.
 
+### V272-00 Brain Knowledge UI/Search Readiness Gate
+
+Status: active.
+
+Goal:
+
+```txt
+Decide whether the explicit brain knowledge catalog is ready for the smallest
+read-only UI/search preview, and define or reject the exact bounded
+implementation surface.
+```
+
+Product rationale:
+
+```txt
+The user wants Adam-like searchable brain views. KRN now has explicit cards,
+catalog readback, skill routing, and package-cwd path normalization. The next
+step is to gate UI/search from evidence instead of dashboard-first ambition.
+```
+
+Architectural rationale:
+
+```txt
+UI/search must render guarded read-only BrainKnowledgeReadModel resources and
+preserve proof/non-proof boundaries. It must not become Memory Core mutation,
+ranking, API/MCP, crawler, or broad dashboard scope.
+```
+
+Evidence source:
+
+- V260 BrainKnowledgeReadModel contract.
+- V261 read-model guard.
+- V264 CLI preview.
+- V267 catalog preview.
+- V269 catalog search guard.
+- V270 skill hook.
+- V271 skill readback usefulness/path repair.
+
+Official/external sources:
+
+- none required unless the UI surface depends on a framework/doc decision.
+
+Inputs required:
+
+- current package/app topology;
+- `packages/cli/src/runKnowledgeCardsCommand.ts`;
+- `packages/harness/src/brainKnowledgeReadModel.ts`;
+- `docs/brain-knowledge/catalog.json`.
+
+Files likely touched:
+
+- root plan/report files;
+- maybe an existing app/package topology doc if UI is rejected or scoped.
+
+Allowed writes:
+
+- readiness report;
+- compact plan updates;
+- only bounded UI/search implementation files if the gate proves the surface is
+  already prepared and the implementation remains read-only.
+
+Forbidden writes:
+
+- Memory Core mutation;
+- source/candidate promotion;
+- ranking engine;
+- DB schema/migration;
+- API/MCP server;
+- source crawler;
+- broad dashboard;
+- ingestion pipeline;
+- product-ready claim.
+
+Output requirements:
+
+- readiness verdict: proceed / defer / reject;
+- exact allowed UI/search surface if proceed;
+- proof/non-proof boundary;
+- next task either UI preview implementation or missing-readiness repair.
+
+Definition of Done:
+
+- report states whether UI/search preview is authorized;
+- if authorized, next task is a bounded implementation slice with allowed files;
+- if deferred, next task names the missing proof.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text unknown-first --json
+pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text source-to-decision --json
+git diff --check
+```
+
+Acceptance criteria:
+
+- no UI/dashboard work without explicit readiness decision;
+- no mutation or ranking hidden under preview;
+- no broad roadmap expansion.
+
+Risk:
+
+- starting UI too early and turning readback into product theater.
+
+Rollback:
+
+- revert the focused V272 commit.
+
+Condensation expectation:
+
+- one compact outcome block plus linked report.
+
+Next-task synthesis rule:
+
+- if proceed, append a bounded `Brain Knowledge Read-Only Web Search Preview`
+  implementation task; if defer, append the smallest missing proof task.
+
+Pattern surface:
+
+- operator UX / CLI / readback.
+
+Primary consumer:
+
+- future UI/search over brain knowledge.
+
+Does not prove:
+
+- product readiness, ranking quality, DB-backed knowledge, or broad research
+  completeness.
+
+Falsifier:
+
+- UI/search is authorized while it can mutate memory/source truth or hide
+  does-not-prove boundaries.
+
 ## Decision Log
 
 - Root `PLAN.md` remains compact product SSOT.
@@ -1088,8 +1224,35 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V269-00 complete: guarded deterministic catalog search/readback behavior.
 - V270-00 complete: routed TypeScript/source-to-decision/pattern-intake
   workflows to explicit brain knowledge catalog readback.
-- V271-00 active: prove whether skill-routed catalog readback helps one bounded
-  source or pattern decision.
+- V271-00 complete: skill-routed catalog readback found and fixed package-cwd
+  root path resolution for knowledge catalog files.
+- V272-00 active: gate the smallest read-only UI/search preview over the brain
+  knowledge catalog.
+
+## Outcome V271-00 Brain Knowledge Skill Readback Usefulness Trial
+
+Summary:
+- running the exact V270 skill command failed from natural
+  `pnpm --filter @krn/cli` execution because `docs/brain-knowledge/catalog.json`
+  was resolved relative to `packages/cli`;
+- repaired `krn knowledge cards` input resolution to try command cwd first and
+  nearest repo root second;
+- added a regression test for root-relative catalog files from a package cwd;
+- verified both `unknown-first` and `source-to-decision` skill queries now work.
+
+Source-to-decision:
+- Source: V270 skill readback hook and the failed V271 command.
+- Mechanism: executable skill guidance requires root-relative files to resolve
+  from package execution cwd.
+- KRN implication: catalog readback must be path-normalized before UI/search or
+  later surfaces inherit fragile path assumptions.
+- Decision: repair explicit input file resolution in `runKnowledgeCardsCommand`
+  and open V272 to gate read-only UI/search readiness.
+- Does not prove: UI/search readiness, ranking quality, DB-backed knowledge,
+  broad pattern coverage, or product readiness.
+- Consumer: V272 brain knowledge UI/search readiness gate.
+- Falsifier: `pnpm --filter @krn/cli krn knowledge cards --catalog-file
+  docs/brain-knowledge/catalog.json ...` fails from repo root.
 
 ## Outcome V270-00 Brain Knowledge Skill Readback Hook
 

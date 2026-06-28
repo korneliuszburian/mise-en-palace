@@ -7,6 +7,7 @@ import {
 } from "./runKnowledgeCardsCommand.js";
 
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
+const cliPackageRoot = fileURLToPath(new URL("..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
 const patternFile = "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json";
 const catalogFile = "docs/brain-knowledge/catalog.json";
@@ -137,6 +138,22 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain(
       "docs/brain-knowledge/catalog.json:../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
     );
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+  });
+
+  it("resolves root-relative catalog files from a package cwd", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: cliPackageRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "unknown-first"
+      },
+      format: "text"
+    });
+
+    expect(result.stdout).toContain("Catalog files: docs/brain-knowledge/catalog.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
 

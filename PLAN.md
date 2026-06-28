@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V271 Brain Knowledge Skill Readback Usefulness Trial
-current task: V271-00 Brain Knowledge Skill Readback Usefulness Trial
+active stream: V272 Brain Knowledge UI/Search Readiness Gate
+current task: V272-00 Brain Knowledge UI/Search Readiness Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -50,29 +50,29 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V271 Brain Knowledge Skill Readback Usefulness Trial
+### V272 Brain Knowledge UI/Search Readiness Gate
 
 Goal:
 
-Run one bounded TypeScript or source-to-decision task through the updated skill
-guidance and record whether catalog readback was used, helped, neutral, noise,
-or missing.
+Decide whether the explicit brain knowledge catalog is ready for the smallest
+read-only web/search preview, and if so define the exact bounded implementation
+surface.
 
 Current finding:
 
 ```txt
-V270 connected the retained pattern catalog to relevant skills and runbooks.
-The next gap is usefulness: prove that a real slice actually queries and uses
-the catalog instead of merely documenting the hook.
+V271 proved skill-routed catalog readback is useful and repaired root-relative
+catalog resolution from package cwd. The next gap is UI/search readiness, not
+more CLI-only proof.
 ```
 
 Current action:
 
 ```txt
-Execute V271-00: choose one bounded TS-boundary or source-to-decision slice,
-query `krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json`,
-and report whether the returned card helped the implementation/review decision.
-Do not build UI/API/MCP, ranking, hidden hooks, or broad research ingestion.
+Execute V272-00: inspect the existing app/package topology and decide the
+smallest read-only UI/search preview path over the same knowledge cards
+resource. Do not add mutation, ranking, broad dashboard scope, API/MCP, DB
+schema, or crawler behavior.
 ```
 
 Primary consumer:
@@ -84,8 +84,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V271 becomes another docs-only assertion, or the report cannot state whether the
-catalog card was used, helped, neutral, noise, or missing.
+V272 authorizes a UI surface that can mutate memory/source truth, hides
+proof/non-proof boundaries, or expands into a dashboard/product claim.
 ```
 
 ## Pattern Gate
