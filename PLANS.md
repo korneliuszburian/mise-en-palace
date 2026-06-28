@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V280 Pattern Brain Readiness Re-Gate
-current task: V280-00 Pattern Brain Readiness Re-Gate
-latest pushed commit before V279: c988d86 feat(adapter): render skill routing pattern refs
-latest CI checked before V279: KRN CI success for c988d865d09a9a64dc6023dd0a041311769075db
+active stream: V281 Brain Knowledge Web Search Readiness Gate
+current task: V281-00 Brain Knowledge Web Search Readiness Gate
+latest pushed commit before V280: 9d0ca50 test(adapter): prove skill pattern smoke readback
+latest CI checked before V280: KRN CI success for 9d0ca50023b8a277ac67fd3494bf7c916a9abf79
 ```
 
 Known current gap:
 
 ```txt
-V280-00 Pattern Brain Readiness Re-Gate is the current gap. V275-V279 connected
-retained patterns to full-catalog HTML readback, skill routing, adapter hints,
-and DB-backed adapter smoke. Now re-gate readiness and select the next
-highest-ROI bounded slice.
+V281-00 Brain Knowledge Web Search Readiness Gate is the current gap. V280
+classified pattern brain as an internal-alpha spine. Now decide the smallest
+read-only web/search path over `BrainKnowledgeReadModel` before API/MCP or
+dashboard work.
 ```
 
 ## 2. Product Thesis
@@ -2245,6 +2245,33 @@ Source-to-decision:
 - Consumer: V280 Pattern Brain Readiness Re-Gate.
 - Falsifier: adapter smoke can pass while rendered skill hints omit retained
   pattern refs.
+
+## Outcome V280-00 Pattern Brain Readiness Re-Gate
+
+Summary:
+- classified pattern brain as an internal-alpha spine, not product-ready;
+- confirmed V275-V279 connected retained patterns to HTML/CLI readback, skill
+  hooks, adapter pattern refs, and DB-backed adapter smoke;
+- selected V281 Brain Knowledge Web Search Readiness Gate as the next
+  highest-ROI slice.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v280-pattern-brain-readiness-regate/REPORT.md`.
+
+Source-to-decision:
+- Source: V275-V279 reports, current `BrainKnowledgeReadModel` readback, skill
+  hooks, adapter pattern refs, and DB-backed adapter smoke proof.
+- Mechanism: the pattern brain now has a retained-pattern-to-brief spine, but
+  web/search and continuous research condensation remain separate product
+  surfaces.
+- KRN implication: the next slice should gate the smallest read-only web/search
+  path instead of adding random patterns or jumping to dashboard/API/MCP.
+- Decision: open V281 Brain Knowledge Web Search Readiness Gate.
+- Does not prove: product readiness, search ranking quality, automatic skill
+  selection, or completeness of retained patterns.
+- Consumer: V281 Brain Knowledge Web Search Readiness Gate.
+- Falsifier: the project jumps from HTML preview to dashboard/API/MCP without a
+  read-only web/search readiness decision and falsifier.
 
 ## Condensation Rules
 

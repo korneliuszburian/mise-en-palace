@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V280 Pattern Brain Readiness Re-Gate
-current task: V280-00 Pattern Brain Readiness Re-Gate
+active stream: V281 Brain Knowledge Web Search Readiness Gate
+current task: V281-00 Brain Knowledge Web Search Readiness Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V280 Pattern Brain Readiness Re-Gate
+### V281 Brain Knowledge Web Search Readiness Gate
 
 Goal:
 
-Re-gate pattern brain readiness after V275-V279 and select the next
-highest-ROI product slice.
+Decide and guard the smallest path from self-contained HTML preview to a
+read-only web/search surface over brain knowledge cards.
 
 Current finding:
 
 ```txt
-V275-V279 connected retained patterns to HTML readback, Codex skill routing,
-adapter skill hints, and DB-backed adapter smoke. The next gap is deciding what
-is still missing before broader UI/search, MCP, or target usage.
+V280 classifies pattern brain as an internal-alpha spine: retained patterns,
+HTML/CLI readback, skill hooks, adapter pattern refs, and DB-backed adapter smoke
+exist. The next product gap is a read-only web/search surface decision.
 ```
 
 Current action:
 
 ```txt
-Execute V280-00: write a compact readiness report that classifies pattern brain
-state, remaining gaps, and next bounded slice. Do not build UI/API/MCP, add
-new patterns, or change product code unless the re-gate proves an immediate
-guard is missing.
+Execute V281-00: write or guard the read-only web/search readiness decision for
+BrainKnowledgeReadModel. Prefer static/read-only before API/MCP. Do not add
+mutation, Memory Core writes, dashboard product, source crawler, or broad
+GraphRAG/SOTA claims.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / product readiness decision loop.
+brain knowledge UI/search readiness loop.
 ```
 
 Falsifier:
 
 ```txt
-The project keeps adding pattern-brain slices without a current readiness
-decision or next highest-ROI slice.
+The project jumps from HTML preview to dashboard/API/MCP without a read-only
+web/search readiness decision and falsifier.
 ```
 
 ## Pattern Gate

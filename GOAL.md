@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V280 Pattern Brain Readiness Re-Gate
+V281 Brain Knowledge Web Search Readiness Gate
 ```
 
 Current product loop:
@@ -52,7 +52,7 @@ V245..V263: activation/source/skill guards, product-readiness re-gate, target
 trial gate, normalized substrate, first target repair, replayable baseline,
 active ledger condensation, replayable target repair trial, and pattern intake
 trial plus first pattern enforcement gate and skills pack re-gate complete.
-current task: V280-00 Pattern Brain Readiness Re-Gate.
+current task: V281-00 Brain Knowledge Web Search Readiness Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
