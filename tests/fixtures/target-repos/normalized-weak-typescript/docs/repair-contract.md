@@ -7,7 +7,7 @@ Status: controlled target substrate contract.
 Repair the weak user service boundary so external input is validated before it
 becomes domain data.
 
-## Must Improve
+## V252 Baseline Weaknesses
 
 ```txt
 unsafe JSON.parse
@@ -17,6 +17,12 @@ mixed IO/domain behavior
 null failure state
 missing invalid-input tests
 ```
+
+## V253 Repair Result
+
+The JSON/input/result boundary is now repaired in the current fixture state.
+Future work should add a reset/generator or baseline/expected variant so this
+substrate can be replayed without relying on git history.
 
 ## Must Not Do
 

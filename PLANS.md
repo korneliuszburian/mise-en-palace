@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V252 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V253 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -90,11 +90,11 @@ finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
 repair plus observe-reflect sequencing guard, skill owner-file seed repair,
 activation surface re-gate after seed repairs, activation budget-priority
-guard, product-readiness re-gate, fresh target trial gate, and normalized
-target trial substrate:
+guard, product-readiness re-gate, fresh target trial gate, normalized target
+trial substrate, and normalized target repair trial:
 complete
-active stream: V253 Normalized Target Repair Trial
-current task: V253-00 Repair Weak TypeScript Boundary In Normalized Target
+active stream: V254 Replayable Target Substrate Baseline
+current task: V254-00 Make Normalized Target Substrate Replayable
 ```
 
 Evidence already recorded in repo:
@@ -110,7 +110,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V253-00 Repair Weak TypeScript Boundary In Normalized Target.
+V254-00 Make Normalized Target Substrate Replayable.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -20484,6 +20484,99 @@ Risk: over-engineering the tiny fixture or turning it into a toy that does not
 teach target transfer.
 Rollback: revert the V253 target fixture source/test changes.
 
+V253 outcome:
+- V253-00 complete: repaired the weak JSON/`any` external input boundary in the
+  normalized target fixture.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v253-normalized-target-repair-trial/REPORT.md`.
+
+V253 evidence:
+- `pnpm --dir tests/fixtures/target-repos/normalized-weak-typescript test`:
+  passed and now runs compiled runtime tests.
+- `rg "\bany\b|as unknown as|@ts-ignore|@ts-expect-error|CreatedUser \| null"
+  tests/fixtures/target-repos/normalized-weak-typescript/src
+  tests/fixtures/target-repos/normalized-weak-typescript/tests`: no matches.
+- `krn evidence capture ... --intended-file ...`: passed with intended files,
+  unrelated none, unknown none.
+- `krn init --dry-run --repo tests/fixtures/target-repos/normalized-weak-typescript`:
+  passed after repair.
+
+V253 source-to-decision:
+- Source: TypeScript boundary standard and V252 repair contract.
+- Mechanism: external JSON/env values must become `unknown` and be narrowed
+  before domain use; finite result states make invalid input explicit.
+- KRN implication: target repair trials can prove best-pattern pressure with
+  focused source/test changes.
+- Decision: adopt unknown-first parsing and discriminated create-user result in
+  the target fixture.
+- Consumer: normalized target fixture and future target repair trials.
+- Falsifier: a future target repair reintroduces raw `any`, unchecked parsed
+  values, or nullable error states at this boundary.
+- Does not prove: product readiness, real target transfer, or second-operator
+  usability.
+
+New task:
+- V254-00 Make Normalized Target Substrate Replayable.
+
+ID: V254-00
+Name: Make Normalized Target Substrate Replayable
+Status: active
+Goal: make the normalized target substrate replayable after V253 repaired the
+weak boundary in place.
+Product rationale: target trials must be reproducible; a committed repaired
+fixture loses the weak baseline unless reset/generator or baseline/expected
+variants exist.
+Architectural rationale: KRN needs substrate repeatability before it can compare
+brain behavior across source-to-decision, activation, evidence, and repair
+runs.
+Evidence source:
+- V252 substrate report;
+- V253 repair report;
+- target-repo-testing skill;
+- code-quality rule against fixture theater.
+Inputs required:
+- decide smallest replay method:
+  - generator script;
+  - baseline/expected fixture variants;
+  - patch file plus reset script;
+  - explicit rejection with reason;
+- preserve owner-file contract and verification command;
+- avoid broad eval platform.
+Files likely touched:
+- normalized target fixture docs/scripts/variants;
+- V254 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- KRN-owned fixture/generator/spec/report;
+- compact plan updates.
+Forbidden writes:
+- living target repos;
+- broad eval platform;
+- benchmark theater;
+- product-ready claim;
+- fake second-operator proof.
+Output requirements:
+- weak baseline replay path;
+- repaired expected state or patch path;
+- reset/rollback instructions;
+- smoke command;
+- next action selected from evidence.
+Definition of Done:
+- future KRN runs can recreate weak baseline without relying on git history;
+- smoke verifies the replay path;
+- active plan advances to the next bounded task;
+- commit is pushed and CI checked if triggered.
+Verification commands:
+- replay smoke command chosen by implementation;
+- `git diff --check`;
+- active plan/context hygiene invariants.
+Acceptance criteria:
+- baseline and repaired state are distinguishable;
+- no broad benchmark/eval platform is created;
+- substrate remains small and reviewable.
+Risk: building too much fixture machinery before another target proof.
+Rollback: revert V254 replay substrate additions.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20491,10 +20584,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V253 Normalized Target Repair Trial.
+- V254 Replayable Target Substrate Baseline.
 
 Next active task:
-- V253-00 Repair Weak TypeScript Boundary In Normalized Target.
+- V254-00 Make Normalized Target Substrate Replayable.
 
 ## 21. Final Response Format For Codex Runs
 

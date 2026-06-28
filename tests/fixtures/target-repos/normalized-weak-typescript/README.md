@@ -11,9 +11,9 @@ resettable, evidence-capturable way?
 
 This is not second-operator proof and not a benchmark platform.
 
-## Baseline
+## Baseline And Current State
 
-The fixture is intentionally weak but small:
+V252 created this fixture with intentionally weak but small code:
 
 - untrusted JSON parsing;
 - loose input typing;
@@ -21,6 +21,10 @@ The fixture is intentionally weak but small:
 - mixed persistence/domain behavior;
 - invalid states represented by `null`;
 - incomplete invalid-input tests.
+
+V253 repaired the JSON/input/result boundary in place. The next substrate
+hardening step should make the weak baseline reproducible without relying on
+git history.
 
 ## Expected Repair Direction
 
@@ -39,5 +43,5 @@ The first KRN repair should prefer:
 pnpm test
 ```
 
-The baseline test is intentionally insufficient. Passing it does not prove the
-fixture is repaired.
+Passing the test proves only the current fixture contract. It does not prove
+KRN product readiness or real target transfer.

@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V253 Normalized Target Repair Trial
+V254 Replayable Target Substrate Baseline
 ```
 
 Current product loop:
@@ -48,14 +48,14 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V252: source-decision seeds, observe-reflect sequencing, skill seeds,
+V245..V253: source-decision seeds, observe-reflect sequencing, skill seeds,
 activation re-gate, budget-priority guard, product-readiness re-gate, fresh
-target trial gate, and normalized target substrate complete.
-current task: V253-00 Repair Weak TypeScript Boundary In Normalized Target.
+target trial gate, normalized target substrate, and first target repair trial
+complete.
+current task: V254-00 Make Normalized Target Substrate Replayable.
 ```
 
-Detailed completed history, evidence, outcomes, and next-task synthesis live in
-`PLANS.md`, not here.
+Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
 
 ## External Boundary
 

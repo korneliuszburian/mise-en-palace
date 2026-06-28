@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "tsc -p tsconfig.json --noEmit"
+    "test": "rm -rf .tmp-test && tsc -p tsconfig.json --outDir .tmp-test --noEmit false && node .tmp-test/tests/userService.test.js && rm -rf .tmp-test"
   },
   "devDependencies": {
     "typescript": "5.9.3"

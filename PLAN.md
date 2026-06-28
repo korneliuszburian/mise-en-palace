@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V253 Normalized Target Repair Trial
-current task: V253-00 Repair Weak TypeScript Boundary In Normalized Target
+active stream: V254 Replayable Target Substrate Baseline
+current task: V254-00 Make Normalized Target Substrate Replayable
 ```
 
 ## Compact Completed Checkpoints
@@ -48,39 +48,38 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V253 Normalized Target Repair Trial
+### V254 Replayable Target Substrate Baseline
 
 Goal:
 
-Use the normalized target substrate to run one bounded repair trial and measure
-whether KRN applies best-pattern pressure to target code.
+Make the normalized target substrate replayable after V253 repaired the weak
+boundary in place.
 
 Current finding:
 
 ```txt
-V252 created `tests/fixtures/target-repos/normalized-weak-typescript` with
-explicit owner files, weak TypeScript boundaries, rollback, and verification.
-The next proof is whether KRN can repair one weakness in that substrate.
+V253 proved one bounded target repair, but the committed fixture is now repaired
+and no longer provides a weak baseline without git history.
 ```
 
 Current action:
 
 ```txt
-Execute V253-00: repair the unsafe JSON/any external input boundary in the
-normalized target fixture with focused tests, evidence, and dogfood reporting.
+Execute V254-00: add the smallest reset/generator or baseline/expected variant
+so future trials can replay weak initial state and compare repaired state.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN/PLANS next product stream and normalized target repair evidence.
+PLAN/PLANS next product stream and replayable target substrate.
 ```
 
 Falsifier:
 
 ```txt
-V253 modifies broad unrelated target files, claims product readiness, or repairs
-the fixture without measuring whether KRN applied the intended pattern pressure.
+V254 creates benchmark theater or a broad eval platform instead of a minimal
+replayable substrate baseline.
 ```
 
 ## Pattern Gate

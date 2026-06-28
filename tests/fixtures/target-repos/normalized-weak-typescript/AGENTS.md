@@ -45,7 +45,7 @@ Use these owner files for KRN target planning:
 
 ## Target Weaknesses
 
-This fixture intentionally contains:
+V252 baseline intentionally contained:
 
 - unsafe `JSON.parse`;
 - `any` at an input boundary;
@@ -54,5 +54,9 @@ This fixture intentionally contains:
 - boolean/null failure state instead of a typed result;
 - incomplete invalid-input tests;
 - weak proof/non-proof reporting.
+
+V253 repaired the JSON/input/result boundary. Future substrate work should make
+the weak baseline reproducible through a generator or baseline/expected variant
+instead of relying on git history.
 
 Do not treat baseline weakness as KRN source quality.
