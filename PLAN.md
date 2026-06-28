@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V293 Brain Knowledge Missing Feedback Triage Dogfood
-current task: V293-00 Brain Knowledge Missing Feedback Triage Dogfood
+active stream: V294 Brain Knowledge Skill Routing Usefulness Feedback
+current task: V294-00 Brain Knowledge Skill Routing Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V293 Brain Knowledge Missing Feedback Triage Dogfood
+### V294 Brain Knowledge Skill Routing Usefulness Feedback
 
 Goal:
 
-Use the missing-feedback readback to select the highest-ROI retained pattern
-that needs a real usefulness proof next.
+Add explicit usefulness feedback for the retained skill-routing pattern if
+evidence shows it materially helped a real slice.
 
 Current finding:
 
 ```txt
-V292 made `--usefulness-outcome none` return the 8 retained pattern cards that
-lack usefulness feedback. The next bottleneck is triage: decide which no-feedback
-pattern should be exercised first, using concrete current project pressure.
+V293 selected `pattern:codex-skill-progressive-disclosure-routing` as the
+highest-ROI no-feedback target because current product pressure is connecting
+brain knowledge to Codex behavior through skills.
 ```
 
 Current action:
 
 ```txt
-Execute V293-00: use `krn knowledge cards --usefulness-outcome none` to compare
-the 8 no-feedback patterns and pick one next-usefulness target. Record why,
-what task should exercise it, and what would count as helped/noise/stale. Do not
-add implementation unless triage exposes a small readback blocker.
+Execute V294-00: inspect V292/V293 evidence and add usefulness feedback for
+`pattern:codex-skill-progressive-disclosure-routing` only if it can be tied to a
+real helped/neutral/noise/stale outcome. Preserve proof boundaries and do not
+add new skills, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge pattern usefulness triage gate.
+brain knowledge skill-routing usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-The missing-feedback filter exists but does not help choose the next pattern to
-exercise, or triage still requires broad rereads.
+Skill-routing usefulness cannot be supported by evidence, or feedback is added
+without proof boundaries and does-not-prove.
 ```
 
 ## Pattern Gate

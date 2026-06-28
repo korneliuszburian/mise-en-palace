@@ -23,19 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V293 Brain Knowledge Missing Feedback Triage Dogfood
-current task: V293-00 Brain Knowledge Missing Feedback Triage Dogfood
-latest pushed commit before V292: 528b431 docs(review): dogfood usefulness outcome filter
-latest CI checked before V292: KRN CI success for 528b431d259b2bd3de897d3648fd85caf0f5ddb2
+active stream: V294 Brain Knowledge Skill Routing Usefulness Feedback
+current task: V294-00 Brain Knowledge Skill Routing Usefulness Feedback
+latest pushed commit before V293: fc2db1c feat(knowledge): filter cards without usefulness feedback
+latest CI checked before V293: KRN CI success for fc2db1cdaa4a4f9dbdddbafb58d7f846a479b93b
 ```
 
 Known current gap:
 
 ```txt
-V293-00 Brain Knowledge Missing Feedback Triage Dogfood is the current gap.
-V292 made `--usefulness-outcome none` return the 8 retained patterns without
-usefulness feedback. The next bottleneck is choosing the highest-ROI no-feedback
-pattern to exercise next without broad rereads.
+V294-00 Brain Knowledge Skill Routing Usefulness Feedback is the current gap.
+V293 selected `pattern:codex-skill-progressive-disclosure-routing` as the
+highest-ROI no-feedback card to exercise next.
 ```
 
 ## 2. Product Thesis
@@ -2620,6 +2619,33 @@ Source-to-decision:
 - Consumer: V293 triage and usefulness-feedback selection.
 - Falsifier: operators cannot select the next highest-value no-feedback card
   from the `none` readback without reading all 8 full cards.
+
+## Outcome V293-00 Brain Knowledge Missing Feedback Triage Dogfood
+
+Summary:
+- used `--usefulness-outcome none` to inspect the 8 retained pattern cards
+  without usefulness feedback;
+- selected `pattern:codex-skill-progressive-disclosure-routing` as the next
+  highest-ROI usefulness target;
+- rejected immediate UI/API/MCP/dashboard or more source intake for this step;
+- defined helped/neutral/noise/stale expectations for skill-routing feedback.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v293-brain-knowledge-missing-feedback-triage-dogfood/REPORT.md`.
+
+Source-to-decision:
+- Source: V292 no-feedback readback and current operator pressure around skills.
+- Mechanism: missing-feedback readback should drive the next usefulness proof,
+  not sit as another report-only artifact.
+- KRN implication: the next pattern-brain improvement should prove that a
+  repo-local skill can route Codex behavior without expanding root prompts.
+- Decision: open V294 Brain Knowledge Skill Routing Usefulness Feedback.
+- Does not prove: automatic skill selection or full Codex/brain integration.
+- Consumer: V294 usefulness feedback for
+  `pattern:codex-skill-progressive-disclosure-routing`.
+- Falsifier: the selected skill-routing pattern cannot be tied to a concrete
+  recent or next slice where loading a skill improved boundary discipline,
+  reduced rereads, or prevented broad context load.
 
 ## Condensation Rules
 
