@@ -23,19 +23,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V291 Brain Knowledge Usefulness Outcome Filter Dogfood
-current task: V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood
-latest pushed commit before V290: a303dce feat(knowledge): render pattern usefulness feedback
-latest CI checked before V290: KRN CI success for a303dce83057147a876f4db7d7b2ab748c461525
+active stream: V292 Brain Knowledge Missing Usefulness Feedback Readback
+current task: V292-00 Brain Knowledge Missing Usefulness Feedback Readback
+latest pushed commit before V291: eba05e3 feat(knowledge): filter cards by usefulness outcome
+latest CI checked before V291: KRN CI success for eba05e38e7b187daa0d705310e5a3c7139c1f720
 ```
 
 Known current gap:
 
 ```txt
-V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood is the current gap.
-V290 made latest usefulness outcomes filterable through the read-only
-CLI/static preview. The next bottleneck is usefulness: prove whether filtering
-helped patterns reduces rereads or improves operator selection.
+V292-00 Brain Knowledge Missing Usefulness Feedback Readback is the current
+gap. V291 proved `--usefulness-outcome helped` reduces rereads for recently
+useful retained patterns, but 8/11 retained pattern cards currently have no
+usefulness feedback and are only compactly visible as `Usefulness: none` in the
+static preview.
 ```
 
 ## 2. Product Thesis
@@ -2563,6 +2564,37 @@ Source-to-decision:
 - Consumer: V291 usefulness filter dogfood.
 - Falsifier: the usefulness outcome filter exists but does not reduce rereads or
   improve operator selection in a bounded dogfood.
+
+## Outcome V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood
+
+Summary:
+- used `krn knowledge cards --usefulness-outcome helped` to answer the bounded
+  operator question "which retained Codex workflow patterns helped most
+  recently?";
+- confirmed the filter returns exactly three cards:
+  `pattern:codex-execplan-living-validation-loop`,
+  `pattern:codex-goal-continuation-evidence-contract`, and
+  `pattern:codex-prompt-task-contract-proof-boundary`;
+- confirmed `noise`, `neutral`, `stale`, and `unknown` filters currently return
+  zero cards;
+- confirmed the static preview labels `Usefulness: none`, while the CLI has no
+  compact missing-feedback readback.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v291-brain-knowledge-usefulness-outcome-filter-dogfood/REPORT.md`.
+
+Source-to-decision:
+- Source: V290 usefulness outcome filter and V291 readback dogfood.
+- Mechanism: usefulness filtering helps only when it also exposes which retained
+  patterns have not yet been measured.
+- KRN implication: the pattern brain needs missing-feedback coverage before more
+  source intake, API/MCP/dashboard, or semantic ranking.
+- Decision: open V292 Brain Knowledge Missing Usefulness Feedback Readback.
+- Does not prove: missing feedback means a card is useless, stale, or invalid.
+- Consumer: V292 missing-feedback readback/filter slice.
+- Falsifier: operators can already discover no-feedback retained patterns from
+  CLI in a compact way without scanning all cards or relying on browser-only
+  static preview state.
 
 ## Condensation Rules
 

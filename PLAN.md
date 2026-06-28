@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V291 Brain Knowledge Usefulness Outcome Filter Dogfood
-current task: V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood
+active stream: V292 Brain Knowledge Missing Usefulness Feedback Readback
+current task: V292-00 Brain Knowledge Missing Usefulness Feedback Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,43 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V291 Brain Knowledge Usefulness Outcome Filter Dogfood
+### V292 Brain Knowledge Missing Usefulness Feedback Readback
 
 Goal:
 
-Measure whether the usefulness outcome filter improves operator selection and
-reduces rereads.
+Make retained pattern cards without usefulness feedback discoverable through a
+compact read-only CLI/harness path.
 
 Current finding:
 
 ```txt
-V290 made latest pattern usefulness outcomes filterable through the existing
-read-only CLI/static preview. The next bottleneck is usefulness: prove whether
-filtering helped patterns actually reduces rereads or improves operator
-selection before adding more UI/API/MCP/dashboard work.
+V291 proved `--usefulness-outcome helped` reduces rereads for recently useful
+patterns, but exposed that 8/11 retained pattern cards have no usefulness
+feedback. Static preview can label `Usefulness: none`, while CLI cannot compactly
+query no-feedback cards.
 ```
 
 Current action:
 
 ```txt
-Execute V291-00: use `krn knowledge cards --usefulness-outcome helped` and the
-static preview usefulness filter to answer a bounded operator question: which
-retained Codex workflow patterns helped most recently? Record helped/noise,
-review burden delta, and next action. Do not add new implementation unless the
-dogfood exposes a specific bounded repair.
+Execute V292-00: add the smallest read-only missing-feedback readback/filter for
+brain knowledge cards so operators can identify retained patterns that still
+lack usefulness evidence. Do not add new source intake, semantic ranking, API,
+MCP, dashboard, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge pattern usefulness UX gate.
+brain knowledge pattern usefulness coverage gate.
 ```
 
 Falsifier:
 
 ```txt
-The usefulness outcome filter exists but does not reduce rereads, does not help
-operators identify useful patterns, or creates misleading confidence.
+Operators still need to scan all cards or browser-only static preview state to
+find retained patterns that lack usefulness feedback.
 ```
 
 ## Pattern Gate

@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V291 Brain Knowledge Usefulness Outcome Filter Dogfood
+V292 Brain Knowledge Missing Usefulness Feedback Readback
 ```
 
 Current product loop:
@@ -48,11 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V263: activation/source/skill guards, product-readiness re-gate, target
-trial gate, normalized substrate, first target repair, replayable baseline,
-active ledger condensation, replayable target repair trial, and pattern intake
-trial plus first pattern enforcement gate and skills pack re-gate complete.
-current task: V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood.
+V245..V291: target repair, pattern intake/enforcement, skill pack, knowledge
+cards, usefulness feedback, outcome filtering, and outcome-filter dogfood
+complete.
+current task: V292-00 Brain Knowledge Missing Usefulness Feedback Readback.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
