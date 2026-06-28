@@ -35,10 +35,12 @@ describe("parseSourceArgs", () => {
       "--consumer",
       "ingest v0",
       "--falsifier",
-      "Preview creates persisted source truth."
+      "Preview creates persisted source truth.",
+      "--persist"
     ])).toEqual({
       command: {
         kind: "sourceArtifactPreview",
+        persist: true,
         file: "docs/KRN_KERNEL.md",
         chunkLines: 12,
         limitChunks: 2,

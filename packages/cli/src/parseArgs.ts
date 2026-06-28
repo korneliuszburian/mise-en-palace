@@ -275,6 +275,7 @@ export type CliCommand =
     }
   | {
       kind: "sourceArtifactPreview";
+      persist: boolean;
       file?: string;
       chunkLines?: number;
       limitChunks?: number;

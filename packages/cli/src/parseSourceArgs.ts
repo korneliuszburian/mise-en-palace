@@ -33,7 +33,7 @@ export const formatSourceClaimAddUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--persist]",
     "",
     "Required:",
     "--file",
@@ -49,8 +49,9 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--trust-tier <tier>",
     "--consumer <text>",
     "--falsifier <text>",
+    "--persist",
     "",
-    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. It does not persist, crawl, embed, rank, or mutate Memory Core."
+    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --persist writes SourceArtifact, SourceChunk, and SearchDocument rows only; it does not crawl, embed, rank, or mutate Memory Core."
   ].join("\n") + "\n";
 
 export const formatSourceDecisionLinkUsage = (): string =>
@@ -172,7 +173,8 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
   }
 
   const sourceCommand: Extract<CliCommand, { kind: "sourceArtifactPreview" }> = {
-    kind: "sourceArtifactPreview"
+    kind: "sourceArtifactPreview",
+    persist: false
   };
 
   for (let index = 2; index < rest.length; index += 1) {
@@ -184,6 +186,11 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
           kind: "sourceArtifactPreviewHelp"
         }
       };
+    }
+
+    if (arg === "--persist") {
+      sourceCommand.persist = true;
+      continue;
     }
 
     if (arg === "--file" || arg?.startsWith("--file=") === true) {

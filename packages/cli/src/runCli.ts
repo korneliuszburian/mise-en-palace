@@ -438,6 +438,11 @@ export const runCli = async (
     try {
       const result = await runSourceArtifactPreviewCommand({
         cwd: runtime.cwd ?? process.cwd(),
+        env: runtime.env,
+        now,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
         command: parsed.command
       });
 

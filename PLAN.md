@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V318 Ingest v0 SearchDocument Persistence Readback
-current task: V318-00 Ingest v0 SearchDocument Persistence Readback
+active stream: V319 Ingest v0 SourceClaim Review Path
+current task: V319-00 Ingest v0 SourceClaim Review Path
 ```
 
 ## Compact Completed Checkpoints
@@ -47,31 +47,31 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V318 Ingest v0 SearchDocument Persistence Readback
+### V319 Ingest v0 SourceClaim Review Path
 
 Goal:
 
-Persist and read back one explicit local artifact preview through existing
-SourceArtifact/SourceChunk/SearchDocument paths without schema/runtime expansion.
+Persist and read back one explicit SourceClaim linked to a local SourceArtifact/
+SourceChunk using existing repository paths without schema/runtime expansion.
 
 Current finding:
 
 ```txt
-V316 added local artifact preview and V317 added reviewable SearchDocument and
-SourceClaim candidate output. The next Ingest v0 gap is proving one explicit
-local artifact can persist/read back through existing DB source/search paths
-without crawler, DB schema migration, embeddings, graph runtime, or Memory Core
-mutation.
+V316 added local artifact preview, V317 added reviewable source/search
+candidate output, and V318 proved SourceArtifact/SourceChunk/SearchDocument
+persistence/readback. The next Ingest v0 gap is proving one explicit SourceClaim
+review path linked to that local artifact/chunk substrate without crawler,
+schema migration, embeddings, graph runtime, or Memory Core mutation.
 ```
 
 Current action:
 
 ```txt
-Execute V318-00: inspect existing source/search repositories and implement or
-record the smallest local preview -> existing DB SourceArtifact/SourceChunk/
-SearchDocument persistence readback. Do not build source crawler, schema
-migration, dashboard, API/MCP, worker daemon, broad eval platform, embeddings,
-ranking, graph runtime, or Memory Core mutation.
+Execute V319-00: inspect existing SourceClaim add/repository paths and implement
+or record the smallest local artifact/chunk -> SourceClaim persistence/readback
+path. Do not build source crawler, schema migration, dashboard, API/MCP, worker
+daemon, broad eval platform, embeddings, ranking, graph runtime, or Memory Core
+mutation.
 ```
 
 Primary consumer:

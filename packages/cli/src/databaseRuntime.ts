@@ -24,6 +24,7 @@ import type {
   MemoryRepository,
   ProjectKernelRecord,
   RepoInstallationRecord,
+  RetrievalRepository,
   SourceRepository
 } from "@krn/harness/repositories/internal";
 import type {
@@ -78,6 +79,11 @@ export interface DatabaseRuntime {
     | "getSourceClaimById"
     | "createSourceDecisionEdge"
     | "createSourceRejection"
+  > & Partial<Pick<SourceRepository, "createSourceChunk">>;
+  retrievalRepository?: Pick<
+    RetrievalRepository,
+    | "createSearchDocument"
+    | "searchLexical"
   >;
   memoryRepository: Pick<
     MemoryRepository,
@@ -181,6 +187,7 @@ export const createDatabaseRuntime = async (
   const projectRepository = new DrizzleProjectRepository(db);
   const harnessRunRepository = new DrizzleHarnessRunRepository(db);
   const sourceRepository = new DrizzleSourceRepository(db);
+  const retrievalRepository = new DrizzleRetrievalRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
   const observationRepository = new DrizzleObservationRepository(db);
   const explicitProjectId = input.projectId?.trim();
@@ -278,12 +285,13 @@ export const createDatabaseRuntime = async (
       harnessRunRepository,
       memoryRepository,
       sourceRepository,
-      retrievalRepository: new DrizzleRetrievalRepository(db),
+      retrievalRepository,
       now: input.now,
       createId: input.createId
     },
     harnessRunRepository,
     sourceRepository,
+    retrievalRepository,
     memoryRepository,
     observationRepository,
     async close(): Promise<void> {
