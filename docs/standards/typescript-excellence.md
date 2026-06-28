@@ -70,6 +70,43 @@ Avoid:
 and persistence-boundary fields. QG-03/QG-04 must identify repeated metadata
 keys that deserve promotion into typed fields.
 
+## Finite-State Exhaustiveness
+
+When a finite union changes behavior, rendering, persistence mapping, review
+meaning, or operator output, the handling boundary should narrow the union
+explicitly and make missed states visible to TypeScript.
+
+This applies especially to:
+
+- status and lifecycle fields;
+- provenance and authority fields;
+- candidate/reviewability labels;
+- project, source, memory, evidence, and activation readback kinds;
+- metadata fields promoted into public or operator-facing resources.
+
+Preferred shape:
+
+```txt
+unknown metadata -> parser/type guard -> named union/domain type -> exhaustive
+rendering or mapping boundary
+```
+
+Do not leave repeated behavior-governing values as ad hoc string checks in
+renderers or repository mappers. If a new union member should require a product
+decision, the compiler should force the owning boundary to handle it.
+
+Source decision:
+
+```txt
+source: docs/KRN_SOURCES.md#typescript-narrowing-and-exhaustiveness
+mechanism: TypeScript narrowing and `never` exhaustiveness make finite union
+states explicit where behavior changes.
+consumer: this standard and future bounded TypeScript repair slices.
+falsifier: a behavior-relevant union member can be added while rendering,
+persistence mapping, or review logic keeps compiling without handling it.
+does_not_prove: every union needs a switch or broad type rewrites are valuable.
+```
+
 ## Hard Bans
 
 Production code must not contain:

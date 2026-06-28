@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V241 External Best-Pattern Intake Trial
-current task: V241-00 External Best-Pattern Intake Trial
+active stream: V242 Finite-State Exhaustiveness Application Trial
+current task: V242-00 Finite-State Exhaustiveness Application Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -28,7 +28,7 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V240: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
@@ -38,50 +38,48 @@ V100..V240: active-surface, handoff, PLANS freshness, pattern-gate,
            package path normalization plus activation abstention re-gate,
            abstention diagnostics/readback, current-state activation seed, and
            default connected-project resolution, and project resolution
-           readback complete.
+           readback plus external TypeScript best-pattern intake complete.
 ```
 
 ## Active Stream
 
-### V241 External Best-Pattern Intake Trial
+### V242 Finite-State Exhaustiveness Application Trial
 
 Goal:
 
-Run one bounded intake trial for external/public best-practice material and
-turn it into an adopt/reject/lab-test decision with a concrete KRN consumer and
-falsifier.
+Apply the V241 finite-state exhaustiveness standard to one concrete KRN
+TypeScript boundary, or reject implementation if source inspection finds no
+bounded drift worth changing.
 
 Current finding:
 
 ```txt
-V240 proved default-path KRN can execute a source repair and read back
-`projectResolution: connected_repo_path`. The next gap is not more local
-project routing; it is controlled ingestion of best patterns without creating a
-research archive or decorative source backlog.
+V241 adopted the official TypeScript narrowing/exhaustiveness mechanism into
+KRN standards. The next proof is whether that standard can improve one concrete
+union/readback/persistence boundary without broad TypeScript cleanup.
 ```
 
 Current action:
 
 ```txt
-Execute V241-00: select a small allowed source set, apply
-docs/runbooks/pattern-intake.md, route each retained pattern through
-source-to-decision, and either make one bounded source/test/doc repair or reject
-implementation with evidence.
+Execute V242-00: inspect one finite union that changes rendering, persistence,
+review meaning, or operator output; add an exhaustive handling boundary and
+focused test only if source inspection finds drift.
 ```
 
 Primary consumer:
 
 ```txt
-KRN source-to-decision discipline, TypeScript/source standards, skills, eval
-candidates, or one bounded repair.
+KRN TypeScript source, operator readback, reviewability/provenance rendering,
+or a documented rejection if no bounded repair is justified.
 ```
 
 Falsifier:
 
 ```txt
-The trial retains sources without mechanism, consumer, falsifier, or measured
-usefulness; copies paid/proprietary material; or creates a broad Research
-Foundry/source crawler.
+The slice performs broad type cleanup, weakens types, changes unrelated
+boundaries, or cannot name the union member whose future addition should force a
+local handling decision.
 ```
 
 ## Pattern Gate

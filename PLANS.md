@@ -77,18 +77,18 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V240 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V241 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
 slices plus TS best-pattern application, sibling package path normalization,
 activation abstention re-gate, activation diagnostics/readback, and
-current-state activation seed plus default connected-project resolution and
-project resolution readback:
+current-state activation seed plus default connected-project resolution,
+project resolution readback, and external TypeScript best-pattern intake:
 complete
-active stream: V241 External Best-Pattern Intake Trial
-current task: V241-00 External Best-Pattern Intake Trial
+active stream: V242 Finite-State Exhaustiveness Application Trial
+current task: V242-00 Finite-State Exhaustiveness Application Trial
 ```
 
 Evidence already recorded in repo:
@@ -104,7 +104,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V241-00 External Best-Pattern Intake Trial.
+V242-00 Finite-State Exhaustiveness Application Trial.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19082,7 +19082,7 @@ New task:
 
 ID: V241-00
 Name: External Best-Pattern Intake Trial
-Status: active
+Status: complete
 Goal: run one bounded intake trial for public/allowed best-practice material and
 turn it into an adopt/reject/lab-test decision with a concrete KRN consumer and
 falsifier.
@@ -19161,6 +19161,111 @@ source crawler.
 Next-task synthesis rule: continue from V241 evidence; only create durable
 surfaces after the source materially changes a local decision.
 
+V241 outcome:
+- V241-00 complete: one official/public TypeScript best-pattern source was
+  retained through source-to-decision and routed to a concrete standards
+  consumer without creating a research archive.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v241-external-best-pattern-intake/REPORT.md`.
+
+V241 evidence:
+- Default V241 plan used no explicit `--project` and rendered
+  `projectResolution: connected_repo_path`.
+- Persisted V241 run:
+  `24a73c6b-6d3f-4a5e-9b6f-12f52e61bc6a`.
+- Updated `docs/KRN_SOURCES.md` with
+  `typescript-narrowing-and-exhaustiveness`.
+- Updated `docs/standards/typescript-excellence.md` with finite-state
+  exhaustiveness guidance.
+- `git diff --check`: passed.
+
+V241 source-to-decision:
+- Source: official TypeScript Handbook narrowing page.
+- Mechanism: control-flow narrowing and `never` exhaustiveness make finite
+  union states explicit where behavior changes.
+- KRN implication: status, provenance, lifecycle, and readback metadata unions
+  should be narrowed at IO/render boundaries so new behavior-relevant members
+  force local handling.
+- Decision: adopt as TypeScript standard guidance.
+- Does not prove: every union needs a switch, broad type rewrites are valuable,
+  or current code already satisfies the rule.
+- Consumer: `docs/standards/typescript-excellence.md` and future bounded
+  TypeScript repair slices.
+- Falsifier: a behavior-relevant union member can be added while rendering,
+  persistence mapping, or review logic keeps compiling without handling it.
+
+New task:
+- V242-00 Finite-State Exhaustiveness Application Trial.
+
+ID: V242-00
+Name: Finite-State Exhaustiveness Application Trial
+Status: active
+Goal: apply the V241 finite-state exhaustiveness standard to one concrete KRN
+TypeScript boundary, or reject implementation if source inspection finds no
+bounded drift worth changing.
+Product rationale: best-pattern intake should improve source behavior or
+produce a clear rejection, not sit as a decorative standard update.
+Architectural rationale: finite-state rules matter most at boundaries where
+status/provenance/lifecycle/readback values change behavior.
+Evidence source:
+- V241 report;
+- `docs/KRN_SOURCES.md#typescript-narrowing-and-exhaustiveness`;
+- `docs/standards/typescript-excellence.md#finite-state-exhaustiveness`;
+- focused source inspection.
+Inputs required:
+- default `krn plan --persist`;
+- TypeScript source search for finite unions in readback/rendering/persistence;
+- current local tests.
+Files likely touched:
+- one TypeScript owner file and focused test if drift exists;
+- dogfood report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- one bounded TypeScript source/test repair;
+- report and plan condensation.
+Forbidden writes:
+- broad TypeScript cleanup;
+- changing runtime behavior unrelated to the selected union;
+- weakening types;
+- adding `any`, double assertions, or unchecked parsing;
+- broad activation/reflection rewrite;
+- source crawler or research backlog.
+Output requirements:
+- name the selected union and owning boundary;
+- explain whether future union members currently force handling;
+- add exhaustive handling/test if drift exists, or reject with evidence if not;
+- record source usefulness.
+Definition of Done:
+- default KRN plan path used and recorded;
+- one finite-state boundary inspected;
+- focused repair or explicit rejection report produced;
+- relevant tests, `pnpm run typecheck`, and `git diff --check` pass if source is
+  touched;
+- evidence capture/report exists;
+- commit is pushed and CI checked when files change.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- targeted tests for touched package;
+- `pnpm run typecheck`;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test` if source is touched;
+- `git diff --check`;
+- `krn evidence capture --persist`;
+- `krn observe --persist`;
+- `krn reflect --persist`.
+Acceptance criteria:
+- one concrete finite-state boundary is better protected or explicitly rejected;
+- no broad cleanup;
+- source usefulness is measured or bounded.
+Risk: applying a good standard as broad style churn instead of a falsifiable
+local repair.
+Rollback: revert focused source/test/report commit; keep V241 standard unless
+the source decision itself is contradicted.
+Condensation expectation: if a repeated finite-state drift appears, create an
+eval/golden candidate; one drift does not justify a quality engine.
+Next-task synthesis rule: continue from V242 evidence and do not jump to broad
+TypeScript cleanup.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19168,10 +19273,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V241 External Best-Pattern Intake Trial.
+- V242 Finite-State Exhaustiveness Application Trial.
 
 Next active task:
-- V241-00 External Best-Pattern Intake Trial.
+- V242-00 Finite-State Exhaustiveness Application Trial.
 
 ## 21. Final Response Format For Codex Runs
 

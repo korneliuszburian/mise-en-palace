@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V241 External Best-Pattern Intake Trial
+V242 Finite-State Exhaustiveness Application Trial
 ```
 
 Current product loop:
@@ -47,7 +47,8 @@ V236..V239: activation abstention re-gate, diagnostics/readback,
 current-state activation seed, and default connected-project resolution
 complete.
 V240: default-path project resolution readback complete.
-current task: V241-00 External Best-Pattern Intake Trial.
+V241: external TypeScript best-pattern intake complete.
+current task: V242-00 Finite-State Exhaustiveness Application Trial.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

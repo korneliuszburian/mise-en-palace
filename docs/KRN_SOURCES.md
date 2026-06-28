@@ -296,6 +296,29 @@ cannot be falsified locally, keep it out of active KRN guidance.
   `SKIP LOCKED` is correct for every KRN read path, or that queue throughput is
   sufficient without a local worker-executor proof.
 
+## TypeScript Official Sources
+
+### TypeScript Narrowing And Exhaustiveness
+
+- URL: https://www.typescriptlang.org/docs/handbook/2/narrowing.html
+- Trust tier: high.
+- Source class: official docs.
+- Decision kind: adopt.
+- Mechanism: TypeScript control-flow narrowing and `never` exhaustiveness make
+  finite union states explicit at the branch where behavior changes.
+- KRN implication: KRN status, provenance, lifecycle, and readback metadata
+  unions should be narrowed at IO/render boundaries, and behavior-changing
+  branches should fail typecheck when a union member is added but not handled.
+- Decision: keep a TypeScript standard rule for finite-state narrowing and
+  exhaustiveness at public, CLI, persistence, and readback boundaries.
+- Consumer: `docs/standards/typescript-excellence.md` and future bounded
+  TypeScript repair slices.
+- Falsifier: a future KRN union adds a behavior-relevant member while rendering,
+  persistence mapping, or review logic keeps compiling without handling the new
+  state.
+- Does not prove: that every union needs a switch, that broad type rewrites are
+  valuable, or that official handbook examples are sufficient product evidence.
+
 ## TypeScript Practitioner Sources
 
 ### Designing Your Types
