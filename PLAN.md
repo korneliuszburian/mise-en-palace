@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V250 Product Readiness Re-Gate
-current task: V250-00 Product Readiness Re-Gate After Activation Guards
+active stream: V251 Fresh Target Trial Gate After Activation Guards
+current task: V251-00 Fresh Target Trial Gate After Activation Guards
 ```
 
 ## Compact Completed Checkpoints
@@ -48,40 +48,41 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V250 Product Readiness Re-Gate
+### V251 Fresh Target Trial Gate After Activation Guards
 
 Goal:
 
-Decide the next product-readiness blocker after activation seed and budget
-guards, without claiming product-ready from internal dogfood alone.
+Select and packet one fresh target trial after activation seed and budget
+guards, without writing to a living target repo until scope, owner files,
+rollback, and support boundary are explicit.
 
 Current finding:
 
 ```txt
-V245/V247 repaired read-model seed gaps and V249 added a budget-priority guard
-without needing a runtime scoring rewrite. The next decision should be a product
-readiness re-gate, not another activation tweak by default.
+V250 re-gated product readiness: KRN is controlled-internal-alpha for technical
+operators, not product-ready. The next blocker is fresh target evidence with the
+current brain, not another local self-dogfood proof.
 ```
 
 Current action:
 
 ```txt
-Execute V250-00: compare current proof against product-readiness requirements
-and choose one next blocker: target trial, second-operator launch, reflection /
-candidate quality, activation evidence, or explicit defer.
+Execute V251-00: identify a safe target repo/mode and produce the trial packet
+or record target selection as the blocker. Do not write target files unless the
+active task explicitly authorizes allowed files and rollback.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN/PLANS next product stream and product-readiness status.
+PLAN/PLANS next product stream and target-trial readiness status.
 ```
 
 Falsifier:
 
 ```txt
-V250 claims product-ready or opens new product work without requirement-by-
-requirement evidence.
+V251 substitutes another KRN-only proof for fresh target evidence or writes to a
+living target repo without explicit authority.
 ```
 
 ## Pattern Gate

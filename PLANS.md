@@ -92,8 +92,8 @@ repair plus observe-reflect sequencing guard, skill owner-file seed repair,
 activation surface re-gate after seed repairs, and activation budget-priority
 guard:
 complete
-active stream: V250 Product Readiness Re-Gate
-current task: V250-00 Product Readiness Re-Gate After Activation Guards
+active stream: V251 Fresh Target Trial Gate After Activation Guards
+current task: V251-00 Fresh Target Trial Gate After Activation Guards
 ```
 
 Evidence already recorded in repo:
@@ -109,7 +109,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V250-00 Product Readiness Re-Gate After Activation Guards.
+V251-00 Fresh Target Trial Gate After Activation Guards.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -20203,6 +20203,94 @@ Acceptance criteria:
 Risk: turning readiness re-gate into another giant plan.
 Rollback: revert report/plan update if it selects work without evidence.
 
+V250 outcome:
+- V250-00 complete: product readiness was re-gated after activation seed and
+  budget guards.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v250-product-readiness-regate-after-activation-guards/REPORT.md`.
+
+V250 verdict:
+- controlled-internal-alpha for technical operators: yes / stronger.
+- widened internal alpha: no.
+- product-ready: no.
+- strongest blocker: fresh target evidence with the current brain plus
+  second-operator/equivalent transcript before product-ready claims.
+
+V250 source-to-decision:
+- Source: V245/V247/V249 activation seed/budget reports plus prior product
+  readiness gates and Brain Usefulness Report.
+- Mechanism: local KRN-on-KRN guards can remove engineering caveats, but product
+  readiness requires target/operator evidence because self-dogfood can hide
+  usability and target-boundary failures.
+- KRN implication: move from local activation repairs to a fresh target trial
+  gate before claiming widened alpha or product-ready.
+- Decision: select V251 as a fresh target trial gate after activation guards.
+- Consumer: root `PLAN.md`, root `GOAL.md`, and target trial packet/report.
+- Falsifier: KRN claims product readiness from self-dogfood or local guards
+  without fresh target/operator evidence.
+- Does not prove: target repo success, second-operator usability, reflection
+  usefulness on target work, or product-ready status.
+
+New task:
+- V251-00 Fresh Target Trial Gate After Activation Guards.
+
+ID: V251-00
+Name: Fresh Target Trial Gate After Activation Guards
+Status: active
+Goal: select and packet one fresh target trial using the current brain, or
+record target selection as the blocker.
+Product rationale: product-ready requires evidence on a target repo with
+explicit mode, owner files, support boundary, rollback, and usefulness reporting.
+Architectural rationale: V245/V247/V249 reduced activation read-model caveats,
+so the next proof should test target transfer instead of adding another local
+activation tweak.
+Evidence source:
+- V250 report;
+- V19/V55 product readiness gates;
+- V245/V247/V249 activation reports;
+- Brain Usefulness Report;
+- target-repo-testing skill.
+Inputs required:
+- current-state preflight;
+- inspect safe target candidates under allowed active workspace boundaries;
+- identify target mode: observation-only, packet-only, or explicitly writable;
+- target owner files if available;
+- bounded target task;
+- rollback/support boundary.
+Files likely touched:
+- V251 target trial gate report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- target selection packet/report;
+- compact plan updates;
+- no target repo writes unless explicit allowed files and rollback are recorded.
+Forbidden writes:
+- living target repo modifications without explicit mode/owner/rollback;
+- product-ready claim;
+- fake second-operator proof;
+- dashboard/API/MCP/worker daemon/source crawler/broad eval platform;
+- activation scoring rewrite before target evidence.
+Output requirements:
+- target candidate list or explicit blocker;
+- selected target/mode or reason none is safe;
+- owner-file/support/rollback packet;
+- next action: execute trial, get operator inputs, or repair blocker.
+Definition of Done:
+- V251 report/packet exists;
+- no target writes occurred unless explicitly authorized;
+- next bounded action is selected from target evidence;
+- docs verification passes;
+- commit is pushed and CI checked if triggered.
+Verification commands:
+- `git diff --check`;
+- active plan/context hygiene invariants if root files change.
+Acceptance criteria:
+- V251 does not substitute another KRN-only dogfood for target evidence;
+- no product-ready claim is made without fresh target/operator proof.
+Risk: choosing a living repo with unclear authority and accidentally writing to
+it.
+Rollback: revert packet/plan update; target repos are not modified by default.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20210,10 +20298,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V250 Product Readiness Re-Gate.
+- V251 Fresh Target Trial Gate After Activation Guards.
 
 Next active task:
-- V250-00 Product Readiness Re-Gate After Activation Guards.
+- V251-00 Fresh Target Trial Gate After Activation Guards.
 
 ## 21. Final Response Format For Codex Runs
 
