@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V307 Pattern Search Usefulness Feedback Closure
-current task: V307-00 Pattern Search Usefulness Feedback Closure
+active stream: V308 Research Source Decisions Initial Pack
+current task: V308-00 Research Source Decisions Initial Pack
 ```
 
 ## Compact Completed Checkpoints
@@ -47,42 +47,41 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V307 Pattern Search Usefulness Feedback Closure
+### V308 Research Source Decisions Initial Pack
 
 Goal:
 
-Measure whether the V306 tokenized `krn knowledge cards --text` behavior helps
-the next pre-coding Pattern Application Gate.
+Add the first small pack of research/source decisions for KRN brain growth.
 
 Current finding:
 
 ```txt
-V306 made natural multi-token card search deterministic and less brittle. The
-remaining risk is that improved search becomes another unmeasured operator UX
-comfort unless the next pattern gate records usefulness feedback.
+V307 showed tokenized knowledge-card search can retrieve the
+source-to-decision retention gate from a natural query. The next highest-ROI
+step is not another search repair; it is a small source-decision pack for
+future brain work.
 ```
 
 Current action:
 
 ```txt
-Execute V307-00: run one bounded pattern-gate query using V306 search, classify
-selected/rejected patterns as helped / neutral / noise / missing / stale, and
-record whether another search repair is justified. Do not add ranking,
-embeddings, API/MCP/dashboard, source crawler, target writes, or Memory Core
-mutation.
+Execute V308-00: add 3-5 source decisions maximum. Each retained source must
+state mechanism, KRN implication, decision/rejection, consumer, falsifier, and
+does-not-prove. Do not create a broad research archive, source crawler,
+dashboard, API/MCP, embeddings, ranking, DB schema, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-pattern application gate operator UX and usefulness feedback closure.
+future research condensation, pattern brain, and mini brain-QA benchmark work.
 ```
 
 Falsifier:
 
 ```txt
-V306 search is used in a pre-coding gate but the report cannot say whether the
-selected cards helped, were neutral, were noise, or missed an obvious pattern.
+A retained source is decorative, has no immediate consumer/falsifier, or cannot
+shape a concrete future KRN task, skill, standard, eval, or source decision.
 ```
 
 ## Pattern Gate

@@ -22,18 +22,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V307 Pattern Search Usefulness Feedback Closure
-current task: V307-00 Pattern Search Usefulness Feedback Closure
-latest pushed commit checked before condensation: 173fdd1 feat(knowledge): guide no-match card queries
-latest CI checked before condensation: KRN CI success for 173fdd1e82c708ef2d8b576248dbdccd1dc45c5bc
+active stream: V308 Research Source Decisions Initial Pack
+current task: V308-00 Research Source Decisions Initial Pack
+latest pushed commit checked: a5c415f feat(knowledge): tokenize card text search
+latest CI checked: KRN CI success for a5c415fbeef8335164fc84b67e9341af9629b305
 ```
 
 Known current gap:
 
 ```txt
-V307-00 Pattern Search Usefulness Feedback Closure is the current gap. V306
-fixed brittle whole-query matching; the next gap is proving whether tokenized
-search helps a real pre-coding pattern gate.
+V308-00 Research Source Decisions Initial Pack is the current gap. V307 proved
+the tokenized search path can retrieve the source-to-decision gate; the next
+gap is adding a small, useful, non-decorative research/source-decision pack.
 ```
 
 ## 2. Product Thesis
@@ -78,8 +78,8 @@ green test != product value
 
 These are the only current high-level blocks that matter for the brain roadmap:
 
-1. Pattern Brain execution/readback hardening: finish V306 and keep pattern-card
-   search useful for pre-coding pattern gates.
+1. Pattern Brain execution/readback hardening: keep future search changes
+   usefulness-backed.
 2. Research/paper/course source decisions: ingest selected public sources such
    as MemGPT, Generative Agents, Reflexion, Self-RAG, GraphRAG, HippoRAG, CoALA,
    Voyager, OpenAI docs, and high-quality TypeScript material through
@@ -223,6 +223,68 @@ Definition of Done:
 - next task is either kept small or no follow-up is opened;
 - `git diff --check` passes.
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v307-pattern-search-usefulness-feedback/REPORT.md
+```
+
+### V308-00 — Research Source Decisions Initial Pack
+
+Status: active.
+
+Goal:
+
+```txt
+Add 3-5 source decisions maximum for the next phase of KRN brain growth.
+```
+
+Product rationale:
+
+```txt
+KRN needs research condensation to improve future infra, pattern brain, graph,
+heartbeat, consensus, and benchmark work without source hoarding.
+```
+
+Architectural rationale:
+
+```txt
+Every retained source must pass source -> mechanism -> KRN implication ->
+decision/rejection -> consumer -> falsifier before it can shape the brain.
+```
+
+Evidence source:
+
+```txt
+V307 selected pattern:source-to-decision-retention-gate as helped.
+```
+
+Files likely touched:
+
+```txt
+docs/KRN_SOURCES.md
+docs/reviews/controlled-dogfood/2026-06-28-v308-research-source-decisions-initial-pack/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+```
+
+Forbidden writes:
+
+```txt
+source crawler, broad research archive, dashboard, API, MCP, DB schema,
+embeddings, ranking, Memory Core mutation, product UI.
+```
+
+Definition of Done:
+
+- 3-5 source decisions maximum are added or explicitly deferred;
+- every retained source has mechanism, KRN implication, decision/rejection,
+  consumer, falsifier, and does-not-prove;
+- no paid/proprietary course material is copied;
+- no source is retained only because it sounds impressive;
+- `git diff --check` and source-map/pattern invariants pass.
+
 ## 9. Task Contract Schema
 
 Every new task appended to `Active Task Queue` or `Generated Task Backlog` must use this schema.
@@ -295,37 +357,33 @@ Primary consumer:
 Does not prove:
 Falsifier:
 
-Current candidate after V307:
+Current candidate after V308:
 
-### V308 — Research Source Decisions Initial Pack
+### V309 — Mini Brain-QA Benchmark Sketch
 
 Status: candidate, not active.
-Goal: add the first small pack of paper/course/official source decisions only
-if V307 shows the pattern gate needs richer retained knowledge.
-Product rationale: start continuous research condensation without source
-hoarding.
-Architectural rationale: use source-to-decision before ingest/graph work.
-Evidence source: V307 report.
-Official/external sources: selected public papers/docs only.
-Inputs required: V307 outcome.
-Files likely touched: `docs/KRN_SOURCES.md`, retained pattern/source decision
-docs, report path.
-Allowed writes: docs/source decisions only.
-Forbidden writes: source crawler, broad research archive, dashboard/API/MCP.
-Output requirements: 3-5 decisions maximum, each with consumer and falsifier.
-Definition of Done: every retained source has mechanism, KRN implication,
-consumer, falsifier, and does-not-prove.
-Verification commands: `git diff --check`; source-map tests if touched.
-Acceptance criteria: no decorative source list.
-Risk: paper washing.
-Rollback: remove sources without immediate consumer.
+Goal: sketch the first 30-question KRN brain-QA benchmark only if V308 produces
+source decisions that need local falsifiers.
+Product rationale: convert research/pattern claims into measurable behavior.
+Architectural rationale: benchmark before wider ingest/graph/runtime work.
+Evidence source: V308 report.
+Official/external sources: V308 retained decisions.
+Inputs required: V308 outcome.
+Files likely touched: benchmark docs/fixtures and report path.
+Allowed writes: docs/fixtures only.
+Forbidden writes: broad eval platform, dashboard/API/MCP, source crawler.
+Output requirements: small benchmark sketch with proof/non-proof boundaries.
+Definition of Done: 30-question initial scope or explicit defer.
+Verification commands: `git diff --check`; tests only if fixtures are executable.
+Acceptance criteria: no fake numeric precision.
+Risk: benchmark theater.
+Rollback: defer if V308 lacks falsifiable source decisions.
 Condensation expectation: one compact report and root state update only.
-Next-task synthesis rule: activate only if V307 evidence supports it.
-Pattern surface: research/paper/course-driven work.
-Primary consumer: future Pattern Brain and benchmark tasks.
+Next-task synthesis rule: activate only if V308 supports it.
+Pattern surface: eval / Pattern Brain.
+Primary consumer: future brain-QA and graph/ingest work.
 Does not prove: product-ready brain or SOTA quality.
-Falsifier: retained sources do not change a task, skill, standard, eval, or
-decision.
+Falsifier: questions do not test any retained decision or product behavior.
 
 ### Historical V307 candidate text
 
@@ -360,7 +418,8 @@ Falsifier: V306 already records enough usefulness feedback.
 - [x] V304 Knowledge Cards Readback Limit: complete.
 - [x] V305 Knowledge Cards No-Match Guidance: complete.
 - [x] V306 Knowledge Cards Tokenized Text Search: complete.
-- [ ] V307 Pattern Search Usefulness Feedback Closure: active.
+- [x] V307 Pattern Search Usefulness Feedback Closure: complete.
+- [ ] V308 Research Source Decisions Initial Pack: active.
 
 Detailed old progress is archived in:
 
@@ -378,6 +437,8 @@ docs/plans/historical-ledgers/2026-06-28-root-plans-before-v306-context-condensa
   `docs/reviews/controlled-dogfood/2026-06-28-v305-knowledge-cards-no-match-guidance/REPORT.md`
 - V306 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v306-knowledge-cards-tokenized-text-search/REPORT.md`
+- V307 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v307-pattern-search-usefulness-feedback/REPORT.md`
 - Latest checked commit before this condensation:
   `173fdd1 feat(knowledge): guide no-match card queries`
 
@@ -445,6 +506,26 @@ Source-to-decision:
 - Consumer: V307 Pattern Search Usefulness Feedback Closure.
 - Falsifier: V307 cannot show whether tokenized search helped, was neutral,
   produced noise, or missed an obvious retained pattern.
+
+## Outcome V307 Pattern Search Usefulness Feedback Closure
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V307 knowledge-card query for `research source decision retention
+  gate`.
+- Mechanism: V306 tokenized search returned exactly one relevant retained
+  pattern for the next pre-coding gate.
+- KRN implication: the improved search reduced pattern-gate uncertainty and
+  supports moving to source-decision work rather than another search repair.
+- Decision: mark V307 complete and activate V308 Research Source Decisions
+  Initial Pack.
+- Does not prove: semantic ranking quality, source truth, research completeness,
+  live DB search, Memory Core mutation behavior, or product readiness.
+- Consumer: V308 source decision intake.
+- Falsifier: V308 cannot use the selected source-to-decision gate to reject
+  decorative sources or retain only source decisions with consumers/falsifiers.
 
 ## 21. Final Response Format For Codex Runs
 

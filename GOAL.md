@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V307 Pattern Search Usefulness Feedback Closure
+V308 Research Source Decisions Initial Pack
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V307-00 Pattern Search Usefulness Feedback Closure.
+current task: V308-00 Research Source Decisions Initial Pack.
 ```
 
 Current task:
 
 ```txt
-Measure whether V306 tokenized knowledge-card search actually helps the next
-pre-coding pattern gate, then keep or refine from evidence.
+Add the first small pack of research/source decisions, using source-to-decision
+instead of source hoarding.
 ```
 
 ## Remaining Work
@@ -42,10 +42,10 @@ pre-coding pattern gate, then keep or refine from evidence.
 The product is not a full living brain yet. The only current high-level blocks
 to preserve are:
 
-1. Pattern Brain execution/readback hardening: close V307 usefulness feedback
-   and keep pattern search useful for pre-coding gates.
-2. Research/paper/course source decisions: ingest public high-quality sources
-   through source-to-decision, not source hoarding.
+1. Pattern Brain execution/readback hardening: V307 closed the first usefulness
+   loop; keep future search changes evidence-backed.
+2. Research/paper/course source decisions: execute V308 as a 3-5 source
+   decision pack through source-to-decision, not source hoarding.
 3. Mini brain-QA benchmark: start with 30 KRN questions, later expand corpus
    QA and compare memory/source/hybrid/anti-memory/graph paths.
 4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
