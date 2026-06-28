@@ -19,13 +19,37 @@ describe("parseSourceArgs", () => {
       " docs/KRN_KERNEL.md ",
       "--chunk-lines",
       "12",
-      "--limit-chunks=2"
+      "--limit-chunks=2",
+      "--claim",
+      "KRN should keep proof boundaries.",
+      "--mechanism",
+      "Preview output separates evidence from source truth.",
+      "--krn-implication",
+      "Use preview as candidate evidence only.",
+      "--does-not-prove",
+      "This does not prove source truth.",
+      "--support-type",
+      "implementation-boundary",
+      "--trust-tier",
+      "source-code",
+      "--consumer",
+      "ingest v0",
+      "--falsifier",
+      "Preview creates persisted source truth."
     ])).toEqual({
       command: {
         kind: "sourceArtifactPreview",
         file: "docs/KRN_KERNEL.md",
         chunkLines: 12,
-        limitChunks: 2
+        limitChunks: 2,
+        claim: "KRN should keep proof boundaries.",
+        mechanism: "Preview output separates evidence from source truth.",
+        krnImplication: "Use preview as candidate evidence only.",
+        doesNotProve: "This does not prove source truth.",
+        supportType: "implementation-boundary",
+        trustTier: "source-code",
+        consumer: "ingest v0",
+        falsifier: "Preview creates persisted source truth."
       }
     });
   });

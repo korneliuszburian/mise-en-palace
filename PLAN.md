@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V317 Ingest v0 Source Candidate Bridge
-current task: V317-00 Ingest v0 Source Candidate Bridge
+active stream: V318 Ingest v0 SearchDocument Persistence Readback
+current task: V318-00 Ingest v0 SearchDocument Persistence Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -47,30 +47,31 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V317 Ingest v0 Source Candidate Bridge
+### V318 Ingest v0 SearchDocument Persistence Readback
 
 Goal:
 
-Bridge the local source artifact preview into reviewable source/search
-candidate output without persistence or runtime expansion.
+Persist and read back one explicit local artifact preview through existing
+SourceArtifact/SourceChunk/SearchDocument paths without schema/runtime expansion.
 
 Current finding:
 
 ```txt
-V316 added `krn source artifact preview --file <path>` as a read-only local
-artifact -> hash -> chunk/source-range preview path. The next Ingest v0 gap is
-turning that preview into reviewable SourceClaim/SearchDocument candidate output
-without crawler, DB schema, embeddings, graph runtime, or Memory Core mutation.
+V316 added local artifact preview and V317 added reviewable SearchDocument and
+SourceClaim candidate output. The next Ingest v0 gap is proving one explicit
+local artifact can persist/read back through existing DB source/search paths
+without crawler, DB schema migration, embeddings, graph runtime, or Memory Core
+mutation.
 ```
 
 Current action:
 
 ```txt
-Execute V317-00: inspect current source claim/search document candidate
-surfaces and implement or record the smallest preview -> candidate bridge.
-Do not build persistence, source crawler, schema migration, runtime platform,
-dashboard, API/MCP, worker daemon, broad eval platform, embeddings, ranking,
-graph runtime, or Memory Core mutation.
+Execute V318-00: inspect existing source/search repositories and implement or
+record the smallest local preview -> existing DB SourceArtifact/SourceChunk/
+SearchDocument persistence readback. Do not build source crawler, schema
+migration, dashboard, API/MCP, worker daemon, broad eval platform, embeddings,
+ranking, graph runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -82,8 +83,8 @@ future source grounding, graph brain, and product-facing knowledge ingestion.
 Falsifier:
 
 ```txt
-V317 cannot produce reviewable source/search candidates from local artifact
-preview output without broad schema/runtime work.
+V318 cannot persist/read back one local preview through existing source/search
+DB paths without broad schema/runtime work.
 ```
 
 ## Pattern Gate

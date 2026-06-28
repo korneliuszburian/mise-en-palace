@@ -5,6 +5,13 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  assessCandidateReviewability
+} from "@krn/core";
+import {
+  parseSearchDocumentInput,
+  parseSourceClaimInput
+} from "@krn/schema";
 import type {
   CliCommand
 } from "./parseArgs.js";
@@ -32,9 +39,40 @@ interface SourceArtifactPreviewChunk {
   preview: string;
 }
 
+interface CandidateField {
+  name: keyof Pick<
+    SourceArtifactPreviewCommand,
+    | "claim"
+    | "mechanism"
+    | "krnImplication"
+    | "doesNotProve"
+    | "supportType"
+    | "trustTier"
+    | "consumer"
+    | "falsifier"
+  >;
+  label: string;
+}
+
 const defaultChunkLines = 40;
 const defaultLimitChunks = 3;
 const maxPreviewCharacters = 240;
+const sourceClaimCandidateFields: readonly CandidateField[] = [
+  { name: "claim", label: "--claim" },
+  { name: "mechanism", label: "--mechanism" },
+  { name: "krnImplication", label: "--krn-implication" },
+  { name: "doesNotProve", label: "--does-not-prove" },
+  { name: "supportType", label: "--support-type" },
+  { name: "trustTier", label: "--trust-tier" },
+  { name: "consumer", label: "--consumer" },
+  { name: "falsifier", label: "--falsifier" }
+] as const;
+
+const searchDocumentCandidateDoesNotProve =
+  "This SearchDocument candidate does not prove source truth, claim correctness, DB persistence, embeddings, graph retrieval, or crawler readiness.";
+
+const sourceClaimCandidateDoesNotProve =
+  "This SourceClaim candidate does not prove the claim is true or should be accepted without review.";
 
 const sha256 = (content: string): string =>
   `sha256:${createHash("sha256").update(content).digest("hex")}`;
@@ -104,6 +142,190 @@ const formatChunks = (chunks: readonly SourceArtifactPreviewChunk[]): string[] =
     `  preview: ${chunk.preview.replace(/\n/gu, "\\n")}`
   ]);
 
+const formatReviewabilityReasons = (reasons: readonly string[]): string[] => [
+  "  reviewability reasons:",
+  ...reasons.map((reason) => `  - ${reason}`)
+];
+
+const chunkBody = (chunks: readonly SourceArtifactPreviewChunk[]): string =>
+  chunks.map((chunk) =>
+    [
+      `chunk ${chunk.ordinal}`,
+      `sourceRange: lines ${chunk.startLine}-${chunk.endLine}`,
+      `contentHash: ${chunk.contentHash}`,
+      `preview: ${chunk.preview}`
+    ].join("\n")
+  ).join("\n\n");
+
+const formatSearchDocumentCandidate = (
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[]
+): string[] => {
+  const candidate = parseSearchDocumentInput({
+    subjectType: "source_artifact",
+    subjectId: artifactHash,
+    trustTier: "source-code",
+    language: "english",
+    title: `Local source artifact: ${file}`,
+    body: chunkBody(chunks),
+    metadataFilters: {
+      source: "local_source_artifact_preview"
+    },
+    metadata: {
+      file,
+      contentHash: artifactHash,
+      chunkCount: chunks.length,
+      source: "krn source artifact preview"
+    }
+  });
+  const reviewability = assessCandidateReviewability({
+    summary: candidate.title,
+    body: candidate.body,
+    evidenceRefs: [
+      file,
+      artifactHash,
+      ...chunks.map((chunk) => chunk.contentHash)
+    ],
+    applicationGuidance: "Use as a reviewable lexical/search document candidate for local source artifact ingestion.",
+    doesNotProve: searchDocumentCandidateDoesNotProve
+  });
+
+  return [
+    "searchDocumentCandidate:",
+    `- id: search-document-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    "  status: candidate",
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  subjectType: ${candidate.subjectType}`,
+    `  subjectId: ${candidate.subjectId}`,
+    `  trustTier: ${candidate.trustTier}`,
+    `  title: ${candidate.title}`,
+    `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
+    `  doesNotProve: ${searchDocumentCandidateDoesNotProve}`,
+    "  No SearchDocument row created"
+  ];
+};
+
+const hasText = (value: string | undefined): boolean =>
+  value !== undefined && value.trim().length > 0;
+
+const missingSourceClaimCandidateFields = (
+  command: SourceArtifactPreviewCommand
+): string[] =>
+  sourceClaimCandidateFields
+    .filter((field) => !hasText(command[field.name]))
+    .map((field) => field.label);
+
+const hasAnySourceClaimCandidateField = (
+  command: SourceArtifactPreviewCommand
+): boolean =>
+  sourceClaimCandidateFields.some((field) => hasText(command[field.name]));
+
+const formatSourceClaimCandidate = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[]
+): string[] => {
+  if (!hasAnySourceClaimCandidateField(command)) {
+    return [
+      "sourceClaimCandidate:",
+      "- not generated",
+      "  reason: explicit claim/mechanism/consumer/falsifier inputs were not supplied",
+      "  No SourceClaim created"
+    ];
+  }
+
+  const missingFields = missingSourceClaimCandidateFields(command);
+
+  if (missingFields.length > 0) {
+    const reviewability = assessCandidateReviewability({
+      summary: command.claim ?? "SourceClaim candidate from local source artifact preview.",
+      ...(hasText(command.mechanism)
+        ? { body: command.mechanism }
+        : {}),
+      evidenceRefs: [
+        file,
+        artifactHash,
+        ...chunks.map((chunk) => chunk.contentHash)
+      ],
+      ...(hasText(command.falsifier)
+        ? { applicationGuidance: command.falsifier }
+        : {}),
+      ...(hasText(command.doesNotProve)
+        ? { doesNotProve: command.doesNotProve }
+        : {}),
+      missingFields
+    });
+
+    return [
+      "sourceClaimCandidate:",
+      "- id: source-claim-candidate:incomplete",
+      "  status: incomplete",
+      `  reviewability: ${reviewability.reviewability}`,
+      ...formatReviewabilityReasons(reviewability.reasons),
+      `  missing: ${missingFields.join(", ")}`,
+      "  No SourceClaim created"
+    ];
+  }
+
+  const candidate = parseSourceClaimInput({
+    claim: command.claim,
+    mechanism: command.mechanism,
+    krnImplication: command.krnImplication,
+    doesNotProve: command.doesNotProve,
+    supportType: command.supportType,
+    trustTier: command.trustTier,
+    consumer: command.consumer,
+    falsifier: command.falsifier,
+    metadata: {
+      file,
+      contentHash: artifactHash,
+      chunkHashes: chunks.map((chunk) => chunk.contentHash),
+      source: "krn source artifact preview"
+    }
+  });
+  const reviewability = assessCandidateReviewability({
+    summary: candidate.claim,
+    body: candidate.mechanism,
+    evidenceRefs: [
+      file,
+      artifactHash,
+      ...chunks.map((chunk) => chunk.contentHash)
+    ],
+    applicationGuidance: candidate.falsifier,
+    doesNotProve: sourceClaimCandidateDoesNotProve
+  });
+
+  return [
+    "sourceClaimCandidate:",
+    `- id: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    `  status: ${candidate.status}`,
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  claim: ${candidate.claim}`,
+    `  mechanism: ${candidate.mechanism}`,
+    `  consumer: ${candidate.consumer}`,
+    `  falsifier: ${candidate.falsifier}`,
+    `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
+    `  doesNotProve: ${sourceClaimCandidateDoesNotProve}`,
+    "  No SourceClaim created"
+  ];
+};
+
+const formatCandidateBridge = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[]
+): string[] => [
+  "Candidate bridge:",
+  "Mutation: none",
+  ...formatSearchDocumentCandidate(file, artifactHash, chunks),
+  ...formatSourceClaimCandidate(command, file, artifactHash, chunks)
+];
+
 const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {
   const cwdPath = path.resolve(cwd, filePath);
 
@@ -137,6 +359,7 @@ export const runSourceArtifactPreviewCommand = async (
   const chunkSize = runtime.command.chunkLines ?? defaultChunkLines;
   const chunkLimit = runtime.command.limitChunks ?? defaultLimitChunks;
   const chunks = chunkLines(lines, chunkSize, chunkLimit);
+  const artifactHash = sha256(raw);
 
   return {
     stdout: [
@@ -149,7 +372,7 @@ export const runSourceArtifactPreviewCommand = async (
       "Artifact:",
       `file: ${file}`,
       `resolvedFile: ${path.relative(runtime.cwd, resolvedPath)}`,
-      `contentHash: ${sha256(raw)}`,
+      `contentHash: ${artifactHash}`,
       `bytes: ${Buffer.byteLength(raw, "utf8")}`,
       `lines: ${lines.length}`,
       `chunking: line-based | chunkLines=${chunkSize} | renderedChunks=${chunks.length}`,
@@ -157,10 +380,13 @@ export const runSourceArtifactPreviewCommand = async (
       "Chunks:",
       ...formatChunks(chunks),
       "",
+      ...formatCandidateBridge(runtime.command, file, artifactHash, chunks),
+      "",
       "Proof:",
       "- proves: one local file was readable in this shell",
       "- proves: artifact and rendered chunk hashes were computed deterministically from current file bytes",
       "- proves: rendered chunks include source line ranges for review",
+      "- proves: preview output can produce reviewable source/search candidate proposals without persistence",
       "- doesNotProve: source truth, claim correctness, DB persistence, embeddings, graph retrieval, crawler readiness, or Memory Core mutation"
     ].join("\n")
   };

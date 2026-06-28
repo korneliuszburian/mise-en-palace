@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V317 Ingest v0 Source Candidate Bridge
-current task: V317-00 Ingest v0 Source Candidate Bridge
+active stream: V318 Ingest v0 SearchDocument Persistence Readback
+current task: V318-00 Ingest v0 SearchDocument Persistence Readback
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,10 +31,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V317-00 Ingest v0 Source Candidate Bridge is the current gap. V316 implemented
-local source artifact preview; now bridge preview output into reviewable
-SourceClaim/SearchDocument candidates without crawler, DB schema, embeddings,
-graph runtime, or Memory Core mutation.
+V318-00 Ingest v0 SearchDocument Persistence Readback is the current gap. V316
+implemented local source artifact preview and V317 added reviewable candidate
+output; now prove one existing-DB source/search persistence readback without
+crawler, schema migration, embeddings, graph runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -83,8 +83,8 @@ green test != product value
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use that result to start Ingest v0.
-4. Ingest v0: local artifact preview exists; next bridge preview output into
-   reviewable claim/search-document candidates before persistence/runtime work.
+4. Ingest v0: local artifact preview and candidate bridge exist; next prove one
+   existing-DB SearchDocument persistence/readback path without schema work.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
@@ -906,7 +906,7 @@ finding without broad schema/runtime work.
 
 ### V317-00 — Ingest v0 Source Candidate Bridge
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -1069,6 +1069,179 @@ V317 cannot bridge preview evidence into reviewable candidate output without
 broad schema/runtime work.
 ```
 
+### V318-00 — Ingest v0 SearchDocument Persistence Readback
+
+Status: active.
+
+Goal:
+
+```txt
+Persist and read back one explicit local artifact preview through existing DB
+SourceArtifact/SourceChunk/SearchDocument paths.
+```
+
+Product rationale:
+
+```txt
+V316/V317 made local artifact evidence previewable and candidate-shaped. The
+next brain step is proving one bounded existing-DB readback path before crawler,
+embeddings, graph, UI, API/MCP, or worker work.
+```
+
+Architectural rationale:
+
+```txt
+Use existing schema/repositories only. Do not add DB schema, source crawler,
+embeddings/ranking runtime, graph runtime, dashboard, API/MCP, worker daemon, or
+Memory Core mutation.
+```
+
+Evidence source:
+
+```txt
+V317 report, local source artifact preview/candidate output, existing
+SourceArtifact/SourceChunk/SearchDocument DB repository paths.
+```
+
+Official/external sources:
+
+```txt
+`pattern:evidence-proof-non-proof-boundary`, `pattern:source-to-decision-retention-gate`,
+and `pattern:ts-boundary-unknown-first-result-state`.
+```
+
+Inputs required:
+
+```txt
+GOAL.md
+PLAN.md
+PLANS.md
+docs/reviews/controlled-dogfood/2026-06-28-v317-ingest-v0-source-candidate-bridge/REPORT.md
+focused DB/source/search repository and CLI owner files discovered by targeted search
+```
+
+Files likely touched:
+
+```txt
+focused CLI/DB source/tests if current repository surfaces support it
+docs/reviews/controlled-dogfood/2026-06-28-v318-ingest-v0-search-document-persistence-readback/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+```
+
+Allowed writes:
+
+```txt
+focused existing-DB readback source/tests and bounded docs/root updates.
+```
+
+Forbidden writes:
+
+```txt
+DB schema migration, source crawler, embeddings/ranking runtime, graph runtime,
+dashboard, API/MCP, worker daemon, Memory Core mutation, target repo writes,
+broad eval platform, paid/proprietary course ingestion.
+```
+
+Output requirements:
+
+```txt
+record inspected repository surfaces, persistence/readback behavior if
+implemented, proof/non-proof boundaries, mutation boundary, and next ingest
+action.
+```
+
+Definition of Done:
+
+- existing source/search DB repository surface is inspected with targeted reads;
+- either smallest preview -> DB source/search readback is implemented with
+  focused tests, or a precise missing-substrate finding is recorded;
+- no forbidden schema/runtime/platform work is added;
+- report states proof and does-not-prove boundaries.
+
+Verification commands:
+
+```sh
+git diff --check
+```
+
+If package source changes:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+If DB path is exercised:
+
+```sh
+pnpm db:ready
+pnpm db:smoke
+```
+
+Acceptance criteria:
+
+```txt
+V318 has either working existing-DB source/search persistence readback for one
+local preview or a precise bounded missing-substrate finding.
+```
+
+Risk:
+
+```txt
+turning readback into schema/crawler/embedding/graph/platform work.
+```
+
+Rollback:
+
+```txt
+Revert focused source/docs changes; no schema/runtime platform changes should
+exist.
+```
+
+Condensation expectation:
+
+```txt
+Keep root state compact; put detailed evidence in the V318 report.
+```
+
+Next-task synthesis rule:
+
+```txt
+If persistence readback works, decide whether next Ingest v0 step is lexical
+retrieval readback, source claim review path, or graph/entity preview. If not,
+open the smallest repository-surface repair.
+```
+
+Pattern surface:
+
+```txt
+DB readback, CLI/readback behavior, TypeScript boundary, source/search substrate.
+```
+
+Primary consumer:
+
+```txt
+future source grounding, graph brain, pattern intake, and product-facing
+knowledge ingestion.
+```
+
+Does not prove:
+
+```txt
+source truth, crawler readiness, embeddings, graph retrieval, product readiness,
+or mass corpus ingest.
+```
+
+Falsifier:
+
+```txt
+V318 cannot persist/read back one local preview through existing source/search
+DB paths without broad schema/runtime work.
+```
+
 ## Pattern Gate
 
 For every non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
@@ -1158,7 +1331,8 @@ Falsifier:
 - [x] V314 Executable Brain-QA Case BQ-025
 - [x] V315 Executable Brain-QA Case BQ-028
 - [x] V316 Ingest v0 Local Source Artifact Preview
-- [ ] V317 Ingest v0 Source Candidate Bridge
+- [x] V317 Ingest v0 Source Candidate Bridge
+- [ ] V318 Ingest v0 SearchDocument Persistence Readback
 
 ## Recent Evidence Pointers
 
@@ -1184,6 +1358,29 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v315-executable-brain-qa-bq-028/REPORT.md`
 - V316 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v316-ingest-v0-local-source-artifact-preview/REPORT.md`
+- V317 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v317-ingest-v0-source-candidate-bridge/REPORT.md`
+
+## Outcome V317 Ingest v0 Source Candidate Bridge
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V316 report, local artifact preview output, `SourceClaimInputSchema`,
+  `SearchDocumentInputSchema`, and candidate reviewability helper.
+- Mechanism: local artifact hash/chunk/source-range evidence can be shaped into
+  reviewable SearchDocument and SourceClaim candidates without persistence.
+- KRN implication: Ingest v0 can require reviewable candidate output before DB
+  persistence, embeddings, graph retrieval, or crawler work.
+- Decision: extend `krn source artifact preview` with a Candidate bridge:
+  SearchDocument candidate by default and SourceClaim candidate only with
+  explicit operator claim fields.
+- Does not prove: source truth, claim correctness, DB persistence, crawler
+  readiness, embeddings, graph retrieval, or product readiness.
+- Consumer: V318 Ingest v0 SearchDocument Persistence Readback.
+- Falsifier: candidate output cannot feed existing DB source/search readback
+  without broad schema/runtime work.
 
 ## Outcome V316 Ingest v0 Local Source Artifact Preview
 

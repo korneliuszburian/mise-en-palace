@@ -33,7 +33,7 @@ export const formatSourceClaimAddUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"]",
     "",
     "Required:",
     "--file",
@@ -41,6 +41,14 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "Optional:",
     "--chunk-lines <positive-integer>",
     "--limit-chunks <positive-integer>",
+    "--claim <text>",
+    "--mechanism <text>",
+    "--krn-implication <text>",
+    "--does-not-prove <text>",
+    "--support-type <type>",
+    "--trust-tier <tier>",
+    "--consumer <text>",
+    "--falsifier <text>",
     "",
     "Note: preview reads one local file, computes hashes, and renders chunk source ranges. It does not persist, crawl, embed, rank, or mutate Memory Core."
   ].join("\n") + "\n";
@@ -225,6 +233,35 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
 
       sourceCommand.limitChunks = parsed.value;
       index = parsed.nextIndex;
+      continue;
+    }
+
+    const optionMap = {
+      "--claim": "claim",
+      "--mechanism": "mechanism",
+      "--krn-implication": "krnImplication",
+      "--does-not-prove": "doesNotProve",
+      "--support-type": "supportType",
+      "--trust-tier": "trustTier",
+      "--consumer": "consumer",
+      "--falsifier": "falsifier"
+    } as const;
+    const option = Object.keys(optionMap).find((candidate) =>
+      arg === candidate || arg?.startsWith(`${candidate}=`) === true
+    );
+
+    if (option !== undefined) {
+      const valueResult = optionValue(rest, index, option);
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+        };
+      }
+
+      sourceCommand[optionMap[option as keyof typeof optionMap]] =
+        valueResult.value.trim();
+      index = valueResult.nextIndex;
       continue;
     }
 

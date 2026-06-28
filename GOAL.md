@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V317 Ingest v0 Source Candidate Bridge
+V318 Ingest v0 SearchDocument Persistence Readback
 ```
 
 Current state:
@@ -27,15 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V317-00 Ingest v0 Source Candidate Bridge.
+current task: V318-00 Ingest v0 SearchDocument Persistence Readback.
 ```
 
 Current task:
 
 ```txt
-Use the local source artifact preview output to implement or scope the smallest
-reviewable SourceClaim/SearchDocument candidate bridge without crawler, DB
-schema, dashboard, API/MCP, worker, or broad eval platform.
+Persist/read back one explicit local artifact preview through existing
+SourceArtifact/SourceChunk/SearchDocument paths without crawler, DB schema,
+dashboard, API/MCP, worker, or broad eval platform.
 ```
 
 ## Remaining Work
@@ -49,8 +49,8 @@ to preserve are:
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
-4. Ingest v0: local artifact preview exists; next bridge preview output into
-   reviewable claim/search-document candidates before persistence/runtime work.
+4. Ingest v0: local artifact preview and candidate bridge exist; next prove one
+   existing-DB SearchDocument persistence/readback path without schema work.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core

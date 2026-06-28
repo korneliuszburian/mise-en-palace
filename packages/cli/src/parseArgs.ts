@@ -278,6 +278,14 @@ export type CliCommand =
       file?: string;
       chunkLines?: number;
       limitChunks?: number;
+      claim?: string;
+      mechanism?: string;
+      krnImplication?: string;
+      doesNotProve?: string;
+      supportType?: string;
+      trustTier?: string;
+      consumer?: string;
+      falsifier?: string;
     }
   | {
       kind: "sourceClaimAdd";
