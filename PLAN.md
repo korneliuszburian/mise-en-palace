@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V274 Add Evidence Proof Boundary Retained Pattern
-current task: V274-00 Add Evidence Proof Boundary Retained Pattern
+active stream: V275 Brain Knowledge HTML Catalog Breadth Guard
+current task: V275-00 Brain Knowledge HTML Catalog Breadth Guard
 ```
 
 ## Compact Completed Checkpoints
@@ -50,28 +50,28 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V274 Add Evidence Proof Boundary Retained Pattern
+### V275 Brain Knowledge HTML Catalog Breadth Guard
 
 Goal:
 
-Add one high-value retained pattern card for KRN evidence proof/non-proof
-boundaries and include it in the explicit brain knowledge catalog.
+Guard that the self-contained HTML preview renders the full current brain
+knowledge catalog, including the new evidence proof-boundary card, with
+source/evidence/falsifier/does-not-prove fields visible.
 
 Current finding:
 
 ```txt
-V273 added a local HTML search preview, but the catalog still has only two
-retained patterns. The next useful brain step is more reviewable knowledge, not
-UI polish.
+V274 added the third retained pattern. The next risk is UI/readback drift: HTML
+or catalog tests could still miss new cards or proof-boundary fields.
 ```
 
 Current action:
 
 ```txt
-Execute V274-00: add a retained pattern for evidence proof/non-proof boundary
-discipline, map it through source -> mechanism -> KRN implication -> decision
--> consumer -> falsifier, add it to `docs/brain-knowledge/catalog.json`, and
-guard/read back the card.
+Execute V275-00: add a focused guard that generated HTML over
+`docs/brain-knowledge/catalog.json` includes all current pattern cards and keeps
+proof/non-proof boundaries visible. Do not add ranking, API/MCP, DB search, or
+UI polish.
 ```
 
 Primary consumer:
@@ -83,8 +83,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V274 retains decorative guidance without mechanism, consumer, falsifier,
-evidence refs, and does-not-prove boundary.
+V275 becomes visual polish, hides proof boundaries, or checks only one card
+while the catalog contains multiple retained patterns.
 ```
 
 ## Pattern Gate

@@ -119,6 +119,7 @@ describe("Brain knowledge read model invariants", () => {
     const patternFiles = catalog["patternFiles"];
 
     expect(Array.isArray(patternFiles)).toBe(true);
+    expect(patternFiles).toContain("../patterns/retained-patterns/evidence-proof-non-proof-boundary.json");
     expect(patternFiles).toContain("../patterns/retained-patterns/source-to-decision-retention-gate.json");
     expect(patternFiles).toContain(
       "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"

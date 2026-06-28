@@ -201,6 +201,24 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("Source-to-decision retention gate");
   });
 
+  it("searches the evidence proof boundary pattern through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "proof-boundary"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:evidence-proof-non-proof-boundary"]);
+    expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(preview.mutation).toBe("none");
+  });
+
   it("guards deterministic catalog search results and proof boundaries", async () => {
     const typeScriptResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -248,6 +266,7 @@ describe("runKnowledgeCardsCommand", () => {
     const preview = parsePreviewResource(result.stdout);
 
     expect(cardIds(preview).sort()).toEqual([
+      "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:ts-boundary-unknown-first-result-state"
     ]);

@@ -23,18 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V274 Add Evidence Proof Boundary Retained Pattern
-current task: V274-00 Add Evidence Proof Boundary Retained Pattern
-latest pushed commit before V273: a8592aa fix(readmodel): resolve knowledge catalog from repo root
-latest CI checked before V273: KRN CI success for a8592aa909721c962284f5f662f09fdbc1c17038
+active stream: V275 Brain Knowledge HTML Catalog Breadth Guard
+current task: V275-00 Brain Knowledge HTML Catalog Breadth Guard
+latest pushed commit before V274: 9f0323b feat(cli): render knowledge cards html preview
+latest CI checked before V274: KRN CI success for 9f0323b7e0555af2af0b6236b45d171fb3b3cca2
 ```
 
 Known current gap:
 
 ```txt
-V274-00 Add Evidence Proof Boundary Retained Pattern is the current gap. V273
-added local HTML search/readback; now the catalog needs more high-value retained
-patterns so the UI searches real brain knowledge, not only two cards.
+V275-00 Brain Knowledge HTML Catalog Breadth Guard is the current gap. V274
+added the third retained pattern; now guard that HTML/catalog readback cannot
+silently omit the new card or its proof-boundary fields.
 ```
 
 ## 2. Product Thesis
@@ -1264,7 +1264,7 @@ Falsifier:
 
 ### V274-00 Add Evidence Proof Boundary Retained Pattern
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -1397,6 +1397,129 @@ Falsifier:
 - evidence-related tasks can omit proof/non-proof boundaries while the retained
   pattern and tests still pass.
 
+### V275-00 Brain Knowledge HTML Catalog Breadth Guard
+
+Status: active.
+
+Goal:
+
+```txt
+Add a focused guard that generated HTML over `docs/brain-knowledge/catalog.json`
+renders all current retained pattern cards and preserves proof-boundary fields.
+```
+
+Product rationale:
+
+```txt
+The catalog now has three cards and a local HTML preview. The next risk is
+readback drift: the UI/search preview could miss cards or hide proof boundaries.
+```
+
+Architectural rationale:
+
+```txt
+Brain UI/search must remain a faithful read-only projection over typed cards,
+not a hand-selected subset or decorative shell.
+```
+
+Evidence source:
+
+- V273 HTML preview.
+- V274 evidence proof-boundary retained pattern.
+- `docs/brain-knowledge/catalog.json`.
+
+Official/external sources:
+
+- none.
+
+Inputs required:
+
+- `packages/cli/src/runKnowledgeCardsCommand.test.ts`
+- `docs/brain-knowledge/catalog.json`
+- retained pattern IDs.
+
+Files likely touched:
+
+- CLI readback tests;
+- V275 report;
+- compact plan updates.
+
+Allowed writes:
+
+- focused HTML/catalog breadth guard;
+- report and plan updates.
+
+Forbidden writes:
+
+- UI polish;
+- ranking engine;
+- API/MCP server;
+- DB schema/search;
+- source crawler;
+- memory/source mutation.
+
+Output requirements:
+
+- test proves HTML contains all three current pattern IDs;
+- test proves HTML contains source refs, evidence refs, falsifier, does-not-prove,
+  mutation none, and proof boundaries.
+
+Definition of Done:
+
+- focused test passes;
+- full verification passes;
+- report records what the guard proves and does not prove.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no broad UI changes;
+- no ranking;
+- no product-ready claim.
+
+Risk:
+
+- snapshot-like HTML test that protects markup noise instead of meaningful
+  readback fields.
+
+Rollback:
+
+- revert focused V275 commit.
+
+Condensation expectation:
+
+- one compact outcome block plus linked report.
+
+Next-task synthesis rule:
+
+- if HTML breadth is guarded, next task may add another high-value retained
+  pattern or a small catalog freshness guard; if not, repair HTML readback.
+
+Pattern surface:
+
+- operator UX / readback / pattern brain.
+
+Primary consumer:
+
+- future local brain knowledge search.
+
+Does not prove:
+
+- visual quality, ranking quality, product readiness, or DB-backed search.
+
+Falsifier:
+
+- generated HTML can omit a catalog card or proof-boundary field while tests
+  still pass.
+
 ## Decision Log
 
 - Root `PLAN.md` remains compact product SSOT.
@@ -1502,8 +1625,34 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   existing `krn knowledge cards` resource; rejected new dashboard/API/MCP.
 - V273-00 complete: implemented `--html` as a local self-contained search
   preview over the existing knowledge cards resource.
-- V274-00 active: add the evidence proof/non-proof boundary as the next retained
-  pattern card.
+- V274-00 complete: added `evidence-proof-non-proof-boundary` as the third
+  retained pattern card in the catalog.
+- V275-00 active: guard that HTML readback renders all current cards and
+  proof-boundary fields.
+
+## Outcome V274-00 Add Evidence Proof Boundary Retained Pattern
+
+Summary:
+- added `docs/patterns/retained-patterns/evidence-proof-non-proof-boundary.json`;
+- added it to `docs/brain-knowledge/catalog.json`;
+- extended catalog invariants and CLI search guard for `proof-boundary`;
+- verified readback returns `pattern:evidence-proof-non-proof-boundary`.
+
+Source-to-decision:
+- Source: `.agents/skills/evidence-review-loop/SKILL.md`,
+  `packages/core/src/evidenceBundle.ts`, and
+  `packages/schema/src/evidenceCapture.ts`.
+- Mechanism: evidence can shape review/memory/source/eval decisions only when
+  provenance and proof/non-proof boundaries stay visible.
+- KRN implication: proof-boundary discipline should be searchable retained
+  knowledge, not only implicit skill text.
+- Decision: retain `evidence-proof-non-proof-boundary`; open V275 to guard HTML
+  breadth after catalog growth.
+- Does not prove: command truth, review correctness, memory quality, source
+  truth, ranking quality, or product readiness.
+- Consumer: future evidence capture/review and brain knowledge UI/search.
+- Falsifier: evidence/candidate/card output can influence decisions while
+  omitting command provenance or does-not-prove boundary and tests still pass.
 
 ## Outcome V273-00 Brain Knowledge Self-Contained HTML Search Preview
 
