@@ -469,6 +469,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
+      "pattern:target-repo-write-authority-boundary",
       "pattern:ts-boundary-unknown-first-result-state"
     ].sort());
     expect(cardIds(noisePreview)).toEqual([]);
@@ -488,7 +489,6 @@ describe("runKnowledgeCardsCommand", () => {
     const preview = parsePreviewResource(result.stdout);
 
     expect(cardIds(preview).sort()).toEqual([
-      "pattern:target-repo-write-authority-boundary",
       "pattern:untrusted-context-warning-boundary"
     ].sort());
   });
@@ -501,13 +501,13 @@ describe("runKnowledgeCardsCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "none",
-        text: "write authority"
+        text: "untrusted"
       },
       format: "json"
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual(["pattern:target-repo-write-authority-boundary"]);
+    expect(cardIds(preview)).toEqual(["pattern:untrusted-context-warning-boundary"]);
   });
 
   it("guards deterministic catalog search results and proof boundaries", async () => {

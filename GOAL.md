@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V300 Target Repo Write Authority Boundary Usefulness Feedback
+V301 Untrusted Context Warning Boundary Usefulness Feedback
 ```
 
 Current product loop:
@@ -48,10 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V299: target repair, pattern intake/enforcement, skills, knowledge cards,
-usefulness feedback, no-feedback triage, TypeScript feedback, active-context
-current-truth feedback, and read-only UI boundary feedback complete.
-current task: V300-00 Target Repo Write Authority Boundary Usefulness Feedback.
+V245..V300: target repair, pattern intake/enforcement, skills, knowledge cards,
+usefulness feedback, no-feedback triage, TypeScript feedback, active-context,
+read-only UI, and target write-authority feedback complete.
+current task: V301-00 Untrusted Context Warning Boundary Usefulness Feedback.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

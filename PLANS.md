@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V300 Target Repo Write Authority Boundary Usefulness Feedback
-current task: V300-00 Target Repo Write Authority Boundary Usefulness Feedback
-latest pushed commit before V299: 88950cd docs(knowledge): mark active context pattern useful
-latest CI checked before V299: KRN CI success for 88950cd65787b44cf9aa76cf1e0c3fc9b0dd1aad
+active stream: V301 Untrusted Context Warning Boundary Usefulness Feedback
+current task: V301-00 Untrusted Context Warning Boundary Usefulness Feedback
+latest pushed commit before V300: 1473c8a docs(knowledge): mark read-only ui boundary useful
+latest CI checked before V300: KRN CI success for 1473c8a055fb607bcb50c978c326364871bd1317
 ```
 
 Known current gap:
 
 ```txt
-V300-00 Target Repo Write Authority Boundary Usefulness Feedback is the current
-gap. V299 marked the read-only UI/search boundary as helped and reduced
-no-feedback cards from 3 to 2. The next highest-ROI no-feedback card is the
-target-repo write-authority boundary.
+V301-00 Untrusted Context Warning Boundary Usefulness Feedback is the current
+gap. V300 marked target-repo write authority as helped and reduced no-feedback
+cards from 2 to 1. The remaining no-feedback card is the untrusted-context
+warning boundary.
 ```
 
 ## 2. Product Thesis
@@ -2802,6 +2802,36 @@ Source-to-decision:
   `pattern:target-repo-write-authority-boundary`.
 - Falsifier: target write-authority cannot be tied to a recent slice where it
   prevented unsafe target writes or clarified allowed write scope.
+
+## Outcome V300-00 Target Repo Write Authority Boundary Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v300-target-repo-write-authority.json`;
+- attached `helped` feedback to
+  `pattern:target-repo-write-authority-boundary`;
+- confirmed `--usefulness-outcome helped` returns 10 cards;
+- confirmed `--usefulness-outcome none` decreased from 2 to 1 card.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v300-target-repo-write-authority-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V251 target trial gate, V252 normalized target substrate, V256
+  replayable target repair, muke-v2 external target trial, and
+  `target-repo-testing` skill.
+- Mechanism: target repos can be dirty, evolving, secret-bearing, or owned by
+  another operator; explicit mode/write authority prevents observation from
+  becoming unscoped mutation.
+- KRN implication: future target tasks must declare mode, dirty state,
+  write authority, allowed/forbidden writes, rollback, verification, and
+  proof/non-proof before any target modification.
+- Decision: open V301 Untrusted Context Warning Boundary Usefulness Feedback.
+- Does not prove: arbitrary target write safety, second-operator usability, or
+  product readiness.
+- Consumer: V301 usefulness feedback for
+  `pattern:untrusted-context-warning-boundary`.
+- Falsifier: untrusted-context warning cannot be tied to a recent slice where it
+  prevented hostile or external text from being treated as trusted instruction.
 
 ## Condensation Rules
 

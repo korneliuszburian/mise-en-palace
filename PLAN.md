@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V300 Target Repo Write Authority Boundary Usefulness Feedback
-current task: V300-00 Target Repo Write Authority Boundary Usefulness Feedback
+active stream: V301 Untrusted Context Warning Boundary Usefulness Feedback
+current task: V301-00 Untrusted Context Warning Boundary Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,43 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V300 Target Repo Write Authority Boundary Usefulness Feedback
+### V301 Untrusted Context Warning Boundary Usefulness Feedback
 
 Goal:
 
-Add explicit usefulness feedback for the target-repo write-authority boundary if
-recent evidence shows it prevented unsafe writes to living/external repos or
-kept target testing reproducible.
+Add explicit usefulness feedback for the untrusted-context warning boundary if
+recent evidence shows it prevented hostile/external target text from being
+treated as trusted instructions.
 
 Current finding:
 
 ```txt
-V299 marked the brain knowledge read-only UI boundary as helped and reduced
-no-feedback cards from 3 to 2. The next highest-ROI no-feedback pattern is the
-target-repo write-authority boundary because safe external/living repo trials
-require explicit write mode, allowed files, rollback, and evidence.
+V300 marked the target-repo write-authority boundary as helped and reduced
+no-feedback cards from 2 to 1. The remaining no-feedback pattern is the
+untrusted-context warning boundary, which gates external target/source text
+before broader target alpha.
 ```
 
 Current action:
 
 ```txt
-Execute V300-00: inspect recent target-repo/testing evidence and add usefulness
-feedback for `pattern:target-repo-write-authority-boundary` only if it can be
-tied to a real helped/neutral/noise/stale outcome. Do not write to a living
-target repo, broaden target substrate, or add API/MCP/dashboard.
+Execute V301-00: inspect recent security/target/source evidence and add
+usefulness feedback for `pattern:untrusted-context-warning-boundary` only if it
+can be tied to a real helped/neutral/noise/stale outcome. Do not add a security
+scanner, prompt-injection subsystem, crawler, API/MCP/dashboard, or target
+writes.
 ```
 
 Primary consumer:
 
 ```txt
-target-repo testing/write-authority usefulness gate.
+untrusted-context warning usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-Target-repo write-authority usefulness cannot be supported by evidence, or
+Untrusted-context warning usefulness cannot be supported by evidence, or
 feedback is added without proof boundaries and does-not-prove.
 ```
 
