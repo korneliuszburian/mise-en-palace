@@ -6,7 +6,8 @@
     "usefulness-feedback/v295-source-to-decision-retention-gate.json",
     "usefulness-feedback/v296-evidence-proof-boundary.json",
     "usefulness-feedback/v297-typescript-boundary-pattern.json",
-    "usefulness-feedback/v298-active-context-current-truth.json"
+    "usefulness-feedback/v298-active-context-current-truth.json",
+    "usefulness-feedback/v299-read-only-ui-boundary.json"
   ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",

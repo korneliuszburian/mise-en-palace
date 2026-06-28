@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
-current task: V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
+active stream: V300 Target Repo Write Authority Boundary Usefulness Feedback
+current task: V300-00 Target Repo Write Authority Boundary Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,43 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
+### V300 Target Repo Write Authority Boundary Usefulness Feedback
 
 Goal:
 
-Add explicit usefulness feedback for the brain knowledge read-only UI/search
-boundary if recent evidence shows it prevented premature API/MCP/dashboard scope
-or kept knowledge-card inspection reviewable.
+Add explicit usefulness feedback for the target-repo write-authority boundary if
+recent evidence shows it prevented unsafe writes to living/external repos or
+kept target testing reproducible.
 
 Current finding:
 
 ```txt
-V298 marked active context compact/current-truth as helped and reduced
-no-feedback cards from 4 to 3. The next highest-ROI no-feedback pattern is the
-brain knowledge read-only UI boundary because user-facing search/UI is desired,
-but the read-only preview boundary may already be preventing premature product
-surface expansion.
+V299 marked the brain knowledge read-only UI boundary as helped and reduced
+no-feedback cards from 3 to 2. The next highest-ROI no-feedback pattern is the
+target-repo write-authority boundary because safe external/living repo trials
+require explicit write mode, allowed files, rollback, and evidence.
 ```
 
 Current action:
 
 ```txt
-Execute V299-00: inspect recent knowledge-card preview/search evidence and add
-usefulness feedback for `pattern:brain-knowledge-read-only-ui-boundary` only if
-it can be tied to a real helped/neutral/noise/stale outcome. Do not build UI,
-API, MCP, dashboard, semantic ranking, or Memory Core mutation.
+Execute V300-00: inspect recent target-repo/testing evidence and add usefulness
+feedback for `pattern:target-repo-write-authority-boundary` only if it can be
+tied to a real helped/neutral/noise/stale outcome. Do not write to a living
+target repo, broaden target substrate, or add API/MCP/dashboard.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge UI/search boundary usefulness gate.
+target-repo testing/write-authority usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-Read-only UI/search boundary usefulness cannot be supported by evidence, or
+Target-repo write-authority usefulness cannot be supported by evidence, or
 feedback is added without proof boundaries and does-not-prove.
 ```
 

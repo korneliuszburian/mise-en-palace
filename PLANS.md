@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
-current task: V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
-latest pushed commit before V298: af784ba docs(knowledge): mark typescript boundary pattern useful
-latest CI checked before V298: KRN CI success for af784ba17d75464f933736c5ffa5774db39335fb
+active stream: V300 Target Repo Write Authority Boundary Usefulness Feedback
+current task: V300-00 Target Repo Write Authority Boundary Usefulness Feedback
+latest pushed commit before V299: 88950cd docs(knowledge): mark active context pattern useful
+latest CI checked before V299: KRN CI success for 88950cd65787b44cf9aa76cf1e0c3fc9b0dd1aad
 ```
 
 Known current gap:
 
 ```txt
-V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback is the current
-gap. V298 marked active-context current-truth routing as helped and reduced
-no-feedback cards from 4 to 3. The next highest-ROI no-feedback card is the
-read-only UI/search boundary.
+V300-00 Target Repo Write Authority Boundary Usefulness Feedback is the current
+gap. V299 marked the read-only UI/search boundary as helped and reduced
+no-feedback cards from 3 to 2. The next highest-ROI no-feedback card is the
+target-repo write-authority boundary.
 ```
 
 ## 2. Product Thesis
@@ -2774,6 +2774,34 @@ Source-to-decision:
 - Falsifier: read-only knowledge-card preview/search boundary cannot be tied to
   a recent slice where it prevented premature product surface expansion or
   reduced review burden.
+
+## Outcome V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v299-read-only-ui-boundary.json`;
+- attached `helped` feedback to
+  `pattern:brain-knowledge-read-only-ui-boundary`;
+- confirmed `--usefulness-outcome helped` returns 9 cards;
+- confirmed `--usefulness-outcome none` decreased from 3 to 2 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v299-brain-knowledge-read-only-ui-boundary-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V281 web search readiness gate, V282 static preview artifact, V285
+  browser smoke, and V291 usefulness outcome dogfood.
+- Mechanism: visible brain knowledge should start as a read-only projection of
+  typed cards with proof boundaries, not as dashboard/API/MCP/DB-backed search
+  or mutation-capable UI.
+- KRN implication: brain UI/search can progress through static preview and
+  usefulness feedback before wider product surfaces.
+- Decision: open V300 Target Repo Write Authority Boundary Usefulness Feedback.
+- Does not prove: product UI readiness, semantic ranking, catalog completeness,
+  or DB-backed search need.
+- Consumer: V300 usefulness feedback for
+  `pattern:target-repo-write-authority-boundary`.
+- Falsifier: target write-authority cannot be tied to a recent slice where it
+  prevented unsafe target writes or clarified allowed write scope.
 
 ## Condensation Rules
 

@@ -1,0 +1,17 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:brain-knowledge-read-only-ui-boundary",
+      "outcome": "helped",
+      "summary": "Kept brain knowledge search on a static/read-only preview path while rejecting premature dashboard, API, MCP, DB-backed search, crawler, and mutation-capable surfaces.",
+      "evidenceRefs": [
+        "docs/reviews/controlled-dogfood/2026-06-28-v281-brain-knowledge-web-search-readiness-gate/REPORT.md",
+        "docs/reviews/controlled-dogfood/2026-06-28-v282-brain-knowledge-static-web-preview-artifact/REPORT.md",
+        "docs/reviews/controlled-dogfood/2026-06-28-v285-brain-knowledge-static-preview-browser-smoke/REPORT.md",
+        "docs/reviews/controlled-dogfood/2026-06-28-v291-brain-knowledge-usefulness-outcome-filter-dogfood/REPORT.md"
+      ],
+      "doesNotProve": "This feedback does not prove product UI readiness, semantic ranking quality, catalog completeness, DB-backed search need, or that API/MCP/dashboard will never be needed.",
+      "observedAt": "2026-06-28"
+    }
+  ]
+}
