@@ -16,6 +16,7 @@ describe("codexAdapterSmoke", () => {
       renderedNonGoals: true,
       renderedExplicitExclusions: true,
       renderedEvidenceContract: true,
+      renderedSkillPatternRefs: true,
       sourceClaimsUsed: 1,
       memoryRecordsUsed: 1,
       antiMemoryWarnings: 1,
@@ -33,6 +34,7 @@ describe("codexAdapterSmoke", () => {
     expect(output).toContain("Non-goals present: yes");
     expect(output).toContain("Explicit exclusions present: yes");
     expect(output).toContain("Evidence contract present: yes");
+    expect(output).toContain("Skill pattern refs present: yes");
     expect(output).toContain("Source claims used: 1");
     expect(output).toContain("Memory records used: 1");
     expect(output).toContain("Anti-memory warnings: 1");

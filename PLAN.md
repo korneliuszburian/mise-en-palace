@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V279 Codex Adapter Skill Pattern Smoke Readback
-current task: V279-00 Codex Adapter Skill Pattern Smoke Readback
+active stream: V280 Pattern Brain Readiness Re-Gate
+current task: V280-00 Pattern Brain Readiness Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V279 Codex Adapter Skill Pattern Smoke Readback
+### V280 Pattern Brain Readiness Re-Gate
 
 Goal:
 
-Prove or guard that DB-backed Codex adapter smoke/readback includes the retained
-skill-routing pattern refs in rendered execution briefs.
+Re-gate pattern brain readiness after V275-V279 and select the next
+highest-ROI product slice.
 
 Current finding:
 
 ```txt
-V278 added `patternRefs` to Codex skill hints and rendered briefs. The next
-gap is whether the DB-backed adapter smoke/readback path includes those refs
-end-to-end.
+V275-V279 connected retained patterns to HTML readback, Codex skill routing,
+adapter skill hints, and DB-backed adapter smoke. The next gap is deciding what
+is still missing before broader UI/search, MCP, or target usage.
 ```
 
 Current action:
 
 ```txt
-Execute V279-00: add or adjust the smallest adapter smoke/readback guard so the
-rendered execution brief includes
-`pattern:codex-skill-progressive-disclosure-routing`. Do not add hidden routing,
-agent framework, MCP, web UI, or broad prompt system.
+Execute V280-00: write a compact readiness report that classifies pattern brain
+state, remaining gaps, and next bounded slice. Do not build UI/API/MCP, add
+new patterns, or change product code unless the re-gate proves an immediate
+guard is missing.
 ```
 
 Primary consumer:
 
 ```txt
-Codex adapter / DB-backed smoke readback / skill routing loop.
+pattern brain / product readiness decision loop.
 ```
 
 Falsifier:
 
 ```txt
-Adapter smoke/readback can render skill hints without retained pattern refs and
-tests still pass.
+The project keeps adding pattern-brain slices without a current readiness
+decision or next highest-ROI slice.
 ```
 
 ## Pattern Gate

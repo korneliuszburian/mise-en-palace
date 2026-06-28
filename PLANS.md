@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V279 Codex Adapter Skill Pattern Smoke Readback
-current task: V279-00 Codex Adapter Skill Pattern Smoke Readback
-latest pushed commit before V278: a81e94e docs(skills): route Codex adapter through skill pattern
-latest CI checked before V278: KRN CI success for a81e94ef9e10f91d6598b47c4b58e886cfd76789
+active stream: V280 Pattern Brain Readiness Re-Gate
+current task: V280-00 Pattern Brain Readiness Re-Gate
+latest pushed commit before V279: c988d86 feat(adapter): render skill routing pattern refs
+latest CI checked before V279: KRN CI success for c988d865d09a9a64dc6023dd0a041311769075db
 ```
 
 Known current gap:
 
 ```txt
-V279-00 Codex Adapter Skill Pattern Smoke Readback is the current gap. V278
-added retained pattern refs to skill hints and rendered briefs. Now prove or
-guard that the DB-backed adapter smoke/readback path includes those refs
-end-to-end.
+V280-00 Pattern Brain Readiness Re-Gate is the current gap. V275-V279 connected
+retained patterns to full-catalog HTML readback, skill routing, adapter hints,
+and DB-backed adapter smoke. Now re-gate readiness and select the next
+highest-ROI bounded slice.
 ```
 
 ## 2. Product Thesis
@@ -2220,6 +2220,31 @@ Source-to-decision:
 - Consumer: V279 Codex Adapter Skill Pattern Smoke Readback.
 - Falsifier: DB-backed adapter smoke/readback can render skill hints without
   retained pattern refs and tests still pass.
+
+## Outcome V279-00 Codex Adapter Skill Pattern Smoke Readback
+
+Summary:
+- added `renderedSkillPatternRefs` to `CodexAdapterSmokeReport`;
+- made DB-backed Codex adapter smoke fail if rendered execution briefs omit
+  `pattern:codex-skill-progressive-disclosure-routing`;
+- report output now includes `Skill pattern refs present: yes/no`.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v279-codex-adapter-skill-pattern-smoke-readback/REPORT.md`.
+
+Source-to-decision:
+- Source: V278 adapter skill routing dogfood and current DB-backed adapter
+  smoke.
+- Mechanism: DB-backed adapter smoke is the strongest local proof that
+  persisted KRN state can be rendered into a bounded Codex execution brief.
+- KRN implication: retained pattern refs must survive persisted
+  plan/readback/render, not only unit renderers.
+- Decision: add skill-pattern-ref readback to adapter smoke proof.
+- Does not prove: automatic skill selection, that Codex follows the hint,
+  pattern ranking quality, or product readiness.
+- Consumer: V280 Pattern Brain Readiness Re-Gate.
+- Falsifier: adapter smoke can pass while rendered skill hints omit retained
+  pattern refs.
 
 ## Condensation Rules
 

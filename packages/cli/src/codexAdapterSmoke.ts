@@ -44,6 +44,7 @@ export interface CodexAdapterSmokeReport {
   renderedNonGoals: boolean;
   renderedExplicitExclusions: boolean;
   renderedEvidenceContract: boolean;
+  renderedSkillPatternRefs: boolean;
   sourceClaimsUsed: number;
   memoryRecordsUsed: number;
   antiMemoryWarnings: number;
@@ -197,6 +198,7 @@ const reportLines = (report: CodexAdapterSmokeReport): string[] => [
   `Non-goals present: ${report.renderedNonGoals ? "yes" : "no"}`,
   `Explicit exclusions present: ${report.renderedExplicitExclusions ? "yes" : "no"}`,
   `Evidence contract present: ${report.renderedEvidenceContract ? "yes" : "no"}`,
+  `Skill pattern refs present: ${report.renderedSkillPatternRefs ? "yes" : "no"}`,
   `Source claims used: ${report.sourceClaimsUsed}`,
   `Memory records used: ${report.memoryRecordsUsed}`,
   `Anti-memory warnings: ${report.antiMemoryWarnings}`,
@@ -506,6 +508,9 @@ export const runCodexAdapterSmokeCheck = async (
     const renderedEvidenceContract =
       renderedBrief.includes("Evidence Contract:") &&
       evidenceContract.commands.every((command) => renderedBrief.includes(command.command));
+    const renderedSkillPatternRefs = renderedBrief.includes(
+      "pattern:codex-skill-progressive-disclosure-routing"
+    );
     const codexInvocationCount = aggregate.runEvents.filter((event) =>
       event.type === "codex.invoked" ||
       event.type === "codex.executed" ||
@@ -519,6 +524,7 @@ export const runCodexAdapterSmokeCheck = async (
       !renderedNonGoals ||
       !renderedExplicitExclusions ||
       !renderedEvidenceContract ||
+      !renderedSkillPatternRefs ||
       brief.sourceClaimsUsed.length === 0 ||
       brief.sourceClaimsUsed.length > 6 ||
       brief.memoryRecordsUsed.length === 0 ||
@@ -547,6 +553,7 @@ export const runCodexAdapterSmokeCheck = async (
       renderedNonGoals,
       renderedExplicitExclusions,
       renderedEvidenceContract,
+      renderedSkillPatternRefs,
       sourceClaimsUsed: brief.sourceClaimsUsed.length,
       memoryRecordsUsed: brief.memoryRecordsUsed.length,
       antiMemoryWarnings: brief.antiMemoryWarnings.length,
