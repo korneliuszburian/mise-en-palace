@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V251 Fresh Target Trial Gate After Activation Guards
-current task: V251-00 Fresh Target Trial Gate After Activation Guards
+active stream: V252 Normalized Target Trial Substrate
+current task: V252-00 Normalized Target Trial Substrate
 ```
 
 ## Compact Completed Checkpoints
@@ -48,41 +48,40 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V251 Fresh Target Trial Gate After Activation Guards
+### V252 Normalized Target Trial Substrate
 
 Goal:
 
-Select and packet one fresh target trial after activation seed and budget
-guards, without writing to a living target repo until scope, owner files,
-rollback, and support boundary are explicit.
+Create a KRN-owned normalized target trial substrate before using living
+`active/` repos as product evidence.
 
 Current finding:
 
 ```txt
-V250 re-gated product readiness: KRN is controlled-internal-alpha for technical
-operators, not product-ready. The next blocker is fresh target evidence with the
-current brain, not another local self-dogfood proof.
+V251 inspected active target candidates and rejected a random living repo as the
+first post-activation product proof. A normalized substrate is needed so target
+trials are reproducible, resettable, and falsifiable.
 ```
 
 Current action:
 
 ```txt
-Execute V251-00: identify a safe target repo/mode and produce the trial packet
-or record target selection as the blocker. Do not write target files unless the
-active task explicitly authorizes allowed files and rollback.
+Execute V252-00: design and create the smallest controlled target repo/worktree
+or fixture substrate with explicit reset, owner files, allowed writes, rollback,
+verification, and best-pattern pressure.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN/PLANS next product stream and target-trial readiness status.
+PLAN/PLANS next product stream and normalized target-trial substrate.
 ```
 
 Falsifier:
 
 ```txt
-V251 substitutes another KRN-only proof for fresh target evidence or writes to a
-living target repo without explicit authority.
+V252 creates benchmark theater, broad eval platform, or a target fixture that
+cannot falsify KRN workflow quality.
 ```
 
 ## Pattern Gate

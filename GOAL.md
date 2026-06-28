@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V251 Fresh Target Trial Gate After Activation Guards
+V252 Normalized Target Trial Substrate
 ```
 
 Current product loop:
@@ -48,10 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V250: source-decision seeds, observe-reflect sequencing, skill seeds,
-activation re-gate, budget-priority guard, and product-readiness re-gate
-complete.
-current task: V251-00 Fresh Target Trial Gate After Activation Guards.
+V245..V251: source-decision seeds, observe-reflect sequencing, skill seeds,
+activation re-gate, budget-priority guard, product-readiness re-gate, and fresh
+target trial gate complete.
+current task: V252-00 Normalized Target Trial Substrate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

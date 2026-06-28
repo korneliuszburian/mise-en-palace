@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V249 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V251 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -89,11 +89,11 @@ project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
 repair plus observe-reflect sequencing guard, skill owner-file seed repair,
-activation surface re-gate after seed repairs, and activation budget-priority
-guard:
+activation surface re-gate after seed repairs, activation budget-priority
+guard, product-readiness re-gate, and fresh target trial gate:
 complete
-active stream: V251 Fresh Target Trial Gate After Activation Guards
-current task: V251-00 Fresh Target Trial Gate After Activation Guards
+active stream: V252 Normalized Target Trial Substrate
+current task: V252-00 Normalized Target Trial Substrate
 ```
 
 Evidence already recorded in repo:
@@ -109,7 +109,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V251-00 Fresh Target Trial Gate After Activation Guards.
+V252-00 Normalized Target Trial Substrate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -20291,6 +20291,103 @@ Risk: choosing a living repo with unclear authority and accidentally writing to
 it.
 Rollback: revert packet/plan update; target repos are not modified by default.
 
+V251 outcome:
+- V251-00 complete: target candidates under `active/` were inspected in
+  observation-only mode and no target files were modified.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v251-fresh-target-trial-gate-after-activation-guards/REPORT.md`.
+
+V251 decision:
+- Reject using a random living target repo as the first post-activation product
+  proof.
+- `wilq-seo` is clean and plausible for later real target work, but it is an
+  active evolving product with local secrets and its own operator context.
+- The next blocker is a normalized KRN-owned target trial substrate with reset,
+  owner files, allowed writes, rollback, command evidence, and best-pattern
+  pressure.
+
+V251 source-to-decision:
+- Source: target-repo-testing skill, active target discovery, and user
+  correction that a controlled substrate should precede random living repo use.
+- Mechanism: living repos introduce uncontrolled dirty state, operator context,
+  secrets, and evolving goals; normalized substrates make expected weaknesses
+  and repairs falsifiable.
+- KRN implication: build a controlled target substrate before using living
+  target repos as product-readiness evidence.
+- Decision: open V252 as normalized target trial substrate.
+- Consumer: root `PLAN.md`, root `GOAL.md`, `PLANS.md`, and V252 target
+  substrate.
+- Falsifier: V252 creates a decorative toy that cannot catch real workflow
+  failures or cannot be reset/replayed.
+- Does not prove: product readiness, real target success, or second-operator
+  usability.
+
+New task:
+- V252-00 Normalized Target Trial Substrate.
+
+ID: V252-00
+Name: Normalized Target Trial Substrate
+Status: active
+Goal: create the smallest KRN-owned controlled target repo/worktree/fixture
+substrate that can test whether KRN forces better engineering behavior before
+touching living target repos.
+Product rationale: product-ready needs target evidence, but target evidence
+must be repeatable and falsifiable before being collected from active evolving
+repos.
+Architectural rationale: KRN needs a standardized target substrate that carries
+owner files, weak patterns, best-pattern expectations, reset/rollback, command
+evidence, and dogfood reporting without becoming a broad benchmark platform.
+Evidence source:
+- V251 report;
+- target-repo-testing skill;
+- source-to-decision skill;
+- TypeScript/type-safety standards;
+- relevant best-pattern source decisions already recorded in KRN.
+Inputs required:
+- choose committed generator/spec vs untracked `.local-lab` target path;
+- define target mode and write authority;
+- define weak code scenarios and expected best-pattern pressure;
+- define reset/rollback and verification commands;
+- define evidence/reporting output.
+Files likely touched:
+- V252 report;
+- a bounded fixture/generator/spec path if selected;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- KRN-owned fixture/generator/spec/report;
+- no living target repo writes.
+Forbidden writes:
+- random active target repo modifications;
+- broad eval platform;
+- benchmark theater;
+- product-ready claim;
+- fake second-operator proof;
+- dashboard/API/MCP/worker daemon/source crawler;
+- paid/proprietary course content ingestion.
+Output requirements:
+- normalized target substrate design and implementation or explicit rejection;
+- reset/rollback instructions;
+- owner-file contract;
+- best-pattern pressure map;
+- command evidence and proof/non-proof boundaries;
+- next action: execute the target trial or repair substrate blocker.
+Definition of Done:
+- V252 substrate exists or a precise blocker report exists;
+- target writes are limited to KRN-owned substrate;
+- docs verification passes;
+- active plan advances to the next bounded task;
+- commit is pushed and CI checked if triggered.
+Verification commands:
+- `git diff --check`;
+- active plan/context hygiene invariants;
+- substrate-specific smoke if files are created.
+Acceptance criteria:
+- substrate is repeatable and resettable;
+- it can falsify whether KRN improves engineering quality;
+- it includes source-to-decision / best-pattern pressure without source hoarding.
+Risk: building a toy benchmark that looks clean but does not stress KRN.
+Rollback: remove the substrate/report and return to V251 target gate.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20298,10 +20395,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V251 Fresh Target Trial Gate After Activation Guards.
+- V252 Normalized Target Trial Substrate.
 
 Next active task:
-- V251-00 Fresh Target Trial Gate After Activation Guards.
+- V252-00 Normalized Target Trial Substrate.
 
 ## 21. Final Response Format For Codex Runs
 
