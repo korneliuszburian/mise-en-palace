@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V246 Observe-Reflect Sequencing Guard
-current task: V246-00 Observe-Reflect Sequencing Guard
+active stream: V247 Skill Owner-File Seed Repair
+current task: V247-00 Skill Owner-File Seed Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -41,46 +41,49 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            readback plus external TypeScript best-pattern intake,
            finite-state exhaustiveness application, Codex ExecPlan source
            decision guard, best-pattern surface re-gate, and source-decision
-           owner-file seed repair complete.
+           owner-file seed repair plus observe-reflect sequencing guard
+           complete.
 ```
 
 ## Active Stream
 
-### V246 Observe-Reflect Sequencing Guard
+### V247 Skill Owner-File Seed Repair
 
 Goal:
 
-Prevent future dogfood/evidence runs from running `krn reflect` before
-`krn observe` has persisted observations for the same run.
+Repair the smallest read-model/source seed path so skill-directed work can
+surface its real skill owner files without activation scoring changes.
 
 Current finding:
 
 ```txt
-V243 and V244 both recorded an ordering caveat: a first reflect ran in parallel
-with observe and selected 0 observations, then a second reflect after observe
-selected 5. This is a repeated workflow issue, not a reflection quality finding.
+V246 needed .agents/skills/evidence-review-loop/SKILL.md and
+packages/harness/src/skillInvariants.test.ts, but DB-backed planning selected
+broad activation/readback files and source-map invariants instead. Skill routing
+and manual inspection found the actual owner files.
 ```
 
 Current action:
 
 ```txt
-Execute V246-00: update the smallest evidence/review loop guidance or guard so
-observe completes before reflect for the same run, then verify with docs/skill
-tests or focused invariants.
+Execute V247-00: inspect init/source-seed detection and owner-file recall for
+repo-local skill paths, then add the smallest seed/guard that makes skill
+owner files available to planning.
 ```
 
 Primary consumer:
 
 ```txt
-evidence-review-loop skill/runbook or active plan invariant that future
-continuations can follow before evidence capture stops.
+target read model / source seed detection, owner-file recall behavior, and
+plan readback evidence for skill-directed tasks.
 ```
 
 Falsifier:
 
 ```txt
-Future reports keep recording first reflect runs with 0 observations because
-observe and reflect were started in parallel for the same run.
+After V247, a skill-directed task still cannot surface the relevant
+.agents/skills/<skill>/SKILL.md file and skill invariant owner file from the
+read model.
 ```
 
 ## Pattern Gate

@@ -27,8 +27,14 @@ state without mutating memory automatically.
 6. If a source, course, paper, docs page, or local evidence shaped the work,
    record source usefulness with `--source-usefulness` or state why it was not
    measured.
-7. Create feedback candidates; do not apply them automatically.
-8. Append run/outbox evidence only when persistence is configured.
+7. For same-run persisted loops, run `krn observe --persist` to completion
+   before `krn reflect --persist`. Do not start observe and reflect in parallel
+   for the same run.
+8. If run-scoped reflect selects `0` observations when the run should have
+   persisted evidence, treat it as a sequencing failure until observe completion
+   is verified. Do not use that result as reflection-quality evidence.
+9. Create feedback candidates; do not apply them automatically.
+10. Append run/outbox evidence only when persistence is configured.
 
 ## Output
 
@@ -39,6 +45,7 @@ state without mutating memory automatically.
 - Rollback path.
 - Feedback candidates.
 - Source usefulness outcomes when source/pattern input shaped the run.
+- Observe-before-reflect sequencing status for persisted same-run loops.
 - Persistence status.
 
 ## Forbidden
@@ -49,8 +56,15 @@ state without mutating memory automatically.
 - Do not mutate Memory Core without explicit acceptance.
 - Do not invent execution runs when DB/run IDs are absent.
 - Do not promote eval/source/memory candidates as a side effect of capture.
+- Do not run same-run `krn observe --persist` and `krn reflect --persist` in
+  parallel.
+- Do not call a zero-observation reflection result a reflection-quality finding
+  until observe completion for that run is verified.
 
 ## Verification
 
 Evidence must let a reviewer see what changed, what was actually run, what risk
 remains, and how to roll back.
+
+For persisted same-run loops, evidence must also show that observe completed
+before reflect, or explicitly mark reflection output as sequencing-weak.

@@ -163,6 +163,11 @@ describe("KRN skill invariants", () => {
     expect(evidenceReviewLoop).toContain(
       "Do not treat default_template, skipped, missing, or not_run command rows"
     );
+    expect(evidenceReviewLoop).toContain("run `krn observe --persist` to completion");
+    expect(evidenceReviewLoop).toContain("before `krn reflect --persist`");
+    expect(evidenceReviewLoop).toContain("Do not start observe and reflect in parallel");
+    expect(evidenceReviewLoop).toContain("sequencing failure");
+    expect(evidenceReviewLoop).toContain("sequencing-weak");
   });
 
   it("keeps codex adapter planning tied to bounded proof-aware rendering", () => {

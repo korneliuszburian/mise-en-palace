@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V245 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V246 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -88,10 +88,10 @@ current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
-repair:
+repair plus observe-reflect sequencing guard:
 complete
-active stream: V246 Observe-Reflect Sequencing Guard
-current task: V246-00 Observe-Reflect Sequencing Guard
+active stream: V247 Skill Owner-File Seed Repair
+current task: V247-00 Skill Owner-File Seed Repair
 ```
 
 Evidence already recorded in repo:
@@ -107,7 +107,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V246-00 Observe-Reflect Sequencing Guard.
+V247-00 Skill Owner-File Seed Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19723,7 +19723,7 @@ New task:
 
 ID: V246-00
 Name: Observe-Reflect Sequencing Guard
-Status: active
+Status: complete
 Goal: prevent future dogfood/evidence runs from running `krn reflect` before
 `krn observe` has persisted observations for the same run.
 Product rationale: repeated parallel observe/reflect runs create false
@@ -19784,6 +19784,130 @@ semantics.
 Condensation expectation: if the sequencing miss recurs after V246, add a CLI
 guard or explicit run-state check in a later bounded task.
 
+V246 outcome:
+- V246-00 complete: same-run observe-before-reflect sequencing is now explicit
+  in `evidence-review-loop` and guarded by `skillInvariants`.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v246-observe-reflect-sequencing-guard/REPORT.md`.
+
+V246 evidence:
+- Persisted V246 plan:
+  `b0d81391-94bd-4596-9769-59b085a8077f`.
+- Task contract:
+  `6d867db7-a5eb-4696-b395-d8b183202f41`.
+- Context assembly:
+  `e3a97694-27d4-4e8a-b4cc-6eb1a7ac52ec`.
+- Evidence bundle:
+  `12a34561-59b0-4334-a5a6-f30ff8050d09`.
+- Review assessment:
+  `0da0272e-832e-49f2-a847-489678e499b9`.
+- Feedback delta:
+  `d435562b-7480-44d1-bad1-107e5719f1f2`.
+- Observation group:
+  `e6b5003b-6f38-4abc-a645-3b9f959d9d1f`.
+- Reflection record:
+  `16df5c27-2e96-4858-ae92-1504945a9125`.
+- V246 observe/reflect was run sequentially; reflect selected 5 observations and
+  is not sequencing-weak.
+- `pnpm --filter @krn/harness test -- skillInvariants`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed.
+- `git diff --check`: passed.
+
+V246 source-to-decision:
+- Source: V243/V244 repeated observe/reflect ordering caveats.
+- Mechanism: run-scoped reflection selects persisted observations; if reflect
+  starts before observe completes, it can select zero observations and create
+  false reflection-quality noise.
+- KRN implication: same-run persisted evidence loops must complete observe
+  before reflect or mark reflection output as sequencing-weak.
+- Decision: update `evidence-review-loop` and guard the rule with
+  `skillInvariants`.
+- Does not prove: reflection quality, candidate quality, or product readiness.
+- Consumer: `.agents/skills/evidence-review-loop/SKILL.md` and
+  `packages/harness/src/skillInvariants.test.ts`.
+- Falsifier: future dogfood reports keep treating zero-observation reflect
+  output as reflection-quality evidence after observe was started in parallel.
+
+V246 activation finding:
+- DB-backed V246 planning did not select the actual owner files
+  `.agents/skills/evidence-review-loop/SKILL.md` and
+  `packages/harness/src/skillInvariants.test.ts`.
+- This is a read-model/source-seed gap for skill-directed work, not yet an
+  activation scoring proof.
+
+New task:
+- V247-00 Skill Owner-File Seed Repair.
+
+ID: V247-00
+Name: Skill Owner-File Seed Repair
+Status: active
+Goal: repair the smallest read-model/source seed path so skill-directed tasks
+can surface their real skill owner files without activation scoring changes.
+Product rationale: KRN skills are now durable execution organs. Planning should
+surface the relevant `.agents/skills/<skill>/SKILL.md` and invariant owner file
+for skill-directed work instead of relying on manual `rg`.
+Architectural rationale: V245 proved source-decision owner seeds improve
+read-model inputs. V246 shows the same class of gap for skills, so repair the
+read-model input before ranking/scoring.
+Evidence source:
+- V246 DB-backed plan output;
+- `.agents/skills/evidence-review-loop/SKILL.md`;
+- `packages/harness/src/skillInvariants.test.ts`;
+- `packages/cli/src/runInitCommand.ts`;
+- `packages/harness/src/activation/ownerFileRecall.ts`.
+Inputs required:
+- current-state preflight;
+- inspect skill seed detection options;
+- inspect owner-file recall treatment of skill paths;
+- DB-backed plan proof after repair.
+Files likely touched:
+- `packages/cli/src/runInitCommand.ts`;
+- `packages/cli/src/runInitCommand.test.ts`;
+- `packages/harness/src/activation/ownerFileRecall.test.ts`;
+- V247 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- one bounded skill/read-model seed repair;
+- focused tests;
+- dogfood report and plan condensation.
+Forbidden writes:
+- activation scoring rewrite;
+- broad retrieval rewrite;
+- skill content rewrite unrelated to seeds;
+- source crawler;
+- dashboard/API/MCP/worker daemon;
+- broad eval platform.
+Output requirements:
+- name skill owner files that should surface;
+- explain whether repair belongs in init seed detection, owner-file recall, or
+  both;
+- add tests proving skill-directed tasks can surface concrete skill owner files;
+- DB-backed `krn plan --persist` proof for a skill-directed task.
+Definition of Done:
+- one focused repair or explicit rejection if source inspection disproves the
+  read-model gap;
+- targeted tests, typecheck, full tests if source touched, db readiness, and
+  diff check pass;
+- evidence capture/report exists;
+- commit is pushed and CI checked.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- targeted CLI/harness tests for touched files;
+- `pnpm run typecheck`;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`;
+- `git diff --check`.
+Acceptance criteria:
+- skill-directed task can surface `.agents/skills/evidence-review-loop/SKILL.md`
+  and `packages/harness/src/skillInvariants.test.ts` from the read model;
+- no activation scoring change;
+- no broad skill rewrite.
+Risk: overfitting one skill instead of a general repo-local skill seed pattern.
+Rollback: revert the focused seed repair and keep V246 report as evidence if
+the repair creates noisy context.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19791,10 +19915,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V246 Observe-Reflect Sequencing Guard.
+- V247 Skill Owner-File Seed Repair.
 
 Next active task:
-- V246-00 Observe-Reflect Sequencing Guard.
+- V247-00 Skill Owner-File Seed Repair.
 
 ## 21. Final Response Format For Codex Runs
 
