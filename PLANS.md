@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V311 BQ-015 Fixture Coverage
-current task: V311-00 BQ-015 Fixture Coverage
+active stream: V312 Executable Brain-QA Case BQ-023
+current task: V312-00 Executable Brain-QA Case BQ-023
 latest pushed commit checked: 1c23d02 docs(review): close pattern search usefulness feedback
 latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
 ```
@@ -31,10 +31,9 @@ latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
 Known current gap:
 
 ```txt
-V311-00 BQ-015 Fixture Coverage is the current gap. V310 proved broad no-match
-query -> shorter mechanism query -> retained pattern hit manually; now the
-first executable brain-QA case needs focused test coverage or an explicit
-existing-coverage readback.
+V312-00 Executable Brain-QA Case BQ-023 is the current gap. BQ-015 is executed
+and covered; now the next brain-QA lane should prove evidence command
+provenance readback without new runtime/platform work.
 ```
 
 ## 2. Product Thesis
@@ -81,8 +80,8 @@ green test != product value
    usefulness-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: V309 sketched 30 KRN questions and V310 executed
-   BQ-015; cover that case before expanding corpus QA or graph paths.
+3. Mini brain-QA benchmark: BQ-015 is executed and covered; execute BQ-023
+   evidence command provenance next.
 4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
    -> embedding/search document with permission and temporal metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
@@ -149,7 +148,7 @@ docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPOR
 
 ### V311-00 — BQ-015 Fixture Coverage
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -157,31 +156,49 @@ Goal:
 Add or confirm focused test coverage for BQ-015.
 ```
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v311-bq-015-fixture-coverage/REPORT.md
+```
+
+### V312-00 — Executable Brain-QA Case BQ-023
+
+Status: active.
+
+Goal:
+
+```txt
+Execute evidence command provenance readback for BQ-023.
+```
+
 Product rationale:
 
 ```txt
-V310 was a manual executable case. KRN should not widen brain-QA until the first
-case is reproducible or proven already covered.
+The first brain-QA case covered read-only pattern retrieval. The next case
+should exercise evidence/review because evidence provenance is a core KRN brain
+strength and product blocker.
 ```
 
 Architectural rationale:
 
 ```txt
-This is a focused behavior guard, not a broad eval platform. It should live in
-the existing knowledge-card/CLI test surface if missing.
+Use existing evidence/readback surfaces before new runtime, DB schema, eval
+platform, dashboard, API/MCP, source crawler, or graph work.
 ```
 
 Evidence source:
 
 ```txt
-V310 report and existing knowledge-card tests.
+V309 BQ-023, evidence integrity reports, and existing evidence command
+provenance code/tests.
 ```
 
 Official/external sources:
 
 ```txt
-Self-RAG entry in docs/KRN_SOURCES.md; pattern cards for evidence proof,
-source-to-decision, and active context.
+`pattern:evidence-proof-non-proof-boundary` and evidence/review KRN source
+decisions.
 ```
 
 Inputs required:
@@ -189,15 +206,15 @@ Inputs required:
 ```txt
 docs/brain-knowledge/catalog.json
 docs/benchmarks/brain-qa/V309_BRAIN_QA_SKETCH.md
-packages/cli/src/runKnowledgeCardsCommand.test.ts
-packages/harness/src/brainKnowledgeReadModel.test.ts
+packages/core/src/evidenceBundle.ts
+packages/cli/src/runEvidenceCaptureCommand.ts
+evidence-related CLI tests
 ```
 
 Files likely touched:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-28-v311-bq-015-fixture-coverage/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-28-v312-executable-brain-qa-bq-023/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -206,7 +223,7 @@ PLANS.md
 Allowed writes:
 
 ```txt
-focused tests if missing, report, and compact root-state updates.
+docs/report/root updates; focused tests only if BQ-023 exposes missing coverage.
 ```
 
 Forbidden writes:
@@ -220,68 +237,70 @@ mutation, target repo writes, paid/proprietary course ingestion.
 Output requirements:
 
 ```txt
-state whether existing tests already cover BQ-015; otherwise add minimal
-coverage for no-match guidance and shorter-query retained-pattern hit.
+record command provenance states, proof/non-proof boundaries, mutation boundary,
+and whether BQ-023 needs focused coverage.
 ```
 
 Definition of Done:
 
-- existing tests prove both behaviors, or focused tests are added;
-- targeted tests pass;
+- evidence command provenance readback is executed or existing coverage is
+  inspected and recorded;
+- report states what the evidence proves and does not prove;
 - no runtime/eval platform is built;
 - `git diff --check` passes.
 
 Verification commands:
 
 ```sh
-pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
+git diff --check
 git diff --check
 ```
 
 Acceptance criteria:
 
 ```txt
-CI would fail if BQ-015 no-match guidance or shorter-query hit regresses.
+BQ-023 has a concrete next evidence/readback path or a precise missing-coverage
+finding.
 ```
 
 Risk:
 
 ```txt
-overfitting to one query or treating deterministic text search as semantic
-retrieval.
+claiming command truth or product readiness from provenance readback alone.
 ```
 
 Rollback:
 
 ```txt
-Remove added tests/report if the case is already covered and report-only
-readback is enough.
+Remove report/root updates if no evidence path can be identified without new
+runtime.
 ```
 
 Next-task synthesis rule:
 
 ```txt
-After V311, execute the next docs/CLI-only brain-QA case or open the smallest
-ingest/graph prerequisite if remaining cases require runtime support.
+After V312, add focused coverage if missing or execute the next docs/CLI-only
+brain-QA case.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA and adaptive retrieval/readback regression protection.
+future brain-QA and evidence/review validation.
 ```
 
 Does not prove:
 
 ```txt
-product readiness, SOTA quality, semantic retrieval quality, graph retrieval
-quality, or full benchmark execution.
+product readiness, command truth beyond recorded provenance, review judgment,
+or full benchmark execution.
 ```
 
 Falsifier:
 
 ```txt
-BQ-015 behavior is not covered by tests and can regress while CI stays green.
+BQ-023 cannot show command provenance states and proof/non-proof boundaries
+through existing evidence/readback surfaces.
 ```
 
 ## Pattern Gate
@@ -367,7 +386,8 @@ Falsifier:
 - [x] V308 Research Source Decisions Initial Pack
 - [x] V309 Mini Brain-QA Benchmark Sketch
 - [x] V310 Executable Brain-QA Case BQ-015
-- [ ] V311 BQ-015 Fixture Coverage
+- [x] V311 BQ-015 Fixture Coverage
+- [ ] V312 Executable Brain-QA Case BQ-023
 
 ## Recent Evidence Pointers
 
@@ -381,6 +401,28 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v309-mini-brain-qa-benchmark-sketch/REPORT.md`
 - V310 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md`
+- V311 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v311-bq-015-fixture-coverage/REPORT.md`
+
+## Outcome V311 BQ-015 Fixture Coverage
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V310 BQ-015 report and `packages/cli/src/runKnowledgeCardsCommand.test.ts`.
+- Mechanism: a manual brain-QA case only stays useful if CI catches regression
+  in the behavior it proved.
+- KRN implication: first executable brain-QA case should be covered before
+  widening benchmark scope.
+- Decision: add focused CLI test coverage for broad no-match query -> shorter
+  mechanism query -> retained pattern hit.
+- Does not prove: semantic retrieval quality, ranking quality,
+  retained-pattern completeness, live DB-backed search, graph retrieval
+  quality, or product readiness.
+- Consumer: V312 and future brain-QA executable cases.
+- Falsifier: BQ-015 no-match/retry behavior regresses while CLI tests stay
+  green.
 
 ## Outcome V310 Executable Brain-QA Case BQ-015
 

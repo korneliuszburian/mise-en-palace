@@ -605,6 +605,47 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
 
+  it("guards BQ-015 broad no-match retrying with a shorter mechanism query", async () => {
+    const broadResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "brain qa source decision retrieval memory anti memory evidence graph"
+      },
+      format: "json"
+    });
+    const mechanismResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "source-to-decision"
+      },
+      format: "json"
+    });
+
+    const broadPreview = parsePreviewResource(broadResult.stdout);
+    const mechanismPreview = parsePreviewResource(mechanismResult.stdout);
+
+    expect(broadPreview.totalCards).toBe(0);
+    expect(broadPreview.returnedCards).toBe(0);
+    expect(cardIds(broadPreview)).toEqual([]);
+    expect(broadPreview.noMatchGuidance).toContain(
+      "Try a shorter --text query or split the query into one mechanism term."
+    );
+    expect(broadPreview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(broadPreview.mutation).toBe("none");
+
+    expect(cardIds(mechanismPreview)).toContain("pattern:source-to-decision-retention-gate");
+    expect(mechanismPreview.totalCards).toBeGreaterThan(0);
+    expect(mechanismPreview.returnedCards).toBeGreaterThan(0);
+    expect(mechanismPreview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(mechanismPreview.mutation).toBe("none");
+  });
+
   it("includes no-match guidance in the static html preview", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,

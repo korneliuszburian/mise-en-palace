@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V311 BQ-015 Fixture Coverage
-current task: V311-00 BQ-015 Fixture Coverage
+active stream: V312 Executable Brain-QA Case BQ-023
+current task: V312-00 Executable Brain-QA Case BQ-023
 ```
 
 ## Compact Completed Checkpoints
@@ -47,39 +47,39 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V311 BQ-015 Fixture Coverage
+### V312 Executable Brain-QA Case BQ-023
 
 Goal:
 
-Add or confirm focused test coverage for BQ-015.
+Execute evidence command provenance readback for BQ-023.
 
 Current finding:
 
 ```txt
-V310 proved BQ-015 manually through the read-only CLI. The next step is to make
-that first executable brain-QA case reproducible, or explicitly confirm that
-existing tests already cover both behaviors.
+V311 added focused coverage for BQ-015. The next brain-QA lane should exercise
+evidence/review behavior: command provenance and proof/non-proof readback.
 ```
 
 Current action:
 
 ```txt
-Execute V311-00: inspect existing `krn knowledge cards` tests. Add the smallest
-focused coverage only if BQ-015 is not already covered. Do not build a broad
-eval platform, source crawler, graph runtime, embeddings, ranking, dashboard,
-API/MCP, DB schema, or Memory Core mutation.
+Execute V312-00: run or inspect the smallest existing evidence command
+provenance readback path for BQ-023. Do not add DB schema, runtime platform,
+dashboard, API/MCP, source crawler, embeddings, ranking, or Memory Core
+mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA and adaptive retrieval/readback regression protection.
+future brain-QA and evidence/review validation.
 ```
 
 Falsifier:
 
 ```txt
-BQ-015 behavior is not covered by tests and can regress while CI stays green.
+BQ-023 cannot show command provenance states and proof/non-proof boundaries
+through existing evidence/readback surfaces.
 ```
 
 ## Pattern Gate

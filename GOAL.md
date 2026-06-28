@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V311 BQ-015 Fixture Coverage
+V312 Executable Brain-QA Case BQ-023
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V311-00 BQ-015 Fixture Coverage.
+current task: V312-00 Executable Brain-QA Case BQ-023.
 ```
 
 Current task:
 
 ```txt
-Add or confirm focused test coverage for BQ-015 broad no-match query -> shorter
-mechanism query -> retained pattern hit, without building a broad eval platform.
+Execute evidence command provenance readback for BQ-023 without new runtime,
+schema, dashboard, API/MCP, or broad eval platform.
 ```
 
 ## Remaining Work
@@ -46,8 +46,8 @@ to preserve are:
    loop; keep future search changes evidence-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: V309 sketched 30 questions and V310 executed
-   BQ-015; add focused coverage before widening benchmark cases.
+3. Mini brain-QA benchmark: BQ-015 is executed and covered; execute BQ-023
+   evidence command provenance next.
 4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
    or search document with temporal and permission metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
