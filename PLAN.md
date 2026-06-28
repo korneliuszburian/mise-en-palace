@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V288 Brain Knowledge External Pattern Usefulness Dogfood
-current task: V288-00 Brain Knowledge External Pattern Usefulness Dogfood
+active stream: V289 Brain Knowledge Pattern Usefulness Feedback Readback
+current task: V289-00 Brain Knowledge Pattern Usefulness Feedback Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,45 +50,45 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V288 Brain Knowledge External Pattern Usefulness Dogfood
+### V289 Brain Knowledge Pattern Usefulness Feedback Readback
 
 Goal:
 
-Measure whether the newly retained external Codex workflow cards actually help
-the next bounded KRN task.
+Make retained pattern usefulness feedback visible through a bounded read-only
+surface.
 
 Current finding:
 
 ```txt
-V287 proved controlled external/public pattern intake without decorative source
-hoarding by adding retained cards for Codex goals, ExecPlans, and prompt task
-contracts. The next bottleneck is usefulness: do these cards reduce rereads,
-stale-plan drift, or task-contract mistakes in a real next slice?
+V288 proved the three external Codex workflow cards helped this continuation:
+goal continuation prevented stale V05 rollback, ExecPlan guidance reduced
+resume ambiguity, and task-contract guidance forced proof/non-proof reporting.
+The next bottleneck is readback: usefulness feedback exists in reports but is
+not yet visible beside retained pattern cards.
 ```
 
 Current action:
 
 ```txt
-Execute V288-00: before the next bounded KRN slice, query the brain knowledge
-catalog for goal continuation, living validation loop, and task contract proof
-boundary. Use those cards as read-only execution guidance, then record whether
-they helped, were neutral/noise, or revealed missing pattern/application
-behavior. Do not add more external sources, build Research Foundry/API/MCP/
-dashboard, or claim product readiness.
+Execute V289-00: add the smallest read-only usefulness feedback readback for
+retained patterns, covering pattern id, latest usefulness outcome, evidence
+refs, and does-not-prove. Prefer explicit docs/catalog-side data and CLI/static
+readback over DB schema, API, MCP, dashboard, or Memory Core mutation. Do not
+add more external sources.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge pattern usefulness feedback loop.
+brain knowledge pattern usefulness readback loop.
 ```
 
 Falsifier:
 
 ```txt
-The newly retained external Codex workflow cards are searchable but do not
-change execution quality, reduce rereads, prevent stale active-state drift, or
-improve task-contract proof boundaries in the next bounded slice.
+Retained pattern cards can accumulate usefulness outcomes only in narrative
+reports, so future operators cannot inspect whether a pattern helped, was
+neutral/noise, or has evidence refs through a compact read-only surface.
 ```
 
 ## Pattern Gate

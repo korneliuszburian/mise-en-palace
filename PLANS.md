@@ -23,20 +23,21 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V288 Brain Knowledge External Pattern Usefulness Dogfood
-current task: V288-00 Brain Knowledge External Pattern Usefulness Dogfood
-latest pushed commit before V287: 7f2b05b docs(knowledge): expand retained pattern catalog
-latest CI checked before V287: KRN CI success for 7f2b05b5521ad240a0fa1e2625f37bc064ae8c79
+active stream: V289 Brain Knowledge Pattern Usefulness Feedback Readback
+current task: V289-00 Brain Knowledge Pattern Usefulness Feedback Readback
+latest pushed commit before V288: 934dec3 docs(knowledge): retain external Codex workflow patterns
+latest CI checked before V288: KRN CI success for 934dec35b9898f05b1de5f26faf8854bc35f4522
 ```
 
 Known current gap:
 
 ```txt
-V288-00 Brain Knowledge External Pattern Usefulness Dogfood is the current gap.
-V287 expanded the catalog from 8 to 11 retained pattern cards by ingesting three
-official Codex/OpenAI workflow patterns through source-to-decision. The next
-bottleneck is usefulness: retained external patterns must help execution, not
-just exist as searchable cards.
+V289-00 Brain Knowledge Pattern Usefulness Feedback Readback is the current
+gap. V288 proved that retained external Codex workflow cards helped a real
+continuation decision: they prevented stale V05 rollback, reduced resume
+ambiguity, and forced proof/non-proof reporting. The next bottleneck is
+readback: usefulness feedback exists in reports but not beside retained pattern
+cards.
 ```
 
 ## 2. Product Thesis
@@ -2479,6 +2480,38 @@ Source-to-decision:
 - Consumer: V288 usefulness feedback loop.
 - Falsifier: the new cards are searchable but do not reduce rereads, prevent
   stale-plan drift, or improve task-contract quality in the next bounded slice.
+
+## Outcome V288-00 Brain Knowledge External Pattern Usefulness Dogfood
+
+Summary:
+- queried the retained cards for `goal continuation`, `living validation loop`,
+  and `task contract proof boundary`;
+- confirmed each query returned one read-only card with `mutation: none`;
+- used the goal-continuation card to keep current root `GOAL.md`, `PLAN.md`,
+  and `PLANS.md` authoritative when the pasted objective still named stale V05;
+- used the ExecPlan card to continue from compact active state instead of broad
+  historical rereads;
+- used the task-contract card to record proof/non-proof and source usefulness
+  feedback before adding more external sources.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v288-brain-knowledge-external-pattern-usefulness-dogfood/REPORT.md`.
+
+Source-to-decision:
+- Source: retained cards
+  `pattern:codex-goal-continuation-evidence-contract`,
+  `pattern:codex-execplan-living-validation-loop`, and
+  `pattern:codex-prompt-task-contract-proof-boundary`.
+- Mechanism: read-only brain knowledge cards can route continuation and task
+  contract decisions when they carry consumer, falsifier, and proof boundary.
+- KRN implication: pattern usefulness should be visible beside retained pattern
+  cards instead of living only in narrative reports.
+- Decision: open V289 Brain Knowledge Pattern Usefulness Feedback Readback.
+- Does not prove: product readiness, semantic ranking, automatic Codex
+  application, or broad external pattern completeness.
+- Consumer: V289 usefulness feedback readback.
+- Falsifier: future operators cannot inspect whether a retained pattern helped,
+  was neutral/noise, or has evidence refs through a compact read-only surface.
 
 ## Condensation Rules
 
