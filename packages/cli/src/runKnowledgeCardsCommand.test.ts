@@ -465,6 +465,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:codex-goal-continuation-evidence-contract",
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
+      "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate"
     ].sort());
     expect(cardIds(noisePreview)).toEqual([]);
@@ -486,7 +487,6 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(preview).sort()).toEqual([
       "pattern:active-context-compact-current-truth",
       "pattern:brain-knowledge-read-only-ui-boundary",
-      "pattern:evidence-proof-non-proof-boundary",
       "pattern:target-repo-write-authority-boundary",
       "pattern:untrusted-context-warning-boundary",
       "pattern:ts-boundary-unknown-first-result-state"

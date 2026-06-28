@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
-current task: V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback
-latest pushed commit before V295: c34dad6 docs(knowledge): mark skill routing pattern useful
-latest CI checked before V295: KRN CI success for c34dad68eebd463ebfbb6c3e9dc42d46599ca99f
+active stream: V297 TypeScript Boundary Pattern Usefulness Feedback
+current task: V297-00 TypeScript Boundary Pattern Usefulness Feedback
+latest pushed commit before V296: 23702d6 docs(knowledge): mark source decision pattern useful
+latest CI checked before V296: KRN CI success for 23702d6ab3d0a20a1d8a1b05bd1d39a85e0e6c4c
 ```
 
 Known current gap:
 
 ```txt
-V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback is the current
-gap. V295 marked source-to-decision retention as helped and reduced no-feedback
-cards from 7 to 6. The next highest-ROI no-feedback card is evidence
-proof/non-proof boundary.
+V297-00 TypeScript Boundary Pattern Usefulness Feedback is the current gap.
+V296 marked evidence proof/non-proof as helped and reduced no-feedback cards
+from 6 to 5. The next highest-ROI no-feedback card is the TypeScript boundary
+pattern.
 ```
 
 ## 2. Product Thesis
@@ -2697,6 +2697,31 @@ Source-to-decision:
   `pattern:evidence-proof-non-proof-boundary`.
 - Falsifier: evidence proof/non-proof cannot be tied to a recent slice where it
   prevented overclaiming or clarified what a command/report did not prove.
+
+## Outcome V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v296-evidence-proof-boundary.json`;
+- attached `helped` feedback to
+  `pattern:evidence-proof-non-proof-boundary`;
+- confirmed `--usefulness-outcome helped` returns 6 cards;
+- confirmed `--usefulness-outcome none` decreased from 6 to 5 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v296-evidence-proof-non-proof-boundary-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V291..V296 dogfood reports and readback proof boundaries.
+- Mechanism: proof/non-proof sections force Codex/KRN to separate readback
+  success from product value.
+- KRN implication: every retained pattern and feedback loop needs proof limits
+  before it can influence future work.
+- Decision: open V297 TypeScript Boundary Pattern Usefulness Feedback.
+- Does not prove: evidence boundaries alone improve TypeScript quality.
+- Consumer: V297 usefulness feedback for
+  `pattern:ts-boundary-unknown-first-result-state`.
+- Falsifier: the TypeScript boundary pattern cannot be tied to a recent slice
+  where it improved boundary typing, unknown narrowing, or finite result state.
 
 ## Condensation Rules
 

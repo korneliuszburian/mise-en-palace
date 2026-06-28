@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
-current task: V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+active stream: V297 TypeScript Boundary Pattern Usefulness Feedback
+current task: V297-00 TypeScript Boundary Pattern Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+### V297 TypeScript Boundary Pattern Usefulness Feedback
 
 Goal:
 
-Add explicit usefulness feedback for the evidence proof/non-proof boundary if
-recent evidence shows it prevented overclaiming or clarified proof limits.
+Add explicit usefulness feedback for the unknown-first TypeScript boundary
+pattern if recent evidence shows it improved concrete TypeScript quality.
 
 Current finding:
 
 ```txt
-V295 marked source-to-decision retention as helped and reduced no-feedback cards
-from 7 to 6. The next highest-ROI no-feedback pattern is evidence proof/non-proof
-boundary because the brain must not turn commands, reports, or retained patterns
-into false certainty.
+V296 marked evidence proof/non-proof as helped and reduced no-feedback cards
+from 6 to 5. The next highest-ROI no-feedback pattern is the TypeScript boundary
+pattern because it connects KRN's pattern brain to concrete code quality.
 ```
 
 Current action:
 
 ```txt
-Execute V296-00: inspect recent evidence/reporting slices and add usefulness
-feedback for `pattern:evidence-proof-non-proof-boundary` only if it can be tied
-to a real helped/neutral/noise/stale outcome. Do not add implementation, source
-intake, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
+Execute V297-00: inspect recent TypeScript boundary slices and add usefulness
+feedback for `pattern:ts-boundary-unknown-first-result-state` only if it can be
+tied to a real helped/neutral/noise/stale outcome. Do not add implementation,
+source intake, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge evidence-boundary usefulness gate.
+brain knowledge TypeScript pattern usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-Evidence proof/non-proof usefulness cannot be supported by evidence, or feedback
-is added without proof boundaries and does-not-prove.
+TypeScript boundary usefulness cannot be supported by evidence, or feedback is
+added without proof boundaries and does-not-prove.
 ```
 
 ## Pattern Gate

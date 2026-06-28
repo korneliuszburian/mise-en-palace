@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V296 Evidence Proof/Non-Proof Boundary Usefulness Feedback
+V297 TypeScript Boundary Pattern Usefulness Feedback
 ```
 
 Current product loop:
@@ -48,11 +48,11 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V295: target repair, pattern intake/enforcement, skill pack, knowledge
-cards, usefulness feedback, no-feedback filtering, triage, skill feedback, and
-source-to-decision feedback
+V245..V296: target repair, pattern intake/enforcement, skill pack, knowledge
+cards, usefulness feedback, no-feedback filtering, triage, skill/source/evidence
+feedback
 complete.
-current task: V296-00 Evidence Proof/Non-Proof Boundary Usefulness Feedback.
+current task: V297-00 TypeScript Boundary Pattern Usefulness Feedback.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
