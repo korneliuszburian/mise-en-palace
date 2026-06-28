@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V263 Brain Knowledge Card Readback Helper
+V264 Brain Knowledge CLI Readback Preview
 ```
 
 Current product loop:
@@ -48,11 +48,11 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V262: activation/source/skill guards, product-readiness re-gate, target
+V245..V263: activation/source/skill guards, product-readiness re-gate, target
 trial gate, normalized substrate, first target repair, replayable baseline,
 active ledger condensation, replayable target repair trial, and pattern intake
 trial plus first pattern enforcement gate and skills pack re-gate complete.
-current task: V263-00 Brain Knowledge Card Readback Helper.
+current task: V264-00 Brain Knowledge CLI Readback Preview.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

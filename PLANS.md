@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V263 Brain Knowledge Card Readback Helper
-current task: V263-00 Brain Knowledge Card Readback Helper
+active stream: V264 Brain Knowledge CLI Readback Preview
+current task: V264-00 Brain Knowledge CLI Readback Preview
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,9 +32,10 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V263-00 Brain Knowledge Card Readback Helper is the current gap. V262 created
-one concrete knowledge card fixture; now KRN needs the smallest pure readback
-helper/test before UI/search.
+V264-00 Brain Knowledge CLI Readback Preview is the current gap. V263 added a
+pure readback/search helper; now KRN should either expose the card fixture
+through the smallest CLI/readback-adjacent surface or explicitly reject CLI
+exposure if it leaks product surface too early.
 ```
 
 ## 2. Product Thesis
@@ -205,6 +206,15 @@ green test != product value
 - Outcome: added
   `tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json`
   and guarded it as a concrete reviewable knowledge card.
+
+### V263 Brain Knowledge Card Readback Helper
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v263-brain-knowledge-card-readback-helper/REPORT.md`.
+- Outcome: added `packages/harness/src/brainKnowledgeReadModel.ts` and tests to
+  parse brain knowledge cards from `unknown` and filter by kind, status,
+  reviewability, and text.
 
 ## Active Task Queue
 
@@ -431,7 +441,7 @@ Non-goals:
 
 ### V263-00 Brain Knowledge Card Readback Helper
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -448,6 +458,26 @@ Non-goals:
 - no DB schema;
 - no ranking engine;
 - no source crawler.
+
+### V264-00 Brain Knowledge CLI Readback Preview
+
+Status: active.
+
+Goal:
+
+```txt
+Expose the card fixture through the smallest existing CLI/readback-adjacent
+surface or explicitly reject CLI exposure if current CLI ownership would create
+a product-surface leak. No web UI/API/MCP.
+```
+
+Non-goals:
+
+- no web UI;
+- no API/MCP;
+- no DB schema;
+- no ranking engine;
+- no broad knowledge ingestion.
 
 ## Decision Log
 
@@ -538,7 +568,8 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   UI/search.
 - V261-00 complete: guarded the brain knowledge read-model contract.
 - V262-00 complete: created one concrete brain knowledge card fixture.
-- V263-00 active: add a pure card readback/search helper.
+- V263-00 complete: added a pure card readback/search helper.
+- V264-00 active: decide or add the smallest CLI/readback preview.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -730,6 +761,26 @@ Source-to-decision:
 - Consumer: V263 Brain Knowledge Card Readback Helper.
 - Falsifier: future readback/search must scrape raw reports because no helper
   can load card fixtures.
+
+## Outcome V263-00 Brain Knowledge Card Readback Helper
+
+Summary:
+- added `packages/harness/src/brainKnowledgeReadModel.ts`;
+- added parser/search tests over the concrete card fixture;
+- kept implementation pure and UI/API/MCP-free.
+
+Source-to-decision:
+- Source: V260 read-model contract, V261 guard, and V262 card fixture.
+- Mechanism: typed card search needs a pure readback helper before UI/API.
+- KRN implication: brain knowledge search starts as typed card readback, not raw
+  report grep or dashboard-first work.
+- Decision: add pure harness helper and open V264 to decide or expose the
+  smallest CLI/readback preview.
+- Does not prove: CLI surface, web UI, ranking quality, DB-backed card
+  production, or product readiness.
+- Consumer: V264 Brain Knowledge CLI Readback Preview.
+- Falsifier: future card search must parse raw JSON/reports ad hoc because the
+  helper cannot load or filter the fixture.
 
 ## Condensation Rules
 

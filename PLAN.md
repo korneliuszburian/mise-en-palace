@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V263 Brain Knowledge Card Readback Helper
-current task: V263-00 Brain Knowledge Card Readback Helper
+active stream: V264 Brain Knowledge CLI Readback Preview
+current task: V264-00 Brain Knowledge CLI Readback Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -50,38 +50,37 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V263 Brain Knowledge Card Readback Helper
+### V264 Brain Knowledge CLI Readback Preview
 
 Goal:
 
-Add a pure readback/search helper over brain knowledge card fixtures.
+Expose the brain knowledge card fixture through the smallest valid
+CLI/readback-adjacent preview or explicitly reject that surface for now.
 
 Current finding:
 
 ```txt
-V262 created one concrete `BrainKnowledgeReadModel` card fixture. The next gap
-is loading and filtering/searching cards without UI/API/MCP.
+V263 added a pure card parser/search helper. The next gap is whether operators
+can read back that card through a bounded surface before web UI/search.
 ```
 
 Current action:
 
 ```txt
-Execute V263-00: add a small pure helper/test that loads card fixtures and
-filters/searches by kind, status, reviewability, and text. Do not build
-UI/API/MCP yet.
+Execute V264-00: add or reject the smallest CLI/readback preview. Do not build
+web UI/API/MCP yet.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / knowledge-card readback loop.
+pattern brain / operator readback loop.
 ```
 
 Falsifier:
 
 ```txt
-V263 becomes UI/API/MCP work or a ranking engine instead of a small pure
-readback helper.
+V264 becomes web UI/API/MCP work, a ranking engine, or a product-surface leak.
 ```
 
 ## Pattern Gate
