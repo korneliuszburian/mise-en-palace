@@ -9,6 +9,7 @@ import {
 const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
 const cardFile = "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json";
 const patternFile = "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json";
+const catalogFile = "docs/brain-knowledge/catalog.json";
 
 describe("runKnowledgeCardsCommand", () => {
   it("renders a read-only knowledge card preview", async () => {
@@ -16,6 +17,7 @@ describe("runKnowledgeCardsCommand", () => {
       cwd: repoRoot,
       cardFiles: [cardFile],
       patternFiles: [],
+      catalogFiles: [],
       filter: {
         kind: "pattern",
         status: "active",
@@ -44,6 +46,7 @@ describe("runKnowledgeCardsCommand", () => {
       cwd: repoRoot,
       cardFiles: [cardFile],
       patternFiles: [],
+      catalogFiles: [],
       filter: {
         text: "unknown-first"
       },
@@ -80,6 +83,7 @@ describe("runKnowledgeCardsCommand", () => {
       cwd: repoRoot,
       cardFiles: ["package.json"],
       patternFiles: [],
+      catalogFiles: [],
       filter: {},
       format: "text"
     })).rejects.toThrow("Invalid BrainKnowledgeReadModel card file: package.json");
@@ -90,6 +94,7 @@ describe("runKnowledgeCardsCommand", () => {
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: [patternFile],
+      catalogFiles: [],
       filter: {
         text: "unknown-first"
       },
@@ -107,9 +112,38 @@ describe("runKnowledgeCardsCommand", () => {
       cwd: repoRoot,
       cardFiles: [],
       patternFiles: ["package.json"],
+      catalogFiles: [],
       filter: {},
       format: "text"
     })).rejects.toThrow("Invalid retained pattern decision file: package.json");
+  });
+
+  it("renders knowledge cards from explicit catalog files", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "unknown-first"
+      },
+      format: "text"
+    });
+
+    expect(result.stdout).toContain("Catalog files: docs/brain-knowledge/catalog.json");
+    expect(result.stdout).toContain("Pattern files: docs/brain-knowledge/catalog.json:../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+  });
+
+  it("rejects invalid catalog files", async () => {
+    await expect(runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: ["package.json"],
+      filter: {},
+      format: "text"
+    })).rejects.toThrow("Invalid brain knowledge catalog file: package.json");
   });
 });
 

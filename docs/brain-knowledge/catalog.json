@@ -1,0 +1,6 @@
+{
+  "cardFiles": [],
+  "patternFiles": [
+    "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+  ]
+}

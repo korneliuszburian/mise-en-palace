@@ -128,6 +128,7 @@ export type CliCommand =
       kind: "knowledgeCards";
       cardFiles: readonly string[];
       patternFiles: readonly string[];
+      catalogFiles: readonly string[];
       filter: BrainKnowledgeSearchFilter;
       format: "text" | "json";
     }
@@ -351,7 +352,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
-  "krn knowledge cards [--card-file <path>|--pattern-file <path>] [--text <query>] [--json]",
+  "krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json]",
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",

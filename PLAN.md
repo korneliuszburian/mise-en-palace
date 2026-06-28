@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V267 Brain Knowledge Explicit Catalog Preview
-current task: V267-00 Brain Knowledge Explicit Catalog Preview
+active stream: V268 Add Second Retained Pattern To Brain Knowledge Catalog
+current task: V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
 ```
 
 ## Compact Completed Checkpoints
@@ -50,26 +50,26 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V267 Brain Knowledge Explicit Catalog Preview
+### V268 Add Second Retained Pattern To Brain Knowledge Catalog
 
 Goal:
 
-Let the existing `krn knowledge cards` preview read an explicit catalog file
-that lists card and retained-pattern files.
+Add a second retained pattern decision to the explicit brain knowledge catalog
+using the same producer/readback path.
 
 Current finding:
 
 ```txt
-V266 added explicit retained-pattern file readback. The next gap is that
-operators must pass every card/pattern file manually; a small explicit catalog
-can support multi-card search without directory crawling or ranking.
+V267 added explicit catalog-file preview. The next gap is breadth: the catalog
+currently proves the path with one retained pattern only.
 ```
 
 Current action:
 
 ```txt
-Execute V267-00: add or reject explicit `--catalog-file` support. Do not crawl
-directories, rank cards, build UI/API/MCP, add DB schema, or broaden ingestion.
+Execute V268-00: add a second high-value retained pattern source and catalog it,
+or reject the available candidates if they are not structured enough. Do not
+build broad ingestion, UI/API/MCP, DB schema, ranking, or directory crawling.
 ```
 
 Primary consumer:
@@ -81,8 +81,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V267 becomes directory crawling, ranking, DB persistence, UI/API/MCP work, or
-accepts untyped catalog input without unknown-first parsing.
+V268 adds decorative or unsupported knowledge, bypasses source-to-decision, or
+turns into broad research ingestion.
 ```
 
 ## Pattern Gate

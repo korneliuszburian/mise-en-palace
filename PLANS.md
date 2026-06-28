@@ -23,18 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V267 Brain Knowledge Explicit Catalog Preview
-current task: V267-00 Brain Knowledge Explicit Catalog Preview
-latest pushed commit before V266: 393dae1 feat(readmodel): produce cards from retained patterns
-latest CI checked before V266: KRN CI success for 393dae17c9522cf3c42f8c001d6b0d3e688c135c
+active stream: V268 Add Second Retained Pattern To Brain Knowledge Catalog
+current task: V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
+latest pushed commit before V267: 0ab8a46 feat(readmodel): preview retained pattern cards
+latest CI checked before V267: KRN CI success for 0ab8a46406fc07756748bf135e5a9bc64da57e23
 ```
 
 Known current gap:
 
 ```txt
-V267-00 Brain Knowledge Explicit Catalog Preview is the current gap. V266 added
-explicit retained-pattern file readback; now KRN needs a small explicit catalog
-file so operators do not pass every card/pattern file manually.
+V268-00 Add Second Retained Pattern To Brain Knowledge Catalog is the current
+gap. V267 added explicit catalog-file preview; now the catalog needs a second
+well-supported retained pattern so the path is not a one-pattern demo.
 ```
 
 ## 2. Product Thesis
@@ -682,7 +682,7 @@ Falsifier:
 
 ### V267-00 Brain Knowledge Explicit Catalog Preview
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -736,6 +736,57 @@ Does not prove:
 Falsifier:
 
 - catalog support becomes implicit repo scanning or accepts unvalidated JSON.
+
+### V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
+
+Status: active.
+
+Goal:
+
+```txt
+Add one more source-backed retained pattern decision to
+`docs/patterns/retained-patterns/` and include it in
+`docs/brain-knowledge/catalog.json`.
+```
+
+Rationale:
+
+```txt
+V267 proves catalog mechanics with one pattern. The next proof is breadth
+without broad ingestion: add exactly one high-value retained pattern that passes
+source -> mechanism -> KRN implication -> consumer -> falsifier.
+```
+
+Candidate pattern class:
+
+- source-to-decision graph discipline; or
+- evidence proof/non-proof boundary; or
+- progressive-disclosure skill design.
+
+Forbidden writes:
+
+- broad research archive;
+- paid/proprietary course copying;
+- directory crawling;
+- ranking engine;
+- DB schema/migration;
+- web UI/API/MCP.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- brainKnowledgeReadModel brainKnowledgeReadModelInvariants
+pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Next-task synthesis rule:
+
+- if second pattern works, next task should add a catalog/readback quality guard
+  or lightweight search fixture; if no pattern is defensible, document rejection
+  and choose the missing source-decision repair.
 
 ## Decision Log
 
@@ -831,7 +882,8 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V265-00 complete: added retained-pattern source JSON and deterministic card
   producer.
 - V266-00 complete: connected explicit retained pattern files to CLI readback.
-- V267-00 active: add or reject explicit catalog-file preview.
+- V267-00 complete: added explicit catalog-file preview.
+- V268-00 active: add a second retained pattern to the catalog.
 
 ## Outcome V264-00 Brain Knowledge CLI Readback Preview
 
@@ -903,6 +955,32 @@ Source-to-decision:
   readiness.
 - Consumer: V267 explicit catalog preview.
 - Falsifier: CLI starts crawling directories or trusting unparsed pattern JSON.
+
+## Outcome V267-00 Brain Knowledge Explicit Catalog Preview
+
+Summary:
+- added `docs/brain-knowledge/catalog.json`;
+- added `--catalog-file` to `krn knowledge cards`;
+- catalog entries list exact card/pattern files and resolve relative to the
+  catalog file;
+- kept the surface read-only with no directory crawling, ranking, DB, UI, API,
+  MCP, or mutation authority.
+
+Source-to-decision:
+- Source: V264 card-file preview, V265 retained-pattern producer, and V266
+  pattern-file preview.
+- Mechanism: an explicit catalog supports multi-card readback without implicit
+  repo scan or product search claims.
+- KRN implication: future UI/search can begin from a typed catalog, not raw
+  docs crawling.
+- Decision: add explicit catalog-file preview; open V268 to add a second
+  retained pattern and prove breadth.
+- Does not prove: ranking quality, DB-backed card store, UI readiness, or
+  broad research condensation.
+- Consumer: V268 second retained pattern and future search/readback quality
+  guards.
+- Falsifier: catalog support becomes directory crawling or accepts unvalidated
+  JSON.
 
 ## Outcome V255-00 Active Ledger Condensation
 

@@ -20,6 +20,7 @@ export interface KnowledgeCardsCommandRuntime {
   cwd?: string;
   cardFiles: readonly string[];
   patternFiles: readonly string[];
+  catalogFiles: readonly string[];
   filter: BrainKnowledgeSearchFilter;
   format: KnowledgeCardsOutputFormat;
 }
@@ -36,6 +37,7 @@ export interface KnowledgeCardsPreviewResource {
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
   patternFiles: string[];
+  catalogFiles: string[];
   cards: BrainKnowledgeReadModel[];
   proof: {
     proves: string[];
@@ -64,31 +66,41 @@ export const runKnowledgeCardsCommand = async (
   const loadedCards: BrainKnowledgeReadModel[] = [];
   const resolvedFiles: string[] = [];
   const resolvedPatternFiles: string[] = [];
+  const resolvedCatalogFiles: string[] = [];
 
   for (const cardFile of runtime.cardFiles) {
-    const resolvedFile = path.resolve(cwd, cardFile);
-    const parsed = await readJsonObject(resolvedFile);
-    const card = parseBrainKnowledgeReadModel(parsed);
-
-    if (card === undefined) {
-      throw new Error(`Invalid BrainKnowledgeReadModel card file: ${cardFile}`);
-    }
-
-    loadedCards.push(card);
+    await loadCardFile(cardFile, path.resolve(cwd, cardFile), loadedCards);
     resolvedFiles.push(cardFile);
   }
 
   for (const patternFile of runtime.patternFiles) {
-    const resolvedFile = path.resolve(cwd, patternFile);
-    const parsed = await readJsonObject(resolvedFile);
-    const pattern = parseRetainedPatternDecision(parsed);
+    await loadPatternFile(patternFile, path.resolve(cwd, patternFile), loadedCards);
+    resolvedPatternFiles.push(patternFile);
+  }
 
-    if (pattern === undefined) {
-      throw new Error(`Invalid retained pattern decision file: ${patternFile}`);
+  for (const catalogFile of runtime.catalogFiles) {
+    const resolvedCatalogFile = path.resolve(cwd, catalogFile);
+    const catalog = parseKnowledgeCatalog(await readJsonObject(resolvedCatalogFile));
+
+    if (catalog === undefined) {
+      throw new Error(`Invalid brain knowledge catalog file: ${catalogFile}`);
     }
 
-    loadedCards.push(brainKnowledgeCardFromRetainedPatternDecision(pattern));
-    resolvedPatternFiles.push(patternFile);
+    const catalogDirectory = path.dirname(resolvedCatalogFile);
+
+    for (const cardFile of catalog.cardFiles) {
+      const resolvedCardFile = path.resolve(catalogDirectory, cardFile);
+      await loadCardFile(`${catalogFile}:${cardFile}`, resolvedCardFile, loadedCards);
+      resolvedFiles.push(`${catalogFile}:${cardFile}`);
+    }
+
+    for (const patternFile of catalog.patternFiles) {
+      const resolvedPatternFile = path.resolve(catalogDirectory, patternFile);
+      await loadPatternFile(`${catalogFile}:${patternFile}`, resolvedPatternFile, loadedCards);
+      resolvedPatternFiles.push(`${catalogFile}:${patternFile}`);
+    }
+
+    resolvedCatalogFiles.push(catalogFile);
   }
 
   const resource: KnowledgeCardsPreviewResource = {
@@ -99,6 +111,7 @@ export const runKnowledgeCardsCommand = async (
     filter: runtime.filter,
     cardFiles: resolvedFiles,
     patternFiles: resolvedPatternFiles,
+    catalogFiles: resolvedCatalogFiles,
     cards: searchBrainKnowledgeCards(loadedCards, runtime.filter),
     proof: {
       proves: [...proof.proves],
@@ -119,6 +132,7 @@ const formatKnowledgeCardsPreview = (resource: KnowledgeCardsPreviewResource): s
     "Access: read-only",
     "Mutation: none",
     "Source: explicit files",
+    `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Card files: ${formatList(resource.cardFiles)}`,
     `Pattern files: ${formatList(resource.patternFiles)}`,
     `Results: ${resource.cards.length}`,
@@ -148,3 +162,68 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
 
 const formatList = (items: readonly string[]): string =>
   items.length === 0 ? "none" : items.join(", ");
+
+type KnowledgeCatalogInput = {
+  cardFiles: string[];
+  patternFiles: string[];
+};
+
+const parseKnowledgeCatalog = (value: unknown): KnowledgeCatalogInput | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const cardFiles = parseStringArray(value["cardFiles"]);
+  const patternFiles = parseStringArray(value["patternFiles"]);
+
+  if (
+    cardFiles === undefined ||
+    patternFiles === undefined ||
+    (cardFiles.length === 0 && patternFiles.length === 0)
+  ) {
+    return undefined;
+  }
+
+  return {
+    cardFiles,
+    patternFiles
+  };
+};
+
+const loadCardFile = async (
+  label: string,
+  resolvedFile: string,
+  cards: BrainKnowledgeReadModel[]
+): Promise<void> => {
+  const parsed = await readJsonObject(resolvedFile);
+  const card = parseBrainKnowledgeReadModel(parsed);
+
+  if (card === undefined) {
+    throw new Error(`Invalid BrainKnowledgeReadModel card file: ${label}`);
+  }
+
+  cards.push(card);
+};
+
+const loadPatternFile = async (
+  label: string,
+  resolvedFile: string,
+  cards: BrainKnowledgeReadModel[]
+): Promise<void> => {
+  const parsed = await readJsonObject(resolvedFile);
+  const pattern = parseRetainedPatternDecision(parsed);
+
+  if (pattern === undefined) {
+    throw new Error(`Invalid retained pattern decision file: ${label}`);
+  }
+
+  cards.push(brainKnowledgeCardFromRetainedPatternDecision(pattern));
+};
+
+const parseStringArray = (value: unknown): string[] | undefined =>
+  Array.isArray(value) && value.every((item) => typeof item === "string" && item.trim().length > 0)
+    ? value
+    : undefined;
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);

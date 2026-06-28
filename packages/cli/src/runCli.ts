@@ -372,6 +372,7 @@ export const runCli = async (
         cwd: runtime.cwd ?? process.cwd(),
         cardFiles: parsed.command.cardFiles,
         patternFiles: parsed.command.patternFiles,
+        catalogFiles: parsed.command.catalogFiles,
         filter: parsed.command.filter,
         format: parsed.command.format
       });
