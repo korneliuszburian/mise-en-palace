@@ -22,12 +22,16 @@ Use this skill before or during TypeScript changes.
 4. Avoid `any`; isolate and justify it if unavoidable.
 5. Avoid double assertions unless no better option exists.
 6. Put runtime validation near external boundaries.
-7. Decide whether `ts-type-critic` should review.
-8. Run typecheck before completion.
+7. If the work touches an external input boundary, check
+   `docs/patterns/typescript-boundary-patterns.md` and state whether
+   `ts-boundary-unknown-first-result-state` applies.
+8. Decide whether `ts-type-critic` should review.
+9. Run typecheck before completion.
 
 ## Output
 
 - Boundary classification.
+- Pattern ID applied or rejected, when a retained TypeScript pattern is relevant.
 - Validation or narrowing location.
 - Public type changes.
 - Any justified type-safety exception.
@@ -45,6 +49,8 @@ Use this skill before or during TypeScript changes.
 - Do not trust `JSON.parse`, `fetch().json()`, file reads, env vars, CLI args,
   MCP responses, connector responses, plugin output, or user config.
 - Do not introduce unreviewed `any`.
+- Do not apply a retained pattern by vibe; name the pattern ID, consumer, and
+  falsifier or explicitly reject it for the slice.
 - Do not claim completion without typecheck once TypeScript exists.
 
 ## Verification

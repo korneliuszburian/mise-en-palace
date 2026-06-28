@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V259 Codex Skills Pack Re-Gate
-current task: V259-00 Codex Skills Pack Re-Gate
+active stream: V260 Brain Knowledge Read Model Sketch
+current task: V260-00 Brain Knowledge Read Model Sketch
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,9 +32,9 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V259-00 Codex Skills Pack Re-Gate is the current gap. V258 added the first
-pattern enforcement gate; now KRN needs the minimal skill routing set that lets
-Codex repeatedly use the brain without long prompt dumps.
+V260-00 Brain Knowledge Read Model Sketch is the current gap. V259 routed
+TypeScript boundary work through retained patterns; now KRN needs the minimal
+typed read-model shape that can later power UI/search over brain knowledge.
 ```
 
 ## 2. Product Thesis
@@ -170,6 +170,15 @@ green test != product value
 - Outcome: added `packages/harness/src/typescriptTargetPatternInvariants.test.ts`
   to guard the retained TypeScript pattern, the weak scenario falsifier, and the
   repaired target state.
+
+### V259 Codex Skills Pack Re-Gate
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v259-codex-skills-pack-regate/REPORT.md`.
+- Outcome: kept the minimal skill pack and updated
+  `.agents/skills/typescript-type-safety/SKILL.md` to route external input
+  boundary work through retained TypeScript patterns.
 
 ## Active Task Queue
 
@@ -316,7 +325,7 @@ Non-goals:
 
 ### V259-00 Codex Skills Pack Re-Gate
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -334,7 +343,7 @@ Expected outcome:
 
 ### V260-00 Brain Knowledge Read Model Sketch
 
-Status: queued.
+Status: active.
 
 Goal:
 
@@ -439,7 +448,10 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   source-to-decision object and enforcement/eval candidate.
 - V258-00 complete: added a focused harness invariant for the retained
   TypeScript boundary pattern.
-- V259-00 active: re-gate the minimal Codex skills pack.
+- V259-00 complete: re-gated the minimal Codex skills pack and updated the
+  TypeScript skill to route retained patterns.
+- V260-00 active: sketch the minimal brain knowledge read model for future
+  UI/search.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -541,6 +553,30 @@ Source-to-decision:
 - Consumer: future normalized target trials and V259 skills pack re-gate.
 - Falsifier: the normalized target can regress to raw `any`/nullable invalid
   input state while `typescriptTargetPatternInvariants` still passes.
+
+## Outcome V259-00 Codex Skills Pack Re-Gate
+
+Summary:
+- reviewed the repo-local skill pack;
+- did not create a new skill;
+- updated `typescript-type-safety` to check
+  `docs/patterns/typescript-boundary-patterns.md` for external input boundary
+  work and require pattern ID/consumer/falsifier when relevant.
+
+Source-to-decision:
+- Source: V257 retained pattern, V258 enforcement gate, and existing repo-local
+  skills.
+- Mechanism: skills are the progressive-disclosure bridge from retained brain
+  knowledge to Codex execution.
+- KRN implication: pattern brain should route repeated work through a small
+  skill pack instead of long prompt dumps or a skill zoo.
+- Decision: update `typescript-type-safety`; do not create a new TypeScript
+  boundary repair skill yet.
+- Does not prove: automatic skill selection quality, product readiness, or real
+  target transfer.
+- Consumer: V260 read model sketch and future target repair trials.
+- Falsifier: future TypeScript boundary work ignores retained pattern IDs and
+  reverts to untracked prose.
 
 ## Condensation Rules
 

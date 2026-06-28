@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V259 Codex Skills Pack Re-Gate
-current task: V259-00 Codex Skills Pack Re-Gate
+active stream: V260 Brain Knowledge Read Model Sketch
+current task: V260-00 Brain Knowledge Read Model Sketch
 ```
 
 ## Compact Completed Checkpoints
@@ -50,40 +50,40 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V259 Codex Skills Pack Re-Gate
+### V260 Brain Knowledge Read Model Sketch
 
 Goal:
 
-Re-gate the minimal Codex skills pack needed to route future work through the
-brain without long prompt dumps or a skill zoo.
+Define the minimal typed read-model shape needed for future UI/search over
+brain knowledge.
 
 Current finding:
 
 ```txt
-V258 added the first bounded pattern enforcement gate for
-`ts-boundary-unknown-first-result-state`. The next gap is making sure Codex can
-consistently invoke the right small skills for target repair, pattern intake,
-evidence review, TypeScript boundary work, and handoff.
+V259 updated the TypeScript skill so external input boundary work routes through
+retained patterns. The next gap is a compact read model for sources, decisions,
+patterns, candidates, evidence refs, confidence, dissent, and does-not-prove
+boundaries.
 ```
 
 Current action:
 
 ```txt
-Execute V259-00: inspect `.agents/skills`, keep/update/create only skills
-backed by repeated workflow evidence, and reject skill-zoo expansion.
+Execute V260-00: define a minimal brain knowledge read model as docs/contract
+only. Do not build UI/API/MCP yet.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / Codex skill routing loop.
+pattern brain / future UI-search read-model loop.
 ```
 
 Falsifier:
 
 ```txt
-V259 creates decorative skills, expands `AGENTS.md`, or leaves repeated
-workflows dependent on long pasted prompts instead of targeted skills.
+V260 becomes dashboard design, broad API planning, or a decorative schema with
+no source/evidence/reviewability fields.
 ```
 
 ## Pattern Gate
