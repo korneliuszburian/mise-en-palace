@@ -11,7 +11,7 @@ import type {
 } from "./parseArgs.js";
 
 const knowledgeUsage = [
-  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json]",
+  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn knowledge cards --card-file docs-or-fixture-card.json [--text unknown-first]",
@@ -93,7 +93,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   let status: BrainKnowledgeStatus | undefined;
   let reviewability: BrainKnowledgeReviewability | undefined;
   let text: string | undefined;
-  let format: "text" | "json" = "text";
+  let format: "text" | "json" | "html" = "text";
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -272,6 +272,11 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
 
     if (arg === "--json") {
       format = "json";
+      continue;
+    }
+
+    if (arg === "--html") {
+      format = "html";
       continue;
     }
 

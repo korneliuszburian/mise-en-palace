@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V272 Brain Knowledge UI/Search Readiness Gate
-current task: V272-00 Brain Knowledge UI/Search Readiness Gate
+active stream: V274 Add Evidence Proof Boundary Retained Pattern
+current task: V274-00 Add Evidence Proof Boundary Retained Pattern
 ```
 
 ## Compact Completed Checkpoints
@@ -50,29 +50,28 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V272 Brain Knowledge UI/Search Readiness Gate
+### V274 Add Evidence Proof Boundary Retained Pattern
 
 Goal:
 
-Decide whether the explicit brain knowledge catalog is ready for the smallest
-read-only web/search preview, and if so define the exact bounded implementation
-surface.
+Add one high-value retained pattern card for KRN evidence proof/non-proof
+boundaries and include it in the explicit brain knowledge catalog.
 
 Current finding:
 
 ```txt
-V271 proved skill-routed catalog readback is useful and repaired root-relative
-catalog resolution from package cwd. The next gap is UI/search readiness, not
-more CLI-only proof.
+V273 added a local HTML search preview, but the catalog still has only two
+retained patterns. The next useful brain step is more reviewable knowledge, not
+UI polish.
 ```
 
 Current action:
 
 ```txt
-Execute V272-00: inspect the existing app/package topology and decide the
-smallest read-only UI/search preview path over the same knowledge cards
-resource. Do not add mutation, ranking, broad dashboard scope, API/MCP, DB
-schema, or crawler behavior.
+Execute V274-00: add a retained pattern for evidence proof/non-proof boundary
+discipline, map it through source -> mechanism -> KRN implication -> decision
+-> consumer -> falsifier, add it to `docs/brain-knowledge/catalog.json`, and
+guard/read back the card.
 ```
 
 Primary consumer:
@@ -84,8 +83,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V272 authorizes a UI surface that can mutate memory/source truth, hides
-proof/non-proof boundaries, or expands into a dashboard/product claim.
+V274 retains decorative guidance without mechanism, consumer, falsifier,
+evidence refs, and does-not-prove boundary.
 ```
 
 ## Pattern Gate

@@ -16,7 +16,7 @@ import {
   readJsonObject
 } from "./cliFileBoundary.js";
 
-export type KnowledgeCardsOutputFormat = "text" | "json";
+export type KnowledgeCardsOutputFormat = "text" | "json" | "html";
 
 export interface KnowledgeCardsCommandRuntime {
   cwd?: string;
@@ -122,13 +122,26 @@ export const runKnowledgeCardsCommand = async (
   };
 
   return {
-    stdout: runtime.format === "json"
-      ? `${JSON.stringify(resource, null, 2)}\n`
-      : formatKnowledgeCardsPreview(resource)
+    stdout: formatKnowledgeCardsOutput(resource, runtime.format)
   };
 };
 
-const formatKnowledgeCardsPreview = (resource: KnowledgeCardsPreviewResource): string =>
+const formatKnowledgeCardsOutput = (
+  resource: KnowledgeCardsPreviewResource,
+  format: KnowledgeCardsOutputFormat
+): string => {
+  if (format === "json") {
+    return `${JSON.stringify(resource, null, 2)}\n`;
+  }
+
+  if (format === "html") {
+    return formatKnowledgeCardsHtmlPreview(resource);
+  }
+
+  return formatKnowledgeCardsTextPreview(resource);
+};
+
+const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource): string =>
   [
     "KRN Brain Knowledge Cards Preview",
     "Access: read-only",
@@ -144,6 +157,199 @@ const formatKnowledgeCardsPreview = (resource: KnowledgeCardsPreviewResource): s
     ...resource.proof.proves.map((item) => `- proves: ${item}`),
     ...resource.proof.doesNotProve.map((item) => `- does not prove: ${item}`)
   ].join("\n") + "\n";
+
+const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource): string => {
+  const data = JSON.stringify(resource).replace(/</gu, "\\u003c");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KRN Brain Knowledge Cards</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #171a1f;
+      --muted: #616b7a;
+      --line: #dfe3ea;
+      --accent: #0f766e;
+      --warn: #9a3412;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 32px auto;
+    }
+    header {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }
+    .meta, .proof, .refs {
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      margin: 18px 0;
+    }
+    input[type="search"] {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+    .count {
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .cards {
+      display: grid;
+      gap: 12px;
+    }
+    article {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 19px;
+      letter-spacing: 0;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 10px 0;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 12px;
+      color: var(--muted);
+      background: #fbfcfd;
+    }
+    .chip.strong {
+      color: #fff;
+      border-color: var(--accent);
+      background: var(--accent);
+    }
+    dl {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 7px 14px;
+      margin: 14px 0 0;
+    }
+    dt {
+      color: var(--muted);
+      font-weight: 600;
+    }
+    dd { margin: 0; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+    .proof-panel {
+      margin-top: 20px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .proof-panel h2 {
+      font-size: 17px;
+    }
+    .proof-panel li + li {
+      margin-top: 4px;
+    }
+    .empty {
+      display: none;
+      padding: 18px;
+      color: var(--warn);
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-radius: 8px;
+    }
+    @media (max-width: 720px) {
+      main { width: min(100% - 20px, 1120px); margin: 18px auto; }
+      .toolbar { grid-template-columns: 1fr; }
+      dl { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>KRN Brain Knowledge Cards</h1>
+      <div class="meta">Access: read-only | Mutation: none | Source: explicit files</div>
+      <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
+    </header>
+    <section class="toolbar" aria-label="Knowledge search">
+      <input id="search" type="search" placeholder="Search cards" autocomplete="off">
+      <div id="count" class="count">Results: ${resource.cards.length}</div>
+    </section>
+    <section id="empty" class="empty">No cards match the current search.</section>
+    <section id="cards" class="cards">
+      ${resource.cards.map(formatCardHtml).join("\n")}
+    </section>
+    <section class="proof-panel">
+      <h2>Proof Boundaries</h2>
+      <ul>
+        ${resource.proof.proves.map((item) => `<li><strong>proves:</strong> ${escapeHtml(item)}</li>`).join("\n        ")}
+        ${resource.proof.doesNotProve.map((item) => `<li><strong>does not prove:</strong> ${escapeHtml(item)}</li>`).join("\n        ")}
+      </ul>
+    </section>
+  </main>
+  <script id="krn-data" type="application/json">${data}</script>
+  <script>
+    const cards = Array.from(document.querySelectorAll("[data-card]"));
+    const search = document.getElementById("search");
+    const count = document.getElementById("count");
+    const empty = document.getElementById("empty");
+    const render = () => {
+      const query = search.value.trim().toLowerCase();
+      let visible = 0;
+      for (const card of cards) {
+        const match = query.length === 0 || card.dataset.search.includes(query);
+        card.hidden = !match;
+        if (match) visible += 1;
+      }
+      count.textContent = "Results: " + visible;
+      empty.style.display = visible === 0 ? "block" : "none";
+    };
+    search.addEventListener("input", render);
+    render();
+  </script>
+</body>
+</html>
+`;
+};
 
 const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `- ${card.id}`,
@@ -162,8 +368,59 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   ""
 ];
 
+const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
+  const searchText = [
+    card.id,
+    card.kind,
+    card.status,
+    card.title,
+    card.summary,
+    card.confidence,
+    card.reviewability,
+    card.nextAction,
+    ...card.sourceRefs,
+    ...card.evidenceRefs,
+    ...card.consumers,
+    card.falsifier,
+    card.doesNotProve
+  ].join(" ").toLowerCase();
+
+  return `<article data-card data-search="${escapeHtml(searchText)}">
+  <h2>${escapeHtml(card.title)}</h2>
+  <div class="refs"><code>${escapeHtml(card.id)}</code></div>
+  <div class="chips">
+    <span class="chip strong">${escapeHtml(card.kind)}</span>
+    <span class="chip">${escapeHtml(card.status)}</span>
+    <span class="chip">confidence: ${escapeHtml(card.confidence)}</span>
+    <span class="chip">reviewability: ${escapeHtml(card.reviewability)}</span>
+    <span class="chip">next: ${escapeHtml(card.nextAction)}</span>
+  </div>
+  <p>${escapeHtml(card.summary)}</p>
+  <dl>
+    <dt>Source refs</dt><dd>${formatHtmlList(card.sourceRefs)}</dd>
+    <dt>Evidence refs</dt><dd>${formatHtmlList(card.evidenceRefs)}</dd>
+    <dt>Consumers</dt><dd>${formatHtmlList(card.consumers)}</dd>
+    <dt>Falsifier</dt><dd>${escapeHtml(card.falsifier)}</dd>
+    <dt>Does not prove</dt><dd>${escapeHtml(card.doesNotProve)}</dd>
+  </dl>
+</article>`;
+};
+
+const formatHtmlList = (items: readonly string[]): string =>
+  items.length === 0
+    ? "none"
+    : items.map((item) => `<code>${escapeHtml(item)}</code>`).join("<br>");
+
 const formatList = (items: readonly string[]): string =>
   items.length === 0 ? "none" : items.join(", ");
+
+const escapeHtml = (value: string): string =>
+  value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#39;");
 
 const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {
   const cwdPath = path.resolve(cwd, filePath);

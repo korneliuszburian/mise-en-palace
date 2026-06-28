@@ -23,19 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V272 Brain Knowledge UI/Search Readiness Gate
-current task: V272-00 Brain Knowledge UI/Search Readiness Gate
-latest pushed commit before V271: 903643a docs(skills): route pattern catalog readback
-latest CI checked before V271: KRN CI success for 903643a762e5a1dc19d0f984ba4a6ea754fc94af
+active stream: V274 Add Evidence Proof Boundary Retained Pattern
+current task: V274-00 Add Evidence Proof Boundary Retained Pattern
+latest pushed commit before V273: a8592aa fix(readmodel): resolve knowledge catalog from repo root
+latest CI checked before V273: KRN CI success for a8592aa909721c962284f5f662f09fdbc1c17038
 ```
 
 Known current gap:
 
 ```txt
-V272-00 Brain Knowledge UI/Search Readiness Gate is the current gap. V271
-proved skill-routed catalog readback is useful by finding and fixing package-cwd
-path resolution; now decide whether the same read-only card resource is ready
-for the smallest UI/search preview.
+V274-00 Add Evidence Proof Boundary Retained Pattern is the current gap. V273
+added local HTML search/readback; now the catalog needs more high-value retained
+patterns so the UI searches real brain knowledge, not only two cards.
 ```
 
 ## 2. Product Thesis
@@ -992,7 +991,7 @@ Falsifier:
 
 ### V272-00 Brain Knowledge UI/Search Readiness Gate
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -1125,6 +1124,279 @@ Falsifier:
 - UI/search is authorized while it can mutate memory/source truth or hide
   does-not-prove boundaries.
 
+### V273-00 Brain Knowledge Self-Contained HTML Search Preview
+
+Status: complete.
+
+Goal:
+
+```txt
+Add `--html` to `krn knowledge cards` so operators can open a local
+self-contained read-only search page over BrainKnowledgeReadModel cards.
+```
+
+Product rationale:
+
+```txt
+The user wants visible/searchable brain knowledge. V272 rejects dashboard/API
+scope and authorizes the smallest useful UI: HTML generated from the existing
+CLI resource.
+```
+
+Architectural rationale:
+
+```txt
+HTML output should reuse the same typed resource already used by text/JSON
+preview. The UI must not become source of truth, mutation authority, server
+architecture, ranking, or DB-backed search.
+```
+
+Evidence source:
+
+- V260 BrainKnowledgeReadModel.
+- V261 read-model invariant.
+- V264/V267 CLI preview.
+- V269 catalog search guard.
+- V271 package-cwd path normalization.
+- V272 UI/search readiness gate.
+
+Official/external sources:
+
+- none required unless implementation imports a new frontend dependency.
+
+Inputs required:
+
+- `packages/cli/src/parseKnowledgeArgs.ts`
+- `packages/cli/src/runKnowledgeCardsCommand.ts`
+- `packages/cli/src/runKnowledgeCardsCommand.test.ts`
+- `docs/brain-knowledge/catalog.json`
+
+Files likely touched:
+
+- CLI parser/renderer/tests;
+- V273 report;
+- compact plan updates.
+
+Allowed writes:
+
+- add `--html` output mode;
+- client-side local search/filter in generated HTML;
+- focused tests for HTML proof/read-only boundaries.
+
+Forbidden writes:
+
+- new web package;
+- API/MCP server;
+- DB schema/migration;
+- ranking engine;
+- source crawler;
+- Memory Core, SourceDecision, candidate, or evidence mutation;
+- dashboard product claim.
+
+Output requirements:
+
+- generated HTML includes search/filter controls;
+- generated HTML includes card title, summary, kind/status/reviewability,
+  source refs, evidence refs, consumer, falsifier, and does-not-prove boundary;
+- generated HTML states access is read-only and mutation is none;
+- output is self-contained and local.
+
+Definition of Done:
+
+- `--html` parses and renders;
+- tests prove HTML contains search UI and proof/non-proof fields;
+- manual command produces HTML from `docs/brain-knowledge/catalog.json`;
+- full verification passes.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli test -- parseKnowledgeArgs runKnowledgeCardsCommand runCli
+pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --html > .local-lab/brain-knowledge-preview.html
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no server/runtime dependency;
+- no mutation controls;
+- no hidden ranking;
+- no product-ready claim.
+
+Risk:
+
+- UI becomes decorative if it hides proof/non-proof boundaries or cannot search
+  locally.
+
+Rollback:
+
+- revert the focused V273 commit.
+
+Condensation expectation:
+
+- one compact outcome block plus linked report.
+
+Next-task synthesis rule:
+
+- if HTML preview works, next task should add a focused visual/ergonomic guard
+  or add one more retained pattern card; if it fails, repair the exact HTML
+  readback issue before broader UI.
+
+Pattern surface:
+
+- operator UX / CLI / readback.
+
+Primary consumer:
+
+- local brain knowledge search UX.
+
+Does not prove:
+
+- product readiness, ranking quality, DB-backed knowledge, API/MCP readiness,
+  or broad research completeness.
+
+Falsifier:
+
+- generated HTML cannot search/filter locally or omits source/evidence/falsifier
+  /does-not-prove fields.
+
+### V274-00 Add Evidence Proof Boundary Retained Pattern
+
+Status: active.
+
+Goal:
+
+```txt
+Add one retained pattern for evidence proof/non-proof boundary discipline and
+include it in the explicit brain knowledge catalog.
+```
+
+Product rationale:
+
+```txt
+The HTML preview exists; product value now comes from searchable high-value
+patterns. Evidence proof boundaries are one of KRN's strongest repeated
+standards and should be searchable as a card.
+```
+
+Architectural rationale:
+
+```txt
+KRN knowledge should grow through structured retained pattern decisions, not UI
+copy or decorative docs.
+```
+
+Evidence source:
+
+- evidence-review-loop skill;
+- V0/V evidence integrity reports;
+- CLI evidence capture proof/non-proof behavior;
+- current command evidence reports.
+
+Official/external sources:
+
+- repo-local evidence is sufficient unless a new external source is introduced.
+
+Inputs required:
+
+- `.agents/skills/evidence-review-loop/SKILL.md`
+- `docs/reviews/controlled-dogfood/*evidence*`
+- `docs/brain-knowledge/catalog.json`
+- retained pattern schema examples.
+
+Files likely touched:
+
+- `docs/patterns/retained-patterns/evidence-proof-boundary.json`
+- `docs/brain-knowledge/catalog.json`
+- harness/CLI readback tests if catalog breadth guard needs updating;
+- V274 report;
+- compact plan updates.
+
+Allowed writes:
+
+- one retained pattern JSON;
+- catalog update;
+- focused readback guard/test if needed;
+- report and plan updates.
+
+Forbidden writes:
+
+- broad research archive;
+- source crawler;
+- UI polish;
+- dashboard/API/MCP;
+- DB schema/migration;
+- memory/source mutation.
+
+Output requirements:
+
+- pattern includes mechanism, KRN implication, decision, consumer, falsifier,
+  source refs, evidence refs, does-not-prove, reviewability, and next action;
+- catalog readback finds it by a distinct query.
+
+Definition of Done:
+
+- retained pattern exists and is in catalog;
+- readback command returns it;
+- tests/invariants pass;
+- report records source-to-decision mapping.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text proof --json
+pnpm --filter @krn/harness test -- brainKnowledgeReadModel brainKnowledgeReadModelInvariants
+pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no decorative source;
+- no copied external content;
+- no product-ready claim.
+
+Risk:
+
+- making a vague "always state does-not-prove" card without concrete evidence
+  refs and falsifier.
+
+Rollback:
+
+- revert the focused V274 commit.
+
+Condensation expectation:
+
+- one compact outcome block plus linked report.
+
+Next-task synthesis rule:
+
+- if the third pattern works, next task may add a small HTML/catalog usability
+  guard or another high-value pattern; if it fails, repair retained-pattern
+  schema/readback before adding more cards.
+
+Pattern surface:
+
+- evidence/review loop / pattern brain.
+
+Primary consumer:
+
+- future evidence capture, review, and UI/search readback.
+
+Does not prove:
+
+- product readiness, ranking quality, DB-backed card store, or complete evidence
+  quality.
+
+Falsifier:
+
+- evidence-related tasks can omit proof/non-proof boundaries while the retained
+  pattern and tests still pass.
+
 ## Decision Log
 
 - Root `PLAN.md` remains compact product SSOT.
@@ -1226,8 +1498,62 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   workflows to explicit brain knowledge catalog readback.
 - V271-00 complete: skill-routed catalog readback found and fixed package-cwd
   root path resolution for knowledge catalog files.
-- V272-00 active: gate the smallest read-only UI/search preview over the brain
-  knowledge catalog.
+- V272-00 complete: authorized self-contained read-only HTML generated from the
+  existing `krn knowledge cards` resource; rejected new dashboard/API/MCP.
+- V273-00 complete: implemented `--html` as a local self-contained search
+  preview over the existing knowledge cards resource.
+- V274-00 active: add the evidence proof/non-proof boundary as the next retained
+  pattern card.
+
+## Outcome V273-00 Brain Knowledge Self-Contained HTML Search Preview
+
+Summary:
+- added `--html` to `krn knowledge cards`;
+- rendered the existing read-only card resource as self-contained local HTML;
+- included client-side search, cards, source refs, evidence refs, consumers,
+  falsifier, does-not-prove, and proof boundaries;
+- updated CLI surface docs;
+- generated `.local-lab/brain-knowledge-preview.html` as uncommitted local
+  proof.
+
+Source-to-decision:
+- Source: V260/V261 read-model contract and guard, V264/V267/V269 CLI readback,
+  V271 path normalization, and V272 readiness gate.
+- Mechanism: the safest first UI is a presentation of the existing read-only
+  resource, not a server/dashboard/API.
+- KRN implication: operators can now search brain knowledge in a browser while
+  KRN keeps mutation and ranking deferred.
+- Decision: add `--html`; keep API/MCP/DB search/ranking/dashboard deferred.
+- Does not prove: product readiness, ranking quality, DB-backed knowledge, or
+  broad pattern coverage.
+- Consumer: local operator brain knowledge review and V274 catalog growth.
+- Falsifier: HTML output hides source/evidence/falsifier/does-not-prove fields
+  or adds mutation authority.
+
+## Outcome V272-00 Brain Knowledge UI/Search Readiness Gate
+
+Summary:
+- inspected repo topology and confirmed there is no existing web/app package;
+- inspected BrainKnowledgeReadModel, CLI surface docs, and ADR-0025 dashboard
+  gate;
+- rejected dashboard/API/MCP/DB/ranking/crawler scope;
+- authorized `krn knowledge cards --html` as the smallest local read-only
+  UI/search preview over the same typed card resource.
+
+Source-to-decision:
+- Source: V260/V261 read-model contract and guard, V264/V267/V269 CLI/catalog
+  proof, V270 skill hook, V271 path repair, and ADR-0025.
+- Mechanism: UI/search can be useful once it renders typed cards with proof
+  boundaries, but a server/dashboard would create premature product architecture.
+- KRN implication: local HTML output from existing CLI gives operator search UX
+  without widening trust boundaries.
+- Decision: proceed to V273 `--html`; reject new web package/API/MCP/DB/ranking
+  in this step.
+- Does not prove: product readiness, ranking quality, DB-backed knowledge, or
+  broad pattern coverage.
+- Consumer: V273 self-contained HTML search preview.
+- Falsifier: HTML output omits read-only/proof boundaries or adds mutation
+  controls/server dependencies.
 
 ## Outcome V271-00 Brain Knowledge Skill Readback Usefulness Trial
 

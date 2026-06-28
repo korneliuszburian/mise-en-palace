@@ -55,7 +55,7 @@ with the reset direction and need later code removal or internalization.
 - `krn observe --run <id> [--project <id>] [--persist]`
 - `krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]`
 - `krn codex brief --run-id <id>`
-- `krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json]`
+- `krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json|--html]`
 
 Boundary:
 
@@ -68,7 +68,9 @@ Boundary:
   `BrainKnowledgeReadModel` card files, retained-pattern decision files, or
   catalog files that list exact files. It does not scan the repository, crawl
   directories, rank knowledge, persist cards, query DB, mutate Memory Core, or
-  make UI/search product-ready.
+  make UI/search product-ready. `--html` renders the same read-only card
+  resource as a local self-contained search preview; it is not a dashboard,
+  server, API, MCP, or mutation surface.
 
 ## Governed Admin
 

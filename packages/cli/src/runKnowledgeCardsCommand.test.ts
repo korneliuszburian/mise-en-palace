@@ -141,6 +141,33 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
   });
 
+  it("renders self-contained html preview with proof boundaries", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "unknown-first"
+      },
+      format: "html"
+    });
+
+    expect(result.stdout).toContain("<!doctype html>");
+    expect(result.stdout).toContain("<title>KRN Brain Knowledge Cards</title>");
+    expect(result.stdout).toContain("type=\"search\"");
+    expect(result.stdout).toContain("Access: read-only");
+    expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Source refs");
+    expect(result.stdout).toContain("Evidence refs");
+    expect(result.stdout).toContain("Falsifier");
+    expect(result.stdout).toContain("Does not prove");
+    expect(result.stdout).toContain("Proof Boundaries");
+    expect(result.stdout).toContain("does not prove:");
+    expect(result.stdout).toContain("search.addEventListener");
+  });
+
   it("resolves root-relative catalog files from a package cwd", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: cliPackageRoot,

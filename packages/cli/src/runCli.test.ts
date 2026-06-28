@@ -1244,6 +1244,33 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Mutation: none");
   });
 
+  it("renders knowledge cards as self-contained html", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const result = await runCli([
+      "knowledge",
+      "cards",
+      "--catalog-file",
+      "docs/brain-knowledge/catalog.json",
+      "--text",
+      "unknown-first",
+      "--html"
+    ], {
+      cwd: repoRoot,
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("<!doctype html>");
+    expect(result.stdout).toContain("KRN Brain Knowledge Cards");
+    expect(result.stdout).toContain("type=\"search\"");
+    expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Proof Boundaries");
+  });
+
   it("explains how to unblock run show without database config", async () => {
     const result = await runCli(["run", "show", "--run-id", "execution-run-1"], {
       env: {},

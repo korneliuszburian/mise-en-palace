@@ -55,6 +55,24 @@ describe("parseKnowledgeArgs", () => {
     });
   });
 
+  it("parses html format", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--catalog-file",
+      "docs/brain-knowledge/catalog.json",
+      "--html"
+    ])).toEqual({
+      command: {
+        kind: "knowledgeCards",
+        cardFiles: [],
+        patternFiles: [],
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        filter: {},
+        format: "html"
+      }
+    });
+  });
+
   it("parses retained pattern files", () => {
     expect(parseKnowledgeArgs([
       "cards",
