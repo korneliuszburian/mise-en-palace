@@ -185,6 +185,13 @@ describe("KRN skill invariants", () => {
     expect(codexAdapterPlan).toContain("proof boundaries");
     expect(codexAdapterPlan).toContain("non-mutating adapter behavior");
     expect(codexAdapterPlan).toContain("evidence contract");
+    expect(codexAdapterPlan).toContain(
+      "pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text progressive-disclosure"
+    );
+    expect(codexAdapterPlan).toContain("Use the result as read-only context.");
+    expect(codexAdapterPlan).toContain(
+      "Retained skill-routing pattern applied or explicitly rejected"
+    );
     expect(codexAdapterPlan).toContain("Keep adapter output plain, inspectable, and non-mutating.");
     expect(codexAdapterPlan).toContain("Do not make Codex surfaces the product brain.");
   });

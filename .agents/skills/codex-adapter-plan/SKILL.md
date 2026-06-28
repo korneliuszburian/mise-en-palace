@@ -23,6 +23,17 @@ Use this skill at the Codex boundary, not inside core domain logic.
 5. Keep adapter output plain, inspectable, and non-mutating.
 6. Keep core package imports one-way: adapter may import core/harness; core must
    not import adapter.
+7. If the work changes skill hints, Codex-facing execution instructions,
+   `AGENTS.md` pointers, or reusable brief guidance, query the retained skill
+   routing pattern first when the catalog is available:
+
+   ```sh
+   pnpm --filter @krn/cli krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json --text progressive-disclosure
+   ```
+
+   Use the result as read-only context. It can guide skill routing and
+   prompt-size decisions, but it does not prove automatic skill selection,
+   product readiness, or that broad skill creation is useful.
 
 ## Output
 
@@ -31,6 +42,8 @@ Use this skill at the Codex boundary, not inside core domain logic.
 - Capability or skill hints.
 - Evidence contract.
 - Non-goals and stop conditions.
+- Retained skill-routing pattern applied or explicitly rejected when the brief
+  changes skill hints or reusable Codex instructions.
 
 ## Forbidden
 

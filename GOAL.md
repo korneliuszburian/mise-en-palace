@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V277 Codex Adapter Skill Routing Readback Hook
+V278 Codex Adapter Skill Routing Dogfood
 ```
 
 Current product loop:
@@ -52,7 +52,7 @@ V245..V263: activation/source/skill guards, product-readiness re-gate, target
 trial gate, normalized substrate, first target repair, replayable baseline,
 active ledger condensation, replayable target repair trial, and pattern intake
 trial plus first pattern enforcement gate and skills pack re-gate complete.
-current task: V277-00 Codex Adapter Skill Routing Readback Hook.
+current task: V278-00 Codex Adapter Skill Routing Dogfood.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

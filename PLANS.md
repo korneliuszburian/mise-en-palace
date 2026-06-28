@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V277 Codex Adapter Skill Routing Readback Hook
-current task: V277-00 Codex Adapter Skill Routing Readback Hook
-latest pushed commit before V276: 58b7da0 test(readmodel): guard knowledge html catalog breadth
-latest CI checked before V276: KRN CI success for 58b7da054cc584550ab883760c5fd43ce67e403a
+active stream: V278 Codex Adapter Skill Routing Dogfood
+current task: V278-00 Codex Adapter Skill Routing Dogfood
+latest pushed commit before V277: f589ba6 docs(skills): retain Codex skill routing pattern
+latest CI checked before V277: KRN CI success for f589ba6b8ee93e3a2ea9f0eec9e8eb5879d7bc1f
 ```
 
 Known current gap:
 
 ```txt
-V277-00 Codex Adapter Skill Routing Readback Hook is the current gap. V276
-retained the Codex skill progressive-disclosure routing pattern. Now wire the
-smallest relevant Codex adapter/skill guidance to query that card before prompt,
-brief, or skill-hint changes.
+V278-00 Codex Adapter Skill Routing Dogfood is the current gap. V277 wired the
+Codex adapter skill to query the retained skill-routing card. Now run a small
+adapter/brief guidance dogfood and record whether that card helped, was neutral,
+or was noise.
 ```
 
 ## 2. Product Thesis
@@ -2168,6 +2168,32 @@ Source-to-decision:
 - Falsifier: repeated KRN workflows still require copying long prompt blocks
   into chat/root plans/`AGENTS.md`, or relevant skills cannot query retained
   brain knowledge before implementation.
+
+## Outcome V277-00 Codex Adapter Skill Routing Readback Hook
+
+Summary:
+- updated `.agents/skills/codex-adapter-plan/SKILL.md` to query the retained
+  `codex-skill-progressive-disclosure-routing` card before skill-hint,
+  `AGENTS.md` pointer, reusable brief, or Codex-facing instruction changes;
+- guarded the readback hook in `packages/harness/src/skillInvariants.test.ts`.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v277-codex-adapter-skill-routing-readback-hook/REPORT.md`.
+
+Source-to-decision:
+- Source: V276 retained pattern card, V270 skill readback hook, and
+  `.agents/skills/codex-adapter-plan/SKILL.md`.
+- Mechanism: Codex adapter/brief work is where skill hints and reusable
+  execution guidance are rendered.
+- KRN implication: adapter work should read the retained skill-routing pattern
+  before changing brief/skill guidance.
+- Decision: add a read-only catalog hook to the Codex adapter skill, not hidden
+  automatic routing.
+- Does not prove: automatic skill selection, better briefs by default, or
+  product readiness.
+- Consumer: V278 Codex Adapter Skill Routing Dogfood.
+- Falsifier: adapter/brief work can change skill hints or reusable instructions
+  without reading or explicitly rejecting the skill-routing card.
 
 ## Condensation Rules
 

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V277 Codex Adapter Skill Routing Readback Hook
-current task: V277-00 Codex Adapter Skill Routing Readback Hook
+active stream: V278 Codex Adapter Skill Routing Dogfood
+current task: V278-00 Codex Adapter Skill Routing Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V277 Codex Adapter Skill Routing Readback Hook
+### V278 Codex Adapter Skill Routing Dogfood
 
 Goal:
 
-Route Codex-facing brief/skill-hint work through the retained
-`codex-skill-progressive-disclosure-routing` card so adapter work can read the
-skill-routing pattern before changing prompts, briefs, or skill hints.
+Run one small Codex adapter/brief guidance dogfood that uses the retained
+`codex-skill-progressive-disclosure-routing` readback hook and records whether
+the pattern helped, was neutral, or was noise.
 
 Current finding:
 
 ```txt
-V276 retained the skill-routing mechanism as cataloged brain knowledge. The
-next gap is making Codex adapter/brief work query that card before changing
-skill hints or Codex-facing execution instructions.
+V277 wired the Codex adapter skill to query the retained skill-routing pattern.
+The next gap is proof-of-use: whether the hook helps a real adapter/brief
+guidance slice.
 ```
 
 Current action:
 
 ```txt
-Execute V277-00: update the smallest relevant Codex adapter skill/runbook guard
-so Codex-facing brief or skill-hint changes query the retained skill-routing
-card. Do not add hidden routing, agent framework, MCP, or broad prompt system.
+Execute V278-00: choose the smallest adapter/brief guidance improvement, query
+the progressive-disclosure card first, make or reject the tiny change, and
+record usefulness. Do not add hidden routing, agent framework, MCP, web UI, or
+broad prompt system.
 ```
 
 Primary consumer:
 
 ```txt
-Codex adapter / skill routing / pattern brain execution loop.
+Codex adapter / skill routing / proof-of-use loop.
 ```
 
 Falsifier:
 
 ```txt
-Future Codex adapter work can change skill hints or execution instructions
-without reading the retained skill-routing card and tests still pass.
+The dogfood cannot show whether the retained skill-routing card was used,
+helped, neutral, or noise during a real adapter/brief guidance change.
 ```
 
 ## Pattern Gate
