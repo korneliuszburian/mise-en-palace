@@ -77,12 +77,12 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V228 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V229 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
-root-plan headroom, source-usefulness readback/producer, preview dogfood, and
-related re-gate slices: complete
-active stream: V229 Persisted Source Usefulness Readback Dogfood
-current task: V229-00 Persisted Source Usefulness Readback Dogfood
+root-plan headroom, source-usefulness readback/producer, preview dogfood,
+persisted readback dogfood, and related re-gate slices: complete
+active stream: V230 Evidence Capture Repo-Root Path Normalization
+current task: V230-00 Evidence Capture Repo-Root Path Normalization
 ```
 
 Evidence already recorded in repo:
@@ -98,7 +98,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V229-00 Persisted Source Usefulness Readback Dogfood.
+V230-00 Evidence Capture Repo-Root Path Normalization.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18245,6 +18245,74 @@ Next active stream:
 
 Next active task:
 - V229-00 Persisted Source Usefulness Readback Dogfood.
+
+## Outcome 2026-06-28 V229 Persisted Source Usefulness Readback Dogfood
+
+Completed task:
+- V229-00 Persisted Source Usefulness Readback Dogfood.
+
+Decision:
+- Prove source usefulness outcome feedback through the DB-backed evidence path.
+- Use the V228 source outcome payload for
+  `total-typescript-unions-narrowing`.
+- Confirm both text and JSON `krn run show` readback.
+
+Artifact:
+- `docs/reviews/controlled-dogfood/2026-06-28-v229-persisted-source-usefulness-readback/REPORT.md`
+
+DB evidence:
+- `pnpm db:ready`: passed.
+- migrations: 14/14.
+- pgvector: available.
+- executionRun: `dc0b4621-236d-4455-8361-752c0e3b8fcc`.
+- evidenceBundle: `0c9a62c1-5051-44fa-855b-ea937eed813b`.
+- reviewAssessment: `e5450ec4-a1a3-4d71-a5dc-2815fb575752`.
+- feedbackDelta: `e4f58b44-efb3-450e-9e22-dd4a182f6fb2`.
+
+Evidence:
+- `krn plan --persist`: passed with DB URL set.
+- `krn evidence capture --persist --source-usefulness ...`: passed.
+- `krn run show --run-id ...`: passed and rendered source usefulness outcome.
+- `krn run show --run-id ... --json`: passed and returned
+  `feedbackDeltas[].sourceUsefulnessOutcomes`.
+- One attempted `--format json` command failed and documented the correct
+  syntax as `--json`.
+
+Source-to-decision:
+- Source: V228 dogfood on `docs/KRN_SOURCES.md#unions-literals-and-narrowing`
+  plus V229 persisted DB readback.
+- Mechanism: source usefulness can now be recorded as feedback metadata and
+  read back as typed run state.
+- KRN implication: source/course/paper intake can now be measured by future
+  runs instead of retained as decorative authority.
+- Decision: treat source usefulness feedback as DB-backed enough for future
+  dogfood, while keeping source truth immutable unless separately reviewed.
+- Does not prove: source selector quality, source truth, broad research quality,
+  or product readiness.
+- Consumer: evidence capture, run readback, pattern-intake reporting, future
+  source-map/standards/skill/eval decisions.
+- Falsifier: a future run cannot read back persisted source usefulness metadata,
+  or source outcomes start mutating SourceClaim truth automatically.
+
+New finding:
+- V229 persisted readback proved source usefulness outcomes, but changed-file
+  readback stored `../../docs/...` package-relative paths when evidence capture
+  ran through `pnpm --filter @krn/cli`.
+
+New task:
+- V230-00 Evidence Capture Repo-Root Path Normalization.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V230 Evidence Capture Repo-Root Path Normalization.
+
+Next active task:
+- V230-00 Evidence Capture Repo-Root Path Normalization.
 
 ## 21. Final Response Format For Codex Runs
 

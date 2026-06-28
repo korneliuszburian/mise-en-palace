@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V229 Persisted Source Usefulness Readback Dogfood
-current task: V229-00 Persisted Source Usefulness Readback Dogfood
+active stream: V230 Evidence Capture Repo-Root Path Normalization
+current task: V230-00 Evidence Capture Repo-Root Path Normalization
 ```
 
 ## Compact Completed Checkpoints
@@ -28,50 +28,49 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V228: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V229: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
-           dogfood guards complete.
+           dogfood plus persisted readback dogfood guards complete.
 ```
 
 ## Active Stream
 
-### V229 Persisted Source Usefulness Readback Dogfood
+### V230 Evidence Capture Repo-Root Path Normalization
 
 Goal:
 
-Run one persisted dogfood that proves source usefulness outcome feedback can be
-captured and read back from the DB-backed run path.
+Normalize evidence changed-file paths to repo-root-relative form when CLI
+commands run from package cwd through `pnpm --filter`.
 
 Current finding:
 
 ```txt
-Preview source usefulness producer works, but persisted source usefulness
-feedback/readback remains unproven for a DB-backed run.
+V229 persisted readback proved source usefulness outcomes, but changed-file
+readback stored `../../docs/...` package-relative paths when evidence capture ran
+through `pnpm --filter @krn/cli`.
 ```
 
 Current action:
 
 ```txt
-Execute V229-00: create or reuse a persisted run, capture source usefulness
-feedback with `krn evidence capture --source-usefulness --persist`, and confirm
-`krn run show` reads back the outcome.
+Execute V230-00: inspect evidence path normalization and add the smallest repair
+so changed files persist/read back as repo-root-relative paths without breaking
+intended/unrelated/unknown classification.
 ```
 
 Primary consumer:
 
 ```txt
-DB-backed source usefulness readback proof for future source-map, standards,
-skill, and eval decisions.
+Evidence capture and run readback reviewability.
 ```
 
 Falsifier:
 
 ```txt
-The slice requires a schema migration/new subsystem, mutates source truth
-automatically, or claims source quality/product readiness from one persisted
-outcome.
+The slice changes target-repo path semantics, hides unrelated files, broadens
+cwd policy, or requires a new path subsystem.
 ```
 
 ## Pattern Gate
