@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V305 Knowledge Cards No-Match Guidance
-current task: V305-00 Knowledge Cards No-Match Guidance
+active stream: V306 Knowledge Cards Tokenized Text Search
+current task: V306-00 Knowledge Cards Tokenized Text Search
 latest pushed commit before V301: 5279e37 docs(knowledge): mark target write authority useful
 latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db60216cf8a0a3d
 ```
@@ -32,10 +32,9 @@ latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db602
 Known current gap:
 
 ```txt
-V305-00 Knowledge Cards No-Match Guidance is the current gap. V304 proved the
-Pattern Application Gate on a bounded source slice and added `--limit` to
-`krn knowledge cards`; the next gap is useful zero-result guidance for pattern
-queries.
+V306-00 Knowledge Cards Tokenized Text Search is the current gap. V305 added
+zero-result guidance; the next gap is brittle whole-query substring matching
+for natural multi-term pattern-gate queries.
 ```
 
 ## 2. Product Thesis
@@ -2939,6 +2938,33 @@ Source-to-decision:
 - Consumer: V305 pattern query operator UX.
 - Falsifier: zero-result pattern queries still leave operators without bounded
   next steps, or limited output hides total result count.
+
+## Outcome V305-00 Knowledge Cards No-Match Guidance
+
+Summary:
+- added `noMatchGuidance` to zero-result `krn knowledge cards` readbacks;
+- rendered no-match guidance in JSON, text, and static HTML preview output;
+- preserved read-only output and proof/non-proof boundaries;
+- added focused CLI tests for no-match guidance.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v305-knowledge-cards-no-match-guidance/REPORT.md`.
+
+Source-to-decision:
+- Source: V304 pattern-gated source slice report and V305 no-match command
+  evidence.
+- Mechanism: zero-result pattern queries need bounded next steps; otherwise
+  operators may falsely conclude no retained pattern applies.
+- KRN implication: knowledge-card readback should guide safe retries and
+  explicit pattern rejection before coding.
+- Decision: keep guidance in read-only CLI/HTML/JSON preview output and open
+  V306 tokenized text search before considering semantic ranking or UI/API/MCP.
+- Does not prove: semantic ranking quality, DB-backed search, UI/API/MCP
+  readiness, automatic pattern selection, or product readiness.
+- Consumer: V306 tokenized text search.
+- Falsifier: natural multi-term pattern-gate queries still miss relevant cards
+  containing individual mechanism terms, or no-match guidance implies ranking
+  quality.
 
 ## Condensation Rules
 

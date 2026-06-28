@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V305 Knowledge Cards No-Match Guidance
+V306 Knowledge Cards Tokenized Text Search
 ```
 
 Current product loop:
@@ -48,10 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V304: target repair, pattern intake/enforcement, skills, knowledge cards,
+V245..V305: target repair, pattern intake/enforcement, skills, knowledge cards,
 usefulness feedback, no-feedback triage, pattern coverage, pattern application
-gate, and pattern-gated source slice complete.
-current task: V305-00 Knowledge Cards No-Match Guidance.
+gate, pattern-gated source slice, and no-match guidance complete.
+current task: V306-00 Knowledge Cards Tokenized Text Search.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

@@ -48,6 +48,7 @@ export interface KnowledgeCardsPreviewResource {
   totalCards: number;
   returnedCards: number;
   limit?: number;
+  noMatchGuidance?: string[];
   cards: BrainKnowledgeReadModel[];
   proof: {
     proves: string[];
@@ -131,6 +132,9 @@ export const runKnowledgeCardsCommand = async (
   const cards = runtime.limit === undefined
     ? matchingCards
     : matchingCards.slice(0, runtime.limit);
+  const noMatchGuidance = matchingCards.length === 0
+    ? buildNoMatchGuidance(runtime.filter)
+    : undefined;
 
   const resource: KnowledgeCardsPreviewResource = {
     kind: "krn.brainKnowledge.cards.preview.v1",
@@ -145,6 +149,7 @@ export const runKnowledgeCardsCommand = async (
     totalCards: matchingCards.length,
     returnedCards: cards.length,
     ...(runtime.limit === undefined ? {} : { limit: runtime.limit }),
+    ...(noMatchGuidance === undefined ? {} : { noMatchGuidance }),
     cards,
     proof: {
       proves: [...proof.proves],
@@ -187,6 +192,7 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
     ...(resource.limit === undefined ? [] : [
       `Limit: ${resource.limit}`
     ]),
+    ...formatNoMatchGuidanceText(resource),
     "",
     ...resource.cards.flatMap(formatCard),
     "Proof:",
@@ -356,7 +362,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
       ${formatSelect("nextActionFilter", "Next action", uniqueValues(resource.cards.map((card) => card.nextAction)))}
       <div id="count" class="count">Results: ${resource.cards.length}</div>
     </section>
-    <section id="empty" class="empty">No cards match the current search.</section>
+    <section id="empty" class="empty">${formatNoMatchGuidanceHtml(resource)}</section>
     <section id="cards" class="cards">
       ${resource.cards.map(formatCardHtml).join("\n")}
     </section>
@@ -409,6 +415,37 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
 </html>
 `;
 };
+
+const buildNoMatchGuidance = (filter: BrainKnowledgeSearchFilter): string[] => [
+  "No cards matched the current filters.",
+  ...(filter.text === undefined ? [] : [
+    "Try a shorter --text query or split the query into one mechanism term.",
+    "If this is a Pattern Application Gate pre-coding query, run one broader query before concluding no retained pattern applies."
+  ]),
+  ...(hasStructuredFilter(filter) ? [
+    "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
+  ] : []),
+  "If no retained pattern applies after retry, record an explicit rejected_or_deferred_patterns reason before coding.",
+  "Zero results do not prove that no relevant pattern exists or that search ranking is good."
+];
+
+const hasStructuredFilter = (filter: BrainKnowledgeSearchFilter): boolean =>
+  filter.kind !== undefined ||
+  filter.status !== undefined ||
+  filter.reviewability !== undefined ||
+  filter.usefulnessOutcome !== undefined;
+
+const formatNoMatchGuidanceText = (resource: KnowledgeCardsPreviewResource): string[] =>
+  resource.noMatchGuidance === undefined ? [] : [
+    "",
+    "No-match guidance:",
+    ...resource.noMatchGuidance.map((item) => `- ${item}`)
+  ];
+
+const formatNoMatchGuidanceHtml = (resource: KnowledgeCardsPreviewResource): string =>
+  resource.noMatchGuidance === undefined
+    ? "No cards match the current search."
+    : `<strong>No cards match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 
 const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `- ${card.id}`,

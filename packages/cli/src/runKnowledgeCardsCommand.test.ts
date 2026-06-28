@@ -550,6 +550,81 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(preview)).toEqual([]);
   });
 
+  it("renders no-match guidance for over-filtered pattern queries", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "helped",
+        text: "knowledge cards pattern gate source slice operator UX TypeScript"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(preview.totalCards).toBe(0);
+    expect(preview.returnedCards).toBe(0);
+    expect(cardIds(preview)).toEqual([]);
+    expect(preview.noMatchGuidance).toContain("No cards matched the current filters.");
+    expect(preview.noMatchGuidance).toContain(
+      "Try a shorter --text query or split the query into one mechanism term."
+    );
+    expect(preview.noMatchGuidance).toContain(
+      "Remove one structured filter such as --kind, --status, --reviewability, or --usefulness-outcome and retry."
+    );
+    expect(preview.noMatchGuidance).toContain(
+      "If no retained pattern applies after retry, record an explicit rejected_or_deferred_patterns reason before coding."
+    );
+    expect(preview.noMatchGuidance).toContain(
+      "Zero results do not prove that no relevant pattern exists or that search ranking is good."
+    );
+    expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(preview.mutation).toBe("none");
+  });
+
+  it("renders text no-match guidance with proof boundaries", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "helped",
+        text: "knowledge cards pattern gate source slice operator UX TypeScript"
+      },
+      format: "text"
+    });
+
+    expect(result.stdout).toContain("Results: 0");
+    expect(result.stdout).toContain("Total filtered results: 0");
+    expect(result.stdout).toContain("No-match guidance:");
+    expect(result.stdout).toContain("Try a shorter --text query");
+    expect(result.stdout).toContain("record an explicit rejected_or_deferred_patterns reason");
+    expect(result.stdout).toContain("does not prove: search ranking quality is good");
+  });
+
+  it("includes no-match guidance in the static html preview", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "helped",
+        text: "knowledge cards pattern gate source slice operator UX TypeScript"
+      },
+      format: "html"
+    });
+
+    expect(result.stdout).toContain("<!doctype html>");
+    expect(result.stdout).toContain("No cards match the current filters.");
+    expect(result.stdout).toContain("Try a shorter --text query");
+    expect(result.stdout).toContain("Zero results do not prove");
+    expect(result.stdout).toContain("Mutation: none");
+  });
+
   it("guards deterministic catalog search results and proof boundaries", async () => {
     const typeScriptResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -633,6 +708,7 @@ type PreviewResourceForTest = {
   totalCards?: number;
   returnedCards?: number;
   limit?: number;
+  noMatchGuidance?: string[];
   cards: {
     id: string;
   }[];
@@ -653,6 +729,7 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
   const totalCards = parsed["totalCards"];
   const returnedCards = parsed["returnedCards"];
   const limit = parsed["limit"];
+  const noMatchGuidance = parsed["noMatchGuidance"];
   const cards = parsed["cards"];
   const proof = parsed["proof"];
 
@@ -678,6 +755,13 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
     throw new Error("knowledge cards JSON output limit must be an integer when present");
   }
 
+  if (
+    noMatchGuidance !== undefined &&
+    (!Array.isArray(noMatchGuidance) || !noMatchGuidance.every((item) => typeof item === "string"))
+  ) {
+    throw new Error("knowledge cards JSON output noMatchGuidance must be string array when present");
+  }
+
   const doesNotProve = proof["doesNotProve"];
 
   if (!Array.isArray(doesNotProve) || !doesNotProve.every((item) => typeof item === "string")) {
@@ -690,6 +774,7 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
     ...(totalCards === undefined ? {} : { totalCards }),
     ...(returnedCards === undefined ? {} : { returnedCards }),
     ...(limit === undefined ? {} : { limit }),
+    ...(noMatchGuidance === undefined ? {} : { noMatchGuidance }),
     cards: cards.map((card) => {
       if (!isRecord(card) || typeof card["id"] !== "string") {
         throw new Error("knowledge cards JSON output cards must include ids");

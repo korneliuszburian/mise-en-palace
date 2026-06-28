@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V305 Knowledge Cards No-Match Guidance
-current task: V305-00 Knowledge Cards No-Match Guidance
+active stream: V306 Knowledge Cards Tokenized Text Search
+current task: V306-00 Knowledge Cards Tokenized Text Search
 ```
 
 ## Compact Completed Checkpoints
@@ -50,43 +50,45 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V305 Knowledge Cards No-Match Guidance
+### V306 Knowledge Cards Tokenized Text Search
 
 Goal:
 
-Make zero-result `krn knowledge cards` output useful for Pattern Application
-Gate operators without adding semantic ranking, UI, API, MCP, or mutation.
+Make `krn knowledge cards --text` less brittle for Pattern Application Gate
+operators by using deterministic tokenized matching instead of whole-query
+substring matching.
 
 Current finding:
 
 ```txt
-V304 used the Pattern Application Gate on a bounded source slice and added
-`--limit` to `krn knowledge cards`. The first pre-coding query was too narrow
-and returned zero cards; useful patterns appeared only after broader follow-up
-queries.
+V305 added no-match guidance for zero-result knowledge-card queries. The deeper
+issue is that `--text` currently treats a multi-word query as one normalized
+substring, so natural pattern-gate queries can miss cards containing many
+individual terms.
 ```
 
 Current action:
 
 ```txt
-Execute V305-00: add clear no-match guidance when `krn knowledge cards` returns
-zero cards, keeping the command read-only and proof-bounded. The guidance should
-help operators broaden filters or record an explicit rejection before coding.
-Do not add semantic ranking, API/MCP/dashboard, source crawler, target writes,
-or Memory Core mutation.
+Execute V306-00: change text matching to deterministic tokenized matching with
+tests and proof boundaries. Preserve read-only output, `totalCards`, no-match
+guidance, and explicit "does not prove search ranking quality" caveats. Do not
+add semantic ranking, embeddings, API/MCP/dashboard, source crawler, target
+writes, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-pattern application gate operator UX.
+pattern application gate operator UX and knowledge-card readback.
 ```
 
 Falsifier:
 
 ```txt
-Zero-result pattern queries still leave operators without bounded next steps, or
-the command suggests stronger search/ranking guarantees than it actually has.
+Multi-term pattern-gate queries still miss relevant cards that contain the
+individual mechanism terms, or the command starts implying semantic ranking
+quality instead of deterministic local filtering.
 ```
 
 ## Pattern Gate
