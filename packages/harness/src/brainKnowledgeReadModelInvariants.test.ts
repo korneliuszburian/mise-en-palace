@@ -139,6 +139,37 @@ describe("Brain knowledge read model invariants", () => {
       "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
     );
   });
+
+  it("keeps the local static web preview artifact command repeatable and read-only", () => {
+    const packageJson = readJsonRootFile("package.json");
+
+    if (!isRecord(packageJson)) {
+      throw new Error("Root package.json must be an object.");
+    }
+
+    const scripts = packageJson["scripts"];
+
+    if (!isRecord(scripts)) {
+      throw new Error("Root package.json scripts must be an object.");
+    }
+
+    const previewScript = scripts["brain:knowledge:preview"];
+
+    expect(typeof previewScript).toBe("string");
+
+    if (typeof previewScript !== "string") {
+      return;
+    }
+
+    expect(previewScript).toContain("knowledge cards");
+    expect(previewScript).toContain("--catalog-file docs/brain-knowledge/catalog.json");
+    expect(previewScript).toContain("--html");
+    expect(previewScript).toContain(".local-lab/brain-knowledge-preview.html");
+    expect(previewScript).not.toContain(" db ");
+    expect(previewScript).not.toContain("dashboard");
+    expect(previewScript).not.toContain("mcp");
+    expect(previewScript).not.toContain("--persist");
+  });
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {

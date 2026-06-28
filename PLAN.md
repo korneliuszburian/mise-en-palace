@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V282 Brain Knowledge Static Web Preview Artifact
-current task: V282-00 Brain Knowledge Static Web Preview Artifact
+active stream: V283 Brain Knowledge Static Preview Usefulness Dogfood
+current task: V283-00 Brain Knowledge Static Preview Usefulness Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -50,40 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V282 Brain Knowledge Static Web Preview Artifact
+### V283 Brain Knowledge Static Preview Usefulness Dogfood
 
 Goal:
 
-Implement or guard the first static brain knowledge web preview artifact path
-from `docs/brain-knowledge/catalog.json`.
+Prove whether the generated static brain knowledge preview reduces operator
+rereads for real search questions before adding any wider UI surface.
 
 Current finding:
 
 ```txt
-V281 accepted static/read-only web search over BrainKnowledgeReadModel cards as
-the next valid UI/search step and rejected dashboard/API/MCP for now.
+V282 added and guarded `pnpm brain:knowledge:preview`, which generates
+`.local-lab/brain-knowledge-preview.html` from `docs/brain-knowledge/catalog.json`.
 ```
 
 Current action:
 
 ```txt
-Execute V282-00: add or guard a local static preview artifact command/path that
-generates brain knowledge HTML from `docs/brain-knowledge/catalog.json` into
-`.local-lab/`. Preserve proof boundaries and read-only behavior. Do not add
-API, MCP, dashboard package, DB search service, or mutation.
+Execute V283-00: run a bounded usefulness dogfood over the static preview path.
+Use the generated artifact or the same catalog-backed preview to answer concrete
+operator search questions, record whether it reduces rereads, and decide the
+smallest next UI/search step. Do not add API, MCP, dashboard package, DB search
+service, or mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge static web preview loop.
+brain knowledge operator search loop.
 ```
 
 Falsifier:
 
 ```txt
-Operators cannot regenerate a local web-search preview artifact from the
-catalog without command tribal knowledge, or the artifact path hides proof
+The static preview artifact does not help operators find retained patterns or
+proof boundaries faster than CLI/grep/readme rereads, or it hides proof
 boundaries.
 ```
 

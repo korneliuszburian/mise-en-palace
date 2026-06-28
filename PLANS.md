@@ -23,19 +23,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V282 Brain Knowledge Static Web Preview Artifact
-current task: V282-00 Brain Knowledge Static Web Preview Artifact
-latest pushed commit before V281: 87f4616 docs(review): regate pattern brain readiness
-latest CI checked before V281: KRN CI success for 87f46165a25ee2a51ec1795bf4ace0eade259b1e
+active stream: V283 Brain Knowledge Static Preview Usefulness Dogfood
+current task: V283-00 Brain Knowledge Static Preview Usefulness Dogfood
+latest pushed commit before V282: 3a56ef8 docs(ui): gate brain knowledge web search
+latest CI checked before V282: KRN CI success for 3a56ef8594cad37d8f125bfe0e5f467b2697db6a
 ```
 
 Known current gap:
 
 ```txt
-V282-00 Brain Knowledge Static Web Preview Artifact is the current gap. V281
-accepted static/read-only web search over `BrainKnowledgeReadModel` cards and
-rejected dashboard/API/MCP for now. Now make the local static artifact path
-repeatable and guarded.
+V283-00 Brain Knowledge Static Preview Usefulness Dogfood is the current gap.
+V282 made `pnpm brain:knowledge:preview` generate
+`.local-lab/brain-knowledge-preview.html` from the explicit catalog. Now prove
+whether the static preview actually reduces operator rereads before adding any
+wider UI/search surface.
 ```
 
 ## 2. Product Thesis
@@ -2299,6 +2300,36 @@ Source-to-decision:
 - Consumer: V282 Brain Knowledge Static Web Preview Artifact.
 - Falsifier: static artifact cannot reduce rereads or review burden in dogfood,
   while operators repeatedly need live DB/API-backed interaction.
+
+## Outcome V282-00 Brain Knowledge Static Web Preview Artifact
+
+Summary:
+- added root script `pnpm brain:knowledge:preview`;
+- the script generates `.local-lab/brain-knowledge-preview.html` from
+  `docs/brain-knowledge/catalog.json`;
+- guarded the script in `brainKnowledgeReadModelInvariants` so it remains
+  catalog-backed, HTML-producing, local, non-persistent, and not a
+  dashboard/API/MCP surface;
+- generated artifact readback confirmed non-empty HTML with all four current
+  retained pattern cards plus `Mutation: none` and proof boundaries.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v282-brain-knowledge-static-web-preview-artifact/REPORT.md`.
+
+Source-to-decision:
+- Source: ADR-0028, `BrainKnowledgeReadModel`, V273 HTML preview, V275 catalog
+  breadth guard, and V281 web-search readiness gate.
+- Mechanism: operator-facing brain knowledge search needs a repeatable
+  read-only artifact path before API, MCP, dashboard, or DB-backed UI work.
+- KRN implication: expose the existing `knowledge cards --html` renderer as a
+  root command that generates a local artifact from the explicit catalog.
+- Decision: open V283 to test static preview usefulness before wider UI/search
+  surfaces.
+- Does not prove: product readiness, search usefulness in a browser session,
+  search ranking quality, knowledge completeness, or need for API/MCP/dashboard.
+- Consumer: V283 Brain Knowledge Static Preview Usefulness Dogfood.
+- Falsifier: the static preview does not help operators answer real pattern or
+  proof-boundary questions faster than CLI/grep/rereads.
 
 ## Condensation Rules
 

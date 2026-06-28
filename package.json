@@ -22,6 +22,7 @@
     "eval:brain-battle:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate activePlanInvariants contextHygieneInvariants sourceMapInvariants skillInvariants patternChainInvariants brainBattleMatrixInvariants typescriptBoundaryInvariants && pnpm --filter @krn/cli test -- runRunShowCommand runCli && pnpm --filter @krn/codex-adapter test -- codexBriefGoldenBehavior",
     "eval:promptfoo:smoke": "mkdir -p .local-lab/promptfoo && promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml --output .local-lab/promptfoo/krn-golden-smoke-results.jsonl",
     "krn": "pnpm --filter @krn/cli krn",
+    "brain:knowledge:preview": "mkdir -p .local-lab && cd packages/cli && pnpm exec tsx src/index.ts knowledge cards --catalog-file docs/brain-knowledge/catalog.json --html > ../../.local-lab/brain-knowledge-preview.html",
     "alpha:verify": "pnpm typecheck && pnpm test && pnpm krn doctor",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
     "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"
