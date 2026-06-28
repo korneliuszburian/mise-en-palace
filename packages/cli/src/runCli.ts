@@ -22,6 +22,7 @@ import {
 } from "./parseMemoryArgs.js";
 import {
   formatSourceClaimAddUsage,
+  formatSourceArtifactPreviewUsage,
   formatSourceClaimRejectUsage,
   formatSourceDecisionLinkUsage
 } from "./parseSourceArgs.js";
@@ -79,6 +80,9 @@ import {
 import {
   runSourceClaimAddCommand
 } from "./runSourceClaimAddCommand.js";
+import {
+  runSourceArtifactPreviewCommand
+} from "./runSourceArtifactPreviewCommand.js";
 import {
   runSourceClaimRejectCommand
 } from "./runSourceClaimRejectCommand.js";
@@ -187,6 +191,14 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatSourceClaimAddUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "sourceArtifactPreviewHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatSourceArtifactPreviewUsage(),
       stderr: ""
     };
   }
@@ -413,6 +425,29 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown source claim error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: formatCliError(message)
+      };
+    }
+  }
+
+  if (parsed.command.kind === "sourceArtifactPreview") {
+    try {
+      const result = await runSourceArtifactPreviewCommand({
+        cwd: runtime.cwd ?? process.cwd(),
+        command: parsed.command
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown source artifact preview error";
 
       return {
         exitCode: 1,

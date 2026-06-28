@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V316 Ingest v0 Local Source Artifact Preview
+V317 Ingest v0 Source Candidate Bridge
 ```
 
 Current state:
@@ -27,14 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V316-00 Ingest v0 Local Source Artifact Preview.
+current task: V317-00 Ingest v0 Source Candidate Bridge.
 ```
 
 Current task:
 
 ```txt
-Inspect or implement the smallest local source artifact preview path without
-source crawler, DB schema, dashboard, API/MCP, worker, or broad eval platform.
+Use the local source artifact preview output to implement or scope the smallest
+reviewable SourceClaim/SearchDocument candidate bridge without crawler, DB
+schema, dashboard, API/MCP, worker, or broad eval platform.
 ```
 
 ## Remaining Work
@@ -48,8 +49,8 @@ to preserve are:
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
-4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
-   or search document with temporal and permission metadata.
+4. Ingest v0: local artifact preview exists; next bridge preview output into
+   reviewable claim/search-document candidates before persistence/runtime work.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
@@ -122,8 +123,4 @@ After auto-compact, resume, context loss, or a new `/goal` continuation:
    before starting unrelated work.
 6. If the current slice is complete, synthesize next tasks from evidence, update
    compact active state, and continue.
-7. Research or pattern input must still use:
-
-   ```txt
-   source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
-   ```
+7. Research or pattern input must still use `source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier`.

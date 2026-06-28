@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V316 Ingest v0 Local Source Artifact Preview
-current task: V316-00 Ingest v0 Local Source Artifact Preview
+active stream: V317 Ingest v0 Source Candidate Bridge
+current task: V317-00 Ingest v0 Source Candidate Bridge
 ```
 
 ## Compact Completed Checkpoints
@@ -47,28 +47,30 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V316 Ingest v0 Local Source Artifact Preview
+### V317 Ingest v0 Source Candidate Bridge
 
 Goal:
 
-Start Ingest v0 with the smallest local source artifact preview.
+Bridge the local source artifact preview into reviewable source/search
+candidate output without persistence or runtime expansion.
 
 Current finding:
 
 ```txt
-V315 proved compact root state can recover the main product gaps without
-historical ledgers. The highest-ROI next product-facing gap is Ingest v0:
-source artifact -> hash -> chunk -> source range -> claim/search document.
+V316 added `krn source artifact preview --file <path>` as a read-only local
+artifact -> hash -> chunk/source-range preview path. The next Ingest v0 gap is
+turning that preview into reviewable SourceClaim/SearchDocument candidate output
+without crawler, DB schema, embeddings, graph runtime, or Memory Core mutation.
 ```
 
 Current action:
 
 ```txt
-Execute V316-00: inspect current source/search substrate and implement or record
-the smallest local source artifact -> hash -> chunk/source-range preview path.
-Do not build a source crawler, DB schema migration, runtime platform,
-dashboard, API/MCP, worker daemon, broad eval platform, embeddings, ranking, or
-Memory Core mutation.
+Execute V317-00: inspect current source claim/search document candidate
+surfaces and implement or record the smallest preview -> candidate bridge.
+Do not build persistence, source crawler, schema migration, runtime platform,
+dashboard, API/MCP, worker daemon, broad eval platform, embeddings, ranking,
+graph runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -80,8 +82,8 @@ future source grounding, graph brain, and product-facing knowledge ingestion.
 Falsifier:
 
 ```txt
-V316 cannot produce a bounded local artifact preview or a precise missing
-substrate finding without broad schema/runtime work.
+V317 cannot produce reviewable source/search candidates from local artifact
+preview output without broad schema/runtime work.
 ```
 
 ## Pattern Gate

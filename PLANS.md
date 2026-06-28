@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V316 Ingest v0 Local Source Artifact Preview
-current task: V316-00 Ingest v0 Local Source Artifact Preview
+active stream: V317 Ingest v0 Source Candidate Bridge
+current task: V317-00 Ingest v0 Source Candidate Bridge
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,9 +31,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V316-00 Ingest v0 Local Source Artifact Preview is the current gap. BQ-015 is
-executed and covered; BQ-023, BQ-024, BQ-025, and BQ-028 are executed. Compact
-root readback identified Ingest v0 as the next highest-ROI product-facing gap.
+V317-00 Ingest v0 Source Candidate Bridge is the current gap. V316 implemented
+local source artifact preview; now bridge preview output into reviewable
+SourceClaim/SearchDocument candidates without crawler, DB schema, embeddings,
+graph runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -82,8 +83,8 @@ green test != product value
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use that result to start Ingest v0.
-4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
-   -> embedding/search document with permission and temporal metadata.
+4. Ingest v0: local artifact preview exists; next bridge preview output into
+   reviewable claim/search-document candidates before persistence/runtime work.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
@@ -750,7 +751,7 @@ state and selected reports without historical ledger rereads.
 
 ### V316-00 — Ingest v0 Local Source Artifact Preview
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -903,6 +904,171 @@ V316 cannot produce a local artifact preview or precise missing-substrate
 finding without broad schema/runtime work.
 ```
 
+### V317-00 — Ingest v0 Source Candidate Bridge
+
+Status: active.
+
+Goal:
+
+```txt
+Inspect source claim/search document candidate surfaces and implement or record
+the smallest local artifact preview -> reviewable candidate bridge.
+```
+
+Product rationale:
+
+```txt
+V316 made source files previewable as hash/chunk/source-range evidence. The next
+brain step is making that evidence reviewable as claim/search-document candidate
+output before persistence, embeddings, graph retrieval, or crawler work.
+```
+
+Architectural rationale:
+
+```txt
+Keep Ingest v0 candidate-first and preview-only. Do not mutate SourceGraph,
+Memory Core, DB schema, embeddings, graph runtime, API/MCP, dashboard, worker,
+or source crawler.
+```
+
+Evidence source:
+
+```txt
+V316 report, local source artifact preview output, existing SourceClaim and
+SearchDocument schemas, current CLI source surfaces.
+```
+
+Official/external sources:
+
+```txt
+`pattern:evidence-proof-non-proof-boundary`, `pattern:source-to-decision-retention-gate`,
+and `pattern:ts-boundary-unknown-first-result-state`.
+```
+
+Inputs required:
+
+```txt
+GOAL.md
+PLAN.md
+PLANS.md
+docs/reviews/controlled-dogfood/2026-06-28-v316-ingest-v0-local-source-artifact-preview/REPORT.md
+focused source/search CLI/schema owner files discovered by targeted search
+```
+
+Files likely touched:
+
+```txt
+focused CLI/core/schema source/tests if a small owner surface supports it
+docs/reviews/controlled-dogfood/2026-06-28-v317-ingest-v0-source-candidate-bridge/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+```
+
+Allowed writes:
+
+```txt
+focused preview/candidate source/tests and bounded docs/root updates.
+```
+
+Forbidden writes:
+
+```txt
+source crawler, DB schema migration, persistence requirement, embeddings/ranking
+runtime, graph runtime, dashboard, API/MCP, worker daemon, Memory Core mutation,
+target repo writes, broad eval platform, paid/proprietary course ingestion.
+```
+
+Output requirements:
+
+```txt
+record inspected owner files, candidate bridge behavior if implemented,
+proof/non-proof boundaries, mutation boundary, and next ingest action.
+```
+
+Definition of Done:
+
+- candidate/search owner surface is inspected with targeted reads;
+- either a smallest preview -> candidate bridge is implemented with focused
+  tests, or a precise missing-substrate finding is recorded;
+- no forbidden runtime/platform work is added;
+- report states proof and does-not-prove boundaries.
+
+Verification commands:
+
+```sh
+git diff --check
+```
+
+If package source changes:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+```txt
+V317 has either working reviewable source/search candidate output from preview
+evidence or a precise bounded missing-substrate finding.
+```
+
+Risk:
+
+```txt
+turning a candidate bridge into crawler, persistence, schema, or ranking work.
+```
+
+Rollback:
+
+```txt
+Revert focused source/docs changes; no persistent schema/runtime changes should
+exist.
+```
+
+Condensation expectation:
+
+```txt
+Keep root state compact; put detailed evidence in the V317 report.
+```
+
+Next-task synthesis rule:
+
+```txt
+If candidate bridge exists, decide whether next Ingest v0 step is persistence,
+search document readback, or graph/entity preview. If not, open the smallest
+missing owner-surface repair.
+```
+
+Pattern surface:
+
+```txt
+CLI/readback behavior, TypeScript boundary, source-to-decision candidate lane.
+```
+
+Primary consumer:
+
+```txt
+future source grounding, graph brain, pattern intake, and product-facing
+knowledge ingestion.
+```
+
+Does not prove:
+
+```txt
+source truth, DB persistence, crawler readiness, embeddings, graph retrieval,
+or product readiness.
+```
+
+Falsifier:
+
+```txt
+V317 cannot bridge preview evidence into reviewable candidate output without
+broad schema/runtime work.
+```
+
 ## Pattern Gate
 
 For every non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
@@ -991,7 +1157,8 @@ Falsifier:
 - [x] V313 Executable Brain-QA Case BQ-024
 - [x] V314 Executable Brain-QA Case BQ-025
 - [x] V315 Executable Brain-QA Case BQ-028
-- [ ] V316 Ingest v0 Local Source Artifact Preview
+- [x] V316 Ingest v0 Local Source Artifact Preview
+- [ ] V317 Ingest v0 Source Candidate Bridge
 
 ## Recent Evidence Pointers
 
@@ -1015,6 +1182,30 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v314-executable-brain-qa-bq-025/REPORT.md`
 - V315 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v315-executable-brain-qa-bq-028/REPORT.md`
+- V316 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v316-ingest-v0-local-source-artifact-preview/REPORT.md`
+
+## Outcome V316 Ingest v0 Local Source Artifact Preview
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V315 report, compact root state, existing `krn source claim add`
+  preview behavior, and source/search owner file inspection.
+- Mechanism: one explicit local source file can be rendered as hash,
+  line-based chunk preview, and source ranges without persistence or runtime
+  platform work.
+- KRN implication: Ingest v0 can begin with reviewable local source artifact
+  evidence before source crawler, DB schema, embeddings, graph runtime, or
+  Memory Core mutation.
+- Decision: add `krn source artifact preview --file <path>` as a read-only
+  local preview path.
+- Does not prove: source truth, claim correctness, DB persistence, crawler
+  readiness, embeddings, graph retrieval, or product readiness.
+- Consumer: V317 Ingest v0 Source Candidate Bridge.
+- Falsifier: preview output cannot feed a reviewable candidate bridge without
+  broad schema/runtime work.
 
 ## Outcome V315 Executable Brain-QA Case BQ-028
 

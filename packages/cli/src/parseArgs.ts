@@ -271,6 +271,15 @@ export type CliCommand =
       kind: "sourceClaimAddHelp";
     }
   | {
+      kind: "sourceArtifactPreviewHelp";
+    }
+  | {
+      kind: "sourceArtifactPreview";
+      file?: string;
+      chunkLines?: number;
+      limitChunks?: number;
+    }
+  | {
       kind: "sourceClaimAdd";
       persist: boolean;
       title?: string;
@@ -358,6 +367,7 @@ const usage = [
   "",
   "Governed admin commands:",
   "krn source claim add --title \"...\" --claim \"...\" --mechanism \"...\" --does-not-prove \"...\" --falsifier \"...\" --support-type implementation-boundary --trust-tier project-decision --consumer \"...\" [--persist]",
+  "krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",
   "krn source claim reject --title \"...\" --rejected-because decorative [--attempted-claim \"...\"|--reason \"...\"] [--persist]",
   "krn source decision link --source-claim-id <id> --target-type harness_run --target-id <id> --support-type implementation-boundary --confidence medium --notes \"...\" [--persist]",
   "krn memory candidate add --run-id <id> --kind <kind> --content \"...\" --confidence <low|medium|high|0-100> --application-guidance \"...\" [--source-claim-id <id>|--source-lineage <id>] [--persist]",

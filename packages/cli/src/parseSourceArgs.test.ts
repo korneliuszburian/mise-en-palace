@@ -5,12 +5,31 @@ import {
 } from "vitest";
 
 import {
-  formatSourceClaimAddUsage,
+  formatSourceArtifactPreviewUsage,
   formatSourceClaimRejectUsage,
   parseSourceArgs
 } from "./parseSourceArgs.js";
 
 describe("parseSourceArgs", () => {
+  it("parses source artifact preview options", () => {
+    expect(parseSourceArgs([
+      "artifact",
+      "preview",
+      "--file",
+      " docs/KRN_KERNEL.md ",
+      "--chunk-lines",
+      "12",
+      "--limit-chunks=2"
+    ])).toEqual({
+      command: {
+        kind: "sourceArtifactPreview",
+        file: "docs/KRN_KERNEL.md",
+        chunkLines: 12,
+        limitChunks: 2
+      }
+    });
+  });
+
   it("parses source claim add options and metadata", () => {
     expect(parseSourceArgs([
       "claim",
@@ -161,11 +180,22 @@ describe("parseSourceArgs", () => {
         kind: "sourceDecisionLinkHelp"
       }
     });
+    expect(parseSourceArgs(["artifact", "preview", "--help"])).toEqual({
+      command: {
+        kind: "sourceArtifactPreviewHelp"
+      }
+    });
+    expect(parseSourceArgs(["artifact", "preview", "--file", ""])).toEqual({
+      error: "--file requires a non-empty path"
+    });
+    expect(parseSourceArgs(["artifact", "preview", "--file", "README.md", "--chunk-lines", "0"])).toEqual({
+      error: "--chunk-lines must be a positive integer"
+    });
     expect(parseSourceArgs(["claim", "add", "--metadata", "not-a-pair"])).toEqual({
       error: "--metadata requires key=value"
     });
     expect(parseSourceArgs(["claim", "unknown"])).toEqual({
-      error: formatSourceClaimAddUsage()
+      error: formatSourceArtifactPreviewUsage()
     });
     expect(parseSourceArgs(["claim", "reject", "--unknown"])).toEqual({
       error: formatSourceClaimRejectUsage()

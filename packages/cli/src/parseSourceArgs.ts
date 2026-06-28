@@ -31,6 +31,20 @@ export const formatSourceClaimAddUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
+export const formatSourceArtifactPreviewUsage = (): string =>
+  [
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>]",
+    "",
+    "Required:",
+    "--file",
+    "",
+    "Optional:",
+    "--chunk-lines <positive-integer>",
+    "--limit-chunks <positive-integer>",
+    "",
+    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. It does not persist, crawl, embed, rank, or mutate Memory Core."
+  ].join("\n") + "\n";
+
 export const formatSourceDecisionLinkUsage = (): string =>
   [
     "Usage: krn source decision link --source-claim-id <id> --target-type <type> --target-id <id> --support-type <type> --confidence <low|medium|high> --notes \"...\" [--persist]",
@@ -103,6 +117,124 @@ const parseMetadataOption = (
       value: entry.value
     },
     nextIndex: valueResult.nextIndex
+  };
+};
+
+const parsePositiveIntegerOption = (
+  rest: readonly string[],
+  index: number,
+  option: string,
+  fallbackUsage: string
+): {
+  value?: number;
+  error?: string;
+  nextIndex: number;
+} => {
+  const valueResult = optionValue(rest, index, option);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? fallbackUsage,
+      nextIndex: index
+    };
+  }
+
+  const parsed = Number.parseInt(valueResult.value, 10);
+
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed.toString() !== valueResult.value.trim()) {
+    return {
+      error: `${option} must be a positive integer`,
+      nextIndex: valueResult.nextIndex
+    };
+  }
+
+  return {
+    value: parsed,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "sourceArtifactPreviewHelp"
+      }
+    };
+  }
+
+  const sourceCommand: Extract<CliCommand, { kind: "sourceArtifactPreview" }> = {
+    kind: "sourceArtifactPreview"
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const arg = rest[index];
+
+    if (arg === "--help" || arg === "-h") {
+      return {
+        command: {
+          kind: "sourceArtifactPreviewHelp"
+        }
+      };
+    }
+
+    if (arg === "--file" || arg?.startsWith("--file=") === true) {
+      const valueResult = optionValue(rest, index, "--file");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+        };
+      }
+
+      const file = valueResult.value.trim();
+
+      if (file.length === 0) {
+        return {
+          error: "--file requires a non-empty path"
+        };
+      }
+
+      sourceCommand.file = file;
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--chunk-lines" || arg?.startsWith("--chunk-lines=") === true) {
+      const parsed = parsePositiveIntegerOption(rest, index, "--chunk-lines", formatSourceArtifactPreviewUsage());
+
+      if (parsed.error !== undefined || parsed.value === undefined) {
+        return {
+          error: parsed.error ?? formatSourceArtifactPreviewUsage()
+        };
+      }
+
+      sourceCommand.chunkLines = parsed.value;
+      index = parsed.nextIndex;
+      continue;
+    }
+
+    if (arg === "--limit-chunks" || arg?.startsWith("--limit-chunks=") === true) {
+      const parsed = parsePositiveIntegerOption(rest, index, "--limit-chunks", formatSourceArtifactPreviewUsage());
+
+      if (parsed.error !== undefined || parsed.value === undefined) {
+        return {
+          error: parsed.error ?? formatSourceArtifactPreviewUsage()
+        };
+      }
+
+      sourceCommand.limitChunks = parsed.value;
+      index = parsed.nextIndex;
+      continue;
+    }
+
+    return {
+      error: formatSourceArtifactPreviewUsage()
+    };
+  }
+
+  return {
+    command: sourceCommand
   };
 };
 
@@ -363,6 +495,10 @@ const parseSourceDecisionLinkArgs = (rest: readonly string[]): ParseArgsResult =
 };
 
 export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest[0] === "artifact" && rest[1] === "preview") {
+    return parseSourceArtifactPreviewArgs(rest);
+  }
+
   if (rest[0] === "claim" && rest[1] === "add") {
     return parseSourceClaimAddArgs(rest);
   }
@@ -376,6 +512,6 @@ export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
   }
 
   return {
-    error: formatSourceClaimAddUsage()
+    error: formatSourceArtifactPreviewUsage()
   };
 };
