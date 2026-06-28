@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V275 Brain Knowledge HTML Catalog Breadth Guard
-current task: V275-00 Brain Knowledge HTML Catalog Breadth Guard
+active stream: V276 Codex Skill Progressive-Disclosure Pattern Card
+current task: V276-00 Codex Skill Progressive-Disclosure Pattern Card
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V275 Brain Knowledge HTML Catalog Breadth Guard
+### V276 Codex Skill Progressive-Disclosure Pattern Card
 
 Goal:
 
-Guard that the self-contained HTML preview renders the full current brain
-knowledge catalog, including the new evidence proof-boundary card, with
-source/evidence/falsifier/does-not-prove fields visible.
+Retain the Codex skill progressive-disclosure routing pattern as a brain
+knowledge card so future skill work has a falsifiable rule for loading narrow
+execution guidance and querying retained patterns before implementation.
 
 Current finding:
 
 ```txt
-V274 added the third retained pattern. The next risk is UI/readback drift: HTML
-or catalog tests could still miss new cards or proof-boundary fields.
+V270 connected skills to brain knowledge readback and V275 guarded the full
+HTML catalog. The next gap is making the skill-routing mechanism itself a
+retained pattern instead of only scattered skill/runbook prose.
 ```
 
 Current action:
 
 ```txt
-Execute V275-00: add a focused guard that generated HTML over
-`docs/brain-knowledge/catalog.json` includes all current pattern cards and keeps
-proof/non-proof boundaries visible. Do not add ranking, API/MCP, DB search, or
-UI polish.
+Execute V276-00: add a retained pattern decision/card for Codex skill
+progressive-disclosure routing, add it to the brain knowledge catalog, and guard
+readback. Do not add a skill zoo, agent framework, MCP server, or hidden
+execution hook.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / operator readback loop.
+Codex skill routing / pattern brain execution loop.
 ```
 
 Falsifier:
 
 ```txt
-V275 becomes visual polish, hides proof boundaries, or checks only one card
-while the catalog contains multiple retained patterns.
+Future skill work can bypass retained pattern readback or load broad unrelated
+guidance while tests still pass.
 ```
 
 ## Pattern Gate

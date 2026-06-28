@@ -168,6 +168,32 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("search.addEventListener");
   });
 
+  it("renders every catalog card in html with proof-boundary fields", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {},
+      format: "html"
+    });
+
+    expect(result.stdout).toContain("pattern:evidence-proof-non-proof-boundary");
+    expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Evidence proof and non-proof boundary");
+    expect(result.stdout).toContain("Source-to-decision retention gate");
+    expect(result.stdout).toContain("Unknown-first external boundary with explicit result state");
+    expect(result.stdout).toContain("Source refs");
+    expect(result.stdout).toContain("Evidence refs");
+    expect(result.stdout).toContain("Falsifier");
+    expect(result.stdout).toContain("Does not prove");
+    expect(result.stdout).toContain("Proof Boundaries");
+    expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("does not prove:");
+    expect(result.stdout).toContain("This card does not prove command truth");
+  });
+
   it("resolves root-relative catalog files from a package cwd", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: cliPackageRoot,

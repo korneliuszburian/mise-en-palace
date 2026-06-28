@@ -23,18 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V275 Brain Knowledge HTML Catalog Breadth Guard
-current task: V275-00 Brain Knowledge HTML Catalog Breadth Guard
-latest pushed commit before V274: 9f0323b feat(cli): render knowledge cards html preview
-latest CI checked before V274: KRN CI success for 9f0323b7e0555af2af0b6236b45d171fb3b3cca2
+active stream: V276 Codex Skill Progressive-Disclosure Pattern Card
+current task: V276-00 Codex Skill Progressive-Disclosure Pattern Card
+latest pushed commit before V275: e1f4244 docs(readmodel): add evidence proof boundary card
+latest CI checked before V275: KRN CI success for e1f4244fc5ea3834ee25fd9a389c0b73daf1e095
 ```
 
 Known current gap:
 
 ```txt
-V275-00 Brain Knowledge HTML Catalog Breadth Guard is the current gap. V274
-added the third retained pattern; now guard that HTML/catalog readback cannot
-silently omit the new card or its proof-boundary fields.
+V276-00 Codex Skill Progressive-Disclosure Pattern Card is the current gap.
+V275 guarded full-catalog HTML readback. Now retain the skill-routing mechanism
+itself as cataloged brain knowledge so Codex work can be routed through narrow
+skills plus retained-pattern readback.
 ```
 
 ## 2. Product Thesis
@@ -2109,6 +2110,33 @@ Source-to-decision:
 - Consumer: V264 Brain Knowledge CLI Readback Preview.
 - Falsifier: future card search must parse raw JSON/reports ad hoc because the
   helper cannot load or filter the fixture.
+
+## Outcome V275-00 Brain Knowledge HTML Catalog Breadth Guard
+
+Summary:
+- added a focused `runKnowledgeCardsCommand` HTML guard over the full
+  `docs/brain-knowledge/catalog.json`;
+- protected all current retained pattern cards from disappearing from HTML
+  readback;
+- guarded visible source refs, evidence refs, falsifier, does-not-prove,
+  mutation boundary, and proof boundaries.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v275-brain-knowledge-html-catalog-breadth-guard/REPORT.md`.
+
+Source-to-decision:
+- Source: V273 HTML preview, V274 evidence proof-boundary card, current catalog.
+- Mechanism: a pattern brain needs card readback that renders the full retained
+  catalog and keeps proof/non-proof boundaries visible.
+- KRN implication: UI/search progress should be guarded by catalog breadth and
+  proof-boundary tests before adding API/MCP/web surfaces.
+- Decision: add a focused HTML catalog breadth guard and open V276 to retain the
+  Codex skill-routing mechanism as a cataloged pattern.
+- Does not prove: DB-backed card production, ranking quality, web app readiness,
+  completeness of retained patterns, or product readiness.
+- Consumer: V276 Codex Skill Progressive-Disclosure Pattern Card.
+- Falsifier: a future HTML/readback change can omit a retained pattern or hide
+  proof boundaries while tests still pass.
 
 ## Condensation Rules
 
