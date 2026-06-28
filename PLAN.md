@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V313 Executable Brain-QA Case BQ-024
-current task: V313-00 Executable Brain-QA Case BQ-024
+active stream: V314 Executable Brain-QA Case BQ-025
+current task: V314-00 Executable Brain-QA Case BQ-025
 ```
 
 ## Compact Completed Checkpoints
@@ -47,27 +47,26 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V313 Executable Brain-QA Case BQ-024
+### V314 Executable Brain-QA Case BQ-025
 
 Goal:
 
-Execute dirty-context changed-file classification readback for BQ-024.
+Execute report proof/non-proof boundary readback for BQ-025.
 
 Current finding:
 
 ```txt
-V312 proved command provenance readback through existing evidence capture
-surfaces. The next adjacent evidence/review case should exercise intended,
-unrelated, and unknown changed-file classification.
+V313 proved dirty-context classification readback through existing evidence
+capture golden behavior. The next adjacent evidence/review case should inspect
+whether reports keep proof and non-proof boundaries explicit.
 ```
 
 Current action:
 
 ```txt
-Execute V313-00: run or inspect the smallest existing dirty-context
-classification readback path for BQ-024. Do not add DB schema, runtime
-platform, dashboard, API/MCP, source crawler, embeddings, ranking, or Memory
-Core mutation.
+Execute V314-00: inspect the smallest current report/readback path for BQ-025.
+Do not add DB schema, runtime platform, dashboard, API/MCP, source crawler,
+embeddings, ranking, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -79,8 +78,8 @@ future brain-QA and evidence/review validation.
 Falsifier:
 
 ```txt
-BQ-024 cannot show intended, unrelated, and unknown changed-file classes through
-existing evidence/readback surfaces.
+BQ-025 cannot show explicit "what this proves" and "what this does not prove"
+boundaries in current report/readback artifacts.
 ```
 
 ## Pattern Gate
