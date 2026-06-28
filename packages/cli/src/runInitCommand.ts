@@ -58,7 +58,11 @@ export interface SourceSeedProposal {
     | "project_readme"
     | "agent_instructions"
     | "docs_root"
+    | "source_map"
+    | "runbook"
+    | "standard_doc"
     | "eval_workspace"
+    | "invariant_test"
     | "mcp_workspace"
     | "script_root"
     | "source_root"
@@ -241,6 +245,21 @@ const sourceSeedCandidates = [
     reason: "seed target documentation and runbook context"
   },
   {
+    path: "docs/KRN_SOURCES.md",
+    kind: "source_map",
+    reason: "seed retained source-to-decision map and source usefulness decisions"
+  },
+  {
+    path: "docs/runbooks/pattern-intake.md",
+    kind: "runbook",
+    reason: "seed pattern-intake workflow and source-to-decision consumer routing"
+  },
+  {
+    path: "docs/standards/typescript-excellence.md",
+    kind: "standard_doc",
+    reason: "seed TypeScript best-pattern and finite-state standard"
+  },
+  {
     path: "evals",
     kind: "eval_workspace",
     reason: "seed eval, acceptance report, and test owner-file recall"
@@ -264,6 +283,11 @@ const sourceSeedCandidates = [
     path: "tests",
     kind: "test_root",
     reason: "seed target repo verification surface"
+  },
+  {
+    path: "packages/harness/src/sourceMapInvariants.test.ts",
+    kind: "invariant_test",
+    reason: "seed source-map invariant and Codex/source decision guard tests"
   }
 ] as const satisfies readonly SourceSeedProposal[];
 

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V245 Source-Decision Owner-File Seed Repair
-current task: V245-00 Source-Decision Owner-File Seed Repair
+active stream: V246 Observe-Reflect Sequencing Guard
+current task: V246-00 Observe-Reflect Sequencing Guard
 ```
 
 ## Compact Completed Checkpoints
@@ -40,49 +40,47 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            default connected-project resolution, and project resolution
            readback plus external TypeScript best-pattern intake,
            finite-state exhaustiveness application, Codex ExecPlan source
-           decision guard, and best-pattern surface re-gate complete.
+           decision guard, best-pattern surface re-gate, and source-decision
+           owner-file seed repair complete.
 ```
 
 ## Active Stream
 
-### V245 Source-Decision Owner-File Seed Repair
+### V246 Observe-Reflect Sequencing Guard
 
 Goal:
 
-Repair the smallest read-model/source seed path so source-to-decision and
-pattern-intake tasks can surface their real owner files without activation
-scoring changes.
+Prevent future dogfood/evidence runs from running `krn reflect` before
+`krn observe` has persisted observations for the same run.
 
 Current finding:
 
 ```txt
-V241, V243, and V244 all needed source inspection to find docs/KRN_SOURCES.md,
-pattern-intake, standards, or source-map invariant owner files. Exact owner-file
-recall works when the read model provides owner files, so the next repair is
-read-model input quality, not broad activation scoring.
+V243 and V244 both recorded an ordering caveat: a first reflect ran in parallel
+with observe and selected 0 observations, then a second reflect after observe
+selected 5. This is a repeated workflow issue, not a reflection quality finding.
 ```
 
 Current action:
 
 ```txt
-Execute V245-00: inspect init/source-seed detection and owner-file recall, then
-add the smallest source-decision owner-file seed repair with focused tests and a
-DB-backed plan proof.
+Execute V246-00: update the smallest evidence/review loop guidance or guard so
+observe completes before reflect for the same run, then verify with docs/skill
+tests or focused invariants.
 ```
 
 Primary consumer:
 
 ```txt
-Target read model / source seed detection, owner-file recall behavior, and plan
-readback evidence for source-to-decision tasks.
+evidence-review-loop skill/runbook or active plan invariant that future
+continuations can follow before evidence capture stops.
 ```
 
 Falsifier:
 
 ```txt
-After V245, a source-to-decision task still cannot surface docs/KRN_SOURCES.md,
-docs/runbooks/pattern-intake.md, relevant standards, or source-map invariant
-owner files from the read model.
+Future reports keep recording first reflect runs with 0 observations because
+observe and reflect were started in parallel for the same run.
 ```
 
 ## Pattern Gate

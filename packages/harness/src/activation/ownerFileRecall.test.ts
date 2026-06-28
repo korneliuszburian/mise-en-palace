@@ -120,6 +120,76 @@ describe("owner-file recall", () => {
     );
   });
 
+  it("surfaces source-to-decision owner seeds as concrete target candidates", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/mise-en-palace"],
+      sourceSeeds: [
+        {
+          path: "docs",
+          kind: "docs_root",
+          reason: "seed target documentation and runbook context"
+        },
+        {
+          path: "docs/KRN_SOURCES.md",
+          kind: "source_map",
+          reason: "seed retained source-to-decision map and source usefulness decisions"
+        },
+        {
+          path: "docs/runbooks/pattern-intake.md",
+          kind: "runbook",
+          reason: "seed pattern-intake workflow and source-to-decision consumer routing"
+        },
+        {
+          path: "docs/standards/typescript-excellence.md",
+          kind: "standard_doc",
+          reason: "seed TypeScript best-pattern and finite-state standard"
+        },
+        {
+          path: "packages/harness/src/sourceMapInvariants.test.ts",
+          kind: "invariant_test",
+          reason: "seed source-map invariant and Codex/source decision guard tests"
+        }
+      ],
+      ownerFiles: [],
+      trustExclusions: []
+    };
+    const candidates = buildOwnerFileRecallCandidates(
+      taskContract(
+        "Repair source-to-decision pattern-intake TypeScript standard and source-map invariant owner-file recall"
+      ),
+      { targetReadModel }
+    );
+
+    expect(candidates.map((candidate) => candidate.reason)).toEqual(
+      expect.arrayContaining([
+        "Target source seed: docs/KRN_SOURCES.md",
+        "Target source seed: docs/runbooks/pattern-intake.md",
+        "Target source seed: docs/standards/typescript-excellence.md",
+        "Target source seed: packages/harness/src/sourceMapInvariants.test.ts"
+      ])
+    );
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            source: "target_project_read_model",
+            targetReadModelKind: "source_seed",
+            targetPath: "docs/KRN_SOURCES.md",
+            seedKind: "source_map"
+          })
+        }),
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            targetPath: "packages/harness/src/sourceMapInvariants.test.ts",
+            seedKind: "invariant_test"
+          })
+        })
+      ])
+    );
+  });
+
   it("surfaces explicit target owner files below named roots when the read model provides them", () => {
     const targetReadModel: TargetActivationReadModel = {
       projectKernelId: "kernel-1",

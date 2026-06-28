@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V245 Source-Decision Owner-File Seed Repair
+V246 Observe-Reflect Sequencing Guard
 ```
 
 Current product loop:
@@ -46,12 +46,10 @@ PLANS.md.
 V236..V239: activation abstention re-gate, diagnostics/readback,
 current-state activation seed, and default connected-project resolution
 complete.
-V240: default-path project resolution readback complete.
-V241: external TypeScript best-pattern intake complete.
-V242: finite-state exhaustiveness application complete.
-V243: Codex ExecPlan source decision guard complete.
-V244: best-pattern surface re-gate complete.
-current task: V245-00 Source-Decision Owner-File Seed Repair.
+V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
+decision, and best-pattern re-gate complete.
+V245: source-decision owner-file seed repair complete.
+current task: V246-00 Observe-Reflect Sequencing Guard.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V244 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V245 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -87,10 +87,11 @@ activation abstention re-gate, activation diagnostics/readback, and
 current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
-guard plus best-pattern surface re-gate:
+guard plus best-pattern surface re-gate and source-decision owner-file seed
+repair:
 complete
-active stream: V245 Source-Decision Owner-File Seed Repair
-current task: V245-00 Source-Decision Owner-File Seed Repair
+active stream: V246 Observe-Reflect Sequencing Guard
+current task: V246-00 Observe-Reflect Sequencing Guard
 ```
 
 Evidence already recorded in repo:
@@ -106,7 +107,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V245-00 Source-Decision Owner-File Seed Repair.
+V246-00 Observe-Reflect Sequencing Guard.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19572,7 +19573,7 @@ New task:
 
 ID: V245-00
 Name: Source-Decision Owner-File Seed Repair
-Status: active
+Status: complete
 Goal: repair the smallest read-model/source seed path so source-to-decision and
 pattern-intake tasks can surface their real owner files without activation
 scoring changes.
@@ -19656,6 +19657,133 @@ Condensation expectation: if V245 improves owner-file recall, consider a
 Next-task synthesis rule: continue from V245 evidence; only open activation
 scoring if read-model inputs are good and repeated misses remain.
 
+V245 outcome:
+- V245-00 complete: source-to-decision owner-file seeds were added to the KRN
+  target read model and guarded with focused CLI/harness tests.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v245-source-decision-owner-file-seeds/REPORT.md`.
+
+V245 evidence:
+- Initial persisted V245 plan before repair:
+  `8b1b4f8b-b480-4760-906a-235bbc8c6d1b`.
+- Correct root project refresh:
+  `krn init --connect --repo /home/krn/coding/krn/active/mise-en-palace --persist`.
+- Refreshed ProjectKernel:
+  `05cfb8c8-8f25-4561-a0dd-182ca7435bb3`.
+- DB-backed proof plan after refresh:
+  `05c08590-f424-4d06-b9d1-6d7e6567f12a`.
+- Proof plan selected exact source-decision seeds:
+  `docs/runbooks/pattern-intake.md`,
+  `packages/harness/src/sourceMapInvariants.test.ts`, and
+  `docs/KRN_SOURCES.md`.
+- `docs/standards/typescript-excellence.md` was present in refreshed
+  sourceSeeds and budget-excluded from that proof context.
+- Evidence bundle:
+  `e1ffb3ab-315e-4d27-b93d-3d8234cd6d9d`.
+- Review assessment:
+  `307c03f6-cdc8-47db-b9ba-205d66607b8a`.
+- Feedback delta:
+  `ddf88865-f53b-4989-8bba-7d2459b13281`.
+- Observation group:
+  `db93a7a1-15c6-436c-8eeb-f25ccf17c384`.
+- Reflection record:
+  `4301fc95-e56e-43fd-963c-584c11c88f08`.
+- V245 observe/reflect was run sequentially; reflect selected 5 observations.
+- `pnpm --filter @krn/cli test -- runInitCommand runCli`: passed.
+- `pnpm --filter @krn/harness test -- ownerFileRecall`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed.
+- `git diff --check`: passed.
+- Caveat: an accidental package-scoped `krn init --connect --repo . --persist`
+  created a DB-only `packages/cli` local project before the absolute root path
+  refresh. It did not change files or Memory Core.
+
+V245 source-to-decision:
+- Source: V241/V243/V244 reports plus V245 before/after DB-backed plan
+  readback.
+- Mechanism: activation can surface exact files when the target read model names
+  them; source-to-decision work was missing exact source-map/runbook/standard
+  and invariant owner seeds.
+- KRN implication: seed obvious source-decision owners in project read models
+  before changing scoring.
+- Decision: add exact seed candidates for `docs/KRN_SOURCES.md`,
+  `docs/runbooks/pattern-intake.md`,
+  `docs/standards/typescript-excellence.md`, and
+  `packages/harness/src/sourceMapInvariants.test.ts`.
+- Does not prove: activation scoring is solved, broad source crawling is useful,
+  or every standard always belongs in context.
+- Consumer: `runInitCommand` source seed detection, `ownerFileRecall` target
+  candidates, DB-backed `krn plan --persist` readback.
+- Falsifier: future source-to-decision tasks still cannot surface source map,
+  pattern-intake, standards, or source-map invariant seeds from the read model.
+
+New task:
+- V246-00 Observe-Reflect Sequencing Guard.
+
+ID: V246-00
+Name: Observe-Reflect Sequencing Guard
+Status: active
+Goal: prevent future dogfood/evidence runs from running `krn reflect` before
+`krn observe` has persisted observations for the same run.
+Product rationale: repeated parallel observe/reflect runs create false
+reflection-quality noise by selecting zero observations before observe
+finishes.
+Architectural rationale: this is a workflow sequencing guard, not a reflection
+extraction rewrite. The right first repair is to make the evidence/review loop
+harder to misuse.
+Evidence source:
+- V243 report ordering caveat;
+- V244 report ordering caveat;
+- V245 continuation guidance;
+- evidence-review-loop skill/runbook and any active plan invariants.
+Inputs required:
+- current-state preflight;
+- inspect evidence-review-loop skill and runbook surfaces;
+- identify the smallest durable consumer for observe-before-reflect ordering;
+- focused verification.
+Files likely touched:
+- `.agents/skills/evidence-review-loop/SKILL.md`;
+- maybe `PLANS.md`, `PLAN.md`, `GOAL.md`;
+- maybe focused invariant tests only if an existing invariant surface already
+  owns workflow sequencing.
+Allowed writes:
+- one bounded skill/runbook/guard update;
+- focused test/invariant only if it matches existing patterns;
+- report and plan condensation.
+Forbidden writes:
+- reflection extraction rewrite;
+- activation scoring;
+- memory scoring;
+- DB schema/migration;
+- dashboard/API/MCP/worker daemon;
+- broad eval platform;
+- broad process rewrite.
+Output requirements:
+- make observe-before-reflect sequencing explicit for same-run evidence loops;
+- define what to do if reflect returns zero observations because observe has
+  not completed;
+- record the source-to-decision decision, consumer, and falsifier.
+Definition of Done:
+- smallest durable workflow surface updated or explicit rejection recorded;
+- verification for touched files passes;
+- dogfood report/evidence exists;
+- active compact state remains V246 until commit/push/CI are done.
+Verification commands:
+- `git diff --check`;
+- source/skill test or invariant command if code/tests are touched;
+- `pnpm typecheck` and `pnpm test` only if package source/tests are touched.
+Acceptance criteria:
+- future continuations can follow the evidence-review loop without parallel
+  observe/reflect confusion;
+- V243/V244 caveat is condensed into durable workflow guidance;
+- no reflection quality claim is made from sequencing failure.
+Risk: encoding guidance only in a report that future continuations do not read.
+Rollback: revert the skill/runbook/guard update if it conflicts with actual CLI
+semantics.
+Condensation expectation: if the sequencing miss recurs after V246, add a CLI
+guard or explicit run-state check in a later bounded task.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19663,10 +19791,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V245 Source-Decision Owner-File Seed Repair.
+- V246 Observe-Reflect Sequencing Guard.
 
 Next active task:
-- V245-00 Source-Decision Owner-File Seed Repair.
+- V246-00 Observe-Reflect Sequencing Guard.
 
 ## 21. Final Response Format For Codex Runs
 
