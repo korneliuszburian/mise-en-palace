@@ -23,20 +23,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V283 Brain Knowledge Static Preview Usefulness Dogfood
-current task: V283-00 Brain Knowledge Static Preview Usefulness Dogfood
-latest pushed commit before V282: 3a56ef8 docs(ui): gate brain knowledge web search
-latest CI checked before V282: KRN CI success for 3a56ef8594cad37d8f125bfe0e5f467b2697db6a
+active stream: V284 Brain Knowledge Static Preview Field Filters
+current task: V284-00 Brain Knowledge Static Preview Field Filters
+latest pushed commit before V283: 5d6f99c chore(ui): add brain knowledge static preview script
+latest CI checked before V283: KRN CI success for 5d6f99c6ce5af4fa9f1fe33c812caa8ef8e6a222
 ```
 
 Known current gap:
 
 ```txt
-V283-00 Brain Knowledge Static Preview Usefulness Dogfood is the current gap.
-V282 made `pnpm brain:knowledge:preview` generate
-`.local-lab/brain-knowledge-preview.html` from the explicit catalog. Now prove
-whether the static preview actually reduces operator rereads before adding any
-wider UI/search surface.
+V284-00 Brain Knowledge Static Preview Field Filters is the current gap. V283
+proved the static preview/readback path can answer exact retained-pattern
+queries, but broad terms such as `skill` are noisy because text search matches
+all card fields equally. Improve static field/facet filtering before any wider
+UI/search surface.
 ```
 
 ## 2. Product Thesis
@@ -2330,6 +2330,34 @@ Source-to-decision:
 - Consumer: V283 Brain Knowledge Static Preview Usefulness Dogfood.
 - Falsifier: the static preview does not help operators answer real pattern or
   proof-boundary questions faster than CLI/grep/rereads.
+
+## Outcome V283-00 Brain Knowledge Static Preview Usefulness Dogfood
+
+Summary:
+- generated `.local-lab/brain-knowledge-preview.html`;
+- queried the catalog-backed read model for `skill`, `proof`,
+  `source-to-decision`, and `unknown-first`;
+- confirmed direct queries like `proof` and `unknown-first` land on one useful
+  retained pattern card;
+- found broad terms like `skill` are noisy because current text search matches
+  all card fields equally.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v283-brain-knowledge-static-preview-usefulness-dogfood/REPORT.md`.
+
+Source-to-decision:
+- Source: generated V282 static artifact and catalog-backed `knowledge cards`
+  readback queries.
+- Mechanism: exact retained-pattern lookup reduces rereads, but unrestricted
+  full-field text matching creates noisy results as the catalog grows.
+- KRN implication: improve static preview ergonomics with field/facet controls
+  before adding API, MCP, dashboard, or DB search.
+- Decision: open V284 Brain Knowledge Static Preview Field Filters.
+- Does not prove: product readiness, browser UX quality, ranking quality,
+  larger-catalog relevance, DB/API/MCP need, or catalog completeness.
+- Consumer: V284 Brain Knowledge Static Preview Field Filters.
+- Falsifier: field filters do not reduce noisy broad searches or require a
+  non-static server/API/DB path.
 
 ## Condensation Rules
 

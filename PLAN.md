@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V283 Brain Knowledge Static Preview Usefulness Dogfood
-current task: V283-00 Brain Knowledge Static Preview Usefulness Dogfood
+active stream: V284 Brain Knowledge Static Preview Field Filters
+current task: V284-00 Brain Knowledge Static Preview Field Filters
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V283 Brain Knowledge Static Preview Usefulness Dogfood
+### V284 Brain Knowledge Static Preview Field Filters
 
 Goal:
 
-Prove whether the generated static brain knowledge preview reduces operator
-rereads for real search questions before adding any wider UI surface.
+Improve static brain knowledge preview search ergonomics without leaving the
+static/read-only artifact boundary.
 
 Current finding:
 
 ```txt
-V282 added and guarded `pnpm brain:knowledge:preview`, which generates
-`.local-lab/brain-knowledge-preview.html` from `docs/brain-knowledge/catalog.json`.
+V283 proved the static preview/readback path can answer exact retained-pattern
+queries, but broad terms such as `skill` are noisy because text search matches
+all card fields equally.
 ```
 
 Current action:
 
 ```txt
-Execute V283-00: run a bounded usefulness dogfood over the static preview path.
-Use the generated artifact or the same catalog-backed preview to answer concrete
-operator search questions, record whether it reduces rereads, and decide the
-smallest next UI/search step. Do not add API, MCP, dashboard package, DB search
-service, or mutation.
+Execute V284-00: add small client-side field/facet filters to the static HTML
+preview over stable card fields such as `kind`, `status`, `reviewability`, and
+`nextAction`. Keep the artifact self-contained and read-only. Do not add API,
+MCP, dashboard package, DB search service, persistence, or mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge operator search loop.
+brain knowledge static preview operator search loop.
 ```
 
 Falsifier:
 
 ```txt
-The static preview artifact does not help operators find retained patterns or
-proof boundaries faster than CLI/grep/readme rereads, or it hides proof
-boundaries.
+Operators cannot narrow broad search terms without noisy matches, or field
+filters hide proof boundaries or require a server/API/DB path.
 ```
 
 ## Pattern Gate
