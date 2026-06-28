@@ -22,6 +22,7 @@ const methodNames = [
   "createSourceClaimEdge",
   "listSourceClaimEdgesForClaim",
   "createSourceDecisionEdge",
+  "getSourceDecisionEdgeById",
   "listSourceDecisionEdgesForRun",
   "createSourceRejection"
 ] as const;

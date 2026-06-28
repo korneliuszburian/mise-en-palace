@@ -3920,6 +3920,23 @@ describe("runCli", () => {
                 metadata: input.metadata ?? {},
                 createdAt: now
               };
+            },
+            async getSourceDecisionEdgeById(id) {
+              if (id !== "source-decision-edge-1") {
+                return undefined;
+              }
+
+              return {
+                id: "source-decision-edge-1",
+                sourceClaimId: "source-claim-1",
+                targetType: "harness_run",
+                targetId: "execution-run-1",
+                supportType: "implementation-boundary",
+                confidence: "medium",
+                notes: "Used to justify M22 Postgres-backed source graph edge",
+                metadata: {},
+                createdAt: now
+              };
             }
           },
           harnessRunRepository: dependencies.harnessRunRepository,
@@ -3935,10 +3952,13 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Persistence: enabled (Postgres, explicit --persist)");
     expect(result.stdout).toContain("sourceDecisionEdge: source-decision-edge-1");
+    expect(result.stdout).toContain("sourceDecisionEdgeReadback: hit");
     expect(result.stdout).toContain("sourceClaimId: source-claim-1");
     expect(result.stdout).toContain("target: harness_run/execution-run-1");
     expect(result.stdout).toContain("supportType: implementation-boundary");
     expect(result.stdout).toContain("confidence: medium");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("doesNotProve: SourceDecisionEdge readback does not prove source truth");
   });
 
   it("rejects source decision link when the source claim is rejected", async () => {

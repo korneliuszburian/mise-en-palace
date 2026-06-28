@@ -98,6 +98,7 @@ export interface SourceRepository {
   createSourceClaimEdge(input: CreateSourceClaimEdgeInput): Promise<SourceClaimEdge>;
   listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]>;
   createSourceDecisionEdge(input: CreateSourceDecisionEdgeInput): Promise<SourceDecisionEdge>;
+  getSourceDecisionEdgeById(id: SourceDecisionEdge["id"]): Promise<SourceDecisionEdge | undefined>;
   listSourceDecisionEdgesForRun(executionRunId: ExecutionRunId): Promise<SourceDecisionEdge[]>;
   createSourceRejection(input: CreateSourceRejectionInput): Promise<SourceRejection>;
 }

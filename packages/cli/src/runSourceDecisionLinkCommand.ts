@@ -51,6 +51,7 @@ const formatPreview = (
 
 const formatPersisted = (
   edgeId: string,
+  readback: "hit" | "missing",
   edge: ReturnType<typeof parseSourceDecisionEdgeInput>
 ): string =>
   [
@@ -59,11 +60,15 @@ const formatPersisted = (
     "",
     "Persisted IDs:",
     `sourceDecisionEdge: ${edgeId}`,
+    `sourceDecisionEdgeReadback: ${readback}`,
     `sourceClaimId: ${edge.sourceClaimId}`,
     `target: ${edge.targetType}/${edge.targetId}`,
     `supportType: ${edge.supportType}`,
     `confidence: ${edge.confidence}`,
-    `notes: ${edge.notes}`
+    `notes: ${edge.notes}`,
+    "Memory mutation: none",
+    "Graph runtime: none",
+    "doesNotProve: SourceDecisionEdge readback does not prove source truth, decision correctness, graph retrieval, crawler readiness, or product readiness"
   ].join("\n");
 
 export const runSourceDecisionLinkCommand = async (
@@ -123,9 +128,15 @@ export const runSourceDecisionLinkCommand = async (
       notes: edgeInput.notes,
       metadata: edgeInput.metadata
     });
+    const sourceDecisionEdgeReadback =
+      await databaseRuntime.sourceRepository.getSourceDecisionEdgeById(sourceDecisionEdge.id);
 
     return {
-      stdout: formatPersisted(sourceDecisionEdge.id, edgeInput)
+      stdout: formatPersisted(
+        sourceDecisionEdge.id,
+        sourceDecisionEdgeReadback === undefined ? "missing" : "hit",
+        edgeInput
+      )
     };
   } finally {
     await databaseRuntime.close();

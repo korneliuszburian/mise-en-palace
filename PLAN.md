@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V320 Ingest v0 SourceDecision Linkage Readback
-current task: V320-00 Ingest v0 SourceDecision Linkage Readback
+active stream: V321 Ingest v0 Activation Over Persisted Source State
+current task: V321-00 Ingest v0 Activation Over Persisted Source State
 ```
 
 ## Compact Completed Checkpoints
@@ -47,46 +47,47 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V320 Ingest v0 SourceDecision Linkage Readback
+### V321 Ingest v0 Activation Over Persisted Source State
 
 Goal:
 
-Link one persisted/proposed SourceClaim to a bounded SourceDecision or
-SourceDecisionEdge through existing repository paths without schema/runtime
-expansion.
+Prove whether existing activation/readback surfaces can select or expose the
+persisted local source/search/claim/decision substrate from V318-V320 without
+schema/runtime expansion.
 
 Current finding:
 
 ```txt
 V316 added local artifact preview, V317 added reviewable source/search
 candidate output, V318 proved SourceArtifact/SourceChunk/SearchDocument
-persistence/readback, and V319 proved explicit SourceClaim persistence/readback.
-The next Ingest v0 gap is proving one bounded SourceDecision linkage/readback
-path before graph/entity/crawler work.
+persistence/readback, V319 proved explicit SourceClaim persistence/readback,
+and V320 proved SourceDecisionEdge linkage/readback. The next gap is whether
+the existing brain can retrieve or expose that persisted source state usefully.
 ```
 
 Current action:
 
 ```txt
-Execute V320-00: inspect existing SourceDecision/SourceDecisionEdge repository
-paths and implement or record the smallest SourceClaim -> SourceDecision
-linkage/readback path. Do not build source crawler, schema migration,
-dashboard, API/MCP, worker daemon, broad eval platform, embeddings, ranking,
-graph runtime, or Memory Core mutation.
+Execute V321-00: inspect existing activation/retrieval/readback owner paths and
+implement or record the smallest persisted local source state activation/readback
+proof. Do not build source crawler, schema migration, dashboard, API/MCP, worker
+daemon, broad eval platform, embeddings, ranking, graph runtime, or Memory Core
+mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future source grounding, graph brain, consensus/eval candidates, and
-product-facing knowledge ingestion.
+future activation quality, source grounding, graph brain, consensus/eval
+candidates, and product-facing knowledge ingestion.
 ```
 
 Falsifier:
 
 ```txt
-V320 cannot link and read back one bounded source decision path through existing
-repository contracts without broad schema/runtime work.
+V321 cannot retrieve or expose persisted local source/search/claim/decision
+state through existing activation/readback surfaces without broad schema/runtime
+work.
 ```
 
 ## Pattern Gate

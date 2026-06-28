@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V320 Ingest v0 SourceDecision Linkage Readback
+V321 Ingest v0 Activation Over Persisted Source State
 ```
 
 Current state:
@@ -27,16 +27,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V320-00 Ingest v0 SourceDecision Linkage Readback.
+current task: V321-00 Ingest v0 Activation Over Persisted Source State.
 ```
 
 Current task:
 
 ```txt
-Link one persisted/proposed SourceClaim to a bounded SourceDecision or
-SourceDecisionEdge through existing repository paths and readback/proof
-boundaries, without crawler, DB schema, dashboard, API/MCP, worker, embeddings,
-graph runtime, or Memory Core mutation.
+Prove whether existing activation/readback surfaces can select or expose the
+persisted local source/search/claim/decision substrate from V318-V320, without
+crawler, DB schema, dashboard, API/MCP, worker, embeddings, graph runtime, or
+Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -50,9 +50,9 @@ to preserve are:
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
-4. Ingest v0: local artifact preview, candidate bridge, SearchDocument
-   persistence/readback, and SourceClaim persistence/readback exist; next prove
-   one SourceDecision linkage/readback path without schema work.
+4. Ingest v0: local artifact preview, candidate bridge, SearchDocument,
+   SourceClaim, and SourceDecisionEdge persistence/readback exist; next prove
+   activation/readback usefulness over that persisted local source state.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core

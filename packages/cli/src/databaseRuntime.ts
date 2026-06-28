@@ -78,6 +78,7 @@ export interface DatabaseRuntime {
     | "createSourceClaim"
     | "getSourceClaimById"
     | "createSourceDecisionEdge"
+    | "getSourceDecisionEdgeById"
     | "createSourceRejection"
   > & Partial<Pick<SourceRepository, "createSourceChunk">>;
   retrievalRepository?: Pick<

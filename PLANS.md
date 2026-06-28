@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V320 Ingest v0 SourceDecision Linkage Readback
-current task: V320-00 Ingest v0 SourceDecision Linkage Readback
+active stream: V321 Ingest v0 Activation Over Persisted Source State
+current task: V321-00 Ingest v0 Activation Over Persisted Source State
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,12 +31,13 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V320-00 Ingest v0 SourceDecision Linkage Readback is the current gap. V316
-implemented local source artifact preview, V317 added reviewable candidate
+V321-00 Ingest v0 Activation Over Persisted Source State is the current gap.
+V316 implemented local source artifact preview, V317 added reviewable candidate
 output, V318 proved SourceArtifact/SourceChunk/SearchDocument persistence
-readback, and V319 proved existing-DB SourceClaim persistence/readback. Now
-prove one SourceDecision linkage/readback path without crawler, schema
-migration, embeddings, graph runtime, or Memory Core mutation.
+readback, V319 proved SourceClaim persistence/readback, and V320 proved
+SourceDecisionEdge linkage/readback. Now prove whether existing activation or
+readback surfaces can select/expose that persisted source state without crawler,
+schema migration, embeddings, graph runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -85,9 +86,9 @@ green test != product value
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use that result to start Ingest v0.
-4. Ingest v0: local artifact preview, candidate bridge, SearchDocument
-   persistence/readback, and SourceClaim persistence/readback exist; next prove
-   one existing-DB SourceDecision linkage/readback path without schema work.
+4. Ingest v0: local artifact preview, candidate bridge, SearchDocument,
+   SourceClaim, and SourceDecisionEdge persistence/readback exist; next prove
+   activation/readback usefulness over that persisted local source state.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
@@ -1427,7 +1428,7 @@ evidence without broad schema/runtime work.
 
 ### V320-00 — Ingest v0 SourceDecision Linkage Readback
 
-Status: active.
+Status: complete.
 
 Goal: link one persisted/proposed SourceClaim to a bounded SourceDecision or
 SourceDecisionEdge through existing repository paths and read it back.
@@ -1453,6 +1454,41 @@ and `pnpm db:smoke` when DB path is exercised.
 
 Falsifier: V320 cannot link/read back one bounded source decision through
 existing repository contracts without broad schema/runtime work.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v320-ingest-v0-sourcedecision-linkage-readback/REPORT.md
+```
+
+### V321-00 — Ingest v0 Activation Over Persisted Source State
+
+Status: active.
+
+Goal: prove whether existing activation/readback surfaces can select or expose
+the persisted local source/search/claim/decision substrate from V318-V320.
+
+Use: V318-V320 reports, activation/retrieval/readback owner files discovered by
+targeted search, and existing DB source/search state.
+
+Allowed: focused activation/readback source/tests and a compact report at
+`docs/reviews/controlled-dogfood/2026-06-29-v321-ingest-v0-activation-over-persisted-source-state/REPORT.md`.
+
+Forbidden: DB schema migration, source crawler, embeddings/ranking runtime,
+graph runtime, dashboard, API/MCP, worker daemon, Memory Core mutation, target
+repo writes, broad eval platform.
+
+Done when: existing activation/readback surfaces are inspected; either smallest
+persisted-source-state readback/activation proof works with focused tests, or a
+precise missing-substrate finding is recorded; report states proof/non-proof
+boundaries.
+
+Verify: `pnpm typecheck`, `pnpm test`, `git diff --check`; add `pnpm db:ready`
+and `pnpm db:smoke` when DB path is exercised.
+
+Falsifier: V321 cannot retrieve or expose persisted local source/search/claim/
+decision state through existing activation/readback surfaces without broad
+schema/runtime work.
 
 ## Pattern Gate
 
@@ -1546,7 +1582,8 @@ Falsifier:
 - [x] V317 Ingest v0 Source Candidate Bridge
 - [x] V318 Ingest v0 SearchDocument Persistence Readback
 - [x] V319 Ingest v0 SourceClaim Review Path
-- [ ] V320 Ingest v0 SourceDecision Linkage Readback
+- [x] V320 Ingest v0 SourceDecision Linkage Readback
+- [ ] V321 Ingest v0 Activation Over Persisted Source State
 
 ## Recent Evidence Pointers
 
@@ -1578,6 +1615,32 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v318-ingest-v0-search-document-persistence-readback/REPORT.md`
 - V319 report:
   `docs/reviews/controlled-dogfood/2026-06-29-v319-ingest-v0-sourceclaim-review-path/REPORT.md`
+- V320 report:
+  `docs/reviews/controlled-dogfood/2026-06-29-v320-ingest-v0-sourcedecision-linkage-readback/REPORT.md`
+
+## Outcome V320 Ingest v0 SourceDecision Linkage Readback
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V319 report, SourceDecisionEdge schema/repository contracts, and
+  local DB readiness/readback evidence.
+- Mechanism: a persisted SourceClaim can support a bounded SourceDecisionEdge
+  through existing DB paths, and the created edge can be read back by id.
+- KRN implication: Ingest v0 now has a minimal local source-to-decision
+  substrate before activation/readback usefulness, graph, crawler, embeddings,
+  or product UI/API work.
+- Decision: add SourceDecisionEdge readback by id and render
+  `sourceDecisionEdgeReadback` in `krn source decision link --persist`.
+- Rejection: do not create autonomous source truth, graph runtime, crawler,
+  schema, or source-decision adoption flow in this slice.
+- Does not prove: source truth, decision correctness, source-decision quality,
+  activation usefulness, graph retrieval, crawler readiness, mass corpus
+  ingest, or product readiness.
+- Consumer: V321 Ingest v0 Activation Over Persisted Source State.
+- Falsifier: `krn source decision link --persist` cannot read back the created
+  SourceDecisionEdge by id in the current shell.
 
 ## Outcome V319 Ingest v0 SourceClaim Review Path
 
