@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V238 Current-State Activation Seed And Read-Model Decision
-current task: V238-00 Current-State Activation Seed And Read-Model Decision
+active stream: V239 Default Connected Project Resolution Repair
+current task: V239-00 Default Connected Project Resolution Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -28,58 +28,57 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V237: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V238: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
            normalization/readback guards plus best-pattern usefulness closure
            and closure dogfood plus TS best-pattern application and sibling
-           package path normalization plus activation abstention re-gate and
-           abstention diagnostics/readback complete.
+           package path normalization plus activation abstention re-gate,
+           abstention diagnostics/readback, and current-state activation seed
+           complete.
 ```
 
 ## Active Stream
 
-### V238 Current-State Activation Seed And Read-Model Decision
+### V239 Default Connected Project Resolution Repair
 
 Goal:
 
-Decide and execute the smallest existing path that gives the current KRN
-project project kernel, repo installation, source seed, or owner-file activation
-material.
+Make default `krn plan --persist` from the current repo use the connected repo
+project when one exists, or print a clear warning/suggestion when it would use
+an empty default project.
 
 Current finding:
 
 ```txt
-V237 made abstention diagnostics visible and proved the active project currently
-reports `empty_activation_store`: no memory, source claims, search documents,
-owner-file candidates, anti-memory, target read model, source seeds, or owner
-files.
+V238 proved explicit `--project 7d9d103a-1a8e-4492-a4ca-db3a5589bd9b` selects
+current-repo owner-file context, while default `krn plan --persist` still uses
+the older empty project `ae9962f9-0b20-4a43-97fe-d715062c4478`.
 ```
 
 Current action:
 
 ```txt
-Execute V238-00: inspect existing init/connect/source-seed paths, seed/connect
-the current repo only if an existing bounded path supports it, and prove a
-DB-backed plan no longer reports `empty_activation_store` for a task that should
-surface owner-file context.
+Execute V239-00: inspect current project resolution, repair or warn through the
+smallest existing CLI/runtime boundary, and prove default planning no longer
+silently selects the empty project when a connected repo project exists.
 ```
 
 Primary consumer:
 
 ```txt
-KRN current-state planning context, source/memory activation, owner-file recall,
-and future source repair selection.
+KRN self-dogfood planning, operator UX, project resolution, activation
+read-model selection, and future source repair selection.
 ```
 
 Falsifier:
 
 ```txt
-The slice invents a broad source crawler, rewrites scoring, or seeds unchecked
-runtime memory instead of using/repairing the smallest existing current-repo
-init/connect/read-model path.
+The slice rewrites activation scoring, creates a crawler, mutates broad memory,
+or hides ambiguity instead of making project resolution deterministic and
+reviewable.
 ```
 
 ## Pattern Gate

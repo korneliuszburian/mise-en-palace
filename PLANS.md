@@ -77,16 +77,17 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V237 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V238 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
 slices plus TS best-pattern application, sibling package path normalization,
-activation abstention re-gate, and activation diagnostics/readback:
+activation abstention re-gate, activation diagnostics/readback, and
+current-state activation seed:
 complete
-active stream: V238 Current-State Activation Seed And Read-Model Decision
-current task: V238-00 Current-State Activation Seed And Read-Model Decision
+active stream: V239 Default Connected Project Resolution Repair
+current task: V239-00 Default Connected Project Resolution Repair
 ```
 
 Evidence already recorded in repo:
@@ -102,7 +103,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V238-00 Current-State Activation Seed And Read-Model Decision.
+V239-00 Default Connected Project Resolution Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18801,85 +18802,119 @@ New task:
 ID: V238-00
 Name: Current-State Activation Seed And Read-Model Decision
 Status: active
-Goal: decide and execute the smallest existing path that gives the current KRN
-project project kernel, repo installation, source seed, or owner-file activation
-material.
-Product rationale: KRN cannot evaluate activation usefulness if the current
-project has an empty activation store. The next proof should make a current KRN
-planning task select real owner-file/read-model context before any scoring
-repair.
-Architectural rationale: prefer existing init/connect/read-model paths over new
-source crawlers, broad memory seeding, or scoring rewrites.
+V238 outcome:
+- V238-00 complete: existing `krn init --connect` seeded current-repo
+  sourceSeeds and ownerFiles through DB metadata without source file writes.
+- Report: `docs/reviews/controlled-dogfood/2026-06-28-v238-current-state-activation-seed/REPORT.md`.
+
+V238 evidence:
+- `krn init --dry-run --repo .` resolved to `packages/cli` under
+  `pnpm --filter @krn/cli`; rejected as a root-repo proof.
+- `krn init --dry-run --repo /home/krn/coding/krn/active/mise-en-palace`:
+  sourceSeeds=7, ownerFiles=3.
+- `krn init --connect --repo /home/krn/coding/krn/active/mise-en-palace
+  --persist`: created project `7d9d103a-1a8e-4492-a4ca-db3a5589bd9b`,
+  repoInstallation `7a2f9ba6-8df8-48a8-bfb0-a54653ea91a3`, and
+  projectKernel `6057c6fd-e10b-418b-beda-e5b46c610034`.
+- `krn plan --project 7d9d103a-1a8e-4492-a4ca-db3a5589bd9b --persist`:
+  selected 4 context inclusions and rendered `inputStatus:
+  candidates_available`.
+- Default `krn plan --persist` still used old project
+  `ae9962f9-0b20-4a43-97fe-d715062c4478` and rendered
+  `inputStatus: empty_activation_store`.
+
+V238 source-to-decision:
+- Source: current-repo init/connect dry-run, connect, explicit project plan, and
+  default plan counter-proof.
+- Mechanism: explicit connected project selection gives activation a target
+  read model; default project resolution still points to an older empty project.
+- KRN implication: fix or warn on default project resolution before activation
+  scoring work.
+- Decision: append V239 default connected-project resolution repair.
+- Does not prove: owner-file coverage is complete, memory/source stores are
+  useful, or product readiness.
+- Consumer: V239 default project resolution repair.
+- Falsifier: default `krn plan --persist` continues to use an empty project when
+  a connected repo project for the current cwd exists.
+
+New task:
+- V239-00 Default Connected Project Resolution Repair.
+
+ID: V239-00
+Name: Default Connected Project Resolution Repair
+Status: active
+Goal: make default `krn plan --persist` from the current repo use the connected
+repo project when one exists, or print a clear warning/suggestion when it would
+use an empty default project.
+Product rationale: KRN self-dogfood should not require operators to memorize a
+UUID to avoid an empty activation store.
+Architectural rationale: project selection is an operator UX/read-model routing
+problem, not an activation scoring problem.
 Evidence source:
-- V236 report;
-- V237 report;
-- V237 DB-backed `empty_activation_store` readback.
+- V238 report;
+- explicit project plan success;
+- default project plan counter-proof.
 Official/external sources:
 - repo-local `activation-engine` skill;
-- target-repo/current-state testing rules if current-repo init/connect is used;
+- `target-repo-testing` owner-file read-model contract;
 - source-to-decision pattern gate.
 Inputs required:
 - local DB ready;
-- current repo path;
-- existing `krn init --connect` or equivalent current-project read-model path;
-- current dirty worktree understood before any DB/persisted seed action.
+- current connected repo project ID and old default project ID;
+- current `runPlanCommand`/database runtime project resolution code.
 Files likely touched:
-- preferably no source if existing init/connect path works;
-- otherwise only the smallest init/connect/read-model source and tests;
+- `packages/cli/src/runPlanCommand.ts`;
+- `packages/cli/src/databaseRuntime.ts`;
+- `packages/db/src/repositories/DrizzleProjectRepository.ts` only if repository
+  lookup support is missing;
+- focused CLI/DB tests;
 - `PLAN.md`, `GOAL.md`, `PLANS.md`;
-- dogfood report under `docs/reviews/controlled-dogfood/`.
+- dogfood report.
 Allowed writes:
-- DB project kernel/repo installation/source seed metadata for current KRN repo
-  if produced by existing bounded CLI path;
-- bounded source/test repair only if existing path is broken;
+- smallest source/test repair to project resolution or warning output;
 - plan/report updates.
 Forbidden writes:
-- broad source crawler;
 - activation scoring rewrite;
+- source crawler;
+- broad DB migration unless source proves lookup cannot be represented;
 - broad memory/source seeding;
 - dashboard/API/MCP/worker daemon;
-- Research Foundry;
-- runtime markdown memory;
 - product-readiness claim.
 Output requirements:
-- decision on whether existing init/connect/read-model path is enough;
-- if used, DB readback or plan output proving non-empty current-state activation
-  material;
-- proof/non-proof boundaries;
-- next-task synthesis based on whether activation now selects useful owner-file
-  context.
+- default plan either selects the connected repo project or prints an explicit
+  warning/suggestion including the connected project ID;
+- no silent empty-project self-dogfood path;
+- DB-backed proof and run readback.
 Definition of Done:
-- local DB readiness verified;
-- existing current-repo init/connect/read-model path inspected;
-- one DB-backed plan proves either non-empty activation material or a precise
-  blocker;
-- no scoring rewrite;
-- verification commands pass;
-- dogfood report exists;
-- commit is pushed and CI checked when relevant.
+- focused tests cover default connected-project behavior or warning;
+- `pnpm run typecheck`, relevant tests, full tests, and `git diff --check`
+  pass;
+- DB-backed dogfood proves behavior;
+- report exists;
+- commit is pushed and CI checked.
 Verification commands:
+- `pnpm --filter @krn/cli test -- runCli runPlanCommand`;
+- `pnpm run typecheck`;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`;
 - `pnpm db:ready`;
-- current-repo init/connect/read-model command if selected;
 - `krn plan --persist`;
 - `krn run show --run-id <run>`;
-- source tests/typecheck/full tests only if source changes;
 - `git diff --check`.
 Acceptance criteria:
-- `empty_activation_store` is either eliminated for a current-repo owner-file
-  task or explained by a specific missing existing path;
-- no broad source/indexing subsystem is introduced;
-- next task is owner-file recall repair only if non-empty inputs still miss
-  obvious context.
-Risk: accidentally turning current-state seeding into a crawler or treating DB
-metadata seed as product readiness.
-Rollback: revert source/report commit if source changed; if DB-only seed was
-performed, record the inserted project/repo/kernel IDs and use existing cleanup
-path or leave as dogfood evidence with explicit caveat.
-Condensation expectation: choose exactly one next repair: owner-file recall
-quality, source/search document seed path, memory/source review path, or no
-activation repair yet.
-Next-task synthesis rule: continue from V238 evidence; do not jump to scoring
-until non-empty activation inputs still produce a repeated miss.
+- a current-repo default plan no longer silently uses the empty project when a
+  connected repo project exists;
+- the repair does not change activation scoring;
+- ambiguity is visible if automatic selection is unsafe.
+Risk: accidentally changing project resolution for external/target repos without
+explicit scope.
+Rollback: revert focused source/test/report commit; DB seed from V238 remains
+dogfood evidence and should not be deleted unless a cleanup path is explicitly
+needed.
+Condensation expectation: if default resolution works, next task can test
+owner-file usefulness with default plan; if warning-only, next task should
+decide whether auto-selection is safe.
+Next-task synthesis rule: continue from V239 evidence; do not jump to scoring
+until default current-repo planning uses non-empty activation inputs.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -18888,10 +18923,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V238 Current-State Activation Seed And Read-Model Decision.
+- V239 Default Connected Project Resolution Repair.
 
 Next active task:
-- V238-00 Current-State Activation Seed And Read-Model Decision.
+- V239-00 Default Connected Project Resolution Repair.
 
 ## 21. Final Response Format For Codex Runs
 
