@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V298 Active Context Compact Current Truth Usefulness Feedback
+V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
 ```
 
 Current product loop:
@@ -48,11 +48,11 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V297: target repair, pattern intake/enforcement, skill pack, knowledge
+V245..V298: target repair, pattern intake/enforcement, skill pack, knowledge
 cards, usefulness feedback, no-feedback filtering, triage, skill/source/evidence
-feedback, and TypeScript feedback
+feedback, TypeScript feedback, and active-context current-truth feedback
 complete.
-current task: V298-00 Active Context Compact Current Truth Usefulness Feedback.
+current task: V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

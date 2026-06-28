@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V298 Active Context Compact Current Truth Usefulness Feedback
-current task: V298-00 Active Context Compact Current Truth Usefulness Feedback
-latest pushed commit before V297: a595270 docs(knowledge): mark evidence boundary pattern useful
-latest CI checked before V297: KRN CI success for a595270e0b26520fe34db4933c3922c6e978e5fe
+active stream: V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
+current task: V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
+latest pushed commit before V298: af784ba docs(knowledge): mark typescript boundary pattern useful
+latest CI checked before V298: KRN CI success for af784ba17d75464f933736c5ffa5774db39335fb
 ```
 
 Known current gap:
 
 ```txt
-V298-00 Active Context Compact Current Truth Usefulness Feedback is the current
-gap. V297 marked the TypeScript boundary pattern as helped and reduced
-no-feedback cards from 5 to 4. The next highest-ROI no-feedback card is active
-context compact/current-truth routing.
+V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback is the current
+gap. V298 marked active-context current-truth routing as helped and reduced
+no-feedback cards from 4 to 3. The next highest-ROI no-feedback card is the
+read-only UI/search boundary.
 ```
 
 ## 2. Product Thesis
@@ -2747,6 +2747,33 @@ Source-to-decision:
   `pattern:active-context-compact-current-truth`.
 - Falsifier: active context compactness cannot be tied to a recent continuation
   where it prevented stale objective rollback or context waste.
+
+## Outcome V298-00 Active Context Compact Current Truth Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v298-active-context-current-truth.json`;
+- attached `helped` feedback to
+  `pattern:active-context-compact-current-truth`;
+- confirmed `--usefulness-outcome helped` returns 8 cards;
+- confirmed `--usefulness-outcome none` decreased from 4 to 3 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v298-active-context-compact-current-truth-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V288 stale pasted objective dogfood and current root continuation
+  rules.
+- Mechanism: compact root `GOAL.md`, `PLAN.md`, and `PLANS.md` prevent stale
+  attachment/conversation objectives from rolling the active stream backward.
+- KRN implication: active-context/current-truth routing should be retained as
+  useful brain knowledge for compaction, handoff, and `/goal` continuation.
+- Decision: open V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback.
+- Does not prove: automatic future resume correctness or product readiness.
+- Consumer: V299 usefulness feedback for
+  `pattern:brain-knowledge-read-only-ui-boundary`.
+- Falsifier: read-only knowledge-card preview/search boundary cannot be tied to
+  a recent slice where it prevented premature product surface expansion or
+  reduced review burden.
 
 ## Condensation Rules
 

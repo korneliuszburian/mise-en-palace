@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V298 Active Context Compact Current Truth Usefulness Feedback
-current task: V298-00 Active Context Compact Current Truth Usefulness Feedback
+active stream: V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
+current task: V299-00 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,44 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V298 Active Context Compact Current Truth Usefulness Feedback
+### V299 Brain Knowledge Read-Only UI Boundary Usefulness Feedback
 
 Goal:
 
-Add explicit usefulness feedback for active context compact/current-truth routing
-if recent evidence shows it prevented stale objective rollback or context waste.
+Add explicit usefulness feedback for the brain knowledge read-only UI/search
+boundary if recent evidence shows it prevented premature API/MCP/dashboard scope
+or kept knowledge-card inspection reviewable.
 
 Current finding:
 
 ```txt
-V297 marked the TypeScript boundary pattern as helped and reduced no-feedback
-cards from 5 to 4. The next highest-ROI no-feedback pattern is active context
-compact/current-truth because continuation must ignore stale pasted objectives.
+V298 marked active context compact/current-truth as helped and reduced
+no-feedback cards from 4 to 3. The next highest-ROI no-feedback pattern is the
+brain knowledge read-only UI boundary because user-facing search/UI is desired,
+but the read-only preview boundary may already be preventing premature product
+surface expansion.
 ```
 
 Current action:
 
 ```txt
-Execute V298-00: inspect recent continuation evidence and add usefulness
-feedback for `pattern:active-context-compact-current-truth` only if it can be
-tied to a real helped/neutral/noise/stale outcome. Do not add implementation,
-source intake, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
+Execute V299-00: inspect recent knowledge-card preview/search evidence and add
+usefulness feedback for `pattern:brain-knowledge-read-only-ui-boundary` only if
+it can be tied to a real helped/neutral/noise/stale outcome. Do not build UI,
+API, MCP, dashboard, semantic ranking, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge active-context usefulness gate.
+brain knowledge UI/search boundary usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-Active-context usefulness cannot be supported by evidence, or feedback is added
-without proof boundaries and does-not-prove.
+Read-only UI/search boundary usefulness cannot be supported by evidence, or
+feedback is added without proof boundaries and does-not-prove.
 ```
 
 ## Pattern Gate

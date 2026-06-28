@@ -461,6 +461,7 @@ describe("runKnowledgeCardsCommand", () => {
     const noisePreview = parsePreviewResource(noiseResult.stdout);
 
     expect(cardIds(helpedPreview).sort()).toEqual([
+      "pattern:active-context-compact-current-truth",
       "pattern:codex-execplan-living-validation-loop",
       "pattern:codex-goal-continuation-evidence-contract",
       "pattern:codex-prompt-task-contract-proof-boundary",
@@ -486,7 +487,6 @@ describe("runKnowledgeCardsCommand", () => {
     const preview = parsePreviewResource(result.stdout);
 
     expect(cardIds(preview).sort()).toEqual([
-      "pattern:active-context-compact-current-truth",
       "pattern:brain-knowledge-read-only-ui-boundary",
       "pattern:target-repo-write-authority-boundary",
       "pattern:untrusted-context-warning-boundary"

@@ -1,0 +1,17 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:active-context-compact-current-truth",
+      "outcome": "helped",
+      "summary": "Kept continuation on current root GOAL/PLAN/PLANS state when pasted objectives still named stale streams, preventing active-stream rollback and broad historical rereads.",
+      "evidenceRefs": [
+        "GOAL.md#current-objective",
+        "PLAN.md#current-product-state",
+        "PLANS.md#current-state",
+        "docs/reviews/controlled-dogfood/2026-06-28-v288-brain-knowledge-external-pattern-usefulness-dogfood/REPORT.md"
+      ],
+      "doesNotProve": "This feedback does not prove every future continuation will choose current truth automatically, that all historical docs are clean, or product readiness.",
+      "observedAt": "2026-06-28"
+    }
+  ]
+}
