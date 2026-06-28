@@ -206,12 +206,12 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
     }
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(220px, 1fr) auto;
+      grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(120px, auto)) auto;
       gap: 12px;
       align-items: center;
       margin: 18px 0;
     }
-    input[type="search"] {
+    input[type="search"], select {
       width: 100%;
       min-height: 42px;
       border: 1px solid var(--line);
@@ -312,6 +312,10 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
     </header>
     <section class="toolbar" aria-label="Knowledge search">
       <input id="search" type="search" placeholder="Search cards" autocomplete="off">
+      ${formatSelect("kindFilter", "Kind", uniqueValues(resource.cards.map((card) => card.kind)))}
+      ${formatSelect("statusFilter", "Status", uniqueValues(resource.cards.map((card) => card.status)))}
+      ${formatSelect("reviewabilityFilter", "Reviewability", uniqueValues(resource.cards.map((card) => card.reviewability)))}
+      ${formatSelect("nextActionFilter", "Next action", uniqueValues(resource.cards.map((card) => card.nextAction)))}
       <div id="count" class="count">Results: ${resource.cards.length}</div>
     </section>
     <section id="empty" class="empty">No cards match the current search.</section>
@@ -330,13 +334,23 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
   <script>
     const cards = Array.from(document.querySelectorAll("[data-card]"));
     const search = document.getElementById("search");
+    const kindFilter = document.getElementById("kindFilter");
+    const statusFilter = document.getElementById("statusFilter");
+    const reviewabilityFilter = document.getElementById("reviewabilityFilter");
+    const nextActionFilter = document.getElementById("nextActionFilter");
     const count = document.getElementById("count");
     const empty = document.getElementById("empty");
+    const matchesFilter = (card, key, value) => value === "" || card.dataset[key] === value;
     const render = () => {
       const query = search.value.trim().toLowerCase();
       let visible = 0;
       for (const card of cards) {
-        const match = query.length === 0 || card.dataset.search.includes(query);
+        const textMatch = query.length === 0 || card.dataset.search.includes(query);
+        const match = textMatch
+          && matchesFilter(card, "kind", kindFilter.value)
+          && matchesFilter(card, "status", statusFilter.value)
+          && matchesFilter(card, "reviewability", reviewabilityFilter.value)
+          && matchesFilter(card, "nextAction", nextActionFilter.value);
         card.hidden = !match;
         if (match) visible += 1;
       }
@@ -344,6 +358,10 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
       empty.style.display = visible === 0 ? "block" : "none";
     };
     search.addEventListener("input", render);
+    kindFilter.addEventListener("change", render);
+    statusFilter.addEventListener("change", render);
+    reviewabilityFilter.addEventListener("change", render);
+    nextActionFilter.addEventListener("change", render);
     render();
   </script>
 </body>
@@ -385,7 +403,7 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     card.doesNotProve
   ].join(" ").toLowerCase();
 
-  return `<article data-card data-search="${escapeHtml(searchText)}">
+  return `<article data-card data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
   <h2>${escapeHtml(card.title)}</h2>
   <div class="refs"><code>${escapeHtml(card.id)}</code></div>
   <div class="chips">
@@ -405,6 +423,19 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
   </dl>
 </article>`;
 };
+
+const formatSelect = (
+  id: string,
+  label: string,
+  options: readonly string[]
+): string =>
+  `<select id="${escapeHtml(id)}" aria-label="${escapeHtml(label)}">
+        <option value="">${escapeHtml(label)}: all</option>
+        ${options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(label)}: ${escapeHtml(option)}</option>`).join("\n        ")}
+      </select>`;
+
+const uniqueValues = (values: readonly string[]): string[] =>
+  [...new Set(values)].sort((left, right) => left.localeCompare(right));
 
 const formatHtmlList = (items: readonly string[]): string =>
   items.length === 0

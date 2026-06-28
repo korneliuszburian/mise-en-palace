@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V284 Brain Knowledge Static Preview Field Filters
-current task: V284-00 Brain Knowledge Static Preview Field Filters
+active stream: V285 Brain Knowledge Static Preview Browser Smoke
+current task: V285-00 Brain Knowledge Static Preview Browser Smoke
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V284 Brain Knowledge Static Preview Field Filters
+### V285 Brain Knowledge Static Preview Browser Smoke
 
 Goal:
 
-Improve static brain knowledge preview search ergonomics without leaving the
-static/read-only artifact boundary.
+Execute the static brain knowledge preview filter behavior in a browser or
+DOM-capable smoke without leaving the static/read-only artifact boundary.
 
 Current finding:
 
 ```txt
-V283 proved the static preview/readback path can answer exact retained-pattern
-queries, but broad terms such as `skill` are noisy because text search matches
-all card fields equally.
+V284 added static preview field filters for `kind`, `status`, `reviewability`,
+and `nextAction`, but current proof is string/readback plus tests, not executed
+browser/DOM behavior.
 ```
 
 Current action:
 
 ```txt
-Execute V284-00: add small client-side field/facet filters to the static HTML
-preview over stable card fields such as `kind`, `status`, `reviewability`, and
-`nextAction`. Keep the artifact self-contained and read-only. Do not add API,
-MCP, dashboard package, DB search service, persistence, or mutation.
+Execute V285-00: add or run the smallest browser/DOM-capable smoke proving that
+the generated static preview can filter visible cards by text plus field
+filters. Keep the artifact self-contained and read-only. Do not add API, MCP,
+dashboard package, DB search service, persistence, or mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge static preview operator search loop.
+brain knowledge static preview browser smoke loop.
 ```
 
 Falsifier:
 
 ```txt
-Operators cannot narrow broad search terms without noisy matches, or field
-filters hide proof boundaries or require a server/API/DB path.
+The static preview renders filter controls but browser/DOM execution does not
+reduce visible cards correctly, or testing it requires a server/API/DB path.
 ```
 
 ## Pattern Gate

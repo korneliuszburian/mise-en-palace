@@ -23,20 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V284 Brain Knowledge Static Preview Field Filters
-current task: V284-00 Brain Knowledge Static Preview Field Filters
-latest pushed commit before V283: 5d6f99c chore(ui): add brain knowledge static preview script
-latest CI checked before V283: KRN CI success for 5d6f99c6ce5af4fa9f1fe33c812caa8ef8e6a222
+active stream: V285 Brain Knowledge Static Preview Browser Smoke
+current task: V285-00 Brain Knowledge Static Preview Browser Smoke
+latest pushed commit before V284: 36a8284 docs(ui): dogfood brain knowledge static preview
+latest CI checked before V284: KRN CI success for 36a8284c20965c05338adf8f9e5bc648873ae0cd
 ```
 
 Known current gap:
 
 ```txt
-V284-00 Brain Knowledge Static Preview Field Filters is the current gap. V283
-proved the static preview/readback path can answer exact retained-pattern
-queries, but broad terms such as `skill` are noisy because text search matches
-all card fields equally. Improve static field/facet filtering before any wider
-UI/search surface.
+V285-00 Brain Knowledge Static Preview Browser Smoke is the current gap. V284
+added static preview field filters for `kind`, `status`, `reviewability`, and
+`nextAction`, but proof is still string/readback plus tests. Execute the filter
+behavior in a browser/DOM-capable smoke before any wider UI/search surface.
 ```
 
 ## 2. Product Thesis
@@ -2358,6 +2357,33 @@ Source-to-decision:
 - Consumer: V284 Brain Knowledge Static Preview Field Filters.
 - Falsifier: field filters do not reduce noisy broad searches or require a
   non-static server/API/DB path.
+
+## Outcome V284-00 Brain Knowledge Static Preview Field Filters
+
+Summary:
+- added client-side field filters for `kind`, `status`, `reviewability`, and
+  `nextAction` to the static HTML preview;
+- added stable card `data-*` attributes for deterministic client-side filters;
+- kept free-text search, count, empty state, proof boundaries, `Access:
+  read-only`, and `Mutation: none`;
+- guarded the rendered HTML through `runKnowledgeCardsCommand` tests.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v284-brain-knowledge-static-preview-field-filters/REPORT.md`.
+
+Source-to-decision:
+- Source: V283 static preview usefulness dogfood.
+- Mechanism: broad text queries like `skill` are noisy because text search
+  matches every card field equally.
+- KRN implication: add static field/facet filters before API, MCP, dashboard,
+  DB search, or ranking work.
+- Decision: open V285 to execute the filter behavior in a browser/DOM-capable
+  smoke.
+- Does not prove: browser event behavior, search ranking quality, product
+  readiness, larger-catalog sufficiency, or need for API/MCP/dashboard.
+- Consumer: V285 Brain Knowledge Static Preview Browser Smoke.
+- Falsifier: rendered filters exist but do not reduce visible cards under
+  executed browser/DOM behavior.
 
 ## Condensation Rules
 
