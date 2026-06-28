@@ -280,6 +280,12 @@ describe("runRunShowCommand", () => {
       "project resolution does not prove: Connected repo path resolution does not prove owner files are complete, current, or sufficient."
     );
     expect(result.stdout).toContain("Activation diagnostics:");
+    expect(result.stdout).toContain("Context inclusion details:");
+    expect(result.stdout).toContain("source_claim:claim-1");
+    expect(result.stdout).toContain("expectedUse: Render proof boundary.");
+    expect(result.stdout).toContain("Context exclusion details:");
+    expect(result.stdout).toContain("source_claim:claim-weak");
+    expect(result.stdout).toContain("explanation: Weak source excluded.");
     expect(result.stdout).toContain("- inputStatus: empty_activation_store");
     expect(result.stdout).toContain(
       "- counts: memory=0 sourceClaims=0 search=0 ownerFile=0 antiMemory=0 merged=0"
@@ -368,6 +374,22 @@ describe("runRunShowCommand", () => {
         }
       },
       context: {
+        inclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-1",
+          reason: "Evidence readback should distinguish proof strength.",
+          expectedUse: "Render proof boundary.",
+          tokenEstimate: 20,
+          trustTier: "project-decision"
+        }],
+        exclusionDetails: [{
+          subjectType: "source_claim",
+          subjectId: "claim-weak",
+          reason: "low_trust",
+          explanation: "Weak source excluded.",
+          score: 10,
+          trustTier: "low"
+        }],
         activationDiagnostics: {
           inputStatus: "empty_activation_store",
           memoryRecordCount: 0,

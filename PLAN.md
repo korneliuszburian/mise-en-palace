@@ -2,8 +2,6 @@
 
 Status: active compact root plan. Date: 2026-06-27.
 
-Repository: `/home/krn/coding/krn/active/mise-en-palace`.
-
 Root `PLAN.md` is the compact product single source of truth. Detailed
 continuous execution lives in `PLANS.md`.
 
@@ -16,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V321 Ingest v0 Activation Over Persisted Source State
-current task: V321-00 Ingest v0 Activation Over Persisted Source State
+active stream: V322 Activation Lexical Search Over Persisted Local Source Documents
+current task: V322-00 Activation Lexical Search Over Persisted Local Source Documents
 ```
 
 ## Compact Completed Checkpoints
@@ -49,45 +47,55 @@ Remaining product gaps:
 
 ### V321 Ingest v0 Activation Over Persisted Source State
 
+Status: complete.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v321-ingest-v0-activation-over-persisted-source-state/REPORT.md
+SourceArtifact/Chunk/SearchDocument/Claim/DecisionEdge readback works.
+`krn plan --persist` activates persisted SourceClaims. `krn run show` now
+exposes context details. Plan lexical search over the artifact SearchDocument
+still reports search=0.
+```
+
+### V322 Activation Lexical Search Over Persisted Local Source Documents
+
 Goal:
 
-Prove whether existing activation/readback surfaces can select or expose the
-persisted local source/search/claim/decision substrate from V318-V320 without
-schema/runtime expansion.
+Make `krn plan --persist` retrieve persisted local artifact SearchDocuments
+when task queries contain explicit marker/hash terms.
 
 Current finding:
 
 ```txt
-V316 added local artifact preview, V317 added reviewable source/search
-candidate output, V318 proved SourceArtifact/SourceChunk/SearchDocument
-persistence/readback, V319 proved explicit SourceClaim persistence/readback,
-and V320 proved SourceDecisionEdge linkage/readback. The next gap is whether
-the existing brain can retrieve or expose that persisted source state usefully.
+V321 proved direct SearchDocument lexical readback works in `krn source artifact
+preview --persist`, but `krn plan --persist` activation diagnostics still
+reported search=0 even when the task query contained the artifact marker.
 ```
 
 Current action:
 
 ```txt
-Execute V321-00: inspect existing activation/retrieval/readback owner paths and
-implement or record the smallest persisted local source state activation/readback
-proof. Do not build source crawler, schema migration, dashboard, API/MCP, worker
-daemon, broad eval platform, embeddings, ranking, graph runtime, or Memory Core
-mutation.
+Execute V322-00: add the smallest bounded activation/query repair so persisted
+local artifact SearchDocuments can appear in activation candidates/readback for
+explicit marker/hash queries. No crawler/schema/dashboard/API/MCP/worker/
+embeddings/graph/broad ranking rewrite/Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future activation quality, source grounding, graph brain, consensus/eval
-candidates, and product-facing knowledge ingestion.
+future activation quality, source grounding, ingest v0, graph brain, and
+product-facing knowledge ingestion.
 ```
 
 Falsifier:
 
 ```txt
-V321 cannot retrieve or expose persisted local source/search/claim/decision
-state through existing activation/readback surfaces without broad schema/runtime
-work.
+Given a persisted local artifact SearchDocument and a task query with its
+marker/hash terms, activation diagnostics still report search=0 or run readback
+cannot expose the selected/excluded SearchDocument.
 ```
 
 ## Pattern Gate
@@ -128,25 +136,17 @@ Do not substitute self/headless scenarios for V02-01.
 
 ## Hard Non-Goals
 
-Do not build or claim: fake V02-01 proof, product-ready status, widened
-internal alpha, dashboard, API server, MCP server, worker daemon, source
-crawler, Research Foundry, broad eval platform, generic multi-agent system,
-runtime markdown memory, hidden semantic hooks, living target repo writes
-without explicit scope, large `AGENTS.md` expansion, or parallel roadmap.
+Do not build or claim: fake V02-01 proof, product-ready status, dashboard,
+API/MCP, worker, crawler, Research Foundry, broad eval, generic multi-agent,
+runtime markdown memory, hidden semantic hooks, unsafe target writes, large
+`AGENTS.md`, or parallel roadmap.
 
 ## Verification Policy
 
 Use the narrowest relevant verification for each slice.
 
 If local Vitest or workspace tests fail with a temporary-directory write error,
-set `TMPDIR` to a path outside this repository, for example:
-
-```sh
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test
-```
-
-Do not set `TMPDIR` under the repo checkout: CLI boundary tests rely on
-outside-workspace temporary directories.
+use `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo checkout: CLI boundary tests rely on outside-workspace temporary directories.
 
 Docs/plan-only changes: `git diff --check`.
 Source changes: `pnpm typecheck`, `pnpm test`, `git diff --check`.

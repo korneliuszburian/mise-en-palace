@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V321 Ingest v0 Activation Over Persisted Source State
-current task: V321-00 Ingest v0 Activation Over Persisted Source State
+active stream: V322 Activation Lexical Search Over Persisted Local Source Documents
+current task: V322-00 Activation Lexical Search Over Persisted Local Source Documents
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,13 +31,11 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V321-00 Ingest v0 Activation Over Persisted Source State is the current gap.
-V316 implemented local source artifact preview, V317 added reviewable candidate
-output, V318 proved SourceArtifact/SourceChunk/SearchDocument persistence
-readback, V319 proved SourceClaim persistence/readback, and V320 proved
-SourceDecisionEdge linkage/readback. Now prove whether existing activation or
-readback surfaces can select/expose that persisted source state without crawler,
-schema migration, embeddings, graph runtime, or Memory Core mutation.
+V322-00 Activation Lexical Search Over Persisted Local Source Documents is the
+current gap. V321 proved persisted SourceClaim activation and context detail
+run readback, but `krn plan --persist` activation still reported search=0 for
+the persisted local artifact SearchDocument even when the task query contained
+the artifact marker.
 ```
 
 ## 2. Product Thesis
@@ -1463,7 +1461,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v320-ingest-v0-sourcedecision-linkage
 
 ### V321-00 — Ingest v0 Activation Over Persisted Source State
 
-Status: active.
+Status: complete.
 
 Goal: prove whether existing activation/readback surfaces can select or expose
 the persisted local source/search/claim/decision substrate from V318-V320.
@@ -1486,9 +1484,49 @@ boundaries.
 Verify: `pnpm typecheck`, `pnpm test`, `git diff --check`; add `pnpm db:ready`
 and `pnpm db:smoke` when DB path is exercised.
 
-Falsifier: V321 cannot retrieve or expose persisted local source/search/claim/
-decision state through existing activation/readback surfaces without broad
-schema/runtime work.
+Falsifier outcome: partially falsified. SourceArtifact/SearchDocument direct
+readback, SourceClaim activation, SourceDecisionEdge readback, and `run show`
+context details work; plan activation lexical search over the persisted local
+artifact SearchDocument still reports search=0.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v321-ingest-v0-activation-over-persisted-source-state/REPORT.md
+```
+
+### V322-00 — Activation Lexical Search Over Persisted Local Source Documents
+
+Status: active.
+
+Goal: make `krn plan --persist` retrieve persisted local artifact
+SearchDocuments when the task query contains explicit marker/hash terms.
+
+Use: V321 report, `packages/harness/src/activation/sourceQuery.ts`,
+`packages/harness/src/activation/memoryQuery.ts`,
+`packages/harness/src/activation/activationEngine.ts`,
+`packages/db/src/repositories/DrizzleRetrievalRepository.ts`, and focused
+activation tests.
+
+Allowed: smallest bounded activation/query/readback source change and focused
+tests.
+
+Forbidden: DB schema migration, source crawler, embeddings, broad ranking
+rewrite, graph runtime, dashboard, API/MCP, worker daemon, Memory Core
+mutation, target repo writes, broad eval platform.
+
+Done when: a persisted local artifact SearchDocument can appear in activation
+candidate/readback for explicit marker/hash queries, or a precise lower-level
+retrieval limitation is recorded with evidence.
+
+Verify: `pnpm --filter @krn/harness test -- activation`,
+`pnpm --filter @krn/cli test -- runRunShowCommand`, `pnpm typecheck`,
+`pnpm test`, `git diff --check`; add `pnpm db:ready` and a live DB proof when
+DB path is exercised.
+
+Falsifier: given a persisted local artifact SearchDocument and a task query
+containing its marker/hash terms, activation diagnostics still report search=0
+or run readback cannot expose the selected/excluded SearchDocument.
 
 ## Pattern Gate
 
@@ -1583,7 +1621,8 @@ Falsifier:
 - [x] V318 Ingest v0 SearchDocument Persistence Readback
 - [x] V319 Ingest v0 SourceClaim Review Path
 - [x] V320 Ingest v0 SourceDecision Linkage Readback
-- [ ] V321 Ingest v0 Activation Over Persisted Source State
+- [x] V321 Ingest v0 Activation Over Persisted Source State
+- [ ] V322 Activation Lexical Search Over Persisted Local Source Documents
 
 ## Recent Evidence Pointers
 

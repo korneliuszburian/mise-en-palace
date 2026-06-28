@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V321 Ingest v0 Activation Over Persisted Source State
+V322 Activation Lexical Search Over Persisted Local Source Documents
 ```
 
 Current state:
@@ -27,16 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V321-00 Ingest v0 Activation Over Persisted Source State.
+current task: V322-00 Activation Lexical Search Over Persisted Local Source Documents.
 ```
 
 Current task:
 
 ```txt
-Prove whether existing activation/readback surfaces can select or expose the
-persisted local source/search/claim/decision substrate from V318-V320, without
-crawler, DB schema, dashboard, API/MCP, worker, embeddings, graph runtime, or
-Memory Core mutation.
+Make `krn plan --persist` retrieve persisted local artifact SearchDocuments
+when the task query contains explicit marker/hash terms, without broad ranking,
+embeddings, crawler, graph runtime, schema changes, or Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -51,8 +50,9 @@ to preserve are:
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
 4. Ingest v0: local artifact preview, candidate bridge, SearchDocument,
-   SourceClaim, and SourceDecisionEdge persistence/readback exist; next prove
-   activation/readback usefulness over that persisted local source state.
+   SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
+   activation, and context detail run readback exist; next repair lexical
+   activation over persisted local SearchDocuments.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core

@@ -13,10 +13,15 @@ import {
 } from "@krn/core";
 import type {
   CandidateReviewability,
+  ContextAssembly,
+  ContextExclusion,
+  ContextInclusion,
+  ContextSubjectType,
   EvidenceCommand,
   FeedbackDelta,
   FeedbackCandidateProposalKind,
   NormalizedEvidenceCommand,
+  SourceTrustTier,
   SourceUsefulnessOutcome,
   TargetEvidence
 } from "@krn/core";
@@ -73,6 +78,24 @@ export interface RunReadbackChangedFilesResource {
   };
 }
 
+export interface RunReadbackContextInclusionResource {
+  subjectType: ContextSubjectType;
+  subjectId: string;
+  reason: string;
+  expectedUse: string;
+  trustTier: SourceTrustTier;
+  tokenEstimate?: number;
+}
+
+export interface RunReadbackContextExclusionResource {
+  subjectType: ContextSubjectType;
+  subjectId: string;
+  reason: string;
+  explanation: string;
+  trustTier: SourceTrustTier;
+  score?: number;
+}
+
 export interface RunReadbackResource {
   kind: "krn.run.readback.v1";
   access: "read_only";
@@ -95,6 +118,8 @@ export interface RunReadbackResource {
     status: string;
     inclusions: number;
     exclusions: number;
+    inclusionDetails: RunReadbackContextInclusionResource[];
+    exclusionDetails: RunReadbackContextExclusionResource[];
     activationDiagnostics?: ActivationRetrievalDiagnostics;
   };
   evidenceBundles: {
@@ -331,6 +356,39 @@ const renderCommands = (commands: readonly EvidenceCommand[]): string[] =>
     ? ["- none"]
     : commands.flatMap(renderCommand);
 
+const contextSubjectRef = (item: { subjectType: string; subjectId: string }): string =>
+  `${item.subjectType}:${item.subjectId}`;
+
+const renderContextInclusion = (inclusion: ContextInclusion): string[] => [
+  `  - ${contextSubjectRef(inclusion)}`,
+  `    reason: ${inclusion.reason}`,
+  `    expectedUse: ${inclusion.expectedUse}`,
+  `    trustTier: ${inclusion.trustTier}`,
+  ...(inclusion.tokenEstimate === undefined ? [] : [`    tokenEstimate: ${inclusion.tokenEstimate}`])
+];
+
+const renderContextExclusion = (exclusion: ContextExclusion): string[] => [
+  `  - ${contextSubjectRef(exclusion)}`,
+  `    reason: ${exclusion.reason}`,
+  `    explanation: ${exclusion.explanation}`,
+  `    trustTier: ${exclusion.trustTier}`,
+  ...(exclusion.score === undefined ? [] : [`    score: ${exclusion.score}`])
+];
+
+const renderContextDetails = (
+  contextAssembly: ContextAssembly | undefined
+): string[] => {
+  const inclusions = contextAssembly?.inclusions ?? [];
+  const exclusions = contextAssembly?.exclusions ?? [];
+
+  return [
+    "Context inclusion details:",
+    ...(inclusions.length === 0 ? ["  - none"] : inclusions.flatMap(renderContextInclusion)),
+    "Context exclusion details:",
+    ...(exclusions.length === 0 ? ["  - none"] : exclusions.flatMap(renderContextExclusion))
+  ];
+};
+
 const renderList = (values: readonly string[]): string[] =>
   values.length === 0
     ? ["    - none"]
@@ -382,6 +440,28 @@ const commandResource = (command: EvidenceCommand): RunReadbackCommandResource =
     doesNotProve: normalized.doesNotProve
   };
 };
+
+const contextInclusionResource = (
+  inclusion: ContextInclusion
+): RunReadbackContextInclusionResource => ({
+  subjectType: inclusion.subjectType,
+  subjectId: inclusion.subjectId,
+  reason: inclusion.reason,
+  expectedUse: inclusion.expectedUse,
+  trustTier: inclusion.trustTier,
+  ...(inclusion.tokenEstimate === undefined ? {} : { tokenEstimate: inclusion.tokenEstimate })
+});
+
+const contextExclusionResource = (
+  exclusion: ContextExclusion
+): RunReadbackContextExclusionResource => ({
+  subjectType: exclusion.subjectType,
+  subjectId: exclusion.subjectId,
+  reason: exclusion.reason,
+  explanation: exclusion.explanation,
+  trustTier: exclusion.trustTier,
+  ...(exclusion.score === undefined ? {} : { score: exclusion.score })
+});
 
 const candidateReviewabilityReasons = (
   metadata: Record<string, unknown>
@@ -629,6 +709,8 @@ export const buildRunReadbackResource = (
       status: aggregate.contextAssembly?.status ?? "missing",
       inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
       exclusions: aggregate.contextAssembly?.exclusions.length ?? 0,
+      inclusionDetails: aggregate.contextAssembly?.inclusions.map(contextInclusionResource) ?? [],
+      exclusionDetails: aggregate.contextAssembly?.exclusions.map(contextExclusionResource) ?? [],
       ...(aggregate.contextAssembly === undefined
         ? {}
         : (() => {
@@ -731,6 +813,7 @@ const renderAggregate = (
     `- status: ${aggregate.contextAssembly?.status ?? "missing"}`,
     `- inclusions: ${aggregate.contextAssembly?.inclusions.length ?? 0}`,
     `- exclusions: ${aggregate.contextAssembly?.exclusions.length ?? 0}`,
+    ...renderContextDetails(aggregate.contextAssembly),
     ...(activationDiagnostics === undefined
       ? []
       : formatActivationRetrievalDiagnostics(activationDiagnostics)),
