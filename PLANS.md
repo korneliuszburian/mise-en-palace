@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V242 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V243 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -86,10 +86,11 @@ slices plus TS best-pattern application, sibling package path normalization,
 activation abstention re-gate, activation diagnostics/readback, and
 current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
-finite-state exhaustiveness application:
+finite-state exhaustiveness application plus Codex ExecPlan source decision
+guard:
 complete
-active stream: V243 Codex ExecPlan Source Decision Trial
-current task: V243-00 Codex ExecPlan Source Decision Trial
+active stream: V244 Best-Pattern Surface Re-Gate
+current task: V244-00 Best-Pattern Surface Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -105,7 +106,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V243-00 Codex ExecPlan Source Decision Trial.
+V244-00 Best-Pattern Surface Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19321,7 +19322,7 @@ New task:
 
 ID: V243-00
 Name: Codex ExecPlan Source Decision Trial
-Status: active
+Status: complete
 Goal: map the official Codex ExecPlan/Goal/prompting sources already
 influencing KRN through source-to-decision, then route them to one compact
 consumer, falsifier, or explicit rejection.
@@ -19400,6 +19401,128 @@ not justify a new subsystem.
 Next-task synthesis rule: continue from V243 evidence and choose the next
 surface from measured gaps, not from generic "best practices" appetite.
 
+V243 outcome:
+- V243-00 complete: official OpenAI/Codex process sources for Goals, ExecPlans,
+  and the Codex Prompting Guide were re-gated and tied to a focused source-map
+  invariant consumer.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v243-codex-execplan-source-decision/REPORT.md`.
+
+V243 evidence:
+- Persisted V243 plan:
+  `e6dfd56d-8d4e-48a2-8bf0-3c5fe903eefc`.
+- Evidence bundle:
+  `08d76a36-ae1a-4b70-9e7e-5e9ba1738ec8`.
+- Review assessment:
+  `735f3da4-18c0-4354-aa5d-32766c7efde0`.
+- Feedback delta:
+  `5aa74882-9f16-492b-919b-7ebbe021bdca`.
+- Observation group:
+  `5a7598b5-6c51-48b7-8c3b-89c33cc9dbfe`.
+- Final reflection record:
+  `7ddb7e55-2b5b-4c8c-be37-3aad965af1da`.
+- Ordering caveat: an earlier parallel reflect record selected 0 observations;
+  final proof used a second reflect after observe completed.
+- MemoryRecord created: no.
+- Codex manual helper reported the local manual was current:
+  `/tmp/openai-docs-cache/codex-manual.md`.
+- Official source availability checks returned HTTP 200 for:
+  `codex_exec_plans`, `using_goals_in_codex`, and
+  `codex_prompting_guide`.
+- `packages/harness/src/sourceMapInvariants.test.ts` now guards the
+  source-to-decision consumers for Goals, ExecPlans, and Codex Prompting Guide.
+- `pnpm --filter @krn/harness test -- sourceMapInvariants activePlanInvariants patternChainInvariants`:
+  passed.
+
+V243 source-to-decision:
+- Source: OpenAI Cookbook Goals, ExecPlans, and Codex Prompting Guide retained
+  in `docs/KRN_SOURCES.md`.
+- Mechanism: Codex performs better with explicit objectives, continuation
+  state, task constraints, expected outputs, and verification.
+- KRN implication: `GOAL.md` stays compact current objective, `PLAN.md` stays
+  compact product truth, `PLANS.md` stays detailed continuous ExecPlan, and task
+  contracts must name non-goals, allowed/forbidden writes, verification,
+  proof/non-proof, rollback, and next-task synthesis.
+- Decision: add a focused source-map invariant instead of expanding root plans.
+- Does not prove: every process source needs a dedicated invariant or that KRN
+  is product-ready.
+- Consumer: `packages/harness/src/sourceMapInvariants.test.ts`.
+- Falsifier: an adopted Codex process source remains in `docs/KRN_SOURCES.md`
+  without a concrete KRN consumer and falsifier.
+
+New task:
+- V244-00 Best-Pattern Surface Re-Gate.
+
+ID: V244-00
+Name: Best-Pattern Surface Re-Gate
+Status: active
+Goal: choose the next highest-ROI best-pattern application surface from current
+evidence before ingesting more sources or changing code.
+Product rationale: the brain should continuously absorb best patterns across
+infra, harness, CI/eval, Codex surfaces, TypeScript, security, and operator UX,
+but only when a surface has a clear consumer and falsifier.
+Architectural rationale: source-to-decision is the intake lane; active tasks
+should be chosen by measured gaps, not by broad appetite for more research.
+Evidence source:
+- V241, V242, and V243 reports;
+- `docs/KRN_SOURCES.md`;
+- `docs/runbooks/pattern-intake.md`;
+- recent `PLANS.md` outcomes;
+- source map, active plan, and pattern-chain invariants.
+Inputs required:
+- current-state preflight;
+- default `krn plan --persist`;
+- review of recent evidence by surface;
+- no new external source unless the selected surface needs it.
+Files likely touched:
+- one report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`;
+- maybe `docs/KRN_SOURCES.md`, a skill, runbook, invariant, or small source/test
+  repair only after the re-gate names a consumer.
+Allowed writes:
+- bounded re-gate report;
+- active task selection;
+- one focused consumer update only if the re-gate finds a clear missing guard.
+Forbidden writes:
+- source crawler;
+- research archive;
+- broad paper/course ingestion;
+- dashboard/API/MCP/worker daemon;
+- broad activation or reflection rewrite;
+- generic "quality" subsystem.
+Output requirements:
+- surface comparison across infra, harness, CI/eval, Codex surfaces,
+  TypeScript, security, and operator UX;
+- one selected next bounded slice or explicit defer;
+- source class, consumer, falsifier, does-not-prove, and verification boundary.
+Definition of Done:
+- default KRN plan path used and recorded;
+- current evidence reviewed by surface;
+- one next bounded task appended or all candidates deferred with reason;
+- verification appropriate to touched files passes;
+- evidence capture/report exists;
+- commit is pushed and CI checked when files change.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- `pnpm --filter @krn/harness test -- sourceMapInvariants activePlanInvariants patternChainInvariants`;
+- `git diff --check`;
+- `krn evidence capture --persist`;
+- `krn observe --persist`;
+- `krn reflect --persist`.
+Acceptance criteria:
+- KRN does not ingest another "best practice" until it names the surface and
+  consumer;
+- next active task is selected by evidence;
+- no broad research backlog is created.
+Risk: mistaking volume of sources for quality of brain improvement.
+Rollback: revert report/plan update if it selects a task without consumer or
+falsifier.
+Condensation expectation: if one surface repeatedly wins, create a durable
+skill/runbook/guard only after evidence shows the repeated pattern.
+Next-task synthesis rule: V244 must produce exactly one next active bounded
+task or explicitly stop as blocked/deferred.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19407,10 +19530,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V243 Codex ExecPlan Source Decision Trial.
+- V244 Best-Pattern Surface Re-Gate.
 
 Next active task:
-- V243-00 Codex ExecPlan Source Decision Trial.
+- V244-00 Best-Pattern Surface Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

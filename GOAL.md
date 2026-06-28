@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V243 Codex ExecPlan Source Decision Trial
+V244 Best-Pattern Surface Re-Gate
 ```
 
 Current product loop:
@@ -49,7 +49,8 @@ complete.
 V240: default-path project resolution readback complete.
 V241: external TypeScript best-pattern intake complete.
 V242: finite-state exhaustiveness application complete.
-current task: V243-00 Codex ExecPlan Source Decision Trial.
+V243: Codex ExecPlan source decision guard complete.
+current task: V244-00 Best-Pattern Surface Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

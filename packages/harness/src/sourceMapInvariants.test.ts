@@ -146,4 +146,31 @@ describe("KRN source map invariants", () => {
     expect(source?.body).not.toContain("review capture");
     expect(source?.body).not.toContain("later dogfood starts with `krn doctor`");
   });
+
+  it("keeps official Codex process sources tied to executable KRN consumers", () => {
+    const goals = sourceSections().find((section) => section.title === "Goals In Codex");
+    const execPlans = sourceSections().find((section) => section.title === "ExecPlans");
+    const prompting = sourceSections().find(
+      (section) => section.title === "Codex Prompting Guide"
+    );
+
+    expect(goals?.body).toContain("GOAL.md");
+    expect(goals?.body).toContain("current execution contract");
+    expect(goals?.body).toContain("compact");
+    expect(goals?.body).toContain("becomes a ledger/backlog");
+
+    expect(execPlans?.body).toContain("PLANS.md");
+    expect(execPlans?.body).toContain("PLAN.md");
+    expect(execPlans?.body).toContain("fresh Codex continuation");
+    expect(execPlans?.body).toContain("without broad rereads or stale completed slices");
+
+    expect(prompting?.body).toContain("non-goals");
+    expect(prompting?.body).toContain("allowed writes");
+    expect(prompting?.body).toContain("forbidden writes");
+    expect(prompting?.body).toContain("verification");
+    expect(prompting?.body).toContain("proof/non-proof boundaries");
+    expect(prompting?.body).toContain("rollback");
+    expect(prompting?.body).toContain("next-task synthesis");
+    expect(prompting?.body).toContain("every small edit");
+  });
 });

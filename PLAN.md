@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V243 Codex ExecPlan Source Decision Trial
-current task: V243-00 Codex ExecPlan Source Decision Trial
+active stream: V244 Best-Pattern Surface Re-Gate
+current task: V244-00 Best-Pattern Surface Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -38,48 +38,49 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            package path normalization plus activation abstention re-gate,
            abstention diagnostics/readback, current-state activation seed, and
            default connected-project resolution, and project resolution
-           readback plus external TypeScript best-pattern intake and
-           finite-state exhaustiveness application complete.
+           readback plus external TypeScript best-pattern intake,
+           finite-state exhaustiveness application, and Codex ExecPlan source
+           decision guard complete.
 ```
 
 ## Active Stream
 
-### V243 Codex ExecPlan Source Decision Trial
+### V244 Best-Pattern Surface Re-Gate
 
 Goal:
 
-Map the official Codex ExecPlan/Goal/prompting sources already influencing KRN
-through source-to-decision, then route them to one compact consumer, falsifier,
-or explicit rejection.
+Choose the next highest-ROI best-pattern application surface from current
+evidence before ingesting more sources or changing code.
 
 Current finding:
 
 ```txt
-V242 proved that external best-pattern intake can produce one bounded code
-repair. The next risk is that Codex process links in PLANS.md remain references
-without explicit KRN mechanism, consumer, falsifier, and usefulness closure.
+V241-V243 proved that source-backed patterns can move from official docs to
+standards, code, and invariants. The next risk is choosing sources by vibe
+instead of selecting the surface with the clearest missing consumer/falsifier.
 ```
 
 Current action:
 
 ```txt
-Execute V243-00: inspect official OpenAI/Codex ExecPlan, Goals, and prompting
-sources; adopt/reject only bounded mechanisms that improve KRN continuation,
-planning, or prompt discipline without creating a research archive.
+Execute V244-00: review recent evidence and source map coverage across infra,
+harness, CI/eval, Codex surfaces, TypeScript, security, and operator UX; select
+one next bounded source-backed slice or explicitly defer if no surface has a
+clear consumer.
 ```
 
 Primary consumer:
 
 ```txt
-GOAL.md / PLAN.md / PLANS.md continuation contract, source map, skill/runbook,
-or a focused invariant if source inspection proves a drift.
+PLANS.md active task queue, plus a compact report explaining the chosen surface,
+source class, consumer, falsifier, and non-goals.
 ```
 
 Falsifier:
 
 ```txt
-The slice hoards links, expands the plan with broad prose, or cannot name a
-concrete KRN consumer and falsifier for each adopted Codex source.
+The slice creates a broad research backlog, picks a source without a consumer,
+or starts implementation without naming the surface-specific proof boundary.
 ```
 
 ## Pattern Gate
