@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V315 Executable Brain-QA Case BQ-028
-current task: V315-00 Executable Brain-QA Case BQ-028
+active stream: V316 Ingest v0 Local Source Artifact Preview
+current task: V316-00 Ingest v0 Local Source Artifact Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,10 +31,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V315-00 Executable Brain-QA Case BQ-028 is the current gap. BQ-015 is executed
-and covered; BQ-023, BQ-024, and BQ-025 are executed. Now the next brain-QA
-lane should prove compact product-gap readback without historical ledgers or
-new runtime/platform work.
+V316-00 Ingest v0 Local Source Artifact Preview is the current gap. BQ-015 is
+executed and covered; BQ-023, BQ-024, BQ-025, and BQ-028 are executed. Compact
+root readback identified Ingest v0 as the next highest-ROI product-facing gap.
 ```
 
 ## 2. Product Thesis
@@ -82,7 +81,7 @@ green test != product value
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
-   and BQ-025 are executed; execute BQ-028 compact product-gap readback next.
+   BQ-025, and BQ-028 are executed; next use that result to start Ingest v0.
 4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
    -> embedding/search document with permission and temporal metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
@@ -603,7 +602,7 @@ report/readback artifacts.
 
 ### V315-00 — Executable Brain-QA Case BQ-028
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -690,6 +689,12 @@ Definition of Done:
 - no runtime/eval platform or historical-ledger reread is used;
 - `git diff --check` passes.
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v315-executable-brain-qa-bq-028/REPORT.md
+```
+
 Verification commands:
 
 ```sh
@@ -719,8 +724,8 @@ identified without historical ledgers or new runtime.
 Next-task synthesis rule:
 
 ```txt
-After V315, add focused coverage if missing or execute the next docs/CLI-only
-brain-QA case.
+After V315, start the next highest-ROI product-facing gap instead of extending
+docs/readback-only brain-QA.
 ```
 
 Primary consumer:
@@ -741,6 +746,161 @@ Falsifier:
 ```txt
 BQ-028 cannot identify the main unresolved product gaps from compact current
 state and selected reports without historical ledger rereads.
+```
+
+### V316-00 — Ingest v0 Local Source Artifact Preview
+
+Status: active.
+
+Goal:
+
+```txt
+Inspect current source/search substrate and implement or record the smallest
+local source artifact -> hash -> chunk/source-range preview path.
+```
+
+Product rationale:
+
+```txt
+The compact product-gap readback identifies Ingest v0 as the next highest-ROI
+product-facing gap. KRN cannot become a useful brain without a bounded path from
+source artifacts into reviewable chunks/source ranges.
+```
+
+Architectural rationale:
+
+```txt
+Start local and preview-only before source crawler, DB schema migration, worker,
+API/MCP, dashboard, embeddings, ranking, graph runtime, or Memory Core mutation.
+```
+
+Evidence source:
+
+```txt
+V315 report, GOAL.md, PLAN.md, PLANS.md, current source/search/schema code.
+```
+
+Official/external sources:
+
+```txt
+`pattern:active-context-compact-current-truth`, `pattern:evidence-proof-non-proof-boundary`,
+and source-to-decision KRN decisions if source behavior changes.
+```
+
+Inputs required:
+
+```txt
+GOAL.md
+PLAN.md
+PLANS.md
+docs/reviews/controlled-dogfood/2026-06-28-v315-executable-brain-qa-bq-028/REPORT.md
+source/search/schema/CLI files discovered by targeted search
+```
+
+Files likely touched:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v316-ingest-v0-local-source-artifact-preview/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+focused package source/tests only if a small existing owner surface supports it
+```
+
+Allowed writes:
+
+```txt
+docs/report/root updates; focused source/tests for a local preview-only ingest
+path if current substrate supports it.
+```
+
+Forbidden writes:
+
+```txt
+source crawler, DB schema migration, broad eval platform, Promptfoo expansion,
+embeddings/ranking runtime, graph runtime, dashboard, API/MCP, worker daemon,
+Memory Core mutation, target repo writes, paid/proprietary course ingestion.
+```
+
+Output requirements:
+
+```txt
+record inspected owner files, decision to implement/defer, artifact hash/chunk
+preview behavior if implemented, proof/non-proof boundaries, mutation boundary,
+and next product-facing action.
+```
+
+Definition of Done:
+
+- existing source/search substrate is inspected with targeted reads;
+- either a smallest local preview path is implemented with focused tests, or a
+  precise missing-substrate finding is recorded;
+- no forbidden runtime/platform work is added;
+- report states what evidence proves and does not prove;
+- verification matches touched files.
+
+Verification commands:
+
+```sh
+git diff --check
+```
+
+If package source changes:
+
+```sh
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+```txt
+V316 has either a working local source artifact preview path or a precise,
+bounded missing-substrate finding that enables the next implementation slice.
+```
+
+Risk:
+
+```txt
+accidentally building a source crawler, schema migration, or broad ingestion
+platform instead of a local preview slice.
+```
+
+Rollback:
+
+```txt
+Revert focused source/docs changes; no persistent schema/runtime changes should
+exist.
+```
+
+Next-task synthesis rule:
+
+```txt
+If preview path is implemented, add focused coverage/readback and decide next
+ingest v0 persistence/search step. If missing substrate is found, open the
+smallest owner-surface repair.
+```
+
+Primary consumer:
+
+```txt
+future source grounding, graph brain, pattern intake, and product-facing
+knowledge ingestion.
+```
+
+Does not prove:
+
+```txt
+mass ingest, source crawler readiness, DB persistence, graph retrieval, product
+readiness, or arbitrary corpus QA.
+```
+
+Falsifier:
+
+```txt
+V316 cannot produce a local artifact preview or precise missing-substrate
+finding without broad schema/runtime work.
 ```
 
 ## Pattern Gate
@@ -830,7 +990,8 @@ Falsifier:
 - [x] V312 Executable Brain-QA Case BQ-023
 - [x] V313 Executable Brain-QA Case BQ-024
 - [x] V314 Executable Brain-QA Case BQ-025
-- [ ] V315 Executable Brain-QA Case BQ-028
+- [x] V315 Executable Brain-QA Case BQ-028
+- [ ] V316 Ingest v0 Local Source Artifact Preview
 
 ## Recent Evidence Pointers
 
@@ -852,6 +1013,27 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v313-executable-brain-qa-bq-024/REPORT.md`
 - V314 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v314-executable-brain-qa-bq-025/REPORT.md`
+- V315 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v315-executable-brain-qa-bq-028/REPORT.md`
+
+## Outcome V315 Executable Brain-QA Case BQ-028
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: compact root `GOAL.md`, `PLAN.md`, `PLANS.md`, and V314 report.
+- Mechanism: compact active state carries current product readiness, unresolved
+  gaps, and next-task synthesis without historical ledger rereads.
+- KRN implication: the project can continue from compact state and should now
+  move to a product-facing Ingest v0 slice.
+- Decision: close BQ-028 and activate V316 Ingest v0 Local Source Artifact
+  Preview.
+- Does not prove: arbitrary corpus QA, graph retrieval, product readiness,
+  second-operator usability, or that Ingest v0 is already implemented.
+- Consumer: V316 Ingest v0 Local Source Artifact Preview.
+- Falsifier: compact state cannot recover product gaps without historical
+  ledger rereads.
 
 ## Outcome V314 Executable Brain-QA Case BQ-025
 

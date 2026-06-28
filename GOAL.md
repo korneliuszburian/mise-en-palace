@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V315 Executable Brain-QA Case BQ-028
+V316 Ingest v0 Local Source Artifact Preview
 ```
 
 Current state:
@@ -27,14 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V315-00 Executable Brain-QA Case BQ-028.
+current task: V316-00 Ingest v0 Local Source Artifact Preview.
 ```
 
 Current task:
 
 ```txt
-Execute compact-root product-gap readback for BQ-028 without historical ledger
-rereads, new runtime, schema, dashboard, API/MCP, or broad eval platform.
+Inspect and implement or record the smallest local source artifact -> hash ->
+chunk/source-range preview path without source crawler, DB schema, dashboard,
+API/MCP, worker daemon, or broad eval platform.
 ```
 
 ## Remaining Work
@@ -47,7 +48,7 @@ to preserve are:
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
-   and BQ-025 are executed; execute BQ-028 compact product-gap readback next.
+   BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
 4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
    or search document with temporal and permission metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,

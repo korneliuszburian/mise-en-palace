@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V315 Executable Brain-QA Case BQ-028
-current task: V315-00 Executable Brain-QA Case BQ-028
+active stream: V316 Ingest v0 Local Source Artifact Preview
+current task: V316-00 Ingest v0 Local Source Artifact Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -47,40 +47,41 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V315 Executable Brain-QA Case BQ-028
+### V316 Ingest v0 Local Source Artifact Preview
 
 Goal:
 
-Execute compact-root product-gap readback for BQ-028.
+Start Ingest v0 with the smallest local source artifact preview.
 
 Current finding:
 
 ```txt
-V314 proved recent reports preserve proof/non-proof boundaries. The next
-docs/readback case should check whether KRN can identify unresolved product
-gaps from compact root state and selected reports without historical ledgers.
+V315 proved compact root state can recover the main product gaps without
+historical ledgers. The highest-ROI next product-facing gap is Ingest v0:
+source artifact -> hash -> chunk -> source range -> claim/search document.
 ```
 
 Current action:
 
 ```txt
-Execute V315-00: inspect compact root state and selected current reports for
-BQ-028. Do not read historical ledgers or add DB schema, runtime platform,
-dashboard, API/MCP, source crawler, embeddings, ranking, or Memory Core
-mutation.
+Execute V316-00: inspect current source/search substrate and implement or record
+the smallest local source artifact -> hash -> chunk/source-range preview path.
+Do not build a source crawler, DB schema migration, runtime platform,
+dashboard, API/MCP, worker daemon, broad eval platform, embeddings, ranking, or
+Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA and evidence/review validation.
+future source grounding, graph brain, and product-facing knowledge ingestion.
 ```
 
 Falsifier:
 
 ```txt
-BQ-028 cannot identify the main unresolved product gaps from compact current
-state and selected reports without historical ledger rereads.
+V316 cannot produce a bounded local artifact preview or a precise missing
+substrate finding without broad schema/runtime work.
 ```
 
 ## Pattern Gate
