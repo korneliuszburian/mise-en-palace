@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V243 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V244 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -87,10 +87,10 @@ activation abstention re-gate, activation diagnostics/readback, and
 current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
-guard:
+guard plus best-pattern surface re-gate:
 complete
-active stream: V244 Best-Pattern Surface Re-Gate
-current task: V244-00 Best-Pattern Surface Re-Gate
+active stream: V245 Source-Decision Owner-File Seed Repair
+current task: V245-00 Source-Decision Owner-File Seed Repair
 ```
 
 Evidence already recorded in repo:
@@ -106,7 +106,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V244-00 Best-Pattern Surface Re-Gate.
+V245-00 Source-Decision Owner-File Seed Repair.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19455,7 +19455,7 @@ New task:
 
 ID: V244-00
 Name: Best-Pattern Surface Re-Gate
-Status: active
+Status: complete
 Goal: choose the next highest-ROI best-pattern application surface from current
 evidence before ingesting more sources or changing code.
 Product rationale: the brain should continuously absorb best patterns across
@@ -19523,6 +19523,139 @@ skill/runbook/guard only after evidence shows the repeated pattern.
 Next-task synthesis rule: V244 must produce exactly one next active bounded
 task or explicitly stop as blocked/deferred.
 
+V244 outcome:
+- V244-00 complete: the next surface was selected from recent evidence instead
+  of by ingesting another source.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v244-best-pattern-surface-regate/REPORT.md`.
+
+V244 evidence:
+- Persisted V244 plan:
+  `46ea43a6-4e64-4531-a563-88906c7022e7`.
+- Evidence bundle:
+  `0d370731-f598-4c6d-a811-e0fcb6abbcad`.
+- Review assessment:
+  `8092cf55-6446-4a0c-8947-d736bdc55063`.
+- Feedback delta:
+  `26a01268-2dcc-44ce-8cac-c283d57584d0`.
+- Observation group:
+  `720e85e0-18dd-4659-a114-3e63fa454abb`.
+- Final reflection record:
+  `e6df1e27-3696-4746-b8c8-d20c2b514e15`.
+- Ordering caveat: an earlier parallel reflect record selected 0 observations;
+  final proof used a second reflect after observe completed.
+- MemoryRecord created: no.
+- Worktree preflight before V244 edits: clean, `main...origin/main`.
+- `pnpm db:ready`: passed with 14/14 migrations and pgvector available.
+- V244 activation selected CLI/readback owner files plus broad source seeds, but
+  did not select the source-map/runbook/standard/report files that recent
+  source-to-decision work actually used.
+
+V244 source-to-decision:
+- Source: V241/V243 reports plus V244 persisted plan output.
+- Mechanism: activation can use exact owner files when the read model names
+  them, but source-to-decision tasks currently miss concrete source-map,
+  standard, runbook, and invariant owner files.
+- KRN implication: improve read-model/source seed inputs before changing
+  activation scoring.
+- Decision: run V245 as a bounded source-decision owner-file seed repair.
+- Does not prove: activation scoring is broken or broad search/crawling is
+  needed.
+- Consumer: target read model / source seed detection, owner-file recall tests,
+  and DB-backed plan readback evidence.
+- Falsifier: after V245, a source-to-decision task still cannot surface
+  `docs/KRN_SOURCES.md`, `docs/runbooks/pattern-intake.md`, relevant standards,
+  or source-map invariant owner files from the read model.
+
+New task:
+- V245-00 Source-Decision Owner-File Seed Repair.
+
+ID: V245-00
+Name: Source-Decision Owner-File Seed Repair
+Status: active
+Goal: repair the smallest read-model/source seed path so source-to-decision and
+pattern-intake tasks can surface their real owner files without activation
+scoring changes.
+Product rationale: KRN should use its own source map, standards, runbooks, and
+invariant owners when applying best patterns. Manual `rg` should verify and
+inspect, not be the only path to obvious source-to-decision owner files.
+Architectural rationale: exact owner-file recall works when the target read
+model provides owner files. The repeated gap is read-model input quality, not
+yet ranking/scoring.
+Evidence source:
+- V244 report;
+- V241 report missing `docs/KRN_SOURCES.md` and TypeScript standard owner files;
+- V243 report missing `docs/KRN_SOURCES.md`, pattern-intake, and source-map
+  invariant owner files;
+- `packages/cli/src/runInitCommand.ts`;
+- `packages/harness/src/activation/ownerFileRecall.ts`;
+- owner-file recall tests.
+Inputs required:
+- current-state preflight;
+- default `krn plan --persist`;
+- inspect init/source-seed detection;
+- inspect target read-model candidate generation;
+- DB-backed plan proof after repair.
+Files likely touched:
+- `packages/cli/src/runInitCommand.ts`;
+- `packages/cli/src/runCli.test.ts` or init parsing/render tests if source seed
+  detection output changes;
+- `packages/harness/src/activation/ownerFileRecall.ts`;
+- `packages/harness/src/activation/ownerFileRecall.test.ts`;
+- V245 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- one bounded source/read-model seed repair;
+- focused tests;
+- dogfood report and plan condensation.
+Forbidden writes:
+- activation scoring rewrite;
+- broad retrieval rewrite;
+- source crawler;
+- broad research ingestion;
+- dashboard/API/MCP/worker daemon;
+- generic quality subsystem;
+- broad TypeScript cleanup.
+Output requirements:
+- name the source-to-decision owner files that should surface;
+- explain whether repair belongs in init seed detection, owner-file recall, or
+  both;
+- add tests proving future source-to-decision tasks can surface concrete
+  source-map/runbook/standard/invariant owner files;
+- DB-backed `krn plan --persist` proof for a source-to-decision task.
+Definition of Done:
+- default KRN plan path used and recorded;
+- one focused repair or explicit rejection if source inspection disproves the
+  read-model gap;
+- targeted tests, typecheck, full tests if source touched, db readiness, and
+  diff check pass;
+- evidence capture/report exists;
+- commit is pushed and CI checked.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- targeted CLI/harness tests for touched files;
+- `pnpm run typecheck`;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`;
+- `git diff --check`;
+- `krn evidence capture --persist`;
+- `krn observe --persist`;
+- `krn reflect --persist`.
+Acceptance criteria:
+- source-to-decision/pattern-intake task can surface concrete owner files for
+  source map, pattern-intake runbook, relevant standards, or source-map
+  invariant work;
+- no activation scoring change;
+- no source crawler or broad research backlog.
+Risk: overfitting KRN repo docs as universal owner files.
+Rollback: revert the focused source/read-model repair and keep V244 report as
+  evidence if the repair makes context noisier.
+Condensation expectation: if V245 improves owner-file recall, consider a
+  focused golden/activation behavior guard; one repair still does not justify
+  scoring work.
+Next-task synthesis rule: continue from V245 evidence; only open activation
+scoring if read-model inputs are good and repeated misses remain.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19530,10 +19663,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V244 Best-Pattern Surface Re-Gate.
+- V245 Source-Decision Owner-File Seed Repair.
 
 Next active task:
-- V244-00 Best-Pattern Surface Re-Gate.
+- V245-00 Source-Decision Owner-File Seed Repair.
 
 ## 21. Final Response Format For Codex Runs
 

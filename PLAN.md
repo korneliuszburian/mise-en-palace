@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V244 Best-Pattern Surface Re-Gate
-current task: V244-00 Best-Pattern Surface Re-Gate
+active stream: V245 Source-Decision Owner-File Seed Repair
+current task: V245-00 Source-Decision Owner-File Seed Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -39,48 +39,50 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            abstention diagnostics/readback, current-state activation seed, and
            default connected-project resolution, and project resolution
            readback plus external TypeScript best-pattern intake,
-           finite-state exhaustiveness application, and Codex ExecPlan source
-           decision guard complete.
+           finite-state exhaustiveness application, Codex ExecPlan source
+           decision guard, and best-pattern surface re-gate complete.
 ```
 
 ## Active Stream
 
-### V244 Best-Pattern Surface Re-Gate
+### V245 Source-Decision Owner-File Seed Repair
 
 Goal:
 
-Choose the next highest-ROI best-pattern application surface from current
-evidence before ingesting more sources or changing code.
+Repair the smallest read-model/source seed path so source-to-decision and
+pattern-intake tasks can surface their real owner files without activation
+scoring changes.
 
 Current finding:
 
 ```txt
-V241-V243 proved that source-backed patterns can move from official docs to
-standards, code, and invariants. The next risk is choosing sources by vibe
-instead of selecting the surface with the clearest missing consumer/falsifier.
+V241, V243, and V244 all needed source inspection to find docs/KRN_SOURCES.md,
+pattern-intake, standards, or source-map invariant owner files. Exact owner-file
+recall works when the read model provides owner files, so the next repair is
+read-model input quality, not broad activation scoring.
 ```
 
 Current action:
 
 ```txt
-Execute V244-00: review recent evidence and source map coverage across infra,
-harness, CI/eval, Codex surfaces, TypeScript, security, and operator UX; select
-one next bounded source-backed slice or explicitly defer if no surface has a
-clear consumer.
+Execute V245-00: inspect init/source-seed detection and owner-file recall, then
+add the smallest source-decision owner-file seed repair with focused tests and a
+DB-backed plan proof.
 ```
 
 Primary consumer:
 
 ```txt
-PLANS.md active task queue, plus a compact report explaining the chosen surface,
-source class, consumer, falsifier, and non-goals.
+Target read model / source seed detection, owner-file recall behavior, and plan
+readback evidence for source-to-decision tasks.
 ```
 
 Falsifier:
 
 ```txt
-The slice creates a broad research backlog, picks a source without a consumer,
-or starts implementation without naming the surface-specific proof boundary.
+After V245, a source-to-decision task still cannot surface docs/KRN_SOURCES.md,
+docs/runbooks/pattern-intake.md, relevant standards, or source-map invariant
+owner files from the read model.
 ```
 
 ## Pattern Gate

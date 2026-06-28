@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V244 Best-Pattern Surface Re-Gate
+V245 Source-Decision Owner-File Seed Repair
 ```
 
 Current product loop:
@@ -50,7 +50,8 @@ V240: default-path project resolution readback complete.
 V241: external TypeScript best-pattern intake complete.
 V242: finite-state exhaustiveness application complete.
 V243: Codex ExecPlan source decision guard complete.
-current task: V244-00 Best-Pattern Surface Re-Gate.
+V244: best-pattern surface re-gate complete.
+current task: V245-00 Source-Decision Owner-File Seed Repair.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
