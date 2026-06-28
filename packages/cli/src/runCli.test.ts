@@ -3998,7 +3998,8 @@ describe("runCli", () => {
     expect(result.stdout).toContain("Changed files:\nintended:");
     expect(result.stdout).toContain("- M src/runEvidenceCaptureCommand.ts");
     expect(result.stdout).toContain("- M src/parseEvidenceArgs.ts");
-    expect(result.stdout).toContain("- ?? ../../docs/reviews/controlled-dogfood/run/");
+    expect(result.stdout).toContain("- ?? docs/reviews/controlled-dogfood/run");
+    expect(result.stdout).not.toContain("../../docs/reviews/controlled-dogfood/run");
     expect(result.stdout).toContain("unrelated:\n- ?? docs/materials/raw-audit.md");
     expect(result.stdout).toContain("unknown:\n- none");
     expect(result.stdout).toContain("Dirty context: unrelated files present; review burden increased.");

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V230 Evidence Capture Repo-Root Path Normalization
-current task: V230-00 Evidence Capture Repo-Root Path Normalization
+active stream: V231 Evidence Capture Repo-Root Path Normalization Readback
+current task: V231-00 Persisted Repo-Root Path Normalization Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -28,36 +28,37 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V229: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V230: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
-           dogfood plus persisted readback dogfood guards complete.
+           dogfood plus persisted readback dogfood and repo-root path
+           normalization guards complete.
 ```
 
 ## Active Stream
 
-### V230 Evidence Capture Repo-Root Path Normalization
+### V231 Evidence Capture Repo-Root Path Normalization Readback
 
 Goal:
 
-Normalize evidence changed-file paths to repo-root-relative form when CLI
-commands run from package cwd through `pnpm --filter`.
+Prove the V230 repo-root path normalization through persisted evidence capture
+and run readback.
 
 Current finding:
 
 ```txt
-V229 persisted readback proved source usefulness outcomes, but changed-file
-readback stored `../../docs/...` package-relative paths when evidence capture ran
-through `pnpm --filter @krn/cli`.
+V230 normalized changed-file paths during evidence capture parsing and guarded
+the behavior in CLI/golden tests. DB-backed readback has not yet proven the
+normalized representation in persisted EvidenceBundle/FeedbackDelta metadata.
 ```
 
 Current action:
 
 ```txt
-Execute V230-00: inspect evidence path normalization and add the smallest repair
-so changed files persist/read back as repo-root-relative paths without breaking
-intended/unrelated/unknown classification.
+Execute V231-00: run a DB-backed evidence capture from the filtered CLI path,
+read it back through `krn run show`, and confirm changed files are
+repo-root-relative without `../../` prefixes.
 ```
 
 Primary consumer:
@@ -69,8 +70,8 @@ Evidence capture and run readback reviewability.
 Falsifier:
 
 ```txt
-The slice changes target-repo path semantics, hides unrelated files, broadens
-cwd policy, or requires a new path subsystem.
+Persisted/readback changed files still contain package-cwd `../../` paths, or
+the proof depends on target-repo semantics, hidden cleanup, or manual DB edits.
 ```
 
 ## Pattern Gate

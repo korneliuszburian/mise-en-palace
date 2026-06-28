@@ -99,17 +99,6 @@ const readGitStatus = async (runtime: EvidenceCaptureRuntime): Promise<string> =
   return result.stdout;
 };
 
-const parseChangedFiles = (statusOutput: string): ChangedFile[] =>
-  statusOutput
-    .split("\n")
-    .map((line) => line.trimEnd())
-    .filter((line) => line.length > 0)
-    .map((line) => ({
-      status: line.slice(0, 2).trim() || "changed",
-      path: line.slice(3).trim()
-    }))
-    .filter((file) => file.path.length > 0);
-
 const diffRiskFromChangedFiles = (changedFiles: readonly ChangedFile[]): DiffRisk => {
   if (changedFiles.length === 0) {
     return "low";
@@ -128,6 +117,17 @@ const normalizeChangedFilePath = (path: string): string =>
     .replace(/^\.\//, "")
     .replace(/^(\.\.\/)+/, "")
     .replace(/\/$/, "");
+
+const parseChangedFiles = (statusOutput: string): ChangedFile[] =>
+  statusOutput
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.length > 0)
+    .map((line) => ({
+      status: line.slice(0, 2).trim() || "changed",
+      path: normalizeChangedFilePath(line.slice(3))
+    }))
+    .filter((file) => file.path.length > 0);
 
 const changedFileMatchesIntendedFile = (changedPath: string, intendedPath: string): boolean => {
   if (changedPath === intendedPath) {

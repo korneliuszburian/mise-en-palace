@@ -77,12 +77,13 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V229 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V230 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
-persisted readback dogfood, and related re-gate slices: complete
-active stream: V230 Evidence Capture Repo-Root Path Normalization
-current task: V230-00 Evidence Capture Repo-Root Path Normalization
+persisted readback dogfood, repo-root path normalization, and related re-gate
+slices: complete
+active stream: V231 Evidence Capture Repo-Root Path Normalization Readback
+current task: V231-00 Persisted Repo-Root Path Normalization Readback
 ```
 
 Evidence already recorded in repo:
@@ -98,7 +99,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V230-00 Evidence Capture Repo-Root Path Normalization.
+V231-00 Persisted Repo-Root Path Normalization Readback.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18313,6 +18314,69 @@ Next active stream:
 
 Next active task:
 - V230-00 Evidence Capture Repo-Root Path Normalization.
+
+## Outcome 2026-06-28 V230 Evidence Capture Repo-Root Path Normalization
+
+Completed task:
+- V230-00 Evidence Capture Repo-Root Path Normalization.
+
+Decision:
+- Normalize changed-file paths when parsing `git status --short` output in
+  evidence capture.
+- Keep intended/unrelated/unknown classification semantics unchanged.
+- Do not change target-repo evidence semantics, cwd policy, DB schema, or create
+  a path subsystem.
+
+Changed:
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
+- `packages/cli/src/runCli.test.ts`
+- `packages/cli/src/evidenceCaptureGoldenBehavior.test.ts`
+- `GOAL.md`
+- `PLAN.md`
+- `PLANS.md`
+
+Evidence:
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm --filter @krn/cli test -- runCli runEvidenceCaptureCommand parseEvidenceArgs evidenceCaptureGoldenBehavior`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `git diff --check`: passed.
+
+Source-to-decision:
+- Source: V229 persisted source usefulness readback finding.
+- Mechanism: `pnpm --filter @krn/cli` can make evidence capture see Git paths
+  relative to a package cwd, yielding `../../docs/...` in changed-file readback.
+- KRN implication: evidence capture should persist reviewer-facing changed-file
+  paths in repo-root-relative form so dirty-context evidence is readable and
+  stable across CLI invocation paths.
+- Decision: normalize changed-file paths at parse time, before rendering,
+  metadata persistence, source-decision candidate creation, and classification.
+- Does not prove: DB persisted readback after V230, target-repo path semantics,
+  product readiness, or general path policy correctness outside Git status
+  evidence.
+- Consumer: evidence capture output, persisted evidence metadata, `krn run show`
+  readback, source-decision/memory candidate evidence refs.
+- Falsifier: a DB-backed evidence capture through `pnpm --filter @krn/cli`
+  still persists/readbacks `../../` paths, or normalization hides unrelated dirty
+  files.
+
+New finding:
+- V230 source/tests prove normalized render behavior, but persisted DB readback
+  after the fix has not yet been executed.
+
+New task:
+- V231-00 Persisted Repo-Root Path Normalization Readback.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V231 Evidence Capture Repo-Root Path Normalization Readback.
+
+Next active task:
+- V231-00 Persisted Repo-Root Path Normalization Readback.
 
 ## 21. Final Response Format For Codex Runs
 

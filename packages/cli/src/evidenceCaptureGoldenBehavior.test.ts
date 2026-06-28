@@ -113,7 +113,8 @@ describe("evidence capture golden behavior", () => {
       classifiedResult.exitCode === 0 &&
       classifiedOutput.includes("Changed files:\nintended:") &&
       classifiedOutput.includes("- M src/runEvidenceCaptureCommand.ts") &&
-      classifiedOutput.includes("- ?? ../../docs/reviews/controlled-dogfood/run/") &&
+      classifiedOutput.includes("- ?? docs/reviews/controlled-dogfood/run") &&
+      !classifiedOutput.includes("../../docs/reviews/controlled-dogfood/run") &&
       classifiedOutput.includes("unrelated:\n- ?? docs/materials/raw-audit.md") &&
       classifiedOutput.includes("unknown:\n- none") &&
       classifiedOutput.includes("Dirty context: unrelated files present; review burden increased.") &&
