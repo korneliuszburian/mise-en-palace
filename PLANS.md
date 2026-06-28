@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V265 Brain Knowledge Card Producer From Retained Patterns
-current task: V265-00 Brain Knowledge Card Producer From Retained Patterns
-latest pushed commit before V264: 39fe185 feat(readmodel): add brain knowledge card readback
-latest CI checked before V264: KRN CI success for 39fe185265b70b6c591b0117945aea6f8abee8b0
+active stream: V266 Brain Knowledge Pattern-File CLI Preview
+current task: V266-00 Brain Knowledge Pattern-File CLI Preview
+latest pushed commit before V265: e227ff0 feat(readmodel): preview brain knowledge cards
+latest CI checked before V265: KRN CI success for e227ff047610a3ecbbb700d4e65f48ab5b76b823
 ```
 
 Known current gap:
 
 ```txt
-V265-00 Brain Knowledge Card Producer From Retained Patterns is the current
-gap. V264 added a read-only CLI preview over explicit knowledge card files; now
-KRN needs the smallest deterministic producer or catalog path so retained
-patterns become cards without manual fixture drift.
+V266-00 Brain Knowledge Pattern-File CLI Preview is the current gap. V265 added
+a deterministic retained-pattern -> BrainKnowledgeReadModel producer; now the
+CLI preview should read explicit retained-pattern files directly, or reject
+that surface if it would become broad ingestion.
 ```
 
 ## 2. Product Thesis
@@ -491,7 +491,7 @@ Non-goals:
 
 ### V265-00 Brain Knowledge Card Producer From Retained Patterns
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -618,6 +618,69 @@ Falsifier:
 - cards can drift from retained pattern evidence without a failing test or
   catalog rule.
 
+### V266-00 Brain Knowledge Pattern-File CLI Preview
+
+Status: active.
+
+Goal:
+
+```txt
+Add explicit `--pattern-file <path>` support to `krn knowledge cards` so the
+CLI preview can render cards produced from retained pattern decisions.
+```
+
+Rationale:
+
+```txt
+V264 can read card files and V265 can produce cards from retained pattern
+decisions. The next smallest integration is CLI readback from explicit pattern
+files, not web UI/search, DB persistence, or broad ingestion.
+```
+
+Inputs:
+
+- `packages/cli/src/parseKnowledgeArgs.ts`
+- `packages/cli/src/runKnowledgeCardsCommand.ts`
+- `packages/harness/src/brainKnowledgeReadModel.ts`
+- `docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json`
+
+Allowed writes:
+
+- focused CLI parser/renderer tests and docs/report updates.
+
+Forbidden writes:
+
+- directory crawling;
+- ranking engine;
+- DB schema/migration;
+- web UI/API/MCP;
+- source crawler;
+- memory/source mutation.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli test -- parseKnowledgeArgs runKnowledgeCardsCommand runCli
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Next-task synthesis rule:
+
+- if `--pattern-file` works, next task should add a second retained pattern/card
+  or a durable card catalog index; if rejected, next task should fix the exact
+  surface leak.
+
+Does not prove:
+
+- product search, ranking quality, DB-backed knowledge store, or UI readiness.
+
+Falsifier:
+
+- CLI accepts broad directories, parses markdown, or trusts pattern JSON
+  without `parseRetainedPatternDecision`.
+
 ## Decision Log
 
 - Root `PLAN.md` remains compact product SSOT.
@@ -709,7 +772,9 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V262-00 complete: created one concrete brain knowledge card fixture.
 - V263-00 complete: added a pure card readback/search helper.
 - V264-00 complete: added the read-only `krn knowledge cards` preview.
-- V265-00 active: produce/catalog knowledge cards from retained patterns.
+- V265-00 complete: added retained-pattern source JSON and deterministic card
+  producer.
+- V266-00 active: connect explicit retained pattern files to CLI readback.
 
 ## Outcome V264-00 Brain Knowledge CLI Readback Preview
 
@@ -735,6 +800,30 @@ Source-to-decision:
 - Consumer: V265 card producer/catalog and future UI/search read-model work.
 - Falsifier: CLI starts scanning/ranking/mutating knowledge or operators treat
   explicit card-file preview as product search.
+
+## Outcome V265-00 Brain Knowledge Card Producer From Retained Patterns
+
+Summary:
+- added a structured retained pattern source at
+  `docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json`;
+- added `parseRetainedPatternDecision` and
+  `brainKnowledgeCardFromRetainedPatternDecision`;
+- guarded that the generated card equals the concrete card fixture;
+- documented that markdown is not the runtime/card source.
+
+Source-to-decision:
+- Source: V257 retained pattern, V260 card contract, V262 fixture, V263 helper,
+  and V264 CLI preview.
+- Mechanism: manual card fixtures drift unless generated from structured
+  retained decisions.
+- KRN implication: pattern brain cards should be produced from typed retained
+  pattern decisions, not scraped markdown.
+- Decision: add retained-pattern JSON source and producer; open V266 to let CLI
+  read explicit pattern files directly.
+- Does not prove: broad research condensation, DB-backed card store, ranking
+  quality, or UI readiness.
+- Consumer: V266 pattern-file CLI preview and future catalog/index work.
+- Falsifier: cards drift from retained pattern source while tests pass.
 
 ## Outcome V255-00 Active Ledger Condensation
 

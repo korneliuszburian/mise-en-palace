@@ -66,9 +66,20 @@ describe("Brain knowledge read model invariants", () => {
   });
 
   it("keeps the retained TypeScript pattern available as a concrete knowledge card", () => {
+    const pattern = readJsonRootFile(
+      "docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+    );
     const card = readJsonRootFile(
       "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
     );
+
+    expect(pattern).toMatchObject({
+      patternId: "ts-boundary-unknown-first-result-state",
+      adoptionStatus: "adopt_now",
+      confidence: "high",
+      reviewability: "ready",
+      nextAction: "use"
+    });
 
     expect(card).toMatchObject({
       id: "pattern:ts-boundary-unknown-first-result-state",

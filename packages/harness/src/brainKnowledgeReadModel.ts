@@ -95,6 +95,28 @@ export type BrainKnowledgeSearchFilter = {
   text?: string;
 };
 
+export type RetainedPatternAdoptionStatus =
+  | "adopt_now"
+  | "lab"
+  | "later"
+  | "reject";
+
+export type RetainedPatternDecision = {
+  patternId: string;
+  name: string;
+  adoptionStatus: RetainedPatternAdoptionStatus;
+  confidence: BrainKnowledgeConfidence;
+  reviewability: BrainKnowledgeReviewability;
+  decision: string;
+  sourceRefs: string[];
+  evidenceRefs: string[];
+  consumers: string[];
+  falsifier: string;
+  doesNotProve: string;
+  observedAt?: string;
+  nextAction: BrainKnowledgeNextAction;
+};
+
 const knowledgeKinds = new Set<BrainKnowledgeKind>([
   "source_claim",
   "source_decision",
@@ -146,6 +168,13 @@ const knowledgeNextActions = new Set<BrainKnowledgeNextAction>([
   "reject",
   "defer",
   "unknown"
+]);
+
+const patternAdoptionStatuses = new Set<RetainedPatternAdoptionStatus>([
+  "adopt_now",
+  "lab",
+  "later",
+  "reject"
 ]);
 
 export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeReadModel | undefined {
@@ -209,6 +238,86 @@ export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeRead
   };
 }
 
+export function parseRetainedPatternDecision(value: unknown): RetainedPatternDecision | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const patternId = parseNonEmptyString(value["patternId"]);
+  const name = parseNonEmptyString(value["name"]);
+  const adoptionStatus = parseSetValue(value["adoptionStatus"], patternAdoptionStatuses);
+  const confidence = parseSetValue(value["confidence"], knowledgeConfidences);
+  const reviewability = parseSetValue(value["reviewability"], knowledgeReviewabilities);
+  const decision = parseNonEmptyString(value["decision"]);
+  const sourceRefs = parseNonEmptyStringArray(value["sourceRefs"]);
+  const evidenceRefs = parseNonEmptyStringArray(value["evidenceRefs"]);
+  const consumers = parseNonEmptyStringArray(value["consumers"]);
+  const falsifier = parseNonEmptyString(value["falsifier"]);
+  const doesNotProve = parseNonEmptyString(value["doesNotProve"]);
+  const nextAction = parseSetValue(value["nextAction"], knowledgeNextActions);
+
+  if (
+    patternId === undefined ||
+    name === undefined ||
+    adoptionStatus === undefined ||
+    confidence === undefined ||
+    reviewability === undefined ||
+    decision === undefined ||
+    sourceRefs === undefined ||
+    evidenceRefs === undefined ||
+    consumers === undefined ||
+    falsifier === undefined ||
+    doesNotProve === undefined ||
+    nextAction === undefined ||
+    !optionalStringFields(value, ["observedAt"])
+  ) {
+    return undefined;
+  }
+
+  return {
+    patternId,
+    name,
+    adoptionStatus,
+    confidence,
+    reviewability,
+    decision,
+    sourceRefs,
+    evidenceRefs,
+    consumers,
+    falsifier,
+    doesNotProve,
+    ...pickOptionalString(value, "observedAt"),
+    nextAction
+  };
+}
+
+export function brainKnowledgeCardFromRetainedPatternDecision(
+  pattern: RetainedPatternDecision
+): BrainKnowledgeReadModel {
+  return {
+    id: `pattern:${pattern.patternId}`,
+    kind: "pattern",
+    status: statusFromPatternAdoption(pattern.adoptionStatus),
+    title: pattern.name,
+    summary: pattern.decision,
+    confidence: pattern.confidence,
+    reviewability: pattern.reviewability,
+    sourceRefs: pattern.sourceRefs,
+    evidenceRefs: pattern.evidenceRefs,
+    consumers: pattern.consumers,
+    falsifier: pattern.falsifier,
+    doesNotProve: pattern.doesNotProve,
+    temporal: {
+      kind: "current",
+      ...(pattern.observedAt === undefined ? {} : { observedAt: pattern.observedAt })
+    },
+    dissent: {
+      kind: "none"
+    },
+    nextAction: pattern.nextAction
+  };
+}
+
 export function searchBrainKnowledgeCards(
   cards: BrainKnowledgeReadModel[],
   filter: BrainKnowledgeSearchFilter
@@ -245,6 +354,18 @@ export function searchBrainKnowledgeCards(
 
     return true;
   });
+}
+
+function statusFromPatternAdoption(status: RetainedPatternAdoptionStatus): BrainKnowledgeStatus {
+  switch (status) {
+    case "adopt_now":
+      return "active";
+    case "lab":
+    case "later":
+      return "deferred";
+    case "reject":
+      return "rejected";
+  }
 }
 
 function parseSetValue<T extends string>(value: unknown, allowed: ReadonlySet<T>): T | undefined {

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V265 Brain Knowledge Card Producer From Retained Patterns
-current task: V265-00 Brain Knowledge Card Producer From Retained Patterns
+active stream: V266 Brain Knowledge Pattern-File CLI Preview
+current task: V266-00 Brain Knowledge Pattern-File CLI Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -50,27 +50,27 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V265 Brain Knowledge Card Producer From Retained Patterns
+### V266 Brain Knowledge Pattern-File CLI Preview
 
 Goal:
 
-Produce `BrainKnowledgeReadModel` cards from retained pattern decisions through
-the smallest deterministic producer or catalog path.
+Let the existing `krn knowledge cards` preview read explicit retained pattern
+decision files and render produced `BrainKnowledgeReadModel` cards.
 
 Current finding:
 
 ```txt
-V264 added a read-only CLI preview over explicit card files. The next gap is
-that cards are still hand-authored fixtures; the pattern brain needs a
-repeatable way to produce or catalog cards from retained pattern decisions.
+V265 added a retained-pattern source JSON and deterministic producer. The next
+gap is that the CLI preview still accepts card files only, so operators cannot
+read retained patterns directly through the preview surface.
 ```
 
 Current action:
 
 ```txt
-Execute V265-00: add or reject the smallest deterministic producer/catalog for
-pattern knowledge cards. Do not build broad ingestion, UI, API, MCP, or DB
-schema.
+Execute V266-00: add explicit `--pattern-file` support or reject it if it
+would leak a broader ingestion surface. Do not build broad ingestion, UI, API,
+MCP, DB schema, or ranking.
 ```
 
 Primary consumer:
@@ -82,8 +82,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V265 becomes broad knowledge ingestion, source crawler, UI/API/MCP work,
-ranking engine, or manual card duplication with no producer/catalog rule.
+V266 becomes directory crawling, ranking, DB persistence, UI/API/MCP work, or
+accepts untyped pattern input without unknown-first parsing.
 ```
 
 ## Pattern Gate

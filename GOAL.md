@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V265 Brain Knowledge Card Producer From Retained Patterns
+V266 Brain Knowledge Pattern-File CLI Preview
 ```
 
 Current product loop:
@@ -52,7 +52,7 @@ V245..V263: activation/source/skill guards, product-readiness re-gate, target
 trial gate, normalized substrate, first target repair, replayable baseline,
 active ledger condensation, replayable target repair trial, and pattern intake
 trial plus first pattern enforcement gate and skills pack re-gate complete.
-current task: V265-00 Brain Knowledge Card Producer From Retained Patterns.
+current task: V266-00 Brain Knowledge Pattern-File CLI Preview.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
