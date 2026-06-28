@@ -23,20 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V292 Brain Knowledge Missing Usefulness Feedback Readback
-current task: V292-00 Brain Knowledge Missing Usefulness Feedback Readback
-latest pushed commit before V291: eba05e3 feat(knowledge): filter cards by usefulness outcome
-latest CI checked before V291: KRN CI success for eba05e38e7b187daa0d705310e5a3c7139c1f720
+active stream: V293 Brain Knowledge Missing Feedback Triage Dogfood
+current task: V293-00 Brain Knowledge Missing Feedback Triage Dogfood
+latest pushed commit before V292: 528b431 docs(review): dogfood usefulness outcome filter
+latest CI checked before V292: KRN CI success for 528b431d259b2bd3de897d3648fd85caf0f5ddb2
 ```
 
 Known current gap:
 
 ```txt
-V292-00 Brain Knowledge Missing Usefulness Feedback Readback is the current
-gap. V291 proved `--usefulness-outcome helped` reduces rereads for recently
-useful retained patterns, but 8/11 retained pattern cards currently have no
-usefulness feedback and are only compactly visible as `Usefulness: none` in the
-static preview.
+V293-00 Brain Knowledge Missing Feedback Triage Dogfood is the current gap.
+V292 made `--usefulness-outcome none` return the 8 retained patterns without
+usefulness feedback. The next bottleneck is choosing the highest-ROI no-feedback
+pattern to exercise next without broad rereads.
 ```
 
 ## 2. Product Thesis
@@ -2595,6 +2594,32 @@ Source-to-decision:
 - Falsifier: operators can already discover no-feedback retained patterns from
   CLI in a compact way without scanning all cards or relying on browser-only
   static preview state.
+
+## Outcome V292-00 Brain Knowledge Missing Usefulness Feedback Readback
+
+Summary:
+- added a read-only `BrainKnowledgeUsefulnessOutcomeFilter` so
+  `BrainKnowledgeUsefulnessOutcome` remains the stored feedback union while
+  `"none"` is only a query state;
+- made `--usefulness-outcome none` return cards without usefulness feedback;
+- rendered `usefulnessOutcome: none` in text output;
+- guarded harness filtering, CLI parsing, and CLI readback;
+- confirmed current catalog has 8 no-feedback retained patterns.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v292-brain-knowledge-missing-usefulness-feedback-readback/REPORT.md`.
+
+Source-to-decision:
+- Source: V291 dogfood finding and V292 implementation readback.
+- Mechanism: a pattern catalog becomes actionable when it exposes both proven
+  useful cards and cards with missing usefulness evidence.
+- KRN implication: usefulness coverage should drive the next dogfood, not more
+  source intake by default.
+- Decision: open V293 Brain Knowledge Missing Feedback Triage Dogfood.
+- Does not prove: missing feedback means the pattern should be demoted.
+- Consumer: V293 triage and usefulness-feedback selection.
+- Falsifier: operators cannot select the next highest-value no-feedback card
+  from the `none` readback without reading all 8 full cards.
 
 ## Condensation Rules
 

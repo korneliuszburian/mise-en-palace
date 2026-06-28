@@ -468,6 +468,48 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(noisePreview)).toEqual([]);
   });
 
+  it("filters retained pattern cards with no usefulness feedback", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "none"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview).sort()).toEqual([
+      "pattern:active-context-compact-current-truth",
+      "pattern:brain-knowledge-read-only-ui-boundary",
+      "pattern:codex-skill-progressive-disclosure-routing",
+      "pattern:evidence-proof-non-proof-boundary",
+      "pattern:source-to-decision-retention-gate",
+      "pattern:target-repo-write-authority-boundary",
+      "pattern:untrusted-context-warning-boundary",
+      "pattern:ts-boundary-unknown-first-result-state"
+    ].sort());
+  });
+
+  it("combines missing usefulness feedback and text filters", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "none",
+        text: "unknown-first"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:ts-boundary-unknown-first-result-state"]);
+  });
+
   it("guards deterministic catalog search results and proof boundaries", async () => {
     const typeScriptResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,

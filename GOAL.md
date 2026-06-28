@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V292 Brain Knowledge Missing Usefulness Feedback Readback
+V293 Brain Knowledge Missing Feedback Triage Dogfood
 ```
 
 Current product loop:
@@ -48,10 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V291: target repair, pattern intake/enforcement, skill pack, knowledge
-cards, usefulness feedback, outcome filtering, and outcome-filter dogfood
+V245..V292: target repair, pattern intake/enforcement, skill pack, knowledge
+cards, usefulness feedback, outcome/no-feedback filtering, and dogfood
 complete.
-current task: V292-00 Brain Knowledge Missing Usefulness Feedback Readback.
+current task: V293-00 Brain Knowledge Missing Feedback Triage Dogfood.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

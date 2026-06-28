@@ -407,7 +407,9 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `  sourceRefs: ${card.sourceRefs.join(", ")}`,
   `  evidenceRefs: ${card.evidenceRefs.join(", ")}`,
   `  consumers: ${card.consumers.join(", ")}`,
-  ...(card.usefulnessFeedback === undefined ? [] : [
+  ...(card.usefulnessFeedback === undefined ? [
+    "  usefulnessOutcome: none"
+  ] : [
     `  usefulnessOutcome: ${card.usefulnessFeedback.outcome}`,
     `  usefulnessSummary: ${card.usefulnessFeedback.summary}`,
     `  usefulnessEvidenceRefs: ${card.usefulnessFeedback.evidenceRefs.join(", ")}`,

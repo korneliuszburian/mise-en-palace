@@ -58,6 +58,28 @@ describe("parseKnowledgeArgs", () => {
     });
   });
 
+  it("parses missing usefulness feedback filter", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--catalog-file",
+      "docs/brain-knowledge/catalog.json",
+      "--usefulness-outcome",
+      "none",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "knowledgeCards",
+        cardFiles: [],
+        patternFiles: [],
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        filter: {
+          usefulnessOutcome: "none"
+        },
+        format: "json"
+      }
+    });
+  });
+
   it("parses html format", () => {
     expect(parseKnowledgeArgs([
       "cards",

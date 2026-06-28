@@ -2,7 +2,7 @@ import type {
   BrainKnowledgeKind,
   BrainKnowledgeReviewability,
   BrainKnowledgeStatus,
-  BrainKnowledgeUsefulnessOutcome
+  BrainKnowledgeUsefulnessOutcomeFilter
 } from "@krn/harness";
 import {
   optionValue
@@ -12,7 +12,7 @@ import type {
 } from "./parseArgs.js";
 
 const knowledgeUsage = [
-  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome>] [--text <query>] [--json|--html]",
+  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn knowledge cards --card-file docs-or-fixture-card.json [--text unknown-first]",
@@ -63,8 +63,9 @@ const knowledgeUsefulnessOutcomes = [
   "neutral",
   "noise",
   "stale",
-  "unknown"
-] as const satisfies readonly BrainKnowledgeUsefulnessOutcome[];
+  "unknown",
+  "none"
+] as const satisfies readonly BrainKnowledgeUsefulnessOutcomeFilter[];
 
 const isAllowed = <T extends string>(
   value: string,
@@ -101,7 +102,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   let kind: BrainKnowledgeKind | undefined;
   let status: BrainKnowledgeStatus | undefined;
   let reviewability: BrainKnowledgeReviewability | undefined;
-  let usefulnessOutcome: BrainKnowledgeUsefulnessOutcome | undefined;
+  let usefulnessOutcome: BrainKnowledgeUsefulnessOutcomeFilter | undefined;
   let text: string | undefined;
   let format: "text" | "json" | "html" = "text";
 

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V292 Brain Knowledge Missing Usefulness Feedback Readback
-current task: V292-00 Brain Knowledge Missing Usefulness Feedback Readback
+active stream: V293 Brain Knowledge Missing Feedback Triage Dogfood
+current task: V293-00 Brain Knowledge Missing Feedback Triage Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V292 Brain Knowledge Missing Usefulness Feedback Readback
+### V293 Brain Knowledge Missing Feedback Triage Dogfood
 
 Goal:
 
-Make retained pattern cards without usefulness feedback discoverable through a
-compact read-only CLI/harness path.
+Use the missing-feedback readback to select the highest-ROI retained pattern
+that needs a real usefulness proof next.
 
 Current finding:
 
 ```txt
-V291 proved `--usefulness-outcome helped` reduces rereads for recently useful
-patterns, but exposed that 8/11 retained pattern cards have no usefulness
-feedback. Static preview can label `Usefulness: none`, while CLI cannot compactly
-query no-feedback cards.
+V292 made `--usefulness-outcome none` return the 8 retained pattern cards that
+lack usefulness feedback. The next bottleneck is triage: decide which no-feedback
+pattern should be exercised first, using concrete current project pressure.
 ```
 
 Current action:
 
 ```txt
-Execute V292-00: add the smallest read-only missing-feedback readback/filter for
-brain knowledge cards so operators can identify retained patterns that still
-lack usefulness evidence. Do not add new source intake, semantic ranking, API,
-MCP, dashboard, or Memory Core mutation.
+Execute V293-00: use `krn knowledge cards --usefulness-outcome none` to compare
+the 8 no-feedback patterns and pick one next-usefulness target. Record why,
+what task should exercise it, and what would count as helped/noise/stale. Do not
+add implementation unless triage exposes a small readback blocker.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge pattern usefulness coverage gate.
+brain knowledge pattern usefulness triage gate.
 ```
 
 Falsifier:
 
 ```txt
-Operators still need to scan all cards or browser-only static preview state to
-find retained patterns that lack usefulness feedback.
+The missing-feedback filter exists but does not help choose the next pattern to
+exercise, or triage still requires broad rereads.
 ```
 
 ## Pattern Gate

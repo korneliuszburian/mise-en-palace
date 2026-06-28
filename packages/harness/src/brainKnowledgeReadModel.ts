@@ -77,6 +77,10 @@ export type BrainKnowledgeUsefulnessOutcome =
   | "stale"
   | "unknown";
 
+export type BrainKnowledgeUsefulnessOutcomeFilter =
+  | BrainKnowledgeUsefulnessOutcome
+  | "none";
+
 export type BrainKnowledgeUsefulnessFeedback = {
   cardId: string;
   outcome: BrainKnowledgeUsefulnessOutcome;
@@ -109,7 +113,7 @@ export type BrainKnowledgeSearchFilter = {
   kind?: BrainKnowledgeKind;
   status?: BrainKnowledgeStatus;
   reviewability?: BrainKnowledgeReviewability;
-  usefulnessOutcome?: BrainKnowledgeUsefulnessOutcome;
+  usefulnessOutcome?: BrainKnowledgeUsefulnessOutcomeFilter;
   text?: string;
 };
 
@@ -438,11 +442,14 @@ export function searchBrainKnowledgeCards(
       return false;
     }
 
-    if (
-      filter.usefulnessOutcome !== undefined &&
-      card.usefulnessFeedback?.outcome !== filter.usefulnessOutcome
-    ) {
-      return false;
+    if (filter.usefulnessOutcome !== undefined) {
+      if (filter.usefulnessOutcome === "none") {
+        if (card.usefulnessFeedback !== undefined) {
+          return false;
+        }
+      } else if (card.usefulnessFeedback?.outcome !== filter.usefulnessOutcome) {
+        return false;
+      }
     }
 
     if (normalizedText !== undefined && normalizedText.length > 0) {

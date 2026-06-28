@@ -118,6 +118,32 @@ describe("Brain knowledge read model", () => {
     expect(searchBrainKnowledgeCards(cards, {
       usefulnessOutcome: "noise"
     })).toEqual([]);
+    expect(searchBrainKnowledgeCards(cards, {
+      usefulnessOutcome: "none"
+    })).toEqual([]);
+  });
+
+  it("filters cards with no usefulness feedback", () => {
+    const card = parseBrainKnowledgeReadModel(cardFixture());
+
+    if (card === undefined) {
+      throw new Error("Expected card fixture to parse.");
+    }
+
+    expect(searchBrainKnowledgeCards([card], {
+      usefulnessOutcome: "none"
+    })).toEqual([card]);
+    expect(searchBrainKnowledgeCards([card], {
+      usefulnessOutcome: "helped"
+    })).toEqual([]);
+    expect(searchBrainKnowledgeCards([card], {
+      usefulnessOutcome: "none",
+      text: "unknown-first"
+    })).toEqual([card]);
+    expect(searchBrainKnowledgeCards([card], {
+      usefulnessOutcome: "none",
+      text: "missing text"
+    })).toEqual([]);
   });
 
   it("produces the TypeScript boundary knowledge card from the retained pattern decision", () => {
