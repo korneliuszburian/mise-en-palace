@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V228 Pattern Intake Source Usefulness Dogfood Trial
-current task: V228-00 Pattern Intake Source Usefulness Dogfood Trial
+active stream: V229 Persisted Source Usefulness Readback Dogfood
+current task: V229-00 Persisted Source Usefulness Readback Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -28,50 +28,50 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V227: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V228: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
-           re-gate plus source-usefulness readback/producer guards complete.
+           re-gate plus source-usefulness readback/producer and preview
+           dogfood guards complete.
 ```
 
 ## Active Stream
 
-### V228 Pattern Intake Source Usefulness Dogfood Trial
+### V229 Persisted Source Usefulness Readback Dogfood
 
 Goal:
 
-Run one bounded pattern-intake dogfood that applies a retained source decision
-to a real KRN slice and records source usefulness outcome feedback.
+Run one persisted dogfood that proves source usefulness outcome feedback can be
+captured and read back from the DB-backed run path.
 
 Current finding:
 
 ```txt
-Source usefulness readback and producer exist, but no dogfood run has yet used
-the producer to record whether a retained pattern/course/paper source helped a
-real implementation or review decision.
+Preview source usefulness producer works, but persisted source usefulness
+feedback/readback remains unproven for a DB-backed run.
 ```
 
 Current action:
 
 ```txt
-Execute V228-00: select one existing retained source from `docs/KRN_SOURCES.md`
-or a repo-local pattern decision, apply it to one small KRN task, and capture
-source usefulness feedback with `krn evidence capture --source-usefulness`.
+Execute V229-00: create or reuse a persisted run, capture source usefulness
+feedback with `krn evidence capture --source-usefulness --persist`, and confirm
+`krn run show` reads back the outcome.
 ```
 
 Primary consumer:
 
 ```txt
-Pattern-intake dogfood evidence for whether source usefulness feedback changes
-future source-map, standards, skill, or eval decisions.
+DB-backed source usefulness readback proof for future source-map, standards,
+skill, and eval decisions.
 ```
 
 Falsifier:
 
 ```txt
-The slice reads broad research, copies paid course material, creates a crawler
-or research archive, mutates source truth automatically, or claims source
-quality/product readiness from one dogfood outcome.
+The slice requires a schema migration/new subsystem, mutates source truth
+automatically, or claims source quality/product readiness from one persisted
+outcome.
 ```
 
 ## Pattern Gate

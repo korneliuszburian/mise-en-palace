@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V228 Pattern Intake Source Usefulness Dogfood Trial
+V229 Persisted Source Usefulness Readback Dogfood
 ```
 
 Current product loop:
@@ -37,12 +37,12 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V227: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
+V110..V228: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
 target, evidence, compactness, smoke, onboarding current-state, and related
 regression guards plus security permission-boundary, root-plan headroom,
-re-gate, source-usefulness readback, and source-usefulness producer repairs
-complete; details stay in PLANS.md.
-current task: V228-00 Pattern Intake Source Usefulness Dogfood Trial.
+re-gate, source-usefulness readback/producer, and source-usefulness preview
+dogfood complete; details stay in PLANS.md.
+current task: V229-00 Persisted Source Usefulness Readback Dogfood.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

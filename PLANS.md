@@ -77,12 +77,12 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V227 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V228 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
-root-plan headroom, source-usefulness readback/producer, and related re-gate
-slices: complete
-active stream: V228 Pattern Intake Source Usefulness Dogfood Trial
-current task: V228-00 Pattern Intake Source Usefulness Dogfood Trial
+root-plan headroom, source-usefulness readback/producer, preview dogfood, and
+related re-gate slices: complete
+active stream: V229 Persisted Source Usefulness Readback Dogfood
+current task: V229-00 Persisted Source Usefulness Readback Dogfood
 ```
 
 Evidence already recorded in repo:
@@ -98,7 +98,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V228-00 Pattern Intake Source Usefulness Dogfood Trial.
+V229-00 Persisted Source Usefulness Readback Dogfood.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18185,6 +18185,66 @@ Next active stream:
 
 Next active task:
 - V228-00 Pattern Intake Source Usefulness Dogfood Trial.
+
+## Outcome 2026-06-28 V228 Pattern Intake Source Usefulness Dogfood Trial
+
+Completed task:
+- V228-00 Pattern Intake Source Usefulness Dogfood Trial.
+
+Decision:
+- Use existing retained source `total-typescript-unions-narrowing` as a bounded
+  dogfood source.
+- Record the source outcome as `helped` through
+  `krn evidence capture --source-usefulness` in preview mode.
+- Do not add new research, crawler, archive, broad source intake, or paid course
+  content.
+
+Artifact:
+- `docs/reviews/controlled-dogfood/2026-06-28-v228-pattern-intake-source-usefulness/REPORT.md`
+
+Evidence:
+- `krn evidence capture --source-usefulness ...`: passed in preview mode.
+- The output rendered:
+  - `outcome=helped`;
+  - `sourceClaim=total-typescript-unions-narrowing`;
+  - evidence refs to `packages/core/src/feedbackDelta.ts`,
+    `packages/cli/src/parseEvidenceArgs.ts`, and
+    `packages/cli/src/parseEvidenceArgs.test.ts`;
+  - a does-not-prove boundary for future source selector quality.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md#unions-literals-and-narrowing`.
+- Mechanism: literal unions and narrowing constrain finite states and valid
+  transitions.
+- KRN implication: source usefulness outcomes should be finite typed states, not
+  arbitrary strings in CLI/readback behavior.
+- Decision: classify this source as helped for V226/V227 source usefulness
+  outcome/readback/producer repairs.
+- Does not prove: source selector quality, broad TypeScript quality, product
+  readiness, or that every source field needs a union.
+- Consumer: pattern-intake dogfood report and future persisted source
+  usefulness readback proof.
+- Falsifier: source usefulness outcome labels regress to arbitrary strings, or
+  malformed source usefulness metadata becomes trusted evidence.
+
+New finding:
+- Preview source usefulness producer works, but persisted source usefulness
+  feedback/readback remains unproven for a DB-backed run.
+
+New task:
+- V229-00 Persisted Source Usefulness Readback Dogfood.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V229 Persisted Source Usefulness Readback Dogfood.
+
+Next active task:
+- V229-00 Persisted Source Usefulness Readback Dogfood.
 
 ## 21. Final Response Format For Codex Runs
 
