@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V309 Mini Brain-QA Benchmark Sketch
-current task: V309-00 Mini Brain-QA Benchmark Sketch
+active stream: V310 Executable Brain-QA Case BQ-015
+current task: V310-00 Executable Brain-QA Case BQ-015
 latest pushed commit checked: 1c23d02 docs(review): close pattern search usefulness feedback
 latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
 ```
@@ -31,10 +31,10 @@ latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
 Known current gap:
 
 ```txt
-V309-00 Mini Brain-QA Benchmark Sketch is the current gap. V308 added the first
-bounded paper/source decision pack; now those retained decisions need
-falsifiable KRN brain questions before ingest, graph, heartbeat, consensus,
-UI/API/MCP, or broad eval work.
+V310-00 Executable Brain-QA Case BQ-015 is the current gap. V309 sketched 30
+questions; now one read-only case should prove broad no-match query -> shorter
+mechanism query -> retained pattern hit before broader benchmark or runtime
+work.
 ```
 
 ## 2. Product Thesis
@@ -81,9 +81,9 @@ green test != product value
    usefulness-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: start with 30 KRN questions, later expand corpus QA
-   and compare no-memory, lexical, memory, source, hybrid, anti-memory, and
-   graph-stub paths.
+3. Mini brain-QA benchmark: V309 sketched 30 KRN questions; execute BQ-015
+   first, then later expand corpus QA and compare no-memory, lexical, memory,
+   source, hybrid, anti-memory, and graph-stub paths.
 4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
    -> embedding/search document with permission and temporal metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
@@ -116,7 +116,7 @@ docs/reviews/controlled-dogfood/2026-06-28-v308-research-source-decisions-initia
 
 ### V309-00 — Mini Brain-QA Benchmark Sketch
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -125,47 +125,62 @@ Sketch the first 30-question KRN brain-QA benchmark from retained source
 decisions and existing product behavior.
 ```
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v309-mini-brain-qa-benchmark-sketch/REPORT.md
+```
+
+### V310-00 — Executable Brain-QA Case BQ-015
+
+Status: active.
+
+Goal:
+
+```txt
+Execute BQ-015 from the V309 sketch: broad no-match query -> shorter mechanism
+query -> retained pattern hit.
+```
+
 Product rationale:
 
 ```txt
-Retained source decisions must become local falsifiers. The next product move
-is not another source pack; it is a small benchmark sketch that can later test
-whether KRN retrieval, memory, source grounding, anti-memory, temporal behavior,
-and graph/global QA actually help.
+KRN needs one executable brain-QA case before widening the benchmark. BQ-015
+uses the existing read-only `krn knowledge cards` surface and tests adaptive
+query narrowing without new infrastructure.
 ```
 
 Architectural rationale:
 
 ```txt
-Benchmark shape comes before ingest/graph/runtime work so those systems are
-driven by falsifiable questions instead of impressive architecture.
+Self-RAG was retained as a lab-test hypothesis. BQ-015 is the smallest local
+falsifier for adaptive retrieval behavior available in current CLI surfaces.
 ```
 
 Evidence source:
 
 ```txt
-V308 retained source decisions and current KRN brain-readiness gaps.
+V309 sketch, BQ-015.
 ```
 
 Official/external sources:
 
 ```txt
-MemGPT, Reflexion, Self-RAG, GraphRAG, HippoRAG entries in docs/KRN_SOURCES.md.
+Self-RAG entry in docs/KRN_SOURCES.md; pattern cards for evidence proof,
+source-to-decision, and active context.
 ```
 
 Inputs required:
 
 ```txt
-docs/KRN_SOURCES.md
 docs/brain-knowledge/catalog.json
-current KRN docs/source/activation/memory evidence
+docs/benchmarks/brain-qa/V309_BRAIN_QA_SKETCH.md
 ```
 
 Files likely touched:
 
 ```txt
-docs/benchmarks/brain-qa/V309_BRAIN_QA_SKETCH.md
-docs/reviews/controlled-dogfood/2026-06-28-v309-mini-brain-qa-benchmark-sketch/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -188,20 +203,17 @@ mutation, target repo writes, paid/proprietary course ingestion.
 Output requirements:
 
 ```txt
-30 questions grouped by behavior lane, each with expected evidence type,
-retained decision/source link, proof/non-proof boundary, and future execution
-mode. No fake numeric precision.
+record broad query, no-match guidance, shorter mechanism query, matched card,
+selected pattern usefulness, proof/non-proof, and whether this should become a
+fixture later.
 ```
 
 Definition of Done:
 
-- 30-question sketch exists.
-- Each question maps to a retained KRN decision, source decision, or product
-  behavior.
-- Lanes include context/memory, source grounding, adaptive retrieval/abstention,
-  temporal/anti-memory, evidence/review, graph/global QA, and multi-hop.
-- The sketch states what it proves and does not prove.
-- No runtime/eval platform is built.
+- broad query returns no-match guidance;
+- shorter mechanism query returns a relevant retained pattern;
+- report records proof/non-proof and usefulness;
+- no runtime/eval platform is built;
 - `git diff --check` passes.
 
 Verification commands:
@@ -213,47 +225,46 @@ git diff --check
 Acceptance criteria:
 
 ```txt
-The benchmark sketch can guide one future small executable benchmark without
-becoming a broad eval roadmap.
+One existing read-only CLI behavior demonstrates adaptive query narrowing in a
+way future benchmark execution can reuse.
 ```
 
 Risk:
 
 ```txt
-benchmark theater or source-decision laundering.
+benchmark theater or treating deterministic text search as semantic retrieval.
 ```
 
 Rollback:
 
 ```txt
-Remove the sketch/report if questions cannot be tied to retained decisions or
-product behavior.
+Remove report/root updates if BQ-015 cannot be executed without new runtime.
 ```
 
 Next-task synthesis rule:
 
 ```txt
-After V309, choose either one executable mini brain-QA case or defer benchmark
-execution and open the smallest ingest/graph prerequisite.
+After V310, either add a focused fixture for BQ-015 or execute the next
+docs/CLI-only brain-QA case.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA, activation, ingest, graph, and heartbeat validation.
+future brain-QA and adaptive retrieval/readback validation.
 ```
 
 Does not prove:
 
 ```txt
-product readiness, SOTA quality, graph retrieval quality, or benchmark
-execution.
+product readiness, SOTA quality, semantic retrieval quality, graph retrieval
+quality, or full benchmark execution.
 ```
 
 Falsifier:
 
 ```txt
-Questions are not tied to retained decisions or cannot falsify any KRN behavior.
+BQ-015 cannot show broad no-match -> shorter query -> retained pattern hit.
 ```
 
 ## Pattern Gate
@@ -337,7 +348,8 @@ Falsifier:
 - [x] V306 Knowledge Cards Tokenized Text Search
 - [x] V307 Pattern Search Usefulness Feedback Closure
 - [x] V308 Research Source Decisions Initial Pack
-- [ ] V309 Mini Brain-QA Benchmark Sketch
+- [x] V309 Mini Brain-QA Benchmark Sketch
+- [ ] V310 Executable Brain-QA Case BQ-015
 
 ## Recent Evidence Pointers
 
@@ -347,6 +359,28 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v307-pattern-search-usefulness-feedback/REPORT.md`
 - V308 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v308-research-source-decisions-initial-pack/REPORT.md`
+- V309 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v309-mini-brain-qa-benchmark-sketch/REPORT.md`
+
+## Outcome V309 Mini Brain-QA Benchmark Sketch
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V308 retained source decisions and V309 Pattern Gate readback.
+- Mechanism: retained source decisions need local falsifiable behavior
+  questions before they can guide ingest, graph, heartbeat, consensus, UI/API,
+  MCP, or broad eval work.
+- KRN implication: KRN should execute one small read-only benchmark case before
+  widening the benchmark or adding runtime surfaces.
+- Decision: create a 30-question sketch and activate BQ-015 as the first
+  executable case.
+- Does not prove: product readiness, SOTA quality, semantic retrieval quality,
+  graph retrieval quality, citation accuracy, or benchmark execution.
+- Consumer: V310 Executable Brain-QA Case BQ-015.
+- Falsifier: V310 cannot execute broad no-match -> shorter mechanism query ->
+  retained pattern hit with proof/non-proof boundaries.
 
 ## Outcome V308 Research Source Decisions Initial Pack
 

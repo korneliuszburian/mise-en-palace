@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V309 Mini Brain-QA Benchmark Sketch
-current task: V309-00 Mini Brain-QA Benchmark Sketch
+active stream: V310 Executable Brain-QA Case BQ-015
+current task: V310-00 Executable Brain-QA Case BQ-015
 ```
 
 ## Compact Completed Checkpoints
@@ -47,42 +47,40 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V309 Mini Brain-QA Benchmark Sketch
+### V310 Executable Brain-QA Case BQ-015
 
 Goal:
 
-Sketch the first 30-question KRN brain-QA benchmark from retained source
-decisions.
+Execute one mini brain-QA case from the V309 sketch.
 
 Current finding:
 
 ```txt
-V308 retained the first bounded paper/source decision pack for context
-management, feedback-to-candidate loops, adaptive retrieval, global graph QA,
-and multi-hop graph retrieval. These decisions now need local falsifiers.
+V309 converted retained source decisions into 30 local brain-QA questions. The
+lowest-risk first executable case is BQ-015: broad no-match query -> shorter
+mechanism query -> retained pattern hit.
 ```
 
 Current action:
 
 ```txt
-Execute V309-00: create a small benchmark sketch with 30 KRN questions that
-map to retained decisions and product behavior. Do not build a broad eval
-platform, source crawler, graph runtime, embeddings, ranking, dashboard,
-API/MCP, DB schema, or Memory Core mutation.
+Execute V310-00: run and document the BQ-015 read-only CLI case with existing
+`krn knowledge cards`. Do not build a broad eval platform, source crawler,
+graph runtime, embeddings, ranking, dashboard, API/MCP, DB schema, or Memory
+Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA, activation, ingest, graph, and heartbeat validation.
+future brain-QA and adaptive retrieval/readback validation.
 ```
 
 Falsifier:
 
 ```txt
-The benchmark questions do not test retained decisions, source grounding,
-temporal behavior, abstention, anti-memory, activation, graph/global QA, or
-review burden in any falsifiable way.
+BQ-015 cannot show a broad no-match query, a shorter mechanism retry, and a
+retained pattern hit with explicit proof/non-proof boundaries.
 ```
 
 ## Pattern Gate
