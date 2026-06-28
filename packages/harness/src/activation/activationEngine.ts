@@ -167,6 +167,42 @@ const sourceSupportStateFor = (
   return "source_claim_supported";
 };
 
+const isExplicitMarkerTerm = (term: string): boolean =>
+  term.length >= 8 && /[0-9]/u.test(term) && /^[a-z0-9]+$/u.test(term);
+
+const fallbackLexicalSearchQuery = (sourceQuery: ActivationQuery): string | undefined => {
+  const terms = sourceQuery.terms.filter(isExplicitMarkerTerm).slice(0, 5);
+
+  return terms.length === 0 ? undefined : terms.join(" OR ");
+};
+
+const searchLexicalWithMarkerFallback = async (
+  input: Pick<RetrieveActivationCandidatesInput, "taskContract" | "limits" | "repositories">,
+  sourceQuery: ActivationQuery
+) => {
+  const primaryResults = await input.repositories.retrievalRepository.searchLexical({
+    ...(input.taskContract.projectId === undefined ? {} : { projectId: input.taskContract.projectId }),
+    query: sourceQuery.text,
+    limit: input.limits.search
+  });
+
+  if (primaryResults.length > 0) {
+    return primaryResults;
+  }
+
+  const fallbackQuery = fallbackLexicalSearchQuery(sourceQuery);
+
+  if (fallbackQuery === undefined) {
+    return primaryResults;
+  }
+
+  return input.repositories.retrievalRepository.searchLexical({
+    ...(input.taskContract.projectId === undefined ? {} : { projectId: input.taskContract.projectId }),
+    query: fallbackQuery,
+    limit: input.limits.search
+  });
+};
+
 export const retrieveActivationCandidates = async (
   input: RetrieveActivationCandidatesInput
 ): Promise<RetrieveActivationCandidatesResult> => {
@@ -203,11 +239,7 @@ export const retrieveActivationCandidates = async (
     input.taskContract.projectId,
     input.limits.source
   );
-  const searchResults = await input.repositories.retrievalRepository.searchLexical({
-    projectId: input.taskContract.projectId,
-    query: sourceQuery.text,
-    limit: input.limits.search
-  });
+  const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
     input.limits.antiMemory

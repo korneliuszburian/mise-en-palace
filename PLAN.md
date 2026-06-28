@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V322 Activation Lexical Search Over Persisted Local Source Documents
-current task: V322-00 Activation Lexical Search Over Persisted Local Source Documents
+active stream: V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+current task: V323-00 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -36,7 +36,7 @@ Remaining product gaps:
 1. pattern search/readback hardening
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
-4. ingest v0
+4. ingest v0 activation/readback closure
 5. graph brain v0
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
@@ -61,41 +61,47 @@ still reports search=0.
 
 ### V322 Activation Lexical Search Over Persisted Local Source Documents
 
-Goal:
+Status: complete.
 
-Make `krn plan --persist` retrieve persisted local artifact SearchDocuments
-when task queries contain explicit marker/hash terms.
-
-Current finding:
+Outcome:
 
 ```txt
-V321 proved direct SearchDocument lexical readback works in `krn source artifact
-preview --persist`, but `krn plan --persist` activation diagnostics still
-reported search=0 even when the task query contained the artifact marker.
+Report: docs/reviews/controlled-dogfood/2026-06-29-v322-activation-lexical-search-over-persisted-local-source-documents/REPORT.md
+`krn plan --persist` now retries empty lexical source search with explicit
+marker/hash terms. Live DB readback showed search=5 and exposed persisted local
+artifact SearchDocument ccc44d6d-18ae-4b15-81cb-d948ea09b721 as an over-budget
+context exclusion.
 ```
+
+### V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+
+Goal:
+
+Start the first bounded graph-brain preview over local source state by producing
+reviewable entity/claim/edge candidates with source ranges.
 
 Current action:
 
 ```txt
-Execute V322-00: add the smallest bounded activation/query repair so persisted
-local artifact SearchDocuments can appear in activation candidates/readback for
-explicit marker/hash queries. No crawler/schema/dashboard/API/MCP/worker/
-embeddings/graph/broad ranking rewrite/Memory Core mutation.
+Execute V323-00: use one small persisted local source artifact corpus and add
+the smallest graph preview/readback path needed to represent entity/claim/edge
+candidates. No crawler/UI/API/MCP/worker daemon/consensus runtime/automatic
+Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future activation quality, source grounding, ingest v0, graph brain, and
-product-facing knowledge ingestion.
+future graph-aware retrieval, contradiction/duplicate detection, temporal
+slices, consensus candidate evaluation, and product-facing knowledge search.
 ```
 
 Falsifier:
 
 ```txt
-Given a persisted local artifact SearchDocument and a task query with its
-marker/hash terms, activation diagnostics still report search=0 or run readback
-cannot expose the selected/excluded SearchDocument.
+Given a small source artifact with named entities and claims, KRN cannot produce
+reviewable candidate graph facts with source ranges and does-not-prove
+boundaries, or it mutates final memory/graph truth without review.
 ```
 
 ## Pattern Gate

@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V322 Activation Lexical Search Over Persisted Local Source Documents
-current task: V322-00 Activation Lexical Search Over Persisted Local Source Documents
+active stream: V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+current task: V323-00 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,11 +31,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V322-00 Activation Lexical Search Over Persisted Local Source Documents is the
-current gap. V321 proved persisted SourceClaim activation and context detail
-run readback, but `krn plan --persist` activation still reported search=0 for
-the persisted local artifact SearchDocument even when the task query contained
-the artifact marker.
+V323-00 Graph Brain v0 Bounded Source Entity/Claim Edge Preview is the current
+gap. V322 closed the ingest v0 lexical activation gap: `krn plan --persist`
+now exposes persisted local artifact SearchDocuments for explicit marker/hash
+queries, with live DB readback evidence.
 ```
 
 ## 2. Product Thesis
@@ -1497,7 +1496,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v321-ingest-v0-activation-over-persis
 
 ### V322-00 — Activation Lexical Search Over Persisted Local Source Documents
 
-Status: active.
+Status: complete.
 
 Goal: make `krn plan --persist` retrieve persisted local artifact
 SearchDocuments when the task query contains explicit marker/hash terms.
@@ -1527,6 +1526,43 @@ DB path is exercised.
 Falsifier: given a persisted local artifact SearchDocument and a task query
 containing its marker/hash terms, activation diagnostics still report search=0
 or run readback cannot expose the selected/excluded SearchDocument.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v322-activation-lexical-search-over-persisted-local-source-documents/REPORT.md
+Implementation: bounded activation lexical retry for explicit marker/hash terms
+after empty primary source search.
+Live DB proof: executionRun 2d548b12-1737-44f7-b4f8-f94c2b22f9fb reported
+search=5 and run readback exposed local artifact SearchDocument
+ccc44d6d-18ae-4b15-81cb-d948ea09b721 as an over-budget context exclusion.
+```
+
+### V323-00 — Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+
+Status: active.
+
+Goal: start the first bounded graph-brain preview over persisted local source
+state by producing reviewable entity/claim/edge candidates with source ranges.
+
+Allowed: smallest source/harness/readback path needed for candidate graph facts
+over one small local artifact corpus.
+
+Forbidden: crawler, UI, API/MCP, worker daemon, consensus runtime, broad graph
+ranking, schema expansion without proof, automatic Memory Core mutation, target
+repo writes, broad eval platform.
+
+Done when: one small source artifact yields reviewable graph candidates with
+source ranges and does-not-prove boundaries, or source inspection records the
+minimal missing persistence/readback seam with evidence.
+
+Verify: targeted graph/source tests, `pnpm run typecheck`, `pnpm run test`,
+`git diff --check`; add `pnpm db:ready` and live readback proof when DB path is
+exercised.
+
+Falsifier: named entities/claims in a small source artifact cannot become
+reviewable candidate graph facts with source ranges, or the slice mutates final
+memory/graph truth without review.
 
 ## Pattern Gate
 
@@ -1622,7 +1658,8 @@ Falsifier:
 - [x] V319 Ingest v0 SourceClaim Review Path
 - [x] V320 Ingest v0 SourceDecision Linkage Readback
 - [x] V321 Ingest v0 Activation Over Persisted Source State
-- [ ] V322 Activation Lexical Search Over Persisted Local Source Documents
+- [x] V322 Activation Lexical Search Over Persisted Local Source Documents
+- [ ] V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
 
 ## Recent Evidence Pointers
 

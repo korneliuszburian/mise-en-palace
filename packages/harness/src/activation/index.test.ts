@@ -295,6 +295,79 @@ describe("activation engine", () => {
     expect(result.diagnostics.doesNotProve).toContain("ranking quality");
   });
 
+  it("retries lexical search with explicit marker terms when the full source query is empty", async () => {
+    const queries: string[] = [];
+    const markerTask: TaskContract = {
+      ...task,
+      title: "krn-source-artifact-preview 55568e9ec7a48a12",
+      objective: "Find the persisted local artifact SearchDocument for this marker.",
+      constraints: ["preserve strict TypeScript boundaries"],
+      nonGoals: ["do not add broad ranking"],
+      acceptance: ["activation diagnostics report a search result"]
+    };
+    const result = await retrieveActivationCandidates({
+      taskContract: markerTask,
+      limits: {
+        memory: 25,
+        source: 25,
+        search: 25,
+        antiMemory: 25
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical(input) {
+            queries.push(input.query);
+
+            return input.query === "55568e9ec7a48a12"
+              ? [
+                  searchDocument({
+                    id: "search-document-marker",
+                    subjectType: "source_artifact",
+                    subjectId: "source-artifact-1",
+                    sourceArtifactId: "source-artifact-1",
+                    title: "Local artifact preview marker",
+                    body: "krn-source-artifact-preview 55568e9ec7a48a12",
+                    searchText: "krn-source-artifact-preview 55568e9ec7a48a12",
+                    lexicalScore: 95
+                  })
+                ]
+              : [];
+          }
+        }
+      }
+    });
+
+    expect(queries).toHaveLength(2);
+    expect(queries[0]).toContain("preserve strict TypeScript boundaries");
+    expect(queries[1]).toBe("55568e9ec7a48a12");
+    expect(result.diagnostics).toMatchObject({
+      inputStatus: "candidates_available",
+      searchResultCount: 1,
+      mergedCandidateCount: 1
+    });
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        kind: "search",
+        subjectType: "search_document",
+        subjectId: "search-document-marker",
+        searchDocumentId: "search-document-marker"
+      })
+    ]);
+  });
+
   it("ranks Memory Core write-authority memory above adjacent source-graph memory", () => {
     const query = buildMemoryQuery({
       ...task,

@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V322 Activation Lexical Search Over Persisted Local Source Documents
+V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
 ```
 
 Current state:
@@ -27,15 +27,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V322-00 Activation Lexical Search Over Persisted Local Source Documents.
+current task: V323-00 Graph Brain v0 Bounded Source Entity/Claim Edge Preview.
 ```
 
 Current task:
 
 ```txt
-Make `krn plan --persist` retrieve persisted local artifact SearchDocuments
-when the task query contains explicit marker/hash terms, without broad ranking,
-embeddings, crawler, graph runtime, schema changes, or Memory Core mutation.
+Start the first bounded graph-brain preview over local source state by producing
+reviewable entity/claim/edge candidates with source ranges, without crawler,
+UI, API/MCP, worker daemon, consensus runtime, broad graph ranking, or automatic
+Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -51,8 +52,8 @@ to preserve are:
    BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
 4. Ingest v0: local artifact preview, candidate bridge, SearchDocument,
    SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
-   activation, and context detail run readback exist; next repair lexical
-   activation over persisted local SearchDocuments.
+   activation, context detail run readback, and marker/hash lexical activation
+   over persisted local SearchDocuments exist.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
