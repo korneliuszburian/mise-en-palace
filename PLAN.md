@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V264 Brain Knowledge CLI Readback Preview
-current task: V264-00 Brain Knowledge CLI Readback Preview
+active stream: V265 Brain Knowledge Card Producer From Retained Patterns
+current task: V265-00 Brain Knowledge Card Producer From Retained Patterns
 ```
 
 ## Compact Completed Checkpoints
@@ -50,25 +50,27 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V264 Brain Knowledge CLI Readback Preview
+### V265 Brain Knowledge Card Producer From Retained Patterns
 
 Goal:
 
-Expose the brain knowledge card fixture through the smallest valid
-CLI/readback-adjacent preview or explicitly reject that surface for now.
+Produce `BrainKnowledgeReadModel` cards from retained pattern decisions through
+the smallest deterministic producer or catalog path.
 
 Current finding:
 
 ```txt
-V263 added a pure card parser/search helper. The next gap is whether operators
-can read back that card through a bounded surface before web UI/search.
+V264 added a read-only CLI preview over explicit card files. The next gap is
+that cards are still hand-authored fixtures; the pattern brain needs a
+repeatable way to produce or catalog cards from retained pattern decisions.
 ```
 
 Current action:
 
 ```txt
-Execute V264-00: add or reject the smallest CLI/readback preview. Do not build
-web UI/API/MCP yet.
+Execute V265-00: add or reject the smallest deterministic producer/catalog for
+pattern knowledge cards. Do not build broad ingestion, UI, API, MCP, or DB
+schema.
 ```
 
 Primary consumer:
@@ -80,7 +82,8 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V264 becomes web UI/API/MCP work, a ranking engine, or a product-surface leak.
+V265 becomes broad knowledge ingestion, source crawler, UI/API/MCP work,
+ranking engine, or manual card duplication with no producer/catalog rule.
 ```
 
 ## Pattern Gate

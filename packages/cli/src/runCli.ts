@@ -6,6 +6,9 @@ import {
   formatDbUsage
 } from "./parseDbArgs.js";
 import {
+  formatKnowledgeUsage
+} from "./parseKnowledgeArgs.js";
+import {
   formatRunUsage
 } from "./parseRunArgs.js";
 import {
@@ -52,6 +55,9 @@ import {
 import {
   runRunShowCommand
 } from "./runRunShowCommand.js";
+import {
+  runKnowledgeCardsCommand
+} from "./runKnowledgeCardsCommand.js";
 import type {
   CreateReviewAssessDatabaseRuntime
 } from "./runReviewAssessCommand.js";
@@ -239,6 +245,14 @@ export const runCli = async (
     };
   }
 
+  if (parsed.command.kind === "knowledgeCardsHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatKnowledgeUsage(),
+      stderr: ""
+    };
+  }
+
   if (parsed.command.kind === "memoryCandidateAddHelp") {
     return {
       exitCode: 0,
@@ -343,6 +357,31 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown run show error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: formatCliError(message)
+      };
+    }
+  }
+
+  if (parsed.command.kind === "knowledgeCards") {
+    try {
+      const result = await runKnowledgeCardsCommand({
+        cwd: runtime.cwd ?? process.cwd(),
+        cardFiles: parsed.command.cardFiles,
+        filter: parsed.command.filter,
+        format: parsed.command.format
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown knowledge cards error";
 
       return {
         exitCode: 1,

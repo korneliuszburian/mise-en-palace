@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V264 Brain Knowledge CLI Readback Preview
-current task: V264-00 Brain Knowledge CLI Readback Preview
-latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
-latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
+active stream: V265 Brain Knowledge Card Producer From Retained Patterns
+current task: V265-00 Brain Knowledge Card Producer From Retained Patterns
+latest pushed commit before V264: 39fe185 feat(readmodel): add brain knowledge card readback
+latest CI checked before V264: KRN CI success for 39fe185265b70b6c591b0117945aea6f8abee8b0
 ```
 
 Known current gap:
 
 ```txt
-V264-00 Brain Knowledge CLI Readback Preview is the current gap. V263 added a
-pure readback/search helper; now KRN should either expose the card fixture
-through the smallest CLI/readback-adjacent surface or explicitly reject CLI
-exposure if it leaks product surface too early.
+V265-00 Brain Knowledge Card Producer From Retained Patterns is the current
+gap. V264 added a read-only CLI preview over explicit knowledge card files; now
+KRN needs the smallest deterministic producer or catalog path so retained
+patterns become cards without manual fixture drift.
 ```
 
 ## 2. Product Thesis
@@ -80,7 +80,7 @@ candidate reviewability: core primitive
 activation: useful for guardrails, still weak for owner-file recall in some runs
 reflection/candidate usefulness: partially proven, not product-grade
 pattern brain: partial; gate/skills/standards exist, continuous intake/enforce/eval loop still incomplete
-UI/search over brain knowledge: not started as product surface
+UI/search over brain knowledge: CLI read-only preview exists; web/API/MCP not started
 ```
 
 Important distinction:
@@ -215,6 +215,16 @@ green test != product value
 - Outcome: added `packages/harness/src/brainKnowledgeReadModel.ts` and tests to
   parse brain knowledge cards from `unknown` and filter by kind, status,
   reviewability, and text.
+
+### V264 Brain Knowledge CLI Readback Preview
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v264-brain-knowledge-cli-readback-preview/REPORT.md`.
+- Outcome: added `krn knowledge cards --card-file ...` as a read-only preview
+  over explicit `BrainKnowledgeReadModel` files with text/field filters and
+  JSON output. This is not web UI, API, MCP, DB search, ranking, or product
+  readiness.
 
 ## Active Task Queue
 
@@ -461,7 +471,7 @@ Non-goals:
 
 ### V264-00 Brain Knowledge CLI Readback Preview
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -478,6 +488,135 @@ Non-goals:
 - no DB schema;
 - no ranking engine;
 - no broad knowledge ingestion.
+
+### V265-00 Brain Knowledge Card Producer From Retained Patterns
+
+Status: active.
+
+Goal:
+
+```txt
+Add or reject the smallest deterministic producer/catalog path that turns
+retained pattern decisions into BrainKnowledgeReadModel cards without manual
+fixture drift.
+```
+
+Product rationale:
+
+```txt
+V264 proves operators can read explicit cards. The next brain gap is producing
+cards from retained knowledge so future CLI/UI/search does not depend on
+hand-authored JSON fixtures.
+```
+
+Architectural rationale:
+
+```txt
+Knowledge readback should flow from retained pattern/source decisions into
+typed read models. It must not scrape raw reports or become broad ingestion.
+```
+
+Evidence source:
+
+- V257 retained TypeScript boundary pattern.
+- V260 BrainKnowledgeReadModel contract.
+- V262 card fixture.
+- V263 readback helper.
+- V264 CLI readback preview.
+
+Official/external sources:
+
+- existing source-to-decision refs in `docs/patterns/typescript-boundary-patterns.md`.
+
+Inputs required:
+
+- `docs/patterns/typescript-boundary-patterns.md`
+- `tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json`
+- `packages/harness/src/brainKnowledgeReadModel.ts`
+- current CLI/readback tests if output changes.
+
+Files likely touched:
+
+- `packages/harness/src/brainKnowledgeReadModel.ts`
+- `packages/harness/src/brainKnowledgeReadModel.test.ts`
+- `docs/patterns/typescript-boundary-patterns.md`
+- brain knowledge fixture/catalog path if needed.
+
+Allowed writes:
+
+- focused harness/read-model producer tests;
+- focused docs/report updates.
+
+Forbidden writes:
+
+- web UI/API/MCP;
+- DB schema/migrations;
+- source crawler;
+- ranking engine;
+- broad knowledge ingestion;
+- memory/source mutation.
+
+Output requirements:
+
+- either a deterministic producer/catalog path or a written rejection explaining
+  why current pattern docs cannot produce cards safely.
+
+Definition of Done:
+
+- retained pattern card production/catalog cannot drift silently from the
+  retained pattern evidence;
+- tests prove the behavior or the rejection is documented with next unblocker;
+- active plans point to the next bounded task.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/harness test -- brainKnowledgeReadModel
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Acceptance criteria:
+
+- no manual-only fixture growth;
+- no broad ingestion;
+- no product-ready claim.
+
+Risk:
+
+- overbuilding a knowledge ingestion subsystem too early.
+
+Rollback:
+
+- focused revert of V265 commit.
+
+Condensation expectation:
+
+- one compact outcome block plus linked report.
+
+Next-task synthesis rule:
+
+- if producer exists, next task should add second retained pattern/card or
+  durable catalog readback; if rejected, next task should repair the minimal
+  source shape blocking production.
+
+Pattern surface:
+
+- source-to-decision -> BrainKnowledgeReadModel.
+
+Primary consumer:
+
+- pattern brain / future CLI/UI/search.
+
+Does not prove:
+
+- ranking quality, broad research condensation, DB-backed card store, or web UI.
+
+Falsifier:
+
+- cards can drift from retained pattern evidence without a failing test or
+  catalog rule.
 
 ## Decision Log
 
@@ -569,7 +708,33 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 - V261-00 complete: guarded the brain knowledge read-model contract.
 - V262-00 complete: created one concrete brain knowledge card fixture.
 - V263-00 complete: added a pure card readback/search helper.
-- V264-00 active: decide or add the smallest CLI/readback preview.
+- V264-00 complete: added the read-only `krn knowledge cards` preview.
+- V265-00 active: produce/catalog knowledge cards from retained patterns.
+
+## Outcome V264-00 Brain Knowledge CLI Readback Preview
+
+Summary:
+- added `krn knowledge cards --card-file <path>` as a read-only CLI preview;
+- added text, kind, status, reviewability, and JSON filters;
+- reused `BrainKnowledgeReadModel` parser/search helper through the harness
+  public root;
+- kept the surface explicit-file only, with no DB, ranking, UI, API, MCP, or
+  mutation authority.
+
+Source-to-decision:
+- Source: V260 read-model contract, V262 card fixture, V263 parser/search
+  helper, and current CLI surface classification.
+- Mechanism: operators need a cheap readback loop before web UI/search, but a
+  preview must not imply product search or mutate Memory Core.
+- KRN implication: expose explicit typed cards through read-only CLI preview
+  with proof/non-proof boundaries.
+- Decision: add `krn knowledge cards` and open V265 to remove manual fixture
+  drift by producing/cataloging cards from retained patterns.
+- Does not prove: product readiness, ranking quality, live DB card production,
+  broad knowledge ingestion, or web UI readiness.
+- Consumer: V265 card producer/catalog and future UI/search read-model work.
+- Falsifier: CLI starts scanning/ranking/mutating knowledge or operators treat
+  explicit card-file preview as product search.
 
 ## Outcome V255-00 Active Ledger Condensation
 

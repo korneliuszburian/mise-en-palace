@@ -1160,6 +1160,44 @@ describe("runCli", () => {
     expect(result.stdout).toContain("verify DB first: pnpm db:ready");
   });
 
+  it("prints knowledge cards preview help", async () => {
+    const result = await runCli(["knowledge", "--help"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Usage: krn knowledge cards --card-file <path>");
+    expect(result.stdout).toContain("Read-only preview commands:");
+    expect(result.stdout).toContain("does not scan, rank, persist, or mutate Memory Core");
+  });
+
+  it("renders knowledge cards through the CLI preview", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const result = await runCli([
+      "knowledge",
+      "cards",
+      "--card-file",
+      "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json",
+      "--text",
+      "unknown-first"
+    ], {
+      cwd: repoRoot,
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Brain Knowledge Cards Preview");
+    expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("does not prove: KRN is product-ready");
+  });
+
   it("explains how to unblock run show without database config", async () => {
     const result = await runCli(["run", "show", "--run-id", "execution-run-1"], {
       env: {},

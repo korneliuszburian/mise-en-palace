@@ -3,6 +3,9 @@ import type {
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceInput
 } from "@krn/core";
+import type {
+  BrainKnowledgeSearchFilter
+} from "@krn/harness";
 import {
   parseCodexArgs
 } from "./parseCodexArgs.js";
@@ -18,6 +21,9 @@ import {
 import {
   parseInitArgs
 } from "./parseInitArgs.js";
+import {
+  parseKnowledgeArgs
+} from "./parseKnowledgeArgs.js";
 import {
   parseMemoryArgs
 } from "./parseMemoryArgs.js";
@@ -113,6 +119,15 @@ export type CliCommand =
   | {
       kind: "runShow";
       runId: string;
+      format: "text" | "json";
+    }
+  | {
+      kind: "knowledgeCardsHelp";
+    }
+  | {
+      kind: "knowledgeCards";
+      cardFiles: readonly string[];
+      filter: BrainKnowledgeSearchFilter;
       format: "text" | "json";
     }
   | {
@@ -335,6 +350,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
+  "krn knowledge cards --card-file <path> [--text <query>] [--json]",
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",
@@ -392,6 +408,10 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
 
   if (command === "run") {
     return parseRunArgs(rest);
+  }
+
+  if (command === "knowledge") {
+    return parseKnowledgeArgs(rest);
   }
 
   if (command === "observe") {

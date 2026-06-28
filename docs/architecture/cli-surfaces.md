@@ -55,6 +55,7 @@ with the reset direction and need later code removal or internalization.
 - `krn observe --run <id> [--project <id>] [--persist]`
 - `krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]`
 - `krn codex brief --run-id <id>`
+- `krn knowledge cards --card-file <path> [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json]`
 
 Boundary:
 
@@ -63,6 +64,10 @@ Boundary:
 - `codex brief` renders Codex-facing output. It does not invoke Codex.
 - `doctor` reports readiness. It does not prove DB runtime unless the current
   shell has the required DB configuration and DB commands are run.
+- `knowledge cards` is a read-only preview over explicit
+  `BrainKnowledgeReadModel` card files. It does not scan the repository, rank
+  knowledge, persist cards, query DB, mutate Memory Core, or make UI/search
+  product-ready.
 
 ## Governed Admin
 
