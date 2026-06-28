@@ -7,8 +7,10 @@ import type {
   ContextInclusion
 } from "@krn/core";
 import {
+  activationRetrievalDiagnosticsFromMetadata,
   assessTargetOwnerFileRecall,
-  compileHarnessPlan
+  compileHarnessPlan,
+  formatActivationRetrievalDiagnostics
 } from "@krn/harness";
 import type {
   HarnessCompilerDependencies,
@@ -323,18 +325,23 @@ const formatExclusionLine = (exclusion: ContextExclusion): string =>
 const formatActivationSummary = (
   contextAssembly: ContextAssembly,
   nextAction: string
-): string[] => [
-  `Context status: ${contextAssembly.status}`,
-  "Context inclusions:",
-  ...(contextAssembly.inclusions.length === 0
-    ? ["- none"]
-    : contextAssembly.inclusions.map(formatInclusionLine)),
-  "Context exclusions:",
-  ...(contextAssembly.exclusions.length === 0
-    ? ["- none"]
-    : contextAssembly.exclusions.map(formatExclusionLine)),
-  ...(contextAssembly.status === "abstained" ? [`Context abstention: ${nextAction}`] : [])
-];
+): string[] => {
+  const diagnostics = activationRetrievalDiagnosticsFromMetadata(contextAssembly.metadata);
+
+  return [
+    `Context status: ${contextAssembly.status}`,
+    "Context inclusions:",
+    ...(contextAssembly.inclusions.length === 0
+      ? ["- none"]
+      : contextAssembly.inclusions.map(formatInclusionLine)),
+    "Context exclusions:",
+    ...(contextAssembly.exclusions.length === 0
+      ? ["- none"]
+      : contextAssembly.exclusions.map(formatExclusionLine)),
+    ...(diagnostics === undefined ? [] : formatActivationRetrievalDiagnostics(diagnostics)),
+    ...(contextAssembly.status === "abstained" ? [`Context abstention: ${nextAction}`] : [])
+  ];
+};
 
 const resolveCompilerRuntime = async (
   runtime: PlanCommandRuntime,

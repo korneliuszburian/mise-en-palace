@@ -161,6 +161,7 @@ export const compileHarnessPlan = async (
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     metadata: {
       sourceQuery: retrieved.sourceQuery.text,
+      activationRetrievalDiagnostics: retrieved.diagnostics,
       ...(input.targetReadModel === undefined
         ? {}
         : {
@@ -195,7 +196,8 @@ export const compileHarnessPlan = async (
     createdAt,
     metadata: {
       retrievalRunId: retrievalRun.id,
-      conflictSets: conflictResult.conflictSets
+      conflictSets: conflictResult.conflictSets,
+      activationRetrievalDiagnostics: retrieved.diagnostics
     }
   });
   const contextAssembly = await dependencies.harnessRunRepository.createContextAssembly({

@@ -26,6 +26,7 @@ import {
   detectConflicts,
   mergeActivationCandidates,
   rankCandidates,
+  retrieveActivationCandidates,
   toMemoryCandidate,
   toSearchCandidate,
   toSourceClaimCandidate
@@ -246,6 +247,52 @@ describe("activation engine", () => {
       mergedKinds: expect.arrayContaining(["source", "search"])
     });
     expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
+  });
+
+  it("reports empty activation inputs before ranking repairs are considered", async () => {
+    const result = await retrieveActivationCandidates({
+      taskContract: task,
+      limits: {
+        memory: 25,
+        source: 25,
+        search: 25,
+        antiMemory: 25
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    expect(result.candidates).toHaveLength(0);
+    expect(result.diagnostics).toMatchObject({
+      projectScoped: true,
+      inputStatus: "empty_activation_store",
+      memoryRecordCount: 0,
+      sourceClaimCount: 0,
+      searchResultCount: 0,
+      ownerFileCandidateCount: 0,
+      antiMemoryRecordCount: 0,
+      mergedCandidateCount: 0,
+      targetReadModelStatus: "not_provided"
+    });
+    expect(result.diagnostics.doesNotProve).toContain("ranking quality");
   });
 
   it("ranks Memory Core write-authority memory above adjacent source-graph memory", () => {

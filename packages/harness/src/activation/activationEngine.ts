@@ -18,6 +18,9 @@ import {
   buildMemoryQuery
 } from "./memoryQuery.js";
 import {
+  buildActivationRetrievalDiagnostics
+} from "./activationDiagnostics.js";
+import {
   buildOwnerFileRecallCandidates
 } from "./ownerFileRecall.js";
 import type {
@@ -35,6 +38,7 @@ import {
 } from "./sourceQuery.js";
 import type {
   ActivationExclusionReason,
+  ActivationRetrievalDiagnostics,
   ActivationCandidateKind,
   ActivationQuery,
   RankedActivationCandidate
@@ -70,6 +74,7 @@ export interface RetrieveActivationCandidatesResult {
   sourceQuery: ActivationQuery;
   candidates: readonly RankedActivationCandidate[];
   antiMemoryRecords: readonly AntiMemoryRecord[];
+  diagnostics: ActivationRetrievalDiagnostics;
 }
 
 export interface PersistActivationTraceInput {
@@ -173,7 +178,20 @@ export const retrieveActivationCandidates = async (
       memoryQuery,
       sourceQuery,
       candidates: [],
-      antiMemoryRecords: []
+      antiMemoryRecords: [],
+      diagnostics: buildActivationRetrievalDiagnostics({
+        projectScoped: false,
+        memoryRecordCount: 0,
+        sourceClaimCount: 0,
+        searchResultCount: 0,
+        ownerFileCandidateCount: 0,
+        antiMemoryRecordCount: 0,
+        mergedCandidateCount: 0,
+        targetReadModelStatus: input.targetReadModel === undefined ? "not_provided" : "provided",
+        sourceSeedCount: input.targetReadModel?.sourceSeeds.length ?? 0,
+        targetOwnerFileCount: input.targetReadModel?.ownerFiles?.length ?? 0,
+        trustExclusionCount: input.targetReadModel?.trustExclusions.length ?? 0
+      })
     };
   }
 
@@ -203,17 +221,31 @@ export const retrieveActivationCandidates = async (
     }),
     sourceQuery
   );
+  const candidates = mergeActivationCandidates([
+    ...memoryCandidates,
+    ...sourceCandidates,
+    ...searchCandidates,
+    ...ownerFileCandidates
+  ]);
 
   return {
     memoryQuery,
     sourceQuery,
-    candidates: mergeActivationCandidates([
-      ...memoryCandidates,
-      ...sourceCandidates,
-      ...searchCandidates,
-      ...ownerFileCandidates
-    ]),
-    antiMemoryRecords
+    candidates,
+    antiMemoryRecords,
+    diagnostics: buildActivationRetrievalDiagnostics({
+      projectScoped: true,
+      memoryRecordCount: memoryRecords.length,
+      sourceClaimCount: sourceClaims.length,
+      searchResultCount: searchResults.length,
+      ownerFileCandidateCount: ownerFileCandidates.length,
+      antiMemoryRecordCount: antiMemoryRecords.length,
+      mergedCandidateCount: candidates.length,
+      targetReadModelStatus: input.targetReadModel === undefined ? "not_provided" : "provided",
+      sourceSeedCount: input.targetReadModel?.sourceSeeds.length ?? 0,
+      targetOwnerFileCount: input.targetReadModel?.ownerFiles?.length ?? 0,
+      trustExclusionCount: input.targetReadModel?.trustExclusions.length ?? 0
+    })
   };
 };
 

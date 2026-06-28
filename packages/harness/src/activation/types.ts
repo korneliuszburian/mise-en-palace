@@ -99,6 +99,32 @@ export interface RankedActivationCandidate extends ActivationCandidate {
   exclusion?: ActivationExclusion;
 }
 
+export type ActivationRetrievalInputStatus =
+  | "candidates_available"
+  | "missing_project_scope"
+  | "empty_activation_store"
+  | "no_matching_candidates";
+
+export type ActivationTargetReadModelStatus =
+  | "not_provided"
+  | "provided";
+
+export interface ActivationRetrievalDiagnostics {
+  projectScoped: boolean;
+  inputStatus: ActivationRetrievalInputStatus;
+  memoryRecordCount: number;
+  sourceClaimCount: number;
+  searchResultCount: number;
+  ownerFileCandidateCount: number;
+  antiMemoryRecordCount: number;
+  mergedCandidateCount: number;
+  targetReadModelStatus: ActivationTargetReadModelStatus;
+  sourceSeedCount: number;
+  targetOwnerFileCount: number;
+  trustExclusionCount: number;
+  doesNotProve: string;
+}
+
 export interface AssembleContextInput {
   id: ContextAssemblyId;
   harnessPlanId: HarnessPlanId;

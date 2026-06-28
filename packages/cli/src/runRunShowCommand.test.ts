@@ -12,6 +12,23 @@ import type {
 
 const now = "2026-06-25T14:40:00.000Z";
 
+const activationRetrievalDiagnostics = {
+  projectScoped: true,
+  inputStatus: "empty_activation_store",
+  memoryRecordCount: 0,
+  sourceClaimCount: 0,
+  searchResultCount: 0,
+  ownerFileCandidateCount: 0,
+  antiMemoryRecordCount: 0,
+  mergedCandidateCount: 0,
+  targetReadModelStatus: "not_provided",
+  sourceSeedCount: 0,
+  targetOwnerFileCount: 0,
+  trustExclusionCount: 0,
+  doesNotProve:
+    "Activation diagnostics do not prove selected context is sufficient, source truth is correct, or ranking quality is good."
+} as const;
+
 const aggregate: HarnessRunAggregate = {
   operatorIntent: {
     id: "intent-1",
@@ -67,7 +84,9 @@ const aggregate: HarnessRunAggregate = {
       score: 10,
       trustTier: "low"
     }],
-    metadata: {},
+    metadata: {
+      activationRetrievalDiagnostics
+    },
     createdAt: now
   },
   executionRun: {
@@ -244,6 +263,12 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Run ID: run-1");
+    expect(result.stdout).toContain("Activation diagnostics:");
+    expect(result.stdout).toContain("- inputStatus: empty_activation_store");
+    expect(result.stdout).toContain(
+      "- counts: memory=0 sourceClaims=0 search=0 ownerFile=0 antiMemory=0 merged=0"
+    );
+    expect(result.stdout).toContain("- targetReadModel: not_provided sourceSeeds=0 ownerFiles=0 trustExclusions=0");
     expect(result.stdout).toContain("changed file classification:");
     expect(result.stdout).toContain("- intended=1");
     expect(result.stdout).toContain("- unrelated=0");
@@ -318,6 +343,17 @@ describe("runRunShowCommand", () => {
       mutation: "none",
       run: {
         id: "run-1"
+      },
+      context: {
+        activationDiagnostics: {
+          inputStatus: "empty_activation_store",
+          memoryRecordCount: 0,
+          sourceClaimCount: 0,
+          searchResultCount: 0,
+          ownerFileCandidateCount: 0,
+          antiMemoryRecordCount: 0,
+          mergedCandidateCount: 0
+        }
       },
       evidenceBundles: [{
         changedFiles: {

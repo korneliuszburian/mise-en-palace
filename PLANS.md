@@ -77,16 +77,16 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V236 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V237 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
 slices plus TS best-pattern application, sibling package path normalization,
-and activation abstention re-gate:
+activation abstention re-gate, and activation diagnostics/readback:
 complete
-active stream: V237 Activation Abstention Diagnostics And Empty-Store Readback
-current task: V237-00 Activation Abstention Diagnostics And Empty-Store Readback
+active stream: V238 Current-State Activation Seed And Read-Model Decision
+current task: V238-00 Current-State Activation Seed And Read-Model Decision
 ```
 
 Evidence already recorded in repo:
@@ -102,7 +102,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
+V238-00 Current-State Activation Seed And Read-Model Decision.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18759,92 +18759,127 @@ V236 source-to-decision:
 - Falsifier: a future DB-backed run with non-empty candidates abstains without
   readable exclusion/score diagnostics.
 
-New task:
-- V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
+V237 outcome:
+- V237-00 complete: activation abstention diagnostics are now produced,
+  persisted, and rendered in `krn plan` and `krn run show`.
+- Report: `docs/reviews/controlled-dogfood/2026-06-28-v237-activation-abstention-diagnostics/REPORT.md`.
 
-ID: V237-00
-Name: Activation Abstention Diagnostics And Empty-Store Readback
+V237 evidence:
+- `pnpm --filter @krn/harness test -- activation`: passed.
+- `pnpm --filter @krn/cli test -- runCli runRunShowCommand`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed.
+- `krn plan --persist`: passed with diagnostics rendered.
+- `krn run show --run-id 40a21c1e-8b11-4dc3-9788-bdcd487d5c15`: passed with
+  persisted diagnostics rendered.
+- `krn evidence capture --persist`: passed with evidenceBundle
+  `e22ad8e1-02c0-4c5d-812d-4ffd9424f38f`.
+- `krn observe --persist`: passed with observationGroup
+  `93658613-0b81-4676-ae16-496c1afe05c7`.
+- `krn reflect --persist` after observe: passed with reflectionRecord
+  `a5e10c04-519a-40d6-880c-f0e05b5835a8`.
+- `git diff --check`: passed.
+
+V237 source-to-decision:
+- Source: V237 DB-backed activation diagnostics readback.
+- Mechanism: typed activation diagnostics preserve input counts and target
+  read-model availability across plan persistence and run readback.
+- KRN implication: repeated abstention is now inspectable; the next blocker is
+  empty current-project activation material, not proven bad scoring.
+- Decision: append V238 current-state activation seed/read-model decision.
+- Does not prove: future seeded context will be useful, product readiness, or
+  activation scoring quality.
+- Consumer: current-state activation seed/read-model decision.
+- Falsifier: after current-state seed/read-model exists, DB-backed plans still
+  show `empty_activation_store` or miss obvious owner-file context without a
+  readable reason.
+
+New task:
+- V238-00 Current-State Activation Seed And Read-Model Decision.
+
+ID: V238-00
+Name: Current-State Activation Seed And Read-Model Decision
 Status: active
-Goal: make activation abstention actionable in `krn plan` and/or `krn run show`
-by surfacing activation input counts, empty-store cause, target read-model
-availability, and owner-file fallback results.
-Product rationale: KRN cannot improve context selection if operators only see
-`Context: abstained`; it must show whether the problem was empty inputs,
-missing target read model, owner-file fallback miss, low score, low trust, or
-budget exclusion.
-Architectural rationale: diagnostics/readback should precede activation scoring
-changes. A zero-candidate run is an input/read-model problem until proven
-otherwise.
+Goal: decide and execute the smallest existing path that gives the current KRN
+project project kernel, repo installation, source seed, or owner-file activation
+material.
+Product rationale: KRN cannot evaluate activation usefulness if the current
+project has an empty activation store. The next proof should make a current KRN
+planning task select real owner-file/read-model context before any scoring
+repair.
+Architectural rationale: prefer existing init/connect/read-model paths over new
+source crawlers, broad memory seeding, or scoring rewrites.
 Evidence source:
-- `docs/reviews/controlled-dogfood/2026-06-28-v236-activation-abstention-regate/REPORT.md`;
-- V231..V235 persisted run readbacks;
-- DB retrieval candidate counts and active project store counts.
+- V236 report;
+- V237 report;
+- V237 DB-backed `empty_activation_store` readback.
 Official/external sources:
 - repo-local `activation-engine` skill;
-- source-to-decision pattern gate;
-- no fresh external research needed for this repair.
+- target-repo/current-state testing rules if current-repo init/connect is used;
+- source-to-decision pattern gate.
 Inputs required:
-- current DB via `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`;
-- recent persisted abstained runs;
-- activation compiler/readback source.
+- local DB ready;
+- current repo path;
+- existing `krn init --connect` or equivalent current-project read-model path;
+- current dirty worktree understood before any DB/persisted seed action.
 Files likely touched:
-- `packages/harness/src/activation/activationEngine.ts`;
-- `packages/harness/src/activation/assembleContext.ts`;
-- `packages/harness/src/compiler/compileHarnessPlan.ts`;
-- `packages/cli/src/runPlanCommand.ts`;
-- `packages/cli/src/runRunShowCommand.ts`;
-- focused tests for activation diagnostics/readback;
+- preferably no source if existing init/connect path works;
+- otherwise only the smallest init/connect/read-model source and tests;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`;
 - dogfood report under `docs/reviews/controlled-dogfood/`.
 Allowed writes:
-- bounded source/test changes needed to expose diagnostics;
-- compact `PLAN.md`, `GOAL.md`, and `PLANS.md` updates;
-- one focused dogfood report.
+- DB project kernel/repo installation/source seed metadata for current KRN repo
+  if produced by existing bounded CLI path;
+- bounded source/test repair only if existing path is broken;
+- plan/report updates.
 Forbidden writes:
+- broad source crawler;
 - activation scoring rewrite;
 - broad memory/source seeding;
-- source crawler;
-- Research Foundry;
 - dashboard/API/MCP/worker daemon;
-- broad eval platform;
-- hidden semantic hooks;
+- Research Foundry;
+- runtime markdown memory;
 - product-readiness claim.
 Output requirements:
-- plan and/or run readback says why activation abstained;
-- diagnostics distinguish at least empty activation stores from excluded
-  candidates;
-- owner-file fallback availability/miss is visible enough for operator review;
-- command evidence includes proof/non-proof boundaries.
+- decision on whether existing init/connect/read-model path is enough;
+- if used, DB readback or plan output proving non-empty current-state activation
+  material;
+- proof/non-proof boundaries;
+- next-task synthesis based on whether activation now selects useful owner-file
+  context.
 Definition of Done:
-- focused tests prove empty-store/diagnostic output;
-- `pnpm typecheck` passes if source is touched;
-- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test` or targeted + full tests pass as
-  appropriate;
-- `git diff --check` passes;
-- DB-backed dogfood report records usefulness and next-task synthesis;
-- commit is pushed and CI is checked when relevant.
+- local DB readiness verified;
+- existing current-repo init/connect/read-model path inspected;
+- one DB-backed plan proves either non-empty activation material or a precise
+  blocker;
+- no scoring rewrite;
+- verification commands pass;
+- dogfood report exists;
+- commit is pushed and CI checked when relevant.
 Verification commands:
-- `pnpm --filter @krn/harness test -- activation`;
-- `pnpm --filter @krn/cli test -- runPlanCommand runRunShowCommand`;
-- `pnpm typecheck`;
-- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`;
-- `git diff --check`;
 - `pnpm db:ready`;
-- `krn plan --persist` and `krn run show --run-id <run>`.
+- current-repo init/connect/read-model command if selected;
+- `krn plan --persist`;
+- `krn run show --run-id <run>`;
+- source tests/typecheck/full tests only if source changes;
+- `git diff --check`.
 Acceptance criteria:
-- empty-store abstention no longer looks identical to low-score/low-trust
-  abstention in operator readback;
-- no ranking/scoring behavior changes are made in this slice;
-- diagnostics do not claim missing context means no relevant files exist.
-Risk: overfitting diagnostics to V231..V235 or turning diagnostics into a new
-activation subsystem.
-Rollback: revert the focused source/test/report commit.
-Condensation expectation: if diagnostics prove a repeated owner-file fallback
-miss after non-empty inputs, append a small owner-file recall repair; if they
-prove only empty stores, append a current-state source/memory seeding decision
-task instead of scoring work.
-Next-task synthesis rule: choose exactly one of owner-file recall repair,
-current-state activation seed/read-model task, or no activation repair based on
-diagnostic evidence.
+- `empty_activation_store` is either eliminated for a current-repo owner-file
+  task or explained by a specific missing existing path;
+- no broad source/indexing subsystem is introduced;
+- next task is owner-file recall repair only if non-empty inputs still miss
+  obvious context.
+Risk: accidentally turning current-state seeding into a crawler or treating DB
+metadata seed as product readiness.
+Rollback: revert source/report commit if source changed; if DB-only seed was
+performed, record the inserted project/repo/kernel IDs and use existing cleanup
+path or leave as dogfood evidence with explicit caveat.
+Condensation expectation: choose exactly one next repair: owner-file recall
+quality, source/search document seed path, memory/source review path, or no
+activation repair yet.
+Next-task synthesis rule: continue from V238 evidence; do not jump to scoring
+until non-empty activation inputs still produce a repeated miss.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -18853,10 +18888,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V237 Activation Abstention Diagnostics And Empty-Store Readback.
+- V238 Current-State Activation Seed And Read-Model Decision.
 
 Next active task:
-- V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
+- V238-00 Current-State Activation Seed And Read-Model Decision.
 
 ## 21. Final Response Format For Codex Runs
 

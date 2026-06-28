@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V237 Activation Abstention Diagnostics And Empty-Store Readback
-current task: V237-00 Activation Abstention Diagnostics And Empty-Store Readback
+active stream: V238 Current-State Activation Seed And Read-Model Decision
+current task: V238-00 Current-State Activation Seed And Read-Model Decision
 ```
 
 ## Compact Completed Checkpoints
@@ -28,56 +28,58 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V236: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V237: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
            normalization/readback guards plus best-pattern usefulness closure
            and closure dogfood plus TS best-pattern application and sibling
-           package path normalization plus activation abstention re-gate
-           complete.
+           package path normalization plus activation abstention re-gate and
+           abstention diagnostics/readback complete.
 ```
 
 ## Active Stream
 
-### V237 Activation Abstention Diagnostics And Empty-Store Readback
+### V238 Current-State Activation Seed And Read-Model Decision
 
 Goal:
 
-Make activation abstention actionable in `krn plan` and/or `krn run show` by
-surfacing activation input counts, empty-store cause, target read-model
-availability, and owner-file fallback results.
+Decide and execute the smallest existing path that gives the current KRN
+project project kernel, repo installation, source seed, or owner-file activation
+material.
 
 Current finding:
 
 ```txt
-V236 proved V231..V235 abstained because persisted retrieval candidate counts
-were 0. The active project has no active memory, source claims, search
-documents, anti-memory, repo installations, or project kernel metadata.
+V237 made abstention diagnostics visible and proved the active project currently
+reports `empty_activation_store`: no memory, source claims, search documents,
+owner-file candidates, anti-memory, target read model, source seeds, or owner
+files.
 ```
 
 Current action:
 
 ```txt
-Execute V237-00: add focused diagnostics so future abstentions distinguish
-empty activation stores, missing target read models, owner-file fallback misses,
-and real candidate exclusions before any ranking/scoring repair is considered.
+Execute V238-00: inspect existing init/connect/source-seed paths, seed/connect
+the current repo only if an existing bounded path supports it, and prove a
+DB-backed plan no longer reports `empty_activation_store` for a task that should
+surface owner-file context.
 ```
 
 Primary consumer:
 
 ```txt
-KRN planning context selection, run readback, operator review burden, and future
-activation repair selection.
+KRN current-state planning context, source/memory activation, owner-file recall,
+and future source repair selection.
 ```
 
 Falsifier:
 
 ```txt
-The slice changes ranking/scoring or seeds broad context instead of exposing
-which activation inputs were present and why candidates were unavailable or
-excluded.
+The slice invents a broad source crawler, rewrites scoring, or seeds unchecked
+runtime memory instead of using/repairing the smallest existing current-repo
+init/connect/read-model path.
 ```
 
 ## Pattern Gate

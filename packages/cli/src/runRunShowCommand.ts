@@ -24,6 +24,13 @@ import type {
   HarnessRunAggregate,
   HarnessRunRepository
 } from "@krn/harness/repositories";
+import {
+  activationRetrievalDiagnosticsFromMetadata,
+  formatActivationRetrievalDiagnostics
+} from "@krn/harness";
+import type {
+  ActivationRetrievalDiagnostics
+} from "@krn/harness";
 
 import type {
   DatabaseRuntimeInput
@@ -82,6 +89,7 @@ export interface RunReadbackResource {
     status: string;
     inclusions: number;
     exclusions: number;
+    activationDiagnostics?: ActivationRetrievalDiagnostics;
   };
   evidenceBundles: {
     id: string;
@@ -567,7 +575,16 @@ export const buildRunReadbackResource = (
   context: {
     status: aggregate.contextAssembly?.status ?? "missing",
     inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
-    exclusions: aggregate.contextAssembly?.exclusions.length ?? 0
+    exclusions: aggregate.contextAssembly?.exclusions.length ?? 0,
+    ...(aggregate.contextAssembly === undefined
+      ? {}
+      : (() => {
+          const diagnostics = activationRetrievalDiagnosticsFromMetadata(
+            aggregate.contextAssembly.metadata
+          );
+
+          return diagnostics === undefined ? {} : { activationDiagnostics: diagnostics };
+        })())
   },
   evidenceBundles: aggregate.evidenceBundles.map((bundle) => {
     const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
@@ -626,8 +643,13 @@ export const buildRunReadbackResource = (
 
 const renderAggregate = (
   aggregate: HarnessRunAggregate
-): string =>
-  [
+): string => {
+  const activationDiagnostics =
+    aggregate.contextAssembly === undefined
+      ? undefined
+      : activationRetrievalDiagnosticsFromMetadata(aggregate.contextAssembly.metadata);
+
+  return [
     "KRN Run Readback",
     `Run ID: ${aggregate.executionRun.id}`,
     "Persistence: read-only (Postgres)",
@@ -644,6 +666,9 @@ const renderAggregate = (
     `- status: ${aggregate.contextAssembly?.status ?? "missing"}`,
     `- inclusions: ${aggregate.contextAssembly?.inclusions.length ?? 0}`,
     `- exclusions: ${aggregate.contextAssembly?.exclusions.length ?? 0}`,
+    ...(activationDiagnostics === undefined
+      ? []
+      : formatActivationRetrievalDiagnostics(activationDiagnostics)),
     "",
     ...renderEvidenceBundle(aggregate),
     "",
@@ -665,6 +690,7 @@ const renderAggregate = (
     "- Memory Core mutation",
     ""
   ].join("\n");
+};
 
 export const runRunShowCommand = async (
   runtime: RunShowCommandRuntime
