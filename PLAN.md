@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V258 Pattern Enforcement Gate
-current task: V258-00 Pattern Enforcement Gate
+active stream: V259 Codex Skills Pack Re-Gate
+current task: V259-00 Codex Skills Pack Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -50,39 +50,40 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V258 Pattern Enforcement Gate
+### V259 Codex Skills Pack Re-Gate
 
 Goal:
 
-Add the smallest falsifiable guard/eval/test for the retained TypeScript
-boundary pattern.
+Re-gate the minimal Codex skills pack needed to route future work through the
+brain without long prompt dumps or a skill zoo.
 
 Current finding:
 
 ```txt
-V257 retained `ts-boundary-unknown-first-result-state` as active pattern
-knowledge with sources, consumer, falsifier, and eval candidate. The next gap is
-enforcement: the pattern should fail when the replayable target violates it.
+V258 added the first bounded pattern enforcement gate for
+`ts-boundary-unknown-first-result-state`. The next gap is making sure Codex can
+consistently invoke the right small skills for target repair, pattern intake,
+evidence review, TypeScript boundary work, and handoff.
 ```
 
 Current action:
 
 ```txt
-Execute V258-00: add the smallest guard or test for
-`ts-boundary-unknown-first-result-state`.
+Execute V259-00: inspect `.agents/skills`, keep/update/create only skills
+backed by repeated workflow evidence, and reject skill-zoo expansion.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / enforcement loop.
+pattern brain / Codex skill routing loop.
 ```
 
 Falsifier:
 
 ```txt
-V258 adds decorative docs only, or the retained target pattern can regress
-without a failing check.
+V259 creates decorative skills, expands `AGENTS.md`, or leaves repeated
+workflows dependent on long pasted prompts instead of targeted skills.
 ```
 
 ## Pattern Gate

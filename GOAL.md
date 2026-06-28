@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V258 Pattern Enforcement Gate
+V259 Codex Skills Pack Re-Gate
 ```
 
 Current product loop:
@@ -48,11 +48,11 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V257: activation/source/skill guards, product-readiness re-gate, target
+V245..V258: activation/source/skill guards, product-readiness re-gate, target
 trial gate, normalized substrate, first target repair, replayable baseline,
 active ledger condensation, replayable target repair trial, and pattern intake
-trial complete.
-current task: V258-00 Pattern Enforcement Gate.
+trial plus first pattern enforcement gate complete.
+current task: V259-00 Codex Skills Pack Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

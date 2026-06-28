@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V258 Pattern Enforcement Gate
-current task: V258-00 Pattern Enforcement Gate
+active stream: V259 Codex Skills Pack Re-Gate
+current task: V259-00 Codex Skills Pack Re-Gate
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,9 +32,9 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V258-00 Pattern Enforcement Gate is the current gap. V257 made the repeated
-TypeScript boundary pattern durable brain knowledge; now KRN needs the smallest
-falsifiable guard/eval that fails when the replayable target violates it.
+V259-00 Codex Skills Pack Re-Gate is the current gap. V258 added the first
+pattern enforcement gate; now KRN needs the minimal skill routing set that lets
+Codex repeatedly use the brain without long prompt dumps.
 ```
 
 ## 2. Product Thesis
@@ -162,6 +162,15 @@ green test != product value
   `docs/patterns/typescript-boundary-patterns.md` with source mechanisms,
   consumer, falsifier, and eval candidate.
 
+### V258 Pattern Enforcement Gate
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v258-pattern-enforcement-gate/REPORT.md`.
+- Outcome: added `packages/harness/src/typescriptTargetPatternInvariants.test.ts`
+  to guard the retained TypeScript pattern, the weak scenario falsifier, and the
+  repaired target state.
+
 ## Active Task Queue
 
 ### V255-00 Condense PLANS Active Ledger
@@ -277,7 +286,7 @@ Expected output:
 
 ### V258-00 Pattern Enforcement Gate
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -307,7 +316,7 @@ Non-goals:
 
 ### V259-00 Codex Skills Pack Re-Gate
 
-Status: queued.
+Status: active.
 
 Goal:
 
@@ -428,7 +437,9 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   `.local-lab`.
 - V257-00 complete: turned the repeated TypeScript boundary pattern into a
   source-to-decision object and enforcement/eval candidate.
-- V258-00 active: add the smallest falsifiable pattern enforcement gate.
+- V258-00 complete: added a focused harness invariant for the retained
+  TypeScript boundary pattern.
+- V259-00 active: re-gate the minimal Codex skills pack.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -507,6 +518,29 @@ Source-to-decision:
 - Consumer: V258 Pattern Enforcement Gate.
 - Falsifier: the replayable target can retain raw `any`/trusted `JSON.parse` or
   nullable invalid-input result while the future pattern gate passes.
+
+## Outcome V258-00 Pattern Enforcement Gate
+
+Summary:
+- added `packages/harness/src/typescriptTargetPatternInvariants.test.ts`;
+- guarded the retained pattern object, weak scenario falsifier, and repaired
+  target state;
+- kept the gate bounded to one pattern and one normalized substrate.
+
+Source-to-decision:
+- Source: V257 retained pattern object and V253/V256 repair evidence.
+- Mechanism: a replayable weak scenario plus repaired target fixture can falsify
+  whether a retained pattern is still applied.
+- KRN implication: pattern brain should grow by small enforcement gates tied to
+  retained patterns, not broad quality scanners.
+- Decision: add a harness invariant for
+  `ts-boundary-unknown-first-result-state` and open V259 to re-gate Codex skill
+  routing.
+- Does not prove: real target transfer, product readiness, full TypeScript
+  quality, or UI/search readiness.
+- Consumer: future normalized target trials and V259 skills pack re-gate.
+- Falsifier: the normalized target can regress to raw `any`/nullable invalid
+  input state while `typescriptTargetPatternInvariants` still passes.
 
 ## Condensation Rules
 
