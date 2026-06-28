@@ -55,6 +55,12 @@ interface SourceArtifactPreviewChunk {
   preview: string;
 }
 
+interface SourceArtifactPreviewPersistenceResult {
+  lines: string[];
+  searchDocumentPersisted: boolean;
+  sourceClaimPersisted: boolean;
+}
+
 interface CandidateField {
   name: keyof Pick<
     SourceArtifactPreviewCommand,
@@ -239,7 +245,7 @@ const persistSourceArtifactPreview = async (
   resolvedPath: string,
   artifactHash: string,
   chunks: readonly SourceArtifactPreviewChunk[]
-): Promise<string[]> => {
+): Promise<SourceArtifactPreviewPersistenceResult> => {
   const databaseUrl = runtime.env?.KRN_DATABASE_URL?.trim();
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
@@ -360,8 +366,62 @@ const persistSourceArtifactPreview = async (
       limit: 5
     });
     const readbackHit = lexicalReadback.find((result) => result.id === searchDocument.id);
+    const hasCompleteSourceClaimCandidate =
+      hasAnySourceClaimCandidateField(runtime.command) &&
+      missingSourceClaimCandidateFields(runtime.command).length === 0;
+    const parsedSourceClaim = hasCompleteSourceClaimCandidate
+      ? parseSourceClaimInput({
+          sourceArtifactId: sourceArtifact.id,
+          ...(firstChunk === undefined ? {} : { sourceChunkId: firstChunk.id }),
+          claim: runtime.command.claim,
+          mechanism: runtime.command.mechanism,
+          krnImplication: runtime.command.krnImplication,
+          doesNotProve: runtime.command.doesNotProve,
+          trustTier: runtime.command.trustTier,
+          supportType: runtime.command.supportType,
+          consumer: runtime.command.consumer,
+          falsifier: runtime.command.falsifier,
+          metadata: {
+            file,
+            contentHash: artifactHash,
+            chunkIds: sourceChunks.map((chunk) => chunk.id),
+            source: "krn source artifact preview --persist",
+            doesNotProve: "Persisted SourceClaim readback does not prove source truth, claim acceptance, automatic extraction, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
+          }
+        })
+      : undefined;
+    const sourceClaim = parsedSourceClaim === undefined
+      ? undefined
+      : await databaseRuntime.sourceRepository.createSourceClaim({
+          sourceArtifactId: sourceArtifact.id,
+          ...(parsedSourceClaim.sourceChunkId === undefined
+            ? {}
+            : { sourceChunkId: parsedSourceClaim.sourceChunkId }),
+          ...(parsedSourceClaim.executionRunId === undefined
+            ? {}
+            : { executionRunId: parsedSourceClaim.executionRunId }),
+          claim: parsedSourceClaim.claim,
+          mechanism: parsedSourceClaim.mechanism,
+          krnImplication: parsedSourceClaim.krnImplication,
+          doesNotProve: parsedSourceClaim.doesNotProve,
+          trustTier: parsedSourceClaim.trustTier,
+          supportType: parsedSourceClaim.supportType,
+          consumer: parsedSourceClaim.consumer,
+          falsifier: parsedSourceClaim.falsifier,
+          ...(parsedSourceClaim.revisitWhen === undefined
+            ? {}
+            : { revisitWhen: parsedSourceClaim.revisitWhen }),
+          status: parsedSourceClaim.status,
+          metadata: parsedSourceClaim.metadata
+        });
+    const sourceClaimReadback = sourceClaim === undefined
+      ? undefined
+      : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaim.id);
 
-    return [
+    return {
+      searchDocumentPersisted: true,
+      sourceClaimPersisted: sourceClaim !== undefined,
+      lines: [
       "Persistence readback:",
       "Persistence: enabled (Postgres, explicit --persist)",
       `project: ${databaseRuntime.projectId}`,
@@ -373,10 +433,17 @@ const persistSourceArtifactPreview = async (
       ...(readbackHit === undefined
         ? []
         : [`lexicalScore: ${readbackHit.lexicalScore}`]),
+      sourceClaim === undefined
+        ? "sourceClaim: not created"
+        : `sourceClaim: ${sourceClaim.id}`,
+      ...(sourceClaim === undefined
+        ? []
+        : [`sourceClaimReadback: ${sourceClaimReadback === undefined ? "missing" : "hit"}`]),
       "Embeddings: none",
       "Graph runtime: none",
       "doesNotProve: DB readback does not prove source truth, embeddings, graph retrieval, crawler readiness, or product readiness"
-    ];
+      ]
+    };
   } finally {
     await databaseRuntime.close();
   }
@@ -401,7 +468,8 @@ const formatSourceClaimCandidate = (
   command: SourceArtifactPreviewCommand,
   file: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[]
+  chunks: readonly SourceArtifactPreviewChunk[],
+  persisted: boolean
 ): string[] => {
   if (!hasAnySourceClaimCandidateField(command)) {
     return [
@@ -485,7 +553,9 @@ const formatSourceClaimCandidate = (
     `  falsifier: ${candidate.falsifier}`,
     `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
     `  doesNotProve: ${sourceClaimCandidateDoesNotProve}`,
-    "  No SourceClaim created"
+    persisted
+      ? "  SourceClaim row created: see Persistence readback"
+      : "  No SourceClaim created"
   ];
 };
 
@@ -493,12 +563,24 @@ const formatCandidateBridge = (
   command: SourceArtifactPreviewCommand,
   file: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[]
+  chunks: readonly SourceArtifactPreviewChunk[],
+  persistence?: SourceArtifactPreviewPersistenceResult
 ): string[] => [
   "Candidate bridge:",
   "Mutation: none",
-  ...formatSearchDocumentCandidate(file, artifactHash, chunks, command.persist),
-  ...formatSourceClaimCandidate(command, file, artifactHash, chunks)
+  ...formatSearchDocumentCandidate(
+    file,
+    artifactHash,
+    chunks,
+    persistence?.searchDocumentPersisted ?? false
+  ),
+  ...formatSourceClaimCandidate(
+    command,
+    file,
+    artifactHash,
+    chunks,
+    persistence?.sourceClaimPersisted ?? false
+  )
 ];
 
 const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {
@@ -535,12 +617,13 @@ export const runSourceArtifactPreviewCommand = async (
   const chunkLimit = runtime.command.limitChunks ?? defaultLimitChunks;
   const chunks = chunkLines(lines, chunkSize, chunkLimit);
   const artifactHash = sha256(raw);
-  const persistenceLines = runtime.command.persist
+  const persistence = runtime.command.persist
     ? await persistSourceArtifactPreview(runtime, file, resolvedPath, artifactHash, chunks)
-    : [
-        "Persistence: disabled (local preview only)",
-        "DB writes: none"
-      ];
+    : undefined;
+  const persistenceLines = persistence?.lines ?? [
+    "Persistence: disabled (local preview only)",
+    "DB writes: none"
+  ];
 
   return {
     stdout: [
@@ -560,7 +643,7 @@ export const runSourceArtifactPreviewCommand = async (
       "Chunks:",
       ...formatChunks(chunks),
       "",
-      ...formatCandidateBridge(runtime.command, file, artifactHash, chunks),
+      ...formatCandidateBridge(runtime.command, file, artifactHash, chunks, persistence),
       "",
       "Proof:",
       "- proves: one local file was readable in this shell",
@@ -571,6 +654,9 @@ export const runSourceArtifactPreviewCommand = async (
         : "- proves: preview output can produce reviewable source/search candidate proposals without persistence",
       ...(runtime.command.persist
         ? ["- proves: explicit --persist wrote and read back SourceArtifact/SourceChunk/SearchDocument rows in this shell"]
+        : []),
+      ...(persistence?.sourceClaimPersisted === true
+        ? ["- proves: complete explicit SourceClaim fields wrote and read back a SourceClaim row linked to the persisted SourceArtifact/SourceChunk"]
         : []),
       "- doesNotProve: source truth, claim correctness, DB persistence, embeddings, graph retrieval, crawler readiness, or Memory Core mutation"
     ].join("\n")

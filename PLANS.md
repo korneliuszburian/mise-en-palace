@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V319 Ingest v0 SourceClaim Review Path
-current task: V319-00 Ingest v0 SourceClaim Review Path
+active stream: V320 Ingest v0 SourceDecision Linkage Readback
+current task: V320-00 Ingest v0 SourceDecision Linkage Readback
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -31,12 +31,12 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V319-00 Ingest v0 SourceClaim Review Path is the current gap. V316 implemented
-local source artifact preview, V317 added reviewable candidate output, and V318
-proved existing-DB SourceArtifact/SourceChunk/SearchDocument persistence
-readback; now prove one SourceClaim review path linked to a local artifact/chunk
-without crawler, schema migration, embeddings, graph runtime, or Memory Core
-mutation.
+V320-00 Ingest v0 SourceDecision Linkage Readback is the current gap. V316
+implemented local source artifact preview, V317 added reviewable candidate
+output, V318 proved SourceArtifact/SourceChunk/SearchDocument persistence
+readback, and V319 proved existing-DB SourceClaim persistence/readback. Now
+prove one SourceDecision linkage/readback path without crawler, schema
+migration, embeddings, graph runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -85,9 +85,9 @@ green test != product value
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use that result to start Ingest v0.
-4. Ingest v0: local artifact preview, candidate bridge, and SearchDocument
-   persistence/readback exist; next prove one existing-DB SourceClaim review
-   path linked to a local artifact/chunk without schema work.
+4. Ingest v0: local artifact preview, candidate bridge, SearchDocument
+   persistence/readback, and SourceClaim persistence/readback exist; next prove
+   one existing-DB SourceDecision linkage/readback path without schema work.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
@@ -1247,7 +1247,7 @@ DB paths without broad schema/runtime work.
 
 ### V319-00 — Ingest v0 SourceClaim Review Path
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -1384,6 +1384,12 @@ Condensation expectation:
 Keep root state compact; put detailed evidence in the V319 report.
 ```
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v319-ingest-v0-sourceclaim-review-path/REPORT.md
+```
+
 Next-task synthesis rule:
 
 ```txt
@@ -1418,6 +1424,35 @@ Falsifier:
 V319 cannot persist/read back one governed SourceClaim linked to local artifact
 evidence without broad schema/runtime work.
 ```
+
+### V320-00 — Ingest v0 SourceDecision Linkage Readback
+
+Status: active.
+
+Goal: link one persisted/proposed SourceClaim to a bounded SourceDecision or
+SourceDecisionEdge through existing repository paths and read it back.
+
+Use: V319 report, SourceDecision/SourceDecisionEdge schema, SourceRepository
+contracts, and Drizzle source repository owner files.
+
+Allowed: focused source-decision linkage/readback source/tests and a compact
+report at
+`docs/reviews/controlled-dogfood/2026-06-29-v320-ingest-v0-sourcedecision-linkage-readback/REPORT.md`.
+
+Forbidden: DB schema migration, source crawler, embeddings/ranking runtime,
+graph runtime, dashboard, API/MCP, worker daemon, Memory Core mutation, target
+repo writes, broad eval platform.
+
+Done when: existing SourceDecision/SourceDecisionEdge repository surface is
+inspected; either smallest SourceClaim -> SourceDecision linkage/readback works
+with focused tests or a precise missing-substrate finding is recorded; report
+states proof/non-proof boundaries.
+
+Verify: `pnpm typecheck`, `pnpm test`, `git diff --check`; add `pnpm db:ready`
+and `pnpm db:smoke` when DB path is exercised.
+
+Falsifier: V320 cannot link/read back one bounded source decision through
+existing repository contracts without broad schema/runtime work.
 
 ## Pattern Gate
 
@@ -1510,7 +1545,8 @@ Falsifier:
 - [x] V316 Ingest v0 Local Source Artifact Preview
 - [x] V317 Ingest v0 Source Candidate Bridge
 - [x] V318 Ingest v0 SearchDocument Persistence Readback
-- [ ] V319 Ingest v0 SourceClaim Review Path
+- [x] V319 Ingest v0 SourceClaim Review Path
+- [ ] V320 Ingest v0 SourceDecision Linkage Readback
 
 ## Recent Evidence Pointers
 
@@ -1540,6 +1576,33 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v317-ingest-v0-source-candidate-bridge/REPORT.md`
 - V318 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v318-ingest-v0-search-document-persistence-readback/REPORT.md`
+- V319 report:
+  `docs/reviews/controlled-dogfood/2026-06-29-v319-ingest-v0-sourceclaim-review-path/REPORT.md`
+
+## Outcome V319 Ingest v0 SourceClaim Review Path
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V318 report, existing SourceClaim schema/repository contracts, and
+  local DB readiness/readback evidence.
+- Mechanism: explicit local artifact preview can persist a governed SourceClaim
+  linked to persisted SourceArtifact/SourceChunk evidence and verify readback
+  by id through existing Postgres repository paths.
+- KRN implication: Ingest v0 can now move from local source/search/claim
+  persistence to bounded SourceDecision linkage before graph, crawler,
+  embeddings, or product UI/API work.
+- Decision: persist SourceClaim from `krn source artifact preview --persist`
+  only when complete explicit source-claim fields are supplied.
+- Rejection: do not infer SourceClaim truth from file content and do not create
+  SourceClaim rows for absent or incomplete claim fields.
+- Does not prove: source truth, claim correctness, SourceDecision quality,
+  automatic extraction, embeddings, graph retrieval, crawler readiness, mass
+  corpus ingest, or product readiness.
+- Consumer: V320 Ingest v0 SourceDecision Linkage Readback.
+- Falsifier: complete explicit SourceClaim fields cannot be linked to persisted
+  SourceArtifact/SourceChunk rows and read back in the current shell.
 
 ## Outcome V318 Ingest v0 SearchDocument Persistence Readback
 

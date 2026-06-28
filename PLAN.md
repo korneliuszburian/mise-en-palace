@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V319 Ingest v0 SourceClaim Review Path
-current task: V319-00 Ingest v0 SourceClaim Review Path
+active stream: V320 Ingest v0 SourceDecision Linkage Readback
+current task: V320-00 Ingest v0 SourceDecision Linkage Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -47,44 +47,46 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V319 Ingest v0 SourceClaim Review Path
+### V320 Ingest v0 SourceDecision Linkage Readback
 
 Goal:
 
-Persist and read back one explicit SourceClaim linked to a local SourceArtifact/
-SourceChunk using existing repository paths without schema/runtime expansion.
+Link one persisted/proposed SourceClaim to a bounded SourceDecision or
+SourceDecisionEdge through existing repository paths without schema/runtime
+expansion.
 
 Current finding:
 
 ```txt
 V316 added local artifact preview, V317 added reviewable source/search
-candidate output, and V318 proved SourceArtifact/SourceChunk/SearchDocument
-persistence/readback. The next Ingest v0 gap is proving one explicit SourceClaim
-review path linked to that local artifact/chunk substrate without crawler,
-schema migration, embeddings, graph runtime, or Memory Core mutation.
+candidate output, V318 proved SourceArtifact/SourceChunk/SearchDocument
+persistence/readback, and V319 proved explicit SourceClaim persistence/readback.
+The next Ingest v0 gap is proving one bounded SourceDecision linkage/readback
+path before graph/entity/crawler work.
 ```
 
 Current action:
 
 ```txt
-Execute V319-00: inspect existing SourceClaim add/repository paths and implement
-or record the smallest local artifact/chunk -> SourceClaim persistence/readback
-path. Do not build source crawler, schema migration, dashboard, API/MCP, worker
-daemon, broad eval platform, embeddings, ranking, graph runtime, or Memory Core
-mutation.
+Execute V320-00: inspect existing SourceDecision/SourceDecisionEdge repository
+paths and implement or record the smallest SourceClaim -> SourceDecision
+linkage/readback path. Do not build source crawler, schema migration,
+dashboard, API/MCP, worker daemon, broad eval platform, embeddings, ranking,
+graph runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future source grounding, graph brain, and product-facing knowledge ingestion.
+future source grounding, graph brain, consensus/eval candidates, and
+product-facing knowledge ingestion.
 ```
 
 Falsifier:
 
 ```txt
-V318 cannot persist/read back one local preview through existing source/search
-DB paths without broad schema/runtime work.
+V320 cannot link and read back one bounded source decision path through existing
+repository contracts without broad schema/runtime work.
 ```
 
 ## Pattern Gate

@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V319 Ingest v0 SourceClaim Review Path
+V320 Ingest v0 SourceDecision Linkage Readback
 ```
 
 Current state:
@@ -27,16 +27,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V319-00 Ingest v0 SourceClaim Review Path.
+current task: V320-00 Ingest v0 SourceDecision Linkage Readback.
 ```
 
 Current task:
 
 ```txt
-Persist/read back one explicit SourceClaim linked to a local SourceArtifact/
-SourceChunk using existing repository paths and proof boundaries, without
-crawler, DB schema, dashboard, API/MCP, worker, embeddings, graph runtime, or
-Memory Core mutation.
+Link one persisted/proposed SourceClaim to a bounded SourceDecision or
+SourceDecisionEdge through existing repository paths and readback/proof
+boundaries, without crawler, DB schema, dashboard, API/MCP, worker, embeddings,
+graph runtime, or Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -50,9 +50,9 @@ to preserve are:
    future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
    BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
-4. Ingest v0: local artifact preview, candidate bridge, and SearchDocument
-   persistence/readback exist; next prove one existing-DB SourceClaim review
-   path linked to a local artifact/chunk without schema work.
+4. Ingest v0: local artifact preview, candidate bridge, SearchDocument
+   persistence/readback, and SourceClaim persistence/readback exist; next prove
+   one SourceDecision linkage/readback path without schema work.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
    contradictions, supersession, and temporal slices.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core

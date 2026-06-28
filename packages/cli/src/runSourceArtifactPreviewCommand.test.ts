@@ -20,6 +20,9 @@ import {
 import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
+import type {
+  SourceClaim
+} from "@krn/core";
 
 const tempRoots: string[] = [];
 
@@ -138,10 +141,11 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("No SourceClaim created");
   });
 
-  it("persists local artifact chunks and reads back a search document when explicitly requested", async () => {
+  it("persists local artifact chunks, search document, and complete source claim when explicitly requested", async () => {
     const tempRoot = await createTempRoot();
     const sourcePath = path.join(tempRoot, "source.md");
     const timestamp = "2026-06-28T21:00:00.000Z";
+    const sourceClaimId = "44444444-4444-4444-8444-444444444444" as SourceClaim["id"];
 
     await writeFile(sourcePath, [
       "# Source",
@@ -188,11 +192,49 @@ describe("runSourceArtifactPreviewCommand", () => {
               createdAt: timestamp
             };
           },
-          async createSourceClaim() {
-            throw new Error("createSourceClaim should not be called");
+          async createSourceClaim(input) {
+            return {
+              id: sourceClaimId,
+              sourceArtifactId: input.sourceArtifactId as SourceClaim["sourceArtifactId"],
+              sourceChunkId: input.sourceChunkId,
+              executionRunId: input.executionRunId,
+              claim: input.claim,
+              mechanism: input.mechanism,
+              krnImplication: input.krnImplication,
+              doesNotProve: input.doesNotProve,
+              trustTier: input.trustTier,
+              supportType: input.supportType,
+              consumer: input.consumer,
+              falsifier: input.falsifier,
+              revisitWhen: input.revisitWhen,
+              status: input.status ?? "proposed",
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
           },
-          async getSourceClaimById() {
-            throw new Error("getSourceClaimById should not be called");
+          async getSourceClaimById(id) {
+            if (id !== sourceClaimId) {
+              return undefined;
+            }
+
+            return {
+              id: sourceClaimId,
+              sourceArtifactId: "11111111-1111-4111-8111-111111111111" as SourceClaim["sourceArtifactId"],
+              sourceChunkId: "22222222-2222-4222-8222-222222222222",
+              claim: "Local artifact previews can persist governed source claims.",
+              mechanism: "Preview persistence creates Artifact and Chunk rows before creating SourceClaim.",
+              krnImplication: "Use explicit local artifact evidence as the first Ingest v0 source-claim review path.",
+              doesNotProve: "This does not prove source truth.",
+              trustTier: "source-code",
+              supportType: "implementation-boundary",
+              consumer: "ingest v0",
+              falsifier: "SourceClaim is not linked to the persisted SourceArtifact.",
+              status: "proposed",
+              metadata: {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
           },
           async createSourceDecisionEdge() {
             throw new Error("createSourceDecisionEdge should not be called");
@@ -255,7 +297,15 @@ describe("runSourceArtifactPreviewCommand", () => {
         persist: true,
         file: "source.md",
         chunkLines: 2,
-        limitChunks: 1
+        limitChunks: 1,
+        claim: "Local artifact previews can persist governed source claims.",
+        mechanism: "Preview persistence creates Artifact and Chunk rows before creating SourceClaim.",
+        krnImplication: "Use explicit local artifact evidence as the first Ingest v0 source-claim review path.",
+        doesNotProve: "This does not prove source truth.",
+        supportType: "implementation-boundary",
+        trustTier: "source-code",
+        consumer: "ingest v0",
+        falsifier: "SourceClaim is not linked to the persisted SourceArtifact."
       }
     });
 
@@ -264,9 +314,13 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("sourceChunks: 22222222-2222-4222-8222-222222222222");
     expect(result.stdout).toContain("searchDocument: 33333333-3333-4333-8333-333333333333");
     expect(result.stdout).toContain("lexicalReadback: hit");
+    expect(result.stdout).toContain("sourceClaim: 44444444-4444-4444-8444-444444444444");
+    expect(result.stdout).toContain("sourceClaimReadback: hit");
+    expect(result.stdout).toContain("SourceClaim row created: see Persistence readback");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Embeddings: none");
     expect(result.stdout).toContain("Graph runtime: none");
+    expect(result.stdout).toContain("proves: complete explicit SourceClaim fields wrote and read back a SourceClaim row linked to the persisted SourceArtifact/SourceChunk");
   });
 
   it("falls back to repo-root-relative paths when cwd is a package directory", async () => {
