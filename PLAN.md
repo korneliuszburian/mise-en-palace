@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V312 Executable Brain-QA Case BQ-023
-current task: V312-00 Executable Brain-QA Case BQ-023
+active stream: V313 Executable Brain-QA Case BQ-024
+current task: V313-00 Executable Brain-QA Case BQ-024
 ```
 
 ## Compact Completed Checkpoints
@@ -47,26 +47,27 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V312 Executable Brain-QA Case BQ-023
+### V313 Executable Brain-QA Case BQ-024
 
 Goal:
 
-Execute evidence command provenance readback for BQ-023.
+Execute dirty-context changed-file classification readback for BQ-024.
 
 Current finding:
 
 ```txt
-V311 added focused coverage for BQ-015. The next brain-QA lane should exercise
-evidence/review behavior: command provenance and proof/non-proof readback.
+V312 proved command provenance readback through existing evidence capture
+surfaces. The next adjacent evidence/review case should exercise intended,
+unrelated, and unknown changed-file classification.
 ```
 
 Current action:
 
 ```txt
-Execute V312-00: run or inspect the smallest existing evidence command
-provenance readback path for BQ-023. Do not add DB schema, runtime platform,
-dashboard, API/MCP, source crawler, embeddings, ranking, or Memory Core
-mutation.
+Execute V313-00: run or inspect the smallest existing dirty-context
+classification readback path for BQ-024. Do not add DB schema, runtime
+platform, dashboard, API/MCP, source crawler, embeddings, ranking, or Memory
+Core mutation.
 ```
 
 Primary consumer:
@@ -78,8 +79,8 @@ future brain-QA and evidence/review validation.
 Falsifier:
 
 ```txt
-BQ-023 cannot show command provenance states and proof/non-proof boundaries
-through existing evidence/readback surfaces.
+BQ-024 cannot show intended, unrelated, and unknown changed-file classes through
+existing evidence/readback surfaces.
 ```
 
 ## Pattern Gate

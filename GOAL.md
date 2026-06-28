@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V312 Executable Brain-QA Case BQ-023
+V313 Executable Brain-QA Case BQ-024
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V312-00 Executable Brain-QA Case BQ-023.
+current task: V313-00 Executable Brain-QA Case BQ-024.
 ```
 
 Current task:
 
 ```txt
-Execute evidence command provenance readback for BQ-023 without new runtime,
-schema, dashboard, API/MCP, or broad eval platform.
+Execute dirty-context changed-file classification readback for BQ-024 without
+new runtime, schema, dashboard, API/MCP, or broad eval platform.
 ```
 
 ## Remaining Work
@@ -46,8 +46,8 @@ to preserve are:
    loop; keep future search changes evidence-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: BQ-015 is executed and covered; execute BQ-023
-   evidence command provenance next.
+3. Mini brain-QA benchmark: BQ-015 is executed and covered, BQ-023 is executed;
+   execute BQ-024 dirty-context classification next.
 4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
    or search document with temporal and permission metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,

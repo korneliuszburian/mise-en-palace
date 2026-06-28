@@ -22,18 +22,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V312 Executable Brain-QA Case BQ-023
-current task: V312-00 Executable Brain-QA Case BQ-023
-latest pushed commit checked: 1c23d02 docs(review): close pattern search usefulness feedback
-latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
+active stream: V313 Executable Brain-QA Case BQ-024
+current task: V313-00 Executable Brain-QA Case BQ-024
+latest pushed commit checked: see latest final response / GitHub checks
+latest CI checked: see latest final response / GitHub checks
 ```
 
 Known current gap:
 
 ```txt
-V312-00 Executable Brain-QA Case BQ-023 is the current gap. BQ-015 is executed
-and covered; now the next brain-QA lane should prove evidence command
-provenance readback without new runtime/platform work.
+V313-00 Executable Brain-QA Case BQ-024 is the current gap. BQ-015 is executed
+and covered, and BQ-023 command provenance readback is executed; now the next
+brain-QA lane should prove dirty-context changed-file classification without
+new runtime/platform work.
 ```
 
 ## 2. Product Thesis
@@ -80,8 +81,8 @@ green test != product value
    usefulness-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: BQ-015 is executed and covered; execute BQ-023
-   evidence command provenance next.
+3. Mini brain-QA benchmark: BQ-015 is executed and covered, BQ-023 is executed;
+   execute BQ-024 dirty-context classification next.
 4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
    -> embedding/search document with permission and temporal metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
@@ -164,7 +165,7 @@ docs/reviews/controlled-dogfood/2026-06-28-v311-bq-015-fixture-coverage/REPORT.m
 
 ### V312-00 — Executable Brain-QA Case BQ-023
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -249,6 +250,12 @@ Definition of Done:
 - no runtime/eval platform is built;
 - `git diff --check` passes.
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v312-executable-brain-qa-bq-023/REPORT.md
+```
+
 Verification commands:
 
 ```sh
@@ -279,8 +286,7 @@ runtime.
 Next-task synthesis rule:
 
 ```txt
-After V312, add focused coverage if missing or execute the next docs/CLI-only
-brain-QA case.
+After V312, execute the next docs/CLI-only brain-QA case.
 ```
 
 Primary consumer:
@@ -301,6 +307,149 @@ Falsifier:
 ```txt
 BQ-023 cannot show command provenance states and proof/non-proof boundaries
 through existing evidence/readback surfaces.
+```
+
+### V313-00 — Executable Brain-QA Case BQ-024
+
+Status: active.
+
+Goal:
+
+```txt
+Execute dirty-context changed-file classification readback for BQ-024.
+```
+
+Product rationale:
+
+```txt
+BQ-023 covered command proof boundaries. The next evidence/review behavior is
+whether KRN can classify intended, unrelated, and unknown dirty context so
+future reviews do not hide unrelated work.
+```
+
+Architectural rationale:
+
+```txt
+Use existing evidence capture dirty-context surfaces before new runtime, DB
+schema, eval platform, dashboard, API/MCP, source crawler, or graph work.
+```
+
+Evidence source:
+
+```txt
+V309 BQ-024, V312 report, evidence dirty-context reports, and existing
+evidence capture CLI/golden tests.
+```
+
+Official/external sources:
+
+```txt
+`pattern:evidence-proof-non-proof-boundary` and evidence/review KRN source
+decisions.
+```
+
+Inputs required:
+
+```txt
+docs/benchmarks/brain-qa/V309_BRAIN_QA_SKETCH.md
+docs/reviews/controlled-dogfood/2026-06-28-v312-executable-brain-qa-bq-023/REPORT.md
+packages/cli/src/runEvidenceCaptureCommand.ts
+packages/cli/src/evidenceCaptureGoldenBehavior.test.ts
+packages/cli/src/runCli.test.ts
+```
+
+Files likely touched:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v313-executable-brain-qa-bq-024/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+focused tests only if BQ-024 exposes missing coverage
+```
+
+Allowed writes:
+
+```txt
+docs/report/root updates; focused tests only if missing coverage is found.
+```
+
+Forbidden writes:
+
+```txt
+broad eval platform, Promptfoo expansion, source crawler, embeddings, ranking,
+graph runtime, DB schema, dashboard, API/MCP, worker daemon, Memory Core
+mutation, target repo writes, paid/proprietary course ingestion.
+```
+
+Output requirements:
+
+```txt
+record intended/unrelated/unknown changed-file classes, dirty-context warning,
+proof/non-proof boundaries, mutation boundary, and whether BQ-024 needs focused
+coverage.
+```
+
+Definition of Done:
+
+- dirty-context classification readback is executed or existing coverage is
+  inspected and recorded;
+- report states what the evidence proves and does not prove;
+- no runtime/eval platform is built;
+- `git diff --check` passes.
+
+Verification commands:
+
+```sh
+git diff --check
+```
+
+Acceptance criteria:
+
+```txt
+BQ-024 has a concrete dirty-context readback path or a precise missing-coverage
+finding.
+```
+
+Risk:
+
+```txt
+claiming review judgment or product readiness from changed-file classification
+alone.
+```
+
+Rollback:
+
+```txt
+Remove report/root updates if no evidence path can be identified without new
+runtime.
+```
+
+Next-task synthesis rule:
+
+```txt
+After V313, add focused coverage if missing or execute the next docs/CLI-only
+brain-QA case.
+```
+
+Primary consumer:
+
+```txt
+future brain-QA and evidence/review validation.
+```
+
+Does not prove:
+
+```txt
+product readiness, review judgment, command truth, dirty-context correctness
+for every path form, or full benchmark execution.
+```
+
+Falsifier:
+
+```txt
+BQ-024 cannot show intended, unrelated, and unknown changed-file classes through
+existing evidence/readback surfaces.
 ```
 
 ## Pattern Gate
@@ -387,7 +536,8 @@ Falsifier:
 - [x] V309 Mini Brain-QA Benchmark Sketch
 - [x] V310 Executable Brain-QA Case BQ-015
 - [x] V311 BQ-015 Fixture Coverage
-- [ ] V312 Executable Brain-QA Case BQ-023
+- [x] V312 Executable Brain-QA Case BQ-023
+- [ ] V313 Executable Brain-QA Case BQ-024
 
 ## Recent Evidence Pointers
 
@@ -403,6 +553,29 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md`
 - V311 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v311-bq-015-fixture-coverage/REPORT.md`
+- V312 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v312-executable-brain-qa-bq-023/REPORT.md`
+
+## Outcome V312 Executable Brain-QA Case BQ-023
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V309 BQ-023, `krn evidence capture` CLI output, and evidence command
+  normalization tests.
+- Mechanism: command evidence is useful only when provenance and proof limits
+  are visible at readback time.
+- KRN implication: brain-QA evidence cases can execute through existing CLI
+  surfaces before adding DB/runtime/eval platforms.
+- Decision: record BQ-023 as executed and activate adjacent BQ-024 dirty-context
+  classification.
+- Does not prove: command execution truth, DB replay for this run, review
+  correctness, product readiness, command-runner CLI execution, or full
+  benchmark quality.
+- Consumer: V313 BQ-024 dirty-context classification.
+- Falsifier: weak/default command rows can appear as passed proof while tests
+  and reports stay green.
 
 ## Outcome V311 BQ-015 Fixture Coverage
 
