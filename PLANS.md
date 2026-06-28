@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V303 Pattern Application Gate For Active Slices
-current task: V303-00 Pattern Application Gate For Active Slices
+active stream: V304 Pattern-Gated Source Slice Trial
+current task: V304-00 Pattern-Gated Source Slice Trial
 latest pushed commit before V301: 5279e37 docs(knowledge): mark target write authority useful
 latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db60216cf8a0a3d
 ```
@@ -32,9 +32,9 @@ latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db602
 Known current gap:
 
 ```txt
-V303-00 Pattern Application Gate For Active Slices is the current gap. V302
-verified all 11 current retained patterns have helped feedback and no-feedback
-readback is empty. The next gap is applying patterns before implementation.
+V304-00 Pattern-Gated Source Slice Trial is the current gap. V303 added the
+Pattern Application Gate to the runbook and invariants. The next proof is using
+that gate on one real bounded source slice.
 ```
 
 ## 2. Product Thesis
@@ -2884,6 +2884,32 @@ Source-to-decision:
 - Consumer: V303 pattern application gate.
 - Falsifier: future slices continue without selecting/applying relevant helped
   patterns or the gate adds review burden without changing decisions.
+
+## Outcome V303-00 Pattern Application Gate For Active Slices
+
+Summary:
+- added `## Pattern Application Gate` to `docs/runbooks/pattern-intake.md`;
+- updated root `GOAL.md` and `PLAN.md` so non-trivial slices must query/select
+  helped patterns before coding and classify usefulness after verification;
+- guarded the runbook gate through
+  `packages/harness/src/activePlanInvariants.test.ts`.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v303-pattern-application-gate/REPORT.md`.
+
+Source-to-decision:
+- Source: V302 coverage closure, helped-pattern readback, and
+  `source-to-decision` skill.
+- Mechanism: retained patterns affect quality only when selected and applied
+  during implementation, not just when searchable.
+- KRN implication: every future non-trivial slice should begin with helped
+  pattern selection and end with pattern application classification.
+- Decision: open V304 Pattern-Gated Source Slice Trial.
+- Does not prove: semantic ranking quality, automatic pattern enforcement, or
+  product readiness.
+- Consumer: V304 source-slice dogfood.
+- Falsifier: V304 completes without selected/rejected pattern application
+  evidence or selected patterns do not affect implementation/review decisions.
 
 ## Condensation Rules
 

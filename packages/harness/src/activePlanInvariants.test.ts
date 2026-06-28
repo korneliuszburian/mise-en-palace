@@ -199,6 +199,7 @@ describe("KRN active plan invariants", () => {
     const runbook = readRootFile("docs/runbooks/pattern-intake.md");
     const outputTemplate = sectionBody(runbook, "## Output Template");
     const rejectionReasons = sectionBody(runbook, "## Rejection Reasons");
+    const patternApplicationGate = sectionBody(runbook, "## Pattern Application Gate");
 
     expect(runbook).toContain("Do not copy paid or proprietary course material into KRN.");
     expect(runbook).toContain("Forbidden:");
@@ -212,6 +213,14 @@ describe("KRN active plan invariants", () => {
     expect(runbook).toContain("krn evidence capture");
     expect(runbook).toContain("--source-usefulness");
     expect(runbook).toContain("source_usefulness_feedback:");
+
+    expect(patternApplicationGate).toContain("--usefulness-outcome helped");
+    expect(patternApplicationGate).toContain("selected_patterns:");
+    expect(patternApplicationGate).toContain("rejected_or_deferred_patterns:");
+    expect(patternApplicationGate).toContain("pattern_application:");
+    expect(patternApplicationGate).toContain("outcome: helped | neutral | noise | missing | stale | unknown");
+    expect(patternApplicationGate).toContain("do not apply retained patterns by vibe");
+    expect(patternApplicationGate).toContain("do not select more than five patterns");
 
     expectFieldLines(outputTemplate, [
       "source_id",

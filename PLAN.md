@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V303 Pattern Application Gate For Active Slices
-current task: V303-00 Pattern Application Gate For Active Slices
+active stream: V304 Pattern-Gated Source Slice Trial
+current task: V304-00 Pattern-Gated Source Slice Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V303 Pattern Application Gate For Active Slices
+### V304 Pattern-Gated Source Slice Trial
 
 Goal:
 
-Make helped pattern selection an explicit pre-slice and post-slice gate for
-non-trivial KRN work so retained patterns apply to implementation instead of
-remaining searchable documentation.
+Use the new Pattern Application Gate on one real bounded source slice and record
+whether selected helped patterns changed implementation or review decisions.
 
 Current finding:
 
 ```txt
-V302 verified all 11 current retained patterns have helped feedback and
-no-feedback readback is empty. The next gap is application: future slices must
-select and apply relevant helped patterns before coding.
+V303 added the Pattern Application Gate to the pattern-intake runbook and
+guarded it with active-plan invariants. The next proof is a real source slice
+that uses the gate before coding and classifies patterns after verification.
 ```
 
 Current action:
 
 ```txt
-Execute V303-00: inspect current plan/report conventions and add the smallest
-pattern application gate that forces relevant helped-pattern selection before
-non-trivial implementation and after-slice usefulness classification. Do not add
-semantic ranking, API/MCP/dashboard, source crawler, or Memory Core mutation.
+Execute V304-00: select a small source slice, query helped patterns before
+coding, implement only the bounded change, verify, and report pattern
+application outcomes. Do not add semantic ranking, API/MCP/dashboard, source
+crawler, target writes, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-pattern application gate for active implementation slices.
+pattern application gate dogfood for a source slice.
 ```
 
 Falsifier:
 
 ```txt
-Future implementation can proceed without selecting relevant helped patterns, or
-the gate adds review burden without changing decisions.
+The source slice can complete without selected/rejected pattern application
+evidence, or selected patterns do not affect implementation/review decisions.
 ```
 
 ## Pattern Gate
@@ -94,6 +93,18 @@ For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
 target-workflow, security, operator-UX, or research/paper/course-driven work,
 apply: source -> mechanism -> KRN implication -> decision/rejection -> consumer
 -> falsifier.
+
+Pattern application gate:
+
+```txt
+before coding:
+  query helped retained patterns;
+  select 1-5 expected-use patterns or explicitly reject/defer them.
+
+after verification:
+  classify selected patterns as helped / neutral / noise / missing / stale;
+  record proof and does-not-prove boundaries.
+```
 
 ## External Input Blocker
 

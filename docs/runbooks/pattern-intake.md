@@ -160,6 +160,54 @@ Matrix rules:
 - A source that cannot name a local proof, falsifier, or rejection condition is
   not ready.
 
+## Pattern Application Gate
+
+Use this gate for every non-trivial KRN slice that touches infra, harness,
+CI/eval, Codex surfaces, TypeScript boundaries, target workflows, security,
+operator UX, or research/paper/course-driven work.
+
+Before coding:
+
+```sh
+pnpm --filter @krn/cli krn knowledge cards \
+  --catalog-file docs/brain-knowledge/catalog.json \
+  --usefulness-outcome helped \
+  --text "<slice topic>"
+```
+
+Then record:
+
+```txt
+selected_patterns:
+  - pattern_id:
+    expected_use:
+    consumer:
+    falsifier:
+
+rejected_or_deferred_patterns:
+  - pattern_id:
+    reason:
+```
+
+After verification, classify selected or missing patterns:
+
+```txt
+pattern_application:
+  - pattern_id:
+    outcome: helped | neutral | noise | missing | stale | unknown
+    evidence:
+    does_not_prove:
+```
+
+Rules:
+
+- do not apply retained patterns by vibe;
+- do not select more than five patterns without a written reason;
+- if no helped pattern is relevant, say why before coding;
+- if a missing pattern would have changed the implementation, record it as a
+  candidate instead of silently adding a broad source intake task;
+- usefulness feedback is added only when the run evidence supports it.
+
 ## Output Template
 
 ```yaml
