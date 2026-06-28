@@ -22,8 +22,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V310 Executable Brain-QA Case BQ-015
-current task: V310-00 Executable Brain-QA Case BQ-015
+active stream: V311 BQ-015 Fixture Coverage
+current task: V311-00 BQ-015 Fixture Coverage
 latest pushed commit checked: 1c23d02 docs(review): close pattern search usefulness feedback
 latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
 ```
@@ -31,10 +31,10 @@ latest CI checked: KRN CI success for 1c23d02f8da56b415271d680c71dca83bd640e2a
 Known current gap:
 
 ```txt
-V310-00 Executable Brain-QA Case BQ-015 is the current gap. V309 sketched 30
-questions; now one read-only case should prove broad no-match query -> shorter
-mechanism query -> retained pattern hit before broader benchmark or runtime
-work.
+V311-00 BQ-015 Fixture Coverage is the current gap. V310 proved broad no-match
+query -> shorter mechanism query -> retained pattern hit manually; now the
+first executable brain-QA case needs focused test coverage or an explicit
+existing-coverage readback.
 ```
 
 ## 2. Product Thesis
@@ -81,9 +81,8 @@ green test != product value
    usefulness-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: V309 sketched 30 KRN questions; execute BQ-015
-   first, then later expand corpus QA and compare no-memory, lexical, memory,
-   source, hybrid, anti-memory, and graph-stub paths.
+3. Mini brain-QA benchmark: V309 sketched 30 KRN questions and V310 executed
+   BQ-015; cover that case before expanding corpus QA or graph paths.
 4. Ingest v0: source artifact -> content hash -> chunk -> source range -> claim
    -> embedding/search document with permission and temporal metadata.
 5. Graph brain v0: entities, events, claims, relations, duplicates,
@@ -133,7 +132,7 @@ docs/reviews/controlled-dogfood/2026-06-28-v309-mini-brain-qa-benchmark-sketch/R
 
 ### V310-00 — Executable Brain-QA Case BQ-015
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -142,25 +141,40 @@ Execute BQ-015 from the V309 sketch: broad no-match query -> shorter mechanism
 query -> retained pattern hit.
 ```
 
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md
+```
+
+### V311-00 — BQ-015 Fixture Coverage
+
+Status: active.
+
+Goal:
+
+```txt
+Add or confirm focused test coverage for BQ-015.
+```
+
 Product rationale:
 
 ```txt
-KRN needs one executable brain-QA case before widening the benchmark. BQ-015
-uses the existing read-only `krn knowledge cards` surface and tests adaptive
-query narrowing without new infrastructure.
+V310 was a manual executable case. KRN should not widen brain-QA until the first
+case is reproducible or proven already covered.
 ```
 
 Architectural rationale:
 
 ```txt
-Self-RAG was retained as a lab-test hypothesis. BQ-015 is the smallest local
-falsifier for adaptive retrieval behavior available in current CLI surfaces.
+This is a focused behavior guard, not a broad eval platform. It should live in
+the existing knowledge-card/CLI test surface if missing.
 ```
 
 Evidence source:
 
 ```txt
-V309 sketch, BQ-015.
+V310 report and existing knowledge-card tests.
 ```
 
 Official/external sources:
@@ -175,12 +189,15 @@ Inputs required:
 ```txt
 docs/brain-knowledge/catalog.json
 docs/benchmarks/brain-qa/V309_BRAIN_QA_SKETCH.md
+packages/cli/src/runKnowledgeCardsCommand.test.ts
+packages/harness/src/brainKnowledgeReadModel.test.ts
 ```
 
 Files likely touched:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-28-v311-bq-015-fixture-coverage/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -189,7 +206,7 @@ PLANS.md
 Allowed writes:
 
 ```txt
-docs-only benchmark sketch, report, and compact root-state updates.
+focused tests if missing, report, and compact root-state updates.
 ```
 
 Forbidden writes:
@@ -203,55 +220,55 @@ mutation, target repo writes, paid/proprietary course ingestion.
 Output requirements:
 
 ```txt
-record broad query, no-match guidance, shorter mechanism query, matched card,
-selected pattern usefulness, proof/non-proof, and whether this should become a
-fixture later.
+state whether existing tests already cover BQ-015; otherwise add minimal
+coverage for no-match guidance and shorter-query retained-pattern hit.
 ```
 
 Definition of Done:
 
-- broad query returns no-match guidance;
-- shorter mechanism query returns a relevant retained pattern;
-- report records proof/non-proof and usefulness;
+- existing tests prove both behaviors, or focused tests are added;
+- targeted tests pass;
 - no runtime/eval platform is built;
 - `git diff --check` passes.
 
 Verification commands:
 
 ```sh
+pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
 git diff --check
 ```
 
 Acceptance criteria:
 
 ```txt
-One existing read-only CLI behavior demonstrates adaptive query narrowing in a
-way future benchmark execution can reuse.
+CI would fail if BQ-015 no-match guidance or shorter-query hit regresses.
 ```
 
 Risk:
 
 ```txt
-benchmark theater or treating deterministic text search as semantic retrieval.
+overfitting to one query or treating deterministic text search as semantic
+retrieval.
 ```
 
 Rollback:
 
 ```txt
-Remove report/root updates if BQ-015 cannot be executed without new runtime.
+Remove added tests/report if the case is already covered and report-only
+readback is enough.
 ```
 
 Next-task synthesis rule:
 
 ```txt
-After V310, either add a focused fixture for BQ-015 or execute the next
-docs/CLI-only brain-QA case.
+After V311, execute the next docs/CLI-only brain-QA case or open the smallest
+ingest/graph prerequisite if remaining cases require runtime support.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA and adaptive retrieval/readback validation.
+future brain-QA and adaptive retrieval/readback regression protection.
 ```
 
 Does not prove:
@@ -264,7 +281,7 @@ quality, or full benchmark execution.
 Falsifier:
 
 ```txt
-BQ-015 cannot show broad no-match -> shorter query -> retained pattern hit.
+BQ-015 behavior is not covered by tests and can regress while CI stays green.
 ```
 
 ## Pattern Gate
@@ -349,7 +366,8 @@ Falsifier:
 - [x] V307 Pattern Search Usefulness Feedback Closure
 - [x] V308 Research Source Decisions Initial Pack
 - [x] V309 Mini Brain-QA Benchmark Sketch
-- [ ] V310 Executable Brain-QA Case BQ-015
+- [x] V310 Executable Brain-QA Case BQ-015
+- [ ] V311 BQ-015 Fixture Coverage
 
 ## Recent Evidence Pointers
 
@@ -361,6 +379,29 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-06-28-v308-research-source-decisions-initial-pack/REPORT.md`
 - V309 report:
   `docs/reviews/controlled-dogfood/2026-06-28-v309-mini-brain-qa-benchmark-sketch/REPORT.md`
+- V310 report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v310-executable-brain-qa-bq-015/REPORT.md`
+
+## Outcome V310 Executable Brain-QA Case BQ-015
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V309 BQ-015 and `krn knowledge cards` read-only CLI output.
+- Mechanism: broad deterministic text queries can miss retained patterns, while
+  shorter mechanism queries can recover relevant cards with no-match guidance
+  and proof/non-proof boundaries.
+- KRN implication: mini brain-QA can begin with existing read-only CLI behavior
+  before new eval/runtime surfaces.
+- Decision: record BQ-015 as the first executable brain-QA case and activate
+  V311 to add or confirm focused coverage.
+- Does not prove: semantic retrieval quality, ranking quality, retained-pattern
+  completeness, live DB-backed search, graph retrieval quality, or product
+  readiness.
+- Consumer: V311 BQ-015 Fixture Coverage.
+- Falsifier: BQ-015 behavior is not covered by tests and can regress while CI
+  stays green.
 
 ## Outcome V309 Mini Brain-QA Benchmark Sketch
 

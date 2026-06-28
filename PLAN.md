@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V310 Executable Brain-QA Case BQ-015
-current task: V310-00 Executable Brain-QA Case BQ-015
+active stream: V311 BQ-015 Fixture Coverage
+current task: V311-00 BQ-015 Fixture Coverage
 ```
 
 ## Compact Completed Checkpoints
@@ -47,40 +47,39 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V310 Executable Brain-QA Case BQ-015
+### V311 BQ-015 Fixture Coverage
 
 Goal:
 
-Execute one mini brain-QA case from the V309 sketch.
+Add or confirm focused test coverage for BQ-015.
 
 Current finding:
 
 ```txt
-V309 converted retained source decisions into 30 local brain-QA questions. The
-lowest-risk first executable case is BQ-015: broad no-match query -> shorter
-mechanism query -> retained pattern hit.
+V310 proved BQ-015 manually through the read-only CLI. The next step is to make
+that first executable brain-QA case reproducible, or explicitly confirm that
+existing tests already cover both behaviors.
 ```
 
 Current action:
 
 ```txt
-Execute V310-00: run and document the BQ-015 read-only CLI case with existing
-`krn knowledge cards`. Do not build a broad eval platform, source crawler,
-graph runtime, embeddings, ranking, dashboard, API/MCP, DB schema, or Memory
-Core mutation.
+Execute V311-00: inspect existing `krn knowledge cards` tests. Add the smallest
+focused coverage only if BQ-015 is not already covered. Do not build a broad
+eval platform, source crawler, graph runtime, embeddings, ranking, dashboard,
+API/MCP, DB schema, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future brain-QA and adaptive retrieval/readback validation.
+future brain-QA and adaptive retrieval/readback regression protection.
 ```
 
 Falsifier:
 
 ```txt
-BQ-015 cannot show a broad no-match query, a shorter mechanism retry, and a
-retained pattern hit with explicit proof/non-proof boundaries.
+BQ-015 behavior is not covered by tests and can regress while CI stays green.
 ```
 
 ## Pattern Gate
