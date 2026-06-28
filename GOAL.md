@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V306 Knowledge Cards Tokenized Text Search
+V307 Pattern Search Usefulness Feedback Closure
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V306-00 Knowledge Cards Tokenized Text Search.
+current task: V307-00 Pattern Search Usefulness Feedback Closure.
 ```
 
 Current task:
 
 ```txt
-Improve `krn knowledge cards --text` so pattern-card search uses deterministic
-tokenized matching instead of brittle whole-query substring matching.
+Measure whether V306 tokenized knowledge-card search actually helps the next
+pre-coding pattern gate, then keep or refine from evidence.
 ```
 
 ## Remaining Work
@@ -42,8 +42,8 @@ tokenized matching instead of brittle whole-query substring matching.
 The product is not a full living brain yet. The only current high-level blocks
 to preserve are:
 
-1. Pattern Brain execution/readback hardening: finish V306 and keep pattern
-   search useful for pre-coding gates.
+1. Pattern Brain execution/readback hardening: close V307 usefulness feedback
+   and keep pattern search useful for pre-coding gates.
 2. Research/paper/course source decisions: ingest public high-quality sources
    through source-to-decision, not source hoarding.
 3. Mini brain-QA benchmark: start with 30 KRN questions, later expand corpus

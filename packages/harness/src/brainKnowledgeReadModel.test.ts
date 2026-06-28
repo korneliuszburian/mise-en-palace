@@ -91,6 +91,22 @@ describe("Brain knowledge read model", () => {
     })).toEqual([]);
   });
 
+  it("matches text queries by deterministic tokens when whole-query substring misses", () => {
+    const card = parseBrainKnowledgeReadModel(cardFixture());
+
+    if (card === undefined) {
+      throw new Error("Expected card fixture to parse.");
+    }
+
+    expect(searchBrainKnowledgeCards([card], {
+      text: "unknown first result state"
+    })).toEqual([card]);
+
+    expect(searchBrainKnowledgeCards([card], {
+      text: "unknown first result state missing"
+    })).toEqual([]);
+  });
+
   it("filters cards by latest usefulness outcome", () => {
     const card = parseBrainKnowledgeReadModel(cardFixture());
     const feedback = parseBrainKnowledgeUsefulnessFeedbackList({

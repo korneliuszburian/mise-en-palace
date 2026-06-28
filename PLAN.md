@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V306 Knowledge Cards Tokenized Text Search
-current task: V306-00 Knowledge Cards Tokenized Text Search
+active stream: V307 Pattern Search Usefulness Feedback Closure
+current task: V307-00 Pattern Search Usefulness Feedback Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -47,45 +47,42 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V306 Knowledge Cards Tokenized Text Search
+### V307 Pattern Search Usefulness Feedback Closure
 
 Goal:
 
-Make `krn knowledge cards --text` less brittle for Pattern Application Gate
-operators by using deterministic tokenized matching instead of whole-query
-substring matching.
+Measure whether the V306 tokenized `krn knowledge cards --text` behavior helps
+the next pre-coding Pattern Application Gate.
 
 Current finding:
 
 ```txt
-V305 added no-match guidance for zero-result knowledge-card queries. The deeper
-issue is that `--text` currently treats a multi-word query as one normalized
-substring, so natural pattern-gate queries can miss cards containing many
-individual terms.
+V306 made natural multi-token card search deterministic and less brittle. The
+remaining risk is that improved search becomes another unmeasured operator UX
+comfort unless the next pattern gate records usefulness feedback.
 ```
 
 Current action:
 
 ```txt
-Execute V306-00: change text matching to deterministic tokenized matching with
-tests and proof boundaries. Preserve read-only output, `totalCards`, no-match
-guidance, and explicit "does not prove search ranking quality" caveats. Do not
-add semantic ranking, embeddings, API/MCP/dashboard, source crawler, target
-writes, or Memory Core mutation.
+Execute V307-00: run one bounded pattern-gate query using V306 search, classify
+selected/rejected patterns as helped / neutral / noise / missing / stale, and
+record whether another search repair is justified. Do not add ranking,
+embeddings, API/MCP/dashboard, source crawler, target writes, or Memory Core
+mutation.
 ```
 
 Primary consumer:
 
 ```txt
-pattern application gate operator UX and knowledge-card readback.
+pattern application gate operator UX and usefulness feedback closure.
 ```
 
 Falsifier:
 
 ```txt
-Multi-term pattern-gate queries still miss relevant cards that contain the
-individual mechanism terms, or the command starts implying semantic ranking
-quality instead of deterministic local filtering.
+V306 search is used in a pre-coding gate but the report cannot say whether the
+selected cards helped, were neutral, were noise, or missed an obvious pattern.
 ```
 
 ## Pattern Gate

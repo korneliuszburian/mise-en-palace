@@ -660,6 +660,27 @@ describe("runKnowledgeCardsCommand", () => {
     expect(sourceDecisionPreview.mutation).toBe("none");
   });
 
+  it("matches natural multi-token catalog queries without semantic ranking claims", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "unknown first result state"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:ts-boundary-unknown-first-result-state"]);
+    expect(preview.totalCards).toBe(1);
+    expect(preview.returnedCards).toBe(1);
+    expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(preview.access).toBe("read_only");
+    expect(preview.mutation).toBe("none");
+  });
+
   it("returns every catalog card without a text filter", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,

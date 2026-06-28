@@ -428,6 +428,7 @@ export function searchBrainKnowledgeCards(
   filter: BrainKnowledgeSearchFilter
 ): BrainKnowledgeReadModel[] {
   const normalizedText = filter.text?.trim().toLowerCase();
+  const textTokens = tokenizeSearchText(normalizedText ?? "");
 
   return cards.filter((card) => {
     if (filter.kind !== undefined && card.kind !== filter.kind) {
@@ -453,7 +454,7 @@ export function searchBrainKnowledgeCards(
     }
 
     if (normalizedText !== undefined && normalizedText.length > 0) {
-      const searchable = [
+      const exactSearchable = [
         card.id,
         card.title,
         card.summary,
@@ -468,11 +469,29 @@ export function searchBrainKnowledgeCards(
         ...(card.usefulnessFeedback?.evidenceRefs ?? [])
       ].join("\n").toLowerCase();
 
-      return searchable.includes(normalizedText);
+      if (exactSearchable.includes(normalizedText)) {
+        return true;
+      }
+
+      const tokenSearchable = [
+        card.id,
+        card.title,
+        card.summary,
+        card.falsifier,
+        card.doesNotProve,
+        ...card.consumers
+      ].join("\n").toLowerCase();
+      const searchableTokens = new Set(tokenizeSearchText(tokenSearchable));
+
+      return textTokens.length > 0 && textTokens.every((token) => searchableTokens.has(token));
     }
 
     return true;
   });
+}
+
+function tokenizeSearchText(value: string): string[] {
+  return [...value.matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
 }
 
 function isNewerFeedback(
