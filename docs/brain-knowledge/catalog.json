@@ -1,6 +1,7 @@
 {
   "cardFiles": [],
   "patternFiles": [
+    "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json",
     "../patterns/retained-patterns/evidence-proof-non-proof-boundary.json",
     "../patterns/retained-patterns/source-to-decision-retention-gate.json",
     "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"

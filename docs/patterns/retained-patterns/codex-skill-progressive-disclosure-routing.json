@@ -1,0 +1,28 @@
+{
+  "patternId": "codex-skill-progressive-disclosure-routing",
+  "name": "Codex skill progressive-disclosure routing",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "Repeated KRN execution workflows should live in narrow repo-local Codex skills that load targeted instructions and query retained brain knowledge when relevant, instead of expanding root prompts, root plans, or AGENTS.md.",
+  "sourceRefs": [
+    "docs/KRN_SOURCES.md#skills",
+    "docs/runbooks/pattern-intake.md#official-codex-docs-to-skill",
+    ".agents/skills/source-to-decision/SKILL.md",
+    ".agents/skills/typescript-type-safety/SKILL.md"
+  ],
+  "evidenceRefs": [
+    "docs/reviews/controlled-dogfood/2026-06-28-v259-codex-skills-pack-regate/REPORT.md",
+    "docs/reviews/controlled-dogfood/2026-06-28-v270-brain-knowledge-skill-readback-hook/REPORT.md",
+    "docs/reviews/controlled-dogfood/2026-06-28-v271-brain-knowledge-skill-readback-usefulness/REPORT.md"
+  ],
+  "consumers": [
+    "future Codex skill updates",
+    "future pattern-to-skill routing",
+    "future operator execution briefs"
+  ],
+  "falsifier": "A repeated KRN workflow still requires copying long prompt blocks into chat, root plans, or AGENTS.md, or a relevant skill cannot query retained brain knowledge before implementation.",
+  "doesNotProve": "This card does not prove automatic skill selection, that many skills are useful by default, that Codex will always load the right skill, or product readiness.",
+  "observedAt": "2026-06-28",
+  "nextAction": "use"
+}

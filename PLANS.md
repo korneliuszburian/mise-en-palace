@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V276 Codex Skill Progressive-Disclosure Pattern Card
-current task: V276-00 Codex Skill Progressive-Disclosure Pattern Card
-latest pushed commit before V275: e1f4244 docs(readmodel): add evidence proof boundary card
-latest CI checked before V275: KRN CI success for e1f4244fc5ea3834ee25fd9a389c0b73daf1e095
+active stream: V277 Codex Adapter Skill Routing Readback Hook
+current task: V277-00 Codex Adapter Skill Routing Readback Hook
+latest pushed commit before V276: 58b7da0 test(readmodel): guard knowledge html catalog breadth
+latest CI checked before V276: KRN CI success for 58b7da054cc584550ab883760c5fd43ce67e403a
 ```
 
 Known current gap:
 
 ```txt
-V276-00 Codex Skill Progressive-Disclosure Pattern Card is the current gap.
-V275 guarded full-catalog HTML readback. Now retain the skill-routing mechanism
-itself as cataloged brain knowledge so Codex work can be routed through narrow
-skills plus retained-pattern readback.
+V277-00 Codex Adapter Skill Routing Readback Hook is the current gap. V276
+retained the Codex skill progressive-disclosure routing pattern. Now wire the
+smallest relevant Codex adapter/skill guidance to query that card before prompt,
+brief, or skill-hint changes.
 ```
 
 ## 2. Product Thesis
@@ -2137,6 +2137,37 @@ Source-to-decision:
 - Consumer: V276 Codex Skill Progressive-Disclosure Pattern Card.
 - Falsifier: a future HTML/readback change can omit a retained pattern or hide
   proof boundaries while tests still pass.
+
+## Outcome V276-00 Codex Skill Progressive-Disclosure Pattern Card
+
+Summary:
+- added retained pattern
+  `docs/patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json`;
+- added it to `docs/brain-knowledge/catalog.json`;
+- guarded catalog presence and CLI search/readback;
+- updated the HTML catalog breadth guard to include the new card.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v276-codex-skill-progressive-disclosure-pattern-card/REPORT.md`.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md#skills`,
+  `docs/runbooks/pattern-intake.md#official-codex-docs-to-skill`,
+  `.agents/skills/source-to-decision/SKILL.md`, and
+  `.agents/skills/typescript-type-safety/SKILL.md`.
+- Mechanism: Codex skills package reusable workflows through progressive
+  disclosure; KRN skills can query retained brain knowledge before
+  implementation.
+- KRN implication: repeated workflows should live in narrow repo-local skills
+  with retained-pattern readback, not giant prompts, root plans, or `AGENTS.md`.
+- Decision: retain `codex-skill-progressive-disclosure-routing` and open V277
+  to route Codex adapter/brief work through the card.
+- Does not prove: automatic skill selection, that many skills are useful by
+  default, or product readiness.
+- Consumer: V277 Codex Adapter Skill Routing Readback Hook.
+- Falsifier: repeated KRN workflows still require copying long prompt blocks
+  into chat/root plans/`AGENTS.md`, or relevant skills cannot query retained
+  brain knowledge before implementation.
 
 ## Condensation Rules
 

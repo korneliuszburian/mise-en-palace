@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V276 Codex Skill Progressive-Disclosure Pattern Card
-current task: V276-00 Codex Skill Progressive-Disclosure Pattern Card
+active stream: V277 Codex Adapter Skill Routing Readback Hook
+current task: V277-00 Codex Adapter Skill Routing Readback Hook
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V276 Codex Skill Progressive-Disclosure Pattern Card
+### V277 Codex Adapter Skill Routing Readback Hook
 
 Goal:
 
-Retain the Codex skill progressive-disclosure routing pattern as a brain
-knowledge card so future skill work has a falsifiable rule for loading narrow
-execution guidance and querying retained patterns before implementation.
+Route Codex-facing brief/skill-hint work through the retained
+`codex-skill-progressive-disclosure-routing` card so adapter work can read the
+skill-routing pattern before changing prompts, briefs, or skill hints.
 
 Current finding:
 
 ```txt
-V270 connected skills to brain knowledge readback and V275 guarded the full
-HTML catalog. The next gap is making the skill-routing mechanism itself a
-retained pattern instead of only scattered skill/runbook prose.
+V276 retained the skill-routing mechanism as cataloged brain knowledge. The
+next gap is making Codex adapter/brief work query that card before changing
+skill hints or Codex-facing execution instructions.
 ```
 
 Current action:
 
 ```txt
-Execute V276-00: add a retained pattern decision/card for Codex skill
-progressive-disclosure routing, add it to the brain knowledge catalog, and guard
-readback. Do not add a skill zoo, agent framework, MCP server, or hidden
-execution hook.
+Execute V277-00: update the smallest relevant Codex adapter skill/runbook guard
+so Codex-facing brief or skill-hint changes query the retained skill-routing
+card. Do not add hidden routing, agent framework, MCP, or broad prompt system.
 ```
 
 Primary consumer:
 
 ```txt
-Codex skill routing / pattern brain execution loop.
+Codex adapter / skill routing / pattern brain execution loop.
 ```
 
 Falsifier:
 
 ```txt
-Future skill work can bypass retained pattern readback or load broad unrelated
-guidance while tests still pass.
+Future Codex adapter work can change skill hints or execution instructions
+without reading the retained skill-routing card and tests still pass.
 ```
 
 ## Pattern Gate

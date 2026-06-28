@@ -179,8 +179,10 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("pattern:evidence-proof-non-proof-boundary");
+    expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
     expect(result.stdout).toContain("Source-to-decision retention gate");
     expect(result.stdout).toContain("Unknown-first external boundary with explicit result state");
@@ -217,7 +219,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "source-to-decision"
+        text: "retention gate"
       },
       format: "text"
     });
@@ -245,6 +247,24 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
+  it("searches the Codex skill routing pattern through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "progressive-disclosure"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:codex-skill-progressive-disclosure-routing"]);
+    expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
+    expect(preview.mutation).toBe("none");
+  });
+
   it("guards deterministic catalog search results and proof boundaries", async () => {
     const typeScriptResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -262,7 +282,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "source-to-decision"
+        text: "retention gate"
       },
       format: "json"
     });
@@ -280,7 +300,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(sourceDecisionPreview.mutation).toBe("none");
   });
 
-  it("returns both catalog cards without a text filter", async () => {
+  it("returns every catalog card without a text filter", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [],
@@ -292,6 +312,7 @@ describe("runKnowledgeCardsCommand", () => {
     const preview = parsePreviewResource(result.stdout);
 
     expect(cardIds(preview).sort()).toEqual([
+      "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:ts-boundary-unknown-first-result-state"
