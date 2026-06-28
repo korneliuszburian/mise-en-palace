@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V297 TypeScript Boundary Pattern Usefulness Feedback
-current task: V297-00 TypeScript Boundary Pattern Usefulness Feedback
-latest pushed commit before V296: 23702d6 docs(knowledge): mark source decision pattern useful
-latest CI checked before V296: KRN CI success for 23702d6ab3d0a20a1d8a1b05bd1d39a85e0e6c4c
+active stream: V298 Active Context Compact Current Truth Usefulness Feedback
+current task: V298-00 Active Context Compact Current Truth Usefulness Feedback
+latest pushed commit before V297: a595270 docs(knowledge): mark evidence boundary pattern useful
+latest CI checked before V297: KRN CI success for a595270e0b26520fe34db4933c3922c6e978e5fe
 ```
 
 Known current gap:
 
 ```txt
-V297-00 TypeScript Boundary Pattern Usefulness Feedback is the current gap.
-V296 marked evidence proof/non-proof as helped and reduced no-feedback cards
-from 6 to 5. The next highest-ROI no-feedback card is the TypeScript boundary
-pattern.
+V298-00 Active Context Compact Current Truth Usefulness Feedback is the current
+gap. V297 marked the TypeScript boundary pattern as helped and reduced
+no-feedback cards from 5 to 4. The next highest-ROI no-feedback card is active
+context compact/current-truth routing.
 ```
 
 ## 2. Product Thesis
@@ -2722,6 +2722,31 @@ Source-to-decision:
   `pattern:ts-boundary-unknown-first-result-state`.
 - Falsifier: the TypeScript boundary pattern cannot be tied to a recent slice
   where it improved boundary typing, unknown narrowing, or finite result state.
+
+## Outcome V297-00 TypeScript Boundary Pattern Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v297-typescript-boundary-pattern.json`;
+- attached `helped` feedback to
+  `pattern:ts-boundary-unknown-first-result-state`;
+- confirmed `--usefulness-outcome helped` returns 7 cards;
+- confirmed `--usefulness-outcome none` decreased from 5 to 4 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v297-typescript-boundary-pattern-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V292 missing-feedback readback and TypeScript boundary implementation.
+- Mechanism: explicit finite states and boundary narrowing prevent ambiguous
+  input/output states from leaking into operator readback.
+- KRN implication: TypeScript best-pattern intake should keep producing
+  falsifiable, finite-state boundary rules before broad code-quality automation.
+- Decision: open V298 Active Context Compact Current Truth Usefulness Feedback.
+- Does not prove: context hygiene by itself improves TypeScript quality.
+- Consumer: V298 usefulness feedback for
+  `pattern:active-context-compact-current-truth`.
+- Falsifier: active context compactness cannot be tied to a recent continuation
+  where it prevented stale objective rollback or context waste.
 
 ## Condensation Rules
 
