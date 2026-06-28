@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V254 Replayable Target Substrate Baseline
-current task: V254-00 Make Normalized Target Substrate Replayable
+active stream: V255 Active Ledger Condensation
+current task: V255-00 Condense PLANS Active Ledger
 ```
 
 ## Compact Completed Checkpoints
@@ -48,38 +48,39 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V254 Replayable Target Substrate Baseline
+### V255 Active Ledger Condensation
 
 Goal:
 
-Make the normalized target substrate replayable after V253 repaired the weak
-boundary in place.
+Condense root `PLANS.md` so active context stays readable while detailed
+history remains archived and linked.
 
 Current finding:
 
 ```txt
-V253 proved one bounded target repair, but the committed fixture is now repaired
-and no longer provides a weak baseline without git history.
+V254 made the normalized target substrate replayable. The next blocker is
+active-context size: `PLANS.md` is too large to remain an efficient current
+truth surface.
 ```
 
 Current action:
 
 ```txt
-Execute V254-00: add the smallest reset/generator or baseline/expected variant
-so future trials can replay weak initial state and compare repaired state.
+Execute V255-00: archive historical detail and rewrite root `PLANS.md` as a
+compact active ledger with links to reports and the next bounded tasks.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN/PLANS next product stream and replayable target substrate.
+PLAN/PLANS active-context hygiene and continuation reliability.
 ```
 
 Falsifier:
 
 ```txt
-V254 creates benchmark theater or a broad eval platform instead of a minimal
-replayable substrate baseline.
+V255 deletes evidence, hides current blockers, or leaves `PLANS.md` as an
+append-only wall of text.
 ```
 
 ## Pattern Gate

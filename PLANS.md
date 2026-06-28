@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V253 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V254 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -91,10 +91,10 @@ guard plus best-pattern surface re-gate and source-decision owner-file seed
 repair plus observe-reflect sequencing guard, skill owner-file seed repair,
 activation surface re-gate after seed repairs, activation budget-priority
 guard, product-readiness re-gate, fresh target trial gate, normalized target
-trial substrate, and normalized target repair trial:
+trial substrate, normalized target repair trial, and replayable baseline:
 complete
-active stream: V254 Replayable Target Substrate Baseline
-current task: V254-00 Make Normalized Target Substrate Replayable
+active stream: V255 Active Ledger Condensation
+current task: V255-00 Condense PLANS Active Ledger
 ```
 
 Evidence already recorded in repo:
@@ -110,7 +110,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V254-00 Make Normalized Target Substrate Replayable.
+V255-00 Condense PLANS Active Ledger.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -20577,6 +20577,92 @@ Acceptance criteria:
 Risk: building too much fixture machinery before another target proof.
 Rollback: revert V254 replay substrate additions.
 
+V254 outcome:
+- V254-00 complete: normalized target substrate can now replay the weak
+  JSON-boundary baseline without git history.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v254-replayable-target-substrate-baseline/REPORT.md`.
+- Replay path:
+  `tests/fixtures/target-repos/normalized-weak-typescript/scripts/materialize-scenario.mjs`
+  plus `scenarios/weak-json-boundary/`.
+
+V254 evidence:
+- `node tests/fixtures/target-repos/normalized-weak-typescript/scripts/materialize-scenario.mjs weak-json-boundary .local-lab/target-substrates/normalized-weak-typescript-weak-json-boundary`:
+  passed.
+- `pnpm --dir .local-lab/target-substrates/normalized-weak-typescript-weak-json-boundary test`:
+  passed.
+- `rg "parseJsonConfig\\(raw: string\\): any|CreatedUser \\| null" .local-lab .../scenarios/weak-json-boundary`:
+  found weak baseline markers.
+- `rg "\bany\b|CreatedUser \| null|as unknown as|@ts-ignore" .../src .../tests`:
+  no matches in committed repaired fixture source/tests.
+
+V254 source-to-decision:
+- Source: V253 repair report and operator rule to clean active progress/plan
+  surfaces instead of endlessly appending.
+- Mechanism: replayable substrates preserve weak baseline evidence while active
+  ledgers must stay compact enough for future Codex contexts.
+- KRN implication: preserve detail in reports/archives; keep active plans as
+  current-state indexes.
+- Decision: open V255 to condense root `PLANS.md`.
+- Consumer: root `PLANS.md`, compact resume protocol, future UI/search
+  read-model work.
+- Falsifier: active plan files continue growing as append-only walls of text.
+- Does not prove: UI/search readiness or product readiness.
+
+New task:
+- V255-00 Condense PLANS Active Ledger.
+
+ID: V255-00
+Name: Condense PLANS Active Ledger
+Status: active
+Goal: replace root `PLANS.md` append-only detail with a compact active ledger
+while preserving evidence in reports and archives.
+Product rationale: the brain cannot rely on AI rereading huge active ledgers.
+Active context must be a concise index to current state and next work.
+Architectural rationale: durable knowledge belongs in typed stores, reports,
+source decisions, skills, evals, and archives; root active plan files should
+route work, not contain all work.
+Evidence source:
+- V254 report;
+- operator rule added during V254;
+- current `PLANS.md` size and context hygiene goals.
+Inputs required:
+- archive current detailed `PLANS.md`;
+- rewrite root `PLANS.md` as compact active ledger;
+- preserve active stream/task, product readiness, latest proof, next 3-5 tasks,
+  verification policy, and links to archives/reports.
+Files likely touched:
+- `PLANS.md`;
+- archive under `docs/plans/historical-ledgers/`;
+- V255 report;
+- maybe `PLAN.md` / `GOAL.md` if active pointers change.
+Allowed writes:
+- plan condensation and archive.
+Forbidden writes:
+- delete evidence;
+- hide blockers;
+- create a parallel roadmap;
+- inflate root `GOAL.md` or `PLAN.md`.
+Output requirements:
+- compact `PLANS.md`;
+- archive pointer;
+- active next-task queue;
+- verification showing active plan invariants pass.
+Definition of Done:
+- root `PLANS.md` is compact enough for resume;
+- historical detail remains accessible by path;
+- active plan invariants pass;
+- commit is pushed and CI checked if triggered.
+Verification commands:
+- `git diff --check`;
+- active plan/context hygiene invariants.
+Acceptance criteria:
+- active context is shorter and clearer;
+- no evidence is deleted, only moved/linked;
+- next task remains explicit.
+Risk: over-condensing and losing the next action.
+Rollback: restore archived `PLANS.md`.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20584,10 +20670,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V254 Replayable Target Substrate Baseline.
+- V255 Active Ledger Condensation.
 
 Next active task:
-- V254-00 Make Normalized Target Substrate Replayable.
+- V255-00 Condense PLANS Active Ledger.
 
 ## 21. Final Response Format For Codex Runs
 
