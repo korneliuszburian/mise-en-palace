@@ -603,6 +603,99 @@ describe("runCli", () => {
     expect(result.stdout).toContain("executionRun: execution-run-1");
   });
 
+  it("passes the current repo root hint for default persisted planning", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    let observedRepoPathHint: string | undefined;
+
+    const result = await runCli(
+      ["plan", "--task", "use connected current repo project", "--persist"],
+      {
+        cwd: path.join(repoRoot, "packages", "cli"),
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          observedRepoPathHint = input.repoPathHint;
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-connected",
+            projectId: "project-connected",
+            projectKernel: {
+              id: "project-kernel-connected",
+              projectId: "project-connected",
+              version: 1,
+              summary: "Connected current repo kernel",
+              activeContextRule: "Use connected current repo read model.",
+              metadata: {},
+              createdAt: now,
+              updatedAt: now
+            },
+            repoInstallations: [
+              {
+                id: "repo-installation-connected",
+                projectId: "project-connected",
+                provider: "local",
+                repoUrl: `file://${repoRoot}`,
+                defaultBranch: "main",
+                repoFingerprint: "sha256:connected",
+                localPathHint: repoRoot,
+                metadata: {
+                  ownerFiles: [
+                    {
+                      path: "packages/cli/src/runPlanCommand.ts",
+                      root: "packages/cli/src",
+                      kind: "cli_plan_rendering",
+                      reason: "plan output owner"
+                    }
+                  ]
+                },
+                createdAt: now,
+                updatedAt: now
+              }
+            ],
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(observedRepoPathHint).toBe(repoRoot);
+    expect(result.stdout).toContain("Project ID: project-connected");
+    expect(result.stdout).toContain("ProjectKernel: project-kernel-connected");
+    expect(result.stdout).toContain("Repo installations: repo-installation-connected");
+    expect(result.stdout).toContain("Target owner files: packages/cli/src/runPlanCommand.ts");
+  });
+
   it("uses explicit project identity for persisted planning", async () => {
     let observedProjectId: string | undefined;
     let executionRunMetadata: Record<string, unknown> | undefined;

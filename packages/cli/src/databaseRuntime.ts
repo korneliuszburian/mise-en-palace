@@ -39,6 +39,7 @@ export interface DatabaseRuntimeInput {
   workspaceSlug: string;
   projectSlug: string;
   projectId?: string;
+  repoPathHint?: string;
   now(): string;
   createId(prefix: string): string;
 }
@@ -170,10 +171,15 @@ export const createDatabaseRuntime = async (
   const memoryRepository = new DrizzleMemoryRepository(db);
   const observationRepository = new DrizzleObservationRepository(db);
   const explicitProjectId = input.projectId?.trim();
+  const repoPathHint = input.repoPathHint?.trim();
   const project =
     explicitProjectId === undefined || explicitProjectId.length === 0
       ? undefined
       : await projectRepository.getProject(explicitProjectId);
+  const connectedProject =
+    project === undefined && repoPathHint !== undefined && repoPathHint.length > 0
+      ? await projectRepository.getProjectByRepoPath(repoPathHint)
+      : undefined;
 
   if (explicitProjectId !== undefined && explicitProjectId.length > 0 && project === undefined) {
     await client.end();
@@ -181,11 +187,11 @@ export const createDatabaseRuntime = async (
   }
 
   const existingWorkspace =
-    project === undefined
+    project === undefined && connectedProject === undefined
       ? await projectRepository.findWorkspaceBySlug(input.workspaceSlug)
       : undefined;
   const workspace =
-    project === undefined
+    project === undefined && connectedProject === undefined
       ? existingWorkspace ??
         (await projectRepository.createWorkspace({
           slug: input.workspaceSlug,
@@ -193,24 +199,28 @@ export const createDatabaseRuntime = async (
         }))
       : undefined;
   const defaultProject =
-    project === undefined && workspace !== undefined
+    project ?? connectedProject ??
+    (workspace !== undefined
       ? (await projectRepository.findProjectBySlug(workspace.id, input.projectSlug)) ??
         (await projectRepository.createProject({
           workspaceId: workspace.id,
           slug: input.projectSlug,
           displayName: input.projectSlug
         }))
-      : project;
+      : undefined);
 
   if (defaultProject === undefined) {
     await client.end();
     throw new Error("Unable to resolve project for database runtime");
   }
 
+  const shouldLoadProjectScopedMetadata =
+    explicitProjectId !== undefined && explicitProjectId.length > 0 ||
+    connectedProject !== undefined;
   const projectKernel =
-    explicitProjectId === undefined || explicitProjectId.length === 0
-      ? undefined
-      : await projectRepository.getLatestProjectKernel(defaultProject.id);
+    shouldLoadProjectScopedMetadata
+      ? await projectRepository.getLatestProjectKernel(defaultProject.id)
+      : undefined;
 
   if (explicitProjectId !== undefined && explicitProjectId.length > 0 && projectKernel === undefined) {
     await client.end();
@@ -218,9 +228,9 @@ export const createDatabaseRuntime = async (
   }
 
   const repoInstallations =
-    explicitProjectId === undefined || explicitProjectId.length === 0
-      ? undefined
-      : await projectRepository.listRepoInstallationsForProject(defaultProject.id);
+    shouldLoadProjectScopedMetadata
+      ? await projectRepository.listRepoInstallationsForProject(defaultProject.id)
+      : undefined;
 
   return {
     workspaceId: defaultProject.workspaceId,

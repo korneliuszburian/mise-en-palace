@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V239 Default Connected Project Resolution Repair
+V240 Default-Path Source-To-Decision Dogfood
 ```
 
 Current product loop:
@@ -43,7 +43,10 @@ regression guards plus security permission-boundary, root-plan headroom,
 re-gate, source-usefulness readback/producer, preview dogfood, and persisted
 readback dogfood plus repo-root path normalization complete; details stay in
 PLANS.md.
-current task: V239-00 Default Connected Project Resolution Repair.
+V236..V239: activation abstention re-gate, diagnostics/readback,
+current-state activation seed, and default connected-project resolution
+complete.
+current task: V240-00 Default-Path Source-To-Decision Dogfood.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

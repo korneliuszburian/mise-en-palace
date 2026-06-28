@@ -37,6 +37,9 @@ import {
   createNoStoreCompilerDependencies
 } from "./noStoreRepositories.js";
 import {
+  findRepoRoot
+} from "./cliFileBoundary.js";
+import {
   detectSourceSeeds
 } from "./runInitCommand.js";
 import type {
@@ -45,6 +48,7 @@ import type {
 
 export interface PlanCommandRuntime {
   env: Record<string, string | undefined>;
+  cwd?: string;
   now(): string;
   createId(prefix: string): string;
   persist: boolean;
@@ -371,11 +375,16 @@ const resolveCompilerRuntime = async (
   }
 
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+  const repoPathHint =
+    runtime.projectId === undefined && runtime.cwd !== undefined
+      ? await findRepoRoot(runtime.cwd)
+      : undefined;
   const databaseRuntime = await createRuntime({
     databaseUrl,
     workspaceSlug,
     projectSlug,
     ...(runtime.projectId === undefined ? {} : { projectId: runtime.projectId }),
+    ...(repoPathHint === undefined ? {} : { repoPathHint }),
     now: runtime.now,
     createId: runtime.createId
   });

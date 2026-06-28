@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V239 Default Connected Project Resolution Repair
-current task: V239-00 Default Connected Project Resolution Repair
+active stream: V240 Default-Path Source-To-Decision Dogfood
+current task: V240-00 Default-Path Source-To-Decision Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -28,7 +28,7 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V238: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V239: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
@@ -36,49 +36,51 @@ V100..V238: active-surface, handoff, PLANS freshness, pattern-gate,
            normalization/readback guards plus best-pattern usefulness closure
            and closure dogfood plus TS best-pattern application and sibling
            package path normalization plus activation abstention re-gate,
-           abstention diagnostics/readback, and current-state activation seed
-           complete.
+           abstention diagnostics/readback, current-state activation seed, and
+           default connected-project resolution complete.
 ```
 
 ## Active Stream
 
-### V239 Default Connected Project Resolution Repair
+### V240 Default-Path Source-To-Decision Dogfood
 
 Goal:
 
-Make default `krn plan --persist` from the current repo use the connected repo
-project when one exists, or print a clear warning/suggestion when it would use
-an empty default project.
+Use default `krn plan --persist` without explicit `--project` for the next
+KRN-on-KRN slice, and prove the connected read model plus source-to-decision
+pattern gate can guide a small real repair without manual UUID routing.
 
 Current finding:
 
 ```txt
-V238 proved explicit `--project 7d9d103a-1a8e-4492-a4ca-db3a5589bd9b` selects
-current-repo owner-file context, while default `krn plan --persist` still uses
-the older empty project `ae9962f9-0b20-4a43-97fe-d715062c4478`.
+V239 repaired default connected-project resolution. Current-repo
+`krn plan --persist` now selects project `7d9d103a-1a8e-4492-a4ca-db3a5589bd9b`,
+loads repoInstallation `7a2f9ba6-8df8-48a8-bfb0-a54653ea91a3`, and renders
+`inputStatus: candidates_available` without explicit `--project`.
 ```
 
 Current action:
 
 ```txt
-Execute V239-00: inspect current project resolution, repair or warn through the
-smallest existing CLI/runtime boundary, and prove default planning no longer
-silently selects the empty project when a connected repo project exists.
+Execute V240-00: pick the smallest source-to-decision-backed KRN repair where
+default connected planning should surface relevant owner files; use the pattern
+gate, verify the repair, and report whether default-path KRN materially reduced
+manual routing/review burden.
 ```
 
 Primary consumer:
 
 ```txt
-KRN self-dogfood planning, operator UX, project resolution, activation
-read-model selection, and future source repair selection.
+KRN self-dogfood planning, source-to-decision discipline, TypeScript/source
+repair quality, and future best-pattern intake without manual project UUIDs.
 ```
 
 Falsifier:
 
 ```txt
-The slice rewrites activation scoring, creates a crawler, mutates broad memory,
-or hides ambiguity instead of making project resolution deterministic and
-reviewable.
+Default planning again requires manual `--project`, selected owner files are
+irrelevant to the repair, or the slice adopts a pattern without a consumer and
+falsifier.
 ```
 
 ## Pattern Gate

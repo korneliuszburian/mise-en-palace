@@ -590,6 +590,7 @@ export const runCli = async (
     try {
       const result = await runPlanCommand(parsed.command.task, {
         env: runtime.env,
+        cwd: runtime.cwd ?? process.cwd(),
         now,
         createId,
         persist: parsed.command.persist,

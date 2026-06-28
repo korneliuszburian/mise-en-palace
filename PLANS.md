@@ -77,17 +77,17 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V238 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V239 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
 slices plus TS best-pattern application, sibling package path normalization,
 activation abstention re-gate, activation diagnostics/readback, and
-current-state activation seed:
+current-state activation seed plus default connected-project resolution:
 complete
-active stream: V239 Default Connected Project Resolution Repair
-current task: V239-00 Default Connected Project Resolution Repair
+active stream: V240 Default-Path Source-To-Decision Dogfood
+current task: V240-00 Default-Path Source-To-Decision Dogfood
 ```
 
 Evidence already recorded in repo:
@@ -103,7 +103,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V239-00 Default Connected Project Resolution Repair.
+V240-00 Default-Path Source-To-Decision Dogfood.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18842,7 +18842,7 @@ New task:
 
 ID: V239-00
 Name: Default Connected Project Resolution Repair
-Status: active
+Status: complete
 Goal: make default `krn plan --persist` from the current repo use the connected
 repo project when one exists, or print a clear warning/suggestion when it would
 use an empty default project.
@@ -18916,6 +18916,131 @@ decide whether auto-selection is safe.
 Next-task synthesis rule: continue from V239 evidence; do not jump to scoring
 until default current-repo planning uses non-empty activation inputs.
 
+V239 outcome:
+- V239-00 complete: default `krn plan --persist` from the current repo now
+  resolves the connected repo project through `repo_installations.local_path_hint`
+  before falling back to slug-created project identity.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v239-default-connected-project-resolution/REPORT.md`.
+
+V239 evidence:
+- `pnpm --filter @krn/cli test -- runCli`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed with 14/14 migrations and pgvector available.
+- Default `krn plan --persist` without `--project` selected project
+  `7d9d103a-1a8e-4492-a4ca-db3a5589bd9b`, projectKernel
+  `6057c6fd-e10b-418b-beda-e5b46c610034`, repoInstallation
+  `7a2f9ba6-8df8-48a8-bfb0-a54653ea91a3`, and rendered
+  `inputStatus: candidates_available`.
+- Persisted run:
+  `3d04ae3e-4a5a-4e5a-9645-a24c9ba339f4`.
+- `krn run show --run-id 3d04ae3e-4a5a-4e5a-9645-a24c9ba339f4` confirmed
+  readback diagnostics with ownerFile=7 and merged=7.
+- `git diff --check`: passed.
+
+V239 source-to-decision:
+- Source: V238 explicit-project success plus default-project counter-proof.
+- Mechanism: `krn init --connect` stores `localPathHint`; default planning can
+  use the caller repo root to recover the connected project and load target
+  read-model metadata.
+- KRN implication: normal self-dogfood should not require operators to memorize
+  UUIDs to avoid empty activation input.
+- Decision: pass repo-root hint from CLI plan runtime into DB project
+  resolution; explicit `--project` remains highest authority.
+- Does not prove: owner-file coverage is complete, activation ranking is good,
+  memory/source stores are useful, or product readiness.
+- Consumer: default-path KRN planning and future source repair selection.
+- Falsifier: a default current-repo persisted plan still selects the old empty
+  project or omits connected project read-model metadata after init/connect.
+
+New task:
+- V240-00 Default-Path Source-To-Decision Dogfood.
+
+ID: V240-00
+Name: Default-Path Source-To-Decision Dogfood
+Status: active
+Goal: use default `krn plan --persist` without explicit `--project` for the next
+KRN-on-KRN repair, and prove the connected read model plus pattern gate can
+guide source work without manual UUID routing.
+Product rationale: after V239, normal KRN self-dogfood should flow through the
+connected repo project by default; the next proof should use that path on a
+real source-to-decision-backed repair.
+Architectural rationale: best patterns, courses, papers, docs, and local
+evidence must continuously enter KRN through source -> mechanism -> implication
+-> decision/rejection -> consumer -> falsifier, not through decorative
+research archives.
+Evidence source:
+- V239 default connected-project resolution report;
+- `docs/runbooks/pattern-intake.md`;
+- `source-to-decision` skill;
+- TypeScript standards if the selected repair touches TypeScript.
+Inputs required:
+- DB ready;
+- default `krn plan --persist` current-repo read model;
+- one small source repair where source-to-decision can materially constrain the
+  implementation.
+Files likely touched:
+- to be discovered from default KRN plan owner-file selection;
+- focused tests;
+- dogfood report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- one bounded source/test repair;
+- source-to-decision or report entries needed to prove pattern usefulness;
+- plan/report condensation.
+Forbidden writes:
+- dashboard/API/MCP/worker daemon;
+- source crawler or Research Foundry;
+- broad activation scoring rewrite;
+- broad reflection extraction rewrite;
+- memory/source auto-promotion;
+- long research archive;
+- decorative source links without consumer/falsifier.
+Output requirements:
+- start with default `krn plan --persist`, no `--project`;
+- record selected owner files and whether they helped;
+- map any adopted pattern/source through source-to-decision;
+- implement the smallest final-pattern repair, or reject implementation if no
+  source-backed repair is justified;
+- capture evidence and dogfood usefulness.
+Definition of Done:
+- default plan path is used and recorded;
+- at least one source/pattern decision is adopted, rejected, or lab-tested with
+  consumer and falsifier;
+- source/test repair is focused and verified, or explicitly rejected with a
+  report if no repair is justified;
+- `pnpm run typecheck`, relevant tests, full tests, `pnpm db:ready`, and
+  `git diff --check` pass when source is touched;
+- report exists;
+- commit is pushed and CI checked.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- targeted package tests based on touched files;
+- `pnpm run typecheck`;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`;
+- `krn evidence capture --persist`;
+- `krn observe --persist`;
+- `krn reflect --persist`;
+- `git diff --check`.
+Acceptance criteria:
+- default-path KRN source repair no longer needs manual UUID routing;
+- selected context is classified as helped/neutral/noise/missing;
+- source-to-decision prevents decorative research and creates one concrete
+  consumer or rejection;
+- no broad architecture surface is added.
+Risk: turning "best patterns" into a vague research backlog instead of one
+bounded decision with proof.
+Rollback: revert focused source/test/report commit; keep V239 default-project
+resolution repair unless V240 uncovers a concrete regression.
+Condensation expectation: if this succeeds, next tasks can feed higher-quality
+external patterns into source decisions; if selected context is poor, open an
+owner-file/read-model repair before activation scoring.
+Next-task synthesis rule: continue from V240 evidence; do not create a broad
+research layer until repeated bounded pattern-intake trials prove the missing
+surface.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -18923,10 +19048,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V239 Default Connected Project Resolution Repair.
+- V240 Default-Path Source-To-Decision Dogfood.
 
 Next active task:
-- V239-00 Default Connected Project Resolution Repair.
+- V240-00 Default-Path Source-To-Decision Dogfood.
 
 ## 21. Final Response Format For Codex Runs
 
