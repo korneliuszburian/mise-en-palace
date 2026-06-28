@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V302 Pattern Brain Usefulness Coverage Closure Gate
-current task: V302-00 Pattern Brain Usefulness Coverage Closure Gate
+active stream: V303 Pattern Application Gate For Active Slices
+current task: V303-00 Pattern Application Gate For Active Slices
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V302 Pattern Brain Usefulness Coverage Closure Gate
+### V303 Pattern Application Gate For Active Slices
 
 Goal:
 
-Verify current retained pattern usefulness coverage is complete, summarize what
-the Pattern Brain can and cannot do now, and choose the next product-building
-surface without adding new patterns by default.
+Make helped pattern selection an explicit pre-slice and post-slice gate for
+non-trivial KRN work so retained patterns apply to implementation instead of
+remaining searchable documentation.
 
 Current finding:
 
 ```txt
-V301 marked the untrusted-context warning boundary as helped and reduced
-no-feedback cards from 1 to 0. The current retained pattern set now has
-usefulness feedback coverage and needs a closure/readiness gate.
+V302 verified all 11 current retained patterns have helped feedback and
+no-feedback readback is empty. The next gap is application: future slices must
+select and apply relevant helped patterns before coding.
 ```
 
 Current action:
 
 ```txt
-Execute V302-00: verify `helped` and `none` readbacks, produce a compact
-coverage closure report, and select the next bounded product-building surface.
-Do not add source intake, UI/API/MCP/dashboard, semantic ranking, or Memory Core
-mutation in this gate.
+Execute V303-00: inspect current plan/report conventions and add the smallest
+pattern application gate that forces relevant helped-pattern selection before
+non-trivial implementation and after-slice usefulness classification. Do not add
+semantic ranking, API/MCP/dashboard, source crawler, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain usefulness coverage closure gate.
+pattern application gate for active implementation slices.
 ```
 
 Falsifier:
 
 ```txt
-Coverage closure cannot prove all retained patterns have usefulness feedback, or
-the next product-building surface is selected without evidence.
+Future implementation can proceed without selecting relevant helped patterns, or
+the gate adds review burden without changing decisions.
 ```
 
 ## Pattern Gate

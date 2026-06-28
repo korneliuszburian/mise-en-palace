@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V302 Pattern Brain Usefulness Coverage Closure Gate
+V303 Pattern Application Gate For Active Slices
 ```
 
 Current product loop:
@@ -48,10 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V301: target repair, pattern intake/enforcement, skills, knowledge cards,
+V245..V302: target repair, pattern intake/enforcement, skills, knowledge cards,
 usefulness feedback, no-feedback triage, TypeScript feedback, active-context,
 read-only UI, target write-authority, and untrusted-context feedback complete.
-current task: V302-00 Pattern Brain Usefulness Coverage Closure Gate.
+current task: V303-00 Pattern Application Gate For Active Slices.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

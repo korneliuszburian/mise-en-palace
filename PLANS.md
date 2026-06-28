@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V302 Pattern Brain Usefulness Coverage Closure Gate
-current task: V302-00 Pattern Brain Usefulness Coverage Closure Gate
+active stream: V303 Pattern Application Gate For Active Slices
+current task: V303-00 Pattern Application Gate For Active Slices
 latest pushed commit before V301: 5279e37 docs(knowledge): mark target write authority useful
 latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db60216cf8a0a3d
 ```
@@ -32,10 +32,9 @@ latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db602
 Known current gap:
 
 ```txt
-V302-00 Pattern Brain Usefulness Coverage Closure Gate is the current gap. V301
-marked untrusted-context warning as helped and reduced no-feedback cards from 1
-to 0. The retained pattern set needs a closure/readiness gate before the next
-product-building surface.
+V303-00 Pattern Application Gate For Active Slices is the current gap. V302
+verified all 11 current retained patterns have helped feedback and no-feedback
+readback is empty. The next gap is applying patterns before implementation.
 ```
 
 ## 2. Product Thesis
@@ -2858,6 +2857,33 @@ Source-to-decision:
 - Consumer: V302 pattern brain usefulness coverage closure.
 - Falsifier: helped/none readback cannot prove all current retained patterns
   have usefulness feedback.
+
+## Outcome V302-00 Pattern Brain Usefulness Coverage Closure Gate
+
+Summary:
+- confirmed `--usefulness-outcome helped` returns all 11 current retained
+  pattern cards;
+- confirmed `--usefulness-outcome none` returns 0 cards;
+- confirmed a `TypeScript` query surfaces relevant helped patterns with proof
+  boundaries;
+- selected V303 as the next product-building surface.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v302-pattern-brain-usefulness-coverage-closure/REPORT.md`.
+
+Source-to-decision:
+- Source: V288..V301 usefulness feedback loop and `krn knowledge cards`
+  readback.
+- Mechanism: pattern cards help only when selected and applied before
+  implementation; searchable cards alone do not enforce better code.
+- KRN implication: future non-trivial slices should select relevant helped
+  patterns before coding and classify pattern usefulness after verification.
+- Decision: open V303 Pattern Application Gate For Active Slices.
+- Does not prove: semantic ranking quality, full research condensation, web
+  product readiness, or automatic pattern enforcement.
+- Consumer: V303 pattern application gate.
+- Falsifier: future slices continue without selecting/applying relevant helped
+  patterns or the gate adds review burden without changing decisions.
 
 ## Condensation Rules
 
