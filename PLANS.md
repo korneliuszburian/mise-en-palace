@@ -23,8 +23,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V256 Replayable Target Repair Trial
-current task: V256-00 Run Replayable Target Repair Trial
+active stream: V257 Pattern Intake Trial
+current task: V257-00 Pattern Intake Trial
 latest pushed commit: b2ccbaf test(target): make normalized substrate replayable
 latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 ```
@@ -32,9 +32,10 @@ latest CI checked: KRN CI success for b2ccbaf279409f24b01d150dcbecb0f92324b048
 Known current gap:
 
 ```txt
-V256-00 Run Replayable Target Repair Trial is the current gap. V255 condensed
-the active ledger; now KRN must prove the replayable target substrate can drive
-another source repair from a weak baseline.
+V257-00 Pattern Intake Trial is the current gap. V256 proved the replayable
+target substrate can drive a weak-baseline repair; now the repeated TypeScript
+boundary pattern must become durable brain knowledge with consumer, falsifier,
+and enforcement/eval candidate.
 ```
 
 ## 2. Product Thesis
@@ -143,6 +144,16 @@ green test != product value
 - Report:
   `docs/reviews/controlled-dogfood/2026-06-28-v255-active-ledger-condensation/REPORT.md`.
 
+### V256 Replayable Target Repair Trial
+
+- Status: complete.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v256-replayable-target-repair-trial/REPORT.md`.
+- Outcome: materialized the weak JSON boundary target into `.local-lab`,
+  repaired it with unknown-first JSON and discriminated result states, and
+  recorded that `krn init` surfaced target owner files while `krn plan` still
+  selected unrelated context without connected target read-model context.
+
 ## Active Task Queue
 
 ### V255-00 Condense PLANS Active Ledger
@@ -169,7 +180,7 @@ Definition of Done:
 
 ### V256-00 Run Replayable Target Repair Trial
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -205,7 +216,7 @@ git diff --check
 
 ### V257-00 Pattern Intake Trial
 
-Status: queued.
+Status: active.
 
 Goal:
 
@@ -220,6 +231,13 @@ Preferred first pattern class:
 ```txt
 TypeScript external-boundary or finite-state modeling pattern, because the
 normalized target substrate already provides falsifiable code evidence.
+```
+
+Current target pattern:
+
+```txt
+unknown-first JSON/external input boundary + discriminated create-user result
+states from V253/V256.
 ```
 
 Rules:
@@ -392,7 +410,10 @@ Current generated backlog is represented by queued tasks V257..V260 above.
 
 - V255-00 complete: root `PLANS.md` was condensed and historical detail was
   archived.
-- V256-00 active: run replayable target repair trial.
+- V256-00 complete: replayed and repaired the weak TypeScript target in
+  `.local-lab`.
+- V257-00 active: turn the repeated TypeScript boundary pattern into a
+  source-to-decision object and enforcement/eval candidate.
 
 ## Outcome V255-00 Active Ledger Condensation
 
@@ -417,6 +438,35 @@ Source-to-decision:
   read-model work.
 - Falsifier: `PLANS.md` again becomes an append-only wall that blocks quick
   resume or hides the current task.
+
+## Outcome V256-00 Replayable Target Repair Trial
+
+Summary:
+- materialized `weak-json-boundary` into
+  `.local-lab/target-substrates/normalized-weak-typescript-v256`;
+- confirmed weak baseline markers: `any`, raw `JSON.parse`, and
+  `CreatedUser | null`;
+- repaired the local target with unknown-first parsing, `UserRole`, and
+  discriminated `CreateUserResult`;
+- verified target tests and forbidden-smell search;
+- recorded that root evidence capture does not classify ignored `.local-lab`
+  file diffs.
+
+Source-to-decision:
+- Source: V252 normalized substrate, V253 TypeScript repair, V254 replayable
+  baseline, target-repo-testing skill, TypeScript type safety skill.
+- Mechanism: replayable weak targets let KRN apply and verify the same
+  best-pattern pressure repeatedly instead of relying on prose standards.
+- KRN implication: pattern brain needs source decisions and enforcement
+  candidates backed by replayable target falsifiers.
+- Decision: open V257 to formalize the unknown-first external boundary /
+  discriminated result-state pattern as a reviewable source-to-decision object.
+- Does not prove: product readiness, real target transfer, second-operator
+  usability, or automatic activation quality.
+- Consumer: V257 pattern intake, V258 enforcement gate, future target repair
+  trials.
+- Falsifier: future target repairs cannot reproduce or verify the pattern
+  without manual source archaeology.
 
 ## Condensation Rules
 

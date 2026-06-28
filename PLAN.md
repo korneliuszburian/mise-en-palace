@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V256 Replayable Target Repair Trial
-current task: V256-00 Run Replayable Target Repair Trial
+active stream: V257 Pattern Intake Trial
+current task: V257-00 Pattern Intake Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V256 Replayable Target Repair Trial
+### V257 Pattern Intake Trial
 
 Goal:
 
-Run the first replayable target repair trial from the normalized weak
-TypeScript baseline and use it to test whether KRN enforces selected best
-patterns in code, not only in reports.
+Convert the repeated TypeScript boundary pattern proven by V253/V256 into a
+source-to-decision object with consumer, falsifier, and an enforcement/eval
+candidate.
 
 Current finding:
 
 ```txt
-V255 condensed root `PLANS.md` from 20,736 lines into a compact active ledger
-and archived the historical detail. V252..V254 created a normalized weak
-TypeScript substrate, repaired it once, and made the weak baseline replayable.
+V256 replayed the weak JSON-boundary target into `.local-lab`, repaired it with
+unknown-first JSON and discriminated result states, and showed the next gap:
+the pattern must become durable brain knowledge rather than human memory.
 ```
 
 Current action:
 
 ```txt
-Execute V256-00: materialize the weak-json-boundary scenario, run the KRN-guided
-target repair workflow from that weak baseline, capture evidence/readback, and
-report whether KRN enforces selected best patterns rather than just documenting
-them.
+Execute V257-00: run the unknown-first external boundary / discriminated
+result-state pattern through source -> mechanism -> KRN implication ->
+decision/rejection -> consumer -> falsifier, then produce a reviewable
+enforcement/eval candidate.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / target-repair proof loop.
+pattern brain / source-to-decision intake loop.
 ```
 
 Falsifier:
 
 ```txt
-V256 cannot replay the weak baseline, cannot route the repair through evidence,
-or produces only a ledger without improving the target boundary.
+V257 produces decorative source notes without a consumer/falsifier, or fails to
+create a testable enforcement/eval candidate.
 ```
 
 ## Pattern Gate

@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V256 Replayable Target Repair Trial
+V257 Pattern Intake Trial
 ```
 
 Current product loop:
@@ -48,10 +48,10 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240..V244: project resolution, TypeScript best-pattern, Codex ExecPlan source
 decision, and best-pattern re-gate complete.
-V245..V255: activation/source/skill guards, product-readiness re-gate, target
-trial gate, normalized substrate, first target repair, replayable baseline, and
-active ledger condensation complete.
-current task: V256-00 Run Replayable Target Repair Trial.
+V245..V256: activation/source/skill guards, product-readiness re-gate, target
+trial gate, normalized substrate, first target repair, replayable baseline,
+active ledger condensation, and replayable target repair trial complete.
+current task: V257-00 Pattern Intake Trial.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.
