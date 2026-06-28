@@ -77,12 +77,12 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V226 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V227 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
-root-plan headroom, source-usefulness readback, and related re-gate slices:
-complete
-active stream: V227 Pattern Intake Source Usefulness Producer Gate
-current task: V227-00 Pattern Intake Source Usefulness Producer Gate
+root-plan headroom, source-usefulness readback/producer, and related re-gate
+slices: complete
+active stream: V228 Pattern Intake Source Usefulness Dogfood Trial
+current task: V228-00 Pattern Intake Source Usefulness Dogfood Trial
 ```
 
 Evidence already recorded in repo:
@@ -98,7 +98,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V227-00 Pattern Intake Source Usefulness Producer Gate.
+V228-00 Pattern Intake Source Usefulness Dogfood Trial.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18111,6 +18111,80 @@ Next active stream:
 
 Next active task:
 - V227-00 Pattern Intake Source Usefulness Producer Gate.
+
+## Outcome 2026-06-28 V227 Pattern Intake Source Usefulness Producer Gate
+
+Completed task:
+- V227-00 Pattern Intake Source Usefulness Producer Gate.
+
+Decision:
+- Implement the smallest producer path on `krn evidence capture`:
+  repeatable `--source-usefulness`.
+- Store operator-reported source usefulness outcomes in existing
+  `FeedbackDelta.metadata.sourceUsefulnessOutcomes`.
+- Keep this as evidence feedback only: no source truth mutation, no automatic
+  source scoring, no crawler, no research archive, and no paid course copying.
+
+CLI producer format:
+
+```txt
+--source-usefulness "claim:<id>=helped|reason|evidence-ref[,ref]|doesNotProve"
+--source-usefulness "decision:<id>=stale|reason|evidence-ref[,ref]|doesNotProve"
+```
+
+Changed:
+- `packages/core/src/feedbackDelta.ts` exports `isSourceUsefulnessOutcome`.
+- `packages/cli/src/parseEvidenceArgs.ts` parses and validates
+  `--source-usefulness`.
+- `packages/cli/src/runEvidenceCaptureCommand.ts` renders source usefulness
+  outcomes and persists them to feedback metadata.
+- `packages/cli/src/runCli.ts` passes source usefulness outcomes to evidence
+  capture.
+- CLI help and tests cover the new producer path.
+
+Evidence:
+- `pnpm --filter @krn/cli test -- parseEvidenceArgs runCli runEvidenceCaptureCommand`: passed.
+- `pnpm --filter @krn/core test -- reviewFeedback`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `git diff --check`: passed.
+
+Source-to-decision:
+- Source: V226 readback outcome, pattern-intake runbook, source-to-decision
+  skill, and current user direction to feed KRN with best courses/papers/patterns
+  continuously.
+- Mechanism: a retained source can improve KRN only if a later run can report
+  whether that source was selected, used, helped, neutral/noise, or stale.
+- KRN implication: pattern intake needs an operator-reported producer before
+  source usefulness can be measured in dogfood runs.
+- Decision: adopt `krn evidence capture --source-usefulness` as the bounded
+  producer for source usefulness outcome feedback.
+- Does not prove: any specific source helped, source selector quality, research
+  quality, or product readiness.
+- Consumer: evidence capture, feedback delta metadata, `krn run show`, and
+  future pattern-intake dogfood.
+- Falsifier: future runs cannot round-trip the metadata through persisted
+  readback, or the producer encourages decorative source hoarding.
+
+New finding:
+- Source usefulness readback and producer exist, but no dogfood run has yet used
+  the producer to record whether a retained pattern/course/paper source helped a
+  real implementation or review decision.
+
+New task:
+- V228-00 Pattern Intake Source Usefulness Dogfood Trial.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V228 Pattern Intake Source Usefulness Dogfood Trial.
+
+Next active task:
+- V228-00 Pattern Intake Source Usefulness Dogfood Trial.
 
 ## 21. Final Response Format For Codex Runs
 

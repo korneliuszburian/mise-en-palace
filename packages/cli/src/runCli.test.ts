@@ -1345,11 +1345,12 @@ describe("runCli", () => {
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain(
-      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--persist]"
+      "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--persist]"
     );
     expect(result.stdout).toContain(
       "example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\""
     );
+    expect(result.stdout).toContain("source usefulness: krn evidence capture --source-usefulness");
     expect(result.stdout).toContain("target: krn evidence capture --target-repo ../target");
     expect(result.stdout).toContain(
       "evidence capture records outcomes; it does not execute commands"
@@ -4133,6 +4134,7 @@ describe("runCli", () => {
     let capturedEvidenceBundle: CreateEvidenceBundleInput | undefined;
     let capturedSourceDecisions: CreateFeedbackDeltaInput["sourceDecisions"] | undefined;
     let capturedMemoryCandidates: CreateFeedbackDeltaInput["memoryCandidates"] | undefined;
+    let capturedFeedbackDeltaMetadata: CreateFeedbackDeltaInput["metadata"] | undefined;
     const aggregate: HarnessRunAggregate = {
       operatorIntent: {
         id: "operator-intent-1",
@@ -4241,6 +4243,7 @@ describe("runCli", () => {
       async createFeedbackDelta(input: CreateFeedbackDeltaInput) {
         capturedMemoryCandidates = input.memoryCandidates;
         capturedSourceDecisions = input.sourceDecisions;
+        capturedFeedbackDeltaMetadata = input.metadata;
 
         return {
           id: "feedback-delta-1",
@@ -4283,6 +4286,8 @@ describe("runCli", () => {
         "M apps/dashboard/src/App.tsx",
         "--target-command",
         "wilq-seo scripts/test.sh",
+        "--source-usefulness",
+        "claim:source-claim-1=helped|Source claim kept pattern-intake proof boundaries visible|evidence-bundle-1,feedback-delta-1|Does not prove future source selector quality",
         "--persist"
       ],
       {
@@ -4322,6 +4327,15 @@ describe("runCli", () => {
     expect(result.stdout).toContain("memory-candidate-proposal-1");
     expect(result.stdout).toContain("No MemoryCandidate row created");
     expect(result.stdout).toContain("sourceDecisionCandidates:");
+    expect(result.stdout).toContain("sourceUsefulnessOutcomes:");
+    expect(result.stdout).toContain("outcome=helped sourceClaim=source-claim-1 sourceDecision=none");
+    expect(result.stdout).toContain(
+      "reason: Source claim kept pattern-intake proof boundaries visible"
+    );
+    expect(result.stdout).toContain("evidenceRef: evidence-bundle-1");
+    expect(result.stdout).toContain(
+      "doesNotProve: Does not prove future source selector quality"
+    );
     expect(capturedMemoryCandidates).toHaveLength(1);
     expect(capturedMemoryCandidates?.[0]?.projectId).toBe("project-1");
     expect(capturedMemoryCandidates?.[0]?.executionRunId).toBe("execution-run-1");
@@ -4341,6 +4355,15 @@ describe("runCli", () => {
     expect(capturedSourceDecisions?.[0]?.metadata).toMatchObject({
       reviewability: "too_vague",
       reviewabilityReasons: ["Candidate does not name a concrete future use."]
+    });
+    expect(capturedFeedbackDeltaMetadata).toMatchObject({
+      sourceUsefulnessOutcomes: [{
+        sourceClaimId: "source-claim-1",
+        outcome: "helped",
+        reason: "Source claim kept pattern-intake proof boundaries visible",
+        evidenceRefs: ["evidence-bundle-1", "feedback-delta-1"],
+        doesNotProve: "Does not prove future source selector quality"
+      }]
     });
     expect(capturedEvidenceBundle?.reviewBurden).toBe(
       "Review changed files, command proof, residual risk, and rollback path. Review target repo mode, dirty state, ownership, allowed/forbidden writes, target command proof, and target does-not-prove boundaries separately."

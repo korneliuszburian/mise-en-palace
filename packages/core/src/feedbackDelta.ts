@@ -95,6 +95,11 @@ const sourceUsefulnessOutcomes = new Set<SourceUsefulnessOutcome>([
   "unknown"
 ]);
 
+export const isSourceUsefulnessOutcome = (
+  value: string
+): value is SourceUsefulnessOutcome =>
+  sourceUsefulnessOutcomes.has(value as SourceUsefulnessOutcome);
+
 const objectListMetadata = (
   metadata: Record<string, unknown>,
   key: string
@@ -138,7 +143,7 @@ const sourceUsefulnessOutcomeField = (
 ): SourceUsefulnessOutcome => {
   const value = stringField(input, "outcome");
 
-  return value !== undefined && sourceUsefulnessOutcomes.has(value as SourceUsefulnessOutcome)
+  return value !== undefined && isSourceUsefulnessOutcome(value)
     ? value as SourceUsefulnessOutcome
     : "unknown";
 };

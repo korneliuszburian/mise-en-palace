@@ -1,5 +1,6 @@
 import type {
   EvidenceCommand,
+  SourceUsefulnessOutcomeFeedback,
   TargetEvidenceInput
 } from "@krn/core";
 import {
@@ -90,6 +91,7 @@ export type CliCommand =
       intendedFiles?: readonly string[];
       commandOutcomes?: readonly EvidenceCommand[];
       targetEvidence?: TargetEvidenceInput;
+      sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
     }
   | {
       kind: "reviewAssess";
@@ -324,8 +326,9 @@ const usage = [
   "krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]",
   "krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]",
   "krn doctor",
-  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--persist]",
+  "krn evidence capture [--run-id <id>|--run <id>] [--intended-file <path>] [--target-repo <path>] [--verification \"pnpm typecheck=passed\"] [--source-usefulness \"claim:<id>=helped|reason|evidence|doesNotProve\"] [--persist]",
   "  example: krn evidence capture --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"pnpm typecheck=passed\" --verification \"pnpm test=passed\"",
+  "  source usefulness: krn evidence capture --source-usefulness \"claim:source-claim-1=helped|Source kept proof boundaries visible|evidence-1,feedback-1|Does not prove future selector quality\"",
   "  target: krn evidence capture --target-repo ../target --target-mode observation-only --target-dirty-before dirty --target-dirty-after dirty --target-allowed-write none --target-forbidden-write \"target source edits\" --target-changed-file \"M src/app.ts\" --target-command \"target pnpm test\" --verification \"target pnpm test=passed\"",
   "  persisted: krn evidence capture --run-id <execution-run-id> --intended-file packages/cli/src/runEvidenceCaptureCommand.ts --verification \"git diff --check=passed\" --persist",
   "  note: evidence capture records outcomes; it does not execute commands",

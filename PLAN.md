@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V227 Pattern Intake Source Usefulness Producer Gate
-current task: V227-00 Pattern Intake Source Usefulness Producer Gate
+active stream: V228 Pattern Intake Source Usefulness Dogfood Trial
+current task: V228-00 Pattern Intake Source Usefulness Dogfood Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -28,50 +28,50 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V226: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V227: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
-           re-gate plus source-usefulness readback guards complete.
+           re-gate plus source-usefulness readback/producer guards complete.
 ```
 
 ## Active Stream
 
-### V227 Pattern Intake Source Usefulness Producer Gate
+### V228 Pattern Intake Source Usefulness Dogfood Trial
 
 Goal:
 
-Inspect and either implement or explicitly defer the smallest producer path for
-source usefulness outcome feedback during bounded pattern intake.
+Run one bounded pattern-intake dogfood that applies a retained source decision
+to a real KRN slice and records source usefulness outcome feedback.
 
 Current finding:
 
 ```txt
-Source usefulness outcome readback exists, but no bounded producer yet records
-whether pattern/course/paper guidance was selected, used, helped, stale, or
-noise during a real pattern-intake slice.
+Source usefulness readback and producer exist, but no dogfood run has yet used
+the producer to record whether a retained pattern/course/paper source helped a
+real implementation or review decision.
 ```
 
 Current action:
 
 ```txt
-Execute V227-00: inspect pattern-intake and feedback producer surfaces and add
-one bounded producer repair only if the existing flow can support it without a
-new research subsystem.
+Execute V228-00: select one existing retained source from `docs/KRN_SOURCES.md`
+or a repo-local pattern decision, apply it to one small KRN task, and capture
+source usefulness feedback with `krn evidence capture --source-usefulness`.
 ```
 
 Primary consumer:
 
 ```txt
-Pattern-intake source usefulness feedback for future course/paper/practitioner
-source decisions, or an explicit defer decision.
+Pattern-intake dogfood evidence for whether source usefulness feedback changes
+future source-map, standards, skill, or eval decisions.
 ```
 
 Falsifier:
 
 ```txt
-The slice creates a source crawler/research archive/new subsystem, copies paid
-course material, mutates source truth automatically, or claims product readiness
-from source feedback.
+The slice reads broad research, copies paid course material, creates a crawler
+or research archive, mutates source truth automatically, or claims source
+quality/product readiness from one dogfood outcome.
 ```
 
 ## Pattern Gate

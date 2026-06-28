@@ -10,6 +10,7 @@ import type {
   NormalizedEvidenceCommand,
   MemoryCandidate,
   SourceDecision,
+  SourceUsefulnessOutcomeFeedback,
   TargetEvidence,
   TargetEvidenceInput
 } from "@krn/core";
@@ -37,6 +38,7 @@ export interface EvidenceCaptureRuntime {
   intendedFiles?: readonly string[];
   commandOutcomes?: readonly EvidenceCommand[];
   targetEvidence?: TargetEvidenceInput;
+  sourceUsefulnessOutcomes?: readonly SourceUsefulnessOutcomeFeedback[];
   readGitStatus?(): Promise<string>;
   createDatabaseRuntime?: CreateDatabaseRuntime;
 }
@@ -505,6 +507,23 @@ const renderSourceDecisionCandidates = (
   });
 };
 
+const renderSourceUsefulnessOutcomes = (
+  outcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined
+): string[] => {
+  if (outcomes === undefined || outcomes.length === 0) {
+    return ["- none"];
+  }
+
+  return outcomes.flatMap((outcome) => [
+    `- outcome=${outcome.outcome} sourceClaim=${outcome.sourceClaimId ?? "none"} sourceDecision=${outcome.sourceDecisionId ?? "none"}`,
+    `  reason: ${outcome.reason}`,
+    ...(outcome.evidenceRefs.length === 0
+      ? ["  evidenceRef: none"]
+      : outcome.evidenceRefs.map((evidenceRef) => `  evidenceRef: ${evidenceRef}`)),
+    `  doesNotProve: ${outcome.doesNotProve}`
+  ]);
+};
+
 const renderMemoryCandidateProposals = (
   proposals: readonly MemoryCandidateProposal[]
 ): string[] => {
@@ -578,6 +597,7 @@ const persistEvidenceCapture = async (
   commands: NormalizedEvidenceCommand[],
   diffRisk: DiffRisk,
   targetEvidence: TargetEvidence | undefined,
+  sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
   sourceDecisionCandidates: readonly SourceDecision[],
   memoryCandidateProposals: readonly MemoryCandidateProposal[]
 ): Promise<PersistedEvidenceIdentity> => {
@@ -688,7 +708,10 @@ const persistEvidenceCapture = async (
         targetEvidencePresent: targetEvidence !== undefined,
         memoryCandidateProposalCount: memoryCandidates.length,
         memoryCandidateRowCount: 0,
-        sourceDecisionCandidateCount: sourceDecisionCandidates.length
+        sourceDecisionCandidateCount: sourceDecisionCandidates.length,
+        ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
+          ? {}
+          : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] })
       }
     });
 
@@ -727,6 +750,7 @@ export const runEvidenceCaptureCommand = async (
       commands,
       diffRisk,
       targetEvidence,
+      runtime.sourceUsefulnessOutcomes,
       sourceDecisionCandidates,
       memoryCandidateProposals
     )
@@ -760,7 +784,9 @@ export const runEvidenceCaptureCommand = async (
     "memoryCandidates:",
     ...renderMemoryCandidateProposals(memoryCandidateProposals),
     "sourceDecisionCandidates:",
-    ...renderSourceDecisionCandidates(sourceDecisionCandidates)
+    ...renderSourceDecisionCandidates(sourceDecisionCandidates),
+    "sourceUsefulnessOutcomes:",
+    ...renderSourceUsefulnessOutcomes(runtime.sourceUsefulnessOutcomes)
   ];
 
   if (persistedIdentity !== undefined) {
