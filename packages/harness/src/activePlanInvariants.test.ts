@@ -208,6 +208,10 @@ describe("KRN active plan invariants", () => {
     expect(runbook).toContain("retaining a source with no consumer");
     expect(runbook).toContain("source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier");
     expect(runbook).toContain("Surface Consumer Matrix");
+    expect(runbook).toContain("Usefulness Feedback Closure");
+    expect(runbook).toContain("krn evidence capture");
+    expect(runbook).toContain("--source-usefulness");
+    expect(runbook).toContain("source_usefulness_feedback:");
 
     expectFieldLines(outputTemplate, [
       "source_id",
@@ -223,6 +227,7 @@ describe("KRN active plan invariants", () => {
       "falsifier",
       "does_not_prove",
       "candidate_output",
+      "source_usefulness_feedback",
       "next_action"
     ]);
     expect(outputTemplate).toContain("decision_kind: adopt | reject | lab_test | defer");

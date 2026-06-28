@@ -23,6 +23,8 @@ Use this skill to prevent source hoarding.
 6. Name the consumer: doc, ADR, skill, type, policy gate, eval candidate, or CLI
    behavior.
 7. Add a falsifier.
+8. After execution, close source usefulness feedback or record why it was not
+   measured.
 
 ## Research Intake Rules
 
@@ -80,6 +82,12 @@ Optional when useful:
 candidate_output:
   type: MemoryCandidate | SourceDecision | EvalCandidate | SkillCandidate | none
   reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown
+source_usefulness_feedback:
+  status: measured_with_evidence_capture | not_measured
+  outcome: selected | used | helped | neutral | noise | stale | unknown
+  reason:
+  evidence_refs:
+  does_not_prove:
 ```
 
 ## Forbidden
@@ -167,7 +175,34 @@ reject:
 Do not proceed from pattern to implementation unless the consumer and falsifier
 are explicit.
 
+## Usefulness Feedback Closure
+
+If a source materially shaped code, infra, harness, CI, eval, TypeScript,
+operator UX, or Codex-surface work, close the loop after execution:
+
+```txt
+krn evidence capture --source-usefulness "claim:<source-id>=helped|reason|evidence-ref[,ref]|doesNotProve"
+```
+
+Use `decision:<id>` instead of `claim:<id>` when the retained object is a
+SourceDecision.
+
+If usefulness is not measured, record why in the report or plan outcome. Accept
+only bounded reasons:
+
+```txt
+no persisted run
+source was rejected
+source was background context only
+no implementation/review decision used it
+legal/content boundary
+```
+
+Do not leave a course, paper, docs page, practitioner claim, or repo-local
+source as decorative authority after it influences implementation.
+
 ## Verification
 
 The mapped source must change a decision, reject a path, define a risk, create a
-testable hypothesis, or constrain implementation.
+testable hypothesis, constrain implementation, or be closed by source
+usefulness feedback with a proof/non-proof boundary.

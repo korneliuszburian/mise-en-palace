@@ -88,6 +88,8 @@ irrelevant, and a medium-trust source can still create a useful lab-test.
 8. State what the source does not prove.
 9. Decide whether a candidate should be emitted.
 10. Keep the retained note as small as possible.
+11. After execution, record source usefulness feedback or explain why it was not
+    measured.
 
 ## Consumer Routing
 
@@ -167,8 +169,42 @@ does_not_prove:
 candidate_output:
   type: MemoryCandidate | SourceDecision | EvalCandidate | SkillCandidate | none
   reviewability: ready | needs_more_evidence | too_vague | duplicate | not_useful | unknown
+source_usefulness_feedback:
+  status: measured_with_evidence_capture | not_measured
+  outcome: selected | used | helped | neutral | noise | stale | unknown
+  reason:
+  evidence_refs:
+  does_not_prove:
 next_action:
 ```
+
+## Usefulness Feedback Closure
+
+If a retained source shaped a code, infra, harness, CI, eval, TypeScript,
+operator UX, or Codex-surface decision, close the feedback loop after the run.
+
+Preferred evidence capture shape:
+
+```sh
+krn evidence capture \
+  --source-usefulness "claim:<source-id>=helped|reason|evidence-ref[,ref]|doesNotProve"
+```
+
+Use `decision:<id>` when the source outcome belongs to a SourceDecision.
+
+If usefulness is not measured, the report or plan outcome must say why. Allowed
+reasons:
+
+```txt
+no persisted run
+source was rejected
+source was background context only
+no implementation/review decision used it
+legal/content boundary
+```
+
+This closure is what keeps courses, papers, docs, and practitioner writing from
+becoming decorative authority.
 
 ## Rejection Reasons
 

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V232 Best-Pattern Source Usefulness Re-Gate
-current task: V232-00 Best-Pattern Source Usefulness Re-Gate
+active stream: V233 Best-Pattern Source Usefulness Closure Dogfood
+current task: V233-00 Best-Pattern Source Usefulness Closure Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -28,56 +28,50 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V231: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V232: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
-           normalization/readback guards complete.
+           normalization/readback guards plus best-pattern usefulness closure
+           complete.
 ```
 
 ## Active Stream
 
-### V232 Best-Pattern Source Usefulness Re-Gate
+### V233 Best-Pattern Source Usefulness Closure Dogfood
 
 Goal:
 
-Make high-quality external/internal patterns usable as engineering pressure:
-every non-trivial course/paper/docs/standard source used by a future slice must
-map to source -> mechanism -> KRN implication -> decision/rejection -> consumer
--> falsifier, and either record source usefulness or explicitly explain why it
-was not measured.
+Dogfood the V232 best-pattern usefulness closure by recording source usefulness
+for the source/runbook/skill evidence that shaped V232.
 
 Current finding:
 
 ```txt
-V227..V231 created source usefulness producer/readback and proved persisted
-metadata, but the durable workflow surface may still not force future
-best-pattern/course/paper-driven slices to close the loop with usefulness
-evidence.
+V232 updated source-to-decision, pattern-intake, evidence-review-loop, and
+invariant tests so sources that materially shape work must close the source
+usefulness loop. The new closure rule still needs one explicit dogfood capture.
 ```
 
 Current action:
 
 ```txt
-Execute V232-00: inspect `source-to-decision`, evidence reporting docs, and plan
-rules; add the smallest durable update or guard so pattern/course/paper sources
-cannot remain decorative when they influence code, infra, harness, or CI work.
+Execute V233-00: capture/report source usefulness for the V232 source evidence,
+prefer persisted evidence if DB is available, and verify readback if persisted.
 ```
 
 Primary consumer:
 
 ```txt
-Future KRN source-to-decision slices, TypeScript standards application, infra
-choices, harness/eval decisions, and research/pattern condensation.
+Pattern/course/paper/source-driven KRN slices and future evidence review.
 ```
 
 Falsifier:
 
 ```txt
-The slice creates source hoarding, broad research crawler behavior, another
-plan-sprawl surface, or a rule that cannot be verified through evidence capture,
-tests, or a source usefulness report.
+V233 cannot record source usefulness for V232, records it only as decorative
+prose, or fails to preserve proof/non-proof boundaries.
 ```
 
 ## Pattern Gate

@@ -101,6 +101,9 @@ describe("KRN skill invariants", () => {
     expect(sourceToDecision).toContain("Do not copy paid/proprietary course material into KRN.");
     expect(sourceToDecision).toContain("Do not create a research archive, source crawler, or broad research backlog");
     expect(sourceToDecision).toContain("Do not proceed from pattern to implementation unless the consumer and falsifier");
+    expect(sourceToDecision).toContain("Usefulness Feedback Closure");
+    expect(sourceToDecision).toContain("krn evidence capture --source-usefulness");
+    expect(sourceToDecision).toContain("Do not leave a course, paper, docs page, practitioner claim, or repo-local");
 
     const requiredOutputFields = [
       "source_id:",
@@ -114,7 +117,8 @@ describe("KRN skill invariants", () => {
       "decision:",
       "does_not_prove:",
       "consumer:",
-      "falsifier:"
+      "falsifier:",
+      "source_usefulness_feedback:"
     ];
 
     for (const field of requiredOutputFields) {

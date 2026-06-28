@@ -24,8 +24,11 @@ state without mutating memory automatically.
 3. State diff risk and review burden.
 4. State rollback path.
 5. Separate hard evidence from interpretation.
-6. Create feedback candidates; do not apply them automatically.
-7. Append run/outbox evidence only when persistence is configured.
+6. If a source, course, paper, docs page, or local evidence shaped the work,
+   record source usefulness with `--source-usefulness` or state why it was not
+   measured.
+7. Create feedback candidates; do not apply them automatically.
+8. Append run/outbox evidence only when persistence is configured.
 
 ## Output
 
@@ -35,6 +38,7 @@ state without mutating memory automatically.
 - Review burden.
 - Rollback path.
 - Feedback candidates.
+- Source usefulness outcomes when source/pattern input shaped the run.
 - Persistence status.
 
 ## Forbidden

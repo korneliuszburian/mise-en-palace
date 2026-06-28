@@ -77,13 +77,13 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V231 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V232 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
-persisted readback dogfood, repo-root path normalization/readback, and related
-re-gate slices: complete
-active stream: V232 Best-Pattern Source Usefulness Re-Gate
-current task: V232-00 Best-Pattern Source Usefulness Re-Gate
+persisted readback dogfood, repo-root path normalization/readback,
+best-pattern usefulness closure, and related re-gate slices: complete
+active stream: V233 Best-Pattern Source Usefulness Closure Dogfood
+current task: V233-00 Best-Pattern Source Usefulness Closure Dogfood
 ```
 
 Evidence already recorded in repo:
@@ -99,7 +99,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V232-00 Best-Pattern Source Usefulness Re-Gate.
+V233-00 Best-Pattern Source Usefulness Closure Dogfood.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18453,6 +18453,74 @@ Next active stream:
 
 Next active task:
 - V232-00 Best-Pattern Source Usefulness Re-Gate.
+
+## Outcome 2026-06-28 V232 Best-Pattern Source Usefulness Re-Gate
+
+Completed task:
+- V232-00 Best-Pattern Source Usefulness Re-Gate.
+
+Decision:
+- Update `source-to-decision` so any source that materially shapes code, infra,
+  harness, CI, eval, TypeScript, operator UX, or Codex-surface work must close a
+  source usefulness feedback loop or record why usefulness was not measured.
+- Update `docs/runbooks/pattern-intake.md` with the same closure requirement and
+  allowed non-measurement reasons.
+- Update `evidence-review-loop` so source usefulness belongs in execution
+  evidence, not just prose.
+- Guard the durable surfaces with harness invariant tests.
+
+Changed:
+- `.agents/skills/source-to-decision/SKILL.md`
+- `.agents/skills/evidence-review-loop/SKILL.md`
+- `docs/runbooks/pattern-intake.md`
+- `packages/harness/src/skillInvariants.test.ts`
+- `packages/harness/src/activePlanInvariants.test.ts`
+- `GOAL.md`
+- `PLAN.md`
+- `PLANS.md`
+
+Evidence:
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm --filter @krn/harness test -- skillInvariants activePlanInvariants patternChainInvariants`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `git diff --check`: passed.
+
+Source-to-decision:
+- Source: V227..V231 source usefulness producer/readback evidence plus existing
+  `source-to-decision` and pattern-intake durable surfaces.
+- Mechanism: best-practice/course/paper/docs sources improve KRN only when their
+  mechanism changes a decision and later evidence records whether the source
+  helped, was neutral/noise/stale, or was intentionally not measured.
+- KRN implication: pattern intake must be a closed evidence loop, not source
+  hoarding or a broad research archive.
+- Decision: require source usefulness feedback closure in the skill, pattern
+  intake runbook, and evidence review loop.
+- Does not prove: source selector quality, research quality, product readiness,
+  or that every source should be retained.
+- Consumer: future TypeScript, infra, harness, CI/eval, Codex-surface, and
+  operator-UX slices that use external/internal sources.
+- Falsifier: future source-shaped slices omit source usefulness feedback and do
+  not record a bounded non-measurement reason, or decorative sources accumulate
+  without consumers/falsifiers.
+
+New finding:
+- V232 codified the usefulness closure rule, but the new rule should be
+  dogfooded once with a concrete source usefulness capture for this slice.
+
+New task:
+- V233-00 Best-Pattern Source Usefulness Closure Dogfood.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V233 Best-Pattern Source Usefulness Closure Dogfood.
+
+Next active task:
+- V233-00 Best-Pattern Source Usefulness Closure Dogfood.
 
 ## 21. Final Response Format For Codex Runs
 
