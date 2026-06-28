@@ -1,0 +1,19 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:untrusted-context-warning-boundary",
+      "outcome": "helped",
+      "summary": "Kept Codex-facing selected context reviewable by rendering deterministic untrusted-context warnings for non-trusted source context instead of treating selection as implementation authority.",
+      "evidenceRefs": [
+        "docs/architecture/security-trust-boundaries.md",
+        "docs/reviews/controlled-dogfood/2026-06-25-codex-brief-contract-hardening/REPORT.md",
+        "docs/reviews/controlled-dogfood/2026-06-28-v286-brain-knowledge-catalog-coverage-expansion/REPORT.md",
+        "packages/codex-adapter/src/renderExecutionBrief.ts",
+        "packages/codex-adapter/src/renderExecutionBrief.test.ts",
+        "packages/codex-adapter/src/codexBriefGoldenBehavior.test.ts"
+      ],
+      "doesNotProve": "This feedback does not prove prompt-injection resistance, safe Codex execution, source truth, or product readiness.",
+      "observedAt": "2026-06-28"
+    }
+  ]
+}

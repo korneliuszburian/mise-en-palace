@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V301 Untrusted Context Warning Boundary Usefulness Feedback
-current task: V301-00 Untrusted Context Warning Boundary Usefulness Feedback
-latest pushed commit before V300: 1473c8a docs(knowledge): mark read-only ui boundary useful
-latest CI checked before V300: KRN CI success for 1473c8a055fb607bcb50c978c326364871bd1317
+active stream: V302 Pattern Brain Usefulness Coverage Closure Gate
+current task: V302-00 Pattern Brain Usefulness Coverage Closure Gate
+latest pushed commit before V301: 5279e37 docs(knowledge): mark target write authority useful
+latest CI checked before V301: KRN CI success for 5279e37a05f8405e9c0a15135db60216cf8a0a3d
 ```
 
 Known current gap:
 
 ```txt
-V301-00 Untrusted Context Warning Boundary Usefulness Feedback is the current
-gap. V300 marked target-repo write authority as helped and reduced no-feedback
-cards from 2 to 1. The remaining no-feedback card is the untrusted-context
-warning boundary.
+V302-00 Pattern Brain Usefulness Coverage Closure Gate is the current gap. V301
+marked untrusted-context warning as helped and reduced no-feedback cards from 1
+to 0. The retained pattern set needs a closure/readiness gate before the next
+product-building surface.
 ```
 
 ## 2. Product Thesis
@@ -2832,6 +2832,32 @@ Source-to-decision:
   `pattern:untrusted-context-warning-boundary`.
 - Falsifier: untrusted-context warning cannot be tied to a recent slice where it
   prevented hostile or external text from being treated as trusted instruction.
+
+## Outcome V301-00 Untrusted Context Warning Boundary Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v301-untrusted-context-warning.json`;
+- attached `helped` feedback to
+  `pattern:untrusted-context-warning-boundary`;
+- confirmed `--usefulness-outcome helped` returns 11 cards;
+- confirmed `--usefulness-outcome none` returns 0 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v301-untrusted-context-warning-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: security/trust boundary doc, Codex adapter renderer/tests, Codex
+  brief hardening report, and V286 retained pattern coverage.
+- Mechanism: selected context can contain hostile or external text; selection
+  is not trust, so the Codex brief must label untrusted context before use.
+- KRN implication: Codex-facing briefs should keep deterministic untrusted
+  context warnings before broader target alpha or source ingestion.
+- Decision: open V302 Pattern Brain Usefulness Coverage Closure Gate.
+- Does not prove: prompt-injection resistance, safe Codex execution, source
+  truth, or product readiness.
+- Consumer: V302 pattern brain usefulness coverage closure.
+- Falsifier: helped/none readback cannot prove all current retained patterns
+  have usefulness feedback.
 
 ## Condensation Rules
 

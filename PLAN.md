@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V301 Untrusted Context Warning Boundary Usefulness Feedback
-current task: V301-00 Untrusted Context Warning Boundary Usefulness Feedback
+active stream: V302 Pattern Brain Usefulness Coverage Closure Gate
+current task: V302-00 Pattern Brain Usefulness Coverage Closure Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -50,44 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V301 Untrusted Context Warning Boundary Usefulness Feedback
+### V302 Pattern Brain Usefulness Coverage Closure Gate
 
 Goal:
 
-Add explicit usefulness feedback for the untrusted-context warning boundary if
-recent evidence shows it prevented hostile/external target text from being
-treated as trusted instructions.
+Verify current retained pattern usefulness coverage is complete, summarize what
+the Pattern Brain can and cannot do now, and choose the next product-building
+surface without adding new patterns by default.
 
 Current finding:
 
 ```txt
-V300 marked the target-repo write-authority boundary as helped and reduced
-no-feedback cards from 2 to 1. The remaining no-feedback pattern is the
-untrusted-context warning boundary, which gates external target/source text
-before broader target alpha.
+V301 marked the untrusted-context warning boundary as helped and reduced
+no-feedback cards from 1 to 0. The current retained pattern set now has
+usefulness feedback coverage and needs a closure/readiness gate.
 ```
 
 Current action:
 
 ```txt
-Execute V301-00: inspect recent security/target/source evidence and add
-usefulness feedback for `pattern:untrusted-context-warning-boundary` only if it
-can be tied to a real helped/neutral/noise/stale outcome. Do not add a security
-scanner, prompt-injection subsystem, crawler, API/MCP/dashboard, or target
-writes.
+Execute V302-00: verify `helped` and `none` readbacks, produce a compact
+coverage closure report, and select the next bounded product-building surface.
+Do not add source intake, UI/API/MCP/dashboard, semantic ranking, or Memory Core
+mutation in this gate.
 ```
 
 Primary consumer:
 
 ```txt
-untrusted-context warning usefulness gate.
+pattern brain usefulness coverage closure gate.
 ```
 
 Falsifier:
 
 ```txt
-Untrusted-context warning usefulness cannot be supported by evidence, or
-feedback is added without proof boundaries and does-not-prove.
+Coverage closure cannot prove all retained patterns have usefulness feedback, or
+the next product-building surface is selected without evidence.
 ```
 
 ## Pattern Gate

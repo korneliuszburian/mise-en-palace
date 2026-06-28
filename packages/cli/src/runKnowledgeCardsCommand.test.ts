@@ -470,7 +470,8 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
-      "pattern:ts-boundary-unknown-first-result-state"
+      "pattern:ts-boundary-unknown-first-result-state",
+      "pattern:untrusted-context-warning-boundary"
     ].sort());
     expect(cardIds(noisePreview)).toEqual([]);
   });
@@ -488,9 +489,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview).sort()).toEqual([
-      "pattern:untrusted-context-warning-boundary"
-    ].sort());
+    expect(cardIds(preview)).toEqual([]);
   });
 
   it("combines missing usefulness feedback and text filters", async () => {
@@ -507,7 +506,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual(["pattern:untrusted-context-warning-boundary"]);
+    expect(cardIds(preview)).toEqual([]);
   });
 
   it("guards deterministic catalog search results and proof boundaries", async () => {
