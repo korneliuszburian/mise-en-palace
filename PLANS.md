@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V246 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V247 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -88,10 +88,10 @@ current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
-repair plus observe-reflect sequencing guard:
+repair plus observe-reflect sequencing guard and skill owner-file seed repair:
 complete
-active stream: V247 Skill Owner-File Seed Repair
-current task: V247-00 Skill Owner-File Seed Repair
+active stream: V248 Activation Surface Re-Gate After Seed Repairs
+current task: V248-00 Activation Surface Re-Gate After Seed Repairs
 ```
 
 Evidence already recorded in repo:
@@ -107,7 +107,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V247-00 Skill Owner-File Seed Repair.
+V248-00 Activation Surface Re-Gate After Seed Repairs.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19842,7 +19842,7 @@ New task:
 
 ID: V247-00
 Name: Skill Owner-File Seed Repair
-Status: active
+Status: complete
 Goal: repair the smallest read-model/source seed path so skill-directed tasks
 can surface their real skill owner files without activation scoring changes.
 Product rationale: KRN skills are now durable execution organs. Planning should
@@ -19908,6 +19908,120 @@ Risk: overfitting one skill instead of a general repo-local skill seed pattern.
 Rollback: revert the focused seed repair and keep V246 report as evidence if
 the repair creates noisy context.
 
+V247 outcome:
+- V247-00 complete: repo-local skill seeds were added to the KRN target read
+  model and guarded with focused CLI/harness tests.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v247-skill-owner-file-seeds/REPORT.md`.
+
+V247 evidence:
+- Root project refresh:
+  `krn init --connect --repo /home/krn/coding/krn/active/mise-en-palace --persist`.
+- Refreshed ProjectKernel:
+  `f7001365-cb86-4450-ba6e-02a443fbad42`.
+- DB-backed proof plan:
+  `225f5add-6636-4caf-af61-424ad1c3829d`.
+- Task contract:
+  `8ac6e0f2-6f67-456b-a897-a656dbdc60e6`.
+- Context assembly:
+  `e249fb73-c9c2-4ed0-9209-f602e4260a44`.
+- Proof plan selected:
+  `.agents/skills/evidence-review-loop/SKILL.md`,
+  `packages/harness/src/skillInvariants.test.ts`, and `.agents/skills`.
+- Evidence bundle:
+  `f2ca542a-7406-461a-93e2-f473243758c9`.
+- Review assessment:
+  `46d9d92a-a228-4e04-8bed-9be6cd208c8a`.
+- Feedback delta:
+  `40531532-f526-4ff7-ba4c-717392e25661`.
+- Observation group:
+  `04df6f28-e133-4f68-b560-a82a21da0cd0`.
+- Reflection record:
+  `0d72acc3-644d-41dc-ad7e-5695fa40acc2`.
+- V247 observe/reflect was run sequentially; reflect selected 5 observations and
+  is not sequencing-weak.
+- `pnpm --filter @krn/cli test -- runInitCommand runCli`: passed.
+- `pnpm --filter @krn/harness test -- ownerFileRecall`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed.
+- `git diff --check`: passed.
+
+V247 source-to-decision:
+- Source: V246 DB-backed plan output and V246 report.
+- Mechanism: activation can surface exact files when the target read model names
+  them; V246 missed skill owner files because repo-local skill paths were absent
+  from source seeds.
+- KRN implication: repo-local skills should be explicit source seeds because
+  they are durable execution organs.
+- Decision: add `.agents/skills`, `.agents/skills/evidence-review-loop/SKILL.md`,
+  and `packages/harness/src/skillInvariants.test.ts` as seed candidates.
+- Does not prove: activation scoring is solved or every skill should always fit
+  context.
+- Consumer: `runInitCommand` source seed detection, `ownerFileRecall` target
+  candidates, DB-backed plan readback.
+- Falsifier: future skill-directed tasks still cannot surface skill doc and
+  skill invariant owner files from the read model.
+
+New task:
+- V248-00 Activation Surface Re-Gate After Seed Repairs.
+
+ID: V248-00
+Name: Activation Surface Re-Gate After Seed Repairs
+Status: active
+Goal: review activation evidence after V245 and V247 read-model seed repairs
+before adding more seeds or changing scoring.
+Product rationale: KRN should not keep adding seed classes reactively. After two
+successful read-model repairs, choose the next activation surface from evidence.
+Architectural rationale: read-model input quality improved for source-decision
+and skill-directed tasks. The next decision should distinguish remaining input
+gaps from ranking/scoring gaps.
+Evidence source:
+- V245 report and DB-backed plan proof;
+- V246 report and activation miss;
+- V247 report and DB-backed plan proof;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Inputs required:
+- current-state preflight;
+- review V245/V246/V247 activation inclusions/exclusions;
+- compare consumers/falsifiers;
+- no source changes unless the re-gate identifies one bounded repair.
+Files likely touched:
+- V248 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`;
+- maybe one focused test/guard only if the re-gate finds a clear missing guard.
+Allowed writes:
+- bounded re-gate report;
+- active task selection;
+- one focused consumer update only if evidence demands it.
+Forbidden writes:
+- activation scoring rewrite without repeated post-seed evidence;
+- broad retrieval rewrite;
+- source crawler;
+- broad research ingestion;
+- dashboard/API/MCP/worker daemon;
+- broad eval platform.
+Output requirements:
+- compare V245 and V247 before/after activation evidence;
+- decide whether remaining gap is no action, another seed class, owner-file
+  budget priority, or activation behavior guard;
+- produce exactly one next bounded task or explicit defer.
+Definition of Done:
+- evidence comparison exists;
+- next active task selected by evidence or all candidates deferred;
+- verification appropriate to touched files passes;
+- commit is pushed and CI checked when files change.
+Verification commands:
+- `git diff --check`;
+- targeted tests only if source/tests are touched.
+Acceptance criteria:
+- no more seed repair is opened without evidence;
+- no scoring work is opened unless post-seed misses prove scoring/ranking is
+  the bottleneck.
+Risk: overfitting recent tasks and continuing activation work past its evidence.
+Rollback: revert report/plan update if it selects a next task without consumer
+or falsifier.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19915,10 +20029,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V247 Skill Owner-File Seed Repair.
+- V248 Activation Surface Re-Gate After Seed Repairs.
 
 Next active task:
-- V247-00 Skill Owner-File Seed Repair.
+- V248-00 Activation Surface Re-Gate After Seed Repairs.
 
 ## 21. Final Response Format For Codex Runs
 

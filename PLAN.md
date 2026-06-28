@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V247 Skill Owner-File Seed Repair
-current task: V247-00 Skill Owner-File Seed Repair
+active stream: V248 Activation Surface Re-Gate After Seed Repairs
+current task: V248-00 Activation Surface Re-Gate After Seed Repairs
 ```
 
 ## Compact Completed Checkpoints
@@ -41,49 +41,47 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            readback plus external TypeScript best-pattern intake,
            finite-state exhaustiveness application, Codex ExecPlan source
            decision guard, best-pattern surface re-gate, and source-decision
-           owner-file seed repair plus observe-reflect sequencing guard
-           complete.
+           owner-file seed repair plus observe-reflect sequencing guard and
+           skill owner-file seed repair complete.
 ```
 
 ## Active Stream
 
-### V247 Skill Owner-File Seed Repair
+### V248 Activation Surface Re-Gate After Seed Repairs
 
 Goal:
 
-Repair the smallest read-model/source seed path so skill-directed work can
-surface its real skill owner files without activation scoring changes.
+Review activation evidence after V245 and V247 read-model seed repairs before
+adding more seeds or changing scoring.
 
 Current finding:
 
 ```txt
-V246 needed .agents/skills/evidence-review-loop/SKILL.md and
-packages/harness/src/skillInvariants.test.ts, but DB-backed planning selected
-broad activation/readback files and source-map invariants instead. Skill routing
-and manual inspection found the actual owner files.
+V245 and V247 repaired repeated source-decision and skill-directed read-model
+seed gaps. Both proof runs can now surface concrete owner files. The next
+decision should be made from evidence, not by automatically adding more seeds or
+rewriting activation scoring.
 ```
 
 Current action:
 
 ```txt
-Execute V247-00: inspect init/source-seed detection and owner-file recall for
-repo-local skill paths, then add the smallest seed/guard that makes skill
-owner files available to planning.
+Execute V248-00: compare recent activation/read-model evidence and choose the
+next bounded surface: stop seed repair, add one more specific seed class, or
+open a focused activation behavior guard.
 ```
 
 Primary consumer:
 
 ```txt
-target read model / source seed detection, owner-file recall behavior, and
-plan readback evidence for skill-directed tasks.
+PLAN/PLANS active stream selection and any future activation/read-model repair.
 ```
 
 Falsifier:
 
 ```txt
-After V247, a skill-directed task still cannot surface the relevant
-.agents/skills/<skill>/SKILL.md file and skill invariant owner file from the
-read model.
+V248 selects another activation/read-model task without comparing V245/V247
+proofs, misses, consumers, and falsifiers.
 ```
 
 ## Pattern Gate

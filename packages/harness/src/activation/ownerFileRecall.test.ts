@@ -190,6 +190,64 @@ describe("owner-file recall", () => {
     );
   });
 
+  it("surfaces repo-local skill owner seeds as concrete target candidates", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/mise-en-palace"],
+      sourceSeeds: [
+        {
+          path: ".agents/skills",
+          kind: "skill_root",
+          reason: "seed repo-local KRN skills and execution workflow organs"
+        },
+        {
+          path: ".agents/skills/evidence-review-loop/SKILL.md",
+          kind: "skill_doc",
+          reason: "seed evidence-review-loop skill owner for proof and sequencing work"
+        },
+        {
+          path: "packages/harness/src/skillInvariants.test.ts",
+          kind: "skill_invariant_test",
+          reason: "seed skill invariant tests for repo-local skill workflow guards"
+        }
+      ],
+      ownerFiles: [],
+      trustExclusions: []
+    };
+    const candidates = buildOwnerFileRecallCandidates(
+      taskContract(
+        "Update evidence-review-loop skill and skill invariant for observe reflect sequencing guard"
+      ),
+      { targetReadModel }
+    );
+
+    expect(candidates.map((candidate) => candidate.reason)).toEqual(
+      expect.arrayContaining([
+        "Target source seed: .agents/skills/evidence-review-loop/SKILL.md",
+        "Target source seed: packages/harness/src/skillInvariants.test.ts"
+      ])
+    );
+    expect(candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            source: "target_project_read_model",
+            targetReadModelKind: "source_seed",
+            targetPath: ".agents/skills/evidence-review-loop/SKILL.md",
+            seedKind: "skill_doc"
+          })
+        }),
+        expect.objectContaining({
+          metadata: expect.objectContaining({
+            targetPath: "packages/harness/src/skillInvariants.test.ts",
+            seedKind: "skill_invariant_test"
+          })
+        })
+      ])
+    );
+  });
+
   it("surfaces explicit target owner files below named roots when the read model provides them", () => {
     const targetReadModel: TargetActivationReadModel = {
       projectKernelId: "kernel-1",

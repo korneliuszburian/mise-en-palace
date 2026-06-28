@@ -57,6 +57,8 @@ export interface SourceSeedProposal {
     | "typescript_config"
     | "project_readme"
     | "agent_instructions"
+    | "skill_root"
+    | "skill_doc"
     | "docs_root"
     | "source_map"
     | "runbook"
@@ -66,7 +68,8 @@ export interface SourceSeedProposal {
     | "mcp_workspace"
     | "script_root"
     | "source_root"
-    | "test_root";
+    | "test_root"
+    | "skill_invariant_test";
   reason: string;
 }
 
@@ -240,6 +243,16 @@ const sourceSeedCandidates = [
     reason: "capture target repo adjacent agent instructions when present"
   },
   {
+    path: ".agents/skills",
+    kind: "skill_root",
+    reason: "seed repo-local KRN skills and execution workflow organs"
+  },
+  {
+    path: ".agents/skills/evidence-review-loop/SKILL.md",
+    kind: "skill_doc",
+    reason: "seed evidence-review-loop skill owner for proof and sequencing work"
+  },
+  {
     path: "docs",
     kind: "docs_root",
     reason: "seed target documentation and runbook context"
@@ -288,6 +301,11 @@ const sourceSeedCandidates = [
     path: "packages/harness/src/sourceMapInvariants.test.ts",
     kind: "invariant_test",
     reason: "seed source-map invariant and Codex/source decision guard tests"
+  },
+  {
+    path: "packages/harness/src/skillInvariants.test.ts",
+    kind: "skill_invariant_test",
+    reason: "seed skill invariant tests for repo-local skill workflow guards"
   }
 ] as const satisfies readonly SourceSeedProposal[];
 

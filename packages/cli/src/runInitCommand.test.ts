@@ -30,8 +30,20 @@ describe("runInitCommand source seed detection", () => {
           kind: "standard_doc"
         }),
         expect.objectContaining({
+          path: ".agents/skills",
+          kind: "skill_root"
+        }),
+        expect.objectContaining({
+          path: ".agents/skills/evidence-review-loop/SKILL.md",
+          kind: "skill_doc"
+        }),
+        expect.objectContaining({
           path: "packages/harness/src/sourceMapInvariants.test.ts",
           kind: "invariant_test"
+        }),
+        expect.objectContaining({
+          path: "packages/harness/src/skillInvariants.test.ts",
+          kind: "skill_invariant_test"
         })
       ])
     );
