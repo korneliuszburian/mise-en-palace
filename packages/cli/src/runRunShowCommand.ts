@@ -33,7 +33,9 @@ import type {
 } from "@krn/harness";
 
 import type {
-  DatabaseRuntimeInput
+  DatabaseRuntimeInput,
+  ProjectResolution,
+  ProjectResolutionKind
 } from "./databaseRuntime.js";
 
 export interface RunShowCommandRuntime {
@@ -78,6 +80,7 @@ export interface RunReadbackResource {
     adapter: string;
     createdAt: string;
     updatedAt: string;
+    projectResolution?: ProjectResolution;
   };
   task: {
     id: string;
@@ -203,6 +206,49 @@ const metadataString = (
   const value = metadata[key];
 
   return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+};
+
+const projectResolutionKinds = new Set<ProjectResolutionKind>([
+  "explicit_project",
+  "connected_repo_path",
+  "workspace_project_slug"
+]);
+
+const projectResolutionFromMetadata = (
+  metadata: Record<string, unknown>
+): ProjectResolution | undefined => {
+  const value = metadata.projectResolution;
+
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value)
+  ) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const kind = metadataString(record, "kind");
+  const reason = metadataString(record, "reason");
+  const doesNotProve = metadataString(record, "doesNotProve");
+
+  if (
+    kind === undefined ||
+    !projectResolutionKinds.has(kind as ProjectResolutionKind) ||
+    reason === undefined ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  const repoPathHint = metadataString(record, "repoPathHint");
+
+  return {
+    kind: kind as ProjectResolutionKind,
+    reason,
+    doesNotProve,
+    ...(repoPathHint === undefined ? {} : { repoPathHint })
+  };
 };
 
 const metadataStringList = (
@@ -555,91 +601,96 @@ const renderFeedbackDeltas = (feedbackDeltas: readonly FeedbackDelta[]): string[
 
 export const buildRunReadbackResource = (
   aggregate: HarnessRunAggregate
-): RunReadbackResource => ({
-  kind: "krn.run.readback.v1",
-  access: "read_only",
-  mutation: "none",
-  run: {
-    id: aggregate.executionRun.id,
-    status: aggregate.executionRun.status,
-    adapter: aggregate.executionRun.adapter,
-    createdAt: aggregate.executionRun.createdAt,
-    updatedAt: aggregate.executionRun.updatedAt
-  },
-  task: {
-    id: aggregate.taskContract.id,
-    title: aggregate.taskContract.title,
-    objective: aggregate.taskContract.objective,
-    status: aggregate.taskContract.status
-  },
-  context: {
-    status: aggregate.contextAssembly?.status ?? "missing",
-    inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
-    exclusions: aggregate.contextAssembly?.exclusions.length ?? 0,
-    ...(aggregate.contextAssembly === undefined
-      ? {}
-      : (() => {
-          const diagnostics = activationRetrievalDiagnosticsFromMetadata(
-            aggregate.contextAssembly.metadata
-          );
+): RunReadbackResource => {
+  const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
 
-          return diagnostics === undefined ? {} : { activationDiagnostics: diagnostics };
-        })())
-  },
-  evidenceBundles: aggregate.evidenceBundles.map((bundle) => {
-    const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
+  return {
+    kind: "krn.run.readback.v1",
+    access: "read_only",
+    mutation: "none",
+    run: {
+      id: aggregate.executionRun.id,
+      status: aggregate.executionRun.status,
+      adapter: aggregate.executionRun.adapter,
+      createdAt: aggregate.executionRun.createdAt,
+      updatedAt: aggregate.executionRun.updatedAt,
+      ...(projectResolution === undefined ? {} : { projectResolution })
+    },
+    task: {
+      id: aggregate.taskContract.id,
+      title: aggregate.taskContract.title,
+      objective: aggregate.taskContract.objective,
+      status: aggregate.taskContract.status
+    },
+    context: {
+      status: aggregate.contextAssembly?.status ?? "missing",
+      inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
+      exclusions: aggregate.contextAssembly?.exclusions.length ?? 0,
+      ...(aggregate.contextAssembly === undefined
+        ? {}
+        : (() => {
+            const diagnostics = activationRetrievalDiagnosticsFromMetadata(
+              aggregate.contextAssembly.metadata
+            );
 
-    return {
-      id: bundle.id,
-      status: bundle.status,
-      diffRisk: bundle.diffRisk,
-      reviewBurden: bundle.reviewBurden,
-      rollbackPath: bundle.rollbackPath,
-      changedFiles: {
-        all: bundle.changedFiles,
-        classification: changedFileClassification(bundle)
-      },
-      commands: bundle.commands.map(commandResource),
-      ...(targetEvidence === undefined ? {} : { targetEvidence })
-    };
-  }),
-  reviewAssessments: aggregate.reviewAssessments.map((assessment) => ({
-    id: assessment.id,
-    status: assessment.status,
-    reviewer: assessment.reviewer
-  })),
-  feedbackDeltas: aggregate.feedbackDeltas.map((feedback) => {
-    const summary = summarizeFeedbackCandidateProposals(feedback);
+            return diagnostics === undefined ? {} : { activationDiagnostics: diagnostics };
+          })())
+    },
+    evidenceBundles: aggregate.evidenceBundles.map((bundle) => {
+      const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
 
-    return {
-      id: feedback.id,
-      status: feedback.status,
-      memoryRecordMutation: summary.memoryRecordMutation,
-      candidateCounts: {
-        memory: summary.counts.memoryCandidates,
-        source: summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates,
-        sourceClaim: summary.counts.sourceClaimCandidates,
-        sourceDecision: summary.counts.sourceDecisionCandidates,
-        antiMemory: summary.counts.antiMemoryCandidates,
-        eval: summary.counts.evalCandidates,
-        observation: summary.counts.observationCandidates
-      },
-      candidates: runReadbackCandidateResources(feedback),
-      sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback)
-    };
-  }),
-  proof: {
-    proves: [
-      "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
-      "this readback surface exposes no write action"
-    ],
-    doesNotProve: [
-      "commands were executed by this readback command",
-      "memory quality, source truth, review correctness, or product readiness",
-      "Memory Core mutation"
-    ]
-  }
-});
+      return {
+        id: bundle.id,
+        status: bundle.status,
+        diffRisk: bundle.diffRisk,
+        reviewBurden: bundle.reviewBurden,
+        rollbackPath: bundle.rollbackPath,
+        changedFiles: {
+          all: bundle.changedFiles,
+          classification: changedFileClassification(bundle)
+        },
+        commands: bundle.commands.map(commandResource),
+        ...(targetEvidence === undefined ? {} : { targetEvidence })
+      };
+    }),
+    reviewAssessments: aggregate.reviewAssessments.map((assessment) => ({
+      id: assessment.id,
+      status: assessment.status,
+      reviewer: assessment.reviewer
+    })),
+    feedbackDeltas: aggregate.feedbackDeltas.map((feedback) => {
+      const summary = summarizeFeedbackCandidateProposals(feedback);
+
+      return {
+        id: feedback.id,
+        status: feedback.status,
+        memoryRecordMutation: summary.memoryRecordMutation,
+        candidateCounts: {
+          memory: summary.counts.memoryCandidates,
+          source: summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates,
+          sourceClaim: summary.counts.sourceClaimCandidates,
+          sourceDecision: summary.counts.sourceDecisionCandidates,
+          antiMemory: summary.counts.antiMemoryCandidates,
+          eval: summary.counts.evalCandidates,
+          observation: summary.counts.observationCandidates
+        },
+        candidates: runReadbackCandidateResources(feedback),
+        sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback)
+      };
+    }),
+    proof: {
+      proves: [
+        "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+        "this readback surface exposes no write action"
+      ],
+      doesNotProve: [
+        "commands were executed by this readback command",
+        "memory quality, source truth, review correctness, or product readiness",
+        "Memory Core mutation"
+      ]
+    }
+  };
+};
 
 const renderAggregate = (
   aggregate: HarnessRunAggregate
@@ -648,6 +699,7 @@ const renderAggregate = (
     aggregate.contextAssembly === undefined
       ? undefined
       : activationRetrievalDiagnosticsFromMetadata(aggregate.contextAssembly.metadata);
+  const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
 
   return [
     "KRN Run Readback",
@@ -661,6 +713,16 @@ const renderAggregate = (
     `- objective: ${aggregate.taskContract.objective}`,
     `- run status: ${aggregate.executionRun.status}`,
     `- adapter: ${aggregate.executionRun.adapter}`,
+    ...(projectResolution === undefined
+      ? []
+      : [
+          `- project resolution: ${projectResolution.kind}`,
+          `- project resolution reason: ${projectResolution.reason}`,
+          ...(projectResolution.repoPathHint === undefined
+            ? []
+            : [`- project resolution repoPathHint: ${projectResolution.repoPathHint}`]),
+          `- project resolution does not prove: ${projectResolution.doesNotProve}`
+        ]),
     "",
     "Context:",
     `- status: ${aggregate.contextAssembly?.status ?? "missing"}`,

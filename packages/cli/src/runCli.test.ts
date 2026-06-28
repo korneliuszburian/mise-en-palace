@@ -606,6 +606,7 @@ describe("runCli", () => {
   it("passes the current repo root hint for default persisted planning", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     let observedRepoPathHint: string | undefined;
+    let executionRunMetadata: Record<string, unknown> | undefined;
 
     const result = await runCli(
       ["plan", "--task", "use connected current repo project", "--persist"],
@@ -622,6 +623,8 @@ describe("runCli", () => {
           const harnessRunRepository = {
             ...dependencies.harnessRunRepository,
             async createExecutionRun(runInput: CreateExecutionRunInput) {
+              executionRunMetadata = runInput.metadata ?? {};
+
               return {
                 id: "execution-run-1",
                 harnessPlanId: runInput.harnessPlanId,
@@ -640,6 +643,13 @@ describe("runCli", () => {
           return {
             workspaceId: "workspace-connected",
             projectId: "project-connected",
+            projectResolution: {
+              kind: "connected_repo_path",
+              reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+              doesNotProve:
+                "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
+              repoPathHint: repoRoot
+            },
             projectKernel: {
               id: "project-kernel-connected",
               projectId: "project-connected",
@@ -691,9 +701,23 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(observedRepoPathHint).toBe(repoRoot);
     expect(result.stdout).toContain("Project ID: project-connected");
+    expect(result.stdout).toContain("Project resolution: connected_repo_path");
+    expect(result.stdout).toContain(
+      "Project resolution reason: Resolved from repo_installations.local_path_hint matching the current repo root."
+    );
+    expect(result.stdout).toContain(`Project resolution repoPathHint: ${repoRoot}`);
+    expect(result.stdout).toContain(
+      "Project resolution does not prove: Connected repo path resolution does not prove owner files are complete, current, or sufficient."
+    );
     expect(result.stdout).toContain("ProjectKernel: project-kernel-connected");
     expect(result.stdout).toContain("Repo installations: repo-installation-connected");
     expect(result.stdout).toContain("Target owner files: packages/cli/src/runPlanCommand.ts");
+    expect(executionRunMetadata).toMatchObject({
+      projectResolution: {
+        kind: "connected_repo_path",
+        repoPathHint: repoRoot
+      }
+    });
   });
 
   it("uses explicit project identity for persisted planning", async () => {

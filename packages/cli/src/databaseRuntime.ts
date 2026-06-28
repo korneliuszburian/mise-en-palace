@@ -44,9 +44,22 @@ export interface DatabaseRuntimeInput {
   createId(prefix: string): string;
 }
 
+export type ProjectResolutionKind =
+  | "explicit_project"
+  | "connected_repo_path"
+  | "workspace_project_slug";
+
+export interface ProjectResolution {
+  kind: ProjectResolutionKind;
+  reason: string;
+  doesNotProve: string;
+  repoPathHint?: string;
+}
+
 export interface DatabaseRuntime {
   workspaceId: string;
   projectId: string;
+  projectResolution?: ProjectResolution;
   projectKernel?: ProjectKernelRecord;
   repoInstallations?: RepoInstallationRecord[];
   compilerDependencies: HarnessCompilerDependencies;
@@ -214,6 +227,29 @@ export const createDatabaseRuntime = async (
     throw new Error("Unable to resolve project for database runtime");
   }
 
+  const projectResolution: ProjectResolution =
+    project !== undefined
+      ? {
+          kind: "explicit_project",
+          reason: "Resolved from explicit --project.",
+          doesNotProve:
+            "Explicit project resolution does not prove the project read model is complete, current, or useful."
+        }
+      : connectedProject !== undefined
+        ? {
+            kind: "connected_repo_path",
+            reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+            doesNotProve:
+              "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
+            ...(repoPathHint === undefined ? {} : { repoPathHint })
+          }
+        : {
+            kind: "workspace_project_slug",
+            reason: "Resolved from workspace/project slug fallback.",
+            doesNotProve:
+              "Slug fallback resolution does not prove this is the intended connected repo project."
+          };
+
   const shouldLoadProjectScopedMetadata =
     explicitProjectId !== undefined && explicitProjectId.length > 0 ||
     connectedProject !== undefined;
@@ -235,6 +271,7 @@ export const createDatabaseRuntime = async (
   return {
     workspaceId: defaultProject.workspaceId,
     projectId: defaultProject.id,
+    projectResolution,
     ...(projectKernel === undefined ? {} : { projectKernel }),
     ...(repoInstallations === undefined ? {} : { repoInstallations }),
     compilerDependencies: {

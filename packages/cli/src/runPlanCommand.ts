@@ -31,7 +31,8 @@ import {
 } from "./databaseRuntime.js";
 import type {
   DatabaseRuntime,
-  DatabaseRuntimeInput
+  DatabaseRuntimeInput,
+  ProjectResolution
 } from "./databaseRuntime.js";
 import {
   createNoStoreCompilerDependencies
@@ -81,6 +82,7 @@ interface CompilerRuntimeResolution {
   workspaceId: string;
   projectId: string;
   persistenceLabel: string;
+  projectResolution?: ProjectResolution;
   compilerDependencies: HarnessCompilerDependencies;
   harnessRunRepository?: Pick<HarnessRunRepository, "createExecutionRun">;
   projectScopedMetadata?: ProjectScopedPlanMetadata;
@@ -393,6 +395,9 @@ const resolveCompilerRuntime = async (
     workspaceId: databaseRuntime.workspaceId,
     projectId: databaseRuntime.projectId,
     persistenceLabel: "enabled (Postgres, explicit --persist)",
+    ...(databaseRuntime.projectResolution === undefined
+      ? {}
+      : { projectResolution: databaseRuntime.projectResolution }),
     compilerDependencies: databaseRuntime.compilerDependencies,
     harnessRunRepository: databaseRuntime.harnessRunRepository,
     ...(databaseRuntime.projectKernel === undefined && databaseRuntime.repoInstallations === undefined
@@ -415,6 +420,7 @@ const formatPlanSummary = (
   task: string,
   projectId: string,
   persistenceLabel: string,
+  projectResolution: ProjectResolution | undefined,
   contextAssembly: ContextAssembly,
   evidenceCommands: readonly string[],
   nextAction: string,
@@ -428,6 +434,16 @@ const formatPlanSummary = (
     `Task: ${task}`,
     `Project ID: ${projectId}`,
     `Persistence: ${persistenceLabel}`,
+    ...(projectResolution === undefined
+      ? []
+      : [
+          `Project resolution: ${projectResolution.kind}`,
+          `Project resolution reason: ${projectResolution.reason}`,
+          ...(projectResolution.repoPathHint === undefined
+            ? []
+            : [`Project resolution repoPathHint: ${projectResolution.repoPathHint}`]),
+          `Project resolution does not prove: ${projectResolution.doesNotProve}`
+        ]),
     ...(projectScopedMetadata?.projectKernel === undefined
       ? []
       : [`ProjectKernel: ${projectScopedMetadata.projectKernel.id}`]),
@@ -613,6 +629,9 @@ export const runPlanCommand = async (
                         : { ownerFileRecall: targetOwnerFileRecall })
                     }
                   }),
+              ...(compilerRuntime.projectResolution === undefined
+                ? {}
+                : { projectResolution: compilerRuntime.projectResolution }),
               evidenceContract: result.evidenceContract,
               codexAdapterPlanRef: result.codexAdapterPlanRef
             }
@@ -633,6 +652,7 @@ export const runPlanCommand = async (
         task,
         compilerRuntime.projectId,
         compilerRuntime.persistenceLabel,
+        compilerRuntime.projectResolution,
         result.contextAssembly,
         evidenceCommands,
         result.nextAction,

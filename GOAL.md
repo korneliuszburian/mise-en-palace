@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V240 Default-Path Source-To-Decision Dogfood
+V241 External Best-Pattern Intake Trial
 ```
 
 Current product loop:
@@ -46,7 +46,8 @@ PLANS.md.
 V236..V239: activation abstention re-gate, diagnostics/readback,
 current-state activation seed, and default connected-project resolution
 complete.
-current task: V240-00 Default-Path Source-To-Decision Dogfood.
+V240: default-path project resolution readback complete.
+current task: V241-00 External Best-Pattern Intake Trial.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

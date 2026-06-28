@@ -94,7 +94,15 @@ const aggregate: HarnessRunAggregate = {
     harnessPlanId: "plan-1",
     adapter: "cli",
     status: "succeeded",
-    metadata: {},
+    metadata: {
+      projectResolution: {
+        kind: "connected_repo_path",
+        reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+        doesNotProve:
+          "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
+        repoPathHint: "/repo/root"
+      }
+    },
     createdAt: now,
     updatedAt: now
   },
@@ -263,6 +271,14 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Run ID: run-1");
+    expect(result.stdout).toContain("project resolution: connected_repo_path");
+    expect(result.stdout).toContain(
+      "project resolution reason: Resolved from repo_installations.local_path_hint matching the current repo root."
+    );
+    expect(result.stdout).toContain("project resolution repoPathHint: /repo/root");
+    expect(result.stdout).toContain(
+      "project resolution does not prove: Connected repo path resolution does not prove owner files are complete, current, or sufficient."
+    );
     expect(result.stdout).toContain("Activation diagnostics:");
     expect(result.stdout).toContain("- inputStatus: empty_activation_store");
     expect(result.stdout).toContain(
@@ -342,7 +358,14 @@ describe("runRunShowCommand", () => {
       access: "read_only",
       mutation: "none",
       run: {
-        id: "run-1"
+        id: "run-1",
+        projectResolution: {
+          kind: "connected_repo_path",
+          reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+          doesNotProve:
+            "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
+          repoPathHint: "/repo/root"
+        }
       },
       context: {
         activationDiagnostics: {

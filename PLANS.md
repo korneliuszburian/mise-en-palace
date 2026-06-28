@@ -77,17 +77,18 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V239 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V240 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
 slices plus TS best-pattern application, sibling package path normalization,
 activation abstention re-gate, activation diagnostics/readback, and
-current-state activation seed plus default connected-project resolution:
+current-state activation seed plus default connected-project resolution and
+project resolution readback:
 complete
-active stream: V240 Default-Path Source-To-Decision Dogfood
-current task: V240-00 Default-Path Source-To-Decision Dogfood
+active stream: V241 External Best-Pattern Intake Trial
+current task: V241-00 External Best-Pattern Intake Trial
 ```
 
 Evidence already recorded in repo:
@@ -103,7 +104,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V240-00 Default-Path Source-To-Decision Dogfood.
+V241-00 External Best-Pattern Intake Trial.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18959,7 +18960,7 @@ New task:
 
 ID: V240-00
 Name: Default-Path Source-To-Decision Dogfood
-Status: active
+Status: complete
 Goal: use default `krn plan --persist` without explicit `--project` for the next
 KRN-on-KRN repair, and prove the connected read model plus pattern gate can
 guide source work without manual UUID routing.
@@ -19041,6 +19042,125 @@ Next-task synthesis rule: continue from V240 evidence; do not create a broad
 research layer until repeated bounded pattern-intake trials prove the missing
 surface.
 
+V240 outcome:
+- V240-00 complete: default-path planning now renders project resolution source
+  in `krn plan`, persists it to ExecutionRun metadata, and `krn run show`
+  renders it in text and JSON readback.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v240-project-resolution-readback/REPORT.md`.
+
+V240 evidence:
+- Default V240 plan used no explicit `--project` and rendered
+  `Project resolution: connected_repo_path`.
+- Persisted V240 run:
+  `8f6089c8-11ac-4449-8b8c-3628c54186fd`.
+- `krn run show --run-id 8f6089c8-11ac-4449-8b8c-3628c54186fd` rendered
+  `project resolution: connected_repo_path` plus reason, repoPathHint, and
+  does-not-prove text.
+- `pnpm --filter @krn/cli test -- runCli runRunShowCommand`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed with 14/14 migrations and pgvector available.
+- `git diff --check`: passed.
+
+V240 source-to-decision:
+- Source: V239 default connected-project resolution proof.
+- Mechanism: automatic project resolution is useful only if the operator can
+  inspect why the project was selected in plan and readback.
+- KRN implication: project resolution source is an operator-facing proof
+  boundary and should be persisted/readable, not inferred from UUIDs.
+- Decision: add typed `ProjectResolution` metadata and render it in plan/run
+  readback.
+- Does not prove: owner-file coverage, activation ranking quality, memory/source
+  usefulness, or product readiness.
+- Consumer: CLI/readback behavior and future default-path dogfood reviews.
+- Falsifier: persisted default plans cannot explain why the selected project was
+  chosen.
+
+New task:
+- V241-00 External Best-Pattern Intake Trial.
+
+ID: V241-00
+Name: External Best-Pattern Intake Trial
+Status: active
+Goal: run one bounded intake trial for public/allowed best-practice material and
+turn it into an adopt/reject/lab-test decision with a concrete KRN consumer and
+falsifier.
+Product rationale: KRN should continuously improve from best patterns, courses,
+papers, official docs, practitioner writing, and local evidence without turning
+them into decorative context or a broad research backlog.
+Architectural rationale: source-to-decision is the ingestion path; durable
+consumers are standards, skills, ADRs, eval/golden candidates, memory/source
+candidates, CLI/readback behavior, or bounded repairs.
+Evidence source:
+- `docs/runbooks/pattern-intake.md`;
+- `.agents/skills/source-to-decision/SKILL.md`;
+- current public/official docs or public course pages selected during the
+  slice;
+- repo-local standards/tests for any implementation.
+Inputs required:
+- default `krn plan --persist` with connected project resolution;
+- one small allowed source set;
+- legal/content boundary check.
+Files likely touched:
+- one standards doc, skill, eval/golden candidate, or small source/test repair;
+- dogfood report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- bounded source-to-decision entry;
+- one small consumer update or repair;
+- focused tests if source is touched;
+- plan/report condensation.
+Forbidden writes:
+- copying paid/proprietary course material;
+- transcripts/source dumps;
+- source crawler;
+- Research Foundry;
+- broad reading backlog;
+- dashboard/API/MCP/worker daemon;
+- broad activation/reflection rewrite;
+- decorative links without consumer/falsifier.
+Output requirements:
+- every retained source has mechanism, KRN implication, decision/rejection,
+  consumer, falsifier, and does-not-prove;
+- if no source has a concrete consumer, reject/defer and stop the slice with a
+  report;
+- if one source is adopted/lab-tested, implement only the smallest consumer
+  update and verify it.
+Definition of Done:
+- default KRN plan path used and recorded;
+- at least one external/public source is adopted/rejected/lab-tested through the
+  runbook;
+- no retained decorative source;
+- verification appropriate to touched files passes;
+- evidence capture/report exists;
+- commit is pushed and CI checked when source/docs change.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- source-specific tests if source is touched;
+- `pnpm run typecheck` when TypeScript/source is touched;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test` when source/test behavior is
+  touched;
+- `git diff --check`;
+- `krn evidence capture --persist`;
+- `krn observe --persist`;
+- `krn reflect --persist`.
+Acceptance criteria:
+- KRN gains one concrete pattern decision or explicit rejection;
+- the source decision has a consumer and falsifier;
+- source usefulness is measured or explicitly bounded as not measured;
+- no broad research layer is created.
+Risk: using "best practices" as vague authority instead of a falsifiable local
+decision.
+Rollback: revert the consumer update/repair and keep the rejection/deferral
+report if the source is decorative or mismatched.
+Condensation expectation: repeated successful V241-style trials may justify a
+source-to-decision read model or skill improvement; one trial does not justify a
+source crawler.
+Next-task synthesis rule: continue from V241 evidence; only create durable
+surfaces after the source materially changes a local decision.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19048,10 +19168,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V240 Default-Path Source-To-Decision Dogfood.
+- V241 External Best-Pattern Intake Trial.
 
 Next active task:
-- V240-00 Default-Path Source-To-Decision Dogfood.
+- V241-00 External Best-Pattern Intake Trial.
 
 ## 21. Final Response Format For Codex Runs
 
