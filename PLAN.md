@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V290 Brain Knowledge Usefulness Outcome Filter
-current task: V290-00 Brain Knowledge Usefulness Outcome Filter
+active stream: V291 Brain Knowledge Usefulness Outcome Filter Dogfood
+current task: V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,43 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V290 Brain Knowledge Usefulness Outcome Filter
+### V291 Brain Knowledge Usefulness Outcome Filter Dogfood
 
 Goal:
 
-Make retained pattern usefulness outcomes filterable in the existing read-only
-brain knowledge preview.
+Measure whether the usefulness outcome filter improves operator selection and
+reduces rereads.
 
 Current finding:
 
 ```txt
-V289 made latest usefulness feedback visible beside retained pattern cards
-without DB schema, API, MCP, dashboard, or Memory Core mutation. The next
-bottleneck is filtering: operators can see feedback but cannot directly filter
-cards by latest usefulness outcome.
+V290 made latest pattern usefulness outcomes filterable through the existing
+read-only CLI/static preview. The next bottleneck is usefulness: prove whether
+filtering helped patterns actually reduces rereads or improves operator
+selection before adding more UI/API/MCP/dashboard work.
 ```
 
 Current action:
 
 ```txt
-Execute V290-00: add the smallest read-only `usefulness outcome` filter to the
-brain knowledge CLI/static preview so operators can isolate helped, neutral,
-noise, stale, and unknown pattern cards. Do not add DB schema, API, MCP,
-dashboard, ranking, semantic search, or new external sources.
+Execute V291-00: use `krn knowledge cards --usefulness-outcome helped` and the
+static preview usefulness filter to answer a bounded operator question: which
+retained Codex workflow patterns helped most recently? Record helped/noise,
+review burden delta, and next action. Do not add new implementation unless the
+dogfood exposes a specific bounded repair.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge pattern usefulness search loop.
+brain knowledge pattern usefulness UX gate.
 ```
 
 Falsifier:
 
 ```txt
-Retained pattern usefulness feedback is visible but cannot be filtered by
-outcome through the existing read-only CLI/static preview.
+The usefulness outcome filter exists but does not reduce rereads, does not help
+operators identify useful patterns, or creates misleading confidence.
 ```
 
 ## Pattern Gate

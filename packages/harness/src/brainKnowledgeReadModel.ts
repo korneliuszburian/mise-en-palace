@@ -109,6 +109,7 @@ export type BrainKnowledgeSearchFilter = {
   kind?: BrainKnowledgeKind;
   status?: BrainKnowledgeStatus;
   reviewability?: BrainKnowledgeReviewability;
+  usefulnessOutcome?: BrainKnowledgeUsefulnessOutcome;
   text?: string;
 };
 
@@ -434,6 +435,13 @@ export function searchBrainKnowledgeCards(
     }
 
     if (filter.reviewability !== undefined && card.reviewability !== filter.reviewability) {
+      return false;
+    }
+
+    if (
+      filter.usefulnessOutcome !== undefined &&
+      card.usefulnessFeedback?.outcome !== filter.usefulnessOutcome
+    ) {
       return false;
     }
 

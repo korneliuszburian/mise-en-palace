@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V290 Brain Knowledge Usefulness Outcome Filter
-current task: V290-00 Brain Knowledge Usefulness Outcome Filter
-latest pushed commit before V289: f7389b6 docs(review): dogfood external pattern usefulness
-latest CI checked before V289: KRN CI success for f7389b6e219f43d80fc9ab8ca7547f4d9096ba59
+active stream: V291 Brain Knowledge Usefulness Outcome Filter Dogfood
+current task: V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood
+latest pushed commit before V290: a303dce feat(knowledge): render pattern usefulness feedback
+latest CI checked before V290: KRN CI success for a303dce83057147a876f4db7d7b2ab748c461525
 ```
 
 Known current gap:
 
 ```txt
-V290-00 Brain Knowledge Usefulness Outcome Filter is the current gap. V289 made
-latest usefulness feedback visible beside retained pattern cards. The next
-bottleneck is filtering: operators can inspect feedback but cannot directly find
-cards whose latest outcome is helped, neutral, noise, stale, or unknown.
+V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood is the current gap.
+V290 made latest usefulness outcomes filterable through the read-only
+CLI/static preview. The next bottleneck is usefulness: prove whether filtering
+helped patterns reduces rereads or improves operator selection.
 ```
 
 ## 2. Product Thesis
@@ -2537,6 +2537,32 @@ Source-to-decision:
 - Consumer: V290 usefulness outcome filter.
 - Falsifier: usefulness feedback is visible but cannot be filtered by outcome in
   the read-only preview.
+
+## Outcome V290-00 Brain Knowledge Usefulness Outcome Filter
+
+Summary:
+- added `usefulnessOutcome` to `BrainKnowledgeSearchFilter`;
+- added `--usefulness-outcome` CLI parsing with explicit allowed outcomes;
+- rendered a static HTML usefulness filter and `data-usefulness-outcome`;
+- guarded parser rejection, harness filtering, CLI JSON filtering, and DOM smoke
+  behavior;
+- regenerated `.local-lab/brain-knowledge-preview.html` with usefulness facets.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v290-brain-knowledge-usefulness-outcome-filter/REPORT.md`.
+
+Source-to-decision:
+- Source: V289 usefulness feedback readback.
+- Mechanism: visible feedback is less useful if operators cannot isolate cards
+  by latest usefulness outcome.
+- KRN implication: usefulness outcome should be a read-only filter before
+  broader UI/API/MCP/dashboard surfaces.
+- Decision: open V291 Brain Knowledge Usefulness Outcome Filter Dogfood.
+- Does not prove: product readiness, semantic search, ranking quality, full
+  feedback history, or that all retained patterns have feedback.
+- Consumer: V291 usefulness filter dogfood.
+- Falsifier: the usefulness outcome filter exists but does not reduce rereads or
+  improve operator selection in a bounded dogfood.
 
 ## Condensation Rules
 

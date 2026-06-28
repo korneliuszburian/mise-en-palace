@@ -1,7 +1,8 @@
 import type {
   BrainKnowledgeKind,
   BrainKnowledgeReviewability,
-  BrainKnowledgeStatus
+  BrainKnowledgeStatus,
+  BrainKnowledgeUsefulnessOutcome
 } from "@krn/harness";
 import {
   optionValue
@@ -11,7 +12,7 @@ import type {
 } from "./parseArgs.js";
 
 const knowledgeUsage = [
-  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json|--html]",
+  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome>] [--text <query>] [--json|--html]",
   "",
   "Read-only preview commands:",
   "krn knowledge cards --card-file docs-or-fixture-card.json [--text unknown-first]",
@@ -57,6 +58,14 @@ const knowledgeReviewabilities = [
   "unknown"
 ] as const satisfies readonly BrainKnowledgeReviewability[];
 
+const knowledgeUsefulnessOutcomes = [
+  "helped",
+  "neutral",
+  "noise",
+  "stale",
+  "unknown"
+] as const satisfies readonly BrainKnowledgeUsefulnessOutcome[];
+
 const isAllowed = <T extends string>(
   value: string,
   allowed: readonly T[]
@@ -92,6 +101,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
   let kind: BrainKnowledgeKind | undefined;
   let status: BrainKnowledgeStatus | undefined;
   let reviewability: BrainKnowledgeReviewability | undefined;
+  let usefulnessOutcome: BrainKnowledgeUsefulnessOutcome | undefined;
   let text: string | undefined;
   let format: "text" | "json" | "html" = "text";
 
@@ -248,6 +258,34 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
       continue;
     }
 
+    if (arg === "--usefulness-outcome") {
+      const valueResult = optionValue(args, index, "--usefulness-outcome");
+
+      if (valueResult.error !== undefined) {
+        return {
+          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
+        };
+      }
+
+      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
+
+      if (!required.ok) {
+        return {
+          error: required.error
+        };
+      }
+
+      if (!isAllowed(required.value, knowledgeUsefulnessOutcomes)) {
+        return {
+          error: `Unsupported knowledge usefulness outcome: ${required.value}\n${formatKnowledgeUsage()}`
+        };
+      }
+
+      usefulnessOutcome = required.value;
+      index += 1;
+      continue;
+    }
+
     if (arg === "--text") {
       const valueResult = optionValue(args, index, "--text");
 
@@ -306,6 +344,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
         ...(kind === undefined ? {} : { kind }),
         ...(status === undefined ? {} : { status }),
         ...(reviewability === undefined ? {} : { reviewability }),
+        ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
         ...(text === undefined || text.length === 0 ? {} : { text })
       },
       format

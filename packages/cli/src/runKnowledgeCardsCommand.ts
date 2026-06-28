@@ -337,6 +337,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
       ${formatSelect("kindFilter", "Kind", uniqueValues(resource.cards.map((card) => card.kind)))}
       ${formatSelect("statusFilter", "Status", uniqueValues(resource.cards.map((card) => card.status)))}
       ${formatSelect("reviewabilityFilter", "Reviewability", uniqueValues(resource.cards.map((card) => card.reviewability)))}
+      ${formatSelect("usefulnessOutcomeFilter", "Usefulness", uniqueValues(resource.cards.map((card) => card.usefulnessFeedback?.outcome ?? "none")))}
       ${formatSelect("nextActionFilter", "Next action", uniqueValues(resource.cards.map((card) => card.nextAction)))}
       <div id="count" class="count">Results: ${resource.cards.length}</div>
     </section>
@@ -359,6 +360,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
     const kindFilter = document.getElementById("kindFilter");
     const statusFilter = document.getElementById("statusFilter");
     const reviewabilityFilter = document.getElementById("reviewabilityFilter");
+    const usefulnessOutcomeFilter = document.getElementById("usefulnessOutcomeFilter");
     const nextActionFilter = document.getElementById("nextActionFilter");
     const count = document.getElementById("count");
     const empty = document.getElementById("empty");
@@ -372,6 +374,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
           && matchesFilter(card, "kind", kindFilter.value)
           && matchesFilter(card, "status", statusFilter.value)
           && matchesFilter(card, "reviewability", reviewabilityFilter.value)
+          && matchesFilter(card, "usefulnessOutcome", usefulnessOutcomeFilter.value)
           && matchesFilter(card, "nextAction", nextActionFilter.value);
         card.hidden = !match;
         if (match) visible += 1;
@@ -383,6 +386,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
     kindFilter.addEventListener("change", render);
     statusFilter.addEventListener("change", render);
     reviewabilityFilter.addEventListener("change", render);
+    usefulnessOutcomeFilter.addEventListener("change", render);
     nextActionFilter.addEventListener("change", render);
     render();
   </script>
@@ -435,7 +439,7 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     ...(card.usefulnessFeedback?.evidenceRefs ?? [])
   ].join(" ").toLowerCase();
 
-  return `<article data-card data-card-id="${escapeHtml(card.id)}" data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
+  return `<article data-card data-card-id="${escapeHtml(card.id)}" data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-usefulness-outcome="${escapeHtml(card.usefulnessFeedback?.outcome ?? "none")}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
   <h2>${escapeHtml(card.title)}</h2>
   <div class="refs"><code>${escapeHtml(card.id)}</code></div>
   <div class="chips">

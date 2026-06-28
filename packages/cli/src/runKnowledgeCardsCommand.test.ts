@@ -166,6 +166,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("id=\"kindFilter\"");
     expect(result.stdout).toContain("id=\"statusFilter\"");
     expect(result.stdout).toContain("id=\"reviewabilityFilter\"");
+    expect(result.stdout).toContain("id=\"usefulnessOutcomeFilter\"");
     expect(result.stdout).toContain("id=\"nextActionFilter\"");
     expect(result.stdout).toContain("Kind: pattern");
     expect(result.stdout).toContain("Status: active");
@@ -177,6 +178,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("data-kind=\"pattern\"");
     expect(result.stdout).toContain("data-status=\"active\"");
     expect(result.stdout).toContain("data-reviewability=\"ready\"");
+    expect(result.stdout).toContain("data-usefulness-outcome=");
     expect(result.stdout).toContain("data-next-action=\"use\"");
     expect(result.stdout).toContain("Source refs");
     expect(result.stdout).toContain("Evidence refs");
@@ -185,6 +187,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("Proof Boundaries");
     expect(result.stdout).toContain("does not prove:");
     expect(result.stdout).toContain("matchesFilter(card, \"kind\", kindFilter.value)");
+    expect(result.stdout).toContain("matchesFilter(card, \"usefulnessOutcome\", usefulnessOutcomeFilter.value)");
     expect(result.stdout).toContain("search.addEventListener");
     expect(result.stdout).toContain("kindFilter.addEventListener");
   });
@@ -243,6 +246,7 @@ describe("runKnowledgeCardsCommand", () => {
       title: "Skill routing",
       summary: "Use progressive-disclosure skills for repeated workflows.",
       reviewability: "ready",
+      usefulnessOutcome: "helped",
       nextAction: "use"
     })));
     await writeFile(memoryCardPath, JSON.stringify(knowledgeCard({
@@ -272,6 +276,11 @@ describe("runKnowledgeCardsCommand", () => {
     expect(smoke.count()).toBe("Results: 1");
 
     smoke.setSearch("");
+    smoke.setFilter("usefulnessOutcomeFilter", "helped");
+    expect(smoke.visibleIds()).toEqual(["pattern:skill-routing"]);
+    expect(smoke.count()).toBe("Results: 1");
+
+    smoke.setFilter("usefulnessOutcomeFilter", "");
     smoke.setFilter("kindFilter", "memory");
     expect(smoke.visibleIds()).toEqual(["memory:stale-dashboard"]);
     expect(smoke.count()).toBe("Results: 1");
@@ -426,6 +435,39 @@ describe("runKnowledgeCardsCommand", () => {
     );
   });
 
+  it("filters retained pattern cards by usefulness outcome", async () => {
+    const helpedResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "helped"
+      },
+      format: "json"
+    });
+    const noiseResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        usefulnessOutcome: "noise"
+      },
+      format: "json"
+    });
+
+    const helpedPreview = parsePreviewResource(helpedResult.stdout);
+    const noisePreview = parsePreviewResource(noiseResult.stdout);
+
+    expect(cardIds(helpedPreview).sort()).toEqual([
+      "pattern:codex-execplan-living-validation-loop",
+      "pattern:codex-goal-continuation-evidence-contract",
+      "pattern:codex-prompt-task-contract-proof-boundary"
+    ].sort());
+    expect(cardIds(noisePreview)).toEqual([]);
+  });
+
   it("guards deterministic catalog search results and proof boundaries", async () => {
     const typeScriptResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -565,6 +607,7 @@ type KnowledgeCardInputForTest = {
   title: string;
   summary: string;
   reviewability: string;
+  usefulnessOutcome?: string;
   nextAction: string;
 };
 
@@ -583,7 +626,17 @@ function knowledgeCard(input: KnowledgeCardInputForTest): Record<string, unknown
     },
     dissent: {
       kind: "none"
-    }
+    },
+    ...(input.usefulnessOutcome === undefined ? {} : {
+      usefulnessFeedback: {
+        cardId: input.id,
+        outcome: input.usefulnessOutcome,
+        summary: `Usefulness outcome for ${input.id}.`,
+        evidenceRefs: ["test:usefulness"],
+        doesNotProve: "This usefulness feedback does not prove product readiness.",
+        observedAt: "2026-06-28"
+      }
+    })
   };
 }
 
@@ -605,6 +658,7 @@ type FakeCard = {
     kind: string;
     status: string;
     reviewability: string;
+    usefulnessOutcome: string;
     nextAction: string;
   };
 };
@@ -637,6 +691,7 @@ function executeKnowledgePreviewHtml(html: string): KnowledgePreviewSmoke {
         kind: attr(attributes, "data-kind"),
         status: attr(attributes, "data-status"),
         reviewability: attr(attributes, "data-reviewability"),
+        usefulnessOutcome: attr(attributes, "data-usefulness-outcome"),
         nextAction: attr(attributes, "data-next-action")
       }
     };
@@ -647,6 +702,7 @@ function executeKnowledgePreviewHtml(html: string): KnowledgePreviewSmoke {
     kindFilter: fakeControl(),
     statusFilter: fakeControl(),
     reviewabilityFilter: fakeControl(),
+    usefulnessOutcomeFilter: fakeControl(),
     nextActionFilter: fakeControl(),
     count: fakeControl(),
     empty: fakeControl()

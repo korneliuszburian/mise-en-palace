@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V290 Brain Knowledge Usefulness Outcome Filter
+V291 Brain Knowledge Usefulness Outcome Filter Dogfood
 ```
 
 Current product loop:
@@ -52,7 +52,7 @@ V245..V263: activation/source/skill guards, product-readiness re-gate, target
 trial gate, normalized substrate, first target repair, replayable baseline,
 active ledger condensation, replayable target repair trial, and pattern intake
 trial plus first pattern enforcement gate and skills pack re-gate complete.
-current task: V290-00 Brain Knowledge Usefulness Outcome Filter.
+current task: V291-00 Brain Knowledge Usefulness Outcome Filter Dogfood.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in `PLANS.md`.

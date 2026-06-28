@@ -91,6 +91,35 @@ describe("Brain knowledge read model", () => {
     })).toEqual([]);
   });
 
+  it("filters cards by latest usefulness outcome", () => {
+    const card = parseBrainKnowledgeReadModel(cardFixture());
+    const feedback = parseBrainKnowledgeUsefulnessFeedbackList({
+      feedback: [
+        {
+          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          outcome: "helped",
+          summary: "The retained pattern guided an unknown-first boundary repair.",
+          evidenceRefs: ["docs/reviews/newer.md"],
+          doesNotProve: "This feedback does not prove product readiness.",
+          observedAt: "2026-06-28"
+        }
+      ]
+    });
+
+    if (card === undefined || feedback === undefined) {
+      throw new Error("Expected card and usefulness feedback fixtures to parse.");
+    }
+
+    const cards = cardsWithBrainKnowledgeUsefulnessFeedback([card], feedback);
+
+    expect(searchBrainKnowledgeCards(cards, {
+      usefulnessOutcome: "helped"
+    })).toEqual(cards);
+    expect(searchBrainKnowledgeCards(cards, {
+      usefulnessOutcome: "noise"
+    })).toEqual([]);
+  });
+
   it("produces the TypeScript boundary knowledge card from the retained pattern decision", () => {
     const patternDecision = parseRetainedPatternDecision(patternDecisionFixture());
     const expectedCard = parseBrainKnowledgeReadModel(cardFixture());

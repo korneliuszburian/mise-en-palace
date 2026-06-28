@@ -16,6 +16,8 @@ describe("parseKnowledgeArgs", () => {
       "active",
       "--reviewability",
       "ready",
+      "--usefulness-outcome",
+      "helped",
       "--text",
       "unknown-first"
     ])).toEqual({
@@ -30,6 +32,7 @@ describe("parseKnowledgeArgs", () => {
           kind: "pattern",
           status: "active",
           reviewability: "ready",
+          usefulnessOutcome: "helped",
           text: "unknown-first"
         },
         format: "text"
@@ -132,6 +135,18 @@ describe("parseKnowledgeArgs", () => {
       "everything"
     ])).toEqual({
       error: expect.stringContaining("Unsupported knowledge kind: everything")
+    });
+  });
+
+  it("rejects unknown usefulness outcome filters", () => {
+    expect(parseKnowledgeArgs([
+      "cards",
+      "--card-file",
+      "card.json",
+      "--usefulness-outcome",
+      "maybe"
+    ])).toEqual({
+      error: expect.stringContaining("Unsupported knowledge usefulness outcome: maybe")
     });
   });
 });
