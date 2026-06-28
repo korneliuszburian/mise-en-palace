@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V308 Research Source Decisions Initial Pack
-current task: V308-00 Research Source Decisions Initial Pack
+active stream: V309 Mini Brain-QA Benchmark Sketch
+current task: V309-00 Mini Brain-QA Benchmark Sketch
 ```
 
 ## Compact Completed Checkpoints
@@ -47,41 +47,42 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V308 Research Source Decisions Initial Pack
+### V309 Mini Brain-QA Benchmark Sketch
 
 Goal:
 
-Add the first small pack of research/source decisions for KRN brain growth.
+Sketch the first 30-question KRN brain-QA benchmark from retained source
+decisions.
 
 Current finding:
 
 ```txt
-V307 showed tokenized knowledge-card search can retrieve the
-source-to-decision retention gate from a natural query. The next highest-ROI
-step is not another search repair; it is a small source-decision pack for
-future brain work.
+V308 retained the first bounded paper/source decision pack for context
+management, feedback-to-candidate loops, adaptive retrieval, global graph QA,
+and multi-hop graph retrieval. These decisions now need local falsifiers.
 ```
 
 Current action:
 
 ```txt
-Execute V308-00: add 3-5 source decisions maximum. Each retained source must
-state mechanism, KRN implication, decision/rejection, consumer, falsifier, and
-does-not-prove. Do not create a broad research archive, source crawler,
-dashboard, API/MCP, embeddings, ranking, DB schema, or Memory Core mutation.
+Execute V309-00: create a small benchmark sketch with 30 KRN questions that
+map to retained decisions and product behavior. Do not build a broad eval
+platform, source crawler, graph runtime, embeddings, ranking, dashboard,
+API/MCP, DB schema, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future research condensation, pattern brain, and mini brain-QA benchmark work.
+future brain-QA, activation, ingest, graph, and heartbeat validation.
 ```
 
 Falsifier:
 
 ```txt
-A retained source is decorative, has no immediate consumer/falsifier, or cannot
-shape a concrete future KRN task, skill, standard, eval, or source decision.
+The benchmark questions do not test retained decisions, source grounding,
+temporal behavior, abstention, anti-memory, activation, graph/global QA, or
+review burden in any falsifiable way.
 ```
 
 ## Pattern Gate

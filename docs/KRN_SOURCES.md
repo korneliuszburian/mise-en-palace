@@ -243,6 +243,107 @@ cannot be falsified locally, keep it out of active KRN guidance.
   verification, proof/non-proof boundaries, rollback, or next-task synthesis.
 - Does not prove: that every small edit needs a verbose prompt.
 
+## Agent Memory And Retrieval Papers
+
+### MemGPT
+
+- URL: https://arxiv.org/abs/2310.08560
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: virtual context management treats the LLM context window as a
+  managed working set over slower durable memory tiers.
+- KRN implication: KRN activation should select and evict context deliberately
+  from store-backed memory/source/read models instead of treating long prompts
+  or markdown ledgers as runtime memory.
+- Decision: keep context assembly as a bounded working set and keep Memory Core
+  store-backed; do not build file-backed runtime memory or assume a larger
+  context window solves recall quality.
+- Consumer: activation/context assembly work, context hygiene invariants, and
+  future memory-usefulness benchmark cases.
+- Falsifier: a future task improves KRN by adding more always-loaded context or
+  markdown runtime memory instead of selected store-backed recall and still
+  claims memory quality.
+- Does not prove: that KRN should copy MemGPT implementation details, train a
+  memory manager now, or skip review-gated memory promotion.
+
+### Reflexion
+
+- URL: https://arxiv.org/abs/2303.11366
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: adopt.
+- Mechanism: language-agent feedback can be converted into reflective memory
+  that improves later trials without model weight updates.
+- KRN implication: KRN feedback deltas and review assessments should create
+  reviewable memory/source/eval candidates for future runs, not mutate durable
+  truth automatically.
+- Decision: retain feedback-to-candidate as the default improvement path and
+  reject autonomous reflection writes to final Memory Core.
+- Consumer: evidence/review loop, MemoryCandidate review, and future heartbeat
+  candidate generation.
+- Falsifier: a future reflection/feedback path writes final MemoryRecord truth
+  without review or cannot show that feedback changed a later task.
+- Does not prove: that verbal reflection is sufficient evidence, that candidate
+  quality is good, or that KRN should optimize weights.
+
+### Self-RAG
+
+- URL: https://arxiv.org/abs/2310.11511
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: lab_test.
+- Mechanism: retrieval should be adaptive and critique-aware rather than always
+  retrieving a fixed amount of context.
+- KRN implication: brain-QA and activation work should test when KRN retrieves,
+  abstains, critiques retrieved material, or records that evidence is
+  insufficient.
+- Decision: keep Self-RAG as an eval hypothesis for mini brain-QA; do not add a
+  trained reflection-token model or hidden semantic hook.
+- Consumer: V309 mini brain-QA benchmark sketch and future activation
+  relevance tests.
+- Falsifier: mini brain-QA cannot express cases where retrieval should be
+  skipped, expanded, critiqued, or marked insufficient.
+- Does not prove: that KRN has adaptive retrieval quality, citation accuracy,
+  or a trained Self-RAG-style model.
+
+### GraphRAG
+
+- URL: https://arxiv.org/abs/2404.16130
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: lab_test.
+- Mechanism: global questions over a corpus can require entity graph structure
+  and community summaries rather than nearest-neighbor passage retrieval.
+- KRN implication: graph brain v0 should start from entities, claims, edges,
+  and summary candidates with source ranges before widening corpus ingest.
+- Decision: keep GraphRAG as a graph-brain benchmark hypothesis, not as a reason
+  to build a broad graph platform now.
+- Consumer: graph brain v0 design and mini brain-QA global-question cases.
+- Falsifier: KRN graph work cannot answer or evaluate any corpus-level question
+  that lexical/vector-only retrieval misses.
+- Does not prove: that GraphRAG is the right implementation, that community
+  summaries are accurate, or that KRN should build dashboard/API/MCP first.
+
+### HippoRAG
+
+- URL: https://arxiv.org/abs/2405.14831
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: lab_test.
+- Mechanism: knowledge graphs plus graph traversal/ranking can support
+  multi-hop retrieval over integrated external knowledge.
+- KRN implication: graph brain v0 should preserve entity/claim edges in a form
+  that can later be evaluated for multi-hop retrieval, instead of only storing
+  isolated chunks and embeddings.
+- Decision: retain HippoRAG as a falsifiable multi-hop graph retrieval
+  hypothesis after graph/ingest v0 exists.
+- Consumer: future graph retrieval tests and multi-hop brain-QA cases.
+- Falsifier: graph v0 produces edges that cannot improve or even be evaluated
+  on multi-hop questions compared with lexical/vector readback.
+- Does not prove: that KRN needs PageRank now, that a separate graph database is
+  justified, or that graph retrieval is product-ready.
+
 ## Agent Memory Practitioner Sources
 
 ### Mastra Observational Memory

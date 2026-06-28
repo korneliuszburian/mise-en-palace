@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V308 Research Source Decisions Initial Pack
+V309 Mini Brain-QA Benchmark Sketch
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V308-00 Research Source Decisions Initial Pack.
+current task: V309-00 Mini Brain-QA Benchmark Sketch.
 ```
 
 Current task:
 
 ```txt
-Add the first small pack of research/source decisions, using source-to-decision
-instead of source hoarding.
+Sketch the first small KRN brain-QA benchmark from retained source decisions,
+without building a broad eval platform.
 ```
 
 ## Remaining Work
@@ -44,8 +44,8 @@ to preserve are:
 
 1. Pattern Brain execution/readback hardening: V307 closed the first usefulness
    loop; keep future search changes evidence-backed.
-2. Research/paper/course source decisions: execute V308 as a 3-5 source
-   decision pack through source-to-decision, not source hoarding.
+2. Research/paper/course source decisions: V308 added the first bounded pack;
+   future sources still require consumer, falsifier, and does-not-prove.
 3. Mini brain-QA benchmark: start with 30 KRN questions, later expand corpus
    QA and compare memory/source/hybrid/anti-memory/graph paths.
 4. Ingest v0: artifact -> hash -> chunk -> source range -> claim -> embedding
