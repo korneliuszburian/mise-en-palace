@@ -200,12 +200,20 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("pattern:evidence-proof-non-proof-boundary");
+    expect(result.stdout).toContain("pattern:active-context-compact-current-truth");
+    expect(result.stdout).toContain("pattern:brain-knowledge-read-only-ui-boundary");
     expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
+    expect(result.stdout).toContain("pattern:target-repo-write-authority-boundary");
+    expect(result.stdout).toContain("pattern:untrusted-context-warning-boundary");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+    expect(result.stdout).toContain("Active context stays compact and current-truth routed");
+    expect(result.stdout).toContain("Brain knowledge UI/search remains read-only until usefulness proof");
     expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
     expect(result.stdout).toContain("Source-to-decision retention gate");
+    expect(result.stdout).toContain("Target repo writes require explicit authority and rollback");
+    expect(result.stdout).toContain("Untrusted selected context is labeled before Codex use");
     expect(result.stdout).toContain("Unknown-first external boundary with explicit result state");
     expect(result.stdout).toContain("Source refs");
     expect(result.stdout).toContain("Evidence refs");
@@ -384,11 +392,15 @@ describe("runKnowledgeCardsCommand", () => {
     const preview = parsePreviewResource(result.stdout);
 
     expect(cardIds(preview).sort()).toEqual([
+      "pattern:active-context-compact-current-truth",
+      "pattern:brain-knowledge-read-only-ui-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
+      "pattern:target-repo-write-authority-boundary",
+      "pattern:untrusted-context-warning-boundary",
       "pattern:ts-boundary-unknown-first-result-state"
-    ]);
+    ].sort());
   });
 
   it("rejects invalid catalog files", async () => {

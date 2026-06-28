@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V286 Brain Knowledge Catalog Coverage Expansion
-current task: V286-00 Brain Knowledge Catalog Coverage Expansion
+active stream: V287 Brain Knowledge External Pattern Intake Trial
+current task: V287-00 Brain Knowledge External Pattern Intake Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -50,43 +50,45 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V286 Brain Knowledge Catalog Coverage Expansion
+### V287 Brain Knowledge External Pattern Intake Trial
 
 Goal:
 
-Increase useful brain knowledge coverage from existing retained KRN evidence
-before adding more UI/search surface.
+Run the first bounded external/public pattern intake into the brain knowledge
+catalog.
 
 Current finding:
 
 ```txt
-V285 proved static preview text and field filters execute in a DOM-capable
-smoke. The next bottleneck is catalog breadth: the current catalog has only four
-retained pattern cards.
+V286 expanded the catalog from 4 to 8 retained KRN operating patterns from
+existing reviewed repo-local evidence. The next bottleneck is controlled
+external/public best-practice intake, not more UI chrome.
 ```
 
 Current action:
 
 ```txt
-Execute V286-00: add a small number of high-value knowledge cards or retained
-decisions from existing reviewed KRN sources/evidence. Use source-to-decision
-with consumer and falsifier, update catalog/readback guards, and preserve
-read-only reviewability. Do not crawl sources, ingest broad raw materials, add
-API/MCP/dashboard, or claim product readiness.
+Execute V287-00: ingest a small number of public/legal external best-practice
+patterns through source-to-decision into retained brain knowledge. Use only
+official docs, public pages, papers, or user-provided summaries that can be
+mapped to mechanism, KRN implication, decision/rejection, consumer, falsifier,
+and does-not-prove. Do not ingest paid/proprietary course material, crawl broad
+sources, build Research Foundry/API/MCP/dashboard, or claim SOTA/product
+readiness.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge catalog growth loop.
+brain knowledge external pattern intake loop.
 ```
 
 Falsifier:
 
 ```txt
-The static preview remains useful as a UI shell but cannot answer more KRN
-pattern questions because the catalog is too small or missing high-value
-retained decisions.
+The brain knowledge catalog cannot absorb external best practices without
+decorative source hoarding, or retained external patterns lack consumer,
+falsifier, and local proof boundaries.
 ```
 
 ## Pattern Gate

@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V286 Brain Knowledge Catalog Coverage Expansion
-current task: V286-00 Brain Knowledge Catalog Coverage Expansion
-latest pushed commit before V285: a0b8349 feat(ui): filter brain knowledge static preview
-latest CI checked before V285: KRN CI success for a0b83491c6c796bb8b36bddc5f75512a84f41604
+active stream: V287 Brain Knowledge External Pattern Intake Trial
+current task: V287-00 Brain Knowledge External Pattern Intake Trial
+latest pushed commit before V286: 139c799 test(ui): smoke brain knowledge static filters
+latest CI checked before V286: KRN CI success for 139c79913f871edd8d55bc89fa4b411dfcb40690
 ```
 
 Known current gap:
 
 ```txt
-V286-00 Brain Knowledge Catalog Coverage Expansion is the current gap. V285
-proved static preview text and field filters execute in a DOM-capable smoke.
-The next bottleneck is catalog breadth: the current catalog has only four
-retained pattern cards.
+V287-00 Brain Knowledge External Pattern Intake Trial is the current gap. V286
+expanded the catalog from 4 to 8 retained KRN operating patterns from existing
+reviewed repo-local evidence. The next bottleneck is controlled external/public
+best-practice intake without decorative source hoarding.
 ```
 
 ## 2. Product Thesis
@@ -2411,6 +2411,41 @@ Source-to-decision:
 - Consumer: V286 Brain Knowledge Catalog Coverage Expansion.
 - Falsifier: static preview works mechanically but cannot answer more KRN
   pattern questions because catalog breadth is too small.
+
+## Outcome V286-00 Brain Knowledge Catalog Coverage Expansion
+
+Summary:
+- added four retained pattern decisions:
+  `active-context-compact-current-truth`,
+  `brain-knowledge-read-only-ui-boundary`,
+  `target-repo-write-authority-boundary`, and
+  `untrusted-context-warning-boundary`;
+- expanded `docs/brain-knowledge/catalog.json` from 4 to 8 retained pattern
+  cards;
+- updated harness and CLI catalog breadth guards;
+- readback queries confirmed `compact`, `read-only`, `target-repo`, and
+  `untrusted` find the new cards;
+- regenerated static preview includes the new pattern ids.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v286-brain-knowledge-catalog-coverage-expansion/REPORT.md`.
+
+Source-to-decision:
+- Source: V255, V281-V285 reports, `BrainKnowledgeReadModel`, security/trust
+  boundaries, target-repo testing skill, Codex adapter tests, and active
+  context invariants.
+- Mechanism: the static preview shell needs more reviewable cards, but each
+  retained card must carry source refs, evidence refs, consumer, falsifier, and
+  proof/non-proof boundary.
+- KRN implication: expand catalog coverage from reviewed repo-local evidence
+  before building wider UI/search surfaces.
+- Decision: open V287 Brain Knowledge External Pattern Intake Trial.
+- Does not prove: product readiness, catalog completeness, search ranking
+  quality, external research completeness, or automatic application by Codex.
+- Consumer: V287 Brain Knowledge External Pattern Intake Trial.
+- Falsifier: external/public pattern intake turns into decorative source
+  hoarding or retained external patterns lack consumer, falsifier, and local
+  proof boundaries.
 
 ## Condensation Rules
 

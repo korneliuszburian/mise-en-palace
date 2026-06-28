@@ -131,10 +131,22 @@ describe("Brain knowledge read model invariants", () => {
 
     expect(Array.isArray(patternFiles)).toBe(true);
     expect(patternFiles).toContain(
+      "../patterns/retained-patterns/active-context-compact-current-truth.json"
+    );
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/brain-knowledge-read-only-ui-boundary.json"
+    );
+    expect(patternFiles).toContain(
       "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json"
     );
     expect(patternFiles).toContain("../patterns/retained-patterns/evidence-proof-non-proof-boundary.json");
     expect(patternFiles).toContain("../patterns/retained-patterns/source-to-decision-retention-gate.json");
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/target-repo-write-authority-boundary.json"
+    );
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/untrusted-context-warning-boundary.json"
+    );
     expect(patternFiles).toContain(
       "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
     );

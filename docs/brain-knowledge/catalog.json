@@ -1,9 +1,13 @@
 {
   "cardFiles": [],
   "patternFiles": [
+    "../patterns/retained-patterns/active-context-compact-current-truth.json",
+    "../patterns/retained-patterns/brain-knowledge-read-only-ui-boundary.json",
     "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json",
     "../patterns/retained-patterns/evidence-proof-non-proof-boundary.json",
     "../patterns/retained-patterns/source-to-decision-retention-gate.json",
+    "../patterns/retained-patterns/target-repo-write-authority-boundary.json",
+    "../patterns/retained-patterns/untrusted-context-warning-boundary.json",
     "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
   ]
 }
