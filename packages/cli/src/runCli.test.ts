@@ -701,7 +701,7 @@ describe("runCli", () => {
     expect(result.stderr).toBe("");
     expect(observedRepoPathHint).toBe(repoRoot);
     expect(result.stdout).toContain("Project ID: project-connected");
-    expect(result.stdout).toContain("Project resolution: connected_repo_path");
+    expect(result.stdout).toContain("Project resolution: connected_repo_path (connected repo path)");
     expect(result.stdout).toContain(
       "Project resolution reason: Resolved from repo_installations.local_path_hint matching the current repo root."
     );

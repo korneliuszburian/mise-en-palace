@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V242 Finite-State Exhaustiveness Application Trial
+V243 Codex ExecPlan Source Decision Trial
 ```
 
 Current product loop:
@@ -48,7 +48,8 @@ current-state activation seed, and default connected-project resolution
 complete.
 V240: default-path project resolution readback complete.
 V241: external TypeScript best-pattern intake complete.
-current task: V242-00 Finite-State Exhaustiveness Application Trial.
+V242: finite-state exhaustiveness application complete.
+current task: V243-00 Codex ExecPlan Source Decision Trial.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

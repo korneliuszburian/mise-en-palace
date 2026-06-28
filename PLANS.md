@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V241 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V242 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -85,10 +85,11 @@ best-pattern usefulness closure and closure dogfood, and related re-gate
 slices plus TS best-pattern application, sibling package path normalization,
 activation abstention re-gate, activation diagnostics/readback, and
 current-state activation seed plus default connected-project resolution,
-project resolution readback, and external TypeScript best-pattern intake:
+project resolution readback, external TypeScript best-pattern intake, and
+finite-state exhaustiveness application:
 complete
-active stream: V242 Finite-State Exhaustiveness Application Trial
-current task: V242-00 Finite-State Exhaustiveness Application Trial
+active stream: V243 Codex ExecPlan Source Decision Trial
+current task: V243-00 Codex ExecPlan Source Decision Trial
 ```
 
 Evidence already recorded in repo:
@@ -104,7 +105,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V242-00 Finite-State Exhaustiveness Application Trial.
+V243-00 Codex ExecPlan Source Decision Trial.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19199,7 +19200,7 @@ New task:
 
 ID: V242-00
 Name: Finite-State Exhaustiveness Application Trial
-Status: active
+Status: complete
 Goal: apply the V241 finite-state exhaustiveness standard to one concrete KRN
 TypeScript boundary, or reject implementation if source inspection finds no
 bounded drift worth changing.
@@ -19266,6 +19267,139 @@ eval/golden candidate; one drift does not justify a quality engine.
 Next-task synthesis rule: continue from V242 evidence and do not jump to broad
 TypeScript cleanup.
 
+V242 outcome:
+- V242-00 complete: one official TypeScript finite-state exhaustiveness source
+  decision was applied to an operator-facing CLI readback boundary without broad
+  TypeScript cleanup.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v242-finite-state-exhaustiveness-application/REPORT.md`.
+
+V242 evidence:
+- Default V242 implementation plan:
+  `a23d324b-37ae-410b-bf9c-791542ce715b`.
+- Live readback proof run:
+  `86e81d2d-f628-40fe-afad-7ea1d4630502`.
+- `krn plan --persist` rendered
+  `Project resolution: connected_repo_path (connected repo path)`.
+- `krn run show --run-id 86e81d2d-f628-40fe-afad-7ea1d4630502` rendered
+  `project resolution: connected_repo_path (connected repo path)`.
+- Evidence bundle:
+  `848d6dc3-1bb2-423a-b4cd-8c2568c4c2ce`.
+- Review assessment:
+  `4f9238b9-cbe4-425a-9802-fd835cf9e71f`.
+- Feedback delta:
+  `f76734db-2e2b-49ea-9f0f-20caa9472877`.
+- Observation group:
+  `c7b7fa81-379c-411e-bd00-d5244c0ae91a`.
+- Reflection record:
+  `2f32df60-fb0d-4b04-957a-7472313965d2`.
+- MemoryRecord created: no.
+- `pnpm --filter @krn/cli test -- runCli runRunShowCommand projectResolutionReadback`:
+  passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `pnpm db:ready`: passed with 14/14 migrations and pgvector available.
+- `git diff --check`: passed.
+
+V242 source-to-decision:
+- Source: `docs/KRN_SOURCES.md#typescript-narrowing-and-exhaustiveness`.
+- Mechanism: TypeScript narrowing and `never` exhaustiveness make finite union
+  states explicit where behavior changes.
+- KRN implication: `ProjectResolutionKind` is an operator-facing readback union;
+  adding a new resolution kind should force a local label/product wording
+  decision.
+- Decision: add exhaustive `ProjectResolutionKind` readback helper and use it in
+  plan/readback output.
+- Does not prove: every union needs exhaustive rendering, broad TypeScript
+  cleanup is valuable, or activation owner-file recall is solved.
+- Consumer: CLI readback behavior and focused tests.
+- Falsifier: a new `ProjectResolutionKind` can be added without compile-time
+  failure or readback label update.
+
+New task:
+- V243-00 Codex ExecPlan Source Decision Trial.
+
+ID: V243-00
+Name: Codex ExecPlan Source Decision Trial
+Status: active
+Goal: map the official Codex ExecPlan/Goal/prompting sources already
+influencing KRN through source-to-decision, then route them to one compact
+consumer, falsifier, or explicit rejection.
+Product rationale: KRN's continuous loop should be grounded in current Codex
+patterns for Goals, ExecPlans, prompts, skills, and compaction without turning
+those sources into decorative links or a research backlog.
+Architectural rationale: Codex surfaces are adapters over typed KRN state; the
+source decision must say which Codex behavior changes KRN's plan, skill,
+runbook, invariant, or prompt contract.
+Evidence source:
+- `https://developers.openai.com/cookbook/articles/codex_exec_plans`;
+- `https://developers.openai.com/cookbook/examples/codex/using_goals_in_codex`;
+- `https://developers.openai.com/cookbook/examples/gpt-5/codex_prompting_guide`;
+- current `GOAL.md`, `PLAN.md`, `PLANS.md`;
+- existing KRN skills/runbooks for handoff, source-to-decision, and Codex
+  adapter planning.
+Inputs required:
+- current-state preflight;
+- default `krn plan --persist`;
+- official OpenAI source verification from current docs;
+- source-to-decision mapping.
+Files likely touched:
+- `docs/KRN_SOURCES.md`;
+- one existing runbook, skill, compact plan contract, or invariant test if a
+  bounded consumer is justified;
+- dogfood report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- bounded OpenAI/Codex source decision entry;
+- one compact consumer update or focused invariant;
+- dogfood report and plan condensation.
+Forbidden writes:
+- copying long docs text;
+- research archive;
+- source crawler;
+- broad prompt framework;
+- MCP/server/dashboard/worker daemon;
+- broad skill rewrite;
+- AGENTS.md expansion unless evidence proves a global repeated failure;
+- generic multi-agent system.
+Output requirements:
+- every adopted source has mechanism, KRN implication, consumer, falsifier, and
+  does-not-prove;
+- reject/defer any source that has no bounded KRN consumer;
+- measure source usefulness if implementation or plan behavior changes.
+Definition of Done:
+- default KRN plan path used and recorded;
+- official OpenAI/Codex source(s) are verified and mapped through
+  source-to-decision;
+- one compact consumer is updated or all candidates are explicitly rejected;
+- verification appropriate to touched files passes;
+- evidence capture/report exists;
+- commit is pushed and CI checked when files change.
+Verification commands:
+- `pnpm db:ready`;
+- `krn plan --persist`;
+- source-specific tests or plan invariants if a consumer is touched;
+- `pnpm run typecheck` if source is touched;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test` if source/test behavior is
+  touched;
+- `git diff --check`;
+- `krn evidence capture --persist`;
+- `krn observe --persist`;
+- `krn reflect --persist`.
+Acceptance criteria:
+- KRN gains one concrete Codex-process decision or explicit rejection;
+- no decorative Codex links remain in the active source decision path;
+- no broad research layer or prompt framework is created.
+Risk: treating official Codex docs as vague authority instead of extracting one
+mechanism with a consumer and falsifier.
+Rollback: revert focused consumer/report update if the source decision is
+decorative or mismatched; keep V242 code repair.
+Condensation expectation: if official Codex patterns repeatedly affect KRN
+continuation, update the relevant skill/runbook or invariant; one source does
+not justify a new subsystem.
+Next-task synthesis rule: continue from V243 evidence and choose the next
+surface from measured gaps, not from generic "best practices" appetite.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -19273,10 +19407,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V242 Finite-State Exhaustiveness Application Trial.
+- V243 Codex ExecPlan Source Decision Trial.
 
 Next active task:
-- V242-00 Finite-State Exhaustiveness Application Trial.
+- V243-00 Codex ExecPlan Source Decision Trial.
 
 ## 21. Final Response Format For Codex Runs
 

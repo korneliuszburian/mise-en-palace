@@ -41,6 +41,9 @@ import {
   findRepoRoot
 } from "./cliFileBoundary.js";
 import {
+  formatProjectResolutionKind
+} from "./projectResolutionReadback.js";
+import {
   detectSourceSeeds
 } from "./runInitCommand.js";
 import type {
@@ -437,7 +440,7 @@ const formatPlanSummary = (
     ...(projectResolution === undefined
       ? []
       : [
-          `Project resolution: ${projectResolution.kind}`,
+          `Project resolution: ${formatProjectResolutionKind(projectResolution.kind)}`,
           `Project resolution reason: ${projectResolution.reason}`,
           ...(projectResolution.repoPathHint === undefined
             ? []

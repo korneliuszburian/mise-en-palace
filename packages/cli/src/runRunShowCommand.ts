@@ -37,6 +37,9 @@ import type {
   ProjectResolution,
   ProjectResolutionKind
 } from "./databaseRuntime.js";
+import {
+  formatProjectResolutionKind
+} from "./projectResolutionReadback.js";
 
 export interface RunShowCommandRuntime {
   env: Record<string, string | undefined>;
@@ -716,7 +719,7 @@ const renderAggregate = (
     ...(projectResolution === undefined
       ? []
       : [
-          `- project resolution: ${projectResolution.kind}`,
+          `- project resolution: ${formatProjectResolutionKind(projectResolution.kind)}`,
           `- project resolution reason: ${projectResolution.reason}`,
           ...(projectResolution.repoPathHint === undefined
             ? []

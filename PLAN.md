@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V242 Finite-State Exhaustiveness Application Trial
-current task: V242-00 Finite-State Exhaustiveness Application Trial
+active stream: V243 Codex ExecPlan Source Decision Trial
+current task: V243-00 Codex ExecPlan Source Decision Trial
 ```
 
 ## Compact Completed Checkpoints
@@ -38,48 +38,48 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            package path normalization plus activation abstention re-gate,
            abstention diagnostics/readback, current-state activation seed, and
            default connected-project resolution, and project resolution
-           readback plus external TypeScript best-pattern intake complete.
+           readback plus external TypeScript best-pattern intake and
+           finite-state exhaustiveness application complete.
 ```
 
 ## Active Stream
 
-### V242 Finite-State Exhaustiveness Application Trial
+### V243 Codex ExecPlan Source Decision Trial
 
 Goal:
 
-Apply the V241 finite-state exhaustiveness standard to one concrete KRN
-TypeScript boundary, or reject implementation if source inspection finds no
-bounded drift worth changing.
+Map the official Codex ExecPlan/Goal/prompting sources already influencing KRN
+through source-to-decision, then route them to one compact consumer, falsifier,
+or explicit rejection.
 
 Current finding:
 
 ```txt
-V241 adopted the official TypeScript narrowing/exhaustiveness mechanism into
-KRN standards. The next proof is whether that standard can improve one concrete
-union/readback/persistence boundary without broad TypeScript cleanup.
+V242 proved that external best-pattern intake can produce one bounded code
+repair. The next risk is that Codex process links in PLANS.md remain references
+without explicit KRN mechanism, consumer, falsifier, and usefulness closure.
 ```
 
 Current action:
 
 ```txt
-Execute V242-00: inspect one finite union that changes rendering, persistence,
-review meaning, or operator output; add an exhaustive handling boundary and
-focused test only if source inspection finds drift.
+Execute V243-00: inspect official OpenAI/Codex ExecPlan, Goals, and prompting
+sources; adopt/reject only bounded mechanisms that improve KRN continuation,
+planning, or prompt discipline without creating a research archive.
 ```
 
 Primary consumer:
 
 ```txt
-KRN TypeScript source, operator readback, reviewability/provenance rendering,
-or a documented rejection if no bounded repair is justified.
+GOAL.md / PLAN.md / PLANS.md continuation contract, source map, skill/runbook,
+or a focused invariant if source inspection proves a drift.
 ```
 
 Falsifier:
 
 ```txt
-The slice performs broad type cleanup, weakens types, changes unrelated
-boundaries, or cannot name the union member whose future addition should force a
-local handling decision.
+The slice hoards links, expands the plan with broad prose, or cannot name a
+concrete KRN consumer and falsifier for each adopted Codex source.
 ```
 
 ## Pattern Gate

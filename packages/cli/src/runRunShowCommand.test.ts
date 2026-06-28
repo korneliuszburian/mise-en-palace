@@ -271,7 +271,7 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Run ID: run-1");
-    expect(result.stdout).toContain("project resolution: connected_repo_path");
+    expect(result.stdout).toContain("project resolution: connected_repo_path (connected repo path)");
     expect(result.stdout).toContain(
       "project resolution reason: Resolved from repo_installations.local_path_hint matching the current repo root."
     );
