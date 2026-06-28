@@ -55,20 +55,25 @@ describe("evidence capture golden behavior", () => {
       "--intended-file",
       "packages/cli/src/runEvidenceCaptureCommand.ts",
       "--intended-file",
+      "packages/core/src/candidateReviewability.ts",
+      "--intended-file",
       "docs/reviews/controlled-dogfood/run/REPORT.md",
       "--verification",
       "pnpm typecheck=passed"
     ], {
       env: {},
+      cwd: process.cwd(),
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () =>
         " M src/runEvidenceCaptureCommand.ts\n" +
+        " M ../core/src/candidateReviewability.ts\n" +
         "?? ../../docs/reviews/controlled-dogfood/run/\n" +
-        "?? docs/materials/raw-audit.md\n"
+        "?? ../../docs/materials/raw-audit.md\n"
     });
     const unclassifiedResult = await runCli(["evidence", "capture"], {
       env: {},
+      cwd: process.cwd(),
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () => " M src/runEvidenceCaptureCommand.ts\n"
@@ -112,7 +117,9 @@ describe("evidence capture golden behavior", () => {
     const classifiedPassed =
       classifiedResult.exitCode === 0 &&
       classifiedOutput.includes("Changed files:\nintended:") &&
-      classifiedOutput.includes("- M src/runEvidenceCaptureCommand.ts") &&
+      classifiedOutput.includes("- M packages/cli/src/runEvidenceCaptureCommand.ts") &&
+      classifiedOutput.includes("- M packages/core/src/candidateReviewability.ts") &&
+      !classifiedOutput.includes("- M core/src/candidateReviewability.ts") &&
       classifiedOutput.includes("- ?? docs/reviews/controlled-dogfood/run") &&
       !classifiedOutput.includes("../../docs/reviews/controlled-dogfood/run") &&
       classifiedOutput.includes("unrelated:\n- ?? docs/materials/raw-audit.md") &&
@@ -122,7 +129,7 @@ describe("evidence capture golden behavior", () => {
     const unclassifiedPassed =
       unclassifiedResult.exitCode === 0 &&
       unclassifiedOutput.includes("Changed files:\nunknown:") &&
-      unclassifiedOutput.includes("- M src/runEvidenceCaptureCommand.ts") &&
+      unclassifiedOutput.includes("- M packages/cli/src/runEvidenceCaptureCommand.ts") &&
       unclassifiedOutput.includes("Dirty context: unclassified (no --intended-file provided).") &&
       unclassifiedOutput.includes("pnpm typecheck: not_run | provenance=default_template") &&
       unclassifiedOutput.includes(

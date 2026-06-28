@@ -77,14 +77,15 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V234 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V235 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
-slices plus TS best-pattern application: complete
-active stream: V235 Evidence Capture Sibling Package Path Normalization
-current task: V235-00 Evidence Capture Sibling Package Path Normalization
+slices plus TS best-pattern application and sibling package path normalization:
+complete
+active stream: V236 Activation Abstention Re-Gate
+current task: V236-00 Activation Abstention Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -100,7 +101,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V235-00 Evidence Capture Sibling Package Path Normalization.
+V236-00 Activation Abstention Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18664,6 +18665,83 @@ Next active stream:
 
 Next active task:
 - V235-00 Evidence Capture Sibling Package Path Normalization.
+
+## Outcome 2026-06-28 V235 Evidence Capture Sibling Package Path Normalization
+
+Completed task:
+- V235-00 Evidence Capture Sibling Package Path Normalization.
+
+Decision:
+- Normalize `git status --short` paths by resolving each status path against
+  the status command cwd and then relativizing to the repo root.
+- Keep target-repo evidence semantics unchanged.
+- Guard current-package, sibling-package, and docs path behavior in focused CLI
+  and golden behavior tests.
+
+Changed:
+- `packages/cli/src/runEvidenceCaptureCommand.ts`
+- `packages/cli/src/runCli.test.ts`
+- `packages/cli/src/evidenceCaptureGoldenBehavior.test.ts`
+- `docs/reviews/controlled-dogfood/2026-06-28-v235-sibling-package-path-normalization/REPORT.md`
+
+DB evidence:
+- executionRun: `bc0312c6-94e4-4214-88b6-c6b34caea2dc`.
+- primary evidenceBundle: `18114765-9b97-48e5-90d6-2730d7021f93`.
+- temporary sibling proof evidenceBundle: `1f5d17aa-35f9-4e60-b4dc-6edf6b542279`.
+- primary feedbackDelta: `f0522c96-65bd-4453-b97a-318110c19fbf`.
+- temporary sibling proof feedbackDelta: `0c991129-768d-417e-a456-3c2049ff2f4f`.
+
+Evidence:
+- `pnpm --filter @krn/cli test -- runCli evidenceCaptureGoldenBehavior runEvidenceCaptureCommand parseEvidenceArgs`: passed.
+- `pnpm run typecheck`: passed.
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`: passed.
+- `git diff --check`: passed.
+- `pnpm db:ready`: passed.
+- `krn evidence capture --persist`: passed.
+- `krn run show --json`: passed.
+
+Readback result:
+- current-package paths persisted as `packages/cli/src/...`.
+- docs path persisted as `docs/reviews/...`.
+- temporary sibling package proof persisted as
+  `packages/core/src/v235-path-proof.tmp`.
+- no shortened `core/src/...` path appeared in the sibling proof.
+- The temporary sibling proof file was removed before commit and is not source
+  truth.
+
+Source-to-decision:
+- Source: V234 DB readback finding.
+- Mechanism: Git status paths are relative to the command cwd; stripping `../`
+  loses package-root information for sibling packages.
+- KRN implication: evidence capture must resolve status paths through cwd and
+  repo root before rendering, persistence, readback, and candidate evidence refs.
+- Decision: adopt repo-root path normalization at evidence parse time.
+- Does not prove: target-repo path semantics, product readiness, activation
+  quality, or every path source outside KRN Git status evidence.
+- Consumer: evidence capture, run readback, source usefulness reports,
+  dirty-context review, and source/memory candidate evidence refs.
+- Falsifier: a future package-filtered evidence capture stores `core/src/...`
+  for a `packages/core` file or hides unrelated dirty files.
+
+New finding:
+- Recent persisted internal planning runs continue to show activation abstention
+  with 0 inclusions and 0 exclusions. This should be re-gated before any scoring
+  or activation rewrite.
+
+New task:
+- V236-00 Activation Abstention Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V236 Activation Abstention Re-Gate.
+
+Next active task:
+- V236-00 Activation Abstention Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

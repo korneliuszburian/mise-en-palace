@@ -1,6 +1,7 @@
 import {
   execFile
 } from "node:child_process";
+import path from "node:path";
 import {
   promisify
 } from "node:util";
@@ -22,6 +23,9 @@ import {
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
+import {
+  findRepoRoot
+} from "./cliFileBoundary.js";
 import type {
   CreateDatabaseRuntime
 } from "./runPlanCommand.js";
@@ -50,6 +54,11 @@ export interface EvidenceCaptureResult {
 interface ChangedFile {
   status: string;
   path: string;
+}
+
+interface ChangedFilePathContext {
+  repoRoot: string;
+  statusCwd: string;
 }
 
 interface ChangedFileClassification {
@@ -118,14 +127,33 @@ const normalizeChangedFilePath = (path: string): string =>
     .replace(/^(\.\.\/)+/, "")
     .replace(/\/$/, "");
 
-const parseChangedFiles = (statusOutput: string): ChangedFile[] =>
+const normalizeGitStatusPath = (
+  rawPath: string,
+  context: ChangedFilePathContext
+): string => {
+  const trimmedPath = rawPath.trim();
+
+  if (trimmedPath.length === 0) {
+    return "";
+  }
+
+  const absolutePath = path.resolve(context.statusCwd, trimmedPath);
+  const relativePath = path.relative(context.repoRoot, absolutePath);
+
+  return normalizeChangedFilePath(relativePath);
+};
+
+const parseChangedFiles = (
+  statusOutput: string,
+  context: ChangedFilePathContext
+): ChangedFile[] =>
   statusOutput
     .split("\n")
     .map((line) => line.trimEnd())
     .filter((line) => line.length > 0)
     .map((line) => ({
       status: line.slice(0, 2).trim() || "changed",
-      path: normalizeChangedFilePath(line.slice(3))
+      path: normalizeGitStatusPath(line.slice(3), context)
     }))
     .filter((file) => file.path.length > 0);
 
@@ -728,8 +756,12 @@ const persistEvidenceCapture = async (
 export const runEvidenceCaptureCommand = async (
   runtime: EvidenceCaptureRuntime
 ): Promise<EvidenceCaptureResult> => {
+  const repoRoot = await findRepoRoot(runtime.cwd);
   const statusOutput = await readGitStatus(runtime);
-  const changedFiles = parseChangedFiles(statusOutput);
+  const changedFiles = parseChangedFiles(statusOutput, {
+    repoRoot,
+    statusCwd: runtime.cwd
+  });
   const changedFileClassification = classifyChangedFiles(changedFiles, runtime.intendedFiles);
   const commands =
     runtime.commandOutcomes === undefined || runtime.commandOutcomes.length === 0

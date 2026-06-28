@@ -3938,6 +3938,7 @@ describe("runCli", () => {
   it("prints evidence capture without mutating memory", async () => {
     const result = await runCli(["evidence", "capture"], {
       env: {},
+      cwd: path.resolve(process.cwd(), "../.."),
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () => " M packages/cli/src/runCli.ts\n?? notes.md\n"
@@ -3979,27 +3980,33 @@ describe("runCli", () => {
       "packages/cli/src/runEvidenceCaptureCommand.ts",
       "--intended-file=./packages/cli/src/parseEvidenceArgs.ts",
       "--intended-file",
+      "packages/core/src/candidateReviewability.ts",
+      "--intended-file",
       "docs/reviews/controlled-dogfood/run/REPORT.md",
       "--verification",
       "pnpm typecheck=passed"
     ], {
       env: {},
+      cwd: process.cwd(),
       now: () => now,
       createId: (prefix) => `${prefix}-1`,
       readGitStatus: async () =>
         " M src/runEvidenceCaptureCommand.ts\n" +
         " M src/parseEvidenceArgs.ts\n" +
+        " M ../core/src/candidateReviewability.ts\n" +
         "?? ../../docs/reviews/controlled-dogfood/run/\n" +
-        "?? docs/materials/raw-audit.md\n"
+        "?? ../../docs/materials/raw-audit.md\n"
     });
 
     expect(result.exitCode).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain("Changed files:\nintended:");
-    expect(result.stdout).toContain("- M src/runEvidenceCaptureCommand.ts");
-    expect(result.stdout).toContain("- M src/parseEvidenceArgs.ts");
+    expect(result.stdout).toContain("- M packages/cli/src/runEvidenceCaptureCommand.ts");
+    expect(result.stdout).toContain("- M packages/cli/src/parseEvidenceArgs.ts");
+    expect(result.stdout).toContain("- M packages/core/src/candidateReviewability.ts");
     expect(result.stdout).toContain("- ?? docs/reviews/controlled-dogfood/run");
     expect(result.stdout).not.toContain("../../docs/reviews/controlled-dogfood/run");
+    expect(result.stdout).not.toContain("- M core/src/candidateReviewability.ts");
     expect(result.stdout).toContain("unrelated:\n- ?? docs/materials/raw-audit.md");
     expect(result.stdout).toContain("unknown:\n- none");
     expect(result.stdout).toContain("Dirty context: unrelated files present; review burden increased.");
@@ -4295,6 +4302,7 @@ describe("runCli", () => {
         env: {
           KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
         },
+        cwd: path.resolve(process.cwd(), "../.."),
         now: () => now,
         createId: (prefix) => `${prefix}-1`,
         readGitStatus: async () =>

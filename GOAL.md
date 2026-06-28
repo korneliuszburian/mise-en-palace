@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V235 Evidence Capture Sibling Package Path Normalization
+V236 Activation Abstention Re-Gate
 ```
 
 Current product loop:
@@ -37,13 +37,13 @@ product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
 V100..V109: active-surface, handoff, and PLANS freshness guards complete.
-V110..V234: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
+V110..V235: active-plan, pattern-gate, source-map, ADR, skill, TypeScript,
 target, evidence, compactness, smoke, onboarding current-state, and related
 regression guards plus security permission-boundary, root-plan headroom,
 re-gate, source-usefulness readback/producer, preview dogfood, and persisted
 readback dogfood plus repo-root path normalization complete; details stay in
 PLANS.md.
-current task: V235-00 Evidence Capture Sibling Package Path Normalization.
+current task: V236-00 Activation Abstention Re-Gate.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

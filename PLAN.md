@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V235 Evidence Capture Sibling Package Path Normalization
-current task: V235-00 Evidence Capture Sibling Package Path Normalization
+active stream: V236 Activation Abstention Re-Gate
+current task: V236-00 Activation Abstention Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -28,53 +28,55 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V234: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V235: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
            normalization/readback guards plus best-pattern usefulness closure
-           and closure dogfood plus TS best-pattern application complete.
+           and closure dogfood plus TS best-pattern application and sibling
+           package path normalization complete.
 ```
 
 ## Active Stream
 
-### V235 Evidence Capture Sibling Package Path Normalization
+### V236 Activation Abstention Re-Gate
 
 Goal:
 
-Normalize evidence changed-file paths to full repo-root-relative paths for
-sibling package files when evidence capture runs from `packages/cli`.
+Re-gate repeated DB-backed activation abstention in recent internal KRN runs and
+decide whether the next repair should target activation inputs, source/memory
+availability, owner-file recall, or no activation repair yet.
 
 Current finding:
 
 ```txt
-V234 proved TypeScript source usefulness, but persisted changed-file readback
-stored sibling package paths as `core/src/...` instead of
-`packages/core/src/...` when capture ran through `pnpm --filter @krn/cli`.
+Recent DB-backed `krn plan --persist` runs for V231..V235 repeatedly produced
+`Context activation abstained` with 0 inclusions and 0 exclusions, even when
+the task had clear recent source/run evidence.
 ```
 
 Current action:
 
 ```txt
-Execute V235-00: repair evidence changed-file path normalization relative to the
-actual repo root and add focused tests for sibling package, current package, and
-docs paths.
+Execute V236-00: inspect recent persisted plans/readbacks and activation
+inputs, classify whether abstention is expected or a recall/read-model gap, and
+recommend one bounded repair only if evidence supports it.
 ```
 
 Primary consumer:
 
 ```txt
-Evidence capture, run readback, source usefulness reports, and dirty-context
-review.
+KRN planning context selection, source/memory activation, and next-source repair
+selection.
 ```
 
 Falsifier:
 
 ```txt
-Readback still stores `core/src/...` for `packages/core` files, breaks existing
-intended/unrelated/unknown classification, or changes target-repo evidence
-semantics.
+The slice jumps into scoring rewrites without proving whether the blocker is
+missing stored context, missing source/memory rows, weak query construction, or
+expected abstention.
 ```
 
 ## Pattern Gate
