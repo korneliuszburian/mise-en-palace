@@ -77,13 +77,13 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V230 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V231 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
-persisted readback dogfood, repo-root path normalization, and related re-gate
-slices: complete
-active stream: V231 Evidence Capture Repo-Root Path Normalization Readback
-current task: V231-00 Persisted Repo-Root Path Normalization Readback
+persisted readback dogfood, repo-root path normalization/readback, and related
+re-gate slices: complete
+active stream: V232 Best-Pattern Source Usefulness Re-Gate
+current task: V232-00 Best-Pattern Source Usefulness Re-Gate
 ```
 
 Evidence already recorded in repo:
@@ -99,7 +99,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V231-00 Persisted Repo-Root Path Normalization Readback.
+V232-00 Best-Pattern Source Usefulness Re-Gate.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18377,6 +18377,82 @@ Next active stream:
 
 Next active task:
 - V231-00 Persisted Repo-Root Path Normalization Readback.
+
+## Outcome 2026-06-28 V231 Persisted Repo-Root Path Normalization Readback
+
+Completed task:
+- V231-00 Persisted Repo-Root Path Normalization Readback.
+
+Decision:
+- Prove the V230 changed-file path normalization through the DB-backed evidence
+  capture and `krn run show` readback path.
+- Use a newly created report under `docs/reviews/controlled-dogfood/` as the
+  intended dirty file while invoking the CLI through `pnpm --filter @krn/cli`.
+- Do not claim activation quality from this run; activation abstained.
+
+Artifact:
+- `docs/reviews/controlled-dogfood/2026-06-28-v231-repo-root-path-readback/REPORT.md`
+
+DB evidence:
+- `pnpm db:ready`: passed.
+- migrations: 14/14.
+- pgvector: available.
+- executionRun: `0ece63ad-854d-4ff5-87bb-b474bc37eb2d`.
+- evidenceBundle: `89e0f34e-6e24-4bc9-a925-8be95987bff6`.
+- reviewAssessment: `0b2ae41f-f496-4cbb-9441-bb9587d0d692`.
+- feedbackDelta: `cd283d33-83dd-43f7-9331-e6a6ca5eeb62`.
+
+Evidence:
+- `krn plan --persist`: passed.
+- `krn evidence capture --persist --intended-file docs/reviews/controlled-dogfood/2026-06-28-v231-repo-root-path-readback/REPORT.md`: passed.
+- `krn run show --run-id 0ece63ad-854d-4ff5-87bb-b474bc37eb2d`: passed.
+- `krn run show --run-id 0ece63ad-854d-4ff5-87bb-b474bc37eb2d --json`: passed.
+
+Readback result:
+- `changedFiles.all` contained
+  `docs/reviews/controlled-dogfood/2026-06-28-v231-repo-root-path-readback`.
+- `changedFiles.classification.intended` contained the same repo-root-relative
+  path.
+- `unrelated=[]`.
+- `unknown=[]`.
+- no `../../docs/...` path was present in persisted readback.
+
+Source-to-decision:
+- Source: V230 implementation and V231 DB readback.
+- Mechanism: normalizing changed-file paths at evidence parse time affects
+  rendered output, metadata persistence, and readback without changing target
+  evidence semantics.
+- KRN implication: future evidence/review and source-decision candidates can use
+  stable repo-root-relative file refs even when CLI execution starts from a
+  package cwd.
+- Decision: accept V230 normalization as DB-backed for KRN changed-file evidence.
+- Does not prove: product readiness, activation quality, target-repo path
+  semantics, or general path policy outside KRN Git status evidence.
+- Consumer: evidence capture, `krn run show`, dirty-context review, source
+  usefulness reports, and future source-decision candidates.
+- Falsifier: a future package-cwd evidence capture readback returns `../../`
+  paths, or normalization hides unrelated dirty files.
+
+New finding:
+- Source usefulness can now be produced, persisted, and read back, but future
+  high-quality course/paper/docs sources still need a durable rule that prevents
+  decorative source retention when a source influences code, infra, harness, CI,
+  or TypeScript decisions.
+
+New task:
+- V232-00 Best-Pattern Source Usefulness Re-Gate.
+
+Product readiness verdict:
+- controlled-internal-alpha: yes / stronger
+- widened internal alpha: no
+- product-ready: no
+- V02-01: blocked/deferred
+
+Next active stream:
+- V232 Best-Pattern Source Usefulness Re-Gate.
+
+Next active task:
+- V232-00 Best-Pattern Source Usefulness Re-Gate.
 
 ## 21. Final Response Format For Codex Runs
 

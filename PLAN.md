@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V231 Evidence Capture Repo-Root Path Normalization Readback
-current task: V231-00 Persisted Repo-Root Path Normalization Readback
+active stream: V232 Best-Pattern Source Usefulness Re-Gate
+current task: V232-00 Best-Pattern Source Usefulness Re-Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -28,50 +28,56 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V230: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V231: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
-           normalization guards complete.
+           normalization/readback guards complete.
 ```
 
 ## Active Stream
 
-### V231 Evidence Capture Repo-Root Path Normalization Readback
+### V232 Best-Pattern Source Usefulness Re-Gate
 
 Goal:
 
-Prove the V230 repo-root path normalization through persisted evidence capture
-and run readback.
+Make high-quality external/internal patterns usable as engineering pressure:
+every non-trivial course/paper/docs/standard source used by a future slice must
+map to source -> mechanism -> KRN implication -> decision/rejection -> consumer
+-> falsifier, and either record source usefulness or explicitly explain why it
+was not measured.
 
 Current finding:
 
 ```txt
-V230 normalized changed-file paths during evidence capture parsing and guarded
-the behavior in CLI/golden tests. DB-backed readback has not yet proven the
-normalized representation in persisted EvidenceBundle/FeedbackDelta metadata.
+V227..V231 created source usefulness producer/readback and proved persisted
+metadata, but the durable workflow surface may still not force future
+best-pattern/course/paper-driven slices to close the loop with usefulness
+evidence.
 ```
 
 Current action:
 
 ```txt
-Execute V231-00: run a DB-backed evidence capture from the filtered CLI path,
-read it back through `krn run show`, and confirm changed files are
-repo-root-relative without `../../` prefixes.
+Execute V232-00: inspect `source-to-decision`, evidence reporting docs, and plan
+rules; add the smallest durable update or guard so pattern/course/paper sources
+cannot remain decorative when they influence code, infra, harness, or CI work.
 ```
 
 Primary consumer:
 
 ```txt
-Evidence capture and run readback reviewability.
+Future KRN source-to-decision slices, TypeScript standards application, infra
+choices, harness/eval decisions, and research/pattern condensation.
 ```
 
 Falsifier:
 
 ```txt
-Persisted/readback changed files still contain package-cwd `../../` paths, or
-the proof depends on target-repo semantics, hidden cleanup, or manual DB edits.
+The slice creates source hoarding, broad research crawler behavior, another
+plan-sprawl surface, or a rule that cannot be verified through evidence capture,
+tests, or a source usefulness report.
 ```
 
 ## Pattern Gate
