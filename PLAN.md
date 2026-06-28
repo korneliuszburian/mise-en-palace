@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V262 Brain Knowledge Card Fixture
-current task: V262-00 Brain Knowledge Card Fixture
+active stream: V263 Brain Knowledge Card Readback Helper
+current task: V263-00 Brain Knowledge Card Readback Helper
 ```
 
 ## Compact Completed Checkpoints
@@ -50,38 +50,38 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V262 Brain Knowledge Card Fixture
+### V263 Brain Knowledge Card Readback Helper
 
 Goal:
 
-Create one concrete brain knowledge card fixture for the retained TypeScript
-boundary pattern.
+Add a pure readback/search helper over brain knowledge card fixtures.
 
 Current finding:
 
 ```txt
-V261 guarded the `BrainKnowledgeReadModel` contract. The next gap is a concrete
-card object future UI/search can render and test.
+V262 created one concrete `BrainKnowledgeReadModel` card fixture. The next gap
+is loading and filtering/searching cards without UI/API/MCP.
 ```
 
 Current action:
 
 ```txt
-Execute V262-00: create one reviewable `BrainKnowledgeReadModel` fixture/card
-for `ts-boundary-unknown-first-result-state`. Do not build UI/API/MCP yet.
+Execute V263-00: add a small pure helper/test that loads card fixtures and
+filters/searches by kind, status, reviewability, and text. Do not build
+UI/API/MCP yet.
 ```
 
 Primary consumer:
 
 ```txt
-pattern brain / read-model fixture loop.
+pattern brain / knowledge-card readback loop.
 ```
 
 Falsifier:
 
 ```txt
-V262 becomes UI/API/MCP work or produces a decorative card without source refs,
-evidence refs, reviewability, falsifier, and does-not-prove boundaries.
+V263 becomes UI/API/MCP work or a ranking engine instead of a small pure
+readback helper.
 ```
 
 ## Pattern Gate

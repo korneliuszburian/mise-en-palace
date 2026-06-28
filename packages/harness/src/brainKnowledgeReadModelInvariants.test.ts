@@ -9,6 +9,9 @@ import {
 const readRootFile = (path: string): string =>
   readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 
+const readJsonRootFile = (path: string): unknown =>
+  JSON.parse(readRootFile(path));
+
 const sectionBody = (body: string, heading: string): string => {
   const start = body.indexOf(heading);
 
@@ -61,4 +64,65 @@ describe("Brain knowledge read model invariants", () => {
     expect(dashboardGate).toContain("Do not build a dashboard");
     expect(dashboardGate).toContain("read-only boundary over typed read models");
   });
+
+  it("keeps the retained TypeScript pattern available as a concrete knowledge card", () => {
+    const card = readJsonRootFile(
+      "tests/fixtures/brain-knowledge/cards/ts-boundary-unknown-first-result-state.json"
+    );
+
+    expect(card).toMatchObject({
+      id: "pattern:ts-boundary-unknown-first-result-state",
+      kind: "pattern",
+      status: "active",
+      confidence: "high",
+      reviewability: "ready",
+      temporal: {
+        kind: "current"
+      },
+      dissent: {
+        kind: "none"
+      },
+      nextAction: "use"
+    });
+
+    if (!isRecord(card)) {
+      throw new Error("Brain knowledge card fixture must be an object.");
+    }
+
+    expectNonEmptyString(card, "title");
+    expectNonEmptyString(card, "summary");
+    expectNonEmptyString(card, "falsifier");
+    expectNonEmptyString(card, "doesNotProve");
+    expectNonEmptyStringArray(card, "sourceRefs");
+    expectNonEmptyStringArray(card, "evidenceRefs");
+    expectNonEmptyStringArray(card, "consumers");
+  });
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function expectNonEmptyString(record: Record<string, unknown>, key: string): void {
+  const value = record[key];
+
+  expect(typeof value).toBe("string");
+  expect((value as string).length).toBeGreaterThan(0);
+}
+
+function expectNonEmptyStringArray(record: Record<string, unknown>, key: string): void {
+  const value = record[key];
+
+  expect(Array.isArray(value)).toBe(true);
+
+  if (!Array.isArray(value)) {
+    return;
+  }
+
+  expect(value.length).toBeGreaterThan(0);
+
+  for (const item of value) {
+    expect(typeof item).toBe("string");
+    expect((item as string).length).toBeGreaterThan(0);
+  }
+}
