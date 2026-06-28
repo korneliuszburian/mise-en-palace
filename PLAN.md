@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V289 Brain Knowledge Pattern Usefulness Feedback Readback
-current task: V289-00 Brain Knowledge Pattern Usefulness Feedback Readback
+active stream: V290 Brain Knowledge Usefulness Outcome Filter
+current task: V290-00 Brain Knowledge Usefulness Outcome Filter
 ```
 
 ## Compact Completed Checkpoints
@@ -50,45 +50,42 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V289 Brain Knowledge Pattern Usefulness Feedback Readback
+### V290 Brain Knowledge Usefulness Outcome Filter
 
 Goal:
 
-Make retained pattern usefulness feedback visible through a bounded read-only
-surface.
+Make retained pattern usefulness outcomes filterable in the existing read-only
+brain knowledge preview.
 
 Current finding:
 
 ```txt
-V288 proved the three external Codex workflow cards helped this continuation:
-goal continuation prevented stale V05 rollback, ExecPlan guidance reduced
-resume ambiguity, and task-contract guidance forced proof/non-proof reporting.
-The next bottleneck is readback: usefulness feedback exists in reports but is
-not yet visible beside retained pattern cards.
+V289 made latest usefulness feedback visible beside retained pattern cards
+without DB schema, API, MCP, dashboard, or Memory Core mutation. The next
+bottleneck is filtering: operators can see feedback but cannot directly filter
+cards by latest usefulness outcome.
 ```
 
 Current action:
 
 ```txt
-Execute V289-00: add the smallest read-only usefulness feedback readback for
-retained patterns, covering pattern id, latest usefulness outcome, evidence
-refs, and does-not-prove. Prefer explicit docs/catalog-side data and CLI/static
-readback over DB schema, API, MCP, dashboard, or Memory Core mutation. Do not
-add more external sources.
+Execute V290-00: add the smallest read-only `usefulness outcome` filter to the
+brain knowledge CLI/static preview so operators can isolate helped, neutral,
+noise, stale, and unknown pattern cards. Do not add DB schema, API, MCP,
+dashboard, ranking, semantic search, or new external sources.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge pattern usefulness readback loop.
+brain knowledge pattern usefulness search loop.
 ```
 
 Falsifier:
 
 ```txt
-Retained pattern cards can accumulate usefulness outcomes only in narrative
-reports, so future operators cannot inspect whether a pattern helped, was
-neutral/noise, or has evidence refs through a compact read-only surface.
+Retained pattern usefulness feedback is visible but cannot be filtered by
+outcome through the existing read-only CLI/static preview.
 ```
 
 ## Pattern Gate

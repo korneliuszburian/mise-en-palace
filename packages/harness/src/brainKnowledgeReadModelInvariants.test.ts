@@ -128,8 +128,10 @@ describe("Brain knowledge read model invariants", () => {
     }
 
     const patternFiles = catalog["patternFiles"];
+    const usefulnessFeedbackFiles = catalog["usefulnessFeedbackFiles"];
 
     expect(Array.isArray(patternFiles)).toBe(true);
+    expect(Array.isArray(usefulnessFeedbackFiles)).toBe(true);
     expect(patternFiles).toContain(
       "../patterns/retained-patterns/active-context-compact-current-truth.json"
     );
@@ -158,6 +160,9 @@ describe("Brain knowledge read model invariants", () => {
     );
     expect(patternFiles).toContain(
       "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+    );
+    expect(usefulnessFeedbackFiles).toContain(
+      "usefulness-feedback/v288-external-codex-workflow-patterns.json"
     );
   });
 

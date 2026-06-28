@@ -1,5 +1,8 @@
 {
   "cardFiles": [],
+  "usefulnessFeedbackFiles": [
+    "usefulness-feedback/v288-external-codex-workflow-patterns.json"
+  ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",
     "../patterns/retained-patterns/brain-knowledge-read-only-ui-boundary.json",

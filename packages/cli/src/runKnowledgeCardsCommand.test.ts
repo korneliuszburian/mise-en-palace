@@ -401,6 +401,31 @@ describe("runKnowledgeCardsCommand", () => {
     expect(taskContractPreview.proof.doesNotProve).toContain("KRN is product-ready");
   });
 
+  it("renders retained pattern usefulness feedback through catalog readback", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "goal continuation"
+      },
+      format: "text"
+    });
+
+    expect(result.stdout).toContain(
+      "Usefulness feedback files: docs/brain-knowledge/catalog.json:usefulness-feedback/v288-external-codex-workflow-patterns.json"
+    );
+    expect(result.stdout).toContain("pattern:codex-goal-continuation-evidence-contract");
+    expect(result.stdout).toContain("usefulnessOutcome: helped");
+    expect(result.stdout).toContain(
+      "usefulnessSummary: Prevented stale pasted V05 objective from rolling the active stream backward from V288."
+    );
+    expect(result.stdout).toContain(
+      "usefulnessDoesNotProve: This feedback does not prove automatic resume correctness or product readiness."
+    );
+  });
+
   it("guards deterministic catalog search results and proof boundaries", async () => {
     const typeScriptResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,

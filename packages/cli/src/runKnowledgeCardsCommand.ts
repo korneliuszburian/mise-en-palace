@@ -2,11 +2,14 @@ import path from "node:path";
 
 import type {
   BrainKnowledgeReadModel,
-  BrainKnowledgeSearchFilter
+  BrainKnowledgeSearchFilter,
+  BrainKnowledgeUsefulnessFeedback
 } from "@krn/harness";
 import {
   brainKnowledgeCardFromRetainedPatternDecision,
+  cardsWithBrainKnowledgeUsefulnessFeedback,
   parseBrainKnowledgeReadModel,
+  parseBrainKnowledgeUsefulnessFeedbackList,
   parseRetainedPatternDecision,
   searchBrainKnowledgeCards
 } from "@krn/harness";
@@ -39,6 +42,7 @@ export interface KnowledgeCardsPreviewResource {
   filter: BrainKnowledgeSearchFilter;
   cardFiles: string[];
   patternFiles: string[];
+  usefulnessFeedbackFiles: string[];
   catalogFiles: string[];
   cards: BrainKnowledgeReadModel[];
   proof: {
@@ -50,6 +54,7 @@ export interface KnowledgeCardsPreviewResource {
 const proof = {
   proves: [
     "supplied files parse as BrainKnowledgeReadModel or retained pattern decisions",
+    "supplied usefulness feedback files parse with proof boundaries",
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
@@ -66,8 +71,10 @@ export const runKnowledgeCardsCommand = async (
 ): Promise<KnowledgeCardsCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
   const loadedCards: BrainKnowledgeReadModel[] = [];
+  const loadedFeedback: BrainKnowledgeUsefulnessFeedback[] = [];
   const resolvedFiles: string[] = [];
   const resolvedPatternFiles: string[] = [];
+  const resolvedUsefulnessFeedbackFiles: string[] = [];
   const resolvedCatalogFiles: string[] = [];
 
   for (const cardFile of runtime.cardFiles) {
@@ -102,8 +109,20 @@ export const runKnowledgeCardsCommand = async (
       resolvedPatternFiles.push(`${catalogFile}:${patternFile}`);
     }
 
+    for (const usefulnessFeedbackFile of catalog.usefulnessFeedbackFiles) {
+      const resolvedUsefulnessFeedbackFile = path.resolve(catalogDirectory, usefulnessFeedbackFile);
+      await loadUsefulnessFeedbackFile(
+        `${catalogFile}:${usefulnessFeedbackFile}`,
+        resolvedUsefulnessFeedbackFile,
+        loadedFeedback
+      );
+      resolvedUsefulnessFeedbackFiles.push(`${catalogFile}:${usefulnessFeedbackFile}`);
+    }
+
     resolvedCatalogFiles.push(catalogFile);
   }
+
+  const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(loadedCards, loadedFeedback);
 
   const resource: KnowledgeCardsPreviewResource = {
     kind: "krn.brainKnowledge.cards.preview.v1",
@@ -113,8 +132,9 @@ export const runKnowledgeCardsCommand = async (
     filter: runtime.filter,
     cardFiles: resolvedFiles,
     patternFiles: resolvedPatternFiles,
+    usefulnessFeedbackFiles: resolvedUsefulnessFeedbackFiles,
     catalogFiles: resolvedCatalogFiles,
-    cards: searchBrainKnowledgeCards(loadedCards, runtime.filter),
+    cards: searchBrainKnowledgeCards(cardsWithFeedback, runtime.filter),
     proof: {
       proves: [...proof.proves],
       doesNotProve: [...proof.doesNotProve]
@@ -150,6 +170,7 @@ const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource
     `Catalog files: ${formatList(resource.catalogFiles)}`,
     `Card files: ${formatList(resource.cardFiles)}`,
     `Pattern files: ${formatList(resource.patternFiles)}`,
+    `Usefulness feedback files: ${formatList(resource.usefulnessFeedbackFiles)}`,
     `Results: ${resource.cards.length}`,
     "",
     ...resource.cards.flatMap(formatCard),
@@ -309,6 +330,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
       <h1>KRN Brain Knowledge Cards</h1>
       <div class="meta">Access: read-only | Mutation: none | Source: explicit files</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
+      <div class="meta">Usefulness feedback files: ${escapeHtml(formatList(resource.usefulnessFeedbackFiles))}</div>
     </header>
     <section class="toolbar" aria-label="Knowledge search">
       <input id="search" type="search" placeholder="Search cards" autocomplete="off">
@@ -381,6 +403,12 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `  sourceRefs: ${card.sourceRefs.join(", ")}`,
   `  evidenceRefs: ${card.evidenceRefs.join(", ")}`,
   `  consumers: ${card.consumers.join(", ")}`,
+  ...(card.usefulnessFeedback === undefined ? [] : [
+    `  usefulnessOutcome: ${card.usefulnessFeedback.outcome}`,
+    `  usefulnessSummary: ${card.usefulnessFeedback.summary}`,
+    `  usefulnessEvidenceRefs: ${card.usefulnessFeedback.evidenceRefs.join(", ")}`,
+    `  usefulnessDoesNotProve: ${card.usefulnessFeedback.doesNotProve}`
+  ]),
   `  falsifier: ${card.falsifier}`,
   `  doesNotProve: ${card.doesNotProve}`,
   ""
@@ -400,7 +428,11 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     ...card.evidenceRefs,
     ...card.consumers,
     card.falsifier,
-    card.doesNotProve
+    card.doesNotProve,
+    card.usefulnessFeedback?.outcome ?? "",
+    card.usefulnessFeedback?.summary ?? "",
+    card.usefulnessFeedback?.doesNotProve ?? "",
+    ...(card.usefulnessFeedback?.evidenceRefs ?? [])
   ].join(" ").toLowerCase();
 
   return `<article data-card data-card-id="${escapeHtml(card.id)}" data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
@@ -418,6 +450,7 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     <dt>Source refs</dt><dd>${formatHtmlList(card.sourceRefs)}</dd>
     <dt>Evidence refs</dt><dd>${formatHtmlList(card.evidenceRefs)}</dd>
     <dt>Consumers</dt><dd>${formatHtmlList(card.consumers)}</dd>
+    ${card.usefulnessFeedback === undefined ? "" : `<dt>Usefulness</dt><dd><strong>${escapeHtml(card.usefulnessFeedback.outcome)}</strong><br>${escapeHtml(card.usefulnessFeedback.summary)}<br>${formatHtmlList(card.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(card.usefulnessFeedback.doesNotProve)}</span></dd>`}
     <dt>Falsifier</dt><dd>${escapeHtml(card.falsifier)}</dd>
     <dt>Does not prove</dt><dd>${escapeHtml(card.doesNotProve)}</dd>
   </dl>
@@ -469,6 +502,7 @@ const resolveInputFile = async (cwd: string, filePath: string): Promise<string> 
 type KnowledgeCatalogInput = {
   cardFiles: string[];
   patternFiles: string[];
+  usefulnessFeedbackFiles: string[];
 };
 
 const parseKnowledgeCatalog = (value: unknown): KnowledgeCatalogInput | undefined => {
@@ -478,18 +512,21 @@ const parseKnowledgeCatalog = (value: unknown): KnowledgeCatalogInput | undefine
 
   const cardFiles = parseStringArray(value["cardFiles"]);
   const patternFiles = parseStringArray(value["patternFiles"]);
+  const usefulnessFeedbackFiles = parseStringArray(value["usefulnessFeedbackFiles"] ?? []);
 
   if (
     cardFiles === undefined ||
     patternFiles === undefined ||
-    (cardFiles.length === 0 && patternFiles.length === 0)
+    usefulnessFeedbackFiles === undefined ||
+    (cardFiles.length === 0 && patternFiles.length === 0 && usefulnessFeedbackFiles.length === 0)
   ) {
     return undefined;
   }
 
   return {
     cardFiles,
-    patternFiles
+    patternFiles,
+    usefulnessFeedbackFiles
   };
 };
 
@@ -521,6 +558,21 @@ const loadPatternFile = async (
   }
 
   cards.push(brainKnowledgeCardFromRetainedPatternDecision(pattern));
+};
+
+const loadUsefulnessFeedbackFile = async (
+  label: string,
+  resolvedFile: string,
+  feedback: BrainKnowledgeUsefulnessFeedback[]
+): Promise<void> => {
+  const parsed = await readJsonObject(resolvedFile);
+  const parsedFeedback = parseBrainKnowledgeUsefulnessFeedbackList(parsed);
+
+  if (parsedFeedback === undefined) {
+    throw new Error(`Invalid brain knowledge usefulness feedback file: ${label}`);
+  }
+
+  feedback.push(...parsedFeedback);
 };
 
 const parseStringArray = (value: unknown): string[] | undefined =>

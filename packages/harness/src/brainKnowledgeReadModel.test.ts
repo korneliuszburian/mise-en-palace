@@ -8,8 +8,10 @@ import {
 
 import {
   brainKnowledgeCardFromRetainedPatternDecision,
+  cardsWithBrainKnowledgeUsefulnessFeedback,
   parseBrainKnowledgeReadModel,
   parseRetainedPatternDecision,
+  parseBrainKnowledgeUsefulnessFeedbackList,
   searchBrainKnowledgeCards
 } from "./brainKnowledgeReadModel.js";
 
@@ -102,5 +104,57 @@ describe("Brain knowledge read model", () => {
     }
 
     expect(brainKnowledgeCardFromRetainedPatternDecision(patternDecision)).toEqual(expectedCard);
+  });
+
+  it("parses and applies latest usefulness feedback from unknown JSON", () => {
+    const card = parseBrainKnowledgeReadModel(cardFixture());
+    const feedback = parseBrainKnowledgeUsefulnessFeedbackList({
+      feedback: [
+        {
+          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          outcome: "neutral",
+          summary: "Older feedback should not win.",
+          evidenceRefs: ["docs/reviews/older.md"],
+          doesNotProve: "Older feedback does not prove current usefulness.",
+          observedAt: "2026-06-27"
+        },
+        {
+          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          outcome: "helped",
+          summary: "The retained pattern guided an unknown-first boundary repair.",
+          evidenceRefs: ["docs/reviews/newer.md"],
+          doesNotProve: "This feedback does not prove product readiness.",
+          observedAt: "2026-06-28"
+        }
+      ]
+    });
+
+    if (card === undefined || feedback === undefined) {
+      throw new Error("Expected card and usefulness feedback fixtures to parse.");
+    }
+
+    expect(cardsWithBrainKnowledgeUsefulnessFeedback([card], feedback)).toMatchObject([
+      {
+        id: "pattern:ts-boundary-unknown-first-result-state",
+        usefulnessFeedback: {
+          outcome: "helped",
+          summary: "The retained pattern guided an unknown-first boundary repair.",
+          evidenceRefs: ["docs/reviews/newer.md"]
+        }
+      }
+    ]);
+  });
+
+  it("rejects usefulness feedback missing proof boundaries", () => {
+    expect(parseBrainKnowledgeUsefulnessFeedbackList({
+      feedback: [
+        {
+          cardId: "pattern:missing-boundary",
+          outcome: "helped",
+          summary: "Missing doesNotProve should fail.",
+          evidenceRefs: ["docs/reviews/report.md"]
+        }
+      ]
+    })).toBeUndefined();
   });
 });

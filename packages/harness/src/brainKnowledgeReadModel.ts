@@ -70,6 +70,22 @@ export type BrainKnowledgeNextAction =
   | "defer"
   | "unknown";
 
+export type BrainKnowledgeUsefulnessOutcome =
+  | "helped"
+  | "neutral"
+  | "noise"
+  | "stale"
+  | "unknown";
+
+export type BrainKnowledgeUsefulnessFeedback = {
+  cardId: string;
+  outcome: BrainKnowledgeUsefulnessOutcome;
+  summary: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
+  observedAt?: string;
+};
+
 export type BrainKnowledgeReadModel = {
   id: string;
   kind: BrainKnowledgeKind;
@@ -86,6 +102,7 @@ export type BrainKnowledgeReadModel = {
   temporal: BrainKnowledgeTemporal;
   dissent: BrainKnowledgeDissent;
   nextAction: BrainKnowledgeNextAction;
+  usefulnessFeedback?: BrainKnowledgeUsefulnessFeedback;
 };
 
 export type BrainKnowledgeSearchFilter = {
@@ -170,6 +187,14 @@ const knowledgeNextActions = new Set<BrainKnowledgeNextAction>([
   "unknown"
 ]);
 
+const knowledgeUsefulnessOutcomes = new Set<BrainKnowledgeUsefulnessOutcome>([
+  "helped",
+  "neutral",
+  "noise",
+  "stale",
+  "unknown"
+]);
+
 const patternAdoptionStatuses = new Set<RetainedPatternAdoptionStatus>([
   "adopt_now",
   "lab",
@@ -198,6 +223,9 @@ export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeRead
   const consumers = parseNonEmptyStringArray(value["consumers"]);
   const falsifier = parseNonEmptyString(value["falsifier"]);
   const doesNotProve = parseNonEmptyString(value["doesNotProve"]);
+  const usefulnessFeedback = value["usefulnessFeedback"] === undefined
+    ? undefined
+    : parseBrainKnowledgeUsefulnessFeedback(value["usefulnessFeedback"]);
 
   if (
     id === undefined ||
@@ -214,7 +242,8 @@ export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeRead
     doesNotProve === undefined ||
     temporal === undefined ||
     dissent === undefined ||
-    nextAction === undefined
+    nextAction === undefined ||
+    (value["usefulnessFeedback"] !== undefined && usefulnessFeedback === undefined)
   ) {
     return undefined;
   }
@@ -234,8 +263,53 @@ export function parseBrainKnowledgeReadModel(value: unknown): BrainKnowledgeRead
     doesNotProve,
     temporal,
     dissent,
-    nextAction
+    nextAction,
+    ...(usefulnessFeedback === undefined ? {} : { usefulnessFeedback })
   };
+}
+
+export function parseBrainKnowledgeUsefulnessFeedback(value: unknown): BrainKnowledgeUsefulnessFeedback | undefined {
+  if (!isRecord(value)) {
+    return undefined;
+  }
+
+  const cardId = parseNonEmptyString(value["cardId"]);
+  const outcome = parseSetValue(value["outcome"], knowledgeUsefulnessOutcomes);
+  const summary = parseNonEmptyString(value["summary"]);
+  const evidenceRefs = parseNonEmptyStringArray(value["evidenceRefs"]);
+  const doesNotProve = parseNonEmptyString(value["doesNotProve"]);
+
+  if (
+    cardId === undefined ||
+    outcome === undefined ||
+    summary === undefined ||
+    evidenceRefs === undefined ||
+    doesNotProve === undefined ||
+    !optionalStringFields(value, ["observedAt"])
+  ) {
+    return undefined;
+  }
+
+  return {
+    cardId,
+    outcome,
+    summary,
+    evidenceRefs,
+    doesNotProve,
+    ...pickOptionalString(value, "observedAt")
+  };
+}
+
+export function parseBrainKnowledgeUsefulnessFeedbackList(value: unknown): BrainKnowledgeUsefulnessFeedback[] | undefined {
+  if (!isRecord(value) || !Array.isArray(value["feedback"])) {
+    return undefined;
+  }
+
+  const feedback = value["feedback"].map(parseBrainKnowledgeUsefulnessFeedback);
+
+  return feedback.every((item) => item !== undefined)
+    ? feedback
+    : undefined;
 }
 
 export function parseRetainedPatternDecision(value: unknown): RetainedPatternDecision | undefined {
@@ -318,6 +392,32 @@ export function brainKnowledgeCardFromRetainedPatternDecision(
   };
 }
 
+export function cardsWithBrainKnowledgeUsefulnessFeedback(
+  cards: BrainKnowledgeReadModel[],
+  feedback: readonly BrainKnowledgeUsefulnessFeedback[]
+): BrainKnowledgeReadModel[] {
+  const latestByCardId = new Map<string, BrainKnowledgeUsefulnessFeedback>();
+
+  for (const item of feedback) {
+    const previous = latestByCardId.get(item.cardId);
+
+    if (previous === undefined || isNewerFeedback(item, previous)) {
+      latestByCardId.set(item.cardId, item);
+    }
+  }
+
+  return cards.map((card) => {
+    const usefulnessFeedback = latestByCardId.get(card.id);
+
+    return usefulnessFeedback === undefined
+      ? card
+      : {
+        ...card,
+        usefulnessFeedback
+      };
+  });
+}
+
 export function searchBrainKnowledgeCards(
   cards: BrainKnowledgeReadModel[],
   filter: BrainKnowledgeSearchFilter
@@ -344,9 +444,13 @@ export function searchBrainKnowledgeCards(
         card.summary,
         card.falsifier,
         card.doesNotProve,
+        card.usefulnessFeedback?.outcome ?? "",
+        card.usefulnessFeedback?.summary ?? "",
+        card.usefulnessFeedback?.doesNotProve ?? "",
         ...card.sourceRefs,
         ...card.evidenceRefs,
-        ...card.consumers
+        ...card.consumers,
+        ...(card.usefulnessFeedback?.evidenceRefs ?? [])
       ].join("\n").toLowerCase();
 
       return searchable.includes(normalizedText);
@@ -354,6 +458,17 @@ export function searchBrainKnowledgeCards(
 
     return true;
   });
+}
+
+function isNewerFeedback(
+  candidate: BrainKnowledgeUsefulnessFeedback,
+  previous: BrainKnowledgeUsefulnessFeedback
+): boolean {
+  if (candidate.observedAt === undefined) {
+    return previous.observedAt === undefined;
+  }
+
+  return previous.observedAt === undefined || candidate.observedAt >= previous.observedAt;
 }
 
 function statusFromPatternAdoption(status: RetainedPatternAdoptionStatus): BrainKnowledgeStatus {

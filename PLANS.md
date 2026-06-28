@@ -23,21 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V289 Brain Knowledge Pattern Usefulness Feedback Readback
-current task: V289-00 Brain Knowledge Pattern Usefulness Feedback Readback
-latest pushed commit before V288: 934dec3 docs(knowledge): retain external Codex workflow patterns
-latest CI checked before V288: KRN CI success for 934dec35b9898f05b1de5f26faf8854bc35f4522
+active stream: V290 Brain Knowledge Usefulness Outcome Filter
+current task: V290-00 Brain Knowledge Usefulness Outcome Filter
+latest pushed commit before V289: f7389b6 docs(review): dogfood external pattern usefulness
+latest CI checked before V289: KRN CI success for f7389b6e219f43d80fc9ab8ca7547f4d9096ba59
 ```
 
 Known current gap:
 
 ```txt
-V289-00 Brain Knowledge Pattern Usefulness Feedback Readback is the current
-gap. V288 proved that retained external Codex workflow cards helped a real
-continuation decision: they prevented stale V05 rollback, reduced resume
-ambiguity, and forced proof/non-proof reporting. The next bottleneck is
-readback: usefulness feedback exists in reports but not beside retained pattern
-cards.
+V290-00 Brain Knowledge Usefulness Outcome Filter is the current gap. V289 made
+latest usefulness feedback visible beside retained pattern cards. The next
+bottleneck is filtering: operators can inspect feedback but cannot directly find
+cards whose latest outcome is helped, neutral, noise, stale, or unknown.
 ```
 
 ## 2. Product Thesis
@@ -2512,6 +2510,33 @@ Source-to-decision:
 - Consumer: V289 usefulness feedback readback.
 - Falsifier: future operators cannot inspect whether a retained pattern helped,
   was neutral/noise, or has evidence refs through a compact read-only surface.
+
+## Outcome V289-00 Brain Knowledge Pattern Usefulness Feedback Readback
+
+Summary:
+- added typed `BrainKnowledgeUsefulnessFeedback` parsing and latest-feedback
+  attachment in the harness read model;
+- added explicit catalog-side feedback artifact for V288 external Codex
+  workflow pattern usefulness;
+- extended `docs/brain-knowledge/catalog.json` with `usefulnessFeedbackFiles`;
+- rendered usefulness feedback in CLI text, JSON, and HTML readback;
+- guarded invalid feedback rejection and visible V288 feedback output.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v289-brain-knowledge-pattern-usefulness-feedback-readback/REPORT.md`.
+
+Source-to-decision:
+- Source: V288 usefulness dogfood report and retained pattern feedback.
+- Mechanism: pattern feedback is useful only if operators can inspect latest
+  outcome, evidence refs, and does-not-prove beside the retained card.
+- KRN implication: usefulness feedback belongs in the read-only knowledge
+  readback path before DB/API/MCP/dashboard work.
+- Decision: open V290 Brain Knowledge Usefulness Outcome Filter.
+- Does not prove: product readiness, semantic search, ranking quality, full
+  feedback history, or that feedback should mutate Memory Core.
+- Consumer: V290 usefulness outcome filter.
+- Falsifier: usefulness feedback is visible but cannot be filtered by outcome in
+  the read-only preview.
 
 ## Condensation Rules
 
