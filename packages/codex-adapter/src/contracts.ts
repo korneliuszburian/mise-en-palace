@@ -19,6 +19,7 @@ export interface CodexSkillBindingHint {
   capabilityKind: CapabilityRequirementKind;
   reason: string;
   requiredEvidence: string[];
+  patternRefs: string[];
   priority: CodexSkillBindingPriority;
   source: CodexSkillBindingSource;
 }

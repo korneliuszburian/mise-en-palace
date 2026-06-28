@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V278 Codex Adapter Skill Routing Dogfood
-current task: V278-00 Codex Adapter Skill Routing Dogfood
+active stream: V279 Codex Adapter Skill Pattern Smoke Readback
+current task: V279-00 Codex Adapter Skill Pattern Smoke Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,42 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V278 Codex Adapter Skill Routing Dogfood
+### V279 Codex Adapter Skill Pattern Smoke Readback
 
 Goal:
 
-Run one small Codex adapter/brief guidance dogfood that uses the retained
-`codex-skill-progressive-disclosure-routing` readback hook and records whether
-the pattern helped, was neutral, or was noise.
+Prove or guard that DB-backed Codex adapter smoke/readback includes the retained
+skill-routing pattern refs in rendered execution briefs.
 
 Current finding:
 
 ```txt
-V277 wired the Codex adapter skill to query the retained skill-routing pattern.
-The next gap is proof-of-use: whether the hook helps a real adapter/brief
-guidance slice.
+V278 added `patternRefs` to Codex skill hints and rendered briefs. The next
+gap is whether the DB-backed adapter smoke/readback path includes those refs
+end-to-end.
 ```
 
 Current action:
 
 ```txt
-Execute V278-00: choose the smallest adapter/brief guidance improvement, query
-the progressive-disclosure card first, make or reject the tiny change, and
-record usefulness. Do not add hidden routing, agent framework, MCP, web UI, or
-broad prompt system.
+Execute V279-00: add or adjust the smallest adapter smoke/readback guard so the
+rendered execution brief includes
+`pattern:codex-skill-progressive-disclosure-routing`. Do not add hidden routing,
+agent framework, MCP, web UI, or broad prompt system.
 ```
 
 Primary consumer:
 
 ```txt
-Codex adapter / skill routing / proof-of-use loop.
+Codex adapter / DB-backed smoke readback / skill routing loop.
 ```
 
 Falsifier:
 
 ```txt
-The dogfood cannot show whether the retained skill-routing card was used,
-helped, neutral, or noise during a real adapter/brief guidance change.
+Adapter smoke/readback can render skill hints without retained pattern refs and
+tests still pass.
 ```
 
 ## Pattern Gate

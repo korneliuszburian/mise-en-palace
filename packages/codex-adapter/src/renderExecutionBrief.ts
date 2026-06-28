@@ -101,6 +101,7 @@ const renderSkillBindingHints = (brief: ExecutionBrief): string[] =>
           `- ${hint.skillName}`,
           `capability=${hint.capabilityKind}`,
           `priority=${hint.priority}`,
+          `patterns=${hint.patternRefs.join(", ")}`,
           `reason=${hint.reason}`,
           `evidence=${hint.requiredEvidence.join(", ")}`
         ].join(" | ")

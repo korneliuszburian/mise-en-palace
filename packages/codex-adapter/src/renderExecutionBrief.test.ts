@@ -174,6 +174,9 @@ describe("renderExecutionBrief", () => {
     expect(brief.stopCondition).toBe("Stop before Codex execution or hidden state mutation.");
     expect(brief.rollbackExpectation).toBe(evidenceContract.rollbackPath);
     expect(brief.doesNotProve).toContain("Codex executed the work.");
+    expect(brief.skillBindingHints.every((hint) =>
+      hint.patternRefs.includes("pattern:codex-skill-progressive-disclosure-routing")
+    )).toBe(true);
   });
 
   it("renders a bounded Codex execution brief with exclusions and evidence", () => {
@@ -215,6 +218,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain(`Review burden: ${evidenceContract.reviewBurden}`);
     expect(rendered).toContain("Skill Binding Hints:");
     expect(rendered).toContain("- activation-engine");
+    expect(rendered).toContain("patterns=pattern:codex-skill-progressive-disclosure-routing");
     expect(rendered).not.toContain("select-kernel-patterns");
     expect(rendered).toContain("Hook Expectations:");
     expect(rendered).toContain(
@@ -324,5 +328,8 @@ describe("renderExecutionBrief", () => {
       "source-to-decision",
       "evidence-review-loop"
     ]));
+    expect(hints.every((hint) =>
+      hint.patternRefs.includes("pattern:codex-skill-progressive-disclosure-routing")
+    )).toBe(true);
   });
 });

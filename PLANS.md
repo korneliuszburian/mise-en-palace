@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V278 Codex Adapter Skill Routing Dogfood
-current task: V278-00 Codex Adapter Skill Routing Dogfood
-latest pushed commit before V277: f589ba6 docs(skills): retain Codex skill routing pattern
-latest CI checked before V277: KRN CI success for f589ba6b8ee93e3a2ea9f0eec9e8eb5879d7bc1f
+active stream: V279 Codex Adapter Skill Pattern Smoke Readback
+current task: V279-00 Codex Adapter Skill Pattern Smoke Readback
+latest pushed commit before V278: a81e94e docs(skills): route Codex adapter through skill pattern
+latest CI checked before V278: KRN CI success for a81e94ef9e10f91d6598b47c4b58e886cfd76789
 ```
 
 Known current gap:
 
 ```txt
-V278-00 Codex Adapter Skill Routing Dogfood is the current gap. V277 wired the
-Codex adapter skill to query the retained skill-routing card. Now run a small
-adapter/brief guidance dogfood and record whether that card helped, was neutral,
-or was noise.
+V279-00 Codex Adapter Skill Pattern Smoke Readback is the current gap. V278
+added retained pattern refs to skill hints and rendered briefs. Now prove or
+guard that the DB-backed adapter smoke/readback path includes those refs
+end-to-end.
 ```
 
 ## 2. Product Thesis
@@ -2194,6 +2194,32 @@ Source-to-decision:
 - Consumer: V278 Codex Adapter Skill Routing Dogfood.
 - Falsifier: adapter/brief work can change skill hints or reusable instructions
   without reading or explicitly rejecting the skill-routing card.
+
+## Outcome V278-00 Codex Adapter Skill Routing Dogfood
+
+Summary:
+- used the `progressive-disclosure` catalog card before changing Codex adapter
+  skill hints;
+- added `patternRefs` to `CodexSkillBindingHint`;
+- rendered `pattern:codex-skill-progressive-disclosure-routing` in execution
+  brief skill hints;
+- guarded typed artifact and text output in codex-adapter tests.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v278-codex-adapter-skill-routing-dogfood/REPORT.md`.
+
+Source-to-decision:
+- Source: V276 retained pattern card and V277 adapter skill readback hook.
+- Mechanism: skill hints reach Codex through execution briefs; without pattern
+  refs, retained knowledge is invisible at the execution boundary.
+- KRN implication: Codex-facing skill hints should expose the retained pattern
+  that justifies routing.
+- Decision: add read-only `patternRefs` to skill hints and render them.
+- Does not prove: automatic skill selection, DB-backed smoke coverage, or
+  product readiness.
+- Consumer: V279 Codex Adapter Skill Pattern Smoke Readback.
+- Falsifier: DB-backed adapter smoke/readback can render skill hints without
+  retained pattern refs and tests still pass.
 
 ## Condensation Rules
 
