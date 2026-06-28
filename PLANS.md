@@ -23,18 +23,18 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V268 Add Second Retained Pattern To Brain Knowledge Catalog
-current task: V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
-latest pushed commit before V267: 0ab8a46 feat(readmodel): preview retained pattern cards
-latest CI checked before V267: KRN CI success for 0ab8a46406fc07756748bf135e5a9bc64da57e23
+active stream: V269 Brain Knowledge Catalog Search Guard
+current task: V269-00 Brain Knowledge Catalog Search Guard
+latest pushed commit before V268: 5782281 feat(readmodel): preview brain knowledge catalog
+latest CI checked before V268: KRN CI success for 57822811007aba2b68911fd428e79728570b3caa
 ```
 
 Known current gap:
 
 ```txt
-V268-00 Add Second Retained Pattern To Brain Knowledge Catalog is the current
-gap. V267 added explicit catalog-file preview; now the catalog needs a second
-well-supported retained pattern so the path is not a one-pattern demo.
+V269-00 Brain Knowledge Catalog Search Guard is the current gap. V268 added a
+second retained pattern; now KRN needs a focused guard proving distinct catalog
+queries return distinct cards and keep proof/non-proof boundaries.
 ```
 
 ## 2. Product Thesis
@@ -739,7 +739,7 @@ Falsifier:
 
 ### V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
 
-Status: active.
+Status: complete.
 
 Goal:
 
@@ -787,6 +787,41 @@ Next-task synthesis rule:
 - if second pattern works, next task should add a catalog/readback quality guard
   or lightweight search fixture; if no pattern is defensible, document rejection
   and choose the missing source-decision repair.
+
+### V269-00 Brain Knowledge Catalog Search Guard
+
+Status: active.
+
+Goal:
+
+```txt
+Add a focused behavior guard proving explicit catalog readback returns distinct
+cards for distinct query terms and preserves proof/non-proof boundaries.
+```
+
+Rationale:
+
+```txt
+V267 built catalog preview and V268 added breadth. The next proof is not
+ranking; it is deterministic readback quality over the existing catalog.
+```
+
+Forbidden writes:
+
+- ranking engine;
+- web UI/API/MCP;
+- DB schema/migration;
+- directory crawling;
+- broad ingestion.
+
+Verification commands:
+
+```sh
+pnpm --filter @krn/cli test -- runKnowledgeCardsCommand
+pnpm typecheck
+pnpm test
+git diff --check
+```
 
 ## Decision Log
 
@@ -883,7 +918,8 @@ Current generated backlog is represented by queued tasks V257..V260 above.
   producer.
 - V266-00 complete: connected explicit retained pattern files to CLI readback.
 - V267-00 complete: added explicit catalog-file preview.
-- V268-00 active: add a second retained pattern to the catalog.
+- V268-00 complete: added a second retained pattern to the catalog.
+- V269-00 active: guard deterministic catalog search/readback behavior.
 
 ## Outcome V264-00 Brain Knowledge CLI Readback Preview
 
@@ -981,6 +1017,30 @@ Source-to-decision:
   guards.
 - Falsifier: catalog support becomes directory crawling or accepts unvalidated
   JSON.
+
+## Outcome V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
+
+Summary:
+- added `source-to-decision-retention-gate` as a structured retained pattern;
+- added it to `docs/brain-knowledge/catalog.json`;
+- extended CLI/catalog tests to find the second pattern by text query;
+- extended harness invariants to keep catalog entries pointed at retained
+  pattern sources.
+
+Source-to-decision:
+- Source: `docs/KRN_KERNEL.md`, `docs/patterns/KRN_PATTERN_SELECTION.md`, and
+  `.agents/skills/source-to-decision/SKILL.md`.
+- Mechanism: retained knowledge requires mechanism, implication, decision or
+  rejection, consumer, falsifier, and does-not-prove.
+- KRN implication: the catalog should retain reviewable pattern decisions, not
+  decorative source notes.
+- Decision: adopt `source-to-decision-retention-gate` and open V269 for a
+  catalog search/readback guard.
+- Does not prove: research completeness, source truth, ranking quality, DB
+  card store, UI readiness, or product readiness.
+- Consumer: future pattern intake, research condensation, and catalog reviews.
+- Falsifier: retained pattern cards can omit source-to-decision requirements
+  while tests still pass.
 
 ## Outcome V255-00 Active Ledger Condensation
 

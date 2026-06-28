@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V268 Add Second Retained Pattern To Brain Knowledge Catalog
-current task: V268-00 Add Second Retained Pattern To Brain Knowledge Catalog
+active stream: V269 Brain Knowledge Catalog Search Guard
+current task: V269-00 Brain Knowledge Catalog Search Guard
 ```
 
 ## Compact Completed Checkpoints
@@ -50,26 +50,25 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V268 Add Second Retained Pattern To Brain Knowledge Catalog
+### V269 Brain Knowledge Catalog Search Guard
 
 Goal:
 
-Add a second retained pattern decision to the explicit brain knowledge catalog
-using the same producer/readback path.
+Guard catalog search/readback behavior across multiple retained patterns.
 
 Current finding:
 
 ```txt
-V267 added explicit catalog-file preview. The next gap is breadth: the catalog
-currently proves the path with one retained pattern only.
+V268 added a second retained pattern to the catalog. The next gap is a focused
+guard that proves distinct catalog queries return distinct cards and preserve
+proof/non-proof boundaries.
 ```
 
 Current action:
 
 ```txt
-Execute V268-00: add a second high-value retained pattern source and catalog it,
-or reject the available candidates if they are not structured enough. Do not
-build broad ingestion, UI/API/MCP, DB schema, ranking, or directory crawling.
+Execute V269-00: add a focused catalog search/readback guard. Do not build
+ranking, UI/API/MCP, DB schema, broad ingestion, or directory crawling.
 ```
 
 Primary consumer:
@@ -81,8 +80,7 @@ pattern brain / operator readback loop.
 Falsifier:
 
 ```txt
-V268 adds decorative or unsupported knowledge, bypasses source-to-decision, or
-turns into broad research ingestion.
+V269 becomes ranking/search-engine work or loses proof/non-proof boundaries.
 ```
 
 ## Pattern Gate

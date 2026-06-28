@@ -108,6 +108,22 @@ describe("Brain knowledge read model invariants", () => {
     expectNonEmptyStringArray(card, "evidenceRefs");
     expectNonEmptyStringArray(card, "consumers");
   });
+
+  it("keeps the explicit brain knowledge catalog pointed at retained pattern sources", () => {
+    const catalog = readJsonRootFile("docs/brain-knowledge/catalog.json");
+
+    if (!isRecord(catalog)) {
+      throw new Error("Brain knowledge catalog must be an object.");
+    }
+
+    const patternFiles = catalog["patternFiles"];
+
+    expect(Array.isArray(patternFiles)).toBe(true);
+    expect(patternFiles).toContain("../patterns/retained-patterns/source-to-decision-retention-gate.json");
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+    );
+  });
 });
 
 function isRecord(value: unknown): value is Record<string, unknown> {

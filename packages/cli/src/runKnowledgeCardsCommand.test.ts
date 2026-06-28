@@ -131,8 +131,30 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("Catalog files: docs/brain-knowledge/catalog.json");
-    expect(result.stdout).toContain("Pattern files: docs/brain-knowledge/catalog.json:../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
+    expect(result.stdout).toContain(
+      "docs/brain-knowledge/catalog.json:../patterns/retained-patterns/source-to-decision-retention-gate.json"
+    );
+    expect(result.stdout).toContain(
+      "docs/brain-knowledge/catalog.json:../patterns/retained-patterns/ts-boundary-unknown-first-result-state.json"
+    );
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
+  });
+
+  it("searches the second retained pattern through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "source-to-decision"
+      },
+      format: "text"
+    });
+
+    expect(result.stdout).toContain("Results: 1");
+    expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
+    expect(result.stdout).toContain("Source-to-decision retention gate");
   });
 
   it("rejects invalid catalog files", async () => {
