@@ -48,6 +48,9 @@ describe("Brain knowledge read model invariants", () => {
   it("keeps UI and search behind the read-only knowledge card contract", () => {
     const readModels = readRootFile("docs/architecture/observability-read-models.md");
     const dashboardGate = readRootFile("docs/decisions/ADR-0025-dashboard-readiness-gate.md");
+    const webSearchGate = readRootFile(
+      "docs/decisions/ADR-0028-brain-knowledge-web-search-readiness-gate.md"
+    );
     const knowledgeModel = sectionBody(readModels, "## BrainKnowledgeReadModel");
 
     expect(knowledgeModel).toContain(
@@ -63,6 +66,14 @@ describe("Brain knowledge read model invariants", () => {
     expect(knowledgeModel).toContain("evidence");
     expect(dashboardGate).toContain("Do not build a dashboard");
     expect(dashboardGate).toContain("read-only boundary over typed read models");
+    expect(webSearchGate).toContain("static/read-only web search path");
+    expect(webSearchGate).toContain("BrainKnowledgeReadModel");
+    expect(webSearchGate).toContain("Mutation: none");
+    expect(webSearchGate).toContain("must not mutate Memory Core");
+    expect(webSearchGate).toContain("Add dashboard package now");
+    expect(webSearchGate).toContain("Add API solely to serve knowledge cards");
+    expect(webSearchGate).toContain("Add MCP server before static preview usefulness is proven");
+    expect(webSearchGate).toContain("V282 Brain Knowledge Static Web Preview Artifact");
   });
 
   it("keeps the retained TypeScript pattern available as a concrete knowledge card", () => {

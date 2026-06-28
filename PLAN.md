@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V281 Brain Knowledge Web Search Readiness Gate
-current task: V281-00 Brain Knowledge Web Search Readiness Gate
+active stream: V282 Brain Knowledge Static Web Preview Artifact
+current task: V282-00 Brain Knowledge Static Web Preview Artifact
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V281 Brain Knowledge Web Search Readiness Gate
+### V282 Brain Knowledge Static Web Preview Artifact
 
 Goal:
 
-Decide and guard the smallest path from self-contained HTML preview to a
-read-only web/search surface over brain knowledge cards.
+Implement or guard the first static brain knowledge web preview artifact path
+from `docs/brain-knowledge/catalog.json`.
 
 Current finding:
 
 ```txt
-V280 classifies pattern brain as an internal-alpha spine: retained patterns,
-HTML/CLI readback, skill hooks, adapter pattern refs, and DB-backed adapter smoke
-exist. The next product gap is a read-only web/search surface decision.
+V281 accepted static/read-only web search over BrainKnowledgeReadModel cards as
+the next valid UI/search step and rejected dashboard/API/MCP for now.
 ```
 
 Current action:
 
 ```txt
-Execute V281-00: write or guard the read-only web/search readiness decision for
-BrainKnowledgeReadModel. Prefer static/read-only before API/MCP. Do not add
-mutation, Memory Core writes, dashboard product, source crawler, or broad
-GraphRAG/SOTA claims.
+Execute V282-00: add or guard a local static preview artifact command/path that
+generates brain knowledge HTML from `docs/brain-knowledge/catalog.json` into
+`.local-lab/`. Preserve proof boundaries and read-only behavior. Do not add
+API, MCP, dashboard package, DB search service, or mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge UI/search readiness loop.
+brain knowledge static web preview loop.
 ```
 
 Falsifier:
 
 ```txt
-The project jumps from HTML preview to dashboard/API/MCP without a read-only
-web/search readiness decision and falsifier.
+Operators cannot regenerate a local web-search preview artifact from the
+catalog without command tribal knowledge, or the artifact path hides proof
+boundaries.
 ```
 
 ## Pattern Gate

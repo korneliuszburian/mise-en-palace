@@ -23,19 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V281 Brain Knowledge Web Search Readiness Gate
-current task: V281-00 Brain Knowledge Web Search Readiness Gate
-latest pushed commit before V280: 9d0ca50 test(adapter): prove skill pattern smoke readback
-latest CI checked before V280: KRN CI success for 9d0ca50023b8a277ac67fd3494bf7c916a9abf79
+active stream: V282 Brain Knowledge Static Web Preview Artifact
+current task: V282-00 Brain Knowledge Static Web Preview Artifact
+latest pushed commit before V281: 87f4616 docs(review): regate pattern brain readiness
+latest CI checked before V281: KRN CI success for 87f46165a25ee2a51ec1795bf4ace0eade259b1e
 ```
 
 Known current gap:
 
 ```txt
-V281-00 Brain Knowledge Web Search Readiness Gate is the current gap. V280
-classified pattern brain as an internal-alpha spine. Now decide the smallest
-read-only web/search path over `BrainKnowledgeReadModel` before API/MCP or
-dashboard work.
+V282-00 Brain Knowledge Static Web Preview Artifact is the current gap. V281
+accepted static/read-only web search over `BrainKnowledgeReadModel` cards and
+rejected dashboard/API/MCP for now. Now make the local static artifact path
+repeatable and guarded.
 ```
 
 ## 2. Product Thesis
@@ -2272,6 +2272,33 @@ Source-to-decision:
 - Consumer: V281 Brain Knowledge Web Search Readiness Gate.
 - Falsifier: the project jumps from HTML preview to dashboard/API/MCP without a
   read-only web/search readiness decision and falsifier.
+
+## Outcome V281-00 Brain Knowledge Web Search Readiness Gate
+
+Summary:
+- added `docs/decisions/ADR-0028-brain-knowledge-web-search-readiness-gate.md`;
+- guarded ADR-0028 through
+  `packages/harness/src/brainKnowledgeReadModelInvariants.test.ts`;
+- accepted static/read-only web search over `BrainKnowledgeReadModel` cards as
+  the next valid UI/search step;
+- kept dashboard/API/MCP/source-crawler/mutation surfaces rejected for now.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v281-brain-knowledge-web-search-readiness-gate/REPORT.md`.
+
+Source-to-decision:
+- Source: `docs/architecture/observability-read-models.md`,
+  `docs/decisions/ADR-0025-dashboard-readiness-gate.md`, V273 HTML preview,
+  V275 HTML catalog breadth guard, and V280 pattern brain readiness re-gate.
+- Mechanism: operator-facing knowledge search currently needs typed read-only
+  cards; services and mutation add product surface before usefulness proof.
+- KRN implication: build the static/read-only preview path first.
+- Decision: accept ADR-0028 and open V282 for a static web preview artifact.
+- Does not prove: product readiness, search ranking quality, web UI usefulness,
+  completeness of retained knowledge, or live DB/API/MCP need.
+- Consumer: V282 Brain Knowledge Static Web Preview Artifact.
+- Falsifier: static artifact cannot reduce rereads or review burden in dogfood,
+  while operators repeatedly need live DB/API-backed interaction.
 
 ## Condensation Rules
 
