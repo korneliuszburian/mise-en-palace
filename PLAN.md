@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V248 Activation Surface Re-Gate After Seed Repairs
-current task: V248-00 Activation Surface Re-Gate After Seed Repairs
+active stream: V249 Activation Budget Priority Guard
+current task: V249-00 Activation Budget Priority Guard
 ```
 
 ## Compact Completed Checkpoints
@@ -42,46 +42,46 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            finite-state exhaustiveness application, Codex ExecPlan source
            decision guard, best-pattern surface re-gate, and source-decision
            owner-file seed repair plus observe-reflect sequencing guard and
-           skill owner-file seed repair complete.
+           skill owner-file seed repair and activation surface re-gate complete.
 ```
 
 ## Active Stream
 
-### V248 Activation Surface Re-Gate After Seed Repairs
+### V249 Activation Budget Priority Guard
 
 Goal:
 
-Review activation evidence after V245 and V247 read-model seed repairs before
-adding more seeds or changing scoring.
+Guard that task-specific target source seeds are not crowded out by generic
+default owner files when they have stronger task relevance.
 
 Current finding:
 
 ```txt
-V245 and V247 repaired repeated source-decision and skill-directed read-model
-seed gaps. Both proof runs can now surface concrete owner files. The next
-decision should be made from evidence, not by automatically adding more seeds or
-rewriting activation scoring.
+V248 found no evidence for another seed class and no evidence for a broad
+scoring rewrite. The remaining activation risk is budget priority: generic
+default owner files still consume context slots and can push task-specific
+source seeds out.
 ```
 
 Current action:
 
 ```txt
-Execute V248-00: compare recent activation/read-model evidence and choose the
-next bounded surface: stop seed repair, add one more specific seed class, or
-open a focused activation behavior guard.
+Execute V249-00: add a focused behavior guard, and only a minimal source repair
+if needed, so strongly task-matching source seeds outrank generic default owner
+files.
 ```
 
 Primary consumer:
 
 ```txt
-PLAN/PLANS active stream selection and any future activation/read-model repair.
+owner-file recall/context assembly behavior and future activation re-gates.
 ```
 
 Falsifier:
 
 ```txt
-V248 selects another activation/read-model task without comparing V245/V247
-proofs, misses, consumers, and falsifiers.
+A post-seed task-specific source seed is still excluded over budget while
+generic default owner files are included without stronger task relevance.
 ```
 
 ## Pattern Gate

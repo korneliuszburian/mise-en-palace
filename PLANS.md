@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V247 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V248 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -88,10 +88,11 @@ current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
-repair plus observe-reflect sequencing guard and skill owner-file seed repair:
+repair plus observe-reflect sequencing guard, skill owner-file seed repair, and
+activation surface re-gate after seed repairs:
 complete
-active stream: V248 Activation Surface Re-Gate After Seed Repairs
-current task: V248-00 Activation Surface Re-Gate After Seed Repairs
+active stream: V249 Activation Budget Priority Guard
+current task: V249-00 Activation Budget Priority Guard
 ```
 
 Evidence already recorded in repo:
@@ -107,7 +108,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V248-00 Activation Surface Re-Gate After Seed Repairs.
+V249-00 Activation Budget Priority Guard.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -19968,7 +19969,7 @@ New task:
 
 ID: V248-00
 Name: Activation Surface Re-Gate After Seed Repairs
-Status: active
+Status: complete
 Goal: review activation evidence after V245 and V247 read-model seed repairs
 before adding more seeds or changing scoring.
 Product rationale: KRN should not keep adding seed classes reactively. After two
@@ -20022,6 +20023,104 @@ Risk: overfitting recent tasks and continuing activation work past its evidence.
 Rollback: revert report/plan update if it selects a next task without consumer
 or falsifier.
 
+V248 outcome:
+- V248-00 complete: activation/read-model evidence after V245 and V247 was
+  compared before opening more seed or scoring work.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v248-activation-surface-regate-after-seeds/REPORT.md`.
+
+V248 evidence:
+- V245 report: source-decision seeds now surface, with
+  `docs/standards/typescript-excellence.md` present but budget-excluded.
+- V246 report: observe/reflect sequencing fixed and skill owner files were the
+  next concrete read-model miss.
+- V247 report: skill owner files now surface, but generic default owner files
+  still consume context slots.
+- Worktree preflight before V248 edits: clean, `main...origin/main`.
+- Latest commits before V248: `e3f8e4c`, `be33a5c`, `90438bf`.
+
+V248 source-to-decision:
+- Source: V245/V246/V247 reports and DB-backed plan readbacks.
+- Mechanism: missing read-model inputs caused recent owner-file misses; after
+  adding exact seeds, plans can surface the intended owner files, but generic
+  default owner files still consume budget and can push task-specific seeds out.
+- KRN implication: stop adding seed classes until another concrete miss appears;
+  next repair should guard budget priority between generic owner files and
+  task-specific source seeds.
+- Decision: open V249 as a bounded activation budget-priority guard, not a
+  scoring rewrite.
+- Does not prove: activation scoring is globally wrong, broad retrieval rewrite
+  is needed, or no future seed class will ever be needed.
+- Consumer: activation owner-file recall tests, context assembly behavior, and
+  future activation re-gates.
+- Falsifier: a post-seed task-specific source seed is still excluded over
+  budget while generic default owner files are included without stronger task
+  relevance.
+
+New task:
+- V249-00 Activation Budget Priority Guard.
+
+ID: V249-00
+Name: Activation Budget Priority Guard
+Status: active
+Goal: guard that task-specific target source seeds are not crowded out by
+generic default owner files when they have stronger task relevance.
+Product rationale: KRN should not waste context budget on generic readback
+owners when a source seed directly matches the task. This reduces context waste
+without a broad scoring rewrite.
+Architectural rationale: V245/V247 fixed read-model input gaps; V248 found the
+remaining activation risk is budget priority, not another seed class.
+Evidence source:
+- V245 report and `docs/standards/typescript-excellence.md` budget exclusion;
+- V247 report showing skill seeds surface while generic owner files still occupy
+  slots;
+- `packages/harness/src/activation/ownerFileRecall.ts`;
+- `packages/harness/src/activation/ownerFileRecall.test.ts`.
+Inputs required:
+- current-state preflight;
+- inspect owner-file recall candidate scoring and context budget behavior;
+- decide whether a focused test is enough or a minimal source repair is needed.
+Files likely touched:
+- `packages/harness/src/activation/ownerFileRecall.test.ts`;
+- maybe `packages/harness/src/activation/ownerFileRecall.ts`;
+- V249 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- one bounded behavior guard;
+- minimal scoring/budget adjustment only if the guard proves current behavior is
+  wrong;
+- dogfood report and plan condensation.
+Forbidden writes:
+- broad activation scoring rewrite;
+- broad retrieval rewrite;
+- new seed class;
+- source crawler;
+- dashboard/API/MCP/worker daemon;
+- broad eval platform.
+Output requirements:
+- prove task-specific source seed vs generic owner-file budget behavior;
+- if repaired, explain exact scoring/budget rule and falsifier;
+- if no repair needed, record why and stop.
+Definition of Done:
+- focused test or explicit rejection exists;
+- source change only if needed by failing guard;
+- targeted tests, typecheck/full tests if source touched, diff check pass;
+- evidence/report exists;
+- commit is pushed and CI checked.
+Verification commands:
+- `pnpm --filter @krn/harness test -- ownerFileRecall`;
+- `pnpm run typecheck` and `TMPDIR=/home/krn/.cache/krn-tmp pnpm test` if source
+  changes;
+- `git diff --check`.
+Acceptance criteria:
+- task-specific source seed with stronger relevance is protected from generic
+  owner-file budget crowd-out;
+- no broad scoring rewrite;
+- no new seed class.
+Risk: overcorrecting and hiding useful generic owner files for activation work.
+Rollback: revert the focused guard/repair and keep V248 report as evidence if
+the behavior is too brittle.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20029,10 +20128,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V248 Activation Surface Re-Gate After Seed Repairs.
+- V249 Activation Budget Priority Guard.
 
 Next active task:
-- V248-00 Activation Surface Re-Gate After Seed Repairs.
+- V249-00 Activation Budget Priority Guard.
 
 ## 21. Final Response Format For Codex Runs
 
