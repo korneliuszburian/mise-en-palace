@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V236 Activation Abstention Re-Gate
-current task: V236-00 Activation Abstention Re-Gate
+active stream: V237 Activation Abstention Diagnostics And Empty-Store Readback
+current task: V237-00 Activation Abstention Diagnostics And Empty-Store Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -28,55 +28,56 @@ Detailed history stays in `PLANS.md`.
 V02..V47: target/evidence/DB/activation/memory/source/internal-alpha complete.
 V48..V99: source-to-decision, CI/eval, pattern matrix, TypeScript/security,
           source-map, skill, brain-battle, and context-hygiene guards complete.
-V100..V235: active-surface, handoff, PLANS freshness, pattern-gate,
+V100..V236: active-surface, handoff, PLANS freshness, pattern-gate,
            TypeScript, source-map, ADR, skill, CI/eval, onboarding, infra,
            worker, security permission-boundary, root-plan headroom, and
            re-gate plus source-usefulness readback/producer and preview
            dogfood plus persisted readback dogfood and repo-root path
            normalization/readback guards plus best-pattern usefulness closure
            and closure dogfood plus TS best-pattern application and sibling
-           package path normalization complete.
+           package path normalization plus activation abstention re-gate
+           complete.
 ```
 
 ## Active Stream
 
-### V236 Activation Abstention Re-Gate
+### V237 Activation Abstention Diagnostics And Empty-Store Readback
 
 Goal:
 
-Re-gate repeated DB-backed activation abstention in recent internal KRN runs and
-decide whether the next repair should target activation inputs, source/memory
-availability, owner-file recall, or no activation repair yet.
+Make activation abstention actionable in `krn plan` and/or `krn run show` by
+surfacing activation input counts, empty-store cause, target read-model
+availability, and owner-file fallback results.
 
 Current finding:
 
 ```txt
-Recent DB-backed `krn plan --persist` runs for V231..V235 repeatedly produced
-`Context activation abstained` with 0 inclusions and 0 exclusions, even when
-the task had clear recent source/run evidence.
+V236 proved V231..V235 abstained because persisted retrieval candidate counts
+were 0. The active project has no active memory, source claims, search
+documents, anti-memory, repo installations, or project kernel metadata.
 ```
 
 Current action:
 
 ```txt
-Execute V236-00: inspect recent persisted plans/readbacks and activation
-inputs, classify whether abstention is expected or a recall/read-model gap, and
-recommend one bounded repair only if evidence supports it.
+Execute V237-00: add focused diagnostics so future abstentions distinguish
+empty activation stores, missing target read models, owner-file fallback misses,
+and real candidate exclusions before any ranking/scoring repair is considered.
 ```
 
 Primary consumer:
 
 ```txt
-KRN planning context selection, source/memory activation, and next-source repair
-selection.
+KRN planning context selection, run readback, operator review burden, and future
+activation repair selection.
 ```
 
 Falsifier:
 
 ```txt
-The slice jumps into scoring rewrites without proving whether the blocker is
-missing stored context, missing source/memory rows, weak query construction, or
-expected abstention.
+The slice changes ranking/scoring or seeds broad context instead of exposing
+which activation inputs were present and why candidates were unavailable or
+excluded.
 ```
 
 ## Pattern Gate

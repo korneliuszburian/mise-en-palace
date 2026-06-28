@@ -14,7 +14,7 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Active stream:
 
 ```txt
-V236 Activation Abstention Re-Gate
+V237 Activation Abstention Diagnostics And Empty-Store Readback
 ```
 
 Current product loop:
@@ -43,7 +43,7 @@ regression guards plus security permission-boundary, root-plan headroom,
 re-gate, source-usefulness readback/producer, preview dogfood, and persisted
 readback dogfood plus repo-root path normalization complete; details stay in
 PLANS.md.
-current task: V236-00 Activation Abstention Re-Gate.
+current task: V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
 ```
 
 Detailed completed history, evidence, outcomes, and next-task synthesis live in

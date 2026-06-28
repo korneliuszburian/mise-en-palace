@@ -77,15 +77,16 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V235 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V236 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
 best-pattern usefulness closure and closure dogfood, and related re-gate
-slices plus TS best-pattern application and sibling package path normalization:
+slices plus TS best-pattern application, sibling package path normalization,
+and activation abstention re-gate:
 complete
-active stream: V236 Activation Abstention Re-Gate
-current task: V236-00 Activation Abstention Re-Gate
+active stream: V237 Activation Abstention Diagnostics And Empty-Store Readback
+current task: V237-00 Activation Abstention Diagnostics And Empty-Store Readback
 ```
 
 Evidence already recorded in repo:
@@ -101,7 +102,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V236-00 Activation Abstention Re-Gate.
+V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -18723,13 +18724,127 @@ Source-to-decision:
 - Falsifier: a future package-filtered evidence capture stores `core/src/...`
   for a `packages/core` file or hides unrelated dirty files.
 
-New finding:
-- Recent persisted internal planning runs continue to show activation abstention
-  with 0 inclusions and 0 exclusions. This should be re-gated before any scoring
-  or activation rewrite.
+V236 outcome:
+- V236-00 complete: repeated DB-backed activation abstention was re-gated.
+- Report: `docs/reviews/controlled-dogfood/2026-06-28-v236-activation-abstention-regate/REPORT.md`.
+
+V236 evidence:
+- V231..V235 persisted run readbacks all showed `Context: abstained`,
+  `inclusions: 0`, `exclusions: 0`.
+- DB inspection showed each inspected retrieval run had `candidate_count=0`.
+- The active project `ae9962f9-0b20-4a43-97fe-d715062c4478` had:
+  - `memory_active=0`;
+  - `anti_memory=0`;
+  - `source_claims_via_artifact=0`;
+  - `search_documents=0`;
+  - `repo_installations=0`;
+  - `project_kernels=0`.
+- A V236 persisted plan selected the static activation owner-file recall
+  candidate `packages/harness/src/activation/activationEngine.ts`, proving the
+  static fallback can work when task terms match enough known catalog terms.
+
+V236 source-to-decision:
+- Source: V236 DB/readback inspection and current-shell `krn plan --persist`.
+- Mechanism: activation can only select candidates that exist in memory,
+  source, search, target read model, or static owner-file fallback; V231..V235
+  had zero persisted candidates and no project activation material.
+- KRN implication: treat the repeated abstention as an activation input/readback
+  diagnostic gap, not as evidence for ranking/scoring rewrite.
+- Decision: add a bounded V237 repair to expose activation input diagnostics in
+  plan/run readback.
+- Does not prove: activation scoring quality, future seeded-store relevance,
+  product readiness, or that static owner-file recall is complete.
+- Consumer: `krn plan`, `krn run show`, activation repair selection, operator
+  review burden.
+- Falsifier: a future DB-backed run with non-empty candidates abstains without
+  readable exclusion/score diagnostics.
 
 New task:
-- V236-00 Activation Abstention Re-Gate.
+- V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
+
+ID: V237-00
+Name: Activation Abstention Diagnostics And Empty-Store Readback
+Status: active
+Goal: make activation abstention actionable in `krn plan` and/or `krn run show`
+by surfacing activation input counts, empty-store cause, target read-model
+availability, and owner-file fallback results.
+Product rationale: KRN cannot improve context selection if operators only see
+`Context: abstained`; it must show whether the problem was empty inputs,
+missing target read model, owner-file fallback miss, low score, low trust, or
+budget exclusion.
+Architectural rationale: diagnostics/readback should precede activation scoring
+changes. A zero-candidate run is an input/read-model problem until proven
+otherwise.
+Evidence source:
+- `docs/reviews/controlled-dogfood/2026-06-28-v236-activation-abstention-regate/REPORT.md`;
+- V231..V235 persisted run readbacks;
+- DB retrieval candidate counts and active project store counts.
+Official/external sources:
+- repo-local `activation-engine` skill;
+- source-to-decision pattern gate;
+- no fresh external research needed for this repair.
+Inputs required:
+- current DB via `KRN_DATABASE_URL=postgres://krn:krn@localhost:54329/krn`;
+- recent persisted abstained runs;
+- activation compiler/readback source.
+Files likely touched:
+- `packages/harness/src/activation/activationEngine.ts`;
+- `packages/harness/src/activation/assembleContext.ts`;
+- `packages/harness/src/compiler/compileHarnessPlan.ts`;
+- `packages/cli/src/runPlanCommand.ts`;
+- `packages/cli/src/runRunShowCommand.ts`;
+- focused tests for activation diagnostics/readback;
+- dogfood report under `docs/reviews/controlled-dogfood/`.
+Allowed writes:
+- bounded source/test changes needed to expose diagnostics;
+- compact `PLAN.md`, `GOAL.md`, and `PLANS.md` updates;
+- one focused dogfood report.
+Forbidden writes:
+- activation scoring rewrite;
+- broad memory/source seeding;
+- source crawler;
+- Research Foundry;
+- dashboard/API/MCP/worker daemon;
+- broad eval platform;
+- hidden semantic hooks;
+- product-readiness claim.
+Output requirements:
+- plan and/or run readback says why activation abstained;
+- diagnostics distinguish at least empty activation stores from excluded
+  candidates;
+- owner-file fallback availability/miss is visible enough for operator review;
+- command evidence includes proof/non-proof boundaries.
+Definition of Done:
+- focused tests prove empty-store/diagnostic output;
+- `pnpm typecheck` passes if source is touched;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test` or targeted + full tests pass as
+  appropriate;
+- `git diff --check` passes;
+- DB-backed dogfood report records usefulness and next-task synthesis;
+- commit is pushed and CI is checked when relevant.
+Verification commands:
+- `pnpm --filter @krn/harness test -- activation`;
+- `pnpm --filter @krn/cli test -- runPlanCommand runRunShowCommand`;
+- `pnpm typecheck`;
+- `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`;
+- `git diff --check`;
+- `pnpm db:ready`;
+- `krn plan --persist` and `krn run show --run-id <run>`.
+Acceptance criteria:
+- empty-store abstention no longer looks identical to low-score/low-trust
+  abstention in operator readback;
+- no ranking/scoring behavior changes are made in this slice;
+- diagnostics do not claim missing context means no relevant files exist.
+Risk: overfitting diagnostics to V231..V235 or turning diagnostics into a new
+activation subsystem.
+Rollback: revert the focused source/test/report commit.
+Condensation expectation: if diagnostics prove a repeated owner-file fallback
+miss after non-empty inputs, append a small owner-file recall repair; if they
+prove only empty stores, append a current-state source/memory seeding decision
+task instead of scoring work.
+Next-task synthesis rule: choose exactly one of owner-file recall repair,
+current-state activation seed/read-model task, or no activation repair based on
+diagnostic evidence.
 
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
@@ -18738,10 +18853,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V236 Activation Abstention Re-Gate.
+- V237 Activation Abstention Diagnostics And Empty-Store Readback.
 
 Next active task:
-- V236-00 Activation Abstention Re-Gate.
+- V237-00 Activation Abstention Diagnostics And Empty-Store Readback.
 
 ## 21. Final Response Format For Codex Runs
 
