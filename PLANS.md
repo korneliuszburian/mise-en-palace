@@ -77,7 +77,7 @@ V44 Target Evidence Lifecycle And Freshness Fields: complete
 V45 Target Availability Re-Gate With Typed Lifecycle Evidence: complete
 V46 Target Owner Coordination Packet: complete
 V47 Internal Hardening Re-Gate After Target Coordination: complete
-V48..V248 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
+V48..V249 continuous pattern, source-to-decision, TypeScript, source-map, CI/eval,
 skills, context hygiene, onboarding, infra, worker, security permission-boundary,
 root-plan headroom, source-usefulness readback/producer, preview dogfood,
 persisted readback dogfood, repo-root path normalization/readback,
@@ -88,11 +88,12 @@ current-state activation seed plus default connected-project resolution,
 project resolution readback, external TypeScript best-pattern intake, and
 finite-state exhaustiveness application plus Codex ExecPlan source decision
 guard plus best-pattern surface re-gate and source-decision owner-file seed
-repair plus observe-reflect sequencing guard, skill owner-file seed repair, and
-activation surface re-gate after seed repairs:
+repair plus observe-reflect sequencing guard, skill owner-file seed repair,
+activation surface re-gate after seed repairs, and activation budget-priority
+guard:
 complete
-active stream: V249 Activation Budget Priority Guard
-current task: V249-00 Activation Budget Priority Guard
+active stream: V250 Product Readiness Re-Gate
+current task: V250-00 Product Readiness Re-Gate After Activation Guards
 ```
 
 Evidence already recorded in repo:
@@ -108,7 +109,7 @@ Known current gap:
 
 ```txt
 The current gap is the active task above:
-V249-00 Activation Budget Priority Guard.
+V250-00 Product Readiness Re-Gate After Activation Guards.
 
 Use the latest outcome entry before the final-response format section to choose
 the next bounded slice. Older gaps remain historical evidence, not active truth.
@@ -20062,7 +20063,7 @@ New task:
 
 ID: V249-00
 Name: Activation Budget Priority Guard
-Status: active
+Status: complete
 Goal: guard that task-specific target source seeds are not crowded out by
 generic default owner files when they have stronger task relevance.
 Product rationale: KRN should not waste context budget on generic readback
@@ -20121,6 +20122,87 @@ Risk: overcorrecting and hiding useful generic owner files for activation work.
 Rollback: revert the focused guard/repair and keep V248 report as evidence if
 the behavior is too brittle.
 
+V249 outcome:
+- V249-00 complete: a focused owner-file recall behavior guard proves a strongly
+  matching task-specific source seed can survive tight context budget over a
+  weaker generic owner file.
+- Report:
+  `docs/reviews/controlled-dogfood/2026-06-28-v249-activation-budget-priority-guard/REPORT.md`.
+
+V249 evidence:
+- `pnpm --filter @krn/harness test -- ownerFileRecall`: passed.
+- The guard did not require runtime activation scoring changes.
+
+V249 source-to-decision:
+- Source: V248 budget-priority risk plus ownerFileRecall behavior.
+- Mechanism: target source seeds and owner files both enter activation as
+  search candidates; under tight maxInclusions, total score decides which
+  context survives over_budget exclusion.
+- KRN implication: guard strongly task-matching source seed behavior before
+  changing scoring.
+- Decision: add guard, reject runtime scoring change for now.
+- Does not prove: activation quality globally, product readiness, or that budget
+  behavior is correct for every target repo.
+- Consumer: `packages/harness/src/activation/ownerFileRecall.test.ts`.
+- Falsifier: a strongly matching target source seed is excluded over_budget
+  while a weaker generic owner file is included.
+
+New task:
+- V250-00 Product Readiness Re-Gate After Activation Guards.
+
+ID: V250-00
+Name: Product Readiness Re-Gate After Activation Guards
+Status: active
+Goal: decide the next product-readiness blocker after activation seed and budget
+guards, without claiming product-ready from internal dogfood alone.
+Product rationale: the brain has stronger evidence/review/source/skill and
+activation read-model behavior now. The next move should be selected against
+product-readiness requirements.
+Architectural rationale: after V245/V247/V249, activation no longer has the
+same immediate missing-owner-file/budget caveats. Re-gate before continuing to
+avoid local confidence inflation.
+Evidence source:
+- V245/V246/V247/V248/V249 reports;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`;
+- recent CI/DB-backed evidence;
+- product-readiness caveats from earlier brain usefulness and controlled alpha
+  reports.
+Inputs required:
+- current-state preflight;
+- review current readiness dimensions:
+  evidence/review, DB replay, source-to-decision, skills, activation,
+  reflection, candidate quality, target trials, second-operator proof, CI/eval.
+Files likely touched:
+- V250 report;
+- `PLAN.md`, `GOAL.md`, `PLANS.md`.
+Allowed writes:
+- bounded readiness re-gate report;
+- next active task selection.
+Forbidden writes:
+- product-ready claim without evidence;
+- new feature work before re-gate decision;
+- dashboard/API/MCP/worker daemon;
+- broad eval platform;
+- broad activation/reflection rewrite.
+Output requirements:
+- readiness matrix with proved / not proved / missing evidence;
+- choose one next blocker or explicit defer;
+- state what would make product-ready true.
+Definition of Done:
+- V250 report exists;
+- product readiness remains honest;
+- one next bounded task selected by evidence;
+- docs verification passes;
+- commit is pushed and CI checked if triggered.
+Verification commands:
+- `git diff --check`;
+- context hygiene/active plan invariants if root files change.
+Acceptance criteria:
+- no product-ready claim without requirement-by-requirement proof;
+- next task is not selected by momentum alone.
+Risk: turning readiness re-gate into another giant plan.
+Rollback: revert report/plan update if it selects work without evidence.
+
 Product readiness verdict:
 - controlled-internal-alpha: yes / stronger
 - widened internal alpha: no
@@ -20128,10 +20210,10 @@ Product readiness verdict:
 - V02-01: blocked/deferred
 
 Next active stream:
-- V249 Activation Budget Priority Guard.
+- V250 Product Readiness Re-Gate.
 
 Next active task:
-- V249-00 Activation Budget Priority Guard.
+- V250-00 Product Readiness Re-Gate After Activation Guards.
 
 ## 21. Final Response Format For Codex Runs
 

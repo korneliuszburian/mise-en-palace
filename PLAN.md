@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V249 Activation Budget Priority Guard
-current task: V249-00 Activation Budget Priority Guard
+active stream: V250 Product Readiness Re-Gate
+current task: V250-00 Product Readiness Re-Gate After Activation Guards
 ```
 
 ## Compact Completed Checkpoints
@@ -42,46 +42,46 @@ V100..V241: active-surface, handoff, PLANS freshness, pattern-gate,
            finite-state exhaustiveness application, Codex ExecPlan source
            decision guard, best-pattern surface re-gate, and source-decision
            owner-file seed repair plus observe-reflect sequencing guard and
-           skill owner-file seed repair and activation surface re-gate complete.
+           skill owner-file seed repair, activation surface re-gate, and
+           budget-priority guard complete.
 ```
 
 ## Active Stream
 
-### V249 Activation Budget Priority Guard
+### V250 Product Readiness Re-Gate
 
 Goal:
 
-Guard that task-specific target source seeds are not crowded out by generic
-default owner files when they have stronger task relevance.
+Decide the next product-readiness blocker after activation seed and budget
+guards, without claiming product-ready from internal dogfood alone.
 
 Current finding:
 
 ```txt
-V248 found no evidence for another seed class and no evidence for a broad
-scoring rewrite. The remaining activation risk is budget priority: generic
-default owner files still consume context slots and can push task-specific
-source seeds out.
+V245/V247 repaired read-model seed gaps and V249 added a budget-priority guard
+without needing a runtime scoring rewrite. The next decision should be a product
+readiness re-gate, not another activation tweak by default.
 ```
 
 Current action:
 
 ```txt
-Execute V249-00: add a focused behavior guard, and only a minimal source repair
-if needed, so strongly task-matching source seeds outrank generic default owner
-files.
+Execute V250-00: compare current proof against product-readiness requirements
+and choose one next blocker: target trial, second-operator launch, reflection /
+candidate quality, activation evidence, or explicit defer.
 ```
 
 Primary consumer:
 
 ```txt
-owner-file recall/context assembly behavior and future activation re-gates.
+PLAN/PLANS next product stream and product-readiness status.
 ```
 
 Falsifier:
 
 ```txt
-A post-seed task-specific source seed is still excluded over budget while
-generic default owner files are included without stronger task relevance.
+V250 claims product-ready or opens new product work without requirement-by-
+requirement evidence.
 ```
 
 ## Pattern Gate

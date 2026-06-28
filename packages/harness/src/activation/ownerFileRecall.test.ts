@@ -11,6 +11,15 @@ import {
 import type {
   TargetActivationReadModel
 } from "./ownerFileRecall.js";
+import {
+  applyContextROI
+} from "./contextRoi.js";
+import {
+  rankCandidates
+} from "./rankCandidates.js";
+import {
+  buildSourceQuery
+} from "./sourceQuery.js";
 
 const taskContract = (objective: string): TaskContract => ({
   id: "task-1",
@@ -246,6 +255,58 @@ describe("owner-file recall", () => {
         })
       ])
     );
+  });
+
+  it("keeps strongly matching source seeds ahead of generic owner files under tight budget", () => {
+    const targetReadModel: TargetActivationReadModel = {
+      projectKernelId: "kernel-1",
+      repoInstallationIds: ["repo-installation-1"],
+      localPathHints: ["/tmp/mise-en-palace"],
+      sourceSeeds: [
+        {
+          path: "docs/standards/typescript-excellence.md",
+          kind: "standard_doc",
+          reason: "seed TypeScript best-pattern and finite-state standard"
+        }
+      ],
+      ownerFiles: [
+        {
+          path: "packages/cli/src/runPlanCommand.ts",
+          root: "packages/cli/src",
+          kind: "plan_readback",
+          reason: "plan output activation diagnostics owner"
+        }
+      ],
+      trustExclusions: []
+    };
+    const task = taskContract(
+      "Apply TypeScript finite-state standard and best-pattern source decision"
+    );
+    const ranked = rankCandidates(
+      buildOwnerFileRecallCandidates(task, { targetReadModel }),
+      buildSourceQuery(task)
+    );
+    const bounded = applyContextROI(ranked, { maxInclusions: 1 });
+
+    const included = bounded.find((candidate) => candidate.exclusion === undefined);
+    const excluded = bounded.filter((candidate) => candidate.exclusion !== undefined);
+
+    expect(included?.metadata).toMatchObject({
+      targetReadModelKind: "source_seed",
+      targetPath: "docs/standards/typescript-excellence.md",
+      seedKind: "standard_doc"
+    });
+    expect(excluded).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          targetReadModelKind: "owner_file",
+          targetPath: "packages/cli/src/runPlanCommand.ts"
+        }),
+        exclusion: expect.objectContaining({
+          reason: "over_budget"
+        })
+      })
+    ]));
   });
 
   it("surfaces explicit target owner files below named roots when the read model provides them", () => {
