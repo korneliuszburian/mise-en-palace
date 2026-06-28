@@ -23,18 +23,19 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V294 Brain Knowledge Skill Routing Usefulness Feedback
-current task: V294-00 Brain Knowledge Skill Routing Usefulness Feedback
-latest pushed commit before V293: fc2db1c feat(knowledge): filter cards without usefulness feedback
-latest CI checked before V293: KRN CI success for fc2db1cdaa4a4f9dbdddbafb58d7f846a479b93b
+active stream: V295 Source-To-Decision Retention Gate Usefulness Feedback
+current task: V295-00 Source-To-Decision Retention Gate Usefulness Feedback
+latest pushed commit before V294: 6d2f756 docs(review): triage missing pattern feedback
+latest CI checked before V294: KRN CI success for 6d2f7563ef698444ead3e0c96a82e007343a3d90
 ```
 
 Known current gap:
 
 ```txt
-V294-00 Brain Knowledge Skill Routing Usefulness Feedback is the current gap.
-V293 selected `pattern:codex-skill-progressive-disclosure-routing` as the
-highest-ROI no-feedback card to exercise next.
+V295-00 Source-To-Decision Retention Gate Usefulness Feedback is the current
+gap. V294 marked skill routing as helped and reduced no-feedback cards from 8
+to 7. The next highest-ROI no-feedback card is source-to-decision retention,
+which governs research/paper/course condensation.
 ```
 
 ## 2. Product Thesis
@@ -2646,6 +2647,30 @@ Source-to-decision:
 - Falsifier: the selected skill-routing pattern cannot be tied to a concrete
   recent or next slice where loading a skill improved boundary discipline,
   reduced rereads, or prevented broad context load.
+
+## Outcome V294-00 Brain Knowledge Skill Routing Usefulness Feedback
+
+Summary:
+- added `docs/brain-knowledge/usefulness-feedback/v294-skill-routing-pattern.json`;
+- attached `helped` feedback to
+  `pattern:codex-skill-progressive-disclosure-routing`;
+- confirmed `--usefulness-outcome helped` returns 4 cards;
+- confirmed `--usefulness-outcome none` decreased from 8 to 7 cards.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v294-brain-knowledge-skill-routing-usefulness-feedback/REPORT.md`.
+
+Source-to-decision:
+- Source: V292 TypeScript boundary repair and V294 usefulness readback.
+- Mechanism: a repo-local skill helps when it narrows the execution contract
+  and avoids broad prompt/doc expansion for repeated work.
+- KRN implication: skills are the current bridge between retained brain
+  knowledge and Codex execution, but usefulness must be measured per pattern.
+- Decision: open V295 Source-To-Decision Retention Gate Usefulness Feedback.
+- Does not prove: automatic research condensation or full pattern brain.
+- Consumer: V295 research/pattern condensation usefulness proof.
+- Falsifier: source-to-decision retention cannot be tied to a recent slice where
+  it prevented source hoarding, vague pattern intake, or ungrounded decisions.
 
 ## Condensation Rules
 

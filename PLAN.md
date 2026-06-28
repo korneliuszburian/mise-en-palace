@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V294 Brain Knowledge Skill Routing Usefulness Feedback
-current task: V294-00 Brain Knowledge Skill Routing Usefulness Feedback
+active stream: V295 Source-To-Decision Retention Gate Usefulness Feedback
+current task: V295-00 Source-To-Decision Retention Gate Usefulness Feedback
 ```
 
 ## Compact Completed Checkpoints
@@ -50,41 +50,41 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V294 Brain Knowledge Skill Routing Usefulness Feedback
+### V295 Source-To-Decision Retention Gate Usefulness Feedback
 
 Goal:
 
-Add explicit usefulness feedback for the retained skill-routing pattern if
-evidence shows it materially helped a real slice.
+Add explicit usefulness feedback for the source-to-decision retention gate if
+recent evidence shows it materially helped research/pattern condensation.
 
 Current finding:
 
 ```txt
-V293 selected `pattern:codex-skill-progressive-disclosure-routing` as the
-highest-ROI no-feedback target because current product pressure is connecting
-brain knowledge to Codex behavior through skills.
+V294 marked skill routing as helped and reduced no-feedback cards from 8 to 7.
+The next highest-ROI no-feedback pattern is source-to-decision retention,
+because it governs research, papers, courses, and best-pattern intake.
 ```
 
 Current action:
 
 ```txt
-Execute V294-00: inspect V292/V293 evidence and add usefulness feedback for
-`pattern:codex-skill-progressive-disclosure-routing` only if it can be tied to a
-real helped/neutral/noise/stale outcome. Preserve proof boundaries and do not
-add new skills, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
+Execute V295-00: inspect recent source/pattern intake evidence and add
+usefulness feedback for `pattern:source-to-decision-retention-gate` only if it
+can be tied to a real helped/neutral/noise/stale outcome. Do not add new source
+intake, UI/API/MCP, dashboard, semantic ranking, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge skill-routing usefulness gate.
+brain knowledge research-condensation usefulness gate.
 ```
 
 Falsifier:
 
 ```txt
-Skill-routing usefulness cannot be supported by evidence, or feedback is added
-without proof boundaries and does-not-prove.
+Source-to-decision usefulness cannot be supported by evidence, or feedback is
+added without proof boundaries and does-not-prove.
 ```
 
 ## Pattern Gate

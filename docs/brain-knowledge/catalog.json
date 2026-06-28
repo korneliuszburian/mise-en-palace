@@ -1,7 +1,8 @@
 {
   "cardFiles": [],
   "usefulnessFeedbackFiles": [
-    "usefulness-feedback/v288-external-codex-workflow-patterns.json"
+    "usefulness-feedback/v288-external-codex-workflow-patterns.json",
+    "usefulness-feedback/v294-skill-routing-pattern.json"
   ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",

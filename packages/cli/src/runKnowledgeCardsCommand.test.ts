@@ -463,7 +463,8 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(helpedPreview).sort()).toEqual([
       "pattern:codex-execplan-living-validation-loop",
       "pattern:codex-goal-continuation-evidence-contract",
-      "pattern:codex-prompt-task-contract-proof-boundary"
+      "pattern:codex-prompt-task-contract-proof-boundary",
+      "pattern:codex-skill-progressive-disclosure-routing"
     ].sort());
     expect(cardIds(noisePreview)).toEqual([]);
   });
@@ -484,7 +485,6 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(preview).sort()).toEqual([
       "pattern:active-context-compact-current-truth",
       "pattern:brain-knowledge-read-only-ui-boundary",
-      "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
