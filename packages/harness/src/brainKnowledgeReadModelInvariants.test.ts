@@ -137,6 +137,15 @@ describe("Brain knowledge read model invariants", () => {
       "../patterns/retained-patterns/brain-knowledge-read-only-ui-boundary.json"
     );
     expect(patternFiles).toContain(
+      "../patterns/retained-patterns/codex-execplan-living-validation-loop.json"
+    );
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/codex-goal-continuation-evidence-contract.json"
+    );
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/codex-prompt-task-contract-proof-boundary.json"
+    );
+    expect(patternFiles).toContain(
       "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json"
     );
     expect(patternFiles).toContain("../patterns/retained-patterns/evidence-proof-non-proof-boundary.json");

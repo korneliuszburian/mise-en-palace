@@ -23,19 +23,20 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V287 Brain Knowledge External Pattern Intake Trial
-current task: V287-00 Brain Knowledge External Pattern Intake Trial
-latest pushed commit before V286: 139c799 test(ui): smoke brain knowledge static filters
-latest CI checked before V286: KRN CI success for 139c79913f871edd8d55bc89fa4b411dfcb40690
+active stream: V288 Brain Knowledge External Pattern Usefulness Dogfood
+current task: V288-00 Brain Knowledge External Pattern Usefulness Dogfood
+latest pushed commit before V287: 7f2b05b docs(knowledge): expand retained pattern catalog
+latest CI checked before V287: KRN CI success for 7f2b05b5521ad240a0fa1e2625f37bc064ae8c79
 ```
 
 Known current gap:
 
 ```txt
-V287-00 Brain Knowledge External Pattern Intake Trial is the current gap. V286
-expanded the catalog from 4 to 8 retained KRN operating patterns from existing
-reviewed repo-local evidence. The next bottleneck is controlled external/public
-best-practice intake without decorative source hoarding.
+V288-00 Brain Knowledge External Pattern Usefulness Dogfood is the current gap.
+V287 expanded the catalog from 8 to 11 retained pattern cards by ingesting three
+official Codex/OpenAI workflow patterns through source-to-decision. The next
+bottleneck is usefulness: retained external patterns must help execution, not
+just exist as searchable cards.
 ```
 
 ## 2. Product Thesis
@@ -2446,6 +2447,38 @@ Source-to-decision:
 - Falsifier: external/public pattern intake turns into decorative source
   hoarding or retained external patterns lack consumer, falsifier, and local
   proof boundaries.
+
+## Outcome V287-00 Brain Knowledge External Pattern Intake Trial
+
+Summary:
+- added retained pattern decisions for Codex goal continuation, Codex ExecPlan
+  living validation, and Codex prompt task contract proof boundaries;
+- expanded `docs/brain-knowledge/catalog.json` from 8 to 11 retained pattern
+  cards;
+- updated harness and CLI catalog/readback guards;
+- readback queries confirmed `goal continuation`, `living validation loop`, and
+  `task contract proof boundary` find the new cards;
+- regenerated static preview includes the new pattern ids.
+
+Report:
+`docs/reviews/controlled-dogfood/2026-06-28-v287-brain-knowledge-external-pattern-intake-trial/REPORT.md`.
+
+Source-to-decision:
+- Source: `docs/KRN_SOURCES.md#goals-in-codex`,
+  `docs/KRN_SOURCES.md#execplans`, and
+  `docs/KRN_SOURCES.md#codex-prompting-guide`.
+- Mechanism: official Codex/Cookbook guidance maps goals to continuation
+  contracts, ExecPlans to long-running validation state, and prompting guidance
+  to explicit task contracts with verification.
+- KRN implication: these mechanisms belong in retained brain knowledge only as
+  small cards with consumers, falsifiers, evidence refs, and proof/non-proof
+  boundaries.
+- Decision: open V288 Brain Knowledge External Pattern Usefulness Dogfood.
+- Does not prove: product readiness, semantic ranking quality, automatic
+  application by Codex, or completeness of external best practices.
+- Consumer: V288 usefulness feedback loop.
+- Falsifier: the new cards are searchable but do not reduce rereads, prevent
+  stale-plan drift, or improve task-contract quality in the next bounded slice.
 
 ## Condensation Rules
 

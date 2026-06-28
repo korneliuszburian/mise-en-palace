@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V287 Brain Knowledge External Pattern Intake Trial
-current task: V287-00 Brain Knowledge External Pattern Intake Trial
+active stream: V288 Brain Knowledge External Pattern Usefulness Dogfood
+current task: V288-00 Brain Knowledge External Pattern Usefulness Dogfood
 ```
 
 ## Compact Completed Checkpoints
@@ -50,45 +50,45 @@ V100..V255: active-surface, handoff, PLANS freshness, pattern-gate,
 
 ## Active Stream
 
-### V287 Brain Knowledge External Pattern Intake Trial
+### V288 Brain Knowledge External Pattern Usefulness Dogfood
 
 Goal:
 
-Run the first bounded external/public pattern intake into the brain knowledge
-catalog.
+Measure whether the newly retained external Codex workflow cards actually help
+the next bounded KRN task.
 
 Current finding:
 
 ```txt
-V286 expanded the catalog from 4 to 8 retained KRN operating patterns from
-existing reviewed repo-local evidence. The next bottleneck is controlled
-external/public best-practice intake, not more UI chrome.
+V287 proved controlled external/public pattern intake without decorative source
+hoarding by adding retained cards for Codex goals, ExecPlans, and prompt task
+contracts. The next bottleneck is usefulness: do these cards reduce rereads,
+stale-plan drift, or task-contract mistakes in a real next slice?
 ```
 
 Current action:
 
 ```txt
-Execute V287-00: ingest a small number of public/legal external best-practice
-patterns through source-to-decision into retained brain knowledge. Use only
-official docs, public pages, papers, or user-provided summaries that can be
-mapped to mechanism, KRN implication, decision/rejection, consumer, falsifier,
-and does-not-prove. Do not ingest paid/proprietary course material, crawl broad
-sources, build Research Foundry/API/MCP/dashboard, or claim SOTA/product
-readiness.
+Execute V288-00: before the next bounded KRN slice, query the brain knowledge
+catalog for goal continuation, living validation loop, and task contract proof
+boundary. Use those cards as read-only execution guidance, then record whether
+they helped, were neutral/noise, or revealed missing pattern/application
+behavior. Do not add more external sources, build Research Foundry/API/MCP/
+dashboard, or claim product readiness.
 ```
 
 Primary consumer:
 
 ```txt
-brain knowledge external pattern intake loop.
+brain knowledge pattern usefulness feedback loop.
 ```
 
 Falsifier:
 
 ```txt
-The brain knowledge catalog cannot absorb external best practices without
-decorative source hoarding, or retained external patterns lack consumer,
-falsifier, and local proof boundaries.
+The newly retained external Codex workflow cards are searchable but do not
+change execution quality, reduce rereads, prevent stale active-state drift, or
+improve task-contract proof boundaries in the next bounded slice.
 ```
 
 ## Pattern Gate

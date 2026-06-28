@@ -202,6 +202,9 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("pattern:evidence-proof-non-proof-boundary");
     expect(result.stdout).toContain("pattern:active-context-compact-current-truth");
     expect(result.stdout).toContain("pattern:brain-knowledge-read-only-ui-boundary");
+    expect(result.stdout).toContain("pattern:codex-execplan-living-validation-loop");
+    expect(result.stdout).toContain("pattern:codex-goal-continuation-evidence-contract");
+    expect(result.stdout).toContain("pattern:codex-prompt-task-contract-proof-boundary");
     expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
     expect(result.stdout).toContain("pattern:target-repo-write-authority-boundary");
@@ -209,6 +212,9 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("Active context stays compact and current-truth routed");
     expect(result.stdout).toContain("Brain knowledge UI/search remains read-only until usefulness proof");
+    expect(result.stdout).toContain("Codex ExecPlan living validation loop");
+    expect(result.stdout).toContain("Codex goal continuation evidence contract");
+    expect(result.stdout).toContain("Codex prompt task contract proof boundary");
     expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
     expect(result.stdout).toContain("Source-to-decision retention gate");
@@ -316,7 +322,7 @@ describe("runKnowledgeCardsCommand", () => {
       patternFiles: [],
       catalogFiles: [catalogFile],
       filter: {
-        text: "proof-boundary"
+        text: "command provenance"
       },
       format: "json"
     });
@@ -343,6 +349,56 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(preview)).toEqual(["pattern:codex-skill-progressive-disclosure-routing"]);
     expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
     expect(preview.mutation).toBe("none");
+  });
+
+  it("searches external Codex workflow patterns through the catalog", async () => {
+    const goalsResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "goal continuation"
+      },
+      format: "json"
+    });
+    const execPlanResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "living validation loop"
+      },
+      format: "json"
+    });
+    const taskContractResult = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "task contract proof boundary"
+      },
+      format: "json"
+    });
+
+    const goalsPreview = parsePreviewResource(goalsResult.stdout);
+    const execPlanPreview = parsePreviewResource(execPlanResult.stdout);
+    const taskContractPreview = parsePreviewResource(taskContractResult.stdout);
+
+    expect(cardIds(goalsPreview)).toEqual([
+      "pattern:codex-goal-continuation-evidence-contract"
+    ]);
+    expect(cardIds(execPlanPreview)).toEqual([
+      "pattern:codex-execplan-living-validation-loop"
+    ]);
+    expect(cardIds(taskContractPreview)).toEqual([
+      "pattern:codex-prompt-task-contract-proof-boundary"
+    ]);
+    expect(goalsPreview.proof.doesNotProve).toContain("KRN is product-ready");
+    expect(execPlanPreview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(taskContractPreview.proof.doesNotProve).toContain("KRN is product-ready");
   });
 
   it("guards deterministic catalog search results and proof boundaries", async () => {
@@ -394,6 +450,9 @@ describe("runKnowledgeCardsCommand", () => {
     expect(cardIds(preview).sort()).toEqual([
       "pattern:active-context-compact-current-truth",
       "pattern:brain-knowledge-read-only-ui-boundary",
+      "pattern:codex-execplan-living-validation-loop",
+      "pattern:codex-goal-continuation-evidence-contract",
+      "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:source-to-decision-retention-gate",
