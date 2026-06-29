@@ -15,15 +15,14 @@ import {
   selectObservationPrefix
 } from "@krn/harness";
 
-import type { KrnDatabase } from "./database.js";
 import {
-  countSmokeRows,
-  createSmokeDatabase,
+  assertSmokeReadbackChecks,
+  cleanupActivationSmokeRows,
+  countActivationSmokeMarkerRows,
+  countSmokeContextSelectionRows,
   createSmokeProjectRecords,
-  ensureSmokeBrainStoreReady,
-  normalizeSmokeSlugPart,
-  optionalSmokeCount,
-  sumSmokeCountTasks
+  createSmokeRuntime,
+  requireSmokeReadbackValue
 } from "./dbSmokeSupport.js";
 import {
   DrizzleHarnessRunRepository,
@@ -33,18 +32,9 @@ import {
   DrizzleSourceRepository
 } from "./repositories/index.js";
 import {
-  antiMemoryRecords,
   contextAssemblies,
-  contextExclusions,
-  contextItems,
-  memoryRecords,
-  memoryRecordVersions,
   retrievalRuns,
-  runEvents,
   searchDocuments,
-  sourceArtifacts,
-  sourceClaims,
-  workspaces
 } from "./schema/index.js";
 
 export interface ActivationSmokeInput {
@@ -81,46 +71,6 @@ export interface ActivationSmokeReport {
   remainingMarkerCount: number;
   cleanedUp: boolean;
 }
-
-const countMarkerRows = async (
-  db: KrnDatabase,
-  workspaceSlug: string,
-  marker: string,
-  contextAssemblyId: string | undefined
-): Promise<number> => {
-  return sumSmokeCountTasks([
-    () => countSmokeRows(db, workspaces, eq(workspaces.slug, workspaceSlug)),
-    () => countSmokeRows(db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`),
-    () => countMemoryRecordVersionsForSmoke(db, marker),
-    () => countSmokeRows(db, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, searchDocuments, sql`${searchDocuments.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, retrievalRuns, sql`${retrievalRuns.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${marker}`),
-    optionalSmokeCount(
-      contextAssemblyId,
-      (id) => countSmokeRows(db, contextItems, eq(contextItems.contextAssemblyId, id))
-    ),
-    optionalSmokeCount(
-      contextAssemblyId,
-      (id) => countSmokeRows(db, contextExclusions, eq(contextExclusions.contextAssemblyId, id))
-    )
-  ]);
-};
-
-const countMemoryRecordVersionsForSmoke = async (
-  db: KrnDatabase,
-  marker: string
-): Promise<number> => {
-  const rows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(memoryRecordVersions)
-    .innerJoin(memoryRecords, eq(memoryRecordVersions.memoryRecordId, memoryRecords.id))
-    .where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
-
-  return rows[0]?.count ?? 0;
-};
 
 const countByDecision = (
   decisions: readonly { decision: string }[],
@@ -167,47 +117,38 @@ const observationPrefixItemCount = (
 export const runActivationSmokeCheck = async (
   input: ActivationSmokeInput
 ): Promise<ActivationSmokeReport> => {
-  await ensureSmokeBrainStoreReady(
-    input.databaseUrl,
-    input.migrationsFolder,
-    "activation smoke"
-  );
-
-  const marker = normalizeSmokeSlugPart(input.smokeId);
-  const workspaceSlug = `krn-activation-smoke-${marker}`;
-  const projectSlug = "activation-engine";
   const now = "2026-06-22T05:00:00.000Z";
   const past = "2026-06-01T00:00:00.000Z";
-  const { client, db } = createSmokeDatabase(input.databaseUrl);
+  const runtime = await createSmokeRuntime({
+    databaseUrl: input.databaseUrl,
+    migrationsFolder: input.migrationsFolder,
+    smokeId: input.smokeId,
+    smokeName: "activation smoke",
+    workspacePrefix: "krn-activation-smoke",
+    projectSlug: "activation-engine"
+  });
+  const { client, db, marker, projectSlug, workspaceSlug } = runtime;
   let contextAssemblyId: string | undefined;
-
+  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+  const memoryRepository = new DrizzleMemoryRepository(db);
+  const projectRepository = new DrizzleProjectRepository(db);
   const retrievalRepository = new DrizzleRetrievalRepository(db);
+  const sourceRepository = new DrizzleSourceRepository(db);
 
   const cleanup = async (): Promise<number> => {
     await retrievalRepository.cleanupTestRetrievalRecords({ smokeId: marker });
-    await db
-      .delete(antiMemoryRecords)
-      .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(memoryRecords)
-      .where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceClaims).where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(sourceArtifacts)
-      .where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(runEvents).where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
-    await db.delete(workspaces).where(eq(workspaces.slug, workspaceSlug));
+    await cleanupActivationSmokeRows({
+      db,
+      marker,
+      workspaceSlug
+    });
 
-    return countMarkerRows(db, workspaceSlug, marker, contextAssemblyId);
+    return countActivationSmokeMarkerRows({ db, workspaceSlug, marker, contextAssemblyId });
   };
 
   try {
     await cleanup();
 
-    const projectRepository = new DrizzleProjectRepository(db);
-    const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-    const sourceRepository = new DrizzleSourceRepository(db);
-    const memoryRepository = new DrizzleMemoryRepository(db);
     const { workspace, project } = await createSmokeProjectRecords(
       projectRepository,
       workspaceSlug,
@@ -577,14 +518,7 @@ export const runActivationSmokeCheck = async (
       })
       .from(retrievalRuns)
       .where(eq(retrievalRuns.id, retrievalRun.id));
-    const contextItemRows = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(contextItems)
-      .where(eq(contextItems.contextAssemblyId, contextAssembly.id));
-    const contextExclusionRows = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(contextExclusions)
-      .where(eq(contextExclusions.contextAssemblyId, contextAssembly.id));
+    const contextSelectionCounts = await countSmokeContextSelectionRows(db, contextAssembly.id);
     const searchDocumentRows = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(searchDocuments)
@@ -605,32 +539,42 @@ export const runActivationSmokeCheck = async (
     const excludedDecisionCount = countByDecision(activationRecords, "excluded");
     const conflictDecisionCount = countByDecision(activationRecords, "conflict");
     const staleDecisionCount = countByDecision(activationRecords, "stale");
-    const contextItemCount = contextItemRows[0]?.count ?? 0;
-    const contextExclusionCount = contextExclusionRows[0]?.count ?? 0;
+    const { contextItemCount, contextExclusionCount } = contextSelectionCounts;
     const prefixItemCount = observationPrefixItemCount(readBackContextAssembly?.metadata);
     const rawRecallTriggerCount = rawEvidenceRecallTriggerCount(readBackRetrievalRun?.metadata);
 
-    if (
-      readBackContextAssembly === undefined ||
-      readBackContextAssembly.retrievalRunId !== retrievalRun.id ||
-      readBackRetrievalRun === undefined ||
-      sourceClaimCount !== 3 ||
-      memoryRecordCount !== 2 ||
-      antiMemoryRecordCount !== 1 ||
-      searchDocumentCount !== 1 ||
-      searchCandidateCount < 1 ||
-      retrievalCandidateCount < 5 ||
-      activationDecisionCount < 5 ||
-      includedDecisionCount !== 2 ||
-      conflictDecisionCount !== 1 ||
-      staleDecisionCount !== 1 ||
-      contextItemCount !== 2 ||
-      contextExclusionCount < 3 ||
-      prefixItemCount !== 1 ||
-      rawRecallTriggerCount < 1
-    ) {
-      throw new Error("Activation smoke readback did not match expected activation records");
-    }
+    assertSmokeReadbackChecks(
+      [
+        { label: "context assembly exists", passed: readBackContextAssembly !== undefined },
+        { label: "context assembly retrieval run", passed: readBackContextAssembly?.retrievalRunId === retrievalRun.id },
+        { label: "retrieval run exists", passed: readBackRetrievalRun !== undefined },
+        { label: "source claims", passed: sourceClaimCount === 3 },
+        { label: "memory records", passed: memoryRecordCount === 2 },
+        { label: "anti-memory records", passed: antiMemoryRecordCount === 1 },
+        { label: "search documents", passed: searchDocumentCount === 1 },
+        { label: "search candidates", passed: searchCandidateCount >= 1 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount >= 5 },
+        { label: "activation decisions", passed: activationDecisionCount >= 5 },
+        { label: "included decisions", passed: includedDecisionCount === 2 },
+        { label: "conflict decisions", passed: conflictDecisionCount === 1 },
+        { label: "stale decisions", passed: staleDecisionCount === 1 },
+        { label: "context items", passed: contextItemCount === 2 },
+        { label: "context exclusions", passed: contextExclusionCount >= 3 },
+        { label: "observation prefix", passed: prefixItemCount === 1 },
+        { label: "raw recall trigger", passed: rawRecallTriggerCount >= 1 }
+      ],
+      "Activation smoke readback did not match expected activation records"
+    );
+    const readBackContextAssemblyId = requireSmokeReadbackValue(
+      readBackContextAssembly?.id,
+      "context assembly id",
+      "Activation smoke readback did not match expected activation records"
+    );
+    const readBackRetrievalRunId = requireSmokeReadbackValue(
+      readBackRetrievalRun?.id,
+      "retrieval run id",
+      "Activation smoke readback did not match expected activation records"
+    );
 
     const remainingMarkerCount = await cleanup();
 
@@ -641,9 +585,9 @@ export const runActivationSmokeCheck = async (
       taskContractId: taskContract.id,
       harnessPlanId: harnessPlan.id,
       contextAssemblyId: contextAssembly.id,
-      readBackContextAssemblyId: readBackContextAssembly.id,
+      readBackContextAssemblyId,
       retrievalRunId: retrievalRun.id,
-      readBackRetrievalRunId: readBackRetrievalRun.id,
+      readBackRetrievalRunId,
       sourceClaimCount,
       memoryRecordCount,
       antiMemoryRecordCount,

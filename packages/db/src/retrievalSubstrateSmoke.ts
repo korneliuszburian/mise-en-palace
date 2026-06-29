@@ -1,17 +1,10 @@
 import {
-  eq,
-  sql
-} from "drizzle-orm";
-
-import type { KrnDatabase } from "./database.js";
-import {
-  countSmokeRows,
-  createSmokeDatabase,
+  assertSmokeReadbackChecks,
+  cleanupRetrievalSubstrateSmokeRows,
+  countRetrievalSubstrateSmokeMarkerRows,
+  countSmokeContextSelectionRows,
   createSmokeProjectRecords,
-  ensureSmokeBrainStoreReady,
-  normalizeSmokeSlugPart,
-  optionalSmokeCount,
-  sumSmokeCountTasks
+  createSmokeRuntime
 } from "./dbSmokeSupport.js";
 import {
   DrizzleHarnessRunRepository,
@@ -20,17 +13,6 @@ import {
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
 } from "./repositories/index.js";
-import {
-  contextExclusions,
-  contextItems,
-  memoryRecords,
-  memoryRecordVersions,
-  runEvents,
-  sourceArtifacts,
-  sourceClaims,
-  sourceDecisions,
-  workspaces
-} from "./schema/index.js";
 
 export interface RetrievalSubstrateSmokeInput {
   databaseUrl: string;
@@ -62,72 +44,39 @@ export interface RetrievalSubstrateSmokeReport {
 const deterministicSmokeVector = (): number[] =>
   Array.from({ length: 1536 }, (_, index) => (index === 0 ? 1 : 0));
 
-const countMarkerRows = async (
-  db: KrnDatabase,
-  workspaceSlug: string,
-  marker: string,
-  contextAssemblyId: string | undefined
-): Promise<number> => {
-  return sumSmokeCountTasks([
-    () => countSmokeRows(db, workspaces, eq(workspaces.slug, workspaceSlug)),
-    () => countSmokeRows(db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceDecisions, sql`${sourceDecisions.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryRecordVersions, sql`${memoryRecordVersions.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${marker}`),
-    optionalSmokeCount(
-      contextAssemblyId,
-      (id) => countSmokeRows(db, contextItems, eq(contextItems.contextAssemblyId, id))
-    ),
-    optionalSmokeCount(
-      contextAssemblyId,
-      (id) => countSmokeRows(db, contextExclusions, eq(contextExclusions.contextAssemblyId, id))
-    )
-  ]);
-};
-
 export const runRetrievalSubstrateSmokeCheck = async (
   input: RetrievalSubstrateSmokeInput
 ): Promise<RetrievalSubstrateSmokeReport> => {
-  await ensureSmokeBrainStoreReady(
-    input.databaseUrl,
-    input.migrationsFolder,
-    "retrieval substrate smoke"
-  );
-
-  const marker = normalizeSmokeSlugPart(input.smokeId);
-  const workspaceSlug = `krn-retrieval-smoke-${marker}`;
-  const projectSlug = "retrieval-substrate";
-  const { client, db } = createSmokeDatabase(input.databaseUrl);
+  const runtime = await createSmokeRuntime({
+    databaseUrl: input.databaseUrl,
+    migrationsFolder: input.migrationsFolder,
+    smokeId: input.smokeId,
+    smokeName: "retrieval substrate smoke",
+    workspacePrefix: "krn-retrieval-smoke",
+    projectSlug: "retrieval-substrate"
+  });
+  const { client, db, marker, projectSlug, workspaceSlug } = runtime;
   let contextAssemblyId: string | undefined;
-
+  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
+  const memoryRepository = new DrizzleMemoryRepository(db);
+  const projectRepository = new DrizzleProjectRepository(db);
   const retrievalRepository = new DrizzleRetrievalRepository(db);
+  const sourceRepository = new DrizzleSourceRepository(db);
 
   const cleanup = async (): Promise<number> => {
     await retrievalRepository.cleanupTestRetrievalRecords({ smokeId: marker });
-    await db
-      .delete(memoryRecordVersions)
-      .where(sql`${memoryRecordVersions.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(memoryRecords).where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceDecisions).where(sql`${sourceDecisions.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceClaims).where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(sourceArtifacts)
-      .where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(runEvents).where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
-    await db.delete(workspaces).where(eq(workspaces.slug, workspaceSlug));
+    await cleanupRetrievalSubstrateSmokeRows({
+      db,
+      marker,
+      workspaceSlug
+    });
 
-    return countMarkerRows(db, workspaceSlug, marker, contextAssemblyId);
+    return countRetrievalSubstrateSmokeMarkerRows({ db, workspaceSlug, marker, contextAssemblyId });
   };
 
   try {
     await cleanup();
 
-    const projectRepository = new DrizzleProjectRepository(db);
-    const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-    const sourceRepository = new DrizzleSourceRepository(db);
-    const memoryRepository = new DrizzleMemoryRepository(db);
     const { workspace, project } = await createSmokeProjectRecords(
       projectRepository,
       workspaceSlug,
@@ -455,14 +404,7 @@ export const runRetrievalSubstrateSmokeCheck = async (
     const activationRecords = await retrievalRepository.listActivationDecisionsForRun(
       retrievalRun.id
     );
-    const contextItemRows = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(contextItems)
-      .where(eq(contextItems.contextAssemblyId, contextAssembly.id));
-    const contextExclusionRows = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(contextExclusions)
-      .where(eq(contextExclusions.contextAssemblyId, contextAssembly.id));
+    const contextSelectionCounts = await countSmokeContextSelectionRows(db, contextAssembly.id);
 
     const searchDocumentCount = [
       sourceDocument,
@@ -472,19 +414,19 @@ export const runRetrievalSubstrateSmokeCheck = async (
     ].length;
     const retrievalCandidateCount = candidates.length;
     const activationDecisionCount = activationRecords.length;
-    const contextItemCount = contextItemRows[0]?.count ?? 0;
-    const contextExclusionCount = contextExclusionRows[0]?.count ?? 0;
+    const { contextItemCount, contextExclusionCount } = contextSelectionCounts;
 
-    if (
-      searchDocumentCount !== 4 ||
-      lexicalResults.length === 0 ||
-      retrievalCandidateCount !== 2 ||
-      activationDecisionCount !== 2 ||
-      contextItemCount !== 1 ||
-      contextExclusionCount !== 1
-    ) {
-      throw new Error("Retrieval substrate smoke readback did not match expected records");
-    }
+    assertSmokeReadbackChecks(
+      [
+        { label: "search documents", passed: searchDocumentCount === 4 },
+        { label: "lexical results", passed: lexicalResults.length > 0 },
+        { label: "retrieval candidates", passed: retrievalCandidateCount === 2 },
+        { label: "activation decisions", passed: activationDecisionCount === 2 },
+        { label: "context items", passed: contextItemCount === 1 },
+        { label: "context exclusions", passed: contextExclusionCount === 1 }
+      ],
+      "Retrieval substrate smoke readback did not match expected records"
+    );
 
     const remainingMarkerCount = await cleanup();
 
