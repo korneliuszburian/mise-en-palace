@@ -10,7 +10,8 @@ import {
   mapMemoryApplication,
   mapMemoryCandidate,
   mapMemoryFeedbackEvent,
-  mapMemoryRecord
+  mapMemoryRecord,
+  memoryCandidatesOrEmpty
 } from "./memoryMappers.js";
 
 const createdAt = new Date("2026-06-21T12:00:00.000Z");
@@ -58,6 +59,84 @@ describe("memoryMappers", () => {
       validFrom: createdAt.toISOString(),
       metadata: { slice: "QG-04G" }
     });
+  });
+
+  it("filters malformed MemoryCandidate JSON at the boundary", () => {
+    const candidateJson: unknown[] = [
+      "not-object",
+      {
+        id: "candidate-invalid-kind",
+        projectId: "project-1",
+        proposedBy: "reviewer",
+        kind: "note",
+        status: "candidate",
+        summary: "Invalid kind",
+        body: "This should be filtered.",
+        owner: "memory-governance",
+        confidence: 90,
+        applicationGuidance: "Use never.",
+        isUserPreference: false,
+        createdAt: createdAt.toISOString(),
+        updatedAt: updatedAt.toISOString()
+      },
+      {
+        id: "candidate-invalid-status",
+        projectId: "project-1",
+        proposedBy: "reviewer",
+        kind: "procedure",
+        status: "ready",
+        summary: "Invalid status",
+        body: "This should be filtered.",
+        owner: "memory-governance",
+        confidence: 90,
+        applicationGuidance: "Use never.",
+        isUserPreference: false,
+        createdAt: createdAt.toISOString(),
+        updatedAt: updatedAt.toISOString()
+      },
+      {
+        id: "candidate-valid",
+        projectId: "project-1",
+        proposedBy: "reviewer",
+        kind: "procedure",
+        status: "candidate",
+        summary: "Keep review feedback candidate-only.",
+        body: "Feedback should not create MemoryRecord rows directly.",
+        owner: "memory-governance",
+        confidence: 90,
+        applicationGuidance: "Use when reviewing feedback extraction.",
+        sourceClaimIds: ["source-claim-1", 123],
+        sourceLineage: [
+          { sourceId: "source-claim-1", note: "reviewed" },
+          { sourceId: 123 },
+          { note: "missing source" }
+        ],
+        isUserPreference: false,
+        metadata: ["not-a-record"],
+        createdAt: createdAt.toISOString(),
+        updatedAt: updatedAt.toISOString()
+      }
+    ];
+
+    expect(memoryCandidatesOrEmpty(candidateJson)).toEqual([{
+      id: "candidate-valid",
+      projectId: "project-1",
+      proposedBy: "reviewer",
+      kind: "procedure",
+      status: "candidate",
+      summary: "Keep review feedback candidate-only.",
+      body: "Feedback should not create MemoryRecord rows directly.",
+      owner: "memory-governance",
+      confidence: 90,
+      applicationGuidance: "Use when reviewing feedback extraction.",
+      sourceClaimIds: ["source-claim-1"],
+      sourceLineage: [{ sourceId: "source-claim-1", note: "reviewed" }],
+      isUserPreference: false,
+      validFrom: createdAt.toISOString(),
+      metadata: {},
+      createdAt: createdAt.toISOString(),
+      updatedAt: updatedAt.toISOString()
+    }]);
   });
 
   it("maps AntiMemoryCandidate review and lineage fields", () => {

@@ -51,6 +51,50 @@ const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const requiredMemoryCandidateStringFields = [
+  "id",
+  "projectId",
+  "proposedBy",
+  "summary",
+  "body",
+  "owner",
+  "applicationGuidance",
+  "createdAt",
+  "updatedAt"
+] as const;
+
+const hasStringFields = (
+  item: Record<string, unknown>,
+  fields: readonly string[]
+): boolean => fields.every((field) => typeof item[field] === "string");
+
+const isMemoryRecordKind = (value: unknown): value is MemoryCandidate["kind"] =>
+  typeof value === "string" && memoryRecordKinds.has(value as MemoryCandidate["kind"]);
+
+const isMemoryCandidateStatus = (
+  value: unknown
+): value is MemoryCandidate["status"] =>
+  typeof value === "string" &&
+  memoryCandidateStatuses.has(value as MemoryCandidate["status"]);
+
+type MemoryCandidateJson = Record<string, unknown> &
+  Record<typeof requiredMemoryCandidateStringFields[number], string> & {
+    kind: MemoryCandidate["kind"];
+    status: MemoryCandidate["status"];
+    confidence: number;
+    isUserPreference: boolean;
+  };
+
+const isMemoryCandidateJson = (
+  item: Record<string, unknown>
+): item is MemoryCandidateJson => (
+  hasStringFields(item, requiredMemoryCandidateStringFields) &&
+  isMemoryRecordKind(item.kind) &&
+  isMemoryCandidateStatus(item.status) &&
+  typeof item.confidence === "number" &&
+  typeof item.isUserPreference === "boolean"
+);
+
 const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   if (!Array.isArray(value)) {
     return [];
@@ -65,67 +109,57 @@ const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   });
 };
 
+const memoryCandidateFromJson = (
+  item: MemoryCandidateJson
+): MemoryCandidate => ({
+  id: item.id,
+  projectId: item.projectId,
+  ...(typeof item.executionRunId === "string" ? { executionRunId: item.executionRunId } : {}),
+  ...(typeof item.feedbackDeltaId === "string"
+    ? { feedbackDeltaId: item.feedbackDeltaId }
+    : {}),
+  proposedBy: item.proposedBy,
+  kind: item.kind,
+  status: item.status,
+  summary: item.summary,
+  body: item.body,
+  owner: item.owner,
+  confidence: item.confidence,
+  applicationGuidance: item.applicationGuidance,
+  ...(typeof item.invalidationRule === "string"
+    ? { invalidationRule: item.invalidationRule }
+    : {}),
+  sourceClaimIds: stringListOrEmpty(item.sourceClaimIds),
+  sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
+  isUserPreference: item.isUserPreference,
+  ...(typeof item.reviewer === "string" ? { reviewer: item.reviewer } : {}),
+  ...(typeof item.reviewedAt === "string" ? { reviewedAt: item.reviewedAt } : {}),
+  ...(typeof item.rejectionReason === "string"
+    ? { rejectionReason: item.rejectionReason }
+    : {}),
+  validFrom: typeof item.validFrom === "string" ? item.validFrom : item.createdAt,
+  ...(typeof item.validUntil === "string" ? { validUntil: item.validUntil } : {}),
+  metadata: metadataOrEmpty(item.metadata),
+  createdAt: item.createdAt,
+  updatedAt: item.updatedAt
+});
+
+const maybeMemoryCandidateFromJson = (
+  item: unknown
+): MemoryCandidate[] => {
+  if (!isRecord(item) || !isMemoryCandidateJson(item)) {
+    return [];
+  }
+
+  return [memoryCandidateFromJson(item)];
+};
+
 export const memoryCandidatesOrEmpty = (value: unknown): MemoryCandidate[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
-  return value.flatMap((item): MemoryCandidate[] => {
-    if (!isRecord(item)) {
-      return [];
-    }
-
-    if (
-      typeof item.id !== "string" ||
-      typeof item.projectId !== "string" ||
-      typeof item.proposedBy !== "string" ||
-      !memoryRecordKinds.has(item.kind as MemoryCandidate["kind"]) ||
-      !memoryCandidateStatuses.has(item.status as MemoryCandidate["status"]) ||
-      typeof item.summary !== "string" ||
-      typeof item.body !== "string" ||
-      typeof item.owner !== "string" ||
-      typeof item.confidence !== "number" ||
-      typeof item.applicationGuidance !== "string" ||
-      typeof item.isUserPreference !== "boolean" ||
-      typeof item.createdAt !== "string" ||
-      typeof item.updatedAt !== "string"
-    ) {
-      return [];
-    }
-
-    return [{
-      id: item.id,
-      projectId: item.projectId,
-      ...(typeof item.executionRunId === "string" ? { executionRunId: item.executionRunId } : {}),
-      ...(typeof item.feedbackDeltaId === "string"
-        ? { feedbackDeltaId: item.feedbackDeltaId }
-        : {}),
-      proposedBy: item.proposedBy,
-      kind: item.kind as MemoryCandidate["kind"],
-      status: item.status as MemoryCandidate["status"],
-      summary: item.summary,
-      body: item.body,
-      owner: item.owner,
-      confidence: item.confidence,
-      applicationGuidance: item.applicationGuidance,
-      ...(typeof item.invalidationRule === "string"
-        ? { invalidationRule: item.invalidationRule }
-        : {}),
-      sourceClaimIds: stringListOrEmpty(item.sourceClaimIds),
-      sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
-      isUserPreference: item.isUserPreference,
-      ...(typeof item.reviewer === "string" ? { reviewer: item.reviewer } : {}),
-      ...(typeof item.reviewedAt === "string" ? { reviewedAt: item.reviewedAt } : {}),
-      ...(typeof item.rejectionReason === "string"
-        ? { rejectionReason: item.rejectionReason }
-        : {}),
-      validFrom: typeof item.validFrom === "string" ? item.validFrom : item.createdAt,
-      ...(typeof item.validUntil === "string" ? { validUntil: item.validUntil } : {}),
-      metadata: metadataOrEmpty(item.metadata),
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }];
-  });
+  return value.flatMap(maybeMemoryCandidateFromJson);
 };
 
 export const mapMemoryRecord = (row: MemoryRecordRow): MemoryRecord => {
@@ -159,6 +193,75 @@ export const mapMemoryRecord = (row: MemoryRecordRow): MemoryRecord => {
   };
 };
 
+interface CandidateRunRefs {
+  executionRunId: string | null;
+  feedbackDeltaId: string | null;
+}
+
+interface CandidateReviewRefs {
+  reviewer: string | null;
+  rejectionReason: string | null;
+}
+
+interface AntiMemoryFields {
+  rejectedClaim?: string;
+  reason?: string;
+  invalidatedBySourceClaimIds: string[];
+  invalidatedBySourceClaimId?: string;
+  appliesTo?: string;
+  mayRevisitWhen?: string;
+  summary: string;
+  body: string;
+  owner: string;
+  confidence: number;
+  sourceLineage: SourceLineageRef[];
+}
+
+const candidateRunRefs = (row: CandidateRunRefs): {
+  executionRunId?: string;
+  feedbackDeltaId?: string;
+} => ({
+  ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
+  ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId })
+});
+
+const candidateReviewRefs = (
+  row: CandidateReviewRefs,
+  reviewedAt: string | undefined
+): {
+  reviewer?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+} => ({
+  ...(row.reviewer === null ? {} : { reviewer: row.reviewer }),
+  ...(reviewedAt === undefined ? {} : { reviewedAt }),
+  ...(row.rejectionReason === null ? {} : { rejectionReason: row.rejectionReason })
+});
+
+const validUntilField = (
+  validUntil: string | undefined
+): { validUntil?: string } => (
+  validUntil === undefined ? {} : { validUntil }
+);
+
+const antiMemoryFields = (
+  row: AntiMemoryCandidateRow | AntiMemoryRecordRow
+): AntiMemoryFields => ({
+  ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
+  ...(row.reason === null ? {} : { reason: row.reason }),
+  invalidatedBySourceClaimIds: stringListOrEmpty(row.invalidatedBySourceClaimIds),
+  ...(row.invalidatedBySourceClaimId === null
+    ? {}
+    : { invalidatedBySourceClaimId: row.invalidatedBySourceClaimId }),
+  ...(row.appliesTo === null ? {} : { appliesTo: row.appliesTo }),
+  ...(row.mayRevisitWhen === null ? {} : { mayRevisitWhen: row.mayRevisitWhen }),
+  summary: row.summary,
+  body: row.body,
+  owner: row.owner,
+  confidence: row.confidence,
+  sourceLineage: sourceLineageOrEmpty(row.sourceLineage)
+});
+
 export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => {
   const reviewedAt = optionalIsoTimestamp(row.reviewedAt);
   const validUntil = optionalIsoTimestamp(row.validUntil);
@@ -166,8 +269,7 @@ export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => 
   return {
     id: row.id,
     projectId: row.projectId,
-    ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
-    ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+    ...candidateRunRefs(row),
     proposedBy: row.proposedBy,
     kind: row.kind,
     status: row.status,
@@ -180,11 +282,9 @@ export const mapMemoryCandidate = (row: MemoryCandidateRow): MemoryCandidate => 
     sourceClaimIds: stringListOrEmpty(row.sourceClaimIds),
     sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
     isUserPreference: row.isUserPreference,
-    ...(row.reviewer === null ? {} : { reviewer: row.reviewer }),
-    ...(reviewedAt === undefined ? {} : { reviewedAt }),
-    ...(row.rejectionReason === null ? {} : { rejectionReason: row.rejectionReason }),
+    ...candidateReviewRefs(row, reviewedAt),
     validFrom: toIsoTimestamp(row.validFrom),
-    ...(validUntil === undefined ? {} : { validUntil }),
+    ...validUntilField(validUntil),
     metadata: metadataOrEmpty(row.metadata),
     createdAt: toIsoTimestamp(row.createdAt),
     updatedAt: toIsoTimestamp(row.updatedAt)
@@ -198,29 +298,14 @@ export const mapAntiMemoryCandidate = (row: AntiMemoryCandidateRow): AntiMemoryC
   return {
     id: row.id,
     projectId: row.projectId,
-    ...(row.executionRunId === null ? {} : { executionRunId: row.executionRunId }),
-    ...(row.feedbackDeltaId === null ? {} : { feedbackDeltaId: row.feedbackDeltaId }),
+    ...candidateRunRefs(row),
     proposedBy: row.proposedBy,
     key: row.key,
     status: row.status,
-    ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
-    ...(row.reason === null ? {} : { reason: row.reason }),
-    invalidatedBySourceClaimIds: stringListOrEmpty(row.invalidatedBySourceClaimIds),
-    ...(row.invalidatedBySourceClaimId === null
-      ? {}
-      : { invalidatedBySourceClaimId: row.invalidatedBySourceClaimId }),
-    ...(row.appliesTo === null ? {} : { appliesTo: row.appliesTo }),
-    ...(row.mayRevisitWhen === null ? {} : { mayRevisitWhen: row.mayRevisitWhen }),
-    summary: row.summary,
-    body: row.body,
-    owner: row.owner,
-    confidence: row.confidence,
-    sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
-    ...(row.reviewer === null ? {} : { reviewer: row.reviewer }),
-    ...(reviewedAt === undefined ? {} : { reviewedAt }),
-    ...(row.rejectionReason === null ? {} : { rejectionReason: row.rejectionReason }),
+    ...antiMemoryFields(row),
+    ...candidateReviewRefs(row, reviewedAt),
     validFrom: toIsoTimestamp(row.validFrom),
-    ...(validUntil === undefined ? {} : { validUntil }),
+    ...validUntilField(validUntil),
     metadata: metadataOrEmpty(row.metadata),
     createdAt: toIsoTimestamp(row.createdAt),
     updatedAt: toIsoTimestamp(row.updatedAt)
@@ -268,21 +353,9 @@ export const mapAntiMemoryRecord = (row: AntiMemoryRecordRow): AntiMemoryRecord 
       ? {}
       : { createdFromCandidateId: row.createdFromCandidateId }),
     key: row.key,
-    ...(row.rejectedClaim === null ? {} : { rejectedClaim: row.rejectedClaim }),
-    ...(row.reason === null ? {} : { reason: row.reason }),
-    invalidatedBySourceClaimIds: stringListOrEmpty(row.invalidatedBySourceClaimIds),
-    ...(row.invalidatedBySourceClaimId === null
-      ? {}
-      : { invalidatedBySourceClaimId: row.invalidatedBySourceClaimId }),
-    ...(row.appliesTo === null ? {} : { appliesTo: row.appliesTo }),
-    ...(row.mayRevisitWhen === null ? {} : { mayRevisitWhen: row.mayRevisitWhen }),
-    summary: row.summary,
-    body: row.body,
-    owner: row.owner,
-    confidence: row.confidence,
-    sourceLineage: sourceLineageOrEmpty(row.sourceLineage),
+    ...antiMemoryFields(row),
     validFrom: toIsoTimestamp(row.validFrom),
-    ...(validUntil === undefined ? {} : { validUntil }),
+    ...validUntilField(validUntil),
     ...(invalidatedAt === undefined ? {} : { invalidatedAt }),
     ...(row.invalidationReason === null ? {} : { invalidationReason: row.invalidationReason }),
     metadata: metadataOrEmpty(row.metadata),
