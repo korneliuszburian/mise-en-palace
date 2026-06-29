@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V346 Source Search Answer Package Preview
-current task: V346-00 Source Search Answer Package Preview
+active stream: V347 Heartbeat/Consensus SearchDocument Coverage Closure
+current task: V347-00 Heartbeat/Consensus SearchDocument Coverage Closure
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V346-00 Source Search Answer Package Preview must reduce manual synthesis over
-raw source-search results without adding new retrieval, ranking, crawler, UI,
-API, MCP, schema, graph runtime, worker, or Memory Core mutation.
+V347-00 Heartbeat/Consensus SearchDocument Coverage Closure must inspect and
+close the concrete missing-document evidence exposed by V346 without adding new
+retrieval, ranking, crawler, UI/API/MCP, schema, graph runtime, worker, or
+Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -100,6 +101,7 @@ V343 complete: coverage seed improved weak queries through SourceClaims, while
 SearchDocument natural-language results stayed absent.
 V344 complete: source-search document retrieval alignment.
 V345 complete: source-search usefulness closure after alignment.
+V346 complete: source-search answer package preview.
 ```
 
 Recent report range:
@@ -301,7 +303,8 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V343 complete: product-facing knowledge search coverage seed.
 - [x] V344 complete: source search document retrieval alignment.
 - [x] V345 complete: source search usefulness closure after document alignment.
-- [ ] V346 current task: source search answer package preview.
+- [x] V346 complete: source search answer package preview.
+- [ ] V347 current task: heartbeat/consensus SearchDocument coverage closure.
 
 ## Active Task Contract
 
@@ -457,20 +460,65 @@ questions. The next highest-ROI product-facing brain task is a compact answer
 package over existing source-search results, not a new retrieval subsystem.
 ```
 
-### V346-00 Source Search Answer Package Preview
+## Outcome V346 Source Search Answer Package Preview
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V345 usefulness closure and V346 DB readback.
+- Mechanism: source search had governed candidates but required manual
+  synthesis; V346 renders an answer package over existing candidates while
+  preserving raw output.
+- KRN implication: operator-facing search should show answer, supporting
+  claims/documents, missing evidence, does-not-prove, and recommended next
+  action before raw candidate details.
+- Decision: keep answer package preview; next close the heartbeat/consensus
+  missing-SearchDocument coverage gap it exposed.
+- Does not prove: source truth, answer correctness, ranking quality, broad
+  coverage, product readiness, or Memory Core mutation safety.
+- Consumer: technical operators using source search as a Pattern Application
+  Gate.
+- Falsifier: answer package hides proof boundaries, hides raw candidates, or
+  fails to reduce rereads.
+
+V346 evidence:
+
+```txt
+executionRun: 87cbd38e-77b3-4034-b140-06ebd70645c1
+report: docs/reviews/controlled-dogfood/2026-06-29-v346-source-search-answer-package-preview/REPORT.md
+evidenceBundle: 586aac55-3252-4202-ac51-3097b2cd086b
+observationGroup: 75501912-4c0c-41d8-aeeb-3c75e0a33295
+reflectionRecord: c13ca094-5d38-4eff-9735-657c1f6b2e52
+changed: packages/cli/src/runSourceSearchCommand.ts, packages/cli/src/runSourceSearchCommand.test.ts
+source-to-decision package: 5 supporting SourceClaims, 1 supporting SearchDocument
+future-task package: 6 supporting SourceClaims, 0 supporting SearchDocuments
+verification: CLI targeted test, workspace typecheck, full workspace test, db:ready, git diff --check
+```
+
+V346 outcome:
+
+```txt
+`krn source search` now gives a compact answer package before raw candidates.
+The next task should close the heartbeat/consensus missing-SearchDocument gap,
+not add a new retrieval subsystem.
+```
+
+### V347-00 Heartbeat/Consensus SearchDocument Coverage Closure
 
 Objective:
 
 ```txt
-Render a compact read-only answer package from existing `krn source search`
-results so operators can see answer, supporting claims, supporting documents,
-neutral/noise, missing evidence, does-not-prove, and recommended next action.
+Use the V346 answer package to determine whether heartbeat/consensus
+future-task queries lack SearchDocuments because of coverage or query guidance,
+then repair only the bounded gap if proven.
 ```
 
 Allowed:
 
 ```txt
-bounded CLI/report preview over current source-search results
+bounded DB-backed source-search readback
+coverage/query-guidance repair only if source evidence proves it
 DB-backed readback
 focused tests if source changes
 compact report/root state update
@@ -496,12 +544,11 @@ candidate promotion
 Success criteria:
 
 ```txt
-1. answer package preview uses existing source-search candidate data;
-2. output preserves reviewability and does-not-prove boundaries;
-3. supporting claims/documents and missing evidence are visible;
-4. raw candidates remain inspectable;
-5. tests/readback prove the preview does not overclaim source truth;
-6. root state stays compact.
+1. heartbeat/consensus answer package missing evidence is explained;
+2. if repair is needed, it is bounded to coverage/query guidance;
+3. no retrieval/ranking/schema/product-surface change is introduced;
+4. DB readback shows whether SearchDocument evidence is present after repair;
+5. root state stays compact.
 ```
 
 ## Verification Policy

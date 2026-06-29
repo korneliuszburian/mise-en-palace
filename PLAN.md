@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V346 Source Search Answer Package Preview
-current task: V346-00 Source Search Answer Package Preview
+active stream: V347 Heartbeat/Consensus SearchDocument Coverage Closure
+current task: V347-00 Heartbeat/Consensus SearchDocument Coverage Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -50,39 +50,38 @@ previews exist without autonomous truth runtime. V340 proved one artifact-to-
 activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
 coverage gaps. V343 seeded four artifacts. V344 repaired source-search document
 retrieval alignment so seeded natural-language queries return matching
-SearchDocuments. V345 proved the repaired search reduces rereads for seeded
-Pattern Application Gate questions but still leaves operators manually
-synthesizing raw candidate lists.
+SearchDocuments. V345 proved reduced rereads for seeded Pattern Application
+Gate questions. V346 added an answer package and exposed missing
+SearchDocument evidence for heartbeat/consensus future-task queries.
 
-### V346 Source Search Answer Package Preview
+### V347 Heartbeat/Consensus SearchDocument Coverage Closure
 
 Goal:
 
-Add a bounded read-only answer package preview over existing `krn source search`
-results.
+Use the V346 answer package to inspect and close the concrete missing
+SearchDocument evidence gap for heartbeat/consensus future-task queries.
 
 Current action:
 
 ```txt
-Execute V346-00: render a compact answer package from existing source-search
-results with supporting claims, supporting documents, neutral/noise, missing
-evidence, does-not-prove, and recommended next action. Do not add crawler,
-UI/API/MCP, worker daemon, schema, broad eval platform, ranking rewrite,
-embeddings, graph runtime, autonomous truth runtime, or Memory Core mutation.
+Execute V347-00: determine whether heartbeat/consensus missing document
+evidence is a coverage gap or query-guidance issue, then repair only the
+bounded gap if proven. Do not add crawler, UI/API/MCP, worker daemon, schema,
+broad eval platform, ranking rewrite, embeddings, graph runtime, autonomous
+truth runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators using source search as a pre-coding Pattern Application
-Gate.
+technical operators using source search answer packages for next-task decisions.
 ```
 
 Falsifier:
 
 ```txt
-The answer package hides proof/non-proof boundaries, overclaims source truth, or
-does not reduce rereads compared with raw source-search output.
+The heartbeat/consensus answer package still reports missing SearchDocument
+evidence after the bounded coverage/query-guidance repair.
 ```
 
 ## Pattern Gate

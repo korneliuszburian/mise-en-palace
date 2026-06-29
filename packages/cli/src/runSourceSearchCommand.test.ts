@@ -196,6 +196,15 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("Persistence: read-only (Postgres)");
     expect(result.stdout).toContain("DB writes: none");
     expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("Answer package preview:");
+    expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
+    expect(result.stdout).toContain("supporting claims:");
+    expect(result.stdout).toContain(`- source_claim:${sourceClaimId}`);
+    expect(result.stdout).toContain("supporting documents:");
+    expect(result.stdout).toContain(`- search_document:${searchDocumentId}`);
+    expect(result.stdout).toContain("missing evidence:");
+    expect(result.stdout).toContain("- none detected by current diagnostics");
+    expect(result.stdout).toContain("recommended next action: Use the supporting claims/documents as a Pattern Application Gate");
     expect(result.stdout).toContain(`source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain(`search_document:${searchDocumentId}`);
     expect(result.stdout).toContain("Included candidates:");
@@ -234,6 +243,11 @@ describe("runSourceSearchCommand", () => {
 
     expect(result.stdout).toContain("Included candidates:");
     expect(result.stdout).toContain("- none");
+    expect(result.stdout).toContain("Answer package preview:");
+    expect(result.stdout).toContain("answer: Source search found 0 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
+    expect(result.stdout).toContain("- governed SourceClaim evidence for this query");
+    expect(result.stdout).toContain("- matching SearchDocument evidence for this query");
+    expect(result.stdout).toContain("recommended next action: Narrow the query or ingest a bounded local artifact");
     expect(result.stdout).toContain("No-match guidance:");
     expect(result.stdout).toContain("try a narrower marker/hash query");
     expect(result.stdout).toContain("Memory mutation: none");

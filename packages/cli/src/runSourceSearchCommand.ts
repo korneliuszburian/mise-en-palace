@@ -133,6 +133,65 @@ const formatCandidate = (
   ];
 };
 
+const candidateLabel = (candidate: RankedActivationCandidate): string =>
+  `${candidate.subjectType}:${candidate.subjectId}`;
+
+const formatAnswerPackage = (input: {
+  query: string;
+  included: readonly RankedActivationCandidate[];
+  diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
+}): string[] => {
+  const supportingClaims = input.included.filter(
+    (candidate) => candidate.subjectType === "source_claim"
+  );
+  const supportingDocuments = input.included.filter(
+    (candidate) => candidate.subjectType === "search_document"
+  );
+  const neutralOrNoise = input.included.filter(
+    (candidate) =>
+      candidate.subjectType !== "source_claim" && candidate.subjectType !== "search_document"
+  );
+  const missingEvidence = [
+    ...(input.diagnostics.sourceClaimCount === 0
+      ? ["governed SourceClaim evidence for this query"]
+      : []),
+    ...(input.diagnostics.searchResultCount === 0
+      ? ["matching SearchDocument evidence for this query"]
+      : [])
+  ];
+  const recommendedNextAction =
+    supportingClaims.length > 0 && supportingDocuments.length > 0
+      ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."
+      : supportingClaims.length > 0
+        ? "Use the supporting claims cautiously and inspect artifact/SearchDocument coverage before changing retrieval."
+        : supportingDocuments.length > 0
+          ? "Inspect the documents and verify whether a governed SourceClaim should exist before relying on them."
+          : "Narrow the query or ingest a bounded local artifact before changing ranking or adding a product surface.";
+
+  return [
+    "Answer package preview:",
+    `answer: Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
+    "supporting claims:",
+    ...(supportingClaims.length === 0
+      ? ["- none"]
+      : supportingClaims.map((candidate) => `- ${candidateLabel(candidate)} | ${candidate.reason}`)),
+    "supporting documents:",
+    ...(supportingDocuments.length === 0
+      ? ["- none"]
+      : supportingDocuments.map((candidate) => `- ${candidateLabel(candidate)} | ${candidate.reason}`)),
+    "neutral/noise:",
+    ...(neutralOrNoise.length === 0
+      ? ["- none from included candidates"]
+      : neutralOrNoise.map((candidate) => `- ${candidateLabel(candidate)} | outside SourceClaim/SearchDocument answer scope`)),
+    "missing evidence:",
+    ...(missingEvidence.length === 0 ? ["- none detected by current diagnostics"] : missingEvidence.map((item) => `- ${item}`)),
+    "doesNotProve:",
+    `- ${input.diagnostics.doesNotProve}`,
+    "- source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation",
+    `recommended next action: ${recommendedNextAction}`
+  ];
+};
+
 const createSearchTaskContract = (
   runtime: SourceSearchCommandRuntime,
   projectId: string,
@@ -213,6 +272,12 @@ const formatSearchResult = (input: {
     `- searchResults: ${input.diagnostics.searchResultCount}`,
     `- mergedCandidates: ${input.diagnostics.mergedCandidateCount}`,
     `- doesNotProve: ${input.diagnostics.doesNotProve}`,
+    "",
+    ...formatAnswerPackage({
+      query: input.query,
+      included,
+      diagnostics: input.diagnostics
+    }),
     "",
     "Included candidates:",
     ...(included.length === 0
