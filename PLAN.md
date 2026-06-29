@@ -99,16 +99,17 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  DB init-connect smoke readback cleanup,
 	  memory mapper boundary cleanup,
 	  Codex brief/smoke support cleanup,
-	  activation/retrieval smoke support cleanup
-	full Fallow moved: dupes 136 -> 78; health 117 -> 36
+	  activation/retrieval smoke support cleanup,
+	  memory/source-graph smoke support cleanup
+	full Fallow moved: dupes 136 -> 76; health 117 -> 35
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
 `packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
 pick a bounded owner surface with direct complexity debt. Strict
 DB smoke assertion cleanup should be split by smoke family; touching
-memory-governance or activation smoke still pulls inherited smoke duplication
-into the changed-files gate.
+remaining smoke families can still pull inherited smoke duplication into the
+changed-files gate, so keep each cleanup owner-bounded.
 
 Verification: target package tests, `pnpm typecheck`, `pnpm test`,
 `pnpm quality:fallow:ci`, full `pnpm quality:fallow` report, `git diff --check`.
