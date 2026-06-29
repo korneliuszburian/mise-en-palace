@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V359 Fallow Quality Gate And First Cleanup
-current task: V359-00 Fallow Quality Gate And First Cleanup
+active stream: V360 Fallow Legacy Complexity Cleanup
+current task: V360-00 Fallow Legacy Complexity Cleanup
 ```
 
 ## Compact Checkpoints
@@ -103,7 +103,7 @@ active slot.
 
 ### V359-00 Fallow Quality Gate And First Cleanup
 
-Status: complete pending commit/CI.
+Status: complete.
 
 Outcome: Fallow added as a JS/TS quality layer, AGENTS guidance added, CI
 changed-files gate added, intentional fixture/typecheck/repository exceptions
@@ -113,8 +113,23 @@ configured, dead-code findings reduced to zero, and first ranked health target
 Does not prove: full repo cleanup. Full Fallow audit still reports legacy
 duplication and health debt.
 
-Next task: V360 Fallow Legacy Complexity Cleanup, starting with the highest ROI
-bounded target that can pass typecheck/tests/Fallow gate without broad refactor.
+### V360-00 Fallow Legacy Complexity Cleanup
+
+Status: active.
+
+Goal: reduce legacy Fallow duplication/health debt through bounded source
+cleanup slices.
+
+First rule: do not broad-refactor the repo. Pick one high-confidence target
+from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
+then commit/push/CI before choosing the next target.
+
+Current candidate targets: `packages/db/src/repositories/common.ts` high-impact
+split, `packages/cli/src/parseEvidenceArgs.ts` complexity extraction, or
+another narrower target if source inspection shows lower risk.
+
+Verification: target package tests, `pnpm typecheck`, `pnpm test`,
+`pnpm quality:fallow:ci`, full `pnpm quality:fallow` report, `git diff --check`.
 
 ## Remaining Product Gaps
 

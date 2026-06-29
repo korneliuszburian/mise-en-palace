@@ -13,9 +13,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-latest pushed commit checked: ba9e55e / CI green before V357 work
+active stream: V360 Fallow Legacy Complexity Cleanup
+current task: V360-00 Fallow Legacy Complexity Cleanup
+latest pushed commit checked: 46f15f7 / CI failed before V360 invariant fix
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,9 +24,8 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure must prove whether
-the new `queryShapeDiagnostics` field reduces graph-relations operator
-diagnostic burden.
+V360-00 Fallow Legacy Complexity Cleanup must reduce full-audit duplication or
+health debt one bounded source target at a time without broad repo refactors.
 ```
 
 ## 2. Product Thesis
@@ -520,8 +519,8 @@ Falsifier:
 - [x] V356 complete: Graph Relation SearchDocument Support Vertical.
 - [x] V357 complete: Source Search Query-Shape Diagnostics.
 - [ ] V358 deferred: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
-- [x] V359 complete pending commit/CI: Fallow Quality Gate And First Cleanup.
-- [ ] V360 next: Fallow Legacy Complexity Cleanup.
+- [x] V359 complete: Fallow Quality Gate And First Cleanup.
+- [ ] V360 current task: Fallow Legacy Complexity Cleanup.
 
 ## Verification Policy
 

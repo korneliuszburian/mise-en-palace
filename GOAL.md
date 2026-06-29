@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V359 Fallow Quality Gate And First Cleanup
+V360 Fallow Legacy Complexity Cleanup
 ```
 
 Current state:
@@ -27,14 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V359-00 Fallow Quality Gate And First Cleanup.
+current task: V360-00 Fallow Legacy Complexity Cleanup.
 ```
 
-Current task: install Fallow as an additional quality layer, wire a CI
-changed-files gate, run the full audit, fix confirmed true positives and the
-first bounded health target, then continue with legacy Fallow cleanup. Do not
-pretend full repo cleanup is complete while full Fallow still reports
-duplication/health debt.
+Current task: continue Fallow-driven cleanup through one bounded source target
+at a time. Do not pretend full repo cleanup is complete while full Fallow still
+reports duplication/health debt. Do not run broad repo refactors.
 
 ## Direction
 
