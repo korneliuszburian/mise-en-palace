@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V333 Edge-Aware Activation Usefulness Closure
-current task: V333-00 Edge-Aware Activation Usefulness Closure
+active stream: V334 Edge-Aware Activation Selection Delta Proof
+current task: V334-00 Edge-Aware Activation Selection Delta Proof
 ```
 
 ## Compact Completed Checkpoints
@@ -57,6 +57,8 @@ V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 V330 complete: bounded edge-aware source candidate ranking lab.
 V331 complete: persisted edge-aware activation readback.
 V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
+V333 complete: edge-aware activation usefulness closure showed review-useful
+  edge metadata and top ordering, but not inclusion delta.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
@@ -65,23 +67,24 @@ docs/reviews/controlled-dogfood/2026-06-29-v328-...,
 docs/reviews/controlled-dogfood/2026-06-29-v329-...,
 docs/reviews/controlled-dogfood/2026-06-29-v330-...,
 docs/reviews/controlled-dogfood/2026-06-29-v331-...,
-docs/reviews/controlled-dogfood/2026-06-29-v332-...
+docs/reviews/controlled-dogfood/2026-06-29-v332-...,
+docs/reviews/controlled-dogfood/2026-06-29-v333-...
 ```
 
-### V333 Edge-Aware Activation Usefulness Closure
+### V334 Edge-Aware Activation Selection Delta Proof
 
 Goal:
 
-Measure whether the normal edge-aware candidate path actually improves a
-bounded activation/usefulness scenario, or whether it is only reviewable
-metadata.
+Prove whether SourceClaimEdge influence can change bounded activation selection
+or ordering compared with a no-edge baseline, without broad graph retrieval
+work.
 
 Current action:
 
 ```txt
-Execute V333-00: use existing persisted SourceClaims/SourceClaimEdges to compare
-edge-aware activation usefulness against a bounded scenario. Record selected /
-used / helped / missing / noise before production graph retrieval.
+Execute V334-00: create the smallest behavior/readback proof where edge-aware
+SourceClaimEdge influence changes candidate ordering or inclusion compared with
+a no-edge baseline. Prefer existing activation helpers and persisted readback.
 Do not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
 runtime, broad ranking rewrite, or Memory Core mutation.
 ```
@@ -97,9 +100,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given persisted SourceClaimEdge context, KRN can show whether edge-aware
-activation changed review usefulness in a bounded run, without claiming product
-graph retrieval quality.
+Given candidates where lexical evidence alone would not select the edge-adjacent
+claim, SourceClaimEdge influence cannot change ordering or inclusion in a
+bounded proof/readback.
 ```
 
 ## Pattern Gate

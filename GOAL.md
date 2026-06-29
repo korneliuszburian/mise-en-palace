@@ -14,10 +14,8 @@ Use root `PLAN.md` as the compact product single source of truth and root
 Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
-Active stream:
-
 ```txt
-V333 Edge-Aware Activation Usefulness Closure
+V334 Edge-Aware Activation Selection Delta Proof
 ```
 
 Current state:
@@ -27,14 +25,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V333-00 Edge-Aware Activation Usefulness Closure.
+current task: V334-00 Edge-Aware Activation Selection Delta Proof.
 ```
 
 Current task:
 
 ```txt
-Measure whether the normal edge-aware candidate path actually improves a
-bounded activation/usefulness scenario before broader graph retrieval work.
+Prove whether SourceClaimEdge influence can change bounded activation
+selection or ordering compared with a no-edge baseline, without broad graph
+retrieval work.
 ```
 
 ## Remaining Work
@@ -57,7 +56,8 @@ to preserve are:
    repaired fence-state carryover; V329 added adjacent SourceClaim context
    readback; V330 added bounded edge-aware candidate input; V331 added
    persisted activation trace readback; V332 removed the lab-seeded duplicate
-   candidate dependency; next measure usefulness before graph retrieval work.
+   candidate dependency; V333 proved review-useful edge-aware activation
+   ordering/readback; next prove selection delta before graph retrieval work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

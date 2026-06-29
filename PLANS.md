@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V333 Edge-Aware Activation Usefulness Closure
-current task: V333-00 Edge-Aware Activation Usefulness Closure
+active stream: V334 Edge-Aware Activation Selection Delta Proof
+current task: V334-00 Edge-Aware Activation Selection Delta Proof
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V333-00 Edge-Aware Activation Usefulness Closure. V332 removed the lab-seeded
-duplicate candidate dependency; Graph Brain v0 now needs a bounded usefulness
-check before broader graph retrieval work.
+V334-00 Edge-Aware Activation Selection Delta Proof. V333 showed edge-aware
+activation is review-useful and ranking-positive, but did not prove edge
+influence can change inclusion under budget pressure.
 ```
 
 ## 2. Product Thesis
@@ -59,7 +59,7 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   extraction persistence bridge complete; fence-state carryover repair complete;
   graph-aware edge readback complete; edge-aware ranking lab complete;
   persisted edge-aware activation readback complete; edge-aware candidate
-  refinement complete; usefulness closure next
+  refinement complete; usefulness closure complete; selection delta proof next
 product-ready: no
 ```
 
@@ -83,6 +83,7 @@ V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 V330 complete: bounded edge-aware source candidate ranking lab.
 V331 complete: persisted edge-aware activation readback.
 V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
+V333 complete: edge-aware activation usefulness closure.
 ```
 
 Reports:
@@ -97,6 +98,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-acti
 docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -336,26 +338,67 @@ krn run show --run-id 7555... --json: passed
 git diff --check: passed
 ```
 
-## Active Task: V333-00 Edge-Aware Activation Usefulness Closure
+## Outcome V333 Edge-Aware Activation Usefulness Closure
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: `docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md`
+- Mechanism: V332 made normal activation retrieval fetch persisted
+  SourceClaimEdge rows before ranking/readback.
+- KRN implication: before broader graph retrieval work, KRN needed to measure
+  whether edge-aware activation is useful or only decorative metadata.
+- Decision: run a DB-backed usefulness closure and classify selected / used /
+  helped / missing / noise.
+- Does not prove: source truth, edge correctness, production graph retrieval,
+  activation scoring quality, crawler readiness, product readiness, or Memory
+  Core mutation.
+- Consumer: V334 edge-aware activation selection delta proof.
+- Falsifier: edge-aware activation cannot show useful metadata, ordering impact,
+  or operator review value in a fresh persisted run.
+
+V333 outcome:
+
+```txt
+Edge-aware activation selected a normal SourceClaim candidate with persisted
+SourceClaimEdge metadata, `graphScore: 8`, and top ordering. Owner-file recall
+selected activation/readback owner files. V333 is review-useful and
+ranking-positive, but does not prove inclusion delta under budget pressure.
+```
+
+V333 verification:
+
+```txt
+pnpm db:ready: passed
+krn knowledge cards --text "edge-aware activation usefulness": passed, 0 results
+krn knowledge cards --text "activation": passed, 1 deferred/noise result
+krn plan --persist: passed
+krn run show --run-id 5595420c-58a8-4943-b766-074ff9520d3d: passed
+krn run show --run-id 5595420c-58a8-4943-b766-074ff9520d3d --json: passed
+```
+
+## Active Task: V334-00 Edge-Aware Activation Selection Delta Proof
 
 Goal:
 
 ```txt
-Measure whether the normal edge-aware candidate path actually improves a
-bounded activation/usefulness scenario before broader graph retrieval work.
+Prove whether SourceClaimEdge influence can change bounded activation selection
+or ordering compared with a no-edge baseline, without broad graph retrieval
+work.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-focused tests or report only, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v333-edge-aware-activation-usefulness-closure/REPORT.md
+focused activation test or bounded report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v334-edge-aware-activation-selection-delta/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -371,39 +414,37 @@ mutation; automatic source truth promotion; runtime markdown memory
 
 Definition of Done:
 
-- A bounded scenario records selected / used / helped / missing / noise for the
-  normal edge-aware source candidate path.
-- The report states whether edge-aware activation improved review usefulness or
-  only produced reviewable metadata.
+- A bounded proof compares edge-aware candidate behavior against a no-edge
+  baseline.
+- The report states whether edge influence changed ordering, inclusion, both,
+  or neither.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 
 Acceptance criteria:
 
 ```txt
-edge-aware activation usefulness is measured without claiming product graph
+edge-aware activation selection delta is measured without claiming product graph
 retrieval quality.
 ```
 
 Risk:
 
 ```txt
-medium: usefulness closure can drift into benchmark/platform work before the
+medium: selection-delta proof can drift into benchmark/platform work before the
 system has earned it.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V333 implementation commit if source changes are made
+focused revert of the V334 implementation commit if source changes are made
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V333 shows positive usefulness, choose the next graph-brain task from
-evidence: small graph QA case, source relation refinement, or heartbeat
-candidate generation. If usefulness is weak, repair edge-aware activation
-selection before expanding surfaces.
+If V334 proves selection delta, choose the next small graph-brain QA case. If
+V334 is weak, repair edge-aware activation selection before expanding surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -472,7 +513,8 @@ Next-task synthesis rule:
 - V330: complete; edge-aware SourceClaim candidate ranking lab.
 - V331: complete; persisted edge-aware activation readback.
 - V332: complete; edge-aware source candidate refinement.
-- V333: active; edge-aware activation usefulness closure.
+- V333: complete; edge-aware activation usefulness closure.
+- V334: active; edge-aware activation selection delta proof.
 
 ## Pattern Gate
 
