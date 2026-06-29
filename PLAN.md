@@ -72,8 +72,8 @@ another narrower target if source inspection shows lower risk.
 Progress in this stream:
 
 ```txt
-completed locally: parseKnowledgeArgs and parseReviewArgs cleanup
-full Fallow moved: dupes 136 -> 134; health 117 -> 115
+completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs cleanup
+full Fallow moved: dupes 136 -> 133; health 117 -> 115
 ```
 
 Next candidate targets are tracked in `PLANS.md`.

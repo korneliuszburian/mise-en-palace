@@ -528,9 +528,10 @@ V360 progress:
 completed bounded targets:
   packages/cli/src/parseKnowledgeArgs.ts
   packages/cli/src/parseReviewArgs.ts
+  packages/cli/src/parseEvidenceArgs.ts
 
 full Fallow moved:
-  dupes 136 -> 134 clone groups
+  dupes 136 -> 133 clone groups
   health 117 -> 115 above threshold
 
 next: continue with one bounded target only; do not broad-refactor smoke

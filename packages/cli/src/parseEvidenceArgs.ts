@@ -232,6 +232,94 @@ const parseTargetChangedFile = (
   };
 };
 
+type ParsedStringOption =
+  | {
+      ok: true;
+      value: string;
+      nextIndex: number;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+const parseNonEmptyOption = (
+  rest: readonly string[],
+  index: number,
+  optionName: string,
+  emptyError: string
+): ParsedStringOption => {
+  const valueResult = optionValue(rest, index, optionName);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      ok: false,
+      error: valueResult.error ?? evidenceUsage
+    };
+  }
+
+  const value = valueResult.value.trim();
+
+  if (value.length === 0) {
+    return {
+      ok: false,
+      error: emptyError
+    };
+  }
+
+  return {
+    ok: true,
+    value,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const parseEvidenceOption = (
+  rest: readonly string[],
+  index: number,
+  optionName: string
+): ParsedStringOption => {
+  const valueResult = optionValue(rest, index, optionName);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      ok: false,
+      error: valueResult.error ?? evidenceUsage
+    };
+  }
+
+  return {
+    ok: true,
+    value: valueResult.value,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const parseOptionAfterPendingCommand = (
+  rest: readonly string[],
+  index: number,
+  optionName: string,
+  commandOutcomes: EvidenceCommand[],
+  pendingCommand: Partial<EvidenceCommand> | undefined
+): ParsedStringOption => {
+  const parsed = parseEvidenceOption(rest, index, optionName);
+
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  const pushResult = pushPendingCommand(commandOutcomes, pendingCommand);
+
+  if (pushResult.error !== undefined) {
+    return {
+      ok: false,
+      error: pushResult.error
+    };
+  }
+
+  return parsed;
+};
+
 export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] !== "capture") {
     return {
@@ -551,93 +639,83 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     }
 
     if (arg === "--target-allowed-write" || arg?.startsWith("--target-allowed-write=") === true) {
-      const valueResult = optionValue(rest, index, "--target-allowed-write");
+      const parsed = parseNonEmptyOption(
+        rest,
+        index,
+        "--target-allowed-write",
+        "--target-allowed-write requires a non-empty value"
+      );
 
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
+      if (!parsed.ok) {
         return {
-          error: valueResult.error ?? evidenceUsage
+          error: parsed.error
         };
       }
 
-      const allowedWrite = valueResult.value.trim();
-
-      if (allowedWrite.length === 0) {
-        return {
-          error: "--target-allowed-write requires a non-empty value"
-        };
-      }
-
-      targetAllowedWrites.push(allowedWrite);
-      index = valueResult.nextIndex;
+      targetAllowedWrites.push(parsed.value);
+      index = parsed.nextIndex;
       continue;
     }
 
     if (arg === "--target-forbidden-write" || arg?.startsWith("--target-forbidden-write=") === true) {
-      const valueResult = optionValue(rest, index, "--target-forbidden-write");
+      const parsed = parseNonEmptyOption(
+        rest,
+        index,
+        "--target-forbidden-write",
+        "--target-forbidden-write requires a non-empty value"
+      );
 
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
+      if (!parsed.ok) {
         return {
-          error: valueResult.error ?? evidenceUsage
+          error: parsed.error
         };
       }
 
-      const forbiddenWrite = valueResult.value.trim();
-
-      if (forbiddenWrite.length === 0) {
-        return {
-          error: "--target-forbidden-write requires a non-empty value"
-        };
-      }
-
-      targetForbiddenWrites.push(forbiddenWrite);
-      index = valueResult.nextIndex;
+      targetForbiddenWrites.push(parsed.value);
+      index = parsed.nextIndex;
       continue;
     }
 
     if (arg === "--command" || arg?.startsWith("--command=") === true) {
-      const valueResult = optionValue(rest, index, "--command");
+      const parsed = parseOptionAfterPendingCommand(
+        rest,
+        index,
+        "--command",
+        commandOutcomes,
+        pendingCommand
+      );
 
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
+      if (!parsed.ok) {
         return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const pushResult = pushPendingCommand(commandOutcomes, pendingCommand);
-
-      if (pushResult.error !== undefined) {
-        return {
-          error: pushResult.error
+          error: parsed.error
         };
       }
 
       pendingCommand = {
-        command: valueResult.value
+        command: parsed.value
       };
-      index = valueResult.nextIndex;
+      index = parsed.nextIndex;
       continue;
     }
 
     if (arg === "--verification" || arg?.startsWith("--verification=") === true) {
-      const valueResult = optionValue(rest, index, "--verification");
+      const parsed = parseOptionAfterPendingCommand(
+        rest,
+        index,
+        "--verification",
+        commandOutcomes,
+        pendingCommand
+      );
 
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
+      if (!parsed.ok) {
         return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const pushResult = pushPendingCommand(commandOutcomes, pendingCommand);
-
-      if (pushResult.error !== undefined) {
-        return {
-          error: pushResult.error
+          error: parsed.error
         };
       }
 
       pendingCommand = undefined;
 
-      const verificationResult = parseVerification(valueResult.value);
+      const verificationResult = parseVerification(parsed.value);
 
       if (verificationResult.error !== undefined || verificationResult.command === undefined) {
         return {
@@ -646,7 +724,7 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
       }
 
       commandOutcomes.push(verificationResult.command);
-      index = valueResult.nextIndex;
+      index = parsed.nextIndex;
       continue;
     }
 
