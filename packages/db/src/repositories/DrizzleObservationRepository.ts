@@ -154,10 +154,15 @@ type ObservationSourceRangeRow = typeof observationSourceRanges.$inferSelect;
 type ObservationEntityEdgeRow = typeof observationEntityEdges.$inferSelect;
 type ObservationClaimEdgeRow = typeof observationClaimEdges.$inferSelect;
 type ObservationFeedbackEventRow = typeof observationFeedbackEvents.$inferSelect;
+type ObservationItemInsertRow = typeof observationItems.$inferInsert;
+type ObservationSourceRangeInsertRow = typeof observationSourceRanges.$inferInsert;
+type RawEvidenceResolver = () => Promise<ObservationRawEvidenceRecord | undefined>;
 
 const unknownListOrEmpty = (value: unknown): unknown[] => (
   Array.isArray(value) ? value : []
 );
+
+const isDefined = <T>(value: T | undefined): value is T => value !== undefined;
 
 const truthBearingObservationKinds = new Set<ObservationKind>([
   "fact",
@@ -404,6 +409,101 @@ const itemScope = (
   ...inputScope
 });
 
+const observationScopeInsertValues = (scope: ObservationScope) => ({
+  ...(scope.workspaceId === undefined ? {} : { workspaceId: scope.workspaceId }),
+  ...(scope.projectId === undefined ? {} : { projectId: scope.projectId }),
+  ...(scope.executionRunId === undefined ? {} : { executionRunId: scope.executionRunId }),
+  ...(scope.taskContractId === undefined ? {} : { taskContractId: scope.taskContractId }),
+  ...(scope.targetRepoPath === undefined ? {} : { targetRepoPath: scope.targetRepoPath })
+});
+
+const temporalScopeInsertValues = (temporalScope: ObservationItem["temporalScope"]) => ({
+  observedAt: fromIsoTimestamp(temporalScope.observedAt),
+  ...(temporalScope.eventTime === undefined
+    ? {}
+    : { eventTime: fromIsoTimestamp(temporalScope.eventTime) }),
+  ingestedAt: fromIsoTimestamp(temporalScope.ingestedAt),
+  ...(temporalScope.referencedAt === undefined
+    ? {}
+    : { referencedAt: fromIsoTimestamp(temporalScope.referencedAt) }),
+  ...(temporalScope.referenceTime === undefined
+    ? {}
+    : { referenceTime: fromIsoTimestamp(temporalScope.referenceTime) }),
+  ...(temporalScope.relativeTimeBase === undefined
+    ? {}
+    : { relativeTimeBase: fromIsoTimestamp(temporalScope.relativeTimeBase) }),
+  ...(temporalScope.validFrom === undefined
+    ? {}
+    : { validFrom: fromIsoTimestamp(temporalScope.validFrom) }),
+  ...(temporalScope.validUntil === undefined
+    ? {}
+    : { validUntil: fromIsoTimestamp(temporalScope.validUntil) }),
+  ...(temporalScope.invalidatedAt === undefined
+    ? {}
+    : { invalidatedAt: fromIsoTimestamp(temporalScope.invalidatedAt) }),
+  ...(temporalScope.supersededAt === undefined
+    ? {}
+    : { supersededAt: fromIsoTimestamp(temporalScope.supersededAt) })
+});
+
+const observationItemInsertValues = (
+  groupId: ObservationGroupId,
+  scope: ObservationScope,
+  input: CreateObservationItemInput
+): ObservationItemInsertRow => ({
+  groupId,
+  ...observationScopeInsertValues(scope),
+  kind: input.kind,
+  status: input.status ?? "observed",
+  priority: input.priority ?? "medium",
+  confidence: input.confidence ?? "medium",
+  provenanceKind: input.provenanceKind,
+  subject: input.subject,
+  summary: input.summary,
+  body: input.body,
+  ...temporalScopeInsertValues(input.temporalScope),
+  metadata: input.metadata ?? {}
+});
+
+const sourceRangeInsertValues = (
+  observationItemId: ObservationItemId,
+  input: CreateObservationSourceRangeInput
+): ObservationSourceRangeInsertRow => ({
+  observationItemId,
+  sourceType: input.sourceType,
+  sourceId: input.sourceId,
+  ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
+  ...(input.runEventId === undefined ? {} : { runEventId: input.runEventId }),
+  ...(input.sourceChunkId === undefined ? {} : { sourceChunkId: input.sourceChunkId }),
+  ...(input.evidenceBundleId === undefined ? {} : { evidenceBundleId: input.evidenceBundleId }),
+  ...(input.reviewAssessmentId === undefined ? {} : { reviewAssessmentId: input.reviewAssessmentId }),
+  ...(input.feedbackDeltaId === undefined ? {} : { feedbackDeltaId: input.feedbackDeltaId }),
+  locator: input.locator,
+  ...(input.excerpt === undefined ? {} : { excerpt: input.excerpt }),
+  capturedAt: fromIsoTimestamp(input.capturedAt),
+  metadata: input.metadata ?? {}
+});
+
+const baseRawEvidenceRecord = (
+  row: ObservationSourceRangeRow,
+  sourceRange: ObservationSourceRange
+): ObservationRawEvidenceRecord => ({
+  sourceRange,
+  kind: "unavailable",
+  sourceId: row.sourceId,
+  locator: row.locator,
+  ...(row.excerpt === null ? {} : { excerpt: row.excerpt }),
+  payload: metadataOrEmpty(row.metadata),
+  capturedAt: toIsoTimestamp(row.capturedAt)
+});
+
+const rawEvidenceResolver = (
+  id: string | null,
+  resolve: (id: string) => Promise<ObservationRawEvidenceRecord | undefined>
+): RawEvidenceResolver | undefined => (
+  id === null ? undefined : () => resolve(id)
+);
+
 export class DrizzleObservationRepository {
   constructor(private readonly db: KrnDatabase) {}
 
@@ -455,82 +555,7 @@ export class DrizzleObservationRepository {
       const items: ObservationItem[] = [];
 
       for (const input of inputs) {
-        assertObservationItemEvidenceLinkage({
-          kind: input.kind,
-          provenanceKind: input.provenanceKind,
-          sourceRanges: input.sourceRanges ?? []
-        });
-
-        const scope = itemScope(group, input.scope);
-        const itemRow = requireReturnedRow(
-          await tx
-            .insert(observationItems)
-            .values({
-              groupId,
-              ...(scope.workspaceId === undefined ? {} : { workspaceId: scope.workspaceId }),
-              ...(scope.projectId === undefined ? {} : { projectId: scope.projectId }),
-              ...(scope.executionRunId === undefined
-                ? {}
-                : { executionRunId: scope.executionRunId }),
-              ...(scope.taskContractId === undefined
-                ? {}
-                : { taskContractId: scope.taskContractId }),
-              ...(scope.targetRepoPath === undefined
-                ? {}
-                : { targetRepoPath: scope.targetRepoPath }),
-              kind: input.kind,
-              status: input.status ?? "observed",
-              priority: input.priority ?? "medium",
-              confidence: input.confidence ?? "medium",
-              provenanceKind: input.provenanceKind,
-              subject: input.subject,
-              summary: input.summary,
-              body: input.body,
-              observedAt: fromIsoTimestamp(input.temporalScope.observedAt),
-              ...(input.temporalScope.eventTime === undefined
-                ? {}
-                : { eventTime: fromIsoTimestamp(input.temporalScope.eventTime) }),
-              ingestedAt: fromIsoTimestamp(input.temporalScope.ingestedAt),
-              ...(input.temporalScope.referencedAt === undefined
-                ? {}
-                : { referencedAt: fromIsoTimestamp(input.temporalScope.referencedAt) }),
-              ...(input.temporalScope.referenceTime === undefined
-                ? {}
-                : { referenceTime: fromIsoTimestamp(input.temporalScope.referenceTime) }),
-              ...(input.temporalScope.relativeTimeBase === undefined
-                ? {}
-                : { relativeTimeBase: fromIsoTimestamp(input.temporalScope.relativeTimeBase) }),
-              ...(input.temporalScope.validFrom === undefined
-                ? {}
-                : { validFrom: fromIsoTimestamp(input.temporalScope.validFrom) }),
-              ...(input.temporalScope.validUntil === undefined
-                ? {}
-                : { validUntil: fromIsoTimestamp(input.temporalScope.validUntil) }),
-              ...(input.temporalScope.invalidatedAt === undefined
-                ? {}
-                : { invalidatedAt: fromIsoTimestamp(input.temporalScope.invalidatedAt) }),
-              ...(input.temporalScope.supersededAt === undefined
-                ? {}
-                : { supersededAt: fromIsoTimestamp(input.temporalScope.supersededAt) }),
-              metadata: input.metadata ?? {}
-            })
-            .returning(),
-          "addObservationItem"
-        );
-
-        const sourceRanges = await this.insertSourceRanges(
-          itemRow.id,
-          input.sourceRanges ?? [],
-          tx
-        );
-        const entityLinks = await this.insertEntityLinks(
-          itemRow.id,
-          input.entityLinks ?? [],
-          tx
-        );
-        const claimLinks = await this.insertClaimLinks(itemRow.id, input.claimLinks ?? [], tx);
-
-        items.push(mapObservationItem(itemRow, sourceRanges, entityLinks, claimLinks));
+        items.push(await this.addItemInTransaction(groupId, group, input, tx));
       }
 
       return items;
@@ -614,27 +639,7 @@ export class DrizzleObservationRepository {
     const row = requireReturnedRow(
       await this.db
         .insert(observationSourceRanges)
-        .values({
-          observationItemId,
-          sourceType: input.sourceType,
-          sourceId: input.sourceId,
-          ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-          ...(input.runEventId === undefined ? {} : { runEventId: input.runEventId }),
-          ...(input.sourceChunkId === undefined ? {} : { sourceChunkId: input.sourceChunkId }),
-          ...(input.evidenceBundleId === undefined
-            ? {}
-            : { evidenceBundleId: input.evidenceBundleId }),
-          ...(input.reviewAssessmentId === undefined
-            ? {}
-            : { reviewAssessmentId: input.reviewAssessmentId }),
-          ...(input.feedbackDeltaId === undefined
-            ? {}
-            : { feedbackDeltaId: input.feedbackDeltaId }),
-          locator: input.locator,
-          ...(input.excerpt === undefined ? {} : { excerpt: input.excerpt }),
-          capturedAt: fromIsoTimestamp(input.capturedAt),
-          metadata: input.metadata ?? {}
-        })
+        .values(sourceRangeInsertValues(observationItemId, input))
         .returning(),
       "linkObservationSourceRange"
     );
@@ -680,150 +685,188 @@ export class DrizzleObservationRepository {
     return mapObservationFeedbackEvent(row);
   }
 
+  private async addItemInTransaction(
+    groupId: ObservationGroupId,
+    group: ObservationGroup,
+    input: CreateObservationItemInput,
+    tx: KrnDatabase
+  ): Promise<ObservationItem> {
+    assertObservationItemEvidenceLinkage({
+      kind: input.kind,
+      provenanceKind: input.provenanceKind,
+      sourceRanges: input.sourceRanges ?? []
+    });
+
+    const itemRow = requireReturnedRow(
+      await tx
+        .insert(observationItems)
+        .values(observationItemInsertValues(groupId, itemScope(group, input.scope), input))
+        .returning(),
+      "addObservationItem"
+    );
+
+    const sourceRanges = await this.insertSourceRanges(itemRow.id, input.sourceRanges ?? [], tx);
+    const entityLinks = await this.insertEntityLinks(itemRow.id, input.entityLinks ?? [], tx);
+    const claimLinks = await this.insertClaimLinks(itemRow.id, input.claimLinks ?? [], tx);
+
+    return mapObservationItem(itemRow, sourceRanges, entityLinks, claimLinks);
+  }
+
   private async recallRawEvidenceForRange(
     row: ObservationSourceRangeRow
   ): Promise<ObservationRawEvidenceRecord> {
     const sourceRange = mapObservationSourceRange(row);
-    const base = (): ObservationRawEvidenceRecord => {
-      const record: ObservationRawEvidenceRecord = {
-        sourceRange,
-        kind: "unavailable",
-        sourceId: row.sourceId,
-        locator: row.locator,
-        payload: metadataOrEmpty(row.metadata),
-        capturedAt: toIsoTimestamp(row.capturedAt)
-      };
+    const base = baseRawEvidenceRecord(row, sourceRange);
 
-      if (row.excerpt !== null) {
-        record.excerpt = row.excerpt;
+    for (const resolve of this.rawEvidenceResolvers(row, base)) {
+      const evidence = await resolve();
+
+      if (evidence !== undefined) {
+        return evidence;
       }
+    }
 
-      return record;
+    return base;
+  }
+
+  private rawEvidenceResolvers(
+    row: ObservationSourceRangeRow,
+    base: ObservationRawEvidenceRecord
+  ): RawEvidenceResolver[] {
+    return [
+      rawEvidenceResolver(row.runEventId, (id) => this.recallRunEventEvidence(id, base)),
+      rawEvidenceResolver(row.sourceChunkId, (id) => this.recallSourceChunkEvidence(id, base)),
+      rawEvidenceResolver(row.evidenceBundleId, (id) => this.recallEvidenceBundleEvidence(id, base)),
+      rawEvidenceResolver(row.reviewAssessmentId, (id) => this.recallReviewAssessmentEvidence(id, base)),
+      rawEvidenceResolver(row.feedbackDeltaId, (id) => this.recallFeedbackDeltaEvidence(id, base))
+    ].filter(isDefined);
+  }
+
+  private async recallRunEventEvidence(
+    id: string,
+    base: ObservationRawEvidenceRecord
+  ): Promise<ObservationRawEvidenceRecord | undefined> {
+    const runEvent = await this.db.query.runEvents.findFirst({
+      where: eq(runEvents.id, id)
+    });
+
+    return runEvent === undefined ? undefined : {
+      ...base,
+      kind: "run_event",
+      sourceId: runEvent.id,
+      text: runEvent.message,
+      payload: {
+        executionRunId: runEvent.executionRunId,
+        sequence: runEvent.sequence,
+        type: runEvent.type,
+        severity: runEvent.severity,
+        payload: metadataOrEmpty(runEvent.payload),
+        occurredAt: toIsoTimestamp(runEvent.occurredAt)
+      }
     };
+  }
 
-    if (row.runEventId !== null) {
-      const runEvent = await this.db.query.runEvents.findFirst({
-        where: eq(runEvents.id, row.runEventId)
-      });
+  private async recallSourceChunkEvidence(
+    id: string,
+    base: ObservationRawEvidenceRecord
+  ): Promise<ObservationRawEvidenceRecord | undefined> {
+    const sourceChunk = await this.db.query.sourceChunks.findFirst({
+      where: eq(sourceChunks.id, id)
+    });
 
-      if (runEvent !== undefined) {
-        return {
-          ...base(),
-          kind: "run_event",
-          sourceId: runEvent.id,
-          text: runEvent.message,
-          payload: {
-            executionRunId: runEvent.executionRunId,
-            sequence: runEvent.sequence,
-            type: runEvent.type,
-            severity: runEvent.severity,
-            payload: metadataOrEmpty(runEvent.payload),
-            occurredAt: toIsoTimestamp(runEvent.occurredAt)
-          }
-        };
+    return sourceChunk === undefined ? undefined : {
+      ...base,
+      kind: "source_chunk",
+      sourceId: sourceChunk.id,
+      text: sourceChunk.content,
+      payload: {
+        sourceArtifactId: sourceChunk.sourceArtifactId,
+        ordinal: sourceChunk.ordinal,
+        heading: sourceChunk.heading,
+        tokenCount: sourceChunk.tokenCount,
+        contentHash: sourceChunk.contentHash,
+        metadata: metadataOrEmpty(sourceChunk.metadata),
+        createdAt: toIsoTimestamp(sourceChunk.createdAt)
       }
-    }
+    };
+  }
 
-    if (row.sourceChunkId !== null) {
-      const sourceChunk = await this.db.query.sourceChunks.findFirst({
-        where: eq(sourceChunks.id, row.sourceChunkId)
-      });
+  private async recallEvidenceBundleEvidence(
+    id: string,
+    base: ObservationRawEvidenceRecord
+  ): Promise<ObservationRawEvidenceRecord | undefined> {
+    const evidenceBundle = await this.db.query.evidenceBundles.findFirst({
+      where: eq(evidenceBundles.id, id)
+    });
 
-      if (sourceChunk !== undefined) {
-        return {
-          ...base(),
-          kind: "source_chunk",
-          sourceId: sourceChunk.id,
-          text: sourceChunk.content,
-          payload: {
-            sourceArtifactId: sourceChunk.sourceArtifactId,
-            ordinal: sourceChunk.ordinal,
-            heading: sourceChunk.heading,
-            tokenCount: sourceChunk.tokenCount,
-            contentHash: sourceChunk.contentHash,
-            metadata: metadataOrEmpty(sourceChunk.metadata),
-            createdAt: toIsoTimestamp(sourceChunk.createdAt)
-          }
-        };
+    return evidenceBundle === undefined ? undefined : {
+      ...base,
+      kind: "evidence_bundle",
+      sourceId: evidenceBundle.id,
+      text: evidenceBundle.rollbackPath,
+      payload: {
+        executionRunId: evidenceBundle.executionRunId,
+        status: evidenceBundle.status,
+        changedFiles: unknownListOrEmpty(evidenceBundle.changedFiles),
+        commands: unknownListOrEmpty(evidenceBundle.commands),
+        diffRisk: evidenceBundle.diffRisk,
+        reviewBurden: evidenceBundle.reviewBurden,
+        rollbackPath: evidenceBundle.rollbackPath,
+        metadata: metadataOrEmpty(evidenceBundle.metadata),
+        createdAt: toIsoTimestamp(evidenceBundle.createdAt),
+        updatedAt: toIsoTimestamp(evidenceBundle.updatedAt)
       }
-    }
+    };
+  }
 
-    if (row.evidenceBundleId !== null) {
-      const evidenceBundle = await this.db.query.evidenceBundles.findFirst({
-        where: eq(evidenceBundles.id, row.evidenceBundleId)
-      });
+  private async recallReviewAssessmentEvidence(
+    id: string,
+    base: ObservationRawEvidenceRecord
+  ): Promise<ObservationRawEvidenceRecord | undefined> {
+    const reviewAssessment = await this.db.query.reviewAssessments.findFirst({
+      where: eq(reviewAssessments.id, id)
+    });
 
-      if (evidenceBundle !== undefined) {
-        return {
-          ...base(),
-          kind: "evidence_bundle",
-          sourceId: evidenceBundle.id,
-          text: evidenceBundle.rollbackPath,
-          payload: {
-            executionRunId: evidenceBundle.executionRunId,
-            status: evidenceBundle.status,
-            changedFiles: unknownListOrEmpty(evidenceBundle.changedFiles),
-            commands: unknownListOrEmpty(evidenceBundle.commands),
-            diffRisk: evidenceBundle.diffRisk,
-            reviewBurden: evidenceBundle.reviewBurden,
-            rollbackPath: evidenceBundle.rollbackPath,
-            metadata: metadataOrEmpty(evidenceBundle.metadata),
-            createdAt: toIsoTimestamp(evidenceBundle.createdAt),
-            updatedAt: toIsoTimestamp(evidenceBundle.updatedAt)
-          }
-        };
+    return reviewAssessment === undefined ? undefined : {
+      ...base,
+      kind: "review_assessment",
+      sourceId: reviewAssessment.id,
+      text: reviewAssessment.summary,
+      payload: {
+        evidenceBundleId: reviewAssessment.evidenceBundleId,
+        status: reviewAssessment.status,
+        reviewer: reviewAssessment.reviewer,
+        findings: unknownListOrEmpty(reviewAssessment.findings),
+        metadata: metadataOrEmpty(reviewAssessment.metadata),
+        createdAt: toIsoTimestamp(reviewAssessment.createdAt),
+        updatedAt: toIsoTimestamp(reviewAssessment.updatedAt)
       }
-    }
+    };
+  }
 
-    if (row.reviewAssessmentId !== null) {
-      const reviewAssessment = await this.db.query.reviewAssessments.findFirst({
-        where: eq(reviewAssessments.id, row.reviewAssessmentId)
-      });
+  private async recallFeedbackDeltaEvidence(
+    id: string,
+    base: ObservationRawEvidenceRecord
+  ): Promise<ObservationRawEvidenceRecord | undefined> {
+    const feedbackDelta = await this.db.query.feedbackDeltas.findFirst({
+      where: eq(feedbackDeltas.id, id)
+    });
 
-      if (reviewAssessment !== undefined) {
-        return {
-          ...base(),
-          kind: "review_assessment",
-          sourceId: reviewAssessment.id,
-          text: reviewAssessment.summary,
-          payload: {
-            evidenceBundleId: reviewAssessment.evidenceBundleId,
-            status: reviewAssessment.status,
-            reviewer: reviewAssessment.reviewer,
-            findings: unknownListOrEmpty(reviewAssessment.findings),
-            metadata: metadataOrEmpty(reviewAssessment.metadata),
-            createdAt: toIsoTimestamp(reviewAssessment.createdAt),
-            updatedAt: toIsoTimestamp(reviewAssessment.updatedAt)
-          }
-        };
+    return feedbackDelta === undefined ? undefined : {
+      ...base,
+      kind: "feedback_delta",
+      sourceId: feedbackDelta.id,
+      payload: {
+        reviewAssessmentId: feedbackDelta.reviewAssessmentId,
+        status: feedbackDelta.status,
+        memoryCandidates: unknownListOrEmpty(feedbackDelta.memoryCandidates),
+        sourceDecisions: unknownListOrEmpty(feedbackDelta.sourceDecisions),
+        evalCandidates: unknownListOrEmpty(feedbackDelta.evalCandidates),
+        metadata: metadataOrEmpty(feedbackDelta.metadata),
+        createdAt: toIsoTimestamp(feedbackDelta.createdAt),
+        updatedAt: toIsoTimestamp(feedbackDelta.updatedAt)
       }
-    }
-
-    if (row.feedbackDeltaId !== null) {
-      const feedbackDelta = await this.db.query.feedbackDeltas.findFirst({
-        where: eq(feedbackDeltas.id, row.feedbackDeltaId)
-      });
-
-      if (feedbackDelta !== undefined) {
-        return {
-          ...base(),
-          kind: "feedback_delta",
-          sourceId: feedbackDelta.id,
-          payload: {
-            reviewAssessmentId: feedbackDelta.reviewAssessmentId,
-            status: feedbackDelta.status,
-            memoryCandidates: unknownListOrEmpty(feedbackDelta.memoryCandidates),
-            sourceDecisions: unknownListOrEmpty(feedbackDelta.sourceDecisions),
-            evalCandidates: unknownListOrEmpty(feedbackDelta.evalCandidates),
-            metadata: metadataOrEmpty(feedbackDelta.metadata),
-            createdAt: toIsoTimestamp(feedbackDelta.createdAt),
-            updatedAt: toIsoTimestamp(feedbackDelta.updatedAt)
-          }
-        };
-      }
-    }
-
-    return base();
+    };
   }
 
   private async hydrateItems(rows: ObservationItemRow[]): Promise<ObservationItem[]> {
@@ -867,27 +910,7 @@ export class DrizzleObservationRepository {
     const rows = await tx
       .insert(observationSourceRanges)
       .values(
-        inputs.map((input) => ({
-          observationItemId,
-          sourceType: input.sourceType,
-          sourceId: input.sourceId,
-          ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-          ...(input.runEventId === undefined ? {} : { runEventId: input.runEventId }),
-          ...(input.sourceChunkId === undefined ? {} : { sourceChunkId: input.sourceChunkId }),
-          ...(input.evidenceBundleId === undefined
-            ? {}
-            : { evidenceBundleId: input.evidenceBundleId }),
-          ...(input.reviewAssessmentId === undefined
-            ? {}
-            : { reviewAssessmentId: input.reviewAssessmentId }),
-          ...(input.feedbackDeltaId === undefined
-            ? {}
-            : { feedbackDeltaId: input.feedbackDeltaId }),
-          locator: input.locator,
-          ...(input.excerpt === undefined ? {} : { excerpt: input.excerpt }),
-          capturedAt: fromIsoTimestamp(input.capturedAt),
-          metadata: input.metadata ?? {}
-        }))
+        inputs.map((input) => sourceRangeInsertValues(observationItemId, input))
       )
       .returning();
 
