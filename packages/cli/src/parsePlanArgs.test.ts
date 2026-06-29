@@ -31,6 +31,17 @@ describe("parsePlanArgs", () => {
   it("rejects plan commands without a task or with unsupported options", () => {
     expect(parsePlanArgs([]).error).toContain("Usage: krn plan");
     expect(parsePlanArgs(["--task", ""]).error).toContain("Usage: krn plan");
+    expect(parsePlanArgs(["--task", "--persist"]).error).toContain("Usage: krn plan");
+    expect(parsePlanArgs(["--task="]).error).toContain("Usage: krn plan");
     expect(parsePlanArgs(["--task", "work", "--unknown"]).error).toContain("Usage: krn plan");
+  });
+
+  it("rejects blank or flag-shaped project ids", () => {
+    expect(parsePlanArgs(["--project", "", "--task", "work"]).error)
+      .toContain("Usage: krn plan");
+    expect(parsePlanArgs(["--project", "--persist", "--task", "work"]).error)
+      .toContain("Usage: krn plan");
+    expect(parsePlanArgs(["--project=", "--task", "work"]).error)
+      .toContain("Usage: krn plan");
   });
 });

@@ -92,6 +92,11 @@ interface CompilerRuntimeResolution {
   close(): Promise<void>;
 }
 
+type TargetOwnerFile = NonNullable<TargetActivationReadModel["ownerFiles"]>[number];
+type HarnessCompileInput = ReturnType<typeof parseHarnessCompileInput>;
+type CompiledHarnessPlan = Awaited<ReturnType<typeof compileHarnessPlan>>;
+type TargetOwnerFileRecall = ReturnType<typeof assessTargetOwnerFileRecall>;
+
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
@@ -149,23 +154,35 @@ const subjectRef = (item: { subjectType: string; subjectId: string }): string =>
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+const nonBlankStringField = (
+  record: Record<string, unknown>,
+  field: string
+): string | undefined => {
+  const value = record[field];
+
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed.length === 0 ? undefined : trimmed;
+};
+
 const sourceSeedFromUnknown = (value: unknown): SourceSeedProposal | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const seedPath = value.path;
-  const kind = value.kind;
-  const reason = value.reason;
+  const seedPath = nonBlankStringField(value, "path");
+  const kind = nonBlankStringField(value, "kind");
+  const reason = nonBlankStringField(value, "reason");
 
   if (
-    typeof seedPath !== "string" ||
-    seedPath.trim().length === 0 ||
-    typeof kind !== "string" ||
+    seedPath === undefined ||
+    kind === undefined ||
     !isSourceSeedKind(kind) ||
-    kind.trim().length === 0 ||
-    typeof reason !== "string" ||
-    reason.trim().length === 0
+    reason === undefined
   ) {
     return undefined;
   }
@@ -195,26 +212,17 @@ const sourceSeedsFromMetadata = (
 
 const targetOwnerFileFromUnknown = (
   value: unknown
-): NonNullable<TargetActivationReadModel["ownerFiles"]>[number] | undefined => {
+): TargetOwnerFile | undefined => {
   if (!isRecord(value)) {
     return undefined;
   }
 
-  const ownerPath = value.path;
-  const root = value.root;
-  const kind = value.kind;
-  const reason = value.reason;
+  const ownerPath = nonBlankStringField(value, "path");
+  const root = nonBlankStringField(value, "root");
+  const kind = nonBlankStringField(value, "kind");
+  const reason = nonBlankStringField(value, "reason");
 
-  if (
-    typeof ownerPath !== "string" ||
-    ownerPath.trim().length === 0 ||
-    typeof root !== "string" ||
-    root.trim().length === 0 ||
-    typeof kind !== "string" ||
-    kind.trim().length === 0 ||
-    typeof reason !== "string" ||
-    reason.trim().length === 0
-  ) {
+  if (ownerPath === undefined || root === undefined || kind === undefined || reason === undefined) {
     return undefined;
   }
 
@@ -245,7 +253,7 @@ const ownerFilesFromMetadata = (
 const uniqueOwnerFiles = (
   ownerFiles: NonNullable<TargetActivationReadModel["ownerFiles"]>
 ): NonNullable<TargetActivationReadModel["ownerFiles"]> => {
-  const ownerFilesByPath = new Map<string, NonNullable<TargetActivationReadModel["ownerFiles"]>[number]>();
+  const ownerFilesByPath = new Map<string, TargetOwnerFile>();
 
   for (const ownerFile of ownerFiles) {
     ownerFilesByPath.set(ownerFile.path, ownerFile);
@@ -352,28 +360,51 @@ const formatActivationSummary = (
   ];
 };
 
-const resolveCompilerRuntime = async (
+const commandLabelForRuntime = (runtime: PlanCommandRuntime): string => {
+  if (runtime.projectId !== undefined) {
+    return "krn plan --project --persist";
+  }
+
+  return runtime.persist ? "krn plan --persist" : "krn plan";
+};
+
+const noStoreCompilerRuntime = (
+  runtime: PlanCommandRuntime,
+  workspaceSlug: string,
+  projectSlug: string
+): CompilerRuntimeResolution => ({
+  workspaceId: `workspace:${workspaceSlug}`,
+  projectId: `project:${projectSlug}`,
+  persistenceLabel: "disabled (explicit no-store preview; use --persist to write)",
+  compilerDependencies: createNoStoreCompilerDependencies(runtime),
+  async close(): Promise<void> {
+    return undefined;
+  }
+});
+
+const projectScopedMetadataFromRuntime = (
+  databaseRuntime: DatabaseRuntime
+): ProjectScopedPlanMetadata | undefined => {
+  if (databaseRuntime.projectKernel === undefined && databaseRuntime.repoInstallations === undefined) {
+    return undefined;
+  }
+
+  return {
+    ...(databaseRuntime.projectKernel === undefined
+      ? {}
+      : { projectKernel: databaseRuntime.projectKernel }),
+    ...(databaseRuntime.repoInstallations === undefined
+      ? {}
+      : { repoInstallations: databaseRuntime.repoInstallations })
+  };
+};
+
+const persistedCompilerRuntime = async (
   runtime: PlanCommandRuntime,
   workspaceSlug: string,
   projectSlug: string
 ): Promise<CompilerRuntimeResolution> => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL;
-
-  if (runtime.projectId !== undefined && !runtime.persist) {
-    throw new Error("krn plan --project requires --persist");
-  }
-
-  if (!runtime.persist) {
-    return {
-      workspaceId: `workspace:${workspaceSlug}`,
-      projectId: `project:${projectSlug}`,
-      persistenceLabel: "disabled (explicit no-store preview; use --persist to write)",
-      compilerDependencies: createNoStoreCompilerDependencies(runtime),
-      async close(): Promise<void> {
-        return undefined;
-      }
-    };
-  }
 
   if (databaseUrl === undefined || databaseUrl.trim().length === 0) {
     throw new Error("KRN_DATABASE_URL is required for krn plan --persist");
@@ -403,21 +434,105 @@ const resolveCompilerRuntime = async (
       : { projectResolution: databaseRuntime.projectResolution }),
     compilerDependencies: databaseRuntime.compilerDependencies,
     harnessRunRepository: databaseRuntime.harnessRunRepository,
-    ...(databaseRuntime.projectKernel === undefined && databaseRuntime.repoInstallations === undefined
-      ? {}
-      : {
-          projectScopedMetadata: {
-            ...(databaseRuntime.projectKernel === undefined
-              ? {}
-              : { projectKernel: databaseRuntime.projectKernel }),
-            ...(databaseRuntime.repoInstallations === undefined
-              ? {}
-              : { repoInstallations: databaseRuntime.repoInstallations })
-          }
-        }),
+    ...optionalProjectScopedMetadata(projectScopedMetadataFromRuntime(databaseRuntime)),
     close: databaseRuntime.close
   };
 };
+
+const optionalProjectScopedMetadata = (
+  projectScopedMetadata: ProjectScopedPlanMetadata | undefined
+): Pick<CompilerRuntimeResolution, "projectScopedMetadata"> | Record<string, never> => (
+  projectScopedMetadata === undefined ? {} : { projectScopedMetadata }
+);
+
+const resolveCompilerRuntime = async (
+  runtime: PlanCommandRuntime,
+  workspaceSlug: string,
+  projectSlug: string
+): Promise<CompilerRuntimeResolution> => {
+  if (runtime.projectId !== undefined && !runtime.persist) {
+    throw new Error("krn plan --project requires --persist");
+  }
+
+  return runtime.persist
+    ? persistedCompilerRuntime(runtime, workspaceSlug, projectSlug)
+    : noStoreCompilerRuntime(runtime, workspaceSlug, projectSlug);
+};
+
+const formatProjectResolutionLines = (
+  projectResolution: ProjectResolution | undefined
+): string[] => (
+  projectResolution === undefined
+    ? []
+    : [
+        `Project resolution: ${formatProjectResolutionKind(projectResolution.kind)}`,
+        `Project resolution reason: ${projectResolution.reason}`,
+        ...(projectResolution.repoPathHint === undefined
+          ? []
+          : [`Project resolution repoPathHint: ${projectResolution.repoPathHint}`]),
+        `Project resolution does not prove: ${projectResolution.doesNotProve}`
+      ]
+);
+
+const formatProjectScopedMetadataLines = (
+  projectScopedMetadata: ProjectScopedPlanMetadata | undefined
+): string[] => [
+  ...(projectScopedMetadata?.projectKernel === undefined
+    ? []
+    : [`ProjectKernel: ${projectScopedMetadata.projectKernel.id}`]),
+  ...(projectScopedMetadata?.repoInstallations === undefined
+    ? []
+    : [`Repo installations: ${formatRepoInstallationIds(projectScopedMetadata.repoInstallations)}`])
+];
+
+const formatRepoInstallationIds = (
+  repoInstallations: readonly RepoInstallationRecord[]
+): string => (
+  repoInstallations.length === 0
+    ? "none"
+    : repoInstallations.map((repoInstallation) => repoInstallation.id).join(", ")
+);
+
+const formatTargetReadModelLines = (
+  targetReadModel: TargetActivationReadModel | undefined
+): string[] => {
+  if (targetReadModel === undefined) {
+    return [];
+  }
+
+  const ownerFileRecall = assessTargetOwnerFileRecall(targetReadModel);
+
+  return [
+    `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, ownerFiles=${targetReadModel.ownerFiles?.length ?? 0}, trustExclusions=${targetReadModel.trustExclusions.length}`,
+    `Target owner-file recall: ${ownerFileRecall.status}`,
+    `Target owner-file reason: ${ownerFileRecall.reason}`,
+    `Target owner-file explanation: ${ownerFileRecall.explanation}`,
+    `Target owner-file does not prove: ${ownerFileRecall.doesNotProve}`,
+    formatTargetOwnerFilesLine(ownerFileRecall)
+  ];
+};
+
+const formatTargetOwnerFilesLine = (ownerFileRecall: TargetOwnerFileRecall): string => (
+  ownerFileRecall.status === "missing_owner_file_read_model"
+    ? "Target owner files: unavailable; using root-level source seeds only"
+    : `Target owner files: ${ownerFileRecall.ownerFilePaths.join(", ")}`
+);
+
+const formatPersistedIdentityLines = (
+  persistedIdentity: PersistedPlanIdentity | undefined
+): string[] => (
+  persistedIdentity === undefined
+    ? []
+    : [
+        "",
+        "Persisted IDs:",
+        `operatorIntent: ${persistedIdentity.operatorIntentId}`,
+        `taskContract: ${persistedIdentity.taskContractId}`,
+        `harnessPlan: ${persistedIdentity.harnessPlanId}`,
+        `contextAssembly: ${persistedIdentity.contextAssemblyId}`,
+        `executionRun: ${persistedIdentity.executionRunId}`
+      ]
+);
 
 const formatPlanSummary = (
   task: string,
@@ -437,74 +552,26 @@ const formatPlanSummary = (
     `Task: ${task}`,
     `Project ID: ${projectId}`,
     `Persistence: ${persistenceLabel}`,
-    ...(projectResolution === undefined
-      ? []
-      : [
-          `Project resolution: ${formatProjectResolutionKind(projectResolution.kind)}`,
-          `Project resolution reason: ${projectResolution.reason}`,
-          ...(projectResolution.repoPathHint === undefined
-            ? []
-            : [`Project resolution repoPathHint: ${projectResolution.repoPathHint}`]),
-          `Project resolution does not prove: ${projectResolution.doesNotProve}`
-        ]),
-    ...(projectScopedMetadata?.projectKernel === undefined
-      ? []
-      : [`ProjectKernel: ${projectScopedMetadata.projectKernel.id}`]),
-    ...(projectScopedMetadata?.repoInstallations === undefined
-      ? []
-      : [
-          `Repo installations: ${
-            projectScopedMetadata.repoInstallations.length === 0
-              ? "none"
-              : projectScopedMetadata.repoInstallations
-                  .map((repoInstallation) => repoInstallation.id)
-                  .join(", ")
-          }`
-        ]),
-    ...(targetReadModel === undefined
-      ? []
-      : (() => {
-          const ownerFileRecall = assessTargetOwnerFileRecall(targetReadModel);
-
-          return [
-            `Target read model: sourceSeeds=${targetReadModel.sourceSeeds.length}, ownerFiles=${targetReadModel.ownerFiles?.length ?? 0}, trustExclusions=${targetReadModel.trustExclusions.length}`,
-            `Target owner-file recall: ${ownerFileRecall.status}`,
-            `Target owner-file reason: ${ownerFileRecall.reason}`,
-            `Target owner-file explanation: ${ownerFileRecall.explanation}`,
-            `Target owner-file does not prove: ${ownerFileRecall.doesNotProve}`,
-            ...(ownerFileRecall.status === "missing_owner_file_read_model"
-              ? ["Target owner files: unavailable; using root-level source seeds only"]
-              : [`Target owner files: ${ownerFileRecall.ownerFilePaths.join(", ")}`])
-          ];
-        })()),
+    ...formatProjectResolutionLines(projectResolution),
+    ...formatProjectScopedMetadataLines(projectScopedMetadata),
+    ...formatTargetReadModelLines(targetReadModel),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
     ...formatActivationSummary(contextAssembly, nextAction),
     `Evidence expected: ${evidenceCommands.join(", ")}`,
     `Next action: ${nextAction}`,
     "",
-    executionBrief
+    executionBrief,
+    ...formatPersistedIdentityLines(persistedIdentity)
   ];
-
-  if (persistedIdentity !== undefined) {
-    lines.push(
-      "",
-      "Persisted IDs:",
-      `operatorIntent: ${persistedIdentity.operatorIntentId}`,
-      `taskContract: ${persistedIdentity.taskContractId}`,
-      `harnessPlan: ${persistedIdentity.harnessPlanId}`,
-      `contextAssembly: ${persistedIdentity.contextAssemblyId}`,
-      `executionRun: ${persistedIdentity.executionRunId}`
-    );
-  }
 
   return lines.join("\n");
 };
 
-export const runPlanCommand = async (
+const buildHarnessCompileInput = (
   task: string,
   runtime: PlanCommandRuntime
-): Promise<PlanCommandResult> => {
+): HarnessCompileInput => {
   const operatorIntent = parseOperatorIntentInput({
     rawIntent: task,
     source: "cli",
@@ -531,19 +598,141 @@ export const runPlanCommand = async (
     ],
     metadata: {}
   });
-  const compileInput = parseHarnessCompileInput({
+
+  return parseHarnessCompileInput({
     operatorIntent,
     taskContract,
     tokenBudget: 1200,
     metadata: {
-      command:
-        runtime.projectId === undefined
-          ? runtime.persist
-            ? "krn plan --persist"
-            : "krn plan"
-          : "krn plan --project --persist"
+      command: commandLabelForRuntime(runtime)
     }
   });
+};
+
+const compilePlanForCommand = (
+  compilerRuntime: CompilerRuntimeResolution,
+  compileInput: HarnessCompileInput,
+  targetReadModel: TargetActivationReadModel | undefined
+): Promise<CompiledHarnessPlan> =>
+  compileHarnessPlan(
+    {
+      workspaceId: compilerRuntime.workspaceId,
+      projectId: compilerRuntime.projectId,
+      operatorIntent: {
+        rawIntent: compileInput.operatorIntent.rawIntent,
+        source: compileInput.operatorIntent.source,
+        metadata: compileInput.operatorIntent.metadata
+      },
+      ...(compileInput.taskContract === undefined
+        ? {}
+        : { taskContract: compileInput.taskContract }),
+      ...(targetReadModel === undefined ? {} : { targetReadModel }),
+      ...(compileInput.tokenBudget === undefined ? {} : { tokenBudget: compileInput.tokenBudget }),
+      metadata: compileInput.metadata
+    },
+    compilerRuntime.compilerDependencies
+  );
+
+const renderPlanExecutionBrief = (result: CompiledHarnessPlan): string =>
+  renderExecutionBrief({
+    taskContract: result.taskContract,
+    harnessPlan: result.harnessPlan,
+    contextAssembly: result.contextAssembly,
+    capabilityPlan: result.capabilityPlan,
+    evidenceContract: result.evidenceContract,
+    nextAction: result.nextAction,
+    goalReference: "GOAL.md active KRN final harness spine",
+    execPlanReference: "PLAN.md Milestone 13"
+  });
+
+const targetReadModelMetadata = (
+  targetReadModel: TargetActivationReadModel | undefined,
+  targetOwnerFileRecall: TargetOwnerFileRecall | undefined
+): Record<string, unknown> => (
+  targetReadModel === undefined
+    ? {}
+    : {
+        targetReadModel: {
+          sourceSeedCount: targetReadModel.sourceSeeds.length,
+          ownerFileCount: targetReadModel.ownerFiles?.length ?? 0,
+          trustExclusionCount: targetReadModel.trustExclusions.length,
+          sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path),
+          ownerFilePaths: (targetReadModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path),
+          ...(targetOwnerFileRecall === undefined ? {} : { ownerFileRecall: targetOwnerFileRecall })
+        }
+      }
+);
+
+const projectScopedMetadataForRun = (
+  compilerRuntime: CompilerRuntimeResolution
+): Record<string, unknown> => ({
+  ...(compilerRuntime.projectScopedMetadata?.projectKernel === undefined
+    ? {}
+    : { projectKernelId: compilerRuntime.projectScopedMetadata.projectKernel.id }),
+  ...(compilerRuntime.projectScopedMetadata?.repoInstallations === undefined
+    ? {}
+    : {
+        repoInstallationIds:
+          compilerRuntime.projectScopedMetadata.repoInstallations.map(
+            (repoInstallation) => repoInstallation.id
+          )
+      })
+});
+
+const createPersistedPlanIdentity = async (
+  compilerRuntime: CompilerRuntimeResolution,
+  result: CompiledHarnessPlan,
+  command: string,
+  targetReadModel: TargetActivationReadModel | undefined,
+  targetOwnerFileRecall: TargetOwnerFileRecall | undefined
+): Promise<PersistedPlanIdentity | undefined> => {
+  const executionRun =
+    compilerRuntime.harnessRunRepository === undefined
+      ? undefined
+      : await compilerRuntime.harnessRunRepository.createExecutionRun({
+          harnessPlanId: result.harnessPlan.id,
+          adapter: "codex",
+          status: "planned",
+          initialEvent: {
+            sequence: 1,
+            type: "plan.persisted",
+            message: "Persisted harness plan created",
+            payload: {
+              operatorIntentId: result.operatorIntent.id,
+              taskContractId: result.taskContract.id,
+              harnessPlanId: result.harnessPlan.id,
+              contextAssemblyId: result.contextAssembly.id,
+              codexAdapterPlanRefId: result.codexAdapterPlanRef.id
+            }
+          },
+          metadata: {
+            command,
+            ...projectScopedMetadataForRun(compilerRuntime),
+            ...targetReadModelMetadata(targetReadModel, targetOwnerFileRecall),
+            ...(compilerRuntime.projectResolution === undefined
+              ? {}
+              : { projectResolution: compilerRuntime.projectResolution }),
+            evidenceContract: result.evidenceContract,
+            codexAdapterPlanRef: result.codexAdapterPlanRef
+          }
+        });
+
+  return executionRun === undefined
+    ? undefined
+    : {
+        operatorIntentId: result.operatorIntent.id,
+        taskContractId: result.taskContract.id,
+        harnessPlanId: result.harnessPlan.id,
+        contextAssemblyId: result.contextAssembly.id,
+        executionRunId: executionRun.id
+      };
+};
+
+export const runPlanCommand = async (
+  task: string,
+  runtime: PlanCommandRuntime
+): Promise<PlanCommandResult> => {
+  const compileInput = buildHarnessCompileInput(task, runtime);
   const workspaceSlug = compileInput.operatorIntent.workspaceSlug ?? defaultWorkspaceSlug;
   const projectSlug = compileInput.operatorIntent.projectSlug ?? defaultProjectSlug;
   const compilerRuntime = await resolveCompilerRuntime(runtime, workspaceSlug, projectSlug);
@@ -552,103 +741,18 @@ export const runPlanCommand = async (
     const targetReadModel = await buildTargetActivationReadModel(
       compilerRuntime.projectScopedMetadata
     );
-    const result = await compileHarnessPlan(
-      {
-        workspaceId: compilerRuntime.workspaceId,
-        projectId: compilerRuntime.projectId,
-        operatorIntent: {
-          rawIntent: compileInput.operatorIntent.rawIntent,
-          source: compileInput.operatorIntent.source,
-          metadata: compileInput.operatorIntent.metadata
-        },
-        ...(compileInput.taskContract === undefined
-          ? {}
-          : { taskContract: compileInput.taskContract }),
-        ...(targetReadModel === undefined ? {} : { targetReadModel }),
-        ...(compileInput.tokenBudget === undefined ? {} : { tokenBudget: compileInput.tokenBudget }),
-        metadata: compileInput.metadata
-      },
-      compilerRuntime.compilerDependencies
-    );
+    const result = await compilePlanForCommand(compilerRuntime, compileInput, targetReadModel);
     const targetOwnerFileRecall =
       targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(targetReadModel);
-    const executionBrief = renderExecutionBrief({
-      taskContract: result.taskContract,
-      harnessPlan: result.harnessPlan,
-      contextAssembly: result.contextAssembly,
-      capabilityPlan: result.capabilityPlan,
-      evidenceContract: result.evidenceContract,
-      nextAction: result.nextAction,
-      goalReference: "GOAL.md active KRN final harness spine",
-      execPlanReference: "PLAN.md Milestone 13"
-    });
+    const executionBrief = renderPlanExecutionBrief(result);
     const evidenceCommands = result.evidenceContract.commands.map((command) => command.command);
-    const executionRun =
-      compilerRuntime.harnessRunRepository === undefined
-        ? undefined
-        : await compilerRuntime.harnessRunRepository.createExecutionRun({
-            harnessPlanId: result.harnessPlan.id,
-            adapter: "codex",
-            status: "planned",
-            initialEvent: {
-              sequence: 1,
-              type: "plan.persisted",
-              message: "Persisted harness plan created",
-              payload: {
-                operatorIntentId: result.operatorIntent.id,
-                taskContractId: result.taskContract.id,
-                harnessPlanId: result.harnessPlan.id,
-                contextAssemblyId: result.contextAssembly.id,
-                codexAdapterPlanRefId: result.codexAdapterPlanRef.id
-              }
-            },
-            metadata: {
-              command:
-                runtime.projectId === undefined
-                  ? "krn plan --persist"
-                  : "krn plan --project --persist",
-              ...(compilerRuntime.projectScopedMetadata?.projectKernel === undefined
-                ? {}
-                : { projectKernelId: compilerRuntime.projectScopedMetadata.projectKernel.id }),
-              ...(compilerRuntime.projectScopedMetadata?.repoInstallations === undefined
-                ? {}
-                : {
-                    repoInstallationIds:
-                      compilerRuntime.projectScopedMetadata.repoInstallations.map(
-                        (repoInstallation) => repoInstallation.id
-                      )
-                  }),
-              ...(targetReadModel === undefined
-                ? {}
-                : {
-                    targetReadModel: {
-                      sourceSeedCount: targetReadModel.sourceSeeds.length,
-                      ownerFileCount: targetReadModel.ownerFiles?.length ?? 0,
-                      trustExclusionCount: targetReadModel.trustExclusions.length,
-                      sourceSeedPaths: targetReadModel.sourceSeeds.map((seed) => seed.path),
-                      ownerFilePaths: (targetReadModel.ownerFiles ?? []).map((ownerFile) => ownerFile.path),
-                      ...(targetOwnerFileRecall === undefined
-                        ? {}
-                        : { ownerFileRecall: targetOwnerFileRecall })
-                    }
-                  }),
-              ...(compilerRuntime.projectResolution === undefined
-                ? {}
-                : { projectResolution: compilerRuntime.projectResolution }),
-              evidenceContract: result.evidenceContract,
-              codexAdapterPlanRef: result.codexAdapterPlanRef
-            }
-          });
-    const persistedIdentity =
-      executionRun === undefined
-        ? undefined
-        : {
-            operatorIntentId: result.operatorIntent.id,
-            taskContractId: result.taskContract.id,
-            harnessPlanId: result.harnessPlan.id,
-            contextAssemblyId: result.contextAssembly.id,
-            executionRunId: executionRun.id
-          };
+    const persistedIdentity = await createPersistedPlanIdentity(
+      compilerRuntime,
+      result,
+      commandLabelForRuntime(runtime),
+      targetReadModel,
+      targetOwnerFileRecall
+    );
 
     return {
       stdout: formatPlanSummary(
