@@ -5,6 +5,9 @@ import {
   sql
 } from "drizzle-orm";
 import type {
+  SQL
+} from "drizzle-orm";
+import type {
   ActivationDecisionRecord,
   AddRetrievalCandidateInput,
   CleanupTestRetrievalRecordsInput,
@@ -107,52 +110,159 @@ const activationDecisionMetadata = (
     : { activationAbstentionReason: input.activationAbstentionReason })
 });
 
+type SearchDocumentInsertRow = typeof searchDocuments.$inferInsert;
+type EmbeddingInsertRow = typeof embeddings.$inferInsert;
+type RetrievalCandidateInsertRow = typeof retrievalCandidates.$inferInsert;
+type ActivationDecisionInsertRow = typeof activationDecisions.$inferInsert;
+type SearchDocumentInsertValues = Omit<SearchDocumentInsertRow, "searchVector"> & {
+  searchVector: SQL;
+};
+type RetrievalInsertColumnName =
+  | keyof SearchDocumentInsertValues
+  | keyof EmbeddingInsertRow
+  | keyof RetrievalCandidateInsertRow
+  | keyof ActivationDecisionInsertRow;
+type RetrievalSubjectType = SearchDocumentInsertRow["subjectType"];
+
+interface RetrievalSubjectLinkInput {
+  subjectType: RetrievalSubjectType;
+  subjectId: string;
+  sourceArtifactId?: string;
+  sourceChunkId?: string;
+  sourceClaimId?: string;
+  memoryRecordId?: string;
+  antiMemoryRecordId?: string;
+}
+
+type RetrievalSubjectLinkColumns =
+  Pick<SearchDocumentInsertRow, "subjectType" | "subjectId"> &
+  Partial<
+    Pick<
+      SearchDocumentInsertRow,
+      | "sourceArtifactId"
+      | "sourceChunkId"
+      | "sourceClaimId"
+      | "memoryRecordId"
+      | "antiMemoryRecordId"
+    >
+  >;
+
+const optionalColumn = <Key extends RetrievalInsertColumnName, Value>(
+  key: Key,
+  value: Value | undefined
+): Partial<Record<Key, Value>> => (
+  value === undefined ? {} : { [key]: value } as Record<Key, Value>
+);
+
+const optionalTimestampColumn = <Key extends RetrievalInsertColumnName>(
+  key: Key,
+  value: string | undefined
+): Partial<Record<Key, Date>> => optionalColumn(
+  key,
+  value === undefined ? undefined : fromIsoTimestamp(value)
+);
+
+const retrievalSubjectLinkColumns = (
+  input: RetrievalSubjectLinkInput
+): RetrievalSubjectLinkColumns => ({
+  subjectType: input.subjectType,
+  subjectId: input.subjectId,
+  ...optionalColumn("sourceArtifactId", input.sourceArtifactId),
+  ...optionalColumn("sourceChunkId", input.sourceChunkId),
+  ...optionalColumn("sourceClaimId", input.sourceClaimId),
+  ...optionalColumn("memoryRecordId", input.memoryRecordId),
+  ...optionalColumn("antiMemoryRecordId", input.antiMemoryRecordId)
+});
+
+const searchDocumentInsertValues = (
+  input: CreateSearchDocumentInput
+): SearchDocumentInsertValues => {
+  const language = input.language ?? "english";
+  const searchText = input.searchText ?? `${input.title}\n${input.body}`;
+
+  return {
+    ...optionalColumn("projectId", input.projectId),
+    ...retrievalSubjectLinkColumns(input),
+    ...optionalColumn("evidenceBundleId", input.evidenceBundleId),
+    ...optionalColumn("reviewAssessmentId", input.reviewAssessmentId),
+    ...optionalColumn("sourceDecisionId", input.sourceDecisionId),
+    ...optionalColumn("runEventId", input.runEventId),
+    trustTier: input.trustTier ?? "medium",
+    validityStatus: input.validityStatus ?? "active",
+    language,
+    title: input.title,
+    body: input.body,
+    searchText,
+    searchVector: sql`to_tsvector(${language}::regconfig, ${searchText})`,
+    metadataFilters: input.metadataFilters ?? {},
+    ...optionalTimestampColumn("validFrom", input.validFrom),
+    ...optionalTimestampColumn("validUntil", input.validUntil),
+    metadata: input.metadata ?? {}
+  };
+};
+
+const embeddingInsertValues = (
+  input: CreateEmbeddingInput
+): EmbeddingInsertRow => ({
+  ...optionalColumn("projectId", input.projectId),
+  embeddingModelId: input.embeddingModelId,
+  ...retrievalSubjectLinkColumns(input),
+  ...optionalColumn("searchDocumentId", input.searchDocumentId),
+  embedding: input.embedding,
+  contentHash: input.contentHash,
+  trustTier: input.trustTier ?? "medium",
+  validityStatus: input.validityStatus ?? "active",
+  metadataFilters: input.metadataFilters ?? {},
+  ...optionalTimestampColumn("validFrom", input.validFrom),
+  ...optionalTimestampColumn("validUntil", input.validUntil),
+  metadata: input.metadata ?? {}
+});
+
+const retrievalCandidateInsertValues = (
+  input: AddRetrievalCandidateInput
+): RetrievalCandidateInsertRow => ({
+  retrievalRunId: input.retrievalRunId,
+  kind: input.kind,
+  status: input.status ?? "candidate",
+  subjectType: input.subjectType,
+  subjectId: input.subjectId,
+  ...optionalColumn("searchDocumentId", input.searchDocumentId),
+  trustTier: input.trustTier,
+  ...optionalColumn("lexicalScore", input.lexicalScore),
+  ...optionalColumn("vectorScore", input.vectorScore),
+  ...optionalColumn("graphScore", input.graphScore),
+  ...optionalColumn("temporalScore", input.temporalScore),
+  ...optionalColumn("contextRoiScore", input.contextRoiScore),
+  ...optionalColumn("totalScore", input.totalScore),
+  ...optionalColumn("score", input.score),
+  reason: input.reason,
+  metadata: input.metadata ?? {}
+});
+
+const activationDecisionInsertValues = (
+  input: RecordActivationDecisionInput
+): ActivationDecisionInsertRow => ({
+  retrievalRunId: input.retrievalRunId,
+  ...optionalColumn("retrievalCandidateId", input.retrievalCandidateId),
+  ...optionalColumn("contextAssemblyId", input.contextAssemblyId),
+  subjectType: input.subjectType,
+  subjectId: input.subjectId,
+  decision: input.decision,
+  reason: input.reason,
+  ...optionalColumn("score", input.score),
+  ...optionalColumn("contextBudgetCost", input.contextBudgetCost),
+  ...optionalColumn("expectedDecisionImpact", input.expectedDecisionImpact),
+  metadata: activationDecisionMetadata(input)
+});
+
 export class DrizzleRetrievalRepository implements RetrievalRepository {
   constructor(private readonly db: KrnDatabase) {}
 
   async createSearchDocument(input: CreateSearchDocumentInput): Promise<SearchDocumentRecord> {
-    const language = input.language ?? "english";
-    const searchText = input.searchText ?? `${input.title}\n${input.body}`;
     const row = requireReturnedRow(
       await this.db
         .insert(searchDocuments)
-        .values({
-          ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-          subjectType: input.subjectType,
-          subjectId: input.subjectId,
-          ...(input.sourceArtifactId === undefined
-            ? {}
-            : { sourceArtifactId: input.sourceArtifactId }),
-          ...(input.sourceChunkId === undefined ? {} : { sourceChunkId: input.sourceChunkId }),
-          ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
-          ...(input.memoryRecordId === undefined ? {} : { memoryRecordId: input.memoryRecordId }),
-          ...(input.antiMemoryRecordId === undefined
-            ? {}
-            : { antiMemoryRecordId: input.antiMemoryRecordId }),
-          ...(input.evidenceBundleId === undefined
-            ? {}
-            : { evidenceBundleId: input.evidenceBundleId }),
-          ...(input.reviewAssessmentId === undefined
-            ? {}
-            : { reviewAssessmentId: input.reviewAssessmentId }),
-          ...(input.sourceDecisionId === undefined
-            ? {}
-            : { sourceDecisionId: input.sourceDecisionId }),
-          ...(input.runEventId === undefined ? {} : { runEventId: input.runEventId }),
-          trustTier: input.trustTier ?? "medium",
-          validityStatus: input.validityStatus ?? "active",
-          language,
-          title: input.title,
-          body: input.body,
-          searchText,
-          searchVector: sql`to_tsvector(${language}::regconfig, ${searchText})`,
-          metadataFilters: input.metadataFilters ?? {},
-          ...(input.validFrom === undefined ? {} : { validFrom: fromIsoTimestamp(input.validFrom) }),
-          ...(input.validUntil === undefined
-            ? {}
-            : { validUntil: fromIsoTimestamp(input.validUntil) }),
-          metadata: input.metadata ?? {}
-        })
+        .values(searchDocumentInsertValues(input))
         .returning(),
       "createSearchDocument"
     );
@@ -208,34 +318,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
     const row = requireReturnedRow(
       await this.db
         .insert(embeddings)
-        .values({
-          ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-          embeddingModelId: input.embeddingModelId,
-          subjectType: input.subjectType,
-          subjectId: input.subjectId,
-          ...(input.sourceArtifactId === undefined
-            ? {}
-            : { sourceArtifactId: input.sourceArtifactId }),
-          ...(input.sourceChunkId === undefined ? {} : { sourceChunkId: input.sourceChunkId }),
-          ...(input.sourceClaimId === undefined ? {} : { sourceClaimId: input.sourceClaimId }),
-          ...(input.memoryRecordId === undefined ? {} : { memoryRecordId: input.memoryRecordId }),
-          ...(input.antiMemoryRecordId === undefined
-            ? {}
-            : { antiMemoryRecordId: input.antiMemoryRecordId }),
-          ...(input.searchDocumentId === undefined
-            ? {}
-            : { searchDocumentId: input.searchDocumentId }),
-          embedding: input.embedding,
-          contentHash: input.contentHash,
-          trustTier: input.trustTier ?? "medium",
-          validityStatus: input.validityStatus ?? "active",
-          metadataFilters: input.metadataFilters ?? {},
-          ...(input.validFrom === undefined ? {} : { validFrom: fromIsoTimestamp(input.validFrom) }),
-          ...(input.validUntil === undefined
-            ? {}
-            : { validUntil: fromIsoTimestamp(input.validUntil) }),
-          metadata: input.metadata ?? {}
-        })
+        .values(embeddingInsertValues(input))
         .returning(),
       "createEmbedding"
     );
@@ -298,28 +381,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
     const row = requireReturnedRow(
       await this.db
         .insert(retrievalCandidates)
-        .values({
-          retrievalRunId: input.retrievalRunId,
-          kind: input.kind,
-          status: input.status ?? "candidate",
-          subjectType: input.subjectType,
-          subjectId: input.subjectId,
-          ...(input.searchDocumentId === undefined
-            ? {}
-            : { searchDocumentId: input.searchDocumentId }),
-          trustTier: input.trustTier,
-          ...(input.lexicalScore === undefined ? {} : { lexicalScore: input.lexicalScore }),
-          ...(input.vectorScore === undefined ? {} : { vectorScore: input.vectorScore }),
-          ...(input.graphScore === undefined ? {} : { graphScore: input.graphScore }),
-          ...(input.temporalScore === undefined ? {} : { temporalScore: input.temporalScore }),
-          ...(input.contextRoiScore === undefined
-            ? {}
-            : { contextRoiScore: input.contextRoiScore }),
-          ...(input.totalScore === undefined ? {} : { totalScore: input.totalScore }),
-          ...(input.score === undefined ? {} : { score: input.score }),
-          reason: input.reason,
-          metadata: input.metadata ?? {}
-        })
+        .values(retrievalCandidateInsertValues(input))
         .returning(),
       "addRetrievalCandidate"
     );
@@ -339,27 +401,7 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
     const row = requireReturnedRow(
       await this.db
         .insert(activationDecisions)
-        .values({
-          retrievalRunId: input.retrievalRunId,
-          ...(input.retrievalCandidateId === undefined
-            ? {}
-            : { retrievalCandidateId: input.retrievalCandidateId }),
-          ...(input.contextAssemblyId === undefined
-            ? {}
-            : { contextAssemblyId: input.contextAssemblyId }),
-          subjectType: input.subjectType,
-          subjectId: input.subjectId,
-          decision: input.decision,
-          reason: input.reason,
-          ...(input.score === undefined ? {} : { score: input.score }),
-          ...(input.contextBudgetCost === undefined
-            ? {}
-            : { contextBudgetCost: input.contextBudgetCost }),
-          ...(input.expectedDecisionImpact === undefined
-            ? {}
-            : { expectedDecisionImpact: input.expectedDecisionImpact }),
-          metadata: activationDecisionMetadata(input)
-        })
+        .values(activationDecisionInsertValues(input))
         .returning(),
       "recordActivationDecision"
     );
