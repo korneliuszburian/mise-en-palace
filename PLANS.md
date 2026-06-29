@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: e026c3639115e749e2eb67894edd607f2b01f09e / CI success
+latest source slice commit checked: 85d433e5a52274e4ff2fc53b1b2e045bcb5eba68 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -121,6 +121,11 @@ candidate JSON guards and shared private mapper fragments without schema/public
 API changes, added malformed-candidate boundary coverage, and reduced global
 Fallow to dupes 93 and health 40; commit `e026c36` passed CI run
 `28406685338`.
+Latest completed slice: Codex brief/smoke support cleanup extracted shared CLI
+support for evidence-contract parsing, read-only brief rendering, smoke
+runtime/repositories, count helpers, and proof formatting; verified
+codex-adapter and target-repo-harness DB smokes, and reduced global Fallow to
+dupes 81 and health 37; commit `85d433e` passed CI run `28408366911`.
 Memory-governance and activation smoke assertion cleanup remain valid, but they
 must be handled as dedicated smoke-family cleanup slices because touching them
 pulls inherited smoke duplication into the changed-files gate.
@@ -662,10 +667,15 @@ completed bounded targets:
   packages/db/src/repositories/DrizzleMemoryRepository.ts
   packages/db/src/dbSmokeSupport.ts and DB smoke setup callers
   packages/db/src/initConnectSmoke.ts
+  packages/db/src/repositories/memoryMappers.ts
+  packages/cli/src/codexBriefSupport.ts
+  packages/cli/src/codexAdapterSmoke.ts
+  packages/cli/src/targetRepoHarnessSmoke.ts
+  packages/cli/src/runCodexBriefCommand.ts
 
 full Fallow moved:
-  dupes 136 -> 95 clone groups
-  health 117 -> 41 above threshold
+  dupes 136 -> 81 clone groups
+  health 117 -> 37 above threshold
 
 next: pick the next bounded owner surface from the current full Fallow report.
 If continuing DB smoke cleanup, handle memory-governance/activation as a
