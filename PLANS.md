@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 16ce545c214c4c00059e523f7778764a6d403f06 / CI success
+latest source slice commit checked: f130f7f8fab54486a914f88b5dbcdc1c7aa3dda3 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -76,6 +76,11 @@ Latest completed slice: doctor failure rules cleanup replaced the monolithic
 `runDoctorCommand` failure predicate with declarative rules, removed the
 `runDoctorCommand` high-complexity finding, verified DB-backed doctor/readiness
 output, and reduced global Fallow health to 68; commit `16ce545` passed CI.
+Latest completed slice: doctor DB readiness gates cleanup extracted shared
+brain-store skip classification from `doctorDbChecks`, added behavior tests for
+not-configured/unreachable/not-ready skip statuses, removed changed-file Fallow
+findings, and reduced global Fallow to dupes 113 and health 65; commit
+`f130f7f` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -606,16 +611,16 @@ completed bounded targets:
   packages/cli/src/cliFileBoundary.ts
   packages/cli/src/doctorStaticChecks.ts
   packages/cli/src/runDoctorCommand.ts
+  packages/cli/src/doctorDbChecks.ts
 
 full Fallow moved:
-  dupes 136 -> 115 clone groups
-  health 117 -> 68 above threshold
+  dupes 136 -> 113 clone groups
+  health 117 -> 65 above threshold
 
 next: inspect a bounded owner surface with direct complexity debt, likely
-packages/cli/src/doctorDbChecks.ts, packages/cli/src/databaseRuntime.ts, or
-another narrower target from the fresh Fallow report. Do not split
-packages/db/src/repositories/common.ts only because Fallow flags fan-in; it is
-already the shared DB boundary helper.
+packages/cli/src/databaseRuntime.ts or another narrower target from the fresh
+Fallow report. Do not split packages/db/src/repositories/common.ts only because
+Fallow flags fan-in; it is already the shared DB boundary helper.
 ```
 
 ## Verification Policy
