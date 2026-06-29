@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V334 Edge-Aware Activation Selection Delta Proof
-current task: V334-00 Edge-Aware Activation Selection Delta Proof
+active stream: V335 Small Graph-Brain QA Case
+current task: V335-00 Small Graph-Brain QA Case
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V334-00 Edge-Aware Activation Selection Delta Proof. V333 showed edge-aware
-activation is review-useful and ranking-positive, but did not prove edge
-influence can change inclusion under budget pressure.
+V335-00 Small Graph-Brain QA Case. V334 proved edge influence can change the
+bounded working set; the next gap is whether that relation-selected context
+improves a tiny graph-brain QA/review scenario.
 ```
 
 ## 2. Product Thesis
@@ -59,7 +59,8 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   extraction persistence bridge complete; fence-state carryover repair complete;
   graph-aware edge readback complete; edge-aware ranking lab complete;
   persisted edge-aware activation readback complete; edge-aware candidate
-  refinement complete; usefulness closure complete; selection delta proof next
+  refinement complete; usefulness closure complete; selection delta proof
+  complete; small graph QA next
 product-ready: no
 ```
 
@@ -84,6 +85,7 @@ V330 complete: bounded edge-aware source candidate ranking lab.
 V331 complete: persisted edge-aware activation readback.
 V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
 V333 complete: edge-aware activation usefulness closure.
+V334 complete: edge-aware activation selection delta proof.
 ```
 
 Reports:
@@ -99,6 +101,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate
 docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v334-edge-aware-activation-selection-delta/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -378,27 +381,65 @@ krn run show --run-id 5595420c-58a8-4943-b766-074ff9520d3d: passed
 krn run show --run-id 5595420c-58a8-4943-b766-074ff9520d3d --json: passed
 ```
 
-## Active Task: V334-00 Edge-Aware Activation Selection Delta Proof
+## Outcome V334 Edge-Aware Activation Selection Delta Proof
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: `docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md`
+- Mechanism: V333 proved review-useful edge metadata and top ordering, but not
+  whether edge influence can rescue or include an otherwise lower-ranked
+  candidate.
+- KRN implication: before graph QA or broader graph retrieval, KRN needed a
+  bounded no-edge vs edge-aware selection-delta proof.
+- Decision: add a focused activation test comparing identical candidates under
+  `maxInclusions: 1` with and without SourceClaimEdge influence.
+- Does not prove: source truth, edge correctness, production graph retrieval,
+  graph QA quality, crawler readiness, product readiness, or Memory Core
+  mutation.
+- Consumer: V335 small graph-brain QA case.
+- Falsifier: edge influence cannot change selected context under identical
+  candidate/budget conditions.
+
+V334 outcome:
+
+```txt
+Focused activation proof now shows a no-edge baseline selecting the lexical-only
+claim while the edge-aware path selects the edge-connected claim under the same
+bounded context policy. DB-backed readback also continues to show current
+edge-aware activation metadata.
+```
+
+V334 verification:
+
+```txt
+pnpm --filter @krn/harness test -- activation --testNamePattern "SourceClaimEdge influence can change bounded selection": passed
+krn plan --persist: passed
+krn run show --run-id f0fc3a0b-7c52-42e6-b096-0bb2025abd61: passed
+krn run show --run-id f0fc3a0b-7c52-42e6-b096-0bb2025abd61 --json: passed
+```
+
+## Active Task: V335-00 Small Graph-Brain QA Case
 
 Goal:
 
 ```txt
-Prove whether SourceClaimEdge influence can change bounded activation selection
-or ordering compared with a no-edge baseline, without broad graph retrieval
-work.
+Use the edge-aware activation path in one tiny graph-brain QA scenario where the
+answer or selected context depends on a source relation.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v334-edge-aware-activation-selection-delta/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-focused activation test or bounded report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v334-edge-aware-activation-selection-delta/REPORT.md
+focused test or bounded report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v335-small-graph-brain-qa-case/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -414,37 +455,37 @@ mutation; automatic source truth promotion; runtime markdown memory
 
 Definition of Done:
 
-- A bounded proof compares edge-aware candidate behavior against a no-edge
-  baseline.
-- The report states whether edge influence changed ordering, inclusion, both,
-  or neither.
+- One tiny graph-brain QA/review scenario uses existing SourceClaimEdge context.
+- The report states whether relation-selected context improved answer grounding
+  or review usefulness compared with a no-relation baseline.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 
 Acceptance criteria:
 
 ```txt
-edge-aware activation selection delta is measured without claiming product graph
-retrieval quality.
+small graph-brain QA usefulness is measured without claiming product graph
+retrieval quality or product readiness.
 ```
 
 Risk:
 
 ```txt
-medium: selection-delta proof can drift into benchmark/platform work before the
+medium: graph QA case can drift into benchmark/platform work before the
 system has earned it.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V334 implementation commit if source changes are made
+focused revert of the V335 implementation commit if source changes are made
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V334 proves selection delta, choose the next small graph-brain QA case. If
-V334 is weak, repair edge-aware activation selection before expanding surfaces.
+If V335 is positive, choose the next small source-relation refinement or
+heartbeat candidate-generation task. If weak, repair edge-aware graph QA
+readback before expanding surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -514,7 +555,8 @@ Next-task synthesis rule:
 - V331: complete; persisted edge-aware activation readback.
 - V332: complete; edge-aware source candidate refinement.
 - V333: complete; edge-aware activation usefulness closure.
-- V334: active; edge-aware activation selection delta proof.
+- V334: complete; edge-aware activation selection delta proof.
+- V335: active; small graph-brain QA case.
 
 ## Pattern Gate
 

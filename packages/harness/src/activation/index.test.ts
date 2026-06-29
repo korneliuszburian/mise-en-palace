@@ -316,6 +316,120 @@ describe("activation engine", () => {
     expect(disconnected?.metadata).not.toHaveProperty("sourceClaimEdgeInfluence");
   });
 
+  it("proves SourceClaimEdge influence can change bounded selection against a no-edge baseline", () => {
+    const query = buildSourceQuery({
+      ...task,
+      objective: "Use edge-aware source claim context for graph brain selection delta"
+    });
+    const seedSourceClaim = sourceClaim({
+      id: "claim-seed",
+      claim: "Graph brain v0 should keep SourceClaimEdge relations reviewable.",
+      krnImplication: "Use edge-aware source context only with a proof boundary."
+    });
+    const edgeConnectedSourceClaim = sourceClaim({
+      id: "claim-edge-connected",
+      claim: "Edge-adjacent source context should be selected when a reviewed SourceClaimEdge makes it relevant.",
+      mechanism: "A SourceClaimEdge connects this lower-lexical claim to the selected graph-brain seed.",
+      krnImplication: "Prefer edge-adjacent source context when it changes bounded selection with reviewable metadata."
+    });
+    const lexicalOnlySourceClaim = sourceClaim({
+      id: "claim-lexical-only",
+      claim: "Lexical graph brain context is useful but has no SourceClaimEdge support.",
+      mechanism: "It matches task terms without a reviewed source relation.",
+      krnImplication: "Use as the no-edge baseline competitor."
+    });
+    const edge: SourceClaimEdge = {
+      id: "edge-selection-delta",
+      fromSourceClaimId: seedSourceClaim.id,
+      toSourceClaimId: edgeConnectedSourceClaim.id,
+      kind: "supports",
+      metadata: {
+        consumer: "V334 edge-aware activation selection delta proof",
+        doesNotProve: "This edge does not prove graph retrieval quality."
+      },
+      createdAt: now
+    };
+    const baselineRanked = rankCandidates([
+      {
+        ...toSourceClaimCandidate(seedSourceClaim),
+        lexicalScore: 5
+      },
+      {
+        ...toSourceClaimCandidate(edgeConnectedSourceClaim),
+        lexicalScore: 20
+      },
+      {
+        ...toSourceClaimCandidate(lexicalOnlySourceClaim),
+        lexicalScore: 35
+      }
+    ], query);
+    const baselineContext = assembleContext({
+      id: "context-no-edge",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(baselineRanked, { maxInclusions: 1 }),
+      createdAt: now
+    });
+    const edgeAwareRanked = rankCandidates(
+      applySourceClaimEdgeInfluence([
+        {
+          ...toSourceClaimCandidate(seedSourceClaim),
+          lexicalScore: 5
+        },
+        {
+          ...toSourceClaimCandidate(edgeConnectedSourceClaim),
+          lexicalScore: 20
+        },
+        {
+          ...toSourceClaimCandidate(lexicalOnlySourceClaim),
+          lexicalScore: 35
+        }
+      ], {
+        edges: [edge],
+        seedSourceClaimIds: [seedSourceClaim.id],
+        graphScore: 30
+      }),
+      query
+    );
+    const edgeAwareContext = assembleContext({
+      id: "context-edge-aware",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(edgeAwareRanked, { maxInclusions: 1 }),
+      createdAt: now
+    });
+
+    expect(baselineContext.inclusions.map((item) => item.subjectId)).toEqual([
+      "claim-lexical-only"
+    ]);
+    expect(baselineContext.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "claim-edge-connected",
+        reason: "over_budget"
+      })
+    ]));
+    expect(edgeAwareContext.inclusions.map((item) => item.subjectId)).toEqual([
+      "claim-edge-connected"
+    ]);
+    expect(edgeAwareContext.exclusions).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        subjectId: "claim-lexical-only",
+        reason: "over_budget"
+      })
+    ]));
+    expect(edgeAwareRanked.find((candidate) =>
+      candidate.subjectId === "claim-edge-connected"
+    )).toMatchObject({
+      graphScore: 30,
+      metadata: {
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-selection-delta"],
+          edgeKinds: ["supports"],
+          seedSourceClaimIds: ["claim-seed"],
+          doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      }
+    });
+  });
+
   it("applies SourceClaimEdge influence during activation retrieval without duplicate candidates", async () => {
     const seedSourceClaim = sourceClaim({
       id: "claim-seed",

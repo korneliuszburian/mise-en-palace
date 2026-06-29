@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V334 Edge-Aware Activation Selection Delta Proof
-current task: V334-00 Edge-Aware Activation Selection Delta Proof
+active stream: V335 Small Graph-Brain QA Case
+current task: V335-00 Small Graph-Brain QA Case
 ```
 
 ## Compact Completed Checkpoints
@@ -59,6 +59,8 @@ V331 complete: persisted edge-aware activation readback.
 V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
 V333 complete: edge-aware activation usefulness closure showed review-useful
   edge metadata and top ordering, but not inclusion delta.
+V334 complete: edge-aware selection delta proof showed SourceClaimEdge influence
+  can change the bounded working set against a no-edge baseline.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
@@ -68,23 +70,23 @@ docs/reviews/controlled-dogfood/2026-06-29-v329-...,
 docs/reviews/controlled-dogfood/2026-06-29-v330-...,
 docs/reviews/controlled-dogfood/2026-06-29-v331-...,
 docs/reviews/controlled-dogfood/2026-06-29-v332-...,
-docs/reviews/controlled-dogfood/2026-06-29-v333-...
+docs/reviews/controlled-dogfood/2026-06-29-v333-...,
+docs/reviews/controlled-dogfood/2026-06-29-v334-...
 ```
 
-### V334 Edge-Aware Activation Selection Delta Proof
+### V335 Small Graph-Brain QA Case
 
 Goal:
 
-Prove whether SourceClaimEdge influence can change bounded activation selection
-or ordering compared with a no-edge baseline, without broad graph retrieval
-work.
+Use the edge-aware activation path in one tiny graph-brain QA scenario where the
+answer or selected context depends on a source relation.
 
 Current action:
 
 ```txt
-Execute V334-00: create the smallest behavior/readback proof where edge-aware
-SourceClaimEdge influence changes candidate ordering or inclusion compared with
-a no-edge baseline. Prefer existing activation helpers and persisted readback.
+Execute V335-00: create the smallest graph-brain QA proof/report using existing
+SourceClaimEdge context. The scenario must show whether edge-selected source
+relations improve the answer/review outcome.
 Do not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
 runtime, broad ranking rewrite, or Memory Core mutation.
 ```
@@ -100,9 +102,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given candidates where lexical evidence alone would not select the edge-adjacent
-claim, SourceClaimEdge influence cannot change ordering or inclusion in a
-bounded proof/readback.
+Given one tiny relation-dependent graph QA scenario, edge-aware activation does
+not improve selected context, answer grounding, or review usefulness over a
+no-relation baseline.
 ```
 
 ## Pattern Gate
