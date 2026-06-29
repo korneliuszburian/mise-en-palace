@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
+V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
 ```
 
 Current state:
@@ -27,16 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V325-00 Local Source Entity/Claim Extraction Candidate Preview.
+current task: V326-00 Extraction Candidate Reviewability Noise Gate.
 ```
 
 Current task:
 
 ```txt
-Add the smallest candidate-only local source extraction preview that can render
-reviewable entity/claim/relation candidates with source ranges, proof/non-proof
-boundaries, and no autonomous graph truth, graph ranking, crawler, or Memory
-Core mutation.
+Improve local source extraction candidate reviewability before any persistence:
+keep the preview candidate-only, but stop presenting fenced source-decision/YAML
+blocks or weak fragments as globally ready claim candidates.
 ```
 
 ## Remaining Work
@@ -54,10 +53,10 @@ to preserve are:
    SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
    activation, context detail run readback, and marker/hash lexical activation
    over persisted local SearchDocuments exist.
-5. Graph brain v0: V323 proved bounded SourceClaimEdge preview/persistence and
-   V324 exposed direct persisted edge readback; next add candidate-only local
-   source entity/claim extraction preview before ranking, crawler, or graph
-   runtime work.
+5. Graph brain v0: V323 proved SourceClaimEdge preview/persistence, V324 exposed
+   direct edge readback, and V325 added candidate-only local extraction preview;
+   next repair extraction reviewability/noise before persistence, ranking,
+   crawler, or graph runtime work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

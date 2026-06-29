@@ -46,7 +46,7 @@ export const formatSourceClaimEdgesUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
     "",
     "Required:",
     "--file",
@@ -54,6 +54,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "Optional:",
     "--chunk-lines <positive-integer>",
     "--limit-chunks <positive-integer>",
+    "--extract-candidates",
     "--claim <text>",
     "--mechanism <text>",
     "--krn-implication <text>",
@@ -74,7 +75,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--graph-edge-invalidated-at <iso-or-text>",
     "--persist",
     "",
-    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --persist writes SourceArtifact, SourceChunk, and SearchDocument rows only; it does not crawl, embed, rank, or mutate Memory Core."
+    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --extract-candidates renders candidate-only deterministic local extraction output. --persist writes SourceArtifact, SourceChunk, and SearchDocument rows only; it does not crawl, embed, rank, or mutate Memory Core."
   ].join("\n") + "\n";
 
 export const formatSourceDecisionLinkUsage = (): string =>
@@ -228,6 +229,11 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
 
     if (arg === "--persist") {
       sourceCommand.persist = true;
+      continue;
+    }
+
+    if (arg === "--extract-candidates") {
+      sourceCommand.extractCandidates = true;
       continue;
     }
 

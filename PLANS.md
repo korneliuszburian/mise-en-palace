@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
-current task: V325-00 Local Source Entity/Claim Extraction Candidate Preview
+active stream: V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
+current task: V326-00 Extraction Candidate Reviewability Noise Gate
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,11 +25,12 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V325-00 Local Source Entity/Claim Extraction Candidate Preview is the current
-gap. V323 proved explicit SourceClaimEdge preview/persistence and V324 exposed
-direct persisted edge readback. Operators now need candidate-only extraction
-preview from local source artifacts before graph ranking, crawler, UI/API/MCP,
-worker daemon, consensus runtime, or Memory Core mutation.
+V326-00 Extraction Candidate Reviewability Noise Gate is the current gap. V325
+proved candidate-only local extraction preview, but live ADR-0021 output showed
+that fenced source-decision/YAML blocks and weak fragments can be rendered as
+globally ready claim candidates. Operators need stronger reviewability/noise
+classification before persistence, ranking, crawler, UI/API/MCP, worker daemon,
+consensus runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -56,7 +57,7 @@ DB-backed replay: proven
 candidate reviewability: core primitive
 activation: useful for guardrails and some persisted source state; owner-file recall still mixed
 pattern brain: partial
-graph brain: SourceClaimEdge preview/persistence/readback exists; candidate extraction next
+graph brain: SourceClaimEdge preview/persistence/readback exists; candidate extraction preview exists; extraction reviewability/noise gate next
 product-ready: no
 ```
 
@@ -98,36 +99,63 @@ krn plan/evidence/observe/reflect --persist: passed
 
 ### V325-00 Local Source Entity/Claim Extraction Candidate Preview
 
+Status: complete.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
+Added `krn source artifact preview --extract-candidates` as a candidate-only
+deterministic local extraction preview. It renders entity/claim/relation
+candidates with source ranges, reviewability, doesNotProve, Graph runtime none,
+and Memory mutation none. Live ADR-0021 preview proved the surface and exposed
+the next gap: noisy fenced source-decision/YAML or weak fragment candidates.
+```
+
+Verification:
+
+```txt
+pnpm --filter @krn/cli test -- parseSourceArgs runSourceArtifactPreviewCommand: passed
+pnpm typecheck: passed
+pnpm test: passed
+pnpm db:ready: passed
+git diff --check: passed
+krn source artifact preview --extract-candidates: passed
+```
+
+### V326-00 Extraction Candidate Reviewability Noise Gate
+
 Status: active.
 
 Goal:
 
 ```txt
-Add the smallest candidate-only local source extraction preview that renders
-reviewable entity, claim, and relation candidates with source ranges and
-proof/non-proof boundaries.
+Keep local source extraction candidate preview candidate-only, but stop
+rendering fenced source-decision/YAML blocks or weak fragments as globally ready
+claim candidates.
 ```
 
 Product rationale:
 
 ```txt
-V323/V324 proved explicit graph edge write/readback. Before graph-aware
-retrieval, KRN needs a bounded local-source preview that can produce reviewable
-extraction candidates without pretending they are accepted graph truth.
+V325 created the preview surface. Before any persistence or graph-aware
+retrieval, KRN needs operator-trustworthy candidate reviewability/noise signals
+for extracted local source candidates.
 ```
 
 Architectural rationale:
 
 ```txt
-Reuse existing source artifact preview/readback and candidate reviewability
-patterns. Do not introduce graph runtime, schema expansion, crawler, UI/API/MCP,
-worker daemon, consensus runtime, or Memory Core mutation.
+Reuse existing source artifact preview and candidate reviewability patterns.
+Prefer deterministic classification/rendering over a new extractor subsystem.
+Do not introduce graph runtime, schema expansion, crawler, UI/API/MCP, worker
+daemon, consensus runtime, or Memory Core mutation.
 ```
 
 Evidence source:
 
 ```txt
-V323/V324 reports and live SourceClaimEdge 415321b3-4a26-4634-bfbe-38b756777d6a.
+V325 report and live ADR-0021 `--extract-candidates` output.
 ```
 
 Official/external sources:
@@ -141,22 +169,19 @@ Inputs required:
 ```txt
 PLAN.md
 PLANS.md
-docs/reviews/controlled-dogfood/2026-06-29-v323-graph-brain-v0-bounded-source-entity-claim-edge-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
 packages/cli/src/parseSourceArgs.ts
-packages/cli/src/*source*
-packages/cli/src/databaseRuntime.ts
-packages/harness/src/repositories/sourceRepository.ts
-packages/db/src/repositories/DrizzleSourceRepository.ts
+packages/cli/src/runSourceArtifactPreviewCommand.ts
+packages/cli/src/runSourceArtifactPreviewCommand.test.ts
 docs/decisions/ADR-0021-temporal-claim-graph.md
 ```
 
 Files likely touched:
 
 ```txt
-packages/cli/src/parseSourceArgs.ts
-packages/cli/src/runSource*.ts
+packages/cli/src/runSourceArtifactPreviewCommand.ts
 focused CLI tests
-docs/reviews/controlled-dogfood/<date>-v325-local-source-extraction-preview/REPORT.md
+docs/reviews/controlled-dogfood/<date>-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -165,36 +190,39 @@ PLANS.md
 Allowed writes:
 
 ```txt
-focused CLI/source preview code, tests, report, compact root state
+focused CLI/source preview rendering/classification code, tests, report,
+compact root state
 ```
 
 Forbidden writes:
 
 ```txt
-schema/migration unless proven necessary; graph ranking; crawler; UI/API/MCP;
-worker daemon; consensus runtime; Memory Core mutation; runtime markdown
-memory; target repo writes; automatic acceptance of extracted candidates
+schema/migration; candidate persistence; graph ranking; crawler; UI/API/MCP;
+worker daemon; consensus runtime; Memory Core mutation; runtime markdown memory;
+target repo writes; automatic acceptance of extracted candidates
 ```
 
 Output requirements:
 
 ```txt
-operator-facing candidate preview with entity/claim/relation candidates, source
-ranges, reviewability, doesNotProve, and proof/non-proof boundaries
+operator-facing extraction preview that distinguishes reviewable candidates from
+noisy or weak extraction output with source ranges, reviewability,
+doesNotProve, and proof/non-proof boundaries
 ```
 
 Definition of Done:
 
-- Candidate-only local source extraction preview exists or source inspection
-  records why the existing surface already satisfies it.
-- Focused tests cover candidate rendering and proof/non-proof output.
+- Fenced source-decision/YAML blocks or weak fragments are not rendered as
+  globally ready claim candidates.
+- Focused tests cover ready vs noisy/needs-review candidate rendering and
+  proof/non-proof output.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
-- Live DB dogfood is recorded if the preview is implemented.
+- Live dogfood is recorded against ADR-0021 or equivalent local source.
 
 Verification commands:
 
 ```txt
-pnpm --filter @krn/cli test -- source
+pnpm --filter @krn/cli test -- runSourceArtifactPreviewCommand
 pnpm typecheck
 pnpm test
 pnpm db:ready
@@ -204,21 +232,21 @@ git diff --check
 Acceptance criteria:
 
 ```txt
-local source extraction candidates can be inspected without claiming accepted
-graph truth, extraction quality, ranking quality, or Memory Core mutation
+local source extraction candidates can be inspected without noisy fenced blocks
+or weak fragments masquerading as ready graph/source knowledge
 ```
 
 Risk:
 
 ```txt
-medium: extraction preview can accidentally imply accepted graph truth instead
-of candidate-only evidence.
+medium: over-filtering can hide useful candidates; under-filtering keeps noisy
+candidates looking ready.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the implementation commit
+focused revert of the V326 implementation commit
 ```
 
 Condensation expectation:
@@ -230,9 +258,9 @@ keep root state compact; archive details in the V325 report
 Next-task synthesis rule:
 
 ```txt
-If V325 succeeds, choose the next graph-brain task from evidence: persist
-candidate extraction, graph-aware retrieval stub, or repair extraction
-reviewability. Do not jump to crawler/UI/API/MCP.
+If V326 succeeds, choose the next graph-brain task from evidence: persistence
+bridge, graph-aware retrieval stub, or another reviewability repair. Do not
+jump to crawler/UI/API/MCP.
 ```
 
 ## 9. Task Contract Schema
@@ -296,7 +324,8 @@ Next-task synthesis rule:
 - V322: complete; marker/hash lexical retry exposes persisted local source docs.
 - V323: complete; SourceClaimEdge preview/persistence/readback proved.
 - V324: complete; SourceClaimEdge readback by SourceClaim id.
-- V325: active; local source entity/claim extraction candidate preview.
+- V325: complete; local source entity/claim extraction candidate preview.
+- V326: active; extraction candidate reviewability/noise gate.
 
 ## Pattern Gate
 

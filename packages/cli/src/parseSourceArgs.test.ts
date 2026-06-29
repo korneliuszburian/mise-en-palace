@@ -21,6 +21,7 @@ describe("parseSourceArgs", () => {
       "--chunk-lines",
       "12",
       "--limit-chunks=2",
+      "--extract-candidates",
       "--claim",
       "KRN should keep proof boundaries.",
       "--mechanism",
@@ -56,6 +57,7 @@ describe("parseSourceArgs", () => {
       command: {
         kind: "sourceArtifactPreview",
         persist: true,
+        extractCandidates: true,
         file: "docs/KRN_KERNEL.md",
         chunkLines: 12,
         limitChunks: 2,

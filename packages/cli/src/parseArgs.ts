@@ -287,6 +287,7 @@ export type CliCommand =
       file?: string;
       chunkLines?: number;
       limitChunks?: number;
+      extractCandidates?: boolean;
       claim?: string;
       mechanism?: string;
       krnImplication?: string;

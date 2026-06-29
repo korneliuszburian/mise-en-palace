@@ -88,7 +88,49 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("sourceClaimEdgeCandidate:");
     expect(result.stdout).toContain("reason: explicit graph edge inputs were not supplied");
     expect(result.stdout).toContain("No SourceClaimEdge created");
+    expect(result.stdout).toContain("extractionCandidatePreview:");
+    expect(result.stdout).toContain("reason: --extract-candidates was not supplied");
+    expect(result.stdout).toContain("No extracted entity, claim, or relation candidates created");
     expect(result.stdout).toContain("doesNotProve: source truth, claim correctness, DB persistence, embeddings, graph retrieval, crawler readiness, or Memory Core mutation");
+  });
+
+  it("renders candidate-only local extraction preview with source ranges", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+
+    await writeFile(sourcePath, [
+      "# Temporal Claim Graph",
+      "KRN should represent `SourceClaimEdge` candidates with source ranges.",
+      "Source ranges must remain reviewable."
+    ].join("\n"), "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: false,
+        file: "source.md",
+        chunkLines: 3,
+        limitChunks: 1,
+        extractCandidates: true
+      }
+    });
+
+    expect(result.stdout).toContain("extractionCandidatePreview:");
+    expect(result.stdout).toContain("mode: deterministic_local_heuristic");
+    expect(result.stdout).toContain("reviewability: ready");
+    expect(result.stdout).toContain("entityCandidates:");
+    expect(result.stdout).toContain("kind: markdown_heading | label: Temporal Claim Graph | sourceRange: lines 1-1");
+    expect(result.stdout).toContain("kind: inline_code | label: SourceClaimEdge | sourceRange: lines 2-2");
+    expect(result.stdout).toContain("claimCandidates:");
+    expect(result.stdout).toContain("text: KRN should represent `SourceClaimEdge` candidates with source ranges. Source ranges must remain reviewable. | sourceRange: lines 2-3");
+    expect(result.stdout).toContain("relationCandidates:");
+    expect(result.stdout).toContain("kind: scoped_by_heading");
+    expect(result.stdout).toContain("No SourceClaim row created from extraction candidates");
+    expect(result.stdout).toContain("No SourceClaimEdge row created from extraction candidates");
+    expect(result.stdout).toContain("Graph runtime: none");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("doesNotProve: These deterministic extraction candidates do not prove entity identity, claim truth, relation correctness, graph retrieval quality, extraction quality, crawler readiness, or Memory Core mutation.");
   });
 
   it("renders incomplete source claim candidates as reviewable missing-evidence output", async () => {

@@ -66,6 +66,38 @@ interface SourceArtifactPreviewPersistenceResult {
   sourceClaimEdgePersisted: boolean;
 }
 
+type ExtractionEntityKind = "markdown_heading" | "inline_code";
+type ExtractionRelationKind = "scoped_by_heading";
+
+interface ExtractionEntityCandidate {
+  id: string;
+  label: string;
+  kind: ExtractionEntityKind;
+  sourceRange: string;
+  lineNumber: number;
+}
+
+interface ExtractionClaimCandidate {
+  id: string;
+  text: string;
+  sourceRange: string;
+  lineNumber: number;
+}
+
+interface ExtractionRelationCandidate {
+  id: string;
+  kind: ExtractionRelationKind;
+  fromCandidateId: string;
+  toCandidateId: string;
+  sourceRange: string;
+}
+
+interface ExtractionCandidatePreview {
+  entities: readonly ExtractionEntityCandidate[];
+  claims: readonly ExtractionClaimCandidate[];
+  relations: readonly ExtractionRelationCandidate[];
+}
+
 interface CandidateField {
   name: keyof Pick<
     SourceArtifactPreviewCommand,
@@ -100,6 +132,8 @@ const searchDocumentCandidateDoesNotProve =
 
 const sourceClaimCandidateDoesNotProve =
   "This SourceClaim candidate does not prove the claim is true or should be accepted without review.";
+const extractionCandidateDoesNotProve =
+  "These deterministic extraction candidates do not prove entity identity, claim truth, relation correctness, graph retrieval quality, extraction quality, crawler readiness, or Memory Core mutation.";
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 
@@ -208,6 +242,157 @@ const formatReviewabilityReasons = (reasons: readonly string[]): string[] => [
   "  reviewability reasons:",
   ...reasons.map((reason) => `  - ${reason}`)
 ];
+
+const candidateSlug = (value: string): string => {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gu, "-")
+    .replace(/^-|-$/gu, "")
+    .slice(0, 40);
+
+  return slug.length === 0 ? "candidate" : slug;
+};
+
+const stripMarkdownPrefix = (value: string): string =>
+  value
+    .replace(/^#{1,6}\s+/u, "")
+    .replace(/^[-*]\s+/u, "")
+    .trim();
+
+const extractLocalSourceCandidates = (
+  chunks: readonly SourceArtifactPreviewChunk[]
+): ExtractionCandidatePreview => {
+  const entities: ExtractionEntityCandidate[] = [];
+  const claims: ExtractionClaimCandidate[] = [];
+  const seenEntities = new Set<string>();
+  const seenClaims = new Set<string>();
+
+  for (const chunk of chunks) {
+    const lines = chunk.content.split("\n");
+
+    for (const [index, rawLine] of lines.entries()) {
+      const lineNumber = chunk.startLine + index;
+      const sourceRange = `lines ${lineNumber}-${lineNumber}`;
+      const line = rawLine.trim();
+
+      if (line.length === 0) {
+        continue;
+      }
+
+      const headingMatch = /^(#{1,6})\s+(.+)$/u.exec(line);
+
+      if (headingMatch?.[2] !== undefined) {
+        const label = stripMarkdownPrefix(headingMatch[2]);
+        const key = `markdown_heading:${lineNumber}:${label}`;
+
+        if (label.length > 0 && !seenEntities.has(key)) {
+          seenEntities.add(key);
+          entities.push({
+            id: `entity-candidate:${lineNumber}:${candidateSlug(label)}`,
+            label,
+            kind: "markdown_heading",
+            sourceRange,
+            lineNumber
+          });
+        }
+      }
+
+      for (const match of line.matchAll(/`([^`\n]{2,80})`/gu)) {
+        const label = match[1]?.trim();
+        const key = label === undefined ? undefined : `inline_code:${lineNumber}:${label}`;
+
+        if (label !== undefined && label.length > 0 && key !== undefined && !seenEntities.has(key)) {
+          seenEntities.add(key);
+          entities.push({
+            id: `entity-candidate:${lineNumber}:${candidateSlug(label)}`,
+            label,
+            kind: "inline_code",
+            sourceRange,
+            lineNumber
+          });
+        }
+      }
+    }
+
+    let blockStartLine: number | undefined;
+    let blockEndLine: number | undefined;
+    let blockLines: string[] = [];
+    const flushClaimBlock = (): void => {
+      if (blockStartLine === undefined || blockEndLine === undefined || blockLines.length === 0) {
+        blockStartLine = undefined;
+        blockEndLine = undefined;
+        blockLines = [];
+
+        return;
+      }
+
+      const normalizedClaim = blockLines.join(" ").replace(/\s+/gu, " ").trim();
+      const hasClaimSignal =
+        normalizedClaim.length >= 24 &&
+        /\b(should|must|can|cannot|does|do|is|are|requires|reject|proves?|supports|contradicts|narrows|exposes?)\b/iu.test(normalizedClaim);
+      const claimKey = `${blockStartLine}-${blockEndLine}:${normalizedClaim}`;
+
+      if (hasClaimSignal && !seenClaims.has(claimKey)) {
+        seenClaims.add(claimKey);
+        claims.push({
+          id: `claim-candidate:${blockStartLine}:${candidateSlug(normalizedClaim)}`,
+          text: normalizedClaim,
+          sourceRange: `lines ${blockStartLine}-${blockEndLine}`,
+          lineNumber: blockStartLine
+        });
+      }
+
+      blockStartLine = undefined;
+      blockEndLine = undefined;
+      blockLines = [];
+    };
+
+    for (const [index, rawLine] of lines.entries()) {
+      const lineNumber = chunk.startLine + index;
+      const line = rawLine.trim();
+
+      if (line.length === 0 || /^#{1,6}\s+/u.test(line)) {
+        flushClaimBlock();
+        continue;
+      }
+
+      if (/^[-*]\s+/u.test(line) && blockLines.length > 0) {
+        flushClaimBlock();
+      }
+
+      blockStartLine ??= lineNumber;
+      blockEndLine = lineNumber;
+      blockLines.push(stripMarkdownPrefix(line));
+    }
+
+    flushClaimBlock();
+  }
+
+  const headingEntities = entities.filter((entity) => entity.kind === "markdown_heading");
+  const relations = claims.flatMap((claim): ExtractionRelationCandidate[] => {
+    const heading = [...headingEntities]
+      .reverse()
+      .find((entity) => entity.lineNumber < claim.lineNumber);
+
+    if (heading === undefined) {
+      return [];
+    }
+
+    return [{
+      id: `relation-candidate:${heading.lineNumber}-${claim.lineNumber}:scoped-by-heading`,
+      kind: "scoped_by_heading",
+      fromCandidateId: claim.id,
+      toCandidateId: heading.id,
+      sourceRange: `${heading.sourceRange}, ${claim.sourceRange}`
+    }];
+  });
+
+  return {
+    entities: entities.slice(0, 8),
+    claims: claims.slice(0, 8),
+    relations: relations.slice(0, 8)
+  };
+};
 
 const chunkBody = (chunks: readonly SourceArtifactPreviewChunk[]): string =>
   chunks.map((chunk) =>
@@ -805,6 +990,72 @@ const formatSourceClaimEdgeCandidate = (
   ];
 };
 
+const formatExtractionCandidatePreview = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[]
+): string[] => {
+  if (command.extractCandidates !== true) {
+    return [
+      "extractionCandidatePreview:",
+      "- not generated",
+      "  reason: --extract-candidates was not supplied",
+      "  No extracted entity, claim, or relation candidates created"
+    ];
+  }
+
+  const extraction = extractLocalSourceCandidates(chunks);
+  const reviewability = assessCandidateReviewability({
+    summary: "Deterministic local source extraction candidate preview.",
+    body: [
+      `entityCandidates: ${extraction.entities.length}`,
+      `claimCandidates: ${extraction.claims.length}`,
+      `relationCandidates: ${extraction.relations.length}`
+    ].join("\n"),
+    evidenceRefs: [
+      file,
+      artifactHash,
+      ...chunks.map((chunk) => `${file}:lines ${chunk.startLine}-${chunk.endLine}`),
+      ...chunks.map((chunk) => chunk.contentHash)
+    ],
+    applicationGuidance: "Use only as reviewable extraction candidates before graph persistence, ranking, crawler, or Memory Core work.",
+    doesNotProve: extractionCandidateDoesNotProve
+  });
+
+  return [
+    "extractionCandidatePreview:",
+    "- status: candidate",
+    "  mode: deterministic_local_heuristic",
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
+    `  doesNotProve: ${extractionCandidateDoesNotProve}`,
+    "  entityCandidates:",
+    ...(extraction.entities.length === 0
+      ? ["  - none"]
+      : extraction.entities.map((entity) =>
+          `  - id: ${entity.id} | kind: ${entity.kind} | label: ${entity.label} | sourceRange: ${entity.sourceRange}`
+        )),
+    "  claimCandidates:",
+    ...(extraction.claims.length === 0
+      ? ["  - none"]
+      : extraction.claims.map((claim) =>
+          `  - id: ${claim.id} | text: ${claim.text} | sourceRange: ${claim.sourceRange}`
+        )),
+    "  relationCandidates:",
+    ...(extraction.relations.length === 0
+      ? ["  - none"]
+      : extraction.relations.map((relation) =>
+          `  - id: ${relation.id} | kind: ${relation.kind} | from: ${relation.fromCandidateId} | to: ${relation.toCandidateId} | sourceRange: ${relation.sourceRange}`
+        )),
+    "  No SourceClaim row created from extraction candidates",
+    "  No SourceClaimEdge row created from extraction candidates",
+    "  Graph runtime: none",
+    "  Memory mutation: none"
+  ];
+};
+
 const formatCandidateBridge = (
   command: SourceArtifactPreviewCommand,
   file: string,
@@ -834,7 +1085,8 @@ const formatCandidateBridge = (
     chunks,
     persistence?.sourceClaimPersisted ?? false,
     persistence?.sourceClaimEdgePersisted ?? false
-  )
+  ),
+  ...formatExtractionCandidatePreview(command, file, artifactHash, chunks)
 ];
 
 const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {

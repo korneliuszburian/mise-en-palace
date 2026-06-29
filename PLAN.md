@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
-current task: V325-00 Local Source Entity/Claim Extraction Candidate Preview
+active stream: V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
+current task: V326-00 Extraction Candidate Reviewability Noise Gate
 ```
 
 ## Compact Completed Checkpoints
@@ -37,7 +37,7 @@ Remaining product gaps:
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
 4. ingest v0 activation/readback closure
-5. graph brain v0 candidate extraction/readback surface
+5. graph brain v0 candidate extraction/reviewability surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
 8. product UI/search/API/MCP after usefulness/security gates
@@ -62,19 +62,33 @@ Live DB readback returned edge 415321b3-4a26-4634-bfbe-38b756777d6a.
 
 ### V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
 
+Status: complete.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
+`krn source artifact preview --extract-candidates` now renders candidate-only
+deterministic entity/claim/relation extraction output with source ranges,
+reviewability, doesNotProve, Graph runtime none, and Memory mutation none.
+Live ADR-0021 dogfood showed the next gap: fenced source-decision/YAML blocks
+and weak fragments can appear as globally ready claim candidates.
+```
+
+### V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
+
 Goal:
 
-Add the smallest candidate-only local source extraction preview.
+Repair local source extraction candidate reviewability/noise before persistence.
 
 Current action:
 
 ```txt
-Execute V325-00: inspect the existing source preview/readback surfaces and add
-the smallest candidate-only local-source extraction preview that renders
-reviewable entity, claim, and relation candidates with source ranges,
-doesNotProve, and no autonomous source truth. Do not add graph ranking,
-crawler, UI, API/MCP, worker daemon, consensus runtime, or automatic Memory
-Core mutation.
+Execute V326-00: keep `--extract-candidates` candidate-only, but stop rendering
+fenced source-decision/YAML blocks or weak fragments as globally ready claim
+candidates. Prefer the smallest deterministic classification/rendering repair.
+Do not add persistence, graph ranking, crawler, UI/API/MCP, worker daemon,
+consensus runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -88,9 +102,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given a local source artifact, KRN cannot show candidate entities/claims/edges
-with source ranges and proof boundaries, or the preview implies accepted graph
-truth, extraction quality, ranking quality, or Memory Core mutation.
+Given a local source artifact containing source-decision/YAML fences or weak
+fragments, KRN presents those extraction candidates as ready product knowledge
+instead of candidate-only/noisy/needs-review output.
 ```
 
 ## Pattern Gate
