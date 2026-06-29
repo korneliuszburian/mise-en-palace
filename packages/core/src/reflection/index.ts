@@ -421,78 +421,98 @@ const candidateEvidenceBlockedReasons = (
   )
 ];
 
-export const buildReflectionIssueReports = (
-  input: ReflectionIssueReportInput
-): ReflectionIssueReports => {
-  const contradictions: ContradictionReport[] = [];
-  const gaps: GapReport[] = [];
-  const now = parseTimestamp(input.now);
-
-  for (const observation of input.observations) {
-    const evidenceRefs = evidenceRefsForObservation(observation);
-
-    if (observation.status === "contested" || observation.kind === "conflict") {
-      contradictions.push({
-        id: `contradiction-${observation.id}`,
-        summary: `Observation ${observation.id} is contested or conflict-marked.`,
-        observationItemIds: [observation.id],
-        conflictingClaims: [observation.summary],
-        evidenceRefs,
-        severity: observation.priority === "critical" ? "critical" : "high",
-        metadata: {
-          reason: observation.status === "contested" ? "contested_observation" : "conflict_observation",
-          observationKind: observation.kind,
-          observationStatus: observation.status
-        }
-      });
-    }
-
-    if (
-      requiresObservationSourceRange(observation.kind, observation.provenanceKind) &&
-      observation.sourceRanges.length === 0
-    ) {
-      gaps.push({
-        id: `gap-missing-source-range-${observation.id}`,
-        summary: `Observation ${observation.id} requires a source range but has none.`,
-        missingEvidence: "source range",
-        observationItemIds: [observation.id],
-        severity: "high",
-        metadata: {
-          reason: "missing_source_range",
-          observationKind: observation.kind,
-          provenanceKind: observation.provenanceKind
-        }
-      });
-    }
-
-    const validUntil = observation.temporalScope.validUntil === undefined
-      ? undefined
-      : parseTimestamp(observation.temporalScope.validUntil);
-
-    if (now !== undefined && validUntil !== undefined && validUntil < now) {
-      gaps.push({
-        id: `gap-stale-observation-${observation.id}`,
-        summary: `Observation ${observation.id} is stale for the reflection timestamp.`,
-        missingEvidence: "fresh observation or invalidation review",
-        observationItemIds: [observation.id],
-        severity: "medium",
-        metadata: {
-          reason: "stale_observation",
-          validUntil: observation.temporalScope.validUntil
-        }
-      });
-    }
+const contradictionForObservation = (
+  observation: ObservationItem
+): ContradictionReport | undefined => {
+  if (observation.status !== "contested" && observation.kind !== "conflict") {
+    return undefined;
   }
 
+  return {
+    id: `contradiction-${observation.id}`,
+    summary: `Observation ${observation.id} is contested or conflict-marked.`,
+    observationItemIds: [observation.id],
+    conflictingClaims: [observation.summary],
+    evidenceRefs: evidenceRefsForObservation(observation),
+    severity: observation.priority === "critical" ? "critical" : "high",
+    metadata: {
+      reason: observation.status === "contested" ? "contested_observation" : "conflict_observation",
+      observationKind: observation.kind,
+      observationStatus: observation.status
+    }
+  };
+};
+
+const missingSourceRangeGapForObservation = (
+  observation: ObservationItem
+): GapReport | undefined => {
+  if (
+    !requiresObservationSourceRange(observation.kind, observation.provenanceKind) ||
+    observation.sourceRanges.length > 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    id: `gap-missing-source-range-${observation.id}`,
+    summary: `Observation ${observation.id} requires a source range but has none.`,
+    missingEvidence: "source range",
+    observationItemIds: [observation.id],
+    severity: "high",
+    metadata: {
+      reason: "missing_source_range",
+      observationKind: observation.kind,
+      provenanceKind: observation.provenanceKind
+    }
+  };
+};
+
+const staleObservationGap = (
+  observation: ObservationItem,
+  now: number | undefined
+): GapReport | undefined => {
+  const validUntil = observation.temporalScope.validUntil === undefined
+    ? undefined
+    : parseTimestamp(observation.temporalScope.validUntil);
+
+  if (now === undefined || validUntil === undefined || validUntil >= now) {
+    return undefined;
+  }
+
+  return {
+    id: `gap-stale-observation-${observation.id}`,
+    summary: `Observation ${observation.id} is stale for the reflection timestamp.`,
+    missingEvidence: "fresh observation or invalidation review",
+    observationItemIds: [observation.id],
+    severity: "medium",
+    metadata: {
+      reason: "stale_observation",
+      validUntil: observation.temporalScope.validUntil
+    }
+  };
+};
+
+const collectDuplicateObservationGroups = (
+  observations: readonly ObservationItem[]
+): Map<string, ObservationItem[]> => {
   const duplicateGroups = new Map<string, ObservationItem[]>();
-  for (const observation of input.observations) {
+
+  for (const observation of observations) {
     const duplicateKey = normalizeReportText(`${observation.subject}\n${observation.summary}`);
     const group = duplicateGroups.get(duplicateKey) ?? [];
     group.push(observation);
     duplicateGroups.set(duplicateKey, group);
   }
 
-  for (const group of duplicateGroups.values()) {
+  return duplicateGroups;
+};
+
+const duplicateObservationGaps = (
+  observations: readonly ObservationItem[]
+): GapReport[] => {
+  const gaps: GapReport[] = [];
+
+  for (const group of collectDuplicateObservationGroups(observations).values()) {
     if (group.length < 2) {
       continue;
     }
@@ -511,23 +531,61 @@ export const buildReflectionIssueReports = (
     });
   }
 
-  for (const decision of input.decisions ?? []) {
-    if (decision.sourceClaimId !== undefined) {
-      continue;
+  return gaps;
+};
+
+const unsupportedDecisionGap = (
+  decision: ReflectionDecisionSnapshot
+): GapReport | undefined => {
+  if (decision.sourceClaimId !== undefined) {
+    return undefined;
+  }
+
+  return {
+    id: `gap-unsupported-decision-${decision.id}`,
+    summary: `Decision ${decision.id} has no source claim link.`,
+    missingEvidence: "source claim link",
+    observationItemIds: [],
+    severity: decision.status === "adopt" ? "high" : "medium",
+    metadata: {
+      reason: "unsupported_decision",
+      decisionId: decision.id,
+      decisionStatus: decision.status
+    }
+  };
+};
+
+export const buildReflectionIssueReports = (
+  input: ReflectionIssueReportInput
+): ReflectionIssueReports => {
+  const contradictions: ContradictionReport[] = [];
+  const gaps: GapReport[] = [];
+  const now = parseTimestamp(input.now);
+
+  for (const observation of input.observations) {
+    const contradiction = contradictionForObservation(observation);
+    if (contradiction !== undefined) {
+      contradictions.push(contradiction);
     }
 
-    gaps.push({
-      id: `gap-unsupported-decision-${decision.id}`,
-      summary: `Decision ${decision.id} has no source claim link.`,
-      missingEvidence: "source claim link",
-      observationItemIds: [],
-      severity: decision.status === "adopt" ? "high" : "medium",
-      metadata: {
-        reason: "unsupported_decision",
-        decisionId: decision.id,
-        decisionStatus: decision.status
-      }
-    });
+    const sourceRangeGap = missingSourceRangeGapForObservation(observation);
+    if (sourceRangeGap !== undefined) {
+      gaps.push(sourceRangeGap);
+    }
+
+    const staleGap = staleObservationGap(observation, now);
+    if (staleGap !== undefined) {
+      gaps.push(staleGap);
+    }
+  }
+
+  gaps.push(...duplicateObservationGaps(input.observations));
+
+  for (const decision of input.decisions ?? []) {
+    const decisionGap = unsupportedDecisionGap(decision);
+    if (decisionGap !== undefined) {
+      gaps.push(decisionGap);
+    }
   }
 
   const sortedContradictions = contradictions.sort((left, right) => left.id.localeCompare(right.id));
