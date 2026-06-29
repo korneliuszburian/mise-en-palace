@@ -1,32 +1,38 @@
-import postgres from "postgres";
 import type {
   Sql
 } from "postgres";
 import {
-  createExecutionBrief,
-  renderExecutionBriefText
-} from "@krn/codex-adapter";
-import {
-  createKrnDatabase
-} from "@krn/db";
-import {
-  DrizzleHarnessRunRepository,
-  DrizzleMemoryRepository,
-  DrizzleProjectRepository,
-  DrizzleRetrievalRepository,
-  DrizzleSourceRepository
-} from "@krn/db/adapters";
-import {
   runMigrationReadinessCheck
 } from "@krn/db/dev";
 import {
-  compileHarnessPlan,
-  createCapabilityPlan,
-  createEvidenceContract
+  compileHarnessPlan
 } from "@krn/harness";
 import type {
-  EvidenceContract
-} from "@krn/harness";
+  HarnessRunAggregate
+} from "@krn/harness/repositories";
+import type {
+  RenderedCodexBrief
+} from "./codexBriefSupport.js";
+import {
+  assertBrainStoreReady,
+  countCodexInvocationEvents,
+  createSmokeIdFactory,
+  createSmokeDatabaseRuntime,
+  createSmokeRepositories,
+  completedOrNot,
+  countMemoryRecordsBySmokeId,
+  countRetrievalRunById,
+  countRunEventsBySmokeId,
+  countSourceArtifactsBySmokeId,
+  countSourceClaimsBySmokeId,
+  matchedOrMismatch,
+  metadataString,
+  normalizeSmokeSlugPart,
+  passedOrFailed,
+  renderCodexBriefFromAggregate,
+  sumCountRows,
+  yesNo
+} from "./codexBriefSupport.js";
 
 export interface CodexAdapterSmokeInput {
   databaseUrl: string;
@@ -58,64 +64,15 @@ interface CountRow {
   count: number;
 }
 
-const normalizeSlugPart = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isDiffRisk = (value: unknown): value is EvidenceContract["diffRisk"] =>
-  value === "low" || value === "medium" || value === "high";
-
-const parseEvidenceContract = (value: unknown): EvidenceContract | undefined => {
-  if (!isRecord(value) || !Array.isArray(value.commands)) {
-    return undefined;
-  }
-
-  const commands = value.commands.flatMap((item): EvidenceContract["commands"] => {
-    if (!isRecord(item) || typeof item.command !== "string" || typeof item.required !== "boolean") {
-      return [];
-    }
-
-    return [
-      {
-        command: item.command,
-        required: item.required
-      }
-    ];
-  });
-
-  if (
-    commands.length === 0 ||
-    !isDiffRisk(value.diffRisk) ||
-    typeof value.reviewBurden !== "string" ||
-    typeof value.rollbackPath !== "string"
-  ) {
-    return undefined;
-  }
-
-  return {
-    commands,
-    diffRisk: value.diffRisk,
-    reviewBurden: value.reviewBurden,
-    rollbackPath: value.rollbackPath,
-    metadata: isRecord(value.metadata) ? value.metadata : {}
-  };
-};
-
-const countQuery = async (rowsPromise: Promise<CountRow[]>): Promise<number> => {
-  const rows = await rowsPromise;
-
-  return rows[0]?.count ?? 0;
-};
+interface CodexAdapterBriefProof {
+  contextAssemblyId: string;
+  renderedObjective: boolean;
+  renderedNonGoals: boolean;
+  renderedExplicitExclusions: boolean;
+  renderedEvidenceContract: boolean;
+  renderedSkillPatternRefs: boolean;
+  codexInvocationCount: number;
+}
 
 const countMarkerRows = async (
   client: Sql,
@@ -124,43 +81,25 @@ const countMarkerRows = async (
   retrievalRunId: string | undefined,
   contextAssemblyId: string | undefined
 ): Promise<number> => {
-  let count = 0;
-
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from workspaces where slug = ${workspaceSlug}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from run_events where payload->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from source_artifacts where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from source_claims where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from search_documents where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from memory_records where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
+  let count = await sumCountRows([
+    client<CountRow[]>`select count(*)::int as count from workspaces where slug = ${workspaceSlug}`,
+    countRunEventsBySmokeId(client, marker),
+    countSourceArtifactsBySmokeId(client, marker),
+    countSourceClaimsBySmokeId(client, marker),
+    client<CountRow[]>`select count(*)::int as count from search_documents where metadata->>'smokeId' = ${marker}`,
+    countMemoryRecordsBySmokeId(client, marker),
     client<CountRow[]>`select count(*)::int as count from anti_memory_records where metadata->>'smokeId' = ${marker}`
-  );
+  ]);
 
   if (retrievalRunId !== undefined) {
-    count += await countQuery(
-      client<CountRow[]>`select count(*)::int as count from retrieval_runs where id = ${retrievalRunId}`
-    );
+    count += await sumCountRows([countRetrievalRunById(client, retrievalRunId)]);
   }
 
   if (contextAssemblyId !== undefined) {
-    count += await countQuery(
-      client<CountRow[]>`select count(*)::int as count from context_items where context_assembly_id = ${contextAssemblyId}`
-    );
-    count += await countQuery(
+    count += await sumCountRows([
+      client<CountRow[]>`select count(*)::int as count from context_items where context_assembly_id = ${contextAssemblyId}`,
       client<CountRow[]>`select count(*)::int as count from context_exclusions where context_assembly_id = ${contextAssemblyId}`
-    );
+    ]);
   }
 
   return count;
@@ -186,27 +125,89 @@ const cleanupMarkerRows = async (
   return countMarkerRows(client, workspaceSlug, marker, retrievalRunId, contextAssemblyId);
 };
 
+const assertCodexAdapterBriefProof = (
+  input: {
+    aggregate: HarnessRunAggregate;
+    executionRunId: string;
+    expectedContextAssemblyId: string;
+    rendered: RenderedCodexBrief;
+  }
+): CodexAdapterBriefProof => {
+  const contextAssembly = input.aggregate.contextAssembly;
+
+  if (contextAssembly === undefined) {
+    throw new Error("Codex adapter smoke failed to read back persisted run");
+  }
+
+  const renderedObjective = input.rendered.renderedBrief.includes(
+    `Objective: ${input.aggregate.taskContract.objective}`
+  );
+  const renderedNonGoals = input.aggregate.taskContract.nonGoals.every((nonGoal) =>
+    input.rendered.renderedBrief.includes(`- ${nonGoal}`)
+  );
+  const renderedExplicitExclusions =
+    contextAssembly.exclusions.length > 0 &&
+    input.rendered.renderedBrief.includes("Explicit Exclusions:") &&
+    !input.rendered.renderedBrief.includes("Explicit Exclusions:\n- none");
+  const renderedEvidenceContract =
+    input.rendered.renderedBrief.includes("Evidence Contract:") &&
+    input.rendered.evidenceContract.commands.every((command) =>
+      input.rendered.renderedBrief.includes(command.command)
+    );
+  const renderedSkillPatternRefs = input.rendered.renderedBrief.includes(
+    "pattern:codex-skill-progressive-disclosure-routing"
+  );
+  const codexInvocationCount = countCodexInvocationEvents(input.aggregate);
+  const proofChecks = [
+    input.aggregate.executionRun.id === input.executionRunId,
+    contextAssembly.id === input.expectedContextAssemblyId,
+    renderedObjective,
+    renderedNonGoals,
+    renderedExplicitExclusions,
+    renderedEvidenceContract,
+    renderedSkillPatternRefs,
+    input.rendered.brief.sourceClaimsUsed.length > 0,
+    input.rendered.brief.sourceClaimsUsed.length <= 6,
+    input.rendered.brief.memoryRecordsUsed.length > 0,
+    input.rendered.brief.memoryRecordsUsed.length <= 6,
+    input.rendered.brief.hookExpectations.length >= 5,
+    codexInvocationCount === 0
+  ];
+
+  if (proofChecks.some((passed) => !passed)) {
+    throw new Error("Codex adapter smoke readback did not match expected brief proof");
+  }
+
+  return {
+    contextAssemblyId: contextAssembly.id,
+    renderedObjective,
+    renderedNonGoals,
+    renderedExplicitExclusions,
+    renderedEvidenceContract,
+    renderedSkillPatternRefs,
+    codexInvocationCount
+  };
+};
+
 const reportLines = (report: CodexAdapterSmokeReport): string[] => [
   `Workspace smoke row: ${report.workspaceSlug}`,
   `Project smoke row: ${report.projectSlug}`,
   `Execution run: ${report.executionRunId}`,
-  `Readback: ${
-    report.readBackExecutionRunId === report.executionRunId ? "matched" : "mismatch"
-  }`,
+  `Readback: ${matchedOrMismatch(report.readBackExecutionRunId, report.executionRunId)}`,
   `Context assembly: ${report.contextAssemblyId}`,
-  `Objective present: ${report.renderedObjective ? "yes" : "no"}`,
-  `Non-goals present: ${report.renderedNonGoals ? "yes" : "no"}`,
-  `Explicit exclusions present: ${report.renderedExplicitExclusions ? "yes" : "no"}`,
-  `Evidence contract present: ${report.renderedEvidenceContract ? "yes" : "no"}`,
-  `Skill pattern refs present: ${report.renderedSkillPatternRefs ? "yes" : "no"}`,
+  `Objective present: ${yesNo(report.renderedObjective)}`,
+  `Non-goals present: ${yesNo(report.renderedNonGoals)}`,
+  `Explicit exclusions present: ${yesNo(report.renderedExplicitExclusions)}`,
+  `Evidence contract present: ${yesNo(report.renderedEvidenceContract)}`,
+  `Skill pattern refs present: ${yesNo(report.renderedSkillPatternRefs)}`,
   `Source claims used: ${report.sourceClaimsUsed}`,
   `Memory records used: ${report.memoryRecordsUsed}`,
   `Anti-memory warnings: ${report.antiMemoryWarnings}`,
   `Hook expectations: ${report.hookExpectationCount}`,
   `Codex invocations: ${report.codexInvocationCount}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-  `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-  `Codex adapter smoke: ${report.cleanedUp ? "passed" : "failed"}`
+  `Cleanup: ${completedOrNot(report.cleanedUp)}`,
+  `Codex adapter smoke: ${passedOrFailed(report.cleanedUp)}`
 ];
 
 export const formatCodexAdapterSmokeReport = (report: CodexAdapterSmokeReport): string =>
@@ -225,31 +226,27 @@ export const runCodexAdapterSmokeCheck = async (
     migrationsFolder: input.migrationsFolder
   });
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for Codex adapter smoke");
-  }
+  assertBrainStoreReady(readiness, "Brain store is not ready for Codex adapter smoke");
 
-  const marker = normalizeSlugPart(input.smokeId);
+  const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-codex-adapter-smoke-${marker}`;
   const projectSlug = "codex-adapter";
   const now = "2026-06-22T06:00:00.000Z";
   const past = "2026-06-01T00:00:00.000Z";
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
+  const { client, db } = createSmokeDatabaseRuntime(input.databaseUrl);
   let retrievalRunId: string | undefined;
   let contextAssemblyId: string | undefined;
 
   try {
     await cleanupMarkerRows(client, workspaceSlug, marker, retrievalRunId, contextAssemblyId);
 
-    const projectRepository = new DrizzleProjectRepository(db);
-    const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-    const sourceRepository = new DrizzleSourceRepository(db);
-    const memoryRepository = new DrizzleMemoryRepository(db);
-    const retrievalRepository = new DrizzleRetrievalRepository(db);
+    const {
+      projectRepository,
+      harnessRunRepository,
+      sourceRepository,
+      memoryRepository,
+      retrievalRepository
+    } = createSmokeRepositories(db);
     const workspace = await projectRepository.createWorkspace({
       slug: workspaceSlug,
       displayName: workspaceSlug,
@@ -385,7 +382,7 @@ export const runCodexAdapterSmokeCheck = async (
       }
     });
 
-    let idCounter = 0;
+    const createSmokeId = createSmokeIdFactory(marker);
     const result = await compileHarnessPlan(
       {
         workspaceId: workspace.id,
@@ -436,14 +433,10 @@ export const runCodexAdapterSmokeCheck = async (
         sourceRepository,
         retrievalRepository,
         now: () => now,
-        createId: (prefix) => {
-          idCounter += 1;
-          return `${prefix}-${marker}-${idCounter}`;
-        }
+        createId: createSmokeId
       }
     );
-    const maybeRetrievalRunId = result.contextAssembly.metadata.retrievalRunId;
-    retrievalRunId = typeof maybeRetrievalRunId === "string" ? maybeRetrievalRunId : undefined;
+    retrievalRunId = metadataString(result.contextAssembly.metadata, "retrievalRunId");
     contextAssemblyId = result.contextAssembly.id;
 
     if (retrievalRunId === undefined) {
@@ -473,67 +466,25 @@ export const runCodexAdapterSmokeCheck = async (
     });
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
 
-    if (aggregate === undefined || aggregate.contextAssembly === undefined) {
+    if (aggregate === undefined) {
       throw new Error("Codex adapter smoke failed to read back persisted run");
     }
 
-    const evidenceContract =
-      parseEvidenceContract(aggregate.harnessPlan.metadata.evidenceContract) ??
-      createEvidenceContract(aggregate.taskContract);
-    const capabilityPlan = createCapabilityPlan({
-      harnessPlan: aggregate.harnessPlan,
-      hasContext: aggregate.contextAssembly.inclusions.length > 0,
+    const rendered = renderCodexBriefFromAggregate({
+      aggregate,
       createdAt: now,
-      createId: (prefix) => `${prefix}-${marker}-readback`
-    });
-    const brief = createExecutionBrief({
-      taskContract: aggregate.taskContract,
-      harnessPlan: aggregate.harnessPlan,
-      contextAssembly: aggregate.contextAssembly,
-      capabilityPlan,
-      evidenceContract,
-      nextAction: aggregate.harnessPlan.nextAction ?? "Use this brief as the next Codex input.",
+      createId: (prefix) => `${prefix}-${marker}-readback`,
+      nextActionFallback: "Use this brief as the next Codex input.",
       goalReference: "GOAL.md active KRN final harness spine",
-      execPlanReference: "GOAL.md M26.05"
+      execPlanReference: "GOAL.md M26.05",
+      missingContextMessage: "Codex adapter smoke failed to read back persisted run"
     });
-    const renderedBrief = renderExecutionBriefText(brief);
-    const renderedObjective = renderedBrief.includes(`Objective: ${aggregate.taskContract.objective}`);
-    const renderedNonGoals = aggregate.taskContract.nonGoals.every((nonGoal) =>
-      renderedBrief.includes(`- ${nonGoal}`)
-    );
-    const renderedExplicitExclusions =
-      aggregate.contextAssembly.exclusions.length > 0 &&
-      renderedBrief.includes("Explicit Exclusions:") &&
-      !renderedBrief.includes("Explicit Exclusions:\n- none");
-    const renderedEvidenceContract =
-      renderedBrief.includes("Evidence Contract:") &&
-      evidenceContract.commands.every((command) => renderedBrief.includes(command.command));
-    const renderedSkillPatternRefs = renderedBrief.includes(
-      "pattern:codex-skill-progressive-disclosure-routing"
-    );
-    const codexInvocationCount = aggregate.runEvents.filter((event) =>
-      event.type === "codex.invoked" ||
-      event.type === "codex.executed" ||
-      event.type === "codex.execution.started"
-    ).length;
-
-    if (
-      aggregate.executionRun.id !== executionRun.id ||
-      aggregate.contextAssembly.id !== result.contextAssembly.id ||
-      !renderedObjective ||
-      !renderedNonGoals ||
-      !renderedExplicitExclusions ||
-      !renderedEvidenceContract ||
-      !renderedSkillPatternRefs ||
-      brief.sourceClaimsUsed.length === 0 ||
-      brief.sourceClaimsUsed.length > 6 ||
-      brief.memoryRecordsUsed.length === 0 ||
-      brief.memoryRecordsUsed.length > 6 ||
-      brief.hookExpectations.length < 5 ||
-      codexInvocationCount !== 0
-    ) {
-      throw new Error("Codex adapter smoke readback did not match expected brief proof");
-    }
+    const proof = assertCodexAdapterBriefProof({
+      aggregate,
+      executionRunId: executionRun.id,
+      expectedContextAssemblyId: result.contextAssembly.id,
+      rendered
+    });
 
     const remainingMarkerCount = await cleanupMarkerRows(
       client,
@@ -548,17 +499,17 @@ export const runCodexAdapterSmokeCheck = async (
       projectSlug,
       executionRunId: executionRun.id,
       readBackExecutionRunId: aggregate.executionRun.id,
-      contextAssemblyId: aggregate.contextAssembly.id,
-      renderedObjective,
-      renderedNonGoals,
-      renderedExplicitExclusions,
-      renderedEvidenceContract,
-      renderedSkillPatternRefs,
-      sourceClaimsUsed: brief.sourceClaimsUsed.length,
-      memoryRecordsUsed: brief.memoryRecordsUsed.length,
-      antiMemoryWarnings: brief.antiMemoryWarnings.length,
-      hookExpectationCount: brief.hookExpectations.length,
-      codexInvocationCount,
+      contextAssemblyId: proof.contextAssemblyId,
+      renderedObjective: proof.renderedObjective,
+      renderedNonGoals: proof.renderedNonGoals,
+      renderedExplicitExclusions: proof.renderedExplicitExclusions,
+      renderedEvidenceContract: proof.renderedEvidenceContract,
+      renderedSkillPatternRefs: proof.renderedSkillPatternRefs,
+      sourceClaimsUsed: rendered.brief.sourceClaimsUsed.length,
+      memoryRecordsUsed: rendered.brief.memoryRecordsUsed.length,
+      antiMemoryWarnings: rendered.brief.antiMemoryWarnings.length,
+      hookExpectationCount: rendered.brief.hookExpectations.length,
+      codexInvocationCount: proof.codexInvocationCount,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };

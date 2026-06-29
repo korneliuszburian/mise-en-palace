@@ -1,0 +1,339 @@
+import postgres from "postgres";
+import type {
+  Sql
+} from "postgres";
+import type {
+  ExecutionBrief
+} from "@krn/codex-adapter";
+import {
+  createExecutionBrief,
+  renderExecutionBriefText
+} from "@krn/codex-adapter";
+import {
+  createCapabilityPlan,
+  createEvidenceContract
+} from "@krn/harness";
+import type {
+  EvidenceContract
+} from "@krn/harness";
+import type {
+  HarnessRunAggregate
+} from "@krn/harness/repositories";
+import {
+  createKrnDatabase
+} from "@krn/db";
+import {
+  DrizzleHarnessRunRepository,
+  DrizzleMemoryRepository,
+  DrizzleProjectRepository,
+  DrizzleRetrievalRepository,
+  DrizzleSourceRepository
+} from "@krn/db/adapters";
+import type {
+  HarnessRunRepository
+} from "@krn/harness/repositories";
+import type {
+  DatabaseRuntimeInput
+} from "./databaseRuntime.js";
+
+export interface CountRow {
+  count: number;
+}
+
+export interface SmokeDatabaseRuntime {
+  client: Sql;
+  db: ReturnType<typeof createKrnDatabase>;
+}
+
+export interface SmokeRepositories {
+  projectRepository: DrizzleProjectRepository;
+  harnessRunRepository: DrizzleHarnessRunRepository;
+  sourceRepository: DrizzleSourceRepository;
+  memoryRepository: DrizzleMemoryRepository;
+  retrievalRepository: DrizzleRetrievalRepository;
+}
+
+export interface ReadOnlyHarnessRuntime {
+  harnessRunRepository: Pick<HarnessRunRepository, "getHarnessRunByExecutionRunId">;
+  close(): Promise<void>;
+}
+
+type CreateReadOnlyHarnessRuntime = (
+  input: DatabaseRuntimeInput
+) => Promise<ReadOnlyHarnessRuntime>;
+
+interface ResolveReadOnlyHarnessRuntimeInput {
+  databaseUrl: string;
+  workspaceSlug: string;
+  projectSlug: string;
+  now(): string;
+  createId(prefix: string): string;
+  createDatabaseRuntime?: CreateReadOnlyHarnessRuntime | undefined;
+}
+
+interface BrainStoreReadiness {
+  migrationsVerified: boolean;
+  pgvectorAvailable: boolean;
+}
+
+interface RenderCodexBriefFromAggregateInput {
+  aggregate: HarnessRunAggregate;
+  createdAt: string;
+  createId(prefix: string): string;
+  nextActionFallback: string;
+  goalReference: string;
+  execPlanReference: string;
+  includeTaskContractInCapabilityPlan?: boolean;
+  missingContextMessage: string;
+}
+
+export interface RenderedCodexBrief {
+  brief: ExecutionBrief;
+  renderedBrief: string;
+  evidenceContract: EvidenceContract;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isDiffRisk = (value: unknown): value is EvidenceContract["diffRisk"] =>
+  value === "low" || value === "medium" || value === "high";
+
+export const normalizeSmokeSlugPart = (value: string): string => {
+  const normalized = value
+    .toLowerCase()
+    .split(/[^a-z0-9]+/u)
+    .filter((part) => part.length > 0)
+    .join("-")
+    .slice(0, 48)
+    .replace(/-$/u, "");
+
+  return normalized.length === 0 ? "local" : normalized;
+};
+
+const countRows = async (rowsPromise: Promise<CountRow[]>): Promise<number> => {
+  const rows = await rowsPromise;
+
+  return rows[0]?.count ?? 0;
+};
+
+export const sumCountRows = async (rowsPromises: readonly Promise<CountRow[]>[]): Promise<number> => {
+  let total = 0;
+
+  for (const rowsPromise of rowsPromises) {
+    total += await countRows(rowsPromise);
+  }
+
+  return total;
+};
+
+const createSmokeSqlClient = (databaseUrl: string): Sql =>
+  postgres(databaseUrl, {
+    max: 1,
+    onnotice: () => undefined
+  });
+
+export const createSmokeDatabaseRuntime = (databaseUrl: string): SmokeDatabaseRuntime => {
+  const client = createSmokeSqlClient(databaseUrl);
+
+  return {
+    client,
+    db: createKrnDatabase(client)
+  };
+};
+
+export const createSmokeRepositories = (
+  db: SmokeDatabaseRuntime["db"]
+): SmokeRepositories => ({
+  projectRepository: new DrizzleProjectRepository(db),
+  harnessRunRepository: new DrizzleHarnessRunRepository(db),
+  sourceRepository: new DrizzleSourceRepository(db),
+  memoryRepository: new DrizzleMemoryRepository(db),
+  retrievalRepository: new DrizzleRetrievalRepository(db)
+});
+
+export const createSmokeIdFactory = (marker: string): ((prefix: string) => string) => {
+  let idCounter = 0;
+
+  return (prefix) => {
+    idCounter += 1;
+    return `${prefix}-${marker}-${idCounter}`;
+  };
+};
+
+export const yesNo = (value: boolean): "yes" | "no" => value ? "yes" : "no";
+
+export const matchedWhen = (value: boolean): "matched" | "mismatch" =>
+  value ? "matched" : "mismatch";
+
+export const matchedOrMismatch = (
+  actual: string,
+  expected: string
+): "matched" | "mismatch" => actual === expected ? "matched" : "mismatch";
+
+export const completedOrNot = (value: boolean): "completed" | "not completed" =>
+  value ? "completed" : "not completed";
+
+export const passedOrFailed = (value: boolean): "passed" | "failed" =>
+  value ? "passed" : "failed";
+
+export const assertBrainStoreReady = (
+  readiness: BrainStoreReadiness,
+  message: string
+): void => {
+  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
+    throw new Error(message);
+  }
+};
+
+export const metadataString = (
+  metadata: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" ? value : undefined;
+};
+
+export const countCodexInvocationEvents = (aggregate: HarnessRunAggregate): number =>
+  aggregate.runEvents.filter((event) =>
+    event.type === "codex.invoked" ||
+    event.type === "codex.executed" ||
+    event.type === "codex.execution.started"
+  ).length;
+
+export const countRunEventsBySmokeId = (
+  client: Sql,
+  marker: string
+): Promise<CountRow[]> =>
+  client<CountRow[]>`select count(*)::int as count from run_events where payload->>'smokeId' = ${marker}`;
+
+export const countSourceArtifactsBySmokeId = (
+  client: Sql,
+  marker: string
+): Promise<CountRow[]> =>
+  client<CountRow[]>`select count(*)::int as count from source_artifacts where metadata->>'smokeId' = ${marker}`;
+
+export const countSourceClaimsBySmokeId = (
+  client: Sql,
+  marker: string
+): Promise<CountRow[]> =>
+  client<CountRow[]>`select count(*)::int as count from source_claims where metadata->>'smokeId' = ${marker}`;
+
+export const countMemoryRecordsBySmokeId = (
+  client: Sql,
+  marker: string
+): Promise<CountRow[]> =>
+  client<CountRow[]>`select count(*)::int as count from memory_records where metadata->>'smokeId' = ${marker}`;
+
+export const countRetrievalRunById = (
+  client: Sql,
+  retrievalRunId: string
+): Promise<CountRow[]> =>
+  client<CountRow[]>`select count(*)::int as count from retrieval_runs where id = ${retrievalRunId}`;
+
+const parseEvidenceContract = (value: unknown): EvidenceContract | undefined => {
+  if (!isRecord(value) || !Array.isArray(value.commands)) {
+    return undefined;
+  }
+
+  const commands = value.commands.flatMap((item): EvidenceContract["commands"] => {
+    if (!isRecord(item) || typeof item.command !== "string" || typeof item.required !== "boolean") {
+      return [];
+    }
+
+    return [
+      {
+        command: item.command,
+        required: item.required
+      }
+    ];
+  });
+
+  if (
+    commands.length === 0 ||
+    !isDiffRisk(value.diffRisk) ||
+    typeof value.reviewBurden !== "string" ||
+    typeof value.rollbackPath !== "string"
+  ) {
+    return undefined;
+  }
+
+  return {
+    commands,
+    diffRisk: value.diffRisk,
+    reviewBurden: value.reviewBurden,
+    rollbackPath: value.rollbackPath,
+    metadata: isRecord(value.metadata) ? value.metadata : {}
+  };
+};
+
+const createReadOnlyHarnessRuntime = async (
+  databaseUrl: string
+): Promise<ReadOnlyHarnessRuntime> => {
+  const client = postgres(databaseUrl, { max: 1 });
+  const harnessRunRepository = new DrizzleHarnessRunRepository(createKrnDatabase(client));
+  const close = async (): Promise<void> => {
+    await client.end();
+  };
+
+  return {
+    harnessRunRepository,
+    close
+  };
+};
+
+export const resolveReadOnlyHarnessRuntime = async (
+  input: ResolveReadOnlyHarnessRuntimeInput
+): Promise<ReadOnlyHarnessRuntime> => {
+  if (input.createDatabaseRuntime === undefined) {
+    return createReadOnlyHarnessRuntime(input.databaseUrl);
+  }
+
+  return input.createDatabaseRuntime({
+    databaseUrl: input.databaseUrl,
+    workspaceSlug: input.workspaceSlug,
+    projectSlug: input.projectSlug,
+    now: input.now,
+    createId: input.createId
+  });
+};
+
+export const renderCodexBriefFromAggregate = (
+  input: RenderCodexBriefFromAggregateInput
+): RenderedCodexBrief => {
+  const contextAssembly = input.aggregate.contextAssembly;
+
+  if (contextAssembly === undefined) {
+    throw new Error(input.missingContextMessage);
+  }
+
+  const evidenceContract =
+    parseEvidenceContract(input.aggregate.harnessPlan.metadata.evidenceContract) ??
+    createEvidenceContract(input.aggregate.taskContract);
+  const capabilityPlan = createCapabilityPlan({
+    harnessPlan: input.aggregate.harnessPlan,
+    ...(input.includeTaskContractInCapabilityPlan === true
+      ? { taskContract: input.aggregate.taskContract }
+      : {}),
+    hasContext: contextAssembly.inclusions.length > 0,
+    createdAt: input.createdAt,
+    createId: input.createId
+  });
+  const brief = createExecutionBrief({
+    taskContract: input.aggregate.taskContract,
+    harnessPlan: input.aggregate.harnessPlan,
+    contextAssembly,
+    capabilityPlan,
+    evidenceContract,
+    nextAction: input.aggregate.harnessPlan.nextAction ?? input.nextActionFallback,
+    goalReference: input.goalReference,
+    execPlanReference: input.execPlanReference
+  });
+
+  return {
+    brief,
+    renderedBrief: renderExecutionBriefText(brief),
+    evidenceContract
+  };
+};

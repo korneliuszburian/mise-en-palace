@@ -1,31 +1,38 @@
-import postgres from "postgres";
 import type {
   Sql
 } from "postgres";
 import {
-  createExecutionBrief,
-  renderExecutionBriefText
-} from "@krn/codex-adapter";
-import {
-  createKrnDatabase
-} from "@krn/db";
-import {
-  DrizzleHarnessRunRepository,
-  DrizzleMemoryRepository,
-  DrizzleProjectRepository,
-  DrizzleRetrievalRepository,
-  DrizzleSourceRepository
-} from "@krn/db/adapters";
-import {
   runMigrationReadinessCheck
 } from "@krn/db/dev";
 import {
-  compileHarnessPlan,
-  createCapabilityPlan
+  compileHarnessPlan
 } from "@krn/harness";
+import type {
+  HarnessRunAggregate
+} from "@krn/harness/repositories";
 import {
   normalizeEvidenceCommand
 } from "@krn/core";
+import {
+  assertBrainStoreReady,
+  createSmokeIdFactory,
+  createSmokeDatabaseRuntime,
+  createSmokeRepositories,
+  completedOrNot,
+  countMemoryRecordsBySmokeId,
+  countRetrievalRunById,
+  countRunEventsBySmokeId,
+  countSourceArtifactsBySmokeId,
+  countSourceClaimsBySmokeId,
+  matchedOrMismatch,
+  matchedWhen,
+  metadataString,
+  normalizeSmokeSlugPart,
+  passedOrFailed,
+  renderCodexBriefFromAggregate,
+  sumCountRows,
+  yesNo
+} from "./codexBriefSupport.js";
 
 export interface TargetRepoHarnessSmokeInput {
   databaseUrl: string;
@@ -66,6 +73,37 @@ export interface TargetRepoHarnessSmokeReport {
 
 interface CountRow {
   count: number;
+}
+
+type SmokeProjectRepository = ReturnType<typeof createSmokeRepositories>["projectRepository"];
+
+interface CreateTargetFixtureProjectInput {
+  projectRepository: SmokeProjectRepository;
+  workspaceSlug: string;
+  projectSlug: string;
+  marker: string;
+  repoFingerprint: string;
+  repoPath: string;
+}
+
+interface TargetPlanReadbackProof {
+  contextAssemblyId: string;
+  codexBriefRendered: boolean;
+  targetProjectLinked: boolean;
+  memoryIncluded: boolean;
+}
+
+interface TargetEvidenceReadbackProof {
+  evidenceBundleId: string;
+  reviewAssessmentId: string;
+  feedbackDeltaId: string;
+}
+
+type EvidenceReadbackBundle = HarnessRunAggregate["evidenceBundles"][number];
+type FeedbackReadbackDelta = HarnessRunAggregate["feedbackDeltas"][number];
+
+interface IdRecord {
+  id: string;
 }
 
 const targetFixtureSourceSeeds = [
@@ -154,62 +192,25 @@ const targetFixtureOwnerFiles = [
   }
 ] as const;
 
-const normalizeSlugPart = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
-};
-
-const countQuery = async (rowsPromise: Promise<CountRow[]>): Promise<number> => {
-  const rows = await rowsPromise;
-
-  return rows[0]?.count ?? 0;
-};
-
 const countMarkerRows = async (
   client: Sql,
   marker: string,
   retrievalRunId: string | undefined
 ): Promise<number> => {
-  let count = 0;
-
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from workspaces where metadata->>'fixtureMarker' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from projects where metadata->>'fixtureMarker' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from repo_installations where metadata->>'fixtureMarker' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from project_kernels where metadata->>'fixtureMarker' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from run_events where payload->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from memory_applications where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from memory_records where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from source_claims where metadata->>'smokeId' = ${marker}`
-  );
-  count += await countQuery(
-    client<CountRow[]>`select count(*)::int as count from source_artifacts where metadata->>'smokeId' = ${marker}`
-  );
+  let count = await sumCountRows([
+    client<CountRow[]>`select count(*)::int as count from workspaces where metadata->>'fixtureMarker' = ${marker}`,
+    client<CountRow[]>`select count(*)::int as count from projects where metadata->>'fixtureMarker' = ${marker}`,
+    client<CountRow[]>`select count(*)::int as count from repo_installations where metadata->>'fixtureMarker' = ${marker}`,
+    client<CountRow[]>`select count(*)::int as count from project_kernels where metadata->>'fixtureMarker' = ${marker}`,
+    countRunEventsBySmokeId(client, marker),
+    client<CountRow[]>`select count(*)::int as count from memory_applications where metadata->>'smokeId' = ${marker}`,
+    countMemoryRecordsBySmokeId(client, marker),
+    countSourceClaimsBySmokeId(client, marker),
+    countSourceArtifactsBySmokeId(client, marker)
+  ]);
 
   if (retrievalRunId !== undefined) {
-    count += await countQuery(
-      client<CountRow[]>`select count(*)::int as count from retrieval_runs where id = ${retrievalRunId}`
-    );
+    count += await sumCountRows([countRetrievalRunById(client, retrievalRunId)]);
   }
 
   return count;
@@ -235,6 +236,147 @@ const cleanupMarkerRows = async (
   return countMarkerRows(client, marker, retrievalRunId);
 };
 
+const createTargetFixtureProject = async (
+  input: CreateTargetFixtureProjectInput
+) => {
+  const fixtureMetadata = {
+    smoke: true,
+    fixtureMarker: input.marker
+  };
+  const workspace = await input.projectRepository.createWorkspace({
+    slug: input.workspaceSlug,
+    displayName: input.workspaceSlug,
+    metadata: fixtureMetadata
+  });
+  const project = await input.projectRepository.createProject({
+    workspaceId: workspace.id,
+    slug: input.projectSlug,
+    displayName: "krn-fixture-typescript-basic",
+    metadata: {
+      ...fixtureMetadata,
+      repoFingerprint: input.repoFingerprint,
+      repoPath: input.repoPath,
+      sourceSeeds: targetFixtureSourceSeeds,
+      ownerFiles: targetFixtureOwnerFiles,
+      trustExclusions: targetFixtureTrustExclusions
+    }
+  });
+
+  return { workspace, project };
+};
+
+const assertTargetPlanReadback = (
+  input: {
+    aggregate: HarnessRunAggregate;
+    executionRunId: string;
+    projectId: string;
+    memoryRecordId: string;
+    renderedBrief: string;
+  }
+): TargetPlanReadbackProof => {
+  const contextAssembly = input.aggregate.contextAssembly;
+
+  if (contextAssembly === undefined) {
+    throw new Error("Target repo harness smoke failed to read back persisted run");
+  }
+
+  const codexBriefRendered =
+    input.renderedBrief.includes("KRN Codex Execution Brief") &&
+    input.renderedBrief.includes("Objective: improve test script readiness");
+  const targetProjectLinked =
+    input.aggregate.operatorIntent.projectId === input.projectId &&
+    input.aggregate.taskContract.projectId === input.projectId;
+  const memoryIncluded = contextAssembly.inclusions.some((inclusion) =>
+    inclusion.subjectType === "memory_record" &&
+    inclusion.subjectId === input.memoryRecordId
+  );
+  const proofChecks = [
+    input.aggregate.executionRun.id === input.executionRunId,
+    codexBriefRendered,
+    targetProjectLinked,
+    memoryIncluded
+  ];
+
+  if (proofChecks.some((passed) => !passed)) {
+    throw new Error("Target repo harness smoke readback did not match expected project proof");
+  }
+
+  return {
+    contextAssemblyId: contextAssembly.id,
+    codexBriefRendered,
+    targetProjectLinked,
+    memoryIncluded
+  };
+};
+
+const findById = <T extends IdRecord>(
+  items: readonly T[],
+  id: string
+): T | undefined => items.find((item) => item.id === id);
+
+const commandsAreWeakDefaultNotRun = (
+  evidenceBundle: EvidenceReadbackBundle | undefined
+): boolean =>
+  evidenceBundle?.commands.every((command) => {
+    const normalized = normalizeEvidenceCommand(command);
+
+    return normalized.status === "not_run" && normalized.provenance === "default_template";
+  }) ?? false;
+
+const feedbackDeltaHasNoMutations = (
+  feedbackDelta: FeedbackReadbackDelta | undefined
+): boolean =>
+  feedbackDelta !== undefined &&
+  feedbackDelta.memoryCandidates.length === 0 &&
+  feedbackDelta.sourceDecisions.length === 0 &&
+  feedbackDelta.evalCandidates.length === 0;
+
+const readbackProofIds = (
+  aggregate: HarnessRunAggregate,
+  expected: TargetEvidenceReadbackProof
+): TargetEvidenceReadbackProof | undefined => {
+  const evidenceBundleId = findById(aggregate.evidenceBundles, expected.evidenceBundleId)?.id;
+  const reviewAssessmentId = findById(aggregate.reviewAssessments, expected.reviewAssessmentId)?.id;
+  const feedbackDeltaId = findById(aggregate.feedbackDeltas, expected.feedbackDeltaId)?.id;
+
+  if (
+    evidenceBundleId === undefined ||
+    reviewAssessmentId === undefined ||
+    feedbackDeltaId === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    evidenceBundleId,
+    reviewAssessmentId,
+    feedbackDeltaId
+  };
+};
+
+const assertTargetEvidenceReadback = (
+  aggregate: HarnessRunAggregate | undefined,
+  expected: TargetEvidenceReadbackProof
+): TargetEvidenceReadbackProof => {
+  if (aggregate === undefined) {
+    throw new Error("Target repo harness smoke failed to read back evidence aggregate");
+  }
+
+  const readBackEvidenceBundle = findById(aggregate.evidenceBundles, expected.evidenceBundleId);
+  const readBackFeedbackDelta = findById(aggregate.feedbackDeltas, expected.feedbackDeltaId);
+  const proofIds = readbackProofIds(aggregate, expected);
+
+  if (
+    proofIds === undefined ||
+    !commandsAreWeakDefaultNotRun(readBackEvidenceBundle) ||
+    !feedbackDeltaHasNoMutations(readBackFeedbackDelta)
+  ) {
+    throw new Error("Target repo harness smoke evidence readback did not preserve proof boundaries");
+  }
+
+  return proofIds;
+};
+
 const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Workspace smoke row: ${report.workspaceSlug}`,
   `Project: ${report.projectId}`,
@@ -244,28 +386,26 @@ const reportLines = (report: TargetRepoHarnessSmokeReport): string[] => [
   `Target owner files: ${report.ownerFilePaths.join(", ")}`,
   `Target trust exclusions: ${report.trustExclusionPatterns.join(", ")}`,
   `Execution run: ${report.executionRunId}`,
-  `Readback: ${
-    report.readBackExecutionRunId === report.executionRunId ? "matched" : "mismatch"
-  }`,
-  `Codex brief rendered: ${report.codexBriefRendered ? "yes" : "no"}`,
+  `Readback: ${matchedOrMismatch(report.readBackExecutionRunId, report.executionRunId)}`,
+  `Codex brief rendered: ${yesNo(report.codexBriefRendered)}`,
   `Evidence bundle: ${report.evidenceBundleId}`,
-  `Evidence readback: ${report.evidenceReadbackMatched ? "matched" : "mismatch"}`,
+  `Evidence readback: ${matchedWhen(report.evidenceReadbackMatched)}`,
   `Command proof boundary: ${report.commandProofBoundary}`,
   `Review assessment: ${report.reviewAssessmentId}`,
-  `Review assessment readback: ${report.reviewAssessmentReadbackMatched ? "matched" : "mismatch"}`,
+  `Review assessment readback: ${matchedWhen(report.reviewAssessmentReadbackMatched)}`,
   `Feedback delta: ${report.feedbackDeltaId}`,
-  `Feedback delta readback: ${report.feedbackDeltaReadbackMatched ? "matched" : "mismatch"}`,
+  `Feedback delta readback: ${matchedWhen(report.feedbackDeltaReadbackMatched)}`,
   `Memory seed record: ${report.memorySeedRecordId}`,
-  `Memory included: ${report.memoryIncluded ? "yes" : "no"}`,
+  `Memory included: ${yesNo(report.memoryIncluded)}`,
   `Memory application: ${report.memoryApplicationId}`,
   `Memory usefulness outcome: ${report.memoryUsefulnessOutcome}`,
-  `Memory usefulness readback: ${report.memoryUsefulnessReadbackMatched ? "matched" : "mismatch"}`,
+  `Memory usefulness readback: ${matchedWhen(report.memoryUsefulnessReadbackMatched)}`,
   `Memory positive feedback count: ${report.memoryPositiveFeedbackCount}`,
   `Automatic MemoryRecord mutation: ${report.automaticMemoryRecordMutation}`,
-  `Target project linked: ${report.targetProjectLinked ? "yes" : "no"}`,
+  `Target project linked: ${yesNo(report.targetProjectLinked)}`,
   `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-  `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-  `Target repo harness smoke: ${report.cleanedUp ? "passed" : "failed"}`
+  `Cleanup: ${completedOrNot(report.cleanedUp)}`,
+  `Target repo harness smoke: ${passedOrFailed(report.cleanedUp)}`
 ];
 
 export const formatTargetRepoHarnessSmokeReport = (
@@ -286,52 +426,34 @@ export const runTargetRepoHarnessSmokeCheck = async (
     migrationsFolder: input.migrationsFolder
   });
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for target repo harness smoke");
-  }
+  assertBrainStoreReady(readiness, "Brain store is not ready for target repo harness smoke");
 
-  const marker = normalizeSlugPart(input.smokeId);
+  const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-target-repo-harness-smoke-${marker}`;
   const projectSlug = `typescript-basic-${marker}`;
   const repoFingerprint = `target-repo-harness:${marker}`;
   const repoPath = `${input.targetRepoPath}#${marker}`;
   const now = "2026-06-22T07:00:00.000Z";
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
+  const { client, db } = createSmokeDatabaseRuntime(input.databaseUrl);
   let retrievalRunId: string | undefined;
 
   try {
     await cleanupMarkerRows(client, marker, retrievalRunId);
 
-    const projectRepository = new DrizzleProjectRepository(db);
-    const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-    const sourceRepository = new DrizzleSourceRepository(db);
-    const memoryRepository = new DrizzleMemoryRepository(db);
-    const retrievalRepository = new DrizzleRetrievalRepository(db);
-    const workspace = await projectRepository.createWorkspace({
-      slug: workspaceSlug,
-      displayName: workspaceSlug,
-      metadata: {
-        smoke: true,
-        fixtureMarker: marker
-      }
-    });
-    const project = await projectRepository.createProject({
-      workspaceId: workspace.id,
-      slug: projectSlug,
-      displayName: "krn-fixture-typescript-basic",
-      metadata: {
-        smoke: true,
-        fixtureMarker: marker,
-        repoFingerprint,
-        repoPath,
-        sourceSeeds: targetFixtureSourceSeeds,
-        ownerFiles: targetFixtureOwnerFiles,
-        trustExclusions: targetFixtureTrustExclusions
-      }
+    const {
+      projectRepository,
+      harnessRunRepository,
+      sourceRepository,
+      memoryRepository,
+      retrievalRepository
+    } = createSmokeRepositories(db);
+    const { workspace, project } = await createTargetFixtureProject({
+      projectRepository,
+      workspaceSlug,
+      projectSlug,
+      marker,
+      repoFingerprint,
+      repoPath
     });
     const repoInstallation = await projectRepository.createRepoInstallation({
       projectId: project.id,
@@ -409,7 +531,7 @@ export const runTargetRepoHarnessSmokeCheck = async (
         fixtureMemory: true
       }
     });
-    let idCounter = 0;
+    const createSmokeId = createSmokeIdFactory(marker);
     const result = await compileHarnessPlan(
       {
         workspaceId: workspace.id,
@@ -456,14 +578,10 @@ export const runTargetRepoHarnessSmokeCheck = async (
         sourceRepository,
         retrievalRepository,
         now: () => now,
-        createId: (prefix) => {
-          idCounter += 1;
-          return `${prefix}-${marker}-${idCounter}`;
-        }
+        createId: createSmokeId
       }
     );
-    const maybeRetrievalRunId = result.contextAssembly.metadata.retrievalRunId;
-    retrievalRunId = typeof maybeRetrievalRunId === "string" ? maybeRetrievalRunId : undefined;
+    retrievalRunId = metadataString(result.contextAssembly.metadata, "retrievalRunId");
 
     if (retrievalRunId === undefined) {
       throw new Error("Target repo harness smoke did not create a retrieval run");
@@ -501,51 +619,31 @@ export const runTargetRepoHarnessSmokeCheck = async (
     });
     const aggregate = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
 
-    if (aggregate === undefined || aggregate.contextAssembly === undefined) {
+    if (aggregate === undefined) {
       throw new Error("Target repo harness smoke failed to read back persisted run");
     }
 
-    const capabilityPlan = createCapabilityPlan({
-      harnessPlan: aggregate.harnessPlan,
-      hasContext: aggregate.contextAssembly.inclusions.length > 0,
+    const { renderedBrief } = renderCodexBriefFromAggregate({
+      aggregate,
       createdAt: now,
-      createId: (prefix) => `${prefix}-${marker}-readback`
-    });
-    const brief = createExecutionBrief({
-      taskContract: aggregate.taskContract,
-      harnessPlan: aggregate.harnessPlan,
-      contextAssembly: aggregate.contextAssembly,
-      capabilityPlan,
-      evidenceContract: result.evidenceContract,
-      nextAction: aggregate.harnessPlan.nextAction ?? "Use this brief as the next Codex input.",
+      createId: (prefix) => `${prefix}-${marker}-readback`,
+      nextActionFallback: "Use this brief as the next Codex input.",
       goalReference: "GOAL.md M27 target repo init-connect dogfood",
-      execPlanReference: "PLAN.md M27 Slice 09"
+      execPlanReference: "PLAN.md M27 Slice 09",
+      missingContextMessage: "Target repo harness smoke failed to read back persisted run"
     });
-    const renderedBrief = renderExecutionBriefText(brief);
-    const codexBriefRendered =
-      renderedBrief.includes("KRN Codex Execution Brief") &&
-      renderedBrief.includes("Objective: improve test script readiness");
-    const targetProjectLinked =
-      aggregate.operatorIntent.projectId === project.id &&
-      aggregate.taskContract.projectId === project.id;
-    const memoryIncluded = aggregate.contextAssembly.inclusions.some((inclusion) =>
-      inclusion.subjectType === "memory_record" &&
-      inclusion.subjectId === memoryRecord.id
-    );
-
-    if (
-      aggregate.executionRun.id !== executionRun.id ||
-      !codexBriefRendered ||
-      !targetProjectLinked ||
-      !memoryIncluded
-    ) {
-      throw new Error("Target repo harness smoke readback did not match expected project proof");
-    }
+    const planProof = assertTargetPlanReadback({
+      aggregate,
+      executionRunId: executionRun.id,
+      projectId: project.id,
+      memoryRecordId: memoryRecord.id,
+      renderedBrief
+    });
     const memoryApplication = await memoryRepository.recordMemoryApplication({
       memoryRecordId: memoryRecord.id,
       executionRunId: executionRun.id,
       taskContractId: aggregate.taskContract.id,
-      contextAssemblyId: aggregate.contextAssembly.id,
+      contextAssemblyId: planProof.contextAssemblyId,
       expectedUse: "Use target fixture readiness memory to keep planning scoped and reviewable.",
       outcome: "helped",
       notes: "Memory helped keep the target fixture harness smoke scoped to source seeds, owner files, evidence, and readback.",
@@ -613,42 +711,14 @@ export const runTargetRepoHarnessSmokeCheck = async (
         projectId: project.id
       }
     });
-    const aggregateWithEvidence = await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id);
-
-    if (aggregateWithEvidence === undefined) {
-      throw new Error("Target repo harness smoke failed to read back evidence aggregate");
-    }
-
-    const readBackEvidenceBundle = aggregateWithEvidence.evidenceBundles.find((bundle) =>
-      bundle.id === evidenceBundle.id
+    const evidenceProof = assertTargetEvidenceReadback(
+      await harnessRunRepository.getHarnessRunByExecutionRunId(executionRun.id),
+      {
+        evidenceBundleId: evidenceBundle.id,
+        reviewAssessmentId: reviewAssessment.id,
+        feedbackDeltaId: feedbackDelta.id
+      }
     );
-    const readBackReviewAssessment = aggregateWithEvidence.reviewAssessments.find((assessment) =>
-      assessment.id === reviewAssessment.id
-    );
-    const readBackFeedbackDelta = aggregateWithEvidence.feedbackDeltas.find((feedback) =>
-      feedback.id === feedbackDelta.id
-    );
-    const commandProofBoundary =
-      readBackEvidenceBundle?.commands.every((command) => {
-        const normalized = normalizeEvidenceCommand(command);
-
-        return normalized.status === "not_run" && normalized.provenance === "default_template";
-      }) ?? false;
-    const noFeedbackMutations =
-      readBackFeedbackDelta !== undefined &&
-      readBackFeedbackDelta.memoryCandidates.length === 0 &&
-      readBackFeedbackDelta.sourceDecisions.length === 0 &&
-      readBackFeedbackDelta.evalCandidates.length === 0;
-
-    if (
-      readBackEvidenceBundle === undefined ||
-      readBackReviewAssessment === undefined ||
-      readBackFeedbackDelta === undefined ||
-      !commandProofBoundary ||
-      !noFeedbackMutations
-    ) {
-      throw new Error("Target repo harness smoke evidence readback did not preserve proof boundaries");
-    }
 
     const remainingMarkerCount = await cleanupMarkerRows(client, marker, retrievalRunId);
 
@@ -662,22 +732,22 @@ export const runTargetRepoHarnessSmokeCheck = async (
       trustExclusionPatterns: targetFixtureTrustExclusions.map((exclusion) => exclusion.pathPattern),
       executionRunId: executionRun.id,
       readBackExecutionRunId: aggregate.executionRun.id,
-      codexBriefRendered,
+      codexBriefRendered: planProof.codexBriefRendered,
       evidenceBundleId: evidenceBundle.id,
-      evidenceReadbackMatched: readBackEvidenceBundle.id === evidenceBundle.id,
+      evidenceReadbackMatched: evidenceProof.evidenceBundleId === evidenceBundle.id,
       commandProofBoundary: "weak_default_not_run",
       reviewAssessmentId: reviewAssessment.id,
-      reviewAssessmentReadbackMatched: readBackReviewAssessment.id === reviewAssessment.id,
+      reviewAssessmentReadbackMatched: evidenceProof.reviewAssessmentId === reviewAssessment.id,
       feedbackDeltaId: feedbackDelta.id,
-      feedbackDeltaReadbackMatched: readBackFeedbackDelta.id === feedbackDelta.id,
+      feedbackDeltaReadbackMatched: evidenceProof.feedbackDeltaId === feedbackDelta.id,
       memorySeedRecordId: memoryRecord.id,
-      memoryIncluded,
+      memoryIncluded: planProof.memoryIncluded,
       memoryApplicationId: memoryApplication.id,
       memoryUsefulnessOutcome: "helped",
       memoryUsefulnessReadbackMatched: readBackMemoryRecord.id === memoryRecord.id,
       memoryPositiveFeedbackCount: readBackMemoryRecord.positiveFeedbackCount,
       automaticMemoryRecordMutation: "none",
-      targetProjectLinked,
+      targetProjectLinked: planProof.targetProjectLinked,
       remainingMarkerCount,
       cleanedUp: remainingMarkerCount === 0
     };
