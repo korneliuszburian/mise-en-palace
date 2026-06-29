@@ -27,6 +27,7 @@ import type {
   TargetActivationReadModel
 } from "./ownerFileRecall.js";
 import {
+  applySourceClaimEdgeInfluence,
   mergeActivationCandidates,
   rankCandidates,
   toMemoryCandidate,
@@ -56,7 +57,7 @@ export interface ActivationRetrievalLimits {
 
 export interface ActivationCandidateRepositories {
   memoryRepository: Pick<MemoryRepository, "listActiveMemory" | "listAntiMemoryForProject">;
-  sourceRepository: Pick<SourceRepository, "listClaimsForProject">;
+  sourceRepository: Pick<SourceRepository, "listClaimsForProject" | "listSourceClaimEdgesForClaim">;
   retrievalRepository: Pick<RetrievalRepository, "searchLexical">;
 }
 
@@ -203,6 +204,18 @@ const searchLexicalWithMarkerFallback = async (
   });
 };
 
+const sourceClaimEdgesForClaims = async (
+  sourceRepository: Pick<SourceRepository, "listSourceClaimEdgesForClaim">,
+  sourceClaims: readonly { id: string }[]
+) => {
+  const edges = await Promise.all(
+    sourceClaims.map((claim) => sourceRepository.listSourceClaimEdgesForClaim(claim.id))
+  );
+  const uniqueEdgesById = new Map(edges.flat().map((edge) => [edge.id, edge]));
+
+  return [...uniqueEdgesById.values()];
+};
+
 export const retrieveActivationCandidates = async (
   input: RetrieveActivationCandidatesInput
 ): Promise<RetrieveActivationCandidatesResult> => {
@@ -239,13 +252,23 @@ export const retrieveActivationCandidates = async (
     input.taskContract.projectId,
     input.limits.source
   );
+  const sourceClaimEdges = await sourceClaimEdgesForClaims(
+    input.repositories.sourceRepository,
+    sourceClaims
+  );
   const searchResults = await searchLexicalWithMarkerFallback(input, sourceQuery);
   const antiMemoryRecords = await input.repositories.memoryRepository.listAntiMemoryForProject(
     input.taskContract.projectId,
     input.limits.antiMemory
   );
   const memoryCandidates = rankCandidates(memoryRecords.map(toMemoryCandidate), memoryQuery);
-  const sourceCandidates = rankCandidates(sourceClaims.map(toSourceClaimCandidate), sourceQuery);
+  const sourceCandidates = rankCandidates(
+    applySourceClaimEdgeInfluence(sourceClaims.map(toSourceClaimCandidate), {
+      edges: sourceClaimEdges,
+      seedSourceClaimIds: sourceClaims.map((claim) => claim.id)
+    }),
+    sourceQuery
+  );
   const searchCandidates = rankCandidates(searchResults.map(toSearchCandidate), sourceQuery);
   const ownerFileCandidates = rankCandidates(
     buildOwnerFileRecallCandidates(input.taskContract, {

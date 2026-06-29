@@ -136,8 +136,15 @@ export const createNoStoreCompilerDependencies = (
       return [];
     }
   };
-  const sourceRepository: Pick<SourceRepository, "listClaimsForProject"> = {
+  const sourceRepository: Pick<
+    SourceRepository,
+    "listClaimsForProject" | "listSourceClaimEdgesForClaim"
+  > = {
     async listClaimsForProject(): Promise<SourceClaim[]> {
+      return [];
+    },
+
+    async listSourceClaimEdgesForClaim() {
       return [];
     }
   };

@@ -11,6 +11,7 @@ import type {
   OperatorIntent,
   ReviewAssessment,
   SourceClaim,
+  SourceClaimEdge,
   TaskContract
 } from "@krn/core";
 import type {
@@ -244,11 +245,23 @@ class FakeMemoryRepository implements MemoryRepository {
   }
 }
 
-class FakeSourceRepository implements Pick<SourceRepository, "listClaimsForProject"> {
-  constructor(private readonly claims: readonly SourceClaim[]) {}
+class FakeSourceRepository implements Pick<
+  SourceRepository,
+  "listClaimsForProject" | "listSourceClaimEdgesForClaim"
+> {
+  constructor(
+    private readonly claims: readonly SourceClaim[],
+    private readonly edges: readonly SourceClaimEdge[] = []
+  ) {}
 
   async listClaimsForProject(): Promise<SourceClaim[]> {
     return [...this.claims];
+  }
+
+  async listSourceClaimEdgesForClaim(sourceClaimId: SourceClaim["id"]): Promise<SourceClaimEdge[]> {
+    return this.edges.filter((edge) =>
+      edge.fromSourceClaimId === sourceClaimId || edge.toSourceClaimId === sourceClaimId
+    );
   }
 }
 

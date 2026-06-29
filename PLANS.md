@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V332 Edge-Aware Source Candidate Refinement
-current task: V332-00 Edge-Aware Source Candidate Refinement
+active stream: V333 Edge-Aware Activation Usefulness Closure
+current task: V333-00 Edge-Aware Activation Usefulness Closure
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,10 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V332-00 Edge-Aware Source Candidate Refinement. V331 proved persisted readback
-for edge-aware candidate graphScore/metadata; Graph Brain v0 now needs the
-smallest refinement path that avoids lab-seeded duplicate candidate rows without
-claiming production graph retrieval quality.
+V333-00 Edge-Aware Activation Usefulness Closure. V332 removed the lab-seeded
+duplicate candidate dependency; Graph Brain v0 now needs a bounded usefulness
+check before broader graph retrieval work.
 ```
 
 ## 2. Product Thesis
@@ -59,7 +58,8 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   preview exists; extraction reviewability/noise gate complete; reviewed
   extraction persistence bridge complete; fence-state carryover repair complete;
   graph-aware edge readback complete; edge-aware ranking lab complete;
-  persisted edge-aware activation readback complete; candidate refinement next
+  persisted edge-aware activation readback complete; edge-aware candidate
+  refinement complete; usefulness closure next
 product-ready: no
 ```
 
@@ -82,6 +82,7 @@ V328 complete: source extraction fence-state carryover repair.
 V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 V330 complete: bounded edge-aware source candidate ranking lab.
 V331 complete: persisted edge-aware activation readback.
+V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
 ```
 
 Reports:
@@ -95,6 +96,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-ca
 docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -289,32 +291,71 @@ krn run show --run-id de972...: passed
 krn run show --run-id de972... --json: passed
 ```
 
-## Active Task: V332-00 Edge-Aware Source Candidate Refinement
+## Outcome V332 Edge-Aware Source Candidate Refinement
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V329, V330, and V331 reports.
+- Mechanism: V331 proved persisted edge-aware activation trace readback, but
+  required a lab-seeded duplicate retrieval candidate row.
+- KRN implication: Graph Brain v0 should use existing SourceClaimEdge context
+  in normal activation retrieval before crawler, graph runtime, schema, or
+  production graph retrieval work.
+- Decision: fetch SourceClaimEdges for retrieved SourceClaims and apply the
+  existing edge influence helper before source candidate ranking.
+- Does not prove: source truth, edge correctness, activation scoring quality,
+  production graph retrieval quality, crawler readiness, product readiness, or
+  Memory Core mutation.
+- Consumer: V333 edge-aware activation usefulness closure.
+- Falsifier: a fresh persisted plan cannot show `sourceClaimEdgeInfluence`
+  without manual duplicate retrieval candidate seeding.
+
+V332 outcome:
+
+```txt
+Normal activation retrieval now persists source candidate graphScore and
+sourceClaimEdgeInfluence through `krn run show` without lab-seeded duplicate
+candidate rows.
+```
+
+V332 verification:
+
+```txt
+pnpm --filter @krn/harness test -- activation compiler: passed
+pnpm --filter @krn/cli test -- runCli --testNamePattern "prints bounded activation inclusions": passed
+pnpm run typecheck: passed
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test: failed once on stale CLI fixture, then passed
+pnpm db:ready: passed
+pnpm db:smoke: passed
+pnpm eval:promptfoo:smoke: passed
+krn plan --persist: passed
+krn run show --run-id 7555...: passed
+krn run show --run-id 7555... --json: passed
+git diff --check: passed
+```
+
+## Active Task: V333-00 Edge-Aware Activation Usefulness Closure
 
 Goal:
 
 ```txt
-Define the smallest bounded source-candidate refinement path for edge influence
-so V331 no longer depends on lab-seeded duplicate candidate rows.
+Measure whether the normal edge-aware candidate path actually improves a
+bounded activation/usefulness scenario before broader graph retrieval work.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-packages/harness/src/activation/activationEngine.ts
-packages/harness/src/activation/rankCandidates.ts
-packages/harness/src/repositories/sourceRepository.ts
-packages/db/src/repositories/DrizzleSourceRepository.ts
-focused tests
-docs/reviews/controlled-dogfood/<date>-v332-edge-aware-source-candidate-refinement/REPORT.md
+focused tests or report only, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v333-edge-aware-activation-usefulness-closure/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -330,37 +371,39 @@ mutation; automatic source truth promotion; runtime markdown memory
 
 Definition of Done:
 
-- Source inspection identifies the smallest source-candidate/edge seam.
-- Edge influence no longer requires a lab-seeded duplicate row, or the current
-  path is documented as intentionally sufficient.
+- A bounded scenario records selected / used / helped / missing / noise for the
+  normal edge-aware source candidate path.
+- The report states whether edge-aware activation improved review usefulness or
+  only produced reviewable metadata.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 
 Acceptance criteria:
 
 ```txt
-edge influence is represented through the smallest bounded source-candidate path
-without claiming product graph retrieval quality.
+edge-aware activation usefulness is measured without claiming product graph
+retrieval quality.
 ```
 
 Risk:
 
 ```txt
-medium: source-candidate refinement can drift into broad graph retrieval or
-schema work before the system has earned it.
+medium: usefulness closure can drift into benchmark/platform work before the
+system has earned it.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V332 implementation commit
+focused revert of the V333 implementation commit if source changes are made
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V332 succeeds, choose the next graph-brain task from evidence: small graph QA
-case, heartbeat candidate generation, or source relation refinement. Do not jump
-to crawler/UI/API/MCP.
+If V333 shows positive usefulness, choose the next graph-brain task from
+evidence: small graph QA case, source relation refinement, or heartbeat
+candidate generation. If usefulness is weak, repair edge-aware activation
+selection before expanding surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -428,7 +471,8 @@ Next-task synthesis rule:
 - V329: complete; graph-aware SourceClaimEdge adjacent context readback.
 - V330: complete; edge-aware SourceClaim candidate ranking lab.
 - V331: complete; persisted edge-aware activation readback.
-- V332: active; edge-aware source candidate refinement.
+- V332: complete; edge-aware source candidate refinement.
+- V333: active; edge-aware activation usefulness closure.
 
 ## Pattern Gate
 

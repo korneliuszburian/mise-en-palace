@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V332 Edge-Aware Source Candidate Refinement
+V333 Edge-Aware Activation Usefulness Closure
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V332-00 Edge-Aware Source Candidate Refinement.
+current task: V333-00 Edge-Aware Activation Usefulness Closure.
 ```
 
 Current task:
 
 ```txt
-Define the smallest bounded source-candidate refinement path for edge influence
-so V331 no longer depends on lab-seeded duplicate candidate rows.
+Measure whether the normal edge-aware candidate path actually improves a
+bounded activation/usefulness scenario before broader graph retrieval work.
 ```
 
 ## Remaining Work
@@ -56,8 +56,8 @@ to preserve are:
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
    readback; V330 added bounded edge-aware candidate input; V331 added
-   persisted activation trace readback; next refine edge-aware source candidate
-   input before crawler or graph runtime.
+   persisted activation trace readback; V332 removed the lab-seeded duplicate
+   candidate dependency; next measure usefulness before graph retrieval work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

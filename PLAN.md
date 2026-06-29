@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V332 Edge-Aware Source Candidate Refinement
-current task: V332-00 Edge-Aware Source Candidate Refinement
+active stream: V333 Edge-Aware Activation Usefulness Closure
+current task: V333-00 Edge-Aware Activation Usefulness Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -56,6 +56,7 @@ V328 complete: source extraction fence-state carryover repair.
 V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 V330 complete: bounded edge-aware source candidate ranking lab.
 V331 complete: persisted edge-aware activation readback.
+V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
@@ -63,21 +64,24 @@ docs/reviews/controlled-dogfood/2026-06-29-v327-...,
 docs/reviews/controlled-dogfood/2026-06-29-v328-...,
 docs/reviews/controlled-dogfood/2026-06-29-v329-...,
 docs/reviews/controlled-dogfood/2026-06-29-v330-...,
-docs/reviews/controlled-dogfood/2026-06-29-v331-...
+docs/reviews/controlled-dogfood/2026-06-29-v331-...,
+docs/reviews/controlled-dogfood/2026-06-29-v332-...
 ```
 
-### V332 Edge-Aware Source Candidate Refinement
+### V333 Edge-Aware Activation Usefulness Closure
 
 Goal:
 
-Define the smallest bounded source-candidate refinement path for edge influence
-so V331 no longer depends on lab-seeded duplicate candidate rows.
+Measure whether the normal edge-aware candidate path actually improves a
+bounded activation/usefulness scenario, or whether it is only reviewable
+metadata.
 
 Current action:
 
 ```txt
-Execute V332-00: inspect source candidate/edge readback seams and decide the
-smallest final-pattern path for edge influence before production graph retrieval.
+Execute V333-00: use existing persisted SourceClaims/SourceClaimEdges to compare
+edge-aware activation usefulness against a bounded scenario. Record selected /
+used / helped / missing / noise before production graph retrieval.
 Do not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
 runtime, broad ranking rewrite, or Memory Core mutation.
 ```
@@ -93,8 +97,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given persisted SourceClaimEdge context, KRN can avoid lab-seeded duplicate
-candidate rows while keeping edge influence reviewable and bounded.
+Given persisted SourceClaimEdge context, KRN can show whether edge-aware
+activation changed review usefulness in a bounded run, without claiming product
+graph retrieval quality.
 ```
 
 ## Pattern Gate

@@ -316,6 +316,93 @@ describe("activation engine", () => {
     expect(disconnected?.metadata).not.toHaveProperty("sourceClaimEdgeInfluence");
   });
 
+  it("applies SourceClaimEdge influence during activation retrieval without duplicate candidates", async () => {
+    const seedSourceClaim = sourceClaim({
+      id: "claim-seed",
+      claim: "KRN should expose SourceClaimEdge readback before graph ranking.",
+      krnImplication: "Use direct edge readback before production graph retrieval."
+    });
+    const connectedSourceClaim = sourceClaim({
+      id: "claim-connected",
+      claim: "Connected source claims can influence graph-aware activation input.",
+      mechanism: "A SourceClaimEdge links the seed claim to the connected claim.",
+      krnImplication: "Represent edge-connected context as graphScore input without duplicate rows."
+    });
+    const edge: SourceClaimEdge = {
+      id: "edge-1",
+      fromSourceClaimId: seedSourceClaim.id,
+      toSourceClaimId: connectedSourceClaim.id,
+      kind: "narrows",
+      metadata: {
+        consumer: "V332 edge-aware source candidate refinement",
+        doesNotProve: "This edge does not prove graph retrieval quality."
+      },
+      createdAt: now
+    };
+
+    const result = await retrieveActivationCandidates({
+      taskContract: {
+        ...task,
+        objective: "Use edge-aware source claim context for graph brain readback"
+      },
+      limits: {
+        memory: 25,
+        source: 25,
+        search: 25,
+        antiMemory: 25
+      },
+      repositories: {
+        memoryRepository: {
+          async listActiveMemory() {
+            return [];
+          },
+          async listAntiMemoryForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [seedSourceClaim, connectedSourceClaim];
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [edge];
+          }
+        },
+        retrievalRepository: {
+          async searchLexical() {
+            return [];
+          }
+        }
+      }
+    });
+
+    const sourceCandidates = result.candidates.filter((candidate) =>
+      candidate.subjectType === "source_claim"
+    );
+    const connected = sourceCandidates.find((candidate) =>
+      candidate.subjectId === connectedSourceClaim.id
+    );
+
+    expect(sourceCandidates).toHaveLength(2);
+    expect(connected).toMatchObject({
+      subjectType: "source_claim",
+      subjectId: "claim-connected",
+      graphScore: 8
+    });
+    expect(connected?.metadata).toMatchObject({
+      sourceClaimEdgeInfluence: {
+        edgeIds: ["edge-1"],
+        edgeKinds: ["narrows"],
+        seedSourceClaimIds: ["claim-seed"],
+        doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+      }
+    });
+    expect(result.diagnostics).toMatchObject({
+      sourceClaimCount: 2,
+      mergedCandidateCount: 2
+    });
+  });
+
   it("reports empty activation inputs before ranking repairs are considered", async () => {
     const result = await retrieveActivationCandidates({
       taskContract: task,
@@ -336,6 +423,9 @@ describe("activation engine", () => {
         },
         sourceRepository: {
           async listClaimsForProject() {
+            return [];
+          },
+          async listSourceClaimEdgesForClaim() {
             return [];
           }
         },
@@ -391,6 +481,9 @@ describe("activation engine", () => {
         },
         sourceRepository: {
           async listClaimsForProject() {
+            return [];
+          },
+          async listSourceClaimEdgesForClaim() {
             return [];
           }
         },

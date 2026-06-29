@@ -1406,6 +1406,9 @@ describe("runCli", () => {
               sourceRepository: {
                 async listClaimsForProject() {
                   return [rejectedClaim];
+                },
+                async listSourceClaimEdgesForClaim() {
+                  return [];
                 }
               },
               retrievalRepository: {
@@ -1520,6 +1523,9 @@ describe("runCli", () => {
               },
               sourceRepository: {
                 async listClaimsForProject() {
+                  return [];
+                },
+                async listSourceClaimEdgesForClaim() {
                   return [];
                 }
               },
