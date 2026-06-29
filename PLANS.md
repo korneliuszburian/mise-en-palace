@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V329 Graph-Aware SourceClaimEdge Activation Readback Stub
-current task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub
+active stream: V330 Edge-Aware SourceClaim Candidate Ranking Lab
+current task: V330-00 Edge-Aware SourceClaim Candidate Ranking Lab
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,10 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub. V328 repaired
-source extraction fence-state carryover; Graph Brain v0 now needs one bounded
-proof that persisted SourceClaimEdge state can influence source context/readback
-without claiming graph ranking or graph runtime.
+V330-00 Edge-Aware SourceClaim Candidate Ranking Lab. V329 proved persisted
+SourceClaimEdge readback can surface adjacent SourceClaim context; Graph Brain
+v0 now needs one bounded lab/proof for edge-aware source candidate influence
+without claiming production graph retrieval quality.
 ```
 
 ## 2. Product Thesis
@@ -58,7 +58,7 @@ pattern brain: partial
 graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   preview exists; extraction reviewability/noise gate complete; reviewed
   extraction persistence bridge complete; fence-state carryover repair complete;
-  graph-aware edge readback/activation stub next
+  graph-aware edge readback complete; edge-aware ranking/readback lab next
 product-ready: no
 ```
 
@@ -78,6 +78,7 @@ V325 complete: candidate-only local extraction preview.
 V326 complete: ready vs deferred extraction claim reviewability gate.
 V327 complete: selected ready extraction candidate persistence bridge.
 V328 complete: source extraction fence-state carryover repair.
+V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 ```
 
 Reports:
@@ -88,6 +89,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidat
 docs/reviews/controlled-dogfood/2026-06-29-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-bridge/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-carryover/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -166,30 +168,69 @@ git diff --check: passed
 krn source artifact preview --extract-candidates on ADR-0021: passed
 ```
 
-## Active Task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub
+## Outcome V329 Graph-Aware SourceClaimEdge Activation Readback
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: `docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md` and V328 report.
+- Mechanism: direct SourceClaimEdge readback exposed edge metadata but not the
+  adjacent SourceClaim context an operator must review before graph-aware
+  ranking.
+- KRN implication: graph brain v0 needs edge-influenced source context before
+  any graph runtime, crawler, or ranking quality claim.
+- Decision: extend read-only `krn source claim edges` output with adjacent
+  SourceClaim context.
+- Does not prove: source truth, edge correctness, graph retrieval quality,
+  ranking quality, crawler readiness, product readiness, or Memory Core
+  mutation.
+- Consumer: V330 edge-aware source candidate ranking lab.
+- Falsifier: a persisted SourceClaimEdge exists but readback cannot show the
+  adjacent SourceClaim context.
+
+V329 outcome:
+
+```txt
+`krn source claim edges` now renders `edgeInfluencedSourceContext` with adjacent
+SourceClaim readback when available.
+```
+
+V329 verification:
+
+```txt
+pnpm --filter @krn/cli test -- parseSourceArgs runSourceClaimEdgesCommand: passed
+pnpm run typecheck: failed once on exact optional property shape, then passed
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
+pnpm db:ready: passed
+krn source claim edges --source-claim-id 578d...: passed
+git diff --check: passed
+```
+
+## Active Task: V330-00 Edge-Aware SourceClaim Candidate Ranking Lab
 
 Goal:
 
 ```txt
-Add the smallest graph-aware readback or activation stub that can show how a
-persisted SourceClaimEdge influences selected source context without claiming
-ranking quality, graph runtime, crawler readiness, or product readiness.
+Add a bounded behavior lab/proof that a source claim connected through a
+persisted SourceClaimEdge can be represented as edge-aware ranking/readback
+input without claiming production graph retrieval quality.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-carryover/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
 packages/harness/src/activation/activationEngine.ts
-packages/cli/src/runSourceClaimEdgesCommand.ts
+packages/harness/src/activation/rankCandidates.ts
 focused tests
-docs/reviews/controlled-dogfood/<date>-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
+docs/reviews/controlled-dogfood/<date>-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -198,43 +239,43 @@ PLANS.md
 Forbidden writes:
 
 ```txt
-schema/migration; crawler; graph database; broad graph ranking; graph runtime;
-UI/API/MCP; worker daemon; consensus runtime; Memory Core mutation; automatic
-source truth promotion; runtime markdown memory
+schema/migration; crawler; graph database; production graph runtime; broad
+ranking rewrite; UI/API/MCP; worker daemon; consensus runtime; Memory Core
+mutation; automatic source truth promotion; runtime markdown memory
 ```
 
 Definition of Done:
 
-- Source inspection decides whether readback or activation is the owning surface.
-- A bounded edge-influence readback/stub exists or the current path is documented
-  as sufficient.
+- Source inspection identifies the smallest activation/ranking lab seam.
+- A bounded edge-aware source candidate ranking/readback proof exists or the
+  current path is documented as sufficient.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 
 Acceptance criteria:
 
 ```txt
-persisted SourceClaimEdge state has a reviewable path into selected source
-context/readback without claiming graph ranking quality.
+SourceClaimEdge-connected source candidate influence is reviewable in a bounded
+lab/readback without claiming product graph retrieval quality.
 ```
 
 Risk:
 
 ```txt
-medium: graph-aware wording can imply ranking/product retrieval quality before
-the system has earned it.
+medium: edge-aware lab wording can imply production graph retrieval quality
+before the system has earned it.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V329 implementation commit
+focused revert of the V330 implementation commit
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V329 succeeds, choose the next graph-brain task from evidence: edge-aware
-candidate ranking lab, source candidate readback refinement, or heartbeat
+If V330 succeeds, choose the next graph-brain task from evidence: persisted
+edge-aware activation readback, source candidate refinement, or heartbeat
 candidate generation. Do not jump to crawler/UI/API/MCP.
 ```
 
@@ -300,7 +341,8 @@ Next-task synthesis rule:
 - V326: complete; extraction candidate reviewability/noise gate.
 - V327: complete; reviewed extraction persistence bridge.
 - V328: complete; source extraction fence-state carryover repair.
-- V329: active; graph-aware SourceClaimEdge activation/readback stub.
+- V329: complete; graph-aware SourceClaimEdge adjacent context readback.
+- V330: active; edge-aware SourceClaim candidate ranking lab.
 
 ## Pattern Gate
 

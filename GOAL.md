@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V329 Graph-Aware SourceClaimEdge Activation Readback Stub
+V330 Edge-Aware SourceClaim Candidate Ranking Lab
 ```
 
 Current state:
@@ -27,15 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub.
+current task: V330-00 Edge-Aware SourceClaim Candidate Ranking Lab.
 ```
 
 Current task:
 
 ```txt
-Add the smallest graph-aware readback or activation stub that can show how a
-persisted `SourceClaimEdge` influences selected source context without claiming
-ranking quality, graph runtime, crawler readiness, or product readiness.
+Add a bounded behavior lab/proof that a source claim connected through a
+persisted `SourceClaimEdge` can be represented as edge-aware ranking/readback
+input without claiming production graph retrieval quality.
 ```
 
 ## Remaining Work
@@ -55,8 +55,9 @@ to preserve are:
    over persisted local SearchDocuments exist.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
-   repaired fence-state carryover; next prove a bounded graph-aware
-   SourceClaimEdge readback/activation stub before crawler or graph runtime.
+   repaired fence-state carryover; V329 added adjacent SourceClaim context
+   readback; next prove a bounded edge-aware ranking/readback lab before
+   crawler or graph runtime.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

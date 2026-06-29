@@ -36,6 +36,22 @@ const sourceClaim: SourceClaim = {
   updatedAt: now
 };
 
+const relatedSourceClaim: SourceClaim = {
+  id: relatedSourceClaimId,
+  sourceArtifactId: "55555555-5555-4555-8555-555555555555" as SourceClaim["sourceArtifactId"],
+  claim: "A narrowed claim can provide adjacent graph-aware source context.",
+  mechanism: "The readback follows the persisted SourceClaimEdge to the related SourceClaim row.",
+  krnImplication: "Operators can inspect edge-influenced context before ranking or graph runtime work.",
+  doesNotProve: "This does not prove graph retrieval quality.",
+  trustTier: "project-decision",
+  supportType: "implementation-boundary",
+  consumer: "graph brain v0",
+  status: "proposed",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now
+};
+
 const sourceClaimEdge: SourceClaimEdge = {
   id: sourceClaimEdgeId,
   fromSourceClaimId: sourceClaimId,
@@ -83,7 +99,11 @@ describe("runSourceClaimEdgesCommand", () => {
             throw new Error("createSourceClaim should not be called");
           },
           async getSourceClaimById(id) {
-            return id === sourceClaimId ? sourceClaim : undefined;
+            if (id === sourceClaimId) {
+              return sourceClaim;
+            }
+
+            return id === relatedSourceClaimId ? relatedSourceClaim : undefined;
           },
           async createSourceClaimEdge() {
             createSourceClaimEdgeCalled = true;
@@ -119,6 +139,13 @@ describe("runSourceClaimEdgesCommand", () => {
     expect(result.stdout).toContain("consumer: graph brain v0");
     expect(result.stdout).toContain("doesNotProve: This edge does not prove claim truth.");
     expect(result.stdout).toContain("sourceRanges:");
+    expect(result.stdout).toContain("edgeInfluencedSourceContext:");
+    expect(result.stdout).toContain(`relatedSourceClaimId: ${relatedSourceClaimId}`);
+    expect(result.stdout).toContain("relatedSourceClaimReadback: hit");
+    expect(result.stdout).toContain("claim: A narrowed claim can provide adjacent graph-aware source context.");
+    expect(result.stdout).toContain("mechanism: The readback follows the persisted SourceClaimEdge to the related SourceClaim row.");
+    expect(result.stdout).toContain("krnImplication: Operators can inspect edge-influenced context before ranking or graph runtime work.");
+    expect(result.stdout).toContain("connected SourceClaim context can be surfaced through persisted SourceClaimEdge readback");
     expect(result.stdout).toContain("doesNotProve: source truth, claim correctness, edge correctness");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Graph runtime: none");

@@ -61,10 +61,25 @@ const directionFor = (
 ): "outgoing" | "incoming" =>
   edge.fromSourceClaimId === sourceClaimId ? "outgoing" : "incoming";
 
-const formatEdge = (
+interface SourceClaimEdgeReadback {
+  edge: SourceClaimEdge;
+  relatedSourceClaim?: SourceClaim;
+}
+
+const relatedSourceClaimIdFor = (
   sourceClaimId: SourceClaim["id"],
   edge: SourceClaimEdge
+): SourceClaim["id"] =>
+  (edge.fromSourceClaimId === sourceClaimId
+    ? edge.toSourceClaimId
+    : edge.fromSourceClaimId) as SourceClaim["id"];
+
+const formatEdge = (
+  sourceClaimId: SourceClaim["id"],
+  readback: SourceClaimEdgeReadback
 ): string[] => {
+  const edge = readback.edge;
+  const relatedSourceClaimId = relatedSourceClaimIdFor(sourceClaimId, edge);
   const sourceRanges = stringArrayMetadata(edge.metadata, "sourceRanges");
 
   return [
@@ -104,13 +119,26 @@ const formatEdge = (
       : [
           "  sourceRanges:",
           ...sourceRanges.map((range) => `  - ${range}`)
+        ]),
+    "  edgeInfluencedSourceContext:",
+    `    relatedSourceClaimId: ${relatedSourceClaimId}`,
+    ...(readback.relatedSourceClaim === undefined
+      ? ["    relatedSourceClaimReadback: missing"]
+      : [
+          "    relatedSourceClaimReadback: hit",
+          `    status: ${readback.relatedSourceClaim.status}`,
+          `    claim: ${readback.relatedSourceClaim.claim}`,
+          `    mechanism: ${readback.relatedSourceClaim.mechanism}`,
+          `    krnImplication: ${readback.relatedSourceClaim.krnImplication}`,
+          `    consumer: ${readback.relatedSourceClaim.consumer}`,
+          `    doesNotProve: ${readback.relatedSourceClaim.doesNotProve}`
         ])
   ];
 };
 
 const formatSourceClaimEdges = (
   sourceClaim: SourceClaim,
-  edges: readonly SourceClaimEdge[]
+  edgeReadbacks: readonly SourceClaimEdgeReadback[]
 ): string =>
   [
     "KRN Source Claim Edges",
@@ -124,14 +152,15 @@ const formatSourceClaimEdges = (
     `consumer: ${sourceClaim.consumer}`,
     "",
     "SourceClaimEdges:",
-    `count: ${edges.length}`,
-    ...(edges.length === 0
+    `count: ${edgeReadbacks.length}`,
+    ...(edgeReadbacks.length === 0
       ? ["- none"]
-      : edges.flatMap((edge) => formatEdge(sourceClaim.id, edge))),
+      : edgeReadbacks.flatMap((edgeReadback) => formatEdge(sourceClaim.id, edgeReadback))),
     "",
     "Proof:",
     "- proves: KRN read the SourceClaim row and connected SourceClaimEdge rows from the current Postgres store",
     "- proves: edge metadata is visible to the operator for review",
+    "- proves: connected SourceClaim context can be surfaced through persisted SourceClaimEdge readback",
     "- doesNotProve: source truth, claim correctness, edge correctness, graph retrieval quality, ranking quality, extraction quality, crawler readiness, product readiness, or Memory Core mutation",
     "Memory mutation: none",
     "Graph runtime: none"
@@ -174,9 +203,18 @@ export const runSourceClaimEdgesCommand = async (
     const edges = await databaseRuntime.sourceRepository.listSourceClaimEdgesForClaim(
       typedSourceClaimId
     );
+    const edgeReadbacks = await Promise.all(edges.map(async (edge): Promise<SourceClaimEdgeReadback> => {
+      const relatedSourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(
+        relatedSourceClaimIdFor(typedSourceClaimId, edge)
+      );
+
+      return relatedSourceClaim === undefined
+        ? { edge }
+        : { edge, relatedSourceClaim };
+    }));
 
     return {
-      stdout: formatSourceClaimEdges(sourceClaim, edges)
+      stdout: formatSourceClaimEdges(sourceClaim, edgeReadbacks)
     };
   } finally {
     await databaseRuntime.close();

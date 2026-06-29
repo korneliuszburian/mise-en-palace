@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V329 Graph-Aware SourceClaimEdge Activation Readback Stub
-current task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub
+active stream: V330 Edge-Aware SourceClaim Candidate Ranking Lab
+current task: V330-00 Edge-Aware SourceClaim Candidate Ranking Lab
 ```
 
 ## Compact Completed Checkpoints
@@ -53,28 +53,30 @@ V325 complete: candidate-only local extraction preview.
 V326 complete: ready vs deferred extraction claim reviewability gate.
 V327 complete: reviewed selected extraction candidate persistence bridge.
 V328 complete: source extraction fence-state carryover repair.
+V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
 docs/reviews/controlled-dogfood/2026-06-29-v327-...,
-docs/reviews/controlled-dogfood/2026-06-29-v328-...
+docs/reviews/controlled-dogfood/2026-06-29-v328-...,
+docs/reviews/controlled-dogfood/2026-06-29-v329-...
 ```
 
-### V329 Graph-Aware SourceClaimEdge Activation Readback Stub
+### V330 Edge-Aware SourceClaim Candidate Ranking Lab
 
 Goal:
 
-Add the smallest graph-aware readback or activation stub that can show how a
-persisted `SourceClaimEdge` influences selected source context without claiming
-ranking quality, graph runtime, crawler readiness, or product readiness.
+Add a bounded behavior lab/proof that a source claim connected through a
+persisted `SourceClaimEdge` can be represented as edge-aware ranking/readback
+input without claiming production graph retrieval quality.
 
 Current action:
 
 ```txt
-Execute V329-00: inspect existing SourceClaimEdge readback and activation source
-selection. If justified, add the smallest readback/activation stub that exposes
-edge influence over source context. Do not add schema, graph database, crawler,
-UI/API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
+Execute V330-00: inspect activation ranking/readback seams and add the smallest
+lab/proof for edge-aware source candidate input. Do not add schema, graph
+database, crawler, UI/API/MCP, worker daemon, consensus runtime, broad ranking
+rewrite, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -88,9 +90,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given persisted source claims and a SourceClaimEdge, KRN can show the edge
-relationship as bounded source context/readback without pretending graph ranking
-or product retrieval quality exists.
+Given source claims connected by SourceClaimEdge, KRN can represent edge-aware
+source candidate influence in a bounded lab/readback without pretending product
+graph retrieval quality exists.
 ```
 
 ## Pattern Gate
