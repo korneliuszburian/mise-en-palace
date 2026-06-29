@@ -66,9 +66,8 @@ from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
 then commit/push/CI before choosing the next target.
 
 Current candidate targets:
-`packages/cli/src/runCli.ts` residual non-memory adapter decomposition,
-`packages/cli/src/runSourceArtifactPreviewCommand.ts`, doctor/static DB checks,
-or another narrower target if source inspection shows lower risk.
+doctor command/readiness cleanup, DB doctor checks, database runtime cleanup, or
+another narrower target if source inspection shows lower risk.
 
 Progress in this stream:
 
@@ -86,8 +85,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   runCli residual dispatch cleanup,
   source artifact preview extraction/persistence/formatting cleanup plus shared
   repo-input resolver cleanup,
-  DB smoke target handler cleanup
-full Fallow moved: dupes 136 -> 115; health 117 -> 72
+  DB smoke target handler cleanup,
+  doctor static checks cleanup
+full Fallow moved: dupes 136 -> 115; health 117 -> 69
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
