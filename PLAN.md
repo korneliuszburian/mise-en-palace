@@ -100,8 +100,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  memory mapper boundary cleanup,
 	  Codex brief/smoke support cleanup,
 	  activation/retrieval smoke support cleanup,
-	  memory/source-graph smoke support cleanup
-	full Fallow moved: dupes 136 -> 76; health 117 -> 35
+	  memory/source-graph smoke support cleanup,
+	  memory add CLI shared support cleanup
+	full Fallow moved: dupes 136 -> 74; health 117 -> 31
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split

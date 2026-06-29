@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 1961d3d39b6fba80219c151fcdba3e45c6a6c5ec / CI success
+latest source slice commit checked: d0653feeab1cc7613ec773868aa940a0e585d5f4 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -136,6 +136,12 @@ shared DB smoke runtime, retrieval-run marker counting, cleanup, and readback
 checks without schema/repository/smoke semantic changes; verified
 memory-governance and source-graph DB smokes, and reduced global Fallow to
 dupes 76 and health 35; commit `1961d3d` passed CI run `28410138947`.
+Latest completed slice: memory add CLI shared support cleanup extracted shared
+candidate-evidence validation, source-lineage conversion, persisted DB runtime,
+and SourceClaim existence checks for memory candidate/anti-memory add commands
+without changing CLI flags, persistence behavior, review gates, or memory
+promotion semantics; reduced global Fallow to dupes 74 and health 31; commit
+`d0653fe` passed CI run `28410581330`.
 Remaining smoke-family cleanup stays valid only as bounded owner-surface work;
 do not split `packages/db/src/repositories/common.ts` only because Fallow ranks
 its fan-in.
