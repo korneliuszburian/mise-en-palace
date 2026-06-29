@@ -24,6 +24,7 @@ import {
   formatSourceClaimAddUsage,
   formatSourceArtifactPreviewUsage,
   formatSourceClaimEdgesUsage,
+  formatSourceSearchUsage,
   formatSourceClaimRejectUsage,
   formatSourceDecisionLinkUsage
 } from "./parseSourceArgs.js";
@@ -84,6 +85,9 @@ import {
 import {
   runSourceClaimEdgesCommand
 } from "./runSourceClaimEdgesCommand.js";
+import {
+  runSourceSearchCommand
+} from "./runSourceSearchCommand.js";
 import {
   runSourceArtifactPreviewCommand
 } from "./runSourceArtifactPreviewCommand.js";
@@ -203,6 +207,14 @@ export const runCli = async (
     return {
       exitCode: 0,
       stdout: formatSourceClaimEdgesUsage(),
+      stderr: ""
+    };
+  }
+
+  if (parsed.command.kind === "sourceSearchHelp") {
+    return {
+      exitCode: 0,
+      stdout: formatSourceSearchUsage(),
       stderr: ""
     };
   }
@@ -493,6 +505,35 @@ export const runCli = async (
       };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown source claim edges error";
+
+      return {
+        exitCode: 1,
+        stdout: "",
+        stderr: formatCliError(message)
+      };
+    }
+  }
+
+  if (parsed.command.kind === "sourceSearch") {
+    try {
+      const result = await runSourceSearchCommand({
+        cwd: runtime.cwd ?? process.cwd(),
+        env: runtime.env,
+        now,
+        createId,
+        command: parsed.command,
+        ...(runtime.createDatabaseRuntime === undefined
+          ? {}
+          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
+      });
+
+      return {
+        exitCode: 0,
+        stdout: result.stdout,
+        stderr: ""
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown source search error";
 
       return {
         exitCode: 1,

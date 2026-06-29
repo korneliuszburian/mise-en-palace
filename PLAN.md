@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V341 Product-Facing Knowledge Search Readback Preview
-current task: V341-00 Product-Facing Knowledge Search Readback Preview
+active stream: V342 Product-Facing Knowledge Search Usefulness Closure
+current task: V342-00 Product-Facing Knowledge Search Usefulness Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -36,7 +36,7 @@ Remaining product gaps:
 1. pattern search/readback hardening
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
-4. ingest v0 product-facing search/readback preview
+4. ingest v0 product-facing search/readback usefulness closure
 5. graph brain v0 candidate extraction/reviewability/persistence surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
@@ -44,8 +44,6 @@ Remaining product gaps:
 ```
 
 ## Active Stream
-
-Recent graph-brain outcomes:
 
 ```txt
 V324 complete: SourceClaimEdge readback by SourceClaim id.
@@ -73,36 +71,39 @@ V339 complete: consensus/eval preview preserves support, dissent, risk, and
   decision options without autonomous truth runtime.
 V340 complete: one local artifact persisted as SourceArtifact/SourceChunk/
   SearchDocument/SourceClaim and activated later as reviewable SourceClaim.
-Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v339-...
+V341 complete: `krn source search --query` reads persisted SourceClaim and
+  SearchDocument candidates with inclusion/exclusion, reviewability, and
+  proof/non-proof boundaries.
 ```
 
-### V341 Product-Facing Knowledge Search Readback Preview
+### V342 Product-Facing Knowledge Search Usefulness Closure
 
 Goal:
 
-Expose the smallest reviewable product-facing query/readback preview over the
-existing local artifact, SearchDocument, SourceClaim, and activation substrate.
+Use `krn source search` on a small set of real KRN knowledge questions and decide
+whether the preview reduces rereads, review burden, and context uncertainty.
 
 Current action:
 
 ```txt
-Execute V341-00: given a query, show persisted knowledge candidates, why they
-are reviewable, what was excluded, and what the readback does not prove. Do not
-add crawler, UI/API/MCP, worker daemon, schema, broad eval platform, or
-autonomous truth runtime.
+Execute V342-00: run the V341 readback preview on 3-5 real queries, classify
+included/excluded candidates as helped/neutral/noise/missing, and decide the
+next highest-ROI product move. Do not add crawler, UI/API/MCP, worker daemon,
+schema, broad eval platform, ranking rewrite, or autonomous truth runtime.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators validating KRN knowledge search before UI/API/MCP work.
+technical operators deciding whether KRN knowledge search is useful enough for
+the next product surface.
 ```
 
 Falsifier:
 
 ```txt
-Given a query over persisted local knowledge, KRN cannot show reviewable
-SourceClaim/SearchDocument candidates with proof and non-proof boundaries.
+Given real KRN knowledge questions, `krn source search` does not reduce rereads,
+review burden, or context uncertainty beyond manual file/source search.
 ```
 
 ## Pattern Gate

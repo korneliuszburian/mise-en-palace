@@ -8,6 +8,7 @@ import {
   formatSourceArtifactPreviewUsage,
   formatSourceClaimEdgesUsage,
   formatSourceClaimRejectUsage,
+  formatSourceSearchUsage,
   parseSourceArgs
 } from "./parseSourceArgs.js";
 
@@ -243,6 +244,24 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("parses source search readback options", () => {
+    expect(parseSourceArgs([
+      "search",
+      "--query",
+      " krn-source-artifact-preview 991034dc0684e887 ",
+      "--limit",
+      "12",
+      "--max-inclusions=3"
+    ])).toEqual({
+      command: {
+        kind: "sourceSearch",
+        query: "krn-source-artifact-preview 991034dc0684e887",
+        limit: 12,
+        maxInclusions: 3
+      }
+    });
+  });
+
   it("parses source claim reject and source decision link", () => {
     expect(parseSourceArgs([
       "claim",
@@ -337,6 +356,11 @@ describe("parseSourceArgs", () => {
         kind: "sourceClaimEdgesHelp"
       }
     });
+    expect(parseSourceArgs(["search", "--help"])).toEqual({
+      command: {
+        kind: "sourceSearchHelp"
+      }
+    });
     expect(parseSourceArgs(["decision", "link", "--help"])).toEqual({
       command: {
         kind: "sourceDecisionLinkHelp"
@@ -364,6 +388,15 @@ describe("parseSourceArgs", () => {
     });
     expect(parseSourceArgs(["claim", "edges", "--unknown"])).toEqual({
       error: formatSourceClaimEdgesUsage()
+    });
+    expect(parseSourceArgs(["search", "--query", ""])).toEqual({
+      error: "--query requires non-empty text"
+    });
+    expect(parseSourceArgs(["search", "--limit", "0"])).toEqual({
+      error: "--limit must be a positive integer"
+    });
+    expect(parseSourceArgs(["search", "--unknown"])).toEqual({
+      error: formatSourceSearchUsage()
     });
     expect(parseSourceArgs(["claim", "unknown"])).toEqual({
       error: formatSourceArtifactPreviewUsage()

@@ -44,6 +44,20 @@ export const formatSourceClaimEdgesUsage = (): string =>
     "Note: read-only Postgres readback for governed SourceClaimEdge rows. It does not rank, extract, crawl, mutate Memory Core, or prove graph truth."
   ].join("\n") + "\n";
 
+export const formatSourceSearchUsage = (): string =>
+  [
+    "Usage: krn source search --query \"...\" [--limit <n>] [--max-inclusions <n>]",
+    "",
+    "Required:",
+    "--query",
+    "",
+    "Optional:",
+    "--limit <positive-integer>",
+    "--max-inclusions <positive-integer>",
+    "",
+    "Note: read-only Postgres readback over persisted SourceClaim/SearchDocument candidates. It does not crawl, embed, mutate Memory Core, or prove product search quality."
+  ].join("\n") + "\n";
+
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
     "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
@@ -548,6 +562,90 @@ const parseSourceClaimEdgesArgs = (rest: readonly string[]): ParseArgsResult => 
   };
 };
 
+const parseSourceSearchArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 1 || rest[1] === "--help" || rest[1] === "-h") {
+    return {
+      command: {
+        kind: "sourceSearchHelp"
+      }
+    };
+  }
+
+  const sourceCommand: Extract<CliCommand, { kind: "sourceSearch" }> = {
+    kind: "sourceSearch"
+  };
+
+  for (let index = 1; index < rest.length; index += 1) {
+    const arg = rest[index];
+
+    if (arg === "--help" || arg === "-h") {
+      return {
+        command: {
+          kind: "sourceSearchHelp"
+        }
+      };
+    }
+
+    if (arg === "--query" || arg?.startsWith("--query=") === true) {
+      const valueResult = optionValue(rest, index, "--query");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatSourceSearchUsage()
+        };
+      }
+
+      const query = valueResult.value.trim();
+
+      if (query.length === 0) {
+        return {
+          error: "--query requires non-empty text"
+        };
+      }
+
+      sourceCommand.query = query;
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--limit" || arg?.startsWith("--limit=") === true) {
+      const parsed = parsePositiveIntegerOption(rest, index, "--limit", formatSourceSearchUsage());
+
+      if (parsed.error !== undefined || parsed.value === undefined) {
+        return {
+          error: parsed.error ?? formatSourceSearchUsage()
+        };
+      }
+
+      sourceCommand.limit = parsed.value;
+      index = parsed.nextIndex;
+      continue;
+    }
+
+    if (arg === "--max-inclusions" || arg?.startsWith("--max-inclusions=") === true) {
+      const parsed = parsePositiveIntegerOption(rest, index, "--max-inclusions", formatSourceSearchUsage());
+
+      if (parsed.error !== undefined || parsed.value === undefined) {
+        return {
+          error: parsed.error ?? formatSourceSearchUsage()
+        };
+      }
+
+      sourceCommand.maxInclusions = parsed.value;
+      index = parsed.nextIndex;
+      continue;
+    }
+
+    return {
+      error: formatSourceSearchUsage()
+    };
+  }
+
+  return {
+    command: sourceCommand
+  };
+};
+
 const parseSourceClaimRejectArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -716,6 +814,10 @@ const parseSourceDecisionLinkArgs = (rest: readonly string[]): ParseArgsResult =
 };
 
 export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest[0] === "search") {
+    return parseSourceSearchArgs(rest);
+  }
+
   if (rest[0] === "artifact" && rest[1] === "preview") {
     return parseSourceArtifactPreviewArgs(rest);
   }

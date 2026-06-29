@@ -15,7 +15,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V341 Product-Facing Knowledge Search Readback Preview
+V342 Product-Facing Knowledge Search Usefulness Closure
 ```
 
 Current state:
@@ -25,16 +25,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V341-00 Product-Facing Knowledge Search Readback Preview.
+current task: V342-00 Product-Facing Knowledge Search Usefulness Closure.
 ```
 
 Current task:
 
 ```txt
-Expose the smallest reviewable query/readback preview over the existing local
-artifact, SearchDocument, SourceClaim, and activation substrate. Do not build a
-dashboard, API, MCP server, crawler, worker daemon, new schema, broad eval, or
-autonomous truth runtime.
+Use the new `krn source search` preview on a small set of real KRN knowledge
+queries and decide whether it reduces rereads/review burden before UI/API/MCP,
+crawler, worker, ranking, or graph-runtime work.
 ```
 
 ## Remaining Work
@@ -49,8 +48,9 @@ to preserve are:
 3. Mini brain-QA benchmark: BQ-015, BQ-023, BQ-024, BQ-025, and BQ-028 are
    executed; use future results only when they change a product loop.
 4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
-   context detail readback, marker/hash activation, and V340 artifact-to-
-   activated-SourceClaim proof exist. Product-facing search/readback is next.
+   context detail readback, marker/hash activation, V340 artifact-to-activated-
+   SourceClaim proof, and V341 product-facing `krn source search` readback
+   exist. Usefulness closure is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context

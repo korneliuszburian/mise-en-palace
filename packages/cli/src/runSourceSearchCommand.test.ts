@@ -1,0 +1,230 @@
+import {
+  describe,
+  expect,
+  it
+} from "vitest";
+
+import type {
+  SourceClaim
+} from "@krn/core";
+import type {
+  SearchDocumentSearchResult
+} from "@krn/harness/repositories/internal";
+import type {
+  DatabaseRuntime
+} from "./databaseRuntime.js";
+import {
+  runSourceSearchCommand
+} from "./runSourceSearchCommand.js";
+
+const now = "2026-06-29T12:00:00.000Z";
+const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
+const sourceClaimId = "3363383c-02d0-4e5a-9674-132c1bc41b51" as SourceClaim["id"];
+const searchDocumentId = "6f045cc4-e8c9-4555-8425-167d74e5d319";
+
+const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
+  id: sourceClaimId,
+  sourceArtifactId: "f6db868a-4c82-406a-8371-9ab7d8594fc5" as SourceClaim["sourceArtifactId"],
+  claim: "KRN should prove one bounded local ingest loop before building a crawler.",
+  mechanism: "A local file can become SourceArtifact, SearchDocument, and SourceClaim.",
+  krnImplication: "Product-facing knowledge search should grow from proven readback.",
+  doesNotProve: "This does not prove product search quality.",
+  trustTier: "project-decision",
+  supportType: "implementation-boundary",
+  consumer: "V341 Product-Facing Knowledge Search Readback Preview",
+  falsifier: "The claim cannot be found by a later readback.",
+  status: "proposed",
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  ...overrides
+});
+
+const searchDocument = (
+  overrides: Partial<SearchDocumentSearchResult> = {}
+): SearchDocumentSearchResult => ({
+  id: searchDocumentId,
+  projectId: projectId as SearchDocumentSearchResult["projectId"],
+  subjectType: "source_artifact",
+  subjectId: "f6db868a-4c82-406a-8371-9ab7d8594fc5",
+  sourceArtifactId: "f6db868a-4c82-406a-8371-9ab7d8594fc5",
+  sourceChunkId: "aeb76503-9798-47dd-b73a-07fb678b3a93",
+  trustTier: "source-code",
+  validityStatus: "active",
+  language: "english",
+  title: "Local source artifact: ARTIFACT.md",
+  body: "krn-source-artifact-preview 991034dc0684e887",
+  searchText: "krn-source-artifact-preview 991034dc0684e887",
+  metadataFilters: {},
+  validFrom: now,
+  metadata: {},
+  createdAt: now,
+  updatedAt: now,
+  lexicalScore: 100,
+  ...overrides
+});
+
+const runtime = (input?: {
+  claims?: readonly SourceClaim[];
+  documents?: readonly SearchDocumentSearchResult[];
+  onClose?(): void;
+}): SourceSearchCommand["createDatabaseRuntime"] => async () => {
+  const claims = input?.claims ?? [sourceClaim()];
+  const documents = input?.documents ?? [searchDocument()];
+
+  return {
+    workspaceId: "workspace-1",
+    projectId,
+    compilerDependencies: {
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      harnessRunRepository: {} as DatabaseRuntime["compilerDependencies"]["harnessRunRepository"],
+      memoryRepository: {
+        async listActiveMemory() {
+          return [];
+        },
+        async listAntiMemoryForProject() {
+          return [];
+        }
+      },
+      sourceRepository: {
+        async listClaimsForProject() {
+          return claims;
+        },
+        async listSourceClaimEdgesForClaim() {
+          return [];
+        }
+      },
+      retrievalRepository: {
+        async searchLexical() {
+          return documents;
+        },
+        async startRetrievalRun() {
+          throw new Error("startRetrievalRun should not be called");
+        },
+        async completeRetrievalRun() {
+          throw new Error("completeRetrievalRun should not be called");
+        },
+        async addCandidate() {
+          throw new Error("addCandidate should not be called");
+        },
+        async recordActivationDecision() {
+          throw new Error("recordActivationDecision should not be called");
+        },
+        async storeContextSelection() {
+          throw new Error("storeContextSelection should not be called");
+        }
+      }
+    },
+    harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+    memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+    sourceRepository: {
+      async createSourceArtifact() {
+        throw new Error("createSourceArtifact should not be called");
+      },
+      async createSourceClaim() {
+        throw new Error("createSourceClaim should not be called");
+      },
+      async getSourceClaimById() {
+        throw new Error("getSourceClaimById should not be called");
+      },
+      async createSourceClaimEdge() {
+        throw new Error("createSourceClaimEdge should not be called");
+      },
+      async listSourceClaimEdgesForClaim() {
+        return [];
+      },
+      async createSourceDecisionEdge() {
+        throw new Error("createSourceDecisionEdge should not be called");
+      },
+      async getSourceDecisionEdgeById() {
+        throw new Error("getSourceDecisionEdgeById should not be called");
+      },
+      async createSourceRejection() {
+        throw new Error("createSourceRejection should not be called");
+      }
+    },
+    retrievalRepository: {
+      async createSearchDocument() {
+        throw new Error("createSearchDocument should not be called");
+      },
+      async searchLexical() {
+        return documents;
+      }
+    },
+    async close() {
+      input?.onClose?.();
+    }
+  };
+};
+
+type SourceSearchCommand = Parameters<typeof runSourceSearchCommand>[0];
+
+describe("runSourceSearchCommand", () => {
+  it("renders read-only source and search candidates with proof boundaries", async () => {
+    let closeCount = 0;
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "krn-source-artifact-preview 991034dc0684e887",
+        limit: 10,
+        maxInclusions: 2
+      },
+      createDatabaseRuntime: runtime({
+        onClose() {
+          closeCount += 1;
+        }
+      })
+    });
+
+    expect(result.stdout).toContain("KRN Source Knowledge Search");
+    expect(result.stdout).toContain("Persistence: read-only (Postgres)");
+    expect(result.stdout).toContain("DB writes: none");
+    expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain(`source_claim:${sourceClaimId}`);
+    expect(result.stdout).toContain(`search_document:${searchDocumentId}`);
+    expect(result.stdout).toContain("Included candidates:");
+    expect(result.stdout).toContain("Excluded candidates:");
+    expect(result.stdout).toContain("reviewability: ready");
+    expect(result.stdout).toContain("SourceClaim has mechanism.");
+    expect(result.stdout).toContain("SourceClaim has doesNotProve boundary.");
+    expect(result.stdout).toContain("SearchDocument row matched the query.");
+    expect(result.stdout).toContain("doesNotProve: This does not prove product search quality.");
+    expect(result.stdout).toContain("doesNotProve: source truth, ranking quality");
+    expect(result.stdout).toContain("Crawler: none");
+    expect(result.stdout).toContain("Embeddings: not run");
+    expect(result.stdout).toContain("Graph runtime: not run");
+    expect(closeCount).toBe(1);
+  });
+
+  it("prints no-match guidance without mutating when no candidates match", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "missing marker"
+      },
+      createDatabaseRuntime: runtime({
+        claims: [],
+        documents: []
+      })
+    });
+
+    expect(result.stdout).toContain("Included candidates:");
+    expect(result.stdout).toContain("- none");
+    expect(result.stdout).toContain("No-match guidance:");
+    expect(result.stdout).toContain("try a narrower marker/hash query");
+    expect(result.stdout).toContain("Memory mutation: none");
+  });
+});
