@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 678d05b8097fb8ceebb8f872cd5dc254ecd2331c / CI success
+latest source slice commit checked: e026c3639115e749e2eb67894edd607f2b01f09e / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -116,6 +116,11 @@ Latest completed slice: DB init-connect smoke readback cleanup extracted
 private assertion/reuse/owner-file readback helpers without schema or cleanup
 ordering changes, verified init-connect DB smoke, and reduced global Fallow
 health to 41; commit `678d05b` passed CI run `28406082493`.
+Latest completed slice: memory mapper boundary cleanup extracted unknown-first
+candidate JSON guards and shared private mapper fragments without schema/public
+API changes, added malformed-candidate boundary coverage, and reduced global
+Fallow to dupes 93 and health 40; commit `e026c36` passed CI run
+`28406685338`.
 Memory-governance and activation smoke assertion cleanup remain valid, but they
 must be handled as dedicated smoke-family cleanup slices because touching them
 pulls inherited smoke duplication into the changed-files gate.

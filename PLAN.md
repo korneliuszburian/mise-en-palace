@@ -96,8 +96,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  retrieval repository insert cleanup,
 	  memory repository invariant/insert cleanup,
 	  DB smoke shared setup cleanup,
-	  DB init-connect smoke readback cleanup
-	full Fallow moved: dupes 136 -> 95; health 117 -> 41
+	  DB init-connect smoke readback cleanup,
+	  memory mapper boundary cleanup
+	full Fallow moved: dupes 136 -> 93; health 117 -> 40
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
