@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V335 Small Graph-Brain QA Case
-current task: V335-00 Small Graph-Brain QA Case
+active stream: V336 Relation-Grounded QA Readback Closure
+current task: V336-00 Relation-Grounded QA Readback Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -61,32 +61,24 @@ V333 complete: edge-aware activation usefulness closure showed review-useful
   edge metadata and top ordering, but not inclusion delta.
 V334 complete: edge-aware selection delta proof showed SourceClaimEdge influence
   can change the bounded working set against a no-edge baseline.
-Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
-docs/reviews/controlled-dogfood/2026-06-29-v325-...,
-docs/reviews/controlled-dogfood/2026-06-29-v326-...,
-docs/reviews/controlled-dogfood/2026-06-29-v327-...,
-docs/reviews/controlled-dogfood/2026-06-29-v328-...,
-docs/reviews/controlled-dogfood/2026-06-29-v329-...,
-docs/reviews/controlled-dogfood/2026-06-29-v330-...,
-docs/reviews/controlled-dogfood/2026-06-29-v331-...,
-docs/reviews/controlled-dogfood/2026-06-29-v332-...,
-docs/reviews/controlled-dogfood/2026-06-29-v333-...,
-docs/reviews/controlled-dogfood/2026-06-29-v334-...
+V335 complete: tiny graph-brain QA proof showed edge-aware context can select
+  the answer-grounding SourceClaim while the no-relation baseline cannot.
+Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v335-...
 ```
 
-### V335 Small Graph-Brain QA Case
+### V336 Relation-Grounded QA Readback Closure
 
 Goal:
 
-Use the edge-aware activation path in one tiny graph-brain QA scenario where the
-answer or selected context depends on a source relation.
+Close the V335 tiny graph-brain QA usefulness loop by making the
+relation-grounded answer delta reviewable as a compact readback/reporting proof.
 
 Current action:
 
 ```txt
-Execute V335-00: create the smallest graph-brain QA proof/report using existing
-SourceClaimEdge context. The scenario must show whether edge-selected source
-relations improve the answer/review outcome.
+Execute V336-00: inspect whether the V335 relation-grounded QA answer delta is
+visible enough for operator review. If not, add the smallest readback/reporting
+or golden proof surface that preserves the baseline-vs-edge answer outcome.
 Do not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
 runtime, broad ranking rewrite, or Memory Core mutation.
 ```
@@ -102,9 +94,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given one tiny relation-dependent graph QA scenario, edge-aware activation does
-not improve selected context, answer grounding, or review usefulness over a
-no-relation baseline.
+Given the V335 tiny relation-dependent QA scenario, an operator cannot review
+which baseline/edge context was selected, whether the answer was grounded, or
+what the proof does not prove.
 ```
 
 ## Pattern Gate

@@ -15,7 +15,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V335 Small Graph-Brain QA Case
+V336 Relation-Grounded QA Readback Closure
 ```
 
 Current state:
@@ -25,14 +25,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V335-00 Small Graph-Brain QA Case.
+current task: V336-00 Relation-Grounded QA Readback Closure.
 ```
 
 Current task:
 
 ```txt
-Use the edge-aware activation path in one tiny graph-brain QA scenario where
-selected context depends on a source relation, without broad graph retrieval.
+Close the V335 tiny graph-brain QA usefulness loop by making the
+relation-grounded answer delta reviewable as a compact readback/reporting proof,
+without broad graph retrieval.
 ```
 
 ## Remaining Work
@@ -56,7 +57,8 @@ to preserve are:
    readback; V330 added bounded edge-aware candidate input; V331 added
    persisted activation trace readback; V332 removed the lab-seeded duplicate
    candidate dependency; V333 proved review-useful edge-aware activation
-   ordering/readback; V334 proved selection delta; next run small graph QA.
+   ordering/readback; V334 proved selection delta; V335 proved a tiny
+   relation-dependent QA answer delta; next close readback/reporting.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

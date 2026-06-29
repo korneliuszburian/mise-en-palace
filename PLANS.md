@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V335 Small Graph-Brain QA Case
-current task: V335-00 Small Graph-Brain QA Case
+active stream: V336 Relation-Grounded QA Readback Closure
+current task: V336-00 Relation-Grounded QA Readback Closure
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,8 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V335-00 Small Graph-Brain QA Case. V334 proved edge influence can change the
-bounded working set; the next gap is whether that relation-selected context
-improves a tiny graph-brain QA/review scenario.
+V336-00 Relation-Grounded QA Readback Closure. V335 proved a tiny
+relation-dependent QA answer delta; the next gap is compact operator readback.
 ```
 
 ## 2. Product Thesis
@@ -60,7 +59,7 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   graph-aware edge readback complete; edge-aware ranking lab complete;
   persisted edge-aware activation readback complete; edge-aware candidate
   refinement complete; usefulness closure complete; selection delta proof
-  complete; small graph QA next
+  complete; small graph QA complete; relation-grounded readback closure next
 product-ready: no
 ```
 
@@ -488,6 +487,103 @@ heartbeat candidate-generation task. If weak, repair edge-aware graph QA
 readback before expanding surfaces.
 ```
 
+V335 outcome:
+
+```txt
+Focused activation proof now shows a no-relation baseline selecting lexical-only
+context and producing an insufficient tiny QA answer, while the edge-aware path
+selects the SourceClaimEdge-connected answer claim and produces a grounded
+answer with improved review usefulness.
+```
+
+V335 verification:
+
+```txt
+pnpm --filter @krn/harness test -- activation --testNamePattern "edge-selected source context": passed
+krn plan --persist: passed
+krn run show --run-id 81d42a8d-5834-4e05-b0fc-84480229c52f: passed
+pnpm run typecheck: passed
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
+pnpm db:ready: passed
+git diff --check: passed
+```
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
+```
+
+## Active Task: V336-00 Relation-Grounded QA Readback Closure
+
+Goal:
+
+```txt
+Close the V335 tiny graph-brain QA usefulness loop by making the
+relation-grounded answer delta reviewable as a compact readback/reporting proof.
+```
+
+Evidence source:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
+```
+
+Files likely touched:
+
+```txt
+focused test/readback surface or bounded report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v336-relation-grounded-qa-readback/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+```
+
+Forbidden writes:
+
+```txt
+schema/migration; crawler; graph database; UI/API/MCP; worker daemon; broad
+benchmark platform; consensus runtime; broad ranking rewrite; Memory Core
+mutation; automatic source truth promotion; runtime markdown memory
+```
+
+Definition of Done:
+
+- Operator can review the V335 baseline-vs-edge answer outcome without reading
+  unrelated historical ledgers.
+- The proof boundary states what the relation-grounded QA readback proves and
+  does not prove.
+- `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
+  if source/readback behavior changes.
+
+Acceptance criteria:
+
+```txt
+relation-grounded QA usefulness is reviewable without claiming product graph
+retrieval quality, product readiness, or autonomous graph reasoning.
+```
+
+Risk:
+
+```txt
+medium: readback closure can drift into a benchmark/UI/API surface before graph
+QA earns it.
+```
+
+Rollback:
+
+```txt
+focused revert of the V336 implementation commit if source changes are made
+```
+
+Next-task synthesis rule:
+
+```txt
+If V336 is positive, choose the next small source-relation refinement or
+heartbeat candidate-generation task. If weak, repair graph QA readback before
+expanding graph-brain surfaces.
+```
+
 ## 9. Task Contract Schema
 
 Every new task appended to `Active Task Queue` or `Generated Task Backlog` must use this schema.
@@ -556,7 +652,8 @@ Next-task synthesis rule:
 - V332: complete; edge-aware source candidate refinement.
 - V333: complete; edge-aware activation usefulness closure.
 - V334: complete; edge-aware activation selection delta proof.
-- V335: active; small graph-brain QA case.
+- V335: complete; small graph-brain QA case.
+- V336: active; relation-grounded QA readback closure.
 
 ## Pattern Gate
 

@@ -430,6 +430,160 @@ describe("activation engine", () => {
     });
   });
 
+  it("uses edge-selected source context to ground a tiny graph-brain QA answer", () => {
+    const query = buildSourceQuery({
+      ...task,
+      objective: "Answer which related source claim grounds the small graph brain QA case"
+    });
+    const seedSourceClaim = sourceClaim({
+      id: "claim-qa-seed",
+      claim: "Graph-brain QA should answer from source relations only when the relation is explicit.",
+      mechanism: "The seed claim states the question boundary but does not contain the answer.",
+      krnImplication: "Use it as the reviewed source relation seed for a tiny QA case."
+    });
+    const answerSourceClaim = sourceClaim({
+      id: "claim-qa-answer",
+      claim: "The answer grounding claim is the edge-connected SourceClaimEdge target.",
+      mechanism: "A reviewed SourceClaimEdge links the graph-brain QA seed to this answer claim.",
+      krnImplication: "Use this relation-selected source claim to ground the small QA answer."
+    });
+    const lexicalOnlySourceClaim = sourceClaim({
+      id: "claim-qa-lexical-only",
+      claim: "Small graph-brain QA remains bounded and should not become a graph platform.",
+      mechanism: "This claim matches graph-brain QA task terms but has no relation to the answer seed.",
+      krnImplication: "Use as the no-relation baseline competitor."
+    });
+    const edge: SourceClaimEdge = {
+      id: "edge-qa-answer",
+      fromSourceClaimId: seedSourceClaim.id,
+      toSourceClaimId: answerSourceClaim.id,
+      kind: "supports",
+      metadata: {
+        consumer: "V335 small graph-brain QA case",
+        doesNotProve: "This edge does not prove graph QA quality."
+      },
+      createdAt: now
+    };
+    const claimsById = new Map([
+      [seedSourceClaim.id, seedSourceClaim],
+      [answerSourceClaim.id, answerSourceClaim],
+      [lexicalOnlySourceClaim.id, lexicalOnlySourceClaim]
+    ]);
+    const answerTinyGraphQuestion = (
+      includedSourceClaimIds: readonly string[]
+    ): {
+      verdict: "grounded" | "insufficient";
+      answer: string;
+      reviewUsefulness: "improved" | "weak";
+      usedSourceClaimIds: readonly string[];
+    } => {
+      const answerClaim = includedSourceClaimIds
+        .map((id) => claimsById.get(id))
+        .find((claim) =>
+          claim?.claim.includes("answer grounding claim") === true
+        );
+
+      if (answerClaim === undefined) {
+        return {
+          verdict: "insufficient",
+          answer: "Insufficient selected source context for relation-dependent graph QA.",
+          reviewUsefulness: "weak",
+          usedSourceClaimIds: includedSourceClaimIds
+        };
+      }
+
+      return {
+        verdict: "grounded",
+        answer: answerClaim.claim,
+        reviewUsefulness: "improved",
+        usedSourceClaimIds: [answerClaim.id]
+      };
+    };
+    const baselineRanked = rankCandidates([
+      {
+        ...toSourceClaimCandidate(seedSourceClaim),
+        lexicalScore: 5
+      },
+      {
+        ...toSourceClaimCandidate(answerSourceClaim),
+        lexicalScore: 15
+      },
+      {
+        ...toSourceClaimCandidate(lexicalOnlySourceClaim),
+        lexicalScore: 35
+      }
+    ], query);
+    const baselineContext = assembleContext({
+      id: "context-qa-no-edge",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(baselineRanked, { maxInclusions: 1 }),
+      createdAt: now
+    });
+    const edgeAwareRanked = rankCandidates(
+      applySourceClaimEdgeInfluence([
+        {
+          ...toSourceClaimCandidate(seedSourceClaim),
+          lexicalScore: 5
+        },
+        {
+          ...toSourceClaimCandidate(answerSourceClaim),
+          lexicalScore: 15
+        },
+        {
+          ...toSourceClaimCandidate(lexicalOnlySourceClaim),
+          lexicalScore: 35
+        }
+      ], {
+        edges: [edge],
+        seedSourceClaimIds: [seedSourceClaim.id],
+        graphScore: 30
+      }),
+      query
+    );
+    const edgeAwareContext = assembleContext({
+      id: "context-qa-edge-aware",
+      harnessPlanId: "plan-1",
+      candidates: applyContextROI(edgeAwareRanked, { maxInclusions: 1 }),
+      createdAt: now
+    });
+    const baselineAnswer = answerTinyGraphQuestion(
+      baselineContext.inclusions.map((item) => item.subjectId)
+    );
+    const edgeAwareAnswer = answerTinyGraphQuestion(
+      edgeAwareContext.inclusions.map((item) => item.subjectId)
+    );
+
+    expect(baselineContext.inclusions.map((item) => item.subjectId)).toEqual([
+      "claim-qa-lexical-only"
+    ]);
+    expect(baselineAnswer).toMatchObject({
+      verdict: "insufficient",
+      reviewUsefulness: "weak"
+    });
+    expect(edgeAwareContext.inclusions.map((item) => item.subjectId)).toEqual([
+      "claim-qa-answer"
+    ]);
+    expect(edgeAwareAnswer).toMatchObject({
+      verdict: "grounded",
+      answer: "The answer grounding claim is the edge-connected SourceClaimEdge target.",
+      reviewUsefulness: "improved",
+      usedSourceClaimIds: ["claim-qa-answer"]
+    });
+    expect(edgeAwareRanked.find((candidate) =>
+      candidate.subjectId === "claim-qa-answer"
+    )).toMatchObject({
+      graphScore: 30,
+      metadata: {
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-qa-answer"],
+          edgeKinds: ["supports"],
+          seedSourceClaimIds: ["claim-qa-seed"],
+          doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      }
+    });
+  });
+
   it("applies SourceClaimEdge influence during activation retrieval without duplicate candidates", async () => {
     const seedSourceClaim = sourceClaim({
       id: "claim-seed",
