@@ -67,6 +67,7 @@ const searchDocument = (
 const runtime = (input?: {
   claims?: readonly SourceClaim[];
   documents?: readonly SearchDocumentSearchResult[];
+  onSearchQuery?(query: string): void;
   onClose?(): void;
 }): SourceSearchCommand["createDatabaseRuntime"] => async () => {
   const claims = input?.claims ?? [sourceClaim()];
@@ -96,7 +97,9 @@ const runtime = (input?: {
         }
       },
       retrievalRepository: {
-        async searchLexical() {
+        async searchLexical(searchInput) {
+          input?.onSearchQuery?.(searchInput.query);
+
           return documents;
         },
         async startRetrievalRun() {
@@ -148,7 +151,9 @@ const runtime = (input?: {
       async createSearchDocument() {
         throw new Error("createSearchDocument should not be called");
       },
-      async searchLexical() {
+      async searchLexical(searchInput) {
+        input?.onSearchQuery?.(searchInput.query);
+
         return documents;
       }
     },
@@ -163,6 +168,7 @@ type SourceSearchCommand = Parameters<typeof runSourceSearchCommand>[0];
 describe("runSourceSearchCommand", () => {
   it("renders read-only source and search candidates with proof boundaries", async () => {
     let closeCount = 0;
+    let searchQuery: string | undefined;
     const result = await runSourceSearchCommand({
       cwd: "/repo",
       env: {
@@ -177,6 +183,9 @@ describe("runSourceSearchCommand", () => {
         maxInclusions: 2
       },
       createDatabaseRuntime: runtime({
+        onSearchQuery(query) {
+          searchQuery = query;
+        },
         onClose() {
           closeCount += 1;
         }
@@ -201,6 +210,8 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("Embeddings: not run");
     expect(result.stdout).toContain("Graph runtime: not run");
     expect(closeCount).toBe(1);
+    expect(searchQuery).toBe("krn-source-artifact-preview 991034dc0684e887");
+    expect(searchQuery).not.toContain("crawler");
   });
 
   it("prints no-match guidance without mutating when no candidates match", async () => {

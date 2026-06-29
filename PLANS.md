@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V344 Source Search Document Retrieval Alignment
-current task: V344-00 Source Search Document Retrieval Alignment
+active stream: V345 Source Search Usefulness Closure After Document Alignment
+current task: V345-00 Source Search Usefulness Closure After Document Alignment
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V344-00 Source Search Document Retrieval Alignment must explain why seeded
-SearchDocuments have hash readback but no natural-language source-search hits,
-and repair only a bounded owner-file issue.
+V345-00 Source Search Usefulness Closure After Document Alignment must measure
+whether repaired source search helps a real Pattern Application Gate before any
+new retrieval feature.
 ```
 
 ## 2. Product Thesis
@@ -297,7 +297,8 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V341 complete: product-facing knowledge search readback preview.
 - [x] V342 complete: product-facing knowledge search usefulness closure.
 - [x] V343 complete: product-facing knowledge search coverage seed.
-- [ ] V344 current task: source search document retrieval alignment.
+- [x] V344 complete: source search document retrieval alignment.
+- [ ] V345 current task: source search usefulness closure after document alignment.
 
 ## Active Task Contract
 
@@ -355,6 +356,98 @@ Success criteria:
 3. weak V343 document queries are rerun with DB evidence;
 4. no crawler/UI/API/MCP/schema/ranking rewrite/graph runtime is added;
 5. root state stays compact and advances to the next highest-ROI task.
+```
+
+## Outcome V344 Source Search Document Retrieval Alignment
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V343 coverage seed report and current DB readback.
+- Mechanism: `krn source search` built lexical SearchDocument retrieval from the
+  whole synthetic TaskContract text, so PostgreSQL FTS searched proof-boundary
+  constraints and non-goals in addition to the operator query.
+- KRN implication: source-search document retrieval should use the operator
+  query only, while CLI output separately carries proof/non-proof boundaries.
+- Decision: pass a query-only source ActivationQuery to
+  `retrieveActivationCandidates` in `runSourceSearchCommand`; no schema,
+  ranking rewrite, embeddings, graph runtime, crawler, UI/API/MCP, or Memory
+  Core mutation.
+- Does not prove: broad product search quality, embeddings, graph retrieval,
+  crawler readiness, product readiness, or second-operator usability.
+- Consumer: V345 Source Search Usefulness Closure After Document Alignment.
+- Falsifier: repaired source search does not reduce rereads or returns noisy
+  SearchDocuments that do not help a real Pattern Application Gate.
+
+V344 evidence:
+
+```txt
+changed:
+  packages/cli/src/runSourceSearchCommand.ts
+  packages/cli/src/runSourceSearchCommand.test.ts
+report:
+  docs/reviews/controlled-dogfood/2026-06-29-v344-source-search-document-retrieval-alignment/REPORT.md
+evidenceBundle: 114cc144-da04-4acb-b119-2e18ea984ab3
+observationGroup: 002d0674-5376-4d17-85d7-abd8f84eca83
+reflectionRecord: 304d33f1-f11b-4dba-b44b-8f025807d471
+DB readback:
+  memory staleness heartbeat candidate MemoryRecord -> searchResults: 1, e0cbc2e9-fdef-41e9-aacc-2262c64ae152
+  consensus candidate dissent decision options -> searchResults: 1, 3eb44f5a-bc41-4630-ab82-cfbf552c270d
+  source-to-decision retention gate consumer falsifier -> searchResults: 1, 64d78b2b-bb04-4039-a4ad-c72ecf2f6d47
+  product-facing knowledge search usefulness coverage seed -> searchResults: 1, e4028fde-2a3b-418c-a429-62cd2c697079
+```
+
+V344 outcome:
+
+```txt
+Seeded SearchDocuments now appear in natural-language source-search results.
+The next task should measure usefulness after alignment instead of adding a new
+retrieval feature.
+```
+
+### V345-00 Source Search Usefulness Closure After Document Alignment
+
+Objective:
+
+```txt
+Measure whether repaired `krn source search` now helps a real pre-coding Pattern
+Application Gate by returning both governed SourceClaims and reviewable
+SearchDocuments.
+```
+
+Allowed:
+
+```txt
+usefulness closure over current source search
+DB-backed readback
+compact report/root state update
+bounded next-task synthesis from evidence
+```
+
+Non-goals:
+
+```txt
+dashboard
+API/MCP
+crawler
+worker daemon
+new schema
+broad eval platform
+ranking rewrite
+embeddings or graph runtime
+autonomous truth runtime
+Memory Core mutation
+```
+
+Success criteria:
+
+```txt
+1. one real Pattern Application Gate query uses repaired source search;
+2. selected SourceClaims/SearchDocuments are classified helped/neutral/noise/missing;
+3. report states whether review burden and rereads decreased;
+4. next highest-ROI product-facing brain task is selected from evidence;
+5. root state stays compact.
 ```
 
 ## Verification Policy

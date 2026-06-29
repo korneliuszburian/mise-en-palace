@@ -3,6 +3,7 @@ import type {
 } from "@krn/core";
 import {
   applyContextROI,
+  buildActivationQuery,
   retrieveActivationCandidates
 } from "@krn/harness";
 import type {
@@ -166,6 +167,25 @@ const createSearchTaskContract = (
   updatedAt: now
 });
 
+const createSearchSourceQuery = (taskContract: TaskContract, query: string) => {
+  const queryOnly = buildActivationQuery({
+    ...taskContract,
+    title: "",
+    objective: query,
+    constraints: [],
+    nonGoals: [],
+    acceptance: []
+  }, {
+    focus: "source",
+    needs: ["source", "search"]
+  });
+
+  return {
+    ...queryOnly,
+    text: query
+  };
+};
+
 const formatSearchResult = (input: {
   query: string;
   projectId: string;
@@ -268,6 +288,7 @@ export const runSourceSearchCommand = async (
     );
     const retrieved = await retrieveActivationCandidates({
       taskContract,
+      sourceQuery: createSearchSourceQuery(taskContract, query),
       limits: {
         memory: 0,
         source: limit,

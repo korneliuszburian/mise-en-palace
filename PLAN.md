@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V344 Source Search Document Retrieval Alignment
-current task: V344-00 Source Search Document Retrieval Alignment
+active stream: V345 Source Search Usefulness Closure After Document Alignment
+current task: V345-00 Source Search Usefulness Closure After Document Alignment
 ```
 
 ## Compact Completed Checkpoints
@@ -36,7 +36,7 @@ Remaining product gaps:
 1. pattern search/readback hardening
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
-4. ingest v0 SourceClaim/SearchDocument retrieval alignment
+4. ingest v0 SourceClaim/SearchDocument usefulness after retrieval alignment
 5. graph brain v0 candidate extraction/reviewability/persistence surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
@@ -48,24 +48,26 @@ Remaining product gaps:
 V324-V339 complete: graph/source-edge, heartbeat, consensus, and tiny QA
 previews exist without autonomous truth runtime. V340 proved one artifact-to-
 activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
-coverage gaps. V343 seeded four artifacts; SourceClaims improved, but natural-
-language SearchDocument results stayed at zero.
+coverage gaps. V343 seeded four artifacts. V344 repaired source-search document
+retrieval alignment so seeded natural-language queries return matching
+SearchDocuments.
 
-### V344 Source Search Document Retrieval Alignment
+### V345 Source Search Usefulness Closure After Document Alignment
 
 Goal:
 
-Inspect and, if bounded, repair why seeded SearchDocuments have hash readback
-but do not appear in natural-language `krn source search` results.
+Measure whether repaired `krn source search` now helps a real pre-coding Pattern
+Application Gate by returning both governed SourceClaims and reviewable
+SearchDocuments.
 
 Current action:
 
 ```txt
-Execute V344-00: inspect source artifact/SearchDocument persistence and
-retrieval owner files, then repair only if natural-language document retrieval
-has a bounded owner-file issue. Do not add crawler, UI/API/MCP, worker daemon,
-schema, broad eval platform, ranking rewrite, embeddings, graph runtime, or
-autonomous truth runtime.
+Execute V345-00: run one usefulness closure over repaired source search,
+classify selected context as helped/neutral/noise/missing, and choose the next
+highest-ROI product-facing brain task from evidence. Do not add crawler,
+UI/API/MCP, worker daemon, schema, broad eval platform, ranking rewrite,
+embeddings, graph runtime, or autonomous truth runtime.
 ```
 
 Primary consumer:
@@ -78,9 +80,8 @@ reviewable artifact documents.
 Falsifier:
 
 ```txt
-Seeded SearchDocuments remain absent from natural-language search because
-current behavior is intentional or unrepairable without a broader product
-surface.
+Repaired source search still fails to reduce rereads or produces noisy document
+results that do not help a real Pattern Application Gate.
 ```
 
 ## Pattern Gate

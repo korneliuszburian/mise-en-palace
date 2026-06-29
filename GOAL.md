@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V344 Source Search Document Retrieval Alignment
+V345 Source Search Usefulness Closure After Document Alignment
 ```
 
 Current state:
@@ -24,16 +24,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V344-00 Source Search Document Retrieval Alignment.
+current task: V345-00 Source Search Usefulness Closure After Document Alignment.
 ```
 
 Current task:
 
 ```txt
-Inspect why seeded SearchDocuments have hash readback but do not appear in
-natural-language `krn source search` results; repair only if a bounded owner
-issue exists, without UI/API/MCP, crawler, schema, ranking rewrite, embeddings,
-graph runtime, worker, or Memory Core mutation.
+Measure whether repaired `krn source search` helps a Pattern Application Gate by
+returning governed SourceClaims and reviewable SearchDocuments; do not add
+UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime,
+worker, or Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -49,8 +49,9 @@ to preserve are:
    executed; use future results only when they change a product loop.
 4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
    context detail readback, marker/hash activation, V340 artifact-to-activated-
-   SourceClaim proof, V341 search readback, V342 usefulness closure, and V343
-   coverage seed exist. SearchDocument alignment is next.
+   SourceClaim proof, V341 search readback, V342 usefulness closure, V343
+   coverage seed, and V344 SearchDocument alignment exist. Usefulness closure
+   after alignment is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
@@ -109,7 +110,7 @@ operator transcript:
 After auto-compact, resume, context loss, or a new `/goal` continuation:
 
 1. Read `GOAL.md`, root `PLAN.md`, and root `PLANS.md`.
-2. Run current-state preflight:
+2. Run:
 
    ```sh
    git fetch --prune
@@ -117,8 +118,7 @@ After auto-compact, resume, context loss, or a new `/goal` continuation:
    git log --oneline -n 8
    ```
 
-3. Return to the first incomplete active task. Do not restart from conversation
-   memory.
+3. Return to the first incomplete active task.
 4. If a pasted objective, attachment, old prompt, or conversation summary names
    a stale active stream that conflicts with current `GOAL.md`, `PLAN.md`, and
    `PLANS.md`, read it as historical evidence and keep the root active state as
