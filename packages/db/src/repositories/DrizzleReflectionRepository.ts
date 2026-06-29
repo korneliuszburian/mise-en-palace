@@ -23,8 +23,14 @@ import {
   reflectionRecords
 } from "../schema/index.js";
 import {
+  booleanOrUndefined,
+  hasDefinedValues,
+  isRecord,
   metadataOrEmpty,
+  numberOrUndefined,
   requireReturnedRow,
+  stringListOrEmpty,
+  stringOrUndefined,
   toIsoTimestamp
 } from "./common.js";
 
@@ -46,23 +52,6 @@ export interface ReflectionRecordScopeQuery {
 }
 
 type ReflectionRecordRow = typeof reflectionRecords.$inferSelect;
-
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === "object" && value !== null && !Array.isArray(value)
-);
-
-const stringListOrEmpty = (value: unknown): string[] => (
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []
-);
-
-const stringOrUndefined = (value: unknown): string | undefined =>
-  typeof value === "string" && value.trim().length > 0 ? value : undefined;
-
-const numberOrUndefined = (value: unknown): number | undefined =>
-  typeof value === "number" && Number.isFinite(value) ? value : undefined;
-
-const booleanOrUndefined = (value: unknown): boolean | undefined =>
-  typeof value === "boolean" ? value : undefined;
 
 const reflectionCandidateEvidenceProvenances = new Set<string>([
   "default_template",
@@ -119,6 +108,57 @@ const sourceSupportTypes = new Set<string>([
   "eval-design",
   "implementation-boundary"
 ]);
+
+const reflectionFindingKinds = new Set<ReflectionFinding["kind"]>([
+  "candidate_signal",
+  "contradiction",
+  "gap",
+  "risk",
+  "correction",
+  "policy_signal"
+]);
+
+const reflectionSeverities = new Set<ReflectionFinding["severity"]>([
+  "low",
+  "medium",
+  "high",
+  "critical"
+]);
+
+const reflectionCandidateLinkTargetTypes = new Set<ReflectionCandidateLink["targetType"]>([
+  "memory_candidate",
+  "source_claim_candidate",
+  "anti_memory_candidate",
+  "policy_candidate",
+  "eval_candidate"
+]);
+
+const isReflectionFindingKind = (value: unknown): value is ReflectionFinding["kind"] =>
+  typeof value === "string" && reflectionFindingKinds.has(value as ReflectionFinding["kind"]);
+
+const isReflectionSeverity = (value: unknown): value is ReflectionFinding["severity"] =>
+  typeof value === "string" && reflectionSeverities.has(value as ReflectionFinding["severity"]);
+
+const isReflectionCandidateLinkTargetType = (
+  value: unknown
+): value is ReflectionCandidateLink["targetType"] =>
+  typeof value === "string" &&
+  reflectionCandidateLinkTargetTypes.has(value as ReflectionCandidateLink["targetType"]);
+
+const isReflectionMemoryKind = (
+  value: unknown
+): value is ReflectionMemoryCandidateProposal["kind"] =>
+  typeof value === "string" && memoryKinds.has(value);
+
+const isReflectionSourceTrustTier = (
+  value: unknown
+): value is ReflectionSourceClaimCandidateProposal["trustTier"] =>
+  typeof value === "string" && sourceTrustTiers.has(value);
+
+const isReflectionSourceSupportType = (
+  value: unknown
+): value is ReflectionSourceClaimCandidateProposal["supportType"] =>
+  typeof value === "string" && sourceSupportTypes.has(value);
 
 const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   if (!Array.isArray(value)) {
@@ -218,29 +258,9 @@ const reflectionFindingsOrEmpty = (value: unknown): ReflectionFinding[] => {
     if (
       !isRecord(item) ||
       typeof item.id !== "string" ||
-      typeof item.kind !== "string" ||
-      typeof item.severity !== "string" ||
+      !isReflectionFindingKind(item.kind) ||
+      !isReflectionSeverity(item.severity) ||
       typeof item.summary !== "string"
-    ) {
-      return [];
-    }
-
-    if (
-      item.kind !== "candidate_signal" &&
-      item.kind !== "contradiction" &&
-      item.kind !== "gap" &&
-      item.kind !== "risk" &&
-      item.kind !== "correction" &&
-      item.kind !== "policy_signal"
-    ) {
-      return [];
-    }
-
-    if (
-      item.severity !== "low" &&
-      item.severity !== "medium" &&
-      item.severity !== "high" &&
-      item.severity !== "critical"
     ) {
       return [];
     }
@@ -267,16 +287,7 @@ const contradictionsOrEmpty = (value: unknown): ContradictionReport[] => {
       !isRecord(item) ||
       typeof item.id !== "string" ||
       typeof item.summary !== "string" ||
-      typeof item.severity !== "string"
-    ) {
-      return [];
-    }
-
-    if (
-      item.severity !== "low" &&
-      item.severity !== "medium" &&
-      item.severity !== "high" &&
-      item.severity !== "critical"
+      !isReflectionSeverity(item.severity)
     ) {
       return [];
     }
@@ -304,16 +315,7 @@ const gapsOrEmpty = (value: unknown): GapReport[] => {
       typeof item.id !== "string" ||
       typeof item.summary !== "string" ||
       typeof item.missingEvidence !== "string" ||
-      typeof item.severity !== "string"
-    ) {
-      return [];
-    }
-
-    if (
-      item.severity !== "low" &&
-      item.severity !== "medium" &&
-      item.severity !== "high" &&
-      item.severity !== "critical"
+      !isReflectionSeverity(item.severity)
     ) {
       return [];
     }
@@ -337,18 +339,8 @@ const candidateLinksOrEmpty = (value: unknown): ReflectionCandidateLink[] => {
   return value.flatMap((item): ReflectionCandidateLink[] => {
     if (
       !isRecord(item) ||
-      typeof item.targetType !== "string" ||
+      !isReflectionCandidateLinkTargetType(item.targetType) ||
       typeof item.summary !== "string"
-    ) {
-      return [];
-    }
-
-    if (
-      item.targetType !== "memory_candidate" &&
-      item.targetType !== "source_claim_candidate" &&
-      item.targetType !== "anti_memory_candidate" &&
-      item.targetType !== "policy_candidate" &&
-      item.targetType !== "eval_candidate"
     ) {
       return [];
     }
@@ -383,36 +375,35 @@ const reflectionMemoryCandidatesOrEmpty = (
     const isUserPreference = booleanOrUndefined(item.isUserPreference);
     const validFrom = stringOrUndefined(item.validFrom);
     const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
-
-    if (
-      kind === undefined ||
-      !memoryKinds.has(kind) ||
-      summary === undefined ||
-      body === undefined ||
-      owner === undefined ||
-      confidence === undefined ||
-      applicationGuidance === undefined ||
-      isUserPreference === undefined ||
-      validFrom === undefined ||
-      evidence === undefined
-    ) {
-      return [];
-    }
-
-    return [{
-      kind: kind as ReflectionMemoryCandidateProposal["kind"],
+    const required = {
       summary,
       body,
       owner,
       confidence,
       applicationGuidance,
+      isUserPreference,
+      validFrom,
+      evidence
+    };
+
+    if (!isReflectionMemoryKind(kind) || !hasDefinedValues(required)) {
+      return [];
+    }
+
+    return [{
+      kind,
+      summary: required.summary,
+      body: required.body,
+      owner: required.owner,
+      confidence: required.confidence,
+      applicationGuidance: required.applicationGuidance,
       ...(typeof item.invalidationRule === "string" ? { invalidationRule: item.invalidationRule } : {}),
       sourceClaimIds: stringListOrEmpty(item.sourceClaimIds),
       sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
-      isUserPreference,
-      validFrom,
+      isUserPreference: required.isUserPreference,
+      validFrom: required.validFrom,
       ...(typeof item.validUntil === "string" ? { validUntil: item.validUntil } : {}),
-      evidence,
+      evidence: required.evidence,
       metadata: metadataOrEmpty(item.metadata)
     }];
   });
@@ -438,33 +429,34 @@ const reflectionSourceClaimCandidatesOrEmpty = (
     const supportType = stringOrUndefined(item.supportType);
     const consumer = stringOrUndefined(item.consumer);
     const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
+    const required = {
+      claim,
+      mechanism,
+      krnImplication,
+      doesNotProve,
+      consumer,
+      evidence
+    };
 
     if (
-      claim === undefined ||
-      mechanism === undefined ||
-      krnImplication === undefined ||
-      doesNotProve === undefined ||
-      trustTier === undefined ||
-      !sourceTrustTiers.has(trustTier) ||
-      supportType === undefined ||
-      !sourceSupportTypes.has(supportType) ||
-      consumer === undefined ||
-      evidence === undefined
+      !isReflectionSourceTrustTier(trustTier) ||
+      !isReflectionSourceSupportType(supportType) ||
+      !hasDefinedValues(required)
     ) {
       return [];
     }
 
     return [{
-      claim,
-      mechanism,
-      krnImplication,
-      doesNotProve,
-      trustTier: trustTier as ReflectionSourceClaimCandidateProposal["trustTier"],
-      supportType: supportType as ReflectionSourceClaimCandidateProposal["supportType"],
-      consumer,
+      claim: required.claim,
+      mechanism: required.mechanism,
+      krnImplication: required.krnImplication,
+      doesNotProve: required.doesNotProve,
+      trustTier,
+      supportType,
+      consumer: required.consumer,
       ...(typeof item.falsifier === "string" ? { falsifier: item.falsifier } : {}),
       ...(typeof item.revisitWhen === "string" ? { revisitWhen: item.revisitWhen } : {}),
-      evidence,
+      evidence: required.evidence,
       metadata: metadataOrEmpty(item.metadata)
     }];
   });
@@ -488,30 +480,31 @@ const reflectionAntiMemoryCandidatesOrEmpty = (
     const owner = stringOrUndefined(item.owner);
     const confidence = numberOrUndefined(item.confidence);
     const evidence = reflectionCandidateEvidenceOrUndefined(item.evidence);
-
-    if (
-      key === undefined ||
-      summary === undefined ||
-      body === undefined ||
-      owner === undefined ||
-      confidence === undefined ||
-      evidence === undefined
-    ) {
-      return [];
-    }
-
-    return [{
+    const required = {
       key,
       summary,
       body,
       owner,
       confidence,
+      evidence
+    };
+
+    if (!hasDefinedValues(required)) {
+      return [];
+    }
+
+    return [{
+      key: required.key,
+      summary: required.summary,
+      body: required.body,
+      owner: required.owner,
+      confidence: required.confidence,
       ...(typeof item.reason === "string" ? { reason: item.reason } : {}),
       invalidatedBySourceClaimIds: stringListOrEmpty(item.invalidatedBySourceClaimIds),
       ...(typeof item.appliesTo === "string" ? { appliesTo: item.appliesTo } : {}),
       ...(typeof item.mayRevisitWhen === "string" ? { mayRevisitWhen: item.mayRevisitWhen } : {}),
       sourceLineage: sourceLineageOrEmpty(item.sourceLineage),
-      evidence,
+      evidence: required.evidence,
       metadata: metadataOrEmpty(item.metadata)
     }];
   });
