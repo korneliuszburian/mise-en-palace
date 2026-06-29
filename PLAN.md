@@ -67,7 +67,7 @@ then commit/push/CI before choosing the next target.
 
 Current candidate targets:
 `packages/cli/src/runCli.ts` residual non-memory adapter decomposition,
-`packages/cli/src/runSourceArtifactPreviewCommand.ts`, DB smoke helper cleanup,
+`packages/cli/src/runSourceArtifactPreviewCommand.ts`, doctor/static DB checks,
 or another narrower target if source inspection shows lower risk.
 
 Progress in this stream:
@@ -85,8 +85,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   runCli memory dispatch cleanup,
   runCli residual dispatch cleanup,
   source artifact preview extraction/persistence/formatting cleanup plus shared
-  repo-input resolver cleanup
-full Fallow moved: dupes 136 -> 115; health 117 -> 73
+  repo-input resolver cleanup,
+  DB smoke target handler cleanup
+full Fallow moved: dupes 136 -> 115; health 117 -> 72
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split

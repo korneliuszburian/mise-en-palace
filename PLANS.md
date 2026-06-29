@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: 78390171b6eae4823d8dab7e43d7577532ecb391 / CI success
+latest pushed commit checked: 2a701422f1d2433f4b69794939aaf8230e7c0308 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -63,6 +63,11 @@ deterministic local extraction, split persistence/readback/candidate rendering,
 added a shared repo-input file resolver, removed changed-file Fallow findings
 under `--gate all`, and reduced global Fallow to dupes 115 and health 73;
 commit `7839017` passed CI.
+Latest completed slice: DB smoke target handler cleanup split the monolithic
+`runDbSmokeCommand` dispatcher into target handlers, removed the
+`runDbSmokeCommand` high-complexity/refactoring target, verified every DB smoke
+target against local Postgres, and reduced global Fallow health to 72; commit
+`2a70142` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -594,12 +599,13 @@ completed bounded targets:
 
 full Fallow moved:
   dupes 136 -> 115 clone groups
-  health 117 -> 73 above threshold
+  health 117 -> 72 above threshold
 
 next: inspect a bounded owner surface with direct complexity debt, likely
-packages/cli/src/runDbSmokeCommand.ts or a narrower DB smoke helper slice. Do
-not split packages/db/src/repositories/common.ts only because Fallow flags
-fan-in; it is already the shared DB boundary helper.
+packages/cli/src/doctorStaticChecks.ts, packages/cli/src/runDoctorCommand.ts,
+packages/cli/src/doctorDbChecks.ts, or another narrower target from the fresh
+Fallow report. Do not split packages/db/src/repositories/common.ts only because
+Fallow flags fan-in; it is already the shared DB boundary helper.
 ```
 
 ## Verification Policy
