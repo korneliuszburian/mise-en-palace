@@ -13,56 +13,100 @@ import {
   readTreeText
 } from "./doctorCheckHelpers.js";
 
+const includesAll = (text: string, fragments: readonly string[]): boolean =>
+  fragments.every((fragment) => text.includes(fragment));
+
+const includesAny = (text: string, fragments: readonly string[]): boolean =>
+  fragments.some((fragment) => text.includes(fragment));
+
+const pathExistsAny = async (paths: readonly string[]): Promise<boolean> => {
+  const exists = await Promise.all(paths.map((targetPath) => pathExists(targetPath)));
+
+  return exists.some(Boolean);
+};
+
+const packagePath = (
+  repoRoot: string,
+  packageName: string,
+  ...segments: string[]
+): string => path.join(repoRoot, "packages", packageName, ...segments);
+
+const hasCodexRunner = async (
+  repoRoot: string,
+  cliText: string,
+  adapterText: string
+): Promise<boolean> =>
+  await pathExistsAny([
+    path.join(repoRoot, "packages", "codex-runner"),
+    path.join(repoRoot, "packages", "codex-executor"),
+    path.join(repoRoot, "packages", "codex-execution")
+  ]) ||
+  includesAny(cliText, [
+    "runCodexExecution",
+    "invokeCodex(",
+    "codex execute",
+    "codex run",
+    "codex exec"
+  ]) ||
+  includesAny(adapterText, [
+    "spawn(\"codex\"",
+    "spawn('codex'",
+    "exec(\"codex\"",
+    "exec('codex'"
+  ]);
+
+const hasMcpServer = async (
+  repoRoot: string,
+  cliText: string,
+  adapterText: string
+): Promise<boolean> =>
+  await pathExistsAny([
+    path.join(repoRoot, "packages", "mcp-server"),
+    path.join(repoRoot, "packages", "krn-mcp-server"),
+    path.join(repoRoot, "packages", "mcp")
+  ]) ||
+  includesAny(cliText, [
+    "createMcpServer",
+    "startMcpServer"
+  ]) ||
+  includesAny(adapterText, [
+    "createMcpServer",
+    "startMcpServer"
+  ]);
+
 export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const adapterIndexText = await readOptionalText(
-    path.join(repoRoot, "packages", "codex-adapter", "src", "index.ts")
+    packagePath(repoRoot, "codex-adapter", "src", "index.ts")
   );
   const renderExecutionBriefText = await readOptionalText(
-    path.join(repoRoot, "packages", "codex-adapter", "src", "renderExecutionBrief.ts")
+    packagePath(repoRoot, "codex-adapter", "src", "renderExecutionBrief.ts")
   );
   const renderHookExpectationsText = await readOptionalText(
-    path.join(repoRoot, "packages", "codex-adapter", "src", "renderHookExpectations.ts")
+    packagePath(repoRoot, "codex-adapter", "src", "renderHookExpectations.ts")
   );
   const contractsText = await readOptionalText(
-    path.join(repoRoot, "packages", "codex-adapter", "src", "contracts.ts")
+    packagePath(repoRoot, "codex-adapter", "src", "contracts.ts")
   );
   const cliText = [
-    await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "parseArgs.ts")),
-    await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "runCli.ts")),
-    await readOptionalText(path.join(repoRoot, "packages", "cli", "src", "runCodexBriefCommand.ts"))
+    await readOptionalText(packagePath(repoRoot, "cli", "src", "parseArgs.ts")),
+    await readOptionalText(packagePath(repoRoot, "cli", "src", "runCli.ts")),
+    await readOptionalText(packagePath(repoRoot, "cli", "src", "runCodexBriefCommand.ts"))
   ].join("\n");
   const adapterText = await readTreeText(
-    path.join(repoRoot, "packages", "codex-adapter", "src")
+    packagePath(repoRoot, "codex-adapter", "src")
   );
   const rendererPresent =
-    adapterIndexText.includes("./renderExecutionBrief") &&
-    renderExecutionBriefText.includes("createExecutionBrief") &&
-    renderExecutionBriefText.includes("renderExecutionBriefText");
+    includesAll(adapterIndexText, ["./renderExecutionBrief"]) &&
+    includesAll(renderExecutionBriefText, [
+      "createExecutionBrief",
+      "renderExecutionBriefText"
+    ]);
   const hookProjectionPresent =
-    contractsText.includes("CodexHookExpectationProjection") &&
-    renderHookExpectationsText.includes("createCodexHookExpectationProjection");
-  const codexRunnerPresent =
-    await pathExists(path.join(repoRoot, "packages", "codex-runner")) ||
-    await pathExists(path.join(repoRoot, "packages", "codex-executor")) ||
-    await pathExists(path.join(repoRoot, "packages", "codex-execution")) ||
-    cliText.includes("runCodexExecution") ||
-    cliText.includes("invokeCodex(") ||
-    cliText.includes("codex execute") ||
-    cliText.includes("codex run") ||
-    cliText.includes("codex exec") ||
-    adapterText.includes("spawn(\"codex\"") ||
-    adapterText.includes("spawn('codex'") ||
-    adapterText.includes("exec(\"codex\"") ||
-    adapterText.includes("exec('codex'");
-  const mcpServerPresent =
-    await pathExists(path.join(repoRoot, "packages", "mcp-server")) ||
-    await pathExists(path.join(repoRoot, "packages", "krn-mcp-server")) ||
-    await pathExists(path.join(repoRoot, "packages", "mcp")) ||
-    cliText.includes("createMcpServer") ||
-    cliText.includes("startMcpServer") ||
-    adapterText.includes("createMcpServer") ||
-    adapterText.includes("startMcpServer");
+    includesAll(contractsText, ["CodexHookExpectationProjection"]) &&
+    includesAll(renderHookExpectationsText, ["createCodexHookExpectationProjection"]);
+  const codexRunnerPresent = await hasCodexRunner(repoRoot, cliText, adapterText);
+  const mcpServerPresent = await hasMcpServer(repoRoot, cliText, adapterText);
 
   return [
     {
@@ -92,62 +136,91 @@ export const checkCodexAdapter = async (repoRoot: string): Promise<DoctorCheck[]
   ];
 };
 
+const packageManifestPaths = (repoRoot: string): string[] => [
+  path.join(repoRoot, "package.json"),
+  packagePath(repoRoot, "cli", "package.json"),
+  packagePath(repoRoot, "codex-adapter", "package.json"),
+  packagePath(repoRoot, "core", "package.json"),
+  packagePath(repoRoot, "db", "package.json"),
+  packagePath(repoRoot, "harness", "package.json"),
+  packagePath(repoRoot, "schema", "package.json"),
+  packagePath(repoRoot, "workers", "package.json")
+];
+
+const readDependencyText = async (repoRoot: string): Promise<string> => {
+  const texts = await Promise.all(
+    packageManifestPaths(repoRoot).map((manifestPath) => readOptionalText(manifestPath))
+  );
+
+  return texts.join("\n").toLowerCase();
+};
+
+const hasRedisOrKafkaDependency = (dependencyText: string): boolean =>
+  includesAny(dependencyText, [
+    "\"redis\"",
+    "redis@",
+    "ioredis",
+    "@upstash/redis",
+    "\"kafka\"",
+    "kafka@",
+    "kafkajs"
+  ]);
+
+const hasBroadWorkerDaemon = async (
+  repoRoot: string,
+  workersText: string,
+  workerRepositoryText: string
+): Promise<boolean> =>
+  await pathExistsAny([
+    path.join(repoRoot, "packages", "worker-daemon"),
+    path.join(repoRoot, "packages", "workers-daemon"),
+    path.join(repoRoot, "packages", "job-runner")
+  ]) ||
+  includesAny(workersText, [
+    "setInterval",
+    "while (",
+    "for (;;)",
+    "spawn(",
+    "exec(",
+    "requiresBackgroundLoop: true"
+  ]) ||
+  includesAny(workerRepositoryText, ["requiresBackgroundLoop: true"]);
+
 export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
-  const rootPackageText = await readOptionalText(path.join(repoRoot, "package.json"));
-  const packageManifestTexts = await Promise.all([
-    readOptionalText(path.join(repoRoot, "packages", "cli", "package.json")),
-    readOptionalText(path.join(repoRoot, "packages", "codex-adapter", "package.json")),
-    readOptionalText(path.join(repoRoot, "packages", "core", "package.json")),
-    readOptionalText(path.join(repoRoot, "packages", "db", "package.json")),
-    readOptionalText(path.join(repoRoot, "packages", "harness", "package.json")),
-    readOptionalText(path.join(repoRoot, "packages", "schema", "package.json")),
-    readOptionalText(path.join(repoRoot, "packages", "workers", "package.json"))
-  ]);
+  const dependencyText = await readDependencyText(repoRoot);
   const schemaText = await readOptionalText(
-    path.join(repoRoot, "packages", "db", "src", "schema", "events.ts")
+    packagePath(repoRoot, "db", "src", "schema", "events.ts")
   );
   const repositoryText = await readOptionalText(
-    path.join(repoRoot, "packages", "db", "src", "repositories", "DrizzleWorkerJobRepository.ts")
+    packagePath(repoRoot, "db", "src", "repositories", "DrizzleWorkerJobRepository.ts")
   );
-  const workersText = await readTreeText(path.join(repoRoot, "packages", "workers", "src"));
+  const workersText = await readTreeText(packagePath(repoRoot, "workers", "src"));
   const workerRepositoryText = await readTreeText(
-    path.join(repoRoot, "packages", "db", "src", "repositories")
+    packagePath(repoRoot, "db", "src", "repositories")
   );
-  const dependencyText = `${rootPackageText}\n${packageManifestTexts.join("\n")}`.toLowerCase();
-  const schemaPresent =
-    schemaText.includes("workerJobs") &&
-    schemaText.includes("outboxEvents") &&
-    schemaText.includes("workerJobStatus") &&
-    schemaText.includes("skipped");
-  const repositoryPresent =
-    repositoryText.includes("DrizzleWorkerJobRepository") &&
-    repositoryText.includes("enqueueWorkerJob") &&
-    repositoryText.includes("listQueuedWorkerJobs") &&
-    repositoryText.includes("markWorkerJobRunning") &&
-    repositoryText.includes("markWorkerJobSucceeded") &&
-    repositoryText.includes("markWorkerJobSkipped") &&
-    repositoryText.includes("markWorkerJobFailed") &&
-    repositoryText.includes("cleanupTestWorkerJobs");
-  const redisKafkaPresent =
-    dependencyText.includes("\"redis\"") ||
-    dependencyText.includes("redis@") ||
-    dependencyText.includes("ioredis") ||
-    dependencyText.includes("@upstash/redis") ||
-    dependencyText.includes("\"kafka\"") ||
-    dependencyText.includes("kafka@") ||
-    dependencyText.includes("kafkajs");
-  const broadWorkerDaemonPresent =
-    await pathExists(path.join(repoRoot, "packages", "worker-daemon")) ||
-    await pathExists(path.join(repoRoot, "packages", "workers-daemon")) ||
-    await pathExists(path.join(repoRoot, "packages", "job-runner")) ||
-    workersText.includes("setInterval") ||
-    workersText.includes("while (") ||
-    workersText.includes("for (;;)") ||
-    workersText.includes("spawn(") ||
-    workersText.includes("exec(") ||
-    workersText.includes("requiresBackgroundLoop: true") ||
-    workerRepositoryText.includes("requiresBackgroundLoop: true");
+  const schemaPresent = includesAll(schemaText, [
+    "workerJobs",
+    "outboxEvents",
+    "workerJobStatus",
+    "skipped"
+  ]);
+  const repositoryPresent = includesAll(repositoryText, [
+    "DrizzleWorkerJobRepository",
+    "enqueueWorkerJob",
+    "listQueuedWorkerJobs",
+    "markWorkerJobRunning",
+    "markWorkerJobSucceeded",
+    "markWorkerJobSkipped",
+    "markWorkerJobFailed",
+    "cleanupTestWorkerJobs"
+  ]);
+  const redisKafkaPresent = hasRedisOrKafkaDependency(dependencyText);
+  const broadWorkerDaemonPresent = await hasBroadWorkerDaemon(
+    repoRoot,
+    workersText,
+    workerRepositoryText
+  );
 
   return [
     {
@@ -177,92 +250,155 @@ export const checkWorkerJobs = async (repoRoot: string): Promise<DoctorCheck[]> 
   ];
 };
 
+const targetRepoFixturePath = (repoRoot: string): string =>
+  path.join(repoRoot, "tests", "fixtures", "target-repos", "typescript-basic");
+
+const hasTargetInitCommand = (
+  parseArgsText: string,
+  runCliText: string,
+  runInitText: string
+): boolean =>
+  includesAll(parseArgsText, ["--connect"]) &&
+  includesAll(runCliText, ["runInitCommand"]) &&
+  includesAll(runInitText, [
+    "connect",
+    "createRepoInstallation",
+    "createProjectKernel"
+  ]);
+
+const hasTargetFixture = async (fixturePath: string): Promise<boolean> =>
+  await pathExists(path.join(fixturePath, "package.json")) &&
+  await pathExists(path.join(fixturePath, "src"));
+
+const hasProjectRegistrationSchema = (harnessSchemaText: string): boolean =>
+  includesAll(harnessSchemaText, [
+    "projects",
+    "repoInstallations",
+    "projectKernels",
+    "repoFingerprint",
+    "localPathHint"
+  ]);
+
+const hasInitConnectSmokeProof = (
+  packageJson: Record<string, unknown> | undefined,
+  parseArgsText: string,
+  initConnectSmokeText: string,
+  verificationText: string
+): boolean =>
+  readScriptStatus(
+    packageJson,
+    "db:smoke:init-connect",
+    "krn db smoke init-connect"
+  ).startsWith("available") &&
+  includesAll(parseArgsText, ["init-connect"]) &&
+  includesAll(initConnectSmokeText, [
+    "runInitConnectSmokeCheck",
+    "cleanupFixtureProjectRecords"
+  ]) &&
+  includesAll(verificationText, ["Live `pnpm db:smoke:init-connect` passed"]);
+
+const hasTargetHarnessSmokeProof = (
+  packageJson: Record<string, unknown> | undefined,
+  parseArgsText: string,
+  targetHarnessSmokeText: string,
+  verificationText: string
+): boolean =>
+  readScriptStatus(
+    packageJson,
+    "db:smoke:target-repo-harness",
+    "krn db smoke target-repo-harness"
+  ).startsWith("available") &&
+  includesAll(parseArgsText, ["target-repo-harness"]) &&
+  includesAll(targetHarnessSmokeText, [
+    "runTargetRepoHarnessSmokeCheck",
+    "targetProjectLinked",
+    "cleanupMarkerRows"
+  ]) &&
+  includesAll(verificationText, ["Live `pnpm db:smoke:target-repo-harness` passed"]);
+
+const hasCrossProjectLeakageProof = (
+  runPlanText: string,
+  databaseRuntimeText: string,
+  targetHarnessSmokeText: string,
+  verificationText: string
+): boolean =>
+  includesAll(runPlanText, [
+    "projectId",
+    "ProjectKernel"
+  ]) &&
+  includesAll(databaseRuntimeText, [
+    "getLatestProjectKernel",
+    "listRepoInstallationsForProject"
+  ]) &&
+  includesAll(targetHarnessSmokeText, ["targetProjectLinked"]) &&
+  includesAll(verificationText, ["Target project linkage was verified as `yes`"]);
+
+const hasForbiddenTargetSurface = async (fixturePath: string): Promise<boolean> =>
+  await pathExistsAny([
+    path.join(fixturePath, ".krn"),
+    path.join(fixturePath, "apps"),
+    path.join(fixturePath, "packages", "dashboard"),
+    path.join(fixturePath, "packages", "api"),
+    path.join(fixturePath, "memory.md"),
+    path.join(fixturePath, "MEMORY.md")
+  ]);
+
 export const checkTargetRepoReadiness = async (repoRoot: string): Promise<DoctorCheck[]> => {
   const packageJson = await readJsonObject(path.join(repoRoot, "package.json"));
   const parseArgsText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "parseArgs.ts")
+    packagePath(repoRoot, "cli", "src", "parseArgs.ts")
   );
   const runCliText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "runCli.ts")
+    packagePath(repoRoot, "cli", "src", "runCli.ts")
   );
   const runInitText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "runInitCommand.ts")
+    packagePath(repoRoot, "cli", "src", "runInitCommand.ts")
   );
   const runPlanText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "runPlanCommand.ts")
+    packagePath(repoRoot, "cli", "src", "runPlanCommand.ts")
   );
   const databaseRuntimeText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "databaseRuntime.ts")
+    packagePath(repoRoot, "cli", "src", "databaseRuntime.ts")
   );
   const targetHarnessSmokeText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "targetRepoHarnessSmoke.ts")
+    packagePath(repoRoot, "cli", "src", "targetRepoHarnessSmoke.ts")
   );
   const initConnectSmokeText = await readOptionalText(
-    path.join(repoRoot, "packages", "db", "src", "initConnectSmoke.ts")
+    packagePath(repoRoot, "db", "src", "initConnectSmoke.ts")
   );
   const harnessSchemaText = await readOptionalText(
-    path.join(repoRoot, "packages", "db", "src", "schema", "harness.ts")
+    packagePath(repoRoot, "db", "src", "schema", "harness.ts")
   );
   const verificationText = await readOptionalText(
     path.join(repoRoot, "docs", "runs", "2026-06-22-target-repo-init-connect", "VERIFICATION.md")
   );
-  const fixturePath = path.join(
-    repoRoot,
-    "tests",
-    "fixtures",
-    "target-repos",
-    "typescript-basic"
+  const fixturePath = targetRepoFixturePath(repoRoot);
+  const initCommandAvailable = hasTargetInitCommand(
+    parseArgsText,
+    runCliText,
+    runInitText
   );
-  const initCommandAvailable =
-    parseArgsText.includes("--connect") &&
-    runCliText.includes("runInitCommand") &&
-    runInitText.includes("connect") &&
-    runInitText.includes("createRepoInstallation") &&
-    runInitText.includes("createProjectKernel");
-  const fixtureAvailable =
-    await pathExists(path.join(fixturePath, "package.json")) &&
-    await pathExists(path.join(fixturePath, "src"));
-  const projectRegistrationSchemaPresent =
-    harnessSchemaText.includes("projects") &&
-    harnessSchemaText.includes("repoInstallations") &&
-    harnessSchemaText.includes("projectKernels") &&
-    harnessSchemaText.includes("repoFingerprint") &&
-    harnessSchemaText.includes("localPathHint");
-  const initConnectSmokeProven =
-    readScriptStatus(
-      packageJson,
-      "db:smoke:init-connect",
-      "krn db smoke init-connect"
-    ).startsWith("available") &&
-    parseArgsText.includes("init-connect") &&
-    initConnectSmokeText.includes("runInitConnectSmokeCheck") &&
-    initConnectSmokeText.includes("cleanupFixtureProjectRecords") &&
-    verificationText.includes("Live `pnpm db:smoke:init-connect` passed");
-  const targetHarnessSmokeProven =
-    readScriptStatus(
-      packageJson,
-      "db:smoke:target-repo-harness",
-      "krn db smoke target-repo-harness"
-    ).startsWith("available") &&
-    parseArgsText.includes("target-repo-harness") &&
-    targetHarnessSmokeText.includes("runTargetRepoHarnessSmokeCheck") &&
-    targetHarnessSmokeText.includes("targetProjectLinked") &&
-    targetHarnessSmokeText.includes("cleanupMarkerRows") &&
-    verificationText.includes("Live `pnpm db:smoke:target-repo-harness` passed");
-  const crossProjectLeakageProofKnown =
-    runPlanText.includes("projectId") &&
-    runPlanText.includes("ProjectKernel") &&
-    databaseRuntimeText.includes("getLatestProjectKernel") &&
-    databaseRuntimeText.includes("listRepoInstallationsForProject") &&
-    targetHarnessSmokeText.includes("targetProjectLinked") &&
-    verificationText.includes("Target project linkage was verified as `yes`");
-  const forbiddenSurfacePresent =
-    await pathExists(path.join(fixturePath, ".krn")) ||
-    await pathExists(path.join(fixturePath, "apps")) ||
-    await pathExists(path.join(fixturePath, "packages", "dashboard")) ||
-    await pathExists(path.join(fixturePath, "packages", "api")) ||
-    await pathExists(path.join(fixturePath, "memory.md")) ||
-    await pathExists(path.join(fixturePath, "MEMORY.md"));
+  const fixtureAvailable = await hasTargetFixture(fixturePath);
+  const projectRegistrationSchemaPresent = hasProjectRegistrationSchema(harnessSchemaText);
+  const initConnectSmokeProven = hasInitConnectSmokeProof(
+    packageJson,
+    parseArgsText,
+    initConnectSmokeText,
+    verificationText
+  );
+  const targetHarnessSmokeProven = hasTargetHarnessSmokeProof(
+    packageJson,
+    parseArgsText,
+    targetHarnessSmokeText,
+    verificationText
+  );
+  const crossProjectLeakageProofKnown = hasCrossProjectLeakageProof(
+    runPlanText,
+    databaseRuntimeText,
+    targetHarnessSmokeText,
+    verificationText
+  );
+  const forbiddenSurfacePresent = await hasForbiddenTargetSurface(fixturePath);
 
   return [
     {
