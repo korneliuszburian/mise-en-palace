@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V356 Graph Relation SearchDocument Support Vertical
+V357 Source Search Query-Shape Diagnostics
 ```
 
 Current state:
@@ -27,14 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V356-00 Graph Relation SearchDocument Support Vertical.
+current task: V357-00 Source Search Query-Shape Diagnostics.
 ```
 
-Current task: turn the graph-relations mini Brain-QA gap into a bounded product
-repair or proof by improving reviewable SearchDocument support for graph
-relation answers where appropriate. Do not add UI/API/MCP, crawler, schema,
-ranking rewrite, embeddings, graph runtime, worker runtime, broad benchmark, or
-Memory Core mutation.
+Current task: improve source-search readback so broad over-constrained queries
+are visible to operators when SourceClaims exist but SearchDocuments are absent.
+Do not add UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph
+runtime, worker runtime, broad benchmark, or Memory Core mutation.
 
 ## Direction
 

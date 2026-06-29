@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V356 Graph Relation SearchDocument Support Vertical
-current task: V356-00 Graph Relation SearchDocument Support Vertical
+active stream: V357 Source Search Query-Shape Diagnostics
+current task: V357-00 Source Search Query-Shape Diagnostics
 ```
 
 ## Compact Checkpoints
@@ -45,6 +45,7 @@ V352: diagnostics usefulness closure.
 V353: classified answer usefulness over five JSON answer packages.
 V354: added built-in answerUsefulness labels/reasons to source-search JSON/text output.
 V355: proved the five-case batch consumes built-in answerUsefulness without local classification.
+V356: proved graph relation SearchDocuments exist; broad relation queries are over-constrained query-shape gaps.
 ```
 
 V353 outcome:
@@ -81,42 +82,57 @@ report: docs/reviews/controlled-dogfood/2026-06-29-v355-mini-brain-qa-built-in-u
 
 ### V356-00 Graph Relation SearchDocument Support Vertical
 
-Goal: turn the graph-relations answer usefulness gap into a bounded product
-repair or proof.
+Status: complete.
 
-Product rationale: V355 showed graph relation answers are claim-useful but lack
-included SearchDocument evidence for the combined query.
+Outcome: graph relation SearchDocuments exist and are included for narrower
+queries such as `temporal claim graph`; V355-style broad queries are
+over-constrained by current lexical query shape.
 
-Architectural rationale: improve graph-brain answer support before UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, or ranking
-work.
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v356-graph-relation-searchdocument-support/REPORT.md
+```
+
+### V357-00 Source Search Query-Shape Diagnostics
+
+Goal: make source-search answer packages expose likely broad-query shape
+diagnostics when SourceClaims exist but SearchDocuments are absent.
+
+Product rationale: V356 showed the graph relation document gap was not missing
+coverage; operators needed manual DB/source-search inspection to discover that
+the broad query was over-constrained.
+
+Architectural rationale: improve operator-facing source-search readback before
+ranking, schema, crawler, embeddings, graph runtime, worker runtime, UI/API/MCP,
+or broad benchmark work.
 
 Source-to-decision:
 
 ```txt
-source: V355 built-in usefulness loop report.
-mechanism: graph-relations query has governed SourceClaims but no included SearchDocument evidence.
-KRN implication: graph answer support needs a bounded document-support repair/proof before broader graph runtime work.
-decision: inspect and repair/prove SearchDocument support for graph relation answers using existing source-search/ingest paths.
-consumer: next graph-brain mini QA loop.
-falsifier: graph relation answers remain claim-only after bounded support work, or repair requires ranking/schema/runtime expansion.
+source: V356 graph relation SearchDocument support report.
+mechanism: source-search can retrieve graph relation SearchDocuments for narrow queries, but broad `websearch_to_tsquery` shapes can require too many terms and return zero documents.
+KRN implication: answer packages need explicit query-shape diagnostics so operators can distinguish missing coverage from over-constrained query wording.
+decision: add bounded source-search query-shape diagnostics without changing ranking or retrieval semantics.
+consumer: next graph-brain mini QA loop and technical operators using `krn source search --json`.
+falsifier: diagnostics cannot be derived safely from existing answer-package fields, or they overclaim ranking/query correctness.
 doesNotProve: answer correctness, source truth, ranking quality, product readiness, UI/API/MCP readiness, or Memory Core mutation.
 ```
 
-Allowed writes: smallest owning source/test files if a source-search support bug
-is found, or report/root only if the gap is coverage not code.
+Allowed writes: smallest owning source-search CLI/readback source and focused tests, plus compact report/root state.
 
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP, crawler,
-embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
-mutation, or parallel roadmap.
+Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
+crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory
+Core mutation, or parallel roadmap.
 
-Verification: targeted source-search/ingest readback or tests, DB-backed
-readback, evidence capture, observe, reflect, `git diff --check`.
+Verification: focused source-search tests, DB-backed readback over broad and
+narrow graph relation queries, evidence capture, observe, reflect,
+`pnpm typecheck`, `pnpm test`, `git diff --check`.
 
 ## Remaining Product Gaps
 
 ```txt
-1. graph relation SearchDocument answer support
+1. source-search query-shape diagnostics
 2. ingest v0 expansion with bounded evidence
 3. graph brain v0 entity/relation extraction and answer deltas
 4. heartbeat/dreaming candidate generator
