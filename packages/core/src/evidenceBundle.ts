@@ -452,20 +452,68 @@ const normalizeDefaultTemplateStatus = (
 ): DefaultTemplateEvidenceCommand["status"] =>
   status === "skipped" ? "skipped" : "not_run";
 
-export const normalizeEvidenceCommand = (
+const normalizedCommandOutputRef = (
   command: EvidenceCommand
-): NormalizedEvidenceCommand => {
-  const outputRef = hasText(command.outputRef)
+): string | undefined =>
+  hasText(command.outputRef)
     ? command.outputRef.trim()
     : hasText(command.outputPath)
       ? command.outputPath.trim()
       : undefined;
-  const provenance = command.provenance ?? inferCommandProvenance(command);
-  const doesNotProve = hasText(command.doesNotProve)
+
+const normalizedCommandDoesNotProve = (
+  command: EvidenceCommand,
+  provenance: EvidenceCommandProvenance
+): string =>
+  hasText(command.doesNotProve)
     ? command.doesNotProve.trim()
     : provenance === "default_template"
       ? defaultTemplateCommandDoesNotProve
       : commandResultDoesNotProve;
+
+interface EvidenceCommandNormalizationContext {
+  command: EvidenceCommand;
+  provenance: EvidenceCommandProvenance;
+  outputRef?: string;
+  doesNotProve: string;
+}
+
+type OptionalCommandExecutionDetails = {
+  exitCode?: number;
+  capturedAt?: IsoTimestamp;
+};
+
+const optionalCommandExecutionDetails = (
+  command: EvidenceCommand
+): OptionalCommandExecutionDetails => ({
+  ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
+  ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {})
+});
+
+const optionalCommandAssertionDetails = (
+  command: EvidenceCommand
+): Pick<OperatorReportedEvidenceCommand, "assertedBy"> | Record<string, never> =>
+  hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {};
+
+const buildEvidenceCommandNormalizationContext = (
+  command: EvidenceCommand
+): EvidenceCommandNormalizationContext => {
+  const outputRef = normalizedCommandOutputRef(command);
+  const provenance = command.provenance ?? inferCommandProvenance(command);
+  const doesNotProve = normalizedCommandDoesNotProve(command, provenance);
+
+  return {
+    command,
+    provenance,
+    ...(outputRef === undefined ? {} : { outputRef }),
+    doesNotProve
+  };
+};
+
+const normalizeCapturedOutputFileCommand = (
+  context: EvidenceCommandNormalizationContext
+): CapturedOutputFileEvidenceCommand | undefined => {
+  const { command, outputRef, provenance, doesNotProve } = context;
 
   if (provenance === "captured_output_file" && outputRef !== undefined) {
     return {
@@ -475,12 +523,19 @@ export const normalizeEvidenceCommand = (
       provenance,
       outputRef,
       ...(hasText(command.outputPath) ? { outputPath: command.outputPath.trim() } : {}),
-      ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
-      ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
-      ...(hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {}),
+      ...optionalCommandExecutionDetails(command),
+      ...optionalCommandAssertionDetails(command),
       doesNotProve
     };
   }
+
+  return undefined;
+};
+
+const normalizeExternalLogCommand = (
+  context: EvidenceCommandNormalizationContext
+): ExternalLogEvidenceCommand | undefined => {
+  const { command, outputRef, provenance, doesNotProve } = context;
 
   if (provenance === "external_log" && outputRef !== undefined) {
     return {
@@ -489,11 +544,18 @@ export const normalizeEvidenceCommand = (
       status: command.status,
       provenance,
       outputRef,
-      ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
-      ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
+      ...optionalCommandExecutionDetails(command),
       doesNotProve
     };
   }
+
+  return undefined;
+};
+
+const normalizeCommandRunnerCommand = (
+  context: EvidenceCommandNormalizationContext
+): CommandRunnerEvidenceCommand | undefined => {
+  const { command, outputRef, provenance, doesNotProve } = context;
 
   if (
     provenance === "command_runner" &&
@@ -513,26 +575,51 @@ export const normalizeEvidenceCommand = (
     };
   }
 
+  return undefined;
+};
+
+const normalizeOperatorReportedCommand = (
+  context: EvidenceCommandNormalizationContext
+): OperatorReportedEvidenceCommand | undefined => {
+  const { command, provenance, doesNotProve } = context;
+
   if (provenance === "operator_reported") {
     return {
       kind: "operator_reported",
       command: command.command,
       status: command.status,
       provenance: "operator_reported",
-      ...(command.exitCode === undefined ? {} : { exitCode: command.exitCode }),
-      ...(hasText(command.capturedAt) ? { capturedAt: command.capturedAt.trim() } : {}),
-      ...(hasText(command.assertedBy) ? { assertedBy: command.assertedBy.trim() } : {}),
+      ...optionalCommandExecutionDetails(command),
+      ...optionalCommandAssertionDetails(command),
       doesNotProve
     };
   }
 
-  return {
+  return undefined;
+};
+
+const normalizeDefaultTemplateCommand = (
+  command: EvidenceCommand
+): DefaultTemplateEvidenceCommand => (
+  {
     kind: "default_template",
     command: command.command,
     status: normalizeDefaultTemplateStatus(command.status),
     provenance: "default_template",
     doesNotProve: defaultTemplateCommandDoesNotProve
-  };
+  }
+);
+
+export const normalizeEvidenceCommand = (
+  command: EvidenceCommand
+): NormalizedEvidenceCommand => {
+  const context = buildEvidenceCommandNormalizationContext(command);
+
+  return normalizeCapturedOutputFileCommand(context)
+    ?? normalizeExternalLogCommand(context)
+    ?? normalizeCommandRunnerCommand(context)
+    ?? normalizeOperatorReportedCommand(context)
+    ?? normalizeDefaultTemplateCommand(command);
 };
 
 const hasRequiredCommand = (
@@ -559,7 +646,9 @@ const stringListMetadata = (
     return [];
   }
 
-  return value.filter((item): item is string => typeof item === "string" && !isBlank(item));
+  return value.filter((item): item is string =>
+    typeof item === "string" && item.trim().length > 0
+  );
 };
 
 const clampRisk = (score: number): DiffRisk => {
