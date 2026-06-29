@@ -109,8 +109,46 @@ interface AntiMemoryCandidateInvariantInput {
   validUntil?: string;
 }
 
+type MemoryRecordInsertRow = typeof memoryRecords.$inferInsert;
+type MemoryRecordVersionInsertRow = typeof memoryRecordVersions.$inferInsert;
+type AntiMemoryCandidateInsertRow = typeof antiMemoryCandidates.$inferInsert;
+
 const hasText = (value: string | undefined): boolean =>
   value !== undefined && value.trim().length > 0;
+
+const assertHasText = (
+  value: string | undefined,
+  message: string
+): void => {
+  if (!hasText(value)) {
+    throw new Error(message);
+  }
+};
+
+const assertConfidence = (
+  confidence: number,
+  subject: string
+): void => {
+  if (!Number.isInteger(confidence) || confidence < 0 || confidence > 100) {
+    throw new Error(`${subject} confidence must be an integer from 0 to 100`);
+  }
+};
+
+const sourceLineageIsPresent = (
+  sourceLineage: readonly { sourceId: string }[]
+): boolean => (
+  sourceLineage.length > 0 &&
+  sourceLineage.every((lineage) => hasText(lineage.sourceId))
+);
+
+const assertSourceLineage = (
+  sourceLineage: readonly { sourceId: string }[],
+  subject: string
+): void => {
+  if (!sourceLineageIsPresent(sourceLineage)) {
+    throw new Error(`${subject} requires source lineage`);
+  }
+};
 
 const timestampValue = (value: string | undefined): number | undefined => {
   if (value === undefined) {
@@ -122,102 +160,86 @@ const timestampValue = (value: string | undefined): number | undefined => {
   return Number.isNaN(parsed) ? undefined : parsed;
 };
 
+const assertTemporalWindow = (
+  validFrom: string | undefined,
+  validUntil: string | undefined,
+  subject: string
+): void => {
+  if (validUntil === undefined) {
+    return;
+  }
+
+  if (!hasText(validFrom)) {
+    throw new Error(`${subject} with validUntil requires validFrom`);
+  }
+
+  const validFromTime = timestampValue(validFrom);
+  const validUntilTime = timestampValue(validUntil);
+
+  if (validFromTime !== undefined && validUntilTime !== undefined && validUntilTime <= validFromTime) {
+    throw new Error(`${subject} validUntil must be after validFrom`);
+  }
+};
+
+const assertMemoryTemporalStrategy = (
+  input: MemoryCoreInvariantInput,
+  subject: string
+): void => {
+  if (input.validUntil === undefined) {
+    return;
+  }
+
+  if (!hasText(input.validFrom)) {
+    throw new Error(`${subject} with validUntil requires validFrom`);
+  }
+
+  if (!hasText(input.invalidationRule)) {
+    throw new Error(`${subject} with validUntil requires invalidation rule`);
+  }
+
+  assertTemporalWindow(input.validFrom, input.validUntil, subject);
+};
+
+const invalidatingSourceClaimCount = (
+  input: AntiMemoryCandidateInvariantInput
+): number => input.invalidatedBySourceClaimIds?.filter(hasText).length ?? 0;
+
+const hasAntiMemoryInvalidationEvidence = (
+  input: AntiMemoryCandidateInvariantInput
+): boolean => (
+  hasText(input.invalidatedBySourceClaimId) ||
+  invalidatingSourceClaimCount(input) > 0 ||
+  sourceLineageIsPresent(input.sourceLineage)
+);
+
 export const assertMemoryCoreInvariants = (
   input: MemoryCoreInvariantInput,
   subject: string
 ): void => {
-  if (!hasText(input.summary)) {
-    throw new Error(`${subject} requires summary`);
-  }
-
-  if (!hasText(input.body)) {
-    throw new Error(`${subject} requires body`);
-  }
-
-  if (!hasText(input.owner)) {
-    throw new Error(`${subject} requires owner`);
-  }
-
-  if (!Number.isInteger(input.confidence) || input.confidence < 0 || input.confidence > 100) {
-    throw new Error(`${subject} confidence must be an integer from 0 to 100`);
-  }
-
-  if (!hasText(input.applicationGuidance)) {
-    throw new Error(`${subject} requires application guidance`);
-  }
-
-  if (
-    input.sourceLineage.length === 0 ||
-    input.sourceLineage.some((lineage) => !hasText(lineage.sourceId))
-  ) {
-    throw new Error(`${subject} requires source lineage`);
-  }
-
-  if (input.validUntil !== undefined) {
-    if (!hasText(input.validFrom)) {
-      throw new Error(`${subject} with validUntil requires validFrom`);
-    }
-
-    if (!hasText(input.invalidationRule)) {
-      throw new Error(`${subject} with validUntil requires invalidation rule`);
-    }
-
-    const validFrom = timestampValue(input.validFrom);
-    const validUntil = timestampValue(input.validUntil);
-
-    if (validFrom !== undefined && validUntil !== undefined && validUntil <= validFrom) {
-      throw new Error(`${subject} validUntil must be after validFrom`);
-    }
-  }
+  assertHasText(input.summary, `${subject} requires summary`);
+  assertHasText(input.body, `${subject} requires body`);
+  assertHasText(input.owner, `${subject} requires owner`);
+  assertConfidence(input.confidence, subject);
+  assertHasText(input.applicationGuidance, `${subject} requires application guidance`);
+  assertSourceLineage(input.sourceLineage, subject);
+  assertMemoryTemporalStrategy(input, subject);
 };
 
 export const assertAntiMemoryCandidateInvariants = (
   input: AntiMemoryCandidateInvariantInput,
   subject: string
 ): void => {
-  if (!hasText(input.key)) {
-    throw new Error(`${subject} requires key`);
-  }
+  assertHasText(input.key, `${subject} requires key`);
+  assertHasText(input.summary, `${subject} requires summary`);
+  assertHasText(input.body, `${subject} requires body`);
+  assertHasText(input.owner, `${subject} requires owner`);
+  assertConfidence(input.confidence, subject);
 
-  if (!hasText(input.summary)) {
-    throw new Error(`${subject} requires summary`);
-  }
-
-  if (!hasText(input.body)) {
-    throw new Error(`${subject} requires body`);
-  }
-
-  if (!hasText(input.owner)) {
-    throw new Error(`${subject} requires owner`);
-  }
-
-  if (!Number.isInteger(input.confidence) || input.confidence < 0 || input.confidence > 100) {
-    throw new Error(`${subject} confidence must be an integer from 0 to 100`);
-  }
-
-  const invalidatingSourceClaimCount = input.invalidatedBySourceClaimIds?.filter(hasText).length ?? 0;
-
-  if (
-    !hasText(input.invalidatedBySourceClaimId) &&
-    invalidatingSourceClaimCount === 0 &&
-    (input.sourceLineage.length === 0 ||
-      input.sourceLineage.some((lineage) => !hasText(lineage.sourceId)))
-  ) {
+  if (!hasAntiMemoryInvalidationEvidence(input)) {
     throw new Error(`${subject} requires invalidating source claim or source lineage`);
   }
 
-  if (input.validUntil !== undefined) {
-    if (!hasText(input.validFrom)) {
-      throw new Error(`${subject} with validUntil requires validFrom`);
-    }
-
-    const validFrom = timestampValue(input.validFrom);
-    const validUntil = timestampValue(input.validUntil);
-
-    if (validFrom !== undefined && validUntil !== undefined && validUntil <= validFrom) {
-      throw new Error(`${subject} validUntil must be after validFrom`);
-    }
-  }
+  assertTemporalWindow(input.validFrom, input.validUntil, subject);
 };
 
 const ensurePromotableCandidate = (candidate: MemoryCandidate): void => {
@@ -240,6 +262,160 @@ const ensurePromotableAntiMemoryCandidate = (candidate: AntiMemoryCandidate): vo
   assertAntiMemoryCandidateInvariants(candidate, `Anti-memory candidate ${candidate.id}`);
 };
 
+const memoryRecordInsertValues = (
+  input: CreateMemoryRecordInput
+): MemoryRecordInsertRow => {
+  const row: MemoryRecordInsertRow = {
+    projectId: input.projectId,
+    key: input.key,
+    kind: input.kind,
+    status: input.status ?? "active",
+    summary: input.summary,
+    body: input.body,
+    owner: input.owner,
+    confidence: input.confidence,
+    applicationGuidance: input.applicationGuidance,
+    sourceLineage: input.sourceLineage,
+    metadata: input.metadata ?? {}
+  };
+
+  if (input.currentVersionId !== undefined) {
+    row.currentVersionId = input.currentVersionId;
+  }
+
+  if (input.invalidationRule !== undefined) {
+    row.invalidationRule = input.invalidationRule;
+  }
+
+  if (input.isUserPreference !== undefined) {
+    row.isUserPreference = input.isUserPreference;
+  }
+
+  if (input.validFrom !== undefined) {
+    row.validFrom = fromIsoTimestamp(input.validFrom);
+  }
+
+  if (input.validUntil !== undefined) {
+    row.validUntil = fromIsoTimestamp(input.validUntil);
+  }
+
+  return row;
+};
+
+const initialMemoryRecordVersionInsertValues = (
+  memoryRecordId: string,
+  input: CreateMemoryRecordInput
+): MemoryRecordVersionInsertRow => {
+  const row: MemoryRecordVersionInsertRow = {
+    memoryRecordId,
+    version: 1,
+    summary: input.summary,
+    body: input.body,
+    owner: input.owner,
+    confidence: input.confidence,
+    applicationGuidance: input.applicationGuidance,
+    sourceLineage: input.sourceLineage,
+    metadata: {
+      reason: "initial memory record version"
+    }
+  };
+
+  if (input.invalidationRule !== undefined) {
+    row.invalidationRule = input.invalidationRule;
+  }
+
+  if (input.validFrom !== undefined) {
+    row.validFrom = fromIsoTimestamp(input.validFrom);
+  }
+
+  if (input.validUntil !== undefined) {
+    row.validUntil = fromIsoTimestamp(input.validUntil);
+  }
+
+  return row;
+};
+
+const applyAntiMemoryCandidateRunLinks = (
+  row: AntiMemoryCandidateInsertRow,
+  input: CreateAntiMemoryCandidateInput
+): void => {
+  if (input.executionRunId !== undefined) {
+    row.executionRunId = input.executionRunId;
+  }
+
+  if (input.feedbackDeltaId !== undefined) {
+    row.feedbackDeltaId = input.feedbackDeltaId;
+  }
+};
+
+const applyAntiMemoryCandidateSourceContext = (
+  row: AntiMemoryCandidateInsertRow,
+  input: CreateAntiMemoryCandidateInput
+): void => {
+  if (input.rejectedClaim !== undefined) {
+    row.rejectedClaim = input.rejectedClaim;
+  }
+
+  if (input.reason !== undefined) {
+    row.reason = input.reason;
+  }
+
+  if (input.invalidatedBySourceClaimId !== undefined) {
+    row.invalidatedBySourceClaimId = input.invalidatedBySourceClaimId;
+  }
+};
+
+const applyAntiMemoryCandidateScope = (
+  row: AntiMemoryCandidateInsertRow,
+  input: CreateAntiMemoryCandidateInput
+): void => {
+  if (input.appliesTo !== undefined) {
+    row.appliesTo = input.appliesTo;
+  }
+
+  if (input.mayRevisitWhen !== undefined) {
+    row.mayRevisitWhen = input.mayRevisitWhen;
+  }
+};
+
+const applyAntiMemoryCandidateTemporalWindow = (
+  row: AntiMemoryCandidateInsertRow,
+  input: CreateAntiMemoryCandidateInput
+): void => {
+  if (input.validFrom !== undefined) {
+    row.validFrom = fromIsoTimestamp(input.validFrom);
+  }
+
+  if (input.validUntil !== undefined) {
+    row.validUntil = fromIsoTimestamp(input.validUntil);
+  }
+};
+
+const antiMemoryCandidateInsertValues = (
+  input: CreateAntiMemoryCandidateInput
+): AntiMemoryCandidateInsertRow => {
+  const row: AntiMemoryCandidateInsertRow = {
+    projectId: input.projectId,
+    proposedBy: input.proposedBy,
+    key: input.key,
+    status: input.status ?? "candidate",
+    invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+    summary: input.summary,
+    body: input.body,
+    owner: input.owner,
+    confidence: input.confidence,
+    sourceLineage: input.sourceLineage,
+    metadata: input.metadata ?? {}
+  };
+
+  applyAntiMemoryCandidateRunLinks(row, input);
+  applyAntiMemoryCandidateSourceContext(row, input);
+  applyAntiMemoryCandidateScope(row, input);
+  applyAntiMemoryCandidateTemporalWindow(row, input);
+
+  return row;
+};
+
 export class DrizzleMemoryRepository implements MemoryRepository {
   constructor(private readonly db: KrnDatabase) {}
 
@@ -250,32 +426,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       const row = requireReturnedRow(
         await tx
           .insert(memoryRecords)
-          .values({
-            projectId: input.projectId,
-            ...(input.currentVersionId === undefined
-              ? {}
-              : { currentVersionId: input.currentVersionId }),
-            key: input.key,
-            kind: input.kind,
-            status: input.status ?? "active",
-            summary: input.summary,
-            body: input.body,
-            owner: input.owner,
-            confidence: input.confidence,
-            applicationGuidance: input.applicationGuidance,
-            ...(input.invalidationRule === undefined
-              ? {}
-              : { invalidationRule: input.invalidationRule }),
-            sourceLineage: input.sourceLineage,
-            isUserPreference: input.isUserPreference,
-            ...(input.validFrom === undefined
-              ? {}
-              : { validFrom: fromIsoTimestamp(input.validFrom) }),
-            ...(input.validUntil === undefined
-              ? {}
-              : { validUntil: fromIsoTimestamp(input.validUntil) }),
-            metadata: input.metadata ?? {}
-          })
+          .values(memoryRecordInsertValues(input))
           .returning(),
         "createMemoryRecord"
       );
@@ -283,28 +434,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       const versionRow = requireReturnedRow(
         await tx
           .insert(memoryRecordVersions)
-          .values({
-            memoryRecordId: row.id,
-            version: 1,
-            summary: input.summary,
-            body: input.body,
-            owner: input.owner,
-            confidence: input.confidence,
-            applicationGuidance: input.applicationGuidance,
-            ...(input.invalidationRule === undefined
-              ? {}
-              : { invalidationRule: input.invalidationRule }),
-            ...(input.validFrom === undefined
-              ? {}
-              : { validFrom: fromIsoTimestamp(input.validFrom) }),
-            ...(input.validUntil === undefined
-              ? {}
-              : { validUntil: fromIsoTimestamp(input.validUntil) }),
-            sourceLineage: input.sourceLineage,
-            metadata: {
-              reason: "initial memory record version"
-            }
-          })
+          .values(initialMemoryRecordVersionInsertValues(row.id, input))
           .returning(),
         "createMemoryRecordVersion"
       );
@@ -697,42 +827,7 @@ export class DrizzleMemoryRepository implements MemoryRepository {
       const row = requireReturnedRow(
         await tx
           .insert(antiMemoryCandidates)
-          .values({
-            projectId: input.projectId,
-            ...(input.executionRunId === undefined
-              ? {}
-              : { executionRunId: input.executionRunId }),
-            ...(input.feedbackDeltaId === undefined
-              ? {}
-              : { feedbackDeltaId: input.feedbackDeltaId }),
-            proposedBy: input.proposedBy,
-            key: input.key,
-            status: input.status ?? "candidate",
-            ...(input.rejectedClaim === undefined
-              ? {}
-              : { rejectedClaim: input.rejectedClaim }),
-            ...(input.reason === undefined ? {} : { reason: input.reason }),
-            invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
-            ...(input.invalidatedBySourceClaimId === undefined
-              ? {}
-              : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
-            ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
-            ...(input.mayRevisitWhen === undefined
-              ? {}
-              : { mayRevisitWhen: input.mayRevisitWhen }),
-            summary: input.summary,
-            body: input.body,
-            owner: input.owner,
-            confidence: input.confidence,
-            sourceLineage: input.sourceLineage,
-            ...(input.validFrom === undefined
-              ? {}
-              : { validFrom: fromIsoTimestamp(input.validFrom) }),
-            ...(input.validUntil === undefined
-              ? {}
-              : { validUntil: fromIsoTimestamp(input.validUntil) }),
-            metadata: input.metadata ?? {}
-          })
+          .values(antiMemoryCandidateInsertValues(input))
           .returning(),
         "createAntiMemoryCandidate"
       );
