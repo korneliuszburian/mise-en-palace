@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V328 Source Extraction Fence-State Carryover Repair
-current task: V328-00 Source Extraction Fence-State Carryover Repair
+active stream: V329 Graph-Aware SourceClaimEdge Activation Readback Stub
+current task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,10 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V328-00 Source Extraction Fence-State Carryover Repair. V327 proved selected
-ready extraction candidates can persist through governed SourceClaim review, but
-live ADR-0021 preview exposed that chunks beginning inside an already-open
-fenced/YAML block can still emit ready claim candidates.
+V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub. V328 repaired
+source extraction fence-state carryover; Graph Brain v0 now needs one bounded
+proof that persisted SourceClaimEdge state can influence source context/readback
+without claiming graph ranking or graph runtime.
 ```
 
 ## 2. Product Thesis
@@ -57,7 +57,8 @@ activation: useful for guardrails and some persisted source state; owner-file re
 pattern brain: partial
 graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   preview exists; extraction reviewability/noise gate complete; reviewed
-  extraction persistence bridge complete; fence-state carryover repair next
+  extraction persistence bridge complete; fence-state carryover repair complete;
+  graph-aware edge readback/activation stub next
 product-ready: no
 ```
 
@@ -76,6 +77,7 @@ V324 complete: SourceClaimEdge readback by SourceClaim id.
 V325 complete: candidate-only local extraction preview.
 V326 complete: ready vs deferred extraction claim reviewability gate.
 V327 complete: selected ready extraction candidate persistence bridge.
+V328 complete: source extraction fence-state carryover repair.
 ```
 
 Reports:
@@ -85,6 +87,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-r
 docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-bridge/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-carryover/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -128,44 +131,65 @@ krn source artifact preview reviewed bridge --persist: passed
 deferred candidate rejection: expected failure
 ```
 
-## Active Task: V328-00 Source Extraction Fence-State Carryover Repair
+## Outcome V328 Source Extraction Fence-State Carryover Repair
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: `docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-bridge/REPORT.md`
+- Mechanism: V327 live ADR-0021 preview showed a chunk beginning inside an
+  already-open fenced/YAML block could emit ready claim candidates.
+- KRN implication: graph brain candidate surfaces must preserve reviewability
+  before graph-aware retrieval.
+- Decision: carry fence state across chunks during deterministic extraction.
+- Does not prove: extraction quality at scale, entity resolution, graph
+  retrieval, source truth, crawler readiness, or product readiness.
+- Consumer: V329 graph-aware edge readback/activation stub.
+- Falsifier: chunk-crossing fenced content appears as ready claim candidates.
+
+V328 outcome:
+
+```txt
+Fenced/code state now carries across chunks; ADR-0021 YAML/source-decision
+content that previously appeared as ready candidates is deferred.
+```
+
+V328 verification:
+
+```txt
+pnpm --filter @krn/cli test -- runSourceArtifactPreviewCommand: passed
+pnpm run typecheck: passed
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
+pnpm db:ready: passed
+git diff --check: passed
+krn source artifact preview --extract-candidates on ADR-0021: passed
+```
+
+## Active Task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub
 
 Goal:
 
 ```txt
-Repair local extraction preview so fenced/code block state is preserved across
-chunk boundaries. Source-decision/YAML content must not appear as ready claim
-candidates because the rendered chunk starts inside an already-open fence.
-```
-
-Product rationale:
-
-```txt
-V327 live ADR-0021 preview found ready candidates from fenced YAML/source-decision
-content when a rendered chunk started inside a fence. This weakens reviewed
-candidate quality before graph-aware retrieval.
-```
-
-Architectural rationale:
-
-```txt
-Keep extraction deterministic and candidate-only. Fix source-range/reviewability
-classification before graph ranking, crawler, worker, UI/API/MCP, or consensus.
+Add the smallest graph-aware readback or activation stub that can show how a
+persisted SourceClaimEdge influences selected source context without claiming
+ranking quality, graph runtime, crawler readiness, or product readiness.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-bridge/REPORT.md
-docs/decisions/ADR-0021-temporal-claim-graph.md
+docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-carryover/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-packages/cli/src/runSourceArtifactPreviewCommand.ts
-packages/cli/src/runSourceArtifactPreviewCommand.test.ts
-docs/reviews/controlled-dogfood/<date>-v328-source-extraction-fence-state-carryover/REPORT.md
+packages/harness/src/activation/activationEngine.ts
+packages/cli/src/runSourceClaimEdgesCommand.ts
+focused tests
+docs/reviews/controlled-dogfood/<date>-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -174,43 +198,44 @@ PLANS.md
 Forbidden writes:
 
 ```txt
-schema/migration; crawler; graph ranking; graph runtime; UI/API/MCP; worker
-daemon; consensus runtime; Memory Core mutation; automatic source truth
-promotion; runtime markdown memory
+schema/migration; crawler; graph database; broad graph ranking; graph runtime;
+UI/API/MCP; worker daemon; consensus runtime; Memory Core mutation; automatic
+source truth promotion; runtime markdown memory
 ```
 
 Definition of Done:
 
-- Existing V327 reviewed bridge behavior remains intact.
-- A test covers a chunk beginning inside an already-open fence.
-- `pnpm --filter @krn/cli test -- runSourceArtifactPreviewCommand`,
-  `pnpm typecheck`, `pnpm test`, and `git diff --check` pass.
+- Source inspection decides whether readback or activation is the owning surface.
+- A bounded edge-influence readback/stub exists or the current path is documented
+  as sufficient.
+- `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 
 Acceptance criteria:
 
 ```txt
-ready claim candidates do not include fenced/YAML/source-decision block content
-that started before the rendered chunk.
+persisted SourceClaimEdge state has a reviewable path into selected source
+context/readback without claiming graph ranking quality.
 ```
 
 Risk:
 
 ```txt
-low-medium: fence-state scanning can over-defer valid prose if implemented too
-broadly.
+medium: graph-aware wording can imply ranking/product retrieval quality before
+the system has earned it.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V328 implementation commit
+focused revert of the V329 implementation commit
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V328 succeeds, choose graph-aware retrieval stub or source candidate readback
-refinement from evidence. Do not jump to crawler/UI/API/MCP.
+If V329 succeeds, choose the next graph-brain task from evidence: edge-aware
+candidate ranking lab, source candidate readback refinement, or heartbeat
+candidate generation. Do not jump to crawler/UI/API/MCP.
 ```
 
 ## 9. Task Contract Schema
@@ -274,7 +299,8 @@ Next-task synthesis rule:
 - V325: complete; local source extraction candidate preview.
 - V326: complete; extraction candidate reviewability/noise gate.
 - V327: complete; reviewed extraction persistence bridge.
-- V328: active; source extraction fence-state carryover repair.
+- V328: complete; source extraction fence-state carryover repair.
+- V329: active; graph-aware SourceClaimEdge activation/readback stub.
 
 ## Pattern Gate
 

@@ -276,6 +276,7 @@ const extractLocalSourceCandidates = (
   const deferredClaims: ExtractionClaimCandidate[] = [];
   const seenEntities = new Set<string>();
   const seenClaims = new Set<string>();
+  let insideFence = false;
 
   for (const chunk of chunks) {
     const lines = chunk.content.split("\n");
@@ -327,14 +328,13 @@ const extractLocalSourceCandidates = (
     let blockStartLine: number | undefined;
     let blockEndLine: number | undefined;
     let blockLines: string[] = [];
-    let blockIsFenced = false;
-    let insideFence = false;
+    let blockIsFenced = insideFence;
     const flushClaimBlock = (): void => {
       if (blockStartLine === undefined || blockEndLine === undefined || blockLines.length === 0) {
         blockStartLine = undefined;
         blockEndLine = undefined;
         blockLines = [];
-        blockIsFenced = false;
+        blockIsFenced = insideFence;
 
         return;
       }
@@ -371,7 +371,7 @@ const extractLocalSourceCandidates = (
       blockStartLine = undefined;
       blockEndLine = undefined;
       blockLines = [];
-      blockIsFenced = false;
+      blockIsFenced = insideFence;
     };
 
     for (const [index, rawLine] of lines.entries()) {
@@ -379,15 +379,40 @@ const extractLocalSourceCandidates = (
       const line = rawLine.trim();
       const isFenceLine = /^```/u.test(line);
 
-      if (line.length === 0 || /^#{1,6}\s+/u.test(line)) {
+      if (isFenceLine) {
+        if (!insideFence) {
+          flushClaimBlock();
+          insideFence = true;
+          blockIsFenced = true;
+          blockStartLine = lineNumber;
+          blockEndLine = lineNumber;
+          blockLines.push(stripMarkdownPrefix(line));
+          continue;
+        }
+
+        blockStartLine ??= lineNumber;
+        blockEndLine = lineNumber;
+        blockIsFenced = true;
+        blockLines.push(stripMarkdownPrefix(line));
+        insideFence = false;
         flushClaimBlock();
         continue;
       }
 
-      if (isFenceLine && !insideFence) {
+      if (insideFence) {
+        if (line.length > 0) {
+          blockStartLine ??= lineNumber;
+          blockEndLine = lineNumber;
+          blockIsFenced = true;
+          blockLines.push(stripMarkdownPrefix(line));
+        }
+
+        continue;
+      }
+
+      if (line.length === 0 || /^#{1,6}\s+/u.test(line)) {
         flushClaimBlock();
-        insideFence = true;
-        blockIsFenced = true;
+        continue;
       }
 
       if (/^[-*]\s+/u.test(line) && blockLines.length > 0) {
@@ -397,11 +422,6 @@ const extractLocalSourceCandidates = (
       blockStartLine ??= lineNumber;
       blockEndLine = lineNumber;
       blockLines.push(stripMarkdownPrefix(line));
-
-      if (isFenceLine && insideFence && blockLines.length > 1) {
-        insideFence = false;
-        flushClaimBlock();
-      }
     }
 
     flushClaimBlock();

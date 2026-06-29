@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V328 Source Extraction Fence-State Carryover Repair
+V329 Graph-Aware SourceClaimEdge Activation Readback Stub
 ```
 
 Current state:
@@ -27,15 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V328-00 Source Extraction Fence-State Carryover Repair.
+current task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub.
 ```
 
 Current task:
 
 ```txt
-Repair local extraction preview so fenced/code block state is preserved across
-chunk boundaries. Source-decision/YAML content must not appear as ready claim
-candidates merely because a rendered chunk starts inside an already-open fence.
+Add the smallest graph-aware readback or activation stub that can show how a
+persisted `SourceClaimEdge` influences selected source context without claiming
+ranking quality, graph runtime, crawler readiness, or product readiness.
 ```
 
 ## Remaining Work
@@ -54,9 +54,9 @@ to preserve are:
    activation, context detail run readback, and marker/hash lexical activation
    over persisted local SearchDocuments exist.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
-   extraction preview exists; V327 added reviewed selected-candidate persistence;
-   next repair extraction fence-state carryover before graph ranking, crawler, or
-   graph runtime work.
+   extraction preview and reviewed selected-candidate persistence exist; V328
+   repaired fence-state carryover; next prove a bounded graph-aware
+   SourceClaimEdge readback/activation stub before crawler or graph runtime.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V328 Source Extraction Fence-State Carryover Repair
-current task: V328-00 Source Extraction Fence-State Carryover Repair
+active stream: V329 Graph-Aware SourceClaimEdge Activation Readback Stub
+current task: V329-00 Graph-Aware SourceClaimEdge Activation Readback Stub
 ```
 
 ## Compact Completed Checkpoints
@@ -52,28 +52,29 @@ V324 complete: SourceClaimEdge readback by SourceClaim id.
 V325 complete: candidate-only local extraction preview.
 V326 complete: ready vs deferred extraction claim reviewability gate.
 V327 complete: reviewed selected extraction candidate persistence bridge.
+V328 complete: source extraction fence-state carryover repair.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
-docs/reviews/controlled-dogfood/2026-06-29-v327-...
+docs/reviews/controlled-dogfood/2026-06-29-v327-...,
+docs/reviews/controlled-dogfood/2026-06-29-v328-...
 ```
 
-### V328 Source Extraction Fence-State Carryover Repair
+### V329 Graph-Aware SourceClaimEdge Activation Readback Stub
 
 Goal:
 
-Repair deterministic local extraction so fenced/code block state carries across
-chunk boundaries. YAML/source-decision content must not be classified as ready
-claim candidates merely because the rendered chunk starts inside an already-open
-fence.
+Add the smallest graph-aware readback or activation stub that can show how a
+persisted `SourceClaimEdge` influences selected source context without claiming
+ranking quality, graph runtime, crawler readiness, or product readiness.
 
 Current action:
 
 ```txt
-Execute V328-00: fix deterministic extraction so open fenced/code block state is
-tracked across chunk boundaries. Keep the repair local to extraction preview and
-tests; do not add schema, graph ranking, crawler, UI/API/MCP, worker daemon,
-consensus runtime, or Memory Core mutation.
+Execute V329-00: inspect existing SourceClaimEdge readback and activation source
+selection. If justified, add the smallest readback/activation stub that exposes
+edge influence over source context. Do not add schema, graph database, crawler,
+UI/API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -87,9 +88,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given a file where a rendered chunk starts inside a fenced block, extraction
-preview keeps fenced content deferred instead of producing ready claim
-candidates.
+Given persisted source claims and a SourceClaimEdge, KRN can show the edge
+relationship as bounded source context/readback without pretending graph ranking
+or product retrieval quality exists.
 ```
 
 ## Pattern Gate

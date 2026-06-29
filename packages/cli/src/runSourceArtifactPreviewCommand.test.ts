@@ -175,6 +175,42 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("Memory mutation: none");
   });
 
+  it("carries fenced block state across chunk boundaries before classifying claims", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+
+    await writeFile(sourcePath, [
+      "# Source To Decision",
+      "```yaml",
+      "source_id: chunked-source-decision",
+      "mechanism: KRN should not render fenced continuation as a ready claim.",
+      "decision: adopt carried fence-state extraction.",
+      "```",
+      "KRN should render direct prose outside the fence as ready."
+    ].join("\n"), "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: false,
+        file: "source.md",
+        chunkLines: 3,
+        limitChunks: 3,
+        extractCandidates: true
+      }
+    });
+
+    expect(result.stdout).toContain("claimCandidates:");
+    expect(result.stdout).not.toContain("reviewability: ready | text: mechanism: KRN should not render fenced continuation as a ready claim.");
+    expect(result.stdout).toContain("reviewability: ready | text: KRN should render direct prose outside the fence as ready. | sourceRange: lines 7-7");
+    expect(result.stdout).toContain("deferredClaimCandidates:");
+    expect(result.stdout).toContain("reviewability: needs_more_evidence | text: mechanism: KRN should not render fenced continuation as a ready claim. decision: adopt carried fence-state extraction. ``` | sourceRange: lines 4-6");
+    expect(result.stdout).toContain("Fenced/code or source-decision metadata block requires human extraction before it can become a claim candidate.");
+    expect(result.stdout).toContain("Graph runtime: none");
+    expect(result.stdout).toContain("Memory mutation: none");
+  });
+
   it("renders incomplete source claim candidates as reviewable missing-evidence output", async () => {
     const tempRoot = await createTempRoot();
     const sourcePath = path.join(tempRoot, "source.md");
