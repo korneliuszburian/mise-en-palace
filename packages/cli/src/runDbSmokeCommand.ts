@@ -59,6 +59,19 @@ interface DbSmokeTargetMetadata {
   failureLabel: string;
 }
 
+interface DbSmokeCommandContext {
+  repoRoot: string;
+  migrationsFolder: string;
+  relativeMigrationsFolder: string;
+  databaseUrl: string;
+}
+
+type DbSmokeTarget = DbSmokeRuntime["target"];
+type DbSmokeTargetHandler = (
+  context: DbSmokeCommandContext,
+  runtime: DbSmokeRuntime
+) => Promise<DbSmokeResult>;
+
 const dbSmokeTargetMetadata = {
   project: {
     title: "KRN DB Smoke",
@@ -117,6 +130,414 @@ const dbSmokeTargetMetadata = {
   }
 } satisfies Record<DbSmokeRuntime["target"], DbSmokeTargetMetadata>;
 
+const output = (lines: string[]): string => lines.join("\n") + "\n";
+
+const configuredHeaderLines = (
+  context: DbSmokeCommandContext,
+  title: string
+): string[] => [
+  title,
+  `Repo root: ${context.repoRoot}`,
+  `Migrations folder: ${context.relativeMigrationsFolder}`,
+  "Postgres config: configured"
+];
+
+const smokeResult = (
+  exitCode: number,
+  context: DbSmokeCommandContext,
+  title: string,
+  lines: string[]
+): DbSmokeResult => ({
+  exitCode,
+  stdout: output([
+    ...configuredHeaderLines(context, title),
+    ...lines
+  ])
+});
+
+const cleanupStatusLines = (cleanedUp: boolean, label: string): string[] => [
+  `Cleanup: ${cleanedUp ? "completed" : "not completed"}`,
+  `${label}: ${cleanedUp ? "passed" : "failed"}`
+];
+
+const smokeResultFromCleanup = (
+  context: DbSmokeCommandContext,
+  title: string,
+  cleanedUp: boolean,
+  lines: string[]
+): DbSmokeResult =>
+  smokeResult(cleanedUp ? 0 : 1, context, title, lines);
+
+const runHarnessPlanSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runHarnessPlanSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("harness-plan-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Harness Plan Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Readback: ${report.readBackExecutionRunId === report.executionRunId ? "matched" : "mismatch"}`,
+      `Evidence contract commands: ${report.evidenceCommandCount}`,
+      `Run events: ${report.runEventCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Harness plan smoke")
+    ]
+  );
+};
+
+const runHarnessEvidenceSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runHarnessEvidenceSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("harness-evidence-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Harness Evidence Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Evidence bundle: ${report.evidenceBundleId}`,
+      `Review assessment: ${report.reviewAssessmentId}`,
+      `Feedback delta: ${report.feedbackDeltaId}`,
+      `Evidence bundles: ${report.evidenceBundleCount}`,
+      `Review assessments: ${report.reviewAssessmentCount}`,
+      `Feedback deltas: ${report.feedbackDeltaCount}`,
+      `Run events: ${report.runEventCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Harness evidence smoke")
+    ]
+  );
+};
+
+const runSourceGraphSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runSourceGraphSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("source-graph-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Source Graph Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Source artifact: ${report.sourceArtifactId}`,
+      `Source claim: ${report.sourceClaimId}`,
+      `Temporal source claim: ${report.temporalSourceClaimId}`,
+      `Source claim readback: ${
+        report.readBackSourceClaimId === report.sourceClaimId ? "matched" : "mismatch"
+      }`,
+      `Source claim edge: ${report.sourceClaimEdgeId}`,
+      `Source decision: ${report.sourceDecisionId}`,
+      `Source decision edge: ${report.sourceDecisionEdgeId}`,
+      `Source rejection: ${report.sourceRejectionId}`,
+      `Run source claims: ${report.runClaimCount}`,
+      `Source claim edges: ${report.sourceClaimEdgeCount}`,
+      `Run source decision edges: ${report.runDecisionEdgeCount}`,
+      `Source rejections: ${report.rejectionCount}`,
+      `Outbox events: ${report.outboxEventCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Source graph smoke")
+    ]
+  );
+};
+
+const runMemoryGovernanceSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runMemoryGovernanceSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("memory-governance-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Memory Governance Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Source claim: ${report.sourceClaimId}`,
+      `Memory candidate: ${report.memoryCandidateId}`,
+      `Memory candidate readback: ${
+        report.readBackMemoryCandidateId === report.memoryCandidateId ? "matched" : "mismatch"
+      }`,
+      `Memory candidate reviewed status: ${report.reviewedMemoryCandidateStatus}`,
+      `Memory record: ${report.memoryRecordId}`,
+      `Memory record readback: ${
+        report.readBackMemoryRecordId === report.memoryRecordId ? "matched" : "mismatch"
+      }`,
+      `Memory record version: ${report.memoryRecordVersionId}`,
+      `Memory record invalidated status: ${report.invalidatedMemoryRecordStatus}`,
+      `Active memory after invalidation: ${report.activeMemoryAfterInvalidationCount}`,
+      `Memory application: ${report.memoryApplicationId}`,
+      `Anti-memory candidate: ${report.antiMemoryCandidateId}`,
+      `Anti-memory candidate reviewed status: ${report.reviewedAntiMemoryCandidateStatus}`,
+      `Anti-memory record: ${report.antiMemoryRecordId}`,
+      `Run anti-memory records: ${report.runAntiMemoryCount}`,
+      `Project memory records: ${report.projectMemoryRecordCount}`,
+      `Outbox events: ${report.outboxEventCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Memory governance smoke")
+    ]
+  );
+};
+
+const runRetrievalSubstrateSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runRetrievalSubstrateSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("retrieval-substrate-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Retrieval Substrate Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Source claim: ${report.sourceClaimId}`,
+      `Memory record: ${report.memoryRecordId}`,
+      `Evidence bundle: ${report.evidenceBundleId}`,
+      `Source decision: ${report.sourceDecisionId}`,
+      `Search documents: ${report.searchDocumentCount}`,
+      `Lexical results: ${report.lexicalResultCount}`,
+      `Embedding model: ${report.embeddingModelId}`,
+      `Embedding row: ${report.embeddingId}`,
+      `Retrieval run: ${report.retrievalRunId}`,
+      `Retrieval candidates: ${report.retrievalCandidateCount}`,
+      `Activation decisions: ${report.activationDecisionCount}`,
+      `Context items: ${report.contextItemCount}`,
+      `Context exclusions: ${report.contextExclusionCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Retrieval substrate smoke")
+    ]
+  );
+};
+
+const runActivationSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runActivationSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("activation-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Activation Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Task contract: ${report.taskContractId}`,
+      `Harness plan: ${report.harnessPlanId}`,
+      `Retrieval run: ${report.retrievalRunId}`,
+      `Retrieval run readback: ${
+        report.readBackRetrievalRunId === report.retrievalRunId ? "matched" : "mismatch"
+      }`,
+      `Context assembly: ${report.contextAssemblyId}`,
+      `Context assembly readback: ${
+        report.readBackContextAssemblyId === report.contextAssemblyId ? "matched" : "mismatch"
+      }`,
+      `Source claims: ${report.sourceClaimCount}`,
+      `Memory records: ${report.memoryRecordCount}`,
+      `Anti-memory records: ${report.antiMemoryRecordCount}`,
+      `Search documents: ${report.searchDocumentCount}`,
+      `Search candidates: ${report.searchCandidateCount}`,
+      `Retrieval candidates: ${report.retrievalCandidateCount}`,
+      `Activation decisions: ${report.activationDecisionCount}`,
+      `Included decisions: ${report.includedDecisionCount}`,
+      `Excluded decisions: ${report.excludedDecisionCount}`,
+      `Conflict decisions: ${report.conflictDecisionCount}`,
+      `Stale decisions: ${report.staleDecisionCount}`,
+      `Context items: ${report.contextItemCount}`,
+      `Context exclusions: ${report.contextExclusionCount}`,
+      `Observation prefix items: ${report.observationPrefixItemCount}`,
+      `Raw evidence recall triggers: ${report.rawEvidenceRecallTriggerCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Activation smoke")
+    ]
+  );
+};
+
+const runCodexAdapterSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runCodexAdapterSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("codex-adapter-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Codex Adapter Smoke",
+    report.cleanedUp,
+    formatCodexAdapterSmokeReportLines(report)
+  );
+};
+
+const runWorkerJobsSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runWorkerJobSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("worker-job-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Worker Job Smoke",
+    report.cleanedUp,
+    formatWorkerJobSmokeReportLines(report)
+  );
+};
+
+const targetRepoFixturePath = (context: DbSmokeCommandContext): string =>
+  path.join(
+    context.repoRoot,
+    "tests",
+    "fixtures",
+    "target-repos",
+    "typescript-basic"
+  );
+
+const runInitConnectSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runInitConnectSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("init-connect-smoke"),
+    targetRepoPath: targetRepoFixturePath(context)
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Target Repo Init-Connect Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project: ${report.projectId}`,
+      `Project readback by fingerprint: ${
+        report.readBackProjectIdByFingerprint === report.projectId ? "matched" : "mismatch"
+      }`,
+      `Project readback by path: ${
+        report.readBackProjectIdByPath === report.projectId ? "matched" : "mismatch"
+      }`,
+      `Repo installation: ${report.repoInstallationId}`,
+      `Repo installation readback: ${
+        report.readBackRepoInstallationId === report.repoInstallationId ? "matched" : "mismatch"
+      }`,
+      `ProjectKernel: ${report.projectKernelId}`,
+      `ProjectKernel readback: ${
+        report.readBackProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
+      }`,
+      `Idempotent project reuse: ${report.reusedProjectId === report.projectId ? "matched" : "mismatch"}`,
+      `Idempotent repo installation reuse: ${
+        report.reusedRepoInstallationId === report.repoInstallationId ? "matched" : "mismatch"
+      }`,
+      `Idempotent ProjectKernel reuse: ${
+        report.reusedProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
+      }`,
+      `Refreshed ProjectKernel: ${report.refreshedProjectKernelId}`,
+      `Refreshed ProjectKernel version: ${report.refreshedProjectKernelVersion}`,
+      `Refreshed owner files: ${report.refreshedOwnerFilePaths.join(", ")}`,
+      `Repo installations listed: ${report.repoInstallationCount}`,
+      `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Init-connect smoke")
+    ]
+  );
+};
+
+const runTargetRepoHarnessSmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runTargetRepoHarnessSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("target-repo-harness-smoke"),
+    targetRepoPath: targetRepoFixturePath(context)
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Target Repo Harness Smoke",
+    report.cleanedUp,
+    formatTargetRepoHarnessSmokeReportLines(report)
+  );
+};
+
+const runProjectSmokeTarget: DbSmokeTargetHandler = async (context, runtime) => {
+  const report = await runPersistenceSmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("db-smoke")
+  });
+
+  return smokeResult(0, context, "KRN DB Smoke", [
+    `Workspace smoke row: ${report.workspaceSlug}`,
+    `Project smoke row: ${report.projectSlug}`,
+    `Project readback: ${report.readBackProjectId === report.projectId ? "matched" : "mismatch"}`,
+    `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
+    "Persistence smoke: passed"
+  ]);
+};
+
+const dbSmokeTargetHandlers = {
+  project: runProjectSmokeTarget,
+  harnessPlan: runHarnessPlanSmokeTarget,
+  harnessEvidence: runHarnessEvidenceSmokeTarget,
+  sourceGraph: runSourceGraphSmokeTarget,
+  memoryGovernance: runMemoryGovernanceSmokeTarget,
+  retrievalSubstrate: runRetrievalSubstrateSmokeTarget,
+  activation: runActivationSmokeTarget,
+  codexAdapter: runCodexAdapterSmokeTarget,
+  workerJobs: runWorkerJobsSmokeTarget,
+  initConnect: runInitConnectSmokeTarget,
+  targetRepoHarness: runTargetRepoHarnessSmokeTarget
+} satisfies Record<DbSmokeTarget, DbSmokeTargetHandler>;
+
 export const runDbSmokeCommand = async (
   runtime: DbSmokeRuntime
 ): Promise<DbSmokeResult> => {
@@ -129,382 +550,36 @@ export const runDbSmokeCommand = async (
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
       exitCode: 1,
-      stdout: [
+      stdout: output([
         targetMetadata.title,
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: missing KRN_DATABASE_URL",
         `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and start docker compose up -d krn-postgres`,
         targetMetadata.skippedLine
-      ].join("\n") + "\n"
+      ])
     };
   }
 
+  const context = {
+    repoRoot,
+    migrationsFolder,
+    relativeMigrationsFolder,
+    databaseUrl
+  };
+
   try {
-    if (runtime.target === "harnessPlan") {
-      const report = await runHarnessPlanSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("harness-plan-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Harness Plan Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project smoke row: ${report.projectSlug}`,
-          `Execution run: ${report.executionRunId}`,
-          `Readback: ${report.readBackExecutionRunId === report.executionRunId ? "matched" : "mismatch"}`,
-          `Evidence contract commands: ${report.evidenceCommandCount}`,
-          `Run events: ${report.runEventCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Harness plan smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "harnessEvidence") {
-      const report = await runHarnessEvidenceSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("harness-evidence-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Harness Evidence Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project smoke row: ${report.projectSlug}`,
-          `Execution run: ${report.executionRunId}`,
-          `Evidence bundle: ${report.evidenceBundleId}`,
-          `Review assessment: ${report.reviewAssessmentId}`,
-          `Feedback delta: ${report.feedbackDeltaId}`,
-          `Evidence bundles: ${report.evidenceBundleCount}`,
-          `Review assessments: ${report.reviewAssessmentCount}`,
-          `Feedback deltas: ${report.feedbackDeltaCount}`,
-          `Run events: ${report.runEventCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Harness evidence smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "sourceGraph") {
-      const report = await runSourceGraphSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("source-graph-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Source Graph Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project smoke row: ${report.projectSlug}`,
-          `Execution run: ${report.executionRunId}`,
-          `Source artifact: ${report.sourceArtifactId}`,
-          `Source claim: ${report.sourceClaimId}`,
-          `Temporal source claim: ${report.temporalSourceClaimId}`,
-          `Source claim readback: ${
-            report.readBackSourceClaimId === report.sourceClaimId ? "matched" : "mismatch"
-          }`,
-          `Source claim edge: ${report.sourceClaimEdgeId}`,
-          `Source decision: ${report.sourceDecisionId}`,
-          `Source decision edge: ${report.sourceDecisionEdgeId}`,
-          `Source rejection: ${report.sourceRejectionId}`,
-          `Run source claims: ${report.runClaimCount}`,
-          `Source claim edges: ${report.sourceClaimEdgeCount}`,
-          `Run source decision edges: ${report.runDecisionEdgeCount}`,
-          `Source rejections: ${report.rejectionCount}`,
-          `Outbox events: ${report.outboxEventCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Source graph smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "memoryGovernance") {
-      const report = await runMemoryGovernanceSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("memory-governance-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Memory Governance Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project smoke row: ${report.projectSlug}`,
-          `Execution run: ${report.executionRunId}`,
-          `Source claim: ${report.sourceClaimId}`,
-          `Memory candidate: ${report.memoryCandidateId}`,
-          `Memory candidate readback: ${
-            report.readBackMemoryCandidateId === report.memoryCandidateId ? "matched" : "mismatch"
-          }`,
-          `Memory candidate reviewed status: ${report.reviewedMemoryCandidateStatus}`,
-          `Memory record: ${report.memoryRecordId}`,
-          `Memory record readback: ${
-            report.readBackMemoryRecordId === report.memoryRecordId ? "matched" : "mismatch"
-          }`,
-          `Memory record version: ${report.memoryRecordVersionId}`,
-          `Memory record invalidated status: ${report.invalidatedMemoryRecordStatus}`,
-          `Active memory after invalidation: ${report.activeMemoryAfterInvalidationCount}`,
-          `Memory application: ${report.memoryApplicationId}`,
-          `Anti-memory candidate: ${report.antiMemoryCandidateId}`,
-          `Anti-memory candidate reviewed status: ${report.reviewedAntiMemoryCandidateStatus}`,
-          `Anti-memory record: ${report.antiMemoryRecordId}`,
-          `Run anti-memory records: ${report.runAntiMemoryCount}`,
-          `Project memory records: ${report.projectMemoryRecordCount}`,
-          `Outbox events: ${report.outboxEventCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Memory governance smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "retrievalSubstrate") {
-      const report = await runRetrievalSubstrateSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("retrieval-substrate-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Retrieval Substrate Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project smoke row: ${report.projectSlug}`,
-          `Execution run: ${report.executionRunId}`,
-          `Source claim: ${report.sourceClaimId}`,
-          `Memory record: ${report.memoryRecordId}`,
-          `Evidence bundle: ${report.evidenceBundleId}`,
-          `Source decision: ${report.sourceDecisionId}`,
-          `Search documents: ${report.searchDocumentCount}`,
-          `Lexical results: ${report.lexicalResultCount}`,
-          `Embedding model: ${report.embeddingModelId}`,
-          `Embedding row: ${report.embeddingId}`,
-          `Retrieval run: ${report.retrievalRunId}`,
-          `Retrieval candidates: ${report.retrievalCandidateCount}`,
-          `Activation decisions: ${report.activationDecisionCount}`,
-          `Context items: ${report.contextItemCount}`,
-          `Context exclusions: ${report.contextExclusionCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Retrieval substrate smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "activation") {
-      const report = await runActivationSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("activation-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Activation Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project smoke row: ${report.projectSlug}`,
-          `Execution run: ${report.executionRunId}`,
-          `Task contract: ${report.taskContractId}`,
-          `Harness plan: ${report.harnessPlanId}`,
-          `Retrieval run: ${report.retrievalRunId}`,
-          `Retrieval run readback: ${
-            report.readBackRetrievalRunId === report.retrievalRunId ? "matched" : "mismatch"
-          }`,
-          `Context assembly: ${report.contextAssemblyId}`,
-          `Context assembly readback: ${
-            report.readBackContextAssemblyId === report.contextAssemblyId ? "matched" : "mismatch"
-          }`,
-          `Source claims: ${report.sourceClaimCount}`,
-          `Memory records: ${report.memoryRecordCount}`,
-          `Anti-memory records: ${report.antiMemoryRecordCount}`,
-          `Search documents: ${report.searchDocumentCount}`,
-          `Search candidates: ${report.searchCandidateCount}`,
-          `Retrieval candidates: ${report.retrievalCandidateCount}`,
-          `Activation decisions: ${report.activationDecisionCount}`,
-          `Included decisions: ${report.includedDecisionCount}`,
-          `Excluded decisions: ${report.excludedDecisionCount}`,
-          `Conflict decisions: ${report.conflictDecisionCount}`,
-          `Stale decisions: ${report.staleDecisionCount}`,
-          `Context items: ${report.contextItemCount}`,
-          `Context exclusions: ${report.contextExclusionCount}`,
-          `Observation prefix items: ${report.observationPrefixItemCount}`,
-          `Raw evidence recall triggers: ${report.rawEvidenceRecallTriggerCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Activation smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "codexAdapter") {
-      const report = await runCodexAdapterSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("codex-adapter-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Codex Adapter Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          ...formatCodexAdapterSmokeReportLines(report)
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "workerJobs") {
-      const report = await runWorkerJobSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("worker-job-smoke")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Worker Job Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          ...formatWorkerJobSmokeReportLines(report)
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "initConnect") {
-      const report = await runInitConnectSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("init-connect-smoke"),
-        targetRepoPath: path.join(repoRoot, "tests", "fixtures", "target-repos", "typescript-basic")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Target Repo Init-Connect Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          `Workspace smoke row: ${report.workspaceSlug}`,
-          `Project: ${report.projectId}`,
-          `Project readback by fingerprint: ${
-            report.readBackProjectIdByFingerprint === report.projectId ? "matched" : "mismatch"
-          }`,
-          `Project readback by path: ${
-            report.readBackProjectIdByPath === report.projectId ? "matched" : "mismatch"
-          }`,
-          `Repo installation: ${report.repoInstallationId}`,
-          `Repo installation readback: ${
-            report.readBackRepoInstallationId === report.repoInstallationId ? "matched" : "mismatch"
-          }`,
-          `ProjectKernel: ${report.projectKernelId}`,
-          `ProjectKernel readback: ${
-            report.readBackProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
-          }`,
-          `Idempotent project reuse: ${report.reusedProjectId === report.projectId ? "matched" : "mismatch"}`,
-          `Idempotent repo installation reuse: ${
-            report.reusedRepoInstallationId === report.repoInstallationId ? "matched" : "mismatch"
-          }`,
-          `Idempotent ProjectKernel reuse: ${
-            report.reusedProjectKernelId === report.projectKernelId ? "matched" : "mismatch"
-          }`,
-          `Refreshed ProjectKernel: ${report.refreshedProjectKernelId}`,
-          `Refreshed ProjectKernel version: ${report.refreshedProjectKernelVersion}`,
-          `Refreshed owner files: ${report.refreshedOwnerFilePaths.join(", ")}`,
-          `Repo installations listed: ${report.repoInstallationCount}`,
-          `Cleanup remaining marker count: ${report.remainingMarkerCount}`,
-          `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-          `Init-connect smoke: ${report.cleanedUp ? "passed" : "failed"}`
-        ].join("\n") + "\n"
-      };
-    }
-
-    if (runtime.target === "targetRepoHarness") {
-      const report = await runTargetRepoHarnessSmokeCheck({
-        databaseUrl,
-        migrationsFolder,
-        smokeId: runtime.createId("target-repo-harness-smoke"),
-        targetRepoPath: path.join(repoRoot, "tests", "fixtures", "target-repos", "typescript-basic")
-      });
-
-      return {
-        exitCode: report.cleanedUp ? 0 : 1,
-        stdout: [
-          "KRN Target Repo Harness Smoke",
-          `Repo root: ${repoRoot}`,
-          `Migrations folder: ${relativeMigrationsFolder}`,
-          "Postgres config: configured",
-          ...formatTargetRepoHarnessSmokeReportLines(report)
-        ].join("\n") + "\n"
-      };
-    }
-
-    const report = await runPersistenceSmokeCheck({
-      databaseUrl,
-      migrationsFolder,
-      smokeId: runtime.createId("db-smoke")
-    });
-
-    return {
-      exitCode: 0,
-      stdout: [
-        "KRN DB Smoke",
-        `Repo root: ${repoRoot}`,
-        `Migrations folder: ${relativeMigrationsFolder}`,
-        "Postgres config: configured",
-        `Workspace smoke row: ${report.workspaceSlug}`,
-        `Project smoke row: ${report.projectSlug}`,
-        `Project readback: ${report.readBackProjectId === report.projectId ? "matched" : "mismatch"}`,
-        `Cleanup: ${report.cleanedUp ? "completed" : "not completed"}`,
-        "Persistence smoke: passed"
-      ].join("\n") + "\n"
-    };
+    return await dbSmokeTargetHandlers[runtime.target](context, runtime);
   } catch (error) {
     return {
       exitCode: 1,
-      stdout: [
+      stdout: output([
         targetMetadata.title,
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: configured",
         `${targetMetadata.failureLabel}: failed (${errorMessage(error)})`
-      ].join("\n") + "\n"
+      ])
     };
   }
 };
