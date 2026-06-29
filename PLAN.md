@@ -66,8 +66,9 @@ from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
 then commit/push/CI before choosing the next target.
 
 Current candidate targets:
-doctor command/readiness cleanup, DB doctor checks, database runtime cleanup, or
-another narrower target if source inspection shows lower risk.
+brain knowledge read-model cleanup, retrieval repository cleanup, observation
+repository cleanup, or another narrower target if source inspection shows lower
+risk.
 
 Progress in this stream:
 
@@ -88,8 +89,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   DB smoke target handler cleanup,
   doctor static checks cleanup,
   doctor failure rules cleanup,
-  doctor DB readiness gates cleanup
-full Fallow moved: dupes 136 -> 113; health 117 -> 65
+  doctor DB readiness gates cleanup,
+  database runtime project resolution cleanup
+full Fallow moved: dupes 136 -> 112; health 117 -> 64
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split

@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: f130f7f8fab54486a914f88b5dbcdc1c7aa3dda3 / CI success
+latest source slice commit checked: 35c221c1fc91f1ce538b69e7a7b2023b3794f168 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -81,6 +81,11 @@ brain-store skip classification from `doctorDbChecks`, added behavior tests for
 not-configured/unreachable/not-ready skip statuses, removed changed-file Fallow
 findings, and reduced global Fallow to dupes 113 and health 65; commit
 `f130f7f` passed CI.
+Latest completed slice: database runtime project resolution cleanup extracted
+private project-resolution/runtime helpers from `databaseRuntime`, added a
+regression test for explicit-project missing-ProjectKernel cleanup order,
+removed changed-file Fallow findings, and reduced global Fallow to dupes 112
+and health 64; commit `35c221c` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -612,15 +617,18 @@ completed bounded targets:
   packages/cli/src/doctorStaticChecks.ts
   packages/cli/src/runDoctorCommand.ts
   packages/cli/src/doctorDbChecks.ts
+  packages/cli/src/databaseRuntime.ts
 
 full Fallow moved:
-  dupes 136 -> 113 clone groups
-  health 117 -> 65 above threshold
+  dupes 136 -> 112 clone groups
+  health 117 -> 64 above threshold
 
-next: inspect a bounded owner surface with direct complexity debt, likely
-packages/cli/src/databaseRuntime.ts or another narrower target from the fresh
-Fallow report. Do not split packages/db/src/repositories/common.ts only because
-Fallow flags fan-in; it is already the shared DB boundary helper.
+next: inspect `packages/harness/src/brainKnowledgeReadModel.ts` as the next
+bounded owner surface. Fallow flags `parseBrainKnowledgeReadModel` and search
+filter complexity; this is product-facing knowledge-card/search readback with
+lower DB risk than repository cleanup. Do not split
+packages/db/src/repositories/common.ts only because Fallow flags fan-in; it is
+already the shared DB boundary helper.
 ```
 
 ## Verification Policy
