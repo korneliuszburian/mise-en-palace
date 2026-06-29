@@ -66,9 +66,8 @@ from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
 then commit/push/CI before choosing the next target.
 
 Current candidate targets:
-brain knowledge read-model cleanup, retrieval repository cleanup, observation
-repository cleanup, or another narrower target if source inspection shows lower
-risk.
+DB smoke assertion extraction, another DB smoke owner surface, or another
+narrower target if source inspection shows lower risk.
 
 Progress in this stream:
 
@@ -95,13 +94,17 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  observation repository persistence cleanup,
 	  plan command boundary/runtime cleanup,
 	  retrieval repository insert cleanup,
-	  memory repository invariant/insert cleanup
-	full Fallow moved: dupes 136 -> 106; health 117 -> 48
+	  memory repository invariant/insert cleanup,
+	  DB smoke shared setup cleanup
+	full Fallow moved: dupes 136 -> 95; health 117 -> 42
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
 `packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
-pick a bounded owner surface with direct complexity debt.
+pick a bounded owner surface with direct complexity debt. Strict
+`pnpm exec fallow audit --format compact --no-cache --changed-since HEAD --gate all`
+still flags inherited DB smoke assertion complexity and duplication; treat that
+as a separate slice, not unfinished setup cleanup.
 
 Verification: target package tests, `pnpm typecheck`, `pnpm test`,
 `pnpm quality:fallow:ci`, full `pnpm quality:fallow` report, `git diff --check`.
