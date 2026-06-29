@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V337 Source-Relation Heartbeat Candidate Preview
-current task: V337-00 Source-Relation Heartbeat Candidate Preview
+active stream: V338 Memory-Staleness Heartbeat Candidate Preview
+current task: V338-00 Memory-Staleness Heartbeat Candidate Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V337-00 Source-Relation Heartbeat Candidate Preview. V336 made the
-relation-dependent QA answer delta reviewable; the next gap is candidate-only
-source-relation maintenance.
+V338-00 Memory-Staleness Heartbeat Candidate Preview. V337 added the first
+candidate-only heartbeat preview for source relations; the next gap is stale
+memory maintenance candidate preview.
 ```
 
 ## 2. Product Thesis
@@ -61,7 +61,8 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   persisted edge-aware activation readback complete; edge-aware candidate
   refinement complete; usefulness closure complete; selection delta proof
   complete; small graph QA complete; relation-grounded readback closure
-  complete; heartbeat candidate preview next
+  complete; source-relation heartbeat candidate preview complete; memory
+  staleness heartbeat candidate preview next
 product-ready: no
 ```
 
@@ -87,6 +88,9 @@ V331 complete: persisted edge-aware activation readback.
 V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
 V333 complete: edge-aware activation usefulness closure.
 V334 complete: edge-aware activation selection delta proof.
+V335 complete: small graph-brain QA case.
+V336 complete: relation-grounded QA readback closure.
+V337 complete: source-relation heartbeat candidate preview.
 ```
 
 Reports:
@@ -103,6 +107,9 @@ docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-
 docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v334-edge-aware-activation-selection-delta/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -614,26 +621,26 @@ Report:
 docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
 ```
 
-## Active Task: V337-00 Source-Relation Heartbeat Candidate Preview
+## Active Task: V338-00 Memory-Staleness Heartbeat Candidate Preview
 
 Goal:
 
 ```txt
-Use relation-grounded QA/readback and SourceClaimEdge context to add one
-candidate-only heartbeat/dreaming preview for source-relation maintenance.
+Add the next heartbeat/dreaming preview candidate class for stale memory
+maintenance.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-focused heartbeat/worker/candidate preview source or report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v337-source-relation-heartbeat-candidate-preview/REPORT.md
+focused memory/worker/candidate preview source or report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -644,43 +651,44 @@ Forbidden writes:
 ```txt
 schema/migration; graph database; crawler; UI/API/MCP; worker daemon; broad
 benchmark platform; consensus runtime; broad ranking rewrite; Memory Core
-mutation; automatic source truth promotion; runtime markdown memory
+mutation; automatic memory promotion; runtime markdown memory
 ```
 
 Definition of Done:
 
-- One source-relation heartbeat/dreaming preview proposes a reviewable
-  candidate only.
-- Candidate includes evidence refs and does-not-prove boundary.
-- No final Memory Core or source truth mutation occurs.
+- One stale-memory heartbeat/dreaming preview proposes a reviewable candidate
+  only.
+- Candidate includes evidence refs, application guidance, stale/invalidation
+  intent, and does-not-prove boundary.
+- No final Memory Core mutation occurs.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
   if source behavior changes.
 
 Acceptance criteria:
 
 ```txt
-source-relation maintenance can be proposed as candidate-only heartbeat output
-without autonomous truth mutation or broad runtime expansion.
+stale memory maintenance can be proposed as candidate-only heartbeat output
+without autonomous Memory Core mutation or broad runtime expansion.
 ```
 
 Risk:
 
 ```txt
-medium: heartbeat preview can drift into an autonomous worker/runtime before
-candidate governance is proven.
+medium: stale-memory preview can drift into automatic invalidation/promotion
+before candidate governance is proven.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V337 implementation commit if source changes are made
+focused revert of the V338 implementation commit if source changes are made
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V337 is positive, choose the next heartbeat candidate class or consensus
-candidate eval. If weak, repair candidate reviewability before expanding
+If V338 is positive, choose the next heartbeat candidate class or consensus
+candidate eval. If weak, repair memory candidate reviewability before expanding
 heartbeat surfaces.
 ```
 
@@ -754,7 +762,8 @@ Next-task synthesis rule:
 - V334: complete; edge-aware activation selection delta proof.
 - V335: complete; small graph-brain QA case.
 - V336: complete; relation-grounded QA readback closure.
-- V337: active; source-relation heartbeat candidate preview.
+- V337: complete; source-relation heartbeat candidate preview.
+- V338: active; memory-staleness heartbeat candidate preview.
 
 ## Pattern Gate
 

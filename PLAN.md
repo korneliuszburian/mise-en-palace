@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V337 Source-Relation Heartbeat Candidate Preview
-current task: V337-00 Source-Relation Heartbeat Candidate Preview
+active stream: V338 Memory-Staleness Heartbeat Candidate Preview
+current task: V338-00 Memory-Staleness Heartbeat Candidate Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -65,38 +65,40 @@ V335 complete: tiny graph-brain QA proof showed edge-aware context can select
   the answer-grounding SourceClaim while the no-relation baseline cannot.
 V336 complete: relation-grounded QA readback helper and golden case protect the
   baseline-vs-edge answer delta.
-Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v336-...
+V337 complete: source-relation heartbeat preview proposes reviewable
+  maintenance candidates without source truth or Memory Core mutation.
+Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v337-...
 ```
 
-### V337 Source-Relation Heartbeat Candidate Preview
+### V338 Memory-Staleness Heartbeat Candidate Preview
 
 Goal:
 
-Use relation-grounded QA/readback and SourceClaimEdge context to add one
-candidate-only heartbeat/dreaming preview for source-relation maintenance.
+Add the next heartbeat/dreaming preview candidate class for stale memory
+maintenance.
 
 Current action:
 
 ```txt
-Execute V337-00: inspect existing heartbeat/worker/candidate surfaces, then add
-the smallest preview that proposes maintenance candidates for source relations.
-Do not mutate Memory Core or final source truth; do not add schema, graph DB,
-crawler, UI/API/MCP, worker daemon, consensus runtime, or broad ranking rewrite.
+Execute V338-00: inspect existing memory/worker/candidate surfaces, then add
+the smallest preview that proposes reviewed stale-memory maintenance candidates.
+Do not mutate Memory Core; do not add schema, worker daemon, UI/API/MCP,
+crawler, consensus runtime, or broad ranking rewrite.
 ```
 
 Primary consumer:
 
 ```txt
-future source artifact ingest, graph-aware retrieval, contradiction/duplicate
-detection, temporal slices, consensus candidate evaluation, and product-facing
-knowledge search.
+future memory maintenance, heartbeat/dreaming candidate generation, review
+gates, consensus candidate evaluation, and product-facing knowledge search.
 ```
 
 Falsifier:
 
 ```txt
-Given a stale/weak/needs-review source relation, heartbeat preview cannot
-produce a reviewable candidate with evidence refs and does-not-prove boundary.
+Given stale or near-expiry memory input, heartbeat preview cannot produce a
+reviewable candidate with evidence refs, application guidance, invalidation
+intent, and does-not-prove boundary.
 ```
 
 ## Pattern Gate

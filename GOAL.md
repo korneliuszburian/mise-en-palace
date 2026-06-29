@@ -15,7 +15,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V337 Source-Relation Heartbeat Candidate Preview
+V338 Memory-Staleness Heartbeat Candidate Preview
 ```
 
 Current state:
@@ -25,15 +25,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V337-00 Source-Relation Heartbeat Candidate Preview.
+current task: V338-00 Memory-Staleness Heartbeat Candidate Preview.
 ```
 
 Current task:
 
 ```txt
-Use the relation-grounded QA/readback and SourceClaimEdge context to add one
-candidate-only heartbeat/dreaming preview for source-relation maintenance,
-without mutating final Memory Core or source truth.
+Add the next heartbeat/dreaming preview candidate class for stale memory
+maintenance without mutating final Memory Core, source truth, or worker runtime.
 ```
 
 ## Remaining Work
@@ -58,7 +57,8 @@ to preserve are:
    persisted activation trace readback; V332 removed the lab-seeded duplicate
    candidate dependency; V333 proved review-useful edge-aware activation
    ordering/readback; V334/V335/V336 proved selection delta, tiny QA answer
-   delta, and reviewable readback; next add candidate-only heartbeat preview.
+   delta, and reviewable readback; V337 added source-relation heartbeat
+   candidate preview.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

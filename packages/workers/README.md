@@ -8,6 +8,8 @@ Current truth:
 - job types and payloads are typed;
 - enqueue contracts can create a worker job and a `worker_job.queued` outbox
   event through caller-supplied repositories;
+- source-relation heartbeat preview can propose reviewable maintenance
+  candidates without mutating source truth or Memory Core;
 - job descriptions explicitly set `requiresBackgroundLoop: false`.
 
 Not built:
@@ -19,6 +21,7 @@ Not built:
 - no contradiction detection runtime;
 - no stale-memory expiration runtime;
 - no embedding worker runtime;
+- no source-relation maintenance executor;
 - no EvalCandidate promotion contract or runtime.
 
 Worker job persistence and smoke checks prove storage/readback lifecycle only.
