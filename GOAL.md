@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V350 Mini Brain-QA JSON Batch Preview
+V351 Source Search Missing-Evidence Specificity Repair
 ```
 
 Current state:
@@ -24,14 +24,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V350-00 Mini Brain-QA JSON Batch Preview.
+current task: V351-00 Source Search Missing-Evidence Specificity Repair.
 ```
 
-Current task: use `krn source search --json` across a small batch of 3-5
-Brain-QA/readback questions and measure answer-package coverage, missing
-evidence, raw candidate inspectability, and review parsing burden. Do not build
-UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime, worker,
-broad benchmark, or Memory Core mutation.
+Current task: use the V350 JSON batch result to repair the smallest owning
+surface for source-search answer-package `missingEvidence` specificity. Avoid
+generic document-gap diagnostics when supporting documents exist, while
+preserving real SearchDocument gaps such as the graph-relations case. Do not
+build UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime,
+worker, broad benchmark, or Memory Core mutation.
 
 ## Remaining Work
 
@@ -48,8 +49,9 @@ to preserve are:
    context detail readback, marker/hash activation, V340 artifact-to-activated-
    SourceClaim proof, V341 search readback, V342 usefulness closure, V343
    coverage seed, V344 SearchDocument alignment, V345 usefulness closure, V346
-   answer package preview, V347 query-guidance closure, V348 JSON readback, and
-   V349 JSON consumer proof exist. A small JSON batch preview is next.
+   answer package preview, V347 query-guidance closure, V348 JSON readback, V349
+   JSON consumer proof, and V350 JSON batch preview exist. Missing-evidence
+   specificity repair is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context

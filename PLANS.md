@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V350 Mini Brain-QA JSON Batch Preview
-current task: V350-00 Mini Brain-QA JSON Batch Preview
+active stream: V351 Source Search Missing-Evidence Specificity Repair
+current task: V351-00 Source Search Missing-Evidence Specificity Repair
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V350-00 Mini Brain-QA JSON Batch Preview must use source-search JSON across 3-5
-Brain-QA/readback questions without adding UI/API/MCP, crawler, schema, ranking
-rewrite, embeddings, graph runtime, worker, broad benchmark, or Memory Core
+V351-00 Source Search Missing-Evidence Specificity Repair must use V350 batch
+evidence to repair over-broad source-search answer-package `missingEvidence`
+diagnostics without changing ranking, schema, retrieval semantics, UI/API/MCP,
+crawler, embeddings, graph runtime, worker, broad benchmark, or Memory Core
 mutation.
 ```
 
@@ -103,6 +104,9 @@ V344 complete: source-search document retrieval alignment.
 V345 complete: source-search usefulness closure after alignment.
 V346 complete: source-search answer package preview.
 V347 complete: heartbeat/consensus SearchDocument coverage closure.
+V348 complete: source-search answer package JSON readback.
+V349 complete: JSON consumer proof over two source-search answer packages.
+V350 complete: mini Brain-QA JSON batch preview across five answer packages.
 ```
 
 Recent report range:
@@ -308,28 +312,35 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V347 complete: heartbeat/consensus SearchDocument coverage closure.
 - [x] V348 complete: source search answer package JSON readback.
 - [x] V349 complete: Brain QA source search JSON consumer case.
-- [ ] V350 current task: Mini Brain-QA JSON batch preview.
+- [x] V350 complete: Mini Brain-QA JSON batch preview.
+- [ ] V351 current task: Source Search Missing-Evidence Specificity Repair.
 
 ## Active Task Contract
 
-### V350-00 Mini Brain-QA JSON Batch Preview
+### V351-00 Source Search Missing-Evidence Specificity Repair
 
 Objective:
 
 ```txt
-Use `krn source search --json` across a small batch of 3-5 Brain-QA/readback
-questions and measure answer-package coverage, missing evidence, raw candidate
-inspectability, and review parsing burden.
+Use V350 batch evidence to repair over-broad `missingEvidence` diagnostics in
+source-search answer packages.
 ```
 
 Allowed:
 
 ```txt
-local lab JSON batch artifacts
-docs/report consumer case
-DB-backed source-search JSON readbacks
-coverage/missing-evidence/proof-boundary classification
+smallest owning source-search answer-package source/test files
+focused tests for supporting-document and no-document cases
+DB-backed source-search JSON readbacks if needed
 compact report/root state update
+```
+
+Expected behavior:
+
+```txt
+cases with supporting SearchDocuments do not receive generic no-document
+diagnostics; real no-SearchDocument cases still surface a specific gap and
+recommended narrowing/follow-up behavior.
 ```
 
 Non-goals:
@@ -360,11 +371,34 @@ before retention.
 Success criteria:
 
 ```txt
-1. 3-5 JSON answer packages are consumed without parsing text output;
-2. the batch records coverage, missing evidence, proof/non-proof, and raw candidate inspectability;
-3. review/report parsing burden is classified across the batch with evidence;
-4. no product surface or retrieval behavior is added;
-5. root state stays compact and advances to the next highest-ROI task.
+1. V350-style cases with supporting documents avoid generic no-document diagnostics;
+2. real claim_only/no-document cases still expose the missing SearchDocument gap;
+3. focused tests cover both behaviors;
+4. no product surface, schema, ranking rewrite, or Memory Core mutation is added;
+5. root state stays compact and advances from evidence.
+```
+
+Evidence source:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v350-mini-brain-qa-json-batch-preview/REPORT.md
+.local-lab/v350/batch-summary.json
+```
+
+Verification:
+
+```txt
+pnpm --filter @krn/cli test -- source search
+pnpm typecheck
+pnpm test
+git diff --check
+```
+
+Does not prove:
+
+```txt
+answer correctness, ranking quality, broad benchmark quality, product
+readiness, UI/API/MCP readiness, or source truth.
 ```
 
 ## Outcome V344 Source Search Document Retrieval Alignment
@@ -623,6 +657,92 @@ SearchDocument evidence gap.
 report: docs/reviews/controlled-dogfood/2026-06-29-v349-brain-qa-source-search-json-consumer-case/REPORT.md
 executionRun: f62a1896-3644-4374-8078-1f506595aed1
 ```
+
+## Outcome V350 Mini Brain-QA JSON Batch Preview
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V349 JSON consumer report and V350 batch summary.
+- Mechanism: JSON answer packages can expose answer coverage, candidate counts,
+  missing evidence, and proof boundaries without parsing text.
+- KRN implication: a tiny Brain-QA batch can be evaluated before product
+  UI/API/MCP or broad benchmark work, but misleading missing-evidence
+  diagnostics must be repaired before scaling.
+- Decision: complete V350 and open a bounded missing-evidence specificity
+  repair.
+- Does not prove: answer correctness, source truth, ranking quality, broad
+  benchmark quality, product readiness, or Memory Core mutation safety beyond
+  this read-only run.
+- Consumer: V351 Source Search Missing-Evidence Specificity Repair.
+- Falsifier: V350 cases cannot expose coverage/missing-evidence/proof
+  boundaries without text parsing.
+
+V350 evidence:
+
+```txt
+executionRun: 4127e542-3989-43fc-9d56-3b89688645b3
+cases: 5
+coverage: 4 claim_and_document, 1 claim_only
+allHaveAnswer: true
+allHaveProofBoundaries: true
+allRawCandidatesInspectable: true
+loweredParsingBurden: 5
+missingEvidenceCases: evidence-proof, graph-relations, heartbeat-consensus
+memoryMutation: none
+report: docs/reviews/controlled-dogfood/2026-06-29-v350-mini-brain-qa-json-batch-preview/REPORT.md
+```
+
+V350 outcome:
+
+```txt
+Source-search JSON can support a tiny Brain-QA/readback batch. The next
+highest-ROI product-facing repair is not a new surface or broad benchmark; it
+is tightening answer-package missing-evidence diagnostics so broad/combined
+queries do not mislead operators.
+```
+
+## Active Task V351 Source Search Missing-Evidence Specificity Repair
+
+ID: V351-00
+Name: Source Search Missing-Evidence Specificity Repair
+Status: active
+Goal: Repair source-search answer-package `missingEvidence` diagnostics using
+V350 evidence.
+Product rationale: Operators need to know whether an answer package has a real
+source-evidence gap or only a broad-query/narrowing caveat.
+Architectural rationale: Keep source-search JSON useful before adding product
+surfaces or broad benchmarks.
+Evidence source: V350 batch report and `.local-lab/v350/batch-summary.json`.
+Official/external sources: none required unless implementation introduces a new
+pattern.
+Inputs required: V350 report, source-search answer package owner, focused tests.
+Files likely touched: source-search CLI/readback code and tests.
+Allowed writes: smallest owning source/test files, compact report, root state.
+Forbidden writes: schema, ranking rewrite, UI/API/MCP, crawler, worker,
+embeddings, graph runtime, broad benchmark, Memory Core mutation.
+Output requirements: specific `missingEvidence` behavior with focused tests and
+dogfood report.
+Definition of Done: cases with supporting documents avoid generic no-document
+diagnostics; real no-document cases still surface the gap.
+Verification commands: `pnpm --filter @krn/cli test -- source search`,
+`pnpm typecheck`, `pnpm test`, `git diff --check`.
+Acceptance criteria: V350-style evidence-proof and heartbeat-consensus cases no
+longer look like no-document cases, while graph-relations still reports its
+SearchDocument gap.
+Risk: overfitting to five queries or hiding real missing evidence.
+Rollback: revert the source/test change and keep V350 report as evidence.
+Condensation expectation: keep root files compact; report detailed evidence.
+Next-task synthesis rule: if V351 passes, run one small JSON batch usefulness
+closure; if it fails, record why source-search coverage rather than diagnostics
+is the blocker.
+Pattern surface: operator-UX / CLI readback.
+Primary consumer: technical operators consuming source-search JSON.
+Does not prove: answer correctness, source truth, ranking quality, product
+readiness, or benchmark quality.
+Falsifier: V350-style cases still require text parsing or produce misleading
+missing-evidence diagnostics after repair.
 
 ## Verification Policy
 

@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V350 Mini Brain-QA JSON Batch Preview
-current task: V350-00 Mini Brain-QA JSON Batch Preview
+active stream: V351 Source Search Missing-Evidence Specificity Repair
+current task: V351-00 Source Search Missing-Evidence Specificity Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -56,36 +56,32 @@ documents exist for specific queries and repaired broad-query guidance. V348
 added typed JSON answer package readback without building a new product surface.
 V349 proved a small consumer can use JSON without parsing text.
 
-### V350 Mini Brain-QA JSON Batch Preview
-
-Goal:
-
-Use `krn source search --json` across a small batch of 3-5 Brain-QA/readback
-questions and measure answer-package coverage, missing evidence, raw candidate
-inspectability, and review parsing burden.
-
-Current action:
+V350 outcome:
 
 ```txt
-Execute V350-00: run a small JSON batch preview over source-search answer
-packages. Prefer local lab artifacts plus one compact report. Do not add
-UI/API/MCP, crawler, worker daemon, schema, broad benchmark, ranking rewrite,
-embeddings, graph runtime, autonomous truth runtime, or Memory Core mutation.
+Five JSON answer packages were consumed without parsing text; all had answers,
+proof boundaries, raw candidate inspectability, and lower parsing burden. The
+batch exposed over-broad `missingEvidence` diagnostics for combined queries.
+report: docs/reviews/controlled-dogfood/2026-06-29-v350-mini-brain-qa-json-batch-preview/REPORT.md
+executionRun: 4127e542-3989-43fc-9d56-3b89688645b3
 ```
 
-Primary consumer:
+### V351 Source Search Missing-Evidence Specificity Repair
 
 ```txt
-technical operators validating whether source-search JSON can support a bounded
-mini Brain-QA loop before product surfaces exist.
+Execute V351-00: inspect the source-search answer package owner and repair
+over-broad missing-document diagnostics. Preserve real gaps such as
+graph-relations claim_only coverage. Do not change ranking, schema, retrieval
+semantics, UI/API/MCP, crawler, embeddings, graph runtime, worker daemon,
+broad benchmark, or Memory Core mutation.
 ```
 
-Falsifier:
+Consumer: technical operators using JSON answer packages for Brain-QA evidence
+readback.
 
 ```txt
-The batch cannot classify answer-package coverage, missing evidence, proof
-boundaries, or raw candidate inspectability without parsing text or adding a
-new product surface.
+Falsifier: V350-style cases with supporting documents still receive generic
+document-gap diagnostics, or real no-document cases stop surfacing their gap.
 ```
 
 ## Pattern Gate
