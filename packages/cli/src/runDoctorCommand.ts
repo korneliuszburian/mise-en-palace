@@ -45,6 +45,77 @@ export interface DoctorCheck {
   status: string;
 }
 
+interface DoctorFailureRule {
+  labels: ReadonlySet<string>;
+  matches(status: string): boolean;
+}
+
+const statusEquals = (expected: string) =>
+  (status: string): boolean => status === expected;
+
+const statusStartsWith = (prefix: string) =>
+  (status: string): boolean => status.startsWith(prefix);
+
+const labels = (values: readonly string[]): ReadonlySet<string> => new Set(values);
+
+const doctorFailureRules: readonly DoctorFailureRule[] = [
+  {
+    labels: labels([
+      ".krn runtime truth",
+      "Forbidden surfaces",
+      "Codex execution runner",
+      "KRN MCP server",
+      "Redis/Kafka queue",
+      "Broad worker daemon",
+      "Runtime markdown memory",
+      "Automatic memory mutation",
+      "Separate vector/search DB",
+      "Naive RAG dump command",
+      "Broad context dump",
+      "Core requiredSkills field",
+      "Target repo forbidden surfaces"
+    ]),
+    matches: statusEquals("present")
+  },
+  {
+    labels: labels([
+      "TypeScript strictness",
+      "workspace packages"
+    ]),
+    matches: statusEquals("incomplete")
+  },
+  {
+    labels: labels([
+      "AGENTS.md",
+      "skills surface"
+    ]),
+    matches: statusEquals("missing")
+  },
+  {
+    labels: labels(["Postgres config"]),
+    matches: statusStartsWith("configured but unreachable")
+  },
+  {
+    labels: labels([
+      "Brain store readiness",
+      "Harness persistence readiness",
+      "Source graph readiness",
+      "Memory governance readiness",
+      "Retrieval substrate readiness",
+      "Activation readiness",
+      "Codex adapter readiness",
+      "Worker job readiness",
+      "Target repo readiness"
+    ]),
+    matches: statusStartsWith("blocked")
+  }
+];
+
+const isDoctorCheckFailure = (check: DoctorCheck): boolean =>
+  doctorFailureRules.some((rule) =>
+    rule.labels.has(check.label) && rule.matches(check.status)
+  );
+
 export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorResult> => {
   const repoRoot = await findRepoRoot(runtime.cwd);
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
@@ -118,85 +189,7 @@ export const runDoctorCommand = async (runtime: DoctorRuntime): Promise<DoctorRe
     `Repo root: ${repoRoot}`,
     ...checks.map((check) => `${check.label}: ${check.status}`)
   ].join("\n");
-  const failed = checks.some((check) => {
-    if (check.label === ".krn runtime truth" || check.label === "Forbidden surfaces") {
-      return check.status === "present";
-    }
-
-    if (check.label === "TypeScript strictness" || check.label === "workspace packages") {
-      return check.status === "incomplete";
-    }
-
-    if (check.label === "AGENTS.md" || check.label === "skills surface") {
-      return check.status === "missing";
-    }
-
-    if (check.label === "Postgres config") {
-      return check.status.startsWith("configured but unreachable");
-    }
-
-    if (check.label === "Brain store readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Harness persistence readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Source graph readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Memory governance readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Retrieval substrate readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Activation readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Codex adapter readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Worker job readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Target repo readiness") {
-      return check.status.startsWith("blocked");
-    }
-
-    if (check.label === "Codex execution runner" || check.label === "KRN MCP server") {
-      return check.status === "present";
-    }
-
-    if (check.label === "Redis/Kafka queue" || check.label === "Broad worker daemon") {
-      return check.status === "present";
-    }
-
-    if (check.label === "Runtime markdown memory" || check.label === "Automatic memory mutation") {
-      return check.status === "present";
-    }
-
-    if (check.label === "Separate vector/search DB" || check.label === "Naive RAG dump command") {
-      return check.status === "present";
-    }
-
-    if (check.label === "Broad context dump" || check.label === "Core requiredSkills field") {
-      return check.status === "present";
-    }
-
-    if (check.label === "Target repo forbidden surfaces") {
-      return check.status === "present";
-    }
-
-    return false;
-  });
+  const failed = checks.some(isDoctorCheckFailure);
 
   return {
     exitCode: failed ? 1 : 0,
