@@ -82,8 +82,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   core reflection issue report cleanup,
   DB smoke target metadata cleanup,
   runCli source dispatch cleanup,
-  runCli memory dispatch cleanup
-full Fallow moved: dupes 136 -> 116; health 117 -> 83
+  runCli memory dispatch cleanup,
+  runCli residual dispatch cleanup
+full Fallow moved: dupes 136 -> 116; health 117 -> 82
 ```
 
 Next candidate targets are tracked in `PLANS.md`.

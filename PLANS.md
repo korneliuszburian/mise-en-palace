@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: 9ab891436af8c5c6fcd0cf31c0c5907115120224 / CI success
+latest pushed commit checked: 9fb2f5d6909b32d45a0dc1da7be1468ae9ced0be / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -54,6 +54,10 @@ Latest completed slice: runCli memory dispatch cleanup extracted memory command
 dispatch, reduced runCli complexity to 72/125, added a fallback regression
 test, and reduced global Fallow to dupes 116 and health 83; commit `9ab8914`
 passed CI.
+Latest completed slice: runCli residual dispatch cleanup extracted project,
+harness lifecycle, DB/doctor, and adapter probing helpers, moved runCli below
+the changed-files Fallow gate, and reduced global Fallow health to 82; commit
+`9fb2f5d` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -574,15 +578,19 @@ completed bounded targets:
   packages/cli/src/runCli.ts
   packages/cli/src/runSourceCliCommand.ts
   packages/cli/src/runMemoryCliCommand.ts
+  packages/cli/src/runProjectCliCommand.ts
+  packages/cli/src/runHarnessCliCommand.ts
+  packages/cli/src/runDbCliCommand.ts
+  packages/cli/src/runCliCommand.ts
 
 full Fallow moved:
   dupes 136 -> 116 clone groups
-  health 117 -> 83 above threshold
+  health 117 -> 82 above threshold
 
-next: residual runCli non-memory adapter extraction first, unless source
-inspection shows lower-risk value in runSourceArtifactPreviewCommand or DB
-smoke helper cleanup. Do not split packages/db/src/repositories/common.ts only
-because Fallow flags fan-in; it is already the shared DB boundary helper.
+next: inspect runSourceArtifactPreviewCommand extraction/persist path first,
+unless source inspection shows lower-risk value in DB smoke helper cleanup. Do
+not split packages/db/src/repositories/common.ts only because Fallow flags
+fan-in; it is already the shared DB boundary helper.
 ```
 
 ## Verification Policy
