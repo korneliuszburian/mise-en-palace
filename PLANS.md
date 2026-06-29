@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: edf3a90c1e9f29d5668bdfabf519ddb78f337cca / CI success
+latest source slice commit checked: 16ce545c214c4c00059e523f7778764a6d403f06 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -72,6 +72,10 @@ Latest completed slice: doctor static checks cleanup extracted read-only
 presence predicates from `doctorStaticChecks`, removed all changed-file Fallow
 findings for the static doctor surface, verified no-DB and DB-configured doctor
 output, and reduced global Fallow health to 69; commit `edf3a90` passed CI.
+Latest completed slice: doctor failure rules cleanup replaced the monolithic
+`runDoctorCommand` failure predicate with declarative rules, removed the
+`runDoctorCommand` high-complexity finding, verified DB-backed doctor/readiness
+output, and reduced global Fallow health to 68; commit `16ce545` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -601,16 +605,17 @@ completed bounded targets:
   packages/cli/src/runKnowledgeCardsCommand.ts
   packages/cli/src/cliFileBoundary.ts
   packages/cli/src/doctorStaticChecks.ts
+  packages/cli/src/runDoctorCommand.ts
 
 full Fallow moved:
   dupes 136 -> 115 clone groups
-  health 117 -> 69 above threshold
+  health 117 -> 68 above threshold
 
 next: inspect a bounded owner surface with direct complexity debt, likely
-packages/cli/src/runDoctorCommand.ts, packages/cli/src/doctorDbChecks.ts,
-packages/cli/src/databaseRuntime.ts, or another narrower target from the fresh
-Fallow report. Do not split packages/db/src/repositories/common.ts only because
-Fallow flags fan-in; it is already the shared DB boundary helper.
+packages/cli/src/doctorDbChecks.ts, packages/cli/src/databaseRuntime.ts, or
+another narrower target from the fresh Fallow report. Do not split
+packages/db/src/repositories/common.ts only because Fallow flags fan-in; it is
+already the shared DB boundary helper.
 ```
 
 ## Verification Policy

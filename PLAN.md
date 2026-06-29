@@ -86,8 +86,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   source artifact preview extraction/persistence/formatting cleanup plus shared
   repo-input resolver cleanup,
   DB smoke target handler cleanup,
-  doctor static checks cleanup
-full Fallow moved: dupes 136 -> 115; health 117 -> 69
+  doctor static checks cleanup,
+  doctor failure rules cleanup
+full Fallow moved: dupes 136 -> 115; health 117 -> 68
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
