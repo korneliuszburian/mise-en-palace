@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 86e654c8b86a786e2fff39a8c75622cc2d5a5cef / CI success
+latest source slice commit checked: 376e0979df32fba99cd16f4b685856dabaaf5350 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -90,6 +90,10 @@ Latest completed slice: brain knowledge read-model cleanup extracted private
 parser/search helpers, added parser/status/feedback regression tests, removed
 changed-file Fallow findings, and reduced global Fallow to dupes 111 and health
 62; commit `86e654c` passed CI.
+Latest completed slice: observation repository persistence cleanup extracted
+typed insert-value helpers and raw-evidence resolvers without schema changes,
+removed changed-file Fallow findings, and reduced global Fallow health to 59;
+commit `376e097` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -623,10 +627,11 @@ completed bounded targets:
   packages/cli/src/doctorDbChecks.ts
   packages/cli/src/databaseRuntime.ts
   packages/harness/src/brainKnowledgeReadModel.ts
+  packages/db/src/repositories/DrizzleObservationRepository.ts
 
 full Fallow moved:
   dupes 136 -> 111 clone groups
-  health 117 -> 62 above threshold
+  health 117 -> 59 above threshold
 
 next: pick the next bounded owner surface from the current full Fallow report,
 preferring direct complexity debt over splitting shared DB fan-in helpers.
