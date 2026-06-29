@@ -154,6 +154,156 @@ const reflectionCandidateMetadata = (
   });
 };
 
+const createReflectionMemoryCandidates = async (
+  input: WriteReflectionCandidatesInput
+): Promise<CreatedReflectionMemoryCandidate[]> => {
+  const memoryCandidates: CreatedReflectionMemoryCandidate[] = [];
+
+  for (const proposal of input.reflectionRecord.output.memoryCandidates) {
+    memoryCandidates.push(await input.memoryRepository.createMemoryCandidate({
+      projectId: input.reflectionRecord.scope.projectId,
+      ...(input.reflectionRecord.scope.executionRunId === undefined
+        ? {}
+        : { executionRunId: input.reflectionRecord.scope.executionRunId }),
+      proposedBy: "reflection",
+      kind: proposal.kind,
+      status: "candidate",
+      summary: proposal.summary,
+      body: proposal.body,
+      owner: proposal.owner,
+      confidence: proposal.confidence,
+      applicationGuidance: proposal.applicationGuidance,
+      ...(proposal.invalidationRule === undefined
+        ? {}
+        : { invalidationRule: proposal.invalidationRule }),
+      ...(proposal.sourceClaimIds === undefined ? {} : { sourceClaimIds: proposal.sourceClaimIds }),
+      sourceLineage: proposal.sourceLineage,
+      isUserPreference: proposal.isUserPreference,
+      validFrom: proposal.validFrom,
+      ...(proposal.validUntil === undefined ? {} : { validUntil: proposal.validUntil }),
+      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
+    }));
+  }
+
+  return memoryCandidates;
+};
+
+const createReflectionAntiMemoryCandidates = async (
+  input: WriteReflectionCandidatesInput
+): Promise<AntiMemoryCandidate[]> => {
+  const antiMemoryCandidates: AntiMemoryCandidate[] = [];
+
+  for (const proposal of input.reflectionRecord.output.antiMemoryCandidates) {
+    antiMemoryCandidates.push(await input.memoryRepository.createAntiMemoryCandidate({
+      projectId: input.reflectionRecord.scope.projectId,
+      ...(input.reflectionRecord.scope.executionRunId === undefined
+        ? {}
+        : { executionRunId: input.reflectionRecord.scope.executionRunId }),
+      proposedBy: "reflection",
+      key: proposal.key,
+      status: "candidate",
+      ...(proposal.reason === undefined ? {} : { reason: proposal.reason }),
+      invalidatedBySourceClaimIds: proposal.invalidatedBySourceClaimIds,
+      summary: proposal.summary,
+      body: proposal.body,
+      owner: proposal.owner,
+      confidence: proposal.confidence,
+      ...(proposal.appliesTo === undefined ? {} : { appliesTo: proposal.appliesTo }),
+      ...(proposal.mayRevisitWhen === undefined
+        ? {}
+        : { mayRevisitWhen: proposal.mayRevisitWhen }),
+      sourceLineage: proposal.sourceLineage,
+      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
+    }));
+  }
+
+  return antiMemoryCandidates;
+};
+
+const collectUnsupportedSourceClaimCandidates = (
+  input: WriteReflectionCandidatesInput
+): UnsupportedReflectionCandidate[] => {
+  if (input.sourceRepository !== undefined && input.sourceArtifactId !== undefined) {
+    return [];
+  }
+
+  return input.reflectionRecord.output.sourceClaimCandidates.map((proposal, index) => {
+    const reviewability = reflectionCandidateReviewability(proposal);
+
+    return {
+      kind: "source_claim_candidate",
+      index,
+      reason: "source_claim_candidate_requires_source_repository_and_source_artifact",
+      reviewability: reviewability.reviewability,
+      reviewabilityReasons: reviewability.reasons,
+      proposal
+    };
+  });
+};
+
+const createReflectionSourceClaims = async (
+  input: WriteReflectionCandidatesInput
+): Promise<SourceClaim[]> => {
+  if (input.sourceRepository === undefined || input.sourceArtifactId === undefined) {
+    return [];
+  }
+
+  const sourceClaims: SourceClaim[] = [];
+
+  for (const proposal of input.reflectionRecord.output.sourceClaimCandidates) {
+    sourceClaims.push(await input.sourceRepository.createSourceClaim({
+      sourceArtifactId: input.sourceArtifactId,
+      ...(input.reflectionRecord.scope.executionRunId === undefined
+        ? {}
+        : { executionRunId: input.reflectionRecord.scope.executionRunId }),
+      claim: proposal.claim,
+      mechanism: proposal.mechanism,
+      krnImplication: proposal.krnImplication,
+      doesNotProve: proposal.doesNotProve,
+      trustTier: proposal.trustTier,
+      supportType: proposal.supportType,
+      consumer: proposal.consumer,
+      ...(proposal.falsifier === undefined ? {} : { falsifier: proposal.falsifier }),
+      ...(proposal.revisitWhen === undefined ? {} : { revisitWhen: proposal.revisitWhen }),
+      status: "proposed",
+      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
+    }));
+  }
+
+  return sourceClaims;
+};
+
+const collectUnsupportedPolicyCandidates = (
+  reflectionRecord: ReflectionRecord
+): UnsupportedReflectionCandidate[] => reflectionRecord.output.policyCandidates.map((proposal, index) => {
+  const reviewability = reflectionCandidateReviewability(proposal);
+
+  return {
+    kind: "policy_candidate",
+    index,
+    reason: "policy_candidate_store_not_available",
+    reviewability: reviewability.reviewability,
+    reviewabilityReasons: reviewability.reasons,
+    proposal
+  };
+});
+
+const createReflectionEvalCandidates = (
+  input: WriteReflectionCandidatesInput
+): EvalCandidateProposal[] => input.reflectionRecord.output.evalCandidates.map(
+  (proposal): EvalCandidateProposal => ({
+    id: input.createId(`eval-candidate-${input.reflectionRecord.id}`),
+    projectId: input.reflectionRecord.scope.projectId,
+    status: "candidate",
+    title: proposal.title,
+    scenario: proposal.scenario,
+    expectedSignal: proposal.expectedSignal,
+    sourceEvidence: proposal.sourceEvidence,
+    metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal),
+    createdAt: input.now()
+  })
+);
+
 export const writeReflectionCandidates = async (
   input: WriteReflectionCandidatesInput
 ): Promise<WriteReflectionCandidatesResult> => {
@@ -181,123 +331,14 @@ export const writeReflectionCandidates = async (
     };
   }
 
-  const memoryCandidates: CreatedReflectionMemoryCandidate[] = [];
-  for (const proposal of input.reflectionRecord.output.memoryCandidates) {
-    memoryCandidates.push(await input.memoryRepository.createMemoryCandidate({
-      projectId: input.reflectionRecord.scope.projectId,
-      ...(input.reflectionRecord.scope.executionRunId === undefined
-        ? {}
-        : { executionRunId: input.reflectionRecord.scope.executionRunId }),
-      proposedBy: "reflection",
-      kind: proposal.kind,
-      status: "candidate",
-      summary: proposal.summary,
-      body: proposal.body,
-      owner: proposal.owner,
-      confidence: proposal.confidence,
-      applicationGuidance: proposal.applicationGuidance,
-      ...(proposal.invalidationRule === undefined
-        ? {}
-        : { invalidationRule: proposal.invalidationRule }),
-      ...(proposal.sourceClaimIds === undefined ? {} : { sourceClaimIds: proposal.sourceClaimIds }),
-      sourceLineage: proposal.sourceLineage,
-      isUserPreference: proposal.isUserPreference,
-      validFrom: proposal.validFrom,
-      ...(proposal.validUntil === undefined ? {} : { validUntil: proposal.validUntil }),
-      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
-    }));
-  }
-
-  const antiMemoryCandidates: AntiMemoryCandidate[] = [];
-  for (const proposal of input.reflectionRecord.output.antiMemoryCandidates) {
-    antiMemoryCandidates.push(await input.memoryRepository.createAntiMemoryCandidate({
-      projectId: input.reflectionRecord.scope.projectId,
-      ...(input.reflectionRecord.scope.executionRunId === undefined
-        ? {}
-        : { executionRunId: input.reflectionRecord.scope.executionRunId }),
-      proposedBy: "reflection",
-      key: proposal.key,
-      status: "candidate",
-      ...(proposal.reason === undefined ? {} : { reason: proposal.reason }),
-      invalidatedBySourceClaimIds: proposal.invalidatedBySourceClaimIds,
-      summary: proposal.summary,
-      body: proposal.body,
-      owner: proposal.owner,
-      confidence: proposal.confidence,
-      ...(proposal.appliesTo === undefined ? {} : { appliesTo: proposal.appliesTo }),
-      ...(proposal.mayRevisitWhen === undefined
-        ? {}
-        : { mayRevisitWhen: proposal.mayRevisitWhen }),
-      sourceLineage: proposal.sourceLineage,
-      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
-    }));
-  }
-
-  const unsupportedCandidates: UnsupportedReflectionCandidate[] = [];
-  const sourceClaims: SourceClaim[] = [];
-  input.reflectionRecord.output.sourceClaimCandidates.forEach((proposal, index) => {
-    if (input.sourceRepository === undefined || input.sourceArtifactId === undefined) {
-      const reviewability = reflectionCandidateReviewability(proposal);
-
-      unsupportedCandidates.push({
-        kind: "source_claim_candidate",
-        index,
-        reason: "source_claim_candidate_requires_source_repository_and_source_artifact",
-        reviewability: reviewability.reviewability,
-        reviewabilityReasons: reviewability.reasons,
-        proposal
-      });
-    }
-  });
-
-  if (input.sourceRepository !== undefined && input.sourceArtifactId !== undefined) {
-    for (const proposal of input.reflectionRecord.output.sourceClaimCandidates) {
-      sourceClaims.push(await input.sourceRepository.createSourceClaim({
-        sourceArtifactId: input.sourceArtifactId,
-        ...(input.reflectionRecord.scope.executionRunId === undefined
-          ? {}
-          : { executionRunId: input.reflectionRecord.scope.executionRunId }),
-        claim: proposal.claim,
-        mechanism: proposal.mechanism,
-        krnImplication: proposal.krnImplication,
-        doesNotProve: proposal.doesNotProve,
-        trustTier: proposal.trustTier,
-        supportType: proposal.supportType,
-        consumer: proposal.consumer,
-        ...(proposal.falsifier === undefined ? {} : { falsifier: proposal.falsifier }),
-        ...(proposal.revisitWhen === undefined ? {} : { revisitWhen: proposal.revisitWhen }),
-        status: "proposed",
-        metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal)
-      }));
-    }
-  }
-
-  input.reflectionRecord.output.policyCandidates.forEach((proposal, index) => {
-    const reviewability = reflectionCandidateReviewability(proposal);
-
-    unsupportedCandidates.push({
-      kind: "policy_candidate",
-      index,
-      reason: "policy_candidate_store_not_available",
-      reviewability: reviewability.reviewability,
-      reviewabilityReasons: reviewability.reasons,
-      proposal
-    });
-  });
-
-  const evalCandidates = input.reflectionRecord.output.evalCandidates.map(
-    (proposal): EvalCandidateProposal => ({
-      id: input.createId(`eval-candidate-${input.reflectionRecord.id}`),
-      projectId: input.reflectionRecord.scope.projectId,
-      status: "candidate",
-      title: proposal.title,
-      scenario: proposal.scenario,
-      expectedSignal: proposal.expectedSignal,
-      sourceEvidence: proposal.sourceEvidence,
-      metadata: reflectionCandidateMetadata(input.reflectionRecord, proposal),
-      createdAt: input.now()
-    })
-  );
+  const memoryCandidates = await createReflectionMemoryCandidates(input);
+  const antiMemoryCandidates = await createReflectionAntiMemoryCandidates(input);
+  const sourceClaims = await createReflectionSourceClaims(input);
+  const unsupportedCandidates = [
+    ...collectUnsupportedSourceClaimCandidates(input),
+    ...collectUnsupportedPolicyCandidates(input.reflectionRecord)
+  ];
+  const evalCandidates = createReflectionEvalCandidates(input);
 
   return {
     status: "ready",
