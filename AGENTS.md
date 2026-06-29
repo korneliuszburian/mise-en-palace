@@ -110,6 +110,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 ## Beads Issue Tracker
 
 This project uses **bd (beads)** for issue tracking. Run `bd prime` to see full workflow context and commands.
+Use the repo-local `beads` skill at `.agents/skills/beads/SKILL.md` for
+workflow guidance before issue operations.
 
 ### Quick Reference
 
@@ -118,13 +120,16 @@ bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --claim  # Claim work
 bd close <id>         # Complete work
+bd prime              # Refresh workflow context after compact/resume
 ```
 
 ### Rules
 
+- Use the repo-local `beads` skill at `.agents/skills/beads/SKILL.md` before issue operations when Beads workflow details are needed.
 - Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
-- Run `bd prime` for detailed command reference and session close protocol
+- Run `bd prime` after context compaction, resume, or a new session before choosing or continuing Beads-tracked work
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+- Keep KRN root `GOAL.md` / `PLAN.md` / `PLANS.md` compact; use Beads for durable task graph and follow-up tracking, not for replacing KRN source-of-truth docs
 
 **Architecture in one line:** issues live in a local Dolt DB; sync uses `refs/dolt/data` on your git remote; `.beads/issues.jsonl` is a passive export. See https://github.com/gastownhall/beads/blob/main/docs/SYNC_CONCEPTS.md for details and anti-patterns.
 

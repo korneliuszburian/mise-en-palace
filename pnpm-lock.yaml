@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@beads/bd':
+        specifier: ^1.0.4
+        version: 1.0.4
       fallow:
         specifier: ^2.103.0
         version: 2.103.0
@@ -437,6 +440,13 @@ packages:
   '@babel/runtime@7.29.7':
     resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
+
+  '@beads/bd@1.0.4':
+    resolution: {integrity: sha512-MbLARdvt3xLliSqZMUAbWkRUpnfeOIviTE8HcVn7w7NlSCSj7r2VdwV2rUIQy9DyW5AjKYPPZfR2yxDA4Zf5ww==}
+    engines: {node: '>=14.0.0'}
+    cpu: [x64, arm64]
+    os: [darwin, linux, win32, android]
+    hasBin: true
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
@@ -5008,6 +5018,8 @@ snapshots:
     optional: true
 
   '@babel/runtime@7.29.7': {}
+
+  '@beads/bd@1.0.4': {}
 
   '@borewit/text-codec@0.2.2':
     optional: true

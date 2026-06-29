@@ -53,6 +53,13 @@ bounded product surface, or unblock the next vertical slice.
 
 - Keep `GOAL.md`, `PLAN.md`, and `PLANS.md` compact.
 - Archive detail in reports, not root files.
+- Use Beads (`bd`) as the durable task graph and handoff layer; see
+  `docs/runbooks/beads-codex-protocol.md`.
+- After compact/resume/new session, run `bd prime` before choosing or
+  continuing Beads-tracked work.
+- Claim or create a Beads issue before source edits when the work is durable.
+- Do not use Beads to replace KRN product truth: `GOAL.md`, `PLAN.md`, and
+  `PLANS.md` remain authoritative.
 - Do not create a parallel roadmap.
 - Do not reopen archived plans as active context.
 - Do not mark this continuous goal complete after one slice.
@@ -93,7 +100,7 @@ Do not substitute self/headless scenarios for V02-01.
 After auto-compact, resume, context loss, or a new `/goal` continuation:
 
 1. Read `GOAL.md`, `PLAN.md`, `PLANS.md`, and `docs/KRN_KERNEL.md`.
-2. Run `git fetch --prune`, `git status --short --branch`, and
+2. Run `bd prime`, then `git fetch --prune`, `git status --short --branch`, and
    `git log --oneline -n 8`.
 3. Return to the first incomplete active task.
 4. If a pasted objective, attachment, old prompt, or conversation summary names

@@ -4,6 +4,11 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@beads/bd"
+    ]
+  },
   "scripts": {
     "db:check": "pnpm --filter @krn/db db:check",
     "db:generate": "pnpm --filter @krn/db db:generate",
@@ -22,6 +27,9 @@
     "eval:brain-battle:smoke": "pnpm --filter @krn/harness test -- goldenKrnBehaviorGate activePlanInvariants contextHygieneInvariants sourceMapInvariants skillInvariants patternChainInvariants brainBattleMatrixInvariants typescriptBoundaryInvariants && pnpm --filter @krn/cli test -- runRunShowCommand runCli && pnpm --filter @krn/codex-adapter test -- codexBriefGoldenBehavior",
     "eval:promptfoo:smoke": "mkdir -p .local-lab/promptfoo && promptfoo eval -c tests/fixtures/promptfoo/krn-golden-smoke.yaml --output .local-lab/promptfoo/krn-golden-smoke-results.jsonl",
     "krn": "pnpm --filter @krn/cli krn",
+    "beads:prime": "bd prime",
+    "beads:ready": "bd ready --json",
+    "beads:doctor": "bd doctor",
     "brain:knowledge:preview": "mkdir -p .local-lab && (cd packages/cli && pnpm exec tsx src/index.ts knowledge cards --catalog-file docs/brain-knowledge/catalog.json --html) > .local-lab/brain-knowledge-preview.html",
     "quality:fallow": "mkdir -p .local-lab/fallow && fallow --format compact --output-file .local-lab/fallow/full.compact.txt",
     "quality:fallow:ci": "fallow audit --format compact",
@@ -30,6 +38,7 @@
     "typecheck": "pnpm -r --workspace-concurrency=1 --if-present typecheck"
   },
   "devDependencies": {
+    "@beads/bd": "^1.0.4",
     "fallow": "^2.103.0",
     "promptfoo": "^0.121.17",
     "typescript": "5.9.3"
