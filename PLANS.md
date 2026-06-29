@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: e3ad9493327e3e55dc606721cf514d1a80f542fd / CI success
+latest source slice commit checked: 678d05b8097fb8ceebb8f872cd5dc254ecd2331c / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -112,9 +112,13 @@ readiness/client/project/count helpers across DB smoke surfaces without changing
 schema, delete ordering, readback assertions, or dev-root exports; verified all
 DB smoke targets and reduced global Fallow to dupes 95 and health 42; commit
 `e3ad949` passed CI run `28405237395`.
-Strict changed-files `--gate all` still reports inherited smoke assertion
-complexity/duplication in touched files; handle that as a dedicated follow-up
-slice if continuing V360.
+Latest completed slice: DB init-connect smoke readback cleanup extracted
+private assertion/reuse/owner-file readback helpers without schema or cleanup
+ordering changes, verified init-connect DB smoke, and reduced global Fallow
+health to 41; commit `678d05b` passed CI run `28406082493`.
+Memory-governance and activation smoke assertion cleanup remain valid, but they
+must be handled as dedicated smoke-family cleanup slices because touching them
+pulls inherited smoke duplication into the changed-files gate.
 ```
 
 ## 2. Product Thesis
@@ -652,14 +656,16 @@ completed bounded targets:
   packages/db/src/repositories/DrizzleRetrievalRepository.ts
   packages/db/src/repositories/DrizzleMemoryRepository.ts
   packages/db/src/dbSmokeSupport.ts and DB smoke setup callers
+  packages/db/src/initConnectSmoke.ts
 
 full Fallow moved:
   dupes 136 -> 95 clone groups
-  health 117 -> 42 above threshold
+  health 117 -> 41 above threshold
 
 next: pick the next bounded owner surface from the current full Fallow report.
-If continuing DB smoke cleanup, target assertion/function complexity explicitly;
-do not extend the shared setup helper into a generic smoke framework.
+If continuing DB smoke cleanup, handle memory-governance/activation as a
+smoke-family cleanup with explicit duplicate-block reduction, not a generic
+shared setup framework.
 ```
 
 ## Verification Policy
