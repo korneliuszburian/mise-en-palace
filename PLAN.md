@@ -91,10 +91,11 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   doctor failure rules cleanup,
   doctor DB readiness gates cleanup,
   database runtime project resolution cleanup,
-  brain knowledge read-model parser/search cleanup,
-  observation repository persistence cleanup
-full Fallow moved: dupes 136 -> 111; health 117 -> 59
-```
+	  brain knowledge read-model parser/search cleanup,
+	  observation repository persistence cleanup,
+	  plan command boundary/runtime cleanup
+	full Fallow moved: dupes 136 -> 111; health 117 -> 55
+	```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
 `packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
