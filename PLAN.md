@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V342 Product-Facing Knowledge Search Usefulness Closure
-current task: V342-00 Product-Facing Knowledge Search Usefulness Closure
+active stream: V343 Product-Facing Knowledge Search Coverage Seed
+current task: V343-00 Product-Facing Knowledge Search Coverage Seed
 ```
 
 ## Compact Completed Checkpoints
@@ -36,7 +36,7 @@ Remaining product gaps:
 1. pattern search/readback hardening
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
-4. ingest v0 product-facing search/readback usefulness closure
+4. ingest v0 product-facing search coverage seed
 5. graph brain v0 candidate extraction/reviewability/persistence surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
@@ -45,65 +45,40 @@ Remaining product gaps:
 
 ## Active Stream
 
-```txt
-V324 complete: SourceClaimEdge readback by SourceClaim id.
-V325 complete: candidate-only local extraction preview.
-V326 complete: ready vs deferred extraction claim reviewability gate.
-V327 complete: reviewed selected extraction candidate persistence bridge.
-V328 complete: source extraction fence-state carryover repair.
-V329 complete: graph-aware SourceClaimEdge adjacent context readback.
-V330 complete: bounded edge-aware source candidate ranking lab.
-V331 complete: persisted edge-aware activation readback.
-V332 complete: edge-aware source candidate refinement without lab-seeded duplicate row.
-V333 complete: edge-aware activation usefulness closure showed review-useful
-  edge metadata and top ordering, but not inclusion delta.
-V334 complete: edge-aware selection delta proof showed SourceClaimEdge influence
-  can change the bounded working set against a no-edge baseline.
-V335 complete: tiny graph-brain QA proof showed edge-aware context can select
-  the answer-grounding SourceClaim while the no-relation baseline cannot.
-V336 complete: relation-grounded QA readback helper and golden case protect the
-  baseline-vs-edge answer delta.
-V337 complete: source-relation heartbeat preview proposes reviewable
-  maintenance candidates without source truth or Memory Core mutation.
-V338 complete: memory-staleness heartbeat preview proposes reviewable
-  MemoryRecord maintenance candidates without Memory Core mutation.
-V339 complete: consensus/eval preview preserves support, dissent, risk, and
-  decision options without autonomous truth runtime.
-V340 complete: one local artifact persisted as SourceArtifact/SourceChunk/
-  SearchDocument/SourceClaim and activated later as reviewable SourceClaim.
-V341 complete: `krn source search --query` reads persisted SourceClaim and
-  SearchDocument candidates with inclusion/exclusion, reviewability, and
-  proof/non-proof boundaries.
-```
+V324-V339 complete: graph/source-edge, heartbeat, consensus, and tiny QA
+previews exist without autonomous truth runtime. V340 proved one artifact-to-
+activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
+that exact/graph queries help but heartbeat/consensus/pattern queries need
+persisted coverage before UI/API/MCP/crawler/ranking work.
 
-### V342 Product-Facing Knowledge Search Usefulness Closure
+### V343 Product-Facing Knowledge Search Coverage Seed
 
 Goal:
 
-Use `krn source search` on a small set of real KRN knowledge questions and decide
-whether the preview reduces rereads, review burden, and context uncertainty.
+Use existing local artifact/source preview paths to seed a tiny set of recent
+KRN knowledge artifacts, then prove weak V342 queries improve.
 
 Current action:
 
 ```txt
-Execute V342-00: run the V341 readback preview on 3-5 real queries, classify
-included/excluded candidates as helped/neutral/noise/missing, and decide the
-next highest-ROI product move. Do not add crawler, UI/API/MCP, worker daemon,
-schema, broad eval platform, ranking rewrite, or autonomous truth runtime.
+Execute V343-00: persist 3-5 compact artifacts for recent heartbeat,
+consensus, pattern, and search-usefulness reports using existing paths; rerun
+weak V342 queries. Do not add crawler, UI/API/MCP, worker daemon, schema, broad
+eval platform, ranking rewrite, graph runtime, or autonomous truth runtime.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators deciding whether KRN knowledge search is useful enough for
-the next product surface.
+technical operators validating whether source search coverage is useful enough
+for later product surfaces.
 ```
 
 Falsifier:
 
 ```txt
-Given real KRN knowledge questions, `krn source search` does not reduce rereads,
-review burden, or context uncertainty beyond manual file/source search.
+After bounded coverage seeding, heartbeat/consensus/pattern queries still miss
+their intended recent knowledge or return mostly generic guardrails.
 ```
 
 ## Pattern Gate

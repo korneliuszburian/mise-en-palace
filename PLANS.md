@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V342 Product-Facing Knowledge Search Usefulness Closure
-current task: V342-00 Product-Facing Knowledge Search Usefulness Closure
+active stream: V343 Product-Facing Knowledge Search Coverage Seed
+current task: V343-00 Product-Facing Knowledge Search Coverage Seed
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V342-00 Product-Facing Knowledge Search Usefulness Closure must measure whether
-the V341 readback reduces rereads/review burden on real KRN questions before
-any UI/API/MCP/crawler/ranking work.
+V343-00 Product-Facing Knowledge Search Coverage Seed must use existing ingest
+paths to improve weak V342 heartbeat/consensus/pattern queries before any
+UI/API/MCP/crawler/ranking work.
 ```
 
 ## 2. Product Thesis
@@ -59,7 +59,8 @@ graph brain: SourceClaimEdge preview/persistence/readback, extraction
   consensus preview exist
 ingest v0: V340 proved local artifact -> SourceArtifact/SourceChunk/
   SearchDocument/SourceClaim -> later activated SourceClaim; V341 added
-  `krn source search --query` readback over that persisted substrate
+  `krn source search --query`; V342 found useful exact/graph recall and weak
+  heartbeat/consensus/pattern coverage
 product-ready: no
 ```
 
@@ -93,6 +94,8 @@ V339 complete: consensus candidate evaluation preview.
 V340 complete: local ingest-to-use loop via persisted artifact/source/search/claim and later activation.
 V341 complete: product-facing knowledge search readback preview via
 `krn source search --query`.
+V342 complete: knowledge search usefulness closure showed exact/graph queries
+help but recent heartbeat/consensus/pattern coverage is weak.
 ```
 
 Recent report range:
@@ -103,45 +106,15 @@ docs/reviews/controlled-dogfood/2026-06-29-v324-.../REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v340-ingest-v0-product-loop-closure/REPORT.md
 ```
 
-## Outcome V340 Ingest v0 Product Loop Closure
+## Outcome V340-V341 Product Readback Basis
 
-Status: complete.
+Status: compacted complete.
 
-Source-to-decision:
-
-- Source: V339 consensus/eval preview report.
-- Mechanism: KRN needed one bounded local artifact path before crawler, UI,
-  API, MCP, worker daemon, schema expansion, or broad eval work.
-- KRN implication: product-facing knowledge search should grow from a proven
-  artifact-to-activated-knowledge path.
-- Decision: use existing local artifact preview, persisted `SearchDocument`,
-  `SourceClaim`, activation, and run readback surfaces; add no product surface.
-- Does not prove: source truth, product search quality, broad corpus ingest,
-  embeddings, graph retrieval, crawler readiness, product readiness, or Memory
-  Core mutation.
-- Consumer: V341 Product-Facing Knowledge Search Readback Preview.
-- Falsifier: persisted local artifact claim/search document cannot be read back
-  or activated in a later plan by marker query.
-
-V340 evidence:
-
-```txt
-artifact: docs/reviews/controlled-dogfood/2026-06-29-v340-ingest-v0-product-loop-closure/ARTIFACT.md
-sourceArtifact: f6db868a-4c82-406a-8371-9ab7d8594fc5
-searchDocument: 6f045cc4-e8c9-4555-8425-167d74e5d319
-sourceClaim: 3363383c-02d0-4e5a-9674-132c1bc41b51
-activationRun: dab76e12-054e-4ac1-a4b4-783e42f69ed4
-retrievalRun: 31fb0db3-0277-4caa-b978-5b6e19a24143
-```
-
-V340 outcome:
-
-```txt
-The V340 SourceClaim was included in a later persisted plan. The matching
-SearchDocument was readable and ranked, but excluded over budget. This proves a
-bounded reviewable artifact-to-activated-knowledge path, not product search
-quality.
-```
+V340 proved one local artifact could become `SourceArtifact`, `SourceChunk`,
+`SearchDocument`, and `SourceClaim`, then activate later as SourceClaim
+`3363383c-02d0-4e5a-9674-132c1bc41b51`; V341 exposed read-only
+`krn source search --query` over that substrate. Full evidence lives in the
+V340 and V341 reports.
 
 ## 9. Task Contract Schema
 
@@ -242,27 +215,64 @@ mutation. The next useful step is not another product surface; it is measuring
 whether this readback reduces rereads/review burden on real questions.
 ```
 
+## Outcome V342 Product-Facing Knowledge Search Usefulness Closure
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V341 product-facing knowledge search readback report.
+- Mechanism: V341 proved the CLI can read persisted source/search candidates,
+  but not that current corpus coverage helps real operator questions.
+- KRN implication: before UI/API/MCP/crawler/ranking work, measure whether
+  readback reduces rereads and separate ranking issues from coverage issues.
+- Decision: run five real `krn source search` queries and classify usefulness.
+- Does not prove: source truth, ranking quality, broad corpus coverage,
+  embeddings, graph retrieval, product readiness, or Memory Core mutation.
+- Consumer: V343 Product-Facing Knowledge Search Coverage Seed.
+- Falsifier: real KRN queries do not retrieve useful persisted candidates or
+  reduce rereads compared with manual report search.
+
+V342 evidence:
+
+```txt
+executionRun: fe155700-02e3-4aa3-8739-fb733fa8066c
+queries: exact marker, graph relation, heartbeat, consensus, source-to-decision
+strong: exact marker and graph relation
+weak: heartbeat, consensus, broad pattern/source-to-decision via source search
+report: docs/reviews/controlled-dogfood/2026-06-29-v342-product-facing-knowledge-search-usefulness-closure/REPORT.md
+```
+
+V342 outcome:
+
+```txt
+`krn source search` is useful where persisted coverage exists. The next
+highest-ROI task is a tiny coverage seed for recent heartbeat, consensus,
+pattern, and usefulness reports using existing ingest/readback paths.
+```
+
 ## 15. Progress
 
 - [x] V340 complete: artifact-to-activated-SourceClaim loop.
 - [x] V341 complete: product-facing knowledge search readback preview.
-- [ ] V342 current task: product-facing knowledge search usefulness closure.
+- [x] V342 complete: product-facing knowledge search usefulness closure.
+- [ ] V343 current task: product-facing knowledge search coverage seed.
 
 ## Active Task Contract
 
-### V342-00 Product-Facing Knowledge Search Usefulness Closure
+### V343-00 Product-Facing Knowledge Search Coverage Seed
 
 Objective:
 
 ```txt
-Run `krn source search` on 3-5 real KRN knowledge questions and decide whether
-the preview reduces rereads, review burden, and context uncertainty.
+Persist 3-5 compact recent KRN knowledge artifacts through existing source
+preview paths and prove weak V342 queries improve.
 ```
 
 Allowed:
 
 ```txt
-read-only CLI usage
+existing local artifact/source preview usage
 DB-backed readback dogfood
 compact usefulness report/root state update
 ```
@@ -280,6 +290,8 @@ autonomous truth runtime
 Memory Core mutation
 ranking rewrite
 UI/API/MCP/crawler work
+new DB schema
+embeddings or graph runtime
 ```
 
 Pattern gate:
@@ -295,12 +307,11 @@ before retention.
 Success criteria:
 
 ```txt
-1. 3-5 real queries are run through `krn source search`;
-2. candidates are classified helped/neutral/noise/missing;
-3. review burden/reread delta is recorded;
-4. output limitations and non-proof boundaries are explicit;
-5. next product move is either bounded repair or hold for more evidence;
-6. root state stays compact and advances to the next highest-ROI task.
+1. 3-5 compact artifacts are persisted with existing paths;
+2. weak V342 heartbeat/consensus/pattern queries are rerun;
+3. improved candidate coverage is recorded or falsified;
+4. no crawler/UI/API/MCP/schema/ranking/graph runtime is added;
+5. root state stays compact and advances to the next highest-ROI task.
 ```
 
 ## Verification Policy

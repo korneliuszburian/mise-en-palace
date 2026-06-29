@@ -15,7 +15,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V342 Product-Facing Knowledge Search Usefulness Closure
+V343 Product-Facing Knowledge Search Coverage Seed
 ```
 
 Current state:
@@ -25,15 +25,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V342-00 Product-Facing Knowledge Search Usefulness Closure.
+current task: V343-00 Product-Facing Knowledge Search Coverage Seed.
 ```
 
 Current task:
 
 ```txt
-Use the new `krn source search` preview on a small set of real KRN knowledge
-queries and decide whether it reduces rereads/review burden before UI/API/MCP,
-crawler, worker, ranking, or graph-runtime work.
+Use the existing local artifact/source preview path to seed a tiny set of
+recent KRN knowledge artifacts, then prove weak V342 queries improve without
+UI/API/MCP, crawler, worker, schema, ranking rewrite, or graph-runtime work.
 ```
 
 ## Remaining Work
@@ -49,8 +49,8 @@ to preserve are:
    executed; use future results only when they change a product loop.
 4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
    context detail readback, marker/hash activation, V340 artifact-to-activated-
-   SourceClaim proof, and V341 product-facing `krn source search` readback
-   exist. Usefulness closure is next.
+   SourceClaim proof, V341 product-facing `krn source search` readback, and
+   V342 usefulness closure exist. Coverage seed is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
