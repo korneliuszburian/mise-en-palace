@@ -12,6 +12,8 @@ Current truth:
   candidates without mutating source truth or Memory Core;
 - memory-staleness heartbeat preview can propose reviewable maintenance
   candidates without mutating Memory Core;
+- consensus candidate evaluation preview can preserve support/dissent/risk
+  evidence without creating autonomous truth;
 - job descriptions explicitly set `requiresBackgroundLoop: false`.
 
 Not built:
@@ -25,6 +27,7 @@ Not built:
 - no embedding worker runtime;
 - no source-relation maintenance executor;
 - no memory-staleness maintenance executor;
+- no consensus agent runtime;
 - no EvalCandidate promotion contract or runtime.
 
 Worker job persistence and smoke checks prove storage/readback lifecycle only.

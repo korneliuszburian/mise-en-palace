@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V339 Consensus Candidate Evaluation Preview
-current task: V339-00 Consensus Candidate Evaluation Preview
+active stream: V340 Ingest v0 Product Loop Closure
+current task: V340-00 Ingest v0 Product Loop Closure
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V339-00 Consensus Candidate Evaluation Preview. V337/V338 added the first
-candidate-only heartbeat previews for source relations and stale memory; the
-next gap is bounded candidate consensus/eval with preserved dissent.
+V340-00 Ingest v0 Product Loop Closure. V339 added candidate-only consensus
+evaluation; the next gap is one small artifact-to-activated-knowledge product
+loop.
 ```
 
 ## 2. Product Thesis
@@ -62,7 +62,7 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   refinement complete; usefulness closure complete; selection delta proof
   complete; small graph QA complete; relation-grounded readback closure
   complete; source-relation and memory-staleness heartbeat candidate previews
-  complete
+  complete; consensus candidate evaluation preview complete
 product-ready: no
 ```
 
@@ -92,6 +92,7 @@ V335 complete: small graph-brain QA case.
 V336 complete: relation-grounded QA readback closure.
 V337 complete: source-relation heartbeat candidate preview.
 V338 complete: memory-staleness heartbeat candidate preview.
+V339 complete: consensus candidate evaluation preview.
 ```
 
 Reports:
@@ -112,6 +113,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT
 docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v339-consensus-candidate-evaluation-preview/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -623,25 +625,25 @@ Report:
 docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
 ```
 
-## Active Task: V339-00 Consensus Candidate Evaluation Preview
+## Active Task: V340-00 Ingest v0 Product Loop Closure
 
 Goal:
 
 ```txt
-Add the first bounded consensus/eval preview for candidate review.
+Close one small local ingest-to-use loop.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v339-consensus-candidate-evaluation-preview/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-focused candidate/eval/consensus preview source or report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v339-consensus-candidate-evaluation-preview/REPORT.md
+focused ingest/source/activation/readback source or report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v340-ingest-v0-product-loop-closure/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -652,45 +654,45 @@ Forbidden writes:
 ```txt
 schema/migration; graph database; crawler; UI/API/MCP; worker daemon; broad
 benchmark platform; consensus agent runtime; broad ranking rewrite; Memory
-Core mutation; automatic candidate promotion; runtime markdown memory
+Core mutation; automatic source/memory promotion; runtime markdown memory
 ```
 
 Definition of Done:
 
-- One consensus/eval preview evaluates a candidate with preserved dissent,
-  decision options, evidence refs, and does-not-prove boundary.
-- Output is candidate-only/read-only and does not create autonomous truth.
-- No final Memory Core, SourceClaim, SourceDecision, or EvalCandidate promotion
-  occurs.
+- One small local artifact can produce or use persisted reviewable
+  SearchDocument/SourceClaim state.
+- A later plan/readback can activate that knowledge with proof/non-proof
+  boundaries.
+- No crawler, UI/API/MCP, worker daemon, schema, or automatic promotion is
+  added.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
   if source behavior changes.
 
 Acceptance criteria:
 
 ```txt
-candidate consensus/eval can be previewed with preserved dissent and proof
-boundaries without autonomous truth runtime or broad platform expansion.
+local ingest v0 can be shown as a useful artifact-to-activated-knowledge path
+without broad product surfaces or autonomous truth runtime.
 ```
 
 Risk:
 
 ```txt
-medium: consensus preview can drift into hidden multi-agent truth theater if it
-does not stay candidate-only and evidence-bounded.
+medium: ingest closure can drift into crawler/platform work instead of one
+bounded product loop.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V339 implementation commit if source changes are made
+focused revert of the V340 implementation commit if source changes are made
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V339 is positive, choose the next ingest/graph/heartbeat task that closes a
-product loop. If weak, repair candidate reviewability/evidence before expanding
-consensus surfaces.
+If V340 is positive, choose the next product-facing knowledge search/readback
+slice. If weak, repair the missing ingest/readback link before expanding.
 ```
 
 ## 9. Task Contract Schema
@@ -765,7 +767,8 @@ Next-task synthesis rule:
 - V336: complete; relation-grounded QA readback closure.
 - V337: complete; source-relation heartbeat candidate preview.
 - V338: complete; memory-staleness heartbeat candidate preview.
-- V339: active; consensus candidate evaluation preview.
+- V339: complete; consensus candidate evaluation preview.
+- V340: active; ingest v0 product loop closure.
 
 ## Pattern Gate
 

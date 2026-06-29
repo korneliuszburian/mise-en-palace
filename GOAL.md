@@ -15,7 +15,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V339 Consensus Candidate Evaluation Preview
+V340 Ingest v0 Product Loop Closure
 ```
 
 Current state:
@@ -25,14 +25,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V339-00 Consensus Candidate Evaluation Preview.
+current task: V340-00 Ingest v0 Product Loop Closure.
 ```
 
 Current task:
 
 ```txt
-Add bounded consensus/eval preview for candidate review with preserved dissent,
-proof/non-proof boundaries, and no autonomous truth runtime.
+Close one small ingest-to-use loop from local artifact to reviewable activated
+knowledge without crawler, UI/API/MCP, worker daemon, or new schema.
 ```
 
 ## Remaining Work
@@ -58,11 +58,11 @@ to preserve are:
    candidate dependency; V333 proved review-useful edge-aware activation
    ordering/readback; V334/V335/V336 proved selection delta, tiny QA answer
    delta, and reviewable readback; V337/V338 added source-relation and
-   memory-staleness heartbeat candidate previews.
+   memory-staleness heartbeat previews; V339 added consensus/eval preview.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
-7. Consensus v0: current next layer; eval/candidate preview with preserved
-   dissent, not autonomous truth runtime.
+7. Consensus v0: eval/candidate preview with preserved dissent exists; no
+   autonomous truth runtime.
 8. Product surfaces: web UI/search/API/MCP only after usefulness, security, and
    read-model gates.
 

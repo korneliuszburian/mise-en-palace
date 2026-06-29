@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V339 Consensus Candidate Evaluation Preview
-current task: V339-00 Consensus Candidate Evaluation Preview
+active stream: V340 Ingest v0 Product Loop Closure
+current task: V340-00 Ingest v0 Product Loop Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -69,37 +69,39 @@ V337 complete: source-relation heartbeat preview proposes reviewable
   maintenance candidates without source truth or Memory Core mutation.
 V338 complete: memory-staleness heartbeat preview proposes reviewable
   MemoryRecord maintenance candidates without Memory Core mutation.
-Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v338-...
+V339 complete: consensus/eval preview preserves support, dissent, risk, and
+  decision options without autonomous truth runtime.
+Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v339-...
 ```
 
-### V339 Consensus Candidate Evaluation Preview
+### V340 Ingest v0 Product Loop Closure
 
 Goal:
 
-Add the first bounded consensus/eval preview for candidate review.
+Close one small local ingest-to-use loop.
 
 Current action:
 
 ```txt
-Execute V339-00: inspect candidate reviewability/eval surfaces, then add the
-smallest preview that evaluates a candidate with preserved dissent and
-proof/non-proof boundaries. Do not add consensus agents, autonomous truth
-runtime, schema, worker daemon, UI/API/MCP, crawler, or broad benchmark lane.
+Execute V340-00: use existing local artifact, SearchDocument, SourceClaim,
+activation, and readback pieces to prove one small artifact can become
+reviewable activated knowledge. Do not add crawler, UI/API/MCP, worker daemon,
+schema, broad eval platform, or autonomous truth runtime.
 ```
 
 Primary consumer:
 
 ```txt
-future consensus v0, source/pattern/candidate review, review gates, and
-product-facing knowledge search.
+future product-facing knowledge search, target repo onboarding, research
+condensation, and second-operator workflows.
 ```
 
 Falsifier:
 
 ```txt
-Given a reviewable candidate with supporting and dissenting evidence, KRN cannot
-produce a candidate-only consensus/eval preview that preserves dissent,
-decision options, evidence refs, and does-not-prove boundary.
+Given a small local artifact, KRN cannot persist/read back a reviewable
+SearchDocument/SourceClaim path and activate it in a later plan without
+manual-only context.
 ```
 
 ## Pattern Gate
