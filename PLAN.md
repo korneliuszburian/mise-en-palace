@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V330 Edge-Aware SourceClaim Candidate Ranking Lab
-current task: V330-00 Edge-Aware SourceClaim Candidate Ranking Lab
+active stream: V331 Persisted Edge-Aware Activation Readback
+current task: V331-00 Persisted Edge-Aware Activation Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -54,29 +54,30 @@ V326 complete: ready vs deferred extraction claim reviewability gate.
 V327 complete: reviewed selected extraction candidate persistence bridge.
 V328 complete: source extraction fence-state carryover repair.
 V329 complete: graph-aware SourceClaimEdge adjacent context readback.
+V330 complete: bounded edge-aware source candidate ranking lab.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
 docs/reviews/controlled-dogfood/2026-06-29-v327-...,
 docs/reviews/controlled-dogfood/2026-06-29-v328-...,
-docs/reviews/controlled-dogfood/2026-06-29-v329-...
+docs/reviews/controlled-dogfood/2026-06-29-v329-...,
+docs/reviews/controlled-dogfood/2026-06-29-v330-...
 ```
 
-### V330 Edge-Aware SourceClaim Candidate Ranking Lab
+### V331 Persisted Edge-Aware Activation Readback
 
 Goal:
 
-Add a bounded behavior lab/proof that a source claim connected through a
-persisted `SourceClaimEdge` can be represented as edge-aware ranking/readback
-input without claiming production graph retrieval quality.
+Show the V330 edge-aware source candidate input in a persisted activation
+readback path without claiming production graph retrieval quality.
 
 Current action:
 
 ```txt
-Execute V330-00: inspect activation ranking/readback seams and add the smallest
-lab/proof for edge-aware source candidate input. Do not add schema, graph
-database, crawler, UI/API/MCP, worker daemon, consensus runtime, broad ranking
-rewrite, or Memory Core mutation.
+Execute V331-00: inspect activation trace persistence/readback and add the
+smallest persisted readback path for V330 edge-aware source candidate input. Do
+not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
+runtime, broad ranking rewrite, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -90,9 +91,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given source claims connected by SourceClaimEdge, KRN can represent edge-aware
-source candidate influence in a bounded lab/readback without pretending product
-graph retrieval quality exists.
+Given an edge-aware source candidate input, KRN can persist and read back the
+graphScore/metadata influence without pretending production graph retrieval
+quality exists.
 ```
 
 ## Pattern Gate

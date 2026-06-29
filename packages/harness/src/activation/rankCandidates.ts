@@ -3,7 +3,8 @@ import type {
 } from "../repositories/types.js";
 import type {
   MemoryRecord,
-  SourceClaim
+  SourceClaim,
+  SourceClaimEdge
 } from "@krn/core";
 
 import type {
@@ -134,6 +135,102 @@ const mergeTwoCandidates = (
 
 const memoryFeedbackScore = (record: MemoryRecord): number =>
   record.positiveFeedbackCount * 2 - record.negativeFeedbackCount * 15;
+
+export interface SourceClaimEdgeInfluenceInput {
+  edges: readonly SourceClaimEdge[];
+  seedSourceClaimIds: readonly SourceClaim["id"][];
+  graphScore?: number;
+}
+
+const defaultSourceClaimEdgeGraphScore = 10;
+
+const sourceClaimEdgeKindWeight: Record<SourceClaimEdge["kind"], number> = {
+  supports: 1,
+  contradicts: 1,
+  qualifies: 0.75,
+  depends_on: 0.75,
+  duplicates: 0.75,
+  supersedes: 1,
+  narrows: 0.75,
+  invalidates: 1,
+  expires: 1
+};
+
+const connectedSourceClaimIdFor = (
+  edge: SourceClaimEdge,
+  seedSourceClaimIds: ReadonlySet<SourceClaim["id"]>
+): SourceClaim["id"] | undefined => {
+  if (seedSourceClaimIds.has(edge.fromSourceClaimId)) {
+    return edge.toSourceClaimId;
+  }
+
+  return seedSourceClaimIds.has(edge.toSourceClaimId)
+    ? edge.fromSourceClaimId
+    : undefined;
+};
+
+export const applySourceClaimEdgeInfluence = (
+  candidates: readonly ActivationCandidate[],
+  input: SourceClaimEdgeInfluenceInput
+): ActivationCandidate[] => {
+  const seedSourceClaimIds = new Set(input.seedSourceClaimIds);
+  const baseGraphScore = input.graphScore ?? defaultSourceClaimEdgeGraphScore;
+  const influenceBySourceClaimId = new Map<SourceClaim["id"], {
+    edgeIds: string[];
+    edgeKinds: SourceClaimEdge["kind"][];
+    graphScore: number;
+    seedSourceClaimIds: SourceClaim["id"][];
+  }>();
+
+  for (const edge of input.edges) {
+    const connectedSourceClaimId = connectedSourceClaimIdFor(edge, seedSourceClaimIds);
+
+    if (connectedSourceClaimId === undefined) {
+      continue;
+    }
+
+    const existing = influenceBySourceClaimId.get(connectedSourceClaimId);
+    const seedSourceClaimId = edge.fromSourceClaimId === connectedSourceClaimId
+      ? edge.toSourceClaimId
+      : edge.fromSourceClaimId;
+    const weightedGraphScore = Math.round(baseGraphScore * sourceClaimEdgeKindWeight[edge.kind]);
+
+    influenceBySourceClaimId.set(connectedSourceClaimId, {
+      edgeIds: [...(existing?.edgeIds ?? []), edge.id],
+      edgeKinds: [...(existing?.edgeKinds ?? []), edge.kind],
+      graphScore: Math.max(existing?.graphScore ?? 0, weightedGraphScore),
+      seedSourceClaimIds: [...(existing?.seedSourceClaimIds ?? []), seedSourceClaimId]
+    });
+  }
+
+  return candidates.map((candidate) => {
+    if (candidate.subjectType !== "source_claim") {
+      return candidate;
+    }
+
+    const influence = influenceBySourceClaimId.get(candidate.subjectId);
+
+    if (influence === undefined) {
+      return candidate;
+    }
+
+    return {
+      ...candidate,
+      graphScore: Math.max(candidate.graphScore ?? 0, influence.graphScore),
+      reason: `${candidate.reason} Edge-aware source graph context: ${influence.edgeKinds.join(", ")}.`,
+      expectedUse: `${candidate.expectedUse} Review with connected SourceClaimEdge context before claiming graph retrieval quality.`,
+      metadata: {
+        ...candidate.metadata,
+        sourceClaimEdgeInfluence: {
+          edgeIds: [...new Set(influence.edgeIds)],
+          edgeKinds: [...new Set(influence.edgeKinds)],
+          seedSourceClaimIds: [...new Set(influence.seedSourceClaimIds)],
+          doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      }
+    };
+  });
+};
 
 export const toMemoryCandidate = (record: MemoryRecord): ActivationCandidate => ({
   id: record.id,

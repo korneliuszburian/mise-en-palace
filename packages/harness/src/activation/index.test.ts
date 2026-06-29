@@ -4,6 +4,7 @@ import type {
   MemoryRecord,
   ObservationItem,
   SourceClaim,
+  SourceClaimEdge,
   TaskContract
 } from "@krn/core";
 import type {
@@ -15,6 +16,7 @@ import {
 
 import {
   applyContextROI,
+  applySourceClaimEdgeInfluence,
   applyActivationFilters,
   applyTemporalFilter,
   applyTrustFilter,
@@ -247,6 +249,71 @@ describe("activation engine", () => {
       mergedKinds: expect.arrayContaining(["source", "search"])
     });
     expect(merged[0]?.metadata["searchDocumentIds"]).toBeUndefined();
+  });
+
+  it("represents SourceClaimEdge influence as bounded graph-aware source candidate input", () => {
+    const query = buildSourceQuery({
+      ...task,
+      objective: "Use edge-aware source claim context for graph brain readback"
+    });
+    const seedSourceClaim = sourceClaim({
+      id: "claim-seed",
+      claim: "KRN should expose SourceClaimEdge readback before graph ranking.",
+      krnImplication: "Use direct edge readback before production graph retrieval."
+    });
+    const connectedSourceClaim = sourceClaim({
+      id: "claim-connected",
+      claim: "Connected source claims can influence graph-aware activation input.",
+      mechanism: "A SourceClaimEdge links the seed claim to the connected claim.",
+      krnImplication: "Represent edge-connected context as graphScore input in a bounded lab."
+    });
+    const disconnectedSourceClaim = sourceClaim({
+      id: "claim-disconnected",
+      claim: "Disconnected claims should not receive graph influence.",
+      mechanism: "There is no SourceClaimEdge from the seed to this claim."
+    });
+    const edge: SourceClaimEdge = {
+      id: "edge-1",
+      fromSourceClaimId: seedSourceClaim.id,
+      toSourceClaimId: connectedSourceClaim.id,
+      kind: "narrows",
+      metadata: {
+        consumer: "V330 edge-aware ranking lab",
+        doesNotProve: "This edge does not prove graph retrieval quality."
+      },
+      createdAt: now
+    };
+
+    const influenced = applySourceClaimEdgeInfluence([
+      toSourceClaimCandidate(seedSourceClaim),
+      toSourceClaimCandidate(connectedSourceClaim),
+      toSourceClaimCandidate(disconnectedSourceClaim)
+    ], {
+      edges: [edge],
+      seedSourceClaimIds: [seedSourceClaim.id],
+      graphScore: 12
+    });
+    const ranked = rankCandidates(influenced, query);
+    const connected = ranked.find((candidate) => candidate.subjectId === connectedSourceClaim.id);
+    const disconnected = ranked.find((candidate) => candidate.subjectId === disconnectedSourceClaim.id);
+
+    expect(connected).toMatchObject({
+      subjectType: "source_claim",
+      subjectId: "claim-connected",
+      graphScore: 9
+    });
+    expect(connected?.reason).toContain("Edge-aware source graph context: narrows.");
+    expect(connected?.expectedUse).toContain("Review with connected SourceClaimEdge context");
+    expect(connected?.metadata).toMatchObject({
+      sourceClaimEdgeInfluence: {
+        edgeIds: ["edge-1"],
+        edgeKinds: ["narrows"],
+        seedSourceClaimIds: ["claim-seed"],
+        doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+      }
+    });
+    expect(disconnected?.graphScore).toBe(0);
+    expect(disconnected?.metadata).not.toHaveProperty("sourceClaimEdgeInfluence");
   });
 
   it("reports empty activation inputs before ranking repairs are considered", async () => {
