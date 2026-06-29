@@ -59,6 +59,16 @@ bd create "Short title" --description="Why this exists and what needs to be done
 bd close <id> --reason="Completed"
 ```
 
+## Workflow
+
+Use Beads before durable work:
+
+1. Run `bd prime` after compaction, resume, or a fresh session.
+2. Inspect ready/in-progress work before choosing a slice.
+3. Claim an existing issue, or create one when the work must survive handoff.
+4. Keep implementation notes in Beads comments or issue descriptions when they are durable; keep root KRN plans compact.
+5. Close the Beads issue only after verification, commit, push, and CI status are recorded or explicitly marked unavailable.
+
 ## What Belongs In Beads
 
 Use Beads for:
@@ -78,3 +88,16 @@ Use agent-local planning tools only for the current turn's execution checklist. 
 - Prefer `--json` when parsing `bd` output programmatically.
 - If hooks are installed, `bd prime` may already be injected. Run it manually when context is missing.
 - Do not auto-close or mutate tasks unless the work is actually complete.
+
+## Verification
+
+For Beads workflow changes, verify the CLI and repository handoff surface:
+
+```bash
+bd --version
+bd prime
+bd ready --json
+git diff --check
+```
+
+If Beads work changes package manifests or generated skills, also rely on the repository CI skill invariants before claiming the integration is complete.
