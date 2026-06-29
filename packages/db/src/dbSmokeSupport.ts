@@ -19,16 +19,23 @@ import {
 } from "./repositories/index.js";
 import {
   antiMemoryRecords,
+  antiMemoryCandidates,
   contextExclusions,
   contextItems,
+  memoryApplications,
+  memoryCandidates,
   memoryRecords,
   memoryRecordVersions,
+  outboxEvents,
   retrievalRuns,
   runEvents,
   searchDocuments,
   sourceArtifacts,
+  sourceClaimEdges,
   sourceClaims,
   sourceDecisions,
+  sourceDecisionEdges,
+  sourceRejections,
   workspaces
 } from "./schema/index.js";
 
@@ -99,6 +106,17 @@ export interface SmokeMarkerRowInput {
   db: KrnDatabase;
   marker: string;
   workspaceSlug: string;
+}
+
+export interface SmokeRetrievalRunMarkerRowInput {
+  db: KrnDatabase;
+  marker: string;
+  retrievalRunId: string | undefined;
+  workspaceSlug: string;
+}
+
+export interface SmokeRetrievalRunCleanupInput extends SmokeCleanupInput {
+  retrievalRunId: string | undefined;
 }
 
 const smokeSlugPartLimit = 48;
@@ -228,6 +246,47 @@ export const countRetrievalSubstrateSmokeMarkerRows = async (
     () => countSmokeRows(input.db, sourceDecisions, sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${input.marker}`),
     () => countSmokeRows(input.db, memoryRecordVersions, sql`${memoryRecordVersions.metadata}->>'smokeId' = ${input.marker}`)
+  ]
+});
+
+const countSmokeRetrievalRunMarkerRows = async (
+  input: SmokeRetrievalRunMarkerRowInput & { extraTasks?: readonly SmokeCountTask[] }
+): Promise<number> => sumSmokeCountTasks([
+  () => countSmokeRows(input.db, workspaces, eq(workspaces.slug, input.workspaceSlug)),
+  () => countSmokeRows(input.db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${input.marker}`),
+  () => countSmokeRows(input.db, outboxEvents, sql`${outboxEvents.payload}->>'smokeId' = ${input.marker}`),
+  optionalSmokeCount(
+    input.retrievalRunId,
+    (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
+  ),
+  ...(input.extraTasks ?? [])
+]);
+
+export const countMemoryGovernanceSmokeMarkerRows = async (
+  input: SmokeRetrievalRunMarkerRowInput
+): Promise<number> => countSmokeRetrievalRunMarkerRows({
+  ...input,
+  extraTasks: [
+    () => countSmokeRows(input.db, memoryCandidates, sql`${memoryCandidates.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, memoryRecordVersions, sql`${memoryRecordVersions.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, memoryApplications, sql`${memoryApplications.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, antiMemoryCandidates, sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${input.marker}`)
+  ]
+});
+
+export const countSourceGraphSmokeMarkerRows = async (
+  input: SmokeRetrievalRunMarkerRowInput
+): Promise<number> => countSmokeRetrievalRunMarkerRows({
+  ...input,
+  extraTasks: [
+    () => countSmokeRows(input.db, sourceClaimEdges, sql`${sourceClaimEdges.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, sourceDecisions, sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, sourceDecisionEdges, sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${input.marker}`),
+    () => countSmokeRows(input.db, sourceRejections, sql`${sourceRejections.metadata}->>'smokeId' = ${input.marker}`)
   ]
 });
 
@@ -377,6 +436,98 @@ export const cleanupRetrievalSubstrateSmokeRows = async (
         await input.db
           .delete(sourceDecisions)
           .where(sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`);
+      }
+    ]
+  });
+};
+
+const cleanupSmokeRetrievalRunRows = async (
+  input: SmokeRetrievalRunCleanupInput
+): Promise<void> => {
+  await cleanupSmokeBaseRows(input);
+
+  if (input.retrievalRunId !== undefined) {
+    await input.db
+      .delete(retrievalRuns)
+      .where(eq(retrievalRuns.id, input.retrievalRunId));
+  }
+};
+
+export const cleanupMemoryGovernanceSmokeRows = async (
+  input: Omit<SmokeRetrievalRunCleanupInput, "beforeSourceClaimDeleteTasks">
+): Promise<void> => {
+  await cleanupSmokeRetrievalRunRows({
+    ...input,
+    beforeSourceClaimDeleteTasks: [
+      async () => {
+        await input.db
+          .delete(outboxEvents)
+          .where(sql`${outboxEvents.payload}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(memoryApplications)
+          .where(sql`${memoryApplications.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(memoryRecordVersions)
+          .where(sql`${memoryRecordVersions.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(antiMemoryRecords)
+          .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(antiMemoryCandidates)
+          .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(memoryRecords)
+          .where(sql`${memoryRecords.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(memoryCandidates)
+          .where(sql`${memoryCandidates.metadata}->>'smokeId' = ${input.marker}`);
+      }
+    ]
+  });
+};
+
+export const cleanupSourceGraphSmokeRows = async (
+  input: Omit<SmokeRetrievalRunCleanupInput, "beforeSourceClaimDeleteTasks">
+): Promise<void> => {
+  await cleanupSmokeRetrievalRunRows({
+    ...input,
+    beforeSourceClaimDeleteTasks: [
+      async () => {
+        await input.db
+          .delete(outboxEvents)
+          .where(sql`${outboxEvents.payload}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(sourceRejections)
+          .where(sql`${sourceRejections.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(sourceDecisionEdges)
+          .where(sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(sourceDecisions)
+          .where(sql`${sourceDecisions.metadata}->>'smokeId' = ${input.marker}`);
+      },
+      async () => {
+        await input.db
+          .delete(sourceClaimEdges)
+          .where(sql`${sourceClaimEdges.metadata}->>'smokeId' = ${input.marker}`);
       }
     ]
   });

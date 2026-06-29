@@ -3,15 +3,13 @@ import {
   compileHarnessPlan
 } from "@krn/harness";
 
-import type { KrnDatabase } from "./database.js";
 import {
-  countSmokeRows,
-  createSmokeDatabase,
+  assertSmokeReadbackChecks,
+  cleanupMemoryGovernanceSmokeRows,
+  countMemoryGovernanceSmokeMarkerRows,
   createSmokeProjectRecords,
-  ensureSmokeBrainStoreReady,
-  normalizeSmokeSlugPart,
-  optionalSmokeCount,
-  sumSmokeCountTasks
+  createSmokeRuntime,
+  requireSmokeReadbackValue
 } from "./dbSmokeSupport.js";
 import {
   DrizzleHarnessRunRepository,
@@ -21,18 +19,9 @@ import {
   DrizzleSourceRepository
 } from "./repositories/index.js";
 import {
-  antiMemoryCandidates,
-  antiMemoryRecords,
   memoryApplications,
-  memoryCandidates,
-  memoryRecords,
   memoryRecordVersions,
-  outboxEvents,
-  retrievalRuns,
-  runEvents,
-  sourceArtifacts,
-  sourceClaims,
-  workspaces
+  outboxEvents
 } from "./schema/index.js";
 
 export interface MemoryGovernanceSmokeInput {
@@ -65,78 +54,35 @@ export interface MemoryGovernanceSmokeReport {
   cleanedUp: boolean;
 }
 
-const countRows = async (
-  db: KrnDatabase,
-  workspaceSlug: string,
-  marker: string,
-  retrievalRunId: string | undefined
-): Promise<number> => {
-  return sumSmokeCountTasks([
-    () => countSmokeRows(db, workspaces, eq(workspaces.slug, workspaceSlug)),
-    () => countSmokeRows(db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryCandidates, sql`${memoryCandidates.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryRecordVersions, sql`${memoryRecordVersions.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, memoryApplications, sql`${memoryApplications.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, antiMemoryCandidates, sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, outboxEvents, sql`${outboxEvents.payload}->>'smokeId' = ${marker}`),
-    optionalSmokeCount(
-      retrievalRunId,
-      (id) => countSmokeRows(db, retrievalRuns, eq(retrievalRuns.id, id))
-    )
-  ]);
-};
-
 export const runMemoryGovernanceSmokeCheck = async (
   input: MemoryGovernanceSmokeInput
 ): Promise<MemoryGovernanceSmokeReport> => {
-  await ensureSmokeBrainStoreReady(
-    input.databaseUrl,
-    input.migrationsFolder,
-    "memory governance smoke"
-  );
-
-  const marker = normalizeSmokeSlugPart(input.smokeId);
-  const workspaceSlug = `krn-memory-governance-smoke-${marker}`;
-  const projectSlug = "memory-governance";
+  const runtime = await createSmokeRuntime({
+    databaseUrl: input.databaseUrl,
+    migrationsFolder: input.migrationsFolder,
+    projectSlug: "memory-governance",
+    smokeId: input.smokeId,
+    smokeName: "memory governance smoke",
+    workspacePrefix: "krn-memory-governance-smoke"
+  });
+  const { client, db, marker, projectSlug, workspaceSlug } = runtime;
   const task = `memory governance smoke ${marker}`;
-  const { client, db } = createSmokeDatabase(input.databaseUrl);
   let retrievalRunId: string | undefined;
 
   const cleanup = async (): Promise<number> => {
-    await db.delete(outboxEvents).where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
-    await db
-      .delete(memoryApplications)
-      .where(sql`${memoryApplications.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(memoryRecordVersions)
-      .where(sql`${memoryRecordVersions.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(antiMemoryRecords)
-      .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(antiMemoryCandidates)
-      .where(sql`${antiMemoryCandidates.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(memoryRecords).where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(memoryCandidates)
-      .where(sql`${memoryCandidates.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceClaims).where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
-    await db
-      .delete(sourceArtifacts)
-      .where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(runEvents).where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
+    await cleanupMemoryGovernanceSmokeRows({
+      db,
+      marker,
+      retrievalRunId,
+      workspaceSlug
+    });
 
-    if (retrievalRunId !== undefined) {
-      await db.delete(retrievalRuns).where(eq(retrievalRuns.id, retrievalRunId));
-    }
-
-    await db.delete(workspaces).where(eq(workspaces.slug, workspaceSlug));
-
-    return countRows(db, workspaceSlug, marker, retrievalRunId);
+    return countMemoryGovernanceSmokeMarkerRows({
+      db,
+      marker,
+      retrievalRunId,
+      workspaceSlug
+    });
   };
 
   try {
@@ -347,26 +293,74 @@ export const runMemoryGovernanceSmokeCheck = async (
       .from(outboxEvents)
       .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
 
-    if (
-      readBackSourceClaim?.id !== sourceClaim.id ||
-      readBackCandidate?.id !== memoryCandidate.id ||
-      reviewedCandidate?.status !== "accepted" ||
-      readBackMemoryRecord?.id !== memoryRecord.id ||
-      readBackMemoryRecord.currentVersionId === undefined ||
-      !projectMemoryRecords.some((record) => record.id === memoryRecord.id) ||
-      invalidatedMemoryRecord.status !== "invalidated" ||
-      activeMemoryAfterInvalidation.some((record) => record.id === memoryRecord.id) ||
-      versionRows.length !== 1 ||
-      versionRows[0]?.createdFromCandidateId !== memoryCandidate.id ||
-      applicationRows.length !== 1 ||
-      applicationRows[0]?.memoryRecordId !== memoryRecord.id ||
-      reviewedAntiMemoryCandidateStatus !== "accepted" ||
-      antiMemoryRecord.createdFromCandidateId !== antiMemoryCandidate.id ||
-      !runAntiMemory.some((record) => record.id === antiMemoryRecord.id) ||
-      (outboxRows[0]?.count ?? 0) < 4
-    ) {
-      throw new Error("Memory governance smoke readback did not match persisted records");
-    }
+    const readbackError = "Memory governance smoke readback did not match persisted records";
+
+    assertSmokeReadbackChecks([
+      { label: "source claim readback", passed: readBackSourceClaim?.id === sourceClaim.id },
+      { label: "memory candidate readback", passed: readBackCandidate?.id === memoryCandidate.id },
+      { label: "candidate accepted", passed: reviewedCandidate?.status === "accepted" },
+      { label: "memory record readback", passed: readBackMemoryRecord?.id === memoryRecord.id },
+      {
+        label: "current version id",
+        passed: readBackMemoryRecord?.currentVersionId !== undefined
+      },
+      {
+        label: "project memory record listed",
+        passed: projectMemoryRecords.some((record) => record.id === memoryRecord.id)
+      },
+      {
+        label: "memory invalidated",
+        passed: invalidatedMemoryRecord.status === "invalidated"
+      },
+      {
+        label: "invalidated memory excluded from active list",
+        passed: !activeMemoryAfterInvalidation.some((record) => record.id === memoryRecord.id)
+      },
+      { label: "memory version row count", passed: versionRows.length === 1 },
+      {
+        label: "memory version candidate lineage",
+        passed: versionRows[0]?.createdFromCandidateId === memoryCandidate.id
+      },
+      { label: "memory application row count", passed: applicationRows.length === 1 },
+      {
+        label: "memory application record lineage",
+        passed: applicationRows[0]?.memoryRecordId === memoryRecord.id
+      },
+      {
+        label: "anti-memory candidate accepted",
+        passed: reviewedAntiMemoryCandidateStatus === "accepted"
+      },
+      {
+        label: "anti-memory candidate lineage",
+        passed: antiMemoryRecord.createdFromCandidateId === antiMemoryCandidate.id
+      },
+      {
+        label: "run anti-memory listed",
+        passed: runAntiMemory.some((record) => record.id === antiMemoryRecord.id)
+      },
+      { label: "outbox events created", passed: (outboxRows[0]?.count ?? 0) >= 4 }
+    ], readbackError);
+
+    const persistedCandidate = requireSmokeReadbackValue(
+      readBackCandidate,
+      "memory candidate readback",
+      readbackError
+    );
+    const persistedReviewedCandidate = requireSmokeReadbackValue(
+      reviewedCandidate,
+      "reviewed candidate readback",
+      readbackError
+    );
+    const persistedMemoryRecord = requireSmokeReadbackValue(
+      readBackMemoryRecord,
+      "memory record readback",
+      readbackError
+    );
+    const memoryRecordVersion = requireSmokeReadbackValue(
+      versionRows[0],
+      "memory version row",
+      readbackError
+    );
 
     const remainingMarkerCount = await cleanup();
 
@@ -376,11 +370,11 @@ export const runMemoryGovernanceSmokeCheck = async (
       executionRunId: executionRun.id,
       sourceClaimId: sourceClaim.id,
       memoryCandidateId: memoryCandidate.id,
-      readBackMemoryCandidateId: readBackCandidate.id,
-      reviewedMemoryCandidateStatus: reviewedCandidate.status,
+      readBackMemoryCandidateId: persistedCandidate.id,
+      reviewedMemoryCandidateStatus: persistedReviewedCandidate.status,
       memoryRecordId: memoryRecord.id,
-      readBackMemoryRecordId: readBackMemoryRecord.id,
-      memoryRecordVersionId: versionRows[0].id,
+      readBackMemoryRecordId: persistedMemoryRecord.id,
+      memoryRecordVersionId: memoryRecordVersion.id,
       invalidatedMemoryRecordStatus: invalidatedMemoryRecord.status,
       activeMemoryAfterInvalidationCount: activeMemoryAfterInvalidation.length,
       memoryApplicationId: memoryApplication.id,

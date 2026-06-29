@@ -3,15 +3,13 @@ import {
   compileHarnessPlan
 } from "@krn/harness";
 
-import type { KrnDatabase } from "./database.js";
 import {
-  countSmokeRows,
-  createSmokeDatabase,
+  assertSmokeReadbackChecks,
+  cleanupSourceGraphSmokeRows,
+  countSourceGraphSmokeMarkerRows,
   createSmokeProjectRecords,
-  ensureSmokeBrainStoreReady,
-  normalizeSmokeSlugPart,
-  optionalSmokeCount,
-  sumSmokeCountTasks
+  createSmokeRuntime,
+  requireSmokeReadbackValue
 } from "./dbSmokeSupport.js";
 import {
   DrizzleHarnessRunRepository,
@@ -22,15 +20,7 @@ import {
 } from "./repositories/index.js";
 import {
   outboxEvents,
-  retrievalRuns,
-  runEvents,
-  sourceArtifacts,
-  sourceClaimEdges,
-  sourceClaims,
-  sourceDecisions,
-  sourceDecisionEdges,
-  sourceRejections,
-  workspaces
+  sourceRejections
 } from "./schema/index.js";
 
 export interface SourceGraphSmokeInput {
@@ -60,62 +50,35 @@ export interface SourceGraphSmokeReport {
   cleanedUp: boolean;
 }
 
-const countRows = async (
-  db: KrnDatabase,
-  workspaceSlug: string,
-  marker: string,
-  retrievalRunId: string | undefined
-): Promise<number> => {
-  return sumSmokeCountTasks([
-    () => countSmokeRows(db, workspaces, eq(workspaces.slug, workspaceSlug)),
-    () => countSmokeRows(db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceClaimEdges, sql`${sourceClaimEdges.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceDecisions, sql`${sourceDecisions.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceDecisionEdges, sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, sourceRejections, sql`${sourceRejections.metadata}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${marker}`),
-    () => countSmokeRows(db, outboxEvents, sql`${outboxEvents.payload}->>'smokeId' = ${marker}`),
-    optionalSmokeCount(
-      retrievalRunId,
-      (id) => countSmokeRows(db, retrievalRuns, eq(retrievalRuns.id, id))
-    )
-  ]);
-};
-
 export const runSourceGraphSmokeCheck = async (
   input: SourceGraphSmokeInput
 ): Promise<SourceGraphSmokeReport> => {
-  await ensureSmokeBrainStoreReady(
-    input.databaseUrl,
-    input.migrationsFolder,
-    "source graph smoke"
-  );
-
-  const marker = normalizeSmokeSlugPart(input.smokeId);
-  const workspaceSlug = `krn-source-graph-smoke-${marker}`;
-  const projectSlug = "source-graph-persistence";
+  const runtime = await createSmokeRuntime({
+    databaseUrl: input.databaseUrl,
+    migrationsFolder: input.migrationsFolder,
+    projectSlug: "source-graph-persistence",
+    smokeId: input.smokeId,
+    smokeName: "source graph smoke",
+    workspacePrefix: "krn-source-graph-smoke"
+  });
+  const { client, db, marker, projectSlug, workspaceSlug } = runtime;
   const task = `source graph persistence smoke ${marker}`;
-  const { client, db } = createSmokeDatabase(input.databaseUrl);
   let retrievalRunId: string | undefined;
 
   const cleanup = async (): Promise<number> => {
-    await db.delete(outboxEvents).where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
-    await db.delete(sourceRejections).where(sql`${sourceRejections.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceDecisionEdges).where(sql`${sourceDecisionEdges.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceDecisions).where(sql`${sourceDecisions.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceClaimEdges).where(sql`${sourceClaimEdges.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceClaims).where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(sourceArtifacts).where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`);
-    await db.delete(runEvents).where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
+    await cleanupSourceGraphSmokeRows({
+      db,
+      marker,
+      retrievalRunId,
+      workspaceSlug
+    });
 
-    if (retrievalRunId !== undefined) {
-      await db.delete(retrievalRuns).where(eq(retrievalRuns.id, retrievalRunId));
-    }
-
-    await db.delete(workspaces).where(eq(workspaces.slug, workspaceSlug));
-
-    return countRows(db, workspaceSlug, marker, retrievalRunId);
+    return countSourceGraphSmokeMarkerRows({
+      db,
+      marker,
+      retrievalRunId,
+      workspaceSlug
+    });
   };
 
   try {
@@ -299,28 +262,46 @@ export const runSourceGraphSmokeCheck = async (
       .from(outboxEvents)
       .where(sql`${outboxEvents.payload}->>'smokeId' = ${marker}`);
 
-    if (
-      readBackClaim?.id !== sourceClaim.id ||
-      !runClaims.some((claim) => claim.id === sourceClaim.id) ||
-      !runDecisionEdges.some(
-        (edge) =>
-          edge.id === sourceDecisionEdge.id &&
-          edge.sourceClaimId === sourceClaim.id &&
-          edge.targetId === executionRun.id
-      ) ||
-      !sourceClaimEdgesForClaim.some(
-        (edge) =>
-          edge.id === sourceClaimEdge.id &&
-          edge.kind === "invalidates" &&
-          edge.fromSourceClaimId === sourceClaim.id &&
-          edge.toSourceClaimId === staleSourceClaim.id
-      ) ||
-      rejectionRows.length !== 1 ||
-      rejectionRows[0]?.id !== sourceRejection.id ||
-      (outboxRows[0]?.count ?? 0) < 2
-    ) {
-      throw new Error("Source graph smoke readback did not match persisted records");
-    }
+    const readbackError = "Source graph smoke readback did not match persisted records";
+
+    assertSmokeReadbackChecks([
+      { label: "source claim readback", passed: readBackClaim?.id === sourceClaim.id },
+      {
+        label: "run source claim listed",
+        passed: runClaims.some((claim) => claim.id === sourceClaim.id)
+      },
+      {
+        label: "run decision edge listed",
+        passed: runDecisionEdges.some(
+          (edge) =>
+            edge.id === sourceDecisionEdge.id &&
+            edge.sourceClaimId === sourceClaim.id &&
+            edge.targetId === executionRun.id
+        )
+      },
+      {
+        label: "source claim invalidation edge listed",
+        passed: sourceClaimEdgesForClaim.some(
+          (edge) =>
+            edge.id === sourceClaimEdge.id &&
+            edge.kind === "invalidates" &&
+            edge.fromSourceClaimId === sourceClaim.id &&
+            edge.toSourceClaimId === staleSourceClaim.id
+        )
+      },
+      { label: "source rejection row count", passed: rejectionRows.length === 1 },
+      {
+        label: "source rejection readback",
+        passed: rejectionRows[0]?.id === sourceRejection.id
+      },
+      { label: "outbox events created", passed: (outboxRows[0]?.count ?? 0) >= 2 }
+    ], readbackError);
+
+    const persistedSourceClaim = requireSmokeReadbackValue(
+      readBackClaim,
+      "source claim readback",
+      readbackError
+    );
 
     const remainingMarkerCount = await cleanup();
 
@@ -331,7 +312,7 @@ export const runSourceGraphSmokeCheck = async (
       sourceArtifactId: sourceArtifact.id,
       sourceClaimId: sourceClaim.id,
       temporalSourceClaimId: staleSourceClaim.id,
-      readBackSourceClaimId: readBackClaim.id,
+      readBackSourceClaimId: persistedSourceClaim.id,
       sourceClaimEdgeId: sourceClaimEdge.id,
       sourceDecisionId: sourceDecision.id,
       sourceDecisionEdgeId: sourceDecisionEdge.id,
