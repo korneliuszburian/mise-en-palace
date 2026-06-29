@@ -8,6 +8,7 @@ export * from "./contextRoi.js";
 export * from "./memoryQuery.js";
 export * from "./ownerFileRecall.js";
 export * from "./rankCandidates.js";
+export * from "./relationGroundedQaReadback.js";
 export * from "./sourceQuery.js";
 export * from "./temporalFilter.js";
 export * from "./trustFilter.js";

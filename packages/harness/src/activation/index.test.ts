@@ -21,6 +21,7 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
+  buildRelationGroundedQaReadback,
   buildActivationRawRecallTriggers,
   buildActivationQuery,
   buildMemoryQuery,
@@ -464,41 +465,6 @@ describe("activation engine", () => {
       },
       createdAt: now
     };
-    const claimsById = new Map([
-      [seedSourceClaim.id, seedSourceClaim],
-      [answerSourceClaim.id, answerSourceClaim],
-      [lexicalOnlySourceClaim.id, lexicalOnlySourceClaim]
-    ]);
-    const answerTinyGraphQuestion = (
-      includedSourceClaimIds: readonly string[]
-    ): {
-      verdict: "grounded" | "insufficient";
-      answer: string;
-      reviewUsefulness: "improved" | "weak";
-      usedSourceClaimIds: readonly string[];
-    } => {
-      const answerClaim = includedSourceClaimIds
-        .map((id) => claimsById.get(id))
-        .find((claim) =>
-          claim?.claim.includes("answer grounding claim") === true
-        );
-
-      if (answerClaim === undefined) {
-        return {
-          verdict: "insufficient",
-          answer: "Insufficient selected source context for relation-dependent graph QA.",
-          reviewUsefulness: "weak",
-          usedSourceClaimIds: includedSourceClaimIds
-        };
-      }
-
-      return {
-        verdict: "grounded",
-        answer: answerClaim.claim,
-        reviewUsefulness: "improved",
-        usedSourceClaimIds: [answerClaim.id]
-      };
-    };
     const baselineRanked = rankCandidates([
       {
         ...toSourceClaimCandidate(seedSourceClaim),
@@ -546,28 +512,35 @@ describe("activation engine", () => {
       candidates: applyContextROI(edgeAwareRanked, { maxInclusions: 1 }),
       createdAt: now
     });
-    const baselineAnswer = answerTinyGraphQuestion(
-      baselineContext.inclusions.map((item) => item.subjectId)
-    );
-    const edgeAwareAnswer = answerTinyGraphQuestion(
-      edgeAwareContext.inclusions.map((item) => item.subjectId)
-    );
+    const readback = buildRelationGroundedQaReadback({
+      baselineContext,
+      edgeAwareContext,
+      sourceClaims: [seedSourceClaim, answerSourceClaim, lexicalOnlySourceClaim],
+      answerSourceClaimId: answerSourceClaim.id
+    });
 
     expect(baselineContext.inclusions.map((item) => item.subjectId)).toEqual([
       "claim-qa-lexical-only"
     ]);
-    expect(baselineAnswer).toMatchObject({
-      verdict: "insufficient",
-      reviewUsefulness: "weak"
-    });
     expect(edgeAwareContext.inclusions.map((item) => item.subjectId)).toEqual([
       "claim-qa-answer"
     ]);
-    expect(edgeAwareAnswer).toMatchObject({
-      verdict: "grounded",
-      answer: "The answer grounding claim is the edge-connected SourceClaimEdge target.",
-      reviewUsefulness: "improved",
-      usedSourceClaimIds: ["claim-qa-answer"]
+    expect(readback).toMatchObject({
+      baseline: {
+        verdict: "insufficient",
+        reviewUsefulness: "weak",
+        includedSourceClaimIds: ["claim-qa-lexical-only"],
+        usedSourceClaimIds: []
+      },
+      edgeAware: {
+        verdict: "grounded",
+        answer: "The answer grounding claim is the edge-connected SourceClaimEdge target.",
+        reviewUsefulness: "improved",
+        includedSourceClaimIds: ["claim-qa-answer"],
+        usedSourceClaimIds: ["claim-qa-answer"]
+      },
+      outcome: "improved",
+      doesNotProve: "Relation-grounded QA readback does not prove source truth, edge correctness, production graph retrieval quality, corpus-scale graph QA, or product readiness."
     });
     expect(edgeAwareRanked.find((candidate) =>
       candidate.subjectId === "claim-qa-answer"

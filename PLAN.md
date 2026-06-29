@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V336 Relation-Grounded QA Readback Closure
-current task: V336-00 Relation-Grounded QA Readback Closure
+active stream: V337 Source-Relation Heartbeat Candidate Preview
+current task: V337-00 Source-Relation Heartbeat Candidate Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -63,24 +63,25 @@ V334 complete: edge-aware selection delta proof showed SourceClaimEdge influence
   can change the bounded working set against a no-edge baseline.
 V335 complete: tiny graph-brain QA proof showed edge-aware context can select
   the answer-grounding SourceClaim while the no-relation baseline cannot.
-Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v335-...
+V336 complete: relation-grounded QA readback helper and golden case protect the
+  baseline-vs-edge answer delta.
+Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v336-...
 ```
 
-### V336 Relation-Grounded QA Readback Closure
+### V337 Source-Relation Heartbeat Candidate Preview
 
 Goal:
 
-Close the V335 tiny graph-brain QA usefulness loop by making the
-relation-grounded answer delta reviewable as a compact readback/reporting proof.
+Use relation-grounded QA/readback and SourceClaimEdge context to add one
+candidate-only heartbeat/dreaming preview for source-relation maintenance.
 
 Current action:
 
 ```txt
-Execute V336-00: inspect whether the V335 relation-grounded QA answer delta is
-visible enough for operator review. If not, add the smallest readback/reporting
-or golden proof surface that preserves the baseline-vs-edge answer outcome.
-Do not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
-runtime, broad ranking rewrite, or Memory Core mutation.
+Execute V337-00: inspect existing heartbeat/worker/candidate surfaces, then add
+the smallest preview that proposes maintenance candidates for source relations.
+Do not mutate Memory Core or final source truth; do not add schema, graph DB,
+crawler, UI/API/MCP, worker daemon, consensus runtime, or broad ranking rewrite.
 ```
 
 Primary consumer:
@@ -94,9 +95,8 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given the V335 tiny relation-dependent QA scenario, an operator cannot review
-which baseline/edge context was selected, whether the answer was grounded, or
-what the proof does not prove.
+Given a stale/weak/needs-review source relation, heartbeat preview cannot
+produce a reviewable candidate with evidence refs and does-not-prove boundary.
 ```
 
 ## Pattern Gate

@@ -4,6 +4,7 @@ import type {
   MemoryRecord,
   ObservationItem,
   SourceClaim,
+  SourceClaimEdge,
   TaskContract
 } from "@krn/core";
 import {
@@ -15,11 +16,13 @@ import {
 import {
   applyActivationFilters,
   applyContextROI,
+  applySourceClaimEdgeInfluence,
   applyTemporalFilter,
   assembleContext,
   buildActivationRawRecallTriggers,
   buildOwnerFileRecallCandidates,
   buildMemoryQuery,
+  buildRelationGroundedQaReadback,
   buildSourceQuery,
   rankCandidates,
   toMemoryCandidate,
@@ -714,6 +717,107 @@ const runDecorativeSourceRejection = (_now: string): GoldenBehaviorProof => {
   );
 };
 
+const runRelationGroundedQaReadback = (now: string): GoldenBehaviorProof => {
+  const seed = sourceClaim({
+    id: "source-claim-graph-qa-seed",
+    claim: "Graph QA should answer from explicit source relations.",
+    mechanism: "The seed claim defines the question but does not include the answer.",
+    krnImplication: "Use it as the relation seed for relation-grounded QA readback."
+  });
+  const answer = sourceClaim({
+    id: "source-claim-graph-qa-answer",
+    claim: "Relation-grounded QA answer comes from the edge-connected source claim.",
+    mechanism: "A reviewed SourceClaimEdge connects the seed claim to this answer claim.",
+    krnImplication: "Use this selected claim to ground the tiny graph QA answer."
+  });
+  const lexicalOnly = sourceClaim({
+    id: "source-claim-graph-qa-lexical-only",
+    claim: "Graph QA should remain bounded and avoid platform expansion.",
+    mechanism: "This claim matches graph QA terms but has no answer relation.",
+    krnImplication: "Use as a no-relation baseline competitor."
+  });
+  const edge: SourceClaimEdge = {
+    id: "source-claim-edge-graph-qa-answer",
+    fromSourceClaimId: seed.id,
+    toSourceClaimId: answer.id,
+    kind: "supports",
+    metadata: {
+      consumer: "golden relation-grounded QA readback",
+      doesNotProve: "This edge does not prove graph QA quality."
+    },
+    createdAt: now
+  };
+  const query = buildSourceQuery(taskContract(
+    now,
+    "Answer graph QA from relation-grounded source context."
+  ));
+  const baselineContext = assembleContext({
+    id: "context-real-gate-graph-qa-baseline",
+    harnessPlanId: "plan-real-gate",
+    candidates: applyContextROI(rankCandidates([
+      {
+        ...toSourceClaimCandidate(seed),
+        lexicalScore: 5
+      },
+      {
+        ...toSourceClaimCandidate(answer),
+        lexicalScore: 15
+      },
+      {
+        ...toSourceClaimCandidate(lexicalOnly),
+        lexicalScore: 35
+      }
+    ], query), { maxInclusions: 1 }),
+    createdAt: now
+  });
+  const edgeAwareContext = assembleContext({
+    id: "context-real-gate-graph-qa-edge-aware",
+    harnessPlanId: "plan-real-gate",
+    candidates: applyContextROI(rankCandidates(
+      applySourceClaimEdgeInfluence([
+        {
+          ...toSourceClaimCandidate(seed),
+          lexicalScore: 5
+        },
+        {
+          ...toSourceClaimCandidate(answer),
+          lexicalScore: 15
+        },
+        {
+          ...toSourceClaimCandidate(lexicalOnly),
+          lexicalScore: 35
+        }
+      ], {
+        edges: [edge],
+        seedSourceClaimIds: [seed.id],
+        graphScore: 30
+      }),
+      query
+    ), { maxInclusions: 1 }),
+    createdAt: now
+  });
+  const readback = buildRelationGroundedQaReadback({
+    baselineContext,
+    edgeAwareContext,
+    sourceClaims: [seed, answer, lexicalOnly],
+    answerSourceClaimId: answer.id
+  });
+  const passed =
+    readback.outcome === "improved" &&
+    readback.baseline.verdict === "insufficient" &&
+    readback.edgeAware.verdict === "grounded" &&
+    readback.edgeAware.usedSourceClaimIds.includes(answer.id) &&
+    readback.doesNotProve.includes("production graph retrieval quality");
+
+  return proof(
+    "golden-case-graph-qa-001-a",
+    passed ? "passed" : "failed",
+    passed
+      ? "Real relation-grounded QA readback showed baseline insufficient and edge-aware context grounded the answer."
+      : "Real relation-grounded QA readback did not preserve the baseline-vs-edge answer delta."
+  );
+};
+
 const proofFactories = {
   "golden-case-memory-smoke-001": runStaleMemoryAbstention,
   "golden-case-memory-smoke-002": runAntiMemoryBlock,
@@ -725,7 +829,8 @@ const proofFactories = {
   "golden-case-target-fixture-battle-001-a": runTargetFixtureBattleHarness,
   "golden-case-target-owner-file-below-roots-001-a": runTargetOwnerFileBelowRoots,
   "golden-case-target-trust-exclusions-001-a": runTargetTrustExclusions,
-  "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection
+  "golden-case-source-decorative-rejection-001-a": runDecorativeSourceRejection,
+  "golden-case-graph-qa-001-a": runRelationGroundedQaReadback
 } as const;
 
 type SupportedCaseId = keyof typeof proofFactories;

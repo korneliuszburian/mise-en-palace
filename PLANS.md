@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V336 Relation-Grounded QA Readback Closure
-current task: V336-00 Relation-Grounded QA Readback Closure
+active stream: V337 Source-Relation Heartbeat Candidate Preview
+current task: V337-00 Source-Relation Heartbeat Candidate Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,8 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V336-00 Relation-Grounded QA Readback Closure. V335 proved a tiny
-relation-dependent QA answer delta; the next gap is compact operator readback.
+V337-00 Source-Relation Heartbeat Candidate Preview. V336 made the
+relation-dependent QA answer delta reviewable; the next gap is candidate-only
+source-relation maintenance.
 ```
 
 ## 2. Product Thesis
@@ -59,7 +60,8 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   graph-aware edge readback complete; edge-aware ranking lab complete;
   persisted edge-aware activation readback complete; edge-aware candidate
   refinement complete; usefulness closure complete; selection delta proof
-  complete; small graph QA complete; relation-grounded readback closure next
+  complete; small graph QA complete; relation-grounded readback closure
+  complete; heartbeat candidate preview next
 product-ready: no
 ```
 
@@ -584,6 +586,104 @@ heartbeat candidate-generation task. If weak, repair graph QA readback before
 expanding graph-brain surfaces.
 ```
 
+V336 outcome:
+
+```txt
+Relation-grounded QA readback helper now exposes baseline/edge verdicts,
+selected SourceClaim ids, used SourceClaim ids, outcome, proof, and
+does-not-prove. Golden behavior gate protects the baseline-insufficient vs
+edge-grounded answer delta.
+```
+
+V336 verification:
+
+```txt
+pnpm --filter @krn/harness test -- goldenKrnBehaviorGate: passed
+pnpm --filter @krn/harness test -- activation --testNamePattern "edge-selected source context": passed
+krn plan --persist: passed
+krn run show --run-id 996d68a4-967a-41b1-afec-4eaab64f9cda: passed
+pnpm run typecheck: passed
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
+pnpm db:ready: passed
+git diff --check: passed
+```
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
+```
+
+## Active Task: V337-00 Source-Relation Heartbeat Candidate Preview
+
+Goal:
+
+```txt
+Use relation-grounded QA/readback and SourceClaimEdge context to add one
+candidate-only heartbeat/dreaming preview for source-relation maintenance.
+```
+
+Evidence source:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
+```
+
+Files likely touched:
+
+```txt
+focused heartbeat/worker/candidate preview source or report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v337-source-relation-heartbeat-candidate-preview/REPORT.md
+GOAL.md
+PLAN.md
+PLANS.md
+```
+
+Forbidden writes:
+
+```txt
+schema/migration; graph database; crawler; UI/API/MCP; worker daemon; broad
+benchmark platform; consensus runtime; broad ranking rewrite; Memory Core
+mutation; automatic source truth promotion; runtime markdown memory
+```
+
+Definition of Done:
+
+- One source-relation heartbeat/dreaming preview proposes a reviewable
+  candidate only.
+- Candidate includes evidence refs and does-not-prove boundary.
+- No final Memory Core or source truth mutation occurs.
+- `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
+  if source behavior changes.
+
+Acceptance criteria:
+
+```txt
+source-relation maintenance can be proposed as candidate-only heartbeat output
+without autonomous truth mutation or broad runtime expansion.
+```
+
+Risk:
+
+```txt
+medium: heartbeat preview can drift into an autonomous worker/runtime before
+candidate governance is proven.
+```
+
+Rollback:
+
+```txt
+focused revert of the V337 implementation commit if source changes are made
+```
+
+Next-task synthesis rule:
+
+```txt
+If V337 is positive, choose the next heartbeat candidate class or consensus
+candidate eval. If weak, repair candidate reviewability before expanding
+heartbeat surfaces.
+```
+
 ## 9. Task Contract Schema
 
 Every new task appended to `Active Task Queue` or `Generated Task Backlog` must use this schema.
@@ -653,7 +753,8 @@ Next-task synthesis rule:
 - V333: complete; edge-aware activation usefulness closure.
 - V334: complete; edge-aware activation selection delta proof.
 - V335: complete; small graph-brain QA case.
-- V336: active; relation-grounded QA readback closure.
+- V336: complete; relation-grounded QA readback closure.
+- V337: active; source-relation heartbeat candidate preview.
 
 ## Pattern Gate
 

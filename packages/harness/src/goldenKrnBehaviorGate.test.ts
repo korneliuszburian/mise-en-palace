@@ -157,6 +157,32 @@ const task: GoldenTask = {
       metadata: {}
     },
     {
+      id: "golden-case-graph-qa-001-a",
+      title: "relation-grounded QA readback preserves answer delta",
+      input: {
+        task: "Answer graph QA from relation-grounded source context."
+      },
+      expectedBehavior: {
+        outcome: "flag",
+        subject: "graph_qa:relation_grounded_answer",
+        rationale: "A tiny graph QA proof must show the no-relation baseline, edge-aware context, grounded answer, and proof boundary.",
+        evidenceRefs: ["packages/harness/src/goldenKrnBehaviorGate.ts"]
+      },
+      protectedFailureModes: [{
+        id: "failure-mode-real-gate-graph-qa-readback",
+        domain: "source",
+        severity: "blocking",
+        title: "relation-grounded QA delta is not reviewable",
+        mustNot: "Graph QA proof must not hide whether baseline or edge-aware context grounded the answer.",
+        detection: "Relation-grounded QA readback omits baseline verdict, edge-aware verdict, used SourceClaim ids, or doesNotProve."
+      }],
+      sourceRefs: [
+        "docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md",
+        "packages/harness/src/activation/relationGroundedQaReadback.ts"
+      ],
+      metadata: {}
+    },
+    {
       id: "golden-case-reflection-001-a",
       title: "reflection creates candidates only",
       input: {
@@ -298,8 +324,8 @@ describe("KRN behavior golden gate", () => {
     expect(report).toMatchObject({
       status: "passed",
       taskCount: 1,
-      caseCount: 11,
-      passedCaseCount: 11,
+      caseCount: 12,
+      passedCaseCount: 12,
       failedCaseCount: 0,
       missingProofCaseIds: [],
       failedProofCaseIds: []
@@ -307,6 +333,7 @@ describe("KRN behavior golden gate", () => {
     expect(report.caseResults.map((result) => result.caseId)).toEqual([
       "golden-case-context-roi-001-a",
       "golden-case-evidence-001-a",
+      "golden-case-graph-qa-001-a",
       "golden-case-memory-005-a",
       "golden-case-memory-smoke-001",
       "golden-case-memory-smoke-002",
@@ -320,6 +347,7 @@ describe("KRN behavior golden gate", () => {
     expect(report.caseResults.map((result) => result.summary)).toEqual([
       "Real ContextROI behavior kept a small packet with expectedUse and explicit over_budget exclusions.",
       "Real EvidenceBundle behavior distinguishes weak default command rows from operator-reported passed evidence.",
+      "Real relation-grounded QA readback showed baseline insufficient and edge-aware context grounded the answer.",
       "Real activation behavior included exact-proof source claim only with raw recall trigger.",
       "Real activation behavior abstained on stale memory and produced stale exclusion.",
       "Real activation behavior blocked memory-stale-pattern with anti-memory conflict evidence.",
