@@ -66,9 +66,9 @@ from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
 then commit/push/CI before choosing the next target.
 
 Current candidate targets:
-`packages/harness/src/reflection/reflectionCandidateWriter.ts`, core evidence
-command normalization, or another narrower target if source inspection shows
-lower risk.
+core evidence command normalization, `packages/cli/src/runCli.ts` dispatch
+decomposition, DB smoke helper cleanup, or another narrower target if source
+inspection shows lower risk.
 
 Progress in this stream:
 
@@ -76,8 +76,9 @@ Progress in this stream:
 completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   parseEvidenceArgs source-usefulness cleanup, DB reflection mapper cleanup,
   parseObserveArgs/parseReflectArgs cleanup, parseSourceArgs cleanup,
-  parseMemoryArgs cleanup, parseInitArgs cleanup
-full Fallow moved: dupes 136 -> 122; health 117 -> 90
+  parseMemoryArgs cleanup, parseInitArgs cleanup,
+  reflectionCandidateWriter cleanup
+full Fallow moved: dupes 136 -> 122; health 117 -> 89
 ```
 
 Next candidate targets are tracked in `PLANS.md`.
