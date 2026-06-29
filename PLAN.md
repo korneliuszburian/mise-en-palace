@@ -65,9 +65,10 @@ First rule: do not broad-refactor the repo. Pick one high-confidence target
 from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
 then commit/push/CI before choosing the next target.
 
-Current candidate targets: `packages/cli/src/parseInitArgs.ts`,
-`packages/harness/src/reflection/reflectionCandidateWriter.ts`, or another
-narrower target if source inspection shows lower risk.
+Current candidate targets:
+`packages/harness/src/reflection/reflectionCandidateWriter.ts`, core evidence
+command normalization, or another narrower target if source inspection shows
+lower risk.
 
 Progress in this stream:
 
@@ -75,8 +76,8 @@ Progress in this stream:
 completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   parseEvidenceArgs source-usefulness cleanup, DB reflection mapper cleanup,
   parseObserveArgs/parseReflectArgs cleanup, parseSourceArgs cleanup,
-  parseMemoryArgs cleanup
-full Fallow moved: dupes 136 -> 122; health 117 -> 92
+  parseMemoryArgs cleanup, parseInitArgs cleanup
+full Fallow moved: dupes 136 -> 122; health 117 -> 90
 ```
 
 Next candidate targets are tracked in `PLANS.md`.

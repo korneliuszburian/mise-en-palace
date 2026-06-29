@@ -6,27 +6,19 @@ import type {
 const initUsage =
   "Usage: krn init --dry-run --repo <path> [--owner-file \"path|root|kind|reason\"]|krn init --connect --repo <path> --persist [--owner-file \"path|root|kind|reason\"]";
 
+const isOwnerFileParts = (
+  parts: readonly string[]
+): parts is readonly [string, string, string, string] =>
+  parts.length === 4 && parts.every((part) => part.length > 0);
+
 const parseOwnerFile = (value: string): TargetOwnerFileInput | undefined => {
   const parts = value.split("|").map((part) => part.trim());
 
-  if (parts.length !== 4) {
+  if (!isOwnerFileParts(parts)) {
     return undefined;
   }
 
   const [ownerPath, root, kind, reason] = parts;
-
-  if (
-    ownerPath === undefined ||
-    ownerPath.length === 0 ||
-    root === undefined ||
-    root.length === 0 ||
-    kind === undefined ||
-    kind.length === 0 ||
-    reason === undefined ||
-    reason.length === 0
-  ) {
-    return undefined;
-  }
 
   return {
     path: ownerPath,
@@ -36,102 +28,173 @@ const parseOwnerFile = (value: string): TargetOwnerFileInput | undefined => {
   };
 };
 
-export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
-  let dryRun = false;
-  let connect = false;
-  let persist = false;
-  let repo: string | undefined;
-  const ownerFiles: TargetOwnerFileInput[] = [];
+interface InitParseState {
+  dryRun: boolean;
+  connect: boolean;
+  persist: boolean;
+  repo?: string;
+  ownerFiles: TargetOwnerFileInput[];
+}
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
+type InitTokenParseResult =
+  | {
+      kind: "next";
+      nextIndex: number;
+    }
+  | {
+      kind: "error";
+    };
 
-    if (arg === "--dry-run") {
-      dryRun = true;
-      continue;
+const nextToken = (nextIndex: number): InitTokenParseResult => ({
+  kind: "next",
+  nextIndex
+});
+
+const parseOwnerFileOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  state: InitParseState
+): InitTokenParseResult | undefined => {
+  if (arg === "--owner-file") {
+    const value = rest[index + 1];
+
+    if (value === undefined) {
+      return {
+        kind: "error"
+      };
     }
 
-    if (arg === "--connect") {
-      connect = true;
-      continue;
+    const parsed = parseOwnerFile(value);
+
+    if (parsed === undefined) {
+      return {
+        kind: "error"
+      };
     }
 
-    if (arg === "--persist") {
-      persist = true;
-      continue;
+    state.ownerFiles.push(parsed);
+
+    return nextToken(index + 1);
+  }
+
+  if (!arg.startsWith("--owner-file=")) {
+    return undefined;
+  }
+
+  const parsed = parseOwnerFile(arg.slice("--owner-file=".length));
+
+  if (parsed === undefined) {
+    return {
+      kind: "error"
+    };
+  }
+
+  state.ownerFiles.push(parsed);
+
+  return nextToken(index);
+};
+
+const parseRepoOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  state: InitParseState
+): InitTokenParseResult | undefined => {
+  if (arg === "--repo") {
+    const repo = rest[index + 1];
+
+    if (repo === undefined) {
+      return {
+        kind: "error"
+      };
     }
 
-    if (arg === "--repo") {
-      repo = rest[index + 1];
-      index += 1;
-      continue;
-    }
+    state.repo = repo;
 
-    if (arg?.startsWith("--repo=") === true) {
-      repo = arg.slice("--repo=".length);
-      continue;
-    }
+    return nextToken(index + 1);
+  }
 
-    if (arg === "--owner-file") {
-      const value = rest[index + 1];
+  if (!arg.startsWith("--repo=")) {
+    return undefined;
+  }
 
-      if (value === undefined) {
-        return {
-          error: initUsage
-        };
-      }
+  state.repo = arg.slice("--repo=".length);
 
-      const parsed = parseOwnerFile(value);
+  return nextToken(index);
+};
 
-      if (parsed === undefined) {
-        return {
-          error: initUsage
-        };
-      }
+const parseInitToken = (
+  rest: readonly string[],
+  index: number,
+  state: InitParseState
+): InitTokenParseResult => {
+  const arg = rest[index];
 
-      ownerFiles.push(parsed);
-      index += 1;
-      continue;
-    }
+  if (arg === "--dry-run") {
+    state.dryRun = true;
 
-    if (arg?.startsWith("--owner-file=") === true) {
-      const parsed = parseOwnerFile(arg.slice("--owner-file=".length));
+    return nextToken(index);
+  }
 
-      if (parsed === undefined) {
-        return {
-          error: initUsage
-        };
-      }
+  if (arg === "--connect") {
+    state.connect = true;
 
-      ownerFiles.push(parsed);
-      continue;
-    }
+    return nextToken(index);
+  }
 
+  if (arg === "--persist") {
+    state.persist = true;
+
+    return nextToken(index);
+  }
+
+  if (arg === undefined) {
+    return {
+      kind: "error"
+    };
+  }
+
+  const repo = parseRepoOption(rest, index, arg, state);
+
+  if (repo !== undefined) {
+    return repo;
+  }
+
+  const ownerFile = parseOwnerFileOption(rest, index, arg, state);
+
+  if (ownerFile !== undefined) {
+    return ownerFile;
+  }
+
+  return {
+    kind: "error"
+  };
+};
+
+const formatInitResult = (state: InitParseState): ParseArgsResult => {
+  if (state.repo === undefined || state.repo.trim().length === 0 || state.dryRun === state.connect) {
     return {
       error: initUsage
     };
   }
 
-  if (repo === undefined || repo.trim().length === 0 || dryRun === connect) {
+  if (state.connect && !state.persist) {
     return {
       error: initUsage
     };
   }
 
-  if (connect && !persist) {
-    return {
-      error: initUsage
-    };
-  }
+  const ownerFiles = state.ownerFiles.length === 0 ? {} : { ownerFiles: state.ownerFiles };
 
-  if (connect) {
+  if (state.connect) {
     return {
       command: {
         kind: "init",
         mode: "connect",
-        repo: repo.trim(),
-        persist,
-        ...(ownerFiles.length === 0 ? {} : { ownerFiles })
+        repo: state.repo.trim(),
+        persist: state.persist,
+        ...ownerFiles
       }
     };
   }
@@ -140,8 +203,31 @@ export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
     command: {
       kind: "init",
       mode: "dryRun",
-      repo: repo.trim(),
-      ...(ownerFiles.length === 0 ? {} : { ownerFiles })
+      repo: state.repo.trim(),
+      ...ownerFiles
     }
   };
+};
+
+export const parseInitArgs = (rest: readonly string[]): ParseArgsResult => {
+  const state: InitParseState = {
+    dryRun: false,
+    connect: false,
+    persist: false,
+    ownerFiles: []
+  };
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const parsed = parseInitToken(rest, index, state);
+
+    if (parsed.kind === "error") {
+      return {
+        error: initUsage
+      };
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  return formatInitResult(state);
 };
