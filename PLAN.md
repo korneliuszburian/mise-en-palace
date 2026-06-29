@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V354 Source Search Answer Usefulness Classification
-current task: V354-00 Source Search Answer Usefulness Classification
+active stream: V355 Mini Brain-QA Built-In Usefulness Loop
+current task: V355-00 Mini Brain-QA Built-In Usefulness Loop
 ```
 
 ## Compact Checkpoints
@@ -43,6 +43,7 @@ V350: five-case JSON batch exposed broad missing-evidence diagnostics.
 V351: repaired missing-evidence specificity.
 V352: diagnostics usefulness closure.
 V353: classified answer usefulness over five JSON answer packages.
+V354: added built-in answerUsefulness labels/reasons to source-search JSON/text output.
 ```
 
 V353 outcome:
@@ -59,39 +60,46 @@ report: docs/reviews/controlled-dogfood/2026-06-29-v353-mini-brain-qa-answer-use
 
 ## Active Task
 
-### V354-00 Source Search Answer Usefulness Classification
+V354 outcome:
 
-Goal: add deterministic answer-usefulness classification to
-`krn source search --json` so consumers do not need ad hoc local classification.
+```txt
+behavior: `krn source search --json` exposes answerUsefulness and reasons.
+tests: focused CLI tests, workspace typecheck, workspace tests, diff check.
+report: docs/reviews/controlled-dogfood/2026-06-29-v354-source-search-answer-usefulness-classification/REPORT.md
+```
 
-Product rationale: V353 showed answer packages can guide bounded operator
-decisions, but usefulness labels currently live outside the CLI output.
+### V355-00 Mini Brain-QA Built-In Usefulness Loop
 
-Architectural rationale: improve operator-facing readback before UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, or ranking
-work.
+Goal: rerun the five-case mini Brain-QA batch using built-in
+`answerUsefulness`/reasons from source-search JSON.
+
+Product rationale: prove the new field reduces consumer logic and supports the
+next product vertical before ingest/graph expansion.
+
+Architectural rationale: close the source-search answer usefulness loop before
+adding broader product surfaces or ranking/retrieval changes.
 
 Source-to-decision:
 
 ```txt
-source: V353 answer-usefulness batch report.
-mechanism: existing JSON answer-package counts and missingEvidence entries are enough to classify bounded answer usefulness.
-KRN implication: usefulness classification should become a readback field.
-decision: implement a deterministic source-search JSON classification and reasons.
-consumer: technical operators and the next mini Brain-QA loop.
-falsifier: classification cannot be derived from existing fields without making answer-correctness or ranking-quality claims.
+source: V354 source-search answer usefulness classification report.
+mechanism: built-in answerUsefulness removes ad hoc consumer classification.
+KRN implication: mini Brain-QA can consume answer usefulness directly.
+decision: run a five-case batch and synthesize next ingest/graph product vertical only if proof boundaries stay clear.
+consumer: V356 next product vertical.
+falsifier: consumers still need local classification or labels overclaim correctness.
 doesNotProve: answer correctness, source truth, ranking quality, product readiness, UI/API/MCP readiness, or Memory Core mutation.
 ```
 
-Allowed writes: smallest owning CLI/source-search source and tests, compact
-V354 report, root state.
+Allowed writes: V355 report and compact root state.
 
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
+Forbidden writes: source changes unless the batch exposes a tiny blocking bug;
+DB schema, ranking rewrite, retrieval semantics, UI/API/MCP, crawler,
+embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
 mutation, or parallel roadmap.
 
-Verification: targeted CLI/source-search tests, `pnpm typecheck`, `pnpm test`,
-`git diff --check`; add DB/evidence commands only when persistence is used.
+Verification: DB-backed source-search JSON batch, evidence capture, observe,
+reflect, `git diff --check`.
 
 ## Remaining Product Gaps
 

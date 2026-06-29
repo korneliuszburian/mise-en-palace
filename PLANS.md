@@ -13,9 +13,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V354 Source Search Answer Usefulness Classification
-current task: V354-00 Source Search Answer Usefulness Classification
-latest pushed commit checked: 462a47a before V353 closeout
+active stream: V355 Mini Brain-QA Built-In Usefulness Loop
+current task: V355-00 Mini Brain-QA Built-In Usefulness Loop
+latest pushed commit checked: 2450aef / CI green before V354 source commit
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,9 +24,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V354-00 Source Search Answer Usefulness Classification must move V353 local
-answer-usefulness labels into source-search JSON without changing ranking,
-schema, retrieval semantics, product surfaces, or Memory Core state.
+V355-00 Mini Brain-QA Built-In Usefulness Loop must use built-in
+`answerUsefulness` from source-search JSON and decide whether the next product
+vertical should be ingest or graph work.
 ```
 
 ## 2. Product Thesis
@@ -88,6 +88,8 @@ V350 complete: five-case mini Brain-QA JSON batch.
 V351 complete: missingEvidence specificity repair.
 V352 complete: source-search JSON diagnostics usefulness closure.
 V353 complete: answer usefulness classified over five JSON answer packages.
+V354 complete: source-search JSON/text now includes answerUsefulness labels and
+reasons.
 ```
 
 ## Outcome V353 Mini Brain-QA Answer Usefulness Closure
@@ -128,11 +130,11 @@ Source-to-decision:
   benchmark quality, product readiness, UI/API/MCP readiness, or Memory Core
   mutation.
 
-## Active Task V354 Source Search Answer Usefulness Classification
+## Outcome V354 Source Search Answer Usefulness Classification
 
 ID: V354-00
 Name: Source Search Answer Usefulness Classification
-Status: active
+Status: complete
 Goal: Add deterministic answer-usefulness classification to
 `krn source search --json`.
 Product rationale: V353 proved answer usefulness can be classified, but the
@@ -170,6 +172,71 @@ Does not prove: answer correctness, source truth, ranking quality, product
 readiness, UI/API/MCP readiness, or Memory Core mutation.
 Falsifier: useful/missing/unsupported cases cannot be classified
 deterministically from current answer-package fields.
+
+Source-to-decision:
+
+- Source: V353 answer-usefulness batch report.
+- Mechanism: existing answer-package fields expose support counts and missing
+  evidence enough to classify bounded answer usefulness.
+- KRN implication: answer usefulness should be an explicit source-search
+  readback field, not an ad hoc consumer rule.
+- Decision: implemented deterministic `answerUsefulness` labels and reasons in
+  source-search JSON/text output.
+- Does not prove: answer correctness, source truth, ranking quality, product
+  readiness, UI/API/MCP readiness, or Memory Core mutation.
+- Consumer: V355 mini Brain-QA built-in usefulness loop.
+- Falsifier: V355 still needs local classification or labels overclaim answer
+  correctness.
+
+Evidence:
+
+```txt
+report: docs/reviews/controlled-dogfood/2026-06-29-v354-source-search-answer-usefulness-classification/REPORT.md
+source files: packages/cli/src/runSourceSearchCommand.ts, packages/cli/src/runSourceSearchCommand.test.ts
+focused tests: pnpm --filter @krn/cli test -- runSourceSearchCommand
+typecheck: pnpm -r --workspace-concurrency=1 --if-present typecheck
+tests: pnpm test
+diff check: git diff --check
+live readback: .local-lab/v354/source-to-decision.json
+```
+
+## Active Task V355 Mini Brain-QA Built-In Usefulness Loop
+
+ID: V355-00
+Name: Mini Brain-QA Built-In Usefulness Loop
+Status: active
+Goal: Rerun the five-case mini Brain-QA batch using built-in
+`answerUsefulness` from source-search JSON.
+Product rationale: Prove the new field reduces consumer logic before opening
+the next ingest/graph product vertical.
+Architectural rationale: Use product-facing readback before broader retrieval,
+graph, or UI/API/MCP work.
+Evidence source: V354 report and source-search JSON output.
+Official/external sources: none required.
+Inputs required: five V353 queries, local DB, source-search JSON.
+Files likely touched: V355 report and compact root state.
+Allowed writes: report/root only unless a tiny blocking source bug appears.
+Forbidden writes: ranking, retrieval semantics, schema, UI/API/MCP, crawler,
+embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
+mutation, or parallel roadmap.
+Output requirements: report with per-case built-in answerUsefulness, reasons,
+support counts, proof/non-proof, and next vertical decision.
+Definition of Done: batch consumes built-in labels without local
+classification; next product vertical is selected or deferred with evidence.
+Verification commands: DB-backed source-search JSON batch, `git diff --check`,
+evidence capture, observe, reflect.
+Acceptance criteria: no text parsing and no local usefulness classifier needed.
+Risk: treating usefulness labels as correctness or ranking proof.
+Rollback: revert only report/root changes if the batch is invalid.
+Condensation expectation: keep root files compact; detailed evidence in report.
+Next-task synthesis rule: if V355 passes, open the next ingest/graph vertical;
+if it fails, repair only the blocking source-search usefulness issue.
+Pattern surface: operator-UX / CLI readback.
+Primary consumer: technical operators and V356 product vertical.
+Does not prove: answer correctness, source truth, ranking quality, product
+readiness, UI/API/MCP readiness, or Memory Core mutation.
+Falsifier: consumers still need ad hoc classification or labels overclaim
+correctness.
 
 ## 9. Task Contract Schema
 
@@ -232,7 +299,8 @@ Falsifier:
 - [x] V351 complete: missingEvidence specificity repair.
 - [x] V352 complete: source-search JSON diagnostics usefulness closure.
 - [x] V353 complete: answer usefulness closure.
-- [ ] V354 current task: Source Search Answer Usefulness Classification.
+- [x] V354 complete: Source Search Answer Usefulness Classification.
+- [ ] V355 current task: Mini Brain-QA Built-In Usefulness Loop.
 
 ## Verification Policy
 

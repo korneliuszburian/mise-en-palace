@@ -14,6 +14,7 @@ import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
 import {
+  classifySourceSearchAnswerUsefulness,
   buildSourceSearchMissingEvidence,
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
@@ -223,6 +224,37 @@ describe("runSourceSearchCommand", () => {
     ]);
   });
 
+  it("classifies answer usefulness from visible answer package support", () => {
+    expect(classifySourceSearchAnswerUsefulness({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 1
+    })).toEqual({
+      answerUsefulness: "useful",
+      reasons: [
+        "Answer package includes governed SourceClaim evidence.",
+        "Answer package includes SearchDocument retrieval evidence."
+      ]
+    });
+    expect(classifySourceSearchAnswerUsefulness({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 0
+    }).answerUsefulness).toBe("partly_useful_missing_document");
+    expect(classifySourceSearchAnswerUsefulness({
+      supportingClaimCount: 0,
+      supportingDocumentCount: 1
+    }).answerUsefulness).toBe("partly_useful_missing_claim");
+    expect(classifySourceSearchAnswerUsefulness({
+      supportingClaimCount: 0,
+      supportingDocumentCount: 0
+    })).toEqual({
+      answerUsefulness: "not_useful",
+      reasons: [
+        "Answer package has no governed SourceClaim evidence.",
+        "Answer package has no included SearchDocument evidence."
+      ]
+    });
+  });
+
   it("renders read-only source and search candidates with proof boundaries", async () => {
     let closeCount = 0;
     let searchQuery: string | undefined;
@@ -255,6 +287,9 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Answer package preview:");
     expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
+    expect(result.stdout).toContain("answer usefulness: useful");
+    expect(result.stdout).toContain("- Answer package includes governed SourceClaim evidence.");
+    expect(result.stdout).toContain("- Answer package includes SearchDocument retrieval evidence.");
     expect(result.stdout).toContain("supporting claims:");
     expect(result.stdout).toContain(`- source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain("supporting documents:");
@@ -309,6 +344,11 @@ describe("runSourceSearchCommand", () => {
     const answerPackage = objectValue(output.answerPackage, "answerPackage");
 
     expect(answerPackage.answer).toContain("1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
+    expect(answerPackage.answerUsefulness).toBe("useful");
+    expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toEqual([
+      "Answer package includes governed SourceClaim evidence.",
+      "Answer package includes SearchDocument retrieval evidence."
+    ]);
     expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Pattern Application Gate");
     expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toEqual([]);
     expect(arrayValue(answerPackage.doesNotProve, "doesNotProve")).toContain(
@@ -366,6 +406,7 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("Answer package preview:");
     expect(result.stdout).toContain("answer: Source search found 0 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
+    expect(result.stdout).toContain("answer usefulness: not_useful");
     expect(result.stdout).toContain("- governed SourceClaim evidence in the answer package for this query");
     expect(result.stdout).toContain("- included SearchDocument evidence in the answer package for this query");
     expect(result.stdout).toContain("recommended next action: Narrow the query or ingest a bounded local artifact");
@@ -393,6 +434,7 @@ describe("runSourceSearchCommand", () => {
     });
 
     expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
+    expect(result.stdout).toContain("answer usefulness: partly_useful_missing_document");
     expect(result.stdout).toContain(
       "- included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
     );

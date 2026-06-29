@@ -53,6 +53,13 @@ type SearchReviewability =
   | "needs_more_evidence"
   | "unknown";
 
+type SourceSearchAnswerUsefulness =
+  | "useful"
+  | "partly_useful_missing_document"
+  | "partly_useful_missing_claim"
+  | "not_useful"
+  | "unknown";
+
 type SourceSearchCandidateStatus =
   | "included"
   | "excluded";
@@ -86,6 +93,8 @@ interface SourceSearchAnswerCandidate {
 
 interface SourceSearchAnswerPackage {
   answer: string;
+  answerUsefulness: SourceSearchAnswerUsefulness;
+  answerUsefulnessReasons: readonly string[];
   supportingClaims: readonly SourceSearchAnswerCandidate[];
   supportingDocuments: readonly SourceSearchAnswerCandidate[];
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
@@ -139,6 +148,52 @@ export const buildSourceSearchMissingEvidence = (input: {
       : ["included SearchDocument evidence in the answer package for this query"]
     : [])
 ];
+
+export const classifySourceSearchAnswerUsefulness = (input: {
+  supportingClaimCount: number;
+  supportingDocumentCount: number;
+}): {
+  answerUsefulness: SourceSearchAnswerUsefulness;
+  reasons: readonly string[];
+} => {
+  if (input.supportingClaimCount > 0 && input.supportingDocumentCount > 0) {
+    return {
+      answerUsefulness: "useful",
+      reasons: [
+        "Answer package includes governed SourceClaim evidence.",
+        "Answer package includes SearchDocument retrieval evidence."
+      ]
+    };
+  }
+
+  if (input.supportingClaimCount > 0) {
+    return {
+      answerUsefulness: "partly_useful_missing_document",
+      reasons: [
+        "Answer package includes governed SourceClaim evidence.",
+        "Answer package is missing included SearchDocument evidence."
+      ]
+    };
+  }
+
+  if (input.supportingDocumentCount > 0) {
+    return {
+      answerUsefulness: "partly_useful_missing_claim",
+      reasons: [
+        "Answer package includes SearchDocument retrieval evidence.",
+        "Answer package is missing governed SourceClaim evidence."
+      ]
+    };
+  }
+
+  return {
+    answerUsefulness: "not_useful",
+    reasons: [
+      "Answer package has no governed SourceClaim evidence.",
+      "Answer package has no included SearchDocument evidence."
+    ]
+  };
+};
 
 const reviewabilityFor = (candidate: RankedActivationCandidate): ReviewabilityResult => {
   if (candidate.subjectType === "source_claim") {
@@ -277,6 +332,10 @@ const buildAnswerPackage = (input: {
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length
   });
+  const answerUsefulness = classifySourceSearchAnswerUsefulness({
+    supportingClaimCount: supportingClaims.length,
+    supportingDocumentCount: supportingDocuments.length
+  });
   const recommendedNextAction =
     supportingClaims.length > 0 && supportingDocuments.length > 0
       ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."
@@ -292,6 +351,8 @@ const buildAnswerPackage = (input: {
 
   return {
     answer: `Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
+    answerUsefulness: answerUsefulness.answerUsefulness,
+    answerUsefulnessReasons: answerUsefulness.reasons,
     supportingClaims,
     supportingDocuments,
     neutralOrNoise,
@@ -305,6 +366,9 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
   return [
     "Answer package preview:",
     `answer: ${answerPackage.answer}`,
+    `answer usefulness: ${answerPackage.answerUsefulness}`,
+    "answer usefulness reasons:",
+    ...answerPackage.answerUsefulnessReasons.map((reason) => `- ${reason}`),
     "supporting claims:",
     ...(answerPackage.supportingClaims.length === 0
       ? ["- none"]
