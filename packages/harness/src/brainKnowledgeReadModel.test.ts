@@ -27,6 +27,26 @@ const cardFixture = (): unknown =>
 const patternDecisionFixture = (): unknown =>
   readJsonRootFile("docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
 
+const parsedCardFixture = () => {
+  const card = parseBrainKnowledgeReadModel(cardFixture());
+
+  if (card === undefined) {
+    throw new Error("Expected card fixture to parse.");
+  }
+
+  return card;
+};
+
+const parsedPatternDecisionFixture = () => {
+  const patternDecision = parseRetainedPatternDecision(patternDecisionFixture());
+
+  if (patternDecision === undefined) {
+    throw new Error("Expected retained pattern decision fixture to parse.");
+  }
+
+  return patternDecision;
+};
+
 describe("Brain knowledge read model", () => {
   it("parses a concrete knowledge card fixture from unknown JSON", () => {
     const card = parseBrainKnowledgeReadModel(cardFixture());
@@ -65,6 +85,23 @@ describe("Brain knowledge read model", () => {
     });
 
     expect(card).toBeUndefined();
+  });
+
+  it("rejects invalid read-model enum fields from unknown JSON", () => {
+    const card = parsedCardFixture();
+
+    for (const field of [
+      "kind",
+      "status",
+      "confidence",
+      "reviewability",
+      "nextAction"
+    ]) {
+      expect(parseBrainKnowledgeReadModel({
+        ...card,
+        [field]: "invalid"
+      })).toBeUndefined();
+    }
   });
 
   it("filters cards by kind, status, reviewability, and text", () => {
@@ -163,18 +200,35 @@ describe("Brain knowledge read model", () => {
   });
 
   it("produces the TypeScript boundary knowledge card from the retained pattern decision", () => {
-    const patternDecision = parseRetainedPatternDecision(patternDecisionFixture());
+    const patternDecision = parsedPatternDecisionFixture();
     const expectedCard = parseBrainKnowledgeReadModel(cardFixture());
-
-    if (patternDecision === undefined) {
-      throw new Error("Expected retained pattern decision fixture to parse.");
-    }
 
     if (expectedCard === undefined) {
       throw new Error("Expected brain knowledge card fixture to parse.");
     }
 
     expect(brainKnowledgeCardFromRetainedPatternDecision(patternDecision)).toEqual(expectedCard);
+  });
+
+  it("maps retained pattern adoption statuses to knowledge-card status", () => {
+    const patternDecision = parsedPatternDecisionFixture();
+
+    expect(brainKnowledgeCardFromRetainedPatternDecision({
+      ...patternDecision,
+      adoptionStatus: "adopt_now"
+    })).toMatchObject({ status: "active" });
+    expect(brainKnowledgeCardFromRetainedPatternDecision({
+      ...patternDecision,
+      adoptionStatus: "lab"
+    })).toMatchObject({ status: "deferred" });
+    expect(brainKnowledgeCardFromRetainedPatternDecision({
+      ...patternDecision,
+      adoptionStatus: "later"
+    })).toMatchObject({ status: "deferred" });
+    expect(brainKnowledgeCardFromRetainedPatternDecision({
+      ...patternDecision,
+      adoptionStatus: "reject"
+    })).toMatchObject({ status: "rejected" });
   });
 
   it("parses and applies latest usefulness feedback from unknown JSON", () => {
@@ -227,5 +281,41 @@ describe("Brain knowledge read model", () => {
         }
       ]
     })).toBeUndefined();
+  });
+
+  it("keeps untimestamped feedback only when no newer timestamped feedback exists", () => {
+    const card = parsedCardFixture();
+    const feedback = parseBrainKnowledgeUsefulnessFeedbackList({
+      feedback: [
+        {
+          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          outcome: "helped",
+          summary: "Untimestamped feedback should win only against untimestamped feedback.",
+          evidenceRefs: ["docs/reviews/untimestamped.md"],
+          doesNotProve: "This feedback does not prove product readiness."
+        },
+        {
+          cardId: "pattern:ts-boundary-unknown-first-result-state",
+          outcome: "neutral",
+          summary: "Timestamped feedback should win against untimestamped feedback.",
+          evidenceRefs: ["docs/reviews/timestamped.md"],
+          doesNotProve: "This feedback does not prove product readiness.",
+          observedAt: "2026-06-28"
+        }
+      ]
+    });
+
+    if (feedback === undefined) {
+      throw new Error("Expected usefulness feedback fixture to parse.");
+    }
+
+    expect(cardsWithBrainKnowledgeUsefulnessFeedback([card], feedback)).toMatchObject([
+      {
+        usefulnessFeedback: {
+          outcome: "neutral",
+          evidenceRefs: ["docs/reviews/timestamped.md"]
+        }
+      }
+    ]);
   });
 });
