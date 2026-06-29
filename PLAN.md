@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V355 Mini Brain-QA Built-In Usefulness Loop
-current task: V355-00 Mini Brain-QA Built-In Usefulness Loop
+active stream: V356 Graph Relation SearchDocument Support Vertical
+current task: V356-00 Graph Relation SearchDocument Support Vertical
 ```
 
 ## Compact Checkpoints
@@ -44,6 +44,7 @@ V351: repaired missing-evidence specificity.
 V352: diagnostics usefulness closure.
 V353: classified answer usefulness over five JSON answer packages.
 V354: added built-in answerUsefulness labels/reasons to source-search JSON/text output.
+V355: proved the five-case batch consumes built-in answerUsefulness without local classification.
 ```
 
 V353 outcome:
@@ -68,49 +69,59 @@ tests: focused CLI tests, workspace typecheck, workspace tests, diff check.
 report: docs/reviews/controlled-dogfood/2026-06-29-v354-source-search-answer-usefulness-classification/REPORT.md
 ```
 
-### V355-00 Mini Brain-QA Built-In Usefulness Loop
+V355 outcome:
 
-Goal: rerun the five-case mini Brain-QA batch using built-in
-`answerUsefulness`/reasons from source-search JSON.
+```txt
+cases: 5
+useful: 4
+partly_useful_missing_document: 1
+gap: graph-relations remains claim-only for SearchDocument support.
+report: docs/reviews/controlled-dogfood/2026-06-29-v355-mini-brain-qa-built-in-usefulness-loop/REPORT.md
+```
 
-Product rationale: prove the new field reduces consumer logic and supports the
-next product vertical before ingest/graph expansion.
+### V356-00 Graph Relation SearchDocument Support Vertical
 
-Architectural rationale: close the source-search answer usefulness loop before
-adding broader product surfaces or ranking/retrieval changes.
+Goal: turn the graph-relations answer usefulness gap into a bounded product
+repair or proof.
+
+Product rationale: V355 showed graph relation answers are claim-useful but lack
+included SearchDocument evidence for the combined query.
+
+Architectural rationale: improve graph-brain answer support before UI/API/MCP,
+crawler, embeddings, graph runtime, worker runtime, broad benchmark, or ranking
+work.
 
 Source-to-decision:
 
 ```txt
-source: V354 source-search answer usefulness classification report.
-mechanism: built-in answerUsefulness removes ad hoc consumer classification.
-KRN implication: mini Brain-QA can consume answer usefulness directly.
-decision: run a five-case batch and synthesize next ingest/graph product vertical only if proof boundaries stay clear.
-consumer: V356 next product vertical.
-falsifier: consumers still need local classification or labels overclaim correctness.
+source: V355 built-in usefulness loop report.
+mechanism: graph-relations query has governed SourceClaims but no included SearchDocument evidence.
+KRN implication: graph answer support needs a bounded document-support repair/proof before broader graph runtime work.
+decision: inspect and repair/prove SearchDocument support for graph relation answers using existing source-search/ingest paths.
+consumer: next graph-brain mini QA loop.
+falsifier: graph relation answers remain claim-only after bounded support work, or repair requires ranking/schema/runtime expansion.
 doesNotProve: answer correctness, source truth, ranking quality, product readiness, UI/API/MCP readiness, or Memory Core mutation.
 ```
 
-Allowed writes: V355 report and compact root state.
+Allowed writes: smallest owning source/test files if a source-search support bug
+is found, or report/root only if the gap is coverage not code.
 
-Forbidden writes: source changes unless the batch exposes a tiny blocking bug;
-DB schema, ranking rewrite, retrieval semantics, UI/API/MCP, crawler,
+Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP, crawler,
 embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
 mutation, or parallel roadmap.
 
-Verification: DB-backed source-search JSON batch, evidence capture, observe,
-reflect, `git diff --check`.
+Verification: targeted source-search/ingest readback or tests, DB-backed
+readback, evidence capture, observe, reflect, `git diff --check`.
 
 ## Remaining Product Gaps
 
 ```txt
-1. answer usefulness in source-search output
-2. mini Brain-QA usefulness loop
-3. ingest v0 expansion with bounded evidence
-4. graph brain v0 entity/relation extraction and answer deltas
-5. heartbeat/dreaming candidate generator
-6. consensus eval/candidate lane
-7. product UI/search/API/MCP after usefulness/security gates
+1. graph relation SearchDocument answer support
+2. ingest v0 expansion with bounded evidence
+3. graph brain v0 entity/relation extraction and answer deltas
+4. heartbeat/dreaming candidate generator
+5. consensus eval/candidate lane
+6. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

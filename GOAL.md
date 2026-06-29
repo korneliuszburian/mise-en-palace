@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V355 Mini Brain-QA Built-In Usefulness Loop
+V356 Graph Relation SearchDocument Support Vertical
 ```
 
 Current state:
@@ -27,13 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V355-00 Mini Brain-QA Built-In Usefulness Loop.
+current task: V356-00 Graph Relation SearchDocument Support Vertical.
 ```
 
-Current task: run the mini Brain-QA batch using built-in
-`answerUsefulness`/reasons from `krn source search --json`, then decide whether
-to move to the next ingest/graph vertical. Do not add UI/API/MCP, crawler,
-schema, ranking, embeddings, graph runtime, worker runtime, broad benchmark, or
+Current task: turn the graph-relations mini Brain-QA gap into a bounded product
+repair or proof by improving reviewable SearchDocument support for graph
+relation answers where appropriate. Do not add UI/API/MCP, crawler, schema,
+ranking rewrite, embeddings, graph runtime, worker runtime, broad benchmark, or
 Memory Core mutation.
 
 ## Direction

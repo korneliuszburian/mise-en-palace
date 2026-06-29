@@ -13,9 +13,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V355 Mini Brain-QA Built-In Usefulness Loop
-current task: V355-00 Mini Brain-QA Built-In Usefulness Loop
-latest pushed commit checked: 2450aef / CI green before V354 source commit
+active stream: V356 Graph Relation SearchDocument Support Vertical
+current task: V356-00 Graph Relation SearchDocument Support Vertical
+latest pushed commit checked: 39483aa / CI green before V355 closeout
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,9 +24,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V355-00 Mini Brain-QA Built-In Usefulness Loop must use built-in
-`answerUsefulness` from source-search JSON and decide whether the next product
-vertical should be ingest or graph work.
+V356-00 Graph Relation SearchDocument Support Vertical must inspect and
+repair/prove why graph-relations source search is claim-useful but lacks
+included SearchDocument evidence.
 ```
 
 ## 2. Product Thesis
@@ -90,6 +90,8 @@ V352 complete: source-search JSON diagnostics usefulness closure.
 V353 complete: answer usefulness classified over five JSON answer packages.
 V354 complete: source-search JSON/text now includes answerUsefulness labels and
 reasons.
+V355 complete: built-in answerUsefulness batch consumed without local
+classification; graph-relations remains claim-only for document support.
 ```
 
 ## Outcome V353 Mini Brain-QA Answer Usefulness Closure
@@ -200,11 +202,11 @@ diff check: git diff --check
 live readback: .local-lab/v354/source-to-decision.json
 ```
 
-## Active Task V355 Mini Brain-QA Built-In Usefulness Loop
+## Outcome V355 Mini Brain-QA Built-In Usefulness Loop
 
 ID: V355-00
 Name: Mini Brain-QA Built-In Usefulness Loop
-Status: active
+Status: complete
 Goal: Rerun the five-case mini Brain-QA batch using built-in
 `answerUsefulness` from source-search JSON.
 Product rationale: Prove the new field reduces consumer logic before opening
@@ -237,6 +239,74 @@ Does not prove: answer correctness, source truth, ranking quality, product
 readiness, UI/API/MCP readiness, or Memory Core mutation.
 Falsifier: consumers still need ad hoc classification or labels overclaim
 correctness.
+
+Evidence:
+
+```txt
+executionRun: f514e534-1c53-421f-8a24-3a8779439033
+report: docs/reviews/controlled-dogfood/2026-06-29-v355-mini-brain-qa-built-in-usefulness-loop/REPORT.md
+cases: 5
+useful: 4
+partly_useful_missing_document: 1
+gap: graph-relations claim-useful but missing SearchDocument support.
+```
+
+Source-to-decision:
+
+- Source: V354 source-search answer usefulness classification report and V355
+  built-in readback batch.
+- Mechanism: built-in usefulness labels remove local consumer classification
+  while preserving missing-evidence visibility.
+- KRN implication: the remaining product gap is graph relation document support,
+  not answer-usefulness labeling.
+- Decision: open V356 to inspect and repair/prove graph relation
+  SearchDocument support with existing paths.
+- Does not prove: answer correctness, source truth, ranking quality, product
+  readiness, UI/API/MCP readiness, or Memory Core mutation.
+- Consumer: V356 graph relation support vertical.
+- Falsifier: graph relation support requires ranking/schema/runtime expansion or
+  remains claim-only after bounded work.
+
+## Active Task V356 Graph Relation SearchDocument Support Vertical
+
+ID: V356-00
+Name: Graph Relation SearchDocument Support Vertical
+Status: active
+Goal: Improve or explain SearchDocument support for graph relation source-search
+answers.
+Product rationale: V355 showed graph relation answers are partly useful because
+claims exist but document support is absent for the combined query.
+Architectural rationale: strengthen graph-brain answer support before broader
+graph runtime, crawler, embeddings, UI/API/MCP, or ranking work.
+Evidence source: V355 report and `.local-lab/v355/graph-relations.json`.
+Official/external sources: none required.
+Inputs required: graph-relations query output, source-search owner files,
+existing ingest/source artifacts if needed.
+Files likely touched: source-search CLI/readback source/tests only if a source
+bug is found; otherwise report/root.
+Allowed writes: smallest source/test repair or report/root proof.
+Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
+crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
+mutation, or parallel roadmap.
+Output requirements: report proving whether the graph-relations gap is coverage,
+query shape, or source-search behavior; source repair only if bounded.
+Definition of Done: graph relation answer support is improved or the remaining
+gap is classified with a precise next action.
+Verification commands: targeted tests/readback if source touched; DB-backed
+source-search readback; evidence capture; observe; reflect; `git diff --check`.
+Acceptance criteria: no broad runtime/ranking/schema work; graph-relations gap
+is no longer vague.
+Risk: overfitting one query or hiding a real document gap.
+Rollback: revert any source repair; keep report if it is evidence-only.
+Condensation expectation: compact root; detailed evidence in report.
+Next-task synthesis rule: if V356 improves support, run graph mini QA; if not,
+open the smallest coverage/ingest task.
+Pattern surface: operator-UX / graph brain readback.
+Primary consumer: next graph-brain mini QA loop.
+Does not prove: graph retrieval quality, answer correctness, source truth,
+product readiness, UI/API/MCP readiness, or Memory Core mutation.
+Falsifier: graph relation support remains claim-only without a bounded repair
+or explanation.
 
 ## 9. Task Contract Schema
 
@@ -300,7 +370,8 @@ Falsifier:
 - [x] V352 complete: source-search JSON diagnostics usefulness closure.
 - [x] V353 complete: answer usefulness closure.
 - [x] V354 complete: Source Search Answer Usefulness Classification.
-- [ ] V355 current task: Mini Brain-QA Built-In Usefulness Loop.
+- [x] V355 complete: Mini Brain-QA Built-In Usefulness Loop.
+- [ ] V356 current task: Graph Relation SearchDocument Support Vertical.
 
 ## Verification Policy
 
