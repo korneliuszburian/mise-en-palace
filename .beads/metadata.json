@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "mise_en_palace",
+  "project_id": "60b76209-9b0e-4fad-9edd-297d5f83e6b6"
+}
