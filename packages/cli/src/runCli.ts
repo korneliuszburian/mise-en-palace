@@ -2,6 +2,9 @@ import {
   formatUsage,
   parseArgs
 } from "./parseArgs.js";
+import type {
+  CliCommand
+} from "./parseArgs.js";
 import {
   formatDbUsage
 } from "./parseDbArgs.js";
@@ -80,23 +83,8 @@ import {
   runCodexBriefCommand
 } from "./runCodexBriefCommand.js";
 import {
-  runSourceClaimAddCommand
-} from "./runSourceClaimAddCommand.js";
-import {
-  runSourceClaimEdgesCommand
-} from "./runSourceClaimEdgesCommand.js";
-import {
-  runSourceSearchCommand
-} from "./runSourceSearchCommand.js";
-import {
-  runSourceArtifactPreviewCommand
-} from "./runSourceArtifactPreviewCommand.js";
-import {
-  runSourceClaimRejectCommand
-} from "./runSourceClaimRejectCommand.js";
-import {
-  runSourceDecisionLinkCommand
-} from "./runSourceDecisionLinkCommand.js";
+  runSourceCliCommand
+} from "./runSourceCliCommand.js";
 import {
   runMemoryCandidateAddCommand
 } from "./runMemoryCandidateAddCommand.js";
@@ -163,6 +151,42 @@ const createDefaultIdFactory = (): ((prefix: string) => string) => {
   };
 };
 
+type HelpCommandKind = Extract<CliCommand, { kind: `${string}Help` }>["kind"];
+
+const helpRenderers = {
+  dbHelp: formatDbUsage,
+  sourceClaimAddHelp: formatSourceClaimAddUsage,
+  sourceClaimEdgesHelp: formatSourceClaimEdgesUsage,
+  sourceSearchHelp: formatSourceSearchUsage,
+  sourceArtifactPreviewHelp: formatSourceArtifactPreviewUsage,
+  sourceDecisionLinkHelp: formatSourceDecisionLinkUsage,
+  sourceClaimRejectHelp: formatSourceClaimRejectUsage,
+  runShowHelp: formatRunUsage,
+  knowledgeCardsHelp: formatKnowledgeUsage,
+  memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
+  memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
+  memoryCandidateRejectHelp: formatMemoryCandidateRejectUsage,
+  memoryRecordApplyHelp: formatMemoryRecordApplyUsage,
+  memoryAntiAddHelp: formatMemoryAntiAddUsage,
+  memoryAntiPromoteHelp: formatMemoryAntiPromoteUsage,
+  memoryAntiRejectHelp: formatMemoryAntiRejectUsage
+} satisfies Record<HelpCommandKind, () => string>;
+
+const isHelpCommandKind = (kind: CliCommand["kind"]): kind is HelpCommandKind =>
+  Object.prototype.hasOwnProperty.call(helpRenderers, kind);
+
+const formatHelpForCommand = (command: CliCommand): string | undefined => {
+  if (command.kind === "help") {
+    return formatUsage();
+  }
+
+  if (!isHelpCommandKind(command.kind)) {
+    return undefined;
+  }
+
+  return helpRenderers[command.kind]();
+};
+
 export const runCli = async (
   args: readonly string[],
   runtime: CliRuntime
@@ -179,7 +203,8 @@ export const runCli = async (
     };
   }
 
-  if (parsed.command === undefined || parsed.command.kind === "help") {
+  const command = parsed.command;
+  if (command === undefined) {
     return {
       exitCode: 0,
       stdout: formatUsage(),
@@ -187,55 +212,24 @@ export const runCli = async (
     };
   }
 
-  if (parsed.command.kind === "dbHelp") {
+  const helpOutput = formatHelpForCommand(command);
+  if (helpOutput !== undefined) {
     return {
       exitCode: 0,
-      stdout: formatDbUsage(),
+      stdout: helpOutput,
       stderr: ""
     };
   }
 
-  if (parsed.command.kind === "sourceClaimAddHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatSourceClaimAddUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "sourceClaimEdgesHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatSourceClaimEdgesUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "sourceSearchHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatSourceSearchUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "sourceArtifactPreviewHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatSourceArtifactPreviewUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "init") {
+  if (command.kind === "init") {
     try {
       const result = await runInitCommand({
         cwd: runtime.cwd ?? process.cwd(),
         env: runtime.env,
-        mode: parsed.command.mode,
-        repo: parsed.command.repo,
-        ...(parsed.command.ownerFiles === undefined ? {} : { ownerFiles: parsed.command.ownerFiles }),
-        ...(parsed.command.mode === "connect" ? { persist: parsed.command.persist } : {}),
+        mode: command.mode,
+        repo: command.repo,
+        ...(command.ownerFiles === undefined ? {} : { ownerFiles: command.ownerFiles }),
+        ...(command.mode === "connect" ? { persist: command.persist } : {}),
         ...(runtime.createInitConnectRuntime === undefined
           ? {}
           : { createInitConnectRuntime: runtime.createInitConnectRuntime })
@@ -257,101 +251,13 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "sourceDecisionLinkHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatSourceDecisionLinkUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "sourceClaimRejectHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatSourceClaimRejectUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "runShowHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatRunUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "knowledgeCardsHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatKnowledgeUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryCandidateAddHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryCandidateAddUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryCandidatePromoteHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryCandidatePromoteUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryCandidateRejectHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryCandidateRejectUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryRecordApplyHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryRecordApplyUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryAntiAddHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryAntiAddUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryAntiPromoteHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryAntiPromoteUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "memoryAntiRejectHelp") {
-    return {
-      exitCode: 0,
-      stdout: formatMemoryAntiRejectUsage(),
-      stderr: ""
-    };
-  }
-
-  if (parsed.command.kind === "reviewAssess") {
+  if (command.kind === "reviewAssess") {
     try {
       const result = await runReviewAssessCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createReviewAssessDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createReviewAssessDatabaseRuntime })
@@ -373,14 +279,14 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "runShow") {
+  if (command.kind === "runShow") {
     try {
       const result = await runRunShowCommand({
         env: runtime.env,
         now,
         createId,
-        runId: parsed.command.runId,
-        format: parsed.command.format,
+        runId: command.runId,
+        format: command.format,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -402,16 +308,16 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "knowledgeCards") {
+  if (command.kind === "knowledgeCards") {
     try {
       const result = await runKnowledgeCardsCommand({
         cwd: runtime.cwd ?? process.cwd(),
-        cardFiles: parsed.command.cardFiles,
-        patternFiles: parsed.command.patternFiles,
-        catalogFiles: parsed.command.catalogFiles,
-        filter: parsed.command.filter,
-        format: parsed.command.format,
-        ...(parsed.command.limit === undefined ? {} : { limit: parsed.command.limit })
+        cardFiles: command.cardFiles,
+        patternFiles: command.patternFiles,
+        catalogFiles: command.catalogFiles,
+        filter: command.filter,
+        format: command.format,
+        ...(command.limit === undefined ? {} : { limit: command.limit })
       });
 
       return {
@@ -430,182 +336,27 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "sourceClaimAdd") {
-    try {
-      const result = await runSourceClaimAddCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown source claim error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
+  const sourceResult = await runSourceCliCommand(command, {
+    cwd: runtime.cwd ?? process.cwd(),
+    env: runtime.env,
+    now,
+    createId,
+    ...(runtime.createDatabaseRuntime === undefined
+      ? {}
+      : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
+    formatCliError
+  });
+  if (sourceResult !== undefined) {
+    return sourceResult;
   }
 
-  if (parsed.command.kind === "sourceArtifactPreview") {
-    try {
-      const result = await runSourceArtifactPreviewCommand({
-        cwd: runtime.cwd ?? process.cwd(),
-        env: runtime.env,
-        now,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
-        command: parsed.command
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown source artifact preview error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (parsed.command.kind === "sourceClaimEdges") {
-    try {
-      const result = await runSourceClaimEdgesCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown source claim edges error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (parsed.command.kind === "sourceSearch") {
-    try {
-      const result = await runSourceSearchCommand({
-        cwd: runtime.cwd ?? process.cwd(),
-        env: runtime.env,
-        now,
-        createId,
-        command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown source search error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (parsed.command.kind === "sourceDecisionLink") {
-    try {
-      const result = await runSourceDecisionLinkCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown source decision link error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (parsed.command.kind === "sourceClaimReject") {
-    try {
-      const result = await runSourceClaimRejectCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: parsed.command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown source claim reject error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (parsed.command.kind === "memoryCandidateAdd") {
+  if (command.kind === "memoryCandidateAdd") {
     try {
       const result = await runMemoryCandidateAddCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -628,15 +379,15 @@ export const runCli = async (
   }
 
   if (
-    parsed.command.kind === "memoryCandidatePromote" ||
-    parsed.command.kind === "memoryCandidateReject"
+    command.kind === "memoryCandidatePromote" ||
+    command.kind === "memoryCandidateReject"
   ) {
     try {
       const result = await runMemoryCandidateReviewCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -659,13 +410,13 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "memoryRecordApply") {
+  if (command.kind === "memoryRecordApply") {
     try {
       const result = await runMemoryRecordApplyCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -688,13 +439,13 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "memoryAntiAdd") {
+  if (command.kind === "memoryAntiAdd") {
     try {
       const result = await runMemoryAntiAddCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -718,15 +469,15 @@ export const runCli = async (
   }
 
   if (
-    parsed.command.kind === "memoryAntiPromote" ||
-    parsed.command.kind === "memoryAntiReject"
+    command.kind === "memoryAntiPromote" ||
+    command.kind === "memoryAntiReject"
   ) {
     try {
       const result = await runMemoryAntiReviewCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -749,15 +500,15 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "plan") {
+  if (command.kind === "plan") {
     try {
-      const result = await runPlanCommand(parsed.command.task, {
+      const result = await runPlanCommand(command.task, {
         env: runtime.env,
         cwd: runtime.cwd ?? process.cwd(),
         now,
         createId,
-        persist: parsed.command.persist,
-        ...(parsed.command.projectId === undefined ? {} : { projectId: parsed.command.projectId }),
+        persist: command.persist,
+        ...(command.projectId === undefined ? {} : { projectId: command.projectId }),
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -779,7 +530,7 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "doctor") {
+  if (command.kind === "doctor") {
     try {
       const result = await runDoctorCommand({
         env: runtime.env,
@@ -802,7 +553,7 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "dbReadiness") {
+  if (command.kind === "dbReadiness") {
     try {
       const result = await runDbReadinessCommand({
         env: runtime.env,
@@ -825,13 +576,13 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "dbSmoke") {
+  if (command.kind === "dbSmoke") {
     try {
       const result = await runDbSmokeCommand({
         env: runtime.env,
         cwd: runtime.cwd ?? process.cwd(),
         createId,
-        target: parsed.command.target
+        target: command.target
       });
 
       return {
@@ -850,13 +601,13 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "codexBrief") {
+  if (command.kind === "codexBrief") {
     try {
       const result = await runCodexBriefCommand({
         env: runtime.env,
         now,
         createId,
-        runId: parsed.command.runId,
+        runId: command.runId,
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime })
@@ -878,27 +629,27 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "evidenceCapture") {
+  if (command.kind === "evidenceCapture") {
     try {
       const result = await runEvidenceCaptureCommand({
         env: runtime.env,
         cwd: runtime.cwd ?? process.cwd(),
         now,
         createId,
-        persist: parsed.command.persist,
-        ...(parsed.command.runId === undefined ? {} : { runId: parsed.command.runId }),
-        ...(parsed.command.intendedFiles === undefined
+        persist: command.persist,
+        ...(command.runId === undefined ? {} : { runId: command.runId }),
+        ...(command.intendedFiles === undefined
           ? {}
-          : { intendedFiles: parsed.command.intendedFiles }),
-        ...(parsed.command.commandOutcomes === undefined
+          : { intendedFiles: command.intendedFiles }),
+        ...(command.commandOutcomes === undefined
           ? {}
-          : { commandOutcomes: parsed.command.commandOutcomes }),
-        ...(parsed.command.targetEvidence === undefined
+          : { commandOutcomes: command.commandOutcomes }),
+        ...(command.targetEvidence === undefined
           ? {}
-          : { targetEvidence: parsed.command.targetEvidence }),
-        ...(parsed.command.sourceUsefulnessOutcomes === undefined
+          : { targetEvidence: command.targetEvidence }),
+        ...(command.sourceUsefulnessOutcomes === undefined
           ? {}
-          : { sourceUsefulnessOutcomes: parsed.command.sourceUsefulnessOutcomes }),
+          : { sourceUsefulnessOutcomes: command.sourceUsefulnessOutcomes }),
         ...(runtime.createDatabaseRuntime === undefined
           ? {}
           : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
@@ -921,12 +672,12 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "observeRun") {
+  if (command.kind === "observeRun") {
     try {
       const result = await runObserveCommand({
         env: runtime.env,
         now,
-        command: parsed.command,
+        command: command,
         ...(runtime.createObserveDatabaseRuntime === undefined
           ? {}
           : { createObserveDatabaseRuntime: runtime.createObserveDatabaseRuntime })
@@ -948,13 +699,13 @@ export const runCli = async (
     }
   }
 
-  if (parsed.command.kind === "reflect") {
+  if (command.kind === "reflect") {
     try {
       const result = await runReflectCommand({
         env: runtime.env,
         now,
         createId,
-        command: parsed.command,
+        command: command,
         ...(runtime.createReflectDatabaseRuntime === undefined
           ? {}
           : { createReflectDatabaseRuntime: runtime.createReflectDatabaseRuntime })
