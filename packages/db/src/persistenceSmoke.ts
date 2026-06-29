@@ -1,7 +1,8 @@
-import postgres from "postgres";
-
-import { createKrnDatabase } from "./database.js";
-import { runMigrationReadinessCheck } from "./migrationReadiness.js";
+import {
+  createSmokeDatabase,
+  ensureSmokeBrainStoreReady,
+  normalizeSmokeSlugPart
+} from "./dbSmokeSupport.js";
 import { DrizzleProjectRepository } from "./repositories/index.js";
 
 export interface PersistenceSmokeInput {
@@ -18,39 +19,21 @@ export interface PersistenceSmokeReport {
   cleanedUp: boolean;
 }
 
-const normalizeSlugPart = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
-};
-
 export const runPersistenceSmokeCheck = async (
   input: PersistenceSmokeInput
 ): Promise<PersistenceSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
-    databaseUrl: input.databaseUrl,
-    migrationsFolder: input.migrationsFolder
-  });
+  await ensureSmokeBrainStoreReady(
+    input.databaseUrl,
+    input.migrationsFolder,
+    "persistence smoke"
+  );
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for persistence smoke");
-  }
-
-  const workspaceSlug = `krn-smoke-${normalizeSlugPart(input.smokeId)}`;
+  const workspaceSlug = `krn-smoke-${normalizeSmokeSlugPart(input.smokeId)}`;
   const projectSlug = "runtime-persistence";
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
+  const { client, db } = createSmokeDatabase(input.databaseUrl);
   let cleanedUp = false;
 
   try {
-    const db = createKrnDatabase(client);
     const projectRepository = new DrizzleProjectRepository(db);
 
     await client`

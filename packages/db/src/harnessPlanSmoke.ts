@@ -1,11 +1,18 @@
-import postgres from "postgres";
 import { eq, sql } from "drizzle-orm";
 import {
   compileHarnessPlan
 } from "@krn/harness";
 
-import { createKrnDatabase } from "./database.js";
-import { runMigrationReadinessCheck } from "./migrationReadiness.js";
+import type { KrnDatabase } from "./database.js";
+import {
+  countSmokeRows,
+  createSmokeDatabase,
+  createSmokeProjectRecords,
+  ensureSmokeBrainStoreReady,
+  normalizeSmokeSlugPart,
+  optionalSmokeCount,
+  sumSmokeCountTasks
+} from "./dbSmokeSupport.js";
 import {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
@@ -36,70 +43,39 @@ export interface HarnessPlanSmokeReport {
   cleanedUp: boolean;
 }
 
-const normalizeSlugPart = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
-};
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
 const countRows = async (
-  db: ReturnType<typeof createKrnDatabase>,
+  db: KrnDatabase,
   workspaceSlug: string,
   marker: string,
   retrievalRunId: string | undefined
 ): Promise<number> => {
-  const workspaceRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(workspaces)
-    .where(eq(workspaces.slug, workspaceSlug));
-  const eventRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(runEvents)
-    .where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
-  const retrievalRows =
-    retrievalRunId === undefined
-      ? [{ count: 0 }]
-      : await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(retrievalRuns)
-          .where(eq(retrievalRuns.id, retrievalRunId));
-
-  return (
-    (workspaceRows[0]?.count ?? 0) +
-    (eventRows[0]?.count ?? 0) +
-    (retrievalRows[0]?.count ?? 0)
-  );
+  return sumSmokeCountTasks([
+    () => countSmokeRows(db, workspaces, eq(workspaces.slug, workspaceSlug)),
+    () => countSmokeRows(db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${marker}`),
+    optionalSmokeCount(
+      retrievalRunId,
+      (id) => countSmokeRows(db, retrievalRuns, eq(retrievalRuns.id, id))
+    )
+  ]);
 };
 
 export const runHarnessPlanSmokeCheck = async (
   input: HarnessPlanSmokeInput
 ): Promise<HarnessPlanSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
-    databaseUrl: input.databaseUrl,
-    migrationsFolder: input.migrationsFolder
-  });
+  await ensureSmokeBrainStoreReady(
+    input.databaseUrl,
+    input.migrationsFolder,
+    "harness plan smoke"
+  );
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for harness plan smoke");
-  }
-
-  const marker = normalizeSlugPart(input.smokeId);
+  const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-harness-smoke-${marker}`;
   const projectSlug = "persisted-harness-plan";
   const task = `persisted harness plan smoke ${marker}`;
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
+  const { client, db } = createSmokeDatabase(input.databaseUrl);
   let retrievalRunId: string | undefined;
 
   const cleanup = async (): Promise<number> => {
@@ -119,23 +95,12 @@ export const runHarnessPlanSmokeCheck = async (
 
     const projectRepository = new DrizzleProjectRepository(db);
     const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-    const workspace = await projectRepository.createWorkspace({
-      slug: workspaceSlug,
-      displayName: workspaceSlug,
-      metadata: {
-        smoke: true,
-        smokeId: marker
-      }
-    });
-    const project = await projectRepository.createProject({
-      workspaceId: workspace.id,
-      slug: projectSlug,
-      displayName: projectSlug,
-      metadata: {
-        smoke: true,
-        smokeId: marker
-      }
-    });
+    const { workspace, project } = await createSmokeProjectRecords(
+      projectRepository,
+      workspaceSlug,
+      projectSlug,
+      marker
+    );
     let idCounter = 0;
     const result = await compileHarnessPlan(
       {

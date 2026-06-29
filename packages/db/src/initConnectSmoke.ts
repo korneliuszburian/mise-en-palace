@@ -1,8 +1,11 @@
-import postgres from "postgres";
 import { sql } from "drizzle-orm";
 
-import { createKrnDatabase } from "./database.js";
-import { runMigrationReadinessCheck } from "./migrationReadiness.js";
+import type { KrnDatabase } from "./database.js";
+import {
+  createSmokeDatabase,
+  ensureSmokeBrainStoreReady,
+  normalizeSmokeSlugPart
+} from "./dbSmokeSupport.js";
 import { DrizzleProjectRepository } from "./repositories/index.js";
 import {
   projectKernels,
@@ -38,19 +41,8 @@ export interface InitConnectSmokeReport {
   cleanedUp: boolean;
 }
 
-const normalizeSlugPart = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
-};
-
 const countMarkerRows = async (
-  db: ReturnType<typeof createKrnDatabase>,
+  db: KrnDatabase,
   marker: string
 ): Promise<number> => {
   const workspaceRows = await db
@@ -81,16 +73,13 @@ const countMarkerRows = async (
 export const runInitConnectSmokeCheck = async (
   input: InitConnectSmokeInput
 ): Promise<InitConnectSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
-    databaseUrl: input.databaseUrl,
-    migrationsFolder: input.migrationsFolder
-  });
+  await ensureSmokeBrainStoreReady(
+    input.databaseUrl,
+    input.migrationsFolder,
+    "init-connect smoke"
+  );
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for init-connect smoke");
-  }
-
-  const marker = normalizeSlugPart(input.smokeId);
+  const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-init-connect-smoke-${marker}`;
   const projectSlug = `typescript-basic-${marker}`;
   const repoFingerprint = `smoke:${marker}`;
@@ -110,11 +99,7 @@ export const runInitConnectSmokeCheck = async (
       reason: "refreshed owner-file snapshot"
     }
   ];
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
+  const { client, db } = createSmokeDatabase(input.databaseUrl);
   const projectRepository = new DrizzleProjectRepository(db);
 
   const cleanup = async (): Promise<number> => {

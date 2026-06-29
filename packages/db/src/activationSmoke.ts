@@ -1,4 +1,3 @@
-import postgres from "postgres";
 import {
   eq,
   sql
@@ -16,8 +15,16 @@ import {
   selectObservationPrefix
 } from "@krn/harness";
 
-import { createKrnDatabase } from "./database.js";
-import { runMigrationReadinessCheck } from "./migrationReadiness.js";
+import type { KrnDatabase } from "./database.js";
+import {
+  countSmokeRows,
+  createSmokeDatabase,
+  createSmokeProjectRecords,
+  ensureSmokeBrainStoreReady,
+  normalizeSmokeSlugPart,
+  optionalSmokeCount,
+  sumSmokeCountTasks
+} from "./dbSmokeSupport.js";
 import {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
@@ -75,88 +82,44 @@ export interface ActivationSmokeReport {
   cleanedUp: boolean;
 }
 
-const normalizeSlugPart = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
-};
-
 const countMarkerRows = async (
-  db: ReturnType<typeof createKrnDatabase>,
+  db: KrnDatabase,
   workspaceSlug: string,
   marker: string,
   contextAssemblyId: string | undefined
 ): Promise<number> => {
-  const workspaceRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(workspaces)
-    .where(eq(workspaces.slug, workspaceSlug));
-  const sourceArtifactRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(sourceArtifacts)
-    .where(sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`);
-  const sourceClaimRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(sourceClaims)
-    .where(sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`);
-  const memoryRecordRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(memoryRecords)
-    .where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
-  const memoryRecordVersionRows = await db
+  return sumSmokeCountTasks([
+    () => countSmokeRows(db, workspaces, eq(workspaces.slug, workspaceSlug)),
+    () => countSmokeRows(db, sourceArtifacts, sql`${sourceArtifacts.metadata}->>'smokeId' = ${marker}`),
+    () => countSmokeRows(db, sourceClaims, sql`${sourceClaims.metadata}->>'smokeId' = ${marker}`),
+    () => countSmokeRows(db, memoryRecords, sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`),
+    () => countMemoryRecordVersionsForSmoke(db, marker),
+    () => countSmokeRows(db, antiMemoryRecords, sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`),
+    () => countSmokeRows(db, searchDocuments, sql`${searchDocuments.metadata}->>'smokeId' = ${marker}`),
+    () => countSmokeRows(db, retrievalRuns, sql`${retrievalRuns.metadata}->>'smokeId' = ${marker}`),
+    () => countSmokeRows(db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${marker}`),
+    optionalSmokeCount(
+      contextAssemblyId,
+      (id) => countSmokeRows(db, contextItems, eq(contextItems.contextAssemblyId, id))
+    ),
+    optionalSmokeCount(
+      contextAssemblyId,
+      (id) => countSmokeRows(db, contextExclusions, eq(contextExclusions.contextAssemblyId, id))
+    )
+  ]);
+};
+
+const countMemoryRecordVersionsForSmoke = async (
+  db: KrnDatabase,
+  marker: string
+): Promise<number> => {
+  const rows = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(memoryRecordVersions)
     .innerJoin(memoryRecords, eq(memoryRecordVersions.memoryRecordId, memoryRecords.id))
     .where(sql`${memoryRecords.metadata}->>'smokeId' = ${marker}`);
-  const antiMemoryRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(antiMemoryRecords)
-    .where(sql`${antiMemoryRecords.metadata}->>'smokeId' = ${marker}`);
-  const searchDocumentRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(searchDocuments)
-    .where(sql`${searchDocuments.metadata}->>'smokeId' = ${marker}`);
-  const retrievalRunRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(retrievalRuns)
-    .where(sql`${retrievalRuns.metadata}->>'smokeId' = ${marker}`);
-  const eventRows = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(runEvents)
-    .where(sql`${runEvents.payload}->>'smokeId' = ${marker}`);
-  const contextItemRows =
-    contextAssemblyId === undefined
-      ? [{ count: 0 }]
-      : await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(contextItems)
-          .where(eq(contextItems.contextAssemblyId, contextAssemblyId));
-  const contextExclusionRows =
-    contextAssemblyId === undefined
-      ? [{ count: 0 }]
-      : await db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(contextExclusions)
-          .where(eq(contextExclusions.contextAssemblyId, contextAssemblyId));
 
-  return (
-    (workspaceRows[0]?.count ?? 0) +
-    (sourceArtifactRows[0]?.count ?? 0) +
-    (sourceClaimRows[0]?.count ?? 0) +
-    (memoryRecordRows[0]?.count ?? 0) +
-    (memoryRecordVersionRows[0]?.count ?? 0) +
-    (antiMemoryRows[0]?.count ?? 0) +
-    (searchDocumentRows[0]?.count ?? 0) +
-    (retrievalRunRows[0]?.count ?? 0) +
-    (eventRows[0]?.count ?? 0) +
-    (contextItemRows[0]?.count ?? 0) +
-    (contextExclusionRows[0]?.count ?? 0)
-  );
+  return rows[0]?.count ?? 0;
 };
 
 const countByDecision = (
@@ -204,25 +167,18 @@ const observationPrefixItemCount = (
 export const runActivationSmokeCheck = async (
   input: ActivationSmokeInput
 ): Promise<ActivationSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
-    databaseUrl: input.databaseUrl,
-    migrationsFolder: input.migrationsFolder
-  });
+  await ensureSmokeBrainStoreReady(
+    input.databaseUrl,
+    input.migrationsFolder,
+    "activation smoke"
+  );
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for activation smoke");
-  }
-
-  const marker = normalizeSlugPart(input.smokeId);
+  const marker = normalizeSmokeSlugPart(input.smokeId);
   const workspaceSlug = `krn-activation-smoke-${marker}`;
   const projectSlug = "activation-engine";
   const now = "2026-06-22T05:00:00.000Z";
   const past = "2026-06-01T00:00:00.000Z";
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
+  const { client, db } = createSmokeDatabase(input.databaseUrl);
   let contextAssemblyId: string | undefined;
 
   const retrievalRepository = new DrizzleRetrievalRepository(db);
@@ -252,23 +208,12 @@ export const runActivationSmokeCheck = async (
     const harnessRunRepository = new DrizzleHarnessRunRepository(db);
     const sourceRepository = new DrizzleSourceRepository(db);
     const memoryRepository = new DrizzleMemoryRepository(db);
-    const workspace = await projectRepository.createWorkspace({
-      slug: workspaceSlug,
-      displayName: workspaceSlug,
-      metadata: {
-        smoke: true,
-        smokeId: marker
-      }
-    });
-    const project = await projectRepository.createProject({
-      workspaceId: workspace.id,
-      slug: projectSlug,
-      displayName: projectSlug,
-      metadata: {
-        smoke: true,
-        smokeId: marker
-      }
-    });
+    const { workspace, project } = await createSmokeProjectRecords(
+      projectRepository,
+      workspaceSlug,
+      projectSlug,
+      marker
+    );
     const operatorIntent = await harnessRunRepository.createOperatorIntent({
       workspaceId: workspace.id,
       projectId: project.id,

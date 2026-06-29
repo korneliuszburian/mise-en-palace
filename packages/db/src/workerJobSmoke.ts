@@ -1,14 +1,12 @@
-import postgres from "postgres";
 import type {
   Sql
 } from "postgres";
 
 import {
-  createKrnDatabase
-} from "./database.js";
-import {
-  runMigrationReadinessCheck
-} from "./migrationReadiness.js";
+  createSmokeDatabase,
+  ensureSmokeBrainStoreReady,
+  normalizeSmokeSlugPart
+} from "./dbSmokeSupport.js";
 import {
   DrizzleWorkerJobRepository
 } from "./repositories/DrizzleWorkerJobRepository.js";
@@ -60,17 +58,6 @@ export const workerJobSmokeTransitionPlan = (
     skipped,
     failed
   };
-};
-
-const normalizeMarker = (value: string): string => {
-  const normalized = value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return normalized.length === 0 ? "local" : normalized;
 };
 
 const countMarkerRows = async (client: Sql, marker: string): Promise<number> => {
@@ -146,21 +133,14 @@ const requireStatus = (
 export const runWorkerJobSmokeCheck = async (
   input: WorkerJobSmokeInput
 ): Promise<WorkerJobSmokeReport> => {
-  const readiness = await runMigrationReadinessCheck({
-    databaseUrl: input.databaseUrl,
-    migrationsFolder: input.migrationsFolder
-  });
+  await ensureSmokeBrainStoreReady(
+    input.databaseUrl,
+    input.migrationsFolder,
+    "worker job smoke"
+  );
 
-  if (!readiness.migrationsVerified || !readiness.pgvectorAvailable) {
-    throw new Error("Brain store is not ready for worker job smoke");
-  }
-
-  const marker = normalizeMarker(input.smokeId);
-  const client = postgres(input.databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-  const db = createKrnDatabase(client);
+  const marker = normalizeSmokeSlugPart(input.smokeId);
+  const { client, db } = createSmokeDatabase(input.databaseUrl);
   const repository = new DrizzleWorkerJobRepository(db);
   const workerJobIds: string[] = [];
   let cleanedUp = false;
