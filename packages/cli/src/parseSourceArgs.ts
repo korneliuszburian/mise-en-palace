@@ -34,6 +34,16 @@ export const formatSourceClaimAddUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
+export const formatSourceClaimEdgesUsage = (): string =>
+  [
+    "Usage: krn source claim edges --source-claim-id <id>",
+    "",
+    "Required:",
+    "--source-claim-id",
+    "",
+    "Note: read-only Postgres readback for governed SourceClaimEdge rows. It does not rank, extract, crawl, mutate Memory Core, or prove graph truth."
+  ].join("\n") + "\n";
+
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
     "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
@@ -430,6 +440,62 @@ const parseSourceClaimAddArgs = (rest: readonly string[]): ParseArgsResult => {
   };
 };
 
+const parseSourceClaimEdgesArgs = (rest: readonly string[]): ParseArgsResult => {
+  if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
+    return {
+      command: {
+        kind: "sourceClaimEdgesHelp"
+      }
+    };
+  }
+
+  const sourceCommand: Extract<CliCommand, { kind: "sourceClaimEdges" }> = {
+    kind: "sourceClaimEdges"
+  };
+
+  for (let index = 2; index < rest.length; index += 1) {
+    const arg = rest[index];
+
+    if (arg === "--help" || arg === "-h") {
+      return {
+        command: {
+          kind: "sourceClaimEdgesHelp"
+        }
+      };
+    }
+
+    if (arg === "--source-claim-id" || arg?.startsWith("--source-claim-id=") === true) {
+      const valueResult = optionValue(rest, index, "--source-claim-id");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatSourceClaimEdgesUsage()
+        };
+      }
+
+      const sourceClaimId = valueResult.value.trim();
+
+      if (sourceClaimId.length === 0) {
+        return {
+          error: "--source-claim-id requires a non-empty id"
+        };
+      }
+
+      sourceCommand.sourceClaimId = sourceClaimId;
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    return {
+      error: formatSourceClaimEdgesUsage()
+    };
+  }
+
+  return {
+    command: sourceCommand
+  };
+};
+
 const parseSourceClaimRejectArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -604,6 +670,10 @@ export const parseSourceArgs = (rest: readonly string[]): ParseArgsResult => {
 
   if (rest[0] === "claim" && rest[1] === "add") {
     return parseSourceClaimAddArgs(rest);
+  }
+
+  if (rest[0] === "claim" && rest[1] === "edges") {
+    return parseSourceClaimEdgesArgs(rest);
   }
 
   if (rest[0] === "claim" && rest[1] === "reject") {

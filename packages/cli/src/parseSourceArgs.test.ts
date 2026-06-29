@@ -6,6 +6,7 @@ import {
 
 import {
   formatSourceArtifactPreviewUsage,
+  formatSourceClaimEdgesUsage,
   formatSourceClaimRejectUsage,
   parseSourceArgs
 } from "./parseSourceArgs.js";
@@ -133,6 +134,31 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("parses source claim edge readback options", () => {
+    expect(parseSourceArgs([
+      "claim",
+      "edges",
+      "--source-claim-id",
+      " source-claim-1 "
+    ])).toEqual({
+      command: {
+        kind: "sourceClaimEdges",
+        sourceClaimId: "source-claim-1"
+      }
+    });
+
+    expect(parseSourceArgs([
+      "claim",
+      "edges",
+      "--source-claim-id=source-claim-2"
+    ])).toEqual({
+      command: {
+        kind: "sourceClaimEdges",
+        sourceClaimId: "source-claim-2"
+      }
+    });
+  });
+
   it("parses source claim reject and source decision link", () => {
     expect(parseSourceArgs([
       "claim",
@@ -222,6 +248,11 @@ describe("parseSourceArgs", () => {
         kind: "sourceClaimRejectHelp"
       }
     });
+    expect(parseSourceArgs(["claim", "edges", "--help"])).toEqual({
+      command: {
+        kind: "sourceClaimEdgesHelp"
+      }
+    });
     expect(parseSourceArgs(["decision", "link", "--help"])).toEqual({
       command: {
         kind: "sourceDecisionLinkHelp"
@@ -243,6 +274,12 @@ describe("parseSourceArgs", () => {
     });
     expect(parseSourceArgs(["claim", "add", "--metadata", "not-a-pair"])).toEqual({
       error: "--metadata requires key=value"
+    });
+    expect(parseSourceArgs(["claim", "edges", "--source-claim-id", ""])).toEqual({
+      error: "--source-claim-id requires a non-empty id"
+    });
+    expect(parseSourceArgs(["claim", "edges", "--unknown"])).toEqual({
+      error: formatSourceClaimEdgesUsage()
     });
     expect(parseSourceArgs(["claim", "unknown"])).toEqual({
       error: formatSourceArtifactPreviewUsage()

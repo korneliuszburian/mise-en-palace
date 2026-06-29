@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V324 Graph Brain v0 SourceClaimEdge Readback Surface
-current task: V324-00 Graph Brain v0 SourceClaimEdge Readback Surface
+active stream: V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
+current task: V325-00 Local Source Entity/Claim Extraction Candidate Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -37,7 +37,7 @@ Remaining product gaps:
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
 4. ingest v0 activation/readback closure
-5. graph brain v0 readback/query surface
+5. graph brain v0 candidate extraction/readback surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
 8. product UI/search/API/MCP after usefulness/security gates
@@ -45,53 +45,52 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+### V324 Graph Brain v0 SourceClaimEdge Readback Surface
 
 Status: complete.
 
 Outcome:
 
 ```txt
-Report: docs/reviews/controlled-dogfood/2026-06-29-v323-graph-brain-v0-bounded-source-entity-claim-edge-preview/REPORT.md
-`krn source artifact preview` now renders reviewable SourceClaimEdge
-candidates and can persist/read back governed SourceClaimEdge rows when
-complete explicit graph-edge fields are supplied. Live DB proof created
-SourceClaimEdge 415321b3-4a26-4634-bfbe-38b756777d6a of kind `narrows` with
-source ranges and does-not-prove metadata. No schema, graph runtime, crawler,
-UI, API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
+Report: docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md
+`krn source claim edges --source-claim-id <id>` now reads persisted
+SourceClaimEdge rows by SourceClaim id with edge kind, direction, from/to ids,
+consumer, doesNotProve, evidence/source-range metadata, proof/non-proof
+boundaries, DB writes none, Graph runtime none, and Memory mutation none.
+Live DB readback returned edge 415321b3-4a26-4634-bfbe-38b756777d6a.
 ```
 
-### V324 Graph Brain v0 SourceClaimEdge Readback Surface
+### V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
 
 Goal:
 
-Expose the persisted graph edge substrate through the smallest operator-facing
-readback surface by claim id.
+Add the smallest candidate-only local source extraction preview.
 
 Current action:
 
 ```txt
-Execute V324-00: add or extend an existing `krn source ...` readback command so
-an operator can inspect SourceClaimEdges connected to a SourceClaim, including
-edge kind, from/to ids, consumer, doesNotProve, and evidence/source-range
-metadata. Use existing repository methods and tests; do not add graph ranking,
-entity extraction, crawler, UI, API/MCP, worker daemon, consensus runtime, or
-automatic Memory Core mutation.
+Execute V325-00: inspect the existing source preview/readback surfaces and add
+the smallest candidate-only local-source extraction preview that renders
+reviewable entity, claim, and relation candidates with source ranges,
+doesNotProve, and no autonomous source truth. Do not add graph ranking,
+crawler, UI, API/MCP, worker daemon, consensus runtime, or automatic Memory
+Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-future graph-aware retrieval, contradiction/duplicate detection, temporal
-slices, consensus candidate evaluation, and product-facing knowledge search.
+future source artifact ingest, graph-aware retrieval, contradiction/duplicate
+detection, temporal slices, consensus candidate evaluation, and product-facing
+knowledge search.
 ```
 
 Falsifier:
 
 ```txt
-Given a persisted SourceClaimEdge row, KRN cannot show the edge and its
-governance metadata by SourceClaim id, or the readback implies graph truth,
-ranking quality, or Memory Core mutation.
+Given a local source artifact, KRN cannot show candidate entities/claims/edges
+with source ranges and proof boundaries, or the preview implies accepted graph
+truth, extraction quality, ranking quality, or Memory Core mutation.
 ```
 
 ## Pattern Gate

@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V324 Graph Brain v0 SourceClaimEdge Readback Surface
+V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
 ```
 
 Current state:
@@ -27,15 +27,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V324-00 Graph Brain v0 SourceClaimEdge Readback Surface.
+current task: V325-00 Local Source Entity/Claim Extraction Candidate Preview.
 ```
 
 Current task:
 
 ```txt
-Add the smallest operator-facing readback surface for persisted SourceClaimEdge
-rows by claim id, using the existing Postgres source graph substrate and
-preserving source ranges, consumer, does-not-prove, and no Memory Core mutation.
+Add the smallest candidate-only local source extraction preview that can render
+reviewable entity/claim/relation candidates with source ranges, proof/non-proof
+boundaries, and no autonomous graph truth, graph ranking, crawler, or Memory
+Core mutation.
 ```
 
 ## Remaining Work
@@ -53,8 +54,9 @@ to preserve are:
    SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
    activation, context detail run readback, and marker/hash lexical activation
    over persisted local SearchDocuments exist.
-5. Graph brain v0: V323 proved bounded SourceClaimEdge preview/persistence;
-   next expose persisted edge readback before ranking, extraction, or graph
+5. Graph brain v0: V323 proved bounded SourceClaimEdge preview/persistence and
+   V324 exposed direct persisted edge readback; next add candidate-only local
+   source entity/claim extraction preview before ranking, crawler, or graph
    runtime work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
@@ -99,9 +101,6 @@ DB mode:
 support boundary:
 operator transcript:
 ```
-
-Self/headless scenarios are engineering proof and knowledge-distillation
-material. They are not second-operator proof or product-ready proof.
 
 ## Continuation After Compact
 

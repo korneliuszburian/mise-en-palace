@@ -25,7 +25,7 @@
     "brain:knowledge:preview": "mkdir -p .local-lab && cd packages/cli && pnpm exec tsx src/index.ts knowledge cards --catalog-file docs/brain-knowledge/catalog.json --html > ../../.local-lab/brain-knowledge-preview.html",
     "alpha:verify": "pnpm typecheck && pnpm test && pnpm krn doctor",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
-    "typecheck": "pnpm -r --workspace-concurrency=1 typecheck"
+    "typecheck": "pnpm -r --workspace-concurrency=1 --if-present typecheck"
   },
   "devDependencies": {
     "promptfoo": "^0.121.17",

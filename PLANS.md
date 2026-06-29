@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V324 Graph Brain v0 SourceClaimEdge Readback Surface
-current task: V324-00 Graph Brain v0 SourceClaimEdge Readback Surface
+active stream: V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
+current task: V325-00 Local Source Entity/Claim Extraction Candidate Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,11 +25,11 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V324-00 Graph Brain v0 SourceClaimEdge Readback Surface is the current gap.
-V323 proved SourceClaimEdge preview/persistence/readback through
-`krn source artifact preview`; operators still need a small source graph
-readback surface by SourceClaim id before graph ranking, extraction, crawler,
-UI/API/MCP, worker daemon, or consensus runtime.
+V325-00 Local Source Entity/Claim Extraction Candidate Preview is the current
+gap. V323 proved explicit SourceClaimEdge preview/persistence and V324 exposed
+direct persisted edge readback. Operators now need candidate-only extraction
+preview from local source artifacts before graph ranking, crawler, UI/API/MCP,
+worker daemon, consensus runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -56,7 +56,7 @@ DB-backed replay: proven
 candidate reviewability: core primitive
 activation: useful for guardrails and some persisted source state; owner-file recall still mixed
 pattern brain: partial
-graph brain: SourceClaimEdge preview/persistence exists; readback surface next
+graph brain: SourceClaimEdge preview/persistence/readback exists; candidate extraction next
 product-ready: no
 ```
 
@@ -72,34 +72,62 @@ source decision exists != continuous research condensation exists
 
 ### V324-00 Graph Brain v0 SourceClaimEdge Readback Surface
 
+Status: complete.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md
+Added `krn source claim edges --source-claim-id <id>` as read-only Postgres
+readback for governed SourceClaimEdge rows. Live DB readback returned edge
+415321b3-4a26-4634-bfbe-38b756777d6a with kind, direction, from/to ids,
+consumer, doesNotProve, evidenceRef, sourceRanges, DB writes none, Graph
+runtime none, and Memory mutation none.
+```
+
+Verification:
+
+```txt
+pnpm --filter @krn/cli test -- parseSourceArgs runSourceClaimEdgesCommand: passed
+pnpm test: passed
+pnpm typecheck: passed
+pnpm db:ready: passed
+git diff --check: passed
+krn plan/evidence/observe/reflect --persist: passed
+```
+
+### V325-00 Local Source Entity/Claim Extraction Candidate Preview
+
 Status: active.
 
 Goal:
 
 ```txt
-Expose persisted SourceClaimEdge rows through the smallest operator-facing
-readback surface by SourceClaim id.
+Add the smallest candidate-only local source extraction preview that renders
+reviewable entity, claim, and relation candidates with source ranges and
+proof/non-proof boundaries.
 ```
 
 Product rationale:
 
 ```txt
-V323 proved write/readback at creation time. Operators now need a direct way to
-inspect persisted graph edges before graph ranking or extraction work.
+V323/V324 proved explicit graph edge write/readback. Before graph-aware
+retrieval, KRN needs a bounded local-source preview that can produce reviewable
+extraction candidates without pretending they are accepted graph truth.
 ```
 
 Architectural rationale:
 
 ```txt
-Reuse existing Postgres source graph substrate and repository read methods.
-Do not introduce graph runtime, schema expansion, crawler, UI/API/MCP, worker
-daemon, consensus runtime, or Memory Core mutation.
+Reuse existing source artifact preview/readback and candidate reviewability
+patterns. Do not introduce graph runtime, schema expansion, crawler, UI/API/MCP,
+worker daemon, consensus runtime, or Memory Core mutation.
 ```
 
 Evidence source:
 
 ```txt
-V323 report and live SourceClaimEdge 415321b3-4a26-4634-bfbe-38b756777d6a.
+V323/V324 reports and live SourceClaimEdge 415321b3-4a26-4634-bfbe-38b756777d6a.
 ```
 
 Official/external sources:
@@ -119,6 +147,7 @@ packages/cli/src/*source*
 packages/cli/src/databaseRuntime.ts
 packages/harness/src/repositories/sourceRepository.ts
 packages/db/src/repositories/DrizzleSourceRepository.ts
+docs/decisions/ADR-0021-temporal-claim-graph.md
 ```
 
 Files likely touched:
@@ -126,9 +155,8 @@ Files likely touched:
 ```txt
 packages/cli/src/parseSourceArgs.ts
 packages/cli/src/runSource*.ts
-packages/cli/src/databaseRuntime.ts
 focused CLI tests
-docs/reviews/controlled-dogfood/<date>-v324-graph-edge-readback/REPORT.md
+docs/reviews/controlled-dogfood/<date>-v325-local-source-extraction-preview/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -137,31 +165,31 @@ PLANS.md
 Allowed writes:
 
 ```txt
-focused CLI/readback source, tests, report, compact root state
+focused CLI/source preview code, tests, report, compact root state
 ```
 
 Forbidden writes:
 
 ```txt
-schema/migration unless proven necessary; graph ranking; entity extraction;
-crawler; UI/API/MCP; worker daemon; consensus runtime; Memory Core mutation;
-runtime markdown memory; target repo writes
+schema/migration unless proven necessary; graph ranking; crawler; UI/API/MCP;
+worker daemon; consensus runtime; Memory Core mutation; runtime markdown
+memory; target repo writes; automatic acceptance of extracted candidates
 ```
 
 Output requirements:
 
 ```txt
-operator-facing edge readback with edge id, from/to ids, kind, consumer,
-doesNotProve, evidence/source-range metadata, and proof/non-proof boundaries
+operator-facing candidate preview with entity/claim/relation candidates, source
+ranges, reviewability, doesNotProve, and proof/non-proof boundaries
 ```
 
 Definition of Done:
 
-- SourceClaimEdge readback by SourceClaim id exists or source inspection records
-  why the existing surface already satisfies it.
-- Focused tests cover readback and proof/non-proof output.
+- Candidate-only local source extraction preview exists or source inspection
+  records why the existing surface already satisfies it.
+- Focused tests cover candidate rendering and proof/non-proof output.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
-- Live DB readback is recorded if the command exists.
+- Live DB dogfood is recorded if the preview is implemented.
 
 Verification commands:
 
@@ -176,15 +204,15 @@ git diff --check
 Acceptance criteria:
 
 ```txt
-persisted SourceClaimEdge rows can be inspected by SourceClaim id without
-claiming graph truth, ranking quality, or Memory Core mutation
+local source extraction candidates can be inspected without claiming accepted
+graph truth, extraction quality, ranking quality, or Memory Core mutation
 ```
 
 Risk:
 
 ```txt
-medium: CLI surface can accidentally imply accepted graph truth instead of
-bounded governed readback.
+medium: extraction preview can accidentally imply accepted graph truth instead
+of candidate-only evidence.
 ```
 
 Rollback:
@@ -196,14 +224,15 @@ focused revert of the implementation commit
 Condensation expectation:
 
 ```txt
-keep root state compact; archive details in the V324 report
+keep root state compact; archive details in the V325 report
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V324 succeeds, choose graph extraction/ranking only after readback usefulness
-is proven; otherwise repair the readback seam.
+If V325 succeeds, choose the next graph-brain task from evidence: persist
+candidate extraction, graph-aware retrieval stub, or repair extraction
+reviewability. Do not jump to crawler/UI/API/MCP.
 ```
 
 ## 9. Task Contract Schema
@@ -266,7 +295,8 @@ Next-task synthesis rule:
 - V321: complete; persisted source state activates source claims.
 - V322: complete; marker/hash lexical retry exposes persisted local source docs.
 - V323: complete; SourceClaimEdge preview/persistence/readback proved.
-- V324: active; expose SourceClaimEdge readback by SourceClaim id.
+- V324: complete; SourceClaimEdge readback by SourceClaim id.
+- V325: active; local source entity/claim extraction candidate preview.
 
 ## Pattern Gate
 
