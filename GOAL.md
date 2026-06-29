@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
+V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
 ```
 
 Current state:
@@ -27,15 +27,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V326-00 Extraction Candidate Reviewability Noise Gate.
+current task: V327-00 Reviewed Extraction Persistence Bridge.
 ```
 
 Current task:
 
 ```txt
-Improve local source extraction candidate reviewability before any persistence:
-keep the preview candidate-only, but stop presenting fenced source-decision/YAML
-blocks or weak fragments as globally ready claim candidates.
+Add the smallest explicit reviewed bridge from extraction preview candidates to
+existing SourceClaim/SourceClaimEdge persistence if source inspection confirms
+the current manual `--claim` / `--graph-edge-*` path is too indirect. Do not
+auto-promote extracted candidates.
 ```
 
 ## Remaining Work
@@ -54,9 +55,9 @@ to preserve are:
    activation, context detail run readback, and marker/hash lexical activation
    over persisted local SearchDocuments exist.
 5. Graph brain v0: V323 proved SourceClaimEdge preview/persistence, V324 exposed
-   direct edge readback, and V325 added candidate-only local extraction preview;
-   next repair extraction reviewability/noise before persistence, ranking,
-   crawler, or graph runtime work.
+   direct edge readback, V325 added extraction preview, and V326 separated
+   ready/deferred extraction candidates; next inspect a reviewed persistence
+   bridge before ranking, crawler, or graph runtime work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

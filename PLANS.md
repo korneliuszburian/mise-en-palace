@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
-current task: V326-00 Extraction Candidate Reviewability Noise Gate
+active stream: V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
+current task: V327-00 Reviewed Extraction Persistence Bridge
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,12 +25,12 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V326-00 Extraction Candidate Reviewability Noise Gate is the current gap. V325
-proved candidate-only local extraction preview, but live ADR-0021 output showed
-that fenced source-decision/YAML blocks and weak fragments can be rendered as
-globally ready claim candidates. Operators need stronger reviewability/noise
-classification before persistence, ranking, crawler, UI/API/MCP, worker daemon,
-consensus runtime, or Memory Core mutation.
+V327-00 Reviewed Extraction Persistence Bridge is the current gap. V325 proved
+candidate-only local extraction preview and V326 separated ready claims from
+deferred/noisy candidates. Operators now need to know whether existing
+`--claim` / `--graph-edge-*` inputs are enough for reviewed persistence, or
+whether a tiny explicit bridge is needed. No auto-promotion, schema, ranking,
+crawler, UI/API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -57,7 +57,7 @@ DB-backed replay: proven
 candidate reviewability: core primitive
 activation: useful for guardrails and some persisted source state; owner-file recall still mixed
 pattern brain: partial
-graph brain: SourceClaimEdge preview/persistence/readback exists; candidate extraction preview exists; extraction reviewability/noise gate next
+graph brain: SourceClaimEdge preview/persistence/readback exists; candidate extraction preview exists; extraction reviewability/noise gate complete; reviewed persistence bridge next
 product-ready: no
 ```
 
@@ -125,37 +125,61 @@ krn source artifact preview --extract-candidates: passed
 
 ### V326-00 Extraction Candidate Reviewability Noise Gate
 
+Status: complete.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
+Updated `krn source artifact preview --extract-candidates` so direct prose
+claims stay in `claimCandidates` with `reviewability: ready`, while fenced
+source-decision/YAML/code blocks and lead-in fragments move to
+`deferredClaimCandidates` with `reviewability: needs_more_evidence`.
+```
+
+Verification:
+
+```txt
+pnpm --filter @krn/cli test -- runSourceArtifactPreviewCommand: passed
+pnpm typecheck: passed
+pnpm test: passed
+pnpm db:ready: passed
+git diff --check: passed
+krn source artifact preview --extract-candidates: passed
+```
+
+### V327-00 Reviewed Extraction Persistence Bridge
+
 Status: active.
 
 Goal:
 
 ```txt
-Keep local source extraction candidate preview candidate-only, but stop
-rendering fenced source-decision/YAML blocks or weak fragments as globally ready
-claim candidates.
+Inspect and, if justified, add the smallest explicit reviewed persistence bridge
+from extraction candidates to existing SourceClaim/SourceClaimEdge persistence.
 ```
 
 Product rationale:
 
 ```txt
-V325 created the preview surface. Before any persistence or graph-aware
-retrieval, KRN needs operator-trustworthy candidate reviewability/noise signals
-for extracted local source candidates.
+V325/V326 made extraction candidates visible and reviewable. Before graph-aware
+retrieval, KRN needs either a clearly documented manual persistence path or a
+small explicit bridge that persists only selected reviewed candidates.
 ```
 
 Architectural rationale:
 
 ```txt
-Reuse existing source artifact preview and candidate reviewability patterns.
-Prefer deterministic classification/rendering over a new extractor subsystem.
-Do not introduce graph runtime, schema expansion, crawler, UI/API/MCP, worker
-daemon, consensus runtime, or Memory Core mutation.
+Reuse existing source artifact preview, SourceClaim persistence, SourceClaimEdge
+persistence, and candidate reviewability patterns. Prefer source inspection over
+a new workflow. Do not introduce schema expansion, graph runtime, ranking,
+crawler, UI/API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
 ```
 
 Evidence source:
 
 ```txt
-V325 report and live ADR-0021 `--extract-candidates` output.
+V326 report and live ADR-0021 `--extract-candidates` output.
 ```
 
 Official/external sources:
@@ -169,7 +193,7 @@ Inputs required:
 ```txt
 PLAN.md
 PLANS.md
-docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
 packages/cli/src/parseSourceArgs.ts
 packages/cli/src/runSourceArtifactPreviewCommand.ts
 packages/cli/src/runSourceArtifactPreviewCommand.test.ts
@@ -179,9 +203,10 @@ docs/decisions/ADR-0021-temporal-claim-graph.md
 Files likely touched:
 
 ```txt
+packages/cli/src/parseSourceArgs.ts
 packages/cli/src/runSourceArtifactPreviewCommand.ts
 focused CLI tests
-docs/reviews/controlled-dogfood/<date>-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
+docs/reviews/controlled-dogfood/<date>-v327-reviewed-extraction-persistence-bridge/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -190,39 +215,41 @@ PLANS.md
 Allowed writes:
 
 ```txt
-focused CLI/source preview rendering/classification code, tests, report,
+focused CLI/source preview persistence bridge code if justified, tests, report,
 compact root state
 ```
 
 Forbidden writes:
 
 ```txt
-schema/migration; candidate persistence; graph ranking; crawler; UI/API/MCP;
-worker daemon; consensus runtime; Memory Core mutation; runtime markdown memory;
-target repo writes; automatic acceptance of extracted candidates
+schema/migration; automatic extraction persistence; graph ranking; crawler;
+UI/API/MCP; worker daemon; consensus runtime; Memory Core mutation; runtime
+markdown memory; target repo writes; automatic acceptance of extracted
+candidates; persisting deferred/noisy candidates
 ```
 
 Output requirements:
 
 ```txt
-operator-facing extraction preview that distinguishes reviewable candidates from
-noisy or weak extraction output with source ranges, reviewability,
-doesNotProve, and proof/non-proof boundaries
+operator-facing result that either documents the existing reviewed persistence
+path as sufficient or provides an explicit selected-candidate bridge with source
+ranges, reviewability, doesNotProve, and proof/non-proof boundaries
 ```
 
 Definition of Done:
 
-- Fenced source-decision/YAML blocks or weak fragments are not rendered as
-  globally ready claim candidates.
-- Focused tests cover ready vs noisy/needs-review candidate rendering and
-  proof/non-proof output.
+- Source inspection decides whether existing manual persistence is enough.
+- If a bridge is added, it persists only selected ready extraction candidates and
+  refuses deferred/noisy candidates.
+- Focused tests cover the inspected/implemented behavior and proof/non-proof
+  output.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 - Live dogfood is recorded against ADR-0021 or equivalent local source.
 
 Verification commands:
 
 ```txt
-pnpm --filter @krn/cli test -- runSourceArtifactPreviewCommand
+pnpm --filter @krn/cli test -- parseSourceArgs runSourceArtifactPreviewCommand
 pnpm typecheck
 pnpm test
 pnpm db:ready
@@ -232,21 +259,22 @@ git diff --check
 Acceptance criteria:
 
 ```txt
-local source extraction candidates can be inspected without noisy fenced blocks
-or weak fragments masquerading as ready graph/source knowledge
+reviewed ready extraction candidates have a clear path to governed
+SourceClaim/SourceClaimEdge persistence without auto-promoting noisy/deferred
+candidates
 ```
 
 Risk:
 
 ```txt
-medium: over-filtering can hide useful candidates; under-filtering keeps noisy
-candidates looking ready.
+medium: a bridge can accidentally imply automatic extraction truth or duplicate
+existing manual inputs without improving operator workflow.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V326 implementation commit
+focused revert of the V327 implementation commit
 ```
 
 Condensation expectation:
@@ -258,9 +286,9 @@ keep root state compact; archive details in the V325 report
 Next-task synthesis rule:
 
 ```txt
-If V326 succeeds, choose the next graph-brain task from evidence: persistence
-bridge, graph-aware retrieval stub, or another reviewability repair. Do not
-jump to crawler/UI/API/MCP.
+If V327 succeeds, choose the next graph-brain task from evidence: graph-aware
+retrieval stub, persistence readback refinement, or another reviewability
+repair. Do not jump to crawler/UI/API/MCP.
 ```
 
 ## 9. Task Contract Schema
@@ -325,7 +353,8 @@ Next-task synthesis rule:
 - V323: complete; SourceClaimEdge preview/persistence/readback proved.
 - V324: complete; SourceClaimEdge readback by SourceClaim id.
 - V325: complete; local source entity/claim extraction candidate preview.
-- V326: active; extraction candidate reviewability/noise gate.
+- V326: complete; extraction candidate reviewability/noise gate.
+- V327: active; reviewed extraction persistence bridge.
 
 ## Pattern Gate
 

@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
-current task: V326-00 Extraction Candidate Reviewability Noise Gate
+active stream: V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
+current task: V327-00 Reviewed Extraction Persistence Bridge
 ```
 
 ## Compact Completed Checkpoints
@@ -45,50 +45,33 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V324 Graph Brain v0 SourceClaimEdge Readback Surface
-
-Status: complete.
-
-Outcome:
+Recent graph-brain outcomes:
 
 ```txt
-Report: docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md
-`krn source claim edges --source-claim-id <id>` now reads persisted
-SourceClaimEdge rows by SourceClaim id with edge kind, direction, from/to ids,
-consumer, doesNotProve, evidence/source-range metadata, proof/non-proof
-boundaries, DB writes none, Graph runtime none, and Memory mutation none.
-Live DB readback returned edge 415321b3-4a26-4634-bfbe-38b756777d6a.
+V324 complete: SourceClaimEdge readback by SourceClaim id.
+V325 complete: candidate-only local extraction preview.
+V326 complete: ready vs deferred extraction claim reviewability gate.
+Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
+docs/reviews/controlled-dogfood/2026-06-29-v325-...,
+docs/reviews/controlled-dogfood/2026-06-29-v326-...
 ```
 
-### V325 Graph Brain v0 Local Source Entity/Claim Extraction Candidate Preview
-
-Status: complete.
-
-Outcome:
-
-```txt
-Report: docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
-`krn source artifact preview --extract-candidates` now renders candidate-only
-deterministic entity/claim/relation extraction output with source ranges,
-reviewability, doesNotProve, Graph runtime none, and Memory mutation none.
-Live ADR-0021 dogfood showed the next gap: fenced source-decision/YAML blocks
-and weak fragments can appear as globally ready claim candidates.
-```
-
-### V326 Graph Brain v0 Extraction Candidate Reviewability Noise Gate
+### V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
 
 Goal:
 
-Repair local source extraction candidate reviewability/noise before persistence.
+Inspect and, if justified, add the smallest explicit reviewed persistence
+bridge from extraction candidates to existing source claim/edge persistence.
 
 Current action:
 
 ```txt
-Execute V326-00: keep `--extract-candidates` candidate-only, but stop rendering
-fenced source-decision/YAML blocks or weak fragments as globally ready claim
-candidates. Prefer the smallest deterministic classification/rendering repair.
-Do not add persistence, graph ranking, crawler, UI/API/MCP, worker daemon,
-consensus runtime, or Memory Core mutation.
+Execute V327-00: inspect whether existing `--claim` and `--graph-edge-*`
+inputs already provide enough reviewed persistence for extraction candidates.
+If not, add the smallest explicit bridge that persists only a selected reviewed
+extraction candidate through existing SourceClaim/SourceClaimEdge paths. Do not
+auto-promote extracted candidates, add schema, graph ranking, crawler,
+UI/API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -102,9 +85,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given a local source artifact containing source-decision/YAML fences or weak
-fragments, KRN presents those extraction candidates as ready product knowledge
-instead of candidate-only/noisy/needs-review output.
+Given a reviewed extraction candidate, KRN either has a clear existing manual
+persistence path or a focused explicit bridge; any bridge must require review
+intent and must not persist noisy/deferred candidates automatically.
 ```
 
 ## Pattern Gate

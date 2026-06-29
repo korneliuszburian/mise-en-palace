@@ -123,7 +123,9 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("kind: markdown_heading | label: Temporal Claim Graph | sourceRange: lines 1-1");
     expect(result.stdout).toContain("kind: inline_code | label: SourceClaimEdge | sourceRange: lines 2-2");
     expect(result.stdout).toContain("claimCandidates:");
-    expect(result.stdout).toContain("text: KRN should represent `SourceClaimEdge` candidates with source ranges. Source ranges must remain reviewable. | sourceRange: lines 2-3");
+    expect(result.stdout).toContain("reviewability: ready | text: KRN should represent `SourceClaimEdge` candidates with source ranges. Source ranges must remain reviewable. | sourceRange: lines 2-3");
+    expect(result.stdout).toContain("deferredClaimCandidates:");
+    expect(result.stdout).toContain("  - none");
     expect(result.stdout).toContain("relationCandidates:");
     expect(result.stdout).toContain("kind: scoped_by_heading");
     expect(result.stdout).toContain("No SourceClaim row created from extraction candidates");
@@ -131,6 +133,46 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("Graph runtime: none");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("doesNotProve: These deterministic extraction candidates do not prove entity identity, claim truth, relation correctness, graph retrieval quality, extraction quality, crawler readiness, or Memory Core mutation.");
+  });
+
+  it("defers fenced source-decision blocks and lead-in fragments instead of rendering them as ready claims", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+
+    await writeFile(sourcePath, [
+      "# Source To Decision",
+      "The current edge model already supports:",
+      "",
+      "```yaml",
+      "mechanism: KRN should keep source ranges before graph persistence.",
+      "decision: adopt candidate-only extraction preview.",
+      "```",
+      "",
+      "KRN should render direct prose claims as reviewable candidates."
+    ].join("\n"), "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: false,
+        file: "source.md",
+        chunkLines: 12,
+        limitChunks: 1,
+        extractCandidates: true
+      }
+    });
+
+    expect(result.stdout).toContain("claimCandidates:");
+    expect(result.stdout).toContain("reviewability: ready | text: KRN should render direct prose claims as reviewable candidates. | sourceRange: lines 9-9");
+    expect(result.stdout).toContain("deferredClaimCandidates:");
+    expect(result.stdout).toContain("reviewability: needs_more_evidence | text: The current edge model already supports: | sourceRange: lines 2-2");
+    expect(result.stdout).toContain("Lead-in fragment ends with ':' and needs following evidence before it can become a claim candidate.");
+    expect(result.stdout).toContain("reviewability: needs_more_evidence | text: ```yaml mechanism: KRN should keep source ranges before graph persistence. decision: adopt candidate-only extraction preview. ``` | sourceRange: lines 4-7");
+    expect(result.stdout).toContain("Fenced/code or source-decision metadata block requires human extraction before it can become a claim candidate.");
+    expect(result.stdout).toContain("No SourceClaim row created from extraction candidates");
+    expect(result.stdout).toContain("No SourceClaimEdge row created from extraction candidates");
+    expect(result.stdout).toContain("Memory mutation: none");
   });
 
   it("renders incomplete source claim candidates as reviewable missing-evidence output", async () => {

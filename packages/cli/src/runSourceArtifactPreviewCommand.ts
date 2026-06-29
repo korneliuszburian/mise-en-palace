@@ -82,6 +82,8 @@ interface ExtractionClaimCandidate {
   text: string;
   sourceRange: string;
   lineNumber: number;
+  reviewability: "ready" | "needs_more_evidence";
+  reviewabilityReason: string;
 }
 
 interface ExtractionRelationCandidate {
@@ -95,6 +97,7 @@ interface ExtractionRelationCandidate {
 interface ExtractionCandidatePreview {
   entities: readonly ExtractionEntityCandidate[];
   claims: readonly ExtractionClaimCandidate[];
+  deferredClaims: readonly ExtractionClaimCandidate[];
   relations: readonly ExtractionRelationCandidate[];
 }
 
@@ -264,6 +267,7 @@ const extractLocalSourceCandidates = (
 ): ExtractionCandidatePreview => {
   const entities: ExtractionEntityCandidate[] = [];
   const claims: ExtractionClaimCandidate[] = [];
+  const deferredClaims: ExtractionClaimCandidate[] = [];
   const seenEntities = new Set<string>();
   const seenClaims = new Set<string>();
 
@@ -317,11 +321,14 @@ const extractLocalSourceCandidates = (
     let blockStartLine: number | undefined;
     let blockEndLine: number | undefined;
     let blockLines: string[] = [];
+    let blockIsFenced = false;
+    let insideFence = false;
     const flushClaimBlock = (): void => {
       if (blockStartLine === undefined || blockEndLine === undefined || blockLines.length === 0) {
         blockStartLine = undefined;
         blockEndLine = undefined;
         blockLines = [];
+        blockIsFenced = false;
 
         return;
       }
@@ -334,26 +341,47 @@ const extractLocalSourceCandidates = (
 
       if (hasClaimSignal && !seenClaims.has(claimKey)) {
         seenClaims.add(claimKey);
-        claims.push({
+        const isLeadInFragment = /:\s*$/u.test(normalizedClaim);
+        const claimCandidate = {
           id: `claim-candidate:${blockStartLine}:${candidateSlug(normalizedClaim)}`,
           text: normalizedClaim,
           sourceRange: `lines ${blockStartLine}-${blockEndLine}`,
-          lineNumber: blockStartLine
-        });
+          lineNumber: blockStartLine,
+          reviewability: blockIsFenced || isLeadInFragment ? "needs_more_evidence" as const : "ready" as const,
+          reviewabilityReason: blockIsFenced
+            ? "Fenced/code or source-decision metadata block requires human extraction before it can become a claim candidate."
+            : isLeadInFragment
+              ? "Lead-in fragment ends with ':' and needs following evidence before it can become a claim candidate."
+              : "Candidate has claim signal, source range, and no deterministic noise marker."
+        };
+
+        if (claimCandidate.reviewability === "ready") {
+          claims.push(claimCandidate);
+        } else {
+          deferredClaims.push(claimCandidate);
+        }
       }
 
       blockStartLine = undefined;
       blockEndLine = undefined;
       blockLines = [];
+      blockIsFenced = false;
     };
 
     for (const [index, rawLine] of lines.entries()) {
       const lineNumber = chunk.startLine + index;
       const line = rawLine.trim();
+      const isFenceLine = /^```/u.test(line);
 
       if (line.length === 0 || /^#{1,6}\s+/u.test(line)) {
         flushClaimBlock();
         continue;
+      }
+
+      if (isFenceLine && !insideFence) {
+        flushClaimBlock();
+        insideFence = true;
+        blockIsFenced = true;
       }
 
       if (/^[-*]\s+/u.test(line) && blockLines.length > 0) {
@@ -363,6 +391,11 @@ const extractLocalSourceCandidates = (
       blockStartLine ??= lineNumber;
       blockEndLine = lineNumber;
       blockLines.push(stripMarkdownPrefix(line));
+
+      if (isFenceLine && insideFence && blockLines.length > 1) {
+        insideFence = false;
+        flushClaimBlock();
+      }
     }
 
     flushClaimBlock();
@@ -390,6 +423,7 @@ const extractLocalSourceCandidates = (
   return {
     entities: entities.slice(0, 8),
     claims: claims.slice(0, 8),
+    deferredClaims: deferredClaims.slice(0, 8),
     relations: relations.slice(0, 8)
   };
 };
@@ -1011,6 +1045,7 @@ const formatExtractionCandidatePreview = (
     body: [
       `entityCandidates: ${extraction.entities.length}`,
       `claimCandidates: ${extraction.claims.length}`,
+      `deferredClaimCandidates: ${extraction.deferredClaims.length}`,
       `relationCandidates: ${extraction.relations.length}`
     ].join("\n"),
     evidenceRefs: [
@@ -1041,7 +1076,13 @@ const formatExtractionCandidatePreview = (
     ...(extraction.claims.length === 0
       ? ["  - none"]
       : extraction.claims.map((claim) =>
-          `  - id: ${claim.id} | text: ${claim.text} | sourceRange: ${claim.sourceRange}`
+          `  - id: ${claim.id} | reviewability: ${claim.reviewability} | text: ${claim.text} | sourceRange: ${claim.sourceRange} | reason: ${claim.reviewabilityReason}`
+        )),
+    "  deferredClaimCandidates:",
+    ...(extraction.deferredClaims.length === 0
+      ? ["  - none"]
+      : extraction.deferredClaims.map((claim) =>
+          `  - id: ${claim.id} | reviewability: ${claim.reviewability} | text: ${claim.text} | sourceRange: ${claim.sourceRange} | reason: ${claim.reviewabilityReason}`
         )),
     "  relationCandidates:",
     ...(extraction.relations.length === 0
