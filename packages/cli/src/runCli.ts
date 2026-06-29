@@ -86,20 +86,8 @@ import {
   runSourceCliCommand
 } from "./runSourceCliCommand.js";
 import {
-  runMemoryCandidateAddCommand
-} from "./runMemoryCandidateAddCommand.js";
-import {
-  runMemoryCandidateReviewCommand
-} from "./runMemoryCandidateReviewCommand.js";
-import {
-  runMemoryRecordApplyCommand
-} from "./runMemoryRecordApplyCommand.js";
-import {
-  runMemoryAntiAddCommand
-} from "./runMemoryAntiAddCommand.js";
-import {
-  runMemoryAntiReviewCommand
-} from "./runMemoryAntiReviewCommand.js";
+  runMemoryCliCommand
+} from "./runMemoryCliCommand.js";
 import {
   missingDbConfigRecovery
 } from "./dbRecoveryGuidance.js";
@@ -350,154 +338,17 @@ export const runCli = async (
     return sourceResult;
   }
 
-  if (command.kind === "memoryCandidateAdd") {
-    try {
-      const result = await runMemoryCandidateAddCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown memory candidate add error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (
-    command.kind === "memoryCandidatePromote" ||
-    command.kind === "memoryCandidateReject"
-  ) {
-    try {
-      const result = await runMemoryCandidateReviewCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown memory candidate review error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "memoryRecordApply") {
-    try {
-      const result = await runMemoryRecordApplyCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown memory record apply error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "memoryAntiAdd") {
-    try {
-      const result = await runMemoryAntiAddCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown memory anti add error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (
-    command.kind === "memoryAntiPromote" ||
-    command.kind === "memoryAntiReject"
-  ) {
-    try {
-      const result = await runMemoryAntiReviewCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown memory anti review error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
+  const memoryResult = await runMemoryCliCommand(command, {
+    env: runtime.env,
+    now,
+    createId,
+    ...(runtime.createDatabaseRuntime === undefined
+      ? {}
+      : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
+    formatCliError
+  });
+  if (memoryResult !== undefined) {
+    return memoryResult;
   }
 
   if (command.kind === "plan") {

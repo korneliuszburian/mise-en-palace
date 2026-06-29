@@ -2342,6 +2342,46 @@ describe("runCli", () => {
     );
   });
 
+  it("uses the memory candidate add fallback for non-error failures", async () => {
+    const result = await runCli(
+      [
+        "memory",
+        "candidate",
+        "add",
+        "--run-id",
+        "execution-run-1",
+        "--kind",
+        "constraint",
+        "--content",
+        "Source graph should use Postgres edge tables first",
+        "--source-claim-id",
+        "source-claim-1",
+        "--confidence",
+        "medium",
+        "--application-guidance",
+        "Use when deciding whether to add a separate graph DB",
+        "--invalidation-rule",
+        "Revisit when graph traversal exceeds Postgres edge-table performance",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async () => {
+          throw "not-an-error";
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("Unknown memory candidate add error");
+    expect(result.stderr).not.toContain("not-an-error");
+  });
+
   it("persists memory candidate add and prints persisted ID", async () => {
     const dependencies = createNoStoreCompilerDependencies({
       now: () => now,
