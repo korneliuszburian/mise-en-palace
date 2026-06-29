@@ -252,4 +252,31 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("try a narrower marker/hash query");
     expect(result.stdout).toContain("Memory mutation: none");
   });
+
+  it("guides broad queries toward narrower searches when claims exist without documents", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "heartbeat consensus candidate layer"
+      },
+      createDatabaseRuntime: runtime({
+        claims: [sourceClaim()],
+        documents: []
+      })
+    });
+
+    expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
+    expect(result.stdout).toContain(
+      "- matching SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
+    );
+    expect(result.stdout).toContain(
+      "recommended next action: Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."
+    );
+  });
 });

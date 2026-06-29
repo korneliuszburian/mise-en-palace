@@ -156,14 +156,16 @@ const formatAnswerPackage = (input: {
       ? ["governed SourceClaim evidence for this query"]
       : []),
     ...(input.diagnostics.searchResultCount === 0
-      ? ["matching SearchDocument evidence for this query"]
+      ? supportingClaims.length > 0
+        ? ["matching SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"]
+        : ["matching SearchDocument evidence for this query"]
       : [])
   ];
   const recommendedNextAction =
     supportingClaims.length > 0 && supportingDocuments.length > 0
       ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."
-      : supportingClaims.length > 0
-        ? "Use the supporting claims cautiously and inspect artifact/SearchDocument coverage before changing retrieval."
+    : supportingClaims.length > 0
+        ? "Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."
         : supportingDocuments.length > 0
           ? "Inspect the documents and verify whether a governed SourceClaim should exist before relying on them."
           : "Narrow the query or ingest a bounded local artifact before changing ranking or adding a product surface.";

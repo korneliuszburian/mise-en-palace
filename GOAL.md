@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V347 Heartbeat/Consensus SearchDocument Coverage Closure
+V348 Source Search Answer Package JSON Readback
 ```
 
 Current state:
@@ -24,13 +24,13 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V347-00 Heartbeat/Consensus SearchDocument Coverage Closure.
+current task: V348-00 Source Search Answer Package JSON Readback.
 ```
 
-Current task: use the new source-search answer package to close the concrete
-heartbeat/consensus missing-SearchDocument coverage gap without changing
-retrieval, ranking, crawler, UI/API/MCP, schema, graph runtime, worker, or
-Memory Core mutation.
+Current task: expose the current source-search answer package as typed JSON
+readback while keeping text output and raw candidates inspectable. Do not build
+UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime, worker,
+or Memory Core mutation.
 
 ## Remaining Work
 
@@ -46,9 +46,9 @@ to preserve are:
 4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
    context detail readback, marker/hash activation, V340 artifact-to-activated-
    SourceClaim proof, V341 search readback, V342 usefulness closure, V343
-   coverage seed, V344 SearchDocument alignment, V345 usefulness closure, and
-   V346 answer package preview exist. Heartbeat/consensus document coverage is
-   next.
+   coverage seed, V344 SearchDocument alignment, V345 usefulness closure, V346
+   answer package preview, and V347 query-guidance closure exist. JSON readback
+   for the answer package is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context

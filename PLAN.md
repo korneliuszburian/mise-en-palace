@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V347 Heartbeat/Consensus SearchDocument Coverage Closure
-current task: V347-00 Heartbeat/Consensus SearchDocument Coverage Closure
+active stream: V348 Source Search Answer Package JSON Readback
+current task: V348-00 Source Search Answer Package JSON Readback
 ```
 
 ## Compact Completed Checkpoints
@@ -51,37 +51,38 @@ activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
 coverage gaps. V343 seeded four artifacts. V344 repaired source-search document
 retrieval alignment so seeded natural-language queries return matching
 SearchDocuments. V345 proved reduced rereads for seeded Pattern Application
-Gate questions. V346 added an answer package and exposed missing
-SearchDocument evidence for heartbeat/consensus future-task queries.
+Gate questions. V346 added an answer package. V347 proved heartbeat/consensus
+documents exist for specific queries and repaired broad-query guidance.
 
-### V347 Heartbeat/Consensus SearchDocument Coverage Closure
+### V348 Source Search Answer Package JSON Readback
 
 Goal:
 
-Use the V346 answer package to inspect and close the concrete missing
-SearchDocument evidence gap for heartbeat/consensus future-task queries.
+Expose the source-search answer package as typed JSON readback while preserving
+human text output and raw candidates.
 
 Current action:
 
 ```txt
-Execute V347-00: determine whether heartbeat/consensus missing document
-evidence is a coverage gap or query-guidance issue, then repair only the
-bounded gap if proven. Do not add crawler, UI/API/MCP, worker daemon, schema,
-broad eval platform, ranking rewrite, embeddings, graph runtime, autonomous
-truth runtime, or Memory Core mutation.
+Execute V348-00: add a bounded JSON readback for the existing answer package so
+future UI/search/API/MCP/benchmark consumers can use typed output later without
+building those surfaces now. Do not add crawler, UI/API/MCP, worker daemon,
+schema, broad eval platform, ranking rewrite, embeddings, graph runtime,
+autonomous truth runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators using source search answer packages for next-task decisions.
+technical operators and future read-only consumers of source-search answer
+packages.
 ```
 
 Falsifier:
 
 ```txt
-The heartbeat/consensus answer package still reports missing SearchDocument
-evidence after the bounded coverage/query-guidance repair.
+JSON output omits proof/non-proof boundaries, hides raw candidate inspectability,
+or diverges from text answer package semantics.
 ```
 
 ## Pattern Gate

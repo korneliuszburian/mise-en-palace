@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V347 Heartbeat/Consensus SearchDocument Coverage Closure
-current task: V347-00 Heartbeat/Consensus SearchDocument Coverage Closure
+active stream: V348 Source Search Answer Package JSON Readback
+current task: V348-00 Source Search Answer Package JSON Readback
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,10 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V347-00 Heartbeat/Consensus SearchDocument Coverage Closure must inspect and
-close the concrete missing-document evidence exposed by V346 without adding new
-retrieval, ranking, crawler, UI/API/MCP, schema, graph runtime, worker, or
-Memory Core mutation.
+V348-00 Source Search Answer Package JSON Readback must expose the current
+answer package as typed JSON without adding UI/API/MCP, crawler, schema,
+ranking rewrite, embeddings, graph runtime, worker, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -102,6 +101,7 @@ SearchDocument natural-language results stayed absent.
 V344 complete: source-search document retrieval alignment.
 V345 complete: source-search usefulness closure after alignment.
 V346 complete: source-search answer package preview.
+V347 complete: heartbeat/consensus SearchDocument coverage closure.
 ```
 
 Recent report range:
@@ -304,7 +304,8 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V344 complete: source search document retrieval alignment.
 - [x] V345 complete: source search usefulness closure after document alignment.
 - [x] V346 complete: source search answer package preview.
-- [ ] V347 current task: heartbeat/consensus SearchDocument coverage closure.
+- [x] V347 complete: heartbeat/consensus SearchDocument coverage closure.
+- [ ] V348 current task: source search answer package JSON readback.
 
 ## Active Task Contract
 
@@ -504,21 +505,65 @@ The next task should close the heartbeat/consensus missing-SearchDocument gap,
 not add a new retrieval subsystem.
 ```
 
-### V347-00 Heartbeat/Consensus SearchDocument Coverage Closure
+## Outcome V347 Heartbeat/Consensus SearchDocument Coverage Closure
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V346 answer package report, V343 coverage seed report, and V347 DB
+  readback.
+- Mechanism: topic-specific heartbeat and consensus queries retrieve their
+  SearchDocuments, while the broad combined heartbeat/consensus/eval query does
+  not.
+- KRN implication: answer packages should guide operators to split broad
+  mixed-topic queries before changing retrieval, ranking, or coverage.
+- Decision: repair query guidance only; reject retrieval, ranking, schema,
+  crawler, UI/API/MCP, graph runtime, worker, or coverage changes for this
+  slice.
+- Does not prove: source truth, ranking quality, semantic query understanding,
+  product readiness, or Memory Core mutation safety.
+- Consumer: technical operators using answer packages for next-task decisions.
+- Falsifier: specific heartbeat/consensus queries cannot retrieve documents, or
+  broad-query guidance still implies retrieval/coverage repair first.
+
+V347 evidence:
+
+```txt
+executionRun: 394ad4fb-a73d-4a71-86f8-bcb072d168fd
+report: docs/reviews/controlled-dogfood/2026-06-29-v347-heartbeat-consensus-search-document-coverage-closure/REPORT.md
+evidenceBundle: 6f62e321-4403-4d56-9417-5cfbf3a4d821
+observationGroup: b5ebeb81-dc4c-4275-a59f-e4b4829ab754
+reflectionRecord: 9e34d736-c256-4c85-b077-a4c09c6b5fa9
+changed: packages/cli/src/runSourceSearchCommand.ts, packages/cli/src/runSourceSearchCommand.test.ts
+heartbeat-specific: 11 SourceClaims, 1 SearchDocument
+consensus-specific: 11 SourceClaims, 1 SearchDocument
+broad-composite-after: 11 SourceClaims, 0 SearchDocuments, query-split guidance
+verification: CLI targeted test, workspace typecheck, db:ready, git diff --check
+```
+
+V347 outcome:
+
+```txt
+The missing document was a broad-query guidance gap, not missing heartbeat or
+consensus coverage. The next product-facing step is typed JSON readback for the
+answer package.
+```
+
+### V348-00 Source Search Answer Package JSON Readback
 
 Objective:
 
 ```txt
-Use the V346 answer package to determine whether heartbeat/consensus
-future-task queries lack SearchDocuments because of coverage or query guidance,
-then repair only the bounded gap if proven.
+Expose the current source-search answer package as typed JSON readback while
+preserving the existing text output and raw candidates.
 ```
 
 Allowed:
 
 ```txt
-bounded DB-backed source-search readback
-coverage/query-guidance repair only if source evidence proves it
+bounded CLI JSON output over existing answer package data
+focused tests
 DB-backed readback
 focused tests if source changes
 compact report/root state update
@@ -544,10 +589,11 @@ candidate promotion
 Success criteria:
 
 ```txt
-1. heartbeat/consensus answer package missing evidence is explained;
-2. if repair is needed, it is bounded to coverage/query guidance;
+1. JSON output includes answer, supportingClaims, supportingDocuments,
+   missingEvidence, doesNotProve, recommendedNextAction, and raw candidates;
+2. text output remains available;
 3. no retrieval/ranking/schema/product-surface change is introduced;
-4. DB readback shows whether SearchDocument evidence is present after repair;
+4. focused tests cover JSON and text behavior;
 5. root state stays compact.
 ```
 
