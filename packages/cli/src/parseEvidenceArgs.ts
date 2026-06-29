@@ -122,23 +122,65 @@ const parseVerification = (value: string): { command?: EvidenceCommand; error?: 
   };
 };
 
-const parseSourceUsefulness = (
+type SourceUsefulnessOutcome = SourceUsefulnessOutcomeFeedback["outcome"];
+type SourceUsefulnessSelectorKind = "claim" | "decision";
+
+type SourceUsefulnessParts = {
+  selector: string;
+  body: string;
+};
+
+type SourceUsefulnessSelector = {
+  kind: SourceUsefulnessSelectorKind;
+  id: string;
+};
+
+type SourceUsefulnessBody = {
+  outcome: SourceUsefulnessOutcome;
+  reason: string;
+  evidenceRefs: string[];
+  doesNotProve: string;
+};
+
+type SourceUsefulnessParseResult<T> =
+  | {
+      ok: true;
+      value: T;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+const parseSourceUsefulnessParts = (
   value: string
-): { outcome?: SourceUsefulnessOutcomeFeedback; error?: string } => {
+): SourceUsefulnessParseResult<SourceUsefulnessParts> => {
   const separatorIndex = value.indexOf("=");
 
   if (separatorIndex < 0) {
     return {
+      ok: false,
       error: "--source-usefulness requires <claim:id|decision:id=outcome|reason|evidence-ref[,ref]|doesNotProve>"
     };
   }
 
-  const selector = value.slice(0, separatorIndex).trim();
-  const body = value.slice(separatorIndex + 1);
+  return {
+    ok: true,
+    value: {
+      selector: value.slice(0, separatorIndex).trim(),
+      body: value.slice(separatorIndex + 1)
+    }
+  };
+};
+
+const parseSourceUsefulnessSelector = (
+  selector: string
+): SourceUsefulnessParseResult<SourceUsefulnessSelector> => {
   const selectorSeparatorIndex = selector.indexOf(":");
 
   if (selectorSeparatorIndex < 0) {
     return {
+      ok: false,
       error: "--source-usefulness selector must start with claim:<id> or decision:<id>"
     };
   }
@@ -148,21 +190,42 @@ const parseSourceUsefulness = (
 
   if (selectorId.length === 0) {
     return {
+      ok: false,
       error: "--source-usefulness requires a non-empty source id"
     };
   }
 
   if (selectorKind !== "claim" && selectorKind !== "decision") {
     return {
+      ok: false,
       error: "--source-usefulness selector must start with claim:<id> or decision:<id>"
     };
   }
 
+  return {
+    ok: true,
+    value: {
+      kind: selectorKind,
+      id: selectorId
+    }
+  };
+};
+
+const parseEvidenceRefs = (value: string): string[] =>
+  value
+    .split(",")
+    .map((ref) => ref.trim())
+    .filter((ref) => ref.length > 0);
+
+const parseSourceUsefulnessBody = (
+  body: string
+): SourceUsefulnessParseResult<SourceUsefulnessBody> => {
   const [outcomeToken, reasonToken, evidenceRefsToken, doesNotProveToken] =
     body.split("|").map((part) => part.trim());
 
   if (outcomeToken === undefined || !isSourceUsefulnessOutcome(outcomeToken)) {
     return {
+      ok: false,
       error:
         "--source-usefulness outcome must be selected, used, helped, neutral, noise, stale, or unknown"
     };
@@ -170,29 +233,69 @@ const parseSourceUsefulness = (
 
   if (reasonToken === undefined || reasonToken.length === 0) {
     return {
+      ok: false,
       error: "--source-usefulness requires a non-empty reason"
     };
   }
 
   if (doesNotProveToken === undefined || doesNotProveToken.length === 0) {
     return {
+      ok: false,
       error: "--source-usefulness requires a non-empty doesNotProve field"
     };
   }
 
-  const evidenceRefs = (evidenceRefsToken ?? "")
-    .split(",")
-    .map((ref) => ref.trim())
-    .filter((ref) => ref.length > 0);
-
   return {
-    outcome: {
-      ...(selectorKind === "claim" ? { sourceClaimId: selectorId } : { sourceDecisionId: selectorId }),
+    ok: true,
+    value: {
       outcome: outcomeToken,
       reason: reasonToken,
-      evidenceRefs,
+      evidenceRefs: parseEvidenceRefs(evidenceRefsToken ?? ""),
       doesNotProve: doesNotProveToken
     }
+  };
+};
+
+const buildSourceUsefulnessOutcome = (
+  selector: SourceUsefulnessSelector,
+  body: SourceUsefulnessBody
+): SourceUsefulnessOutcomeFeedback => ({
+  ...(selector.kind === "claim" ? { sourceClaimId: selector.id } : { sourceDecisionId: selector.id }),
+  outcome: body.outcome,
+  reason: body.reason,
+  evidenceRefs: body.evidenceRefs,
+  doesNotProve: body.doesNotProve
+});
+
+const parseSourceUsefulness = (
+  value: string
+): { outcome?: SourceUsefulnessOutcomeFeedback; error?: string } => {
+  const parts = parseSourceUsefulnessParts(value);
+
+  if (!parts.ok) {
+    return {
+      error: parts.error
+    };
+  }
+
+  const selector = parseSourceUsefulnessSelector(parts.value.selector);
+
+  if (!selector.ok) {
+    return {
+      error: selector.error
+    };
+  }
+
+  const body = parseSourceUsefulnessBody(parts.value.body);
+
+  if (!body.ok) {
+    return {
+      error: body.error
+    };
+  }
+
+  return {
+    outcome: buildSourceUsefulnessOutcome(selector.value, body.value)
   };
 };
 

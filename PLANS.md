@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: 95ec5c7 / CI success
+latest pushed commit checked: 800e2ef / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -529,10 +529,11 @@ completed bounded targets:
   packages/cli/src/parseKnowledgeArgs.ts
   packages/cli/src/parseReviewArgs.ts
   packages/cli/src/parseEvidenceArgs.ts
+  packages/cli/src/parseEvidenceArgs.ts source-usefulness parser
 
 full Fallow moved:
   dupes 136 -> 133 clone groups
-  health 117 -> 114 above threshold
+  health 117 -> 113 above threshold
 
 next: continue with one bounded target only; do not broad-refactor smoke
 fixtures or CLI dispatch without source inspection.

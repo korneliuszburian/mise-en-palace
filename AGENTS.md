@@ -27,6 +27,7 @@ For TypeScript changes:
 
 For code quality:
 
+- treat Fallow as an additional required quality layer for JS/TS work;
 - use `pnpm quality:fallow` for broad JS/TS quality, dead-code, duplication,
   and health audits when touching architecture, package surfaces, or cleanup;
 - treat Fallow findings as review evidence, not automatic truth;
