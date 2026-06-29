@@ -4,11 +4,25 @@ export interface OptionValueResult {
   error?: string;
 }
 
+export type ParsedOptionValue =
+  | {
+      ok: true;
+      value: string;
+      nextIndex: number;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 export interface MetadataEntryResult {
   key?: string;
   value?: string;
   error?: string;
 }
+
+export const optionMatches = (arg: string, option: string): boolean =>
+  arg === option || arg.startsWith(`${option}=`);
 
 export const optionValue = (
   args: readonly string[],
@@ -37,6 +51,28 @@ export const optionValue = (
   return {
     value,
     nextIndex: index + 1
+  };
+};
+
+export const parsedOptionValue = (
+  args: readonly string[],
+  index: number,
+  option: string,
+  fallbackError: string
+): ParsedOptionValue => {
+  const result = optionValue(args, index, option);
+
+  if (result.error !== undefined || result.value === undefined) {
+    return {
+      ok: false,
+      error: result.error ?? fallbackError
+    };
+  }
+
+  return {
+    ok: true,
+    value: result.value.trim(),
+    nextIndex: result.nextIndex
   };
 };
 

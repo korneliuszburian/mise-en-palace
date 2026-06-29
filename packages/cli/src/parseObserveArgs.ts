@@ -2,64 +2,106 @@ import type {
   ParseArgsResult
 } from "./parseArgs.js";
 import {
-  optionValue
+  optionMatches,
+  parsedOptionValue
 } from "./parseArgHelpers.js";
 
 const observeUsage = "Usage: krn observe --run <id>|--run-id <id> [--project <id>] [--persist]";
+const observeRunOptions = ["--run-id", "--run"] as const;
 
-export const parseObserveArgs = (rest: readonly string[]): ParseArgsResult => {
-  let persist = false;
-  let runId: string | undefined;
-  let projectId: string | undefined;
+type ObserveParseState = {
+  persist: boolean;
+  runId: string | undefined;
+  projectId: string | undefined;
+};
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      persist = true;
-      continue;
+type ObserveOptionResult =
+  | {
+      ok: true;
+      nextIndex: number;
     }
+  | {
+      ok: false;
+      error: string;
+    };
 
-    if (
-      arg === "--run" ||
-      arg === "--run-id" ||
-      arg?.startsWith("--run=") === true ||
-      arg?.startsWith("--run-id=") === true
-    ) {
-      const flag = arg === "--run-id" || arg.startsWith("--run-id=") ? "--run-id" : "--run";
-      const valueResult = optionValue(rest, index, flag);
+const findObserveRunOption = (arg: string): typeof observeRunOptions[number] | undefined =>
+  observeRunOptions.find((option) => optionMatches(arg, option));
 
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? observeUsage
-        };
-      }
+const parseObserveOption = (
+  rest: readonly string[],
+  index: number,
+  state: ObserveParseState
+): ObserveOptionResult => {
+  const arg = rest[index];
 
-      runId = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--project" || arg?.startsWith("--project=") === true) {
-      const valueResult = optionValue(rest, index, "--project");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? observeUsage
-        };
-      }
-
-      projectId = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
+  if (arg === "--persist") {
+    state.persist = true;
 
     return {
-      error: observeUsage
+      ok: true,
+      nextIndex: index
     };
   }
 
-  if (runId === undefined || runId.length === 0) {
+  const runOption = arg === undefined ? undefined : findObserveRunOption(arg);
+
+  if (runOption !== undefined) {
+    const parsed = parsedOptionValue(rest, index, runOption, observeUsage);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.runId = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  }
+
+  if (arg !== undefined && optionMatches(arg, "--project")) {
+    const parsed = parsedOptionValue(rest, index, "--project", observeUsage);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.projectId = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  }
+
+  return {
+    ok: false,
+    error: observeUsage
+  };
+};
+
+export const parseObserveArgs = (rest: readonly string[]): ParseArgsResult => {
+  const state: ObserveParseState = {
+    persist: false,
+    runId: undefined,
+    projectId: undefined
+  };
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const parsed = parseObserveOption(rest, index, state);
+
+    if (!parsed.ok) {
+      return {
+        error: parsed.error
+      };
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  if (state.runId === undefined || state.runId.length === 0) {
     return {
       error: observeUsage
     };
@@ -68,9 +110,9 @@ export const parseObserveArgs = (rest: readonly string[]): ParseArgsResult => {
   return {
     command: {
       kind: "observeRun",
-      runId,
-      ...(projectId === undefined || projectId.length === 0 ? {} : { projectId }),
-      persist
+      runId: state.runId,
+      ...(state.projectId === undefined || state.projectId.length === 0 ? {} : { projectId: state.projectId }),
+      persist: state.persist
     }
   };
 };

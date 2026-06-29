@@ -1,130 +1,209 @@
 import type {
+  CliCommand,
   ParseArgsResult
 } from "./parseArgs.js";
 import {
-  optionValue
+  optionMatches,
+  parsedOptionValue
 } from "./parseArgHelpers.js";
 
 const reflectUsage = "Usage: krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]";
 const topicUsage = "Usage: krn reflect --scope topic:<name> --project <id> [--persist]";
 
-export const parseReflectArgs = (rest: readonly string[]): ParseArgsResult => {
-  let persist = false;
-  let scopeValue: string | undefined;
-  let projectId: string | undefined;
+type ReflectScope = Extract<CliCommand, { kind: "reflect" }>["scope"];
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
+type ReflectParseState = {
+  persist: boolean;
+  scopeValue: string | undefined;
+  projectId: string | undefined;
+};
 
-    if (arg === "--persist") {
-      persist = true;
-      continue;
+type ReflectOptionResult =
+  | {
+      ok: true;
+      nextIndex: number;
     }
+  | {
+      ok: false;
+      error: string;
+    };
 
-    if (arg === "--scope" || arg?.startsWith("--scope=") === true) {
-      const valueResult = optionValue(rest, index, "--scope");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? reflectUsage
-        };
-      }
-
-      scopeValue = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
+type ReflectScopeResult =
+  | {
+      ok: true;
+      scope: ReflectScope;
     }
+  | {
+      ok: false;
+      error: string;
+    };
 
-    if (arg === "--project" || arg?.startsWith("--project=") === true) {
-      const valueResult = optionValue(rest, index, "--project");
+const parseReflectOption = (
+  rest: readonly string[],
+  index: number,
+  state: ReflectParseState
+): ReflectOptionResult => {
+  const arg = rest[index];
 
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? reflectUsage
-        };
-      }
-
-      projectId = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
+  if (arg === "--persist") {
+    state.persist = true;
 
     return {
+      ok: true,
+      nextIndex: index
+    };
+  }
+
+  if (arg !== undefined && optionMatches(arg, "--scope")) {
+    const parsed = parsedOptionValue(rest, index, "--scope", reflectUsage);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.scopeValue = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  }
+
+  if (arg !== undefined && optionMatches(arg, "--project")) {
+    const parsed = parsedOptionValue(rest, index, "--project", reflectUsage);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.projectId = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  }
+
+  return {
+    ok: false,
+    error: reflectUsage
+  };
+};
+
+const parseIdScope = (
+  scopeValue: string,
+  prefix: "run:" | "project:",
+  kind: "run" | "project"
+): ReflectScopeResult => {
+  if (!scopeValue.startsWith(prefix)) {
+    return {
+      ok: false,
       error: reflectUsage
     };
   }
 
+  const id = scopeValue.slice(prefix.length).trim();
+
+  if (id.length === 0) {
+    return {
+      ok: false,
+      error: reflectUsage
+    };
+  }
+
+  return {
+    ok: true,
+    scope: {
+      kind,
+      id
+    }
+  };
+};
+
+const parseTopicScope = (
+  scopeValue: string,
+  projectId: string | undefined
+): ReflectScopeResult => {
+  if (!scopeValue.startsWith("topic:")) {
+    return {
+      ok: false,
+      error: reflectUsage
+    };
+  }
+
+  const name = scopeValue.slice("topic:".length).trim();
+
+  if (name.length === 0 || projectId === undefined || projectId.length === 0) {
+    return {
+      ok: false,
+      error: topicUsage
+    };
+  }
+
+  return {
+    ok: true,
+    scope: {
+      kind: "topic",
+      name,
+      projectId
+    }
+  };
+};
+
+const parseReflectScope = (
+  scopeValue: string | undefined,
+  projectId: string | undefined
+): ReflectScopeResult => {
   if (scopeValue === undefined || scopeValue.length === 0) {
     return {
+      ok: false,
       error: reflectUsage
     };
   }
 
   if (scopeValue.startsWith("run:")) {
-    const id = scopeValue.slice("run:".length).trim();
-
-    if (id.length === 0) {
-      return {
-        error: reflectUsage
-      };
-    }
-
-    return {
-      command: {
-        kind: "reflect",
-        scope: {
-          kind: "run",
-          id
-        },
-        persist
-      }
-    };
+    return parseIdScope(scopeValue, "run:", "run");
   }
 
   if (scopeValue.startsWith("project:")) {
-    const id = scopeValue.slice("project:".length).trim();
-
-    if (id.length === 0) {
-      return {
-        error: reflectUsage
-      };
-    }
-
-    return {
-      command: {
-        kind: "reflect",
-        scope: {
-          kind: "project",
-          id
-        },
-        persist
-      }
-    };
+    return parseIdScope(scopeValue, "project:", "project");
   }
 
-  if (scopeValue.startsWith("topic:")) {
-    const name = scopeValue.slice("topic:".length).trim();
+  return parseTopicScope(scopeValue, projectId);
+};
 
-    if (name.length === 0 || projectId === undefined || projectId.length === 0) {
+export const parseReflectArgs = (rest: readonly string[]): ParseArgsResult => {
+  const state: ReflectParseState = {
+    persist: false,
+    scopeValue: undefined,
+    projectId: undefined
+  };
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const parsed = parseReflectOption(rest, index, state);
+
+    if (!parsed.ok) {
       return {
-        error: topicUsage
+        error: parsed.error
       };
     }
 
+    index = parsed.nextIndex;
+  }
+
+  const scope = parseReflectScope(state.scopeValue, state.projectId);
+
+  if (!scope.ok) {
     return {
-      command: {
-        kind: "reflect",
-        scope: {
-          kind: "topic",
-          name,
-          projectId
-        },
-        persist
-      }
+      error: scope.error
     };
   }
 
   return {
-    error: reflectUsage
+    command: {
+      kind: "reflect",
+      scope: scope.scope,
+      persist: state.persist
+    }
   };
 };
