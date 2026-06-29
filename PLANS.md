@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 85d433e5a52274e4ff2fc53b1b2e045bcb5eba68 / CI success
+latest source slice commit checked: 0149fa2e605026716bd142c8950409b0771985dc / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -126,6 +126,11 @@ support for evidence-contract parsing, read-only brief rendering, smoke
 runtime/repositories, count helpers, and proof formatting; verified
 codex-adapter and target-repo-harness DB smokes, and reduced global Fallow to
 dupes 81 and health 37; commit `85d433e` passed CI run `28408366911`.
+Latest completed slice: activation/retrieval smoke support cleanup extracted
+shared DB smoke runtime, marker counting, cleanup, context selection counts,
+and readback checks without schema/repository/smoke semantic changes; verified
+activation and retrieval-substrate DB smokes, and reduced global Fallow to
+dupes 78 and health 36; commit `0149fa2` passed CI run `28409599546`.
 Memory-governance and activation smoke assertion cleanup remain valid, but they
 must be handled as dedicated smoke-family cleanup slices because touching them
 pulls inherited smoke duplication into the changed-files gate.
@@ -672,10 +677,12 @@ completed bounded targets:
   packages/cli/src/codexAdapterSmoke.ts
   packages/cli/src/targetRepoHarnessSmoke.ts
   packages/cli/src/runCodexBriefCommand.ts
+  packages/db/src/activationSmoke.ts
+  packages/db/src/retrievalSubstrateSmoke.ts
 
 full Fallow moved:
-  dupes 136 -> 81 clone groups
-  health 117 -> 37 above threshold
+  dupes 136 -> 78 clone groups
+  health 117 -> 36 above threshold
 
 next: pick the next bounded owner surface from the current full Fallow report.
 If continuing DB smoke cleanup, handle memory-governance/activation as a
