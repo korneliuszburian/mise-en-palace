@@ -126,6 +126,20 @@ interface SourceSearchJsonOutput {
   };
 }
 
+export const buildSourceSearchMissingEvidence = (input: {
+  supportingClaimCount: number;
+  supportingDocumentCount: number;
+}): readonly string[] => [
+  ...(input.supportingClaimCount === 0
+    ? ["governed SourceClaim evidence in the answer package for this query"]
+    : []),
+  ...(input.supportingDocumentCount === 0
+    ? input.supportingClaimCount > 0
+      ? ["included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"]
+      : ["included SearchDocument evidence in the answer package for this query"]
+    : [])
+];
+
 const reviewabilityFor = (candidate: RankedActivationCandidate): ReviewabilityResult => {
   if (candidate.subjectType === "source_claim") {
     const reasons = [
@@ -259,16 +273,10 @@ const buildAnswerPackage = (input: {
     (candidate) =>
       candidate.subjectType !== "source_claim" && candidate.subjectType !== "search_document"
   );
-  const missingEvidence = [
-    ...(input.diagnostics.sourceClaimCount === 0
-      ? ["governed SourceClaim evidence for this query"]
-      : []),
-    ...(input.diagnostics.searchResultCount === 0
-      ? supportingClaims.length > 0
-        ? ["matching SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"]
-        : ["matching SearchDocument evidence for this query"]
-      : [])
-  ];
+  const missingEvidence = buildSourceSearchMissingEvidence({
+    supportingClaimCount: supportingClaims.length,
+    supportingDocumentCount: supportingDocuments.length
+  });
   const recommendedNextAction =
     supportingClaims.length > 0 && supportingDocuments.length > 0
       ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."

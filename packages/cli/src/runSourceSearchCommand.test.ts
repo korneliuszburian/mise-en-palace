@@ -14,6 +14,7 @@ import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
 import {
+  buildSourceSearchMissingEvidence,
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
 
@@ -196,6 +197,32 @@ const arrayValue = (
 };
 
 describe("runSourceSearchCommand", () => {
+  it("builds missing evidence from visible answer package support", () => {
+    expect(buildSourceSearchMissingEvidence({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 1
+    })).toEqual([]);
+    expect(buildSourceSearchMissingEvidence({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 0
+    })).toEqual([
+      "included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
+    ]);
+    expect(buildSourceSearchMissingEvidence({
+      supportingClaimCount: 0,
+      supportingDocumentCount: 1
+    })).toEqual([
+      "governed SourceClaim evidence in the answer package for this query"
+    ]);
+    expect(buildSourceSearchMissingEvidence({
+      supportingClaimCount: 0,
+      supportingDocumentCount: 0
+    })).toEqual([
+      "governed SourceClaim evidence in the answer package for this query",
+      "included SearchDocument evidence in the answer package for this query"
+    ]);
+  });
+
   it("renders read-only source and search candidates with proof boundaries", async () => {
     let closeCount = 0;
     let searchQuery: string | undefined;
@@ -339,8 +366,8 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("Answer package preview:");
     expect(result.stdout).toContain("answer: Source search found 0 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
-    expect(result.stdout).toContain("- governed SourceClaim evidence for this query");
-    expect(result.stdout).toContain("- matching SearchDocument evidence for this query");
+    expect(result.stdout).toContain("- governed SourceClaim evidence in the answer package for this query");
+    expect(result.stdout).toContain("- included SearchDocument evidence in the answer package for this query");
     expect(result.stdout).toContain("recommended next action: Narrow the query or ingest a bounded local artifact");
     expect(result.stdout).toContain("No-match guidance:");
     expect(result.stdout).toContain("try a narrower marker/hash query");
@@ -367,7 +394,7 @@ describe("runSourceSearchCommand", () => {
 
     expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
     expect(result.stdout).toContain(
-      "- matching SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
+      "- included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
     );
     expect(result.stdout).toContain(
       "recommended next action: Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."

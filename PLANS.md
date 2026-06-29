@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V351 Source Search Missing-Evidence Specificity Repair
-current task: V351-00 Source Search Missing-Evidence Specificity Repair
+active stream: V352 Source Search JSON Diagnostics Usefulness Closure
+current task: V352-00 Source Search JSON Diagnostics Usefulness Closure
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,11 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V351-00 Source Search Missing-Evidence Specificity Repair must use V350 batch
-evidence to repair over-broad source-search answer-package `missingEvidence`
-diagnostics without changing ranking, schema, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker, broad benchmark, or Memory Core
-mutation.
+V352-00 Source Search JSON Diagnostics Usefulness Closure must verify whether
+V351 repaired source-search JSON diagnostics reduce operator ambiguity without
+adding product surfaces, ranking changes, schema, crawler, embeddings, graph
+runtime, worker, broad benchmark, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -107,6 +106,7 @@ V347 complete: heartbeat/consensus SearchDocument coverage closure.
 V348 complete: source-search answer package JSON readback.
 V349 complete: JSON consumer proof over two source-search answer packages.
 V350 complete: mini Brain-QA JSON batch preview across five answer packages.
+V351 complete: source-search missingEvidence specificity repair.
 ```
 
 Recent report range:
@@ -313,25 +313,137 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V348 complete: source search answer package JSON readback.
 - [x] V349 complete: Brain QA source search JSON consumer case.
 - [x] V350 complete: Mini Brain-QA JSON batch preview.
-- [ ] V351 current task: Source Search Missing-Evidence Specificity Repair.
+- [x] V351 complete: Source Search Missing-Evidence Specificity Repair.
+- [ ] V352 current task: Source Search JSON Diagnostics Usefulness Closure.
 
 ## Active Task Contract
 
-### V351-00 Source Search Missing-Evidence Specificity Repair
+### V352-00 Source Search JSON Diagnostics Usefulness Closure
 
 Objective:
 
 ```txt
-Use V350 batch evidence to repair over-broad `missingEvidence` diagnostics in
-source-search answer packages.
+Rerun a tiny source-search JSON batch/readback after V351 and classify whether
+the repaired diagnostics reduce operator ambiguity.
 ```
 
 Allowed:
 
 ```txt
-smallest owning source-search answer-package source/test files
-focused tests for supporting-document and no-document cases
-DB-backed source-search JSON readbacks if needed
+local lab JSON readback artifacts
+docs/report closure
+DB-backed source-search JSON readbacks
+compact root state update
+```
+
+Expected behavior:
+
+```txt
+supported-document cases have empty missingEvidence; real no-document cases
+still show a specific included-SearchDocument gap.
+```
+
+Forbidden:
+
+```txt
+source changes unless the closure falsifies V351
+schema, ranking rewrite, retrieval semantic rewrite, UI/API/MCP, crawler,
+worker daemon, embeddings or graph runtime, broad benchmark, Memory Core
+mutation
+```
+
+Non-goals:
+
+```txt
+dashboard
+API/MCP
+crawler
+worker daemon
+new schema
+broad benchmark
+ranking rewrite
+embeddings or graph runtime
+autonomous truth runtime
+Memory Core mutation
+```
+
+Success criteria:
+
+```txt
+1. evidence-proof and heartbeat-consensus show no missingEvidence when documents exist;
+2. graph-relations still shows the no-document gap;
+3. report classifies operator ambiguity before/after V351;
+4. no product surface, schema, ranking rewrite, or Memory Core mutation is added;
+5. root state stays compact and advances from evidence.
+```
+
+Evidence source:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-29-v351-source-search-missing-evidence-specificity-repair/REPORT.md
+.local-lab/v351/*.json
+```
+
+Verification:
+
+```txt
+pnpm db:ready
+source-search JSON readback commands
+git diff --check
+```
+
+Does not prove:
+
+```txt
+answer correctness, ranking quality, broad benchmark quality, product
+readiness, UI/API/MCP readiness, or source truth.
+```
+
+## Outcome V351 Source Search Missing-Evidence Specificity Repair
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V350 mini Brain-QA JSON batch report.
+- Mechanism: V350 proved JSON answer packages can expose support and missing
+  evidence without text parsing, but diagnostics could overstate document gaps.
+- KRN implication: `missingEvidence` should describe visible answer-package
+  support so operators do not confuse supported-document cases with true
+  no-document cases.
+- Decision: derive missing evidence from supporting claim/document counts in
+  the answer package; do not change retrieval, ranking, schema, or product
+  surfaces.
+- Does not prove: answer correctness, source truth, ranking quality, broad
+  benchmark quality, product readiness, or UI/API/MCP readiness.
+- Consumer: V352 Source Search JSON Diagnostics Usefulness Closure.
+- Falsifier: V350-style supported-document cases still report no-document gaps
+  or graph-relations stops reporting its real no-document gap.
+
+V351 evidence:
+
+```txt
+executionRun: 26d4576a-14b2-4347-b4a8-8c3577859b5b
+changed:
+  packages/cli/src/runSourceSearchCommand.ts
+  packages/cli/src/runSourceSearchCommand.test.ts
+report: docs/reviews/controlled-dogfood/2026-06-29-v351-source-search-missing-evidence-specificity-repair/REPORT.md
+focused tests: passed
+typecheck: passed
+full tests: passed
+DB ready: passed
+live readback:
+  evidence-proof: documents=1 missingEvidence=[]
+  graph-relations: documents=0 missingEvidence=[included SearchDocument gap]
+  heartbeat-consensus: documents=2 missingEvidence=[]
+```
+
+V351 outcome:
+
+```txt
+The repair made `missingEvidence` match visible answer-package support. The
+next useful step is a tiny usefulness closure, not a new product surface.
+```
 compact report/root state update
 ```
 

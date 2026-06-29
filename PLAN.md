@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V351 Source Search Missing-Evidence Specificity Repair
-current task: V351-00 Source Search Missing-Evidence Specificity Repair
+active stream: V352 Source Search JSON Diagnostics Usefulness Closure
+current task: V352-00 Source Search JSON Diagnostics Usefulness Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -66,23 +66,29 @@ report: docs/reviews/controlled-dogfood/2026-06-29-v350-mini-brain-qa-json-batch
 executionRun: 4127e542-3989-43fc-9d56-3b89688645b3
 ```
 
-### V351 Source Search Missing-Evidence Specificity Repair
+V351 outcome:
 
 ```txt
-Execute V351-00: inspect the source-search answer package owner and repair
-over-broad missing-document diagnostics. Preserve real gaps such as
-graph-relations claim_only coverage. Do not change ranking, schema, retrieval
-semantics, UI/API/MCP, crawler, embeddings, graph runtime, worker daemon,
-broad benchmark, or Memory Core mutation.
+`missingEvidence` now derives from visible answer-package support counts.
+Supported-document cases no longer look like no-document cases; graph-relations
+still reports its real SearchDocument gap.
+report: docs/reviews/controlled-dogfood/2026-06-29-v351-source-search-missing-evidence-specificity-repair/REPORT.md
+executionRun: 26d4576a-14b2-4347-b4a8-8c3577859b5b
 ```
 
-Consumer: technical operators using JSON answer packages for Brain-QA evidence
-readback.
+### V352 Source Search JSON Diagnostics Usefulness Closure
 
 ```txt
-Falsifier: V350-style cases with supporting documents still receive generic
-document-gap diagnostics, or real no-document cases stop surfacing their gap.
+Execute V352-00: rerun a tiny JSON batch/readback after V351 and classify
+whether repaired diagnostics reduce operator ambiguity. Do not change source
+unless the closure falsifies V351.
 ```
+
+Consumer: technical operators deciding whether source-search JSON is ready for
+the next mini Brain-QA loop.
+
+Falsifier: the same cases still require manual interpretation to distinguish
+supported-document answers from real missing-document gaps.
 
 ## Pattern Gate
 

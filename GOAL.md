@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V351 Source Search Missing-Evidence Specificity Repair
+V352 Source Search JSON Diagnostics Usefulness Closure
 ```
 
 Current state:
@@ -24,13 +24,11 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V351-00 Source Search Missing-Evidence Specificity Repair.
+current task: V352-00 Source Search JSON Diagnostics Usefulness Closure.
 ```
 
-Current task: use the V350 JSON batch result to repair the smallest owning
-surface for source-search answer-package `missingEvidence` specificity. Avoid
-generic document-gap diagnostics when supporting documents exist, while
-preserving real SearchDocument gaps such as the graph-relations case. Do not
+Current task: run one small JSON batch/readback usefulness closure after V351 to
+verify repaired `missingEvidence` diagnostics reduce operator ambiguity. Do not
 build UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime,
 worker, broad benchmark, or Memory Core mutation.
 
@@ -50,8 +48,8 @@ to preserve are:
    SourceClaim proof, V341 search readback, V342 usefulness closure, V343
    coverage seed, V344 SearchDocument alignment, V345 usefulness closure, V346
    answer package preview, V347 query-guidance closure, V348 JSON readback, V349
-   JSON consumer proof, and V350 JSON batch preview exist. Missing-evidence
-   specificity repair is next.
+   JSON consumer proof, V350 JSON batch preview, and V351 missing-evidence
+   specificity repair exist. A tiny diagnostics usefulness closure is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
