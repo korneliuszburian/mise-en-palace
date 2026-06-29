@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 28a1967b6a08989be6e37a4b9b30d580ca4df276 / CI success
+latest source slice commit checked: afa1de0948ca5af922376b438503753ac00506b2 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -98,6 +98,11 @@ Latest completed slice: plan command boundary/runtime cleanup extracted
 private runtime, summary, metadata, and persisted-identity helpers, hardened
 blank/flag-shaped `krn plan` CLI values, removed changed-file Fallow findings,
 and reduced global Fallow health to 55; commit `28a1967` passed CI.
+Latest completed slice: retrieval repository insert cleanup extracted typed
+private insert-value builders for SearchDocument, Embedding, RetrievalCandidate,
+and ActivationDecision rows without schema changes, verified retrieval-substrate
+DB smoke, and reduced global Fallow to dupes 109 and health 52; commit
+`afa1de0` passed CI.
 ```
 
 ## 2. Product Thesis
