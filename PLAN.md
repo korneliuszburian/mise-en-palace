@@ -26,27 +26,12 @@ source-search readback: usable through CLI and JSON
 product-ready brain: not complete
 ```
 
-Recent source-search ladder:
+Recent source-search ladder summary:
 
 ```txt
-V340: local artifact -> SourceArtifact/SourceChunk/SearchDocument/SourceClaim -> later activated SourceClaim.
-V341: added read-only `krn source search --query`.
-V342: usefulness closure found coverage gaps.
-V343: seeded heartbeat/consensus/source-to-decision/search-usefulness claims.
-V344: repaired SearchDocument retrieval alignment.
-V345: proved lower rereads after alignment.
-V346: added answer package preview.
-V347: repaired broad-query guidance for heartbeat/consensus docs.
-V348: added typed JSON answer package readback.
-V349: proved JSON consumer without text parsing.
-V350: five-case JSON batch exposed broad missing-evidence diagnostics.
-V351: repaired missing-evidence specificity.
-V352: diagnostics usefulness closure.
-V353: classified answer usefulness over five JSON answer packages.
-V354: added built-in answerUsefulness labels/reasons to source-search JSON/text output.
-V355: proved the five-case batch consumes built-in answerUsefulness without local classification.
-V356: proved graph relation SearchDocuments exist; broad relation queries are over-constrained query-shape gaps.
-V357: added source-search queryShapeDiagnostics for claim-only/no-document broad query shapes.
+V340-V345: source artifact/search loop and SearchDocument alignment.
+V346-V352: answer package JSON/readback and missing-evidence diagnostics.
+V353-V357: answerUsefulness and queryShapeDiagnostics became built-in source-search output.
 ```
 
 V353 outcome:
