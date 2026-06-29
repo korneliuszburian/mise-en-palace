@@ -1,159 +1,131 @@
 # KRN Active Plan
 
-Status: active compact root plan. Date: 2026-06-27.
+Status: active compact root plan. Date: 2026-06-29.
 
-Root `PLAN.md` is the compact product single source of truth. Detailed
-continuous execution lives in `PLANS.md`.
+Root `PLAN.md` is the compact product source of truth. Detailed history stays in `PLANS.md`.
+Current-task contracts live in `PLANS.md`.
 
-Do not create another parallel roadmap.
-
-## Current Product State
+## Product State
 
 ```txt
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V353 Mini Brain-QA Answer Usefulness Closure
-current task: V353-00 Mini Brain-QA Answer Usefulness Closure
+active stream: V354 Source Search Answer Usefulness Classification
+current task: V354-00 Source Search Answer Usefulness Classification
 ```
 
-## Compact Completed Checkpoints
-
-Detailed history stays in `PLANS.md`.
+## Compact Checkpoints
 
 ```txt
-repo/current-truth hygiene: complete enough for continuation
+repo/current-truth hygiene: strong enough for continuation
 evidence/review loop: DB-backed and useful for dogfood
 candidate reviewability: core primitive
-pattern gate/readback: active hardening stream
+source-search readback: usable through CLI and JSON
 product-ready brain: not complete
 ```
 
-Remaining product gaps:
+Recent source-search ladder:
 
 ```txt
-1. pattern search/readback hardening
-2. research/paper/course source decisions
-3. mini brain-QA benchmark
-4. ingest v0 SourceClaim/SearchDocument usefulness after retrieval alignment
-5. graph brain v0 candidate extraction/reviewability/persistence surface
-6. heartbeat/dreaming v0 as candidate generator
-7. consensus v0 as eval/candidate layer
-8. product UI/search/API/MCP after usefulness/security gates
+V340: local artifact -> SourceArtifact/SourceChunk/SearchDocument/SourceClaim -> later activated SourceClaim.
+V341: added read-only `krn source search --query`.
+V342: usefulness closure found coverage gaps.
+V343: seeded heartbeat/consensus/source-to-decision/search-usefulness claims.
+V344: repaired SearchDocument retrieval alignment.
+V345: proved lower rereads after alignment.
+V346: added answer package preview.
+V347: repaired broad-query guidance for heartbeat/consensus docs.
+V348: added typed JSON answer package readback.
+V349: proved JSON consumer without text parsing.
+V350: five-case JSON batch exposed broad missing-evidence diagnostics.
+V351: repaired missing-evidence specificity.
+V352: diagnostics usefulness closure.
+V353: classified answer usefulness over five JSON answer packages.
 ```
 
-## Active Stream
-
-V324-V339 complete: graph/source-edge, heartbeat, consensus, and tiny QA
-previews exist without autonomous truth runtime. V340 proved one artifact-to-
-activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
-coverage gaps. V343 seeded four artifacts. V344 repaired source-search document
-retrieval alignment so seeded natural-language queries return matching
-SearchDocuments. V345 proved reduced rereads for seeded Pattern Application
-Gate questions. V346 added an answer package. V347 proved heartbeat/consensus
-documents exist for specific queries and repaired broad-query guidance. V348
-added typed JSON answer package readback without building a new product surface.
-V349 proved a small consumer can use JSON without parsing text.
-
-V350 outcome:
+V353 outcome:
 
 ```txt
-Five JSON answer packages were consumed without parsing text; all had answers,
-proof boundaries, raw candidate inspectability, and lower parsing burden. The
-batch exposed over-broad `missingEvidence` diagnostics for combined queries.
-report: docs/reviews/controlled-dogfood/2026-06-29-v350-mini-brain-qa-json-batch-preview/REPORT.md
-executionRun: 4127e542-3989-43fc-9d56-3b89688645b3
+cases: 5
+useful: 4
+partly_useful_missing_document: 1
+not_useful: 0
+allRawCandidatesInspectable: true
+memoryMutation: none
+report: docs/reviews/controlled-dogfood/2026-06-29-v353-mini-brain-qa-answer-usefulness-closure/REPORT.md
 ```
 
-V351 outcome:
+## Active Task
+
+### V354-00 Source Search Answer Usefulness Classification
+
+Goal: add deterministic answer-usefulness classification to
+`krn source search --json` so consumers do not need ad hoc local classification.
+
+Product rationale: V353 showed answer packages can guide bounded operator
+decisions, but usefulness labels currently live outside the CLI output.
+
+Architectural rationale: improve operator-facing readback before UI/API/MCP,
+crawler, embeddings, graph runtime, worker runtime, broad benchmark, or ranking
+work.
+
+Source-to-decision:
 
 ```txt
-`missingEvidence` now derives from visible answer-package support counts.
-Supported-document cases no longer look like no-document cases; graph-relations
-still reports its real SearchDocument gap.
-report: docs/reviews/controlled-dogfood/2026-06-29-v351-source-search-missing-evidence-specificity-repair/REPORT.md
-executionRun: 26d4576a-14b2-4347-b4a8-8c3577859b5b
+source: V353 answer-usefulness batch report.
+mechanism: existing JSON answer-package counts and missingEvidence entries are enough to classify bounded answer usefulness.
+KRN implication: usefulness classification should become a readback field.
+decision: implement a deterministic source-search JSON classification and reasons.
+consumer: technical operators and the next mini Brain-QA loop.
+falsifier: classification cannot be derived from existing fields without making answer-correctness or ranking-quality claims.
+doesNotProve: answer correctness, source truth, ranking quality, product readiness, UI/API/MCP readiness, or Memory Core mutation.
 ```
 
-V352 outcome:
+Allowed writes: smallest owning CLI/source-search source and tests, compact
+V354 report, root state.
+
+Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
+crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
+mutation, or parallel roadmap.
+
+Verification: targeted CLI/source-search tests, `pnpm typecheck`, `pnpm test`,
+`git diff --check`; add DB/evidence commands only when persistence is used.
+
+## Remaining Product Gaps
 
 ```txt
-Three DB-backed JSON readbacks classified cleanly: 2 supported-document cases,
-1 real document gap, 0 ambiguous supported-document cases. No source change.
-report: docs/reviews/controlled-dogfood/2026-06-29-v352-source-search-json-diagnostics-usefulness-closure/REPORT.md
+1. answer usefulness in source-search output
+2. mini Brain-QA usefulness loop
+3. ingest v0 expansion with bounded evidence
+4. graph brain v0 entity/relation extraction and answer deltas
+5. heartbeat/dreaming candidate generator
+6. consensus eval/candidate lane
+7. product UI/search/API/MCP after usefulness/security gates
 ```
-
-### V353 Mini Brain-QA Answer Usefulness Closure
-
-```txt
-Execute V353-00: use a small source-search JSON answer-package batch to
-classify answer usefulness for operator decisions, not just parseability or
-diagnostic clarity. Keep it read-only and bounded.
-```
-
-Consumer: technical operators deciding whether source-search answer packages
-are useful enough for the next mini Brain-QA loop.
-
-Falsifier: answers remain too generic to guide decisions even when diagnostics
-are clear.
 
 ## Pattern Gate
 
 For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
-target-workflow, security, operator-UX, or research/paper/course-driven work,
-apply: source -> mechanism -> KRN implication -> decision/rejection -> consumer
--> falsifier.
-
-Pattern application gate:
+target-workflow, security, operator-UX, or research/paper/course-driven work:
 
 ```txt
-before coding:
-  query helped retained patterns;
-  select 1-5 expected-use patterns or explicitly reject/defer them.
-
-after verification:
-  classify selected patterns as helped / neutral / noise / missing / stale;
-  record proof and does-not-prove boundaries.
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
 ```
-
-## External Input Blocker
-
-Status: deferred boundary, not the current internal stream.
-
-V02-01 still requires real second-operator inputs:
-
-```txt
-operator:
-KRN source:
-target repo:
-DB mode:
-support boundary:
-operator transcript:
-```
-
-Do not substitute self/headless scenarios for V02-01.
-
-## Hard Non-Goals
-
-Do not build or claim: fake V02-01 proof, product-ready status, dashboard,
-API/MCP, worker, crawler, Research Foundry, broad eval, generic multi-agent,
-runtime markdown memory, hidden semantic hooks, unsafe target writes, large
-`AGENTS.md`, or parallel roadmap.
 
 ## Verification Policy
 
-Use the narrowest relevant verification for each slice.
+Use the narrowest relevant verification.
 
-If local Vitest or workspace tests fail with a temporary-directory write error,
-use `TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo checkout: CLI boundary tests rely on outside-workspace temporary directories.
+```txt
+docs/plan-only: git diff --check
+source: pnpm typecheck, pnpm test, git diff --check
+DB/eval-affecting: pnpm db:ready, pnpm db:smoke, pnpm eval:promptfoo:smoke when relevant
+```
 
-Docs/plan-only changes: `git diff --check`.
-Source changes: `pnpm typecheck`, `pnpm test`, `git diff --check`.
-DB/eval-affecting changes: `pnpm db:ready`, `pnpm db:smoke`,
-`pnpm eval:promptfoo:smoke`.
+If Vitest hits a temporary-directory write error, use
+`TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo checkout:
+CLI boundary tests rely on outside-workspace temporary directories.
 
-After each bounded slice, commit, push, and confirm CI when appropriate. Use a
-full `git rev-parse HEAD` SHA for `gh run list --commit`; if that is empty, use
-branch readback and match `headSha`. Do not claim missing CI from short-SHA
-lookup alone.
+After each bounded slice, commit, push, and confirm CI with the full SHA.
