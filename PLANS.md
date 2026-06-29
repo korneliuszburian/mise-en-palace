@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: 46f15f7 / CI failed before V360 invariant fix
+latest pushed commit checked: f4f2f20 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -521,6 +521,21 @@ Falsifier:
 - [ ] V358 deferred: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 - [x] V359 complete: Fallow Quality Gate And First Cleanup.
 - [ ] V360 current task: Fallow Legacy Complexity Cleanup.
+
+V360 progress:
+
+```txt
+completed bounded targets:
+  packages/cli/src/parseKnowledgeArgs.ts
+  packages/cli/src/parseReviewArgs.ts
+
+full Fallow moved:
+  dupes 136 -> 134 clone groups
+  health 117 -> 115 above threshold
+
+next: continue with one bounded target only; do not broad-refactor smoke
+fixtures or CLI dispatch without source inspection.
+```
 
 ## Verification Policy
 

@@ -27,6 +27,180 @@ export const formatReviewAssessUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
+type ReviewAssessCommand = Extract<CliCommand, { kind: "reviewAssess" }>;
+
+type ReviewOptionResult =
+  | {
+      ok: true;
+      nextIndex: number;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+type ReviewValueOptionResult =
+  | {
+      ok: true;
+      nextIndex: number;
+      value: string;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+type ReviewOptionHandler = (
+  rest: readonly string[],
+  index: number,
+  command: ReviewAssessCommand
+) => ReviewOptionResult;
+
+type ReviewScalarField =
+  | "evidenceBundleId"
+  | "reviewer"
+  | "status"
+  | "summary"
+  | "outcome"
+  | "reviewBurden"
+  | "diffRisk";
+
+const reviewOptionNames = [
+  "--persist",
+  "--evidence-bundle-id",
+  "--reviewer",
+  "--status",
+  "--summary",
+  "--outcome",
+  "--review-burden",
+  "--diff-risk",
+  "--finding",
+  "--correction-label",
+  "--metadata"
+] as const;
+
+type ReviewOptionName = typeof reviewOptionNames[number];
+
+const optionMatches = (arg: string, optionName: ReviewOptionName): boolean =>
+  optionName === "--persist"
+    ? arg === optionName
+    : arg === optionName || arg.startsWith(`${optionName}=`);
+
+const findReviewOption = (arg: string): ReviewOptionName | undefined =>
+  reviewOptionNames.find((optionName) => optionMatches(arg, optionName));
+
+const parseReviewOptionValue = (
+  rest: readonly string[],
+  index: number,
+  optionName: ReviewOptionName
+): ReviewValueOptionResult => {
+  const valueResult = optionValue(rest, index, optionName);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      ok: false,
+      error: valueResult.error ?? formatReviewAssessUsage()
+    };
+  }
+
+  return {
+    ok: true,
+    nextIndex: valueResult.nextIndex,
+    value: valueResult.value.trim()
+  };
+};
+
+const scalarReviewOptionHandler = (
+  optionName: ReviewOptionName,
+  field: ReviewScalarField
+): ReviewOptionHandler =>
+  (rest, index, command) => {
+    const parsed = parseReviewOptionValue(rest, index, optionName);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    command[field] = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  };
+
+const reviewOptionHandlers: Record<ReviewOptionName, ReviewOptionHandler> = {
+  "--persist": (_rest, index, command) => {
+    command.persist = true;
+
+    return {
+      ok: true,
+      nextIndex: index
+    };
+  },
+  "--evidence-bundle-id": scalarReviewOptionHandler(
+    "--evidence-bundle-id",
+    "evidenceBundleId"
+  ),
+  "--reviewer": scalarReviewOptionHandler("--reviewer", "reviewer"),
+  "--status": scalarReviewOptionHandler("--status", "status"),
+  "--summary": scalarReviewOptionHandler("--summary", "summary"),
+  "--outcome": scalarReviewOptionHandler("--outcome", "outcome"),
+  "--review-burden": scalarReviewOptionHandler("--review-burden", "reviewBurden"),
+  "--diff-risk": scalarReviewOptionHandler("--diff-risk", "diffRisk"),
+  "--finding": (rest, index, command) => {
+    const parsed = parseReviewOptionValue(rest, index, "--finding");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    command.findings.push(parsed.value);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--correction-label": (rest, index, command) => {
+    const parsed = parseReviewOptionValue(rest, index, "--correction-label");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    command.correctionLabels.push(parsed.value);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--metadata": (rest, index, command) => {
+    const parsed = parseReviewOptionValue(rest, index, "--metadata");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    const entry = metadataEntry(parsed.value);
+
+    if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
+      return {
+        ok: false,
+        error: entry.error ?? formatReviewAssessUsage()
+      };
+    }
+
+    command.metadata[entry.key] = entry.value;
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  }
+};
+
 export const parseReviewArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] !== "assess") {
     return {
@@ -34,7 +208,7 @@ export const parseReviewArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  const reviewCommand: Extract<CliCommand, { kind: "reviewAssess" }> = {
+  const reviewCommand: ReviewAssessCommand = {
     kind: "reviewAssess",
     persist: false,
     findings: [],
@@ -43,94 +217,24 @@ export const parseReviewArgs = (rest: readonly string[]): ParseArgsResult => {
   };
 
   for (let index = 1; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const arg = rest[index]!;
+    const option = findReviewOption(arg);
 
-    if (arg === "--persist") {
-      reviewCommand.persist = true;
-      continue;
+    if (option === undefined) {
+      return {
+        error: formatReviewAssessUsage()
+      };
     }
 
-    const optionMap = {
-      "--evidence-bundle-id": "evidenceBundleId",
-      "--reviewer": "reviewer",
-      "--status": "status",
-      "--summary": "summary",
-      "--outcome": "outcome",
-      "--review-burden": "reviewBurden",
-      "--diff-risk": "diffRisk"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
+    const parsed = reviewOptionHandlers[option](rest, index, reviewCommand);
 
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatReviewAssessUsage()
-        };
-      }
-
-      reviewCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
+    if (!parsed.ok) {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--finding" || arg?.startsWith("--finding=") === true) {
-      const valueResult = optionValue(rest, index, "--finding");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatReviewAssessUsage()
-        };
-      }
-
-      reviewCommand.findings.push(valueResult.value.trim());
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--correction-label" || arg?.startsWith("--correction-label=") === true) {
-      const valueResult = optionValue(rest, index, "--correction-label");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatReviewAssessUsage()
-        };
-      }
-
-      reviewCommand.correctionLabels.push(valueResult.value.trim());
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const valueResult = optionValue(rest, index, "--metadata");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatReviewAssessUsage()
-        };
-      }
-
-      const entry = metadataEntry(valueResult.value);
-
-      if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
-        return {
-          error: entry.error ?? formatReviewAssessUsage()
-        };
-      }
-
-      reviewCommand.metadata[entry.key] = entry.value;
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatReviewAssessUsage()
-    };
+    index = parsed.nextIndex;
   }
 
   return {

@@ -79,6 +79,59 @@ const requiredOption = (
 ): { ok: true; value: string } | { ok: false; error: string } =>
   value === undefined ? { ok: false, error: usage } : { ok: true, value };
 
+type ParseOptionResult<T> =
+  | {
+      ok: true;
+      value: T;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+const parseRequiredOption = (
+  args: readonly string[],
+  index: number,
+  optionName: string
+): ParseOptionResult<string> => {
+  const valueResult = optionValue(args, index, optionName);
+
+  if (valueResult.error !== undefined) {
+    return {
+      ok: false,
+      error: `${valueResult.error}\n${formatKnowledgeUsage()}`
+    };
+  }
+
+  return requiredOption(valueResult.value, formatKnowledgeUsage());
+};
+
+const parseAllowedOption = <T extends string>(
+  args: readonly string[],
+  index: number,
+  optionName: string,
+  allowed: readonly T[],
+  label: string
+): ParseOptionResult<T> => {
+  const required = parseRequiredOption(args, index, optionName);
+
+  if (!required.ok) {
+    return required;
+  }
+
+  if (!isAllowed(required.value, allowed)) {
+    return {
+      ok: false,
+      error: `Unsupported knowledge ${label}: ${required.value}\n${formatKnowledgeUsage()}`
+    };
+  }
+
+  return {
+    ok: true,
+    value: required.value
+  };
+};
+
 const parsePositiveInteger = (
   value: string
 ): { ok: true; value: number } | { ok: false; error: string } => {
@@ -106,6 +159,242 @@ const parsePositiveInteger = (
   };
 };
 
+type KnowledgeParseState = {
+  cardFiles: string[];
+  patternFiles: string[];
+  catalogFiles: string[];
+  kind: BrainKnowledgeKind | undefined;
+  status: BrainKnowledgeStatus | undefined;
+  reviewability: BrainKnowledgeReviewability | undefined;
+  usefulnessOutcome: BrainKnowledgeUsefulnessOutcomeFilter | undefined;
+  text: string | undefined;
+  format: "text" | "json" | "html";
+  limit: number | undefined;
+};
+
+type ParseKnowledgeOptionResult =
+  | {
+      ok: true;
+      nextIndex: number;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+type KnowledgeOptionHandler = (
+  args: readonly string[],
+  index: number,
+  state: KnowledgeParseState
+) => ParseKnowledgeOptionResult;
+
+const pushPathOption = (
+  args: readonly string[],
+  index: number,
+  optionName: string,
+  target: string[]
+): ParseKnowledgeOptionResult => {
+  const required = parseRequiredOption(args, index, optionName);
+
+  if (!required.ok) {
+    return required;
+  }
+
+  target.push(required.value.trim());
+
+  return {
+    ok: true,
+    nextIndex: index + 1
+  };
+};
+
+const knowledgeOptionHandlers: Record<string, KnowledgeOptionHandler> = {
+  "--card-file": (args, index, state) =>
+    pushPathOption(args, index, "--card-file", state.cardFiles),
+  "--pattern-file": (args, index, state) =>
+    pushPathOption(args, index, "--pattern-file", state.patternFiles),
+  "--catalog-file": (args, index, state) =>
+    pushPathOption(args, index, "--catalog-file", state.catalogFiles),
+  "--kind": (args, index, state) => {
+    const parsed = parseAllowedOption(args, index, "--kind", knowledgeKinds, "kind");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.kind = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--status": (args, index, state) => {
+    const parsed = parseAllowedOption(
+      args,
+      index,
+      "--status",
+      knowledgeStatuses,
+      "status"
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.status = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--reviewability": (args, index, state) => {
+    const parsed = parseAllowedOption(
+      args,
+      index,
+      "--reviewability",
+      knowledgeReviewabilities,
+      "reviewability"
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.reviewability = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--usefulness-outcome": (args, index, state) => {
+    const parsed = parseAllowedOption(
+      args,
+      index,
+      "--usefulness-outcome",
+      knowledgeUsefulnessOutcomes,
+      "usefulness outcome"
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.usefulnessOutcome = parsed.value;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--text": (args, index, state) => {
+    const required = parseRequiredOption(args, index, "--text");
+
+    if (!required.ok) {
+      return required;
+    }
+
+    state.text = required.value.trim();
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--limit": (args, index, state) => {
+    const required = parseRequiredOption(args, index, "--limit");
+
+    if (!required.ok) {
+      return required;
+    }
+
+    const parsedLimit = parsePositiveInteger(required.value);
+
+    if (!parsedLimit.ok) {
+      return {
+        ok: false,
+        error: `${parsedLimit.error}\n${formatKnowledgeUsage()}`
+      };
+    }
+
+    state.limit = parsedLimit.value;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--json": (_args, index, state) => {
+    state.format = "json";
+
+    return {
+      ok: true,
+      nextIndex: index
+    };
+  },
+  "--html": (_args, index, state) => {
+    state.format = "html";
+
+    return {
+      ok: true,
+      nextIndex: index
+    };
+  }
+};
+
+const validateKnowledgeSources = (
+  state: KnowledgeParseState
+): ParseOptionResult<undefined> => {
+  if (
+    state.cardFiles.length === 0 &&
+    state.patternFiles.length === 0 &&
+    state.catalogFiles.length === 0
+  ) {
+    return {
+      ok: false,
+      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
+    };
+  }
+
+  if (
+    state.cardFiles.some((cardFile) => cardFile.length === 0) ||
+    state.patternFiles.some((patternFile) => patternFile.length === 0) ||
+    state.catalogFiles.some((catalogFile) => catalogFile.length === 0)
+  ) {
+    return {
+      ok: false,
+      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
+    };
+  }
+
+  return {
+    ok: true,
+    value: undefined
+  };
+};
+
+const buildKnowledgeCardsCommand = (
+  state: KnowledgeParseState
+): ParseArgsResult => ({
+  command: {
+    kind: "knowledgeCards",
+    cardFiles: state.cardFiles,
+    patternFiles: state.patternFiles,
+    catalogFiles: state.catalogFiles,
+    filter: {
+      ...(state.kind === undefined ? {} : { kind: state.kind }),
+      ...(state.status === undefined ? {} : { status: state.status }),
+      ...(state.reviewability === undefined ? {} : { reviewability: state.reviewability }),
+      ...(state.usefulnessOutcome === undefined ? {} : { usefulnessOutcome: state.usefulnessOutcome }),
+      ...(state.text === undefined || state.text.length === 0 ? {} : { text: state.text })
+    },
+    format: state.format,
+    ...(state.limit === undefined ? {} : { limit: state.limit })
+  }
+});
+
 export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => {
   const [action, ...args] = rest;
 
@@ -123,291 +412,48 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
     };
   }
 
-  const cardFiles: string[] = [];
-  const patternFiles: string[] = [];
-  const catalogFiles: string[] = [];
-  let kind: BrainKnowledgeKind | undefined;
-  let status: BrainKnowledgeStatus | undefined;
-  let reviewability: BrainKnowledgeReviewability | undefined;
-  let usefulnessOutcome: BrainKnowledgeUsefulnessOutcomeFilter | undefined;
-  let text: string | undefined;
-  let format: "text" | "json" | "html" = "text";
-  let limit: number | undefined;
+  const state: KnowledgeParseState = {
+    cardFiles: [],
+    patternFiles: [],
+    catalogFiles: [],
+    kind: undefined,
+    status: undefined,
+    reviewability: undefined,
+    usefulnessOutcome: undefined,
+    text: undefined,
+    format: "text",
+    limit: undefined
+  };
 
   for (let index = 0; index < args.length; index += 1) {
-    const arg = args[index];
+    const arg = args[index]!;
 
-    if (arg === "--card-file") {
-      const valueResult = optionValue(args, index, "--card-file");
+    const handler = knowledgeOptionHandlers[arg];
 
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      cardFiles.push(required.value.trim());
-      index += 1;
-      continue;
+    if (handler === undefined) {
+      return {
+        error: `Unsupported knowledge cards argument: ${arg}\n${formatKnowledgeUsage()}`
+      };
     }
 
-    if (arg === "--pattern-file") {
-      const valueResult = optionValue(args, index, "--pattern-file");
+    const parsed = handler(args, index, state);
 
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      patternFiles.push(required.value.trim());
-      index += 1;
-      continue;
+    if (!parsed.ok) {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--catalog-file") {
-      const valueResult = optionValue(args, index, "--catalog-file");
+    index = parsed.nextIndex;
+  }
 
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
+  const sourceValidation = validateKnowledgeSources(state);
 
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      catalogFiles.push(required.value.trim());
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--kind") {
-      const valueResult = optionValue(args, index, "--kind");
-
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      if (!isAllowed(required.value, knowledgeKinds)) {
-        return {
-          error: `Unsupported knowledge kind: ${required.value}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      kind = required.value;
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--status") {
-      const valueResult = optionValue(args, index, "--status");
-
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      if (!isAllowed(required.value, knowledgeStatuses)) {
-        return {
-          error: `Unsupported knowledge status: ${required.value}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      status = required.value;
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--reviewability") {
-      const valueResult = optionValue(args, index, "--reviewability");
-
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      if (!isAllowed(required.value, knowledgeReviewabilities)) {
-        return {
-          error: `Unsupported knowledge reviewability: ${required.value}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      reviewability = required.value;
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--usefulness-outcome") {
-      const valueResult = optionValue(args, index, "--usefulness-outcome");
-
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      if (!isAllowed(required.value, knowledgeUsefulnessOutcomes)) {
-        return {
-          error: `Unsupported knowledge usefulness outcome: ${required.value}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      usefulnessOutcome = required.value;
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--text") {
-      const valueResult = optionValue(args, index, "--text");
-
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      text = required.value.trim();
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--limit") {
-      const valueResult = optionValue(args, index, "--limit");
-
-      if (valueResult.error !== undefined) {
-        return {
-          error: `${valueResult.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      const required = requiredOption(valueResult.value, formatKnowledgeUsage());
-
-      if (!required.ok) {
-        return {
-          error: required.error
-        };
-      }
-
-      const parsedLimit = parsePositiveInteger(required.value);
-
-      if (!parsedLimit.ok) {
-        return {
-          error: `${parsedLimit.error}\n${formatKnowledgeUsage()}`
-        };
-      }
-
-      limit = parsedLimit.value;
-      index += 1;
-      continue;
-    }
-
-    if (arg === "--json") {
-      format = "json";
-      continue;
-    }
-
-    if (arg === "--html") {
-      format = "html";
-      continue;
-    }
-
+  if (!sourceValidation.ok) {
     return {
-      error: `Unsupported knowledge cards argument: ${arg}\n${formatKnowledgeUsage()}`
+      error: sourceValidation.error
     };
   }
 
-  if (
-    (cardFiles.length === 0 && patternFiles.length === 0 && catalogFiles.length === 0) ||
-    cardFiles.some((cardFile) => cardFile.length === 0) ||
-    patternFiles.some((patternFile) => patternFile.length === 0) ||
-    catalogFiles.some((catalogFile) => catalogFile.length === 0)
-  ) {
-    return {
-      error: `Missing required --card-file, --pattern-file, or --catalog-file\n${formatKnowledgeUsage()}`
-    };
-  }
-
-  return {
-    command: {
-      kind: "knowledgeCards",
-      cardFiles,
-      patternFiles,
-      catalogFiles,
-      filter: {
-        ...(kind === undefined ? {} : { kind }),
-        ...(status === undefined ? {} : { status }),
-        ...(reviewability === undefined ? {} : { reviewability }),
-        ...(usefulnessOutcome === undefined ? {} : { usefulnessOutcome }),
-        ...(text === undefined || text.length === 0 ? {} : { text })
-      },
-      format,
-      ...(limit === undefined ? {} : { limit })
-    }
-  };
+  return buildKnowledgeCardsCommand(state);
 };

@@ -26,73 +26,14 @@ source-search readback: usable through CLI and JSON
 product-ready brain: not complete
 ```
 
-Recent source-search ladder summary:
+Recent source-search ladder:
 
 ```txt
-V340-V345: source artifact/search loop and SearchDocument alignment.
-V346-V352: answer package JSON/readback and missing-evidence diagnostics.
-V353-V357: answerUsefulness and queryShapeDiagnostics became built-in source-search output.
-```
-
-V353 outcome:
-
-```txt
-cases: 5
-useful: 4
-partly_useful_missing_document: 1
-not_useful: 0
-allRawCandidatesInspectable: true
-memoryMutation: none
-report: docs/reviews/controlled-dogfood/2026-06-29-v353-mini-brain-qa-answer-usefulness-closure/REPORT.md
+V340-V357 complete: source artifact/search, answer packages, usefulness,
+graph SearchDocuments, and query-shape diagnostics.
 ```
 
 ## Active Task
-
-V354 outcome:
-
-```txt
-behavior: `krn source search --json` exposes answerUsefulness and reasons.
-tests: focused CLI tests, workspace typecheck, workspace tests, diff check.
-report: docs/reviews/controlled-dogfood/2026-06-29-v354-source-search-answer-usefulness-classification/REPORT.md
-```
-
-V355 outcome:
-
-```txt
-cases: 5
-useful: 4
-partly_useful_missing_document: 1
-gap: graph-relations remains claim-only for SearchDocument support.
-report: docs/reviews/controlled-dogfood/2026-06-29-v355-mini-brain-qa-built-in-usefulness-loop/REPORT.md
-```
-
-### V356-00 Graph Relation SearchDocument Support Vertical
-
-Status: complete.
-
-Outcome: graph relation SearchDocuments exist and are included for narrower
-queries such as `temporal claim graph`; V355-style broad queries are
-over-constrained by current lexical query shape.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v356-graph-relation-searchdocument-support/REPORT.md
-```
-
-### V357-00 Source Search Query-Shape Diagnostics
-
-Status: complete.
-
-Outcome: `krn source search` answer packages now expose
-`queryShapeDiagnostics` when SourceClaims match but lexical SearchDocument
-retrieval returns zero results.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v357-source-search-query-shape-diagnostics/REPORT.md
-```
 
 ### V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
@@ -127,6 +68,15 @@ then commit/push/CI before choosing the next target.
 Current candidate targets: `packages/db/src/repositories/common.ts` high-impact
 split, `packages/cli/src/parseEvidenceArgs.ts` complexity extraction, or
 another narrower target if source inspection shows lower risk.
+
+Progress in this stream:
+
+```txt
+completed locally: parseKnowledgeArgs and parseReviewArgs cleanup
+full Fallow moved: dupes 136 -> 134; health 117 -> 115
+```
+
+Next candidate targets are tracked in `PLANS.md`.
 
 Verification: target package tests, `pnpm typecheck`, `pnpm test`,
 `pnpm quality:fallow:ci`, full `pnpm quality:fallow` report, `git diff --check`.
