@@ -73,7 +73,7 @@ Progress in this stream:
 
 ```txt
 completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs cleanup
-full Fallow moved: dupes 136 -> 133; health 117 -> 115
+full Fallow moved: dupes 136 -> 133; health 117 -> 114
 ```
 
 Next candidate targets are tracked in `PLANS.md`.

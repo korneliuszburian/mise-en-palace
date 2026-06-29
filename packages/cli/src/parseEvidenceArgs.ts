@@ -320,6 +320,541 @@ const parseOptionAfterPendingCommand = (
   return parsed;
 };
 
+type EvidenceParseState = {
+  persist: boolean;
+  runId: string | undefined;
+  pendingCommand: Partial<EvidenceCommand> | undefined;
+  commandOutcomes: EvidenceCommand[];
+  intendedFiles: string[];
+  targetRepo: string | undefined;
+  targetMode: string | undefined;
+  targetDirtyBefore: string | undefined;
+  targetDirtyAfter: string | undefined;
+  targetOwnedChanges: string | undefined;
+  targetStatusFreshness: string | undefined;
+  targetPatchLifecycle: string | undefined;
+  handoffArtifact: string | undefined;
+  targetOwnerDecision: string | undefined;
+  targetAllowedWrites: string[];
+  targetForbiddenWrites: string[];
+  targetChangedFiles: TargetEvidenceChangedFileInput[];
+  targetChangedFilesExplicitNone: boolean;
+  targetCommands: string[];
+  sourceUsefulnessOutcomes: SourceUsefulnessOutcomeFeedback[];
+};
+
+type EvidenceOptionResult =
+  | {
+      ok: true;
+      nextIndex: number;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
+type EvidenceOptionHandler = (
+  rest: readonly string[],
+  index: number,
+  state: EvidenceParseState
+) => EvidenceOptionResult;
+
+const evidenceOptionNames = [
+  "--persist",
+  "--run-id",
+  "--run",
+  "--intended-file",
+  "--target-repo",
+  "--target-mode",
+  "--target-dirty-before",
+  "--target-dirty-after",
+  "--target-owned-changes",
+  "--target-status-freshness",
+  "--target-patch-lifecycle",
+  "--target-handoff-artifact",
+  "--target-owner-decision",
+  "--target-changed-file",
+  "--target-command",
+  "--target-allowed-write",
+  "--target-forbidden-write",
+  "--command",
+  "--verification",
+  "--source-usefulness",
+  "--status",
+  "--exit-code",
+  "--output"
+] as const;
+
+type EvidenceOptionName = typeof evidenceOptionNames[number];
+
+const evidenceOptionMatches = (arg: string, optionName: EvidenceOptionName): boolean =>
+  optionName === "--persist"
+    ? arg === optionName
+    : arg === optionName || arg.startsWith(`${optionName}=`);
+
+const findEvidenceOption = (arg: string): EvidenceOptionName | undefined =>
+  evidenceOptionNames.find((optionName) => evidenceOptionMatches(arg, optionName));
+
+const parseAllowedEvidenceOption = (
+  rest: readonly string[],
+  index: number,
+  optionName: EvidenceOptionName,
+  allowed: readonly string[],
+  error: string
+): ParsedStringOption => {
+  const parsed = parseEvidenceOption(rest, index, optionName);
+
+  if (!parsed.ok) {
+    return parsed;
+  }
+
+  if (!isAllowed(parsed.value, allowed)) {
+    return {
+      ok: false,
+      error
+    };
+  }
+
+  return {
+    ok: true,
+    value: parsed.value.trim(),
+    nextIndex: parsed.nextIndex
+  };
+};
+
+const requiredEvidenceHandler = (
+  optionName: EvidenceOptionName,
+  emptyError: string,
+  apply: (state: EvidenceParseState, value: string) => void
+): EvidenceOptionHandler =>
+  (rest, index, state) => {
+    const parsed = parseNonEmptyOption(rest, index, optionName, emptyError);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    apply(state, parsed.value);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  };
+
+const allowedEvidenceHandler = (
+  optionName: EvidenceOptionName,
+  allowed: readonly string[],
+  error: string,
+  apply: (state: EvidenceParseState, value: string) => void
+): EvidenceOptionHandler =>
+  (rest, index, state) => {
+    const parsed = parseAllowedEvidenceOption(rest, index, optionName, allowed, error);
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    apply(state, parsed.value);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  };
+
+const evidenceOptionHandlers: Record<EvidenceOptionName, EvidenceOptionHandler> = {
+  "--persist": (_rest, index, state) => {
+    state.persist = true;
+
+    return {
+      ok: true,
+      nextIndex: index
+    };
+  },
+  "--run-id": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--run-id");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.runId = parsed.value.trim();
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--run": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--run");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.runId = parsed.value.trim();
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--intended-file": requiredEvidenceHandler(
+    "--intended-file",
+    "--intended-file requires a non-empty path",
+    (state, value) => state.intendedFiles.push(value)
+  ),
+  "--target-repo": requiredEvidenceHandler(
+    "--target-repo",
+    "--target-repo requires a non-empty value",
+    (state, value) => {
+      state.targetRepo = value;
+    }
+  ),
+  "--target-mode": allowedEvidenceHandler(
+    "--target-mode",
+    targetModes,
+    "--target-mode must be observation-only, headless-repair, real-second-operator, or unknown",
+    (state, value) => {
+      state.targetMode = value;
+    }
+  ),
+  "--target-dirty-before": allowedEvidenceHandler(
+    "--target-dirty-before",
+    targetDirtyStates,
+    "--target-dirty-before must be clean, dirty, or unknown",
+    (state, value) => {
+      state.targetDirtyBefore = value;
+    }
+  ),
+  "--target-dirty-after": allowedEvidenceHandler(
+    "--target-dirty-after",
+    targetDirtyStates,
+    "--target-dirty-after must be clean, dirty, or unknown",
+    (state, value) => {
+      state.targetDirtyAfter = value;
+    }
+  ),
+  "--target-owned-changes": allowedEvidenceHandler(
+    "--target-owned-changes",
+    targetOwnerships,
+    "--target-owned-changes must be external, owned-by-current-krn-run, partial, or unknown",
+    (state, value) => {
+      state.targetOwnedChanges = value;
+    }
+  ),
+  "--target-status-freshness": allowedEvidenceHandler(
+    "--target-status-freshness",
+    targetStatusFreshnesses,
+    "--target-status-freshness must be fresh-current-task, stale-prior-selection, changed-since-selection, or unknown",
+    (state, value) => {
+      state.targetStatusFreshness = value;
+    }
+  ),
+  "--target-patch-lifecycle": allowedEvidenceHandler(
+    "--target-patch-lifecycle",
+    targetPatchLifecycles,
+    "--target-patch-lifecycle must be none, accepted-by-target-owner, rejected-by-target-owner, stronger-verification-requested, handed-off-unresolved, or unknown",
+    (state, value) => {
+      state.targetPatchLifecycle = value;
+    }
+  ),
+  "--target-handoff-artifact": requiredEvidenceHandler(
+    "--target-handoff-artifact",
+    "--target-handoff-artifact requires a non-empty value",
+    (state, value) => {
+      state.handoffArtifact = value;
+    }
+  ),
+  "--target-owner-decision": requiredEvidenceHandler(
+    "--target-owner-decision",
+    "--target-owner-decision requires a non-empty value",
+    (state, value) => {
+      state.targetOwnerDecision = value;
+    }
+  ),
+  "--target-changed-file": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--target-changed-file");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    const parseResult = parseTargetChangedFile(parsed.value);
+
+    if (parseResult.error !== undefined) {
+      return {
+        ok: false,
+        error: parseResult.error
+      };
+    }
+
+    if (parseResult.none === true) {
+      state.targetChangedFilesExplicitNone = true;
+    } else if (parseResult.changedFile !== undefined) {
+      state.targetChangedFiles.push(parseResult.changedFile);
+    }
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--target-command": requiredEvidenceHandler(
+    "--target-command",
+    "--target-command requires a non-empty value",
+    (state, value) => state.targetCommands.push(value)
+  ),
+  "--target-allowed-write": requiredEvidenceHandler(
+    "--target-allowed-write",
+    "--target-allowed-write requires a non-empty value",
+    (state, value) => state.targetAllowedWrites.push(value)
+  ),
+  "--target-forbidden-write": requiredEvidenceHandler(
+    "--target-forbidden-write",
+    "--target-forbidden-write requires a non-empty value",
+    (state, value) => state.targetForbiddenWrites.push(value)
+  ),
+  "--command": (rest, index, state) => {
+    const parsed = parseOptionAfterPendingCommand(
+      rest,
+      index,
+      "--command",
+      state.commandOutcomes,
+      state.pendingCommand
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.pendingCommand = {
+      command: parsed.value
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--verification": (rest, index, state) => {
+    const parsed = parseOptionAfterPendingCommand(
+      rest,
+      index,
+      "--verification",
+      state.commandOutcomes,
+      state.pendingCommand
+    );
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    state.pendingCommand = undefined;
+
+    const verificationResult = parseVerification(parsed.value);
+
+    if (verificationResult.error !== undefined || verificationResult.command === undefined) {
+      return {
+        ok: false,
+        error: verificationResult.error ?? evidenceUsage
+      };
+    }
+
+    state.commandOutcomes.push(verificationResult.command);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--source-usefulness": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--source-usefulness");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    const outcomeResult = parseSourceUsefulness(parsed.value);
+
+    if (outcomeResult.error !== undefined || outcomeResult.outcome === undefined) {
+      return {
+        ok: false,
+        error: outcomeResult.error ?? evidenceUsage
+      };
+    }
+
+    state.sourceUsefulnessOutcomes.push(outcomeResult.outcome);
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--status": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--status");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (state.pendingCommand === undefined) {
+      return {
+        ok: false,
+        error: "--status requires a preceding --command"
+      };
+    }
+
+    if (!isEvidenceStatus(parsed.value)) {
+      return {
+        ok: false,
+        error: "--status must be passed, failed, skipped, missing, or not_run"
+      };
+    }
+
+    state.pendingCommand = {
+      ...state.pendingCommand,
+      status: parsed.value
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--exit-code": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--exit-code");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (state.pendingCommand === undefined) {
+      return {
+        ok: false,
+        error: "--exit-code requires a preceding --command"
+      };
+    }
+
+    const exitCode = parseExitCode(parsed.value);
+
+    if (exitCode === undefined) {
+      return {
+        ok: false,
+        error: "--exit-code must be an integer"
+      };
+    }
+
+    state.pendingCommand = {
+      ...state.pendingCommand,
+      exitCode
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  },
+  "--output": (rest, index, state) => {
+    const parsed = parseEvidenceOption(rest, index, "--output");
+
+    if (!parsed.ok) {
+      return parsed;
+    }
+
+    if (state.pendingCommand === undefined) {
+      return {
+        ok: false,
+        error: "--output requires a preceding --command"
+      };
+    }
+
+    state.pendingCommand = {
+      ...state.pendingCommand,
+      outputPath: parsed.value
+    };
+
+    return {
+      ok: true,
+      nextIndex: parsed.nextIndex
+    };
+  }
+};
+
+const targetScalarValues = (state: EvidenceParseState): readonly (string | undefined)[] => [
+  state.targetRepo,
+  state.targetMode,
+  state.targetDirtyBefore,
+  state.targetDirtyAfter,
+  state.targetOwnedChanges,
+  state.targetStatusFreshness,
+  state.targetPatchLifecycle,
+  state.handoffArtifact,
+  state.targetOwnerDecision
+];
+
+const targetListSizes = (state: EvidenceParseState): readonly number[] => [
+  state.targetAllowedWrites.length,
+  state.targetForbiddenWrites.length,
+  state.targetChangedFiles.length,
+  state.targetCommands.length
+];
+
+const hasTargetEvidence = (state: EvidenceParseState): boolean =>
+  targetScalarValues(state).some((value) => value !== undefined) ||
+  targetListSizes(state).some((size) => size > 0) ||
+  state.targetChangedFilesExplicitNone;
+
+const assignTargetScalarFields = (
+  targetEvidence: TargetEvidenceInput,
+  state: EvidenceParseState
+): void => {
+  if (state.targetMode !== undefined) targetEvidence.mode = state.targetMode;
+  if (state.targetDirtyBefore !== undefined) targetEvidence.dirtyBefore = state.targetDirtyBefore;
+  if (state.targetDirtyAfter !== undefined) targetEvidence.dirtyAfter = state.targetDirtyAfter;
+  if (state.targetOwnedChanges !== undefined) targetEvidence.ownedChanges = state.targetOwnedChanges;
+  if (state.targetStatusFreshness !== undefined) targetEvidence.targetStatusFreshness = state.targetStatusFreshness;
+  if (state.targetPatchLifecycle !== undefined) targetEvidence.targetPatchLifecycle = state.targetPatchLifecycle;
+  if (state.handoffArtifact !== undefined) targetEvidence.handoffArtifact = state.handoffArtifact;
+  if (state.targetOwnerDecision !== undefined) targetEvidence.targetOwnerDecision = state.targetOwnerDecision;
+};
+
+const assignTargetListFields = (
+  targetEvidence: TargetEvidenceInput,
+  state: EvidenceParseState
+): void => {
+  if (state.targetAllowedWrites.length > 0) targetEvidence.allowedWrites = state.targetAllowedWrites;
+  if (state.targetForbiddenWrites.length > 0) targetEvidence.forbiddenWrites = state.targetForbiddenWrites;
+  if (state.targetChangedFiles.length > 0) targetEvidence.changedFiles = state.targetChangedFiles;
+  if (state.targetCommands.length > 0) targetEvidence.commands = state.targetCommands;
+};
+
+const buildTargetEvidence = (
+  state: EvidenceParseState
+): { targetEvidence?: TargetEvidenceInput; error?: string } => {
+  if (!hasTargetEvidence(state)) {
+    return {};
+  }
+
+  if (state.targetRepo === undefined) {
+    return {
+      error: "--target-repo is required when target evidence flags are supplied"
+    };
+  }
+
+  const targetEvidence: TargetEvidenceInput = {
+    targetRepo: state.targetRepo
+  };
+
+  assignTargetScalarFields(targetEvidence, state);
+  assignTargetListFields(targetEvidence, state);
+
+  return {
+    targetEvidence
+  };
+};
+
 export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest[0] !== "capture") {
     return {
@@ -327,518 +862,51 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  let persist = false;
-  let runId: string | undefined;
-  let pendingCommand: Partial<EvidenceCommand> | undefined;
-  const commandOutcomes: EvidenceCommand[] = [];
-  const intendedFiles: string[] = [];
-  let targetRepo: string | undefined;
-  let targetMode: string | undefined;
-  let targetDirtyBefore: string | undefined;
-  let targetDirtyAfter: string | undefined;
-  let targetOwnedChanges: string | undefined;
-  let targetStatusFreshness: string | undefined;
-  let targetPatchLifecycle: string | undefined;
-  let handoffArtifact: string | undefined;
-  let targetOwnerDecision: string | undefined;
-  const targetAllowedWrites: string[] = [];
-  const targetForbiddenWrites: string[] = [];
-  const targetChangedFiles: TargetEvidenceChangedFileInput[] = [];
-  let targetChangedFilesExplicitNone = false;
-  const targetCommands: string[] = [];
-  const sourceUsefulnessOutcomes: SourceUsefulnessOutcomeFeedback[] = [];
+  const state: EvidenceParseState = {
+    persist: false,
+    runId: undefined,
+    pendingCommand: undefined,
+    commandOutcomes: [],
+    intendedFiles: [],
+    targetRepo: undefined,
+    targetMode: undefined,
+    targetDirtyBefore: undefined,
+    targetDirtyAfter: undefined,
+    targetOwnedChanges: undefined,
+    targetStatusFreshness: undefined,
+    targetPatchLifecycle: undefined,
+    handoffArtifact: undefined,
+    targetOwnerDecision: undefined,
+    targetAllowedWrites: [],
+    targetForbiddenWrites: [],
+    targetChangedFiles: [],
+    targetChangedFilesExplicitNone: false,
+    targetCommands: [],
+    sourceUsefulnessOutcomes: []
+  };
 
   for (let index = 1; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      persist = true;
-      continue;
-    }
-
-    if (
-      arg === "--run-id" ||
-      arg === "--run" ||
-      arg?.startsWith("--run-id=") === true ||
-      arg?.startsWith("--run=") === true
-    ) {
-      const flag = arg === "--run" || arg.startsWith("--run=") ? "--run" : "--run-id";
-      const valueResult = optionValue(rest, index, flag);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      runId = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--intended-file" || arg?.startsWith("--intended-file=") === true) {
-      const valueResult = optionValue(rest, index, "--intended-file");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const intendedFile = valueResult.value.trim();
-
-      if (intendedFile.length === 0) {
-        return {
-          error: "--intended-file requires a non-empty path"
-        };
-      }
-
-      intendedFiles.push(intendedFile);
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-repo" || arg?.startsWith("--target-repo=") === true) {
-      const valueResult = optionValue(rest, index, "--target-repo");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      targetRepo = valueResult.value.trim();
-
-      if (targetRepo.length === 0) {
-        return {
-          error: "--target-repo requires a non-empty value"
-        };
-      }
-
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-mode" || arg?.startsWith("--target-mode=") === true) {
-      const valueResult = optionValue(rest, index, "--target-mode");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (!isAllowed(valueResult.value, targetModes)) {
-        return {
-          error: "--target-mode must be observation-only, headless-repair, real-second-operator, or unknown"
-        };
-      }
-
-      targetMode = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-dirty-before" || arg?.startsWith("--target-dirty-before=") === true) {
-      const valueResult = optionValue(rest, index, "--target-dirty-before");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (!isAllowed(valueResult.value, targetDirtyStates)) {
-        return {
-          error: "--target-dirty-before must be clean, dirty, or unknown"
-        };
-      }
-
-      targetDirtyBefore = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-dirty-after" || arg?.startsWith("--target-dirty-after=") === true) {
-      const valueResult = optionValue(rest, index, "--target-dirty-after");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (!isAllowed(valueResult.value, targetDirtyStates)) {
-        return {
-          error: "--target-dirty-after must be clean, dirty, or unknown"
-        };
-      }
-
-      targetDirtyAfter = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-owned-changes" || arg?.startsWith("--target-owned-changes=") === true) {
-      const valueResult = optionValue(rest, index, "--target-owned-changes");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (!isAllowed(valueResult.value, targetOwnerships)) {
-        return {
-          error: "--target-owned-changes must be external, owned-by-current-krn-run, partial, or unknown"
-        };
-      }
-
-      targetOwnedChanges = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (
-      arg === "--target-status-freshness" ||
-      arg?.startsWith("--target-status-freshness=") === true
-    ) {
-      const valueResult = optionValue(rest, index, "--target-status-freshness");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (!isAllowed(valueResult.value, targetStatusFreshnesses)) {
-        return {
-          error: "--target-status-freshness must be fresh-current-task, stale-prior-selection, changed-since-selection, or unknown"
-        };
-      }
-
-      targetStatusFreshness = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (
-      arg === "--target-patch-lifecycle" ||
-      arg?.startsWith("--target-patch-lifecycle=") === true
-    ) {
-      const valueResult = optionValue(rest, index, "--target-patch-lifecycle");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (!isAllowed(valueResult.value, targetPatchLifecycles)) {
-        return {
-          error: "--target-patch-lifecycle must be none, accepted-by-target-owner, rejected-by-target-owner, stronger-verification-requested, handed-off-unresolved, or unknown"
-        };
-      }
-
-      targetPatchLifecycle = valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-handoff-artifact" || arg?.startsWith("--target-handoff-artifact=") === true) {
-      const valueResult = optionValue(rest, index, "--target-handoff-artifact");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const artifact = valueResult.value.trim();
-
-      if (artifact.length === 0) {
-        return {
-          error: "--target-handoff-artifact requires a non-empty value"
-        };
-      }
-
-      handoffArtifact = artifact;
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-owner-decision" || arg?.startsWith("--target-owner-decision=") === true) {
-      const valueResult = optionValue(rest, index, "--target-owner-decision");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const ownerDecision = valueResult.value.trim();
-
-      if (ownerDecision.length === 0) {
-        return {
-          error: "--target-owner-decision requires a non-empty value"
-        };
-      }
-
-      targetOwnerDecision = ownerDecision;
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-changed-file" || arg?.startsWith("--target-changed-file=") === true) {
-      const valueResult = optionValue(rest, index, "--target-changed-file");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const parseResult = parseTargetChangedFile(valueResult.value);
-
-      if (parseResult.error !== undefined) {
-        return {
-          error: parseResult.error ?? evidenceUsage
-        };
-      }
-
-      if (parseResult.none === true) {
-        targetChangedFilesExplicitNone = true;
-      } else if (parseResult.changedFile !== undefined) {
-        targetChangedFiles.push(parseResult.changedFile);
-      }
-
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-command" || arg?.startsWith("--target-command=") === true) {
-      const valueResult = optionValue(rest, index, "--target-command");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const command = valueResult.value.trim();
-
-      if (command.length === 0) {
-        return {
-          error: "--target-command requires a non-empty value"
-        };
-      }
-
-      targetCommands.push(command);
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-allowed-write" || arg?.startsWith("--target-allowed-write=") === true) {
-      const parsed = parseNonEmptyOption(
-        rest,
-        index,
-        "--target-allowed-write",
-        "--target-allowed-write requires a non-empty value"
-      );
-
-      if (!parsed.ok) {
-        return {
-          error: parsed.error
-        };
-      }
-
-      targetAllowedWrites.push(parsed.value);
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    if (arg === "--target-forbidden-write" || arg?.startsWith("--target-forbidden-write=") === true) {
-      const parsed = parseNonEmptyOption(
-        rest,
-        index,
-        "--target-forbidden-write",
-        "--target-forbidden-write requires a non-empty value"
-      );
-
-      if (!parsed.ok) {
-        return {
-          error: parsed.error
-        };
-      }
-
-      targetForbiddenWrites.push(parsed.value);
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    if (arg === "--command" || arg?.startsWith("--command=") === true) {
-      const parsed = parseOptionAfterPendingCommand(
-        rest,
-        index,
-        "--command",
-        commandOutcomes,
-        pendingCommand
-      );
-
-      if (!parsed.ok) {
-        return {
-          error: parsed.error
-        };
-      }
-
-      pendingCommand = {
-        command: parsed.value
+    const arg = rest[index]!;
+    const option = findEvidenceOption(arg);
+
+    if (option === undefined) {
+      return {
+        error: evidenceUsage
       };
-      index = parsed.nextIndex;
-      continue;
     }
 
-    if (arg === "--verification" || arg?.startsWith("--verification=") === true) {
-      const parsed = parseOptionAfterPendingCommand(
-        rest,
-        index,
-        "--verification",
-        commandOutcomes,
-        pendingCommand
-      );
+    const parsed = evidenceOptionHandlers[option](rest, index, state);
 
-      if (!parsed.ok) {
-        return {
-          error: parsed.error
-        };
-      }
-
-      pendingCommand = undefined;
-
-      const verificationResult = parseVerification(parsed.value);
-
-      if (verificationResult.error !== undefined || verificationResult.command === undefined) {
-        return {
-          error: verificationResult.error ?? evidenceUsage
-        };
-      }
-
-      commandOutcomes.push(verificationResult.command);
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    if (arg === "--source-usefulness" || arg?.startsWith("--source-usefulness=") === true) {
-      const valueResult = optionValue(rest, index, "--source-usefulness");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      const outcomeResult = parseSourceUsefulness(valueResult.value);
-
-      if (outcomeResult.error !== undefined || outcomeResult.outcome === undefined) {
-        return {
-          error: outcomeResult.error ?? evidenceUsage
-        };
-      }
-
-      sourceUsefulnessOutcomes.push(outcomeResult.outcome);
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--status" || arg?.startsWith("--status=") === true) {
-      const valueResult = optionValue(rest, index, "--status");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (pendingCommand === undefined) {
-        return {
-          error: "--status requires a preceding --command"
-        };
-      }
-
-      if (!isEvidenceStatus(valueResult.value)) {
-        return {
-          error: "--status must be passed, failed, skipped, missing, or not_run"
-        };
-      }
-
-      pendingCommand = {
-        ...pendingCommand,
-        status: valueResult.value
+    if (!parsed.ok) {
+      return {
+        error: parsed.error
       };
-      index = valueResult.nextIndex;
-      continue;
     }
 
-    if (arg === "--exit-code" || arg?.startsWith("--exit-code=") === true) {
-      const valueResult = optionValue(rest, index, "--exit-code");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (pendingCommand === undefined) {
-        return {
-          error: "--exit-code requires a preceding --command"
-        };
-      }
-
-      const exitCode = parseExitCode(valueResult.value);
-
-      if (exitCode === undefined) {
-        return {
-          error: "--exit-code must be an integer"
-        };
-      }
-
-      pendingCommand = {
-        ...pendingCommand,
-        exitCode
-      };
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--output" || arg?.startsWith("--output=") === true) {
-      const valueResult = optionValue(rest, index, "--output");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? evidenceUsage
-        };
-      }
-
-      if (pendingCommand === undefined) {
-        return {
-          error: "--output requires a preceding --command"
-        };
-      }
-
-      pendingCommand = {
-        ...pendingCommand,
-        outputPath: valueResult.value
-      };
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    return {
-      error: evidenceUsage
-    };
+    index = parsed.nextIndex;
   }
 
-  const pushResult = pushPendingCommand(commandOutcomes, pendingCommand);
+  const pushResult = pushPendingCommand(state.commandOutcomes, state.pendingCommand);
 
   if (pushResult.error !== undefined) {
     return {
@@ -846,56 +914,23 @@ export const parseEvidenceArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
-  const hasTargetEvidence =
-    targetRepo !== undefined ||
-    targetMode !== undefined ||
-    targetDirtyBefore !== undefined ||
-    targetDirtyAfter !== undefined ||
-    targetOwnedChanges !== undefined ||
-    targetStatusFreshness !== undefined ||
-    targetPatchLifecycle !== undefined ||
-    handoffArtifact !== undefined ||
-    targetOwnerDecision !== undefined ||
-    targetAllowedWrites.length > 0 ||
-    targetForbiddenWrites.length > 0 ||
-    targetChangedFilesExplicitNone ||
-    targetChangedFiles.length > 0 ||
-    targetCommands.length > 0;
+  const targetEvidenceResult = buildTargetEvidence(state);
 
-  if (hasTargetEvidence && targetRepo === undefined) {
+  if (targetEvidenceResult.error !== undefined) {
     return {
-      error: "--target-repo is required when target evidence flags are supplied"
+      error: targetEvidenceResult.error
     };
   }
-
-  const targetEvidence: TargetEvidenceInput | undefined =
-    hasTargetEvidence && targetRepo !== undefined
-      ? {
-          targetRepo,
-          ...(targetMode === undefined ? {} : { mode: targetMode }),
-          ...(targetDirtyBefore === undefined ? {} : { dirtyBefore: targetDirtyBefore }),
-          ...(targetDirtyAfter === undefined ? {} : { dirtyAfter: targetDirtyAfter }),
-          ...(targetOwnedChanges === undefined ? {} : { ownedChanges: targetOwnedChanges }),
-          ...(targetStatusFreshness === undefined ? {} : { targetStatusFreshness }),
-          ...(targetPatchLifecycle === undefined ? {} : { targetPatchLifecycle }),
-          ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
-          ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
-          ...(targetAllowedWrites.length === 0 ? {} : { allowedWrites: targetAllowedWrites }),
-          ...(targetForbiddenWrites.length === 0 ? {} : { forbiddenWrites: targetForbiddenWrites }),
-          ...(targetChangedFiles.length === 0 ? {} : { changedFiles: targetChangedFiles }),
-          ...(targetCommands.length === 0 ? {} : { commands: targetCommands })
-        }
-      : undefined;
 
   return {
     command: {
       kind: "evidenceCapture",
-      persist,
-      ...(runId === undefined ? {} : { runId: runId.trim() }),
-      ...(intendedFiles.length === 0 ? {} : { intendedFiles }),
-      ...(commandOutcomes.length === 0 ? {} : { commandOutcomes }),
-      ...(targetEvidence === undefined ? {} : { targetEvidence }),
-      ...(sourceUsefulnessOutcomes.length === 0 ? {} : { sourceUsefulnessOutcomes })
+      persist: state.persist,
+      ...(state.runId === undefined ? {} : { runId: state.runId.trim() }),
+      ...(state.intendedFiles.length === 0 ? {} : { intendedFiles: state.intendedFiles }),
+      ...(state.commandOutcomes.length === 0 ? {} : { commandOutcomes: state.commandOutcomes }),
+      ...(targetEvidenceResult.targetEvidence === undefined ? {} : { targetEvidence: targetEvidenceResult.targetEvidence }),
+      ...(state.sourceUsefulnessOutcomes.length === 0 ? {} : { sourceUsefulnessOutcomes: state.sourceUsefulnessOutcomes })
     }
   };
 };
