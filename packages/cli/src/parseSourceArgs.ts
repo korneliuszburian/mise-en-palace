@@ -7,6 +7,7 @@ import type {
 } from "./parseArgs.js";
 import {
   metadataEntry,
+  optionMatches,
   optionValue
 } from "./parseArgHelpers.js";
 
@@ -218,6 +219,739 @@ const sourceClaimEdgeKinds = [
 const isSourceClaimEdgeKind = (value: string): value is SourceClaimEdgeKind =>
   sourceClaimEdgeKinds.some((kind) => kind === value);
 
+type SourceOptionParseResult =
+  | {
+      matched: true;
+      nextIndex: number;
+    }
+  | {
+      matched: false;
+    }
+  | {
+      error: string;
+    };
+
+type SourceArtifactPreviewCommand = Extract<CliCommand, { kind: "sourceArtifactPreview" }>;
+type SourceSearchCommand = Extract<CliCommand, { kind: "sourceSearch" }>;
+type SourceClaimAddCommand = Extract<CliCommand, { kind: "sourceClaimAdd" }>;
+type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" }>;
+type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink" }>;
+
+type SourceTokenParseResult =
+  | {
+      kind: "next";
+      nextIndex: number;
+    }
+  | {
+      kind: "help";
+    }
+  | {
+      kind: "error";
+      error: string;
+    };
+
+type SourceStringOptionParseResult<TKey extends string> =
+  | {
+      matched: true;
+      key: TKey;
+      value: string;
+      nextIndex: number;
+    }
+  | {
+      matched: false;
+    }
+  | {
+      error: string;
+    };
+
+type SourceMetadataCommand = {
+  metadata: Record<string, string>;
+};
+
+type SourcePersistedMetadataCommand = SourceMetadataCommand & {
+  persist: boolean;
+};
+
+interface SourcePersistedMetadataTokenConfig<TOption extends string, TKey extends string> {
+  fallbackUsage: string;
+  optionMap: Record<TOption, TKey>;
+  assignOption: (key: TKey, value: string) => void;
+}
+
+const sourceClaimAddStringOptions = {
+  "--title": "title",
+  "--claim": "claim",
+  "--mechanism": "mechanism",
+  "--does-not-prove": "doesNotProve",
+  "--support-type": "supportType",
+  "--trust-tier": "trustTier",
+  "--consumer": "consumer",
+  "--uri": "uri",
+  "--type": "type",
+  "--run-id": "runId",
+  "--falsifier": "falsifier",
+  "--revisit-when": "revisitWhen",
+  "--krn-implication": "krnImplication"
+} as const;
+
+const sourceClaimRejectStringOptions = {
+  "--title": "title",
+  "--attempted-claim": "attemptedClaim",
+  "--rejected-because": "rejectedBecause",
+  "--reason": "reason",
+  "--does-not-prove": "doesNotProve",
+  "--consumer": "consumer",
+  "--run-id": "runId",
+  "--source-artifact-id": "sourceArtifactId",
+  "--source-claim-id": "sourceClaimId"
+} as const;
+
+const sourceDecisionLinkStringOptions = {
+  "--source-claim-id": "sourceClaimId",
+  "--target-type": "targetType",
+  "--target-id": "targetId",
+  "--support-type": "supportType",
+  "--confidence": "confidence",
+  "--notes": "notes"
+} as const;
+
+type SourceClaimAddStringKey = typeof sourceClaimAddStringOptions[keyof typeof sourceClaimAddStringOptions];
+type SourceClaimRejectStringKey = typeof sourceClaimRejectStringOptions[keyof typeof sourceClaimRejectStringOptions];
+type SourceDecisionLinkStringKey = typeof sourceDecisionLinkStringOptions[keyof typeof sourceDecisionLinkStringOptions];
+
+const findMappedStringOption = <TOption extends string, TKey extends string>(
+  arg: string,
+  optionMap: Record<TOption, TKey>
+): TOption | undefined =>
+  (Object.keys(optionMap) as TOption[]).find((option) => optionMatches(arg, option));
+
+const parseMappedStringOption = <TOption extends string, TKey extends string>(
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  optionMap: Record<TOption, TKey>,
+  fallbackUsage: string
+): SourceStringOptionParseResult<TKey> => {
+  const option = findMappedStringOption(arg, optionMap);
+
+  if (option === undefined) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, option);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? fallbackUsage
+    };
+  }
+
+  return {
+    matched: true,
+    key: optionMap[option],
+    value: valueResult.value.trim(),
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const applyMetadataOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  command: SourceMetadataCommand,
+  fallbackUsage: string
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--metadata")) {
+    return {
+      matched: false
+    };
+  }
+
+  const metadata = parseMetadataOption(rest, index, fallbackUsage);
+
+  if (metadata.error !== undefined || metadata.entry === undefined) {
+    return {
+      error: metadata.error ?? fallbackUsage
+    };
+  }
+
+  command.metadata[metadata.entry.key] = metadata.entry.value;
+
+  return {
+    matched: true,
+    nextIndex: metadata.nextIndex
+  };
+};
+
+const sourceHelp = (): SourceTokenParseResult => ({
+  kind: "help"
+});
+
+const sourceNext = (nextIndex: number): SourceTokenParseResult => ({
+  kind: "next",
+  nextIndex
+});
+
+const sourceError = (error: string): SourceTokenParseResult => ({
+  kind: "error",
+  error
+});
+
+const parsePersistedMetadataToken = <TOption extends string, TKey extends string>(
+  rest: readonly string[],
+  index: number,
+  command: SourcePersistedMetadataCommand,
+  config: SourcePersistedMetadataTokenConfig<TOption, TKey>
+): SourceTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return sourceError(config.fallbackUsage);
+  }
+
+  if (arg === "--help" || arg === "-h") {
+    return sourceHelp();
+  }
+
+  if (arg === "--persist") {
+    command.persist = true;
+
+    return sourceNext(index);
+  }
+
+  const option = parseMappedStringOption(rest, index, arg, config.optionMap, config.fallbackUsage);
+
+  if ("error" in option) {
+    return sourceError(option.error);
+  }
+
+  if (option.matched) {
+    config.assignOption(option.key, option.value);
+
+    return sourceNext(option.nextIndex);
+  }
+
+  const metadata = applyMetadataOption(rest, index, arg, command, config.fallbackUsage);
+
+  if ("error" in metadata) {
+    return sourceError(metadata.error);
+  }
+
+  return metadata.matched ? sourceNext(metadata.nextIndex) : sourceError(config.fallbackUsage);
+};
+
+const sourceArtifactPreviewStringOptions = {
+  "--claim": "claim",
+  "--mechanism": "mechanism",
+  "--krn-implication": "krnImplication",
+  "--does-not-prove": "doesNotProve",
+  "--support-type": "supportType",
+  "--trust-tier": "trustTier",
+  "--consumer": "consumer",
+  "--falsifier": "falsifier",
+  "--graph-edge-to-source-claim-id": "graphEdgeToSourceClaimId",
+  "--graph-edge-consumer": "graphEdgeConsumer",
+  "--graph-edge-does-not-prove": "graphEdgeDoesNotProve",
+  "--graph-edge-evidence-ref": "graphEdgeEvidenceRef",
+  "--graph-edge-source-decision-ref": "graphEdgeSourceDecisionRef",
+  "--graph-edge-scope": "graphEdgeScope",
+  "--graph-edge-valid-from": "graphEdgeValidFrom",
+  "--graph-edge-valid-until": "graphEdgeValidUntil",
+  "--graph-edge-invalidated-at": "graphEdgeInvalidatedAt"
+} as const;
+
+const parseReviewedExtractionCandidateIdOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--reviewed-extraction-claim-candidate-id")) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, "--reviewed-extraction-claim-candidate-id");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+    };
+  }
+
+  const candidateId = valueResult.value.trim();
+
+  if (candidateId.length === 0) {
+    return {
+      error: "--reviewed-extraction-claim-candidate-id requires a non-empty id"
+    };
+  }
+
+  sourceCommand.reviewedExtractionClaimCandidateId = candidateId;
+
+  return {
+    matched: true,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const parseSourceArtifactFileOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--file")) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, "--file");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+    };
+  }
+
+  const file = valueResult.value.trim();
+
+  if (file.length === 0) {
+    return {
+      error: "--file requires a non-empty path"
+    };
+  }
+
+  sourceCommand.file = file;
+
+  return {
+    matched: true,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const parseSourceArtifactPositiveIntegerOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceOptionParseResult => {
+  const option = optionMatches(arg, "--chunk-lines")
+    ? "--chunk-lines"
+    : optionMatches(arg, "--limit-chunks")
+      ? "--limit-chunks"
+      : undefined;
+
+  if (option === undefined) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = parsePositiveIntegerOption(rest, index, option, formatSourceArtifactPreviewUsage());
+
+  if (parsed.error !== undefined || parsed.value === undefined) {
+    return {
+      error: parsed.error ?? formatSourceArtifactPreviewUsage()
+    };
+  }
+
+  if (option === "--chunk-lines") {
+    sourceCommand.chunkLines = parsed.value;
+  } else {
+    sourceCommand.limitChunks = parsed.value;
+  }
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
+const parseSourceArtifactStringOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceOptionParseResult => {
+  const option = parseMappedStringOption(
+    rest,
+    index,
+    arg,
+    sourceArtifactPreviewStringOptions,
+    formatSourceArtifactPreviewUsage()
+  );
+
+  if ("error" in option) {
+    return {
+      error: option.error
+    };
+  }
+
+  if (!option.matched) {
+    return {
+      matched: false
+    };
+  }
+
+  sourceCommand[option.key] = option.value;
+
+  return {
+    matched: true,
+    nextIndex: option.nextIndex
+  };
+};
+
+const parseSourceArtifactGraphEdgeKindOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--graph-edge-kind")) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, "--graph-edge-kind");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+    };
+  }
+
+  const graphEdgeKind = valueResult.value.trim();
+
+  if (!isSourceClaimEdgeKind(graphEdgeKind)) {
+    return {
+      error: `Unsupported --graph-edge-kind: ${graphEdgeKind}`
+    };
+  }
+
+  sourceCommand.graphEdgeKind = graphEdgeKind;
+
+  return {
+    matched: true,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+type SourceArtifactOptionParser = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+) => SourceOptionParseResult;
+
+const sourceArtifactOptionParsers: readonly SourceArtifactOptionParser[] = [
+  parseReviewedExtractionCandidateIdOption,
+  parseSourceArtifactFileOption,
+  parseSourceArtifactPositiveIntegerOption,
+  parseSourceArtifactStringOption,
+  parseSourceArtifactGraphEdgeKindOption
+];
+
+const parseSourceArtifactPreviewOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceOptionParseResult => {
+  for (const parseOption of sourceArtifactOptionParsers) {
+    const parsed = parseOption(rest, index, arg, sourceCommand);
+
+    if ("error" in parsed || parsed.matched) {
+      return parsed;
+    }
+  }
+
+  return {
+    matched: false
+  };
+};
+
+const parseSourceArtifactPreviewToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceArtifactPreviewCommand
+): SourceTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return sourceError(formatSourceArtifactPreviewUsage());
+  }
+
+  if (arg === "--help" || arg === "-h") {
+    return sourceHelp();
+  }
+
+  if (arg === "--persist") {
+    sourceCommand.persist = true;
+
+    return sourceNext(index);
+  }
+
+  if (arg === "--extract-candidates") {
+    sourceCommand.extractCandidates = true;
+
+    return sourceNext(index);
+  }
+
+  const parsed = parseSourceArtifactPreviewOption(rest, index, arg, sourceCommand);
+
+  if ("error" in parsed) {
+    return sourceError(parsed.error);
+  }
+
+  if (parsed.matched) {
+    return sourceNext(parsed.nextIndex);
+  }
+
+  return sourceError(formatSourceArtifactPreviewUsage());
+};
+
+const validateReviewedExtractionClaimCandidate = (
+  sourceCommand: SourceArtifactPreviewCommand
+): string | undefined => {
+  if (sourceCommand.reviewedExtractionClaimCandidateId === undefined) {
+    return undefined;
+  }
+
+  if (sourceCommand.extractCandidates !== true) {
+    return "--reviewed-extraction-claim-candidate-id requires --extract-candidates";
+  }
+
+  if (sourceCommand.persist !== true) {
+    return "--reviewed-extraction-claim-candidate-id requires --persist";
+  }
+
+  if (sourceCommand.claim !== undefined) {
+    return "--reviewed-extraction-claim-candidate-id cannot be combined with --claim";
+  }
+
+  return undefined;
+};
+
+const parseSourceSearchQueryOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceSearchCommand
+): SourceOptionParseResult => {
+  if (!optionMatches(arg, "--query")) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, "--query");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? formatSourceSearchUsage()
+    };
+  }
+
+  const query = valueResult.value.trim();
+
+  if (query.length === 0) {
+    return {
+      error: "--query requires non-empty text"
+    };
+  }
+
+  sourceCommand.query = query;
+
+  return {
+    matched: true,
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const parseSourceSearchPositiveIntegerOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceSearchCommand
+): SourceOptionParseResult => {
+  const option = optionMatches(arg, "--limit")
+    ? "--limit"
+    : optionMatches(arg, "--max-inclusions")
+      ? "--max-inclusions"
+      : undefined;
+
+  if (option === undefined) {
+    return {
+      matched: false
+    };
+  }
+
+  const parsed = parsePositiveIntegerOption(rest, index, option, formatSourceSearchUsage());
+
+  if (parsed.error !== undefined || parsed.value === undefined) {
+    return {
+      error: parsed.error ?? formatSourceSearchUsage()
+    };
+  }
+
+  if (option === "--limit") {
+    sourceCommand.limit = parsed.value;
+  } else {
+    sourceCommand.maxInclusions = parsed.value;
+  }
+
+  return {
+    matched: true,
+    nextIndex: parsed.nextIndex
+  };
+};
+
+type SourceSearchOptionParser = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceSearchCommand
+) => SourceOptionParseResult;
+
+const sourceSearchOptionParsers: readonly SourceSearchOptionParser[] = [
+  parseSourceSearchQueryOption,
+  parseSourceSearchPositiveIntegerOption
+];
+
+const parseSourceSearchOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  sourceCommand: SourceSearchCommand
+): SourceOptionParseResult => {
+  for (const parseOption of sourceSearchOptionParsers) {
+    const parsed = parseOption(rest, index, arg, sourceCommand);
+
+    if ("error" in parsed || parsed.matched) {
+      return parsed;
+    }
+  }
+
+  return {
+    matched: false
+  };
+};
+
+const parseSourceSearchToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceSearchCommand
+): SourceTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return sourceError(formatSourceSearchUsage());
+  }
+
+  if (arg === "--help" || arg === "-h") {
+    return sourceHelp();
+  }
+
+  if (arg === "--json") {
+    sourceCommand.json = true;
+
+    return sourceNext(index);
+  }
+
+  const parsed = parseSourceSearchOption(rest, index, arg, sourceCommand);
+
+  if ("error" in parsed) {
+    return sourceError(parsed.error);
+  }
+
+  if (parsed.matched) {
+    return sourceNext(parsed.nextIndex);
+  }
+
+  return sourceError(formatSourceSearchUsage());
+};
+
+const parseSourceClaimAddToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceClaimAddCommand
+): SourceTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, sourceCommand, {
+    fallbackUsage: formatSourceClaimAddUsage(),
+    optionMap: sourceClaimAddStringOptions,
+    assignOption: (key, value) => {
+      sourceCommand[key as SourceClaimAddStringKey] = value;
+    }
+  });
+
+const parseSourceClaimEdgesToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: Extract<CliCommand, { kind: "sourceClaimEdges" }>
+): SourceTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return sourceError(formatSourceClaimEdgesUsage());
+  }
+
+  if (arg === "--help" || arg === "-h") {
+    return sourceHelp();
+  }
+
+  if (!optionMatches(arg, "--source-claim-id")) {
+    return sourceError(formatSourceClaimEdgesUsage());
+  }
+
+  const valueResult = optionValue(rest, index, "--source-claim-id");
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return sourceError(valueResult.error ?? formatSourceClaimEdgesUsage());
+  }
+
+  const sourceClaimId = valueResult.value.trim();
+
+  if (sourceClaimId.length === 0) {
+    return sourceError("--source-claim-id requires a non-empty id");
+  }
+
+  sourceCommand.sourceClaimId = sourceClaimId;
+
+  return sourceNext(valueResult.nextIndex);
+};
+
+const parseSourceClaimRejectToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceClaimRejectCommand
+): SourceTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, sourceCommand, {
+    fallbackUsage: formatSourceClaimRejectUsage(),
+    optionMap: sourceClaimRejectStringOptions,
+    assignOption: (key, value) => {
+      sourceCommand[key as SourceClaimRejectStringKey] = value;
+    }
+  });
+
+const parseSourceDecisionLinkToken = (
+  rest: readonly string[],
+  index: number,
+  sourceCommand: SourceDecisionLinkCommand
+): SourceTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, sourceCommand, {
+    fallbackUsage: formatSourceDecisionLinkUsage(),
+    optionMap: sourceDecisionLinkStringOptions,
+    assignOption: (key, value) => {
+      sourceCommand[key as SourceDecisionLinkStringKey] = value;
+    }
+  });
+
 const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -233,9 +967,9 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
   };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const parsed = parseSourceArtifactPreviewToken(rest, index, sourceCommand);
 
-    if (arg === "--help" || arg === "-h") {
+    if (parsed.kind === "help") {
       return {
         command: {
           kind: "sourceArtifactPreviewHelp"
@@ -243,174 +977,21 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
       };
     }
 
-    if (arg === "--persist") {
-      sourceCommand.persist = true;
-      continue;
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--extract-candidates") {
-      sourceCommand.extractCandidates = true;
-      continue;
-    }
-
-    if (
-      arg === "--reviewed-extraction-claim-candidate-id" ||
-      arg?.startsWith("--reviewed-extraction-claim-candidate-id=") === true
-    ) {
-      const valueResult = optionValue(rest, index, "--reviewed-extraction-claim-candidate-id");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
-        };
-      }
-
-      const candidateId = valueResult.value.trim();
-
-      if (candidateId.length === 0) {
-        return {
-          error: "--reviewed-extraction-claim-candidate-id requires a non-empty id"
-        };
-      }
-
-      sourceCommand.reviewedExtractionClaimCandidateId = candidateId;
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--file" || arg?.startsWith("--file=") === true) {
-      const valueResult = optionValue(rest, index, "--file");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
-        };
-      }
-
-      const file = valueResult.value.trim();
-
-      if (file.length === 0) {
-        return {
-          error: "--file requires a non-empty path"
-        };
-      }
-
-      sourceCommand.file = file;
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--chunk-lines" || arg?.startsWith("--chunk-lines=") === true) {
-      const parsed = parsePositiveIntegerOption(rest, index, "--chunk-lines", formatSourceArtifactPreviewUsage());
-
-      if (parsed.error !== undefined || parsed.value === undefined) {
-        return {
-          error: parsed.error ?? formatSourceArtifactPreviewUsage()
-        };
-      }
-
-      sourceCommand.chunkLines = parsed.value;
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    if (arg === "--limit-chunks" || arg?.startsWith("--limit-chunks=") === true) {
-      const parsed = parsePositiveIntegerOption(rest, index, "--limit-chunks", formatSourceArtifactPreviewUsage());
-
-      if (parsed.error !== undefined || parsed.value === undefined) {
-        return {
-          error: parsed.error ?? formatSourceArtifactPreviewUsage()
-        };
-      }
-
-      sourceCommand.limitChunks = parsed.value;
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    const optionMap = {
-      "--claim": "claim",
-      "--mechanism": "mechanism",
-      "--krn-implication": "krnImplication",
-      "--does-not-prove": "doesNotProve",
-      "--support-type": "supportType",
-      "--trust-tier": "trustTier",
-      "--consumer": "consumer",
-      "--falsifier": "falsifier",
-      "--graph-edge-to-source-claim-id": "graphEdgeToSourceClaimId",
-      "--graph-edge-consumer": "graphEdgeConsumer",
-      "--graph-edge-does-not-prove": "graphEdgeDoesNotProve",
-      "--graph-edge-evidence-ref": "graphEdgeEvidenceRef",
-      "--graph-edge-source-decision-ref": "graphEdgeSourceDecisionRef",
-      "--graph-edge-scope": "graphEdgeScope",
-      "--graph-edge-valid-from": "graphEdgeValidFrom",
-      "--graph-edge-valid-until": "graphEdgeValidUntil",
-      "--graph-edge-invalidated-at": "graphEdgeInvalidatedAt"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
-        };
-      }
-
-      sourceCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--graph-edge-kind" || arg?.startsWith("--graph-edge-kind=") === true) {
-      const valueResult = optionValue(rest, index, "--graph-edge-kind");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
-        };
-      }
-
-      const graphEdgeKind = valueResult.value.trim();
-
-      if (!isSourceClaimEdgeKind(graphEdgeKind)) {
-        return {
-          error: `Unsupported --graph-edge-kind: ${graphEdgeKind}`
-        };
-      }
-
-      sourceCommand.graphEdgeKind = graphEdgeKind;
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatSourceArtifactPreviewUsage()
-    };
+    index = parsed.nextIndex;
   }
 
-  if (sourceCommand.reviewedExtractionClaimCandidateId !== undefined) {
-    if (sourceCommand.extractCandidates !== true) {
-      return {
-        error: "--reviewed-extraction-claim-candidate-id requires --extract-candidates"
-      };
-    }
+  const reviewedExtractionError = validateReviewedExtractionClaimCandidate(sourceCommand);
 
-    if (sourceCommand.persist !== true) {
-      return {
-        error: "--reviewed-extraction-claim-candidate-id requires --persist"
-      };
-    }
-
-    if (sourceCommand.claim !== undefined) {
-      return {
-        error: "--reviewed-extraction-claim-candidate-id cannot be combined with --claim"
-      };
-    }
+  if (reviewedExtractionError !== undefined) {
+    return {
+      error: reviewedExtractionError
+    };
   }
 
   return {
@@ -434,14 +1015,9 @@ const parseSourceClaimAddArgs = (rest: readonly string[]): ParseArgsResult => {
   };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const parsed = parseSourceClaimAddToken(rest, index, sourceCommand);
 
-    if (arg === "--persist") {
-      sourceCommand.persist = true;
-      continue;
-    }
-
-    if (arg === "--help" || arg === "-h") {
+    if (parsed.kind === "help") {
       return {
         command: {
           kind: "sourceClaimAddHelp"
@@ -449,57 +1025,13 @@ const parseSourceClaimAddArgs = (rest: readonly string[]): ParseArgsResult => {
       };
     }
 
-    const optionMap = {
-      "--title": "title",
-      "--claim": "claim",
-      "--mechanism": "mechanism",
-      "--does-not-prove": "doesNotProve",
-      "--support-type": "supportType",
-      "--trust-tier": "trustTier",
-      "--consumer": "consumer",
-      "--uri": "uri",
-      "--type": "type",
-      "--run-id": "runId",
-      "--falsifier": "falsifier",
-      "--revisit-when": "revisitWhen",
-      "--krn-implication": "krnImplication"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceClaimAddUsage()
-        };
-      }
-
-      sourceCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatSourceClaimAddUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatSourceClaimAddUsage()
-        };
-      }
-
-      sourceCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatSourceClaimAddUsage()
-    };
+    index = parsed.nextIndex;
   }
 
   return {
@@ -521,9 +1053,9 @@ const parseSourceClaimEdgesArgs = (rest: readonly string[]): ParseArgsResult => 
   };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const parsed = parseSourceClaimEdgesToken(rest, index, sourceCommand);
 
-    if (arg === "--help" || arg === "-h") {
+    if (parsed.kind === "help") {
       return {
         command: {
           kind: "sourceClaimEdgesHelp"
@@ -531,31 +1063,13 @@ const parseSourceClaimEdgesArgs = (rest: readonly string[]): ParseArgsResult => 
       };
     }
 
-    if (arg === "--source-claim-id" || arg?.startsWith("--source-claim-id=") === true) {
-      const valueResult = optionValue(rest, index, "--source-claim-id");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceClaimEdgesUsage()
-        };
-      }
-
-      const sourceClaimId = valueResult.value.trim();
-
-      if (sourceClaimId.length === 0) {
-        return {
-          error: "--source-claim-id requires a non-empty id"
-        };
-      }
-
-      sourceCommand.sourceClaimId = sourceClaimId;
-      index = valueResult.nextIndex;
-      continue;
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
     }
 
-    return {
-      error: formatSourceClaimEdgesUsage()
-    };
+    index = parsed.nextIndex;
   }
 
   return {
@@ -577,9 +1091,9 @@ const parseSourceSearchArgs = (rest: readonly string[]): ParseArgsResult => {
   };
 
   for (let index = 1; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const parsed = parseSourceSearchToken(rest, index, sourceCommand);
 
-    if (arg === "--help" || arg === "-h") {
+    if (parsed.kind === "help") {
       return {
         command: {
           kind: "sourceSearchHelp"
@@ -587,64 +1101,13 @@ const parseSourceSearchArgs = (rest: readonly string[]): ParseArgsResult => {
       };
     }
 
-    if (arg === "--query" || arg?.startsWith("--query=") === true) {
-      const valueResult = optionValue(rest, index, "--query");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceSearchUsage()
-        };
-      }
-
-      const query = valueResult.value.trim();
-
-      if (query.length === 0) {
-        return {
-          error: "--query requires non-empty text"
-        };
-      }
-
-      sourceCommand.query = query;
-      index = valueResult.nextIndex;
-      continue;
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--limit" || arg?.startsWith("--limit=") === true) {
-      const parsed = parsePositiveIntegerOption(rest, index, "--limit", formatSourceSearchUsage());
-
-      if (parsed.error !== undefined || parsed.value === undefined) {
-        return {
-          error: parsed.error ?? formatSourceSearchUsage()
-        };
-      }
-
-      sourceCommand.limit = parsed.value;
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    if (arg === "--max-inclusions" || arg?.startsWith("--max-inclusions=") === true) {
-      const parsed = parsePositiveIntegerOption(rest, index, "--max-inclusions", formatSourceSearchUsage());
-
-      if (parsed.error !== undefined || parsed.value === undefined) {
-        return {
-          error: parsed.error ?? formatSourceSearchUsage()
-        };
-      }
-
-      sourceCommand.maxInclusions = parsed.value;
-      index = parsed.nextIndex;
-      continue;
-    }
-
-    if (arg === "--json") {
-      sourceCommand.json = true;
-      continue;
-    }
-
-    return {
-      error: formatSourceSearchUsage()
-    };
+    index = parsed.nextIndex;
   }
 
   return {
@@ -668,14 +1131,9 @@ const parseSourceClaimRejectArgs = (rest: readonly string[]): ParseArgsResult =>
   };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const parsed = parseSourceClaimRejectToken(rest, index, sourceCommand);
 
-    if (arg === "--persist") {
-      sourceCommand.persist = true;
-      continue;
-    }
-
-    if (arg === "--help" || arg === "-h") {
+    if (parsed.kind === "help") {
       return {
         command: {
           kind: "sourceClaimRejectHelp"
@@ -683,53 +1141,13 @@ const parseSourceClaimRejectArgs = (rest: readonly string[]): ParseArgsResult =>
       };
     }
 
-    const optionMap = {
-      "--title": "title",
-      "--attempted-claim": "attemptedClaim",
-      "--rejected-because": "rejectedBecause",
-      "--reason": "reason",
-      "--does-not-prove": "doesNotProve",
-      "--consumer": "consumer",
-      "--run-id": "runId",
-      "--source-artifact-id": "sourceArtifactId",
-      "--source-claim-id": "sourceClaimId"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceClaimRejectUsage()
-        };
-      }
-
-      sourceCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatSourceClaimRejectUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatSourceClaimRejectUsage()
-        };
-      }
-
-      sourceCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatSourceClaimRejectUsage()
-    };
+    index = parsed.nextIndex;
   }
 
   return {
@@ -753,14 +1171,9 @@ const parseSourceDecisionLinkArgs = (rest: readonly string[]): ParseArgsResult =
   };
 
   for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
+    const parsed = parseSourceDecisionLinkToken(rest, index, sourceCommand);
 
-    if (arg === "--persist") {
-      sourceCommand.persist = true;
-      continue;
-    }
-
-    if (arg === "--help" || arg === "-h") {
+    if (parsed.kind === "help") {
       return {
         command: {
           kind: "sourceDecisionLinkHelp"
@@ -768,50 +1181,13 @@ const parseSourceDecisionLinkArgs = (rest: readonly string[]): ParseArgsResult =
       };
     }
 
-    const optionMap = {
-      "--source-claim-id": "sourceClaimId",
-      "--target-type": "targetType",
-      "--target-id": "targetId",
-      "--support-type": "supportType",
-      "--confidence": "confidence",
-      "--notes": "notes"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatSourceDecisionLinkUsage()
-        };
-      }
-
-      sourceCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
     }
 
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatSourceDecisionLinkUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatSourceDecisionLinkUsage()
-        };
-      }
-
-      sourceCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatSourceDecisionLinkUsage()
-    };
+    index = parsed.nextIndex;
   }
 
   return {
