@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V340 Ingest v0 Product Loop Closure
-current task: V340-00 Ingest v0 Product Loop Closure
+active stream: V341 Product-Facing Knowledge Search Readback Preview
+current task: V341-00 Product-Facing Knowledge Search Readback Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -36,7 +36,7 @@ Remaining product gaps:
 1. pattern search/readback hardening
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
-4. ingest v0 activation/readback closure
+4. ingest v0 product-facing search/readback preview
 5. graph brain v0 candidate extraction/reviewability/persistence surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
@@ -71,37 +71,38 @@ V338 complete: memory-staleness heartbeat preview proposes reviewable
   MemoryRecord maintenance candidates without Memory Core mutation.
 V339 complete: consensus/eval preview preserves support, dissent, risk, and
   decision options without autonomous truth runtime.
+V340 complete: one local artifact persisted as SourceArtifact/SourceChunk/
+  SearchDocument/SourceClaim and activated later as reviewable SourceClaim.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v339-...
 ```
 
-### V340 Ingest v0 Product Loop Closure
+### V341 Product-Facing Knowledge Search Readback Preview
 
 Goal:
 
-Close one small local ingest-to-use loop.
+Expose the smallest reviewable product-facing query/readback preview over the
+existing local artifact, SearchDocument, SourceClaim, and activation substrate.
 
 Current action:
 
 ```txt
-Execute V340-00: use existing local artifact, SearchDocument, SourceClaim,
-activation, and readback pieces to prove one small artifact can become
-reviewable activated knowledge. Do not add crawler, UI/API/MCP, worker daemon,
-schema, broad eval platform, or autonomous truth runtime.
+Execute V341-00: given a query, show persisted knowledge candidates, why they
+are reviewable, what was excluded, and what the readback does not prove. Do not
+add crawler, UI/API/MCP, worker daemon, schema, broad eval platform, or
+autonomous truth runtime.
 ```
 
 Primary consumer:
 
 ```txt
-future product-facing knowledge search, target repo onboarding, research
-condensation, and second-operator workflows.
+technical operators validating KRN knowledge search before UI/API/MCP work.
 ```
 
 Falsifier:
 
 ```txt
-Given a small local artifact, KRN cannot persist/read back a reviewable
-SearchDocument/SourceClaim path and activate it in a later plan without
-manual-only context.
+Given a query over persisted local knowledge, KRN cannot show reviewable
+SourceClaim/SearchDocument candidates with proof and non-proof boundaries.
 ```
 
 ## Pattern Gate

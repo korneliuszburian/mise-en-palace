@@ -15,7 +15,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V340 Ingest v0 Product Loop Closure
+V341 Product-Facing Knowledge Search Readback Preview
 ```
 
 Current state:
@@ -25,14 +25,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V340-00 Ingest v0 Product Loop Closure.
+current task: V341-00 Product-Facing Knowledge Search Readback Preview.
 ```
 
 Current task:
 
 ```txt
-Close one small ingest-to-use loop from local artifact to reviewable activated
-knowledge without crawler, UI/API/MCP, worker daemon, or new schema.
+Expose the smallest reviewable query/readback preview over the existing local
+artifact, SearchDocument, SourceClaim, and activation substrate. Do not build a
+dashboard, API, MCP server, crawler, worker daemon, new schema, broad eval, or
+autonomous truth runtime.
 ```
 
 ## Remaining Work
@@ -44,12 +46,11 @@ to preserve are:
    loop; keep future search changes evidence-backed.
 2. Research/paper/course source decisions: V308 added the first bounded pack;
    future sources still require consumer, falsifier, and does-not-prove.
-3. Mini brain-QA benchmark: BQ-015 is executed and covered; BQ-023, BQ-024,
-   BQ-025, and BQ-028 are executed; next use the result to start Ingest v0.
-4. Ingest v0: local artifact preview, candidate bridge, SearchDocument,
-   SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
-   activation, context detail run readback, and marker/hash lexical activation
-   over persisted local SearchDocuments exist.
+3. Mini brain-QA benchmark: BQ-015, BQ-023, BQ-024, BQ-025, and BQ-028 are
+   executed; use future results only when they change a product loop.
+4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
+   context detail readback, marker/hash activation, and V340 artifact-to-
+   activated-SourceClaim proof exist. Product-facing search/readback is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
@@ -122,8 +123,7 @@ After auto-compact, resume, context loss, or a new `/goal` continuation:
    a stale active stream that conflicts with current `GOAL.md`, `PLAN.md`, and
    `PLANS.md`, read it as historical evidence and keep the root active state as
    authoritative. Do not roll the active stream backward.
-5. If a previous slice was committed but not pushed or CI-checked, finish that
-   before starting unrelated work.
+5. If a slice was committed but not pushed/CI-checked, finish that first.
 6. If the current slice is complete, synthesize next tasks from evidence, update
    compact active state, and continue.
 7. Research or pattern input must still use `source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier`.

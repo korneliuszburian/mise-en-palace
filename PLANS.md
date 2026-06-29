@@ -3,8 +3,8 @@
 Status: compact active ledger. Date: 2026-06-29.
 
 Root `GOAL.md` states the continuous objective. Root `PLAN.md` is the compact
-product source of truth. This file keeps only current execution state, recent
-outcomes, one active task contract, and final-response rules.
+product source of truth. This file keeps only current state, recent outcomes,
+the active task contract, and final-response rules.
 
 stale attachment objective guard: attachments are evidence, not authority to
 roll the active stream backward.
@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V340 Ingest v0 Product Loop Closure
-current task: V340-00 Ingest v0 Product Loop Closure
+active stream: V341 Product-Facing Knowledge Search Readback Preview
+current task: V341-00 Product-Facing Knowledge Search Readback Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V340-00 Ingest v0 Product Loop Closure. V339 added candidate-only consensus
-evaluation; the next gap is one small artifact-to-activated-knowledge product
-loop.
+V340 closed one small artifact-to-activated-SourceClaim loop.
+V341-00 Product-Facing Knowledge Search Readback Preview must turn that substrate into the smallest product-facing
+knowledge search/readback preview before any UI/API/MCP/crawler work.
 ```
 
 ## 2. Product Thesis
@@ -41,8 +41,8 @@ feedback.
 Current loop:
 
 ```txt
-bounded scenario -> evidence -> source/pattern decision -> source change or
-readback -> verification -> persisted evidence -> compact next task
+bounded scenario -> evidence -> source/pattern decision -> readback or source
+change -> verification -> persisted evidence -> compact next task
 ```
 
 Current brain readiness:
@@ -52,26 +52,22 @@ repo/current-truth hygiene: strong
 evidence/review loop: strong
 DB-backed replay: proven
 candidate reviewability: core primitive
-activation: useful for guardrails and some persisted source state; owner-file recall still mixed
+activation: useful for guardrails and persisted source state; budget behavior still matters
 pattern brain: partial
-graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
-  preview exists; extraction reviewability/noise gate complete; reviewed
-  extraction persistence bridge complete; fence-state carryover repair complete;
-  graph-aware edge readback complete; edge-aware ranking lab complete;
-  persisted edge-aware activation readback complete; edge-aware candidate
-  refinement complete; usefulness closure complete; selection delta proof
-  complete; small graph QA complete; relation-grounded readback closure
-  complete; source-relation and memory-staleness heartbeat candidate previews
-  complete; consensus candidate evaluation preview complete
+graph brain: SourceClaimEdge preview/persistence/readback, extraction
+  reviewability, edge-aware activation, tiny QA, heartbeat previews, and
+  consensus preview exist
+ingest v0: V340 proved local artifact -> SourceArtifact/SourceChunk/
+  SearchDocument/SourceClaim -> later activated SourceClaim
 product-ready: no
 ```
 
-Important distinction:
+Important distinctions:
 
 ```txt
-SourceClaimEdge row exists != graph retrieval works
+SourceClaim included != source truth
+SearchDocument ranked != product search quality
 green test != product value
-source decision exists != continuous research condensation exists
 ```
 
 ## Recent Outcomes
@@ -93,606 +89,55 @@ V336 complete: relation-grounded QA readback closure.
 V337 complete: source-relation heartbeat candidate preview.
 V338 complete: memory-staleness heartbeat candidate preview.
 V339 complete: consensus candidate evaluation preview.
+V340 complete: local ingest-to-use loop via persisted artifact/source/search/claim and later activation.
 ```
 
-Reports:
+Recent report range:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v325-local-source-extraction-candidate-preview/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v326-extraction-candidate-reviewability-noise-gate/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-bridge/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-carryover/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v334-edge-aware-activation-selection-delta/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-29-v339-consensus-candidate-evaluation-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v324-.../REPORT.md
+...
+docs/reviews/controlled-dogfood/2026-06-29-v340-ingest-v0-product-loop-closure/REPORT.md
 ```
 
-## Outcome V327 Reviewed Extraction Persistence Bridge
+## Outcome V340 Ingest v0 Product Loop Closure
 
 Status: complete.
 
 Source-to-decision:
 
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v326-extraction-candidate-reviewability-noise-gate/REPORT.md`
-- Mechanism: ready/deferred extraction candidates existed, but reviewed
-  persistence required manually copying claim text and lost deterministic
-  candidate id/source-range lineage.
-- KRN implication: graph brain v0 needs a selected reviewed bridge before graph
-  ranking/crawler/runtime work.
-- Decision: add `--reviewed-extraction-claim-candidate-id` requiring
-  `--extract-candidates`, `--persist`, and explicit SourceClaim governance
-  fields.
-- Does not prove: extraction quality, source truth, graph retrieval, ranking,
-  crawler readiness, product readiness, or Memory Core mutation.
-- Consumer: V328 extraction quality repair and later graph-aware retrieval.
-- Falsifier: deferred/noisy candidates persist, review fields are optional, or
-  candidate id/source-range lineage is missing.
-
-V327 outcome:
-
-```txt
-Added `--reviewed-extraction-claim-candidate-id` to persist only selected ready
-extraction candidates through existing SourceClaim governance with candidate id
-and source-range lineage. Deferred candidates are rejected before DB runtime.
-```
-
-V327 verification:
-
-```txt
-pnpm --filter @krn/cli test -- parseSourceArgs runSourceArtifactPreviewCommand: passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-git diff --check: passed
-krn source artifact preview reviewed bridge --persist: passed
-deferred candidate rejection: expected failure
-```
-
-## Outcome V328 Source Extraction Fence-State Carryover Repair
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-bridge/REPORT.md`
-- Mechanism: V327 live ADR-0021 preview showed a chunk beginning inside an
-  already-open fenced/YAML block could emit ready claim candidates.
-- KRN implication: graph brain candidate surfaces must preserve reviewability
-  before graph-aware retrieval.
-- Decision: carry fence state across chunks during deterministic extraction.
-- Does not prove: extraction quality at scale, entity resolution, graph
-  retrieval, source truth, crawler readiness, or product readiness.
-- Consumer: V329 graph-aware edge readback/activation stub.
-- Falsifier: chunk-crossing fenced content appears as ready claim candidates.
-
-V328 outcome:
-
-```txt
-Fenced/code state now carries across chunks; ADR-0021 YAML/source-decision
-content that previously appeared as ready candidates is deferred.
-```
-
-V328 verification:
-
-```txt
-pnpm --filter @krn/cli test -- runSourceArtifactPreviewCommand: passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-git diff --check: passed
-krn source artifact preview --extract-candidates on ADR-0021: passed
-```
-
-## Outcome V329 Graph-Aware SourceClaimEdge Activation Readback
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v324-graph-brain-v0-sourceclaimedge-readback-surface/REPORT.md` and V328 report.
-- Mechanism: direct SourceClaimEdge readback exposed edge metadata but not the
-  adjacent SourceClaim context an operator must review before graph-aware
-  ranking.
-- KRN implication: graph brain v0 needs edge-influenced source context before
-  any graph runtime, crawler, or ranking quality claim.
-- Decision: extend read-only `krn source claim edges` output with adjacent
-  SourceClaim context.
-- Does not prove: source truth, edge correctness, graph retrieval quality,
-  ranking quality, crawler readiness, product readiness, or Memory Core
-  mutation.
-- Consumer: V330 edge-aware source candidate ranking lab.
-- Falsifier: a persisted SourceClaimEdge exists but readback cannot show the
-  adjacent SourceClaim context.
-
-V329 outcome:
-
-```txt
-`krn source claim edges` now renders `edgeInfluencedSourceContext` with adjacent
-SourceClaim readback when available.
-```
-
-V329 verification:
-
-```txt
-pnpm --filter @krn/cli test -- parseSourceArgs runSourceClaimEdgesCommand: passed
-pnpm run typecheck: failed once on exact optional property shape, then passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-krn source claim edges --source-claim-id 578d...: passed
-git diff --check: passed
-```
-
-## Outcome V330 Edge-Aware SourceClaim Candidate Ranking Lab
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md`
-- Mechanism: V329 showed adjacent claim context through SourceClaimEdge
-  readback; V330 needed a bounded ranking/input seam before production
-  graph-aware retrieval.
-- KRN implication: graph influence must be inspectable as candidate input before
-  retrieval quality is claimed.
-- Decision: add `applySourceClaimEdgeInfluence` as a pure activation lab helper
-  using bounded `graphScore` and explicit metadata.
-- Does not prove: source truth, edge correctness, production graph retrieval
-  quality, graph runtime, crawler readiness, product readiness, or Memory Core
-  mutation.
-- Consumer: V331 persisted edge-aware activation readback.
-- Falsifier: SourceClaimEdge-connected candidates cannot expose edge ids, edge
-  kinds, seed ids, or graphScore input in activation tests.
-
-V330 outcome:
-
-```txt
-SourceClaimEdge-connected source candidates can now be represented as
-edge-aware activation inputs with graphScore and review metadata.
-```
-
-V330 verification:
-
-```txt
-pnpm --filter @krn/harness test -- activation: passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-git diff --check: passed
-```
-
-## Outcome V331 Persisted Edge-Aware Activation Readback
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md`
-- Mechanism: V330 showed bounded edge-aware graphScore and metadata as
-  activation input, but operators could not read persisted retrieval candidate
-  scores/metadata through `krn run show`.
-- KRN implication: Graph Brain v0 needs persisted activation trace readback
-  before production graph retrieval or crawler work.
-- Decision: extend run readback with retrieval candidates, activation decisions,
-  and typed `sourceClaimEdgeInfluence` metadata.
-- Does not prove: activation scoring quality, source truth, edge correctness,
-  production graph retrieval quality, crawler readiness, product readiness, or
-  Memory Core mutation.
-- Consumer: V332 edge-aware source candidate refinement.
-- Falsifier: persisted candidate graphScore/sourceClaimEdgeInfluence cannot be
-  read through run show text and JSON output.
-
-V331 outcome:
-
-```txt
-`krn run show` now reads persisted activation trace candidates/decisions and can
-show edge-aware candidate graphScore plus sourceClaimEdgeInfluence metadata.
-```
-
-V331 verification:
-
-```txt
-pnpm --filter @krn/cli test -- runRunShowCommand: passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-krn run show --run-id de972...: passed
-krn run show --run-id de972... --json: passed
-```
-
-## Outcome V332 Edge-Aware Source Candidate Refinement
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: V329, V330, and V331 reports.
-- Mechanism: V331 proved persisted edge-aware activation trace readback, but
-  required a lab-seeded duplicate retrieval candidate row.
-- KRN implication: Graph Brain v0 should use existing SourceClaimEdge context
-  in normal activation retrieval before crawler, graph runtime, schema, or
-  production graph retrieval work.
-- Decision: fetch SourceClaimEdges for retrieved SourceClaims and apply the
-  existing edge influence helper before source candidate ranking.
-- Does not prove: source truth, edge correctness, activation scoring quality,
-  production graph retrieval quality, crawler readiness, product readiness, or
-  Memory Core mutation.
-- Consumer: V333 edge-aware activation usefulness closure.
-- Falsifier: a fresh persisted plan cannot show `sourceClaimEdgeInfluence`
-  without manual duplicate retrieval candidate seeding.
-
-V332 outcome:
-
-```txt
-Normal activation retrieval now persists source candidate graphScore and
-sourceClaimEdgeInfluence through `krn run show` without lab-seeded duplicate
-candidate rows.
-```
-
-V332 verification:
-
-```txt
-pnpm --filter @krn/harness test -- activation compiler: passed
-pnpm --filter @krn/cli test -- runCli --testNamePattern "prints bounded activation inclusions": passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: failed once on stale CLI fixture, then passed
-pnpm db:ready: passed
-pnpm db:smoke: passed
-pnpm eval:promptfoo:smoke: passed
-krn plan --persist: passed
-krn run show --run-id 7555...: passed
-krn run show --run-id 7555... --json: passed
-git diff --check: passed
-```
-
-## Outcome V333 Edge-Aware Activation Usefulness Closure
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v332-edge-aware-source-candidate-refinement/REPORT.md`
-- Mechanism: V332 made normal activation retrieval fetch persisted
-  SourceClaimEdge rows before ranking/readback.
-- KRN implication: before broader graph retrieval work, KRN needed to measure
-  whether edge-aware activation is useful or only decorative metadata.
-- Decision: run a DB-backed usefulness closure and classify selected / used /
-  helped / missing / noise.
-- Does not prove: source truth, edge correctness, production graph retrieval,
-  activation scoring quality, crawler readiness, product readiness, or Memory
+- Source: V339 consensus/eval preview report.
+- Mechanism: KRN needed one bounded local artifact path before crawler, UI,
+  API, MCP, worker daemon, schema expansion, or broad eval work.
+- KRN implication: product-facing knowledge search should grow from a proven
+  artifact-to-activated-knowledge path.
+- Decision: use existing local artifact preview, persisted `SearchDocument`,
+  `SourceClaim`, activation, and run readback surfaces; add no product surface.
+- Does not prove: source truth, product search quality, broad corpus ingest,
+  embeddings, graph retrieval, crawler readiness, product readiness, or Memory
   Core mutation.
-- Consumer: V334 edge-aware activation selection delta proof.
-- Falsifier: edge-aware activation cannot show useful metadata, ordering impact,
-  or operator review value in a fresh persisted run.
+- Consumer: V341 Product-Facing Knowledge Search Readback Preview.
+- Falsifier: persisted local artifact claim/search document cannot be read back
+  or activated in a later plan by marker query.
 
-V333 outcome:
+V340 evidence:
 
 ```txt
-Edge-aware activation selected a normal SourceClaim candidate with persisted
-SourceClaimEdge metadata, `graphScore: 8`, and top ordering. Owner-file recall
-selected activation/readback owner files. V333 is review-useful and
-ranking-positive, but does not prove inclusion delta under budget pressure.
+artifact: docs/reviews/controlled-dogfood/2026-06-29-v340-ingest-v0-product-loop-closure/ARTIFACT.md
+sourceArtifact: f6db868a-4c82-406a-8371-9ab7d8594fc5
+searchDocument: 6f045cc4-e8c9-4555-8425-167d74e5d319
+sourceClaim: 3363383c-02d0-4e5a-9674-132c1bc41b51
+activationRun: dab76e12-054e-4ac1-a4b4-783e42f69ed4
+retrievalRun: 31fb0db3-0277-4caa-b978-5b6e19a24143
 ```
 
-V333 verification:
+V340 outcome:
 
 ```txt
-pnpm db:ready: passed
-krn knowledge cards --text "edge-aware activation usefulness": passed, 0 results
-krn knowledge cards --text "activation": passed, 1 deferred/noise result
-krn plan --persist: passed
-krn run show --run-id 5595420c-58a8-4943-b766-074ff9520d3d: passed
-krn run show --run-id 5595420c-58a8-4943-b766-074ff9520d3d --json: passed
-```
-
-## Outcome V334 Edge-Aware Activation Selection Delta Proof
-
-Status: complete.
-
-Source-to-decision:
-
-- Source: `docs/reviews/controlled-dogfood/2026-06-29-v333-edge-aware-activation-usefulness-closure/REPORT.md`
-- Mechanism: V333 proved review-useful edge metadata and top ordering, but not
-  whether edge influence can rescue or include an otherwise lower-ranked
-  candidate.
-- KRN implication: before graph QA or broader graph retrieval, KRN needed a
-  bounded no-edge vs edge-aware selection-delta proof.
-- Decision: add a focused activation test comparing identical candidates under
-  `maxInclusions: 1` with and without SourceClaimEdge influence.
-- Does not prove: source truth, edge correctness, production graph retrieval,
-  graph QA quality, crawler readiness, product readiness, or Memory Core
-  mutation.
-- Consumer: V335 small graph-brain QA case.
-- Falsifier: edge influence cannot change selected context under identical
-  candidate/budget conditions.
-
-V334 outcome:
-
-```txt
-Focused activation proof now shows a no-edge baseline selecting the lexical-only
-claim while the edge-aware path selects the edge-connected claim under the same
-bounded context policy. DB-backed readback also continues to show current
-edge-aware activation metadata.
-```
-
-V334 verification:
-
-```txt
-pnpm --filter @krn/harness test -- activation --testNamePattern "SourceClaimEdge influence can change bounded selection": passed
-krn plan --persist: passed
-krn run show --run-id f0fc3a0b-7c52-42e6-b096-0bb2025abd61: passed
-krn run show --run-id f0fc3a0b-7c52-42e6-b096-0bb2025abd61 --json: passed
-```
-
-## Active Task: V335-00 Small Graph-Brain QA Case
-
-Goal:
-
-```txt
-Use the edge-aware activation path in one tiny graph-brain QA scenario where the
-answer or selected context depends on a source relation.
-```
-
-Evidence source:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v334-edge-aware-activation-selection-delta/REPORT.md
-```
-
-Files likely touched:
-
-```txt
-focused test or bounded report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v335-small-graph-brain-qa-case/REPORT.md
-GOAL.md
-PLAN.md
-PLANS.md
-```
-
-Forbidden writes:
-
-```txt
-schema/migration; crawler; graph database; production graph runtime; broad
-ranking rewrite; UI/API/MCP; worker daemon; consensus runtime; Memory Core
-mutation; automatic source truth promotion; runtime markdown memory
-```
-
-Definition of Done:
-
-- One tiny graph-brain QA/review scenario uses existing SourceClaimEdge context.
-- The report states whether relation-selected context improved answer grounding
-  or review usefulness compared with a no-relation baseline.
-- `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
-
-Acceptance criteria:
-
-```txt
-small graph-brain QA usefulness is measured without claiming product graph
-retrieval quality or product readiness.
-```
-
-Risk:
-
-```txt
-medium: graph QA case can drift into benchmark/platform work before the
-system has earned it.
-```
-
-Rollback:
-
-```txt
-focused revert of the V335 implementation commit if source changes are made
-```
-
-Next-task synthesis rule:
-
-```txt
-If V335 is positive, choose the next small source-relation refinement or
-heartbeat candidate-generation task. If weak, repair edge-aware graph QA
-readback before expanding surfaces.
-```
-
-V335 outcome:
-
-```txt
-Focused activation proof now shows a no-relation baseline selecting lexical-only
-context and producing an insufficient tiny QA answer, while the edge-aware path
-selects the SourceClaimEdge-connected answer claim and produces a grounded
-answer with improved review usefulness.
-```
-
-V335 verification:
-
-```txt
-pnpm --filter @krn/harness test -- activation --testNamePattern "edge-selected source context": passed
-krn plan --persist: passed
-krn run show --run-id 81d42a8d-5834-4e05-b0fc-84480229c52f: passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-git diff --check: passed
-```
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
-```
-
-## Active Task: V336-00 Relation-Grounded QA Readback Closure
-
-Goal:
-
-```txt
-Close the V335 tiny graph-brain QA usefulness loop by making the
-relation-grounded answer delta reviewable as a compact readback/reporting proof.
-```
-
-Evidence source:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
-```
-
-Files likely touched:
-
-```txt
-focused test/readback surface or bounded report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v336-relation-grounded-qa-readback/REPORT.md
-GOAL.md
-PLAN.md
-PLANS.md
-```
-
-Forbidden writes:
-
-```txt
-schema/migration; crawler; graph database; UI/API/MCP; worker daemon; broad
-benchmark platform; consensus runtime; broad ranking rewrite; Memory Core
-mutation; automatic source truth promotion; runtime markdown memory
-```
-
-Definition of Done:
-
-- Operator can review the V335 baseline-vs-edge answer outcome without reading
-  unrelated historical ledgers.
-- The proof boundary states what the relation-grounded QA readback proves and
-  does not prove.
-- `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
-  if source/readback behavior changes.
-
-Acceptance criteria:
-
-```txt
-relation-grounded QA usefulness is reviewable without claiming product graph
-retrieval quality, product readiness, or autonomous graph reasoning.
-```
-
-Risk:
-
-```txt
-medium: readback closure can drift into a benchmark/UI/API surface before graph
-QA earns it.
-```
-
-Rollback:
-
-```txt
-focused revert of the V336 implementation commit if source changes are made
-```
-
-Next-task synthesis rule:
-
-```txt
-If V336 is positive, choose the next small source-relation refinement or
-heartbeat candidate-generation task. If weak, repair graph QA readback before
-expanding graph-brain surfaces.
-```
-
-V336 outcome:
-
-```txt
-Relation-grounded QA readback helper now exposes baseline/edge verdicts,
-selected SourceClaim ids, used SourceClaim ids, outcome, proof, and
-does-not-prove. Golden behavior gate protects the baseline-insufficient vs
-edge-grounded answer delta.
-```
-
-V336 verification:
-
-```txt
-pnpm --filter @krn/harness test -- goldenKrnBehaviorGate: passed
-pnpm --filter @krn/harness test -- activation --testNamePattern "edge-selected source context": passed
-krn plan --persist: passed
-krn run show --run-id 996d68a4-967a-41b1-afec-4eaab64f9cda: passed
-pnpm run typecheck: passed
-TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
-pnpm db:ready: passed
-git diff --check: passed
-```
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
-```
-
-## Active Task: V340-00 Ingest v0 Product Loop Closure
-
-Goal:
-
-```txt
-Close one small local ingest-to-use loop.
-```
-
-Evidence source:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v339-consensus-candidate-evaluation-preview/REPORT.md
-```
-
-Files likely touched:
-
-```txt
-focused ingest/source/activation/readback source or report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v340-ingest-v0-product-loop-closure/REPORT.md
-GOAL.md
-PLAN.md
-PLANS.md
-```
-
-Forbidden writes:
-
-```txt
-schema/migration; graph database; crawler; UI/API/MCP; worker daemon; broad
-benchmark platform; consensus agent runtime; broad ranking rewrite; Memory
-Core mutation; automatic source/memory promotion; runtime markdown memory
-```
-
-Definition of Done:
-
-- One small local artifact can produce or use persisted reviewable
-  SearchDocument/SourceClaim state.
-- A later plan/readback can activate that knowledge with proof/non-proof
-  boundaries.
-- No crawler, UI/API/MCP, worker daemon, schema, or automatic promotion is
-  added.
-- `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
-  if source behavior changes.
-
-Acceptance criteria:
-
-```txt
-local ingest v0 can be shown as a useful artifact-to-activated-knowledge path
-without broad product surfaces or autonomous truth runtime.
-```
-
-Risk:
-
-```txt
-medium: ingest closure can drift into crawler/platform work instead of one
-bounded product loop.
-```
-
-Rollback:
-
-```txt
-focused revert of the V340 implementation commit if source changes are made
-```
-
-Next-task synthesis rule:
-
-```txt
-If V340 is positive, choose the next product-facing knowledge search/readback
-slice. If weak, repair the missing ingest/readback link before expanding.
+The V340 SourceClaim was included in a later persisted plan. The matching
+SearchDocument was readable and ranked, but excluded over budget. This proves a
+bounded reviewable artifact-to-activated-knowledge path, not product search
+quality.
 ```
 
 ## 9. Task Contract Schema
@@ -733,8 +178,6 @@ Product rationale:
 Architectural rationale:
 Evidence source:
 Official/external sources:
-Pattern surface:
-Primary consumer:
 Inputs required:
 Files likely touched:
 Allowed writes:
@@ -745,58 +188,97 @@ Verification commands:
 Acceptance criteria:
 Risk:
 Rollback:
-Does not prove:
-Falsifier:
 Condensation expectation:
 Next-task synthesis rule:
+Pattern surface:
+Primary consumer:
+Does not prove:
+Falsifier:
 
 ## 15. Progress
 
-- V324: complete; SourceClaimEdge readback by SourceClaim id.
-- V325: complete; local source extraction candidate preview.
-- V326: complete; extraction candidate reviewability/noise gate.
-- V327: complete; reviewed extraction persistence bridge.
-- V328: complete; source extraction fence-state carryover repair.
-- V329: complete; graph-aware SourceClaimEdge adjacent context readback.
-- V330: complete; edge-aware SourceClaim candidate ranking lab.
-- V331: complete; persisted edge-aware activation readback.
-- V332: complete; edge-aware source candidate refinement.
-- V333: complete; edge-aware activation usefulness closure.
-- V334: complete; edge-aware activation selection delta proof.
-- V335: complete; small graph-brain QA case.
-- V336: complete; relation-grounded QA readback closure.
-- V337: complete; source-relation heartbeat candidate preview.
-- V338: complete; memory-staleness heartbeat candidate preview.
-- V339: complete; consensus candidate evaluation preview.
-- V340: active; ingest v0 product loop closure.
+- [x] V340 complete: artifact-to-activated-SourceClaim loop.
+- [ ] V341 current task: product-facing knowledge search readback preview.
 
-## Pattern Gate
+## Active Task Contract
 
-Use `docs/runbooks/pattern-intake.md` only when a source/paper/course/practitioner
-pattern materially shapes a slice.
+### V341-00 Product-Facing Knowledge Search Readback Preview
 
-Required chain:
+Objective:
+
+```txt
+Given a query, show persisted knowledge candidates, why they are reviewable,
+what was excluded, and what the readback does not prove.
+```
+
+Allowed:
+
+```txt
+small CLI/readback surface or existing-surface extension
+focused tests
+DB-backed readback dogfood
+compact report/root state update
+```
+
+Non-goals:
+
+```txt
+dashboard
+API/MCP
+crawler
+worker daemon
+new schema unless source proves current shape cannot carry readback
+broad eval platform
+autonomous truth runtime
+Memory Core mutation
+```
+
+Pattern gate:
 
 ```txt
 source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
 ```
 
-Surface Consumer Matrix:
+Runbook: `docs/runbooks/pattern-intake.md`.
+Surface Consumer Matrix: pattern/source decisions must name the consumer surface
+before retention.
+
+Success criteria:
 
 ```txt
-infra -> ADR or migration proof
-harness/activation -> behavior test or run readback
-TypeScript -> standard/typecheck/test
-operator UX/CLI -> readback surface and proof/non-proof output
-research/paper/course -> source decision with consumer and falsifier
+1. query readback shows persisted SourceClaim/SearchDocument candidates;
+2. output includes reviewability/proof/non-proof boundaries;
+3. exclusions or no-match guidance are visible;
+4. tests cover the behavior;
+5. DB-backed dogfood records readback evidence;
+6. root state stays compact and advances to the next highest-ROI task.
 ```
+
+## Verification Policy
+
+Use the narrowest relevant verification for each slice.
+
+Docs/plan-only changes: `git diff --check`.
+Source changes: `pnpm typecheck`, `pnpm test`, `git diff --check`.
+DB/eval-affecting changes: `pnpm db:ready`, relevant DB smoke/readback.
+
+If Vitest fails with a temporary-directory write error, use
+`TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo
+checkout.
+
+After each bounded slice, commit, push, and confirm CI when appropriate. Use a
+full `git rev-parse HEAD` SHA for `gh run list --commit`; if empty, use branch
+readback and match `headSha`.
 
 ## 21. Final Response Format For Codex Runs
 
 Every continuation or completed slice must end with:
 
 ```txt
+Active stream:
+Current task:
 DB used:
+Changed:
 Commands run:
 Reports/artifacts:
 Commits/CI:
@@ -811,6 +293,7 @@ Blocked/budget-limited:
 ## 22. Compact GOAL.md Contract To Pair With This Plan
 
 Active stream: <current active stream from PLAN.md>.
+Current task: <current task from PLAN.md>.
 
 For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
 target-workflow, security, operator-UX, or research/paper/course-driven slice,
@@ -820,10 +303,10 @@ use:
 source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
 ```
 
-If attachments, old prompts, or summaries conflict with root active state, read them as historical evidence and do not roll the active stream backward.
+If pasted objectives, attachments, old prompts, or conversation summaries name
+stale streams, read them as historical evidence and do not roll the active stream backward.
 
 ## 23. Plan Revision Note
 
-At creation time this compact ledger replaced a long append-only active ledger.
-Historical detail remains in reports and archives; active execution resumes from
-the root current state above.
+At creation time this compact ledger replaced a larger active ledger shape.
+Historical details belong in reports and archives, not in active context.
