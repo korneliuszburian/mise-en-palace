@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: 0455e5368b272c7f269cb331c6bc71b18afd43f4 / CI success
+latest pushed commit checked: 39eda63cabc36dee3c79f8e53a630dc25da65e94 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -44,6 +44,9 @@ global Fallow to dupes 118 and health 87; commit `d50d304` passed CI.
 Latest completed slice: core reflection issue report cleanup removed the
 `buildReflectionIssueReports` high-complexity/refactoring target and reduced
 global Fallow health to 86; commit `0455e53` passed CI.
+Latest completed slice: DB smoke target metadata cleanup removed three target
+label helper complexity findings and reduced global Fallow health to 83; commit
+`39eda63` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -560,14 +563,15 @@ completed bounded targets:
   packages/core/src/evidenceBundle.ts
   packages/schema/src/evidenceCapture.ts
   packages/core/src/reflection/index.ts
+  packages/cli/src/runDbSmokeCommand.ts
 
 full Fallow moved:
   dupes 136 -> 118 clone groups
-  health 117 -> 86 above threshold
+  health 117 -> 83 above threshold
 
-next: either runDbSmokeCommand target metadata lookup cleanup or runCli help
-dispatch extraction. Do not split packages/db/src/repositories/common.ts only
-because Fallow flags fan-in; it is already the shared DB boundary helper.
+next: runCli help dispatch extraction or another source-inspected bounded
+target. Do not split packages/db/src/repositories/common.ts only because Fallow
+flags fan-in; it is already the shared DB boundary helper.
 ```
 
 ## Verification Policy
