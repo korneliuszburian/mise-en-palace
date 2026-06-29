@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V352 Source Search JSON Diagnostics Usefulness Closure
-current task: V352-00 Source Search JSON Diagnostics Usefulness Closure
+active stream: V353 Mini Brain-QA Answer Usefulness Closure
+current task: V353-00 Mini Brain-QA Answer Usefulness Closure
 ```
 
 ## Compact Completed Checkpoints
@@ -76,19 +76,27 @@ report: docs/reviews/controlled-dogfood/2026-06-29-v351-source-search-missing-ev
 executionRun: 26d4576a-14b2-4347-b4a8-8c3577859b5b
 ```
 
-### V352 Source Search JSON Diagnostics Usefulness Closure
+V352 outcome:
 
 ```txt
-Execute V352-00: rerun a tiny JSON batch/readback after V351 and classify
-whether repaired diagnostics reduce operator ambiguity. Do not change source
-unless the closure falsifies V351.
+Three DB-backed JSON readbacks classified cleanly: 2 supported-document cases,
+1 real document gap, 0 ambiguous supported-document cases. No source change.
+report: docs/reviews/controlled-dogfood/2026-06-29-v352-source-search-json-diagnostics-usefulness-closure/REPORT.md
 ```
 
-Consumer: technical operators deciding whether source-search JSON is ready for
-the next mini Brain-QA loop.
+### V353 Mini Brain-QA Answer Usefulness Closure
 
-Falsifier: the same cases still require manual interpretation to distinguish
-supported-document answers from real missing-document gaps.
+```txt
+Execute V353-00: use a small source-search JSON answer-package batch to
+classify answer usefulness for operator decisions, not just parseability or
+diagnostic clarity. Keep it read-only and bounded.
+```
+
+Consumer: technical operators deciding whether source-search answer packages
+are useful enough for the next mini Brain-QA loop.
+
+Falsifier: answers remain too generic to guide decisions even when diagnostics
+are clear.
 
 ## Pattern Gate
 

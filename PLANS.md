@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V352 Source Search JSON Diagnostics Usefulness Closure
-current task: V352-00 Source Search JSON Diagnostics Usefulness Closure
+active stream: V353 Mini Brain-QA Answer Usefulness Closure
+current task: V353-00 Mini Brain-QA Answer Usefulness Closure
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,8 +25,8 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V352-00 Source Search JSON Diagnostics Usefulness Closure must verify whether
-V351 repaired source-search JSON diagnostics reduce operator ambiguity without
+V353-00 Mini Brain-QA Answer Usefulness Closure must use source-search JSON
+answer packages to classify answer usefulness for operator decisions without
 adding product surfaces, ranking changes, schema, crawler, embeddings, graph
 runtime, worker, broad benchmark, or Memory Core mutation.
 ```
@@ -107,6 +107,7 @@ V348 complete: source-search answer package JSON readback.
 V349 complete: JSON consumer proof over two source-search answer packages.
 V350 complete: mini Brain-QA JSON batch preview across five answer packages.
 V351 complete: source-search missingEvidence specificity repair.
+V352 complete: source-search JSON diagnostics usefulness closure.
 ```
 
 Recent report range:
@@ -314,17 +315,18 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V349 complete: Brain QA source search JSON consumer case.
 - [x] V350 complete: Mini Brain-QA JSON batch preview.
 - [x] V351 complete: Source Search Missing-Evidence Specificity Repair.
-- [ ] V352 current task: Source Search JSON Diagnostics Usefulness Closure.
+- [x] V352 complete: Source Search JSON Diagnostics Usefulness Closure.
+- [ ] V353 current task: Mini Brain-QA Answer Usefulness Closure.
 
 ## Active Task Contract
 
-### V352-00 Source Search JSON Diagnostics Usefulness Closure
+### V353-00 Mini Brain-QA Answer Usefulness Closure
 
 Objective:
 
 ```txt
-Rerun a tiny source-search JSON batch/readback after V351 and classify whether
-the repaired diagnostics reduce operator ambiguity.
+Use a small source-search JSON answer-package batch to classify whether answers
+are useful for operator decisions, not only parseable.
 ```
 
 Allowed:
@@ -339,14 +341,14 @@ compact root state update
 Expected behavior:
 
 ```txt
-supported-document cases have empty missingEvidence; real no-document cases
-still show a specific included-SearchDocument gap.
+answers are classified as useful / partly useful / not useful for bounded
+operator decisions, with proof/non-proof boundaries and missing evidence.
 ```
 
 Forbidden:
 
 ```txt
-source changes unless the closure falsifies V351
+source changes unless the closure falsifies current answer package usefulness
 schema, ranking rewrite, retrieval semantic rewrite, UI/API/MCP, crawler,
 worker daemon, embeddings or graph runtime, broad benchmark, Memory Core
 mutation
@@ -370,9 +372,9 @@ Memory Core mutation
 Success criteria:
 
 ```txt
-1. evidence-proof and heartbeat-consensus show no missingEvidence when documents exist;
-2. graph-relations still shows the no-document gap;
-3. report classifies operator ambiguity before/after V351;
+1. 3-5 answer packages are classified for decision usefulness;
+2. each classification cites supporting claims/documents and missing evidence;
+3. report distinguishes answer usefulness from answer correctness;
 4. no product surface, schema, ranking rewrite, or Memory Core mutation is added;
 5. root state stays compact and advances from evidence.
 ```
@@ -380,8 +382,8 @@ Success criteria:
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v351-source-search-missing-evidence-specificity-repair/REPORT.md
-.local-lab/v351/*.json
+docs/reviews/controlled-dogfood/2026-06-29-v352-source-search-json-diagnostics-usefulness-closure/REPORT.md
+.local-lab/v352/diagnostics-summary.json
 ```
 
 Verification:
@@ -397,6 +399,43 @@ Does not prove:
 ```txt
 answer correctness, ranking quality, broad benchmark quality, product
 readiness, UI/API/MCP readiness, or source truth.
+```
+
+## Outcome V352 Source Search JSON Diagnostics Usefulness Closure
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V351 missing-evidence specificity repair and V352 JSON readbacks.
+- Mechanism: repaired `missingEvidence` now lets a JSON consumer distinguish
+  supported-document answers from true no-document gaps.
+- KRN implication: source-search JSON can move from diagnostics clarity toward
+  answer usefulness evaluation before product surfaces.
+- Decision: close diagnostics loop and open a small answer-usefulness closure.
+- Does not prove: answer correctness, source truth, ranking quality, broad
+  benchmark quality, product readiness, or UI/API/MCP readiness.
+- Consumer: V353 Mini Brain-QA Answer Usefulness Closure.
+- Falsifier: supported-document cases still require text parsing to distinguish
+  diagnostics from real gaps.
+
+V352 evidence:
+
+```txt
+cases: 3
+clearSupportedCases: 2
+clearRealDocumentGaps: 1
+ambiguousSupportedDocumentCases: 0
+allLowerParsingBurden: true
+memoryMutation: none
+report: docs/reviews/controlled-dogfood/2026-06-29-v352-source-search-json-diagnostics-usefulness-closure/REPORT.md
+```
+
+V352 outcome:
+
+```txt
+Diagnostics ambiguity is closed for the focused cases. The next useful step is
+answer usefulness, not another diagnostics wording repair.
 ```
 
 ## Outcome V351 Source Search Missing-Evidence Specificity Repair

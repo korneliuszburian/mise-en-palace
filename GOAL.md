@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V352 Source Search JSON Diagnostics Usefulness Closure
+V353 Mini Brain-QA Answer Usefulness Closure
 ```
 
 Current state:
@@ -24,13 +24,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V352-00 Source Search JSON Diagnostics Usefulness Closure.
+current task: V353-00 Mini Brain-QA Answer Usefulness Closure.
 ```
 
-Current task: run one small JSON batch/readback usefulness closure after V351 to
-verify repaired `missingEvidence` diagnostics reduce operator ambiguity. Do not
-build UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime,
-worker, broad benchmark, or Memory Core mutation.
+Current task: use a small source-search JSON answer-package batch to classify
+whether answers are useful for operator decisions, not only parseable. Keep it
+read-only and bounded; do not build UI/API/MCP, crawler, schema, ranking
+rewrite, embeddings, graph runtime, worker, broad benchmark, or Memory Core
+mutation.
 
 ## Remaining Work
 
@@ -48,8 +49,9 @@ to preserve are:
    SourceClaim proof, V341 search readback, V342 usefulness closure, V343
    coverage seed, V344 SearchDocument alignment, V345 usefulness closure, V346
    answer package preview, V347 query-guidance closure, V348 JSON readback, V349
-   JSON consumer proof, V350 JSON batch preview, and V351 missing-evidence
-   specificity repair exist. A tiny diagnostics usefulness closure is next.
+   JSON consumer proof, V350 JSON batch preview, V351 missing-evidence
+   specificity repair, and V352 diagnostics usefulness closure exist. Answer
+   usefulness closure is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
