@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 35c221c1fc91f1ce538b69e7a7b2023b3794f168 / CI success
+latest source slice commit checked: 86e654c8b86a786e2fff39a8c75622cc2d5a5cef / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -86,6 +86,10 @@ private project-resolution/runtime helpers from `databaseRuntime`, added a
 regression test for explicit-project missing-ProjectKernel cleanup order,
 removed changed-file Fallow findings, and reduced global Fallow to dupes 112
 and health 64; commit `35c221c` passed CI.
+Latest completed slice: brain knowledge read-model cleanup extracted private
+parser/search helpers, added parser/status/feedback regression tests, removed
+changed-file Fallow findings, and reduced global Fallow to dupes 111 and health
+62; commit `86e654c` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -618,17 +622,14 @@ completed bounded targets:
   packages/cli/src/runDoctorCommand.ts
   packages/cli/src/doctorDbChecks.ts
   packages/cli/src/databaseRuntime.ts
+  packages/harness/src/brainKnowledgeReadModel.ts
 
 full Fallow moved:
-  dupes 136 -> 112 clone groups
-  health 117 -> 64 above threshold
+  dupes 136 -> 111 clone groups
+  health 117 -> 62 above threshold
 
-next: inspect `packages/harness/src/brainKnowledgeReadModel.ts` as the next
-bounded owner surface. Fallow flags `parseBrainKnowledgeReadModel` and search
-filter complexity; this is product-facing knowledge-card/search readback with
-lower DB risk than repository cleanup. Do not split
-packages/db/src/repositories/common.ts only because Fallow flags fan-in; it is
-already the shared DB boundary helper.
+next: pick the next bounded owner surface from the current full Fallow report,
+preferring direct complexity debt over splitting shared DB fan-in helpers.
 ```
 
 ## Verification Policy

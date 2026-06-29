@@ -90,8 +90,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   doctor static checks cleanup,
   doctor failure rules cleanup,
   doctor DB readiness gates cleanup,
-  database runtime project resolution cleanup
-full Fallow moved: dupes 136 -> 112; health 117 -> 64
+  database runtime project resolution cleanup,
+  brain knowledge read-model parser/search cleanup
+full Fallow moved: dupes 136 -> 111; health 117 -> 62
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
