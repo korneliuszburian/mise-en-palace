@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: afa1de0948ca5af922376b438503753ac00506b2 / CI success
+latest source slice commit checked: 1317cfb440ac9c59e238a22a2da3b000064fd668 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -103,6 +103,10 @@ private insert-value builders for SearchDocument, Embedding, RetrievalCandidate,
 and ActivationDecision rows without schema changes, verified retrieval-substrate
 DB smoke, and reduced global Fallow to dupes 109 and health 52; commit
 `afa1de0` passed CI.
+Latest completed slice: memory repository invariant cleanup extracted private
+invariant and insert-value helpers without schema or review-gate changes,
+verified memory-governance DB smoke, and reduced global Fallow to dupes 106 and
+health 48; commit `1317cfb` passed CI.
 ```
 
 ## 2. Product Thesis

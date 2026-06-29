@@ -94,9 +94,10 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  brain knowledge read-model parser/search cleanup,
 	  observation repository persistence cleanup,
 	  plan command boundary/runtime cleanup,
-	  retrieval repository insert cleanup
-	full Fallow moved: dupes 136 -> 109; health 117 -> 52
-	```
+	  retrieval repository insert cleanup,
+	  memory repository invariant/insert cleanup
+	full Fallow moved: dupes 136 -> 106; health 117 -> 48
+		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
 `packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
