@@ -80,8 +80,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   reflectionCandidateWriter cleanup, core evidence command normalization cleanup,
   schema evidence command input normalization cleanup,
   core reflection issue report cleanup,
-  DB smoke target metadata cleanup
-full Fallow moved: dupes 136 -> 118; health 117 -> 83
+  DB smoke target metadata cleanup,
+  runCli source dispatch cleanup
+full Fallow moved: dupes 136 -> 117; health 117 -> 83
 ```
 
 Next candidate targets are tracked in `PLANS.md`.
