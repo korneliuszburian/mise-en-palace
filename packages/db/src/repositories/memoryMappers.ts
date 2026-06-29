@@ -51,7 +51,7 @@ const memoryCandidateStatuses = new Set<MemoryCandidate["status"]>([
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-export const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
+const sourceLineageOrEmpty = (value: unknown): SourceLineageRef[] => {
   if (!Array.isArray(value)) {
     return [];
   }

@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+V359 Fallow Quality Gate And First Cleanup
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+current task: V359-00 Fallow Quality Gate And First Cleanup.
 ```
 
-Current task: rerun the graph-relations mini Brain-QA case using built-in
-`queryShapeDiagnostics`, prove whether it reduces operator diagnostic burden,
-and choose the next graph-brain vertical. Do not add UI/API/MCP, crawler,
-schema, ranking rewrite, embeddings, graph runtime, worker runtime, broad
-benchmark, or Memory Core mutation.
+Current task: install Fallow as an additional quality layer, wire a CI
+changed-files gate, run the full audit, fix confirmed true positives and the
+first bounded health target, then continue with legacy Fallow cleanup. Do not
+pretend full repo cleanup is complete while full Fallow still reports
+duplication/health debt.
 
 ## Direction
 

@@ -25,6 +25,16 @@ For TypeScript changes:
 - avoid `any` unless isolated and justified;
 - run typecheck before claiming completion.
 
+For code quality:
+
+- use `pnpm quality:fallow` for broad JS/TS quality, dead-code, duplication,
+  and health audits when touching architecture, package surfaces, or cleanup;
+- treat Fallow findings as review evidence, not automatic truth;
+- fix true positives, configure intentional fixtures/generated/typecheck proof
+  exceptions explicitly, and never delete runtime/fixture files without owner
+  evidence;
+- CI runs `pnpm quality:fallow:ci` as the changed-files Fallow gate.
+
 For git history:
 
 - use Semantic/Conventional Commits only; see

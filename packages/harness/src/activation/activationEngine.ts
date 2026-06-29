@@ -1,5 +1,6 @@
 import type {
   AntiMemoryRecord,
+  ActivationAbstentionReason,
   ContextAssembly,
   SourceTrustTier,
   TaskContract
@@ -95,6 +96,12 @@ export interface PersistActivationTraceInput {
   };
 }
 
+type ActivationTraceRetrievalRepository = PersistActivationTraceInput["retrievalRepository"];
+type ActivationTraceInclusion = ContextAssembly["inclusions"][number];
+type ActivationTraceExclusion = ContextAssembly["exclusions"][number];
+type ActivationRawRecallTrigger =
+  ReturnType<typeof buildActivationRawRecallTriggers>[number];
+
 const candidateKey = (candidate: { subjectType: string; subjectId: string }): string =>
   `${candidate.subjectType}:${candidate.subjectId}`;
 
@@ -166,6 +173,210 @@ const sourceSupportStateFor = (
   }
 
   return "source_claim_supported";
+};
+
+const buildTraceRawRecallTriggers = (
+  input: Pick<PersistActivationTraceInput, "candidates" | "contextAssembly" | "rawRecall">
+) =>
+  buildActivationRawRecallTriggers({
+    candidates: input.candidates,
+    contextAssembly: input.contextAssembly,
+    ...(input.rawRecall?.requireExactProof === undefined
+      ? {}
+      : { requireExactProof: input.rawRecall.requireExactProof }),
+    ...(input.rawRecall?.lowTrustTiers === undefined
+      ? {}
+      : { lowTrustTiers: input.rawRecall.lowTrustTiers }),
+    ...(input.rawRecall?.exactProofKinds === undefined
+      ? {}
+      : { exactProofKinds: input.rawRecall.exactProofKinds })
+  });
+
+const searchDocumentIdFor = (
+  candidate: RankedActivationCandidate
+): string | undefined =>
+  candidate.searchDocumentId ??
+  (candidate.searchDocumentIds?.length === 1 ? candidate.searchDocumentIds[0] : undefined);
+
+const persistRetrievalCandidates = async (
+  input: Pick<PersistActivationTraceInput, "retrievalRunId" | "candidates"> & {
+    readonly includedIds: ReadonlySet<string>;
+    readonly retrievalRepository: ActivationTraceRetrievalRepository;
+  }
+): Promise<Map<string, string>> => {
+  const candidateRecordIds = new Map<string, string>();
+
+  for (const candidate of input.candidates) {
+    const key = candidateKey(candidate);
+    const searchDocumentId = searchDocumentIdFor(candidate);
+    const record = await input.retrievalRepository.addCandidate({
+      retrievalRunId: input.retrievalRunId,
+      kind: candidate.kind,
+      status: input.includedIds.has(key) ? "included" : "excluded",
+      subjectType: candidate.subjectType,
+      subjectId: candidate.subjectId,
+      ...(searchDocumentId === undefined ? {} : { searchDocumentId }),
+      trustTier: candidate.trustTier,
+      lexicalScore: candidate.lexicalScore,
+      vectorScore: candidate.vectorScore,
+      graphScore: candidate.graphScore,
+      temporalScore: candidate.temporalScore,
+      contextRoiScore: candidate.contextRoiScore,
+      totalScore: candidate.totalScore,
+      score: candidate.totalScore,
+      reason: candidate.exclusion?.explanation ?? candidate.reason,
+      metadata: candidate.metadata
+    });
+
+    candidateRecordIds.set(key, record.id);
+  }
+
+  return candidateRecordIds;
+};
+
+const recordInclusionTraceDecision = async (
+  input: Pick<PersistActivationTraceInput, "retrievalRunId"> & {
+    readonly contextAssemblyId: string;
+    readonly inclusion: ActivationTraceInclusion;
+    readonly candidate: RankedActivationCandidate | undefined;
+    readonly retrievalCandidateId: string | undefined;
+    readonly rawEvidenceRecallTrigger: ActivationRawRecallTrigger | undefined;
+    readonly retrievalRepository: ActivationTraceRetrievalRepository;
+  }
+): Promise<void> => {
+  await input.retrievalRepository.recordActivationDecision({
+    retrievalRunId: input.retrievalRunId,
+    ...(input.retrievalCandidateId === undefined
+      ? {}
+      : { retrievalCandidateId: input.retrievalCandidateId }),
+    contextAssemblyId: input.contextAssemblyId,
+    subjectType: input.inclusion.subjectType,
+    subjectId: input.inclusion.subjectId,
+    decision: "included",
+    reason: input.inclusion.reason,
+    ...(input.candidate === undefined ? {} : { score: input.candidate.totalScore }),
+    ...(input.inclusion.tokenEstimate === undefined
+      ? {}
+      : { contextBudgetCost: input.inclusion.tokenEstimate }),
+    expectedDecisionImpact: input.inclusion.expectedUse,
+    expectedUse: input.inclusion.expectedUse,
+    ...(input.rawEvidenceRecallTrigger === undefined
+      ? {}
+      : {
+          rawRecall: {
+            required: true,
+            reasons: input.rawEvidenceRecallTrigger.reasons,
+            evidenceHints: input.rawEvidenceRecallTrigger.evidenceHints
+          }
+        }),
+    sourceSupportState: sourceSupportStateFor(input.candidate),
+    metadata: {
+      ...(input.candidate?.searchDocumentIds === undefined
+        ? {}
+        : { mergedSearchDocumentIds: input.candidate.searchDocumentIds })
+    }
+  });
+};
+
+const recordExclusionTraceDecision = async (
+  input: Pick<PersistActivationTraceInput, "retrievalRunId"> & {
+    readonly contextAssemblyId: string;
+    readonly exclusion: ActivationTraceExclusion;
+    readonly candidate: RankedActivationCandidate | undefined;
+    readonly retrievalCandidateId: string | undefined;
+    readonly activationAbstentionReason: ActivationAbstentionReason | undefined;
+    readonly retrievalRepository: ActivationTraceRetrievalRepository;
+  }
+): Promise<void> => {
+  const decision = activationDecisionForExclusion(input.candidate);
+  const exclusionCategory = exclusionCategoryFor(
+    input.candidate,
+    input.exclusion.subjectId
+  );
+  const commonInput = {
+    retrievalRunId: input.retrievalRunId,
+    ...(input.retrievalCandidateId === undefined
+      ? {}
+      : { retrievalCandidateId: input.retrievalCandidateId }),
+    contextAssemblyId: input.contextAssemblyId,
+    subjectType: input.exclusion.subjectType,
+    subjectId: input.exclusion.subjectId,
+    ...(input.exclusion.score === undefined ? {} : { score: input.exclusion.score }),
+    sourceSupportState: sourceSupportStateFor(input.candidate),
+    ...(input.activationAbstentionReason === undefined
+      ? {}
+      : { activationAbstentionReason: input.activationAbstentionReason }),
+    metadata: {
+      explanation: input.exclusion.explanation
+    }
+  };
+
+  if (decision === "conflict") {
+    await input.retrievalRepository.recordActivationDecision({
+      ...commonInput,
+      decision,
+      reason: "anti_memory_block",
+      antiMemoryRecordId: antiMemoryRecordIdForConflict(
+        input.candidate,
+        input.exclusion.subjectId
+      ),
+      exclusionCategory
+    });
+    return;
+  }
+
+  if (decision === "stale") {
+    await input.retrievalRepository.recordActivationDecision({
+      ...commonInput,
+      decision,
+      reason: input.exclusion.reason,
+      exclusionCategory: "stale"
+    });
+    return;
+  }
+
+  await input.retrievalRepository.recordActivationDecision({
+    ...commonInput,
+    decision,
+    reason: input.exclusion.reason,
+    exclusionCategory: nonStaleExclusionCategory(
+      exclusionCategory,
+      input.exclusion.subjectId
+    )
+  });
+};
+
+const completeActivationTraceRun = async (
+  input: Pick<
+    PersistActivationTraceInput,
+    "retrievalRunId" | "contextAssembly" | "completedAt" | "metadata"
+  > & {
+    readonly rawEvidenceRecallTriggers: readonly ActivationRawRecallTrigger[];
+    readonly retrievalRepository: ActivationTraceRetrievalRepository;
+  }
+): Promise<void> => {
+  await input.retrievalRepository.storeContextSelection({
+    contextAssemblyId: input.contextAssembly.id,
+    inclusions: input.contextAssembly.inclusions,
+    exclusions: input.contextAssembly.exclusions
+  });
+  await input.retrievalRepository.completeRetrievalRun({
+    retrievalRunId: input.retrievalRunId,
+    status: input.contextAssembly.status === "abstained" ? "abstained" : "completed",
+    completedAt: input.completedAt,
+    ...(input.contextAssembly.activationAbstention === undefined
+      ? {}
+      : { activationAbstentionReason: input.contextAssembly.activationAbstention.reason }),
+    rawEvidenceRecallTriggerCount: input.rawEvidenceRecallTriggers.length,
+    ...(input.rawEvidenceRecallTriggers.length === 0
+      ? {}
+      : { rawEvidenceRecallTriggers: input.rawEvidenceRecallTriggers }),
+    metadata: {
+      ...(input.metadata ?? {}),
+      inclusionCount: input.contextAssembly.inclusions.length,
+      exclusionCount: input.contextAssembly.exclusions.length
+    }
+  });
 };
 
 const isExplicitMarkerTerm = (term: string): boolean =>
@@ -307,19 +518,7 @@ export const retrieveActivationCandidates = async (
 export const persistActivationTrace = async (
   input: PersistActivationTraceInput
 ): Promise<void> => {
-  const rawEvidenceRecallTriggers = buildActivationRawRecallTriggers({
-    candidates: input.candidates,
-    contextAssembly: input.contextAssembly,
-    ...(input.rawRecall?.requireExactProof === undefined
-      ? {}
-      : { requireExactProof: input.rawRecall.requireExactProof }),
-    ...(input.rawRecall?.lowTrustTiers === undefined
-      ? {}
-      : { lowTrustTiers: input.rawRecall.lowTrustTiers }),
-    ...(input.rawRecall?.exactProofKinds === undefined
-      ? {}
-      : { exactProofKinds: input.rawRecall.exactProofKinds })
-  });
+  const rawEvidenceRecallTriggers = buildTraceRawRecallTriggers(input);
   const rawEvidenceRecallTriggersBySubject = new Map(
     rawEvidenceRecallTriggers.map((trigger) => [candidateKey(trigger), trigger])
   );
@@ -331,141 +530,45 @@ export const persistActivationTrace = async (
   const candidatesBySubject = new Map(
     input.candidates.map((candidate) => [candidateKey(candidate), candidate])
   );
-  const candidateRecordIds = new Map<string, string>();
-
-  for (const candidate of input.candidates) {
-    const key = candidateKey(candidate);
-    const included = includedIds.has(key);
-    const searchDocumentId =
-      candidate.searchDocumentId ??
-      (candidate.searchDocumentIds?.length === 1 ? candidate.searchDocumentIds[0] : undefined);
-    const record = await input.retrievalRepository.addCandidate({
-      retrievalRunId: input.retrievalRunId,
-      kind: candidate.kind,
-      status: included ? "included" : "excluded",
-      subjectType: candidate.subjectType,
-      subjectId: candidate.subjectId,
-      ...(searchDocumentId === undefined ? {} : { searchDocumentId }),
-      trustTier: candidate.trustTier,
-      lexicalScore: candidate.lexicalScore,
-      vectorScore: candidate.vectorScore,
-      graphScore: candidate.graphScore,
-      temporalScore: candidate.temporalScore,
-      contextRoiScore: candidate.contextRoiScore,
-      totalScore: candidate.totalScore,
-      score: candidate.totalScore,
-      reason: candidate.exclusion?.explanation ?? candidate.reason,
-      metadata: candidate.metadata
-    });
-
-    candidateRecordIds.set(key, record.id);
-  }
+  const candidateRecordIds = await persistRetrievalCandidates({
+    retrievalRunId: input.retrievalRunId,
+    candidates: input.candidates,
+    includedIds,
+    retrievalRepository: input.retrievalRepository
+  });
 
   for (const inclusion of input.contextAssembly.inclusions) {
     const key = candidateKey(inclusion);
-    const candidate = candidatesBySubject.get(key);
-    const retrievalCandidateId = candidateRecordIds.get(key);
-    const rawEvidenceRecallTrigger = rawEvidenceRecallTriggersBySubject.get(key);
-
-    await input.retrievalRepository.recordActivationDecision({
+    await recordInclusionTraceDecision({
       retrievalRunId: input.retrievalRunId,
-      ...(retrievalCandidateId === undefined ? {} : { retrievalCandidateId }),
       contextAssemblyId: input.contextAssembly.id,
-      subjectType: inclusion.subjectType,
-      subjectId: inclusion.subjectId,
-      decision: "included",
-      reason: inclusion.reason,
-      ...(candidate === undefined ? {} : { score: candidate.totalScore }),
-      ...(inclusion.tokenEstimate === undefined
-        ? {}
-        : { contextBudgetCost: inclusion.tokenEstimate }),
-      expectedDecisionImpact: inclusion.expectedUse,
-      expectedUse: inclusion.expectedUse,
-      ...(rawEvidenceRecallTrigger === undefined
-        ? {}
-        : {
-            rawRecall: {
-              required: true,
-              reasons: rawEvidenceRecallTrigger.reasons,
-              evidenceHints: rawEvidenceRecallTrigger.evidenceHints
-            }
-          }),
-      sourceSupportState: sourceSupportStateFor(candidate),
-      metadata: {
-        ...(candidate?.searchDocumentIds === undefined
-          ? {}
-          : { mergedSearchDocumentIds: candidate.searchDocumentIds })
-      }
+      inclusion,
+      candidate: candidatesBySubject.get(key),
+      retrievalCandidateId: candidateRecordIds.get(key),
+      rawEvidenceRecallTrigger: rawEvidenceRecallTriggersBySubject.get(key),
+      retrievalRepository: input.retrievalRepository
     });
   }
 
   for (const exclusion of input.contextAssembly.exclusions) {
     const key = candidateKey(exclusion);
-    const candidate = candidatesBySubject.get(key);
-    const retrievalCandidateId = candidateRecordIds.get(key);
-    const decision = activationDecisionForExclusion(candidate);
-    const exclusionCategory = exclusionCategoryFor(candidate, exclusion.subjectId);
-    const activationAbstentionReason = input.contextAssembly.activationAbstention?.reason;
-
-    const commonInput = {
+    await recordExclusionTraceDecision({
       retrievalRunId: input.retrievalRunId,
-      ...(retrievalCandidateId === undefined ? {} : { retrievalCandidateId }),
       contextAssemblyId: input.contextAssembly.id,
-      subjectType: exclusion.subjectType,
-      subjectId: exclusion.subjectId,
-      ...(exclusion.score === undefined ? {} : { score: exclusion.score }),
-      sourceSupportState: sourceSupportStateFor(candidate),
-      ...(activationAbstentionReason === undefined ? {} : { activationAbstentionReason }),
-      metadata: {
-        explanation: exclusion.explanation
-      }
-    };
-
-    if (decision === "conflict") {
-      await input.retrievalRepository.recordActivationDecision({
-        ...commonInput,
-        decision,
-        reason: "anti_memory_block",
-        antiMemoryRecordId: antiMemoryRecordIdForConflict(candidate, exclusion.subjectId),
-        exclusionCategory
-      });
-    } else if (decision === "stale") {
-      await input.retrievalRepository.recordActivationDecision({
-        ...commonInput,
-        decision,
-        reason: exclusion.reason,
-        exclusionCategory: "stale"
-      });
-    } else {
-      await input.retrievalRepository.recordActivationDecision({
-        ...commonInput,
-        decision,
-        reason: exclusion.reason,
-        exclusionCategory: nonStaleExclusionCategory(exclusionCategory, exclusion.subjectId)
-      });
-    }
+      exclusion,
+      candidate: candidatesBySubject.get(key),
+      retrievalCandidateId: candidateRecordIds.get(key),
+      activationAbstentionReason: input.contextAssembly.activationAbstention?.reason,
+      retrievalRepository: input.retrievalRepository
+    });
   }
 
-  await input.retrievalRepository.storeContextSelection({
-    contextAssemblyId: input.contextAssembly.id,
-    inclusions: input.contextAssembly.inclusions,
-    exclusions: input.contextAssembly.exclusions
-  });
-  await input.retrievalRepository.completeRetrievalRun({
+  await completeActivationTraceRun({
     retrievalRunId: input.retrievalRunId,
-    status: input.contextAssembly.status === "abstained" ? "abstained" : "completed",
+    contextAssembly: input.contextAssembly,
     completedAt: input.completedAt,
-    ...(input.contextAssembly.activationAbstention === undefined
-      ? {}
-      : { activationAbstentionReason: input.contextAssembly.activationAbstention.reason }),
-    rawEvidenceRecallTriggerCount: rawEvidenceRecallTriggers.length,
-    ...(rawEvidenceRecallTriggers.length === 0
-      ? {}
-      : { rawEvidenceRecallTriggers }),
-    metadata: {
-      ...(input.metadata ?? {}),
-      inclusionCount: input.contextAssembly.inclusions.length,
-      exclusionCount: input.contextAssembly.exclusions.length
-    }
+    ...(input.metadata === undefined ? {} : { metadata: input.metadata }),
+    rawEvidenceRecallTriggers,
+    retrievalRepository: input.retrievalRepository
   });
 };

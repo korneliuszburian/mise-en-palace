@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+active stream: V359 Fallow Quality Gate And First Cleanup
+current task: V359-00 Fallow Quality Gate And First Cleanup
 ```
 
 ## Compact Checkpoints
@@ -96,47 +96,36 @@ docs/reviews/controlled-dogfood/2026-06-29-v357-source-search-query-shape-diagno
 
 ### V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
-Goal: rerun the graph-relations mini Brain-QA case using built-in
-`queryShapeDiagnostics`.
+Status: deferred by operator request.
 
-Product rationale: V357 added the operator-facing diagnostic; now the graph
-mini Brain-QA loop must prove whether consumers can use it without manual DB
-inspection.
+Next condition: resume after Fallow quality-gate cleanup no longer needs the
+active slot.
 
-Architectural rationale: close the usefulness loop before graph brain v0
-entity/relation extraction, ranking, schema, crawler, embeddings, UI/API/MCP,
-worker runtime, or broad benchmark work.
+### V359-00 Fallow Quality Gate And First Cleanup
 
-Source-to-decision:
+Status: complete pending commit/CI.
 
-```txt
-source: V357 source-search query-shape diagnostics report.
-mechanism: answer packages now expose queryShapeDiagnostics for claim-only/no-document/no-search-result broad query shapes.
-KRN implication: the next graph mini QA loop should consume the diagnostic directly and decide whether graph support is sufficient to move forward.
-decision: run a bounded graph-relations diagnostic closure before broader graph brain work.
-consumer: graph brain v0 task selection.
-falsifier: the graph mini QA case still needs manual DB/source inspection or diagnostics hide real missing coverage.
-doesNotProve: answer correctness, source truth, ranking quality, product readiness, UI/API/MCP readiness, or Memory Core mutation.
-```
+Outcome: Fallow added as a JS/TS quality layer, AGENTS guidance added, CI
+changed-files gate added, intentional fixture/typecheck/repository exceptions
+configured, dead-code findings reduced to zero, and first ranked health target
+(`persistActivationTrace`) refactored below Fallow complexity thresholds.
 
-Allowed writes: report/root only unless a tiny blocking source bug appears.
+Does not prove: full repo cleanup. Full Fallow audit still reports legacy
+duplication and health debt.
 
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory
-Core mutation, or parallel roadmap.
-
-Verification: DB-backed graph relation source-search JSON readback, evidence
-capture, observe, reflect, `git diff --check`.
+Next task: V360 Fallow Legacy Complexity Cleanup, starting with the highest ROI
+bounded target that can pass typecheck/tests/Fallow gate without broad refactor.
 
 ## Remaining Product Gaps
 
 ```txt
-1. graph mini Brain-QA query-shape diagnostics closure
-2. ingest v0 expansion with bounded evidence
-3. graph brain v0 entity/relation extraction and answer deltas
-4. heartbeat/dreaming candidate generator
-5. consensus eval/candidate lane
-6. product UI/search/API/MCP after usefulness/security gates
+1. Fallow legacy duplication/complexity cleanup
+2. graph mini Brain-QA query-shape diagnostics closure
+3. ingest v0 expansion with bounded evidence
+4. graph brain v0 entity/relation extraction and answer deltas
+5. heartbeat/dreaming candidate generator
+6. consensus eval/candidate lane
+7. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

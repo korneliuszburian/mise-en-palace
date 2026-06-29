@@ -43,6 +43,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Fallow quality gate
+        run: pnpm quality:fallow:ci
+
       - name: Brain-battle smoke
         run: pnpm eval:brain-battle:smoke
 

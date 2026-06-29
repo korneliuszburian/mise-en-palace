@@ -131,7 +131,7 @@ export const formatMemoryAntiRejectUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
-export const formatMemoryUsage = (): string =>
+const formatMemoryUsage = (): string =>
   [
     formatMemoryCandidateAddUsage().trim(),
     formatMemoryCandidatePromoteUsage().trim(),

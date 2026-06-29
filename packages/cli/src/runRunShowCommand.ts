@@ -235,7 +235,7 @@ const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
 
-export const missingRunShowDatabaseUrlMessage = [
+const missingRunShowDatabaseUrlMessage = [
   "KRN_DATABASE_URL is required for krn run show",
   `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and run pnpm db:ready before readback`,
   "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
@@ -852,7 +852,7 @@ const renderFeedbackDeltas = (feedbackDeltas: readonly FeedbackDelta[]): string[
     : feedbackDeltas.flatMap(renderFeedbackDelta))
 ];
 
-export const buildRunReadbackResource = (
+const buildRunReadbackResource = (
   aggregate: HarnessRunAggregate
 ): RunReadbackResource => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);

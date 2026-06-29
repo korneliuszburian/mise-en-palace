@@ -35,7 +35,7 @@ export interface KnowledgeCardsCommandResult {
   stdout: string;
 }
 
-export interface KnowledgeCardsPreviewResource {
+interface KnowledgeCardsPreviewResource {
   kind: "krn.brainKnowledge.cards.preview.v1";
   access: "read_only";
   mutation: "none";

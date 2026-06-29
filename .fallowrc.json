@@ -1,0 +1,71 @@
+{
+  "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/config-schema.json",
+  "ignorePatterns": [
+    ".local-lab/**",
+    "docs/materials/**",
+    "tests/fixtures/**",
+    "**/*.typecheck.ts"
+  ],
+  "usedClassMembers": [
+    {
+      "implements": "EventLedgerRepository",
+      "members": [
+        "appendRunEvent",
+        "listRunEvents"
+      ]
+    },
+    {
+      "implements": "HarnessRunRepository",
+      "members": [
+        "updateExecutionRunStatus"
+      ]
+    },
+    {
+      "implements": "MemoryRepository",
+      "members": [
+        "getMemoryRecord",
+        "promoteReviewedMemoryCandidate",
+        "rejectMemoryCandidate",
+        "listMemoryCandidates",
+        "createMemoryFeedbackEvent",
+        "rejectAntiMemoryCandidate",
+        "listAntiMemoryCandidates"
+      ]
+    },
+    {
+      "implements": "OutboxRepository",
+      "members": [
+        "enqueue",
+        "listPending"
+      ]
+    },
+    {
+      "implements": "RetrievalRepository",
+      "members": [
+        "completeRetrievalRun"
+      ]
+    },
+    {
+      "implements": "SourceRepository",
+      "members": [
+        "createSourceChunk",
+        "getSourceDecisionEdgeById"
+      ]
+    },
+    {
+      "implements": "WorkerJobRepository",
+      "members": [
+        "enqueue",
+        "getWorkerJobById"
+      ]
+    },
+    "createGroup",
+    "addItems",
+    "recordFeedback",
+    "getReflectionRecordById",
+    "listReflectionRecordsByScope"
+  ],
+  "audit": {
+    "gate": "new-only"
+  }
+}

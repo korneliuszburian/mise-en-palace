@@ -519,7 +519,9 @@ Falsifier:
 - [x] V355 complete: Mini Brain-QA Built-In Usefulness Loop.
 - [x] V356 complete: Graph Relation SearchDocument Support Vertical.
 - [x] V357 complete: Source Search Query-Shape Diagnostics.
-- [ ] V358 current task: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+- [ ] V358 deferred: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+- [x] V359 complete pending commit/CI: Fallow Quality Gate And First Cleanup.
+- [ ] V360 next: Fallow Legacy Complexity Cleanup.
 
 ## Verification Policy
 
