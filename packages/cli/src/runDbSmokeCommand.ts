@@ -53,137 +53,69 @@ const localDatabaseUrl = "postgres://krn:krn@localhost:54329/krn";
 const errorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : "unknown DB smoke error";
 
-const titleForTarget = (target: DbSmokeRuntime["target"]): string => {
-  if (target === "harnessPlan") {
-    return "KRN Harness Plan Smoke";
+interface DbSmokeTargetMetadata {
+  title: string;
+  skippedLine: string;
+  failureLabel: string;
+}
+
+const dbSmokeTargetMetadata = {
+  project: {
+    title: "KRN DB Smoke",
+    skippedLine: "Persistence smoke: skipped (database not configured)",
+    failureLabel: "Persistence smoke"
+  },
+  harnessPlan: {
+    title: "KRN Harness Plan Smoke",
+    skippedLine: "Harness plan smoke: skipped (database not configured)",
+    failureLabel: "Harness plan smoke"
+  },
+  harnessEvidence: {
+    title: "KRN Harness Evidence Smoke",
+    skippedLine: "Harness evidence smoke: skipped (database not configured)",
+    failureLabel: "Harness evidence smoke"
+  },
+  sourceGraph: {
+    title: "KRN Source Graph Smoke",
+    skippedLine: "Source graph smoke: skipped (database not configured)",
+    failureLabel: "Source graph smoke"
+  },
+  memoryGovernance: {
+    title: "KRN Memory Governance Smoke",
+    skippedLine: "Memory governance smoke: skipped (database not configured)",
+    failureLabel: "Memory governance smoke"
+  },
+  retrievalSubstrate: {
+    title: "KRN Retrieval Substrate Smoke",
+    skippedLine: "Retrieval substrate smoke: skipped (database not configured)",
+    failureLabel: "Retrieval substrate smoke"
+  },
+  activation: {
+    title: "KRN Activation Smoke",
+    skippedLine: "Activation smoke: skipped (database not configured)",
+    failureLabel: "Activation smoke"
+  },
+  codexAdapter: {
+    title: "KRN Codex Adapter Smoke",
+    skippedLine: "Codex adapter smoke: skipped (database not configured)",
+    failureLabel: "Codex adapter smoke"
+  },
+  workerJobs: {
+    title: "KRN Worker Job Smoke",
+    skippedLine: "Worker job smoke: skipped (database not configured)",
+    failureLabel: "Worker job smoke"
+  },
+  initConnect: {
+    title: "KRN Target Repo Init-Connect Smoke",
+    skippedLine: "Init-connect smoke: skipped (database not configured)",
+    failureLabel: "Init-connect smoke"
+  },
+  targetRepoHarness: {
+    title: "KRN Target Repo Harness Smoke",
+    skippedLine: "Target repo harness smoke: skipped (database not configured)",
+    failureLabel: "Target repo harness smoke"
   }
-
-  if (target === "harnessEvidence") {
-    return "KRN Harness Evidence Smoke";
-  }
-
-  if (target === "sourceGraph") {
-    return "KRN Source Graph Smoke";
-  }
-
-  if (target === "memoryGovernance") {
-    return "KRN Memory Governance Smoke";
-  }
-
-  if (target === "retrievalSubstrate") {
-    return "KRN Retrieval Substrate Smoke";
-  }
-
-  if (target === "activation") {
-    return "KRN Activation Smoke";
-  }
-
-  if (target === "codexAdapter") {
-    return "KRN Codex Adapter Smoke";
-  }
-
-  if (target === "workerJobs") {
-    return "KRN Worker Job Smoke";
-  }
-
-  if (target === "initConnect") {
-    return "KRN Target Repo Init-Connect Smoke";
-  }
-
-  if (target === "targetRepoHarness") {
-    return "KRN Target Repo Harness Smoke";
-  }
-
-  return "KRN DB Smoke";
-};
-
-const skippedLineForTarget = (target: DbSmokeRuntime["target"]): string => {
-  if (target === "harnessPlan") {
-    return "Harness plan smoke: skipped (database not configured)";
-  }
-
-  if (target === "harnessEvidence") {
-    return "Harness evidence smoke: skipped (database not configured)";
-  }
-
-  if (target === "sourceGraph") {
-    return "Source graph smoke: skipped (database not configured)";
-  }
-
-  if (target === "memoryGovernance") {
-    return "Memory governance smoke: skipped (database not configured)";
-  }
-
-  if (target === "retrievalSubstrate") {
-    return "Retrieval substrate smoke: skipped (database not configured)";
-  }
-
-  if (target === "activation") {
-    return "Activation smoke: skipped (database not configured)";
-  }
-
-  if (target === "codexAdapter") {
-    return "Codex adapter smoke: skipped (database not configured)";
-  }
-
-  if (target === "workerJobs") {
-    return "Worker job smoke: skipped (database not configured)";
-  }
-
-  if (target === "initConnect") {
-    return "Init-connect smoke: skipped (database not configured)";
-  }
-
-  if (target === "targetRepoHarness") {
-    return "Target repo harness smoke: skipped (database not configured)";
-  }
-
-  return "Persistence smoke: skipped (database not configured)";
-};
-
-const failureLabelForTarget = (target: DbSmokeRuntime["target"]): string => {
-  if (target === "harnessPlan") {
-    return "Harness plan smoke";
-  }
-
-  if (target === "harnessEvidence") {
-    return "Harness evidence smoke";
-  }
-
-  if (target === "sourceGraph") {
-    return "Source graph smoke";
-  }
-
-  if (target === "memoryGovernance") {
-    return "Memory governance smoke";
-  }
-
-  if (target === "retrievalSubstrate") {
-    return "Retrieval substrate smoke";
-  }
-
-  if (target === "activation") {
-    return "Activation smoke";
-  }
-
-  if (target === "codexAdapter") {
-    return "Codex adapter smoke";
-  }
-
-  if (target === "workerJobs") {
-    return "Worker job smoke";
-  }
-
-  if (target === "initConnect") {
-    return "Init-connect smoke";
-  }
-
-  if (target === "targetRepoHarness") {
-    return "Target repo harness smoke";
-  }
-
-  return "Persistence smoke";
-};
+} satisfies Record<DbSmokeRuntime["target"], DbSmokeTargetMetadata>;
 
 export const runDbSmokeCommand = async (
   runtime: DbSmokeRuntime
@@ -192,19 +124,18 @@ export const runDbSmokeCommand = async (
   const migrationsFolder = path.join(repoRoot, "packages", "db", "src", "migrations");
   const relativeMigrationsFolder = path.relative(repoRoot, migrationsFolder);
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-  const title = titleForTarget(runtime.target);
-  const skipped = skippedLineForTarget(runtime.target);
+  const targetMetadata = dbSmokeTargetMetadata[runtime.target];
 
   if (databaseUrl === undefined || databaseUrl.length === 0) {
     return {
       exitCode: 1,
       stdout: [
-        title,
+        targetMetadata.title,
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: missing KRN_DATABASE_URL",
         `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and start docker compose up -d krn-postgres`,
-        skipped
+        targetMetadata.skippedLine
       ].join("\n") + "\n"
     };
   }
@@ -568,11 +499,11 @@ export const runDbSmokeCommand = async (
     return {
       exitCode: 1,
       stdout: [
-        title,
+        targetMetadata.title,
         `Repo root: ${repoRoot}`,
         `Migrations folder: ${relativeMigrationsFolder}`,
         "Postgres config: configured",
-        `${failureLabelForTarget(runtime.target)}: failed (${errorMessage(error)})`
+        `${targetMetadata.failureLabel}: failed (${errorMessage(error)})`
       ].join("\n") + "\n"
     };
   }
