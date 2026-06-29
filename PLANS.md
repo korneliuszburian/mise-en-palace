@@ -13,9 +13,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V357 Source Search Query-Shape Diagnostics
-current task: V357-00 Source Search Query-Shape Diagnostics
-latest pushed commit checked: a474385 / CI green before V356 work
+active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+latest pushed commit checked: ba9e55e / CI green before V357 work
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,9 +24,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V357-00 Source Search Query-Shape Diagnostics must make broad-query shape
-ambiguity visible in source-search readback without changing retrieval
-semantics or ranking.
+V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure must prove whether
+the new `queryShapeDiagnostics` field reduces graph-relations operator
+diagnostic burden.
 ```
 
 ## 2. Product Thesis
@@ -94,6 +94,8 @@ V355 complete: built-in answerUsefulness batch consumed without local
 classification; graph-relations remains claim-only for document support.
 V356 complete: graph relation SearchDocuments exist and work for narrow queries;
 the V355 gap is broad-query shape ambiguity.
+V357 complete: source-search answer packages expose queryShapeDiagnostics for
+claim-only/no-document/no-search-result broad query shapes.
 ```
 
 ## Outcome V353 Mini Brain-QA Answer Usefulness Closure
@@ -337,11 +339,11 @@ Source-to-decision:
 - Falsifier: diagnostics cannot be derived safely without changing retrieval
   semantics, or diagnostics hide real missing coverage.
 
-## Active Task V357 Source Search Query-Shape Diagnostics
+## Outcome V357 Source Search Query-Shape Diagnostics
 
 ID: V357-00
 Name: Source Search Query-Shape Diagnostics
-Status: active
+Status: complete
 Goal: Add bounded source-search readback diagnostics for likely over-constrained
 broad queries.
 Product rationale: V356 showed operators needed manual DB/query inspection to
@@ -381,6 +383,76 @@ Does not prove: answer correctness, ranking quality, source truth, product
 readiness, UI/API/MCP readiness, or Memory Core mutation.
 Falsifier: diagnostics cannot be derived safely from existing answer-package
 fields or they hide actual missing coverage.
+
+Evidence:
+
+```txt
+executionRun: b8857df7-6c79-4f19-930c-87f1fc2df197
+report: docs/reviews/controlled-dogfood/2026-06-29-v357-source-search-query-shape-diagnostics/REPORT.md
+source files: packages/cli/src/runSourceSearchCommand.ts, packages/cli/src/runSourceSearchCommand.test.ts
+broad query: queryShapeDiagnostics present
+narrow query: queryShapeDiagnostics empty
+evidenceBundle: 09cc8c6b-a184-4af6-9720-cee255d5f8eb
+reflectionRecord: 3ad5b3ed-18a3-4f7f-9d6e-24bb56af346f
+focused tests: passed
+typecheck: passed
+workspace tests: passed
+```
+
+Source-to-decision:
+
+- Source: V356 graph relation SearchDocument support report.
+- Mechanism: broad graph queries can match SourceClaims while lexical
+  SearchDocument retrieval returns zero results.
+- KRN implication: source-search readback should expose query-shape ambiguity
+  before operators infer missing coverage or change ranking.
+- Decision: implemented bounded `queryShapeDiagnostics` in answer packages.
+- Does not prove: answer correctness, ranking quality, graph retrieval quality,
+  source truth, product readiness, UI/API/MCP readiness, or Memory Core mutation.
+- Consumer: V358 graph mini Brain-QA diagnostic closure.
+- Falsifier: diagnostic fires for normal claim+document packages or hides real
+  missing coverage.
+
+## Active Task V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+
+ID: V358-00
+Name: Graph Mini Brain-QA Query-Shape Diagnostics Closure
+Status: active
+Goal: Rerun the graph-relations mini Brain-QA case using built-in
+`queryShapeDiagnostics`.
+Product rationale: V357 added the diagnostic; now KRN must prove it reduces
+manual DB/source inspection burden for graph-relations readback.
+Architectural rationale: close the usefulness loop before graph brain v0
+entity/relation extraction, ranking, schema, crawler, embeddings, worker
+runtime, UI/API/MCP, or broad benchmark work.
+Evidence source: V357 report and DB-backed source-search JSON readbacks.
+Official/external sources: none required.
+Inputs required: graph-relations broad query, narrow control query, source-search JSON.
+Files likely touched: V358 report and compact root state.
+Allowed writes: report/root only unless a tiny blocking source bug appears.
+Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
+crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
+mutation, or parallel roadmap.
+Output requirements: report with broad/narrow graph readback, diagnostic
+consumption, proof/non-proof, and next graph-brain decision.
+Definition of Done: graph-relations consumer can use built-in diagnostics
+without manual DB inspection; next graph-brain vertical is selected or deferred.
+Verification commands: DB-backed source-search JSON readback, evidence capture,
+observe, reflect, `git diff --check`.
+Acceptance criteria: query-shape diagnostic is consumed directly and does not
+overclaim answer correctness or ranking quality.
+Risk: treating diagnostics as answer correctness or graph retrieval quality.
+Rollback: revert only report/root changes if the closure is invalid.
+Condensation expectation: compact root; detailed evidence in V358 report.
+Next-task synthesis rule: if V358 passes, choose graph brain v0 entity/relation
+extraction or the next highest-ROI source-search repair; if it fails, repair
+only the blocking diagnostic issue.
+Pattern surface: operator-UX / graph brain readback.
+Primary consumer: graph brain v0 task selection.
+Does not prove: answer correctness, ranking quality, graph retrieval quality,
+source truth, product readiness, UI/API/MCP readiness, or Memory Core mutation.
+Falsifier: consumer still needs manual DB/source inspection or diagnostic hides
+actual missing coverage.
 
 ## 9. Task Contract Schema
 
@@ -446,7 +518,8 @@ Falsifier:
 - [x] V354 complete: Source Search Answer Usefulness Classification.
 - [x] V355 complete: Mini Brain-QA Built-In Usefulness Loop.
 - [x] V356 complete: Graph Relation SearchDocument Support Vertical.
-- [ ] V357 current task: Source Search Query-Shape Diagnostics.
+- [x] V357 complete: Source Search Query-Shape Diagnostics.
+- [ ] V358 current task: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 
 ## Verification Policy
 

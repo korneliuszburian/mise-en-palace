@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V357 Source Search Query-Shape Diagnostics
+V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 ```
 
 Current state:
@@ -27,13 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V357-00 Source Search Query-Shape Diagnostics.
+current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 ```
 
-Current task: improve source-search readback so broad over-constrained queries
-are visible to operators when SourceClaims exist but SearchDocuments are absent.
-Do not add UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph
-runtime, worker runtime, broad benchmark, or Memory Core mutation.
+Current task: rerun the graph-relations mini Brain-QA case using built-in
+`queryShapeDiagnostics`, prove whether it reduces operator diagnostic burden,
+and choose the next graph-brain vertical. Do not add UI/API/MCP, crawler,
+schema, ranking rewrite, embeddings, graph runtime, worker runtime, broad
+benchmark, or Memory Core mutation.
 
 ## Direction
 

@@ -95,6 +95,7 @@ interface SourceSearchAnswerPackage {
   answer: string;
   answerUsefulness: SourceSearchAnswerUsefulness;
   answerUsefulnessReasons: readonly string[];
+  queryShapeDiagnostics: readonly string[];
   supportingClaims: readonly SourceSearchAnswerCandidate[];
   supportingDocuments: readonly SourceSearchAnswerCandidate[];
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
@@ -193,6 +194,24 @@ export const classifySourceSearchAnswerUsefulness = (input: {
       "Answer package has no included SearchDocument evidence."
     ]
   };
+};
+
+export const buildSourceSearchQueryShapeDiagnostics = (input: {
+  supportingClaimCount: number;
+  supportingDocumentCount: number;
+  searchResultCount: number;
+}): readonly string[] => {
+  if (
+    input.supportingClaimCount > 0 &&
+    input.supportingDocumentCount === 0 &&
+    input.searchResultCount === 0
+  ) {
+    return [
+      "likely over-constrained query shape: SourceClaims matched, but lexical SearchDocument retrieval returned zero results; try a narrower topic-specific query before changing ranking or coverage."
+    ];
+  }
+
+  return [];
 };
 
 const reviewabilityFor = (candidate: RankedActivationCandidate): ReviewabilityResult => {
@@ -336,6 +355,11 @@ const buildAnswerPackage = (input: {
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length
   });
+  const queryShapeDiagnostics = buildSourceSearchQueryShapeDiagnostics({
+    supportingClaimCount: supportingClaims.length,
+    supportingDocumentCount: supportingDocuments.length,
+    searchResultCount: input.diagnostics.searchResultCount
+  });
   const recommendedNextAction =
     supportingClaims.length > 0 && supportingDocuments.length > 0
       ? "Use the supporting claims/documents as a Pattern Application Gate, then verify the selected pattern against the target slice."
@@ -353,6 +377,7 @@ const buildAnswerPackage = (input: {
     answer: `Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
     answerUsefulness: answerUsefulness.answerUsefulness,
     answerUsefulnessReasons: answerUsefulness.reasons,
+    queryShapeDiagnostics,
     supportingClaims,
     supportingDocuments,
     neutralOrNoise,
@@ -369,6 +394,10 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
     `answer usefulness: ${answerPackage.answerUsefulness}`,
     "answer usefulness reasons:",
     ...answerPackage.answerUsefulnessReasons.map((reason) => `- ${reason}`),
+    "query shape diagnostics:",
+    ...(answerPackage.queryShapeDiagnostics.length === 0
+      ? ["- none detected by current diagnostics"]
+      : answerPackage.queryShapeDiagnostics.map((diagnostic) => `- ${diagnostic}`)),
     "supporting claims:",
     ...(answerPackage.supportingClaims.length === 0
       ? ["- none"]

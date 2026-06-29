@@ -15,6 +15,7 @@ import type {
 } from "./databaseRuntime.js";
 import {
   classifySourceSearchAnswerUsefulness,
+  buildSourceSearchQueryShapeDiagnostics,
   buildSourceSearchMissingEvidence,
   runSourceSearchCommand
 } from "./runSourceSearchCommand.js";
@@ -255,6 +256,26 @@ describe("runSourceSearchCommand", () => {
     });
   });
 
+  it("builds query-shape diagnostics without changing retrieval semantics", () => {
+    expect(buildSourceSearchQueryShapeDiagnostics({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 0,
+      searchResultCount: 0
+    })).toEqual([
+      "likely over-constrained query shape: SourceClaims matched, but lexical SearchDocument retrieval returned zero results; try a narrower topic-specific query before changing ranking or coverage."
+    ]);
+    expect(buildSourceSearchQueryShapeDiagnostics({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 0,
+      searchResultCount: 2
+    })).toEqual([]);
+    expect(buildSourceSearchQueryShapeDiagnostics({
+      supportingClaimCount: 1,
+      supportingDocumentCount: 1,
+      searchResultCount: 1
+    })).toEqual([]);
+  });
+
   it("renders read-only source and search candidates with proof boundaries", async () => {
     let closeCount = 0;
     let searchQuery: string | undefined;
@@ -290,6 +311,8 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain("answer usefulness: useful");
     expect(result.stdout).toContain("- Answer package includes governed SourceClaim evidence.");
     expect(result.stdout).toContain("- Answer package includes SearchDocument retrieval evidence.");
+    expect(result.stdout).toContain("query shape diagnostics:");
+    expect(result.stdout).toContain("- none detected by current diagnostics");
     expect(result.stdout).toContain("supporting claims:");
     expect(result.stdout).toContain(`- source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain("supporting documents:");
@@ -349,6 +372,7 @@ describe("runSourceSearchCommand", () => {
       "Answer package includes governed SourceClaim evidence.",
       "Answer package includes SearchDocument retrieval evidence."
     ]);
+    expect(arrayValue(answerPackage.queryShapeDiagnostics, "queryShapeDiagnostics")).toEqual([]);
     expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Pattern Application Gate");
     expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toEqual([]);
     expect(arrayValue(answerPackage.doesNotProve, "doesNotProve")).toContain(
@@ -435,11 +459,46 @@ describe("runSourceSearchCommand", () => {
 
     expect(result.stdout).toContain("answer: Source search found 1 supporting SourceClaim(s) and 0 supporting SearchDocument(s)");
     expect(result.stdout).toContain("answer usefulness: partly_useful_missing_document");
+    expect(result.stdout).toContain("query shape diagnostics:");
+    expect(result.stdout).toContain(
+      "- likely over-constrained query shape: SourceClaims matched, but lexical SearchDocument retrieval returned zero results; try a narrower topic-specific query before changing ranking or coverage."
+    );
     expect(result.stdout).toContain(
       "- included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
     );
     expect(result.stdout).toContain(
       "recommended next action: Use the supporting claims cautiously and split broad queries into narrower topic-specific source searches before changing retrieval."
+    );
+  });
+
+  it("renders query-shape diagnostics in JSON when claims match but document search returns nothing", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "graph sourceclaimedge relation grounded qa temporal source relations",
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [sourceClaim()],
+        documents: []
+      })
+    });
+
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+
+    expect(answerPackage.answerUsefulness).toBe("partly_useful_missing_document");
+    expect(arrayValue(answerPackage.queryShapeDiagnostics, "queryShapeDiagnostics")).toEqual([
+      "likely over-constrained query shape: SourceClaims matched, but lexical SearchDocument retrieval returned zero results; try a narrower topic-specific query before changing ranking or coverage."
+    ]);
+    expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toContain(
+      "included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
     );
   });
 });
