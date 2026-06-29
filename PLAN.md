@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V349 Brain QA Source Search JSON Consumer Case
-current task: V349-00 Brain QA Source Search JSON Consumer Case
+active stream: V350 Mini Brain-QA JSON Batch Preview
+current task: V350-00 Mini Brain-QA JSON Batch Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -54,37 +54,38 @@ SearchDocuments. V345 proved reduced rereads for seeded Pattern Application
 Gate questions. V346 added an answer package. V347 proved heartbeat/consensus
 documents exist for specific queries and repaired broad-query guidance. V348
 added typed JSON answer package readback without building a new product surface.
+V349 proved a small consumer can use JSON without parsing text.
 
-### V349 Brain QA Source Search JSON Consumer Case
+### V350 Mini Brain-QA JSON Batch Preview
 
 Goal:
 
-Use the V348 `krn source search --json` answer package as a tiny Brain-QA /
-readback consumer and measure whether typed output reduces report/review parsing
-burden.
+Use `krn source search --json` across a small batch of 3-5 Brain-QA/readback
+questions and measure answer-package coverage, missing evidence, raw candidate
+inspectability, and review parsing burden.
 
 Current action:
 
 ```txt
-Execute V349-00: consume one or two source-search JSON answer packages in a
-small Brain-QA/readback case. Prefer docs/report or a tiny local script only if
-needed. Do not add UI/API/MCP, crawler, worker daemon, schema, broad benchmark,
-ranking rewrite, embeddings, graph runtime, autonomous truth runtime, or Memory
-Core mutation.
+Execute V350-00: run a small JSON batch preview over source-search answer
+packages. Prefer local lab artifacts plus one compact report. Do not add
+UI/API/MCP, crawler, worker daemon, schema, broad benchmark, ranking rewrite,
+embeddings, graph runtime, autonomous truth runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators validating whether machine-readable source-search packages
-reduce rereads and parsing burden before product surfaces exist.
+technical operators validating whether source-search JSON can support a bounded
+mini Brain-QA loop before product surfaces exist.
 ```
 
 Falsifier:
 
 ```txt
-The consumer cannot use JSON without parsing text, loses proof/non-proof
-boundaries, hides missing evidence, or creates another guard-only artifact.
+The batch cannot classify answer-package coverage, missing evidence, proof
+boundaries, or raw candidate inspectability without parsing text or adding a
+new product surface.
 ```
 
 ## Pattern Gate

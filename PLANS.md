@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V349 Brain QA Source Search JSON Consumer Case
-current task: V349-00 Brain QA Source Search JSON Consumer Case
+active stream: V350 Mini Brain-QA JSON Batch Preview
+current task: V350-00 Mini Brain-QA JSON Batch Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,10 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V349-00 Brain QA Source Search JSON Consumer Case must consume the V348 JSON
-answer package in one small Brain-QA/readback case without adding UI/API/MCP,
-crawler, schema, ranking rewrite, embeddings, graph runtime, worker, broad
-benchmark, or Memory Core mutation.
+V350-00 Mini Brain-QA JSON Batch Preview must use source-search JSON across 3-5
+Brain-QA/readback questions without adding UI/API/MCP, crawler, schema, ranking
+rewrite, embeddings, graph runtime, worker, broad benchmark, or Memory Core
+mutation.
 ```
 
 ## 2. Product Thesis
@@ -307,26 +307,28 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V346 complete: source search answer package preview.
 - [x] V347 complete: heartbeat/consensus SearchDocument coverage closure.
 - [x] V348 complete: source search answer package JSON readback.
-- [ ] V349 current task: Brain QA source search JSON consumer case.
+- [x] V349 complete: Brain QA source search JSON consumer case.
+- [ ] V350 current task: Mini Brain-QA JSON batch preview.
 
 ## Active Task Contract
 
-### V349-00 Brain QA Source Search JSON Consumer Case
+### V350-00 Mini Brain-QA JSON Batch Preview
 
 Objective:
 
 ```txt
-Consume the V348 source-search JSON answer package in one small Brain-QA/readback
-case and measure whether typed output reduces review/report parsing burden.
+Use `krn source search --json` across a small batch of 3-5 Brain-QA/readback
+questions and measure answer-package coverage, missing evidence, raw candidate
+inspectability, and review parsing burden.
 ```
 
 Allowed:
 
 ```txt
+local lab JSON batch artifacts
 docs/report consumer case
-small local script only if needed to avoid text parsing
-DB-backed source-search JSON readback
-proof/non-proof and missing-evidence classification
+DB-backed source-search JSON readbacks
+coverage/missing-evidence/proof-boundary classification
 compact report/root state update
 ```
 
@@ -358,9 +360,9 @@ before retention.
 Success criteria:
 
 ```txt
-1. JSON answer package is consumed without parsing text output;
-2. the case records answer, evidence, missing evidence, proof/non-proof, and raw candidate inspectability;
-3. review/report parsing burden is classified with evidence;
+1. 3-5 JSON answer packages are consumed without parsing text output;
+2. the batch records coverage, missing evidence, proof/non-proof, and raw candidate inspectability;
+3. review/report parsing burden is classified across the batch with evidence;
 4. no product surface or retrieval behavior is added;
 5. root state stays compact and advances to the next highest-ROI task.
 ```
@@ -607,6 +609,19 @@ and runtime non-mutation fields. Text output remains default. DB readback parsed
 two live JSON packages.
 report: docs/reviews/controlled-dogfood/2026-06-29-v348-source-search-answer-package-json-readback/REPORT.md
 executionRun: b7271663-3420-4f14-939d-0e946f526440
+```
+
+V349 outcome:
+
+```txt
+A local Brain-QA/readback consumer used JSON.parse over two live
+`krn source search --json` packages without parsing text output. It extracted
+answer, evidence counts, missing evidence, proof/non-proof boundaries, raw
+candidate inspectability, and runtime non-mutation fields. Both cases lowered
+report parsing burden; the heartbeat/consensus case preserved its missing
+SearchDocument evidence gap.
+report: docs/reviews/controlled-dogfood/2026-06-29-v349-brain-qa-source-search-json-consumer-case/REPORT.md
+executionRun: f62a1896-3644-4374-8078-1f506595aed1
 ```
 
 ## Verification Policy
