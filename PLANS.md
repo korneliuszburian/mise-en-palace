@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: ed61caf7a0625f132163b7a0a8c068ec3c520278 / CI success
+latest pushed commit checked: dfe3fbb96d71496a1d8edf0121db4c03aa2f5913 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -28,6 +28,8 @@ V360-00 Fallow Legacy Complexity Cleanup must reduce full-audit duplication or
 health debt one bounded source target at a time without broad repo refactors.
 Latest completed slice: `parseSourceArgs` cleanup reduced global Fallow to
 dupes 128 and health 99; commit `ed61caf` passed CI.
+Current local slice: `parseMemoryArgs` cleanup reduced global Fallow to
+dupes 122 and health 92; commit/CI pending.
 ```
 
 ## 2. Product Thesis

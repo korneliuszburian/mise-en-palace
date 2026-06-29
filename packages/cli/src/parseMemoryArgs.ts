@@ -4,6 +4,7 @@ import type {
 } from "./parseArgs.js";
 import {
   metadataEntry,
+  optionMatches,
   optionValue
 } from "./parseArgHelpers.js";
 
@@ -181,6 +182,417 @@ const parseMetadataOption = (
   };
 };
 
+type MemoryTokenParseResult =
+  | {
+      kind: "next";
+      nextIndex: number;
+    }
+  | {
+      kind: "help";
+    }
+  | {
+      kind: "error";
+      error: string;
+    };
+
+type MemoryStringOptionParseResult<TKey extends string> =
+  | {
+      matched: true;
+      key: TKey;
+      value: string;
+      nextIndex: number;
+    }
+  | {
+      matched: false;
+    }
+  | {
+      error: string;
+    };
+
+type MemoryMetadataCommand = {
+  metadata: Record<string, string>;
+};
+
+type MemoryPersistedMetadataCommand = MemoryMetadataCommand & {
+  persist: boolean;
+};
+
+type MemoryCandidateAddCommand = Extract<CliCommand, { kind: "memoryCandidateAdd" }>;
+type MemoryAntiAddCommand = Extract<CliCommand, { kind: "memoryAntiAdd" }>;
+type MemoryCandidatePromoteCommand = Extract<CliCommand, { kind: "memoryCandidatePromote" }>;
+type MemoryCandidateRejectCommand = Extract<CliCommand, { kind: "memoryCandidateReject" }>;
+type MemoryRecordApplyCommand = Extract<CliCommand, { kind: "memoryRecordApply" }>;
+type MemoryAntiPromoteCommand = Extract<CliCommand, { kind: "memoryAntiPromote" }>;
+type MemoryAntiRejectCommand = Extract<CliCommand, { kind: "memoryAntiReject" }>;
+
+type MemoryDraftCommand = MemoryPersistedMetadataCommand & {
+  sourceLineageIds: string[];
+  candidateEvidenceRefs: string[];
+};
+
+interface MemoryPersistedMetadataTokenConfig<TOption extends string, TKey extends string> {
+  fallbackUsage: string;
+  optionMap: Record<TOption, TKey>;
+  assignOption: (key: TKey, value: string) => void;
+}
+
+interface MemoryDraftTokenConfig<TOption extends string, TKey extends string>
+  extends MemoryPersistedMetadataTokenConfig<TOption, TKey> {
+}
+
+const memoryCandidateAddStringOptions = {
+  "--run-id": "runId",
+  "--feedback-delta-id": "feedbackDeltaId",
+  "--kind": "memoryKind",
+  "--content": "content",
+  "--confidence": "confidence",
+  "--application-guidance": "applicationGuidance",
+  "--source-claim-id": "sourceClaimId",
+  "--invalidation-rule": "invalidationRule",
+  "--candidate-evidence-provenance": "candidateEvidenceProvenance",
+  "--candidate-evidence-does-not-prove": "candidateEvidenceDoesNotProve",
+  "--owner": "owner",
+  "--proposed-by": "proposedBy"
+} as const;
+
+const memoryAntiAddStringOptions = {
+  "--run-id": "runId",
+  "--rejected-claim": "rejectedClaim",
+  "--reason": "reason",
+  "--invalidated-by-source-claim-id": "invalidatedBySourceClaimId",
+  "--applies-to": "appliesTo",
+  "--may-revisit-when": "mayRevisitWhen",
+  "--owner": "owner",
+  "--proposed-by": "proposedBy",
+  "--confidence": "confidence",
+  "--key": "key",
+  "--candidate-evidence-provenance": "candidateEvidenceProvenance",
+  "--candidate-evidence-does-not-prove": "candidateEvidenceDoesNotProve"
+} as const;
+
+const memoryCandidatePromoteStringOptions = {
+  "--candidate-id": "candidateId",
+  "--reviewer": "reviewer",
+  "--decision": "decision",
+  "--evidence-reviewed-ref": "evidenceReviewedRef",
+  "--untrusted-source-review-ref": "untrustedSourceReviewRef"
+} as const;
+
+const memoryCandidateRejectStringOptions = {
+  "--candidate-id": "candidateId",
+  "--reviewer": "reviewer",
+  "--reason": "reason"
+} as const;
+
+const memoryRecordApplyStringOptions = {
+  "--run-id": "runId",
+  "--memory-id": "memoryId",
+  "--outcome": "outcome",
+  "--notes": "notes",
+  "--expected-use": "expectedUse",
+  "--task-contract-id": "taskContractId",
+  "--context-assembly-id": "contextAssemblyId"
+} as const;
+
+const memoryAntiPromoteStringOptions = {
+  "--candidate-id": "candidateId",
+  "--reviewer": "reviewer",
+  "--decision": "decision",
+  "--evidence-reviewed-ref": "evidenceReviewedRef"
+} as const;
+
+const memoryAntiRejectStringOptions = {
+  "--candidate-id": "candidateId",
+  "--reviewer": "reviewer",
+  "--reason": "reason"
+} as const;
+
+type MemoryCandidateAddStringKey = typeof memoryCandidateAddStringOptions[keyof typeof memoryCandidateAddStringOptions];
+type MemoryAntiAddStringKey = typeof memoryAntiAddStringOptions[keyof typeof memoryAntiAddStringOptions];
+type MemoryCandidatePromoteStringKey = typeof memoryCandidatePromoteStringOptions[keyof typeof memoryCandidatePromoteStringOptions];
+type MemoryCandidateRejectStringKey = typeof memoryCandidateRejectStringOptions[keyof typeof memoryCandidateRejectStringOptions];
+type MemoryRecordApplyStringKey = typeof memoryRecordApplyStringOptions[keyof typeof memoryRecordApplyStringOptions];
+type MemoryAntiPromoteStringKey = typeof memoryAntiPromoteStringOptions[keyof typeof memoryAntiPromoteStringOptions];
+type MemoryAntiRejectStringKey = typeof memoryAntiRejectStringOptions[keyof typeof memoryAntiRejectStringOptions];
+
+const memoryNext = (nextIndex: number): MemoryTokenParseResult => ({
+  kind: "next",
+  nextIndex
+});
+
+const memoryHelp = (): MemoryTokenParseResult => ({
+  kind: "help"
+});
+
+const memoryError = (error: string): MemoryTokenParseResult => ({
+  kind: "error",
+  error
+});
+
+const findMappedStringOption = <TOption extends string, TKey extends string>(
+  arg: string,
+  optionMap: Record<TOption, TKey>
+): TOption | undefined =>
+  (Object.keys(optionMap) as TOption[]).find((option) => optionMatches(arg, option));
+
+const parseMappedStringOption = <TOption extends string, TKey extends string>(
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  optionMap: Record<TOption, TKey>,
+  fallbackUsage: string
+): MemoryStringOptionParseResult<TKey> => {
+  const option = findMappedStringOption(arg, optionMap);
+
+  if (option === undefined) {
+    return {
+      matched: false
+    };
+  }
+
+  const valueResult = optionValue(rest, index, option);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return {
+      error: valueResult.error ?? fallbackUsage
+    };
+  }
+
+  return {
+    matched: true,
+    key: optionMap[option],
+    value: valueResult.value.trim(),
+    nextIndex: valueResult.nextIndex
+  };
+};
+
+const applyMetadataOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  command: MemoryMetadataCommand,
+  fallbackUsage: string
+): MemoryTokenParseResult | undefined => {
+  if (!optionMatches(arg, "--metadata")) {
+    return undefined;
+  }
+
+  const metadata = parseMetadataOption(rest, index, fallbackUsage);
+
+  if (metadata.error !== undefined || metadata.entry === undefined) {
+    return memoryError(metadata.error ?? fallbackUsage);
+  }
+
+  command.metadata[metadata.entry.key] = metadata.entry.value;
+
+  return memoryNext(metadata.nextIndex);
+};
+
+const parsePersistedMetadataToken = <TOption extends string, TKey extends string>(
+  rest: readonly string[],
+  index: number,
+  command: MemoryPersistedMetadataCommand,
+  config: MemoryPersistedMetadataTokenConfig<TOption, TKey>
+): MemoryTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return memoryError(config.fallbackUsage);
+  }
+
+  if (arg === "--help" || arg === "-h") {
+    return memoryHelp();
+  }
+
+  if (arg === "--persist") {
+    command.persist = true;
+
+    return memoryNext(index);
+  }
+
+  const option = parseMappedStringOption(rest, index, arg, config.optionMap, config.fallbackUsage);
+
+  if ("error" in option) {
+    return memoryError(option.error);
+  }
+
+  if (option.matched) {
+    config.assignOption(option.key, option.value);
+
+    return memoryNext(option.nextIndex);
+  }
+
+  const metadata = applyMetadataOption(rest, index, arg, command, config.fallbackUsage);
+
+  return metadata ?? memoryError(config.fallbackUsage);
+};
+
+const parseRepeatedDraftOption = (
+  rest: readonly string[],
+  index: number,
+  arg: string,
+  command: MemoryDraftCommand,
+  fallbackUsage: string
+): MemoryTokenParseResult | undefined => {
+  const target =
+    optionMatches(arg, "--candidate-evidence-ref")
+      ? command.candidateEvidenceRefs
+      : optionMatches(arg, "--source-lineage")
+        ? command.sourceLineageIds
+        : undefined;
+
+  if (target === undefined) {
+    return undefined;
+  }
+
+  const option = optionMatches(arg, "--candidate-evidence-ref")
+    ? "--candidate-evidence-ref"
+    : "--source-lineage";
+  const valueResult = optionValue(rest, index, option);
+
+  if (valueResult.error !== undefined || valueResult.value === undefined) {
+    return memoryError(valueResult.error ?? fallbackUsage);
+  }
+
+  target.push(valueResult.value.trim());
+
+  return memoryNext(valueResult.nextIndex);
+};
+
+const parseDraftToken = <TOption extends string, TKey extends string>(
+  rest: readonly string[],
+  index: number,
+  command: MemoryDraftCommand,
+  config: MemoryDraftTokenConfig<TOption, TKey>
+): MemoryTokenParseResult => {
+  const arg = rest[index];
+
+  if (arg === undefined) {
+    return memoryError(config.fallbackUsage);
+  }
+
+  const repeated = parseRepeatedDraftOption(rest, index, arg, command, config.fallbackUsage);
+
+  return repeated ?? parsePersistedMetadataToken(rest, index, command, config);
+};
+
+const parseMemoryCandidateAddToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryCandidateAddCommand
+): MemoryTokenParseResult =>
+  parseDraftToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryCandidateAddUsage(),
+    optionMap: memoryCandidateAddStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryCandidateAddStringKey] = value;
+    }
+  });
+
+const parseMemoryAntiAddToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryAntiAddCommand
+): MemoryTokenParseResult =>
+  parseDraftToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryAntiAddUsage(),
+    optionMap: memoryAntiAddStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryAntiAddStringKey] = value;
+    }
+  });
+
+const parseMemoryCandidatePromoteToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryCandidatePromoteCommand
+): MemoryTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryCandidatePromoteUsage(),
+    optionMap: memoryCandidatePromoteStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryCandidatePromoteStringKey] = value;
+    }
+  });
+
+const parseMemoryCandidateRejectToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryCandidateRejectCommand
+): MemoryTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryCandidateRejectUsage(),
+    optionMap: memoryCandidateRejectStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryCandidateRejectStringKey] = value;
+    }
+  });
+
+const parseMemoryRecordApplyToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryRecordApplyCommand
+): MemoryTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryRecordApplyUsage(),
+    optionMap: memoryRecordApplyStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryRecordApplyStringKey] = value;
+    }
+  });
+
+const parseMemoryAntiPromoteToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryAntiPromoteCommand
+): MemoryTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryAntiPromoteUsage(),
+    optionMap: memoryAntiPromoteStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryAntiPromoteStringKey] = value;
+    }
+  });
+
+const parseMemoryAntiRejectToken = (
+  rest: readonly string[],
+  index: number,
+  memoryCommand: MemoryAntiRejectCommand
+): MemoryTokenParseResult =>
+  parsePersistedMetadataToken(rest, index, memoryCommand, {
+    fallbackUsage: formatMemoryAntiRejectUsage(),
+    optionMap: memoryAntiRejectStringOptions,
+    assignOption: (key, value) => {
+      memoryCommand[key as MemoryAntiRejectStringKey] = value;
+    }
+  });
+
+const parseMemoryTokenLoop = (
+  rest: readonly string[],
+  parseToken: (index: number) => MemoryTokenParseResult,
+  helpCommand: CliCommand
+): ParseArgsResult | undefined => {
+  for (let index = 2; index < rest.length; index += 1) {
+    const parsed = parseToken(index);
+
+    if (parsed.kind === "help") {
+      return {
+        command: helpCommand
+      };
+    }
+
+    if (parsed.kind === "error") {
+      return {
+        error: parsed.error
+      };
+    }
+
+    index = parsed.nextIndex;
+  }
+
+  return undefined;
+};
+
 const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -198,103 +610,16 @@ const parseMemoryCandidateAddArgs = (rest: readonly string[]): ParseArgsResult =
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryCandidateAddToken(rest, index, memoryCommand),
+    {
+      kind: "memoryCandidateAddHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryCandidateAddHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--run-id": "runId",
-      "--feedback-delta-id": "feedbackDeltaId",
-      "--kind": "memoryKind",
-      "--content": "content",
-      "--confidence": "confidence",
-      "--application-guidance": "applicationGuidance",
-      "--source-claim-id": "sourceClaimId",
-      "--invalidation-rule": "invalidationRule",
-      "--candidate-evidence-provenance": "candidateEvidenceProvenance",
-      "--candidate-evidence-does-not-prove": "candidateEvidenceDoesNotProve",
-      "--owner": "owner",
-      "--proposed-by": "proposedBy"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryCandidateAddUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (
-      arg === "--candidate-evidence-ref" ||
-      arg?.startsWith("--candidate-evidence-ref=") === true
-    ) {
-      const valueResult = optionValue(rest, index, "--candidate-evidence-ref");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryCandidateAddUsage()
-        };
-      }
-
-      memoryCommand.candidateEvidenceRefs.push(valueResult.value.trim());
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--source-lineage" || arg?.startsWith("--source-lineage=") === true) {
-      const valueResult = optionValue(rest, index, "--source-lineage");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryCandidateAddUsage()
-        };
-      }
-
-      memoryCommand.sourceLineageIds.push(valueResult.value.trim());
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryCandidateAddUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryCandidateAddUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryCandidateAddUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
@@ -317,65 +642,16 @@ const parseMemoryCandidatePromoteArgs = (rest: readonly string[]): ParseArgsResu
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryCandidatePromoteToken(rest, index, memoryCommand),
+    {
+      kind: "memoryCandidatePromoteHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryCandidatePromoteHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--candidate-id": "candidateId",
-      "--reviewer": "reviewer",
-      "--decision": "decision",
-      "--evidence-reviewed-ref": "evidenceReviewedRef",
-      "--untrusted-source-review-ref": "untrustedSourceReviewRef"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryCandidatePromoteUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryCandidatePromoteUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryCandidatePromoteUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryCandidatePromoteUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
@@ -398,63 +674,16 @@ const parseMemoryCandidateRejectArgs = (rest: readonly string[]): ParseArgsResul
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryCandidateRejectToken(rest, index, memoryCommand),
+    {
+      kind: "memoryCandidateRejectHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryCandidateRejectHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--candidate-id": "candidateId",
-      "--reviewer": "reviewer",
-      "--reason": "reason"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryCandidateRejectUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryCandidateRejectUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryCandidateRejectUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryCandidateRejectUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
@@ -477,67 +706,16 @@ const parseMemoryRecordApplyArgs = (rest: readonly string[]): ParseArgsResult =>
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryRecordApplyToken(rest, index, memoryCommand),
+    {
+      kind: "memoryRecordApplyHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryRecordApplyHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--run-id": "runId",
-      "--memory-id": "memoryId",
-      "--outcome": "outcome",
-      "--notes": "notes",
-      "--expected-use": "expectedUse",
-      "--task-contract-id": "taskContractId",
-      "--context-assembly-id": "contextAssemblyId"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryRecordApplyUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryRecordApplyUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryRecordApplyUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryRecordApplyUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
@@ -562,103 +740,16 @@ const parseMemoryAntiAddArgs = (rest: readonly string[]): ParseArgsResult => {
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryAntiAddToken(rest, index, memoryCommand),
+    {
+      kind: "memoryAntiAddHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryAntiAddHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--run-id": "runId",
-      "--rejected-claim": "rejectedClaim",
-      "--reason": "reason",
-      "--invalidated-by-source-claim-id": "invalidatedBySourceClaimId",
-      "--applies-to": "appliesTo",
-      "--may-revisit-when": "mayRevisitWhen",
-      "--owner": "owner",
-      "--proposed-by": "proposedBy",
-      "--confidence": "confidence",
-      "--key": "key",
-      "--candidate-evidence-provenance": "candidateEvidenceProvenance",
-      "--candidate-evidence-does-not-prove": "candidateEvidenceDoesNotProve"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryAntiAddUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (
-      arg === "--candidate-evidence-ref" ||
-      arg?.startsWith("--candidate-evidence-ref=") === true
-    ) {
-      const valueResult = optionValue(rest, index, "--candidate-evidence-ref");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryAntiAddUsage()
-        };
-      }
-
-      memoryCommand.candidateEvidenceRefs.push(valueResult.value.trim());
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--source-lineage" || arg?.startsWith("--source-lineage=") === true) {
-      const valueResult = optionValue(rest, index, "--source-lineage");
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryAntiAddUsage()
-        };
-      }
-
-      memoryCommand.sourceLineageIds.push(valueResult.value.trim());
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryAntiAddUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryAntiAddUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryAntiAddUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
@@ -681,64 +772,16 @@ const parseMemoryAntiPromoteArgs = (rest: readonly string[]): ParseArgsResult =>
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryAntiPromoteToken(rest, index, memoryCommand),
+    {
+      kind: "memoryAntiPromoteHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryAntiPromoteHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--candidate-id": "candidateId",
-      "--reviewer": "reviewer",
-      "--decision": "decision",
-      "--evidence-reviewed-ref": "evidenceReviewedRef"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryAntiPromoteUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryAntiPromoteUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryAntiPromoteUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryAntiPromoteUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
@@ -761,63 +804,16 @@ const parseMemoryAntiRejectArgs = (rest: readonly string[]): ParseArgsResult => 
     metadata: {}
   };
 
-  for (let index = 2; index < rest.length; index += 1) {
-    const arg = rest[index];
-
-    if (arg === "--persist") {
-      memoryCommand.persist = true;
-      continue;
+  const parsed = parseMemoryTokenLoop(
+    rest,
+    (index) => parseMemoryAntiRejectToken(rest, index, memoryCommand),
+    {
+      kind: "memoryAntiRejectHelp"
     }
+  );
 
-    if (arg === "--help" || arg === "-h") {
-      return {
-        command: {
-          kind: "memoryAntiRejectHelp"
-        }
-      };
-    }
-
-    const optionMap = {
-      "--candidate-id": "candidateId",
-      "--reviewer": "reviewer",
-      "--reason": "reason"
-    } as const;
-    const option = Object.keys(optionMap).find((candidate) =>
-      arg === candidate || arg?.startsWith(`${candidate}=`) === true
-    );
-
-    if (option !== undefined) {
-      const valueResult = optionValue(rest, index, option);
-
-      if (valueResult.error !== undefined || valueResult.value === undefined) {
-        return {
-          error: valueResult.error ?? formatMemoryAntiRejectUsage()
-        };
-      }
-
-      memoryCommand[optionMap[option as keyof typeof optionMap]] =
-        valueResult.value.trim();
-      index = valueResult.nextIndex;
-      continue;
-    }
-
-    if (arg === "--metadata" || arg?.startsWith("--metadata=") === true) {
-      const metadata = parseMetadataOption(rest, index, formatMemoryAntiRejectUsage());
-
-      if (metadata.error !== undefined || metadata.entry === undefined) {
-        return {
-          error: metadata.error ?? formatMemoryAntiRejectUsage()
-        };
-      }
-
-      memoryCommand.metadata[metadata.entry.key] = metadata.entry.value;
-      index = metadata.nextIndex;
-      continue;
-    }
-
-    return {
-      error: formatMemoryAntiRejectUsage()
-    };
+  if (parsed !== undefined) {
+    return parsed;
   }
 
   return {
