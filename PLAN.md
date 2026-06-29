@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V338 Memory-Staleness Heartbeat Candidate Preview
-current task: V338-00 Memory-Staleness Heartbeat Candidate Preview
+active stream: V339 Consensus Candidate Evaluation Preview
+current task: V339-00 Consensus Candidate Evaluation Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -67,38 +67,39 @@ V336 complete: relation-grounded QA readback helper and golden case protect the
   baseline-vs-edge answer delta.
 V337 complete: source-relation heartbeat preview proposes reviewable
   maintenance candidates without source truth or Memory Core mutation.
-Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v337-...
+V338 complete: memory-staleness heartbeat preview proposes reviewable
+  MemoryRecord maintenance candidates without Memory Core mutation.
+Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-... through v338-...
 ```
 
-### V338 Memory-Staleness Heartbeat Candidate Preview
+### V339 Consensus Candidate Evaluation Preview
 
 Goal:
 
-Add the next heartbeat/dreaming preview candidate class for stale memory
-maintenance.
+Add the first bounded consensus/eval preview for candidate review.
 
 Current action:
 
 ```txt
-Execute V338-00: inspect existing memory/worker/candidate surfaces, then add
-the smallest preview that proposes reviewed stale-memory maintenance candidates.
-Do not mutate Memory Core; do not add schema, worker daemon, UI/API/MCP,
-crawler, consensus runtime, or broad ranking rewrite.
+Execute V339-00: inspect candidate reviewability/eval surfaces, then add the
+smallest preview that evaluates a candidate with preserved dissent and
+proof/non-proof boundaries. Do not add consensus agents, autonomous truth
+runtime, schema, worker daemon, UI/API/MCP, crawler, or broad benchmark lane.
 ```
 
 Primary consumer:
 
 ```txt
-future memory maintenance, heartbeat/dreaming candidate generation, review
-gates, consensus candidate evaluation, and product-facing knowledge search.
+future consensus v0, source/pattern/candidate review, review gates, and
+product-facing knowledge search.
 ```
 
 Falsifier:
 
 ```txt
-Given stale or near-expiry memory input, heartbeat preview cannot produce a
-reviewable candidate with evidence refs, application guidance, invalidation
-intent, and does-not-prove boundary.
+Given a reviewable candidate with supporting and dissenting evidence, KRN cannot
+produce a candidate-only consensus/eval preview that preserves dissent,
+decision options, evidence refs, and does-not-prove boundary.
 ```
 
 ## Pattern Gate

@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V338 Memory-Staleness Heartbeat Candidate Preview
-current task: V338-00 Memory-Staleness Heartbeat Candidate Preview
+active stream: V339 Consensus Candidate Evaluation Preview
+current task: V339-00 Consensus Candidate Evaluation Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V338-00 Memory-Staleness Heartbeat Candidate Preview. V337 added the first
-candidate-only heartbeat preview for source relations; the next gap is stale
-memory maintenance candidate preview.
+V339-00 Consensus Candidate Evaluation Preview. V337/V338 added the first
+candidate-only heartbeat previews for source relations and stale memory; the
+next gap is bounded candidate consensus/eval with preserved dissent.
 ```
 
 ## 2. Product Thesis
@@ -61,8 +61,8 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   persisted edge-aware activation readback complete; edge-aware candidate
   refinement complete; usefulness closure complete; selection delta proof
   complete; small graph QA complete; relation-grounded readback closure
-  complete; source-relation heartbeat candidate preview complete; memory
-  staleness heartbeat candidate preview next
+  complete; source-relation and memory-staleness heartbeat candidate previews
+  complete
 product-ready: no
 ```
 
@@ -91,6 +91,7 @@ V334 complete: edge-aware activation selection delta proof.
 V335 complete: small graph-brain QA case.
 V336 complete: relation-grounded QA readback closure.
 V337 complete: source-relation heartbeat candidate preview.
+V338 complete: memory-staleness heartbeat candidate preview.
 ```
 
 Reports:
@@ -110,6 +111,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v334-edge-aware-activation-selection-
 docs/reviews/controlled-dogfood/2026-06-29-v335-small-graph-brain-qa-case/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -621,26 +623,25 @@ Report:
 docs/reviews/controlled-dogfood/2026-06-29-v336-relation-grounded-qa-readback-closure/REPORT.md
 ```
 
-## Active Task: V338-00 Memory-Staleness Heartbeat Candidate Preview
+## Active Task: V339-00 Consensus Candidate Evaluation Preview
 
 Goal:
 
 ```txt
-Add the next heartbeat/dreaming preview candidate class for stale memory
-maintenance.
+Add the first bounded consensus/eval preview for candidate review.
 ```
 
 Evidence source:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
-focused memory/worker/candidate preview source or report, depending on source inspection
-docs/reviews/controlled-dogfood/<date>-v338-memory-staleness-heartbeat-candidate-preview/REPORT.md
+focused candidate/eval/consensus preview source or report, depending on source inspection
+docs/reviews/controlled-dogfood/<date>-v339-consensus-candidate-evaluation-preview/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -650,46 +651,46 @@ Forbidden writes:
 
 ```txt
 schema/migration; graph database; crawler; UI/API/MCP; worker daemon; broad
-benchmark platform; consensus runtime; broad ranking rewrite; Memory Core
-mutation; automatic memory promotion; runtime markdown memory
+benchmark platform; consensus agent runtime; broad ranking rewrite; Memory
+Core mutation; automatic candidate promotion; runtime markdown memory
 ```
 
 Definition of Done:
 
-- One stale-memory heartbeat/dreaming preview proposes a reviewable candidate
-  only.
-- Candidate includes evidence refs, application guidance, stale/invalidation
-  intent, and does-not-prove boundary.
-- No final Memory Core mutation occurs.
+- One consensus/eval preview evaluates a candidate with preserved dissent,
+  decision options, evidence refs, and does-not-prove boundary.
+- Output is candidate-only/read-only and does not create autonomous truth.
+- No final Memory Core, SourceClaim, SourceDecision, or EvalCandidate promotion
+  occurs.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass
   if source behavior changes.
 
 Acceptance criteria:
 
 ```txt
-stale memory maintenance can be proposed as candidate-only heartbeat output
-without autonomous Memory Core mutation or broad runtime expansion.
+candidate consensus/eval can be previewed with preserved dissent and proof
+boundaries without autonomous truth runtime or broad platform expansion.
 ```
 
 Risk:
 
 ```txt
-medium: stale-memory preview can drift into automatic invalidation/promotion
-before candidate governance is proven.
+medium: consensus preview can drift into hidden multi-agent truth theater if it
+does not stay candidate-only and evidence-bounded.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V338 implementation commit if source changes are made
+focused revert of the V339 implementation commit if source changes are made
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V338 is positive, choose the next heartbeat candidate class or consensus
-candidate eval. If weak, repair memory candidate reviewability before expanding
-heartbeat surfaces.
+If V339 is positive, choose the next ingest/graph/heartbeat task that closes a
+product loop. If weak, repair candidate reviewability/evidence before expanding
+consensus surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -763,7 +764,8 @@ Next-task synthesis rule:
 - V335: complete; small graph-brain QA case.
 - V336: complete; relation-grounded QA readback closure.
 - V337: complete; source-relation heartbeat candidate preview.
-- V338: active; memory-staleness heartbeat candidate preview.
+- V338: complete; memory-staleness heartbeat candidate preview.
+- V339: active; consensus candidate evaluation preview.
 
 ## Pattern Gate
 

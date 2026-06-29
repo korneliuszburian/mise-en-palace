@@ -10,6 +10,8 @@ Current truth:
   event through caller-supplied repositories;
 - source-relation heartbeat preview can propose reviewable maintenance
   candidates without mutating source truth or Memory Core;
+- memory-staleness heartbeat preview can propose reviewable maintenance
+  candidates without mutating Memory Core;
 - job descriptions explicitly set `requiresBackgroundLoop: false`.
 
 Not built:
@@ -22,6 +24,7 @@ Not built:
 - no stale-memory expiration runtime;
 - no embedding worker runtime;
 - no source-relation maintenance executor;
+- no memory-staleness maintenance executor;
 - no EvalCandidate promotion contract or runtime.
 
 Worker job persistence and smoke checks prove storage/readback lifecycle only.
