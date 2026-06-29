@@ -22,10 +22,13 @@ import type {
 import type {
   HarnessRunRepository,
   MemoryRepository,
+  ProjectRecord,
   ProjectKernelRecord,
+  ProjectRepository,
   RepoInstallationRecord,
   RetrievalRepository,
-  SourceRepository
+  SourceRepository,
+  WorkspaceRecord
 } from "@krn/harness/repositories/internal";
 import type {
   ObservationGroup,
@@ -34,6 +37,8 @@ import type {
   SourceClaim,
   AntiMemoryRecord
 } from "@krn/core";
+
+type PostgresClient = ReturnType<typeof postgres>;
 
 export interface DatabaseRuntimeInput {
   databaseUrl: string;
@@ -161,6 +166,242 @@ interface ReflectRunSnapshot {
   taskContractId?: string;
 }
 
+interface ResolvedRuntimeProject {
+  kind: "resolved";
+  project: ProjectRecord;
+  projectResolution: ProjectResolution;
+  shouldLoadProjectScopedMetadata: boolean;
+  explicitProjectId: string | undefined;
+}
+
+interface MissingExplicitProject {
+  kind: "missing_explicit_project";
+  explicitProjectId: string;
+}
+
+type RuntimeProjectResolution =
+  | ResolvedRuntimeProject
+  | MissingExplicitProject
+  | {
+      kind: "unresolved";
+    };
+
+type ExplicitProjectLookup =
+  | {
+      kind: "not_requested";
+      explicitProjectId: undefined;
+      project: undefined;
+    }
+  | {
+      kind: "missing";
+      explicitProjectId: string;
+      project: undefined;
+    }
+  | {
+      kind: "resolved";
+      explicitProjectId: string;
+      project: ProjectRecord;
+    };
+
+const closePostgresClient = (client: PostgresClient): (() => Promise<void>) => async (): Promise<void> => {
+  await client.end();
+};
+
+const createObservationRuntimeRepositories = (databaseUrl: string) => {
+  const client = postgres(databaseUrl, { max: 1 });
+  const db = createKrnDatabase(client);
+
+  return {
+    client,
+    projectRepository: new DrizzleProjectRepository(db),
+    harnessRunRepository: new DrizzleHarnessRunRepository(db),
+    observationRepository: new DrizzleObservationRepository(db),
+    db
+  };
+};
+
+const trimmedValue = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
+};
+
+const projectResolutionFor = (input: {
+  explicitProject: ProjectRecord | undefined;
+  connectedProject: ProjectRecord | undefined;
+  repoPathHint: string | undefined;
+}): ProjectResolution => {
+  if (input.explicitProject !== undefined) {
+    return {
+      kind: "explicit_project",
+      reason: "Resolved from explicit --project.",
+      doesNotProve:
+        "Explicit project resolution does not prove the project read model is complete, current, or useful."
+    };
+  }
+
+  if (input.connectedProject !== undefined) {
+    return {
+      kind: "connected_repo_path",
+      reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
+      doesNotProve:
+        "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
+      ...(input.repoPathHint === undefined ? {} : { repoPathHint: input.repoPathHint })
+    };
+  }
+
+  return {
+    kind: "workspace_project_slug",
+    reason: "Resolved from workspace/project slug fallback.",
+    doesNotProve:
+      "Slug fallback resolution does not prove this is the intended connected repo project."
+  };
+};
+
+const lookupExplicitProject = async (
+  repository: ProjectRepository,
+  projectId: string | undefined
+): Promise<ExplicitProjectLookup> => {
+  const explicitProjectId = trimmedValue(projectId);
+
+  if (explicitProjectId === undefined) {
+    return {
+      kind: "not_requested",
+      explicitProjectId: undefined,
+      project: undefined
+    };
+  }
+
+  const project = await repository.getProject(explicitProjectId);
+
+  if (project === undefined) {
+    return {
+      kind: "missing",
+      explicitProjectId,
+      project: undefined
+    };
+  }
+
+  return {
+    kind: "resolved",
+    explicitProjectId,
+    project
+  };
+};
+
+const resolveConnectedProject = async (
+  repository: ProjectRepository,
+  explicitProject: ProjectRecord | undefined,
+  repoPathHint: string | undefined
+): Promise<ProjectRecord | undefined> => {
+  if (explicitProject !== undefined || repoPathHint === undefined) {
+    return undefined;
+  }
+
+  return repository.getProjectByRepoPath(repoPathHint);
+};
+
+const findOrCreateWorkspace = async (
+  repository: ProjectRepository,
+  workspaceSlug: string
+): Promise<WorkspaceRecord> =>
+  (await repository.findWorkspaceBySlug(workspaceSlug)) ??
+  (await repository.createWorkspace({
+    slug: workspaceSlug,
+    displayName: workspaceSlug
+  }));
+
+const findOrCreateProject = async (
+  repository: ProjectRepository,
+  workspaceId: string,
+  projectSlug: string
+): Promise<ProjectRecord> =>
+  (await repository.findProjectBySlug(workspaceId, projectSlug)) ??
+  (await repository.createProject({
+    workspaceId,
+    slug: projectSlug,
+    displayName: projectSlug
+  }));
+
+const resolveWorkspaceSlugProject = async (
+  repository: ProjectRepository,
+  input: Pick<DatabaseRuntimeInput, "projectSlug" | "workspaceSlug">
+): Promise<ProjectRecord> => {
+  const workspace = await findOrCreateWorkspace(repository, input.workspaceSlug);
+
+  return findOrCreateProject(repository, workspace.id, input.projectSlug);
+};
+
+const resolveRuntimeProject = async (
+  repository: ProjectRepository,
+  input: Pick<
+    DatabaseRuntimeInput,
+    | "projectId"
+    | "projectSlug"
+    | "repoPathHint"
+    | "workspaceSlug"
+  >
+): Promise<RuntimeProjectResolution> => {
+  const repoPathHint = trimmedValue(input.repoPathHint);
+  const explicitLookup = await lookupExplicitProject(repository, input.projectId);
+
+  if (explicitLookup.kind === "missing") {
+    return {
+      kind: "missing_explicit_project",
+      explicitProjectId: explicitLookup.explicitProjectId
+    };
+  }
+
+  const explicitProject = explicitLookup.project;
+  const connectedProject = await resolveConnectedProject(
+    repository,
+    explicitProject,
+    repoPathHint
+  );
+  const fallbackProject =
+    explicitProject !== undefined || connectedProject !== undefined
+      ? undefined
+      : await resolveWorkspaceSlugProject(repository, input);
+  const project = explicitProject ?? connectedProject ?? fallbackProject;
+
+  if (project === undefined) {
+    return {
+      kind: "unresolved"
+    };
+  }
+
+  return {
+    kind: "resolved",
+    project,
+    projectResolution: projectResolutionFor({
+      explicitProject,
+      connectedProject,
+      repoPathHint
+    }),
+    shouldLoadProjectScopedMetadata:
+      explicitLookup.explicitProjectId !== undefined || connectedProject !== undefined,
+    explicitProjectId: explicitLookup.explicitProjectId
+  };
+};
+
+const loadProjectKernel = async (
+  repository: ProjectRepository,
+  projectId: string,
+  shouldLoadProjectScopedMetadata: boolean
+): Promise<ProjectKernelRecord | undefined> =>
+  shouldLoadProjectScopedMetadata
+    ? repository.getLatestProjectKernel(projectId)
+    : undefined;
+
+const loadRepoInstallations = async (
+  repository: ProjectRepository,
+  projectId: string,
+  shouldLoadProjectScopedMetadata: boolean
+): Promise<RepoInstallationRecord[] | undefined> =>
+  shouldLoadProjectScopedMetadata
+    ? repository.listRepoInstallationsForProject(projectId)
+    : undefined;
+
 export interface ReflectDatabaseRuntime {
   getRunSnapshot(executionRunId: string): Promise<ReflectRunSnapshot | undefined>;
   projectExists(projectId: string): Promise<boolean>;
@@ -193,95 +434,39 @@ export const createDatabaseRuntime = async (
   const retrievalRepository = new DrizzleRetrievalRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
   const observationRepository = new DrizzleObservationRepository(db);
-  const explicitProjectId = input.projectId?.trim();
-  const repoPathHint = input.repoPathHint?.trim();
-  const project =
-    explicitProjectId === undefined || explicitProjectId.length === 0
-      ? undefined
-      : await projectRepository.getProject(explicitProjectId);
-  const connectedProject =
-    project === undefined && repoPathHint !== undefined && repoPathHint.length > 0
-      ? await projectRepository.getProjectByRepoPath(repoPathHint)
-      : undefined;
+  const runtimeProject = await resolveRuntimeProject(projectRepository, input);
 
-  if (explicitProjectId !== undefined && explicitProjectId.length > 0 && project === undefined) {
+  if (runtimeProject.kind === "missing_explicit_project") {
     await client.end();
-    throw new Error(`Project not found for --project ${explicitProjectId}`);
+    throw new Error(`Project not found for --project ${runtimeProject.explicitProjectId}`);
   }
 
-  const existingWorkspace =
-    project === undefined && connectedProject === undefined
-      ? await projectRepository.findWorkspaceBySlug(input.workspaceSlug)
-      : undefined;
-  const workspace =
-    project === undefined && connectedProject === undefined
-      ? existingWorkspace ??
-        (await projectRepository.createWorkspace({
-          slug: input.workspaceSlug,
-          displayName: input.workspaceSlug
-        }))
-      : undefined;
-  const defaultProject =
-    project ?? connectedProject ??
-    (workspace !== undefined
-      ? (await projectRepository.findProjectBySlug(workspace.id, input.projectSlug)) ??
-        (await projectRepository.createProject({
-          workspaceId: workspace.id,
-          slug: input.projectSlug,
-          displayName: input.projectSlug
-        }))
-      : undefined);
-
-  if (defaultProject === undefined) {
+  if (runtimeProject.kind === "unresolved") {
     await client.end();
     throw new Error("Unable to resolve project for database runtime");
   }
 
-  const projectResolution: ProjectResolution =
-    project !== undefined
-      ? {
-          kind: "explicit_project",
-          reason: "Resolved from explicit --project.",
-          doesNotProve:
-            "Explicit project resolution does not prove the project read model is complete, current, or useful."
-        }
-      : connectedProject !== undefined
-        ? {
-            kind: "connected_repo_path",
-            reason: "Resolved from repo_installations.local_path_hint matching the current repo root.",
-            doesNotProve:
-              "Connected repo path resolution does not prove owner files are complete, current, or sufficient.",
-            ...(repoPathHint === undefined ? {} : { repoPathHint })
-          }
-        : {
-            kind: "workspace_project_slug",
-            reason: "Resolved from workspace/project slug fallback.",
-            doesNotProve:
-              "Slug fallback resolution does not prove this is the intended connected repo project."
-          };
+  const projectKernel = await loadProjectKernel(
+    projectRepository,
+    runtimeProject.project.id,
+    runtimeProject.shouldLoadProjectScopedMetadata
+  );
 
-  const shouldLoadProjectScopedMetadata =
-    explicitProjectId !== undefined && explicitProjectId.length > 0 ||
-    connectedProject !== undefined;
-  const projectKernel =
-    shouldLoadProjectScopedMetadata
-      ? await projectRepository.getLatestProjectKernel(defaultProject.id)
-      : undefined;
-
-  if (explicitProjectId !== undefined && explicitProjectId.length > 0 && projectKernel === undefined) {
+  if (runtimeProject.explicitProjectId !== undefined && projectKernel === undefined) {
     await client.end();
-    throw new Error(`ProjectKernel not found for --project ${explicitProjectId}`);
+    throw new Error(`ProjectKernel not found for --project ${runtimeProject.explicitProjectId}`);
   }
 
-  const repoInstallations =
-    shouldLoadProjectScopedMetadata
-      ? await projectRepository.listRepoInstallationsForProject(defaultProject.id)
-      : undefined;
+  const repoInstallations = await loadRepoInstallations(
+    projectRepository,
+    runtimeProject.project.id,
+    runtimeProject.shouldLoadProjectScopedMetadata
+  );
 
   return {
-    workspaceId: defaultProject.workspaceId,
-    projectId: defaultProject.id,
-    projectResolution,
+    workspaceId: runtimeProject.project.workspaceId,
+    projectId: runtimeProject.project.id,
+    projectResolution: runtimeProject.projectResolution,
     ...(projectKernel === undefined ? {} : { projectKernel }),
     ...(repoInstallations === undefined ? {} : { repoInstallations }),
     compilerDependencies: {
@@ -297,20 +482,19 @@ export const createDatabaseRuntime = async (
     retrievalRepository,
     memoryRepository,
     observationRepository,
-    async close(): Promise<void> {
-      await client.end();
-    }
+    close: closePostgresClient(client)
   };
 };
 
 export const createObserveDatabaseRuntime = async (
   input: ObserveDatabaseRuntimeInput
 ): Promise<ObserveDatabaseRuntime> => {
-  const client = postgres(input.databaseUrl, { max: 1 });
-  const db = createKrnDatabase(client);
-  const projectRepository = new DrizzleProjectRepository(db);
-  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-  const observationRepository = new DrizzleObservationRepository(db);
+  const {
+    client,
+    projectRepository,
+    harnessRunRepository,
+    observationRepository
+  } = createObservationRuntimeRepositories(input.databaseUrl);
 
   return {
     harnessRunRepository,
@@ -333,20 +517,20 @@ export const createObserveDatabaseRuntime = async (
         observationRepository
       };
     },
-    async close(): Promise<void> {
-      await client.end();
-    }
+    close: closePostgresClient(client)
   };
 };
 
 export const createReflectDatabaseRuntime = async (
   input: ReflectDatabaseRuntimeInput
 ): Promise<ReflectDatabaseRuntime> => {
-  const client = postgres(input.databaseUrl, { max: 1 });
-  const db = createKrnDatabase(client);
-  const projectRepository = new DrizzleProjectRepository(db);
-  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-  const observationRepository = new DrizzleObservationRepository(db);
+  const {
+    client,
+    db,
+    projectRepository,
+    harnessRunRepository,
+    observationRepository
+  } = createObservationRuntimeRepositories(input.databaseUrl);
   const sourceRepository = new DrizzleSourceRepository(db);
   const memoryRepository = new DrizzleMemoryRepository(db);
   const reflectionRepository = new DrizzleReflectionRepository(db);
@@ -391,9 +575,7 @@ export const createReflectDatabaseRuntime = async (
     reflectionRepository: {
       createReflectionRecord: (...args) => reflectionRepository.createReflectionRecord(...args)
     },
-    async close(): Promise<void> {
-      await client.end();
-    }
+    close: closePostgresClient(client)
   };
 };
 
@@ -406,8 +588,6 @@ export const createReviewAssessDatabaseRuntime = async (
 
   return {
     harnessRunRepository,
-    async close(): Promise<void> {
-      await client.end();
-    }
+    close: closePostgresClient(client)
   };
 };
