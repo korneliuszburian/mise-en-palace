@@ -78,8 +78,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   parseObserveArgs/parseReflectArgs cleanup, parseSourceArgs cleanup,
   parseMemoryArgs cleanup, parseInitArgs cleanup,
   reflectionCandidateWriter cleanup, core evidence command normalization cleanup,
-  schema evidence command input normalization cleanup
-full Fallow moved: dupes 136 -> 118; health 117 -> 87
+  schema evidence command input normalization cleanup,
+  core reflection issue report cleanup
+full Fallow moved: dupes 136 -> 118; health 117 -> 86
 ```
 
 Next candidate targets are tracked in `PLANS.md`.

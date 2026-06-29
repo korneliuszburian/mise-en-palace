@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: d50d3042b9982b98d6d7f140054b59178698a5c2 / CI success
+latest pushed commit checked: 0455e5368b272c7f269cb331c6bc71b18afd43f4 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -41,6 +41,9 @@ dupes 119 and health 88; commit `b21d8de` passed CI.
 Latest completed slice: schema evidence command input normalization cleanup
 removed the `normalizeEvidenceCommandInput` high-complexity finding and reduced
 global Fallow to dupes 118 and health 87; commit `d50d304` passed CI.
+Latest completed slice: core reflection issue report cleanup removed the
+`buildReflectionIssueReports` high-complexity/refactoring target and reduced
+global Fallow health to 86; commit `0455e53` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -550,13 +553,21 @@ completed bounded targets:
   packages/cli/src/parseObserveArgs.ts
   packages/cli/src/parseReflectArgs.ts
   packages/cli/src/parseArgHelpers.ts
+  packages/cli/src/parseSourceArgs.ts
+  packages/cli/src/parseMemoryArgs.ts
+  packages/cli/src/parseInitArgs.ts
+  packages/harness/src/reflection/reflectionCandidateWriter.ts
+  packages/core/src/evidenceBundle.ts
+  packages/schema/src/evidenceCapture.ts
+  packages/core/src/reflection/index.ts
 
 full Fallow moved:
-  dupes 136 -> 130 clone groups
-  health 117 -> 105 above threshold
+  dupes 136 -> 118 clone groups
+  health 117 -> 86 above threshold
 
-next: continue with one bounded target only; do not broad-refactor smoke
-fixtures or CLI dispatch without source inspection.
+next: either runDbSmokeCommand target metadata lookup cleanup or runCli help
+dispatch extraction. Do not split packages/db/src/repositories/common.ts only
+because Fallow flags fan-in; it is already the shared DB boundary helper.
 ```
 
 ## Verification Policy
