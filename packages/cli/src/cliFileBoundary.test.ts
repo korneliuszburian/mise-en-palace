@@ -14,7 +14,8 @@ import {
 import {
   findRepoRoot,
   pathExists,
-  readJsonObject
+  readJsonObject,
+  resolveRepoInputFile
 } from "./cliFileBoundary.js";
 
 describe("cliFileBoundary", () => {
@@ -51,5 +52,21 @@ describe("cliFileBoundary", () => {
     await expect(pathExists(path.join(workspace, "missing.yaml"))).resolves.toBe(false);
     await expect(findRepoRoot(nested)).resolves.toBe(workspace);
     await expect(findRepoRoot(outside)).resolves.toBe(outside);
+  });
+
+  it("resolves input files from cwd first and then workspace root", async () => {
+    const workspace = await mkdtemp(path.join(os.tmpdir(), "krn-cli-resolve-"));
+    const packageDir = path.join(workspace, "packages", "cli");
+    const localFile = path.join(packageDir, "local.md");
+    const rootFile = path.join(workspace, "docs", "source.md");
+
+    await mkdir(path.dirname(rootFile), { recursive: true });
+    await mkdir(packageDir, { recursive: true });
+    await writeFile(path.join(workspace, "pnpm-workspace.yaml"), "packages:\n  - packages/*\n");
+    await writeFile(localFile, "local\n");
+    await writeFile(rootFile, "root\n");
+
+    await expect(resolveRepoInputFile(packageDir, "local.md")).resolves.toBe(localFile);
+    await expect(resolveRepoInputFile(packageDir, "docs/source.md")).resolves.toBe(rootFile);
   });
 });

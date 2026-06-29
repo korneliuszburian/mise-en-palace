@@ -10,6 +10,7 @@ import {
 } from "@krn/core";
 import type {
   SourceClaim,
+  SourceClaimEdge,
   SourceClaimEdgeKind
 } from "@krn/core";
 import {
@@ -22,7 +23,7 @@ import type {
 } from "./parseArgs.js";
 import {
   findRepoRoot,
-  pathExists
+  resolveRepoInputFile
 } from "./cliFileBoundary.js";
 import {
   createDatabaseRuntime
@@ -31,6 +32,14 @@ import type {
   DatabaseRuntime,
   DatabaseRuntimeInput
 } from "./databaseRuntime.js";
+import {
+  extractLocalSourceCandidates
+} from "./sourceArtifactPreviewExtraction.js";
+import type {
+  ExtractionCandidatePreview,
+  ExtractionClaimCandidate,
+  SourceArtifactPreviewChunk
+} from "./sourceArtifactPreviewExtraction.js";
 
 export type SourceArtifactPreviewCommand = Extract<CliCommand, { kind: "sourceArtifactPreview" }>;
 
@@ -50,55 +59,11 @@ export type CreateSourceArtifactPreviewDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<DatabaseRuntime>;
 
-interface SourceArtifactPreviewChunk {
-  ordinal: number;
-  startLine: number;
-  endLine: number;
-  content: string;
-  contentHash: string;
-  preview: string;
-}
-
 interface SourceArtifactPreviewPersistenceResult {
   lines: string[];
   searchDocumentPersisted: boolean;
   sourceClaimPersisted: boolean;
   sourceClaimEdgePersisted: boolean;
-}
-
-type ExtractionEntityKind = "markdown_heading" | "inline_code";
-type ExtractionRelationKind = "scoped_by_heading";
-
-interface ExtractionEntityCandidate {
-  id: string;
-  label: string;
-  kind: ExtractionEntityKind;
-  sourceRange: string;
-  lineNumber: number;
-}
-
-interface ExtractionClaimCandidate {
-  id: string;
-  text: string;
-  sourceRange: string;
-  lineNumber: number;
-  reviewability: "ready" | "needs_more_evidence";
-  reviewabilityReason: string;
-}
-
-interface ExtractionRelationCandidate {
-  id: string;
-  kind: ExtractionRelationKind;
-  fromCandidateId: string;
-  toCandidateId: string;
-  sourceRange: string;
-}
-
-interface ExtractionCandidatePreview {
-  entities: readonly ExtractionEntityCandidate[];
-  claims: readonly ExtractionClaimCandidate[];
-  deferredClaims: readonly ExtractionClaimCandidate[];
-  relations: readonly ExtractionRelationCandidate[];
 }
 
 interface CandidateField {
@@ -177,6 +142,45 @@ interface ReviewedExtractionClaimSelection {
   candidate: ExtractionClaimCandidate;
 }
 
+type SourceArtifactRecord = Awaited<
+  ReturnType<DatabaseRuntime["sourceRepository"]["createSourceArtifact"]>
+>;
+type SourceChunkCreator = NonNullable<DatabaseRuntime["sourceRepository"]["createSourceChunk"]>;
+type SourceChunkRecord = Awaited<ReturnType<SourceChunkCreator>>;
+type RetrievalRepositoryRuntime = NonNullable<DatabaseRuntime["retrievalRepository"]>;
+type SearchDocumentRecord = Awaited<
+  ReturnType<RetrievalRepositoryRuntime["createSearchDocument"]>
+>;
+type SearchDocumentSearchResult = Awaited<
+  ReturnType<RetrievalRepositoryRuntime["searchLexical"]>
+>[number];
+type ParsedSourceClaimInput = ReturnType<typeof parseSourceClaimInput>;
+type SourceClaimEdgeMetadataInput = Parameters<
+  DatabaseRuntime["sourceRepository"]["createSourceClaimEdge"]
+>[0]["metadata"];
+
+interface SourceArtifactPersistenceRows {
+  sourceArtifact: SourceArtifactRecord;
+  sourceChunks: SourceChunkRecord[];
+  firstChunk: SourceChunkRecord | undefined;
+}
+
+interface SearchDocumentReadbackRows {
+  searchDocument: SearchDocumentRecord;
+  readbackQuery: string;
+  readbackHit: SearchDocumentSearchResult | undefined;
+}
+
+interface SourceClaimPersistenceRows {
+  sourceClaim: SourceClaim | undefined;
+  sourceClaimReadback: SourceClaim | undefined;
+}
+
+interface SourceClaimEdgePersistenceRows {
+  sourceClaimEdge: SourceClaimEdge | undefined;
+  sourceClaimEdgeReadback: SourceClaimEdge | undefined;
+}
+
 const sha256 = (content: string): string =>
   `sha256:${createHash("sha256").update(content).digest("hex")}`;
 
@@ -252,208 +256,6 @@ const formatReviewabilityReasons = (reasons: readonly string[]): string[] => [
   ...reasons.map((reason) => `  - ${reason}`)
 ];
 
-const candidateSlug = (value: string): string => {
-  const slug = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/gu, "-")
-    .replace(/^-|-$/gu, "")
-    .slice(0, 40);
-
-  return slug.length === 0 ? "candidate" : slug;
-};
-
-const stripMarkdownPrefix = (value: string): string =>
-  value
-    .replace(/^#{1,6}\s+/u, "")
-    .replace(/^[-*]\s+/u, "")
-    .trim();
-
-const extractLocalSourceCandidates = (
-  chunks: readonly SourceArtifactPreviewChunk[]
-): ExtractionCandidatePreview => {
-  const entities: ExtractionEntityCandidate[] = [];
-  const claims: ExtractionClaimCandidate[] = [];
-  const deferredClaims: ExtractionClaimCandidate[] = [];
-  const seenEntities = new Set<string>();
-  const seenClaims = new Set<string>();
-  let insideFence = false;
-
-  for (const chunk of chunks) {
-    const lines = chunk.content.split("\n");
-
-    for (const [index, rawLine] of lines.entries()) {
-      const lineNumber = chunk.startLine + index;
-      const sourceRange = `lines ${lineNumber}-${lineNumber}`;
-      const line = rawLine.trim();
-
-      if (line.length === 0) {
-        continue;
-      }
-
-      const headingMatch = /^(#{1,6})\s+(.+)$/u.exec(line);
-
-      if (headingMatch?.[2] !== undefined) {
-        const label = stripMarkdownPrefix(headingMatch[2]);
-        const key = `markdown_heading:${lineNumber}:${label}`;
-
-        if (label.length > 0 && !seenEntities.has(key)) {
-          seenEntities.add(key);
-          entities.push({
-            id: `entity-candidate:${lineNumber}:${candidateSlug(label)}`,
-            label,
-            kind: "markdown_heading",
-            sourceRange,
-            lineNumber
-          });
-        }
-      }
-
-      for (const match of line.matchAll(/`([^`\n]{2,80})`/gu)) {
-        const label = match[1]?.trim();
-        const key = label === undefined ? undefined : `inline_code:${lineNumber}:${label}`;
-
-        if (label !== undefined && label.length > 0 && key !== undefined && !seenEntities.has(key)) {
-          seenEntities.add(key);
-          entities.push({
-            id: `entity-candidate:${lineNumber}:${candidateSlug(label)}`,
-            label,
-            kind: "inline_code",
-            sourceRange,
-            lineNumber
-          });
-        }
-      }
-    }
-
-    let blockStartLine: number | undefined;
-    let blockEndLine: number | undefined;
-    let blockLines: string[] = [];
-    let blockIsFenced = insideFence;
-    const flushClaimBlock = (): void => {
-      if (blockStartLine === undefined || blockEndLine === undefined || blockLines.length === 0) {
-        blockStartLine = undefined;
-        blockEndLine = undefined;
-        blockLines = [];
-        blockIsFenced = insideFence;
-
-        return;
-      }
-
-      const normalizedClaim = blockLines.join(" ").replace(/\s+/gu, " ").trim();
-      const hasClaimSignal =
-        normalizedClaim.length >= 24 &&
-        /\b(should|must|can|cannot|does|do|is|are|requires|reject|proves?|supports|contradicts|narrows|exposes?)\b/iu.test(normalizedClaim);
-      const claimKey = `${blockStartLine}-${blockEndLine}:${normalizedClaim}`;
-
-      if (hasClaimSignal && !seenClaims.has(claimKey)) {
-        seenClaims.add(claimKey);
-        const isLeadInFragment = /:\s*$/u.test(normalizedClaim);
-        const claimCandidate = {
-          id: `claim-candidate:${blockStartLine}:${candidateSlug(normalizedClaim)}`,
-          text: normalizedClaim,
-          sourceRange: `lines ${blockStartLine}-${blockEndLine}`,
-          lineNumber: blockStartLine,
-          reviewability: blockIsFenced || isLeadInFragment ? "needs_more_evidence" as const : "ready" as const,
-          reviewabilityReason: blockIsFenced
-            ? "Fenced/code or source-decision metadata block requires human extraction before it can become a claim candidate."
-            : isLeadInFragment
-              ? "Lead-in fragment ends with ':' and needs following evidence before it can become a claim candidate."
-              : "Candidate has claim signal, source range, and no deterministic noise marker."
-        };
-
-        if (claimCandidate.reviewability === "ready") {
-          claims.push(claimCandidate);
-        } else {
-          deferredClaims.push(claimCandidate);
-        }
-      }
-
-      blockStartLine = undefined;
-      blockEndLine = undefined;
-      blockLines = [];
-      blockIsFenced = insideFence;
-    };
-
-    for (const [index, rawLine] of lines.entries()) {
-      const lineNumber = chunk.startLine + index;
-      const line = rawLine.trim();
-      const isFenceLine = /^```/u.test(line);
-
-      if (isFenceLine) {
-        if (!insideFence) {
-          flushClaimBlock();
-          insideFence = true;
-          blockIsFenced = true;
-          blockStartLine = lineNumber;
-          blockEndLine = lineNumber;
-          blockLines.push(stripMarkdownPrefix(line));
-          continue;
-        }
-
-        blockStartLine ??= lineNumber;
-        blockEndLine = lineNumber;
-        blockIsFenced = true;
-        blockLines.push(stripMarkdownPrefix(line));
-        insideFence = false;
-        flushClaimBlock();
-        continue;
-      }
-
-      if (insideFence) {
-        if (line.length > 0) {
-          blockStartLine ??= lineNumber;
-          blockEndLine = lineNumber;
-          blockIsFenced = true;
-          blockLines.push(stripMarkdownPrefix(line));
-        }
-
-        continue;
-      }
-
-      if (line.length === 0 || /^#{1,6}\s+/u.test(line)) {
-        flushClaimBlock();
-        continue;
-      }
-
-      if (/^[-*]\s+/u.test(line) && blockLines.length > 0) {
-        flushClaimBlock();
-      }
-
-      blockStartLine ??= lineNumber;
-      blockEndLine = lineNumber;
-      blockLines.push(stripMarkdownPrefix(line));
-    }
-
-    flushClaimBlock();
-  }
-
-  const headingEntities = entities.filter((entity) => entity.kind === "markdown_heading");
-  const relations = claims.flatMap((claim): ExtractionRelationCandidate[] => {
-    const heading = [...headingEntities]
-      .reverse()
-      .find((entity) => entity.lineNumber < claim.lineNumber);
-
-    if (heading === undefined) {
-      return [];
-    }
-
-    return [{
-      id: `relation-candidate:${heading.lineNumber}-${claim.lineNumber}:scoped-by-heading`,
-      kind: "scoped_by_heading",
-      fromCandidateId: claim.id,
-      toCandidateId: heading.id,
-      sourceRange: `${heading.sourceRange}, ${claim.sourceRange}`
-    }];
-  });
-
-  return {
-    entities: entities.slice(0, 8),
-    claims: claims.slice(0, 8),
-    deferredClaims: deferredClaims.slice(0, 8),
-    relations: relations.slice(0, 8)
-  };
-};
-
 const chunkBody = (chunks: readonly SourceArtifactPreviewChunk[]): string =>
   chunks.map((chunk) =>
     [
@@ -520,6 +322,461 @@ const formatSearchDocumentCandidate = (
 const localArtifactUri = (resolvedPath: string, artifactHash: string, now: string): string =>
   `file://${resolvedPath}?krnPreviewHash=${encodeURIComponent(artifactHash)}&capturedAt=${encodeURIComponent(now)}`;
 
+const requireDatabaseUrl = (runtime: SourceArtifactPreviewCommandRuntime): string => {
+  const databaseUrl = runtime.env?.KRN_DATABASE_URL?.trim();
+
+  if (databaseUrl === undefined || databaseUrl.length === 0) {
+    throw new Error("KRN_DATABASE_URL is required for krn source artifact preview --persist");
+  }
+
+  return databaseUrl;
+};
+
+const createPreviewDatabaseRuntime = async (
+  runtime: SourceArtifactPreviewCommandRuntime,
+  databaseUrl: string,
+  now: () => string
+): Promise<DatabaseRuntime> => {
+  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
+
+  return createRuntime({
+    databaseUrl,
+    workspaceSlug: defaultWorkspaceSlug,
+    projectSlug: defaultProjectSlug,
+    repoPathHint: await findRepoRoot(runtime.cwd),
+    now,
+    createId: (prefix) => `${prefix}-${Date.now()}`
+  });
+};
+
+const requirePreviewPersistenceRepositories = (
+  databaseRuntime: DatabaseRuntime
+): {
+  retrievalRepository: RetrievalRepositoryRuntime;
+  createSourceChunk: SourceChunkCreator;
+} => {
+  const { retrievalRepository } = databaseRuntime;
+  const createSourceChunk = databaseRuntime.sourceRepository.createSourceChunk;
+
+  if (retrievalRepository === undefined) {
+    throw new Error("SearchDocument persistence is unavailable in this database runtime");
+  }
+
+  if (createSourceChunk === undefined) {
+    throw new Error("SourceChunk persistence is unavailable in this database runtime");
+  }
+
+  return {
+    retrievalRepository,
+    createSourceChunk
+  };
+};
+
+const persistPreviewArtifactAndChunks = async (input: {
+  databaseRuntime: DatabaseRuntime;
+  createSourceChunk: SourceChunkCreator;
+  file: string;
+  resolvedPath: string;
+  artifactHash: string;
+  capturedAt: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+}): Promise<SourceArtifactPersistenceRows> => {
+  const artifactInput = parseSourceArtifactInput({
+    kind: "file",
+    title: `Local source artifact: ${input.file}`,
+    uri: localArtifactUri(input.resolvedPath, input.artifactHash, input.capturedAt),
+    contentHash: input.artifactHash,
+    trustTier: "source-code",
+    metadata: {
+      file: input.file,
+      resolvedPath: input.resolvedPath,
+      source: "krn source artifact preview --persist",
+      doesNotProve: "Persisted local source artifact does not prove source truth, source freshness, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
+    }
+  });
+  const sourceArtifact = await input.databaseRuntime.sourceRepository.createSourceArtifact({
+    projectId: input.databaseRuntime.projectId,
+    kind: artifactInput.kind,
+    trustTier: artifactInput.trustTier,
+    uri: artifactInput.uri,
+    title: artifactInput.title,
+    contentHash: artifactInput.contentHash ?? input.artifactHash,
+    metadata: artifactInput.metadata
+  });
+  const sourceChunks: SourceChunkRecord[] = [];
+
+  for (const chunk of input.chunks) {
+    sourceChunks.push(await input.createSourceChunk({
+      sourceArtifactId: sourceArtifact.id,
+      ordinal: chunk.ordinal,
+      content: chunk.content,
+      contentHash: chunk.contentHash,
+      metadata: {
+        file: input.file,
+        sourceRange: `lines ${chunk.startLine}-${chunk.endLine}`,
+        startLine: chunk.startLine,
+        endLine: chunk.endLine
+      }
+    }));
+  }
+
+  return {
+    sourceArtifact,
+    sourceChunks,
+    firstChunk: sourceChunks[0]
+  };
+};
+
+const persistPreviewSearchDocument = async (input: {
+  databaseRuntime: DatabaseRuntime;
+  retrievalRepository: RetrievalRepositoryRuntime;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  sourceArtifact: SourceArtifactRecord;
+  firstChunk: SourceChunkRecord | undefined;
+  sourceChunks: readonly SourceChunkRecord[];
+}): Promise<SearchDocumentReadbackRows> => {
+  const artifactHashPrefix = input.artifactHash.slice("sha256:".length, "sha256:".length + 16);
+  const readbackQuery = `krn-source-artifact-preview ${artifactHashPrefix}`;
+  const body = chunkBody(input.chunks);
+  const documentInput = parseSearchDocumentInput({
+    projectId: input.databaseRuntime.projectId,
+    subjectType: "source_artifact",
+    subjectId: input.sourceArtifact.id,
+    sourceArtifactId: input.sourceArtifact.id,
+    ...(input.firstChunk === undefined ? {} : { sourceChunkId: input.firstChunk.id }),
+    trustTier: "source-code",
+    language: "english",
+    title: `Local source artifact: ${input.file}`,
+    body,
+    searchText: [
+      "krn-source-artifact-preview",
+      artifactHashPrefix,
+      input.file,
+      body
+    ].join("\n"),
+    metadataFilters: {
+      source: "local_source_artifact_preview",
+      file: input.file
+    },
+    metadata: {
+      file: input.file,
+      contentHash: input.artifactHash,
+      chunkIds: input.sourceChunks.map((chunk) => chunk.id),
+      source: "krn source artifact preview --persist",
+      doesNotProve: "Persisted SearchDocument readback does not prove embeddings, graph retrieval, source truth, source freshness, or Memory Core mutation."
+    }
+  });
+  const searchDocument = await input.retrievalRepository.createSearchDocument({
+    projectId: input.databaseRuntime.projectId,
+    subjectType: documentInput.subjectType,
+    subjectId: documentInput.subjectId,
+    sourceArtifactId: input.sourceArtifact.id,
+    ...(input.firstChunk === undefined ? {} : { sourceChunkId: input.firstChunk.id }),
+    trustTier: documentInput.trustTier,
+    validityStatus: documentInput.validityStatus,
+    language: documentInput.language,
+    title: documentInput.title,
+    body: documentInput.body,
+    searchText: documentInput.searchText,
+    metadataFilters: documentInput.metadataFilters,
+    metadata: documentInput.metadata
+  });
+  const lexicalReadback = await input.retrievalRepository.searchLexical({
+    projectId: input.databaseRuntime.projectId,
+    query: readbackQuery,
+    limit: 5
+  });
+
+  return {
+    searchDocument,
+    readbackQuery,
+    readbackHit: lexicalReadback.find((result) => result.id === searchDocument.id)
+  };
+};
+
+const hasCompleteSourceClaimCandidate = (
+  command: SourceArtifactPreviewCommand,
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined
+): boolean =>
+  (
+    hasAnyManualSourceClaimCandidateField(command) &&
+    missingSourceClaimCandidateFields(command).length === 0
+  ) ||
+  (
+    reviewedExtractionClaimSelection !== undefined &&
+    missingReviewedExtractionClaimCandidateFields(command).length === 0
+  );
+
+const sourceChunkForReviewedClaim = (
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceChunks: readonly SourceChunkRecord[],
+  firstChunk: SourceChunkRecord | undefined,
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined
+): SourceChunkRecord | undefined => {
+  if (reviewedExtractionClaimSelection === undefined) {
+    return firstChunk;
+  }
+
+  const extractionChunkIndex = chunks.findIndex((chunk) =>
+    reviewedExtractionClaimSelection.candidate.lineNumber >= chunk.startLine &&
+    reviewedExtractionClaimSelection.candidate.lineNumber <= chunk.endLine
+  );
+
+  return sourceChunks[extractionChunkIndex] ?? firstChunk;
+};
+
+const parsePreviewSourceClaimInput = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  sourceArtifact: SourceArtifactRecord;
+  sourceChunks: readonly SourceChunkRecord[];
+  claimSourceChunk: SourceChunkRecord | undefined;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): ParsedSourceClaimInput | undefined => {
+  if (!hasCompleteSourceClaimCandidate(input.command, input.reviewedExtractionClaimSelection)) {
+    return undefined;
+  }
+
+  return parseSourceClaimInput({
+    sourceArtifactId: input.sourceArtifact.id,
+    ...(input.claimSourceChunk === undefined ? {} : { sourceChunkId: input.claimSourceChunk.id }),
+    claim: input.reviewedExtractionClaimSelection?.candidate.text ?? input.command.claim,
+    mechanism: input.command.mechanism,
+    krnImplication: input.command.krnImplication,
+    doesNotProve: input.command.doesNotProve,
+    trustTier: input.command.trustTier,
+    supportType: input.command.supportType,
+    consumer: input.command.consumer,
+    falsifier: input.command.falsifier,
+    metadata: {
+      file: input.file,
+      contentHash: input.artifactHash,
+      chunkIds: input.sourceChunks.map((chunk) => chunk.id),
+      ...(input.reviewedExtractionClaimSelection === undefined
+        ? {}
+        : {
+            extractionCandidateId: input.reviewedExtractionClaimSelection.candidate.id,
+            extractionCandidateReviewability: input.reviewedExtractionClaimSelection.candidate.reviewability,
+            extractionCandidateReviewabilityReason: input.reviewedExtractionClaimSelection.candidate.reviewabilityReason,
+            extractionCandidateSourceRange: input.reviewedExtractionClaimSelection.candidate.sourceRange,
+            extractionCandidateLineNumber: input.reviewedExtractionClaimSelection.candidate.lineNumber,
+            reviewedExtractionBridge: true
+          }),
+      source: "krn source artifact preview --persist",
+      doesNotProve: "Persisted SourceClaim readback does not prove source truth, claim acceptance, automatic extraction, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
+    }
+  });
+};
+
+const persistOptionalSourceClaim = async (input: {
+  databaseRuntime: DatabaseRuntime;
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  sourceArtifact: SourceArtifactRecord;
+  sourceChunks: readonly SourceChunkRecord[];
+  firstChunk: SourceChunkRecord | undefined;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): Promise<SourceClaimPersistenceRows> => {
+  const claimSourceChunk = sourceChunkForReviewedClaim(
+    input.chunks,
+    input.sourceChunks,
+    input.firstChunk,
+    input.reviewedExtractionClaimSelection
+  );
+  const parsedSourceClaim = parsePreviewSourceClaimInput({
+    command: input.command,
+    file: input.file,
+    artifactHash: input.artifactHash,
+    sourceArtifact: input.sourceArtifact,
+    sourceChunks: input.sourceChunks,
+    claimSourceChunk,
+    reviewedExtractionClaimSelection: input.reviewedExtractionClaimSelection
+  });
+
+  if (parsedSourceClaim === undefined) {
+    return {
+      sourceClaim: undefined,
+      sourceClaimReadback: undefined
+    };
+  }
+
+  const sourceClaim = await input.databaseRuntime.sourceRepository.createSourceClaim({
+    sourceArtifactId: input.sourceArtifact.id,
+    ...(parsedSourceClaim.sourceChunkId === undefined
+      ? {}
+      : { sourceChunkId: parsedSourceClaim.sourceChunkId }),
+    ...(parsedSourceClaim.executionRunId === undefined
+      ? {}
+      : { executionRunId: parsedSourceClaim.executionRunId }),
+    claim: parsedSourceClaim.claim,
+    mechanism: parsedSourceClaim.mechanism,
+    krnImplication: parsedSourceClaim.krnImplication,
+    doesNotProve: parsedSourceClaim.doesNotProve,
+    trustTier: parsedSourceClaim.trustTier,
+    supportType: parsedSourceClaim.supportType,
+    consumer: parsedSourceClaim.consumer,
+    falsifier: parsedSourceClaim.falsifier,
+    ...(parsedSourceClaim.revisitWhen === undefined
+      ? {}
+      : { revisitWhen: parsedSourceClaim.revisitWhen }),
+    status: parsedSourceClaim.status,
+    metadata: parsedSourceClaim.metadata
+  });
+
+  return {
+    sourceClaim,
+    sourceClaimReadback: await input.databaseRuntime.sourceRepository.getSourceClaimById(sourceClaim.id)
+  };
+};
+
+const graphEdgeMetadata = (input: {
+  graphEdgeInput: CompleteGraphEdgeCommandInput;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  sourceChunks: readonly SourceChunkRecord[];
+}): SourceClaimEdgeMetadataInput => ({
+  consumer: input.graphEdgeInput.consumer,
+  doesNotProve: input.graphEdgeInput.doesNotProve,
+  ...(input.graphEdgeInput.evidenceRef === undefined
+    ? {}
+    : { evidenceRef: input.graphEdgeInput.evidenceRef }),
+  ...(input.graphEdgeInput.sourceDecisionRef === undefined
+    ? {}
+    : { sourceDecisionRef: input.graphEdgeInput.sourceDecisionRef }),
+  ...(input.graphEdgeInput.scope === undefined ? {} : { scope: input.graphEdgeInput.scope }),
+  ...(input.graphEdgeInput.validFrom === undefined
+    ? {}
+    : { validFrom: input.graphEdgeInput.validFrom }),
+  ...(input.graphEdgeInput.validUntil === undefined
+    ? {}
+    : { validUntil: input.graphEdgeInput.validUntil }),
+  ...(input.graphEdgeInput.invalidatedAt === undefined
+    ? {}
+    : { invalidatedAt: input.graphEdgeInput.invalidatedAt }),
+  file: input.file,
+  contentHash: input.artifactHash,
+  chunkIds: input.sourceChunks.map((chunk) => chunk.id),
+  sourceRanges: input.chunks.map((chunk) => `lines ${chunk.startLine}-${chunk.endLine}`),
+  source: "krn source artifact preview --persist"
+});
+
+const persistOptionalSourceClaimEdge = async (input: {
+  databaseRuntime: DatabaseRuntime;
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  sourceChunks: readonly SourceChunkRecord[];
+  sourceClaim: SourceClaim | undefined;
+}): Promise<SourceClaimEdgePersistenceRows> => {
+  const graphEdgeInput = completeGraphEdgeInput(input.command);
+
+  if (input.sourceClaim === undefined || graphEdgeInput === undefined) {
+    return {
+      sourceClaimEdge: undefined,
+      sourceClaimEdgeReadback: undefined
+    };
+  }
+
+  const sourceClaimEdge = await input.databaseRuntime.sourceRepository.createSourceClaimEdge({
+    fromSourceClaimId: input.sourceClaim.id,
+    toSourceClaimId: graphEdgeInput.toSourceClaimId as SourceClaim["id"],
+    kind: graphEdgeInput.kind,
+    metadata: graphEdgeMetadata({
+      graphEdgeInput,
+      file: input.file,
+      artifactHash: input.artifactHash,
+      chunks: input.chunks,
+      sourceChunks: input.sourceChunks
+    })
+  });
+  const sourceClaimEdgeReadback = (
+    await input.databaseRuntime.sourceRepository.listSourceClaimEdgesForClaim(
+      sourceClaimEdge.fromSourceClaimId
+    )
+  ).find((edge) => edge.id === sourceClaimEdge.id);
+
+  return {
+    sourceClaimEdge,
+    sourceClaimEdgeReadback
+  };
+};
+
+const formatSearchDocumentReadbackLines = (
+  search: SearchDocumentReadbackRows
+): string[] => [
+  `searchDocument: ${search.searchDocument.id}`,
+  `lexicalReadbackQuery: ${search.readbackQuery}`,
+  `lexicalReadback: ${search.readbackHit === undefined ? "missing" : "hit"}`,
+  ...(search.readbackHit === undefined
+    ? []
+    : [`lexicalScore: ${search.readbackHit.lexicalScore}`])
+];
+
+const formatSourceClaimReadbackLines = (input: {
+  claim: SourceClaimPersistenceRows;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): string[] => {
+  if (input.claim.sourceClaim === undefined) {
+    return ["sourceClaim: not created"];
+  }
+
+  return [
+    `sourceClaim: ${input.claim.sourceClaim.id}`,
+    `sourceClaimReadback: ${input.claim.sourceClaimReadback === undefined ? "missing" : "hit"}`,
+    ...(input.reviewedExtractionClaimSelection === undefined
+      ? []
+      : [
+          `reviewedExtractionClaimCandidate: ${input.reviewedExtractionClaimSelection.candidate.id}`,
+          `reviewedExtractionClaimSourceRange: ${input.reviewedExtractionClaimSelection.candidate.sourceRange}`
+        ])
+  ];
+};
+
+const formatSourceClaimEdgeReadbackLines = (
+  edge: SourceClaimEdgePersistenceRows
+): string[] => {
+  if (edge.sourceClaimEdge === undefined) {
+    return ["sourceClaimEdge: not created"];
+  }
+
+  return [
+    `sourceClaimEdge: ${edge.sourceClaimEdge.id}`,
+    `sourceClaimEdgeKind: ${edge.sourceClaimEdge.kind}`,
+    `sourceClaimEdgeReadback: ${edge.sourceClaimEdgeReadback === undefined ? "missing" : "hit"}`
+  ];
+};
+
+const formatPersistenceReadbackLines = (input: {
+  databaseRuntime: DatabaseRuntime;
+  artifact: SourceArtifactPersistenceRows;
+  search: SearchDocumentReadbackRows;
+  claim: SourceClaimPersistenceRows;
+  edge: SourceClaimEdgePersistenceRows;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): string[] => [
+  "Persistence readback:",
+  "Persistence: enabled (Postgres, explicit --persist)",
+  `project: ${input.databaseRuntime.projectId}`,
+  `sourceArtifact: ${input.artifact.sourceArtifact.id}`,
+  `sourceChunks: ${input.artifact.sourceChunks.map((chunk) => chunk.id).join(", ")}`,
+  ...formatSearchDocumentReadbackLines(input.search),
+  ...formatSourceClaimReadbackLines({
+    claim: input.claim,
+    reviewedExtractionClaimSelection: input.reviewedExtractionClaimSelection
+  }),
+  ...formatSourceClaimEdgeReadbackLines(input.edge),
+  "Embeddings: none",
+  "Graph runtime: none",
+  "doesNotProve: DB readback does not prove source truth, embeddings, graph retrieval, crawler readiness, or product readiness"
+];
+
 const persistSourceArtifactPreview = async (
   runtime: SourceArtifactPreviewCommandRuntime,
   file: string,
@@ -527,12 +784,7 @@ const persistSourceArtifactPreview = async (
   artifactHash: string,
   chunks: readonly SourceArtifactPreviewChunk[]
 ): Promise<SourceArtifactPreviewPersistenceResult> => {
-  const databaseUrl = runtime.env?.KRN_DATABASE_URL?.trim();
-
-  if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error("KRN_DATABASE_URL is required for krn source artifact preview --persist");
-  }
-
+  const databaseUrl = requireDatabaseUrl(runtime);
   const now = runtime.now ?? (() => new Date().toISOString());
   const capturedAt = now();
   const extraction = extractLocalSourceCandidates(chunks);
@@ -550,274 +802,63 @@ const persistSourceArtifactPreview = async (
     );
   }
 
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const databaseRuntime = await createRuntime({
-    databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    repoPathHint: await findRepoRoot(runtime.cwd),
-    now,
-    createId: (prefix) => `${prefix}-${Date.now()}`
-  });
+  const databaseRuntime = await createPreviewDatabaseRuntime(runtime, databaseUrl, now);
 
   try {
-    const artifactInput = parseSourceArtifactInput({
-      kind: "file",
-      title: `Local source artifact: ${file}`,
-      uri: localArtifactUri(resolvedPath, artifactHash, capturedAt),
-      contentHash: artifactHash,
-      trustTier: "source-code",
-      metadata: {
-        file,
-        resolvedPath,
-        source: "krn source artifact preview --persist",
-        doesNotProve: "Persisted local source artifact does not prove source truth, source freshness, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
-      }
+    const { retrievalRepository, createSourceChunk } =
+      requirePreviewPersistenceRepositories(databaseRuntime);
+    const artifact = await persistPreviewArtifactAndChunks({
+      databaseRuntime,
+      createSourceChunk,
+      file,
+      resolvedPath,
+      artifactHash,
+      capturedAt,
+      chunks
     });
-    const retrievalRepository = databaseRuntime.retrievalRepository;
-
-    if (retrievalRepository === undefined) {
-      throw new Error("SearchDocument persistence is unavailable in this database runtime");
-    }
-
-    if (databaseRuntime.sourceRepository.createSourceChunk === undefined) {
-      throw new Error("SourceChunk persistence is unavailable in this database runtime");
-    }
-
-    const sourceArtifact = await databaseRuntime.sourceRepository.createSourceArtifact({
-      projectId: databaseRuntime.projectId,
-      kind: artifactInput.kind,
-      trustTier: artifactInput.trustTier,
-      uri: artifactInput.uri,
-      title: artifactInput.title,
-      contentHash: artifactInput.contentHash ?? artifactHash,
-      metadata: artifactInput.metadata
+    const search = await persistPreviewSearchDocument({
+      databaseRuntime,
+      retrievalRepository,
+      file,
+      artifactHash,
+      chunks,
+      sourceArtifact: artifact.sourceArtifact,
+      firstChunk: artifact.firstChunk,
+      sourceChunks: artifact.sourceChunks
     });
-    const sourceChunks = [];
-
-    for (const chunk of chunks) {
-      sourceChunks.push(await databaseRuntime.sourceRepository.createSourceChunk({
-        sourceArtifactId: sourceArtifact.id,
-        ordinal: chunk.ordinal,
-        content: chunk.content,
-        contentHash: chunk.contentHash,
-        metadata: {
-          file,
-          sourceRange: `lines ${chunk.startLine}-${chunk.endLine}`,
-          startLine: chunk.startLine,
-          endLine: chunk.endLine
-        }
-      }));
-    }
-
-    const firstChunk = sourceChunks[0];
-    const artifactHashPrefix = artifactHash.slice("sha256:".length, "sha256:".length + 16);
-    const readbackQuery = `krn-source-artifact-preview ${artifactHashPrefix}`;
-    const documentInput = parseSearchDocumentInput({
-      projectId: databaseRuntime.projectId,
-      subjectType: "source_artifact",
-      subjectId: sourceArtifact.id,
-      sourceArtifactId: sourceArtifact.id,
-      ...(firstChunk === undefined ? {} : { sourceChunkId: firstChunk.id }),
-      trustTier: "source-code",
-      language: "english",
-      title: `Local source artifact: ${file}`,
-      body: chunkBody(chunks),
-      searchText: [
-        "krn-source-artifact-preview",
-        artifactHashPrefix,
-        file,
-        chunkBody(chunks)
-      ].join("\n"),
-      metadataFilters: {
-        source: "local_source_artifact_preview",
-        file
-      },
-      metadata: {
-        file,
-        contentHash: artifactHash,
-        chunkIds: sourceChunks.map((chunk) => chunk.id),
-        source: "krn source artifact preview --persist",
-        doesNotProve: "Persisted SearchDocument readback does not prove embeddings, graph retrieval, source truth, source freshness, or Memory Core mutation."
-      }
+    const claim = await persistOptionalSourceClaim({
+      databaseRuntime,
+      command: runtime.command,
+      file,
+      artifactHash,
+      chunks,
+      sourceArtifact: artifact.sourceArtifact,
+      sourceChunks: artifact.sourceChunks,
+      firstChunk: artifact.firstChunk,
+      reviewedExtractionClaimSelection
     });
-    const searchDocument = await retrievalRepository.createSearchDocument({
-      projectId: databaseRuntime.projectId,
-      subjectType: documentInput.subjectType,
-      subjectId: documentInput.subjectId,
-      sourceArtifactId: sourceArtifact.id,
-      ...(firstChunk === undefined ? {} : { sourceChunkId: firstChunk.id }),
-      trustTier: documentInput.trustTier,
-      validityStatus: documentInput.validityStatus,
-      language: documentInput.language,
-      title: documentInput.title,
-      body: documentInput.body,
-      searchText: documentInput.searchText,
-      metadataFilters: documentInput.metadataFilters,
-      metadata: documentInput.metadata
+    const edge = await persistOptionalSourceClaimEdge({
+      databaseRuntime,
+      command: runtime.command,
+      file,
+      artifactHash,
+      chunks,
+      sourceChunks: artifact.sourceChunks,
+      sourceClaim: claim.sourceClaim
     });
-    const lexicalReadback = await retrievalRepository.searchLexical({
-      projectId: databaseRuntime.projectId,
-      query: readbackQuery,
-      limit: 5
-    });
-    const readbackHit = lexicalReadback.find((result) => result.id === searchDocument.id);
-    const hasCompleteManualSourceClaimCandidate =
-      hasAnyManualSourceClaimCandidateField(runtime.command) &&
-      missingSourceClaimCandidateFields(runtime.command).length === 0;
-    const hasCompleteReviewedExtractionClaimCandidate =
-      reviewedExtractionClaimSelection !== undefined &&
-      missingReviewedExtractionClaimCandidateFields(runtime.command).length === 0;
-    const extractionChunkIndex = reviewedExtractionClaimSelection === undefined
-      ? -1
-      : chunks.findIndex((chunk) =>
-          reviewedExtractionClaimSelection.candidate.lineNumber >= chunk.startLine &&
-          reviewedExtractionClaimSelection.candidate.lineNumber <= chunk.endLine
-        );
-    const claimSourceChunk = reviewedExtractionClaimSelection === undefined
-      ? firstChunk
-      : sourceChunks[extractionChunkIndex] ?? firstChunk;
-    const parsedSourceClaim = hasCompleteManualSourceClaimCandidate || hasCompleteReviewedExtractionClaimCandidate
-      ? parseSourceClaimInput({
-          sourceArtifactId: sourceArtifact.id,
-          ...(claimSourceChunk === undefined ? {} : { sourceChunkId: claimSourceChunk.id }),
-          claim: reviewedExtractionClaimSelection?.candidate.text ?? runtime.command.claim,
-          mechanism: runtime.command.mechanism,
-          krnImplication: runtime.command.krnImplication,
-          doesNotProve: runtime.command.doesNotProve,
-          trustTier: runtime.command.trustTier,
-          supportType: runtime.command.supportType,
-          consumer: runtime.command.consumer,
-          falsifier: runtime.command.falsifier,
-          metadata: {
-            file,
-            contentHash: artifactHash,
-            chunkIds: sourceChunks.map((chunk) => chunk.id),
-            ...(reviewedExtractionClaimSelection === undefined
-              ? {}
-              : {
-                  extractionCandidateId: reviewedExtractionClaimSelection.candidate.id,
-                  extractionCandidateReviewability: reviewedExtractionClaimSelection.candidate.reviewability,
-                  extractionCandidateReviewabilityReason: reviewedExtractionClaimSelection.candidate.reviewabilityReason,
-                  extractionCandidateSourceRange: reviewedExtractionClaimSelection.candidate.sourceRange,
-                  extractionCandidateLineNumber: reviewedExtractionClaimSelection.candidate.lineNumber,
-                  reviewedExtractionBridge: true
-                }),
-            source: "krn source artifact preview --persist",
-            doesNotProve: "Persisted SourceClaim readback does not prove source truth, claim acceptance, automatic extraction, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
-          }
-        })
-      : undefined;
-    const sourceClaim = parsedSourceClaim === undefined
-      ? undefined
-      : await databaseRuntime.sourceRepository.createSourceClaim({
-          sourceArtifactId: sourceArtifact.id,
-          ...(parsedSourceClaim.sourceChunkId === undefined
-            ? {}
-            : { sourceChunkId: parsedSourceClaim.sourceChunkId }),
-          ...(parsedSourceClaim.executionRunId === undefined
-            ? {}
-            : { executionRunId: parsedSourceClaim.executionRunId }),
-          claim: parsedSourceClaim.claim,
-          mechanism: parsedSourceClaim.mechanism,
-          krnImplication: parsedSourceClaim.krnImplication,
-          doesNotProve: parsedSourceClaim.doesNotProve,
-          trustTier: parsedSourceClaim.trustTier,
-          supportType: parsedSourceClaim.supportType,
-          consumer: parsedSourceClaim.consumer,
-          falsifier: parsedSourceClaim.falsifier,
-          ...(parsedSourceClaim.revisitWhen === undefined
-            ? {}
-            : { revisitWhen: parsedSourceClaim.revisitWhen }),
-          status: parsedSourceClaim.status,
-          metadata: parsedSourceClaim.metadata
-        });
-    const sourceClaimReadback = sourceClaim === undefined
-      ? undefined
-      : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaim.id);
-    const graphEdgeInput = completeGraphEdgeInput(runtime.command);
-    const sourceClaimEdge = sourceClaim === undefined || graphEdgeInput === undefined
-      ? undefined
-      : await databaseRuntime.sourceRepository.createSourceClaimEdge({
-          fromSourceClaimId: sourceClaim.id,
-          toSourceClaimId: graphEdgeInput.toSourceClaimId as SourceClaim["id"],
-          kind: graphEdgeInput.kind,
-          metadata: {
-            consumer: graphEdgeInput.consumer,
-            doesNotProve: graphEdgeInput.doesNotProve,
-            ...(graphEdgeInput.evidenceRef === undefined
-              ? {}
-              : { evidenceRef: graphEdgeInput.evidenceRef }),
-            ...(graphEdgeInput.sourceDecisionRef === undefined
-              ? {}
-              : { sourceDecisionRef: graphEdgeInput.sourceDecisionRef }),
-            ...(graphEdgeInput.scope === undefined
-              ? {}
-              : { scope: graphEdgeInput.scope }),
-            ...(graphEdgeInput.validFrom === undefined
-              ? {}
-              : { validFrom: graphEdgeInput.validFrom }),
-            ...(graphEdgeInput.validUntil === undefined
-              ? {}
-              : { validUntil: graphEdgeInput.validUntil }),
-            ...(graphEdgeInput.invalidatedAt === undefined
-              ? {}
-              : { invalidatedAt: graphEdgeInput.invalidatedAt }),
-            file,
-            contentHash: artifactHash,
-            chunkIds: sourceChunks.map((chunk) => chunk.id),
-            sourceRanges: chunks.map((chunk) => `lines ${chunk.startLine}-${chunk.endLine}`),
-            source: "krn source artifact preview --persist"
-          }
-        });
-    const sourceClaimEdgeReadback = sourceClaimEdge === undefined
-      ? undefined
-      : (await databaseRuntime.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimEdge.fromSourceClaimId))
-          .find((edge) => edge.id === sourceClaimEdge.id);
 
     return {
       searchDocumentPersisted: true,
-      sourceClaimPersisted: sourceClaim !== undefined,
-      sourceClaimEdgePersisted: sourceClaimEdge !== undefined,
-      lines: [
-      "Persistence readback:",
-      "Persistence: enabled (Postgres, explicit --persist)",
-      `project: ${databaseRuntime.projectId}`,
-      `sourceArtifact: ${sourceArtifact.id}`,
-      `sourceChunks: ${sourceChunks.map((chunk) => chunk.id).join(", ")}`,
-      `searchDocument: ${searchDocument.id}`,
-      `lexicalReadbackQuery: ${readbackQuery}`,
-      `lexicalReadback: ${readbackHit === undefined ? "missing" : "hit"}`,
-      ...(readbackHit === undefined
-        ? []
-        : [`lexicalScore: ${readbackHit.lexicalScore}`]),
-      sourceClaim === undefined
-        ? "sourceClaim: not created"
-        : `sourceClaim: ${sourceClaim.id}`,
-      ...(sourceClaim === undefined
-        ? []
-        : [
-            `sourceClaimReadback: ${sourceClaimReadback === undefined ? "missing" : "hit"}`,
-            ...(reviewedExtractionClaimSelection === undefined
-              ? []
-              : [
-                  `reviewedExtractionClaimCandidate: ${reviewedExtractionClaimSelection.candidate.id}`,
-                  `reviewedExtractionClaimSourceRange: ${reviewedExtractionClaimSelection.candidate.sourceRange}`
-                ])
-          ]),
-      sourceClaimEdge === undefined
-        ? "sourceClaimEdge: not created"
-        : `sourceClaimEdge: ${sourceClaimEdge.id}`,
-      ...(sourceClaimEdge === undefined
-        ? []
-        : [
-            `sourceClaimEdgeKind: ${sourceClaimEdge.kind}`,
-            `sourceClaimEdgeReadback: ${sourceClaimEdgeReadback === undefined ? "missing" : "hit"}`
-          ]),
-      "Embeddings: none",
-      "Graph runtime: none",
-      "doesNotProve: DB readback does not prove source truth, embeddings, graph retrieval, crawler readiness, or product readiness"
-      ]
+      sourceClaimPersisted: claim.sourceClaim !== undefined,
+      sourceClaimEdgePersisted: edge.sourceClaimEdge !== undefined,
+      lines: formatPersistenceReadbackLines({
+        databaseRuntime,
+        artifact,
+        search,
+        claim,
+        edge,
+        reviewedExtractionClaimSelection
+      })
     };
   } finally {
     await databaseRuntime.close();
@@ -907,6 +948,35 @@ const missingSourceClaimFieldsForGraphEdge = (
         `${field} for edge source claim`
       );
 
+const addOptionalGraphEdgeInputFields = (
+  input: CompleteGraphEdgeCommandInput,
+  command: SourceArtifactPreviewCommand
+): void => {
+  if (command.graphEdgeEvidenceRef !== undefined) {
+    input.evidenceRef = command.graphEdgeEvidenceRef;
+  }
+
+  if (command.graphEdgeSourceDecisionRef !== undefined) {
+    input.sourceDecisionRef = command.graphEdgeSourceDecisionRef;
+  }
+
+  if (command.graphEdgeScope !== undefined) {
+    input.scope = command.graphEdgeScope;
+  }
+
+  if (command.graphEdgeValidFrom !== undefined) {
+    input.validFrom = command.graphEdgeValidFrom;
+  }
+
+  if (command.graphEdgeValidUntil !== undefined) {
+    input.validUntil = command.graphEdgeValidUntil;
+  }
+
+  if (command.graphEdgeInvalidatedAt !== undefined) {
+    input.invalidatedAt = command.graphEdgeInvalidatedAt;
+  }
+};
+
 const completeGraphEdgeInput = (
   command: SourceArtifactPreviewCommand
 ): CompleteGraphEdgeCommandInput | undefined => {
@@ -924,26 +994,16 @@ const completeGraphEdgeInput = (
     return undefined;
   }
 
-  return {
+  const input: CompleteGraphEdgeCommandInput = {
     toSourceClaimId,
     kind,
     consumer,
-    doesNotProve,
-    ...(command.graphEdgeEvidenceRef === undefined
-      ? {}
-      : { evidenceRef: command.graphEdgeEvidenceRef }),
-    ...(command.graphEdgeSourceDecisionRef === undefined
-      ? {}
-      : { sourceDecisionRef: command.graphEdgeSourceDecisionRef }),
-    ...(command.graphEdgeScope === undefined ? {} : { scope: command.graphEdgeScope }),
-    ...(command.graphEdgeValidFrom === undefined ? {} : { validFrom: command.graphEdgeValidFrom }),
-    ...(command.graphEdgeValidUntil === undefined
-      ? {}
-      : { validUntil: command.graphEdgeValidUntil }),
-    ...(command.graphEdgeInvalidatedAt === undefined
-      ? {}
-      : { invalidatedAt: command.graphEdgeInvalidatedAt })
+    doesNotProve
   };
+
+  addOptionalGraphEdgeInputFields(input, command);
+
+  return input;
 };
 
 const generatedGraphEvidenceRefs = (
@@ -957,6 +1017,147 @@ const generatedGraphEvidenceRefs = (
   ...chunks.map((chunk) => chunk.contentHash)
 ];
 
+const sourceClaimCandidateEvidenceRefs = (
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[]
+): string[] => [
+  file,
+  artifactHash,
+  ...chunks.map((chunk) => chunk.contentHash)
+];
+
+const formatNoSourceClaimCandidate = (): string[] => [
+  "sourceClaimCandidate:",
+  "- not generated",
+  "  reason: explicit claim/mechanism/consumer/falsifier inputs were not supplied",
+  "  No SourceClaim created"
+];
+
+const sourceClaimCandidateMissingFields = (
+  command: SourceArtifactPreviewCommand,
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined
+): string[] =>
+  reviewedExtractionClaimSelection === undefined
+    ? missingSourceClaimCandidateFields(command)
+    : missingReviewedExtractionClaimCandidateFields(command);
+
+const formatIncompleteSourceClaimCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  missingFields: readonly string[];
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): string[] => {
+  const reviewability = assessCandidateReviewability({
+    summary: input.reviewedExtractionClaimSelection?.candidate.text ??
+      input.command.claim ??
+      "SourceClaim candidate from local source artifact preview.",
+    ...(hasText(input.command.mechanism)
+      ? { body: input.command.mechanism }
+      : {}),
+    evidenceRefs: sourceClaimCandidateEvidenceRefs(input.file, input.artifactHash, input.chunks),
+    ...(hasText(input.command.falsifier)
+      ? { applicationGuidance: input.command.falsifier }
+      : {}),
+    ...(hasText(input.command.doesNotProve)
+      ? { doesNotProve: input.command.doesNotProve }
+      : {}),
+    missingFields: input.missingFields
+  });
+
+  return [
+    "sourceClaimCandidate:",
+    "- id: source-claim-candidate:incomplete",
+    "  status: incomplete",
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  missing: ${input.missingFields.join(", ")}`,
+    "  No SourceClaim created"
+  ];
+};
+
+const parseOutputSourceClaimCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): ParsedSourceClaimInput =>
+  parseSourceClaimInput({
+    claim: input.reviewedExtractionClaimSelection?.candidate.text ?? input.command.claim,
+    mechanism: input.command.mechanism,
+    krnImplication: input.command.krnImplication,
+    doesNotProve: input.command.doesNotProve,
+    supportType: input.command.supportType,
+    trustTier: input.command.trustTier,
+    consumer: input.command.consumer,
+    falsifier: input.command.falsifier,
+    metadata: {
+      file: input.file,
+      contentHash: input.artifactHash,
+      chunkHashes: input.chunks.map((chunk) => chunk.contentHash),
+      ...(input.reviewedExtractionClaimSelection === undefined
+        ? {}
+        : {
+            extractionCandidateId: input.reviewedExtractionClaimSelection.candidate.id,
+            extractionCandidateSourceRange: input.reviewedExtractionClaimSelection.candidate.sourceRange,
+            reviewedExtractionBridge: true
+          }),
+      source: "krn source artifact preview"
+    }
+  });
+
+const outputSourceClaimCandidateId = (
+  artifactHash: string,
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined
+): string =>
+  reviewedExtractionClaimSelection === undefined
+    ? `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`
+    : reviewedExtractionClaimSelection.candidate.id;
+
+const formatCompleteSourceClaimCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  persisted: boolean;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): string[] => {
+  const candidate = parseOutputSourceClaimCandidate(input);
+  const reviewability = assessCandidateReviewability({
+    summary: candidate.claim,
+    body: candidate.mechanism,
+    evidenceRefs: sourceClaimCandidateEvidenceRefs(input.file, input.artifactHash, input.chunks),
+    applicationGuidance: candidate.falsifier,
+    doesNotProve: sourceClaimCandidateDoesNotProve
+  });
+
+  return [
+    "sourceClaimCandidate:",
+    `- id: ${outputSourceClaimCandidateId(input.artifactHash, input.reviewedExtractionClaimSelection)}`,
+    `  status: ${candidate.status}`,
+    ...(input.reviewedExtractionClaimSelection === undefined
+      ? []
+      : [
+          "  source: reviewed_extraction_claim_candidate",
+          `  extractionSourceRange: ${input.reviewedExtractionClaimSelection.candidate.sourceRange}`
+        ]),
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  claim: ${candidate.claim}`,
+    `  mechanism: ${candidate.mechanism}`,
+    `  consumer: ${candidate.consumer}`,
+    `  falsifier: ${candidate.falsifier}`,
+    `  evidenceRefs: ${[input.file, input.artifactHash].join(", ")}`,
+    `  doesNotProve: ${sourceClaimCandidateDoesNotProve}`,
+    input.persisted
+      ? "  SourceClaim row created: see Persistence readback"
+      : "  No SourceClaim created"
+  ];
+};
+
 const formatSourceClaimCandidate = (
   command: SourceArtifactPreviewCommand,
   file: string,
@@ -968,112 +1169,141 @@ const formatSourceClaimCandidate = (
     command,
     extractLocalSourceCandidates(chunks)
   );
-  const missingFields = reviewedExtractionClaimSelection === undefined
-    ? missingSourceClaimCandidateFields(command)
-    : missingReviewedExtractionClaimCandidateFields(command);
 
   if (!hasAnyManualSourceClaimCandidateField(command) && reviewedExtractionClaimSelection === undefined) {
-    return [
-      "sourceClaimCandidate:",
-      "- not generated",
-      "  reason: explicit claim/mechanism/consumer/falsifier inputs were not supplied",
-      "  No SourceClaim created"
-    ];
+    return formatNoSourceClaimCandidate();
   }
+
+  const missingFields = sourceClaimCandidateMissingFields(command, reviewedExtractionClaimSelection);
 
   if (missingFields.length > 0) {
-    const reviewability = assessCandidateReviewability({
-      summary: reviewedExtractionClaimSelection?.candidate.text ??
-        command.claim ??
-        "SourceClaim candidate from local source artifact preview.",
-      ...(hasText(command.mechanism)
-        ? { body: command.mechanism }
-        : {}),
-      evidenceRefs: [
-        file,
-        artifactHash,
-        ...chunks.map((chunk) => chunk.contentHash)
-      ],
-      ...(hasText(command.falsifier)
-        ? { applicationGuidance: command.falsifier }
-        : {}),
-      ...(hasText(command.doesNotProve)
-        ? { doesNotProve: command.doesNotProve }
-        : {}),
-      missingFields
-    });
-
-    return [
-      "sourceClaimCandidate:",
-      "- id: source-claim-candidate:incomplete",
-      "  status: incomplete",
-      `  reviewability: ${reviewability.reviewability}`,
-      ...formatReviewabilityReasons(reviewability.reasons),
-      `  missing: ${missingFields.join(", ")}`,
-      "  No SourceClaim created"
-    ];
-  }
-
-  const candidate = parseSourceClaimInput({
-    claim: reviewedExtractionClaimSelection?.candidate.text ?? command.claim,
-    mechanism: command.mechanism,
-    krnImplication: command.krnImplication,
-    doesNotProve: command.doesNotProve,
-    supportType: command.supportType,
-    trustTier: command.trustTier,
-    consumer: command.consumer,
-    falsifier: command.falsifier,
-    metadata: {
-      file,
-      contentHash: artifactHash,
-      chunkHashes: chunks.map((chunk) => chunk.contentHash),
-      ...(reviewedExtractionClaimSelection === undefined
-        ? {}
-        : {
-            extractionCandidateId: reviewedExtractionClaimSelection.candidate.id,
-            extractionCandidateSourceRange: reviewedExtractionClaimSelection.candidate.sourceRange,
-            reviewedExtractionBridge: true
-          }),
-      source: "krn source artifact preview"
-    }
-  });
-  const reviewability = assessCandidateReviewability({
-    summary: candidate.claim,
-    body: candidate.mechanism,
-    evidenceRefs: [
+    return formatIncompleteSourceClaimCandidate({
+      command,
       file,
       artifactHash,
-      ...chunks.map((chunk) => chunk.contentHash)
-    ],
-    applicationGuidance: candidate.falsifier,
-    doesNotProve: sourceClaimCandidateDoesNotProve
+      chunks,
+      missingFields,
+      reviewedExtractionClaimSelection
+    });
+  }
+
+  return formatCompleteSourceClaimCandidate({
+    command,
+    file,
+    artifactHash,
+    chunks,
+    persisted,
+    reviewedExtractionClaimSelection
+  });
+};
+
+const formatNoSourceClaimEdgeCandidate = (): string[] => [
+  "sourceClaimEdgeCandidate:",
+  "- not generated",
+  "  reason: explicit graph edge inputs were not supplied",
+  "  No SourceClaimEdge created"
+];
+
+const sourceClaimEdgeMissingFields = (
+  command: SourceArtifactPreviewCommand
+): string[] => [
+  ...missingGraphEdgeCandidateFields(command),
+  ...missingSourceClaimFieldsForGraphEdge(command)
+];
+
+const formatIncompleteSourceClaimEdgeCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  missingFields: readonly string[];
+}): string[] => {
+  const reviewability = assessCandidateReviewability({
+    summary: input.command.graphEdgeKind === undefined
+      ? "SourceClaimEdge candidate from local source artifact preview."
+      : `SourceClaimEdge ${input.command.graphEdgeKind} candidate from local source artifact preview.`,
+    evidenceRefs: generatedGraphEvidenceRefs(input.file, input.artifactHash, input.chunks),
+    ...(hasText(input.command.graphEdgeConsumer)
+      ? { applicationGuidance: input.command.graphEdgeConsumer }
+      : {}),
+    ...(hasText(input.command.graphEdgeDoesNotProve)
+      ? { doesNotProve: input.command.graphEdgeDoesNotProve }
+      : {}),
+    missingFields: input.missingFields
   });
 
   return [
-    "sourceClaimCandidate:",
-    `- id: ${
-      reviewedExtractionClaimSelection === undefined
-        ? `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`
-        : reviewedExtractionClaimSelection.candidate.id
-    }`,
-    `  status: ${candidate.status}`,
-    ...(reviewedExtractionClaimSelection === undefined
-      ? []
-      : [
-          "  source: reviewed_extraction_claim_candidate",
-          `  extractionSourceRange: ${reviewedExtractionClaimSelection.candidate.sourceRange}`
-        ]),
+    "sourceClaimEdgeCandidate:",
+    "- id: source-claim-edge-candidate:incomplete",
+    "  status: incomplete",
     `  reviewability: ${reviewability.reviewability}`,
     ...formatReviewabilityReasons(reviewability.reasons),
-    `  claim: ${candidate.claim}`,
-    `  mechanism: ${candidate.mechanism}`,
-    `  consumer: ${candidate.consumer}`,
-    `  falsifier: ${candidate.falsifier}`,
-    `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
-    `  doesNotProve: ${sourceClaimCandidateDoesNotProve}`,
-    persisted
-      ? "  SourceClaim row created: see Persistence readback"
-      : "  No SourceClaim created"
+    `  missing: ${input.missingFields.join(", ")}`,
+    "  No SourceClaimEdge created"
+  ];
+};
+
+const formatUnknownSourceClaimEdgeCandidate = (): string[] => [
+  "sourceClaimEdgeCandidate:",
+  "- id: source-claim-edge-candidate:incomplete",
+  "  status: incomplete",
+  "  reviewability: unknown",
+  "  reviewability reasons:",
+  "  - Graph edge input could not be narrowed after missing-field checks.",
+  "  No SourceClaimEdge created"
+];
+
+const sourceClaimEdgeSourceLabel = (
+  command: SourceArtifactPreviewCommand,
+  artifactHash: string
+): string =>
+  hasReviewedExtractionClaimCandidate(command)
+    ? command.reviewedExtractionClaimCandidateId
+    : `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`;
+
+const formatCompleteSourceClaimEdgeCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  sourceClaimPersisted: boolean;
+  sourceClaimEdgePersisted: boolean;
+  graphEdgeInput: CompleteGraphEdgeCommandInput;
+}): string[] => {
+  const reviewability = assessCandidateReviewability({
+    summary: `SourceClaimEdge ${input.graphEdgeInput.kind} -> ${input.graphEdgeInput.toSourceClaimId}`,
+    body: [
+      `from: source-claim-candidate:${input.artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+      `to: ${input.graphEdgeInput.toSourceClaimId}`,
+      `kind: ${input.graphEdgeInput.kind}`,
+      ...(input.graphEdgeInput.scope === undefined ? [] : [`scope: ${input.graphEdgeInput.scope}`])
+    ].join("\n"),
+    evidenceRefs: [
+      ...generatedGraphEvidenceRefs(input.file, input.artifactHash, input.chunks),
+      ...(input.graphEdgeInput.evidenceRef === undefined ? [] : [input.graphEdgeInput.evidenceRef])
+    ],
+    applicationGuidance: input.graphEdgeInput.consumer,
+    doesNotProve: input.graphEdgeInput.doesNotProve
+  });
+
+  return [
+    "sourceClaimEdgeCandidate:",
+    `- id: source-claim-edge-candidate:${input.artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    "  status: candidate",
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  fromSourceClaim: ${sourceClaimEdgeSourceLabel(input.command, input.artifactHash)}`,
+    `  toSourceClaimId: ${input.graphEdgeInput.toSourceClaimId}`,
+    `  kind: ${input.graphEdgeInput.kind}`,
+    `  consumer: ${input.graphEdgeInput.consumer}`,
+    `  evidenceRefs: ${generatedGraphEvidenceRefs(input.file, input.artifactHash, input.chunks).join(", ")}`,
+    `  doesNotProve: ${input.graphEdgeInput.doesNotProve}`,
+    input.sourceClaimPersisted
+      ? "  SourceClaim row available for edge source: see Persistence readback"
+      : "  No SourceClaim row available for edge source",
+    input.sourceClaimEdgePersisted
+      ? "  SourceClaimEdge row created: see Persistence readback"
+      : "  No SourceClaimEdge created"
   ];
 };
 
@@ -1086,98 +1316,36 @@ const formatSourceClaimEdgeCandidate = (
   sourceClaimEdgePersisted: boolean
 ): string[] => {
   if (!hasAnyGraphEdgeCandidateField(command)) {
-    return [
-      "sourceClaimEdgeCandidate:",
-      "- not generated",
-      "  reason: explicit graph edge inputs were not supplied",
-      "  No SourceClaimEdge created"
-    ];
+    return formatNoSourceClaimEdgeCandidate();
   }
 
-  const missingFields = [
-    ...missingGraphEdgeCandidateFields(command),
-    ...missingSourceClaimFieldsForGraphEdge(command)
-  ];
+  const missingFields = sourceClaimEdgeMissingFields(command);
 
   if (missingFields.length > 0) {
-    const reviewability = assessCandidateReviewability({
-      summary: command.graphEdgeKind === undefined
-        ? "SourceClaimEdge candidate from local source artifact preview."
-        : `SourceClaimEdge ${command.graphEdgeKind} candidate from local source artifact preview.`,
-      evidenceRefs: generatedGraphEvidenceRefs(file, artifactHash, chunks),
-      ...(hasText(command.graphEdgeConsumer)
-        ? { applicationGuidance: command.graphEdgeConsumer }
-        : {}),
-      ...(hasText(command.graphEdgeDoesNotProve)
-        ? { doesNotProve: command.graphEdgeDoesNotProve }
-        : {}),
+    return formatIncompleteSourceClaimEdgeCandidate({
+      command,
+      file,
+      artifactHash,
+      chunks,
       missingFields
     });
-
-    return [
-      "sourceClaimEdgeCandidate:",
-      "- id: source-claim-edge-candidate:incomplete",
-      "  status: incomplete",
-      `  reviewability: ${reviewability.reviewability}`,
-      ...formatReviewabilityReasons(reviewability.reasons),
-      `  missing: ${missingFields.join(", ")}`,
-      "  No SourceClaimEdge created"
-    ];
   }
 
   const graphEdgeInput = completeGraphEdgeInput(command);
 
   if (graphEdgeInput === undefined) {
-    return [
-      "sourceClaimEdgeCandidate:",
-      "- id: source-claim-edge-candidate:incomplete",
-      "  status: incomplete",
-      "  reviewability: unknown",
-      "  reviewability reasons:",
-      "  - Graph edge input could not be narrowed after missing-field checks.",
-      "  No SourceClaimEdge created"
-    ];
+    return formatUnknownSourceClaimEdgeCandidate();
   }
 
-  const reviewability = assessCandidateReviewability({
-    summary: `SourceClaimEdge ${graphEdgeInput.kind} -> ${graphEdgeInput.toSourceClaimId}`,
-    body: [
-      `from: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
-      `to: ${graphEdgeInput.toSourceClaimId}`,
-      `kind: ${graphEdgeInput.kind}`,
-      ...(graphEdgeInput.scope === undefined ? [] : [`scope: ${graphEdgeInput.scope}`])
-    ].join("\n"),
-    evidenceRefs: [
-      ...generatedGraphEvidenceRefs(file, artifactHash, chunks),
-      ...(graphEdgeInput.evidenceRef === undefined ? [] : [graphEdgeInput.evidenceRef])
-    ],
-    applicationGuidance: graphEdgeInput.consumer,
-    doesNotProve: graphEdgeInput.doesNotProve
+  return formatCompleteSourceClaimEdgeCandidate({
+    command,
+    file,
+    artifactHash,
+    chunks,
+    sourceClaimPersisted,
+    sourceClaimEdgePersisted,
+    graphEdgeInput
   });
-
-  return [
-    "sourceClaimEdgeCandidate:",
-    `- id: source-claim-edge-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
-    "  status: candidate",
-    `  reviewability: ${reviewability.reviewability}`,
-    ...formatReviewabilityReasons(reviewability.reasons),
-    `  fromSourceClaim: ${
-      hasReviewedExtractionClaimCandidate(command)
-        ? command.reviewedExtractionClaimCandidateId
-        : `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`
-    }`,
-    `  toSourceClaimId: ${graphEdgeInput.toSourceClaimId}`,
-    `  kind: ${graphEdgeInput.kind}`,
-    `  consumer: ${graphEdgeInput.consumer}`,
-    `  evidenceRefs: ${generatedGraphEvidenceRefs(file, artifactHash, chunks).join(", ")}`,
-    `  doesNotProve: ${graphEdgeInput.doesNotProve}`,
-    sourceClaimPersisted
-      ? "  SourceClaim row available for edge source: see Persistence readback"
-      : "  No SourceClaim row available for edge source",
-    sourceClaimEdgePersisted
-      ? "  SourceClaimEdge row created: see Persistence readback"
-      : "  No SourceClaimEdge created"
-  ];
 };
 
 const formatExtractionCandidatePreview = (
@@ -1262,55 +1430,61 @@ const formatExtractionCandidatePreview = (
   ];
 };
 
+const persistenceFlags = (
+  persistence: SourceArtifactPreviewPersistenceResult | undefined
+): {
+  searchDocumentPersisted: boolean;
+  sourceClaimPersisted: boolean;
+  sourceClaimEdgePersisted: boolean;
+} => ({
+  searchDocumentPersisted: persistence?.searchDocumentPersisted ?? false,
+  sourceClaimPersisted: persistence?.sourceClaimPersisted ?? false,
+  sourceClaimEdgePersisted: persistence?.sourceClaimEdgePersisted ?? false
+});
+
 const formatCandidateBridge = (
   command: SourceArtifactPreviewCommand,
   file: string,
   artifactHash: string,
   chunks: readonly SourceArtifactPreviewChunk[],
   persistence?: SourceArtifactPreviewPersistenceResult
-): string[] => [
-  "Candidate bridge:",
-  "Mutation: none",
-  ...formatSearchDocumentCandidate(
+): string[] => {
+  const flags = persistenceFlags(persistence);
+  const lines = [
+    "Candidate bridge:",
+    "Mutation: none"
+  ];
+
+  lines.push(...formatSearchDocumentCandidate(
     file,
     artifactHash,
     chunks,
-    persistence?.searchDocumentPersisted ?? false
-  ),
-  ...formatSourceClaimCandidate(
+    flags.searchDocumentPersisted
+  ));
+  lines.push(...formatSourceClaimCandidate(
     command,
     file,
     artifactHash,
     chunks,
-    persistence?.sourceClaimPersisted ?? false
-  ),
-  ...formatSourceClaimEdgeCandidate(
+    flags.sourceClaimPersisted
+  ));
+  lines.push(...formatSourceClaimEdgeCandidate(
     command,
     file,
     artifactHash,
     chunks,
-    persistence?.sourceClaimPersisted ?? false,
-    persistence?.sourceClaimEdgePersisted ?? false
-  ),
-  ...formatExtractionCandidatePreview(
+    flags.sourceClaimPersisted,
+    flags.sourceClaimEdgePersisted
+  ));
+  lines.push(...formatExtractionCandidatePreview(
     command,
     file,
     artifactHash,
     chunks,
-    persistence?.sourceClaimPersisted ?? false
-  )
-];
+    flags.sourceClaimPersisted
+  ));
 
-const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {
-  const cwdPath = path.resolve(cwd, filePath);
-
-  if (await pathExists(cwdPath)) {
-    return cwdPath;
-  }
-
-  const repoRoot = await findRepoRoot(cwd);
-
-  return path.resolve(repoRoot, filePath);
+  return lines;
 };
 
 export const runSourceArtifactPreviewCommand = async (
@@ -1322,7 +1496,7 @@ export const runSourceArtifactPreviewCommand = async (
     throw new Error("--file is required for krn source artifact preview");
   }
 
-  const resolvedPath = await resolveInputFile(runtime.cwd, file);
+  const resolvedPath = await resolveRepoInputFile(runtime.cwd, file);
   const fileStats = await stat(resolvedPath);
 
   if (!fileStats.isFile()) {

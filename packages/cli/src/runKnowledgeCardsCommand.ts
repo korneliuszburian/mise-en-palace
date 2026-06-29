@@ -14,9 +14,8 @@ import {
   searchBrainKnowledgeCards
 } from "@krn/harness";
 import {
-  findRepoRoot,
-  pathExists,
-  readJsonObject
+  readJsonObject,
+  resolveRepoInputFile
 } from "./cliFileBoundary.js";
 
 export type KnowledgeCardsOutputFormat = "text" | "json" | "html";
@@ -33,6 +32,15 @@ export interface KnowledgeCardsCommandRuntime {
 
 export interface KnowledgeCardsCommandResult {
   stdout: string;
+}
+
+interface LoadedKnowledgeCards {
+  cards: BrainKnowledgeReadModel[];
+  feedback: BrainKnowledgeUsefulnessFeedback[];
+  cardFiles: string[];
+  patternFiles: string[];
+  usefulnessFeedbackFiles: string[];
+  catalogFiles: string[];
 }
 
 interface KnowledgeCardsPreviewResource {
@@ -71,63 +79,115 @@ const proof = {
   ]
 } as const;
 
+const createLoadedKnowledgeCards = (): LoadedKnowledgeCards => ({
+  cards: [],
+  feedback: [],
+  cardFiles: [],
+  patternFiles: [],
+  usefulnessFeedbackFiles: [],
+  catalogFiles: []
+});
+
+const loadExplicitKnowledgeFiles = async (
+  runtime: KnowledgeCardsCommandRuntime,
+  cwd: string,
+  loaded: LoadedKnowledgeCards
+): Promise<void> => {
+  for (const cardFile of runtime.cardFiles) {
+    await loadCardFile(cardFile, await resolveRepoInputFile(cwd, cardFile), loaded.cards);
+    loaded.cardFiles.push(cardFile);
+  }
+
+  for (const patternFile of runtime.patternFiles) {
+    await loadPatternFile(patternFile, await resolveRepoInputFile(cwd, patternFile), loaded.cards);
+    loaded.patternFiles.push(patternFile);
+  }
+};
+
+const loadCatalogCardFiles = async (
+  catalogFile: string,
+  catalogDirectory: string,
+  catalog: KnowledgeCatalogInput,
+  loaded: LoadedKnowledgeCards
+): Promise<void> => {
+  for (const cardFile of catalog.cardFiles) {
+    const resolvedCardFile = path.resolve(catalogDirectory, cardFile);
+    await loadCardFile(`${catalogFile}:${cardFile}`, resolvedCardFile, loaded.cards);
+    loaded.cardFiles.push(`${catalogFile}:${cardFile}`);
+  }
+};
+
+const loadCatalogPatternFiles = async (
+  catalogFile: string,
+  catalogDirectory: string,
+  catalog: KnowledgeCatalogInput,
+  loaded: LoadedKnowledgeCards
+): Promise<void> => {
+  for (const patternFile of catalog.patternFiles) {
+    const resolvedPatternFile = path.resolve(catalogDirectory, patternFile);
+    await loadPatternFile(`${catalogFile}:${patternFile}`, resolvedPatternFile, loaded.cards);
+    loaded.patternFiles.push(`${catalogFile}:${patternFile}`);
+  }
+};
+
+const loadCatalogUsefulnessFeedbackFiles = async (
+  catalogFile: string,
+  catalogDirectory: string,
+  catalog: KnowledgeCatalogInput,
+  loaded: LoadedKnowledgeCards
+): Promise<void> => {
+  for (const usefulnessFeedbackFile of catalog.usefulnessFeedbackFiles) {
+    const resolvedUsefulnessFeedbackFile = path.resolve(catalogDirectory, usefulnessFeedbackFile);
+    await loadUsefulnessFeedbackFile(
+      `${catalogFile}:${usefulnessFeedbackFile}`,
+      resolvedUsefulnessFeedbackFile,
+      loaded.feedback
+    );
+    loaded.usefulnessFeedbackFiles.push(`${catalogFile}:${usefulnessFeedbackFile}`);
+  }
+};
+
+const loadKnowledgeCatalogFile = async (
+  cwd: string,
+  catalogFile: string,
+  loaded: LoadedKnowledgeCards
+): Promise<void> => {
+  const resolvedCatalogFile = await resolveRepoInputFile(cwd, catalogFile);
+  const catalog = parseKnowledgeCatalog(await readJsonObject(resolvedCatalogFile));
+
+  if (catalog === undefined) {
+    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile}`);
+  }
+
+  const catalogDirectory = path.dirname(resolvedCatalogFile);
+
+  await loadCatalogCardFiles(catalogFile, catalogDirectory, catalog, loaded);
+  await loadCatalogPatternFiles(catalogFile, catalogDirectory, catalog, loaded);
+  await loadCatalogUsefulnessFeedbackFiles(catalogFile, catalogDirectory, catalog, loaded);
+  loaded.catalogFiles.push(catalogFile);
+};
+
+const loadKnowledgeCards = async (
+  runtime: KnowledgeCardsCommandRuntime,
+  cwd: string
+): Promise<LoadedKnowledgeCards> => {
+  const loaded = createLoadedKnowledgeCards();
+
+  await loadExplicitKnowledgeFiles(runtime, cwd, loaded);
+
+  for (const catalogFile of runtime.catalogFiles) {
+    await loadKnowledgeCatalogFile(cwd, catalogFile, loaded);
+  }
+
+  return loaded;
+};
+
 export const runKnowledgeCardsCommand = async (
   runtime: KnowledgeCardsCommandRuntime
 ): Promise<KnowledgeCardsCommandResult> => {
   const cwd = runtime.cwd ?? process.cwd();
-  const loadedCards: BrainKnowledgeReadModel[] = [];
-  const loadedFeedback: BrainKnowledgeUsefulnessFeedback[] = [];
-  const resolvedFiles: string[] = [];
-  const resolvedPatternFiles: string[] = [];
-  const resolvedUsefulnessFeedbackFiles: string[] = [];
-  const resolvedCatalogFiles: string[] = [];
-
-  for (const cardFile of runtime.cardFiles) {
-    await loadCardFile(cardFile, await resolveInputFile(cwd, cardFile), loadedCards);
-    resolvedFiles.push(cardFile);
-  }
-
-  for (const patternFile of runtime.patternFiles) {
-    await loadPatternFile(patternFile, await resolveInputFile(cwd, patternFile), loadedCards);
-    resolvedPatternFiles.push(patternFile);
-  }
-
-  for (const catalogFile of runtime.catalogFiles) {
-    const resolvedCatalogFile = await resolveInputFile(cwd, catalogFile);
-    const catalog = parseKnowledgeCatalog(await readJsonObject(resolvedCatalogFile));
-
-    if (catalog === undefined) {
-      throw new Error(`Invalid brain knowledge catalog file: ${catalogFile}`);
-    }
-
-    const catalogDirectory = path.dirname(resolvedCatalogFile);
-
-    for (const cardFile of catalog.cardFiles) {
-      const resolvedCardFile = path.resolve(catalogDirectory, cardFile);
-      await loadCardFile(`${catalogFile}:${cardFile}`, resolvedCardFile, loadedCards);
-      resolvedFiles.push(`${catalogFile}:${cardFile}`);
-    }
-
-    for (const patternFile of catalog.patternFiles) {
-      const resolvedPatternFile = path.resolve(catalogDirectory, patternFile);
-      await loadPatternFile(`${catalogFile}:${patternFile}`, resolvedPatternFile, loadedCards);
-      resolvedPatternFiles.push(`${catalogFile}:${patternFile}`);
-    }
-
-    for (const usefulnessFeedbackFile of catalog.usefulnessFeedbackFiles) {
-      const resolvedUsefulnessFeedbackFile = path.resolve(catalogDirectory, usefulnessFeedbackFile);
-      await loadUsefulnessFeedbackFile(
-        `${catalogFile}:${usefulnessFeedbackFile}`,
-        resolvedUsefulnessFeedbackFile,
-        loadedFeedback
-      );
-      resolvedUsefulnessFeedbackFiles.push(`${catalogFile}:${usefulnessFeedbackFile}`);
-    }
-
-    resolvedCatalogFiles.push(catalogFile);
-  }
-
-  const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(loadedCards, loadedFeedback);
+  const loaded = await loadKnowledgeCards(runtime, cwd);
+  const cardsWithFeedback = cardsWithBrainKnowledgeUsefulnessFeedback(loaded.cards, loaded.feedback);
   const matchingCards = searchBrainKnowledgeCards(cardsWithFeedback, runtime.filter);
   const cards = runtime.limit === undefined
     ? matchingCards
@@ -142,10 +202,10 @@ export const runKnowledgeCardsCommand = async (
     mutation: "none",
     source: "explicit_files",
     filter: runtime.filter,
-    cardFiles: resolvedFiles,
-    patternFiles: resolvedPatternFiles,
-    usefulnessFeedbackFiles: resolvedUsefulnessFeedbackFiles,
-    catalogFiles: resolvedCatalogFiles,
+    cardFiles: loaded.cardFiles,
+    patternFiles: loaded.patternFiles,
+    usefulnessFeedbackFiles: loaded.usefulnessFeedbackFiles,
+    catalogFiles: loaded.catalogFiles,
     totalCards: matchingCards.length,
     returnedCards: cards.length,
     ...(runtime.limit === undefined ? {} : { limit: runtime.limit }),
@@ -472,8 +532,8 @@ const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   ""
 ];
 
-const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
-  const searchText = [
+const cardSearchText = (card: BrainKnowledgeReadModel): string =>
+  [
     card.id,
     card.kind,
     card.status,
@@ -493,7 +553,24 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     ...(card.usefulnessFeedback?.evidenceRefs ?? [])
   ].join(" ").toLowerCase();
 
-  return `<article data-card data-card-id="${escapeHtml(card.id)}" data-kind="${escapeHtml(card.kind)}" data-status="${escapeHtml(card.status)}" data-reviewability="${escapeHtml(card.reviewability)}" data-usefulness-outcome="${escapeHtml(card.usefulnessFeedback?.outcome ?? "none")}" data-next-action="${escapeHtml(card.nextAction)}" data-search="${escapeHtml(searchText)}">
+const formatUsefulnessFeedbackHtml = (card: BrainKnowledgeReadModel): string =>
+  card.usefulnessFeedback === undefined
+    ? ""
+    : `<dt>Usefulness</dt><dd><strong>${escapeHtml(card.usefulnessFeedback.outcome)}</strong><br>${escapeHtml(card.usefulnessFeedback.summary)}<br>${formatHtmlList(card.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(card.usefulnessFeedback.doesNotProve)}</span></dd>`;
+
+const formatCardDataAttributes = (card: BrainKnowledgeReadModel): string =>
+  [
+    { name: "data-card-id", value: card.id },
+    { name: "data-kind", value: card.kind },
+    { name: "data-status", value: card.status },
+    { name: "data-reviewability", value: card.reviewability },
+    { name: "data-usefulness-outcome", value: card.usefulnessFeedback?.outcome ?? "none" },
+    { name: "data-next-action", value: card.nextAction },
+    { name: "data-search", value: cardSearchText(card) }
+  ].map((attribute) => `${attribute.name}="${escapeHtml(attribute.value)}"`).join(" ");
+
+const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
+  return `<article data-card ${formatCardDataAttributes(card)}>
   <h2>${escapeHtml(card.title)}</h2>
   <div class="refs"><code>${escapeHtml(card.id)}</code></div>
   <div class="chips">
@@ -508,7 +585,7 @@ const formatCardHtml = (card: BrainKnowledgeReadModel): string => {
     <dt>Source refs</dt><dd>${formatHtmlList(card.sourceRefs)}</dd>
     <dt>Evidence refs</dt><dd>${formatHtmlList(card.evidenceRefs)}</dd>
     <dt>Consumers</dt><dd>${formatHtmlList(card.consumers)}</dd>
-    ${card.usefulnessFeedback === undefined ? "" : `<dt>Usefulness</dt><dd><strong>${escapeHtml(card.usefulnessFeedback.outcome)}</strong><br>${escapeHtml(card.usefulnessFeedback.summary)}<br>${formatHtmlList(card.usefulnessFeedback.evidenceRefs)}<br><span class="refs">does not prove: ${escapeHtml(card.usefulnessFeedback.doesNotProve)}</span></dd>`}
+    ${formatUsefulnessFeedbackHtml(card)}
     <dt>Falsifier</dt><dd>${escapeHtml(card.falsifier)}</dd>
     <dt>Does not prove</dt><dd>${escapeHtml(card.doesNotProve)}</dd>
   </dl>
@@ -543,19 +620,6 @@ const escapeHtml = (value: string): string =>
     .replaceAll(">", "&gt;")
     .replaceAll("\"", "&quot;")
     .replaceAll("'", "&#39;");
-
-const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {
-  const cwdPath = path.resolve(cwd, filePath);
-
-  if (await pathExists(cwdPath)) {
-    return cwdPath;
-  }
-
-  const repoRoot = await findRepoRoot(cwd);
-  const repoRootPath = path.resolve(repoRoot, filePath);
-
-  return repoRootPath;
-};
 
 type KnowledgeCatalogInput = {
   cardFiles: string[];

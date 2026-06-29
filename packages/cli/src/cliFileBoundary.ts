@@ -31,6 +31,21 @@ export const findRepoRoot = async (startPath: string): Promise<string> => {
   }
 };
 
+export const resolveRepoInputFile = async (
+  cwd: string,
+  filePath: string
+): Promise<string> => {
+  const cwdPath = path.resolve(cwd, filePath);
+
+  if (await pathExists(cwdPath)) {
+    return cwdPath;
+  }
+
+  const repoRoot = await findRepoRoot(cwd);
+
+  return path.resolve(repoRoot, filePath);
+};
+
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
