@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V343 Product-Facing Knowledge Search Coverage Seed
-current task: V343-00 Product-Facing Knowledge Search Coverage Seed
+active stream: V344 Source Search Document Retrieval Alignment
+current task: V344-00 Source Search Document Retrieval Alignment
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V343-00 Product-Facing Knowledge Search Coverage Seed must use existing ingest
-paths to improve weak V342 heartbeat/consensus/pattern queries before any
-UI/API/MCP/crawler/ranking work.
+V344-00 Source Search Document Retrieval Alignment must explain why seeded
+SearchDocuments have hash readback but no natural-language source-search hits,
+and repair only a bounded owner-file issue.
 ```
 
 ## 2. Product Thesis
@@ -59,8 +59,8 @@ graph brain: SourceClaimEdge preview/persistence/readback, extraction
   consensus preview exist
 ingest v0: V340 proved local artifact -> SourceArtifact/SourceChunk/
   SearchDocument/SourceClaim -> later activated SourceClaim; V341 added
-  `krn source search --query`; V342 found useful exact/graph recall and weak
-  heartbeat/consensus/pattern coverage
+  `krn source search --query`; V342 found weak coverage; V343 improved
+  SourceClaim coverage but not SearchDocument natural-language hits
 product-ready: no
 ```
 
@@ -96,6 +96,8 @@ V341 complete: product-facing knowledge search readback preview via
 `krn source search --query`.
 V342 complete: knowledge search usefulness closure showed exact/graph queries
 help but recent heartbeat/consensus/pattern coverage is weak.
+V343 complete: coverage seed improved weak queries through SourceClaims, while
+SearchDocument natural-language results stayed absent.
 ```
 
 Recent report range:
@@ -251,30 +253,70 @@ highest-ROI task is a tiny coverage seed for recent heartbeat, consensus,
 pattern, and usefulness reports using existing ingest/readback paths.
 ```
 
+## Outcome V343 Product-Facing Knowledge Search Coverage Seed
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V342 knowledge search usefulness closure report.
+- Mechanism: V342 showed weak query failures were mostly coverage gaps, not
+  proof that ranking or UI needed work.
+- KRN implication: seed a tiny bounded set of recent knowledge artifacts through
+  existing paths before changing ranking or product surfaces.
+- Decision: persist four compact artifacts for heartbeat, consensus,
+  source-to-decision, and search-usefulness coverage.
+- Does not prove: product search quality, broad corpus coverage,
+  natural-language SearchDocument retrieval quality, embeddings, graph
+  retrieval, product readiness, or Memory Core mutation.
+- Consumer: V344 Source Search Document Retrieval Alignment.
+- Falsifier: weak V342 queries still fail to retrieve seeded governed claims.
+
+V343 evidence:
+
+```txt
+heartbeat SourceClaim: 04b097d5-7338-4b78-be55-e85d0cbb7aff
+consensus SourceClaim: 55e3d7ea-b97d-4495-bec2-1154a8a10b09
+source-to-decision SourceClaim: 125366b1-8bd9-4092-92d8-1aa1d2ed46ae
+search-usefulness SourceClaim: 5b1e25a1-c01e-44d8-849b-1e1ec233a835
+executionRun: 7f22c16e-bddf-4b1b-8e49-b2f68dc0f76b
+report: docs/reviews/controlled-dogfood/2026-06-29-v343-product-facing-knowledge-search-coverage-seed/REPORT.md
+```
+
+V343 outcome:
+
+```txt
+Weak queries now retrieve specific SourceClaims. Seeded SearchDocuments were
+created and hash-read back, but natural-language `krn source search` still
+reported searchResults: 0, so V344 should inspect document retrieval alignment.
+```
+
 ## 15. Progress
 
 - [x] V340 complete: artifact-to-activated-SourceClaim loop.
 - [x] V341 complete: product-facing knowledge search readback preview.
 - [x] V342 complete: product-facing knowledge search usefulness closure.
-- [ ] V343 current task: product-facing knowledge search coverage seed.
+- [x] V343 complete: product-facing knowledge search coverage seed.
+- [ ] V344 current task: source search document retrieval alignment.
 
 ## Active Task Contract
 
-### V343-00 Product-Facing Knowledge Search Coverage Seed
+### V344-00 Source Search Document Retrieval Alignment
 
 Objective:
 
 ```txt
-Persist 3-5 compact recent KRN knowledge artifacts through existing source
-preview paths and prove weak V342 queries improve.
+Inspect why seeded SearchDocuments have hash readback but no natural-language
+`krn source search` hits, and repair only a bounded owner-file issue.
 ```
 
 Allowed:
 
 ```txt
-existing local artifact/source preview usage
-DB-backed readback dogfood
-compact usefulness report/root state update
+source/retrieval owner-file inspection
+bounded source repair if proven
+focused tests and DB-backed readback
+compact report/root state update
 ```
 
 Non-goals:
@@ -292,6 +334,7 @@ ranking rewrite
 UI/API/MCP/crawler work
 new DB schema
 embeddings or graph runtime
+ranking rewrite
 ```
 
 Pattern gate:
@@ -307,10 +350,10 @@ before retention.
 Success criteria:
 
 ```txt
-1. 3-5 compact artifacts are persisted with existing paths;
-2. weak V342 heartbeat/consensus/pattern queries are rerun;
-3. improved candidate coverage is recorded or falsified;
-4. no crawler/UI/API/MCP/schema/ranking/graph runtime is added;
+1. owner files for artifact SearchDocument persistence and source search are identified;
+2. current behavior is explained as intended or repaired with tests;
+3. weak V343 document queries are rerun with DB evidence;
+4. no crawler/UI/API/MCP/schema/ranking rewrite/graph runtime is added;
 5. root state stays compact and advances to the next highest-ROI task.
 ```
 

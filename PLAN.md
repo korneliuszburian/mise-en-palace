@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V343 Product-Facing Knowledge Search Coverage Seed
-current task: V343-00 Product-Facing Knowledge Search Coverage Seed
+active stream: V344 Source Search Document Retrieval Alignment
+current task: V344-00 Source Search Document Retrieval Alignment
 ```
 
 ## Compact Completed Checkpoints
@@ -36,7 +36,7 @@ Remaining product gaps:
 1. pattern search/readback hardening
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
-4. ingest v0 product-facing search coverage seed
+4. ingest v0 SourceClaim/SearchDocument retrieval alignment
 5. graph brain v0 candidate extraction/reviewability/persistence surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
@@ -48,37 +48,39 @@ Remaining product gaps:
 V324-V339 complete: graph/source-edge, heartbeat, consensus, and tiny QA
 previews exist without autonomous truth runtime. V340 proved one artifact-to-
 activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
-that exact/graph queries help but heartbeat/consensus/pattern queries need
-persisted coverage before UI/API/MCP/crawler/ranking work.
+coverage gaps. V343 seeded four artifacts; SourceClaims improved, but natural-
+language SearchDocument results stayed at zero.
 
-### V343 Product-Facing Knowledge Search Coverage Seed
+### V344 Source Search Document Retrieval Alignment
 
 Goal:
 
-Use existing local artifact/source preview paths to seed a tiny set of recent
-KRN knowledge artifacts, then prove weak V342 queries improve.
+Inspect and, if bounded, repair why seeded SearchDocuments have hash readback
+but do not appear in natural-language `krn source search` results.
 
 Current action:
 
 ```txt
-Execute V343-00: persist 3-5 compact artifacts for recent heartbeat,
-consensus, pattern, and search-usefulness reports using existing paths; rerun
-weak V342 queries. Do not add crawler, UI/API/MCP, worker daemon, schema, broad
-eval platform, ranking rewrite, graph runtime, or autonomous truth runtime.
+Execute V344-00: inspect source artifact/SearchDocument persistence and
+retrieval owner files, then repair only if natural-language document retrieval
+has a bounded owner-file issue. Do not add crawler, UI/API/MCP, worker daemon,
+schema, broad eval platform, ranking rewrite, embeddings, graph runtime, or
+autonomous truth runtime.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators validating whether source search coverage is useful enough
-for later product surfaces.
+technical operators expecting source search to show both governed claims and
+reviewable artifact documents.
 ```
 
 Falsifier:
 
 ```txt
-After bounded coverage seeding, heartbeat/consensus/pattern queries still miss
-their intended recent knowledge or return mostly generic guardrails.
+Seeded SearchDocuments remain absent from natural-language search because
+current behavior is intentional or unrepairable without a broader product
+surface.
 ```
 
 ## Pattern Gate

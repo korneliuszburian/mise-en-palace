@@ -3,8 +3,7 @@
 KRN is a Codex Operating Layer / AI Engineering Control Plane.
 
 Codex executes. KRN supplies bounded context, store-backed memory, source
-grounding, policy, skills, eval expectations, traces, review gates, and
-feedback.
+grounding, policy, skills, eval expectations, traces, review gates, and feedback.
 
 ## Current Objective
 
@@ -15,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V343 Product-Facing Knowledge Search Coverage Seed
+V344 Source Search Document Retrieval Alignment
 ```
 
 Current state:
@@ -25,15 +24,16 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V343-00 Product-Facing Knowledge Search Coverage Seed.
+current task: V344-00 Source Search Document Retrieval Alignment.
 ```
 
 Current task:
 
 ```txt
-Use the existing local artifact/source preview path to seed a tiny set of
-recent KRN knowledge artifacts, then prove weak V342 queries improve without
-UI/API/MCP, crawler, worker, schema, ranking rewrite, or graph-runtime work.
+Inspect why seeded SearchDocuments have hash readback but do not appear in
+natural-language `krn source search` results; repair only if a bounded owner
+issue exists, without UI/API/MCP, crawler, schema, ranking rewrite, embeddings,
+graph runtime, worker, or Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -49,8 +49,8 @@ to preserve are:
    executed; use future results only when they change a product loop.
 4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
    context detail readback, marker/hash activation, V340 artifact-to-activated-
-   SourceClaim proof, V341 product-facing `krn source search` readback, and
-   V342 usefulness closure exist. Coverage seed is next.
+   SourceClaim proof, V341 search readback, V342 usefulness closure, and V343
+   coverage seed exist. SearchDocument alignment is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
