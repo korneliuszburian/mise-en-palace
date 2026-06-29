@@ -1,4 +1,7 @@
 import type {
+  SourceClaimEdgeKind
+} from "@krn/core";
+import type {
   CliCommand,
   ParseArgsResult
 } from "./parseArgs.js";
@@ -33,7 +36,7 @@ export const formatSourceClaimAddUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--persist]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
     "",
     "Required:",
     "--file",
@@ -49,6 +52,16 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--trust-tier <tier>",
     "--consumer <text>",
     "--falsifier <text>",
+    "--graph-edge-to-source-claim-id <source-claim-id>",
+    "--graph-edge-kind <supports|contradicts|qualifies|depends_on|supersedes|duplicates|narrows|invalidates|expires>",
+    "--graph-edge-consumer <text>",
+    "--graph-edge-does-not-prove <text>",
+    "--graph-edge-evidence-ref <ref>",
+    "--graph-edge-source-decision-ref <ref>",
+    "--graph-edge-scope <text>",
+    "--graph-edge-valid-from <iso-or-text>",
+    "--graph-edge-valid-until <iso-or-text>",
+    "--graph-edge-invalidated-at <iso-or-text>",
     "--persist",
     "",
     "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --persist writes SourceArtifact, SourceChunk, and SearchDocument rows only; it does not crawl, embed, rank, or mutate Memory Core."
@@ -163,6 +176,21 @@ const parsePositiveIntegerOption = (
   };
 };
 
+const sourceClaimEdgeKinds = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "depends_on",
+  "supersedes",
+  "duplicates",
+  "narrows",
+  "invalidates",
+  "expires"
+] as const satisfies readonly SourceClaimEdgeKind[];
+
+const isSourceClaimEdgeKind = (value: string): value is SourceClaimEdgeKind =>
+  sourceClaimEdgeKinds.some((kind) => kind === value);
+
 const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResult => {
   if (rest.length === 3 && (rest[2] === "--help" || rest[2] === "-h")) {
     return {
@@ -251,7 +279,16 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
       "--support-type": "supportType",
       "--trust-tier": "trustTier",
       "--consumer": "consumer",
-      "--falsifier": "falsifier"
+      "--falsifier": "falsifier",
+      "--graph-edge-to-source-claim-id": "graphEdgeToSourceClaimId",
+      "--graph-edge-consumer": "graphEdgeConsumer",
+      "--graph-edge-does-not-prove": "graphEdgeDoesNotProve",
+      "--graph-edge-evidence-ref": "graphEdgeEvidenceRef",
+      "--graph-edge-source-decision-ref": "graphEdgeSourceDecisionRef",
+      "--graph-edge-scope": "graphEdgeScope",
+      "--graph-edge-valid-from": "graphEdgeValidFrom",
+      "--graph-edge-valid-until": "graphEdgeValidUntil",
+      "--graph-edge-invalidated-at": "graphEdgeInvalidatedAt"
     } as const;
     const option = Object.keys(optionMap).find((candidate) =>
       arg === candidate || arg?.startsWith(`${candidate}=`) === true
@@ -268,6 +305,28 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
 
       sourceCommand[optionMap[option as keyof typeof optionMap]] =
         valueResult.value.trim();
+      index = valueResult.nextIndex;
+      continue;
+    }
+
+    if (arg === "--graph-edge-kind" || arg?.startsWith("--graph-edge-kind=") === true) {
+      const valueResult = optionValue(rest, index, "--graph-edge-kind");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+        };
+      }
+
+      const graphEdgeKind = valueResult.value.trim();
+
+      if (!isSourceClaimEdgeKind(graphEdgeKind)) {
+        return {
+          error: `Unsupported --graph-edge-kind: ${graphEdgeKind}`
+        };
+      }
+
+      sourceCommand.graphEdgeKind = graphEdgeKind;
       index = valueResult.nextIndex;
       continue;
     }

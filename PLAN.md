@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
-current task: V323-00 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+active stream: V324 Graph Brain v0 SourceClaimEdge Readback Surface
+current task: V324-00 Graph Brain v0 SourceClaimEdge Readback Surface
 ```
 
 ## Compact Completed Checkpoints
@@ -37,7 +37,7 @@ Remaining product gaps:
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
 4. ingest v0 activation/readback closure
-5. graph brain v0
+5. graph brain v0 readback/query surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
 8. product UI/search/API/MCP after usefulness/security gates
@@ -45,48 +45,38 @@ Remaining product gaps:
 
 ## Active Stream
 
-### V321 Ingest v0 Activation Over Persisted Source State
-
-Status: complete.
-
-Outcome:
-
-```txt
-Report: docs/reviews/controlled-dogfood/2026-06-29-v321-ingest-v0-activation-over-persisted-source-state/REPORT.md
-SourceArtifact/Chunk/SearchDocument/Claim/DecisionEdge readback works.
-`krn plan --persist` activates persisted SourceClaims. `krn run show` now
-exposes context details. Plan lexical search over the artifact SearchDocument
-still reports search=0.
-```
-
-### V322 Activation Lexical Search Over Persisted Local Source Documents
-
-Status: complete.
-
-Outcome:
-
-```txt
-Report: docs/reviews/controlled-dogfood/2026-06-29-v322-activation-lexical-search-over-persisted-local-source-documents/REPORT.md
-`krn plan --persist` now retries empty lexical source search with explicit
-marker/hash terms. Live DB readback showed search=5 and exposed persisted local
-artifact SearchDocument ccc44d6d-18ae-4b15-81cb-d948ea09b721 as an over-budget
-context exclusion.
-```
-
 ### V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+
+Status: complete.
+
+Outcome:
+
+```txt
+Report: docs/reviews/controlled-dogfood/2026-06-29-v323-graph-brain-v0-bounded-source-entity-claim-edge-preview/REPORT.md
+`krn source artifact preview` now renders reviewable SourceClaimEdge
+candidates and can persist/read back governed SourceClaimEdge rows when
+complete explicit graph-edge fields are supplied. Live DB proof created
+SourceClaimEdge 415321b3-4a26-4634-bfbe-38b756777d6a of kind `narrows` with
+source ranges and does-not-prove metadata. No schema, graph runtime, crawler,
+UI, API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
+```
+
+### V324 Graph Brain v0 SourceClaimEdge Readback Surface
 
 Goal:
 
-Start the first bounded graph-brain preview over local source state by producing
-reviewable entity/claim/edge candidates with source ranges.
+Expose the persisted graph edge substrate through the smallest operator-facing
+readback surface by claim id.
 
 Current action:
 
 ```txt
-Execute V323-00: use one small persisted local source artifact corpus and add
-the smallest graph preview/readback path needed to represent entity/claim/edge
-candidates. No crawler/UI/API/MCP/worker daemon/consensus runtime/automatic
-Memory Core mutation.
+Execute V324-00: add or extend an existing `krn source ...` readback command so
+an operator can inspect SourceClaimEdges connected to a SourceClaim, including
+edge kind, from/to ids, consumer, doesNotProve, and evidence/source-range
+metadata. Use existing repository methods and tests; do not add graph ranking,
+entity extraction, crawler, UI, API/MCP, worker daemon, consensus runtime, or
+automatic Memory Core mutation.
 ```
 
 Primary consumer:
@@ -99,9 +89,9 @@ slices, consensus candidate evaluation, and product-facing knowledge search.
 Falsifier:
 
 ```txt
-Given a small source artifact with named entities and claims, KRN cannot produce
-reviewable candidate graph facts with source ranges and does-not-prove
-boundaries, or it mutates final memory/graph truth without review.
+Given a persisted SourceClaimEdge row, KRN cannot show the edge and its
+governance metadata by SourceClaim id, or the readback implies graph truth,
+ranking quality, or Memory Core mutation.
 ```
 
 ## Pattern Gate

@@ -1,5 +1,6 @@
 import type {
   EvidenceCommand,
+  SourceClaimEdgeKind,
   SourceUsefulnessOutcomeFeedback,
   TargetEvidenceInput
 } from "@krn/core";
@@ -287,6 +288,16 @@ export type CliCommand =
       trustTier?: string;
       consumer?: string;
       falsifier?: string;
+      graphEdgeToSourceClaimId?: string;
+      graphEdgeKind?: SourceClaimEdgeKind;
+      graphEdgeConsumer?: string;
+      graphEdgeDoesNotProve?: string;
+      graphEdgeEvidenceRef?: string;
+      graphEdgeSourceDecisionRef?: string;
+      graphEdgeScope?: string;
+      graphEdgeValidFrom?: string;
+      graphEdgeValidUntil?: string;
+      graphEdgeInvalidatedAt?: string;
     }
   | {
       kind: "sourceClaimAdd";

@@ -36,6 +36,20 @@ describe("parseSourceArgs", () => {
       "ingest v0",
       "--falsifier",
       "Preview creates persisted source truth.",
+      "--graph-edge-to-source-claim-id",
+      "target-claim-1",
+      "--graph-edge-kind",
+      "narrows",
+      "--graph-edge-consumer",
+      "graph brain v0",
+      "--graph-edge-does-not-prove",
+      "This edge candidate does not prove temporal truth.",
+      "--graph-edge-evidence-ref",
+      "source.md:1-2",
+      "--graph-edge-source-decision-ref",
+      "decision-1",
+      "--graph-edge-scope",
+      "local preview",
       "--persist"
     ])).toEqual({
       command: {
@@ -51,7 +65,14 @@ describe("parseSourceArgs", () => {
         supportType: "implementation-boundary",
         trustTier: "source-code",
         consumer: "ingest v0",
-        falsifier: "Preview creates persisted source truth."
+        falsifier: "Preview creates persisted source truth.",
+        graphEdgeToSourceClaimId: "target-claim-1",
+        graphEdgeKind: "narrows",
+        graphEdgeConsumer: "graph brain v0",
+        graphEdgeDoesNotProve: "This edge candidate does not prove temporal truth.",
+        graphEdgeEvidenceRef: "source.md:1-2",
+        graphEdgeSourceDecisionRef: "decision-1",
+        graphEdgeScope: "local preview"
       }
     });
   });
@@ -216,6 +237,9 @@ describe("parseSourceArgs", () => {
     });
     expect(parseSourceArgs(["artifact", "preview", "--file", "README.md", "--chunk-lines", "0"])).toEqual({
       error: "--chunk-lines must be a positive integer"
+    });
+    expect(parseSourceArgs(["artifact", "preview", "--file", "README.md", "--graph-edge-kind", "same_as"])).toEqual({
+      error: "Unsupported --graph-edge-kind: same_as"
     });
     expect(parseSourceArgs(["claim", "add", "--metadata", "not-a-pair"])).toEqual({
       error: "--metadata requires key=value"

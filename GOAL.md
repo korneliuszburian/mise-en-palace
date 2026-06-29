@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V323 Graph Brain v0 Bounded Source Entity/Claim Edge Preview
+V324 Graph Brain v0 SourceClaimEdge Readback Surface
 ```
 
 Current state:
@@ -27,16 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V323-00 Graph Brain v0 Bounded Source Entity/Claim Edge Preview.
+current task: V324-00 Graph Brain v0 SourceClaimEdge Readback Surface.
 ```
 
 Current task:
 
 ```txt
-Start the first bounded graph-brain preview over local source state by producing
-reviewable entity/claim/edge candidates with source ranges, without crawler,
-UI, API/MCP, worker daemon, consensus runtime, broad graph ranking, or automatic
-Memory Core mutation.
+Add the smallest operator-facing readback surface for persisted SourceClaimEdge
+rows by claim id, using the existing Postgres source graph substrate and
+preserving source ranges, consumer, does-not-prove, and no Memory Core mutation.
 ```
 
 ## Remaining Work
@@ -54,8 +53,9 @@ to preserve are:
    SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
    activation, context detail run readback, and marker/hash lexical activation
    over persisted local SearchDocuments exist.
-5. Graph brain v0: entities, events, claims, relations, duplicates,
-   contradictions, supersession, and temporal slices.
+5. Graph brain v0: V323 proved bounded SourceClaimEdge preview/persistence;
+   next expose persisted edge readback before ranking, extraction, or graph
+   runtime work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

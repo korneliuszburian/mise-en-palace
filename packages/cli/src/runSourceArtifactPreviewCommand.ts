@@ -8,6 +8,10 @@ import path from "node:path";
 import {
   assessCandidateReviewability
 } from "@krn/core";
+import type {
+  SourceClaim,
+  SourceClaimEdgeKind
+} from "@krn/core";
 import {
   parseSearchDocumentInput,
   parseSourceArtifactInput,
@@ -59,6 +63,7 @@ interface SourceArtifactPreviewPersistenceResult {
   lines: string[];
   searchDocumentPersisted: boolean;
   sourceClaimPersisted: boolean;
+  sourceClaimEdgePersisted: boolean;
 }
 
 interface CandidateField {
@@ -97,6 +102,37 @@ const sourceClaimCandidateDoesNotProve =
   "This SourceClaim candidate does not prove the claim is true or should be accepted without review.";
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
+
+interface GraphEdgeCandidateField {
+  name: keyof Pick<
+    SourceArtifactPreviewCommand,
+    | "graphEdgeToSourceClaimId"
+    | "graphEdgeKind"
+    | "graphEdgeConsumer"
+    | "graphEdgeDoesNotProve"
+  >;
+  label: string;
+}
+
+const graphEdgeCandidateFields: readonly GraphEdgeCandidateField[] = [
+  { name: "graphEdgeToSourceClaimId", label: "--graph-edge-to-source-claim-id" },
+  { name: "graphEdgeKind", label: "--graph-edge-kind" },
+  { name: "graphEdgeConsumer", label: "--graph-edge-consumer" },
+  { name: "graphEdgeDoesNotProve", label: "--graph-edge-does-not-prove" }
+] as const;
+
+interface CompleteGraphEdgeCommandInput {
+  toSourceClaimId: string;
+  kind: SourceClaimEdgeKind;
+  consumer: string;
+  doesNotProve: string;
+  evidenceRef?: string;
+  sourceDecisionRef?: string;
+  scope?: string;
+  validFrom?: string;
+  validUntil?: string;
+  invalidatedAt?: string;
+}
 
 const sha256 = (content: string): string =>
   `sha256:${createHash("sha256").update(content).digest("hex")}`;
@@ -417,10 +453,50 @@ const persistSourceArtifactPreview = async (
     const sourceClaimReadback = sourceClaim === undefined
       ? undefined
       : await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaim.id);
+    const graphEdgeInput = completeGraphEdgeInput(runtime.command);
+    const sourceClaimEdge = sourceClaim === undefined || graphEdgeInput === undefined
+      ? undefined
+      : await databaseRuntime.sourceRepository.createSourceClaimEdge({
+          fromSourceClaimId: sourceClaim.id,
+          toSourceClaimId: graphEdgeInput.toSourceClaimId as SourceClaim["id"],
+          kind: graphEdgeInput.kind,
+          metadata: {
+            consumer: graphEdgeInput.consumer,
+            doesNotProve: graphEdgeInput.doesNotProve,
+            ...(graphEdgeInput.evidenceRef === undefined
+              ? {}
+              : { evidenceRef: graphEdgeInput.evidenceRef }),
+            ...(graphEdgeInput.sourceDecisionRef === undefined
+              ? {}
+              : { sourceDecisionRef: graphEdgeInput.sourceDecisionRef }),
+            ...(graphEdgeInput.scope === undefined
+              ? {}
+              : { scope: graphEdgeInput.scope }),
+            ...(graphEdgeInput.validFrom === undefined
+              ? {}
+              : { validFrom: graphEdgeInput.validFrom }),
+            ...(graphEdgeInput.validUntil === undefined
+              ? {}
+              : { validUntil: graphEdgeInput.validUntil }),
+            ...(graphEdgeInput.invalidatedAt === undefined
+              ? {}
+              : { invalidatedAt: graphEdgeInput.invalidatedAt }),
+            file,
+            contentHash: artifactHash,
+            chunkIds: sourceChunks.map((chunk) => chunk.id),
+            sourceRanges: chunks.map((chunk) => `lines ${chunk.startLine}-${chunk.endLine}`),
+            source: "krn source artifact preview --persist"
+          }
+        });
+    const sourceClaimEdgeReadback = sourceClaimEdge === undefined
+      ? undefined
+      : (await databaseRuntime.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimEdge.fromSourceClaimId))
+          .find((edge) => edge.id === sourceClaimEdge.id);
 
     return {
       searchDocumentPersisted: true,
       sourceClaimPersisted: sourceClaim !== undefined,
+      sourceClaimEdgePersisted: sourceClaimEdge !== undefined,
       lines: [
       "Persistence readback:",
       "Persistence: enabled (Postgres, explicit --persist)",
@@ -439,6 +515,15 @@ const persistSourceArtifactPreview = async (
       ...(sourceClaim === undefined
         ? []
         : [`sourceClaimReadback: ${sourceClaimReadback === undefined ? "missing" : "hit"}`]),
+      sourceClaimEdge === undefined
+        ? "sourceClaimEdge: not created"
+        : `sourceClaimEdge: ${sourceClaimEdge.id}`,
+      ...(sourceClaimEdge === undefined
+        ? []
+        : [
+            `sourceClaimEdgeKind: ${sourceClaimEdge.kind}`,
+            `sourceClaimEdgeReadback: ${sourceClaimEdgeReadback === undefined ? "missing" : "hit"}`
+          ]),
       "Embeddings: none",
       "Graph runtime: none",
       "doesNotProve: DB readback does not prove source truth, embeddings, graph retrieval, crawler readiness, or product readiness"
@@ -449,7 +534,7 @@ const persistSourceArtifactPreview = async (
   }
 };
 
-const hasText = (value: string | undefined): boolean =>
+const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
 const missingSourceClaimCandidateFields = (
@@ -463,6 +548,68 @@ const hasAnySourceClaimCandidateField = (
   command: SourceArtifactPreviewCommand
 ): boolean =>
   sourceClaimCandidateFields.some((field) => hasText(command[field.name]));
+
+const missingGraphEdgeCandidateFields = (
+  command: SourceArtifactPreviewCommand
+): string[] =>
+  graphEdgeCandidateFields
+    .filter((field) => !hasText(command[field.name]))
+    .map((field) => field.label);
+
+const hasAnyGraphEdgeCandidateField = (
+  command: SourceArtifactPreviewCommand
+): boolean =>
+  graphEdgeCandidateFields.some((field) => hasText(command[field.name]));
+
+const completeGraphEdgeInput = (
+  command: SourceArtifactPreviewCommand
+): CompleteGraphEdgeCommandInput | undefined => {
+  const toSourceClaimId = command.graphEdgeToSourceClaimId;
+  const kind = command.graphEdgeKind;
+  const consumer = command.graphEdgeConsumer;
+  const doesNotProve = command.graphEdgeDoesNotProve;
+
+  if (
+    !hasText(toSourceClaimId) ||
+    kind === undefined ||
+    !hasText(consumer) ||
+    !hasText(doesNotProve)
+  ) {
+    return undefined;
+  }
+
+  return {
+    toSourceClaimId,
+    kind,
+    consumer,
+    doesNotProve,
+    ...(command.graphEdgeEvidenceRef === undefined
+      ? {}
+      : { evidenceRef: command.graphEdgeEvidenceRef }),
+    ...(command.graphEdgeSourceDecisionRef === undefined
+      ? {}
+      : { sourceDecisionRef: command.graphEdgeSourceDecisionRef }),
+    ...(command.graphEdgeScope === undefined ? {} : { scope: command.graphEdgeScope }),
+    ...(command.graphEdgeValidFrom === undefined ? {} : { validFrom: command.graphEdgeValidFrom }),
+    ...(command.graphEdgeValidUntil === undefined
+      ? {}
+      : { validUntil: command.graphEdgeValidUntil }),
+    ...(command.graphEdgeInvalidatedAt === undefined
+      ? {}
+      : { invalidatedAt: command.graphEdgeInvalidatedAt })
+  };
+};
+
+const generatedGraphEvidenceRefs = (
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[]
+): string[] => [
+  file,
+  artifactHash,
+  ...chunks.map((chunk) => `${file}:lines ${chunk.startLine}-${chunk.endLine}`),
+  ...chunks.map((chunk) => chunk.contentHash)
+];
 
 const formatSourceClaimCandidate = (
   command: SourceArtifactPreviewCommand,
@@ -559,6 +706,105 @@ const formatSourceClaimCandidate = (
   ];
 };
 
+const formatSourceClaimEdgeCandidate = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceClaimPersisted: boolean,
+  sourceClaimEdgePersisted: boolean
+): string[] => {
+  if (!hasAnyGraphEdgeCandidateField(command)) {
+    return [
+      "sourceClaimEdgeCandidate:",
+      "- not generated",
+      "  reason: explicit graph edge inputs were not supplied",
+      "  No SourceClaimEdge created"
+    ];
+  }
+
+  const missingFields = [
+    ...missingGraphEdgeCandidateFields(command),
+    ...missingSourceClaimCandidateFields(command).map((field) => `${field} for edge source claim`)
+  ];
+
+  if (missingFields.length > 0) {
+    const reviewability = assessCandidateReviewability({
+      summary: command.graphEdgeKind === undefined
+        ? "SourceClaimEdge candidate from local source artifact preview."
+        : `SourceClaimEdge ${command.graphEdgeKind} candidate from local source artifact preview.`,
+      evidenceRefs: generatedGraphEvidenceRefs(file, artifactHash, chunks),
+      ...(hasText(command.graphEdgeConsumer)
+        ? { applicationGuidance: command.graphEdgeConsumer }
+        : {}),
+      ...(hasText(command.graphEdgeDoesNotProve)
+        ? { doesNotProve: command.graphEdgeDoesNotProve }
+        : {}),
+      missingFields
+    });
+
+    return [
+      "sourceClaimEdgeCandidate:",
+      "- id: source-claim-edge-candidate:incomplete",
+      "  status: incomplete",
+      `  reviewability: ${reviewability.reviewability}`,
+      ...formatReviewabilityReasons(reviewability.reasons),
+      `  missing: ${missingFields.join(", ")}`,
+      "  No SourceClaimEdge created"
+    ];
+  }
+
+  const graphEdgeInput = completeGraphEdgeInput(command);
+
+  if (graphEdgeInput === undefined) {
+    return [
+      "sourceClaimEdgeCandidate:",
+      "- id: source-claim-edge-candidate:incomplete",
+      "  status: incomplete",
+      "  reviewability: unknown",
+      "  reviewability reasons:",
+      "  - Graph edge input could not be narrowed after missing-field checks.",
+      "  No SourceClaimEdge created"
+    ];
+  }
+
+  const reviewability = assessCandidateReviewability({
+    summary: `SourceClaimEdge ${graphEdgeInput.kind} -> ${graphEdgeInput.toSourceClaimId}`,
+    body: [
+      `from: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+      `to: ${graphEdgeInput.toSourceClaimId}`,
+      `kind: ${graphEdgeInput.kind}`,
+      ...(graphEdgeInput.scope === undefined ? [] : [`scope: ${graphEdgeInput.scope}`])
+    ].join("\n"),
+    evidenceRefs: [
+      ...generatedGraphEvidenceRefs(file, artifactHash, chunks),
+      ...(graphEdgeInput.evidenceRef === undefined ? [] : [graphEdgeInput.evidenceRef])
+    ],
+    applicationGuidance: graphEdgeInput.consumer,
+    doesNotProve: graphEdgeInput.doesNotProve
+  });
+
+  return [
+    "sourceClaimEdgeCandidate:",
+    `- id: source-claim-edge-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    "  status: candidate",
+    `  reviewability: ${reviewability.reviewability}`,
+    ...formatReviewabilityReasons(reviewability.reasons),
+    `  fromSourceClaim: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    `  toSourceClaimId: ${graphEdgeInput.toSourceClaimId}`,
+    `  kind: ${graphEdgeInput.kind}`,
+    `  consumer: ${graphEdgeInput.consumer}`,
+    `  evidenceRefs: ${generatedGraphEvidenceRefs(file, artifactHash, chunks).join(", ")}`,
+    `  doesNotProve: ${graphEdgeInput.doesNotProve}`,
+    sourceClaimPersisted
+      ? "  SourceClaim row available for edge source: see Persistence readback"
+      : "  No SourceClaim row available for edge source",
+    sourceClaimEdgePersisted
+      ? "  SourceClaimEdge row created: see Persistence readback"
+      : "  No SourceClaimEdge created"
+  ];
+};
+
 const formatCandidateBridge = (
   command: SourceArtifactPreviewCommand,
   file: string,
@@ -580,6 +826,14 @@ const formatCandidateBridge = (
     artifactHash,
     chunks,
     persistence?.sourceClaimPersisted ?? false
+  ),
+  ...formatSourceClaimEdgeCandidate(
+    command,
+    file,
+    artifactHash,
+    chunks,
+    persistence?.sourceClaimPersisted ?? false,
+    persistence?.sourceClaimEdgePersisted ?? false
   )
 ];
 
@@ -657,6 +911,9 @@ export const runSourceArtifactPreviewCommand = async (
         : []),
       ...(persistence?.sourceClaimPersisted === true
         ? ["- proves: complete explicit SourceClaim fields wrote and read back a SourceClaim row linked to the persisted SourceArtifact/SourceChunk"]
+        : []),
+      ...(persistence?.sourceClaimEdgePersisted === true
+        ? ["- proves: complete explicit SourceClaimEdge fields wrote and read back a governed SourceClaimEdge row linked to reviewed SourceClaim rows"]
         : []),
       "- doesNotProve: source truth, claim correctness, DB persistence, embeddings, graph retrieval, crawler readiness, or Memory Core mutation"
     ].join("\n")

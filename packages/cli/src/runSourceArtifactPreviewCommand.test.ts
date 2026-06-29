@@ -21,7 +21,8 @@ import type {
   DatabaseRuntime
 } from "./databaseRuntime.js";
 import type {
-  SourceClaim
+  SourceClaim,
+  SourceClaimEdge
 } from "@krn/core";
 
 const tempRoots: string[] = [];
@@ -84,6 +85,9 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("sourceClaimCandidate:");
     expect(result.stdout).toContain("reason: explicit claim/mechanism/consumer/falsifier inputs were not supplied");
     expect(result.stdout).toContain("No SourceClaim created");
+    expect(result.stdout).toContain("sourceClaimEdgeCandidate:");
+    expect(result.stdout).toContain("reason: explicit graph edge inputs were not supplied");
+    expect(result.stdout).toContain("No SourceClaimEdge created");
     expect(result.stdout).toContain("doesNotProve: source truth, claim correctness, DB persistence, embeddings, graph retrieval, crawler readiness, or Memory Core mutation");
   });
 
@@ -141,11 +145,53 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("No SourceClaim created");
   });
 
+  it("renders graph edge candidates with source ranges without persistence", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+
+    await writeFile(sourcePath, [
+      "KRN Graph Brain narrows previous source claims.",
+      "Source ranges must stay reviewable."
+    ].join("\n"), "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: false,
+        file: "source.md",
+        claim: "Graph preview can create reviewable source claim edge candidates.",
+        mechanism: "Preview output has source ranges, a new claim candidate, and explicit edge metadata.",
+        krnImplication: "Use source claim edge candidates before graph runtime work.",
+        doesNotProve: "This does not prove graph retrieval quality.",
+        supportType: "implementation-boundary",
+        trustTier: "source-code",
+        consumer: "graph brain v0",
+        falsifier: "Graph preview mutates accepted graph truth.",
+        graphEdgeToSourceClaimId: "target-source-claim-1",
+        graphEdgeKind: "narrows",
+        graphEdgeConsumer: "graph brain v0",
+        graphEdgeDoesNotProve: "This edge candidate does not prove temporal truth."
+      }
+    });
+
+    expect(result.stdout).toContain("sourceClaimEdgeCandidate:");
+    expect(result.stdout).toContain("status: candidate");
+    expect(result.stdout).toContain("reviewability: ready");
+    expect(result.stdout).toContain("toSourceClaimId: target-source-claim-1");
+    expect(result.stdout).toContain("kind: narrows");
+    expect(result.stdout).toContain("evidenceRefs: source.md, sha256:");
+    expect(result.stdout).toContain("source.md:lines 1-2");
+    expect(result.stdout).toContain("No SourceClaimEdge created");
+  });
+
   it("persists local artifact chunks, search document, and complete source claim when explicitly requested", async () => {
     const tempRoot = await createTempRoot();
     const sourcePath = path.join(tempRoot, "source.md");
     const timestamp = "2026-06-28T21:00:00.000Z";
     const sourceClaimId = "44444444-4444-4444-8444-444444444444" as SourceClaim["id"];
+    const sourceClaimEdgeId = "55555555-5555-4555-8555-555555555555" as SourceClaimEdge["id"];
+    const targetSourceClaimId = "66666666-6666-4666-8666-666666666666" as SourceClaim["id"];
 
     await writeFile(sourcePath, [
       "# Source",
@@ -236,6 +282,31 @@ describe("runSourceArtifactPreviewCommand", () => {
               updatedAt: timestamp
             };
           },
+          async createSourceClaimEdge(input) {
+            return {
+              id: sourceClaimEdgeId,
+              fromSourceClaimId: input.fromSourceClaimId,
+              toSourceClaimId: input.toSourceClaimId,
+              kind: input.kind,
+              metadata: input.metadata,
+              createdAt: timestamp
+            };
+          },
+          async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
+            return sourceClaimIdForReadback === sourceClaimId
+              ? [{
+                  id: sourceClaimEdgeId,
+                  fromSourceClaimId: sourceClaimId,
+                  toSourceClaimId: targetSourceClaimId,
+                  kind: "narrows",
+                  metadata: {
+                    consumer: "graph brain v0",
+                    doesNotProve: "This edge candidate does not prove temporal truth."
+                  },
+                  createdAt: timestamp
+                }]
+              : [];
+          },
           async createSourceDecisionEdge() {
             throw new Error("createSourceDecisionEdge should not be called");
           },
@@ -305,7 +376,12 @@ describe("runSourceArtifactPreviewCommand", () => {
         supportType: "implementation-boundary",
         trustTier: "source-code",
         consumer: "ingest v0",
-        falsifier: "SourceClaim is not linked to the persisted SourceArtifact."
+        falsifier: "SourceClaim is not linked to the persisted SourceArtifact.",
+        graphEdgeToSourceClaimId: targetSourceClaimId,
+        graphEdgeKind: "narrows",
+        graphEdgeConsumer: "graph brain v0",
+        graphEdgeDoesNotProve: "This edge candidate does not prove temporal truth.",
+        graphEdgeEvidenceRef: "source.md:lines 1-2"
       }
     });
 
@@ -316,11 +392,16 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("lexicalReadback: hit");
     expect(result.stdout).toContain("sourceClaim: 44444444-4444-4444-8444-444444444444");
     expect(result.stdout).toContain("sourceClaimReadback: hit");
+    expect(result.stdout).toContain("sourceClaimEdge: 55555555-5555-4555-8555-555555555555");
+    expect(result.stdout).toContain("sourceClaimEdgeKind: narrows");
+    expect(result.stdout).toContain("sourceClaimEdgeReadback: hit");
     expect(result.stdout).toContain("SourceClaim row created: see Persistence readback");
+    expect(result.stdout).toContain("SourceClaimEdge row created: see Persistence readback");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("Embeddings: none");
     expect(result.stdout).toContain("Graph runtime: none");
     expect(result.stdout).toContain("proves: complete explicit SourceClaim fields wrote and read back a SourceClaim row linked to the persisted SourceArtifact/SourceChunk");
+    expect(result.stdout).toContain("proves: complete explicit SourceClaimEdge fields wrote and read back a governed SourceClaimEdge row linked to reviewed SourceClaim rows");
   });
 
   it("falls back to repo-root-relative paths when cwd is a package directory", async () => {

@@ -77,6 +77,8 @@ export interface DatabaseRuntime {
     | "createSourceArtifact"
     | "createSourceClaim"
     | "getSourceClaimById"
+    | "createSourceClaimEdge"
+    | "listSourceClaimEdgesForClaim"
     | "createSourceDecisionEdge"
     | "getSourceDecisionEdgeById"
     | "createSourceRejection"
