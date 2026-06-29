@@ -31,6 +31,128 @@ const findCheckStatus = (
   label: DoctorCheck["label"]
 ): string | undefined => checks.find((check) => check.label === label)?.status;
 
+type BrainStoreSkipReason =
+  | "Postgres not configured"
+  | "Postgres unreachable"
+  | "brain store not ready";
+
+type BrainStoreGate =
+  | {
+      kind: "ready";
+      databaseUrl: string;
+    }
+  | {
+      kind: "skipped";
+      reason: BrainStoreSkipReason;
+    };
+
+const skippedStatus = (reason: BrainStoreSkipReason): string => `skipped (${reason})`;
+
+const skippedCheck = (
+  label: DoctorCheck["label"],
+  gate: Extract<BrainStoreGate, { kind: "skipped" }>
+): DoctorCheck => ({
+  label,
+  status: skippedStatus(gate.reason)
+});
+
+const skippedChecks = (
+  labels: readonly DoctorCheck["label"][],
+  gate: Extract<BrainStoreGate, { kind: "skipped" }>
+): DoctorCheck[] => labels.map((label) => skippedCheck(label, gate));
+
+const brainStoreGate = (
+  databaseUrl: string | undefined,
+  postgresChecks: readonly DoctorCheck[]
+): BrainStoreGate => {
+  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
+  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
+  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+
+  if (postgresStatus?.startsWith("not configured") === true) {
+    return {
+      kind: "skipped",
+      reason: "Postgres not configured"
+    };
+  }
+
+  if (postgresStatus?.startsWith("configured but unreachable") === true) {
+    return {
+      kind: "skipped",
+      reason: "Postgres unreachable"
+    };
+  }
+
+  if (
+    databaseUrl === undefined ||
+    databaseUrl.trim().length === 0 ||
+    pgvectorStatus !== "available" ||
+    migrationStatus?.startsWith("verified") !== true
+  ) {
+    return {
+      kind: "skipped",
+      reason: "brain store not ready"
+    };
+  }
+
+  return {
+    kind: "ready",
+    databaseUrl
+  };
+};
+
+const anyPathExists = async (paths: readonly string[]): Promise<boolean> => {
+  for (const candidatePath of paths) {
+    if (await pathExists(candidatePath)) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const memoryMutationCallPatterns = [
+  "createMemoryCandidate(",
+  "promoteMemoryCandidate(",
+  "createMemoryRecord("
+];
+
+const runtimeMarkdownMemoryPresent = async (repoRoot: string): Promise<boolean> =>
+  anyPathExists([
+    path.join(repoRoot, "memory.md"),
+    path.join(repoRoot, "MEMORY.md"),
+    path.join(repoRoot, "runtime-memory.md"),
+    path.join(repoRoot, "memory"),
+    path.join(repoRoot, "memories"),
+    path.join(repoRoot, ".memory"),
+    path.join(repoRoot, "docs", "memory"),
+    path.join(repoRoot, "docs", "runtime-memory")
+  ]);
+
+const automaticMemoryMutationPresent = async (repoRoot: string): Promise<boolean> => {
+  const evidenceCaptureText = await readOptionalText(
+    path.join(repoRoot, "packages", "cli", "src", "runEvidenceCaptureCommand.ts")
+  );
+
+  return memoryMutationCallPatterns.some((pattern) => evidenceCaptureText.includes(pattern)) ||
+    await anyPathExists([
+      path.join(repoRoot, "packages", "memory-crawler"),
+      path.join(repoRoot, "packages", "memory-worker"),
+      path.join(repoRoot, "packages", "memory-auto-promoter")
+    ]);
+};
+
+const readMemoryGovernanceForbiddenChecks = async (repoRoot: string): Promise<DoctorCheck[]> => [
+  {
+    label: "Runtime markdown memory",
+    status: await runtimeMarkdownMemoryPresent(repoRoot) ? "present" : "absent"
+  },
+  {
+    label: "Automatic memory mutation",
+    status: await automaticMemoryMutationPresent(repoRoot) ? "present" : "absent"
+  }
+];
+
 export const checkPostgres = async (
   databaseUrl: string | undefined,
   migrationsFolder: string
@@ -146,48 +268,18 @@ export const checkHarnessPersistence = async (
       )
     }
   ];
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const gate = brainStoreGate(databaseUrl, postgresChecks);
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (gate.kind === "skipped") {
     return [
-      {
-        label: "Harness persistence schema",
-        status: "skipped (Postgres not configured)"
-      },
-      ...smokeChecks
-    ];
-  }
-
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
-    return [
-      {
-        label: "Harness persistence schema",
-        status: "skipped (Postgres unreachable)"
-      },
-      ...smokeChecks
-    ];
-  }
-
-  if (
-    databaseUrl === undefined ||
-    databaseUrl.trim().length === 0 ||
-    pgvectorStatus !== "available" ||
-    migrationStatus?.startsWith("verified") !== true
-  ) {
-    return [
-      {
-        label: "Harness persistence schema",
-        status: "skipped (brain store not ready)"
-      },
+      skippedCheck("Harness persistence schema", gate),
       ...smokeChecks
     ];
   }
 
   try {
     const report = await inspectHarnessPersistenceReadiness({
-      databaseUrl
+      databaseUrl: gate.databaseUrl
     });
 
     return [
@@ -239,75 +331,23 @@ export const checkSourceGraph = async (
       status: separateGraphDbPresent ? "present" : "absent"
     }
   ];
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const gate = brainStoreGate(databaseUrl, postgresChecks);
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (gate.kind === "skipped") {
     return [
-      {
-        label: "Source graph schema",
-        status: "skipped (Postgres not configured)"
-      },
-      {
-        label: "SourceRepository read path",
-        status: "skipped (Postgres not configured)"
-      },
+      ...skippedChecks([
+        "Source graph schema",
+        "SourceRepository read path"
+      ], gate),
       smokeCheck,
-      {
-        label: "Source graph runtime proof",
-        status: "skipped (Postgres not configured)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
-    return [
-      {
-        label: "Source graph schema",
-        status: "skipped (Postgres unreachable)"
-      },
-      {
-        label: "SourceRepository read path",
-        status: "skipped (Postgres unreachable)"
-      },
-      smokeCheck,
-      {
-        label: "Source graph runtime proof",
-        status: "skipped (Postgres unreachable)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (
-    databaseUrl === undefined ||
-    databaseUrl.trim().length === 0 ||
-    pgvectorStatus !== "available" ||
-    migrationStatus?.startsWith("verified") !== true
-  ) {
-    return [
-      {
-        label: "Source graph schema",
-        status: "skipped (brain store not ready)"
-      },
-      {
-        label: "SourceRepository read path",
-        status: "skipped (brain store not ready)"
-      },
-      smokeCheck,
-      {
-        label: "Source graph runtime proof",
-        status: "skipped (brain store not ready)"
-      },
+      skippedCheck("Source graph runtime proof", gate),
       ...forbiddenChecks
     ];
   }
 
   try {
     const report = await inspectSourceGraphReadiness({
-      databaseUrl
+      databaseUrl: gate.databaseUrl
     });
 
     return [
@@ -368,104 +408,24 @@ export const checkMemoryGovernance = async (
       "krn db smoke memory-governance"
     )
   };
-  const runtimeMarkdownMemoryPresent =
-    await pathExists(path.join(repoRoot, "memory.md")) ||
-    await pathExists(path.join(repoRoot, "MEMORY.md")) ||
-    await pathExists(path.join(repoRoot, "runtime-memory.md")) ||
-    await pathExists(path.join(repoRoot, "memory")) ||
-    await pathExists(path.join(repoRoot, "memories")) ||
-    await pathExists(path.join(repoRoot, ".memory")) ||
-    await pathExists(path.join(repoRoot, "docs", "memory")) ||
-    await pathExists(path.join(repoRoot, "docs", "runtime-memory"));
-  const evidenceCaptureText = await readOptionalText(
-    path.join(repoRoot, "packages", "cli", "src", "runEvidenceCaptureCommand.ts")
-  );
-  const automaticMemoryMutationPresent =
-    evidenceCaptureText.includes("createMemoryCandidate(") ||
-    evidenceCaptureText.includes("promoteMemoryCandidate(") ||
-    evidenceCaptureText.includes("createMemoryRecord(") ||
-    (await pathExists(path.join(repoRoot, "packages", "memory-crawler"))) ||
-    (await pathExists(path.join(repoRoot, "packages", "memory-worker"))) ||
-    (await pathExists(path.join(repoRoot, "packages", "memory-auto-promoter")));
-  const forbiddenChecks = [
-    {
-      label: "Runtime markdown memory",
-      status: runtimeMarkdownMemoryPresent ? "present" : "absent"
-    },
-    {
-      label: "Automatic memory mutation",
-      status: automaticMemoryMutationPresent ? "present" : "absent"
-    }
-  ];
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const forbiddenChecks = await readMemoryGovernanceForbiddenChecks(repoRoot);
+  const gate = brainStoreGate(databaseUrl, postgresChecks);
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (gate.kind === "skipped") {
     return [
-      {
-        label: "Memory governance schema",
-        status: "skipped (Postgres not configured)"
-      },
-      {
-        label: "MemoryRepository read path",
-        status: "skipped (Postgres not configured)"
-      },
+      ...skippedChecks([
+        "Memory governance schema",
+        "MemoryRepository read path"
+      ], gate),
       smokeCheck,
-      {
-        label: "Memory governance runtime proof",
-        status: "skipped (Postgres not configured)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
-    return [
-      {
-        label: "Memory governance schema",
-        status: "skipped (Postgres unreachable)"
-      },
-      {
-        label: "MemoryRepository read path",
-        status: "skipped (Postgres unreachable)"
-      },
-      smokeCheck,
-      {
-        label: "Memory governance runtime proof",
-        status: "skipped (Postgres unreachable)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (
-    databaseUrl === undefined ||
-    databaseUrl.trim().length === 0 ||
-    pgvectorStatus !== "available" ||
-    migrationStatus?.startsWith("verified") !== true
-  ) {
-    return [
-      {
-        label: "Memory governance schema",
-        status: "skipped (brain store not ready)"
-      },
-      {
-        label: "MemoryRepository read path",
-        status: "skipped (brain store not ready)"
-      },
-      smokeCheck,
-      {
-        label: "Memory governance runtime proof",
-        status: "skipped (brain store not ready)"
-      },
+      skippedCheck("Memory governance runtime proof", gate),
       ...forbiddenChecks
     ];
   }
 
   try {
     const report = await inspectMemoryGovernanceReadiness({
-      databaseUrl
+      databaseUrl: gate.databaseUrl
     });
 
     return [
@@ -548,75 +508,23 @@ export const checkRetrievalSubstrate = async (
       status: naiveRagDumpCommandPresent ? "present" : "absent"
     }
   ];
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
+  const gate = brainStoreGate(databaseUrl, postgresChecks);
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (gate.kind === "skipped") {
     return [
-      {
-        label: "Retrieval substrate schema",
-        status: "skipped (Postgres not configured)"
-      },
-      {
-        label: "RetrievalRepository read path",
-        status: "skipped (Postgres not configured)"
-      },
+      ...skippedChecks([
+        "Retrieval substrate schema",
+        "RetrievalRepository read path"
+      ], gate),
       smokeCheck,
-      {
-        label: "Retrieval substrate runtime proof",
-        status: "skipped (Postgres not configured)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
-    return [
-      {
-        label: "Retrieval substrate schema",
-        status: "skipped (Postgres unreachable)"
-      },
-      {
-        label: "RetrievalRepository read path",
-        status: "skipped (Postgres unreachable)"
-      },
-      smokeCheck,
-      {
-        label: "Retrieval substrate runtime proof",
-        status: "skipped (Postgres unreachable)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (
-    databaseUrl === undefined ||
-    databaseUrl.trim().length === 0 ||
-    pgvectorStatus !== "available" ||
-    migrationStatus?.startsWith("verified") !== true
-  ) {
-    return [
-      {
-        label: "Retrieval substrate schema",
-        status: "skipped (brain store not ready)"
-      },
-      {
-        label: "RetrievalRepository read path",
-        status: "skipped (brain store not ready)"
-      },
-      smokeCheck,
-      {
-        label: "Retrieval substrate runtime proof",
-        status: "skipped (brain store not ready)"
-      },
+      skippedCheck("Retrieval substrate runtime proof", gate),
       ...forbiddenChecks
     ];
   }
 
   try {
     const report = await inspectRetrievalSubstrateReadiness({
-      databaseUrl
+      databaseUrl: gate.databaseUrl
     });
 
     return [
@@ -730,9 +638,6 @@ export const checkActivation = async (
       status: requiredSkillsPresent ? "present" : "absent"
     }
   ];
-  const postgresStatus = findCheckStatus(postgresChecks, "Postgres config");
-  const pgvectorStatus = findCheckStatus(postgresChecks, "pgvector");
-  const migrationStatus = findCheckStatus(postgresChecks, "migrations");
   const baseChecks = [
     {
       label: "Activation domain contracts",
@@ -744,48 +649,19 @@ export const checkActivation = async (
     },
     smokeCheck
   ];
+  const gate = brainStoreGate(databaseUrl, postgresChecks);
 
-  if (postgresStatus?.startsWith("not configured") === true) {
+  if (gate.kind === "skipped") {
     return [
       ...baseChecks,
-      {
-        label: "Activation smoke runtime proof",
-        status: "skipped (Postgres not configured)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (postgresStatus?.startsWith("configured but unreachable") === true) {
-    return [
-      ...baseChecks,
-      {
-        label: "Activation smoke runtime proof",
-        status: "skipped (Postgres unreachable)"
-      },
-      ...forbiddenChecks
-    ];
-  }
-
-  if (
-    databaseUrl === undefined ||
-    databaseUrl.trim().length === 0 ||
-    pgvectorStatus !== "available" ||
-    migrationStatus?.startsWith("verified") !== true
-  ) {
-    return [
-      ...baseChecks,
-      {
-        label: "Activation smoke runtime proof",
-        status: "skipped (brain store not ready)"
-      },
+      skippedCheck("Activation smoke runtime proof", gate),
       ...forbiddenChecks
     ];
   }
 
   try {
     const report = await inspectActivationReadiness({
-      databaseUrl
+      databaseUrl: gate.databaseUrl
     });
 
     return [
