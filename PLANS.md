@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V348 Source Search Answer Package JSON Readback
-current task: V348-00 Source Search Answer Package JSON Readback
+active stream: V349 Brain QA Source Search JSON Consumer Case
+current task: V349-00 Brain QA Source Search JSON Consumer Case
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V348-00 Source Search Answer Package JSON Readback must expose the current
-answer package as typed JSON without adding UI/API/MCP, crawler, schema,
-ranking rewrite, embeddings, graph runtime, worker, or Memory Core mutation.
+V349-00 Brain QA Source Search JSON Consumer Case must consume the V348 JSON
+answer package in one small Brain-QA/readback case without adding UI/API/MCP,
+crawler, schema, ranking rewrite, embeddings, graph runtime, worker, broad
+benchmark, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -305,25 +306,27 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V345 complete: source search usefulness closure after document alignment.
 - [x] V346 complete: source search answer package preview.
 - [x] V347 complete: heartbeat/consensus SearchDocument coverage closure.
-- [ ] V348 current task: source search answer package JSON readback.
+- [x] V348 complete: source search answer package JSON readback.
+- [ ] V349 current task: Brain QA source search JSON consumer case.
 
 ## Active Task Contract
 
-### V344-00 Source Search Document Retrieval Alignment
+### V349-00 Brain QA Source Search JSON Consumer Case
 
 Objective:
 
 ```txt
-Inspect why seeded SearchDocuments have hash readback but no natural-language
-`krn source search` hits, and repair only a bounded owner-file issue.
+Consume the V348 source-search JSON answer package in one small Brain-QA/readback
+case and measure whether typed output reduces review/report parsing burden.
 ```
 
 Allowed:
 
 ```txt
-source/retrieval owner-file inspection
-bounded source repair if proven
-focused tests and DB-backed readback
+docs/report consumer case
+small local script only if needed to avoid text parsing
+DB-backed source-search JSON readback
+proof/non-proof and missing-evidence classification
 compact report/root state update
 ```
 
@@ -334,15 +337,12 @@ dashboard
 API/MCP
 crawler
 worker daemon
-new schema unless source proves current shape cannot carry readback
-broad eval platform
+new schema
+broad benchmark
+ranking rewrite
+embeddings or graph runtime
 autonomous truth runtime
 Memory Core mutation
-ranking rewrite
-UI/API/MCP/crawler work
-new DB schema
-embeddings or graph runtime
-ranking rewrite
 ```
 
 Pattern gate:
@@ -358,10 +358,10 @@ before retention.
 Success criteria:
 
 ```txt
-1. owner files for artifact SearchDocument persistence and source search are identified;
-2. current behavior is explained as intended or repaired with tests;
-3. weak V343 document queries are rerun with DB evidence;
-4. no crawler/UI/API/MCP/schema/ranking rewrite/graph runtime is added;
+1. JSON answer package is consumed without parsing text output;
+2. the case records answer, evidence, missing evidence, proof/non-proof, and raw candidate inspectability;
+3. review/report parsing burden is classified with evidence;
+4. no product surface or retrieval behavior is added;
 5. root state stays compact and advances to the next highest-ROI task.
 ```
 
@@ -595,6 +595,18 @@ Success criteria:
 3. no retrieval/ranking/schema/product-surface change is introduced;
 4. focused tests cover JSON and text behavior;
 5. root state stays compact.
+```
+
+V348 outcome:
+
+```txt
+`krn source search --json` now returns a typed read-only answer package with
+answer, supportingClaims, supportingDocuments, neutralOrNoise, missingEvidence,
+doesNotProve, recommendedNextAction, raw included/excluded candidates, proof,
+and runtime non-mutation fields. Text output remains default. DB readback parsed
+two live JSON packages.
+report: docs/reviews/controlled-dogfood/2026-06-29-v348-source-search-answer-package-json-readback/REPORT.md
+executionRun: b7271663-3420-4f14-939d-0e946f526440
 ```
 
 ## Verification Policy

@@ -165,6 +165,36 @@ const runtime = (input?: {
 
 type SourceSearchCommand = Parameters<typeof runSourceSearchCommand>[0];
 
+const parseJsonObject = (text: string): Record<string, unknown> => {
+  const parsed: unknown = JSON.parse(text);
+
+  expect(typeof parsed).toBe("object");
+  expect(parsed).not.toBeNull();
+  expect(Array.isArray(parsed)).toBe(false);
+
+  return parsed as Record<string, unknown>;
+};
+
+const objectValue = (
+  value: unknown,
+  label: string
+): Record<string, unknown> => {
+  expect(typeof value, label).toBe("object");
+  expect(value, label).not.toBeNull();
+  expect(Array.isArray(value), label).toBe(false);
+
+  return value as Record<string, unknown>;
+};
+
+const arrayValue = (
+  value: unknown,
+  label: string
+): readonly unknown[] => {
+  expect(Array.isArray(value), label).toBe(true);
+
+  return value as readonly unknown[];
+};
+
 describe("runSourceSearchCommand", () => {
   it("renders read-only source and search candidates with proof boundaries", async () => {
     let closeCount = 0;
@@ -221,6 +251,70 @@ describe("runSourceSearchCommand", () => {
     expect(closeCount).toBe(1);
     expect(searchQuery).toBe("krn-source-artifact-preview 991034dc0684e887");
     expect(searchQuery).not.toContain("crawler");
+  });
+
+  it("renders typed JSON answer package readback without hiding raw candidates", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "krn-source-artifact-preview 991034dc0684e887",
+        limit: 10,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime()
+    });
+
+    const output = parseJsonObject(result.stdout);
+
+    expect(output.kind).toBe("source_search_answer_package");
+    expect(output.query).toBe("krn-source-artifact-preview 991034dc0684e887");
+    expect(output.persistence).toBe("read_only_postgres");
+    expect(output.dbWrites).toBe("none");
+    expect(output.mutation).toBe("none");
+
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+
+    expect(answerPackage.answer).toContain("1 supporting SourceClaim(s) and 1 supporting SearchDocument(s)");
+    expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Pattern Application Gate");
+    expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toEqual([]);
+    expect(arrayValue(answerPackage.doesNotProve, "doesNotProve")).toContain(
+      "source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation"
+    );
+
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const supportingDocuments = arrayValue(answerPackage.supportingDocuments, "supportingDocuments");
+    const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+    const firstDocument = objectValue(supportingDocuments[0], "first supporting document");
+
+    expect(firstClaim.label).toBe(`source_claim:${sourceClaimId}`);
+    expect(firstClaim.status).toBe("included");
+    expect(firstClaim.reviewability).toBe("ready");
+    expect(arrayValue(firstClaim.reviewabilityReasons, "claim reviewability reasons")).toContain("SourceClaim has mechanism.");
+    expect(firstDocument.label).toBe(`search_document:${searchDocumentId}`);
+    expect(firstDocument.reviewability).toBe("ready");
+
+    const includedCandidates = arrayValue(output.includedCandidates, "includedCandidates");
+    const excludedCandidates = arrayValue(output.excludedCandidates, "excludedCandidates");
+    const proof = objectValue(output.proof, "proof");
+    const runtimeOutput = objectValue(output.runtime, "runtime");
+
+    expect(includedCandidates).toHaveLength(2);
+    expect(excludedCandidates).toHaveLength(0);
+    expect(arrayValue(proof.proves, "proof.proves")).toContain(
+      "readback shows inclusion/exclusion, scores, reviewability, and proof boundaries"
+    );
+    expect(arrayValue(proof.doesNotProve, "proof.doesNotProve")).toContain("product readiness");
+    expect(runtimeOutput.memoryMutation).toBe("none");
+    expect(runtimeOutput.crawler).toBe("none");
+    expect(runtimeOutput.embeddings).toBe("not_run");
+    expect(runtimeOutput.graphRuntime).toBe("not_run");
   });
 
   it("prints no-match guidance without mutating when no candidates match", async () => {

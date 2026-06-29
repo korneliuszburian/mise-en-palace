@@ -53,9 +53,77 @@ type SearchReviewability =
   | "needs_more_evidence"
   | "unknown";
 
+type SourceSearchCandidateStatus =
+  | "included"
+  | "excluded";
+
 interface ReviewabilityResult {
   reviewability: SearchReviewability;
   reasons: readonly string[];
+}
+
+interface SourceSearchAnswerCandidate {
+  label: string;
+  subjectType: RankedActivationCandidate["subjectType"];
+  subjectId: string;
+  status: SourceSearchCandidateStatus;
+  kind: RankedActivationCandidate["kind"];
+  trustTier: RankedActivationCandidate["trustTier"];
+  totalScore: number;
+  lexicalScore: number;
+  graphScore: number;
+  contextRoiScore: number;
+  reason: string;
+  expectedUse: string;
+  reviewability: SearchReviewability;
+  reviewabilityReasons: readonly string[];
+  searchDocumentId?: string;
+  sourceClaimId?: string;
+  doesNotProve?: string;
+  exclusionReason?: string;
+  exclusionExplanation?: string;
+}
+
+interface SourceSearchAnswerPackage {
+  answer: string;
+  supportingClaims: readonly SourceSearchAnswerCandidate[];
+  supportingDocuments: readonly SourceSearchAnswerCandidate[];
+  neutralOrNoise: readonly SourceSearchAnswerCandidate[];
+  missingEvidence: readonly string[];
+  doesNotProve: readonly string[];
+  recommendedNextAction: string;
+}
+
+interface SourceSearchJsonOutput {
+  kind: "source_search_answer_package";
+  query: string;
+  projectId: string;
+  limit: number;
+  maxInclusions: number;
+  persistence: "read_only_postgres";
+  dbWrites: "none";
+  mutation: "none";
+  diagnostics: {
+    inputStatus: RetrieveActivationCandidatesResult["diagnostics"]["inputStatus"];
+    sourceClaims: number;
+    searchResults: number;
+    mergedCandidates: number;
+    doesNotProve: string;
+  };
+  answerPackage: SourceSearchAnswerPackage;
+  includedCandidates: readonly SourceSearchAnswerCandidate[];
+  excludedCandidates: readonly SourceSearchAnswerCandidate[];
+  noMatchGuidance: readonly string[];
+  proof: {
+    proves: readonly string[];
+    doesNotProve: readonly string[];
+  };
+  runtime: {
+    memoryMutation: "none";
+    crawler: "none";
+    embeddings: "not_run";
+    graphRuntime: "not_run";
+  };
 }
 
 const reviewabilityFor = (candidate: RankedActivationCandidate): ReviewabilityResult => {
@@ -136,18 +204,58 @@ const formatCandidate = (
 const candidateLabel = (candidate: RankedActivationCandidate): string =>
   `${candidate.subjectType}:${candidate.subjectId}`;
 
-const formatAnswerPackage = (input: {
+const candidateToOutput = (
+  candidate: RankedActivationCandidate,
+  status: SourceSearchCandidateStatus
+): SourceSearchAnswerCandidate => {
+  const reviewability = reviewabilityFor(candidate);
+
+  return {
+    label: candidateLabel(candidate),
+    subjectType: candidate.subjectType,
+    subjectId: candidate.subjectId,
+    status,
+    kind: candidate.kind,
+    trustTier: candidate.trustTier,
+    totalScore: candidate.totalScore,
+    lexicalScore: candidate.lexicalScore,
+    graphScore: candidate.graphScore,
+    contextRoiScore: candidate.contextRoiScore,
+    reason: candidate.reason,
+    expectedUse: candidate.expectedUse,
+    reviewability: reviewability.reviewability,
+    reviewabilityReasons: reviewability.reasons,
+    ...(candidate.searchDocumentId === undefined
+      ? {}
+      : { searchDocumentId: candidate.searchDocumentId }),
+    ...(candidate.sourceClaimId === undefined
+      ? {}
+      : { sourceClaimId: candidate.sourceClaimId }),
+    ...(candidate.doesNotProve === undefined
+      ? {}
+      : { doesNotProve: candidate.doesNotProve }),
+    ...(candidate.exclusion === undefined
+      ? {}
+      : {
+          exclusionReason: candidate.exclusion.reason,
+          exclusionExplanation: candidate.exclusion.explanation
+        })
+  };
+};
+
+const buildAnswerPackage = (input: {
   query: string;
   included: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
-}): string[] => {
-  const supportingClaims = input.included.filter(
+}): SourceSearchAnswerPackage => {
+  const included = input.included.map((candidate) => candidateToOutput(candidate, "included"));
+  const supportingClaims = included.filter(
     (candidate) => candidate.subjectType === "source_claim"
   );
-  const supportingDocuments = input.included.filter(
+  const supportingDocuments = included.filter(
     (candidate) => candidate.subjectType === "search_document"
   );
-  const neutralOrNoise = input.included.filter(
+  const neutralOrNoise = included.filter(
     (candidate) =>
       candidate.subjectType !== "source_claim" && candidate.subjectType !== "search_document"
   );
@@ -169,28 +277,45 @@ const formatAnswerPackage = (input: {
         : supportingDocuments.length > 0
           ? "Inspect the documents and verify whether a governed SourceClaim should exist before relying on them."
           : "Narrow the query or ingest a bounded local artifact before changing ranking or adding a product surface.";
+  const doesNotProve = [
+    input.diagnostics.doesNotProve,
+    "source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation"
+  ];
 
+  return {
+    answer: `Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
+    supportingClaims,
+    supportingDocuments,
+    neutralOrNoise,
+    missingEvidence,
+    doesNotProve,
+    recommendedNextAction
+  };
+};
+
+const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[] => {
   return [
     "Answer package preview:",
-    `answer: Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
+    `answer: ${answerPackage.answer}`,
     "supporting claims:",
-    ...(supportingClaims.length === 0
+    ...(answerPackage.supportingClaims.length === 0
       ? ["- none"]
-      : supportingClaims.map((candidate) => `- ${candidateLabel(candidate)} | ${candidate.reason}`)),
+      : answerPackage.supportingClaims.map((candidate) => `- ${candidate.label} | ${candidate.reason}`)),
     "supporting documents:",
-    ...(supportingDocuments.length === 0
+    ...(answerPackage.supportingDocuments.length === 0
       ? ["- none"]
-      : supportingDocuments.map((candidate) => `- ${candidateLabel(candidate)} | ${candidate.reason}`)),
+      : answerPackage.supportingDocuments.map((candidate) => `- ${candidate.label} | ${candidate.reason}`)),
     "neutral/noise:",
-    ...(neutralOrNoise.length === 0
+    ...(answerPackage.neutralOrNoise.length === 0
       ? ["- none from included candidates"]
-      : neutralOrNoise.map((candidate) => `- ${candidateLabel(candidate)} | outside SourceClaim/SearchDocument answer scope`)),
+      : answerPackage.neutralOrNoise.map((candidate) => `- ${candidate.label} | outside SourceClaim/SearchDocument answer scope`)),
     "missing evidence:",
-    ...(missingEvidence.length === 0 ? ["- none detected by current diagnostics"] : missingEvidence.map((item) => `- ${item}`)),
+    ...(answerPackage.missingEvidence.length === 0
+      ? ["- none detected by current diagnostics"]
+      : answerPackage.missingEvidence.map((item) => `- ${item}`)),
     "doesNotProve:",
-    `- ${input.diagnostics.doesNotProve}`,
-    "- source truth, answer correctness, ranking quality, product readiness, or Memory Core mutation",
-    `recommended next action: ${recommendedNextAction}`
+    ...answerPackage.doesNotProve.map((item) => `- ${item}`),
+    `recommended next action: ${answerPackage.recommendedNextAction}`
   ];
 };
 
@@ -257,6 +382,11 @@ const formatSearchResult = (input: {
 }): string => {
   const included = input.candidates.filter((candidate) => candidate.exclusion === undefined);
   const excluded = input.candidates.filter((candidate) => candidate.exclusion !== undefined);
+  const answerPackage = buildAnswerPackage({
+    query: input.query,
+    included,
+    diagnostics: input.diagnostics
+  });
 
   return [
     "KRN Source Knowledge Search",
@@ -275,11 +405,7 @@ const formatSearchResult = (input: {
     `- mergedCandidates: ${input.diagnostics.mergedCandidateCount}`,
     `- doesNotProve: ${input.diagnostics.doesNotProve}`,
     "",
-    ...formatAnswerPackage({
-      query: input.query,
-      included,
-      diagnostics: input.diagnostics
-    }),
+    ...formatAnswerPackage(answerPackage),
     "",
     "Included candidates:",
     ...(included.length === 0
@@ -310,6 +436,77 @@ const formatSearchResult = (input: {
     "Embeddings: not run",
     "Graph runtime: not run"
   ].join("\n");
+};
+
+const buildNoMatchGuidance = (candidateCount: number): readonly string[] =>
+  candidateCount === 0
+    ? [
+        "no candidates matched; try a narrower marker/hash query or ingest a local artifact first"
+      ]
+    : [
+        "if an expected SearchDocument is excluded, inspect score and budget before changing ranking",
+        "if an expected SourceClaim is missing, verify source claim persistence and project scope"
+      ];
+
+const formatSearchJson = (input: {
+  query: string;
+  projectId: string;
+  limit: number;
+  maxInclusions: number;
+  candidates: readonly RankedActivationCandidate[];
+  diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
+}): string => {
+  const included = input.candidates.filter((candidate) => candidate.exclusion === undefined);
+  const excluded = input.candidates.filter((candidate) => candidate.exclusion !== undefined);
+  const answerPackage = buildAnswerPackage({
+    query: input.query,
+    included,
+    diagnostics: input.diagnostics
+  });
+  const output: SourceSearchJsonOutput = {
+    kind: "source_search_answer_package",
+    query: input.query,
+    projectId: input.projectId,
+    limit: input.limit,
+    maxInclusions: input.maxInclusions,
+    persistence: "read_only_postgres",
+    dbWrites: "none",
+    mutation: "none",
+    diagnostics: {
+      inputStatus: input.diagnostics.inputStatus,
+      sourceClaims: input.diagnostics.sourceClaimCount,
+      searchResults: input.diagnostics.searchResultCount,
+      mergedCandidates: input.diagnostics.mergedCandidateCount,
+      doesNotProve: input.diagnostics.doesNotProve
+    },
+    answerPackage,
+    includedCandidates: included.map((candidate) => candidateToOutput(candidate, "included")),
+    excludedCandidates: excluded.map((candidate) => candidateToOutput(candidate, "excluded")),
+    noMatchGuidance: buildNoMatchGuidance(input.candidates.length),
+    proof: {
+      proves: [
+        "current Postgres can read persisted source/search candidates for this query",
+        "readback shows inclusion/exclusion, scores, reviewability, and proof boundaries"
+      ],
+      doesNotProve: [
+        "source truth",
+        "ranking quality",
+        "embeddings",
+        "graph retrieval",
+        "crawler readiness",
+        "product readiness",
+        "Memory Core mutation"
+      ]
+    },
+    runtime: {
+      memoryMutation: "none",
+      crawler: "none",
+      embeddings: "not_run",
+      graphRuntime: "not_run"
+    }
+  };
+
+  return JSON.stringify(output, null, 2);
 };
 
 export const runSourceSearchCommand = async (
@@ -374,14 +571,23 @@ export const runSourceSearchCommand = async (
     });
 
     return {
-      stdout: formatSearchResult({
-        query,
-        projectId: databaseRuntime.projectId,
-        limit,
-        maxInclusions,
-        candidates: bounded,
-        diagnostics: retrieved.diagnostics
-      })
+      stdout: runtime.command.json === true
+        ? formatSearchJson({
+            query,
+            projectId: databaseRuntime.projectId,
+            limit,
+            maxInclusions,
+            candidates: bounded,
+            diagnostics: retrieved.diagnostics
+          })
+        : formatSearchResult({
+            query,
+            projectId: databaseRuntime.projectId,
+            limit,
+            maxInclusions,
+            candidates: bounded,
+            diagnostics: retrieved.diagnostics
+          })
     };
   } finally {
     await databaseRuntime.close();

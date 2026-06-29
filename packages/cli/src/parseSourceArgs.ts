@@ -46,7 +46,7 @@ export const formatSourceClaimEdgesUsage = (): string =>
 
 export const formatSourceSearchUsage = (): string =>
   [
-    "Usage: krn source search --query \"...\" [--limit <n>] [--max-inclusions <n>]",
+    "Usage: krn source search --query \"...\" [--limit <n>] [--max-inclusions <n>] [--json]",
     "",
     "Required:",
     "--query",
@@ -54,6 +54,7 @@ export const formatSourceSearchUsage = (): string =>
     "Optional:",
     "--limit <positive-integer>",
     "--max-inclusions <positive-integer>",
+    "--json",
     "",
     "Note: read-only Postgres readback over persisted SourceClaim/SearchDocument candidates. It does not crawl, embed, mutate Memory Core, or prove product search quality."
   ].join("\n") + "\n";
@@ -633,6 +634,11 @@ const parseSourceSearchArgs = (rest: readonly string[]): ParseArgsResult => {
 
       sourceCommand.maxInclusions = parsed.value;
       index = parsed.nextIndex;
+      continue;
+    }
+
+    if (arg === "--json") {
+      sourceCommand.json = true;
       continue;
     }
 

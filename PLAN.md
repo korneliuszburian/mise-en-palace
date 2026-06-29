@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V348 Source Search Answer Package JSON Readback
-current task: V348-00 Source Search Answer Package JSON Readback
+active stream: V349 Brain QA Source Search JSON Consumer Case
+current task: V349-00 Brain QA Source Search JSON Consumer Case
 ```
 
 ## Compact Completed Checkpoints
@@ -52,37 +52,39 @@ coverage gaps. V343 seeded four artifacts. V344 repaired source-search document
 retrieval alignment so seeded natural-language queries return matching
 SearchDocuments. V345 proved reduced rereads for seeded Pattern Application
 Gate questions. V346 added an answer package. V347 proved heartbeat/consensus
-documents exist for specific queries and repaired broad-query guidance.
+documents exist for specific queries and repaired broad-query guidance. V348
+added typed JSON answer package readback without building a new product surface.
 
-### V348 Source Search Answer Package JSON Readback
+### V349 Brain QA Source Search JSON Consumer Case
 
 Goal:
 
-Expose the source-search answer package as typed JSON readback while preserving
-human text output and raw candidates.
+Use the V348 `krn source search --json` answer package as a tiny Brain-QA /
+readback consumer and measure whether typed output reduces report/review parsing
+burden.
 
 Current action:
 
 ```txt
-Execute V348-00: add a bounded JSON readback for the existing answer package so
-future UI/search/API/MCP/benchmark consumers can use typed output later without
-building those surfaces now. Do not add crawler, UI/API/MCP, worker daemon,
-schema, broad eval platform, ranking rewrite, embeddings, graph runtime,
-autonomous truth runtime, or Memory Core mutation.
+Execute V349-00: consume one or two source-search JSON answer packages in a
+small Brain-QA/readback case. Prefer docs/report or a tiny local script only if
+needed. Do not add UI/API/MCP, crawler, worker daemon, schema, broad benchmark,
+ranking rewrite, embeddings, graph runtime, autonomous truth runtime, or Memory
+Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators and future read-only consumers of source-search answer
-packages.
+technical operators validating whether machine-readable source-search packages
+reduce rereads and parsing burden before product surfaces exist.
 ```
 
 Falsifier:
 
 ```txt
-JSON output omits proof/non-proof boundaries, hides raw candidate inspectability,
-or diverges from text answer package semantics.
+The consumer cannot use JSON without parsing text, loses proof/non-proof
+boundaries, hides missing evidence, or creates another guard-only artifact.
 ```
 
 ## Pattern Gate

@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V348 Source Search Answer Package JSON Readback
+V349 Brain QA Source Search JSON Consumer Case
 ```
 
 Current state:
@@ -24,13 +24,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V348-00 Source Search Answer Package JSON Readback.
+current task: V349-00 Brain QA Source Search JSON Consumer Case.
 ```
 
-Current task: expose the current source-search answer package as typed JSON
-readback while keeping text output and raw candidates inspectable. Do not build
-UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime, worker,
-or Memory Core mutation.
+Current task: consume the V348 `krn source search --json` answer package in one
+small Brain-QA/readback case and measure whether typed output reduces
+review/report parsing burden. Do not build UI/API/MCP, crawler, schema, ranking
+rewrite, embeddings, graph runtime, worker, broad benchmark, or Memory Core
+mutation.
 
 ## Remaining Work
 
@@ -47,8 +48,8 @@ to preserve are:
    context detail readback, marker/hash activation, V340 artifact-to-activated-
    SourceClaim proof, V341 search readback, V342 usefulness closure, V343
    coverage seed, V344 SearchDocument alignment, V345 usefulness closure, V346
-   answer package preview, and V347 query-guidance closure exist. JSON readback
-   for the answer package is next.
+   answer package preview, V347 query-guidance closure, and V348 JSON readback
+   exist. A small JSON consumer case is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context

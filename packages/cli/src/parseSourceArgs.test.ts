@@ -251,13 +251,15 @@ describe("parseSourceArgs", () => {
       " krn-source-artifact-preview 991034dc0684e887 ",
       "--limit",
       "12",
-      "--max-inclusions=3"
+      "--max-inclusions=3",
+      "--json"
     ])).toEqual({
       command: {
         kind: "sourceSearch",
         query: "krn-source-artifact-preview 991034dc0684e887",
         limit: 12,
-        maxInclusions: 3
+        maxInclusions: 3,
+        json: true
       }
     });
   });
