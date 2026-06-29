@@ -3,17 +3,17 @@ import {
   parseMemoryCandidateInput
 } from "@krn/schema";
 import type {
-  ReflectionCandidateEvidence,
-  ReflectionCandidateEvidenceProvenance,
-  SourceLineageRef
+  ReflectionCandidateEvidence
 } from "@krn/core";
 import {
-  createDatabaseRuntime
-} from "./databaseRuntime.js";
+  assertSourceClaimExists,
+  buildReflectionCandidateEvidence,
+  createMemoryCommandDatabaseRuntime,
+  toSourceLineageRefs
+} from "./memoryCommandSupport.js";
 import type {
-  DatabaseRuntime,
-  DatabaseRuntimeInput
-} from "./databaseRuntime.js";
+  CreateMemoryCommandDatabaseRuntime
+} from "./memoryCommandSupport.js";
 import type {
   CliCommand
 } from "./parseArgs.js";
@@ -28,47 +28,16 @@ export interface MemoryCandidateAddCommandRuntime {
   now(): string;
   createId(prefix: string): string;
   command: MemoryCandidateAddCommand;
-  createDatabaseRuntime?: CreateMemoryCandidateAddDatabaseRuntime;
+  createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
 
 export interface MemoryCandidateAddCommandResult {
   stdout: string;
 }
 
-type CreateMemoryCandidateAddDatabaseRuntime = (
-  input: DatabaseRuntimeInput
-) => Promise<DatabaseRuntime>;
-
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
-
 const kindAliases = new Map<string, string>([
   ["architecture-boundary", "constraint"]
 ]);
-
-const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidenceProvenance>([
-  "default_template",
-  "operator_reported",
-  "captured_output_file",
-  "command_runner",
-  "external_log",
-  "run_event",
-  "source_chunk",
-  "tool_trace",
-  "diff",
-  "evidence_bundle",
-  "review_assessment",
-  "feedback_delta",
-  "user_correction",
-  "user_preference",
-  "local_operator_note",
-  "source_claim"
-]);
-
-const isCandidateEvidenceProvenance = (
-  value: string
-): value is ReflectionCandidateEvidenceProvenance =>
-  candidateEvidenceProvenances.has(value as ReflectionCandidateEvidenceProvenance);
 
 const normalizeKind = (kind: string | undefined): string | undefined => {
   const candidate = kind?.trim();
@@ -84,54 +53,6 @@ const sourceLineage = (command: MemoryCandidateAddCommand): { sourceId: string }
   ...(command.sourceClaimId === undefined ? [] : [{ sourceId: command.sourceClaimId }]),
   ...command.sourceLineageIds.map((sourceId) => ({ sourceId }))
 ];
-
-const toSourceLineageRefs = (
-  sourceLineageItems: ReturnType<typeof parseMemoryCandidateInput>["sourceLineage"]
-): SourceLineageRef[] =>
-  sourceLineageItems.map((item) => ({
-    sourceId: item.sourceId,
-    ...(item.note === undefined ? {} : { note: item.note })
-  }));
-
-const buildCandidateEvidence = (
-  command: MemoryCandidateAddCommand
-): ReflectionCandidateEvidence | undefined => {
-  const provenance = command.candidateEvidenceProvenance?.trim();
-  const evidenceRefs = command.candidateEvidenceRefs
-    .map((evidenceRef) => evidenceRef.trim())
-    .filter((evidenceRef) => evidenceRef.length > 0);
-  const doesNotProve = command.candidateEvidenceDoesNotProve?.trim();
-  const evidenceInputProvided =
-    provenance !== undefined ||
-    command.candidateEvidenceRefs.length > 0 ||
-    doesNotProve !== undefined;
-
-  if (!evidenceInputProvided) {
-    return undefined;
-  }
-
-  if (provenance === undefined || provenance.length === 0) {
-    throw new Error("--candidate-evidence-provenance is required when candidate evidence is supplied");
-  }
-
-  if (!isCandidateEvidenceProvenance(provenance)) {
-    throw new Error(`Unsupported candidate evidence provenance: ${provenance}`);
-  }
-
-  if (evidenceRefs.length === 0) {
-    throw new Error("--candidate-evidence-ref is required when candidate evidence is supplied");
-  }
-
-  if (doesNotProve === undefined || doesNotProve.length === 0) {
-    throw new Error("--candidate-evidence-does-not-prove is required when candidate evidence is supplied");
-  }
-
-  return {
-    provenance,
-    evidenceRefs,
-    doesNotProve
-  };
-};
 
 const formatPreview = (
   command: MemoryCandidateAddCommand,
@@ -203,7 +124,11 @@ export const runMemoryCandidateAddCommand = async (
     throw new Error(`Unsupported memory kind: ${command.memoryKind}`);
   }
 
-  const evidence = buildCandidateEvidence(command);
+  const evidence = buildReflectionCandidateEvidence({
+    provenance: command.candidateEvidenceProvenance,
+    evidenceRefs: command.candidateEvidenceRefs,
+    doesNotProve: command.candidateEvidenceDoesNotProve
+  });
   const candidateInput = parseMemoryCandidateInput({
     executionRunId: command.runId,
     feedbackDeltaId: command.feedbackDeltaId,
@@ -231,20 +156,10 @@ export const runMemoryCandidateAddCommand = async (
     };
   }
 
-  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-
-  if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error("KRN_DATABASE_URL is required for krn memory candidate add --persist");
-  }
-
-  const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-  const databaseRuntime = await createRuntime({
-    databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    now: runtime.now,
-    createId: runtime.createId
-  });
+  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    "KRN_DATABASE_URL is required for krn memory candidate add --persist"
+  );
 
   try {
     if (candidateInput.sourceClaimIds.length > 0) {
@@ -254,11 +169,7 @@ export const runMemoryCandidateAddCommand = async (
         throw new Error("sourceClaimId is required");
       }
 
-      const sourceClaim = await databaseRuntime.sourceRepository.getSourceClaimById(sourceClaimId);
-
-      if (sourceClaim === undefined) {
-        throw new Error(`SourceClaim not found: ${sourceClaimId}`);
-      }
+      await assertSourceClaimExists(databaseRuntime, sourceClaimId);
     }
 
     const memoryCandidate = await databaseRuntime.memoryRepository.createMemoryCandidate({
