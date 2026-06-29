@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V331 Persisted Edge-Aware Activation Readback
-current task: V331-00 Persisted Edge-Aware Activation Readback
+active stream: V332 Edge-Aware Source Candidate Refinement
+current task: V332-00 Edge-Aware Source Candidate Refinement
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,10 +25,10 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V331-00 Persisted Edge-Aware Activation Readback. V330 proved edge-aware
-SourceClaim candidate influence as bounded graphScore input; Graph Brain v0 now
-needs persisted activation readback for that influence without claiming
-production graph retrieval quality.
+V332-00 Edge-Aware Source Candidate Refinement. V331 proved persisted readback
+for edge-aware candidate graphScore/metadata; Graph Brain v0 now needs the
+smallest refinement path that avoids lab-seeded duplicate candidate rows without
+claiming production graph retrieval quality.
 ```
 
 ## 2. Product Thesis
@@ -59,7 +59,7 @@ graph brain: SourceClaimEdge preview/persistence/readback exists; extraction
   preview exists; extraction reviewability/noise gate complete; reviewed
   extraction persistence bridge complete; fence-state carryover repair complete;
   graph-aware edge readback complete; edge-aware ranking lab complete;
-  persisted edge-aware activation readback next
+  persisted edge-aware activation readback complete; candidate refinement next
 product-ready: no
 ```
 
@@ -81,6 +81,7 @@ V327 complete: selected ready extraction candidate persistence bridge.
 V328 complete: source extraction fence-state carryover repair.
 V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 V330 complete: bounded edge-aware source candidate ranking lab.
+V331 complete: persisted edge-aware activation readback.
 ```
 
 Reports:
@@ -93,6 +94,7 @@ docs/reviews/controlled-dogfood/2026-06-29-v327-reviewed-extraction-persistence-
 docs/reviews/controlled-dogfood/2026-06-29-v328-source-extraction-fence-state-carryover/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
 ```
 
 ## Outcome V327 Reviewed Extraction Persistence Bridge
@@ -248,13 +250,52 @@ pnpm db:ready: passed
 git diff --check: passed
 ```
 
-## Active Task: V331-00 Persisted Edge-Aware Activation Readback
+## Outcome V331 Persisted Edge-Aware Activation Readback
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: `docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md`
+- Mechanism: V330 showed bounded edge-aware graphScore and metadata as
+  activation input, but operators could not read persisted retrieval candidate
+  scores/metadata through `krn run show`.
+- KRN implication: Graph Brain v0 needs persisted activation trace readback
+  before production graph retrieval or crawler work.
+- Decision: extend run readback with retrieval candidates, activation decisions,
+  and typed `sourceClaimEdgeInfluence` metadata.
+- Does not prove: activation scoring quality, source truth, edge correctness,
+  production graph retrieval quality, crawler readiness, product readiness, or
+  Memory Core mutation.
+- Consumer: V332 edge-aware source candidate refinement.
+- Falsifier: persisted candidate graphScore/sourceClaimEdgeInfluence cannot be
+  read through run show text and JSON output.
+
+V331 outcome:
+
+```txt
+`krn run show` now reads persisted activation trace candidates/decisions and can
+show edge-aware candidate graphScore plus sourceClaimEdgeInfluence metadata.
+```
+
+V331 verification:
+
+```txt
+pnpm --filter @krn/cli test -- runRunShowCommand: passed
+pnpm run typecheck: passed
+TMPDIR=/home/krn/.cache/krn-tmp pnpm test: passed
+pnpm db:ready: passed
+krn run show --run-id de972...: passed
+krn run show --run-id de972... --json: passed
+```
+
+## Active Task: V332-00 Edge-Aware Source Candidate Refinement
 
 Goal:
 
 ```txt
-Show the V330 edge-aware source candidate input in a persisted activation
-readback path without claiming production graph retrieval quality.
+Define the smallest bounded source-candidate refinement path for edge influence
+so V331 no longer depends on lab-seeded duplicate candidate rows.
 ```
 
 Evidence source:
@@ -262,16 +303,18 @@ Evidence source:
 ```txt
 docs/reviews/controlled-dogfood/2026-06-29-v329-graph-aware-sourceclaimedge-activation-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-06-29-v330-edge-aware-sourceclaim-candidate-ranking-lab/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-29-v331-persisted-edge-aware-activation-readback/REPORT.md
 ```
 
 Files likely touched:
 
 ```txt
 packages/harness/src/activation/activationEngine.ts
-packages/harness/src/activation/activationTraceDecisions.test.ts
-packages/cli/src/runRunShowCommand.ts
+packages/harness/src/activation/rankCandidates.ts
+packages/harness/src/repositories/sourceRepository.ts
+packages/db/src/repositories/DrizzleSourceRepository.ts
 focused tests
-docs/reviews/controlled-dogfood/<date>-v331-persisted-edge-aware-activation-readback/REPORT.md
+docs/reviews/controlled-dogfood/<date>-v332-edge-aware-source-candidate-refinement/REPORT.md
 GOAL.md
 PLAN.md
 PLANS.md
@@ -287,37 +330,37 @@ mutation; automatic source truth promotion; runtime markdown memory
 
 Definition of Done:
 
-- Source inspection identifies the smallest activation trace/readback seam.
-- A persisted edge-aware source candidate influence can be read back, or the
-  current path is documented as sufficient.
+- Source inspection identifies the smallest source-candidate/edge seam.
+- Edge influence no longer requires a lab-seeded duplicate row, or the current
+  path is documented as intentionally sufficient.
 - `pnpm typecheck`, `pnpm test`, `pnpm db:ready`, and `git diff --check` pass.
 
 Acceptance criteria:
 
 ```txt
-edge-aware source candidate graphScore/metadata is persisted and read back
+edge influence is represented through the smallest bounded source-candidate path
 without claiming product graph retrieval quality.
 ```
 
 Risk:
 
 ```txt
-medium: persisted graphScore wording can imply production graph retrieval
-quality before the system has earned it.
+medium: source-candidate refinement can drift into broad graph retrieval or
+schema work before the system has earned it.
 ```
 
 Rollback:
 
 ```txt
-focused revert of the V331 implementation commit
+focused revert of the V332 implementation commit
 ```
 
 Next-task synthesis rule:
 
 ```txt
-If V331 succeeds, choose the next graph-brain task from evidence: source
-candidate refinement, heartbeat candidate generation, or a small graph QA case.
-Do not jump to crawler/UI/API/MCP.
+If V332 succeeds, choose the next graph-brain task from evidence: small graph QA
+case, heartbeat candidate generation, or source relation refinement. Do not jump
+to crawler/UI/API/MCP.
 ```
 
 ## 9. Task Contract Schema
@@ -384,7 +427,8 @@ Next-task synthesis rule:
 - V328: complete; source extraction fence-state carryover repair.
 - V329: complete; graph-aware SourceClaimEdge adjacent context readback.
 - V330: complete; edge-aware SourceClaim candidate ranking lab.
-- V331: active; persisted edge-aware activation readback.
+- V331: complete; persisted edge-aware activation readback.
+- V332: active; edge-aware source candidate refinement.
 
 ## Pattern Gate
 

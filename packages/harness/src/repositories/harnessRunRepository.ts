@@ -21,7 +21,9 @@ import type {
   CreateHarnessPlanInput,
   CreateOperatorIntentInput,
   CreateTaskContractInput,
+  ActivationDecisionRecord,
   NewRunEvent,
+  RetrievalCandidateRecord,
   RepositoryMetadata,
   RunEventRecord
 } from "./types.js";
@@ -86,6 +88,11 @@ export interface HarnessRunAggregate {
   taskContract: TaskContract;
   harnessPlan: HarnessPlan;
   contextAssembly?: ContextAssembly;
+  activationTrace?: {
+    retrievalRunId: string;
+    candidates: RetrievalCandidateRecord[];
+    decisions: ActivationDecisionRecord[];
+  };
   executionRun: ExecutionRun;
   evidenceBundles: EvidenceBundle[];
   reviewAssessments: ReviewAssessment[];

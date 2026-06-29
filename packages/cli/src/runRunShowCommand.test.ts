@@ -89,6 +89,54 @@ const aggregate: HarnessRunAggregate = {
     },
     createdAt: now
   },
+  activationTrace: {
+    retrievalRunId: "retrieval-1",
+    candidates: [{
+      id: "retrieval-candidate-1",
+      retrievalRunId: "retrieval-1",
+      kind: "source",
+      status: "included",
+      subjectType: "source_claim",
+      subjectId: "claim-1",
+      trustTier: "project-decision",
+      lexicalScore: 12,
+      vectorScore: 0,
+      graphScore: 9,
+      temporalScore: 0,
+      contextRoiScore: 80,
+      totalScore: 101,
+      score: 101,
+      reason: "Relevant source claim. Edge-aware source graph context: narrows.",
+      metadata: {
+        sourceClaimEdgeInfluence: {
+          edgeIds: ["edge-1"],
+          edgeKinds: ["narrows"],
+          seedSourceClaimIds: ["claim-seed"],
+          doesNotProve:
+            "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+        }
+      },
+      createdAt: now
+    }],
+    decisions: [{
+      id: "activation-decision-1",
+      retrievalRunId: "retrieval-1",
+      retrievalCandidateId: "retrieval-candidate-1",
+      contextAssemblyId: "context-1",
+      subjectType: "source_claim",
+      subjectId: "claim-1",
+      decision: "included",
+      reason: "Evidence readback should distinguish proof strength.",
+      score: 101,
+      contextBudgetCost: 20,
+      expectedDecisionImpact: "Render proof boundary.",
+      metadata: {
+        expectedUse: "Render proof boundary.",
+        sourceSupportState: "source_claim_supported"
+      },
+      createdAt: now
+    }]
+  },
   executionRun: {
     id: "run-1",
     harnessPlanId: "plan-1",
@@ -283,6 +331,17 @@ describe("runRunShowCommand", () => {
     expect(result.stdout).toContain("Context inclusion details:");
     expect(result.stdout).toContain("source_claim:claim-1");
     expect(result.stdout).toContain("expectedUse: Render proof boundary.");
+    expect(result.stdout).toContain("Activation trace:");
+    expect(result.stdout).toContain("retrievalRunId: retrieval-1");
+    expect(result.stdout).toContain("source_claim:claim-1 | status=included | kind=source");
+    expect(result.stdout).toContain("scores: lexical=12 vector=0 graph=9 temporal=0 contextRoi=80 total=101");
+    expect(result.stdout).toContain("sourceClaimEdgeInfluence:");
+    expect(result.stdout).toContain("edgeIds: edge-1");
+    expect(result.stdout).toContain("edgeKinds: narrows");
+    expect(result.stdout).toContain("seedSourceClaimIds: claim-seed");
+    expect(result.stdout).toContain(
+      "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+    );
     expect(result.stdout).toContain("Context exclusion details:");
     expect(result.stdout).toContain("source_claim:claim-weak");
     expect(result.stdout).toContain("explanation: Weak source excluded.");
@@ -398,6 +457,29 @@ describe("runRunShowCommand", () => {
           ownerFileCandidateCount: 0,
           antiMemoryRecordCount: 0,
           mergedCandidateCount: 0
+        },
+        activationTrace: {
+          retrievalRunId: "retrieval-1",
+          candidates: [{
+            id: "retrieval-candidate-1",
+            subjectType: "source_claim",
+            subjectId: "claim-1",
+            graphScore: 9,
+            sourceClaimEdgeInfluence: {
+              edgeIds: ["edge-1"],
+              edgeKinds: ["narrows"],
+              seedSourceClaimIds: ["claim-seed"],
+              doesNotProve:
+                "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
+            }
+          }],
+          decisions: [{
+            id: "activation-decision-1",
+            subjectType: "source_claim",
+            subjectId: "claim-1",
+            decision: "included",
+            retrievalCandidateId: "retrieval-candidate-1"
+          }]
         }
       },
       evidenceBundles: [{
@@ -475,10 +557,12 @@ describe("runRunShowCommand", () => {
       proof: {
         proves: [
           "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+          "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
           "this readback surface exposes no write action"
         ],
         doesNotProve: [
           "commands were executed by this readback command",
+          "activation scoring quality or production graph retrieval quality",
           "memory quality, source truth, review correctness, or product readiness",
           "Memory Core mutation"
         ]
@@ -486,6 +570,7 @@ describe("runRunShowCommand", () => {
     });
     expect(parsed.proof.proves).toEqual([
       "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+      "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
       "this readback surface exposes no write action"
     ]);
     expect(parsed.proof.proves).not.toContain("commands were executed by this readback command");
@@ -494,6 +579,7 @@ describe("runRunShowCommand", () => {
     );
     expect(parsed.proof.doesNotProve).toEqual([
       "commands were executed by this readback command",
+      "activation scoring quality or production graph retrieval quality",
       "memory quality, source truth, review correctness, or product readiness",
       "Memory Core mutation"
     ]);

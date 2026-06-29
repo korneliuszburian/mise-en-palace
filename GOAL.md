@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V331 Persisted Edge-Aware Activation Readback
+V332 Edge-Aware Source Candidate Refinement
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V331-00 Persisted Edge-Aware Activation Readback.
+current task: V332-00 Edge-Aware Source Candidate Refinement.
 ```
 
 Current task:
 
 ```txt
-Show the V330 edge-aware source candidate input in a persisted activation
-readback path without claiming production graph retrieval quality.
+Define the smallest bounded source-candidate refinement path for edge influence
+so V331 no longer depends on lab-seeded duplicate candidate rows.
 ```
 
 ## Remaining Work
@@ -55,8 +55,9 @@ to preserve are:
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
-   readback; V330 added bounded edge-aware candidate input; next show persisted
-   activation readback before crawler or graph runtime.
+   readback; V330 added bounded edge-aware candidate input; V331 added
+   persisted activation trace readback; next refine edge-aware source candidate
+   input before crawler or graph runtime.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

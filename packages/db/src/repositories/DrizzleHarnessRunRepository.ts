@@ -46,16 +46,22 @@ import {
   taskContracts
 } from "../schema/index.js";
 import {
+  activationDecisions,
+  retrievalCandidates
+} from "../schema/retrieval.js";
+import {
   fromIsoTimestamp,
   requireReturnedRow
 } from "./common.js";
 import {
+  mapActivationDecision,
   mapContextAssembly,
   mapEvidenceBundle,
   mapExecutionRun,
   mapFeedbackDelta,
   mapHarnessPlan,
   mapOperatorIntent,
+  mapRetrievalCandidate,
   mapRunEvent,
   mapReviewAssessment,
   mapTaskContract
@@ -67,6 +73,15 @@ const requireLinkedRow = <T>(row: T | undefined, operation: string): T => {
   }
 
   return row;
+};
+
+const metadataString = (
+  metadata: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 };
 
 export const evidenceCommandsForPersistence = (
@@ -365,12 +380,35 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     });
     const contextAssembly =
       contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
+    const retrievalRunId =
+      contextAssembly === undefined ? undefined : metadataString(contextAssembly.metadata, "retrievalRunId");
+    const retrievalCandidateRows =
+      retrievalRunId === undefined
+        ? []
+        : await this.db.query.retrievalCandidates.findMany({
+            where: eq(retrievalCandidates.retrievalRunId, retrievalRunId)
+          });
+    const activationDecisionRows =
+      retrievalRunId === undefined
+        ? []
+        : await this.db.query.activationDecisions.findMany({
+            where: eq(activationDecisions.retrievalRunId, retrievalRunId)
+          });
 
     return {
       operatorIntent: mapOperatorIntent(operatorIntentRow),
       taskContract: mapTaskContract(taskContractRow),
       harnessPlan: mapHarnessPlan(harnessPlanRow),
       ...(contextAssembly === undefined ? {} : { contextAssembly }),
+      ...(retrievalRunId === undefined
+        ? {}
+        : {
+            activationTrace: {
+              retrievalRunId,
+              candidates: retrievalCandidateRows.map(mapRetrievalCandidate),
+              decisions: activationDecisionRows.map(mapActivationDecision)
+            }
+          }),
       executionRun: mapExecutionRun(executionRunRow),
       evidenceBundles: evidenceBundleRows.map(mapEvidenceBundle),
       reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),

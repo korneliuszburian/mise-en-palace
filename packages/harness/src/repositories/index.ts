@@ -31,6 +31,7 @@ export type {
   SourceRepository
 } from "./sourceRepository.js";
 export type {
+  ActivationDecisionRecord,
   CreateHarnessPlanInput,
   CreateOperatorIntentInput,
   CreateSourceArtifactInput,
@@ -39,6 +40,7 @@ export type {
   ProjectKernelRecord,
   ProjectRecord,
   RepoInstallationRecord,
+  RetrievalCandidateRecord,
   RunEventRecord,
   SourceArtifactRecord,
   SourceChunkRecord,

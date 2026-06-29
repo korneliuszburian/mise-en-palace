@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V331 Persisted Edge-Aware Activation Readback
-current task: V331-00 Persisted Edge-Aware Activation Readback
+active stream: V332 Edge-Aware Source Candidate Refinement
+current task: V332-00 Edge-Aware Source Candidate Refinement
 ```
 
 ## Compact Completed Checkpoints
@@ -55,28 +55,30 @@ V327 complete: reviewed selected extraction candidate persistence bridge.
 V328 complete: source extraction fence-state carryover repair.
 V329 complete: graph-aware SourceClaimEdge adjacent context readback.
 V330 complete: bounded edge-aware source candidate ranking lab.
+V331 complete: persisted edge-aware activation readback.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
 docs/reviews/controlled-dogfood/2026-06-29-v326-...,
 docs/reviews/controlled-dogfood/2026-06-29-v327-...,
 docs/reviews/controlled-dogfood/2026-06-29-v328-...,
 docs/reviews/controlled-dogfood/2026-06-29-v329-...,
-docs/reviews/controlled-dogfood/2026-06-29-v330-...
+docs/reviews/controlled-dogfood/2026-06-29-v330-...,
+docs/reviews/controlled-dogfood/2026-06-29-v331-...
 ```
 
-### V331 Persisted Edge-Aware Activation Readback
+### V332 Edge-Aware Source Candidate Refinement
 
 Goal:
 
-Show the V330 edge-aware source candidate input in a persisted activation
-readback path without claiming production graph retrieval quality.
+Define the smallest bounded source-candidate refinement path for edge influence
+so V331 no longer depends on lab-seeded duplicate candidate rows.
 
 Current action:
 
 ```txt
-Execute V331-00: inspect activation trace persistence/readback and add the
-smallest persisted readback path for V330 edge-aware source candidate input. Do
-not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
+Execute V332-00: inspect source candidate/edge readback seams and decide the
+smallest final-pattern path for edge influence before production graph retrieval.
+Do not add schema, graph database, crawler, UI/API/MCP, worker daemon, consensus
 runtime, broad ranking rewrite, or Memory Core mutation.
 ```
 
@@ -91,9 +93,8 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given an edge-aware source candidate input, KRN can persist and read back the
-graphScore/metadata influence without pretending production graph retrieval
-quality exists.
+Given persisted SourceClaimEdge context, KRN can avoid lab-seeded duplicate
+candidate rows while keeping edge influence reviewable and bounded.
 ```
 
 ## Pattern Gate

@@ -27,6 +27,8 @@ import type {
 } from "@krn/core";
 import type {
   HarnessRunAggregate,
+  ActivationDecisionRecord,
+  RetrievalCandidateRecord,
   HarnessRunRepository
 } from "@krn/harness/repositories";
 import {
@@ -96,6 +98,48 @@ export interface RunReadbackContextExclusionResource {
   score?: number;
 }
 
+export interface RunReadbackSourceClaimEdgeInfluenceResource {
+  edgeIds: string[];
+  edgeKinds: string[];
+  seedSourceClaimIds: string[];
+  doesNotProve: string;
+}
+
+export interface RunReadbackActivationCandidateResource {
+  id: string;
+  kind: string;
+  status: string;
+  subjectType: string;
+  subjectId: string;
+  trustTier: SourceTrustTier;
+  lexicalScore?: number;
+  vectorScore?: number;
+  graphScore?: number;
+  temporalScore?: number;
+  contextRoiScore?: number;
+  totalScore?: number;
+  score?: number;
+  reason: string;
+  sourceClaimEdgeInfluence?: RunReadbackSourceClaimEdgeInfluenceResource;
+}
+
+export interface RunReadbackActivationDecisionResource {
+  id: string;
+  subjectType: string;
+  subjectId: string;
+  decision: string;
+  reason: string;
+  score?: number;
+  expectedDecisionImpact?: string;
+  retrievalCandidateId?: string;
+}
+
+export interface RunReadbackActivationTraceResource {
+  retrievalRunId: string;
+  candidates: RunReadbackActivationCandidateResource[];
+  decisions: RunReadbackActivationDecisionResource[];
+}
+
 export interface RunReadbackResource {
   kind: "krn.run.readback.v1";
   access: "read_only";
@@ -121,6 +165,7 @@ export interface RunReadbackResource {
     inclusionDetails: RunReadbackContextInclusionResource[];
     exclusionDetails: RunReadbackContextExclusionResource[];
     activationDiagnostics?: ActivationRetrievalDiagnostics;
+    activationTrace?: RunReadbackActivationTraceResource;
   };
   evidenceBundles: {
     id: string;
@@ -463,6 +508,131 @@ const contextExclusionResource = (
   ...(exclusion.score === undefined ? {} : { score: exclusion.score })
 });
 
+const sourceClaimEdgeInfluenceFromMetadata = (
+  metadata: Record<string, unknown>
+): RunReadbackSourceClaimEdgeInfluenceResource | undefined => {
+  const value = metadata.sourceClaimEdgeInfluence;
+
+  if (
+    typeof value !== "object" ||
+    value === null ||
+    Array.isArray(value)
+  ) {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const edgeIds = metadataStringList(record, "edgeIds");
+  const edgeKinds = metadataStringList(record, "edgeKinds");
+  const seedSourceClaimIds = metadataStringList(record, "seedSourceClaimIds");
+  const doesNotProve = metadataString(record, "doesNotProve");
+
+  if (
+    edgeIds.length === 0 ||
+    edgeKinds.length === 0 ||
+    seedSourceClaimIds.length === 0 ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    edgeIds,
+    edgeKinds,
+    seedSourceClaimIds,
+    doesNotProve
+  };
+};
+
+const activationCandidateResource = (
+  candidate: RetrievalCandidateRecord
+): RunReadbackActivationCandidateResource => {
+  const sourceClaimEdgeInfluence = sourceClaimEdgeInfluenceFromMetadata(candidate.metadata);
+
+  return {
+    id: candidate.id,
+    kind: candidate.kind,
+    status: candidate.status,
+    subjectType: candidate.subjectType,
+    subjectId: candidate.subjectId,
+    trustTier: candidate.trustTier,
+    ...(candidate.lexicalScore === undefined ? {} : { lexicalScore: candidate.lexicalScore }),
+    ...(candidate.vectorScore === undefined ? {} : { vectorScore: candidate.vectorScore }),
+    ...(candidate.graphScore === undefined ? {} : { graphScore: candidate.graphScore }),
+    ...(candidate.temporalScore === undefined ? {} : { temporalScore: candidate.temporalScore }),
+    ...(candidate.contextRoiScore === undefined ? {} : { contextRoiScore: candidate.contextRoiScore }),
+    ...(candidate.totalScore === undefined ? {} : { totalScore: candidate.totalScore }),
+    ...(candidate.score === undefined ? {} : { score: candidate.score }),
+    reason: candidate.reason,
+    ...(sourceClaimEdgeInfluence === undefined ? {} : { sourceClaimEdgeInfluence })
+  };
+};
+
+const activationDecisionResource = (
+  decision: ActivationDecisionRecord
+): RunReadbackActivationDecisionResource => ({
+  id: decision.id,
+  subjectType: decision.subjectType,
+  subjectId: decision.subjectId,
+  decision: decision.decision,
+  reason: decision.reason,
+  ...(decision.score === undefined ? {} : { score: decision.score }),
+  ...(decision.expectedDecisionImpact === undefined
+    ? {}
+    : { expectedDecisionImpact: decision.expectedDecisionImpact }),
+  ...(decision.retrievalCandidateId === undefined
+    ? {}
+    : { retrievalCandidateId: decision.retrievalCandidateId })
+});
+
+const activationTraceResource = (
+  aggregate: HarnessRunAggregate
+): RunReadbackActivationTraceResource | undefined =>
+  aggregate.activationTrace === undefined
+    ? undefined
+    : {
+        retrievalRunId: aggregate.activationTrace.retrievalRunId,
+        candidates: aggregate.activationTrace.candidates.map(activationCandidateResource),
+        decisions: aggregate.activationTrace.decisions.map(activationDecisionResource)
+      };
+
+const renderActivationTrace = (
+  aggregate: HarnessRunAggregate
+): string[] => {
+  const trace = activationTraceResource(aggregate);
+
+  if (trace === undefined) {
+    return [
+      "Activation trace:",
+      "- none"
+    ];
+  }
+
+  return [
+    "Activation trace:",
+    `- retrievalRunId: ${trace.retrievalRunId}`,
+    `- candidates: ${trace.candidates.length}`,
+    ...trace.candidates.flatMap((candidate) => [
+      `  - ${candidate.subjectType}:${candidate.subjectId} | status=${candidate.status} | kind=${candidate.kind}`,
+      `    scores: lexical=${candidate.lexicalScore ?? 0} vector=${candidate.vectorScore ?? 0} graph=${candidate.graphScore ?? 0} temporal=${candidate.temporalScore ?? 0} contextRoi=${candidate.contextRoiScore ?? 0} total=${candidate.totalScore ?? "unknown"}`,
+      `    reason: ${candidate.reason}`,
+      ...(candidate.sourceClaimEdgeInfluence === undefined
+        ? []
+        : [
+            "    sourceClaimEdgeInfluence:",
+            `      edgeIds: ${candidate.sourceClaimEdgeInfluence.edgeIds.join(", ")}`,
+            `      edgeKinds: ${candidate.sourceClaimEdgeInfluence.edgeKinds.join(", ")}`,
+            `      seedSourceClaimIds: ${candidate.sourceClaimEdgeInfluence.seedSourceClaimIds.join(", ")}`,
+            `      doesNotProve: ${candidate.sourceClaimEdgeInfluence.doesNotProve}`
+          ])
+    ]),
+    `- decisions: ${trace.decisions.length}`,
+    ...trace.decisions.map((decision) =>
+      `  - ${decision.subjectType}:${decision.subjectId} | decision=${decision.decision} | reason=${decision.reason}`
+    )
+  ];
+};
+
 const candidateReviewabilityReasons = (
   metadata: Record<string, unknown>
 ): string[] => metadataStringList(metadata, "reviewabilityReasons");
@@ -686,6 +856,7 @@ export const buildRunReadbackResource = (
   aggregate: HarnessRunAggregate
 ): RunReadbackResource => {
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
+  const activationTrace = activationTraceResource(aggregate);
 
   return {
     kind: "krn.run.readback.v1",
@@ -719,7 +890,8 @@ export const buildRunReadbackResource = (
             );
 
             return diagnostics === undefined ? {} : { activationDiagnostics: diagnostics };
-          })())
+          })()),
+      ...(activationTrace === undefined ? {} : { activationTrace })
     },
     evidenceBundles: aggregate.evidenceBundles.map((bundle) => {
       const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
@@ -766,10 +938,12 @@ export const buildRunReadbackResource = (
     proof: {
       proves: [
         "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+        "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
         "this readback surface exposes no write action"
       ],
       doesNotProve: [
         "commands were executed by this readback command",
+        "activation scoring quality or production graph retrieval quality",
         "memory quality, source truth, review correctness, or product readiness",
         "Memory Core mutation"
       ]
@@ -817,6 +991,7 @@ const renderAggregate = (
     ...(activationDiagnostics === undefined
       ? []
       : formatActivationRetrievalDiagnostics(activationDiagnostics)),
+    ...renderActivationTrace(aggregate),
     "",
     ...renderEvidenceBundle(aggregate),
     "",
@@ -831,9 +1006,11 @@ const renderAggregate = (
     "",
     "What This Proves:",
     "- persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+    "- persisted activation candidate scores and edge-influence metadata can be read without mutating state",
     "",
     "What This Does Not Prove:",
     "- commands were executed by this readback command",
+    "- activation scoring quality or production graph retrieval quality",
     "- memory quality, source truth, review correctness, or product readiness",
     "- Memory Core mutation",
     ""
