@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest pushed commit checked: 9fb2f5d6909b32d45a0dc1da7be1468ae9ced0be / CI success
+latest pushed commit checked: 78390171b6eae4823d8dab7e43d7577532ecb391 / CI success
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -58,6 +58,11 @@ Latest completed slice: runCli residual dispatch cleanup extracted project,
 harness lifecycle, DB/doctor, and adapter probing helpers, moved runCli below
 the changed-files Fallow gate, and reduced global Fallow health to 82; commit
 `9fb2f5d` passed CI.
+Latest completed slice: source artifact preview complexity cleanup extracted
+deterministic local extraction, split persistence/readback/candidate rendering,
+added a shared repo-input file resolver, removed changed-file Fallow findings
+under `--gate all`, and reduced global Fallow to dupes 115 and health 73;
+commit `7839017` passed CI.
 ```
 
 ## 2. Product Thesis
@@ -582,13 +587,17 @@ completed bounded targets:
   packages/cli/src/runHarnessCliCommand.ts
   packages/cli/src/runDbCliCommand.ts
   packages/cli/src/runCliCommand.ts
+  packages/cli/src/runSourceArtifactPreviewCommand.ts
+  packages/cli/src/sourceArtifactPreviewExtraction.ts
+  packages/cli/src/runKnowledgeCardsCommand.ts
+  packages/cli/src/cliFileBoundary.ts
 
 full Fallow moved:
-  dupes 136 -> 116 clone groups
-  health 117 -> 82 above threshold
+  dupes 136 -> 115 clone groups
+  health 117 -> 73 above threshold
 
-next: inspect runSourceArtifactPreviewCommand extraction/persist path first,
-unless source inspection shows lower-risk value in DB smoke helper cleanup. Do
+next: inspect a bounded owner surface with direct complexity debt, likely
+packages/cli/src/runDbSmokeCommand.ts or a narrower DB smoke helper slice. Do
 not split packages/db/src/repositories/common.ts only because Fallow flags
 fan-in; it is already the shared DB boundary helper.
 ```

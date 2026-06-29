@@ -83,11 +83,15 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
   DB smoke target metadata cleanup,
   runCli source dispatch cleanup,
   runCli memory dispatch cleanup,
-  runCli residual dispatch cleanup
-full Fallow moved: dupes 136 -> 116; health 117 -> 82
+  runCli residual dispatch cleanup,
+  source artifact preview extraction/persistence/formatting cleanup plus shared
+  repo-input resolver cleanup
+full Fallow moved: dupes 136 -> 115; health 117 -> 73
 ```
 
-Next candidate targets are tracked in `PLANS.md`.
+Next candidate targets are tracked in `PLANS.md`. Do not split
+`packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
+pick a bounded owner surface with direct complexity debt.
 
 Verification: target package tests, `pnpm typecheck`, `pnpm test`,
 `pnpm quality:fallow:ci`, full `pnpm quality:fallow` report, `git diff --check`.
