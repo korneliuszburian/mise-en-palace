@@ -16,8 +16,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V345 Source Search Usefulness Closure After Document Alignment
-current task: V345-00 Source Search Usefulness Closure After Document Alignment
+active stream: V346 Source Search Answer Package Preview
+current task: V346-00 Source Search Answer Package Preview
 latest pushed commit checked: see latest final response / GitHub checks
 latest CI checked: see latest final response / GitHub checks
 ```
@@ -25,9 +25,9 @@ latest CI checked: see latest final response / GitHub checks
 Known current gap:
 
 ```txt
-V345-00 Source Search Usefulness Closure After Document Alignment must measure
-whether repaired source search helps a real Pattern Application Gate before any
-new retrieval feature.
+V346-00 Source Search Answer Package Preview must reduce manual synthesis over
+raw source-search results without adding new retrieval, ranking, crawler, UI,
+API, MCP, schema, graph runtime, worker, or Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -98,6 +98,8 @@ V342 complete: knowledge search usefulness closure showed exact/graph queries
 help but recent heartbeat/consensus/pattern coverage is weak.
 V343 complete: coverage seed improved weak queries through SourceClaims, while
 SearchDocument natural-language results stayed absent.
+V344 complete: source-search document retrieval alignment.
+V345 complete: source-search usefulness closure after alignment.
 ```
 
 Recent report range:
@@ -298,7 +300,8 @@ reported searchResults: 0, so V344 should inspect document retrieval alignment.
 - [x] V342 complete: product-facing knowledge search usefulness closure.
 - [x] V343 complete: product-facing knowledge search coverage seed.
 - [x] V344 complete: source search document retrieval alignment.
-- [ ] V345 current task: source search usefulness closure after document alignment.
+- [x] V345 complete: source search usefulness closure after document alignment.
+- [ ] V346 current task: source search answer package preview.
 
 ## Active Task Contract
 
@@ -406,21 +409,70 @@ The next task should measure usefulness after alignment instead of adding a new
 retrieval feature.
 ```
 
-### V345-00 Source Search Usefulness Closure After Document Alignment
+## Outcome V345 Source Search Usefulness Closure After Document Alignment
+
+Status: complete.
+
+Source-to-decision:
+
+- Source: V344 source-search document retrieval alignment report and V345 DB
+  readback.
+- Mechanism: V344 made source search retrieve documents from the operator query;
+  V345 confirmed seeded natural-language Pattern Application Gate queries now
+  return both governed SourceClaims and matching SearchDocuments.
+- KRN implication: source search is useful enough to drive pre-coding decisions
+  on seeded knowledge, but the raw candidate list still requires manual answer
+  synthesis.
+- Decision: execute V346 Source Search Answer Package Preview before crawler,
+  UI/API/MCP, ranking rewrite, embeddings, graph runtime, worker daemon, schema,
+  or Memory Core mutation.
+- Does not prove: source truth, broad product search quality, ranking quality,
+  embeddings, graph retrieval, crawler readiness, product readiness, or Memory
+  Core mutation safety.
+- Consumer: technical operators using source search as a Pattern Application
+  Gate.
+- Falsifier: answer-package preview hides proof boundaries, overclaims source
+  truth, or does not reduce rereads compared with raw source-search output.
+
+V345 evidence:
+
+```txt
+executionRun: 16f1946d-4758-49ca-9725-3a2ed9d08ca8
+report: docs/reviews/controlled-dogfood/2026-06-29-v345-source-search-usefulness-closure-after-document-alignment/REPORT.md
+evidenceBundle: c59290f6-4171-4797-b053-ae66ee533d70
+observationGroup: 8749b98a-0a7c-4944-abc4-47ae42aac415
+reflectionRecord: da630ae4-006c-44b2-bc7f-d8b7fadc87ad
+source-to-decision query: 11 SourceClaims, 1 SearchDocument
+search-usefulness query: 11 SourceClaims, 1 SearchDocument
+future-task scan: 11 SourceClaims, 0 SearchDocuments
+helped SourceClaims: 125366b1-8bd9-4092-92d8-1aa1d2ed46ae, 5b1e25a1-c01e-44d8-849b-1e1ec233a835, 04b097d5-7338-4b78-be55-e85d0cbb7aff, 55e3d7ea-b97d-4495-bec2-1154a8a10b09
+helped SearchDocuments: 64d78b2b-bb04-4039-a4ad-c72ecf2f6d47, e4028fde-2a3b-418c-a429-62cd2c697079
+```
+
+V345 outcome:
+
+```txt
+Repaired source search reduces rereads for seeded Pattern Application Gate
+questions. The next highest-ROI product-facing brain task is a compact answer
+package over existing source-search results, not a new retrieval subsystem.
+```
+
+### V346-00 Source Search Answer Package Preview
 
 Objective:
 
 ```txt
-Measure whether repaired `krn source search` now helps a real pre-coding Pattern
-Application Gate by returning both governed SourceClaims and reviewable
-SearchDocuments.
+Render a compact read-only answer package from existing `krn source search`
+results so operators can see answer, supporting claims, supporting documents,
+neutral/noise, missing evidence, does-not-prove, and recommended next action.
 ```
 
 Allowed:
 
 ```txt
-usefulness closure over current source search
+bounded CLI/report preview over current source-search results
 DB-backed readback
+focused tests if source changes
 compact report/root state update
 bounded next-task synthesis from evidence
 ```
@@ -438,16 +490,18 @@ ranking rewrite
 embeddings or graph runtime
 autonomous truth runtime
 Memory Core mutation
+candidate promotion
 ```
 
 Success criteria:
 
 ```txt
-1. one real Pattern Application Gate query uses repaired source search;
-2. selected SourceClaims/SearchDocuments are classified helped/neutral/noise/missing;
-3. report states whether review burden and rereads decreased;
-4. next highest-ROI product-facing brain task is selected from evidence;
-5. root state stays compact.
+1. answer package preview uses existing source-search candidate data;
+2. output preserves reviewability and does-not-prove boundaries;
+3. supporting claims/documents and missing evidence are visible;
+4. raw candidates remain inspectable;
+5. tests/readback prove the preview does not overclaim source truth;
+6. root state stays compact.
 ```
 
 ## Verification Policy

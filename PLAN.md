@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V345 Source Search Usefulness Closure After Document Alignment
-current task: V345-00 Source Search Usefulness Closure After Document Alignment
+active stream: V346 Source Search Answer Package Preview
+current task: V346-00 Source Search Answer Package Preview
 ```
 
 ## Compact Completed Checkpoints
@@ -50,38 +50,39 @@ previews exist without autonomous truth runtime. V340 proved one artifact-to-
 activated-SourceClaim loop. V341 added `krn source search --query`. V342 showed
 coverage gaps. V343 seeded four artifacts. V344 repaired source-search document
 retrieval alignment so seeded natural-language queries return matching
-SearchDocuments.
+SearchDocuments. V345 proved the repaired search reduces rereads for seeded
+Pattern Application Gate questions but still leaves operators manually
+synthesizing raw candidate lists.
 
-### V345 Source Search Usefulness Closure After Document Alignment
+### V346 Source Search Answer Package Preview
 
 Goal:
 
-Measure whether repaired `krn source search` now helps a real pre-coding Pattern
-Application Gate by returning both governed SourceClaims and reviewable
-SearchDocuments.
+Add a bounded read-only answer package preview over existing `krn source search`
+results.
 
 Current action:
 
 ```txt
-Execute V345-00: run one usefulness closure over repaired source search,
-classify selected context as helped/neutral/noise/missing, and choose the next
-highest-ROI product-facing brain task from evidence. Do not add crawler,
+Execute V346-00: render a compact answer package from existing source-search
+results with supporting claims, supporting documents, neutral/noise, missing
+evidence, does-not-prove, and recommended next action. Do not add crawler,
 UI/API/MCP, worker daemon, schema, broad eval platform, ranking rewrite,
-embeddings, graph runtime, or autonomous truth runtime.
+embeddings, graph runtime, autonomous truth runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
 
 ```txt
-technical operators expecting source search to show both governed claims and
-reviewable artifact documents.
+technical operators using source search as a pre-coding Pattern Application
+Gate.
 ```
 
 Falsifier:
 
 ```txt
-Repaired source search still fails to reduce rereads or produces noisy document
-results that do not help a real Pattern Application Gate.
+The answer package hides proof/non-proof boundaries, overclaims source truth, or
+does not reduce rereads compared with raw source-search output.
 ```
 
 ## Pattern Gate

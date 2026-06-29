@@ -14,7 +14,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 `PLANS.md` and archived report/ledger paths.
 
 ```txt
-V345 Source Search Usefulness Closure After Document Alignment
+V346 Source Search Answer Package Preview
 ```
 
 Current state:
@@ -24,17 +24,12 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V345-00 Source Search Usefulness Closure After Document Alignment.
+current task: V346-00 Source Search Answer Package Preview.
 ```
 
-Current task:
-
-```txt
-Measure whether repaired `krn source search` helps a Pattern Application Gate by
-returning governed SourceClaims and reviewable SearchDocuments; do not add
-UI/API/MCP, crawler, schema, ranking rewrite, embeddings, graph runtime,
-worker, or Memory Core mutation.
-```
+Current task: add a bounded read-only answer package preview over existing
+`krn source search` results so operators do not manually synthesize raw
+SourceClaim/SearchDocument candidate lists into pre-coding decisions.
 
 ## Remaining Work
 
@@ -50,8 +45,8 @@ to preserve are:
 4. Ingest v0: local artifact preview, SearchDocument/SourceClaim persistence,
    context detail readback, marker/hash activation, V340 artifact-to-activated-
    SourceClaim proof, V341 search readback, V342 usefulness closure, V343
-   coverage seed, and V344 SearchDocument alignment exist. Usefulness closure
-   after alignment is next.
+   coverage seed, V344 SearchDocument alignment, and V345 usefulness closure
+   exist. Answer-package synthesis over existing search results is next.
 5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
    extraction preview and reviewed selected-candidate persistence exist; V328
    repaired fence-state carryover; V329 added adjacent SourceClaim context
@@ -80,8 +75,8 @@ to preserve are:
   explicitly authorizes a bounded evidence-backed task.
 - Do not write to living target repos unless the active task explicitly allows
   target writes, allowed files, rollback, and verification.
-- After each bounded slice, verify, commit, push, check CI when relevant, update
-  compact root state, and continue with the next highest-ROI task.
+- After each bounded slice, verify, commit, push, check CI, compact root state,
+  and continue with the next highest-ROI task.
 - Do not mark this continuous goal complete after one slice, one report, one
   repair, one skill, or one scenario.
 - For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
@@ -126,4 +121,4 @@ After auto-compact, resume, context loss, or a new `/goal` continuation:
 5. If a slice was committed but not pushed/CI-checked, finish that first.
 6. If the current slice is complete, synthesize next tasks from evidence, update
    compact active state, and continue.
-7. Research or pattern input must still use `source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier`.
+7. Pattern input still uses `source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier`.
