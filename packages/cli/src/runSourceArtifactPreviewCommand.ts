@@ -129,6 +129,8 @@ const sourceClaimCandidateFields: readonly CandidateField[] = [
   { name: "consumer", label: "--consumer" },
   { name: "falsifier", label: "--falsifier" }
 ] as const;
+const reviewedExtractionClaimCandidateFields: readonly CandidateField[] =
+  sourceClaimCandidateFields.filter((field) => field.name !== "claim");
 
 const searchDocumentCandidateDoesNotProve =
   "This SearchDocument candidate does not prove source truth, claim correctness, DB persistence, embeddings, graph retrieval, or crawler readiness.";
@@ -169,6 +171,10 @@ interface CompleteGraphEdgeCommandInput {
   validFrom?: string;
   validUntil?: string;
   invalidatedAt?: string;
+}
+
+interface ReviewedExtractionClaimSelection {
+  candidate: ExtractionClaimCandidate;
 }
 
 const sha256 = (content: string): string =>
@@ -509,6 +515,21 @@ const persistSourceArtifactPreview = async (
 
   const now = runtime.now ?? (() => new Date().toISOString());
   const capturedAt = now();
+  const extraction = extractLocalSourceCandidates(chunks);
+  const reviewedExtractionClaimSelection = selectReviewedExtractionClaimCandidate(
+    runtime.command,
+    extraction
+  );
+  const missingReviewedExtractionFields = reviewedExtractionClaimSelection === undefined
+    ? []
+    : missingReviewedExtractionClaimCandidateFields(runtime.command);
+
+  if (missingReviewedExtractionFields.length > 0) {
+    throw new Error(
+      `Reviewed extraction claim candidate requires review fields: ${missingReviewedExtractionFields.join(", ")}`
+    );
+  }
+
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
   const databaseRuntime = await createRuntime({
     databaseUrl,
@@ -621,14 +642,26 @@ const persistSourceArtifactPreview = async (
       limit: 5
     });
     const readbackHit = lexicalReadback.find((result) => result.id === searchDocument.id);
-    const hasCompleteSourceClaimCandidate =
-      hasAnySourceClaimCandidateField(runtime.command) &&
+    const hasCompleteManualSourceClaimCandidate =
+      hasAnyManualSourceClaimCandidateField(runtime.command) &&
       missingSourceClaimCandidateFields(runtime.command).length === 0;
-    const parsedSourceClaim = hasCompleteSourceClaimCandidate
+    const hasCompleteReviewedExtractionClaimCandidate =
+      reviewedExtractionClaimSelection !== undefined &&
+      missingReviewedExtractionClaimCandidateFields(runtime.command).length === 0;
+    const extractionChunkIndex = reviewedExtractionClaimSelection === undefined
+      ? -1
+      : chunks.findIndex((chunk) =>
+          reviewedExtractionClaimSelection.candidate.lineNumber >= chunk.startLine &&
+          reviewedExtractionClaimSelection.candidate.lineNumber <= chunk.endLine
+        );
+    const claimSourceChunk = reviewedExtractionClaimSelection === undefined
+      ? firstChunk
+      : sourceChunks[extractionChunkIndex] ?? firstChunk;
+    const parsedSourceClaim = hasCompleteManualSourceClaimCandidate || hasCompleteReviewedExtractionClaimCandidate
       ? parseSourceClaimInput({
           sourceArtifactId: sourceArtifact.id,
-          ...(firstChunk === undefined ? {} : { sourceChunkId: firstChunk.id }),
-          claim: runtime.command.claim,
+          ...(claimSourceChunk === undefined ? {} : { sourceChunkId: claimSourceChunk.id }),
+          claim: reviewedExtractionClaimSelection?.candidate.text ?? runtime.command.claim,
           mechanism: runtime.command.mechanism,
           krnImplication: runtime.command.krnImplication,
           doesNotProve: runtime.command.doesNotProve,
@@ -640,6 +673,16 @@ const persistSourceArtifactPreview = async (
             file,
             contentHash: artifactHash,
             chunkIds: sourceChunks.map((chunk) => chunk.id),
+            ...(reviewedExtractionClaimSelection === undefined
+              ? {}
+              : {
+                  extractionCandidateId: reviewedExtractionClaimSelection.candidate.id,
+                  extractionCandidateReviewability: reviewedExtractionClaimSelection.candidate.reviewability,
+                  extractionCandidateReviewabilityReason: reviewedExtractionClaimSelection.candidate.reviewabilityReason,
+                  extractionCandidateSourceRange: reviewedExtractionClaimSelection.candidate.sourceRange,
+                  extractionCandidateLineNumber: reviewedExtractionClaimSelection.candidate.lineNumber,
+                  reviewedExtractionBridge: true
+                }),
             source: "krn source artifact preview --persist",
             doesNotProve: "Persisted SourceClaim readback does not prove source truth, claim acceptance, automatic extraction, embeddings, graph retrieval, crawler readiness, or Memory Core mutation."
           }
@@ -733,7 +776,15 @@ const persistSourceArtifactPreview = async (
         : `sourceClaim: ${sourceClaim.id}`,
       ...(sourceClaim === undefined
         ? []
-        : [`sourceClaimReadback: ${sourceClaimReadback === undefined ? "missing" : "hit"}`]),
+        : [
+            `sourceClaimReadback: ${sourceClaimReadback === undefined ? "missing" : "hit"}`,
+            ...(reviewedExtractionClaimSelection === undefined
+              ? []
+              : [
+                  `reviewedExtractionClaimCandidate: ${reviewedExtractionClaimSelection.candidate.id}`,
+                  `reviewedExtractionClaimSourceRange: ${reviewedExtractionClaimSelection.candidate.sourceRange}`
+                ])
+          ]),
       sourceClaimEdge === undefined
         ? "sourceClaimEdge: not created"
         : `sourceClaimEdge: ${sourceClaimEdge.id}`,
@@ -763,10 +814,55 @@ const missingSourceClaimCandidateFields = (
     .filter((field) => !hasText(command[field.name]))
     .map((field) => field.label);
 
-const hasAnySourceClaimCandidateField = (
+const missingReviewedExtractionClaimCandidateFields = (
+  command: SourceArtifactPreviewCommand
+): string[] =>
+  reviewedExtractionClaimCandidateFields
+    .filter((field) => !hasText(command[field.name]))
+    .map((field) => field.label);
+
+const hasAnyManualSourceClaimCandidateField = (
   command: SourceArtifactPreviewCommand
 ): boolean =>
   sourceClaimCandidateFields.some((field) => hasText(command[field.name]));
+
+const hasReviewedExtractionClaimCandidate = (
+  command: SourceArtifactPreviewCommand
+): command is SourceArtifactPreviewCommand & { reviewedExtractionClaimCandidateId: string } =>
+  hasText(command.reviewedExtractionClaimCandidateId);
+
+const selectReviewedExtractionClaimCandidate = (
+  command: SourceArtifactPreviewCommand,
+  extraction: ExtractionCandidatePreview
+): ReviewedExtractionClaimSelection | undefined => {
+  if (!hasReviewedExtractionClaimCandidate(command)) {
+    return undefined;
+  }
+
+  const readyCandidate = extraction.claims.find((claim) =>
+    claim.id === command.reviewedExtractionClaimCandidateId
+  );
+
+  if (readyCandidate !== undefined) {
+    return {
+      candidate: readyCandidate
+    };
+  }
+
+  const deferredCandidate = extraction.deferredClaims.find((claim) =>
+    claim.id === command.reviewedExtractionClaimCandidateId
+  );
+
+  if (deferredCandidate !== undefined) {
+    throw new Error(
+      `Cannot persist deferred extraction claim candidate: ${command.reviewedExtractionClaimCandidateId}`
+    );
+  }
+
+  throw new Error(
+    `Reviewed extraction claim candidate not found: ${command.reviewedExtractionClaimCandidateId}`
+  );
+};
 
 const missingGraphEdgeCandidateFields = (
   command: SourceArtifactPreviewCommand
@@ -779,6 +875,17 @@ const hasAnyGraphEdgeCandidateField = (
   command: SourceArtifactPreviewCommand
 ): boolean =>
   graphEdgeCandidateFields.some((field) => hasText(command[field.name]));
+
+const missingSourceClaimFieldsForGraphEdge = (
+  command: SourceArtifactPreviewCommand
+): string[] =>
+  hasReviewedExtractionClaimCandidate(command)
+    ? missingReviewedExtractionClaimCandidateFields(command).map((field) =>
+        `${field} for reviewed extraction claim`
+      )
+    : missingSourceClaimCandidateFields(command).map((field) =>
+        `${field} for edge source claim`
+      );
 
 const completeGraphEdgeInput = (
   command: SourceArtifactPreviewCommand
@@ -837,7 +944,15 @@ const formatSourceClaimCandidate = (
   chunks: readonly SourceArtifactPreviewChunk[],
   persisted: boolean
 ): string[] => {
-  if (!hasAnySourceClaimCandidateField(command)) {
+  const reviewedExtractionClaimSelection = selectReviewedExtractionClaimCandidate(
+    command,
+    extractLocalSourceCandidates(chunks)
+  );
+  const missingFields = reviewedExtractionClaimSelection === undefined
+    ? missingSourceClaimCandidateFields(command)
+    : missingReviewedExtractionClaimCandidateFields(command);
+
+  if (!hasAnyManualSourceClaimCandidateField(command) && reviewedExtractionClaimSelection === undefined) {
     return [
       "sourceClaimCandidate:",
       "- not generated",
@@ -846,11 +961,11 @@ const formatSourceClaimCandidate = (
     ];
   }
 
-  const missingFields = missingSourceClaimCandidateFields(command);
-
   if (missingFields.length > 0) {
     const reviewability = assessCandidateReviewability({
-      summary: command.claim ?? "SourceClaim candidate from local source artifact preview.",
+      summary: reviewedExtractionClaimSelection?.candidate.text ??
+        command.claim ??
+        "SourceClaim candidate from local source artifact preview.",
       ...(hasText(command.mechanism)
         ? { body: command.mechanism }
         : {}),
@@ -880,7 +995,7 @@ const formatSourceClaimCandidate = (
   }
 
   const candidate = parseSourceClaimInput({
-    claim: command.claim,
+    claim: reviewedExtractionClaimSelection?.candidate.text ?? command.claim,
     mechanism: command.mechanism,
     krnImplication: command.krnImplication,
     doesNotProve: command.doesNotProve,
@@ -892,6 +1007,13 @@ const formatSourceClaimCandidate = (
       file,
       contentHash: artifactHash,
       chunkHashes: chunks.map((chunk) => chunk.contentHash),
+      ...(reviewedExtractionClaimSelection === undefined
+        ? {}
+        : {
+            extractionCandidateId: reviewedExtractionClaimSelection.candidate.id,
+            extractionCandidateSourceRange: reviewedExtractionClaimSelection.candidate.sourceRange,
+            reviewedExtractionBridge: true
+          }),
       source: "krn source artifact preview"
     }
   });
@@ -909,8 +1031,18 @@ const formatSourceClaimCandidate = (
 
   return [
     "sourceClaimCandidate:",
-    `- id: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    `- id: ${
+      reviewedExtractionClaimSelection === undefined
+        ? `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`
+        : reviewedExtractionClaimSelection.candidate.id
+    }`,
     `  status: ${candidate.status}`,
+    ...(reviewedExtractionClaimSelection === undefined
+      ? []
+      : [
+          "  source: reviewed_extraction_claim_candidate",
+          `  extractionSourceRange: ${reviewedExtractionClaimSelection.candidate.sourceRange}`
+        ]),
     `  reviewability: ${reviewability.reviewability}`,
     ...formatReviewabilityReasons(reviewability.reasons),
     `  claim: ${candidate.claim}`,
@@ -944,7 +1076,7 @@ const formatSourceClaimEdgeCandidate = (
 
   const missingFields = [
     ...missingGraphEdgeCandidateFields(command),
-    ...missingSourceClaimCandidateFields(command).map((field) => `${field} for edge source claim`)
+    ...missingSourceClaimFieldsForGraphEdge(command)
   ];
 
   if (missingFields.length > 0) {
@@ -1009,7 +1141,11 @@ const formatSourceClaimEdgeCandidate = (
     "  status: candidate",
     `  reviewability: ${reviewability.reviewability}`,
     ...formatReviewabilityReasons(reviewability.reasons),
-    `  fromSourceClaim: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    `  fromSourceClaim: ${
+      hasReviewedExtractionClaimCandidate(command)
+        ? command.reviewedExtractionClaimCandidateId
+        : `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`
+    }`,
     `  toSourceClaimId: ${graphEdgeInput.toSourceClaimId}`,
     `  kind: ${graphEdgeInput.kind}`,
     `  consumer: ${graphEdgeInput.consumer}`,
@@ -1028,7 +1164,8 @@ const formatExtractionCandidatePreview = (
   command: SourceArtifactPreviewCommand,
   file: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[]
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceClaimPersisted: boolean
 ): string[] => {
   if (command.extractCandidates !== true) {
     return [
@@ -1040,6 +1177,7 @@ const formatExtractionCandidatePreview = (
   }
 
   const extraction = extractLocalSourceCandidates(chunks);
+  const reviewedExtractionClaimSelection = selectReviewedExtractionClaimCandidate(command, extraction);
   const reviewability = assessCandidateReviewability({
     summary: "Deterministic local source extraction candidate preview.",
     body: [
@@ -1090,7 +1228,14 @@ const formatExtractionCandidatePreview = (
       : extraction.relations.map((relation) =>
           `  - id: ${relation.id} | kind: ${relation.kind} | from: ${relation.fromCandidateId} | to: ${relation.toCandidateId} | sourceRange: ${relation.sourceRange}`
         )),
-    "  No SourceClaim row created from extraction candidates",
+    ...(reviewedExtractionClaimSelection === undefined
+      ? ["  No SourceClaim row created from extraction candidates"]
+      : [
+          `  reviewedExtractionClaimCandidate: ${reviewedExtractionClaimSelection.candidate.id}`,
+          sourceClaimPersisted
+            ? "  SourceClaim row created from reviewed extraction candidate: see Persistence readback"
+            : "  No SourceClaim row created from reviewed extraction candidate"
+        ]),
     "  No SourceClaimEdge row created from extraction candidates",
     "  Graph runtime: none",
     "  Memory mutation: none"
@@ -1127,7 +1272,13 @@ const formatCandidateBridge = (
     persistence?.sourceClaimPersisted ?? false,
     persistence?.sourceClaimEdgePersisted ?? false
   ),
-  ...formatExtractionCandidatePreview(command, file, artifactHash, chunks)
+  ...formatExtractionCandidatePreview(
+    command,
+    file,
+    artifactHash,
+    chunks,
+    persistence?.sourceClaimPersisted ?? false
+  )
 ];
 
 const resolveInputFile = async (cwd: string, filePath: string): Promise<string> => {

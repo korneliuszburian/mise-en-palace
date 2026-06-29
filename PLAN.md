@@ -14,8 +14,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
-current task: V327-00 Reviewed Extraction Persistence Bridge
+active stream: V328 Source Extraction Fence-State Carryover Repair
+current task: V328-00 Source Extraction Fence-State Carryover Repair
 ```
 
 ## Compact Completed Checkpoints
@@ -37,7 +37,7 @@ Remaining product gaps:
 2. research/paper/course source decisions
 3. mini brain-QA benchmark
 4. ingest v0 activation/readback closure
-5. graph brain v0 candidate extraction/reviewability surface
+5. graph brain v0 candidate extraction/reviewability/persistence surface
 6. heartbeat/dreaming v0 as candidate generator
 7. consensus v0 as eval/candidate layer
 8. product UI/search/API/MCP after usefulness/security gates
@@ -51,27 +51,29 @@ Recent graph-brain outcomes:
 V324 complete: SourceClaimEdge readback by SourceClaim id.
 V325 complete: candidate-only local extraction preview.
 V326 complete: ready vs deferred extraction claim reviewability gate.
+V327 complete: reviewed selected extraction candidate persistence bridge.
 Reports: docs/reviews/controlled-dogfood/2026-06-29-v324-...,
 docs/reviews/controlled-dogfood/2026-06-29-v325-...,
-docs/reviews/controlled-dogfood/2026-06-29-v326-...
+docs/reviews/controlled-dogfood/2026-06-29-v326-...,
+docs/reviews/controlled-dogfood/2026-06-29-v327-...
 ```
 
-### V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
+### V328 Source Extraction Fence-State Carryover Repair
 
 Goal:
 
-Inspect and, if justified, add the smallest explicit reviewed persistence
-bridge from extraction candidates to existing source claim/edge persistence.
+Repair deterministic local extraction so fenced/code block state carries across
+chunk boundaries. YAML/source-decision content must not be classified as ready
+claim candidates merely because the rendered chunk starts inside an already-open
+fence.
 
 Current action:
 
 ```txt
-Execute V327-00: inspect whether existing `--claim` and `--graph-edge-*`
-inputs already provide enough reviewed persistence for extraction candidates.
-If not, add the smallest explicit bridge that persists only a selected reviewed
-extraction candidate through existing SourceClaim/SourceClaimEdge paths. Do not
-auto-promote extracted candidates, add schema, graph ranking, crawler,
-UI/API/MCP, worker daemon, consensus runtime, or Memory Core mutation.
+Execute V328-00: fix deterministic extraction so open fenced/code block state is
+tracked across chunk boundaries. Keep the repair local to extraction preview and
+tests; do not add schema, graph ranking, crawler, UI/API/MCP, worker daemon,
+consensus runtime, or Memory Core mutation.
 ```
 
 Primary consumer:
@@ -85,9 +87,9 @@ knowledge search.
 Falsifier:
 
 ```txt
-Given a reviewed extraction candidate, KRN either has a clear existing manual
-persistence path or a focused explicit bridge; any bridge must require review
-intent and must not persist noisy/deferred candidates automatically.
+Given a file where a rendered chunk starts inside a fenced block, extraction
+preview keeps fenced content deferred instead of producing ready claim
+candidates.
 ```
 
 ## Pattern Gate

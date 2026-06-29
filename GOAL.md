@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Active stream:
 
 ```txt
-V327 Graph Brain v0 Reviewed Extraction Persistence Bridge
+V328 Source Extraction Fence-State Carryover Repair
 ```
 
 Current state:
@@ -27,16 +27,15 @@ controlled-internal-alpha for technical operators: yes / stronger.
 product-ready: no.
 widened internal alpha: no.
 V02-01 real second-operator proof: blocked/deferred.
-current task: V327-00 Reviewed Extraction Persistence Bridge.
+current task: V328-00 Source Extraction Fence-State Carryover Repair.
 ```
 
 Current task:
 
 ```txt
-Add the smallest explicit reviewed bridge from extraction preview candidates to
-existing SourceClaim/SourceClaimEdge persistence if source inspection confirms
-the current manual `--claim` / `--graph-edge-*` path is too indirect. Do not
-auto-promote extracted candidates.
+Repair local extraction preview so fenced/code block state is preserved across
+chunk boundaries. Source-decision/YAML content must not appear as ready claim
+candidates merely because a rendered chunk starts inside an already-open fence.
 ```
 
 ## Remaining Work
@@ -54,10 +53,10 @@ to preserve are:
    SourceClaim, SourceDecisionEdge persistence/readback, SourceClaim
    activation, context detail run readback, and marker/hash lexical activation
    over persisted local SearchDocuments exist.
-5. Graph brain v0: V323 proved SourceClaimEdge preview/persistence, V324 exposed
-   direct edge readback, V325 added extraction preview, and V326 separated
-   ready/deferred extraction candidates; next inspect a reviewed persistence
-   bridge before ranking, crawler, or graph runtime work.
+5. Graph brain v0: SourceClaimEdge preview/persistence/readback exists; local
+   extraction preview exists; V327 added reviewed selected-candidate persistence;
+   next repair extraction fence-state carryover before graph ranking, crawler, or
+   graph runtime work.
 6. Heartbeat/dreaming v0: candidate generator only; no final Memory Core
    mutation without review.
 7. Consensus v0: eval/candidate layer with preserved dissent, not autonomous

@@ -288,6 +288,7 @@ export type CliCommand =
       chunkLines?: number;
       limitChunks?: number;
       extractCandidates?: boolean;
+      reviewedExtractionClaimCandidateId?: string;
       claim?: string;
       mechanism?: string;
       krnImplication?: string;

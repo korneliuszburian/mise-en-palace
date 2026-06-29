@@ -46,7 +46,7 @@ export const formatSourceClaimEdgesUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
     "",
     "Required:",
     "--file",
@@ -55,6 +55,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--chunk-lines <positive-integer>",
     "--limit-chunks <positive-integer>",
     "--extract-candidates",
+    "--reviewed-extraction-claim-candidate-id <id>",
     "--claim <text>",
     "--mechanism <text>",
     "--krn-implication <text>",
@@ -75,7 +76,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--graph-edge-invalidated-at <iso-or-text>",
     "--persist",
     "",
-    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --extract-candidates renders candidate-only deterministic local extraction output. --persist writes SourceArtifact, SourceChunk, and SearchDocument rows only; it does not crawl, embed, rank, or mutate Memory Core."
+    "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --extract-candidates renders candidate-only deterministic local extraction output. --reviewed-extraction-claim-candidate-id persists only a selected ready extraction candidate when explicit review fields and --persist are supplied. It does not crawl, embed, rank, or mutate Memory Core."
   ].join("\n") + "\n";
 
 export const formatSourceDecisionLinkUsage = (): string =>
@@ -237,6 +238,31 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
       continue;
     }
 
+    if (
+      arg === "--reviewed-extraction-claim-candidate-id" ||
+      arg?.startsWith("--reviewed-extraction-claim-candidate-id=") === true
+    ) {
+      const valueResult = optionValue(rest, index, "--reviewed-extraction-claim-candidate-id");
+
+      if (valueResult.error !== undefined || valueResult.value === undefined) {
+        return {
+          error: valueResult.error ?? formatSourceArtifactPreviewUsage()
+        };
+      }
+
+      const candidateId = valueResult.value.trim();
+
+      if (candidateId.length === 0) {
+        return {
+          error: "--reviewed-extraction-claim-candidate-id requires a non-empty id"
+        };
+      }
+
+      sourceCommand.reviewedExtractionClaimCandidateId = candidateId;
+      index = valueResult.nextIndex;
+      continue;
+    }
+
     if (arg === "--file" || arg?.startsWith("--file=") === true) {
       const valueResult = optionValue(rest, index, "--file");
 
@@ -350,6 +376,26 @@ const parseSourceArtifactPreviewArgs = (rest: readonly string[]): ParseArgsResul
     return {
       error: formatSourceArtifactPreviewUsage()
     };
+  }
+
+  if (sourceCommand.reviewedExtractionClaimCandidateId !== undefined) {
+    if (sourceCommand.extractCandidates !== true) {
+      return {
+        error: "--reviewed-extraction-claim-candidate-id requires --extract-candidates"
+      };
+    }
+
+    if (sourceCommand.persist !== true) {
+      return {
+        error: "--reviewed-extraction-claim-candidate-id requires --persist"
+      };
+    }
+
+    if (sourceCommand.claim !== undefined) {
+      return {
+        error: "--reviewed-extraction-claim-candidate-id cannot be combined with --claim"
+      };
+    }
   }
 
   return {

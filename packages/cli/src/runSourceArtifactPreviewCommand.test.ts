@@ -488,6 +488,233 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("proves: complete explicit SourceClaimEdge fields wrote and read back a governed SourceClaimEdge row linked to reviewed SourceClaim rows");
   });
 
+  it("persists a selected ready extraction claim only through the reviewed bridge", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+    const timestamp = "2026-06-29T09:00:00.000Z";
+    const sourceClaimId = "77777777-7777-4777-8777-777777777777" as SourceClaim["id"];
+    let capturedClaim: string | undefined;
+    let capturedMetadata: Record<string, unknown> | undefined;
+
+    await writeFile(sourcePath, "KRN should persist reviewed claims.\n", "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => timestamp,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+        harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+        memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+        sourceRepository: {
+          async createSourceArtifact(input) {
+            return {
+              id: "11111111-1111-4111-8111-111111111111",
+              projectId: input.projectId,
+              kind: input.kind,
+              trustTier: input.trustTier,
+              uri: input.uri,
+              title: input.title,
+              contentHash: input.contentHash,
+              capturedAt: timestamp,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
+          },
+          async createSourceChunk(input) {
+            return {
+              id: "22222222-2222-4222-8222-222222222222",
+              sourceArtifactId: input.sourceArtifactId,
+              ordinal: input.ordinal,
+              content: input.content,
+              contentHash: input.contentHash,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp
+            };
+          },
+          async createSourceClaim(input) {
+            capturedClaim = input.claim;
+            capturedMetadata = input.metadata;
+
+            return {
+              id: sourceClaimId,
+              sourceArtifactId: input.sourceArtifactId as SourceClaim["sourceArtifactId"],
+              sourceChunkId: input.sourceChunkId,
+              executionRunId: input.executionRunId,
+              claim: input.claim,
+              mechanism: input.mechanism,
+              krnImplication: input.krnImplication,
+              doesNotProve: input.doesNotProve,
+              trustTier: input.trustTier,
+              supportType: input.supportType,
+              consumer: input.consumer,
+              falsifier: input.falsifier,
+              revisitWhen: input.revisitWhen,
+              status: input.status ?? "proposed",
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
+          },
+          async getSourceClaimById(id) {
+            return id === sourceClaimId
+              ? {
+                  id: sourceClaimId,
+                  sourceArtifactId: "11111111-1111-4111-8111-111111111111" as SourceClaim["sourceArtifactId"],
+                  sourceChunkId: "22222222-2222-4222-8222-222222222222",
+                  claim: "KRN should persist reviewed claims.",
+                  mechanism: "Operator selected a ready extraction candidate and supplied governance fields.",
+                  krnImplication: "Use reviewed extraction bridge before graph ranking work.",
+                  doesNotProve: "This does not prove extracted claim truth.",
+                  trustTier: "source-code",
+                  supportType: "implementation-boundary",
+                  consumer: "graph brain v0",
+                  falsifier: "Deferred extraction candidates can be persisted.",
+                  status: "proposed",
+                  metadata: {},
+                  createdAt: timestamp,
+                  updatedAt: timestamp
+                }
+              : undefined;
+          },
+          async createSourceClaimEdge() {
+            throw new Error("createSourceClaimEdge should not be called");
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [];
+          },
+          async createSourceDecisionEdge() {
+            throw new Error("createSourceDecisionEdge should not be called");
+          },
+          async createSourceRejection() {
+            throw new Error("createSourceRejection should not be called");
+          }
+        },
+        retrievalRepository: {
+          async createSearchDocument(input) {
+            return {
+              id: "33333333-3333-4333-8333-333333333333",
+              projectId: input.projectId,
+              subjectType: input.subjectType,
+              subjectId: input.subjectId,
+              sourceArtifactId: input.sourceArtifactId,
+              sourceChunkId: input.sourceChunkId,
+              trustTier: input.trustTier ?? "medium",
+              validityStatus: input.validityStatus ?? "active",
+              language: input.language ?? "english",
+              title: input.title,
+              body: input.body,
+              searchText: input.searchText ?? `${input.title}\n${input.body}`,
+              metadataFilters: input.metadataFilters ?? {},
+              validFrom: timestamp,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
+          },
+          async searchLexical() {
+            return [{
+              id: "33333333-3333-4333-8333-333333333333",
+              projectId: "project-1",
+              subjectType: "source_artifact",
+              subjectId: "11111111-1111-4111-8111-111111111111",
+              sourceArtifactId: "11111111-1111-4111-8111-111111111111",
+              sourceChunkId: "22222222-2222-4222-8222-222222222222",
+              trustTier: "source-code",
+              validityStatus: "active",
+              language: "english",
+              title: "Local source artifact: source.md",
+              body: "KRN should persist reviewed claims.",
+              searchText: "KRN should persist reviewed claims.",
+              metadataFilters: {},
+              validFrom: timestamp,
+              metadata: {},
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              lexicalScore: 100
+            }];
+          }
+        },
+        async close() {
+          return undefined;
+        }
+      } satisfies DatabaseRuntime),
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        file: "source.md",
+        chunkLines: 2,
+        limitChunks: 1,
+        extractCandidates: true,
+        reviewedExtractionClaimCandidateId: "claim-candidate:1:krn-should-persist-reviewed-claims",
+        mechanism: "Operator selected a ready extraction candidate and supplied governance fields.",
+        krnImplication: "Use reviewed extraction bridge before graph ranking work.",
+        doesNotProve: "This does not prove extracted claim truth.",
+        supportType: "implementation-boundary",
+        trustTier: "source-code",
+        consumer: "graph brain v0",
+        falsifier: "Deferred extraction candidates can be persisted."
+      }
+    });
+
+    expect(capturedClaim).toBe("KRN should persist reviewed claims.");
+    expect(capturedMetadata).toMatchObject({
+      extractionCandidateId: "claim-candidate:1:krn-should-persist-reviewed-claims",
+      extractionCandidateSourceRange: "lines 1-1",
+      reviewedExtractionBridge: true
+    });
+    expect(result.stdout).toContain("reviewedExtractionClaimCandidate: claim-candidate:1:krn-should-persist-reviewed-claims");
+    expect(result.stdout).toContain("reviewedExtractionClaimSourceRange: lines 1-1");
+    expect(result.stdout).toContain("source: reviewed_extraction_claim_candidate");
+    expect(result.stdout).toContain("SourceClaim row created from reviewed extraction candidate: see Persistence readback");
+    expect(result.stdout).toContain("Memory mutation: none");
+    expect(result.stdout).toContain("Graph runtime: none");
+  });
+
+  it("rejects deferred extraction candidates before creating database runtime", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+    let databaseRuntimeCreated = false;
+
+    await writeFile(sourcePath, "The current model supports:\n", "utf8");
+
+    await expect(runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      createDatabaseRuntime: async () => {
+        databaseRuntimeCreated = true;
+        throw new Error("createDatabaseRuntime should not be called");
+      },
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        file: "source.md",
+        chunkLines: 2,
+        limitChunks: 1,
+        extractCandidates: true,
+        reviewedExtractionClaimCandidateId: "claim-candidate:1:the-current-model-supports",
+        mechanism: "Operator selected a ready extraction candidate and supplied governance fields.",
+        krnImplication: "Use reviewed extraction bridge before graph ranking work.",
+        doesNotProve: "This does not prove extracted claim truth.",
+        supportType: "implementation-boundary",
+        trustTier: "source-code",
+        consumer: "graph brain v0",
+        falsifier: "Deferred extraction candidates can be persisted."
+      }
+    })).rejects.toThrow(
+      "Cannot persist deferred extraction claim candidate: claim-candidate:1:the-current-model-supports"
+    );
+
+    expect(databaseRuntimeCreated).toBe(false);
+  });
+
   it("falls back to repo-root-relative paths when cwd is a package directory", async () => {
     const tempRoot = await createTempRoot();
     const packageDir = path.join(tempRoot, "packages", "cli");

@@ -80,6 +80,88 @@ describe("parseSourceArgs", () => {
     });
   });
 
+  it("parses reviewed extraction claim candidate bridge options", () => {
+    expect(parseSourceArgs([
+      "artifact",
+      "preview",
+      "--file",
+      "docs/KRN_KERNEL.md",
+      "--extract-candidates",
+      "--persist",
+      "--reviewed-extraction-claim-candidate-id",
+      "claim-candidate:2:krn-should-keep-proof-boundaries",
+      "--mechanism",
+      "Reviewed extraction candidate keeps source range lineage.",
+      "--krn-implication",
+      "Use selected extraction candidates as reviewed SourceClaim inputs.",
+      "--does-not-prove",
+      "This does not prove extracted claim truth.",
+      "--support-type",
+      "implementation-boundary",
+      "--trust-tier",
+      "source-code",
+      "--consumer",
+      "graph brain v0",
+      "--falsifier",
+      "Deferred extraction candidates can be persisted."
+    ])).toEqual({
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        extractCandidates: true,
+        file: "docs/KRN_KERNEL.md",
+        reviewedExtractionClaimCandidateId: "claim-candidate:2:krn-should-keep-proof-boundaries",
+        mechanism: "Reviewed extraction candidate keeps source range lineage.",
+        krnImplication: "Use selected extraction candidates as reviewed SourceClaim inputs.",
+        doesNotProve: "This does not prove extracted claim truth.",
+        supportType: "implementation-boundary",
+        trustTier: "source-code",
+        consumer: "graph brain v0",
+        falsifier: "Deferred extraction candidates can be persisted."
+      }
+    });
+  });
+
+  it("rejects reviewed extraction claim candidate bridge without required review boundary", () => {
+    expect(parseSourceArgs([
+      "artifact",
+      "preview",
+      "--file",
+      "source.md",
+      "--reviewed-extraction-claim-candidate-id",
+      "claim-candidate:1:source"
+    ])).toEqual({
+      error: "--reviewed-extraction-claim-candidate-id requires --extract-candidates"
+    });
+
+    expect(parseSourceArgs([
+      "artifact",
+      "preview",
+      "--file",
+      "source.md",
+      "--extract-candidates",
+      "--reviewed-extraction-claim-candidate-id",
+      "claim-candidate:1:source"
+    ])).toEqual({
+      error: "--reviewed-extraction-claim-candidate-id requires --persist"
+    });
+
+    expect(parseSourceArgs([
+      "artifact",
+      "preview",
+      "--file",
+      "source.md",
+      "--extract-candidates",
+      "--persist",
+      "--reviewed-extraction-claim-candidate-id",
+      "claim-candidate:1:source",
+      "--claim",
+      "Manual claim"
+    ])).toEqual({
+      error: "--reviewed-extraction-claim-candidate-id cannot be combined with --claim"
+    });
+  });
+
   it("parses source claim add options and metadata", () => {
     expect(parseSourceArgs([
       "claim",
