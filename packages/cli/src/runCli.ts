@@ -31,63 +31,24 @@ import {
   formatSourceClaimRejectUsage,
   formatSourceDecisionLinkUsage
 } from "./parseSourceArgs.js";
-import {
-  runPlanCommand
-} from "./runPlanCommand.js";
 import type {
   CreateDatabaseRuntime
 } from "./runPlanCommand.js";
-import {
-  runInitCommand
-} from "./runInitCommand.js";
 import type {
   CreateInitConnectRuntime
 } from "./runInitCommand.js";
-import {
-  runDoctorCommand
-} from "./runDoctorCommand.js";
-import {
-  runDbReadinessCommand
-} from "./runDbReadinessCommand.js";
-import {
-  runDbSmokeCommand
-} from "./runDbSmokeCommand.js";
-import {
-  runEvidenceCaptureCommand
-} from "./runEvidenceCaptureCommand.js";
-import {
-  runReviewAssessCommand
-} from "./runReviewAssessCommand.js";
-import {
-  runRunShowCommand
-} from "./runRunShowCommand.js";
-import {
-  runKnowledgeCardsCommand
-} from "./runKnowledgeCardsCommand.js";
 import type {
   CreateReviewAssessDatabaseRuntime
 } from "./runReviewAssessCommand.js";
-import {
-  runObserveCommand
-} from "./runObserveCommand.js";
 import type {
   CreateObserveDatabaseRuntime
 } from "./runObserveCommand.js";
-import {
-  runReflectCommand
-} from "./runReflectCommand.js";
 import type {
   CreateReflectDatabaseRuntime
 } from "./runReflectCommand.js";
 import {
-  runCodexBriefCommand
-} from "./runCodexBriefCommand.js";
-import {
-  runSourceCliCommand
-} from "./runSourceCliCommand.js";
-import {
-  runMemoryCliCommand
-} from "./runMemoryCliCommand.js";
+  runCliCommand
+} from "./runCliCommand.js";
 import {
   missingDbConfigRecovery
 } from "./dbRecoveryGuidance.js";
@@ -209,373 +170,31 @@ export const runCli = async (
     };
   }
 
-  if (command.kind === "init") {
-    try {
-      const result = await runInitCommand({
-        cwd: runtime.cwd ?? process.cwd(),
-        env: runtime.env,
-        mode: command.mode,
-        repo: command.repo,
-        ...(command.ownerFiles === undefined ? {} : { ownerFiles: command.ownerFiles }),
-        ...(command.mode === "connect" ? { persist: command.persist } : {}),
-        ...(runtime.createInitConnectRuntime === undefined
-          ? {}
-          : { createInitConnectRuntime: runtime.createInitConnectRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown init error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "reviewAssess") {
-    try {
-      const result = await runReviewAssessCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createReviewAssessDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createReviewAssessDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown review assess error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "runShow") {
-    try {
-      const result = await runRunShowCommand({
-        env: runtime.env,
-        now,
-        createId,
-        runId: command.runId,
-        format: command.format,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown run show error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "knowledgeCards") {
-    try {
-      const result = await runKnowledgeCardsCommand({
-        cwd: runtime.cwd ?? process.cwd(),
-        cardFiles: command.cardFiles,
-        patternFiles: command.patternFiles,
-        catalogFiles: command.catalogFiles,
-        filter: command.filter,
-        format: command.format,
-        ...(command.limit === undefined ? {} : { limit: command.limit })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown knowledge cards error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  const sourceResult = await runSourceCliCommand(command, {
+  const commandResult = await runCliCommand(command, {
     cwd: runtime.cwd ?? process.cwd(),
     env: runtime.env,
     now,
     createId,
+    ...(runtime.createInitConnectRuntime === undefined
+      ? {}
+      : { createInitConnectRuntime: runtime.createInitConnectRuntime }),
+    ...(runtime.readGitStatus === undefined ? {} : { readGitStatus: runtime.readGitStatus }),
     ...(runtime.createDatabaseRuntime === undefined
       ? {}
       : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
-    formatCliError
-  });
-  if (sourceResult !== undefined) {
-    return sourceResult;
-  }
-
-  const memoryResult = await runMemoryCliCommand(command, {
-    env: runtime.env,
-    now,
-    createId,
-    ...(runtime.createDatabaseRuntime === undefined
+    ...(runtime.createReviewAssessDatabaseRuntime === undefined
       ? {}
-      : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
+      : { createReviewAssessDatabaseRuntime: runtime.createReviewAssessDatabaseRuntime }),
+    ...(runtime.createObserveDatabaseRuntime === undefined
+      ? {}
+      : { createObserveDatabaseRuntime: runtime.createObserveDatabaseRuntime }),
+    ...(runtime.createReflectDatabaseRuntime === undefined
+      ? {}
+      : { createReflectDatabaseRuntime: runtime.createReflectDatabaseRuntime }),
     formatCliError
   });
-  if (memoryResult !== undefined) {
-    return memoryResult;
-  }
-
-  if (command.kind === "plan") {
-    try {
-      const result = await runPlanCommand(command.task, {
-        env: runtime.env,
-        cwd: runtime.cwd ?? process.cwd(),
-        now,
-        createId,
-        persist: command.persist,
-        ...(command.projectId === undefined ? {} : { projectId: command.projectId }),
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown CLI error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "doctor") {
-    try {
-      const result = await runDoctorCommand({
-        env: runtime.env,
-        cwd: runtime.cwd ?? process.cwd()
-      });
-
-      return {
-        exitCode: result.exitCode,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown doctor error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "dbReadiness") {
-    try {
-      const result = await runDbReadinessCommand({
-        env: runtime.env,
-        cwd: runtime.cwd ?? process.cwd()
-      });
-
-      return {
-        exitCode: result.exitCode,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown DB readiness error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "dbSmoke") {
-    try {
-      const result = await runDbSmokeCommand({
-        env: runtime.env,
-        cwd: runtime.cwd ?? process.cwd(),
-        createId,
-        target: command.target
-      });
-
-      return {
-        exitCode: result.exitCode,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown DB smoke error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "codexBrief") {
-    try {
-      const result = await runCodexBriefCommand({
-        env: runtime.env,
-        now,
-        createId,
-        runId: command.runId,
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown Codex brief error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "evidenceCapture") {
-    try {
-      const result = await runEvidenceCaptureCommand({
-        env: runtime.env,
-        cwd: runtime.cwd ?? process.cwd(),
-        now,
-        createId,
-        persist: command.persist,
-        ...(command.runId === undefined ? {} : { runId: command.runId }),
-        ...(command.intendedFiles === undefined
-          ? {}
-          : { intendedFiles: command.intendedFiles }),
-        ...(command.commandOutcomes === undefined
-          ? {}
-          : { commandOutcomes: command.commandOutcomes }),
-        ...(command.targetEvidence === undefined
-          ? {}
-          : { targetEvidence: command.targetEvidence }),
-        ...(command.sourceUsefulnessOutcomes === undefined
-          ? {}
-          : { sourceUsefulnessOutcomes: command.sourceUsefulnessOutcomes }),
-        ...(runtime.createDatabaseRuntime === undefined
-          ? {}
-          : { createDatabaseRuntime: runtime.createDatabaseRuntime }),
-        ...(runtime.readGitStatus === undefined ? {} : { readGitStatus: runtime.readGitStatus })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown evidence capture error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "observeRun") {
-    try {
-      const result = await runObserveCommand({
-        env: runtime.env,
-        now,
-        command: command,
-        ...(runtime.createObserveDatabaseRuntime === undefined
-          ? {}
-          : { createObserveDatabaseRuntime: runtime.createObserveDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown observe error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
-  }
-
-  if (command.kind === "reflect") {
-    try {
-      const result = await runReflectCommand({
-        env: runtime.env,
-        now,
-        createId,
-        command: command,
-        ...(runtime.createReflectDatabaseRuntime === undefined
-          ? {}
-          : { createReflectDatabaseRuntime: runtime.createReflectDatabaseRuntime })
-      });
-
-      return {
-        exitCode: 0,
-        stdout: result.stdout,
-        stderr: ""
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown reflect error";
-
-      return {
-        exitCode: 1,
-        stdout: "",
-        stderr: formatCliError(message)
-      };
-    }
+  if (commandResult !== undefined) {
+    return commandResult;
   }
 
   return {
