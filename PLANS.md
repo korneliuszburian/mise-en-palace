@@ -126,6 +126,47 @@ IMR-12 complete: diagnostic-bearing acquisition output drove one bounded
 IMR-13 complete: source-search answer packages now expose artifact-linked
   SearchDocument refs for supporting SourceClaims, while still marking lexical
   included SearchDocument evidence as missing when retrieval returns zero docs.
+IMR-14 complete: brain-search source summaries now preserve source-search
+  `sourceClaimDocumentLinks` and `linkedSearchDocuments`, so downstream pattern
+  gates do not understate artifact-linked evidence when included lexical docs
+  are zero.
+```
+
+## Outcome IMR-14 Brain Search Linked Document Summary
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-14-brain-search-linked-document-summary/REPORT.md
+```
+
+Outcome: `krn brain search` now exposes `sourceClaimDocumentLinks`,
+`linkedSearchDocuments`, and link caveats in its `sourceSearch` summary. The
+live IMR-12 query returns 5 supporting SourceClaims, 0 included
+SearchDocuments, 5 source-claim document links, and 5 linked SearchDocuments.
+
+Source-to-decision:
+
+- Source: IMR-13 report and live brain-search/source-search readback.
+- Mechanism: source-search JSON can carry artifact-linked document evidence even
+  when lexical `supportingDocuments` is zero.
+- KRN implication: brain-search summaries must preserve this evidence for
+  pattern gates and acquisition readbacks.
+- Decision: expose linked document counts/caveats in brain-search sourceSearch
+  summaries.
+- Rejection: no schema, crawler, ranking, worker, API/MCP, source truth, or
+  Memory Core mutation.
+- Consumer: brain-search source summaries, pattern gates, acquisition readbacks,
+  and operator review.
+- Falsifier: brain-search reports only zero documents with no linked-document
+  count or caveat when source-search JSON includes linked docs.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-u8e: Use brain-search linked document evidence in acquisition readback.
 ```
 
 ## Outcome IMR-13 Source Claim Document Link Readback
@@ -162,7 +203,7 @@ Source-to-decision:
 Next bounded issue:
 
 ```txt
-mise-en-palace-s54: Expose linked document evidence in brain-search source summaries.
+mise-en-palace-s54: completed by IMR-14.
 ```
 
 ## Outcome IMR-12 Diagnostic Acquisition Evidence Follow-Up

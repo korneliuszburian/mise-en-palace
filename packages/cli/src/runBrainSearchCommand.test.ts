@@ -422,4 +422,74 @@ describe("runBrainSearchCommand", () => {
       }
     });
   });
+
+  it("surfaces source claim linked document evidence in source-search summaries", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "artifact-linked evidence",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "text"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [
+                { label: "claim-1" },
+                { label: "claim-2" },
+                { label: "claim-3" },
+                { label: "claim-4" },
+                { label: "claim-5" }
+              ],
+              supportingDocuments: [],
+              sourceClaimDocumentLinks: [{
+                sourceClaimId: "claim-1",
+                linkedSearchDocumentCount: 2,
+                linkedSearchDocumentIds: ["doc-1", "doc-2"],
+                linkKinds: ["same_source_artifact"],
+                caveat: "SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
+              }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 5,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+
+    expect(result.stdout).toContain("supportingClaims: 5");
+    expect(result.stdout).toContain("supportingDocuments: 0");
+    expect(result.stdout).toContain("sourceClaimDocumentLinks: 1");
+    expect(result.stdout).toContain("linkedSearchDocuments: 2");
+    expect(result.stdout).toContain(
+      "sourceClaimDocumentLinkCaveat: SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
+    );
+    expect(result.stdout).toContain("missingEvidence: included SearchDocument evidence");
+  });
 });

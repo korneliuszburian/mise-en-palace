@@ -59,6 +59,9 @@ interface BrainSearchPreviewResource {
     answerUsefulness: string;
     supportingClaims: number;
     supportingDocuments: number;
+    sourceClaimDocumentLinks: number;
+    linkedSearchDocuments: number;
+    sourceClaimDocumentLinkCaveats: readonly string[];
     relationSupport: number;
     graphReadback: {
       claimNodes: number;
@@ -142,6 +145,25 @@ const stringArrayValue = (value: unknown): readonly string[] =>
 
 const booleanValue = (value: unknown): boolean =>
   typeof value === "boolean" ? value : false;
+
+const linkedSearchDocumentCount = (
+  sourceClaimDocumentLinks: readonly unknown[]
+): number =>
+  sourceClaimDocumentLinks.reduce<number>((sum, item) => {
+    const link = recordValue(item);
+
+    return sum + (link === undefined ? 0 : numberValue(link["linkedSearchDocumentCount"]));
+  }, 0);
+
+const sourceClaimDocumentLinkCaveats = (
+  sourceClaimDocumentLinks: readonly unknown[]
+): readonly string[] =>
+  sourceClaimDocumentLinks.flatMap((item) => {
+    const link = recordValue(item);
+    const caveat = link === undefined ? undefined : nonEmptyStringValue(link["caveat"]);
+
+    return caveat === undefined ? [] : [caveat];
+  });
 
 const firstDefinedString = (values: readonly (string | undefined)[]): string =>
   values.find((value): value is string => value !== undefined) ?? "";
@@ -372,6 +394,7 @@ const buildResource = (
   const answerPackage = recordValue(input.sourceJson["answerPackage"]) ?? {};
   const supportingClaims = arrayValue(answerPackage["supportingClaims"]);
   const supportingDocuments = arrayValue(answerPackage["supportingDocuments"]);
+  const sourceClaimDocumentLinks = arrayValue(answerPackage["sourceClaimDocumentLinks"]);
   const relationSupport = arrayValue(answerPackage["relationSupport"]);
   const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
@@ -395,6 +418,9 @@ const buildResource = (
       answerUsefulness: stringValue(answerPackage["answerUsefulness"], "unknown"),
       supportingClaims: supportingClaims.length,
       supportingDocuments: supportingDocuments.length,
+      sourceClaimDocumentLinks: sourceClaimDocumentLinks.length,
+      linkedSearchDocuments: linkedSearchDocumentCount(sourceClaimDocumentLinks),
+      sourceClaimDocumentLinkCaveats: sourceClaimDocumentLinkCaveats(sourceClaimDocumentLinks),
       relationSupport: relationSupport.length,
       graphReadback: {
         claimNodes: numberValue(graphReadback["claimNodes"]),
@@ -469,6 +495,13 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
     `- answerUsefulness: ${resource.sourceSearch.answerUsefulness}`,
     `- supportingClaims: ${resource.sourceSearch.supportingClaims}`,
     `- supportingDocuments: ${resource.sourceSearch.supportingDocuments}`,
+    `- sourceClaimDocumentLinks: ${resource.sourceSearch.sourceClaimDocumentLinks}`,
+    `- linkedSearchDocuments: ${resource.sourceSearch.linkedSearchDocuments}`,
+    ...(resource.sourceSearch.sourceClaimDocumentLinkCaveats.length === 0
+      ? ["- sourceClaimDocumentLinkCaveats: none"]
+      : resource.sourceSearch.sourceClaimDocumentLinkCaveats.map(
+          (item) => `- sourceClaimDocumentLinkCaveat: ${item}`
+        )),
     `- relationSupport: ${resource.sourceSearch.relationSupport}`,
     `- graphAware: ${resource.sourceSearch.graphReadback.graphAware}`,
     `- graphRelationEdges: ${resource.sourceSearch.graphReadback.relationEdges}`,
