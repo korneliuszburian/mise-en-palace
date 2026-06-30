@@ -85,10 +85,25 @@ interface BrainSearchKnowledgePacket {
   id: string;
   title: string;
   summary: string;
+  source: "catalog_file" | "source_search";
+  reviewability: "ready" | "needs_more_evidence";
+  reviewabilityReasons: readonly string[];
   consumers: readonly string[];
   falsifier: string;
   doesNotProve: string;
   nextAction: string;
+}
+
+interface SourceSearchKnowledgeFields {
+  id: string;
+  label: string | undefined;
+  claimText: string | undefined;
+  mechanism: string | undefined;
+  krnImplication: string | undefined;
+  consumer: string | undefined;
+  falsifier: string | undefined;
+  doesNotProve: string | undefined;
+  reason: string | undefined;
 }
 
 const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
@@ -113,6 +128,9 @@ const recordValue = (
 const stringValue = (value: unknown, fallback: string): string =>
   typeof value === "string" ? value : fallback;
 
+const nonEmptyStringValue = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+
 const numberValue = (value: unknown): number =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
@@ -124,6 +142,20 @@ const stringArrayValue = (value: unknown): readonly string[] =>
 
 const booleanValue = (value: unknown): boolean =>
   typeof value === "boolean" ? value : false;
+
+const firstDefinedString = (values: readonly (string | undefined)[]): string =>
+  values.find((value): value is string => value !== undefined) ?? "";
+
+const optionalStringArray = (value: string | undefined): readonly string[] =>
+  value === undefined ? [] : [value];
+
+const sourceKnowledgeNextAction: Record<
+  BrainSearchKnowledgePacket["reviewability"],
+  string
+> = {
+  ready: "use",
+  needs_more_evidence: "needs_more_evidence"
+};
 
 const proofDoesNotProve = (value: unknown): readonly string[] => {
   const proof = recordValue(value);
@@ -143,6 +175,33 @@ const knowledgeCardIds = (cards: readonly unknown[]): readonly string[] =>
     return typeof id === "string" ? [id] : [];
   });
 
+const reviewabilityReasonsFor = (
+  fields: readonly {
+    name: string;
+    value: string | readonly string[] | undefined;
+  }[]
+): readonly string[] =>
+  fields.map((field) => {
+    let present = false;
+
+    if (Array.isArray(field.value)) {
+      present = field.value.length > 0;
+    } else if (typeof field.value === "string") {
+      present = field.value.trim().length > 0;
+    }
+
+    return present
+      ? `${field.name} present.`
+      : `${field.name} missing.`;
+  });
+
+const reviewabilityFromReasons = (
+  reasons: readonly string[]
+): BrainSearchKnowledgePacket["reviewability"] =>
+  reasons.some((reason) => reason.includes("missing."))
+    ? "needs_more_evidence"
+    : "ready";
+
 const knowledgePackets = (cards: readonly unknown[]): readonly BrainSearchKnowledgePacket[] =>
   cards.flatMap((card) => {
     const record = recordValue(card);
@@ -156,16 +215,117 @@ const knowledgePackets = (cards: readonly unknown[]): readonly BrainSearchKnowle
     if (typeof id !== "string") {
       return [];
     }
+    const consumers = stringArrayValue(record["consumers"]);
+    const falsifier = nonEmptyStringValue(record["falsifier"]);
+    const doesNotProve = nonEmptyStringValue(record["doesNotProve"]);
+    const reviewabilityReasons = reviewabilityReasonsFor([
+      { name: "catalog id", value: id },
+      { name: "consumer", value: consumers },
+      { name: "falsifier", value: falsifier },
+      { name: "doesNotProve", value: doesNotProve }
+    ]);
 
     return [{
       id,
       title: stringValue(record["title"], ""),
       summary: stringValue(record["summary"], ""),
-      consumers: stringArrayValue(record["consumers"]),
-      falsifier: stringValue(record["falsifier"], ""),
-      doesNotProve: stringValue(record["doesNotProve"], ""),
+      source: "catalog_file",
+      reviewability: reviewabilityFromReasons(reviewabilityReasons),
+      reviewabilityReasons,
+      consumers,
+      falsifier: falsifier ?? "",
+      doesNotProve: doesNotProve ?? "",
       nextAction: stringValue(record["nextAction"], "unknown")
     }];
+  });
+
+const sourceSearchKnowledgeId = (record: JsonRecord): string | undefined =>
+  nonEmptyStringValue(record["sourceClaimId"]) ??
+  nonEmptyStringValue(record["subjectId"]) ??
+  nonEmptyStringValue(record["id"]) ??
+  nonEmptyStringValue(record["label"]);
+
+const sourceSearchKnowledgeFields = (
+  record: JsonRecord
+): SourceSearchKnowledgeFields | undefined => {
+  const id = sourceSearchKnowledgeId(record);
+
+  if (id === undefined) {
+    return undefined;
+  }
+  return {
+    id,
+    label: nonEmptyStringValue(record["label"]),
+    claimText: nonEmptyStringValue(record["claim"]),
+    mechanism: nonEmptyStringValue(record["mechanism"]),
+    krnImplication:
+      nonEmptyStringValue(record["krnImplication"]) ??
+      nonEmptyStringValue(record["expectedUse"]),
+    consumer: nonEmptyStringValue(record["consumer"]),
+    falsifier: nonEmptyStringValue(record["falsifier"]),
+    doesNotProve: nonEmptyStringValue(record["doesNotProve"]),
+    reason: nonEmptyStringValue(record["reason"])
+  };
+};
+
+const sourceSearchKnowledgeReviewability = (
+  fields: SourceSearchKnowledgeFields
+): readonly string[] =>
+  reviewabilityReasonsFor([
+    { name: "SourceClaim id", value: fields.id },
+    { name: "claim", value: fields.claimText },
+    { name: "mechanism", value: fields.mechanism },
+    { name: "KRN implication", value: fields.krnImplication },
+    { name: "consumer", value: fields.consumer },
+    { name: "falsifier", value: fields.falsifier },
+    { name: "doesNotProve", value: fields.doesNotProve }
+  ]);
+
+const sourceSearchKnowledgePacketFromFields = (
+  fields: SourceSearchKnowledgeFields
+): BrainSearchKnowledgePacket => {
+  const reviewabilityReasons = sourceSearchKnowledgeReviewability(fields);
+  const reviewability = reviewabilityFromReasons(reviewabilityReasons);
+
+  return {
+    id: fields.id,
+    title: firstDefinedString([fields.claimText, fields.label, fields.id]),
+    summary: firstDefinedString([fields.krnImplication, fields.mechanism, fields.reason]),
+    source: "source_search",
+    reviewability,
+    reviewabilityReasons,
+    consumers: optionalStringArray(fields.consumer),
+    falsifier: firstDefinedString([
+      fields.falsifier,
+      "missing falsifier; do not treat this source evidence as review-ready brain knowledge"
+    ]),
+    doesNotProve:
+      fields.doesNotProve ??
+      "This source-search candidate does not prove a retained pattern is review-ready.",
+    nextAction: sourceKnowledgeNextAction[reviewability]
+  };
+};
+
+const sourceSearchKnowledgePacket = (
+  record: JsonRecord
+): BrainSearchKnowledgePacket | undefined => {
+  const fields = sourceSearchKnowledgeFields(record);
+
+  return fields === undefined ? undefined : sourceSearchKnowledgePacketFromFields(fields);
+};
+
+const sourceSearchKnowledgePackets = (
+  supportingClaims: readonly unknown[]
+): readonly BrainSearchKnowledgePacket[] =>
+  supportingClaims.flatMap((claim) => {
+    const record = recordValue(claim);
+
+    if (record === undefined) {
+      return [];
+    }
+    const packet = sourceSearchKnowledgePacket(record);
+
+    return packet === undefined ? [] : [packet];
   });
 
 const buildRecommendedNextAction = (
@@ -225,7 +385,10 @@ const buildResource = (
       totalCards: numberValue(input.knowledgeJson["totalCards"]),
       returnedCards: numberValue(input.knowledgeJson["returnedCards"]),
       cardIds: knowledgeCardIds(cards),
-      selectedKnowledge: knowledgePackets(cards),
+      selectedKnowledge:
+        input.brainKnowledgeReadback === "store_only"
+          ? sourceSearchKnowledgePackets(supportingClaims)
+          : knowledgePackets(cards),
       doesNotProve: proofDoesNotProve(input.knowledgeJson["proof"])
     },
     sourceSearch: {
@@ -291,6 +454,11 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
       `- selectedKnowledge: ${card.id}`,
       `  title: ${card.title}`,
       `  summary: ${card.summary}`,
+      `  source: ${card.source}`,
+      `  reviewability: ${card.reviewability}`,
+      ...(card.reviewabilityReasons.length === 0
+        ? ["  reviewabilityReason: none"]
+        : card.reviewabilityReasons.map((reason) => `  reviewabilityReason: ${reason}`)),
       `  consumers: ${card.consumers.length === 0 ? "none" : card.consumers.join(", ")}`,
       `  falsifier: ${card.falsifier}`,
       `  doesNotProve: ${card.doesNotProve}`,

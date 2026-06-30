@@ -86,11 +86,16 @@ interface SourceSearchAnswerCandidate {
   expectedUse: string;
   reviewability: SearchReviewability;
   reviewabilityReasons: readonly string[];
-  searchDocumentId?: string;
-  sourceClaimId?: string;
-  doesNotProve?: string;
-  exclusionReason?: string;
-  exclusionExplanation?: string;
+  searchDocumentId: string | undefined;
+  sourceClaimId: string | undefined;
+  claim: string | undefined;
+  mechanism: string | undefined;
+  krnImplication: string | undefined;
+  consumer: string | undefined;
+  falsifier: string | undefined;
+  doesNotProve: string | undefined;
+  exclusionReason: string | undefined;
+  exclusionExplanation: string | undefined;
 }
 
 type SourceSearchRelationDirection = "outgoing" | "incoming";
@@ -337,6 +342,11 @@ const candidateToOutput = (
   status: SourceSearchCandidateStatus
 ): SourceSearchAnswerCandidate => {
   const reviewability = reviewabilityFor(candidate);
+  const claim = metadataString(candidate.metadata, "claim");
+  const mechanism = metadataString(candidate.metadata, "mechanism");
+  const krnImplication = metadataString(candidate.metadata, "krnImplication");
+  const consumer = metadataString(candidate.metadata, "consumer");
+  const falsifier = metadataString(candidate.metadata, "falsifier");
 
   return {
     label: candidateLabel(candidate),
@@ -353,21 +363,16 @@ const candidateToOutput = (
     expectedUse: candidate.expectedUse,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
-    ...(candidate.searchDocumentId === undefined
-      ? {}
-      : { searchDocumentId: candidate.searchDocumentId }),
-    ...(candidate.sourceClaimId === undefined
-      ? {}
-      : { sourceClaimId: candidate.sourceClaimId }),
-    ...(candidate.doesNotProve === undefined
-      ? {}
-      : { doesNotProve: candidate.doesNotProve }),
-    ...(candidate.exclusion === undefined
-      ? {}
-      : {
-          exclusionReason: candidate.exclusion.reason,
-          exclusionExplanation: candidate.exclusion.explanation
-        })
+    searchDocumentId: candidate.searchDocumentId,
+    sourceClaimId: candidate.sourceClaimId,
+    claim,
+    mechanism,
+    krnImplication,
+    consumer,
+    falsifier,
+    doesNotProve: candidate.doesNotProve,
+    exclusionReason: candidate.exclusion?.reason,
+    exclusionExplanation: candidate.exclusion?.explanation
   };
 };
 

@@ -414,6 +414,12 @@ describe("runSourceSearchCommand", () => {
     expect(firstClaim.status).toBe("included");
     expect(firstClaim.reviewability).toBe("ready");
     expect(arrayValue(firstClaim.reviewabilityReasons, "claim reviewability reasons")).toContain("SourceClaim has mechanism.");
+    expect(firstClaim.claim).toBe("KRN should prove one bounded local ingest loop before building a crawler.");
+    expect(firstClaim.mechanism).toBe("A local file can become SourceArtifact, SearchDocument, and SourceClaim.");
+    expect(firstClaim.krnImplication).toBe("Product-facing knowledge search should grow from proven readback.");
+    expect(firstClaim.consumer).toBe("V341 Product-Facing Knowledge Search Readback Preview");
+    expect(firstClaim.falsifier).toBe("The claim cannot be found by a later readback.");
+    expect(firstClaim.doesNotProve).toBe("This does not prove product search quality.");
     expect(firstDocument.label).toBe(`search_document:${searchDocumentId}`);
     expect(firstDocument.reviewability).toBe("ready");
 

@@ -93,7 +93,44 @@ IMR-02 complete: `krn brain search --store-only` skips file catalog readback and
   pattern evidence with proof boundaries.
 IMR-03 complete: preferred operator language is now `krn brain knowledge`;
   `krn knowledge cards` remains a documented compatibility alias.
+IMR-04 complete: `krn brain search --store-only` derives selectedKnowledge
+  packets from governed source/search evidence instead of only file catalog
+  readback.
 ```
+
+## Outcome IMR-04 Store-Backed Selected Knowledge Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-04-store-backed-selected-knowledge/REPORT.md
+```
+
+Outcome: store-only brain search now returns reviewable `selectedKnowledge`
+packets from source-search supporting claims. File catalog counts remain zero
+in store-only mode, so runtime source/search evidence is not confused with
+file-backed catalog cards.
+
+Source-to-decision:
+
+- Source: `mise-en-palace-06v`, IMR-02 store-only readback,
+  `docs/KRN_KERNEL.md`, and live source-search answer-package output.
+- Mechanism: source-search supporting claims already carry governed SourceClaim
+  fields: claim, mechanism, KRN implication, consumer, falsifier, and
+  doesNotProve.
+- KRN implication: store-only brain search can surface selected knowledge from
+  persisted source/search evidence without treating file-backed catalog cards
+  as runtime memory.
+- Decision: derive source-backed packets in store-only mode; weak/incomplete
+  evidence stays visible as `needs_more_evidence`.
+- Does not prove: source truth, semantic ranking, embeddings, graph retrieval,
+  Memory Core mutation, or product readiness.
+- Consumer: pattern/research brain and future pre-coding Pattern Application
+  Gates.
+- Falsifier: store-only brain search with governed source evidence returns
+  empty selectedKnowledge or treats missing mechanism/falsifier as ready.
 
 ## Outcome IMR-03 Brain Knowledge Vocabulary Migration
 
@@ -258,6 +295,14 @@ Product rationale: KRN's moat is not a task runner. The moat is a multi-layer
 memory system that condenses best patterns, papers, courses, local evidence,
 and senior engineering standards into reusable decisions that improve future
 software work. Multi-repo internal work is the proof surface.
+
+Next Beads issue:
+
+```txt
+mise-en-palace-nrw:
+use store-backed brain packets as a pre-coding pattern gate in one real bounded
+source/product slice.
+```
 
 Evidence sources:
 

@@ -325,8 +325,12 @@ export const toSourceClaimCandidate = (claim: SourceClaim): ActivationCandidate 
   doesNotProve: claim.doesNotProve,
   metadata: {
     sourceArtifactId: claim.sourceArtifactId,
+    claim: claim.claim,
+    mechanism: claim.mechanism,
+    krnImplication: claim.krnImplication,
     supportType: claim.supportType,
-    consumer: claim.consumer
+    consumer: claim.consumer,
+    ...(claim.falsifier === undefined ? {} : { falsifier: claim.falsifier })
   }
 });
 
