@@ -73,11 +73,11 @@ Progress in this stream:
 
 ```txt
 completed locally: bounded CLI/core/schema/db/harness/codex/workers cleanup
-  slices from parser boundaries through activation/retrieval smoke scaffold.
+  slices from parser boundaries through DB smoke support task sharing.
 recent slices: shared parser helpers, source-search readback preparation,
   shared metadata reader, DB readiness table inspection, temporal timestamp
-  parsing, activation/retrieval smoke scaffold.
-	full Fallow moved: dupes 136 -> 53; health 117 -> 18
+  parsing, activation/retrieval smoke scaffold, DB smoke support tasks.
+	full Fallow moved: dupes 136 -> 51; health 117 -> 18
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
