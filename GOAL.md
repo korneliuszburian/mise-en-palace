@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V378 Second-Operator Launch Packet
+V02-01 Real Second-Operator Proof
 ```
 
 Current state:
@@ -27,12 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V378-00 Second-Operator Launch Packet.
+current task: V02-01 Await Real Operator Inputs.
 ```
 
-Current task: prepare the exact second-operator launch packet needed to run
-V02-01 without substituting a self/headless proof. Do not run or fake the
-second-operator proof without real operator inputs.
+Current task: wait for real second-operator inputs and transcript path before
+running V02-01. Do not run or fake the second-operator proof without real
+operator inputs.
 
 ## Direction
 

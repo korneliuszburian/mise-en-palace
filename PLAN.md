@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V378 Second-Operator Launch Packet
-current task: V378-00 Second-Operator Launch Packet
+active stream: V02-01 Real Second-Operator Proof
+current task: V02-01 Await Real Operator Inputs
 ```
 
 ## Compact Checkpoints
@@ -33,18 +33,18 @@ source relation candidate evidence: missing relation evidence is explicit and bl
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and knowledge-card readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
+second-operator launch packet: current packet exists under docs/operator-trials
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V378-00 Second-Operator Launch Packet
+### V02-01 Await Real Operator Inputs
 
-Status: active.
+Status: blocked/deferred.
 
-Goal: prepare the exact operator packet, transcript requirements, DB mode,
-support boundary, and acceptance criteria needed to run V02-01 with a real
-second operator.
+Goal: run V02-01 only after real second-operator inputs and transcript path
+exist.
 
 Hard boundary: do not substitute self/headless scenarios for second-operator
 proof; do not build dashboard, API, MCP, worker daemon, crawler, broad eval
@@ -53,7 +53,13 @@ platform, DB schema, or product server.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v377-brain-qa-pattern-coverage-gap-closure/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/REPORT.md
+```
+
+Launch packet:
+
+```txt
+docs/operator-trials/v02-01-second-operator-launch-packet.md
 ```
 
 ## Recent Completed Streams
@@ -79,6 +85,7 @@ V375: Codex hook guardrail pattern intake.
 V376: mini Brain-QA benchmark/readback over six current local questions.
 V377: retained graph relation readback and heartbeat candidate-only runtime
   patterns from the V376 benchmark gap; ingest pattern deferred.
+V378: prepared current second-operator launch packet without claiming V02-01.
 ```
 
 ## Remaining Product Gaps
