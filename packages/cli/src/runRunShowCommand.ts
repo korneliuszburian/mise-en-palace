@@ -7,6 +7,9 @@ import {
 } from "@krn/db/adapters";
 import {
   normalizeEvidenceCommand,
+  readMetadataObjectList,
+  readMetadataString,
+  readMetadataStringList,
   sourceUsefulnessOutcomesFromMetadata,
   summarizeFeedbackCandidateProposals,
   targetEvidenceFromMetadata
@@ -293,15 +296,6 @@ const resolveReadOnlyRuntime = async (
   });
 };
 
-const metadataString = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-};
-
 const projectResolutionKinds = new Set<ProjectResolutionKind>([
   "explicit_project",
   "connected_repo_path",
@@ -322,9 +316,9 @@ const projectResolutionFromMetadata = (
   }
 
   const record = value as Record<string, unknown>;
-  const kind = metadataString(record, "kind");
-  const reason = metadataString(record, "reason");
-  const doesNotProve = metadataString(record, "doesNotProve");
+  const kind = readMetadataString(record, "kind");
+  const reason = readMetadataString(record, "reason");
+  const doesNotProve = readMetadataString(record, "doesNotProve");
 
   if (
     kind === undefined ||
@@ -335,7 +329,7 @@ const projectResolutionFromMetadata = (
     return undefined;
   }
 
-  const repoPathHint = metadataString(record, "repoPathHint");
+  const repoPathHint = readMetadataString(record, "repoPathHint");
 
   return {
     kind: kind as ProjectResolutionKind,
@@ -343,21 +337,6 @@ const projectResolutionFromMetadata = (
     doesNotProve,
     ...(repoPathHint === undefined ? {} : { repoPathHint })
   };
-};
-
-const metadataStringList = (
-  metadata: Record<string, unknown>,
-  key: string
-): string[] => {
-  const value = metadata[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string =>
-    typeof item === "string" && item.trim().length > 0
-  );
 };
 
 const changedFileClassification = (
@@ -382,9 +361,9 @@ const changedFileClassification = (
 
   return {
     source: "metadata",
-    intended: metadataStringList(record, "intended"),
-    unrelated: metadataStringList(record, "unrelated"),
-    unknown: metadataStringList(record, "unknown")
+    intended: readMetadataStringList(record, "intended"),
+    unrelated: readMetadataStringList(record, "unrelated"),
+    unknown: readMetadataStringList(record, "unknown")
   };
 };
 
@@ -543,10 +522,10 @@ const sourceClaimEdgeInfluenceFromMetadata = (
   }
 
   const record = value as Record<string, unknown>;
-  const edgeIds = metadataStringList(record, "edgeIds");
-  const edgeKinds = metadataStringList(record, "edgeKinds");
-  const seedSourceClaimIds = metadataStringList(record, "seedSourceClaimIds");
-  const doesNotProve = metadataString(record, "doesNotProve");
+  const edgeIds = readMetadataStringList(record, "edgeIds");
+  const edgeKinds = readMetadataStringList(record, "edgeKinds");
+  const seedSourceClaimIds = readMetadataStringList(record, "seedSourceClaimIds");
+  const doesNotProve = readMetadataString(record, "doesNotProve");
 
   if (
     edgeIds.length === 0 ||
@@ -656,7 +635,7 @@ const renderActivationTrace = (
 
 const candidateReviewabilityReasons = (
   metadata: Record<string, unknown>
-): string[] => metadataStringList(metadata, "reviewabilityReasons");
+): string[] => readMetadataStringList(metadata, "reviewabilityReasons");
 
 const candidateReviewabilityLabels = new Set<CandidateReviewability>([
   "ready",
@@ -670,26 +649,11 @@ const candidateReviewabilityLabels = new Set<CandidateReviewability>([
 const candidateReviewability = (
   metadata: Record<string, unknown>
 ): CandidateReviewability => {
-  const value = metadataString(metadata, "reviewability");
+  const value = readMetadataString(metadata, "reviewability");
 
   return value !== undefined && candidateReviewabilityLabels.has(value as CandidateReviewability)
     ? value as CandidateReviewability
     : "unknown";
-};
-
-const objectListMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): Record<string, unknown>[] => {
-  const value = metadata[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is Record<string, unknown> =>
-    typeof item === "object" && item !== null && !Array.isArray(item)
-  );
 };
 
 const candidateResource = (input: {
@@ -715,27 +679,36 @@ const candidateResource = (input: {
   };
 };
 
+const metadataCandidateResource = (
+  item: Record<string, unknown>,
+  kind: FeedbackCandidateProposalKind,
+  summaryField: string
+): RunReadbackCandidateResource | undefined => {
+  const id = readMetadataString(item, "id");
+  const summary = readMetadataString(item, summaryField) ?? readMetadataString(item, "summary");
+
+  if (id === undefined || summary === undefined) {
+    return undefined;
+  }
+
+  return candidateResource({
+    kind,
+    id,
+    status: readMetadataString(item, "status"),
+    summary,
+    metadata: item
+  });
+};
+
 const metadataCandidateResources = (
   metadata: Record<string, unknown>,
   key: string,
   kind: FeedbackCandidateProposalKind,
   summaryField: string
 ): RunReadbackCandidateResource[] =>
-  objectListMetadata(metadata, key).flatMap((item) => {
-    const id = metadataString(item, "id");
-    const summary = metadataString(item, summaryField) ?? metadataString(item, "summary");
-
-    if (id === undefined || summary === undefined) {
-      return [];
-    }
-
-    return [candidateResource({
-      kind,
-      id,
-      status: metadataString(item, "status"),
-      summary,
-      metadata: item
-    })];
+  readMetadataObjectList(metadata, key).flatMap((item) => {
+    const resource = metadataCandidateResource(item, kind, summaryField);
+    return resource === undefined ? [] : [resource];
   });
 
 const runReadbackCandidateResources = (

@@ -11,6 +11,7 @@ export * from "./goldenTask.js";
 export * from "./harnessPlan.js";
 export * from "./ids.js";
 export * from "./memory.js";
+export * from "./metadata.js";
 export * from "./operatorIntent.js";
 export * from "./observations/index.js";
 export * from "./policy.js";

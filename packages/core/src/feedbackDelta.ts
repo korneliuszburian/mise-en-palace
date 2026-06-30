@@ -6,6 +6,11 @@ import type {
 } from "./ids.js";
 import type { EvalCandidateProposal } from "./eval.js";
 import type { MemoryCandidate } from "./memory.js";
+import {
+  readMetadataObjectList,
+  readMetadataString,
+  readMetadataStringList
+} from "./metadata.js";
 import type { SourceDecision } from "./source.js";
 import type { IsoTimestamp } from "./time.js";
 import {
@@ -100,48 +105,10 @@ export const isSourceUsefulnessOutcome = (
 ): value is SourceUsefulnessOutcome =>
   sourceUsefulnessOutcomes.has(value as SourceUsefulnessOutcome);
 
-const objectListMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): Record<string, unknown>[] => {
-  const value = metadata[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is Record<string, unknown> =>
-    typeof item === "object" && item !== null && !Array.isArray(item)
-  );
-};
-
-const stringField = (
-  input: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = input[key];
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-};
-
-const stringListField = (
-  input: Record<string, unknown>,
-  key: string
-): string[] => {
-  const value = input[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string =>
-    typeof item === "string" && item.trim().length > 0
-  );
-};
-
 const sourceUsefulnessOutcomeField = (
   input: Record<string, unknown>
 ): SourceUsefulnessOutcome => {
-  const value = stringField(input, "outcome");
+  const value = readMetadataString(input, "outcome");
 
   return value !== undefined && isSourceUsefulnessOutcome(value)
     ? value as SourceUsefulnessOutcome
@@ -151,11 +118,11 @@ const sourceUsefulnessOutcomeField = (
 export const sourceUsefulnessOutcomesFromMetadata = (
   metadata: Record<string, unknown>
 ): SourceUsefulnessOutcomeFeedback[] =>
-  objectListMetadata(metadata, "sourceUsefulnessOutcomes").flatMap((item) => {
-    const sourceClaimId = stringField(item, "sourceClaimId") as SourceClaimId | undefined;
-    const sourceDecisionId = stringField(item, "sourceDecisionId") as SourceDecisionId | undefined;
-    const reason = stringField(item, "reason");
-    const doesNotProve = stringField(item, "doesNotProve");
+  readMetadataObjectList(metadata, "sourceUsefulnessOutcomes").flatMap((item) => {
+    const sourceClaimId = readMetadataString(item, "sourceClaimId") as SourceClaimId | undefined;
+    const sourceDecisionId = readMetadataString(item, "sourceDecisionId") as SourceDecisionId | undefined;
+    const reason = readMetadataString(item, "reason");
+    const doesNotProve = readMetadataString(item, "doesNotProve");
 
     if (sourceClaimId === undefined && sourceDecisionId === undefined) {
       return [];
@@ -170,7 +137,7 @@ export const sourceUsefulnessOutcomesFromMetadata = (
       ...(sourceDecisionId === undefined ? {} : { sourceDecisionId }),
       outcome: sourceUsefulnessOutcomeField(item),
       reason,
-      evidenceRefs: stringListField(item, "evidenceRefs"),
+      evidenceRefs: readMetadataStringList(item, "evidenceRefs"),
       doesNotProve
     }];
   });
@@ -181,9 +148,9 @@ const metadataCandidateRefs = (
   kind: FeedbackCandidateProposalKind,
   summaryField: string
 ): FeedbackCandidateProposalRef[] =>
-  objectListMetadata(metadata, key).flatMap((item) => {
-    const id = stringField(item, "id");
-    const summary = stringField(item, summaryField) ?? stringField(item, "summary");
+  readMetadataObjectList(metadata, key).flatMap((item) => {
+    const id = readMetadataString(item, "id");
+    const summary = readMetadataString(item, summaryField) ?? readMetadataString(item, "summary");
 
     if (id === undefined || summary === undefined) {
       return [];

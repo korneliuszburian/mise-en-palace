@@ -1,6 +1,8 @@
 import {
   assessCandidateReviewability,
-  isSourceClaimTemporallyValid
+  isSourceClaimTemporallyValid,
+  readMetadataString,
+  readMetadataStringList
 } from "@krn/core";
 import type {
   CandidateReviewability,
@@ -84,28 +86,6 @@ const previewDoesNotProve =
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
-const readStringArrayMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): readonly string[] => {
-  const value = metadata[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
-};
-
-const readStringMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-};
-
 const claimMapById = (
   claims: readonly SourceClaim[]
 ): ReadonlyMap<SourceClaimId, SourceClaim> =>
@@ -152,9 +132,9 @@ const buildCandidate = (
 };
 
 const relationEvidenceIsWeak = (edge: SourceClaimEdge): boolean => {
-  const evidenceRefs = readStringArrayMetadata(edge.metadata, "evidenceRefs");
-  const consumer = readStringMetadata(edge.metadata, "consumer");
-  const doesNotProve = readStringMetadata(edge.metadata, "doesNotProve");
+  const evidenceRefs = readMetadataStringList(edge.metadata, "evidenceRefs");
+  const consumer = readMetadataString(edge.metadata, "consumer");
+  const doesNotProve = readMetadataString(edge.metadata, "doesNotProve");
 
   return evidenceRefs.length === 0 || !hasText(consumer) || !hasText(doesNotProve);
 };
@@ -236,7 +216,7 @@ export const buildSourceRelationHeartbeatPreview = (
         edge,
         candidateKind.reason,
         candidateKind.action,
-        readStringArrayMetadata(edge.metadata, "evidenceRefs")
+        readMetadataStringList(edge.metadata, "evidenceRefs")
       )
     );
 

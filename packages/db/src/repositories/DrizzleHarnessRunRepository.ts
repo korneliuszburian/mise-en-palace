@@ -16,7 +16,8 @@ import type {
   TaskContract
 } from "@krn/core";
 import {
-  normalizeEvidenceCommand
+  normalizeEvidenceCommand,
+  readMetadataString
 } from "@krn/core";
 import type {
   CreateContextAssemblyInput,
@@ -73,15 +74,6 @@ const requireLinkedRow = <T>(row: T | undefined, operation: string): T => {
   }
 
   return row;
-};
-
-const metadataString = (
-  metadata: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = metadata[key];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 };
 
 export const evidenceCommandsForPersistence = (
@@ -381,7 +373,7 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
     const contextAssembly =
       contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
     const retrievalRunId =
-      contextAssembly === undefined ? undefined : metadataString(contextAssembly.metadata, "retrievalRunId");
+      contextAssembly === undefined ? undefined : readMetadataString(contextAssembly.metadata, "retrievalRunId");
     const retrievalCandidateRows =
       retrievalRunId === undefined
         ? []

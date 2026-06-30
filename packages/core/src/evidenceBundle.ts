@@ -2,6 +2,10 @@ import type {
   EvidenceBundleId,
   ExecutionRunId
 } from "./ids.js";
+import {
+  readMetadataString,
+  readMetadataStringList
+} from "./metadata.js";
 import type { IsoTimestamp } from "./time.js";
 
 export type EvidenceBundleStatus = "draft" | "captured" | "verified" | "rejected";
@@ -333,30 +337,6 @@ export const normalizeTargetEvidence = (
   };
 };
 
-const stringField = (
-  record: Record<string, unknown>,
-  key: string
-): string | undefined => {
-  const value = record[key];
-
-  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
-};
-
-const stringListField = (
-  record: Record<string, unknown>,
-  key: string
-): string[] => {
-  const value = record[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string =>
-    typeof item === "string" && item.trim().length > 0
-  );
-};
-
 const targetChangedFilesField = (
   record: Record<string, unknown>
 ): TargetEvidenceChangedFileInput[] => {
@@ -372,14 +352,14 @@ const targetChangedFilesField = (
     }
 
     const changedFile = item as Record<string, unknown>;
-    const status = stringField(changedFile, "status");
-    const path = stringField(changedFile, "path");
+    const status = readMetadataString(changedFile, "status");
+    const path = readMetadataString(changedFile, "path");
 
     if (status === undefined || path === undefined) {
       return [];
     }
 
-    const ownership = stringField(changedFile, "ownership");
+    const ownership = readMetadataString(changedFile, "ownership");
 
     return [{
       status,
@@ -397,19 +377,19 @@ export const targetEvidenceFromMetadata = (
   }
 
   const record = input as Record<string, unknown>;
-  const targetRepo = stringField(record, "targetRepo");
+  const targetRepo = readMetadataString(record, "targetRepo");
 
   if (targetRepo === undefined) {
     return undefined;
   }
-  const mode = stringField(record, "mode");
-  const dirtyBefore = stringField(record, "dirtyBefore");
-  const dirtyAfter = stringField(record, "dirtyAfter");
-  const ownedChanges = stringField(record, "ownedChanges");
-  const targetStatusFreshness = stringField(record, "targetStatusFreshness");
-  const targetPatchLifecycle = stringField(record, "targetPatchLifecycle");
-  const handoffArtifact = stringField(record, "handoffArtifact");
-  const targetOwnerDecision = stringField(record, "targetOwnerDecision");
+  const mode = readMetadataString(record, "mode");
+  const dirtyBefore = readMetadataString(record, "dirtyBefore");
+  const dirtyAfter = readMetadataString(record, "dirtyAfter");
+  const ownedChanges = readMetadataString(record, "ownedChanges");
+  const targetStatusFreshness = readMetadataString(record, "targetStatusFreshness");
+  const targetPatchLifecycle = readMetadataString(record, "targetPatchLifecycle");
+  const handoffArtifact = readMetadataString(record, "handoffArtifact");
+  const targetOwnerDecision = readMetadataString(record, "targetOwnerDecision");
 
   return normalizeTargetEvidence({
     targetRepo,
@@ -421,11 +401,11 @@ export const targetEvidenceFromMetadata = (
     ...(targetPatchLifecycle === undefined ? {} : { targetPatchLifecycle }),
     ...(handoffArtifact === undefined ? {} : { handoffArtifact }),
     ...(targetOwnerDecision === undefined ? {} : { targetOwnerDecision }),
-    allowedWrites: stringListField(record, "allowedWrites"),
-    forbiddenWrites: stringListField(record, "forbiddenWrites"),
+    allowedWrites: readMetadataStringList(record, "allowedWrites"),
+    forbiddenWrites: readMetadataStringList(record, "forbiddenWrites"),
     changedFiles: targetChangedFilesField(record),
-    commands: stringListField(record, "commands"),
-    doesNotProve: stringListField(record, "doesNotProve")
+    commands: readMetadataStringList(record, "commands"),
+    doesNotProve: readMetadataStringList(record, "doesNotProve")
   });
 };
 
@@ -636,21 +616,6 @@ const requiredCommandPassed = (
     command.command === requiredCommand && command.status === "passed"
   );
 
-const stringListMetadata = (
-  metadata: Record<string, unknown>,
-  key: string
-): string[] => {
-  const value = metadata[key];
-
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return value.filter((item): item is string =>
-    typeof item === "string" && item.trim().length > 0
-  );
-};
-
 const clampRisk = (score: number): DiffRisk => {
   if (score >= 2) {
     return "high";
@@ -733,7 +698,7 @@ export const assessEvidenceBundleCompleteness = (
     findings.push("diffSummary is required");
   }
 
-  if (stringListMetadata(bundle.metadata, "sourceRefs").length === 0) {
+  if (readMetadataStringList(bundle.metadata, "sourceRefs").length === 0) {
     findings.push("sourceRefs are required");
   }
 
