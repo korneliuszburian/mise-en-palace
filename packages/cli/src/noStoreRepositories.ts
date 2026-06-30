@@ -42,6 +42,14 @@ const notUsed = (method: string): never => {
   throw new Error(`${method} is not available in CLI no-store preview mode`);
 };
 
+const optionalField = <Key extends string, Value>(
+  key: Key,
+  value: Value | undefined
+): Partial<Record<Key, Value>> =>
+  value === undefined
+    ? {}
+    : { [key]: value } as Record<Key, Value>;
+
 export const createNoStoreCompilerDependencies = (
   runtime: NoStoreRuntime
 ): HarnessCompilerDependencies => {
@@ -50,10 +58,10 @@ export const createNoStoreCompilerDependencies = (
       return {
         id: runtime.createId("operator-intent"),
         workspaceId: input.workspaceId,
-        ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+        ...optionalField("projectId", input.projectId),
         source: input.source,
         rawIntent: input.rawIntent,
-        ...(input.normalizedIntent === undefined ? {} : { normalizedIntent: input.normalizedIntent }),
+        ...optionalField("normalizedIntent", input.normalizedIntent),
         metadata: input.metadata ?? {},
         createdAt: runtime.now()
       };
@@ -213,17 +221,15 @@ export const createNoStoreCompilerDependencies = (
         status: input.status ?? "candidate",
         subjectType: input.subjectType,
         subjectId: input.subjectId,
-        ...(input.searchDocumentId === undefined
-          ? {}
-          : { searchDocumentId: input.searchDocumentId }),
+        ...optionalField("searchDocumentId", input.searchDocumentId),
         trustTier: input.trustTier,
-        ...(input.lexicalScore === undefined ? {} : { lexicalScore: input.lexicalScore }),
-        ...(input.vectorScore === undefined ? {} : { vectorScore: input.vectorScore }),
-        ...(input.graphScore === undefined ? {} : { graphScore: input.graphScore }),
-        ...(input.temporalScore === undefined ? {} : { temporalScore: input.temporalScore }),
-        ...(input.contextRoiScore === undefined ? {} : { contextRoiScore: input.contextRoiScore }),
-        ...(input.totalScore === undefined ? {} : { totalScore: input.totalScore }),
-        ...(input.score === undefined ? {} : { score: input.score }),
+        ...optionalField("lexicalScore", input.lexicalScore),
+        ...optionalField("vectorScore", input.vectorScore),
+        ...optionalField("graphScore", input.graphScore),
+        ...optionalField("temporalScore", input.temporalScore),
+        ...optionalField("contextRoiScore", input.contextRoiScore),
+        ...optionalField("totalScore", input.totalScore),
+        ...optionalField("score", input.score),
         reason: input.reason,
         metadata: input.metadata ?? {},
         createdAt: runtime.now()
