@@ -473,14 +473,16 @@ const createSearchSourceQuery = (taskContract: TaskContract, query: string) => {
   };
 };
 
-const formatSearchResult = (input: {
+type SourceSearchRenderInput = {
   query: string;
   projectId: string;
   limit: number;
   maxInclusions: number;
   candidates: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
-}): string => {
+};
+
+const buildSearchReadback = (input: SourceSearchRenderInput) => {
   const included = input.candidates.filter((candidate) => candidate.exclusion === undefined);
   const excluded = input.candidates.filter((candidate) => candidate.exclusion !== undefined);
   const answerPackage = buildAnswerPackage({
@@ -488,6 +490,17 @@ const formatSearchResult = (input: {
     included,
     diagnostics: input.diagnostics
   });
+
+  return {
+    included,
+    excluded,
+    answerPackage,
+    noMatchGuidance: buildNoMatchGuidance(input.candidates.length)
+  };
+};
+
+const formatSearchResult = (input: SourceSearchRenderInput): string => {
+  const readback = buildSearchReadback(input);
 
   return [
     "KRN Source Knowledge Search",
@@ -506,27 +519,20 @@ const formatSearchResult = (input: {
     `- mergedCandidates: ${input.diagnostics.mergedCandidateCount}`,
     `- doesNotProve: ${input.diagnostics.doesNotProve}`,
     "",
-    ...formatAnswerPackage(answerPackage),
+    ...formatAnswerPackage(readback.answerPackage),
     "",
     "Included candidates:",
-    ...(included.length === 0
+    ...(readback.included.length === 0
       ? ["- none"]
-      : included.flatMap((candidate) => formatCandidate(candidate, "included"))),
+      : readback.included.flatMap((candidate) => formatCandidate(candidate, "included"))),
     "",
     "Excluded candidates:",
-    ...(excluded.length === 0
+    ...(readback.excluded.length === 0
       ? ["- none"]
-      : excluded.flatMap((candidate) => formatCandidate(candidate, "excluded"))),
+      : readback.excluded.flatMap((candidate) => formatCandidate(candidate, "excluded"))),
     "",
     "No-match guidance:",
-    ...(input.candidates.length === 0
-      ? [
-          "- no candidates matched; try a narrower marker/hash query or ingest a local artifact first"
-        ]
-      : [
-          "- if an expected SearchDocument is excluded, inspect score and budget before changing ranking",
-          "- if an expected SourceClaim is missing, verify source claim persistence and project scope"
-        ]),
+    ...readback.noMatchGuidance.map((item) => `- ${item}`),
     "",
     "Proof:",
     "- proves: current Postgres can read persisted source/search candidates for this query",
@@ -549,21 +555,8 @@ const buildNoMatchGuidance = (candidateCount: number): readonly string[] =>
         "if an expected SourceClaim is missing, verify source claim persistence and project scope"
       ];
 
-const formatSearchJson = (input: {
-  query: string;
-  projectId: string;
-  limit: number;
-  maxInclusions: number;
-  candidates: readonly RankedActivationCandidate[];
-  diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
-}): string => {
-  const included = input.candidates.filter((candidate) => candidate.exclusion === undefined);
-  const excluded = input.candidates.filter((candidate) => candidate.exclusion !== undefined);
-  const answerPackage = buildAnswerPackage({
-    query: input.query,
-    included,
-    diagnostics: input.diagnostics
-  });
+const formatSearchJson = (input: SourceSearchRenderInput): string => {
+  const readback = buildSearchReadback(input);
   const output: SourceSearchJsonOutput = {
     kind: "source_search_answer_package",
     query: input.query,
@@ -580,10 +573,10 @@ const formatSearchJson = (input: {
       mergedCandidates: input.diagnostics.mergedCandidateCount,
       doesNotProve: input.diagnostics.doesNotProve
     },
-    answerPackage,
-    includedCandidates: included.map((candidate) => candidateToOutput(candidate, "included")),
-    excludedCandidates: excluded.map((candidate) => candidateToOutput(candidate, "excluded")),
-    noMatchGuidance: buildNoMatchGuidance(input.candidates.length),
+    answerPackage: readback.answerPackage,
+    includedCandidates: readback.included.map((candidate) => candidateToOutput(candidate, "included")),
+    excludedCandidates: readback.excluded.map((candidate) => candidateToOutput(candidate, "excluded")),
+    noMatchGuidance: readback.noMatchGuidance,
     proof: {
       proves: [
         "current Postgres can read persisted source/search candidates for this query",

@@ -393,11 +393,13 @@ describe("runSourceSearchCommand", () => {
 
     const includedCandidates = arrayValue(output.includedCandidates, "includedCandidates");
     const excludedCandidates = arrayValue(output.excludedCandidates, "excludedCandidates");
+    const noMatchGuidance = arrayValue(output.noMatchGuidance, "noMatchGuidance");
     const proof = objectValue(output.proof, "proof");
     const runtimeOutput = objectValue(output.runtime, "runtime");
 
     expect(includedCandidates).toHaveLength(2);
     expect(excludedCandidates).toHaveLength(0);
+    expect(noMatchGuidance).toContain("if an expected SearchDocument is excluded, inspect score and budget before changing ranking");
     expect(arrayValue(proof.proves, "proof.proves")).toContain(
       "readback shows inclusion/exclusion, scores, reviewability, and proof boundaries"
     );
