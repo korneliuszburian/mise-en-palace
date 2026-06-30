@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V361 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+V362 Ingest V0 Expansion With Bounded Evidence
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta.
+current task: V362-00 Ingest V0 Expansion With Bounded Evidence.
 ```
 
-Current task: start the next product-facing graph-brain vertical. Use the V358
-closure as evidence that source-search diagnostics now handle graph-relations
-query-shape ambiguity, then prove or reject a small entity/relation extraction
-and answer-delta path without schema, ranking, UI/API/MCP, crawler, embeddings,
-or worker-runtime expansion.
+Current task: run the next product-facing ingest vertical. Use the V361
+relationSupport answer-package delta as evidence that source search can consume
+existing graph relations, then prove a second bounded local artifact flow
+through existing ingest/readback paths without crawler, embeddings, schema,
+ranking, UI/API/MCP, worker-runtime, broad benchmark, or Memory Core expansion.
 
 ## Direction
 

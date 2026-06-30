@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V361 Graph Brain V0 Entity/Relation Extraction And Answer Delta
-current task: V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+active stream: V362 Ingest V0 Expansion With Bounded Evidence
+current task: V362-00 Ingest V0 Expansion With Bounded Evidence
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta is active.
-The current gap is proving or rejecting a small entity/relation extraction path
-that improves a graph-brain answer package without schema, ranking, UI/API/MCP,
-crawler, embedding, worker-runtime, broad benchmark, or Memory Core expansion.
+V362-00 Ingest V0 Expansion With Bounded Evidence is active.
+The current gap is proving a second bounded local artifact flow through existing
+source artifact, SearchDocument, SourceClaim, SourceClaimEdge, and source-search
+answer-package readback paths without crawler, embeddings, schema, ranking,
+UI/API/MCP, worker runtime, broad benchmark, or Memory Core expansion.
 ```
 
 ## 2. Product Thesis
@@ -73,27 +74,30 @@ V351-V355 complete: missingEvidence specificity and answerUsefulness output.
 V356 complete: graph relation SearchDocuments exist and narrow graph queries retrieve them.
 V357 complete: source-search answer packages expose queryShapeDiagnostics.
 V358 complete: graph mini Brain-QA diagnostic closure passed.
+V361 complete: source-search answer packages expose SourceClaimEdge relationSupport.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V361
+## Active Task V362
 
-ID: V361-00
-Name: Graph Brain V0 Entity/Relation Extraction And Answer Delta
+ID: V362-00
+Name: Ingest V0 Expansion With Bounded Evidence
 Status: active
 
-Goal: prove or reject a small entity/relation extraction path that improves a
-source-search answer package delta for graph-brain questions.
+Goal: prove a second local artifact can flow through existing source artifact,
+SearchDocument, SourceClaim, SourceClaimEdge, and source-search answer-package
+readback paths.
 
-Product rationale: V358 closed the graph-relations query-shape ambiguity. The
-next useful step is not another diagnostic guard; it is a small graph-brain
-vertical that can show answer-package improvement or fail with evidence.
+Product rationale: V361 showed source-search answer packages can consume
+existing graph relation support. The next useful step is proving one more
+bounded ingest path before crawler, embeddings, schema, ranking, UI/API/MCP, or
+worker-runtime expansion.
 
 Allowed writes:
 
 - smallest owning source/test files if implementation is needed;
-- a compact V361 report under `docs/reviews/controlled-dogfood/`;
+- a compact V362 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -111,8 +115,9 @@ Forbidden writes:
 
 Definition of Done:
 
-- either a small graph entity/relation extraction path improves a graph-brain
-  answer package with tests and DB-backed readback;
+- a second bounded local artifact is ingested or previewed through existing
+  source artifact, SearchDocument, SourceClaim, SourceClaimEdge, and
+  source-search answer-package readback paths;
 - or source inspection proves the existing substrate is insufficient and records
   the smallest next blocker without expanding architecture.
 
@@ -132,8 +137,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V361 becomes a schema/ranking/UI/API/MCP/crawler/embedding/worker expansion
-without first proving a small answer-package delta.
+V362 becomes a crawler/embedding/schema/ranking/UI/API/MCP/worker expansion
+without first proving one more bounded local artifact readback.
 ```
 
 ## 9. Task Contract Schema
@@ -194,11 +199,10 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V361 graph brain v0 entity/relation extraction and answer deltas
-2. ingest v0 expansion with bounded evidence
-3. heartbeat/dreaming candidate generator
-4. consensus eval/candidate lane
-5. product UI/search/API/MCP after usefulness/security gates
+1. V362 ingest v0 expansion with bounded evidence
+2. heartbeat/dreaming candidate generator
+3. consensus eval/candidate lane
+4. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -206,7 +210,8 @@ Current backlog order:
 - [x] V358 complete: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 - [x] V359 complete: Fallow Quality Gate And First Cleanup.
 - [x] V360 complete: Fallow Legacy Complexity Cleanup.
-- [ ] V361 pending: Graph Brain V0 Entity/Relation Extraction And Answer Delta.
+- [x] V361 complete: Graph Brain V0 Entity/Relation Extraction And Answer Delta.
+- [ ] V362 pending: Ingest V0 Expansion With Bounded Evidence.
 
 ## Outcome V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
@@ -245,6 +250,49 @@ executionRun: 964b10ca-42e8-48b4-8daf-734ab435a3b6
 evidenceBundle: dbe829e3-02c1-4e6f-a0ac-6b76df981aa5
 observationGroup: e011a547-434e-4b01-81ff-3bba1cdec63c
 reflectionRecord: f32b0c01-b70e-4c4b-814b-771ad19ae791
+MemoryRecord created: no
+```
+
+## Outcome V361 Graph Brain V0 Entity/Relation Answer Delta
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v361-graph-brain-v0-entity-relation-answer-delta/REPORT.md
+```
+
+Source-to-decision:
+
+- Source: V358 graph mini Brain-QA diagnostic closure, existing
+  `sourceArtifactPreviewExtraction` path, relation-grounded QA helper, and
+  SourceClaimEdge readback surface.
+- Mechanism: KRN already has deterministic local entity/claim/relation
+  extraction and persisted SourceClaimEdge rows; source-search answer packages
+  did not expose relation support alongside supporting claims and documents.
+- KRN implication: source-search answer packages should consume existing
+  reviewed relation support before adding graph runtime, schema, ranking,
+  crawler, embeddings, UI/API/MCP, or worker execution.
+- Decision: adopt read-only answer-package `relationSupport` and reject a new
+  extraction layer for this slice.
+- Does not prove: source truth, edge correctness, answer correctness, ranking
+  quality, graph retrieval quality, extraction quality, broad benchmark
+  quality, product readiness, UI/API/MCP readiness, embeddings, crawler
+  readiness, worker runtime, or Memory Core mutation.
+- Consumer: graph mini Brain-QA loop and technical operators consuming
+  `krn source search --json`.
+- Falsifier: `relationSupport` fails to appear for included SourceClaims with
+  persisted SourceClaimEdge rows, changes ranking/retrieval behavior, mutates DB
+  state, or pressures schema/runtime expansion.
+
+Evidence:
+
+```txt
+executionRun: 18145922-1603-4644-b715-9efd1c4ea1b1
+evidenceBundle: d977e1d5-df92-47a0-b676-36b5a16fa850
+observationGroup: db675443-83f6-420f-b414-ee3bae42c9cd
+reflectionRecord: 24b7ec1c-b610-4c04-b1f8-45103790ba11
 MemoryRecord created: no
 ```
 

@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V361 Graph Brain V0 Entity/Relation Extraction And Answer Delta
-current task: V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+active stream: V362 Ingest V0 Expansion With Bounded Evidence
+current task: V362-00 Ingest V0 Expansion With Bounded Evidence
 ```
 
 ## Compact Checkpoints
@@ -56,10 +56,30 @@ ranking work.
 
 ### V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta
 
+Status: complete.
+
+Outcome: `krn source search --json` now exposes read-only `relationSupport` for
+included SourceClaims with persisted SourceClaimEdge rows. The slice rejected a
+new extraction layer because deterministic local entity/claim/relation
+extraction already exists; the product gap was answer-package consumption.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v361-graph-brain-v0-entity-relation-answer-delta/REPORT.md
+```
+
+Next decision: expand ingest v0 with one more bounded local artifact flow before
+crawler, embeddings, schema, ranking, UI/API/MCP, worker runtime, broad
+benchmark, or Memory Core mutation.
+
+### V362-00 Ingest V0 Expansion With Bounded Evidence
+
 Status: active.
 
-Goal: prove or reject a small entity/relation extraction path that improves a
-source-search answer package delta for graph-brain questions.
+Goal: prove a second local artifact can flow through existing source artifact,
+SearchDocument, SourceClaim, SourceClaimEdge, and source-search answer-package
+readback paths.
 
 Hard boundary: no DB schema, ranking rewrite, retrieval semantics rewrite,
 UI/API/MCP, crawler, embeddings, worker runtime, broad benchmark, or Memory Core
@@ -84,14 +104,6 @@ Status: complete.
 Outcome: full Fallow now exits cleanly. Dead-code findings remain zero, health
 findings are below gate, and remaining duplication output is below configured
 failure threshold.
-
-First rule: do not broad-refactor the repo. Pick one high-confidence target
-from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
-then commit/push/CI before choosing the next target.
-
-Current candidate targets:
-production CLI/core/harness health targets from the current Fallow baseline,
-chosen by source inspection and user-facing value.
 
 Progress in this stream:
 
@@ -118,11 +130,10 @@ Verification: `pnpm quality:fallow`, `pnpm typecheck`, `pnpm test`,
 ## Remaining Product Gaps
 
 ```txt
-1. graph brain v0 entity/relation extraction and answer deltas
-2. ingest v0 expansion with bounded evidence
-3. heartbeat/dreaming candidate generator
-4. consensus eval/candidate lane
-5. product UI/search/API/MCP after usefulness/security gates
+1. ingest v0 expansion with bounded evidence
+2. heartbeat/dreaming candidate generator
+3. consensus eval/candidate lane
+4. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

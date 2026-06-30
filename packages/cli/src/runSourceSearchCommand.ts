@@ -1,4 +1,6 @@
 import type {
+  SourceClaim,
+  SourceClaimEdge,
   TaskContract
 } from "@krn/core";
 import {
@@ -91,6 +93,21 @@ interface SourceSearchAnswerCandidate {
   exclusionExplanation?: string;
 }
 
+type SourceSearchRelationDirection = "outgoing" | "incoming";
+
+interface SourceSearchRelationSupport {
+  sourceClaimId: SourceClaim["id"];
+  edgeId: SourceClaimEdge["id"];
+  direction: SourceSearchRelationDirection;
+  relatedSourceClaimId: SourceClaim["id"];
+  kind: SourceClaimEdge["kind"];
+  consumer?: string;
+  doesNotProve?: string;
+  evidenceRef?: string;
+  sourceDecisionRef?: string;
+  sourceRanges?: readonly string[];
+}
+
 interface SourceSearchAnswerPackage {
   answer: string;
   answerUsefulness: SourceSearchAnswerUsefulness;
@@ -98,6 +115,7 @@ interface SourceSearchAnswerPackage {
   queryShapeDiagnostics: readonly string[];
   supportingClaims: readonly SourceSearchAnswerCandidate[];
   supportingDocuments: readonly SourceSearchAnswerCandidate[];
+  relationSupport: readonly SourceSearchRelationSupport[];
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
   missingEvidence: readonly string[];
   doesNotProve: readonly string[];
@@ -331,10 +349,110 @@ const candidateToOutput = (
   };
 };
 
+const sourceClaimIdFor = (
+  candidate: RankedActivationCandidate
+): SourceClaim["id"] | undefined =>
+  candidate.subjectType === "source_claim"
+    ? (candidate.sourceClaimId ?? candidate.subjectId) as SourceClaim["id"]
+    : undefined;
+
+const relationDirectionFor = (
+  sourceClaimId: SourceClaim["id"],
+  edge: SourceClaimEdge
+): SourceSearchRelationDirection =>
+  edge.fromSourceClaimId === sourceClaimId ? "outgoing" : "incoming";
+
+const relatedSourceClaimIdFor = (
+  sourceClaimId: SourceClaim["id"],
+  edge: SourceClaimEdge
+): SourceClaim["id"] =>
+  (edge.fromSourceClaimId === sourceClaimId
+    ? edge.toSourceClaimId
+    : edge.fromSourceClaimId) as SourceClaim["id"];
+
+const metadataString = (
+  metadata: Record<string, unknown>,
+  key: string
+): string | undefined => {
+  const value = metadata[key];
+
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
+};
+
+const metadataStringArray = (
+  metadata: Record<string, unknown>,
+  key: string
+): readonly string[] | undefined => {
+  const value = metadata[key];
+
+  return Array.isArray(value) && value.every((item): item is string => typeof item === "string")
+    ? value
+    : undefined;
+};
+
+const relationSupportFromEdge = (
+  sourceClaimId: SourceClaim["id"],
+  edge: SourceClaimEdge
+): SourceSearchRelationSupport => {
+  const consumer = metadataString(edge.metadata, "consumer");
+  const doesNotProve = metadataString(edge.metadata, "doesNotProve");
+  const evidenceRef = metadataString(edge.metadata, "evidenceRef");
+  const sourceDecisionRef = metadataString(edge.metadata, "sourceDecisionRef");
+  const sourceRanges = metadataStringArray(edge.metadata, "sourceRanges");
+  const support: SourceSearchRelationSupport = {
+    sourceClaimId,
+    edgeId: edge.id,
+    direction: relationDirectionFor(sourceClaimId, edge),
+    relatedSourceClaimId: relatedSourceClaimIdFor(sourceClaimId, edge),
+    kind: edge.kind
+  };
+
+  if (consumer !== undefined) {
+    support.consumer = consumer;
+  }
+
+  if (doesNotProve !== undefined) {
+    support.doesNotProve = doesNotProve;
+  }
+
+  if (evidenceRef !== undefined) {
+    support.evidenceRef = evidenceRef;
+  }
+
+  if (sourceDecisionRef !== undefined) {
+    support.sourceDecisionRef = sourceDecisionRef;
+  }
+
+  if (sourceRanges !== undefined) {
+    support.sourceRanges = sourceRanges;
+  }
+
+  return support;
+};
+
+const buildRelationSupport = async (input: {
+  included: readonly RankedActivationCandidate[];
+  sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceClaimEdgesForClaim">;
+}): Promise<SourceSearchRelationSupport[]> => {
+  const sourceClaimIds = [...new Set(input.included.flatMap((candidate) => {
+    const sourceClaimId = sourceClaimIdFor(candidate);
+
+    return sourceClaimId === undefined ? [] : [sourceClaimId];
+  }))];
+  const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) => {
+    const edges = await input.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimId);
+
+    return edges.map((edge) => relationSupportFromEdge(sourceClaimId, edge));
+  }));
+
+  return edgeGroups.flat();
+};
+
 const buildAnswerPackage = (input: {
   query: string;
   included: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
+  relationSupport: readonly SourceSearchRelationSupport[];
 }): SourceSearchAnswerPackage => {
   const included = input.included.map((candidate) => candidateToOutput(candidate, "included"));
   const supportingClaims = included.filter(
@@ -376,10 +494,16 @@ const buildAnswerPackage = (input: {
   return {
     answer: `Source search found ${supportingClaims.length} supporting SourceClaim(s) and ${supportingDocuments.length} supporting SearchDocument(s) for "${input.query}".`,
     answerUsefulness: answerUsefulness.answerUsefulness,
-    answerUsefulnessReasons: answerUsefulness.reasons,
+    answerUsefulnessReasons: [
+      ...answerUsefulness.reasons,
+      ...(input.relationSupport.length === 0
+        ? []
+        : ["Answer package includes SourceClaimEdge relation support."])
+    ],
     queryShapeDiagnostics,
     supportingClaims,
     supportingDocuments,
+    relationSupport: input.relationSupport,
     neutralOrNoise,
     missingEvidence,
     doesNotProve,
@@ -406,6 +530,20 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
     ...(answerPackage.supportingDocuments.length === 0
       ? ["- none"]
       : answerPackage.supportingDocuments.map((candidate) => `- ${candidate.label} | ${candidate.reason}`)),
+    "relation support:",
+    ...(answerPackage.relationSupport.length === 0
+      ? ["- none"]
+      : answerPackage.relationSupport.map((relation) =>
+          [
+            `- source_claim:${relation.sourceClaimId}`,
+            ` edge:${relation.edgeId}`,
+            ` direction:${relation.direction}`,
+            ` kind:${relation.kind}`,
+            ` relatedSourceClaim:${relation.relatedSourceClaimId}`,
+            relation.consumer === undefined ? "" : ` consumer:${relation.consumer}`,
+            relation.doesNotProve === undefined ? "" : ` doesNotProve:${relation.doesNotProve}`
+          ].join("")
+        )),
     "neutral/noise:",
     ...(answerPackage.neutralOrNoise.length === 0
       ? ["- none from included candidates"]
@@ -480,6 +618,7 @@ type SourceSearchRenderInput = {
   maxInclusions: number;
   candidates: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
+  relationSupport: readonly SourceSearchRelationSupport[];
 };
 
 const buildSearchReadback = (input: SourceSearchRenderInput) => {
@@ -488,7 +627,8 @@ const buildSearchReadback = (input: SourceSearchRenderInput) => {
   const answerPackage = buildAnswerPackage({
     query: input.query,
     included,
-    diagnostics: input.diagnostics
+    diagnostics: input.diagnostics,
+    relationSupport: input.relationSupport
   });
 
   return {
@@ -663,6 +803,10 @@ export const runSourceSearchCommand = async (
       maxInclusions,
       minimumDiverseKinds: ["source", "search"]
     });
+    const relationSupport = await buildRelationSupport({
+      included: bounded.filter((candidate) => candidate.exclusion === undefined),
+      sourceRepository: databaseRuntime.sourceRepository
+    });
 
     return {
       stdout: runtime.command.json === true
@@ -672,7 +816,8 @@ export const runSourceSearchCommand = async (
             limit,
             maxInclusions,
             candidates: bounded,
-            diagnostics: retrieved.diagnostics
+            diagnostics: retrieved.diagnostics,
+            relationSupport
           })
         : formatSearchResult({
             query,
@@ -680,7 +825,8 @@ export const runSourceSearchCommand = async (
             limit,
             maxInclusions,
             candidates: bounded,
-            diagnostics: retrieved.diagnostics
+            diagnostics: retrieved.diagnostics,
+            relationSupport
           })
     };
   } finally {

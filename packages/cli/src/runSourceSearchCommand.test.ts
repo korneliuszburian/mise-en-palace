@@ -5,7 +5,8 @@ import {
 } from "vitest";
 
 import type {
-  SourceClaim
+  SourceClaim,
+  SourceClaimEdge
 } from "@krn/core";
 import type {
   SearchDocumentSearchResult
@@ -23,6 +24,7 @@ import {
 const now = "2026-06-29T12:00:00.000Z";
 const projectId = "7d9d103a-1a8e-4492-a4ca-db3a5589bd9b";
 const sourceClaimId = "3363383c-02d0-4e5a-9674-132c1bc41b51" as SourceClaim["id"];
+const relatedSourceClaimId = "931e7faa-a982-498f-a265-6a938800f707" as SourceClaim["id"];
 const searchDocumentId = "6f045cc4-e8c9-4555-8425-167d74e5d319";
 
 const sourceClaim = (overrides: Partial<SourceClaim> = {}): SourceClaim => ({
@@ -67,14 +69,33 @@ const searchDocument = (
   ...overrides
 });
 
+const sourceClaimEdge = (
+  overrides: Partial<SourceClaimEdge> = {}
+): SourceClaimEdge => ({
+  id: "415321b3-4a26-4634-bfbe-38b756777d6a" as SourceClaimEdge["id"],
+  fromSourceClaimId: sourceClaimId,
+  toSourceClaimId: relatedSourceClaimId,
+  kind: "narrows",
+  metadata: {
+    consumer: "graph mini Brain-QA",
+    doesNotProve: "This edge does not prove graph retrieval quality.",
+    evidenceRef: "docs/decisions/ADR-0021-temporal-claim-graph.md",
+    sourceRanges: ["docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"]
+  },
+  createdAt: now,
+  ...overrides
+});
+
 const runtime = (input?: {
   claims?: readonly SourceClaim[];
   documents?: readonly SearchDocumentSearchResult[];
+  edges?: readonly SourceClaimEdge[];
   onSearchQuery?(query: string): void;
   onClose?(): void;
 }): SourceSearchCommand["createDatabaseRuntime"] => async () => {
   const claims = input?.claims ?? [sourceClaim()];
   const documents = input?.documents ?? [searchDocument()];
+  const edges = input?.edges ?? [];
 
   return {
     workspaceId: "workspace-1",
@@ -137,8 +158,11 @@ const runtime = (input?: {
       async createSourceClaimEdge() {
         throw new Error("createSourceClaimEdge should not be called");
       },
-      async listSourceClaimEdgesForClaim() {
-        return [];
+      async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
+        return edges.filter((edge) =>
+          edge.fromSourceClaimId === sourceClaimIdForReadback ||
+          edge.toSourceClaimId === sourceClaimIdForReadback
+        );
       },
       async createSourceDecisionEdge() {
         throw new Error("createSourceDecisionEdge should not be called");
@@ -317,6 +341,8 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain(`- source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain("supporting documents:");
     expect(result.stdout).toContain(`- search_document:${searchDocumentId}`);
+    expect(result.stdout).toContain("relation support:");
+    expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("missing evidence:");
     expect(result.stdout).toContain("- none detected by current diagnostics");
     expect(result.stdout).toContain("recommended next action: Use the supporting claims/documents as a Pattern Application Gate");
@@ -408,6 +434,48 @@ describe("runSourceSearchCommand", () => {
     expect(runtimeOutput.crawler).toBe("none");
     expect(runtimeOutput.embeddings).toBe("not_run");
     expect(runtimeOutput.graphRuntime).toBe("not_run");
+  });
+
+  it("includes read-only SourceClaimEdge relation support in JSON answer packages", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "temporal claim graph",
+        limit: 10,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        edges: [sourceClaimEdge()]
+      })
+    });
+
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const relationSupport = arrayValue(answerPackage.relationSupport, "relationSupport");
+    const relation = objectValue(relationSupport[0], "first relation support");
+
+    expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
+      "Answer package includes SourceClaimEdge relation support."
+    );
+    expect(relationSupport).toHaveLength(1);
+    expect(relation.sourceClaimId).toBe(sourceClaimId);
+    expect(relation.edgeId).toBe("415321b3-4a26-4634-bfbe-38b756777d6a");
+    expect(relation.direction).toBe("outgoing");
+    expect(relation.relatedSourceClaimId).toBe(relatedSourceClaimId);
+    expect(relation.kind).toBe("narrows");
+    expect(relation.consumer).toBe("graph mini Brain-QA");
+    expect(relation.doesNotProve).toBe("This edge does not prove graph retrieval quality.");
+    expect(relation.evidenceRef).toBe("docs/decisions/ADR-0021-temporal-claim-graph.md");
+    expect(arrayValue(relation.sourceRanges, "relation sourceRanges")).toEqual([
+      "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"
+    ]);
   });
 
   it("prints no-match guidance without mutating when no candidates match", async () => {
