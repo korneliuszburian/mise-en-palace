@@ -40,6 +40,7 @@ heartbeat acquisition dogfood: live DB-backed source/brain missingEvidence produ
 heartbeat candidate focus: candidate-kind filter can isolate acquisition lane and avoid unrelated repo reads
 heartbeat acquisition follow-up: focused candidate triggered bounded source/evidence follow-up and exposed missing query diagnostics
 heartbeat acquisition diagnostics: acquisition candidates preserve query-shape diagnostics and recommended follow-up
+heartbeat diagnostic follow-up: diagnostics selected a bounded source/evidence split and exposed source-claim/document linkage gap
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -76,10 +77,9 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-mise-en-palace-e8s:
-use the diagnostic-bearing acquisition candidate for one bounded source/evidence
-follow-up or explicit rejection, then decide whether the next repair is
-SearchDocument coverage, source claim/document linkage, or no-op.
+mise-en-palace-d8u:
+expose artifact-linked SearchDocument evidence or an explicit linkage caveat for
+supporting SourceClaims in source-search answer packages.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -124,6 +124,9 @@ IMR-10: focused acquisition candidate follow-up proved the gap is actionable but
 IMR-11: acquisition candidates now carry query diagnostics and recommended
   follow-up without changing mutation, ranking, schema, crawler, worker, API/MCP,
   or Memory Core authority.
+IMR-12: diagnostic-bearing acquisition follow-up showed path queries can retrieve
+  documents, while claim-text queries miss artifact-linked documents; next repair
+  is source claim/document linkage readback.
 ```
 
 ## Remaining Product Gaps

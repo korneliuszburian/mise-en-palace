@@ -120,6 +120,50 @@ IMR-10 complete: focused knowledge-acquisition candidate follow-up performed
 IMR-11 complete: heartbeat acquisition candidates now preserve query-shape
   diagnostics and recommended follow-up from source/brain readbacks, reducing
   raw JSON inspection before bounded evidence follow-up.
+IMR-12 complete: diagnostic-bearing acquisition output drove one bounded
+  source/evidence follow-up; evidence points to source claim/document linkage
+  readback, not crawler, schema, ranking, worker, API/MCP, or Memory Core work.
+```
+
+## Outcome IMR-12 Diagnostic Acquisition Evidence Follow-Up
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-12-diagnostic-acquisition-evidence-followup/REPORT.md
+```
+
+Outcome: the diagnostic-bearing acquisition candidate reduced review burden.
+The recommended split produced a clear result: a claim-text source-search query
+returned 5 SourceClaims and 0 SearchDocuments, while a path/evidence-shaped
+query returned 4 SourceClaims and 1 SearchDocument. DB linkage readback showed
+selected SourceClaims have artifact-level SearchDocuments but no direct
+`search_documents.source_claim_id` rows. The next bounded repair is to expose
+artifact-linked document evidence or an explicit linkage caveat for supporting
+SourceClaims.
+
+Source-to-decision:
+
+- Source: IMR-11 diagnostic candidate output, live source-search readbacks, and
+  current DB linkage readback.
+- Mechanism: preserving query diagnostics made the follow-up a bounded
+  claim-text vs path/evidence vs linkage check.
+- KRN implication: source-search should distinguish no lexical document hit from
+  hidden artifact-linked document evidence.
+- Decision: queue source claim/document linkage readback.
+- Rejection: no crawler, DB schema, ranking rewrite, worker daemon, API/MCP,
+  source truth mutation, or Memory Core mutation.
+- Consumer: source-search answer packages, brain-search readbacks, acquisition
+  candidates, and operator review workflow.
+- Falsifier: supporting SourceClaims have artifact-linked documents but answer
+  packages still only report zero documents with no linkage readback/caveat.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-d8u: Expose artifact-linked documents for source claims.
 ```
 
 ## Outcome IMR-11 Acquisition Diagnostics In Candidates
