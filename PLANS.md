@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V365 Heartbeat Preview Review/Eval Closure
-current task: V365-00 Heartbeat Preview Review/Eval Closure
+active stream: V366 Heartbeat Preview Golden Behavior Proof
+current task: V366-00 Heartbeat Preview Golden Behavior Proof
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V365-00 Heartbeat Preview Review/Eval Closure is active.
-The current gap is using the V364 `krn heartbeat preview` readback to decide one
-bounded review/eval closure path before daemon, scheduler, crawler, embeddings,
-schema, UI/API/MCP, broad benchmark, consensus runtime, or autonomous memory/source
+V366-00 Heartbeat Preview Golden Behavior Proof is active.
+The current gap is protecting the V365 `reviewEvalClosure` readback with one
+bounded behavior proof before daemon, scheduler, crawler, embeddings, schema,
+UI/API/MCP, broad benchmark, consensus runtime, or autonomous memory/source
 mutation.
 ```
 
@@ -81,27 +81,30 @@ V363 complete: brain heartbeat preview aggregates memory-staleness and
   source-relation maintenance candidates without mutation.
 V364 complete: `krn heartbeat preview` exposes candidate-only heartbeat readback
   from live Postgres state without mutation.
+V365 complete: heartbeat preview emits and renders a candidate-only
+  review/eval closure decision and next action.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V365
+## Active Task V366
 
-ID: V365-00
-Name: Heartbeat Preview Review/Eval Closure
+ID: V366-00
+Name: Heartbeat Preview Golden Behavior Proof
 Status: active
 
-Goal: use V364 heartbeat preview output as input to one bounded review/eval
-closure before any autonomous heartbeat runtime.
+Goal: add one bounded behavior proof that fails if heartbeat preview stops
+emitting candidate-only review/eval closure output with evidence refs,
+does-not-prove, reviewability, next action, and no mutation.
 
-Product rationale: V364 made heartbeat candidates visible. The next useful step
-is deciding how those candidates become reviewable evidence/eval input without
-building a daemon, scheduler, UI/API/MCP, crawler, embeddings, or broad platform.
+Product rationale: V365 made the review/eval decision visible. The next useful
+step is protecting that operator-facing closure before any autonomous heartbeat
+runtime.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V365 report under `docs/reviews/controlled-dogfood/`;
+- a compact V366 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -122,8 +125,8 @@ Forbidden writes:
 
 Definition of Done:
 
-- operator-facing readback renders heartbeat candidates with evidence refs,
-  does-not-prove, reviewability, and next action;
+- one behavior proof fails if heartbeat preview closure stops exposing evidence
+  refs, does-not-prove, reviewability, next action, or no-mutation boundary;
 - no MemoryRecord, SourceClaim, SourceDecision, or DB schema mutation is added
   unless explicitly rejected/recorded as a blocking falsifier.
 
@@ -143,8 +146,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V365 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
-agent/consensus platform before closing heartbeat readback review/eval value.
+V366 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
+agent/consensus platform instead of protecting the heartbeat preview closure.
 ```
 
 ## 9. Task Contract Schema
@@ -205,7 +208,7 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V365 heartbeat preview review/eval closure
+1. V366 heartbeat preview golden behavior proof
 2. consensus eval/candidate lane
 3. product UI/search/API/MCP after usefulness/security gates
 ```
@@ -219,7 +222,24 @@ Current backlog order:
 - [x] V362 complete: Ingest V0 Expansion With Bounded Evidence.
 - [x] V363 complete: Heartbeat/Dreaming Candidate Generator V0.
 - [x] V364 complete: Heartbeat Preview CLI Readback.
-- [ ] V365 pending: Heartbeat Preview Review/Eval Closure.
+- [x] V365 complete: Heartbeat Preview Review/Eval Closure.
+- [ ] V366 pending: Heartbeat Preview Golden Behavior Proof.
+
+## Outcome V365 Heartbeat Preview Review/Eval Closure
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v365-heartbeat-preview-review-eval-closure/REPORT.md
+```
+
+Outcome: `buildBrainHeartbeatPreview` now emits `reviewEvalClosure`, and
+`krn heartbeat preview` renders the decision, next action, candidate ids,
+evidence refs, does-not-prove, mutation boundary, and forbidden writes.
+
+Next: V366 Heartbeat Preview Golden Behavior Proof.
 
 ## Outcome V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 

@@ -159,6 +159,21 @@ const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => [
   ...formatList(candidate.forbiddenWrites)
 ];
 
+const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
+  "Review/eval closure:",
+  `decision: ${preview.reviewEvalClosure.decision}`,
+  `nextAction: ${preview.reviewEvalClosure.nextAction}`,
+  `summary: ${preview.reviewEvalClosure.summary}`,
+  "candidateIds:",
+  ...formatList(preview.reviewEvalClosure.candidateIds),
+  "evidenceRefs:",
+  ...formatList(preview.reviewEvalClosure.evidenceRefs),
+  `doesNotProve: ${preview.reviewEvalClosure.doesNotProve}`,
+  `mutation: ${preview.reviewEvalClosure.mutation}`,
+  "forbiddenWrites:",
+  ...formatList(preview.reviewEvalClosure.forbiddenWrites)
+];
+
 const formatHeartbeatPreview = (
   input: {
     projectId: string;
@@ -176,6 +191,8 @@ const formatHeartbeatPreview = (
     `Project: ${input.projectId}`,
     ...formatProjectResolutionLines(input.projectResolution),
     `Generated at: ${input.preview.generatedAt}`,
+    "",
+    ...formatReviewEvalClosure(input.preview),
     "",
     "Input readback:",
     `memoryRecords: ${input.memoryRecordCount}`,

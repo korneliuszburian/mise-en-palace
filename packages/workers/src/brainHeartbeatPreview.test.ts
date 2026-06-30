@@ -111,6 +111,25 @@ describe("brain heartbeat preview", () => {
       memoryStaleness: 1,
       sourceRelation: 1
     });
+    expect(result.reviewEvalClosure).toMatchObject({
+      decision: "ready_for_behavior_proof",
+      nextAction: "add_golden_behavior_case",
+      mutation: "none"
+    });
+    expect(result.reviewEvalClosure.candidateIds).toEqual([
+      `memory-staleness-heartbeat:memory-expired:expired_memory`,
+      "source-relation-heartbeat:source-claim-edge-1:relation_needs_review"
+    ]);
+    expect(result.reviewEvalClosure.evidenceRefs).toEqual([evidenceRef]);
+    expect(result.reviewEvalClosure.doesNotProve).toContain("scheduler readiness");
+    expect(result.reviewEvalClosure.forbiddenWrites).toEqual([
+      "memory_records",
+      "anti_memory_records",
+      "source_claims",
+      "source_decisions",
+      "source_claim_edges",
+      "eval_candidates"
+    ]);
     expect(result.candidates.map((candidate) => candidate.kind)).toEqual([
       "memory_staleness_maintenance_candidate",
       "source_relation_maintenance_candidate"
@@ -188,5 +207,10 @@ describe("brain heartbeat preview", () => {
       sourceClaimEdges: 1
     });
     expect(result.mutation).toBe("none");
+    expect(result.reviewEvalClosure).toMatchObject({
+      decision: "no_reviewable_candidates",
+      nextAction: "seed_or_select_heartbeat_candidate_state",
+      mutation: "none"
+    });
   });
 });

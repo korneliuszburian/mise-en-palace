@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V365 Heartbeat Preview Review/Eval Closure
-current task: V365-00 Heartbeat Preview Review/Eval Closure
+active stream: V366 Heartbeat Preview Golden Behavior Proof
+current task: V366-00 Heartbeat Preview Golden Behavior Proof
 ```
 
 ## Compact Checkpoints
@@ -81,10 +81,25 @@ docs/reviews/controlled-dogfood/2026-06-30-v364-heartbeat-preview-cli-readback/R
 
 ### V365-00 Heartbeat Preview Review/Eval Closure
 
+Status: complete.
+
+Outcome: heartbeat preview now emits and renders a read-only
+`reviewEvalClosure` decision with next action, evidence refs, does-not-prove,
+candidate ids, mutation boundary, and forbidden writes.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v365-heartbeat-preview-review-eval-closure/REPORT.md
+```
+
+### V366-00 Heartbeat Preview Golden Behavior Proof
+
 Status: active.
 
-Goal: use the V364 heartbeat preview readback to decide one bounded review/eval
-closure path before any daemon/scheduler/autonomous mutation work.
+Goal: add one bounded behavior proof that fails if heartbeat preview stops
+emitting candidate-only review/eval closure output with evidence refs,
+`doesNotProve`, reviewability, next action, and no mutation.
 
 Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
 crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
@@ -99,12 +114,13 @@ V361: source-search JSON answer packages expose read-only relationSupport.
 V362: second local artifact ingest/readback and source chunk receiver fix.
 V363: candidate-only brain heartbeat preview primitive.
 V364: heartbeat preview CLI/readback.
+V365: heartbeat preview review/eval closure.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. heartbeat preview review/eval closure
+1. heartbeat preview golden behavior proof
 2. consensus eval/candidate lane
 3. product UI/search/API/MCP after usefulness/security gates
 ```

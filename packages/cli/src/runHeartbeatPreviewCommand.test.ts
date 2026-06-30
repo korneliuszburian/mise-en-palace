@@ -138,6 +138,12 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("DB writes: none");
     expect(result.stdout).toContain(`Project: ${projectId}`);
     expect(result.stdout).toContain("Project resolution: explicit_project (explicit project)");
+    expect(result.stdout).toContain("Review/eval closure:");
+    expect(result.stdout).toContain("decision: ready_for_behavior_proof");
+    expect(result.stdout).toContain("nextAction: add_golden_behavior_case");
+    expect(result.stdout).toContain("candidateIds:");
+    expect(result.stdout).toContain(`memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
+    expect(result.stdout).toContain(`source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
     expect(result.stdout).toContain("memoryRecords: 1");
     expect(result.stdout).toContain("sourceClaims: 2");
     expect(result.stdout).toContain("sourceClaimEdges: 1");
@@ -205,6 +211,11 @@ describe("runHeartbeatPreviewCommand", () => {
 
     expect(parsed).toMatchObject({
       preview: {
+        reviewEvalClosure: {
+          decision: "ready_for_behavior_proof",
+          nextAction: "add_golden_behavior_case",
+          mutation: "none"
+        },
         candidates: [
           {
             action: "review_memory_invalidation",

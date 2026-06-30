@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V365 Heartbeat Preview Review/Eval Closure
+V366 Heartbeat Preview Golden Behavior Proof
 ```
 
 Current state:
@@ -27,12 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V365-00 Heartbeat Preview Review/Eval Closure.
+current task: V366-00 Heartbeat Preview Golden Behavior Proof.
 ```
 
-Current task: use the V364 `krn heartbeat preview` readback to decide one bounded
-review/eval closure path before any daemon, scheduler, crawler, embeddings,
-schema, UI/API/MCP, broad benchmark, or autonomous Memory Core/source mutation.
+Current task: add one bounded behavior proof for the V365 heartbeat preview
+review/eval closure before any daemon, scheduler, crawler, embeddings, schema,
+UI/API/MCP, broad benchmark, or autonomous Memory Core/source mutation.
 
 ## Direction
 
