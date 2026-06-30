@@ -1,7 +1,6 @@
 import type {
   MemoryCandidate,
   MemoryRecord,
-  ReflectionCandidateEvidence,
   SourceClaim
 } from "@krn/core";
 import type {
@@ -11,6 +10,14 @@ import type {
 import type {
   SourceRepository
 } from "../repositories/sourceRepository.js";
+import {
+  assertReviewableCandidateEvidence,
+  assertReviewGateConfidence,
+  candidateEvidence,
+  readReviewGateIdentity,
+  requireReviewGateTrimmed,
+  reviewedSourceClaims as readReviewedSourceClaims
+} from "./reviewGateSupport.js";
 
 export interface MemoryReviewGateReview {
   candidateId: string;
@@ -51,38 +58,6 @@ const isReviewableMemoryCandidateStatus = (
   status === "proposed" || status === "candidate"
 );
 
-const isRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === "object" && value !== null && !Array.isArray(value)
-);
-
-const stringListOrEmpty = (value: unknown): string[] => (
-  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []
-);
-
-const candidateEvidenceProvenances = new Set<ReflectionCandidateEvidence["provenance"]>([
-  "default_template",
-  "operator_reported",
-  "captured_output_file",
-  "command_runner",
-  "external_log",
-  "run_event",
-  "source_chunk",
-  "tool_trace",
-  "diff",
-  "evidence_bundle",
-  "review_assessment",
-  "feedback_delta",
-  "user_correction",
-  "user_preference",
-  "local_operator_note",
-  "source_claim"
-]);
-
-const isCandidateEvidenceProvenance = (
-  value: string
-): value is ReflectionCandidateEvidence["provenance"] =>
-  candidateEvidenceProvenances.has(value as ReflectionCandidateEvidence["provenance"]);
-
 const trustedPromotionSourceTiers = new Set([
   "high",
   "official",
@@ -91,99 +66,38 @@ const trustedPromotionSourceTiers = new Set([
   "source-code"
 ]);
 
-const requireTrimmed = (value: string, field: string): string => {
-  const trimmed = value.trim();
-
-  if (trimmed.length === 0) {
-    throw new Error(`${field} is required`);
-  }
-
-  return trimmed;
-};
-
-const candidateEvidence = (candidate: MemoryCandidate): ReflectionCandidateEvidence | undefined => {
-  const value = candidate.metadata["reflectionCandidateEvidence"];
-
-  if (!isRecord(value)) {
-    return undefined;
-  }
-
-  const provenance = typeof value.provenance === "string" ? value.provenance.trim() : "";
-  const doesNotProve = typeof value.doesNotProve === "string" ? value.doesNotProve.trim() : "";
-
-  if (
-    provenance.length === 0 ||
-    !isCandidateEvidenceProvenance(provenance) ||
-    doesNotProve.length === 0
-  ) {
-    return undefined;
-  }
-
-  return {
-    provenance,
-    evidenceRefs: stringListOrEmpty(value.evidenceRefs),
-    doesNotProve
-  };
-};
-
 function assertCandidateReviewable(
   candidate: MemoryCandidate
 ): asserts candidate is ReviewableMemoryCandidate {
+  const candidateLabel = `MemoryCandidate ${candidate.id}`;
+
   if (!isReviewableMemoryCandidateStatus(candidate.status)) {
     throw new Error(
-      `MemoryCandidate ${candidate.id} cannot be promoted from status ${candidate.status}`
+      `${candidateLabel} cannot be promoted from status ${candidate.status}`
     );
   }
 
   if (candidate.sourceLineage.length === 0) {
-    throw new Error(`MemoryCandidate ${candidate.id} requires sourceLineage before promotion`);
+    throw new Error(`${candidateLabel} requires sourceLineage before promotion`);
   }
 
   if (candidate.applicationGuidance.trim().length === 0) {
-    throw new Error(`MemoryCandidate ${candidate.id} requires applicationGuidance before promotion`);
+    throw new Error(`${candidateLabel} requires applicationGuidance before promotion`);
   }
 
-  if (!Number.isInteger(candidate.confidence) || candidate.confidence < 0 || candidate.confidence > 100) {
-    throw new Error(`MemoryCandidate ${candidate.id} confidence must be an integer between 0 and 100`);
-  }
+  assertReviewGateConfidence(candidateLabel, candidate.confidence);
 
   if (candidate.validUntil !== undefined && candidate.invalidationRule === undefined) {
-    throw new Error(`MemoryCandidate ${candidate.id} requires invalidationRule for temporal promotion`);
+    throw new Error(`${candidateLabel} requires invalidationRule for temporal promotion`);
   }
 
-  const evidence = candidateEvidence(candidate);
-
-  if (evidence === undefined) {
-    throw new Error(`MemoryCandidate ${candidate.id} requires candidate evidence provenance before promotion`);
-  }
-
-  if (evidence.evidenceRefs.length === 0) {
-    throw new Error(`MemoryCandidate ${candidate.id} requires candidate evidence refs before promotion`);
-  }
-
-  if (evidence.provenance === "default_template") {
-    throw new Error(`MemoryCandidate ${candidate.id} cannot be promoted from weak default-template evidence`);
-  }
+  assertReviewableCandidateEvidence(candidateLabel, candidateEvidence(candidate));
 }
 
 const reviewedSourceClaims = async (
   sourceRepository: Pick<SourceRepository, "getSourceClaimById">,
   candidate: MemoryCandidate
-): Promise<SourceClaim[]> => {
-  const sourceClaims: SourceClaim[] = [];
-
-  for (const sourceClaimId of candidate.sourceClaimIds) {
-    const sourceClaim = await sourceRepository.getSourceClaimById(sourceClaimId);
-
-    if (sourceClaim === undefined) {
-      throw new Error(`SourceClaim not found: ${sourceClaimId}`);
-    }
-
-    sourceClaims.push(sourceClaim);
-  }
-
-  return sourceClaims;
-};
+): Promise<SourceClaim[]> => readReviewedSourceClaims(sourceRepository, candidate.sourceClaimIds);
 
 const untrustedReviewedSourceClaims = (
   sourceClaims: readonly SourceClaim[]
@@ -220,7 +134,7 @@ export const buildMemoryReviewGateMetadata = (input: {
 }): Record<string, unknown> => ({
   ...(input.review.metadata ?? {}),
   reviewGate: {
-    evidenceReviewedRef: requireTrimmed(
+    evidenceReviewedRef: requireReviewGateTrimmed(
       input.review.evidenceReviewedRef,
       "evidenceReviewedRef"
     ),
@@ -239,9 +153,7 @@ export const buildMemoryReviewGateMetadata = (input: {
 export const promoteMemoryCandidateThroughGate = async (
   input: PromoteMemoryCandidateThroughGateInput
 ): Promise<PromoteMemoryCandidateThroughGateResult> => {
-  const candidateId = requireTrimmed(input.review.candidateId, "candidateId");
-  const reviewer = requireTrimmed(input.review.reviewer, "reviewer");
-  requireTrimmed(input.review.evidenceReviewedRef, "evidenceReviewedRef");
+  const { candidateId, reviewer } = readReviewGateIdentity(input.review);
 
   const candidate = await input.memoryRepository.getMemoryCandidateById(candidateId);
 
@@ -265,7 +177,7 @@ export const promoteMemoryCandidateThroughGate = async (
   };
 
   if (input.review.recordKey !== undefined) {
-    promotionInput.recordKey = requireTrimmed(input.review.recordKey, "recordKey");
+    promotionInput.recordKey = requireReviewGateTrimmed(input.review.recordKey, "recordKey");
   }
 
   const memoryRecord = await input.memoryRepository.promoteReviewedMemoryCandidate(promotionInput);
