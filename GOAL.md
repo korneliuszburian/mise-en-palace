@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+V361 Graph Brain V0 Entity/Relation Extraction And Answer Delta
 ```
 
 Current state:
@@ -27,12 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+current task: V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta.
 ```
 
-Current task: resume the graph-relations mini Brain-QA closure now that full
-Fallow exits cleanly. Consume built-in query-shape diagnostics directly and do
-not reopen guard-only cleanup unless it blocks the product-facing readback.
+Current task: start the next product-facing graph-brain vertical. Use the V358
+closure as evidence that source-search diagnostics now handle graph-relations
+query-shape ambiguity, then prove or reject a small entity/relation extraction
+and answer-delta path without schema, ranking, UI/API/MCP, crawler, embeddings,
+or worker-runtime expansion.
 
 ## Direction
 

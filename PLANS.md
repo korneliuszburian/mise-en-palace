@@ -2,9 +2,9 @@
 
 Status: compact active ledger. Date: 2026-06-30.
 
-Root `GOAL.md` states the continuous objective. Root `PLAN.md` is the compact
+Root `GOAL.md` is the continuous objective. Root `PLAN.md` is the compact
 product source of truth. This file keeps only current state, recent outcomes,
-the active task contract, and response requirements.
+the active task contract, and final-response requirements.
 
 ## Current State
 
@@ -13,9 +13,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-latest source slice commit checked: b7aed88 / CI success run 28428209649
+active stream: V361 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+current task: V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,50 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure is active again.
-V360 rollup: bounded cleanups moved full Fallow from dupes 136 / health 117 /
-dead-code findings to a clean full-audit exit. Remaining duplication output is
-below the configured failure threshold. Changed-files Fallow gates are green for
-each committed slice.
-
-Recent completed slices:
-- `ec82bd9` / CI `28412105854`: run show readback section cleanup.
-- `621e01e` / CI `28412376631`: activation candidate merge scoring cleanup.
-- `34d2415` / CI `28412755845`: observation prefix selection cleanup.
-- `55bdf79` / CI `28413139230`: harness compiler orchestration cleanup.
-- `9ceb1ac` / CI `28413391394`: temporal activation exclusions cleanup.
-- `9336cce` / CI `28413650070`: source claim edge rendering cleanup.
-- `7b1215f` / CI `28414285588`: observe project resolution cleanup.
-- `1ceb0e7` / CI `28414559347`: golden task validation cleanup.
-- `737fe2d` / CI `28414814881`: Promptfoo result parser cleanup.
-- `ec14da1` / CI `28415059440`: no-store preview optional-field cleanup.
-- `c5fad4c` / CI `28415845755`: shared memory/source CLI parser helper cleanup.
-- `f2dd921` / CI `28416283030`: source-search readback preparation cleanup.
-- `61621c0` / CI `28416927740`: shared metadata reader cleanup.
-- `7bcb6b5` / CI `28417262981`: DB readiness table inspection cleanup.
-- `a400109` / CI `28417687400`: temporal timestamp parsing cleanup.
-- `5d7668f` / CI `28418405745`: activation/retrieval smoke scaffold cleanup.
-- `67555af` / CI `28418681842`: DB smoke support task cleanup.
-- `900f82a` / CI `28419541515`: harness smoke scaffold cleanup.
-- `edff0e0` / CI `28419701398`: harness evidence repository Fallow usage.
-- `fbcd521` / CI `28420149421`: memory/source smoke setup cleanup.
-- `69c70a3` / CI `28420421358`: migration readiness client handling cleanup.
-- `3101e7d` / CI `28420915761`: project repo lookup cleanup.
-- `14434bd` / CI `28421308356`: locked row metadata mapping cleanup.
-- `b484236` / CI `28422973918`: retrieval subject mapping cleanup.
-- `e98cf53` / CI `28423354047`: evidence command normalization cleanup.
-- `65b823e` / CI `28424013947`: feedback candidate normalization cleanup.
-- `25857d6` / CI `28424655321`: evidence persistence assembly cleanup.
-- `7b97398` / CI `28425030938`: harness run readback cleanup.
-- `da012b4` / CI `28425391495`: source-map invariant assertion cleanup.
-- `8e14cd6` / CI `28425751124`: knowledge-card preview parser cleanup.
-- `e3c6c10` / CI `28426142560`: evidence golden expectation cleanup.
-- `998c822` / CI `28426685152`: Codex brief golden expectation cleanup.
-- `3c456e3` / CI `28427610121`: CLI persisted evidence fixture cleanup.
-- `b7aed88` / CI `28428209649`: harness retrieval and fixture helper cleanup.
-
-Next source work must return to V358 product-facing graph mini Brain-QA
-diagnostic closure. Do not continue guard-only cleanup unless it blocks V358.
+V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta is active.
+The current gap is proving or rejecting a small entity/relation extraction path
+that improves a graph-brain answer package without schema, ranking, UI/API/MCP,
+crawler, embedding, worker-runtime, broad benchmark, or Memory Core expansion.
 ```
 
 ## 2. Product Thesis
@@ -78,422 +38,103 @@ Codex executes. KRN supplies bounded context, store-backed memory, source
 grounding, policy, skills, eval expectations, traces, review gates, and
 feedback.
 
-Current loop:
+Current useful loop:
 
 ```txt
-bounded scenario -> evidence -> source/pattern decision -> readback or source
-change -> verification -> persisted evidence -> compact next task
+bounded product slice
+-> DB-backed plan/readback
+-> source/pattern decision
+-> verification
+-> persisted evidence
+-> compact next task
 ```
 
-Pattern intake and retained source decisions use `docs/runbooks/pattern-intake.md`.
-Surface Consumer Matrix routing remains required for source/pattern work.
+Avoid guard-only treadmill work. A task must close a usefulness loop, improve a
+bounded product surface, or unblock the next vertical slice.
 
-Current readiness:
+Pattern intake and retained source decisions use
+`docs/runbooks/pattern-intake.md` and the Surface Consumer Matrix.
+
+For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
+target-workflow, security, operator-UX, or research/paper/course-driven work:
 
 ```txt
-repo/current-truth hygiene: strong
-evidence/review loop: DB-backed
-candidate reviewability: core primitive
-source-search readback: useful but still pre-product
-pattern brain: partial
-ingest v0: one local artifact-to-use loop proven
-graph brain: relation/readback previews exist
-heartbeat/dreaming: candidate previews only
-consensus: eval/candidate preview only
-product-ready: no
+source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
 ```
 
-Important distinctions:
-
-```txt
-SourceClaim included != source truth
-SearchDocument ranked != product search quality
-answer usefulness != answer correctness
-green test != product value
-```
-
-## Recent Outcomes
+## Recent Product Outcomes
 
 ```txt
 V340 complete: artifact-to-activated-SourceClaim loop.
 V341 complete: product-facing `krn source search --query` preview.
-V342 complete: search usefulness closure showed coverage gaps.
-V343 complete: coverage seed for recent source-search weak spots.
-V344 complete: SearchDocument retrieval alignment.
-V345 complete: search usefulness closure after alignment.
-V346 complete: answer package preview.
-V347 complete: heartbeat/consensus SearchDocument coverage closure.
-V348 complete: answer package JSON readback.
-V349 complete: JSON consumer proof over two answer packages.
-V350 complete: five-case mini Brain-QA JSON batch.
-V351 complete: missingEvidence specificity repair.
-V352 complete: source-search JSON diagnostics usefulness closure.
-V353 complete: answer usefulness classified over five JSON answer packages.
-V354 complete: source-search JSON/text now includes answerUsefulness labels and
-reasons.
-V355 complete: built-in answerUsefulness batch consumed without local
-classification; graph-relations remains claim-only for document support.
-V356 complete: graph relation SearchDocuments exist and work for narrow queries;
-the V355 gap is broad-query shape ambiguity.
-V357 complete: source-search answer packages expose queryShapeDiagnostics for
-claim-only/no-document/no-search-result broad query shapes.
+V342-V345 complete: search usefulness and SearchDocument alignment.
+V346-V350 complete: answer package JSON/readback and mini Brain-QA batch.
+V351-V355 complete: missingEvidence specificity and answerUsefulness output.
+V356 complete: graph relation SearchDocuments exist and narrow graph queries retrieve them.
+V357 complete: source-search answer packages expose queryShapeDiagnostics.
+V358 complete: graph mini Brain-QA diagnostic closure passed.
+V359 complete: Fallow added as JS/TS quality gate.
+V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Outcome V353 Mini Brain-QA Answer Usefulness Closure
+## Active Task V361
 
-Status: complete.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-29-v353-mini-brain-qa-answer-usefulness-closure/REPORT.md
-```
-
-Evidence:
-
-```txt
-executionRun: 64a00778-f3cd-4c71-9edd-7957210acf0e
-cases: 5
-useful: 4
-partly_useful_missing_document: 1
-not_useful: 0
-allRawCandidatesInspectable: true
-memoryMutation: none
-```
-
-Source-to-decision:
-
-- Source: V353 JSON batch summary and V352 diagnostics closure.
-- Mechanism: existing answer-package fields expose supporting claim/document
-  counts, missing evidence, raw candidate inspectability, and proof boundaries.
-- KRN implication: consumers can classify bounded answer usefulness without
-  parsing text, but this should be part of the operator-facing output.
-- Decision: open V354 to add deterministic answer usefulness classification to
-  source-search JSON.
-- Consumer: technical operators and the next mini Brain-QA loop.
-- Falsifier: classification cannot be derived from existing answer-package
-  fields without making answer-correctness or ranking-quality claims.
-- Does not prove: answer correctness, source truth, ranking quality, broad
-  benchmark quality, product readiness, UI/API/MCP readiness, or Memory Core
-  mutation.
-
-## Outcome V354 Source Search Answer Usefulness Classification
-
-ID: V354-00
-Name: Source Search Answer Usefulness Classification
-Status: complete
-Goal: Add deterministic answer-usefulness classification to
-`krn source search --json`.
-Product rationale: V353 proved answer usefulness can be classified, but the
-classification currently lives in an ad hoc local consumer.
-Architectural rationale: Improve operator-facing readback before adding UI,
-API, MCP, crawler, embeddings, graph runtime, worker runtime, broad benchmark,
-or ranking work.
-Evidence source: V353 report and `.local-lab/v353/answer-usefulness-summary.json`.
-Official/external sources: none required unless implementation introduces a new
-pattern.
-Inputs required: V353 report, source-search JSON owner files, focused tests.
-Files likely touched: source-search CLI/readback source and tests.
-Allowed writes: smallest owning source/test files, compact report, root state.
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
-mutation, or parallel roadmap.
-Output requirements: JSON includes usefulness classification and reasons derived
-from existing answer-package evidence.
-Definition of Done: supported claim+document cases classify useful; claim-only
-document-gap cases classify partly useful; no-evidence cases classify not useful
-or unknown without overclaiming.
-Verification commands: targeted CLI/source-search tests, `pnpm typecheck`,
-`pnpm test`, `git diff --check`.
-Acceptance criteria: consumers no longer need local ad hoc usefulness
-classification for V353-style answer packages.
-Risk: overclaiming answer usefulness as answer correctness or ranking quality.
-Rollback: revert the source/test commit and keep V353 as report-only evidence.
-Condensation expectation: keep root files compact; put detailed evidence in the
-V354 report.
-Next-task synthesis rule: if V354 passes, run a mini Brain-QA loop using the new
-field; if it fails, record why answer-package fields are insufficient.
-Pattern surface: operator-UX / CLI readback / TypeScript boundary.
-Primary consumer: technical operators consuming `krn source search --json`.
-Does not prove: answer correctness, source truth, ranking quality, product
-readiness, UI/API/MCP readiness, or Memory Core mutation.
-Falsifier: useful/missing/unsupported cases cannot be classified
-deterministically from current answer-package fields.
-
-Source-to-decision:
-
-- Source: V353 answer-usefulness batch report.
-- Mechanism: existing answer-package fields expose support counts and missing
-  evidence enough to classify bounded answer usefulness.
-- KRN implication: answer usefulness should be an explicit source-search
-  readback field, not an ad hoc consumer rule.
-- Decision: implemented deterministic `answerUsefulness` labels and reasons in
-  source-search JSON/text output.
-- Does not prove: answer correctness, source truth, ranking quality, product
-  readiness, UI/API/MCP readiness, or Memory Core mutation.
-- Consumer: V355 mini Brain-QA built-in usefulness loop.
-- Falsifier: V355 still needs local classification or labels overclaim answer
-  correctness.
-
-Evidence:
-
-```txt
-report: docs/reviews/controlled-dogfood/2026-06-29-v354-source-search-answer-usefulness-classification/REPORT.md
-source files: packages/cli/src/runSourceSearchCommand.ts, packages/cli/src/runSourceSearchCommand.test.ts
-focused tests: pnpm --filter @krn/cli test -- runSourceSearchCommand
-typecheck: pnpm -r --workspace-concurrency=1 --if-present typecheck
-tests: pnpm test
-diff check: git diff --check
-live readback: .local-lab/v354/source-to-decision.json
-```
-
-## Outcome V355 Mini Brain-QA Built-In Usefulness Loop
-
-ID: V355-00
-Name: Mini Brain-QA Built-In Usefulness Loop
-Status: complete
-Goal: Rerun the five-case mini Brain-QA batch using built-in
-`answerUsefulness` from source-search JSON.
-Product rationale: Prove the new field reduces consumer logic before opening
-the next ingest/graph product vertical.
-Architectural rationale: Use product-facing readback before broader retrieval,
-graph, or UI/API/MCP work.
-Evidence source: V354 report and source-search JSON output.
-Official/external sources: none required.
-Inputs required: five V353 queries, local DB, source-search JSON.
-Files likely touched: V355 report and compact root state.
-Allowed writes: report/root only unless a tiny blocking source bug appears.
-Forbidden writes: ranking, retrieval semantics, schema, UI/API/MCP, crawler,
-embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
-mutation, or parallel roadmap.
-Output requirements: report with per-case built-in answerUsefulness, reasons,
-support counts, proof/non-proof, and next vertical decision.
-Definition of Done: batch consumes built-in labels without local
-classification; next product vertical is selected or deferred with evidence.
-Verification commands: DB-backed source-search JSON batch, `git diff --check`,
-evidence capture, observe, reflect.
-Acceptance criteria: no text parsing and no local usefulness classifier needed.
-Risk: treating usefulness labels as correctness or ranking proof.
-Rollback: revert only report/root changes if the batch is invalid.
-Condensation expectation: keep root files compact; detailed evidence in report.
-Next-task synthesis rule: if V355 passes, open the next ingest/graph vertical;
-if it fails, repair only the blocking source-search usefulness issue.
-Pattern surface: operator-UX / CLI readback.
-Primary consumer: technical operators and V356 product vertical.
-Does not prove: answer correctness, source truth, ranking quality, product
-readiness, UI/API/MCP readiness, or Memory Core mutation.
-Falsifier: consumers still need ad hoc classification or labels overclaim
-correctness.
-
-Evidence:
-
-```txt
-executionRun: f514e534-1c53-421f-8a24-3a8779439033
-report: docs/reviews/controlled-dogfood/2026-06-29-v355-mini-brain-qa-built-in-usefulness-loop/REPORT.md
-cases: 5
-useful: 4
-partly_useful_missing_document: 1
-gap: graph-relations claim-useful but missing SearchDocument support.
-```
-
-Source-to-decision:
-
-- Source: V354 source-search answer usefulness classification report and V355
-  built-in readback batch.
-- Mechanism: built-in usefulness labels remove local consumer classification
-  while preserving missing-evidence visibility.
-- KRN implication: the remaining product gap is graph relation document support,
-  not answer-usefulness labeling.
-- Decision: open V356 to inspect and repair/prove graph relation
-  SearchDocument support with existing paths.
-- Does not prove: answer correctness, source truth, ranking quality, product
-  readiness, UI/API/MCP readiness, or Memory Core mutation.
-- Consumer: V356 graph relation support vertical.
-- Falsifier: graph relation support requires ranking/schema/runtime expansion or
-  remains claim-only after bounded work.
-
-## Outcome V356 Graph Relation SearchDocument Support Vertical
-
-ID: V356-00
-Name: Graph Relation SearchDocument Support Vertical
-Status: complete
-Goal: Improve or explain SearchDocument support for graph relation source-search
-answers.
-Product rationale: V355 showed graph relation answers are partly useful because
-claims exist but document support is absent for the combined query.
-Architectural rationale: strengthen graph-brain answer support before broader
-graph runtime, crawler, embeddings, UI/API/MCP, or ranking work.
-Evidence source: V355 report and `.local-lab/v355/graph-relations.json`.
-Official/external sources: none required.
-Inputs required: graph-relations query output, source-search owner files,
-existing ingest/source artifacts if needed.
-Files likely touched: source-search CLI/readback source/tests only if a source
-bug is found; otherwise report/root.
-Allowed writes: smallest source/test repair or report/root proof.
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
-mutation, or parallel roadmap.
-Output requirements: report proving whether the graph-relations gap is coverage,
-query shape, or source-search behavior; source repair only if bounded.
-Definition of Done: graph relation answer support is improved or the remaining
-gap is classified with a precise next action.
-Verification commands: targeted tests/readback if source touched; DB-backed
-source-search readback; evidence capture; observe; reflect; `git diff --check`.
-Acceptance criteria: no broad runtime/ranking/schema work; graph-relations gap
-is no longer vague.
-Risk: overfitting one query or hiding a real document gap.
-Rollback: revert any source repair; keep report if it is evidence-only.
-Condensation expectation: compact root; detailed evidence in report.
-Next-task synthesis rule: if V356 improves support, run graph mini QA; if not,
-open the smallest coverage/ingest task.
-Pattern surface: operator-UX / graph brain readback.
-Primary consumer: next graph-brain mini QA loop.
-Does not prove: graph retrieval quality, answer correctness, source truth,
-product readiness, UI/API/MCP readiness, or Memory Core mutation.
-Falsifier: graph relation support remains claim-only without a bounded repair
-or explanation.
-
-Evidence:
-
-```txt
-executionRun: ae002e98-b4b8-4dda-b9e9-250ec82cca6f
-report: docs/reviews/controlled-dogfood/2026-06-29-v356-graph-relation-searchdocument-support/REPORT.md
-broad query: 6 SourceClaims, 0 SearchDocuments, 0 searchResults
-narrow query: 3 SourceClaims, 3 SearchDocuments
-evidenceBundle: 38258b2e-fb19-4874-b4ea-d8fa7ac374da
-reflectionRecord: 1d276ead-e516-4dcd-8249-fdf878f2bc0b
-decision: no source repair in V356; open query-shape diagnostics.
-```
-
-Source-to-decision:
-
-- Source: V355 built-in usefulness loop and V356 DB-backed source-search readback.
-- Mechanism: graph relation SearchDocuments exist, but broad
-  `websearch_to_tsquery` shapes can require all broad tokens and return zero
-  document matches.
-- KRN implication: source-search output should surface likely query-shape
-  ambiguity instead of leaving operators to inspect DB/query mechanics manually.
-- Decision: open V357 to add bounded query-shape diagnostics.
-- Does not prove: answer correctness, ranking quality, source truth, product
-  readiness, UI/API/MCP readiness, or Memory Core mutation.
-- Consumer: next graph-brain mini QA loop.
-- Falsifier: diagnostics cannot be derived safely without changing retrieval
-  semantics, or diagnostics hide real missing coverage.
-
-## Outcome V357 Source Search Query-Shape Diagnostics
-
-ID: V357-00
-Name: Source Search Query-Shape Diagnostics
-Status: complete
-Goal: Add bounded source-search readback diagnostics for likely over-constrained
-broad queries.
-Product rationale: V356 showed operators needed manual DB/query inspection to
-learn that graph relation documents existed but the broad query shape prevented
-document matches.
-Architectural rationale: improve source-search operator UX before ranking,
-schema, crawler, embeddings, graph runtime, worker runtime, UI/API/MCP, or broad
-benchmark work.
-Evidence source: V356 report and `.local-lab/v356/*graph*.json` readbacks.
-Official/external sources: none required.
-Inputs required: V356 report, source-search owner files, focused CLI tests.
-Files likely touched: `packages/cli/src/runSourceSearchCommand.ts`,
-`packages/cli/src/runSourceSearchCommand.test.ts`, report/root.
-Allowed writes: smallest source-search CLI/readback source and tests, compact
-report/root state.
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
-mutation, or parallel roadmap.
-Output requirements: answer package JSON/text exposes a diagnostic for likely
-query-shape ambiguity when claims exist, documents are absent, and no document
-search results were retrieved.
-Definition of Done: tests cover broad claim-only/no-document search result
-shape and normal claim+document shape; diagnostics do not overclaim correctness.
-Verification commands: focused source-search tests, `pnpm typecheck`,
-`pnpm test`, DB-backed broad/narrow graph relation readback,
-`git diff --check`.
-Acceptance criteria: operator can distinguish missing document coverage from
-likely over-constrained query wording without manual DB inspection.
-Risk: creating a generic query analyzer or changing retrieval semantics.
-Rollback: revert the source/test commit and keep V356 as report-only evidence.
-Condensation expectation: compact root; detailed evidence in V357 report.
-Next-task synthesis rule: if V357 passes, rerun graph mini QA with diagnostics;
-if it fails, record why query-shape cannot be inferred safely.
-Pattern surface: operator-UX / CLI readback.
-Primary consumer: technical operators and graph-brain mini QA loop.
-Does not prove: answer correctness, ranking quality, source truth, product
-readiness, UI/API/MCP readiness, or Memory Core mutation.
-Falsifier: diagnostics cannot be derived safely from existing answer-package
-fields or they hide actual missing coverage.
-
-Evidence:
-
-```txt
-executionRun: b8857df7-6c79-4f19-930c-87f1fc2df197
-report: docs/reviews/controlled-dogfood/2026-06-29-v357-source-search-query-shape-diagnostics/REPORT.md
-source files: packages/cli/src/runSourceSearchCommand.ts, packages/cli/src/runSourceSearchCommand.test.ts
-broad query: queryShapeDiagnostics present
-narrow query: queryShapeDiagnostics empty
-evidenceBundle: 09cc8c6b-a184-4af6-9720-cee255d5f8eb
-reflectionRecord: 3ad5b3ed-18a3-4f7f-9d6e-24bb56af346f
-focused tests: passed
-typecheck: passed
-workspace tests: passed
-```
-
-Source-to-decision:
-
-- Source: V356 graph relation SearchDocument support report.
-- Mechanism: broad graph queries can match SourceClaims while lexical
-  SearchDocument retrieval returns zero results.
-- KRN implication: source-search readback should expose query-shape ambiguity
-  before operators infer missing coverage or change ranking.
-- Decision: implemented bounded `queryShapeDiagnostics` in answer packages.
-- Does not prove: answer correctness, ranking quality, graph retrieval quality,
-  source truth, product readiness, UI/API/MCP readiness, or Memory Core mutation.
-- Consumer: V358 graph mini Brain-QA diagnostic closure.
-- Falsifier: diagnostic fires for normal claim+document packages or hides real
-  missing coverage.
-
-## Active Task V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-
-ID: V358-00
-Name: Graph Mini Brain-QA Query-Shape Diagnostics Closure
+ID: V361-00
+Name: Graph Brain V0 Entity/Relation Extraction And Answer Delta
 Status: active
-Goal: Rerun the graph-relations mini Brain-QA case using built-in
-`queryShapeDiagnostics`.
-Product rationale: V357 added the diagnostic; now KRN must prove it reduces
-manual DB/source inspection burden for graph-relations readback.
-Architectural rationale: close the usefulness loop before graph brain v0
-entity/relation extraction, ranking, schema, crawler, embeddings, worker
-runtime, UI/API/MCP, or broad benchmark work.
-Evidence source: V357 report and DB-backed source-search JSON readbacks.
-Official/external sources: none required.
-Inputs required: graph-relations broad query, narrow control query, source-search JSON.
-Files likely touched: V358 report and compact root state.
-Allowed writes: report/root only unless a tiny blocking source bug appears.
-Forbidden writes: DB schema, ranking rewrite, retrieval semantics, UI/API/MCP,
-crawler, embeddings, graph runtime, worker runtime, broad benchmark, Memory Core
-mutation, or parallel roadmap.
-Output requirements: report with broad/narrow graph readback, diagnostic
-consumption, proof/non-proof, and next graph-brain decision.
-Definition of Done: graph-relations consumer can use built-in diagnostics
-without manual DB inspection; next graph-brain vertical is selected or deferred.
-Verification commands: DB-backed source-search JSON readback, evidence capture,
-observe, reflect, `git diff --check`.
-Acceptance criteria: query-shape diagnostic is consumed directly and does not
-overclaim answer correctness or ranking quality.
-Risk: treating diagnostics as answer correctness or graph retrieval quality.
-Rollback: revert only report/root changes if the closure is invalid.
-Condensation expectation: compact root; detailed evidence in V358 report.
-Next-task synthesis rule: if V358 passes, choose graph brain v0 entity/relation
-extraction or the next highest-ROI source-search repair; if it fails, repair
-only the blocking diagnostic issue.
-Pattern surface: operator-UX / graph brain readback.
-Primary consumer: graph brain v0 task selection.
-Does not prove: answer correctness, ranking quality, graph retrieval quality,
-source truth, product readiness, UI/API/MCP readiness, or Memory Core mutation.
-Falsifier: consumer still needs manual DB/source inspection or diagnostic hides
-actual missing coverage.
+
+Goal: prove or reject a small entity/relation extraction path that improves a
+source-search answer package delta for graph-brain questions.
+
+Product rationale: V358 closed the graph-relations query-shape ambiguity. The
+next useful step is not another diagnostic guard; it is a small graph-brain
+vertical that can show answer-package improvement or fail with evidence.
+
+Allowed writes:
+
+- smallest owning source/test files if implementation is needed;
+- a compact V361 report under `docs/reviews/controlled-dogfood/`;
+- compact root state after verification.
+
+Forbidden writes:
+
+- DB schema;
+- ranking rewrite;
+- retrieval semantics rewrite;
+- UI/API/MCP;
+- crawler;
+- embeddings;
+- worker runtime;
+- broad benchmark;
+- Memory Core mutation;
+- parallel roadmap.
+
+Definition of Done:
+
+- either a small graph entity/relation extraction path improves a graph-brain
+  answer package with tests and DB-backed readback;
+- or source inspection proves the existing substrate is insufficient and records
+  the smallest next blocker without expanding architecture.
+
+Verification floor:
+
+```txt
+pnpm db:ready
+targeted tests for touched package
+pnpm typecheck
+pnpm test
+git diff --check
+krn evidence capture --persist when a persisted run exists
+krn observe --persist
+krn reflect --persist
+```
+
+Falsifier:
+
+```txt
+V361 becomes a schema/ranking/UI/API/MCP/crawler/embedding/worker expansion
+without first proving a small answer-package delta.
+```
 
 ## 9. Task Contract Schema
 
@@ -550,51 +191,62 @@ Primary consumer:
 Does not prove:
 Falsifier:
 
+Current backlog order:
+
+```txt
+1. V361 graph brain v0 entity/relation extraction and answer deltas
+2. ingest v0 expansion with bounded evidence
+3. heartbeat/dreaming candidate generator
+4. consensus eval/candidate lane
+5. product UI/search/API/MCP after usefulness/security gates
+```
+
 ## 15. Progress
 
-- [x] V350 complete: five-case mini Brain-QA JSON batch.
-- [x] V351 complete: missingEvidence specificity repair.
-- [x] V352 complete: source-search JSON diagnostics usefulness closure.
-- [x] V353 complete: answer usefulness closure.
-- [x] V354 complete: Source Search Answer Usefulness Classification.
-- [x] V355 complete: Mini Brain-QA Built-In Usefulness Loop.
-- [x] V356 complete: Graph Relation SearchDocument Support Vertical.
-- [x] V357 complete: Source Search Query-Shape Diagnostics.
-- [ ] V358 pending: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+- [x] V358 complete: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 - [x] V359 complete: Fallow Quality Gate And First Cleanup.
 - [x] V360 complete: Fallow Legacy Complexity Cleanup.
+- [ ] V361 pending: Graph Brain V0 Entity/Relation Extraction And Answer Delta.
 
-V360 outcome:
+## Outcome V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
-```txt
-bounded cleanup ran across CLI/core/schema/db/harness/codex/workers owner
-surfaces without broad repo refactors.
+Status: complete.
 
-full Fallow:
-  exits cleanly
-  dead-code findings: 0
-  health failures: 0
-  duplication output: below configured failure threshold
-
-next: return to V358 graph mini Brain-QA query-shape diagnostics closure.
-```
-
-## Verification Policy
-
-Use the narrowest relevant verification.
+Report:
 
 ```txt
-docs/plan-only: git diff --check
-source: pnpm typecheck, pnpm test, git diff --check
-DB/eval-affecting: pnpm db:ready, relevant DB smoke/readback
+docs/reviews/controlled-dogfood/2026-06-30-v358-graph-mini-brain-qa-query-shape-diagnostics/REPORT.md
 ```
 
-If Vitest hits a temporary-directory write error, use
-`TMPDIR=/home/krn/.cache/krn-tmp pnpm test`. Do not set `TMPDIR` under the repo.
+Source-to-decision:
 
-After each bounded slice, commit, push, and confirm CI. Use a full
-`git rev-parse HEAD` SHA for CI lookup; if empty, use branch readback and match
-`headSha`.
+- Source: V356/V357 DB-backed graph source-search readbacks.
+- Mechanism: broad `websearch_to_tsquery` can over-constrain
+  SearchDocument retrieval while SourceClaims still match; narrow topic queries
+  retrieve relation SearchDocuments.
+- KRN implication: graph-relations consumers need query-shape diagnostics before
+  assuming missing coverage, ranking failure, graph runtime failure, or schema
+  gaps.
+- Decision: proceed to a bounded graph brain v0 entity/relation extraction and
+  answer-delta vertical.
+- Does not prove: answer correctness, source truth, ranking quality, graph
+  retrieval quality, broad benchmark quality, product readiness, UI/API/MCP
+  readiness, embeddings, crawler readiness, worker runtime, or Memory Core
+  mutation.
+- Consumer: graph mini Brain-QA loop and technical operators consuming
+  `krn source search --json`.
+- Falsifier: future graph-relations answer packages still require manual DB or
+  source inspection to distinguish query shape from missing coverage.
+
+Evidence:
+
+```txt
+executionRun: 964b10ca-42e8-48b4-8daf-734ab435a3b6
+evidenceBundle: dbe829e3-02c1-4e6f-a0ac-6b76df981aa5
+observationGroup: e011a547-434e-4b01-81ff-3bba1cdec63c
+reflectionRecord: f32b0c01-b70e-4c4b-814b-771ad19ae791
+MemoryRecord created: no
+```
 
 ## 21. Final Response Format For Codex Runs
 
@@ -602,18 +254,43 @@ Every continuation or completed slice must end with:
 
 ```txt
 Active stream:
+- ...
+
 Current task:
+- ...
+
+Stale objective handling:
+- ...
+
 DB used:
-Changed:
+- yes/no
+
 Commands run:
+- ...
+
 Reports/artifacts:
+- ...
+
 Commits/CI:
+- ...
+
 What this proves:
+- ...
+
 What this does not prove:
+- ...
+
 Condensation decisions:
+- ...
+
 Tasks appended to PLANS.md:
+- ...
+
 Next active task:
+- ...
+
 Blocked/budget-limited:
+- yes/no
 ```
 
 ## 22. Compact GOAL.md Contract To Pair With This Plan
@@ -622,17 +299,18 @@ Active stream: <current active stream from PLAN.md>.
 Current task: <current task from PLAN.md>.
 
 For every non-trivial infra, harness, CI, eval, Codex-surface, TypeScript,
-target-workflow, security, operator-UX, or research/paper/course-driven slice,
-use:
+target-workflow, security, operator-UX, or research/paper/course-driven slice:
 
 ```txt
 source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
 ```
 
-If pasted objectives, attachments, old prompts, or conversation summaries name
-stale streams, read them as historical evidence and do not roll the active stream backward.
+If a pasted objective, attachment, old prompt, or conversation summary names a
+stale stream, read them as historical evidence.
+If that happens, do not roll the active stream backward.
 
 ## 23. Plan Revision Note
 
-At creation time this compact ledger replaced a larger active ledger shape.
-Historical details belong in reports and archives, not in active context.
+At creation time this compact ledger preserved active state, latest outcomes,
+task contract requirements, and final response requirements while moving detail
+to reports. It is historical guidance, not a second roadmap.

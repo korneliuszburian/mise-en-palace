@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
-current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+active stream: V361 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+current task: V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta
 ```
 
 ## Compact Checkpoints
@@ -37,11 +37,33 @@ graph SearchDocuments, and query-shape diagnostics.
 
 ### V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
+Status: complete.
+
+Outcome: DB-backed broad/narrow graph-relations source-search readbacks consume
+built-in `queryShapeDiagnostics`. Broad query-shape ambiguity is visible without
+manual DB/source inspection; narrow graph query still returns claims and
+SearchDocuments without diagnostic noise.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v358-graph-mini-brain-qa-query-shape-diagnostics/REPORT.md
+```
+
+Next decision: proceed to graph brain v0 entity/relation extraction and
+answer-delta proof before UI/API/MCP, crawler, embeddings, worker runtime, or
+ranking work.
+
+### V361-00 Graph Brain V0 Entity/Relation Extraction And Answer Delta
+
 Status: active.
 
-Goal: rerun the graph-relations mini Brain-QA case using built-in
-`queryShapeDiagnostics`, then decide the next graph-brain vertical without
-manual DB/source inspection or ranking rewrites.
+Goal: prove or reject a small entity/relation extraction path that improves a
+source-search answer package delta for graph-brain questions.
+
+Hard boundary: no DB schema, ranking rewrite, retrieval semantics rewrite,
+UI/API/MCP, crawler, embeddings, worker runtime, broad benchmark, or Memory Core
+mutation unless this task explicitly records a blocking falsifier.
 
 ### V359-00 Fallow Quality Gate And First Cleanup
 
@@ -96,12 +118,11 @@ Verification: `pnpm quality:fallow`, `pnpm typecheck`, `pnpm test`,
 ## Remaining Product Gaps
 
 ```txt
-1. graph mini Brain-QA query-shape diagnostics closure
+1. graph brain v0 entity/relation extraction and answer deltas
 2. ingest v0 expansion with bounded evidence
-3. graph brain v0 entity/relation extraction and answer deltas
-4. heartbeat/dreaming candidate generator
-5. consensus eval/candidate lane
-6. product UI/search/API/MCP after usefulness/security gates
+3. heartbeat/dreaming candidate generator
+4. consensus eval/candidate lane
+5. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate
