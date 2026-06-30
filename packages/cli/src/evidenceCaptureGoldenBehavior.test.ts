@@ -46,6 +46,73 @@ const proof = (
     "This CLI behavior proof does not prove Memory Brain product readiness, activation quality, DB persistence, or reflection quality."
 });
 
+interface CliExecutionForTest {
+  exitCode: number;
+  stdout: string;
+}
+
+interface OutputExpectation {
+  includes: readonly string[];
+  excludes?: readonly string[];
+}
+
+const cliOutputMatches = (
+  result: CliExecutionForTest,
+  expectation: OutputExpectation
+): boolean =>
+  result.exitCode === 0 &&
+  expectation.includes.every((expected) => result.stdout.includes(expected)) &&
+  (expectation.excludes ?? []).every((excluded) => !result.stdout.includes(excluded));
+
+const classifiedExpectation: OutputExpectation = {
+  includes: [
+    "Changed files:\nintended:",
+    "- M packages/cli/src/runEvidenceCaptureCommand.ts",
+    "- M packages/core/src/candidateReviewability.ts",
+    "- ?? docs/reviews/controlled-dogfood/run",
+    "unrelated:\n- ?? docs/materials/raw-audit.md",
+    "unknown:\n- none",
+    "Dirty context: unrelated files present; review burden increased.",
+    "pnpm typecheck: passed | provenance=operator_reported"
+  ],
+  excludes: [
+    "- M core/src/candidateReviewability.ts",
+    "../../docs/reviews/controlled-dogfood/run"
+  ]
+};
+
+const unclassifiedExpectation: OutputExpectation = {
+  includes: [
+    "Changed files:\nunknown:",
+    "- M packages/cli/src/runEvidenceCaptureCommand.ts",
+    "Dirty context: unclassified (no --intended-file provided).",
+    "pnpm typecheck: not_run | provenance=default_template",
+    "Command provenance is weak: default_template rows are not proof that commands ran."
+  ]
+};
+
+const targetEvidenceExpectation: OutputExpectation = {
+  includes: [
+    "Changed files:\n- none",
+    "wilq-seo scripts/test.sh: failed | provenance=operator_reported",
+    "Target evidence:",
+    "- repo: ../wilq-seo",
+    "- mode: observation_only",
+    "- dirtyBefore: dirty",
+    "- dirtyAfter: dirty",
+    "- ownedChanges: external",
+    "- targetStatusFreshness: changed_since_selection",
+    "- targetPatchLifecycle: handed_off_unresolved",
+    "- handoffArtifact: docs/reviews/target/HANDOFF.md",
+    "- targetOwnerDecision: stronger verification requested",
+    "- target source edits",
+    "- target commits",
+    "- M apps/dashboard/src/App.tsx | ownership=external",
+    "Target evidence does not prove KRN source correctness.",
+    "Target evidence does not prove product readiness or V02-01 second-operator usability."
+  ]
+};
+
 describe("evidence capture golden behavior", () => {
   it("guards dirty-context capture behavior with real CLI execution", async () => {
     const tasks = parseGoldenTaskFixtures(readEvidenceCaptureFixture());
@@ -114,48 +181,9 @@ describe("evidence capture golden behavior", () => {
     const classifiedOutput = classifiedResult.stdout;
     const unclassifiedOutput = unclassifiedResult.stdout;
     const targetEvidenceOutput = targetEvidenceResult.stdout;
-    const classifiedPassed =
-      classifiedResult.exitCode === 0 &&
-      classifiedOutput.includes("Changed files:\nintended:") &&
-      classifiedOutput.includes("- M packages/cli/src/runEvidenceCaptureCommand.ts") &&
-      classifiedOutput.includes("- M packages/core/src/candidateReviewability.ts") &&
-      !classifiedOutput.includes("- M core/src/candidateReviewability.ts") &&
-      classifiedOutput.includes("- ?? docs/reviews/controlled-dogfood/run") &&
-      !classifiedOutput.includes("../../docs/reviews/controlled-dogfood/run") &&
-      classifiedOutput.includes("unrelated:\n- ?? docs/materials/raw-audit.md") &&
-      classifiedOutput.includes("unknown:\n- none") &&
-      classifiedOutput.includes("Dirty context: unrelated files present; review burden increased.") &&
-      classifiedOutput.includes("pnpm typecheck: passed | provenance=operator_reported");
-    const unclassifiedPassed =
-      unclassifiedResult.exitCode === 0 &&
-      unclassifiedOutput.includes("Changed files:\nunknown:") &&
-      unclassifiedOutput.includes("- M packages/cli/src/runEvidenceCaptureCommand.ts") &&
-      unclassifiedOutput.includes("Dirty context: unclassified (no --intended-file provided).") &&
-      unclassifiedOutput.includes("pnpm typecheck: not_run | provenance=default_template") &&
-      unclassifiedOutput.includes(
-        "Command provenance is weak: default_template rows are not proof that commands ran."
-      );
-    const targetEvidencePassed =
-      targetEvidenceResult.exitCode === 0 &&
-      targetEvidenceOutput.includes("Changed files:\n- none") &&
-      targetEvidenceOutput.includes("wilq-seo scripts/test.sh: failed | provenance=operator_reported") &&
-      targetEvidenceOutput.includes("Target evidence:") &&
-      targetEvidenceOutput.includes("- repo: ../wilq-seo") &&
-      targetEvidenceOutput.includes("- mode: observation_only") &&
-      targetEvidenceOutput.includes("- dirtyBefore: dirty") &&
-      targetEvidenceOutput.includes("- dirtyAfter: dirty") &&
-      targetEvidenceOutput.includes("- ownedChanges: external") &&
-      targetEvidenceOutput.includes("- targetStatusFreshness: changed_since_selection") &&
-      targetEvidenceOutput.includes("- targetPatchLifecycle: handed_off_unresolved") &&
-      targetEvidenceOutput.includes("- handoffArtifact: docs/reviews/target/HANDOFF.md") &&
-      targetEvidenceOutput.includes("- targetOwnerDecision: stronger verification requested") &&
-      targetEvidenceOutput.includes("- target source edits") &&
-      targetEvidenceOutput.includes("- target commits") &&
-      targetEvidenceOutput.includes("- M apps/dashboard/src/App.tsx | ownership=external") &&
-      targetEvidenceOutput.includes("Target evidence does not prove KRN source correctness.") &&
-      targetEvidenceOutput.includes(
-        "Target evidence does not prove product readiness or V02-01 second-operator usability."
-      );
+    const classifiedPassed = cliOutputMatches(classifiedResult, classifiedExpectation);
+    const unclassifiedPassed = cliOutputMatches(unclassifiedResult, unclassifiedExpectation);
+    const targetEvidencePassed = cliOutputMatches(targetEvidenceResult, targetEvidenceExpectation);
     const report = runGoldenTaskFixtures({
       tasks,
       proofs: [
