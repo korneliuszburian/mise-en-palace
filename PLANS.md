@@ -265,6 +265,15 @@ Evidence sources:
 docs/runbooks/target-repo-testing.md
 docs/operator-trials/v02-01-second-operator-launch-packet.md
 docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-imr-03-brain-knowledge-vocabulary/REPORT.md
+```
+
+Next task:
+
+```txt
+mise-en-palace-06v — Derive store-backed brain knowledge packets.
+Goal: make store-only brain search return selectedKnowledge from governed
+source/search evidence, without DB schema or Memory Core mutation.
 ```
 
 Allowed writes:

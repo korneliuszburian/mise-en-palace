@@ -68,8 +68,10 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-plan -> context -> Codex brief -> execution -> evidence -> review
--> candidates -> promotion/rejection -> next-run reuse or explicit abstention
+mise-en-palace-06v:
+derive store-backed brain knowledge packets so store-only brain search can
+return selectedKnowledge from governed source/search evidence, not only file
+catalog readback.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
