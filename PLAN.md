@@ -110,8 +110,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  harness compiler orchestration cleanup,
 	  temporal activation exclusions cleanup,
 	  source claim edge rendering cleanup,
-	  observe project resolution cleanup
-	full Fallow moved: dupes 136 -> 66; health 117 -> 21
+	  observe project resolution cleanup,
+	  golden task validation cleanup
+	full Fallow moved: dupes 136 -> 66; health 117 -> 20
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
