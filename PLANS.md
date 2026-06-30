@@ -133,6 +133,44 @@ IMR-14 complete: brain-search source summaries now preserve source-search
 IMR-15 complete: heartbeat knowledge-acquisition candidates now preserve
   brain-search `linkedDocumentEvidence`, so reviewable candidates do not hide
   artifact-linked documents when included lexical docs are zero.
+IMR-16 complete: one linked-document acquisition candidate was reviewed and
+  deferred with evidence; next action is wording/readback repair, not
+  ranking/schema/source truth mutation.
+```
+
+## Outcome IMR-16 Linked Document Acquisition Candidate Review
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-16-linked-document-acquisition-review/REPORT.md
+```
+
+Outcome: live DB-backed brain-search/heartbeat readback produced one
+review-ready acquisition candidate with 5 source-claim document links and 5
+linked SearchDocuments while included lexical SearchDocuments remained missing.
+Review decision: `defer_pending_evidence`.
+
+Source-to-decision:
+
+- Source: IMR-15 report and live DB-backed candidate review output.
+- Mechanism: linked document evidence can exist even when included lexical
+  SearchDocument evidence is missing.
+- KRN implication: acquisition review should ask operators to review linked
+  evidence before opening new acquisition work.
+- Decision: create bounded wording/readback repair.
+- Rejection: no ranking, schema, crawler, worker, API/MCP, source truth, or
+  Memory Core mutation.
+- Consumer: heartbeat acquisition review/readback.
+- Falsifier: a future linked-document acquisition candidate still requires raw
+  JSON inspection to tell whether linked document evidence should be reviewed.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-dad: Clarify linked-document acquisition review wording.
 ```
 
 ## Outcome IMR-15 Linked Document Acquisition Readback
