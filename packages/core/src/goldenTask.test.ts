@@ -75,6 +75,28 @@ describe("golden task contract", () => {
     ]);
   });
 
+  test("rejects case and failure-mode fields that cannot protect behavior", () => {
+    expect(validateGoldenTaskContract(goldenTask({
+      cases: [{
+        ...goldenTask({}).cases[0]!,
+        title: " ",
+        protectedFailureModes: [{
+          id: "failure-mode-1",
+          domain: "anti_memory",
+          severity: "blocking",
+          title: " ",
+          mustNot: "",
+          detection: " "
+        }]
+      }]
+    }))).toEqual([
+      "case golden-case-1 title is required",
+      "case golden-case-1 failureMode failure-mode-1 title is required",
+      "case golden-case-1 failureMode failure-mode-1 mustNot is required",
+      "case golden-case-1 failureMode failure-mode-1 detection is required"
+    ]);
+  });
+
   test("rejects private reasoning metadata", () => {
     expect(validateGoldenTaskContract(goldenTask({
       metadata: {

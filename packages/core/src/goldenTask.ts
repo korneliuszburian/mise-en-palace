@@ -91,6 +91,61 @@ const validateMetadata = (
       : []
   );
 
+const requiredCaseFinding = (
+  condition: boolean,
+  finding: string
+): string[] => condition ? [finding] : [];
+
+const validateExpectedBehavior = (
+  expectedBehavior: ExpectedBehavior,
+  prefix: string
+): string[] => [
+  ...requiredCaseFinding(
+    isBlank(expectedBehavior.subject),
+    `${prefix} expectedBehavior.subject is required`
+  ),
+  ...requiredCaseFinding(
+    isBlank(expectedBehavior.rationale),
+    `${prefix} expectedBehavior.rationale is required`
+  ),
+  ...requiredCaseFinding(
+    expectedBehavior.evidenceRefs.length === 0,
+    `${prefix} expectedBehavior.evidenceRefs are required`
+  )
+];
+
+const validateFailureMode = (
+  failureMode: ProtectedFailureMode,
+  prefix: string
+): string[] => [
+  ...requiredCaseFinding(
+    isBlank(failureMode.title),
+    `${prefix} failureMode ${failureMode.id} title is required`
+  ),
+  ...requiredCaseFinding(
+    isBlank(failureMode.mustNot),
+    `${prefix} failureMode ${failureMode.id} mustNot is required`
+  ),
+  ...requiredCaseFinding(
+    isBlank(failureMode.detection),
+    `${prefix} failureMode ${failureMode.id} detection is required`
+  )
+];
+
+const validateCaseRequiredCollections = (
+  goldenCase: GoldenCase,
+  prefix: string
+): string[] => [
+  ...requiredCaseFinding(
+    goldenCase.protectedFailureModes.length === 0,
+    `${prefix} protectedFailureModes are required`
+  ),
+  ...requiredCaseFinding(
+    goldenCase.sourceRefs.length === 0,
+    `${prefix} sourceRefs are required`
+  )
+];
+
 const validateCase = (goldenCase: GoldenCase): string[] => {
   const findings: string[] = [];
   const prefix = `case ${goldenCase.id}`;
@@ -99,40 +154,12 @@ const validateCase = (goldenCase: GoldenCase): string[] => {
     findings.push(`${prefix} title is required`);
   }
 
-  if (isBlank(goldenCase.expectedBehavior.subject)) {
-    findings.push(`${prefix} expectedBehavior.subject is required`);
-  }
-
-  if (isBlank(goldenCase.expectedBehavior.rationale)) {
-    findings.push(`${prefix} expectedBehavior.rationale is required`);
-  }
-
-  if (goldenCase.expectedBehavior.evidenceRefs.length === 0) {
-    findings.push(`${prefix} expectedBehavior.evidenceRefs are required`);
-  }
-
-  if (goldenCase.protectedFailureModes.length === 0) {
-    findings.push(`${prefix} protectedFailureModes are required`);
-  }
-
-  if (goldenCase.sourceRefs.length === 0) {
-    findings.push(`${prefix} sourceRefs are required`);
-  }
-
+  findings.push(...validateExpectedBehavior(goldenCase.expectedBehavior, prefix));
+  findings.push(...validateCaseRequiredCollections(goldenCase, prefix));
   findings.push(...validateMetadata(goldenCase.metadata, `${prefix}.metadata`));
 
   for (const failureMode of goldenCase.protectedFailureModes) {
-    if (isBlank(failureMode.title)) {
-      findings.push(`${prefix} failureMode ${failureMode.id} title is required`);
-    }
-
-    if (isBlank(failureMode.mustNot)) {
-      findings.push(`${prefix} failureMode ${failureMode.id} mustNot is required`);
-    }
-
-    if (isBlank(failureMode.detection)) {
-      findings.push(`${prefix} failureMode ${failureMode.id} detection is required`);
-    }
+    findings.push(...validateFailureMode(failureMode, prefix));
   }
 
   return findings;
