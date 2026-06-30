@@ -211,6 +211,8 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("pattern:codex-prompt-task-contract-proof-boundary");
     expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
+    expect(result.stdout).toContain("pattern:graph-relation-readback-boundary");
+    expect(result.stdout).toContain("pattern:heartbeat-candidate-only-runtime-boundary");
     expect(result.stdout).toContain("pattern:target-repo-write-authority-boundary");
     expect(result.stdout).toContain("pattern:untrusted-context-warning-boundary");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
@@ -222,6 +224,8 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("Codex prompt task contract proof boundary");
     expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
+    expect(result.stdout).toContain("Graph relation readback boundary");
+    expect(result.stdout).toContain("Heartbeat candidate-only runtime boundary");
     expect(result.stdout).toContain("Source-to-decision retention gate");
     expect(result.stdout).toContain("Target repo writes require explicit authority and rollback");
     expect(result.stdout).toContain("Untrusted selected context is labeled before Codex use");
@@ -380,6 +384,42 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
+  it("searches the graph relation readback pattern through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "graph relation readback"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:graph-relation-readback-boundary"]);
+    expect(preview.proof.doesNotProve).toContain("search ranking quality is good");
+    expect(preview.mutation).toBe("none");
+  });
+
+  it("searches the heartbeat candidate-only runtime pattern through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "heartbeat candidate runtime boundary"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:heartbeat-candidate-only-runtime-boundary"]);
+    expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
+    expect(preview.mutation).toBe("none");
+  });
+
   it("searches external Codex workflow patterns through the catalog", async () => {
     const goalsResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -489,6 +529,8 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
+      "pattern:graph-relation-readback-boundary",
+      "pattern:heartbeat-candidate-only-runtime-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
       "pattern:ts-boundary-unknown-first-result-state",
@@ -511,7 +553,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(preview.totalCards).toBe(12);
+    expect(preview.totalCards).toBe(14);
     expect(preview.returnedCards).toBe(2);
     expect(preview.limit).toBe(2);
     expect(preview.cards).toHaveLength(2);
@@ -533,7 +575,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("Total filtered results: 12");
+    expect(result.stdout).toContain("Total filtered results: 14");
     expect(result.stdout).toContain("Limit: 1");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
@@ -763,6 +805,8 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
+      "pattern:graph-relation-readback-boundary",
+      "pattern:heartbeat-candidate-only-runtime-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
       "pattern:untrusted-context-warning-boundary",

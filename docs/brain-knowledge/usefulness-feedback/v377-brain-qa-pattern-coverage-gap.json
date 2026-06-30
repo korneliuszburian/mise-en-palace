@@ -1,0 +1,28 @@
+{
+  "feedback": [
+    {
+      "cardId": "pattern:graph-relation-readback-boundary",
+      "outcome": "helped",
+      "summary": "Closed the V376 Brain-QA gap where graph relation questions were source-search useful but lacked retained pattern coverage by retaining a readback-only graph relation boundary.",
+      "evidenceRefs": [
+        "docs/reviews/controlled-dogfood/2026-06-30-v376-mini-brain-qa-benchmark-slice/REPORT.md",
+        "docs/patterns/retained-patterns/graph-relation-readback-boundary.json",
+        "packages/cli/src/runKnowledgeCardsCommand.test.ts"
+      ],
+      "doesNotProve": "This feedback does not prove graph ranking quality, relation correctness, source truth, GraphRAG-quality reasoning, or KRN product readiness.",
+      "observedAt": "2026-06-30"
+    },
+    {
+      "cardId": "pattern:heartbeat-candidate-only-runtime-boundary",
+      "outcome": "helped",
+      "summary": "Closed the V376 Brain-QA gap where heartbeat and dreaming questions were source-search useful but lacked retained pattern coverage by retaining a candidate-only runtime boundary.",
+      "evidenceRefs": [
+        "docs/reviews/controlled-dogfood/2026-06-30-v376-mini-brain-qa-benchmark-slice/REPORT.md",
+        "docs/patterns/retained-patterns/heartbeat-candidate-only-runtime-boundary.json",
+        "packages/cli/src/runKnowledgeCardsCommand.test.ts"
+      ],
+      "doesNotProve": "This feedback does not prove heartbeat scheduling, autonomous dreaming, candidate truth, Memory Core mutation safety, or KRN product readiness.",
+      "observedAt": "2026-06-30"
+    }
+  ]
+}

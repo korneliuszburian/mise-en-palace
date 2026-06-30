@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V377 Brain-QA Pattern Coverage Gap Closure
+V378 Second-Operator Launch Packet
 ```
 
 Current state:
@@ -27,12 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V377-00 Brain-QA Pattern Coverage Gap Closure.
+current task: V378-00 Second-Operator Launch Packet.
 ```
 
-Current task: close the V376 benchmark gap by retaining one or two source-backed
-patterns only where the mini Brain-QA evidence shows a reusable mechanism with a
-consumer and falsifier. Do not rewrite retrieval or build a benchmark platform.
+Current task: prepare the exact second-operator launch packet needed to run
+V02-01 without substituting a self/headless proof. Do not run or fake the
+second-operator proof without real operator inputs.
 
 ## Direction
 

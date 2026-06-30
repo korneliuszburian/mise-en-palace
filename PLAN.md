@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V377 Brain-QA Pattern Coverage Gap Closure
-current task: V377-00 Brain-QA Pattern Coverage Gap Closure
+active stream: V378 Second-Operator Launch Packet
+current task: V378-00 Second-Operator Launch Packet
 ```
 
 ## Compact Checkpoints
@@ -31,28 +31,29 @@ heartbeat/dreaming: manual candidate-only runtime loop readback visible through 
 heartbeat candidate review: one candidate can be reviewed/deferred with evidence result
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and knowledge-card readback
-mini brain-QA benchmark: six current local questions ran through brain search JSON readback; graph/ingest/heartbeat are source-search useful but pattern coverage is uneven
+mini brain-QA benchmark: six current local questions ran through brain search JSON readback
+brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V377-00 Brain-QA Pattern Coverage Gap Closure
+### V378-00 Second-Operator Launch Packet
 
 Status: active.
 
-Goal: close the V376 benchmark gap by retaining one or two source-backed
-patterns only where V376 evidence shows a reusable mechanism with consumer and
-falsifier.
+Goal: prepare the exact operator packet, transcript requirements, DB mode,
+support boundary, and acceptance criteria needed to run V02-01 with a real
+second operator.
 
-Hard boundary: no ranking rewrite, crawler, dashboard, API server, MCP server,
-DB schema, worker daemon, broad benchmark platform, source-truth mutation,
-autonomous Memory Core mutation, or generic multi-agent runtime.
+Hard boundary: do not substitute self/headless scenarios for second-operator
+proof; do not build dashboard, API, MCP, worker daemon, crawler, broad eval
+platform, DB schema, or product server.
 
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v376-mini-brain-qa-benchmark-slice/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-v377-brain-qa-pattern-coverage-gap-closure/REPORT.md
 ```
 
 ## Recent Completed Streams
@@ -76,13 +77,14 @@ V373: heartbeat runtime candidate review-result loop.
 V374: source relation candidate evidence repair.
 V375: Codex hook guardrail pattern intake.
 V376: mini Brain-QA benchmark/readback over six current local questions.
+V377: retained graph relation readback and heartbeat candidate-only runtime
+  patterns from the V376 benchmark gap; ingest pattern deferred.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. real benchmarks
-2. second-operator proof
+1. second-operator proof
 3. product UI/API/MCP after usefulness/security gates
 ```
 

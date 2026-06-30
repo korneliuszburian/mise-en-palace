@@ -1,0 +1,27 @@
+{
+  "patternId": "heartbeat-candidate-only-runtime-boundary",
+  "name": "Heartbeat candidate-only runtime boundary",
+  "adoptionStatus": "adopt_now",
+  "confidence": "high",
+  "reviewability": "ready",
+  "decision": "KRN heartbeat and dreaming work should run as a candidate-only maintenance/readback loop that reports readiness, reviewability, missing evidence, next action, and forbidden writes before any scheduler, daemon, source-truth mutation, or Memory Core mutation is introduced.",
+  "sourceRefs": [
+    "docs/reviews/controlled-dogfood/2026-06-30-v372-heartbeat-dreaming-runtime-loop/REPORT.md",
+    "docs/reviews/controlled-dogfood/2026-06-30-v374-source-relation-candidate-evidence-repair/REPORT.md",
+    "docs/reviews/controlled-dogfood/2026-06-30-v376-mini-brain-qa-benchmark-slice/REPORT.md",
+    "docs/benchmarks/brain-qa/v376-questions.json"
+  ],
+  "evidenceRefs": [
+    "docs/reviews/controlled-dogfood/2026-06-30-v376-mini-brain-qa-benchmark-slice/REPORT.md",
+    "packages/cli/src/runKnowledgeCardsCommand.test.ts"
+  ],
+  "consumers": [
+    "future heartbeat/dreaming repair slices",
+    "future heartbeat preview CLI/readback tests",
+    "future candidate reviewability and missing-evidence gates"
+  ],
+  "falsifier": "A future heartbeat or dreaming slice adds a scheduler, daemon, automatic memory/source mutation, or review-ready maintenance candidate without explicit evidence refs and reviewability reasons.",
+  "doesNotProve": "This card does not prove heartbeat scheduling, autonomous dreaming, candidate truth, source truth, Memory Core mutation safety, or KRN product readiness.",
+  "observedAt": "2026-06-30",
+  "nextAction": "use"
+}

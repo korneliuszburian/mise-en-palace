@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V377 Brain-QA Pattern Coverage Gap Closure
-current task: V377-00 Brain-QA Pattern Coverage Gap Closure
+active stream: V378 Second-Operator Launch Packet
+current task: V378-00 Second-Operator Launch Packet
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,9 +24,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V377-00 Brain-QA Pattern Coverage Gap Closure is active.
-The current gap is closing the V376 benchmark finding that graph/ingest/heartbeat
-questions are source-search useful but do not all have retained pattern coverage.
+V378-00 Second-Operator Launch Packet is active.
+The current gap is preparing V02-01 for a real operator without faking it with
+self/headless proof.
 ```
 
 ## 2. Product Thesis
@@ -109,79 +109,63 @@ V376 complete: six current local Brain-QA questions ran through `krn brain
   search --json`; source-to-decision/hooks/TypeScript had pattern hits, while
   graph/ingest/heartbeat were source-search useful with uneven retained pattern
   coverage.
+V377 complete: graph relation readback and heartbeat candidate-only runtime
+  boundaries were retained as queryable patterns; ingest pattern was deferred
+  until it changes a decision.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V377
+## Active Task V378
 
-ID: V377-00
-Name: Brain-QA Pattern Coverage Gap Closure
+ID: V378-00
+Name: Second-Operator Launch Packet
 Status: active
 
-Goal: close the V376 benchmark gap by retaining one or two source-backed
-patterns only where V376 evidence shows a reusable mechanism with consumer and
-falsifier.
+Goal: prepare the exact launch packet needed for V02-01 real second-operator
+proof.
 
-Product rationale: KRN should turn benchmark findings into queryable brain
-knowledge only when there is a reusable mechanism, not start a broad benchmark
-or research platform.
+Product rationale: KRN cannot become widened internal alpha until someone
+outside the author can run the workflow with bounded support, transcript
+evidence, proof/non-proof boundaries, and clear blockers.
 
 Allowed writes:
 
-- one or two retained-pattern artifacts if backed by V376 evidence;
-- catalog/usefulness-feedback updates needed for readback;
-- focused knowledge-card tests if catalog coverage changes;
-- a compact V377 report under `docs/reviews/controlled-dogfood/`;
+- one operator launch packet under `docs/operator-trials/`;
+- one compact V378 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
 
-- autonomous Memory Core mutation;
-- scheduler;
-- worker daemon;
-- DB schema;
-- ranking rewrite;
-- retrieval semantics rewrite;
 - UI/API/MCP;
 - dashboard;
 - product server;
 - crawler;
-- embeddings;
 - worker runtime;
-- broad benchmark platform;
-- multi-agent runtime;
 - parallel roadmap.
-- source-truth mutation.
+- fake second-operator transcript;
+- self/headless proof substituted for V02-01;
+- DB schema or Memory Core mutation.
 
 Definition of Done:
 
-- V376 gap is either closed with one or two retained pattern cards or explicitly
-  rejected/deferred with a reason;
-- every retained pattern has source, mechanism, KRN implication, consumer,
-  falsifier, and does-not-prove;
-- readback proves the new pattern is queryable;
-- no schema rewrite, crawler, dashboard, API, MCP, broad benchmark platform, source-truth
-  mutation, or autonomous runtime is added.
+- a real operator can receive one packet with required inputs, setup steps,
+  task flow, support boundary, transcript template, success criteria, and
+  stop conditions;
+- the packet names exactly what evidence proves and does not prove;
+- missing operator inputs remain explicit blockers, not locally substituted.
 
 Verification floor:
 
 ```txt
-pnpm db:ready
-targeted tests for touched package
-pnpm typecheck
-pnpm test
 git diff --check
-krn evidence capture --persist when a persisted run exists
-krn observe --persist
-krn reflect --persist
 ```
 
 Falsifier:
 
 ```txt
-V377 retains decorative cards without V376 evidence, consumer, or falsifier, or
-starts a broad benchmark/retrieval rewrite instead of closing the specific gap.
+V378 claims second-operator proof, generates a fake transcript, or requires a
+new product surface instead of preparing the real operator packet.
 ```
 
 ## 9. Task Contract Schema
