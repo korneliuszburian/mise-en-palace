@@ -35,51 +35,73 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null &&
   !Array.isArray(value);
 
-const parsePromptfooJsonlRow = (
+const assertPromptfooRowRecord = (
   value: unknown,
   rowIndex: number
-): PromptfooJsonlRow => {
+): Record<string, unknown> => {
   if (!isRecord(value)) {
     throw new Error(`Promptfoo row ${rowIndex} must be an object`);
   }
 
-  if (typeof value.success !== "boolean") {
-    throw new Error(`Promptfoo row ${rowIndex} success must be boolean`);
-  }
+  return value;
+};
 
-  if (typeof value.score !== "number" || !Number.isFinite(value.score)) {
+const parsePromptfooScore = (
+  score: unknown,
+  rowIndex: number
+): number => {
+  if (typeof score !== "number" || !Number.isFinite(score)) {
     throw new Error(`Promptfoo row ${rowIndex} score must be a finite number`);
   }
 
-  if (
-    value.gradingResult !== undefined &&
-    value.gradingResult !== null &&
-    !isRecord(value.gradingResult)
-  ) {
+  return score;
+};
+
+const parsePromptfooGradingResult = (
+  gradingResult: unknown,
+  rowIndex: number
+): PromptfooJsonlRow["gradingResult"] | undefined => {
+  if (gradingResult === undefined) {
+    return undefined;
+  }
+
+  if (gradingResult === null) {
+    return null;
+  }
+
+  if (!isRecord(gradingResult)) {
     throw new Error(`Promptfoo row ${rowIndex} gradingResult must be an object or null`);
   }
 
-  const rowBase = {
-    success: value.success,
-    score: value.score
-  };
+  return typeof gradingResult.reason === "string"
+    ? { reason: gradingResult.reason }
+    : {};
+};
 
-  if (value.gradingResult === undefined) {
-    return rowBase;
+const parsePromptfooJsonlRow = (
+  value: unknown,
+  rowIndex: number
+): PromptfooJsonlRow => {
+  const row = assertPromptfooRowRecord(value, rowIndex);
+
+  if (typeof row.success !== "boolean") {
+    throw new Error(`Promptfoo row ${rowIndex} success must be boolean`);
   }
 
-  if (value.gradingResult === null) {
-    return {
-      ...rowBase,
-      gradingResult: null
-    };
+  const gradingResult = parsePromptfooGradingResult(row.gradingResult, rowIndex);
+
+  const rowBase = {
+    success: row.success,
+    score: parsePromptfooScore(row.score, rowIndex)
+  };
+
+  if (gradingResult === undefined) {
+    return rowBase;
   }
 
   return {
     ...rowBase,
-    gradingResult: typeof value.gradingResult.reason === "string"
-      ? { reason: value.gradingResult.reason }
-      : {}
+    gradingResult
   };
 };
 

@@ -77,6 +77,60 @@ describe("golden Promptfoo result mapping", () => {
     ).toThrow("Promptfoo row 0 success must be boolean");
   });
 
+  it("rejects malformed Promptfoo score and grading result fields", () => {
+    expect(() =>
+      mapPromptfooJsonlRowsToGoldenBehaviorProofs({
+        rows: [{
+          success: true,
+          score: Number.NaN
+        }],
+        caseIdsByRow: ["golden-case-memory-smoke-001"],
+        evidenceRef: ".local-lab/promptfoo/krn-golden-smoke-results.jsonl"
+      })
+    ).toThrow("Promptfoo row 0 score must be a finite number");
+
+    expect(() =>
+      mapPromptfooJsonlRowsToGoldenBehaviorProofs({
+        rows: [{
+          success: true,
+          score: 1,
+          gradingResult: "passed"
+        }],
+        caseIdsByRow: ["golden-case-memory-smoke-001"],
+        evidenceRef: ".local-lab/promptfoo/krn-golden-smoke-results.jsonl"
+      })
+    ).toThrow("Promptfoo row 0 gradingResult must be an object or null");
+  });
+
+  it("uses default grading reason when Promptfoo returns no reason", () => {
+    const proofs = mapPromptfooJsonlRowsToGoldenBehaviorProofs({
+      rows: [
+        {
+          success: true,
+          score: 1,
+          gradingResult: null
+        },
+        {
+          success: true,
+          score: 1,
+          gradingResult: {
+            pass: true
+          }
+        }
+      ],
+      caseIdsByRow: [
+        "golden-case-memory-smoke-001",
+        "golden-case-memory-smoke-002"
+      ],
+      evidenceRef: ".local-lab/promptfoo/krn-golden-smoke-results.jsonl"
+    });
+
+    expect(proofs.map((proof) => proof.summary)).toEqual([
+      "Promptfoo row 0 passed with score 1: No grading reason provided",
+      "Promptfoo row 1 passed with score 1: No grading reason provided"
+    ]);
+  });
+
   it("maps Promptfoo rows to eval candidate proposals without behavior-proof authority", () => {
     const proposals = mapPromptfooJsonlRowsToEvalCandidateProposals({
       rows: [{
