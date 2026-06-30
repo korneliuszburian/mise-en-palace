@@ -4,7 +4,7 @@ import type {
 
 export const formatHeartbeatUsage = (): string =>
   [
-    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--acquisition-readback-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
+    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "",
     "Read-only operator commands:",
     "krn heartbeat preview",
@@ -16,6 +16,7 @@ export const formatHeartbeatUsage = (): string =>
     "--near-expiry-days <positive-integer>",
     "--max-candidates <positive-integer>",
     "--evidence-ref <ref>",
+    "--candidate-kind memory_staleness|source_relation|knowledge_acquisition",
     "--acquisition-readback-file <path-to-brain-or-source-search-json>",
     "--review-candidate-id <id>",
     "--review-decision accept_for_manual_followup|defer_pending_evidence|reject_not_actionable",
@@ -54,6 +55,7 @@ type HeartbeatParseState = {
   maxCandidates: number | undefined;
   evidenceRef: string | undefined;
   acquisitionReadbackFile: string | undefined;
+  candidateKinds: HeartbeatCandidateKind[];
   reviewCandidateId: string | undefined;
   reviewDecision: HeartbeatReviewDecision | undefined;
   reviewReason: string | undefined;
@@ -67,6 +69,11 @@ type HeartbeatReviewDecision =
   | "defer_pending_evidence"
   | "reject_not_actionable";
 
+type HeartbeatCandidateKind =
+  | "memory_staleness"
+  | "source_relation"
+  | "knowledge_acquisition";
+
 type HeartbeatCandidateReviewCommand = {
   candidateId: string;
   decision: HeartbeatReviewDecision;
@@ -74,6 +81,14 @@ type HeartbeatCandidateReviewCommand = {
   evidenceRef: string;
   reviewer?: string;
 };
+
+const optionalProperty = <Key extends string, Value>(
+  key: Key,
+  value: Value | undefined
+): { [Property in Key]?: Value } =>
+  value === undefined
+    ? {}
+    : { [key]: value } as { [Property in Key]?: Value };
 
 type ParseHeartbeatOptionResult =
   | {
@@ -180,6 +195,29 @@ const parseReviewDecision = (
   return undefined;
 };
 
+const parseCandidateKind = (
+  value: string
+): HeartbeatCandidateKind | undefined => {
+  if (
+    value === "memory_staleness" ||
+    value === "source_relation" ||
+    value === "knowledge_acquisition"
+  ) {
+    return value;
+  }
+
+  return undefined;
+};
+
+const addCandidateKind = (
+  state: HeartbeatParseState,
+  candidateKind: HeartbeatCandidateKind
+): void => {
+  if (!state.candidateKinds.includes(candidateKind)) {
+    state.candidateKinds.push(candidateKind);
+  }
+};
+
 const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
   "--project": (args, index, state) =>
     assignTextOption(args, index, "--project", (value) => {
@@ -205,6 +243,34 @@ const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
     assignTextOption(args, index, "--evidence-ref", (value) => {
       state.evidenceRef = value;
     }),
+  "--candidate-kind": (args, index, state) => {
+    const required = requiredOption(args, index, "--candidate-kind");
+
+    if (!required.ok) {
+      return {
+        ok: false,
+        error: `${required.error}\n${formatHeartbeatUsage()}`
+      };
+    }
+
+    const candidateKind = parseCandidateKind(required.value);
+
+    if (candidateKind === undefined) {
+      return {
+        ok: false,
+        error:
+          "--candidate-kind must be memory_staleness, source_relation, or knowledge_acquisition\n" +
+          formatHeartbeatUsage()
+      };
+    }
+
+    addCandidateKind(state, candidateKind);
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
   "--acquisition-readback-file": (args, index, state) =>
     assignTextOption(args, index, "--acquisition-readback-file", (value) => {
       state.acquisitionReadbackFile = value;
@@ -312,20 +378,22 @@ const buildCandidateReview = (
 
 const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResult => {
   const candidateReview = buildCandidateReview(state);
+  const candidateKinds = state.candidateKinds.length === 0
+    ? undefined
+    : state.candidateKinds as [HeartbeatCandidateKind, ...HeartbeatCandidateKind[]];
 
   return {
     command: {
       kind: "heartbeatPreview",
-      ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
-      ...(state.memoryLimit === undefined ? {} : { memoryLimit: state.memoryLimit }),
-      ...(state.sourceClaimLimit === undefined ? {} : { sourceClaimLimit: state.sourceClaimLimit }),
-      ...(state.nearExpiryDays === undefined ? {} : { nearExpiryDays: state.nearExpiryDays }),
-      ...(state.maxCandidates === undefined ? {} : { maxCandidates: state.maxCandidates }),
-      ...(state.evidenceRef === undefined ? {} : { evidenceRef: state.evidenceRef }),
-      ...(state.acquisitionReadbackFile === undefined
-        ? {}
-        : { acquisitionReadbackFile: state.acquisitionReadbackFile }),
-      ...(candidateReview === undefined ? {} : { candidateReview }),
+      ...optionalProperty("projectId", state.projectId),
+      ...optionalProperty("memoryLimit", state.memoryLimit),
+      ...optionalProperty("sourceClaimLimit", state.sourceClaimLimit),
+      ...optionalProperty("nearExpiryDays", state.nearExpiryDays),
+      ...optionalProperty("maxCandidates", state.maxCandidates),
+      ...optionalProperty("evidenceRef", state.evidenceRef),
+      ...optionalProperty("candidateKinds", candidateKinds),
+      ...optionalProperty("acquisitionReadbackFile", state.acquisitionReadbackFile),
+      ...optionalProperty("candidateReview", candidateReview),
       format: state.format
     }
   };
@@ -356,6 +424,7 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
     maxCandidates: undefined,
     evidenceRef: undefined,
     acquisitionReadbackFile: undefined,
+    candidateKinds: [],
     reviewCandidateId: undefined,
     reviewDecision: undefined,
     reviewReason: undefined,

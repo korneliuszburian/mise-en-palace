@@ -24,6 +24,8 @@ describe("parseHeartbeatArgs", () => {
       "4",
       "--evidence-ref",
       "docs/report.md",
+      "--candidate-kind",
+      "knowledge_acquisition",
       "--acquisition-readback-file",
       "docs/readbacks/brain-search.json",
       "--review-candidate-id",
@@ -46,6 +48,7 @@ describe("parseHeartbeatArgs", () => {
         nearExpiryDays: 3,
         maxCandidates: 4,
         evidenceRef: "docs/report.md",
+        candidateKinds: ["knowledge_acquisition"],
         acquisitionReadbackFile: "docs/readbacks/brain-search.json",
         candidateReview: {
           candidateId: "candidate-1",
@@ -87,6 +90,16 @@ describe("parseHeartbeatArgs", () => {
       " "
     ])).toEqual({
       error: expect.stringContaining("--acquisition-readback-file cannot be empty")
+    });
+  });
+
+  it("rejects unknown candidate kind", () => {
+    expect(parseHeartbeatArgs([
+      "preview",
+      "--candidate-kind",
+      "all"
+    ])).toEqual({
+      error: expect.stringContaining("--candidate-kind must be")
     });
   });
 

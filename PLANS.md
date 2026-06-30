@@ -109,6 +109,45 @@ IMR-08 complete: live DB-backed source/brain search missingEvidence routed into
   heartbeat knowledge acquisition candidates; the next repair is focused
   heartbeat candidate-kind readback because unrelated weaker lanes can obscure a
   ready acquisition candidate in aggregate closure.
+IMR-09 complete: `krn heartbeat preview --candidate-kind` can focus the
+  heartbeat readback on one candidate lane; focused knowledge-acquisition
+  output avoids unrelated memory/source reads and reaches ready review/eval
+  closure for the acquisition candidate.
+```
+
+## Outcome IMR-09 Heartbeat Candidate-Kind Focus
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-09-heartbeat-candidate-kind-focus/REPORT.md
+```
+
+Outcome: heartbeat preview now accepts `--candidate-kind
+memory_staleness|source_relation|knowledge_acquisition`. Focused
+`knowledge_acquisition` preview skips unrelated memory/source repository reads,
+emits only the acquisition candidate, and lets review/eval closure reflect that
+ready lane.
+
+Source-to-decision:
+
+- Source: IMR-08 live bridge dogfood.
+- Mechanism: aggregate heartbeat closure can be correct globally while
+  obscuring a ready candidate in the lane under review.
+- KRN implication: candidate-kind focus reduces review burden without changing
+  mutation authority.
+- Decision: add a narrow CLI focus filter; do not change review gates, schema,
+  crawler, ranking, worker daemon, or Memory Core mutation.
+- Consumer: heartbeat/dreaming candidate runtime and operator review workflow.
+- Falsifier: focused knowledge-acquisition preview emits unrelated candidate
+  lanes, touches unrelated repositories, or changes mutation behavior.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-3hq: Use focused acquisition candidate for source evidence follow-up.
 ```
 
 ## Outcome IMR-08 Missing-Evidence Acquisition Bridge Dogfood

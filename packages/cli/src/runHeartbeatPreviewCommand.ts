@@ -37,6 +37,7 @@ import type {
 } from "./parseArgs.js";
 
 export type HeartbeatPreviewCommand = Extract<CliCommand, { kind: "heartbeatPreview" }>;
+type HeartbeatCandidateKind = NonNullable<HeartbeatPreviewCommand["candidateKinds"]>[number];
 
 interface HeartbeatPreviewDatabaseRuntime {
   projectId: string;
@@ -75,6 +76,11 @@ const defaultSourceClaimLimit = 50;
 const defaultMaxCandidates = 10;
 const defaultEvidenceRef =
   "krn heartbeat preview operator readback";
+const defaultCandidateKinds = [
+  "memory_staleness",
+  "source_relation",
+  "knowledge_acquisition"
+] as const satisfies readonly HeartbeatCandidateKind[];
 const defaultAcquisitionConsumer =
   "heartbeat knowledge acquisition preview";
 const defaultAcquisitionFalsifier =
@@ -236,6 +242,71 @@ const loadSourceClaimEdges = async (
   return uniqueSourceClaimEdges(edges.flat());
 };
 
+const includesCandidateKind = (
+  candidateKinds: readonly HeartbeatCandidateKind[],
+  candidateKind: HeartbeatCandidateKind
+): boolean => candidateKinds.includes(candidateKind);
+
+const selectedCandidateKinds = (
+  command: HeartbeatPreviewCommand
+): readonly HeartbeatCandidateKind[] =>
+  command.candidateKinds ?? defaultCandidateKinds;
+
+const loadMemoryRecordsForPreview = async (
+  input: {
+    databaseRuntime: HeartbeatPreviewDatabaseRuntime;
+    projectId: ProjectId;
+    command: HeartbeatPreviewCommand;
+    candidateKinds: readonly HeartbeatCandidateKind[];
+  }
+): Promise<MemoryRecord[]> =>
+  includesCandidateKind(input.candidateKinds, "memory_staleness")
+    ? input.databaseRuntime.memoryRepository.listMemoryRecordsForProject(
+      input.projectId,
+      input.command.memoryLimit ?? defaultMemoryLimit
+    )
+    : [];
+
+const loadSourceClaimsForPreview = async (
+  input: {
+    databaseRuntime: HeartbeatPreviewDatabaseRuntime;
+    projectId: ProjectId;
+    command: HeartbeatPreviewCommand;
+    candidateKinds: readonly HeartbeatCandidateKind[];
+  }
+): Promise<SourceClaim[]> =>
+  includesCandidateKind(input.candidateKinds, "source_relation")
+    ? input.databaseRuntime.sourceRepository.listClaimsForProject(
+      input.projectId,
+      input.command.sourceClaimLimit ?? defaultSourceClaimLimit
+    )
+    : [];
+
+const loadSourceClaimEdgesForPreview = async (
+  input: {
+    databaseRuntime: HeartbeatPreviewDatabaseRuntime;
+    sourceClaims: readonly SourceClaim[];
+    candidateKinds: readonly HeartbeatCandidateKind[];
+  }
+): Promise<SourceClaimEdge[]> =>
+  includesCandidateKind(input.candidateKinds, "source_relation")
+    ? loadSourceClaimEdges(input.databaseRuntime.sourceRepository, input.sourceClaims)
+    : [];
+
+const loadKnowledgeAcquisitionRequestsForPreview = async (
+  input: {
+    cwd: string;
+    command: HeartbeatPreviewCommand;
+    candidateKinds: readonly HeartbeatCandidateKind[];
+  }
+): Promise<KnowledgeAcquisitionRequest[]> =>
+  includesCandidateKind(input.candidateKinds, "knowledge_acquisition")
+    ? loadKnowledgeAcquisitionRequests(
+      input.cwd,
+      input.command.acquisitionReadbackFile
+    )
+    : [];
+
 const formatList = (values: readonly string[]): string[] =>
   values.length === 0 ? ["  - none"] : values.map((value) => `  - ${value}`);
 
@@ -378,6 +449,7 @@ const formatHeartbeatPreview = (
     memoryRecordCount: number;
     sourceClaimCount: number;
     sourceClaimEdgeCount: number;
+    candidateKinds: readonly HeartbeatCandidateKind[];
     projectResolution: ProjectResolution | undefined;
     preview: BrainHeartbeatPreview;
   }
@@ -388,6 +460,7 @@ const formatHeartbeatPreview = (
     "DB writes: none",
     `Project: ${input.projectId}`,
     ...formatProjectResolutionLines(input.projectResolution),
+    `Candidate kinds: ${input.candidateKinds.join(", ")}`,
     `Generated at: ${input.preview.generatedAt}`,
     "",
     ...formatReviewEvalClosure(input.preview),
@@ -432,6 +505,7 @@ const jsonOutput = (
     memoryRecordCount: number;
     sourceClaimCount: number;
     sourceClaimEdgeCount: number;
+    candidateKinds: readonly HeartbeatCandidateKind[];
     preview: BrainHeartbeatPreview;
   }
 ): string => JSON.stringify({
@@ -471,18 +545,29 @@ export const runHeartbeatPreviewCommand = async (
 
   try {
     const projectId = databaseRuntime.projectId as ProjectId;
-    const memoryLimit = runtime.command.memoryLimit ?? defaultMemoryLimit;
-    const sourceClaimLimit = runtime.command.sourceClaimLimit ?? defaultSourceClaimLimit;
-    const memoryRecords =
-      await databaseRuntime.memoryRepository.listMemoryRecordsForProject(projectId, memoryLimit);
-    const sourceClaims =
-      await databaseRuntime.sourceRepository.listClaimsForProject(projectId, sourceClaimLimit);
-    const sourceClaimEdges =
-      await loadSourceClaimEdges(databaseRuntime.sourceRepository, sourceClaims);
-    const knowledgeAcquisitionRequests = await loadKnowledgeAcquisitionRequests(
-      runtime.cwd,
-      runtime.command.acquisitionReadbackFile
-    );
+    const candidateKinds = selectedCandidateKinds(runtime.command);
+    const memoryRecords = await loadMemoryRecordsForPreview({
+      databaseRuntime,
+      projectId,
+      command: runtime.command,
+      candidateKinds
+    });
+    const sourceClaims = await loadSourceClaimsForPreview({
+      databaseRuntime,
+      projectId,
+      command: runtime.command,
+      candidateKinds
+    });
+    const sourceClaimEdges = await loadSourceClaimEdgesForPreview({
+      databaseRuntime,
+      sourceClaims,
+      candidateKinds
+    });
+    const knowledgeAcquisitionRequests = await loadKnowledgeAcquisitionRequestsForPreview({
+      cwd: runtime.cwd,
+      command: runtime.command,
+      candidateKinds
+    });
     const preview = buildBrainHeartbeatPreview({
       now: runtime.now(),
       evidenceRef: runtime.command.evidenceRef ?? defaultEvidenceRef,
@@ -506,6 +591,7 @@ export const runHeartbeatPreviewCommand = async (
       memoryRecordCount: memoryRecords.length,
       sourceClaimCount: sourceClaims.length,
       sourceClaimEdgeCount: sourceClaimEdges.length,
+      candidateKinds,
       preview
     };
 

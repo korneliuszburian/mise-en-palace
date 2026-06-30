@@ -483,6 +483,96 @@ describe("runHeartbeatPreviewCommand", () => {
     }
   });
 
+  it("focuses heartbeat preview on knowledge acquisition candidates", async () => {
+    const fixture = await writeJsonFixture("brain-search.json", {
+      kind: "krn.brainSearch.preview.v1",
+      query: "focused acquisition",
+      sourceSearch: {
+        missingEvidence: [
+          "SearchDocument evidence for focused acquisition"
+        ],
+        doesNotProve: [
+          "brain-search readback does not prove acquisition quality"
+        ]
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-09.md",
+          candidateKinds: ["knowledge_acquisition"],
+          acquisitionReadbackFile: fixture.fileName,
+          format: "json"
+        },
+        createDatabaseRuntime: async () => ({
+          projectId,
+          memoryRepository: {
+            async listMemoryRecordsForProject() {
+              throw new Error("memory lane should not be read");
+            }
+          },
+          sourceRepository: {
+            async listClaimsForProject() {
+              throw new Error("source lane should not be read");
+            },
+            async listSourceClaimEdgesForClaim() {
+              throw new Error("source edges should not be read");
+            }
+          },
+          async close() {}
+        })
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      expect(parsed).toMatchObject({
+        candidateKinds: ["knowledge_acquisition"],
+        memoryRecordCount: 0,
+        sourceClaimCount: 0,
+        sourceClaimEdgeCount: 0,
+        preview: {
+          reviewEvalClosure: {
+            decision: "ready_for_behavior_proof",
+            nextAction: "add_golden_behavior_case",
+            mutation: "none"
+          },
+          runtimeLoop: {
+            status: "ready_for_operator_review",
+            nextAction: "review_candidates_and_capture_evidence",
+            inspectedCandidates: 1,
+            reviewableCandidates: 1,
+            mutation: "none"
+          },
+          candidateCounts: {
+            memoryStaleness: 0,
+            sourceRelation: 0,
+            knowledgeAcquisition: 1
+          },
+          candidates: [
+            {
+              kind: "knowledge_acquisition_candidate",
+              source: "brain_search",
+              query: "focused acquisition",
+              reviewability: "ready",
+              mutation: "none"
+            }
+          ]
+        }
+      });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
   it("rejects invalid acquisition readback JSON", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "krn-heartbeat-invalid-readback-"));
     const fileName = "broken.json";

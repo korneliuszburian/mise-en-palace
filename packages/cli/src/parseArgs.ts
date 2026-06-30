@@ -164,6 +164,18 @@ export type CliCommand =
       maxCandidates?: number;
       evidenceRef?: string;
       acquisitionReadbackFile?: string;
+      candidateKinds?: readonly [
+        (
+          | "memory_staleness"
+          | "source_relation"
+          | "knowledge_acquisition"
+        ),
+        ...(
+          | "memory_staleness"
+          | "source_relation"
+          | "knowledge_acquisition"
+        )[]
+      ];
       candidateReview?: {
         candidateId: string;
         decision:

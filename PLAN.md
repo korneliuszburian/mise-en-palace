@@ -37,6 +37,7 @@ heartbeat candidate review: one candidate can be reviewed/deferred with evidence
 heartbeat knowledge acquisition: missing-evidence input can produce reviewable candidate-only acquisition work
 heartbeat acquisition bridge: source/brain search JSON missingEvidence can feed candidate-only heartbeat preview
 heartbeat acquisition dogfood: live DB-backed source/brain missingEvidence produces acquisition candidates
+heartbeat candidate focus: candidate-kind filter can isolate acquisition lane and avoid unrelated repo reads
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -73,9 +74,9 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-mise-en-palace-xe2:
-focus heartbeat preview by candidate kind so one ready lane is not obscured by
-unrelated weaker candidates.
+mise-en-palace-3hq:
+use a focused acquisition candidate for bounded source/evidence follow-up or
+explicit rejection without widening runtime authority.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -114,6 +115,7 @@ IMR-05: store-backed pattern packets gated Autonomous Memory Agents paper intake
 IMR-06: heartbeat preview can turn explicit missing-evidence readback into candidate-only acquisition work.
 IMR-07: heartbeat preview can read source/brain search JSON missingEvidence and route it into acquisition candidates.
 IMR-08: live DB-backed source/brain missingEvidence dogfood proved the acquisition bridge and queued focused heartbeat lane readback.
+IMR-09: heartbeat preview can focus by candidate kind and isolate knowledge-acquisition readback.
 ```
 
 ## Remaining Product Gaps
