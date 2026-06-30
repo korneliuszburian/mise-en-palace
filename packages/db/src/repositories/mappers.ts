@@ -111,6 +111,69 @@ type RetrievalRunRow = InferSelectModel<typeof retrievalRuns>;
 type RetrievalCandidateRow = InferSelectModel<typeof retrievalCandidates>;
 type ActivationDecisionRow = InferSelectModel<typeof activationDecisions>;
 
+type RetrievalSubjectMappingFields = Pick<
+  SearchDocumentRecord,
+  | "projectId"
+  | "subjectType"
+  | "subjectId"
+  | "sourceArtifactId"
+  | "sourceChunkId"
+  | "sourceClaimId"
+  | "memoryRecordId"
+  | "antiMemoryRecordId"
+  | "trustTier"
+  | "validityStatus"
+  | "metadataFilters"
+  | "validFrom"
+  | "validUntil"
+  | "invalidatedAt"
+  | "metadata"
+  | "createdAt"
+  | "updatedAt"
+>;
+
+interface RetrievalSubjectMappingRow {
+  projectId: string | null;
+  subjectType: SearchDocumentRecord["subjectType"];
+  subjectId: string;
+  sourceArtifactId: string | null;
+  sourceChunkId: string | null;
+  sourceClaimId: string | null;
+  memoryRecordId: string | null;
+  antiMemoryRecordId: string | null;
+  trustTier: SourceTrustTier;
+  validityStatus: SearchDocumentRecord["validityStatus"];
+  metadataFilters: unknown;
+  validFrom: Date;
+  validUntil: Date | null;
+  invalidatedAt: Date | null;
+  metadata: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const mapRetrievalSubjectFields = (
+  row: RetrievalSubjectMappingRow
+): RetrievalSubjectMappingFields => ({
+  ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  subjectType: row.subjectType,
+  subjectId: row.subjectId,
+  ...(row.sourceArtifactId === null ? {} : { sourceArtifactId: row.sourceArtifactId }),
+  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
+  ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
+  ...(row.memoryRecordId === null ? {} : { memoryRecordId: row.memoryRecordId }),
+  ...(row.antiMemoryRecordId === null ? {} : { antiMemoryRecordId: row.antiMemoryRecordId }),
+  trustTier: row.trustTier,
+  validityStatus: row.validityStatus,
+  metadataFilters: metadataOrEmpty(row.metadataFilters),
+  validFrom: toIsoTimestamp(row.validFrom),
+  ...(row.validUntil === null ? {} : { validUntil: toIsoTimestamp(row.validUntil) }),
+  ...(row.invalidatedAt === null ? {} : { invalidatedAt: toIsoTimestamp(row.invalidatedAt) }),
+  metadata: metadataOrEmpty(row.metadata),
+  createdAt: toIsoTimestamp(row.createdAt),
+  updatedAt: toIsoTimestamp(row.updatedAt)
+});
+
 const operatorIntentSources = new Set<OperatorIntentSource>([
   "goal",
   "cli",
@@ -658,31 +721,15 @@ export const mapOutboxEvent = (row: OutboxEventRow): OutboxEventRecord => ({
 
 export const mapSearchDocument = (row: SearchDocumentRow): SearchDocumentRecord => ({
   id: row.id,
-  ...(row.projectId === null ? {} : { projectId: row.projectId }),
-  subjectType: row.subjectType,
-  subjectId: row.subjectId,
-  ...(row.sourceArtifactId === null ? {} : { sourceArtifactId: row.sourceArtifactId }),
-  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
-  ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
-  ...(row.memoryRecordId === null ? {} : { memoryRecordId: row.memoryRecordId }),
-  ...(row.antiMemoryRecordId === null ? {} : { antiMemoryRecordId: row.antiMemoryRecordId }),
+  ...mapRetrievalSubjectFields(row),
   ...(row.evidenceBundleId === null ? {} : { evidenceBundleId: row.evidenceBundleId }),
   ...(row.reviewAssessmentId === null ? {} : { reviewAssessmentId: row.reviewAssessmentId }),
   ...(row.sourceDecisionId === null ? {} : { sourceDecisionId: row.sourceDecisionId }),
   ...(row.runEventId === null ? {} : { runEventId: row.runEventId }),
-  trustTier: row.trustTier,
-  validityStatus: row.validityStatus,
   language: row.language,
   title: row.title,
   body: row.body,
-  searchText: row.searchText,
-  metadataFilters: metadataOrEmpty(row.metadataFilters),
-  validFrom: toIsoTimestamp(row.validFrom),
-  ...(row.validUntil === null ? {} : { validUntil: toIsoTimestamp(row.validUntil) }),
-  ...(row.invalidatedAt === null ? {} : { invalidatedAt: toIsoTimestamp(row.invalidatedAt) }),
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
+  searchText: row.searchText
 });
 
 export const mapEmbeddingModel = (row: EmbeddingModelRow): EmbeddingModelRecord => ({
@@ -699,27 +746,11 @@ export const mapEmbeddingModel = (row: EmbeddingModelRow): EmbeddingModelRecord 
 
 export const mapEmbedding = (row: EmbeddingRow): EmbeddingRecord => ({
   id: row.id,
-  ...(row.projectId === null ? {} : { projectId: row.projectId }),
+  ...mapRetrievalSubjectFields(row),
   embeddingModelId: row.embeddingModelId,
-  subjectType: row.subjectType,
-  subjectId: row.subjectId,
-  ...(row.sourceArtifactId === null ? {} : { sourceArtifactId: row.sourceArtifactId }),
-  ...(row.sourceChunkId === null ? {} : { sourceChunkId: row.sourceChunkId }),
-  ...(row.sourceClaimId === null ? {} : { sourceClaimId: row.sourceClaimId }),
-  ...(row.memoryRecordId === null ? {} : { memoryRecordId: row.memoryRecordId }),
-  ...(row.antiMemoryRecordId === null ? {} : { antiMemoryRecordId: row.antiMemoryRecordId }),
   ...(row.searchDocumentId === null ? {} : { searchDocumentId: row.searchDocumentId }),
   embedding: vectorOrEmpty(row.embedding),
-  contentHash: row.contentHash,
-  trustTier: row.trustTier,
-  validityStatus: row.validityStatus,
-  metadataFilters: metadataOrEmpty(row.metadataFilters),
-  validFrom: toIsoTimestamp(row.validFrom),
-  ...(row.validUntil === null ? {} : { validUntil: toIsoTimestamp(row.validUntil) }),
-  ...(row.invalidatedAt === null ? {} : { invalidatedAt: toIsoTimestamp(row.invalidatedAt) }),
-  metadata: metadataOrEmpty(row.metadata),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
+  contentHash: row.contentHash
 });
 
 export const mapRetrievalRun = (row: RetrievalRunRow): RetrievalRunRecord => ({
