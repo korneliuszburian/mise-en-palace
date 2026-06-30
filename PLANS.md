@@ -560,69 +560,23 @@ Falsifier:
 - [x] V355 complete: Mini Brain-QA Built-In Usefulness Loop.
 - [x] V356 complete: Graph Relation SearchDocument Support Vertical.
 - [x] V357 complete: Source Search Query-Shape Diagnostics.
-- [ ] V358 active: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+- [ ] V358 pending: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 - [x] V359 complete: Fallow Quality Gate And First Cleanup.
 - [x] V360 complete: Fallow Legacy Complexity Cleanup.
 
-V360 progress:
+V360 outcome:
 
 ```txt
-completed bounded targets:
-  packages/cli/src/parseKnowledgeArgs.ts
-  packages/cli/src/parseReviewArgs.ts
-  packages/cli/src/parseEvidenceArgs.ts
-  packages/cli/src/parseEvidenceArgs.ts source-usefulness parser
-  packages/db/src/repositories/common.ts
-  packages/db/src/repositories/DrizzleReflectionRepository.ts
-  packages/cli/src/parseObserveArgs.ts
-  packages/cli/src/parseReflectArgs.ts
-  packages/cli/src/parseArgHelpers.ts
-  packages/cli/src/parseSourceArgs.ts
-  packages/cli/src/parseMemoryArgs.ts
-  packages/cli/src/parseInitArgs.ts
-  packages/harness/src/reflection/reflectionCandidateWriter.ts
-  packages/core/src/evidenceBundle.ts
-  packages/schema/src/evidenceCapture.ts
-  packages/core/src/reflection/index.ts
-  packages/cli/src/runDbSmokeCommand.ts
-  packages/cli/src/runCli.ts
-  packages/cli/src/runSourceCliCommand.ts
-  packages/cli/src/runMemoryCliCommand.ts
-  packages/cli/src/runProjectCliCommand.ts
-  packages/cli/src/runHarnessCliCommand.ts
-  packages/cli/src/runDbCliCommand.ts
-  packages/cli/src/runCliCommand.ts
-  packages/cli/src/runSourceArtifactPreviewCommand.ts
-  packages/cli/src/sourceArtifactPreviewExtraction.ts
-  packages/cli/src/runKnowledgeCardsCommand.ts
-  packages/cli/src/cliFileBoundary.ts
-  packages/cli/src/doctorStaticChecks.ts
-  packages/cli/src/runDoctorCommand.ts
-  packages/cli/src/doctorDbChecks.ts
-  packages/cli/src/databaseRuntime.ts
-  packages/harness/src/brainKnowledgeReadModel.ts
-  packages/db/src/repositories/DrizzleObservationRepository.ts
-  packages/db/src/repositories/DrizzleRetrievalRepository.ts
-  packages/db/src/repositories/DrizzleMemoryRepository.ts
-  packages/db/src/dbSmokeSupport.ts and DB smoke setup callers
-  packages/db/src/initConnectSmoke.ts
-  packages/db/src/repositories/memoryMappers.ts
-  packages/cli/src/codexBriefSupport.ts
-  packages/cli/src/codexAdapterSmoke.ts
-  packages/cli/src/targetRepoHarnessSmoke.ts
-  packages/cli/src/runCodexBriefCommand.ts
-  packages/db/src/activationSmoke.ts
-  packages/db/src/retrievalSubstrateSmoke.ts
+bounded cleanup ran across CLI/core/schema/db/harness/codex/workers owner
+surfaces without broad repo refactors.
 
-full Fallow moved:
-  dupes 136 -> 44 clone groups
-  health 117 -> 18 above threshold
-  dead-code 0
+full Fallow:
+  exits cleanly
+  dead-code findings: 0
+  health failures: 0
+  duplication output: below configured failure threshold
 
-next: pick the next bounded owner surface from the current full Fallow report.
-Do not continue DB smoke cleanup unless the current Fallow top still identifies
-a bounded smoke-family duplicate. Prefer the next highest owner surface with
-direct complexity debt.
+next: return to V358 graph mini Brain-QA query-shape diagnostics closure.
 ```
 
 ## Verification Policy
