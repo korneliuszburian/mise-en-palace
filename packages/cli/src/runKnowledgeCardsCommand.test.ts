@@ -779,7 +779,15 @@ type PreviewResourceForTest = {
   };
 };
 
-function parsePreviewResource(value: string): PreviewResourceForTest {
+type ParsedPreviewRoot = {
+  root: Record<string, unknown>;
+  access: "read_only";
+  mutation: "none";
+  cards: unknown[];
+  proof: Record<string, unknown>;
+};
+
+function parsePreviewRoot(value: string): ParsedPreviewRoot {
   const parsed: unknown = JSON.parse(value);
 
   if (!isRecord(parsed)) {
@@ -788,10 +796,6 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
 
   const access = parsed["access"];
   const mutation = parsed["mutation"];
-  const totalCards = parsed["totalCards"];
-  const returnedCards = parsed["returnedCards"];
-  const limit = parsed["limit"];
-  const noMatchGuidance = parsed["noMatchGuidance"];
   const cards = parsed["cards"];
   const proof = parsed["proof"];
 
@@ -799,55 +803,80 @@ function parsePreviewResource(value: string): PreviewResourceForTest {
     throw new Error("knowledge cards JSON output does not match preview resource shape");
   }
 
-  if (
-    totalCards !== undefined &&
-    (typeof totalCards !== "number" || !Number.isSafeInteger(totalCards))
-  ) {
-    throw new Error("knowledge cards JSON output totalCards must be an integer when present");
+  return {
+    root: parsed,
+    access,
+    mutation,
+    cards,
+    proof
+  };
+}
+
+function optionalIntegerField(
+  root: Record<string, unknown>,
+  field: "totalCards" | "returnedCards" | "limit"
+): number | undefined {
+  const value = root[field];
+
+  if (value !== undefined && (typeof value !== "number" || !Number.isSafeInteger(value))) {
+    throw new Error(`knowledge cards JSON output ${field} must be an integer when present`);
   }
 
-  if (
-    returnedCards !== undefined &&
-    (typeof returnedCards !== "number" || !Number.isSafeInteger(returnedCards))
-  ) {
-    throw new Error("knowledge cards JSON output returnedCards must be an integer when present");
+  return value;
+}
+
+function optionalStringArrayField(
+  root: Record<string, unknown>,
+  field: "noMatchGuidance"
+): string[] | undefined {
+  const value = root[field];
+
+  if (value !== undefined && (!Array.isArray(value) || !value.every((item) => typeof item === "string"))) {
+    throw new Error(`knowledge cards JSON output ${field} must be string array when present`);
   }
 
-  if (limit !== undefined && (typeof limit !== "number" || !Number.isSafeInteger(limit))) {
-    throw new Error("knowledge cards JSON output limit must be an integer when present");
-  }
+  return value;
+}
 
-  if (
-    noMatchGuidance !== undefined &&
-    (!Array.isArray(noMatchGuidance) || !noMatchGuidance.every((item) => typeof item === "string"))
-  ) {
-    throw new Error("knowledge cards JSON output noMatchGuidance must be string array when present");
-  }
-
+function parseProofBoundaries(proof: Record<string, unknown>): string[] {
   const doesNotProve = proof["doesNotProve"];
 
   if (!Array.isArray(doesNotProve) || !doesNotProve.every((item) => typeof item === "string")) {
     throw new Error("knowledge cards JSON output must include doesNotProve proof boundaries");
   }
 
+  return doesNotProve;
+}
+
+function parsePreviewCards(cards: readonly unknown[]): PreviewResourceForTest["cards"] {
+  return cards.map((card) => {
+    if (!isRecord(card) || typeof card["id"] !== "string") {
+      throw new Error("knowledge cards JSON output cards must include ids");
+    }
+
+    return {
+      id: card["id"]
+    };
+  });
+}
+
+function parsePreviewResource(value: string): PreviewResourceForTest {
+  const preview = parsePreviewRoot(value);
+  const totalCards = optionalIntegerField(preview.root, "totalCards");
+  const returnedCards = optionalIntegerField(preview.root, "returnedCards");
+  const limit = optionalIntegerField(preview.root, "limit");
+  const noMatchGuidance = optionalStringArrayField(preview.root, "noMatchGuidance");
+
   return {
-    access,
-    mutation,
+    access: preview.access,
+    mutation: preview.mutation,
     ...(totalCards === undefined ? {} : { totalCards }),
     ...(returnedCards === undefined ? {} : { returnedCards }),
     ...(limit === undefined ? {} : { limit }),
     ...(noMatchGuidance === undefined ? {} : { noMatchGuidance }),
-    cards: cards.map((card) => {
-      if (!isRecord(card) || typeof card["id"] !== "string") {
-        throw new Error("knowledge cards JSON output cards must include ids");
-      }
-
-      return {
-        id: card["id"]
-      };
-    }),
+    cards: parsePreviewCards(preview.cards),
     proof: {
-      doesNotProve
+      doesNotProve: parseProofBoundaries(preview.proof)
     }
   };
 }
