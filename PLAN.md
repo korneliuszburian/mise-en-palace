@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V366 Heartbeat Preview Golden Behavior Proof
-current task: V366-00 Heartbeat Preview Golden Behavior Proof
+active stream: V367 Consensus Eval/Candidate Lane
+current task: V367-00 Consensus Eval/Candidate Lane
 ```
 
 ## Compact Checkpoints
@@ -27,28 +27,6 @@ product-ready brain: not complete
 ```
 
 ## Active Task
-
-### V362-00 Ingest V0 Expansion With Bounded Evidence
-
-Status: complete.
-
-Outcome: a second bounded local artifact flowed through existing SourceArtifact,
-SourceChunk, SearchDocument, reviewed SourceClaim, SourceClaimEdge, and
-source-search answer-package `relationSupport` readback paths.
-
-The slice found and fixed a real live-DB bug: `source artifact preview
---persist` lost the repository receiver for `createSourceChunk`. A
-receiver-sensitive regression test now guards the runtime path.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v362-ingest-v0-expansion/REPORT.md
-```
-
-Next decision: proceed to a candidate-only heartbeat/dreaming v0 surface before
-worker daemon, scheduler, autonomous Memory Core mutation, crawler, embeddings,
-schema, UI/API/MCP, or broad benchmark.
 
 ### V363-00 Heartbeat/Dreaming Candidate Generator V0
 
@@ -95,7 +73,7 @@ docs/reviews/controlled-dogfood/2026-06-30-v365-heartbeat-preview-review-eval-cl
 
 ### V366-00 Heartbeat Preview Golden Behavior Proof
 
-Status: active.
+Status: complete.
 
 Goal: add one bounded behavior proof that fails if heartbeat preview stops
 emitting candidate-only review/eval closure output with evidence refs,
@@ -104,6 +82,29 @@ emitting candidate-only review/eval closure output with evidence refs,
 Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
 crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
 consensus runtime.
+
+Outcome: workers heartbeat preview tests now include a focused behavior proof
+for exact `reviewEvalClosure` output, review-ready candidates, evidence refs,
+`doesNotProve`, next action, forbidden writes, and no mutation.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v366-heartbeat-preview-golden-behavior-proof/REPORT.md
+```
+
+### V367-00 Consensus Eval/Candidate Lane
+
+Status: active.
+
+Goal: add the smallest candidate-only consensus/eval surface that can evaluate
+bounded claim or candidate disagreements without producing final truth,
+mutating Memory Core, starting agent runtime, or creating a broad consensus
+platform.
+
+Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
+crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
+multi-agent runtime.
 
 ## Recent Completed Streams
 
@@ -115,14 +116,14 @@ V362: second local artifact ingest/readback and source chunk receiver fix.
 V363: candidate-only brain heartbeat preview primitive.
 V364: heartbeat preview CLI/readback.
 V365: heartbeat preview review/eval closure.
+V366: heartbeat preview golden behavior proof.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. heartbeat preview golden behavior proof
-2. consensus eval/candidate lane
-3. product UI/search/API/MCP after usefulness/security gates
+1. consensus eval/candidate lane
+2. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

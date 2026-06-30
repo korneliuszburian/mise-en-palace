@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V366 Heartbeat Preview Golden Behavior Proof
+V367 Consensus Eval/Candidate Lane
 ```
 
 Current state:
@@ -27,12 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V366-00 Heartbeat Preview Golden Behavior Proof.
+current task: V367-00 Consensus Eval/Candidate Lane.
 ```
 
-Current task: add one bounded behavior proof for the V365 heartbeat preview
-review/eval closure before any daemon, scheduler, crawler, embeddings, schema,
-UI/API/MCP, broad benchmark, or autonomous Memory Core/source mutation.
+Current task: add the smallest candidate-only consensus/eval surface for
+bounded disagreement review before any daemon, scheduler, crawler, embeddings,
+schema, UI/API/MCP, broad benchmark, multi-agent runtime, or autonomous Memory
+Core/source mutation.
 
 ## Direction
 

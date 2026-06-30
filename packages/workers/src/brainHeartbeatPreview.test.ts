@@ -80,6 +80,57 @@ const sourceClaimEdge = (
 });
 
 describe("brain heartbeat preview", () => {
+  test("guards review eval closure behavior proof without mutation", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [
+        memoryRecord("memory-expired", {
+          validUntil: "2026-06-29T00:00:00.000Z"
+        })
+      ],
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [sourceClaimEdge()]
+    });
+
+    expect(result.reviewEvalClosure).toEqual({
+      kind: "heartbeat_preview_review_eval_closure",
+      decision: "ready_for_behavior_proof",
+      nextAction: "add_golden_behavior_case",
+      summary:
+        "Heartbeat preview emitted review-ready candidate output that can be protected by a bounded behavior proof before runtime automation.",
+      candidateIds: [
+        "memory-staleness-heartbeat:memory-expired:expired_memory",
+        "source-relation-heartbeat:source-claim-edge-1:relation_needs_review"
+      ],
+      evidenceRefs: [evidenceRef],
+      mutation: "none",
+      doesNotProve:
+        "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.",
+      forbiddenWrites: [
+        "memory_records",
+        "anti_memory_records",
+        "source_claims",
+        "source_decisions",
+        "source_claim_edges",
+        "eval_candidates"
+      ]
+    });
+    expect(result.candidates).toHaveLength(2);
+    for (const candidate of result.candidates) {
+      expect(candidate.reviewability).toBe("ready");
+      expect(candidate.reviewabilityReasons.length).toBeGreaterThan(0);
+      expect(candidate.action.length).toBeGreaterThan(0);
+      expect(candidate.evidenceRefs).toContain(evidenceRef);
+      expect(candidate.doesNotProve.length).toBeGreaterThan(0);
+      expect(candidate.mutation).toBe("none");
+    }
+    expect(result.mutation).toBe("none");
+  });
+
   test("aggregates memory staleness and source relation candidates without mutation", () => {
     const result = buildBrainHeartbeatPreview({
       now,

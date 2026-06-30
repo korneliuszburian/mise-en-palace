@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V366 Heartbeat Preview Golden Behavior Proof
-current task: V366-00 Heartbeat Preview Golden Behavior Proof
+active stream: V367 Consensus Eval/Candidate Lane
+current task: V367-00 Consensus Eval/Candidate Lane
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V366-00 Heartbeat Preview Golden Behavior Proof is active.
-The current gap is protecting the V365 `reviewEvalClosure` readback with one
-bounded behavior proof before daemon, scheduler, crawler, embeddings, schema,
-UI/API/MCP, broad benchmark, consensus runtime, or autonomous memory/source
-mutation.
+V367-00 Consensus Eval/Candidate Lane is active.
+The current gap is adding the smallest candidate-only consensus/eval surface
+for bounded disagreement review before daemon, scheduler, crawler, embeddings,
+schema, UI/API/MCP, broad benchmark, multi-agent runtime, or autonomous
+memory/source mutation.
 ```
 
 ## 2. Product Thesis
@@ -83,28 +83,32 @@ V364 complete: `krn heartbeat preview` exposes candidate-only heartbeat readback
   from live Postgres state without mutation.
 V365 complete: heartbeat preview emits and renders a candidate-only
   review/eval closure decision and next action.
+V366 complete: heartbeat preview review/eval closure is protected by a focused
+  worker behavior proof.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V366
+## Active Task V367
 
-ID: V366-00
-Name: Heartbeat Preview Golden Behavior Proof
+ID: V367-00
+Name: Consensus Eval/Candidate Lane
 Status: active
 
-Goal: add one bounded behavior proof that fails if heartbeat preview stops
-emitting candidate-only review/eval closure output with evidence refs,
-does-not-prove, reviewability, next action, and no mutation.
+Goal: add the smallest candidate-only consensus/eval surface that can evaluate
+bounded claim or candidate disagreements without producing final truth,
+mutating Memory Core, starting agent runtime, or creating a broad consensus
+platform.
 
-Product rationale: V365 made the review/eval decision visible. The next useful
-step is protecting that operator-facing closure before any autonomous heartbeat
-runtime.
+Product rationale: KRN has source/memory/review gates and heartbeat candidate
+surfaces, but consensus remains a product gap. The next useful step is a
+candidate-only disagreement evaluator that preserves dissent and proof
+boundaries before any runtime multi-agent system.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V366 report under `docs/reviews/controlled-dogfood/`;
+- a compact V367 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -120,15 +124,19 @@ Forbidden writes:
 - embeddings;
 - worker runtime;
 - broad benchmark;
-- consensus runtime;
+- multi-agent runtime;
 - parallel roadmap.
 
 Definition of Done:
 
-- one behavior proof fails if heartbeat preview closure stops exposing evidence
-  refs, does-not-prove, reviewability, next action, or no-mutation boundary;
-- no MemoryRecord, SourceClaim, SourceDecision, or DB schema mutation is added
-  unless explicitly rejected/recorded as a blocking falsifier.
+- one bounded candidate-only consensus/eval helper or preview exists;
+- output preserves claim/candidate refs, pro/con or agreement/disagreement
+  signals, dissent, evidence refs, does-not-prove, reviewability, next action,
+  and no-mutation boundary;
+- focused tests prove ready and insufficient-evidence cases;
+- no MemoryRecord, SourceClaim, SourceDecision, EvalCandidate, or DB schema
+  mutation is added unless explicitly rejected/recorded as a blocking
+  falsifier.
 
 Verification floor:
 
@@ -146,8 +154,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V366 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
-agent/consensus platform instead of protecting the heartbeat preview closure.
+V367 mutates Memory Core, writes final truth, starts runtime agents, or becomes
+a broad consensus platform instead of a candidate-only eval surface.
 ```
 
 ## 9. Task Contract Schema
@@ -208,9 +216,8 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V366 heartbeat preview golden behavior proof
-2. consensus eval/candidate lane
-3. product UI/search/API/MCP after usefulness/security gates
+1. V367 consensus eval/candidate lane
+2. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -223,7 +230,25 @@ Current backlog order:
 - [x] V363 complete: Heartbeat/Dreaming Candidate Generator V0.
 - [x] V364 complete: Heartbeat Preview CLI Readback.
 - [x] V365 complete: Heartbeat Preview Review/Eval Closure.
-- [ ] V366 pending: Heartbeat Preview Golden Behavior Proof.
+- [x] V366 complete: Heartbeat Preview Golden Behavior Proof.
+- [ ] V367 pending: Consensus Eval/Candidate Lane.
+
+## Outcome V366 Heartbeat Preview Golden Behavior Proof
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v366-heartbeat-preview-golden-behavior-proof/REPORT.md
+```
+
+Outcome: `packages/workers/src/brainHeartbeatPreview.test.ts` now contains a
+focused behavior proof for exact heartbeat preview `reviewEvalClosure` output,
+review-ready candidate fields, evidence refs, `doesNotProve`, next action,
+forbidden writes, and no mutation.
+
+Next: V367 Consensus Eval/Candidate Lane.
 
 ## Outcome V365 Heartbeat Preview Review/Eval Closure
 
