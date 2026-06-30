@@ -75,6 +75,14 @@ bounded product surface, or unblock the next vertical slice.
   source -> mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier
   ```
 
+## Senior Execution Doctrine
+
+Every implementation slice must preserve: think before coding; simplest
+final-pattern solution; surgical diff; explicit success criteria; focused tests
+for breakable behavior; verification with proof/non-proof boundaries; TypeScript
+strictness; Fallow as evidence, not automatic truth. If a slice cannot satisfy
+this, rescope before coding.
+
 ## Hard Non-Goals
 
 Do not build dashboard, API, MCP server, worker daemon, crawler, broad eval
