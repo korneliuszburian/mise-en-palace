@@ -105,6 +105,45 @@ IMR-06 complete: heartbeat preview can turn explicit missing-evidence readback
 IMR-07 complete: `krn heartbeat preview --acquisition-readback-file` can read
   `krn brain search --json` or `krn source search --json` missingEvidence and
   route it into candidate-only knowledge acquisition output.
+IMR-08 complete: live DB-backed source/brain search missingEvidence routed into
+  heartbeat knowledge acquisition candidates; the next repair is focused
+  heartbeat candidate-kind readback because unrelated weaker lanes can obscure a
+  ready acquisition candidate in aggregate closure.
+```
+
+## Outcome IMR-08 Missing-Evidence Acquisition Bridge Dogfood
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-08-missing-evidence-acquisition-bridge-dogfood/REPORT.md
+```
+
+Outcome: live current-shell source search and brain search both emitted
+`missingEvidence`, and heartbeat preview converted both JSON readback files
+into `knowledge_acquisition_candidate` output with `reviewability: ready` and
+`mutation: none`. Manual candidate review could target the acquisition
+candidate without Memory Core/source/eval/worker mutation.
+
+Source-to-decision:
+
+- Source: IMR-07 bridge behavior and live DB-backed source/brain readbacks.
+- Mechanism: missing evidence can become actionable candidate work, but
+  aggregate heartbeat closure can still be driven by another weak lane.
+- KRN implication: bridge is useful; next review-burden reduction is focused
+  heartbeat lane readback.
+- Decision: queue focused candidate-kind heartbeat preview; do not change
+  schema, crawler, ranking, worker daemon, or Memory Core mutation.
+- Consumer: heartbeat/dreaming candidate runtime and operator review workflow.
+- Falsifier: focused heartbeat preview cannot isolate a candidate kind, or it
+  changes mutation/review-gate behavior.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-xe2: Focus heartbeat preview by candidate kind.
 ```
 
 ## Outcome IMR-07 Missing-Evidence Acquisition Bridge
