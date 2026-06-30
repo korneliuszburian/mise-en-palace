@@ -20,6 +20,9 @@ import {
   parseEvidenceArgs
 } from "./parseEvidenceArgs.js";
 import {
+  parseHeartbeatArgs
+} from "./parseHeartbeatArgs.js";
+import {
   parseInitArgs
 } from "./parseInitArgs.js";
 import {
@@ -133,6 +136,19 @@ export type CliCommand =
       filter: BrainKnowledgeSearchFilter;
       format: "text" | "json" | "html";
       limit?: number;
+    }
+  | {
+      kind: "heartbeatPreviewHelp";
+    }
+  | {
+      kind: "heartbeatPreview";
+      projectId?: string;
+      memoryLimit?: number;
+      sourceClaimLimit?: number;
+      nearExpiryDays?: number;
+      maxCandidates?: number;
+      evidenceRef?: string;
+      format: "text" | "json";
     }
   | {
       kind: "observeRun";
@@ -402,6 +418,7 @@ const usage = [
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
   "krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
   "",
   "Governed admin commands:",
@@ -429,6 +446,25 @@ const usage = [
 
 export const formatUsage = (): string => `${usage}\n`;
 
+type TopLevelCommandParser = (rest: readonly string[]) => ParseArgsResult;
+
+const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
+  doctor: parseDoctorArgs,
+  init: parseInitArgs,
+  db: parseDbArgs,
+  evidence: parseEvidenceArgs,
+  review: parseReviewArgs,
+  run: parseRunArgs,
+  knowledge: parseKnowledgeArgs,
+  heartbeat: parseHeartbeatArgs,
+  observe: parseObserveArgs,
+  reflect: parseReflectArgs,
+  codex: parseCodexArgs,
+  source: parseSourceArgs,
+  memory: parseMemoryArgs,
+  plan: (rest) => parsePlanArgs(rest, usage)
+};
+
 export const parseArgs = (args: readonly string[]): ParseArgsResult => {
   const [command, ...rest] = args;
 
@@ -440,59 +476,13 @@ export const parseArgs = (args: readonly string[]): ParseArgsResult => {
     };
   }
 
-  if (command === "doctor") {
-    return parseDoctorArgs(rest);
-  }
+  const parser = topLevelCommandParsers[command];
 
-  if (command === "init") {
-    return parseInitArgs(rest);
-  }
-
-  if (command === "db") {
-    return parseDbArgs(rest);
-  }
-
-  if (command === "evidence") {
-    return parseEvidenceArgs(rest);
-  }
-
-  if (command === "review") {
-    return parseReviewArgs(rest);
-  }
-
-  if (command === "run") {
-    return parseRunArgs(rest);
-  }
-
-  if (command === "knowledge") {
-    return parseKnowledgeArgs(rest);
-  }
-
-  if (command === "observe") {
-    return parseObserveArgs(rest);
-  }
-
-  if (command === "reflect") {
-    return parseReflectArgs(rest);
-  }
-
-  if (command === "codex") {
-    return parseCodexArgs(rest);
-  }
-
-  if (command === "source") {
-    return parseSourceArgs(rest);
-  }
-
-  if (command === "memory") {
-    return parseMemoryArgs(rest);
-  }
-
-  if (command !== "plan") {
+  if (parser === undefined) {
     return {
       error: `Unsupported command: ${command}\n${usage}`
     };
   }
 
-  return parsePlanArgs(rest, usage);
+  return parser(rest);
 };

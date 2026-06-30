@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V364 Heartbeat Preview CLI Readback
+V365 Heartbeat Preview Review/Eval Closure
 ```
 
 Current state:
@@ -27,13 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V364-00 Heartbeat Preview CLI Readback.
+current task: V365-00 Heartbeat Preview Review/Eval Closure.
 ```
 
-Current task: expose the V363 candidate-only heartbeat preview through the
-smallest operator-facing readback surface. It must not mutate Memory Core, start
-a worker daemon, add a scheduler, crawler, embeddings, schema, UI/API/MCP, or
-broad benchmark.
+Current task: use the V364 `krn heartbeat preview` readback to decide one bounded
+review/eval closure path before any daemon, scheduler, crawler, embeddings,
+schema, UI/API/MCP, broad benchmark, or autonomous Memory Core/source mutation.
 
 ## Direction
 

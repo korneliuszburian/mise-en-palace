@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V364 Heartbeat Preview CLI Readback
-current task: V364-00 Heartbeat Preview CLI Readback
+active stream: V365 Heartbeat Preview Review/Eval Closure
+current task: V365-00 Heartbeat Preview Review/Eval Closure
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V364-00 Heartbeat Preview CLI Readback is active.
-The current gap is exposing the V363 candidate-only heartbeat preview through the
-smallest operator-facing readback surface without autonomous Memory Core
-mutation, worker daemon, scheduler, crawler, embeddings, schema, UI/API/MCP,
-broad benchmark, or consensus runtime.
+V365-00 Heartbeat Preview Review/Eval Closure is active.
+The current gap is using the V364 `krn heartbeat preview` readback to decide one
+bounded review/eval closure path before daemon, scheduler, crawler, embeddings,
+schema, UI/API/MCP, broad benchmark, consensus runtime, or autonomous memory/source
+mutation.
 ```
 
 ## 2. Product Thesis
@@ -79,28 +79,29 @@ V362 complete: second local artifact ingest/readback passed and fixed a live
   source chunk repository receiver bug.
 V363 complete: brain heartbeat preview aggregates memory-staleness and
   source-relation maintenance candidates without mutation.
+V364 complete: `krn heartbeat preview` exposes candidate-only heartbeat readback
+  from live Postgres state without mutation.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V364
+## Active Task V365
 
-ID: V364-00
-Name: Heartbeat Preview CLI Readback
+ID: V365-00
+Name: Heartbeat Preview Review/Eval Closure
 Status: active
 
-Goal: expose the V363 candidate-only heartbeat preview through the smallest
-operator-facing readback surface.
+Goal: use V364 heartbeat preview output as input to one bounded review/eval
+closure before any autonomous heartbeat runtime.
 
-Product rationale: V363 created the pure preview primitive. The next useful
-product step is making the preview visible to operators before building worker
-daemon, scheduler, consensus runtime, UI/API/MCP, crawler, embeddings, schema, or
-broad benchmark work.
+Product rationale: V364 made heartbeat candidates visible. The next useful step
+is deciding how those candidates become reviewable evidence/eval input without
+building a daemon, scheduler, UI/API/MCP, crawler, embeddings, or broad platform.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V364 report under `docs/reviews/controlled-dogfood/`;
+- a compact V365 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -142,8 +143,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V364 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
-agent/consensus platform before proving operator-facing heartbeat readback value.
+V365 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
+agent/consensus platform before closing heartbeat readback review/eval value.
 ```
 
 ## 9. Task Contract Schema
@@ -204,7 +205,7 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V364 heartbeat preview CLI/readback
+1. V365 heartbeat preview review/eval closure
 2. consensus eval/candidate lane
 3. product UI/search/API/MCP after usefulness/security gates
 ```
@@ -217,7 +218,8 @@ Current backlog order:
 - [x] V361 complete: Graph Brain V0 Entity/Relation Extraction And Answer Delta.
 - [x] V362 complete: Ingest V0 Expansion With Bounded Evidence.
 - [x] V363 complete: Heartbeat/Dreaming Candidate Generator V0.
-- [ ] V364 pending: Heartbeat Preview CLI Readback.
+- [x] V364 complete: Heartbeat Preview CLI Readback.
+- [ ] V365 pending: Heartbeat Preview Review/Eval Closure.
 
 ## Outcome V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
@@ -385,6 +387,43 @@ executionRun: ef6bcf83-6850-4af9-9a7b-bd56d69720f4
 evidenceBundle: 29b2ce4c-0741-4c13-aad3-9a232bf0c03a
 observationGroup: 791c2ac8-6231-4b11-bd08-4903bf0b355d
 reflectionRecord: 1fd8114c-ffe7-4c7d-9ca3-9ecc05e9e2ba
+MemoryRecord created: no
+Candidate rows written: no
+```
+
+## Outcome V364 Heartbeat Preview CLI Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v364-heartbeat-preview-cli-readback/REPORT.md
+```
+
+Source-to-decision:
+
+- Source: V337/V338 heartbeat previews, V363 aggregate preview, and V364 live
+  DB readback.
+- Mechanism: candidate-only heartbeat helpers already produced reviewable
+  maintenance candidates; operators needed a narrow CLI readback before runtime
+  automation.
+- KRN implication: heartbeat/dreaming should stay candidate-only and
+  operator-reviewable before daemon/scheduler/mutation work.
+- Decision: add `krn heartbeat preview` as read-only Postgres CLI output.
+- Does not prove: memory truth, source truth, candidate usefulness, autonomous
+  worker execution, consensus quality, or product readiness.
+- Consumer: technical operator heartbeat readback and future review/eval closure.
+- Falsifier: operators still need manual DB/source inspection to see heartbeat
+  candidates, evidence refs, reviewability, next action, or mutation boundary.
+
+Evidence:
+
+```txt
+executionRun: 18ad49a6-2599-4756-8abe-996850e50065
+evidenceBundle: eaffec05-e0c6-4ba7-8fc3-790e58e786e9
+observationGroup: 887a579b-bb62-4025-add9-c56b195dd628
+reflectionRecord: d2b43a36-4382-480c-a1c9-60a9f7496f19
 MemoryRecord created: no
 Candidate rows written: no
 ```

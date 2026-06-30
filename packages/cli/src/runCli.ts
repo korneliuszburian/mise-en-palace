@@ -12,6 +12,9 @@ import {
   formatKnowledgeUsage
 } from "./parseKnowledgeArgs.js";
 import {
+  formatHeartbeatUsage
+} from "./parseHeartbeatArgs.js";
+import {
   formatRunUsage
 } from "./parseRunArgs.js";
 import {
@@ -112,6 +115,7 @@ const helpRenderers = {
   sourceClaimRejectHelp: formatSourceClaimRejectUsage,
   runShowHelp: formatRunUsage,
   knowledgeCardsHelp: formatKnowledgeUsage,
+  heartbeatPreviewHelp: formatHeartbeatUsage,
   memoryCandidateAddHelp: formatMemoryCandidateAddUsage,
   memoryCandidatePromoteHelp: formatMemoryCandidatePromoteUsage,
   memoryCandidateRejectHelp: formatMemoryCandidateRejectUsage,

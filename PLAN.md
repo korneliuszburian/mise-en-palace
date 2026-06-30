@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V364 Heartbeat Preview CLI Readback
-current task: V364-00 Heartbeat Preview CLI Readback
+active stream: V365 Heartbeat Preview Review/Eval Closure
+current task: V365-00 Heartbeat Preview Review/Eval Closure
 ```
 
 ## Compact Checkpoints
@@ -67,14 +67,28 @@ docs/reviews/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-gen
 
 ### V364-00 Heartbeat Preview CLI Readback
 
+Status: complete.
+
+Outcome: `krn heartbeat preview` now exposes the V363 candidate-only heartbeat
+preview as read-only Postgres operator output with evidence refs,
+`doesNotProve`, reviewability, next action, and mutation boundaries.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v364-heartbeat-preview-cli-readback/REPORT.md
+```
+
+### V365-00 Heartbeat Preview Review/Eval Closure
+
 Status: active.
 
-Goal: expose the V363 candidate-only heartbeat preview through the smallest
-operator-facing readback surface.
+Goal: use the V364 heartbeat preview readback to decide one bounded review/eval
+closure path before any daemon/scheduler/autonomous mutation work.
 
 Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
 crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
-consensus runtime unless this task records a blocking falsifier.
+consensus runtime.
 
 ## Recent Completed Streams
 
@@ -84,12 +98,13 @@ V359-V360: Fallow quality gate and bounded legacy cleanup; full Fallow clean.
 V361: source-search JSON answer packages expose read-only relationSupport.
 V362: second local artifact ingest/readback and source chunk receiver fix.
 V363: candidate-only brain heartbeat preview primitive.
+V364: heartbeat preview CLI/readback.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. heartbeat preview CLI/readback
+1. heartbeat preview review/eval closure
 2. consensus eval/candidate lane
 3. product UI/search/API/MCP after usefulness/security gates
 ```

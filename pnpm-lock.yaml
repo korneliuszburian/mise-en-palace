@@ -38,6 +38,9 @@ importers:
       '@krn/schema':
         specifier: workspace:*
         version: link:../schema
+      '@krn/workers':
+        specifier: workspace:*
+        version: link:../workers
       postgres:
         specifier: ^3.4.9
         version: 3.4.9

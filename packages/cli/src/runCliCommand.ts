@@ -12,6 +12,9 @@ import {
   runHarnessCliCommand
 } from "./runHarnessCliCommand.js";
 import {
+  runHeartbeatPreviewCommand
+} from "./runHeartbeatPreviewCommand.js";
+import {
   runMemoryCliCommand
 } from "./runMemoryCliCommand.js";
 import {
@@ -103,11 +106,45 @@ const runDbAdapter: CliCommandAdapter = (command, context) =>
     formatCliError: context.formatCliError
   });
 
+const runHeartbeatAdapter: CliCommandAdapter = async (command, context) => {
+  if (command.kind !== "heartbeatPreview") {
+    return undefined;
+  }
+
+  try {
+    const result = await runHeartbeatPreviewCommand({
+      cwd: context.cwd,
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command,
+      ...(context.createDatabaseRuntime === undefined
+        ? {}
+        : { createDatabaseRuntime: context.createDatabaseRuntime })
+    });
+
+    return {
+      exitCode: 0,
+      stdout: result.stdout,
+      stderr: ""
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown heartbeat preview error";
+
+    return {
+      exitCode: 1,
+      stdout: "",
+      stderr: context.formatCliError(message)
+    };
+  }
+};
+
 const cliCommandAdapters: readonly CliCommandAdapter[] = [
   runProjectAdapter,
   runSourceAdapter,
   runMemoryAdapter,
   runHarnessAdapter,
+  runHeartbeatAdapter,
   runDbAdapter
 ];
 
