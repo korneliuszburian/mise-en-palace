@@ -73,12 +73,13 @@ Progress in this stream:
 
 ```txt
 completed locally: bounded CLI/core/schema/db/harness/codex/workers cleanup
-  slices from parser boundaries through DB smoke support task sharing.
+  slices from parser boundaries through harness smoke scaffolding.
 recent slices: shared parser helpers, source-search readback preparation,
   shared metadata reader, DB readiness table inspection, temporal timestamp
-  parsing, activation/retrieval smoke scaffold, DB smoke support tasks.
-	full Fallow moved: dupes 136 -> 51; health 117 -> 18
-		```
+  parsing, activation/retrieval smoke scaffold, DB smoke support tasks,
+  harness smoke scaffolding.
+full Fallow moved: dupes 136 -> 47; health 117 -> 18; dead-code 0
+```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
 `packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
