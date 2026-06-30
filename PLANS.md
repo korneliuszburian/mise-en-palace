@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V362 Ingest V0 Expansion With Bounded Evidence
-current task: V362-00 Ingest V0 Expansion With Bounded Evidence
+active stream: V363 Heartbeat/Dreaming Candidate Generator V0
+current task: V363-00 Heartbeat/Dreaming Candidate Generator V0
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V362-00 Ingest V0 Expansion With Bounded Evidence is active.
-The current gap is proving a second bounded local artifact flow through existing
-source artifact, SearchDocument, SourceClaim, SourceClaimEdge, and source-search
-answer-package readback paths without crawler, embeddings, schema, ranking,
-UI/API/MCP, worker runtime, broad benchmark, or Memory Core expansion.
+V363-00 Heartbeat/Dreaming Candidate Generator V0 is active.
+The current gap is a candidate-only heartbeat/dreaming surface that can inspect
+existing KRN state and propose reviewable follow-up candidates without
+autonomous Memory Core mutation, worker daemon, scheduler, crawler, embeddings,
+schema, UI/API/MCP, broad benchmark, or consensus runtime.
 ```
 
 ## 2. Product Thesis
@@ -75,33 +75,37 @@ V356 complete: graph relation SearchDocuments exist and narrow graph queries ret
 V357 complete: source-search answer packages expose queryShapeDiagnostics.
 V358 complete: graph mini Brain-QA diagnostic closure passed.
 V361 complete: source-search answer packages expose SourceClaimEdge relationSupport.
+V362 complete: second local artifact ingest/readback passed and fixed a live
+  source chunk repository receiver bug.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V362
+## Active Task V363
 
-ID: V362-00
-Name: Ingest V0 Expansion With Bounded Evidence
+ID: V363-00
+Name: Heartbeat/Dreaming Candidate Generator V0
 Status: active
 
-Goal: prove a second local artifact can flow through existing source artifact,
-SearchDocument, SourceClaim, SourceClaimEdge, and source-search answer-package
-readback paths.
+Goal: implement the smallest candidate-only heartbeat/dreaming v0 surface over
+existing source, memory, evidence, and review state.
 
-Product rationale: V361 showed source-search answer packages can consume
-existing graph relation support. The next useful step is proving one more
-bounded ingest path before crawler, embeddings, schema, ranking, UI/API/MCP, or
-worker-runtime expansion.
+Product rationale: V362 closed the second local ingest/readback proof. The next
+brain capability is not another ingest proof; it is a bounded "sleep/heartbeat"
+path that proposes stale/duplicate/missing-evidence follow-up candidates for
+human review.
 
 Allowed writes:
 
-- smallest owning source/test files if implementation is needed;
-- a compact V362 report under `docs/reviews/controlled-dogfood/`;
+- smallest owning source/test files;
+- a compact V363 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
 
+- autonomous Memory Core mutation;
+- worker daemon;
+- scheduler;
 - DB schema;
 - ranking rewrite;
 - retrieval semantics rewrite;
@@ -110,16 +114,16 @@ Forbidden writes:
 - embeddings;
 - worker runtime;
 - broad benchmark;
-- Memory Core mutation;
+- consensus runtime;
 - parallel roadmap.
 
 Definition of Done:
 
-- a second bounded local artifact is ingested or previewed through existing
-  source artifact, SearchDocument, SourceClaim, SourceClaimEdge, and
-  source-search answer-package readback paths;
-- or source inspection proves the existing substrate is insufficient and records
-  the smallest next blocker without expanding architecture.
+- heartbeat/dreaming v0 emits reviewable candidate output only;
+- candidates include evidence refs, does-not-prove, reviewability, and next
+  action;
+- no MemoryRecord, SourceClaim, SourceDecision, or DB schema mutation is added
+  unless explicitly rejected/recorded as a blocking falsifier.
 
 Verification floor:
 
@@ -137,8 +141,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V362 becomes a crawler/embedding/schema/ranking/UI/API/MCP/worker expansion
-without first proving one more bounded local artifact readback.
+V363 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
+agent/consensus platform before proving candidate-only review value.
 ```
 
 ## 9. Task Contract Schema
@@ -199,10 +203,9 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V362 ingest v0 expansion with bounded evidence
-2. heartbeat/dreaming candidate generator
-3. consensus eval/candidate lane
-4. product UI/search/API/MCP after usefulness/security gates
+1. V363 heartbeat/dreaming candidate generator
+2. consensus eval/candidate lane
+3. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -211,7 +214,8 @@ Current backlog order:
 - [x] V359 complete: Fallow Quality Gate And First Cleanup.
 - [x] V360 complete: Fallow Legacy Complexity Cleanup.
 - [x] V361 complete: Graph Brain V0 Entity/Relation Extraction And Answer Delta.
-- [ ] V362 pending: Ingest V0 Expansion With Bounded Evidence.
+- [x] V362 complete: Ingest V0 Expansion With Bounded Evidence.
+- [ ] V363 pending: Heartbeat/Dreaming Candidate Generator V0.
 
 ## Outcome V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
@@ -293,6 +297,54 @@ executionRun: 18145922-1603-4644-b715-9efd1c4ea1b1
 evidenceBundle: d977e1d5-df92-47a0-b676-36b5a16fa850
 observationGroup: db675443-83f6-420f-b414-ee3bae42c9cd
 reflectionRecord: 24b7ec1c-b610-4c04-b1f8-45103790ba11
+MemoryRecord created: no
+```
+
+## Outcome V362 Ingest V0 Expansion With Bounded Evidence
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v362-ingest-v0-expansion/REPORT.md
+```
+
+Source-to-decision:
+
+- Source: V316-V323 ingest v0 reports, V356-V361 source-search/graph readbacks,
+  and the live V362 failure.
+- Mechanism: the existing artifact preview path already owns local artifact,
+  chunk, SearchDocument, reviewed SourceClaim, and SourceClaimEdge persistence;
+  the missing proof was a second artifact live replay.
+- KRN implication: useful brain growth should prove current verticals under live
+  DB conditions before adding crawler, embeddings, schema, ranking, UI/API/MCP,
+  worker runtime, broad benchmark, or Memory Core mutation.
+- Decision: fix the repository receiver bug and prove second-artifact
+  ingest/readback through existing CLI/DB/source-search paths.
+- Does not prove: source truth, extraction quality, ranking quality, graph
+  retrieval quality, crawler readiness, product readiness, UI/API/MCP
+  readiness, worker runtime, broad benchmark quality, or Memory Core mutation.
+- Consumer: Ingest v0, source-search answer packages, future graph-brain
+  readbacks.
+- Falsifier: a second local artifact cannot produce SourceArtifact,
+  SourceChunk, SearchDocument, SourceClaim, SourceClaimEdge, and source-search
+  `relationSupport` readback in the current shell.
+
+Evidence:
+
+```txt
+plan executionRun: f86ff91d-6579-4d10-9b34-679356c2dfb6
+sourceArtifact: 561ceab9-f67b-493b-8017-8156d1650bc0
+sourceChunk: 6ed506f4-e84f-455e-b2d1-d4a00143a05a
+searchDocument: 60c400a7-eabc-4179-a571-6d77660f4b3d
+sourceClaim: e4bfcdea-d201-4e0f-9d73-94e200b9fe4f
+sourceClaimEdge: 0549c002-d52f-4cf0-a6ba-e5e9a36e2ead
+source-search answerUsefulness: useful
+evidenceBundle: c9db92e3-1089-4b6c-92bd-9e01273a5b8b
+observationGroup: 1821bbc2-76b7-48b2-99ff-4a32547c55fd
+reflectionRecord: c6f7b9ab-2ad7-42ea-aa62-1942d4cf6584
+reflectionFindings: 4
 MemoryRecord created: no
 ```
 

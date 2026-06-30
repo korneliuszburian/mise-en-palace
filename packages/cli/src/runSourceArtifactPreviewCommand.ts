@@ -356,7 +356,9 @@ const requirePreviewPersistenceRepositories = (
   createSourceChunk: SourceChunkCreator;
 } => {
   const { retrievalRepository } = databaseRuntime;
-  const createSourceChunk = databaseRuntime.sourceRepository.createSourceChunk;
+  const createSourceChunk = databaseRuntime.sourceRepository.createSourceChunk?.bind(
+    databaseRuntime.sourceRepository
+  );
 
   if (retrievalRepository === undefined) {
     throw new Error("SearchDocument persistence is unavailable in this database runtime");

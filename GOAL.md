@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V362 Ingest V0 Expansion With Bounded Evidence
+V363 Heartbeat/Dreaming Candidate Generator V0
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V362-00 Ingest V0 Expansion With Bounded Evidence.
+current task: V363-00 Heartbeat/Dreaming Candidate Generator V0.
 ```
 
-Current task: run the next product-facing ingest vertical. Use the V361
-relationSupport answer-package delta as evidence that source search can consume
-existing graph relations, then prove a second bounded local artifact flow
-through existing ingest/readback paths without crawler, embeddings, schema,
-ranking, UI/API/MCP, worker-runtime, broad benchmark, or Memory Core expansion.
+Current task: design and implement the smallest candidate-only heartbeat /
+dreaming v0 surface over existing source, memory, evidence, and review state.
+It may propose reviewable candidates, but it must not autonomously mutate
+Memory Core, start a worker daemon, add a scheduler, crawler, embeddings,
+schema, UI/API/MCP, or broad benchmark.
 
 ## Direction
 

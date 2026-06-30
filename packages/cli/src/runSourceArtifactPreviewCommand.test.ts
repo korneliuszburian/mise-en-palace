@@ -25,6 +25,13 @@ import type {
   SourceClaimEdge
 } from "@krn/core";
 
+type SourceArtifactCreateInput = Parameters<
+  DatabaseRuntime["sourceRepository"]["createSourceArtifact"]
+>[0];
+type SourceChunkCreateInput = Parameters<
+  NonNullable<DatabaseRuntime["sourceRepository"]["createSourceChunk"]>
+>[0];
+
 const tempRoots: string[] = [];
 
 const createTempRoot = async (): Promise<string> => {
@@ -522,6 +529,143 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("Graph runtime: none");
     expect(result.stdout).toContain("proves: complete explicit SourceClaim fields wrote and read back a SourceClaim row linked to the persisted SourceArtifact/SourceChunk");
     expect(result.stdout).toContain("proves: complete explicit SourceClaimEdge fields wrote and read back a governed SourceClaimEdge row linked to reviewed SourceClaim rows");
+  });
+
+  it("invokes source chunk persistence with the repository receiver intact", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+    const timestamp = "2026-06-30T09:00:00.000Z";
+    let sourceChunkReceiverWasBound = false;
+
+    await writeFile(sourcePath, "KRN should preserve repository method receivers.\n", "utf8");
+
+    const sourceRepository = {
+      receiverMarker: "source-repository",
+      async createSourceArtifact(input: SourceArtifactCreateInput) {
+        return {
+          id: "11111111-1111-4111-8111-111111111111",
+          projectId: input.projectId,
+          kind: input.kind,
+          trustTier: input.trustTier,
+          uri: input.uri,
+          title: input.title,
+          contentHash: input.contentHash,
+          capturedAt: timestamp,
+          metadata: input.metadata ?? {},
+          createdAt: timestamp,
+          updatedAt: timestamp
+        };
+      },
+      async createSourceChunk(
+        this: { receiverMarker: string },
+        input: SourceChunkCreateInput
+      ) {
+        sourceChunkReceiverWasBound = this.receiverMarker === "source-repository";
+
+        return {
+          id: "22222222-2222-4222-8222-222222222222",
+          sourceArtifactId: input.sourceArtifactId,
+          ordinal: input.ordinal,
+          content: input.content,
+          contentHash: input.contentHash,
+          metadata: input.metadata ?? {},
+          createdAt: timestamp
+        };
+      },
+      async createSourceClaim() {
+        throw new Error("createSourceClaim should not be called");
+      },
+      async getSourceClaimById() {
+        throw new Error("getSourceClaimById should not be called");
+      },
+      async createSourceClaimEdge() {
+        throw new Error("createSourceClaimEdge should not be called");
+      },
+      async listSourceClaimEdgesForClaim() {
+        throw new Error("listSourceClaimEdgesForClaim should not be called");
+      },
+      async createSourceDecisionEdge() {
+        throw new Error("createSourceDecisionEdge should not be called");
+      },
+      async createSourceRejection() {
+        throw new Error("createSourceRejection should not be called");
+      }
+    } satisfies DatabaseRuntime["sourceRepository"] & { receiverMarker: string };
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => timestamp,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+        harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+        memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+        sourceRepository,
+        retrievalRepository: {
+          async createSearchDocument(input) {
+            return {
+              id: "33333333-3333-4333-8333-333333333333",
+              projectId: input.projectId,
+              subjectType: input.subjectType,
+              subjectId: input.subjectId,
+              sourceArtifactId: input.sourceArtifactId,
+              sourceChunkId: input.sourceChunkId,
+              trustTier: input.trustTier ?? "medium",
+              validityStatus: input.validityStatus ?? "active",
+              language: input.language ?? "english",
+              title: input.title,
+              body: input.body,
+              searchText: input.searchText ?? `${input.title}\n${input.body}`,
+              metadataFilters: input.metadataFilters ?? {},
+              validFrom: timestamp,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
+          },
+          async searchLexical() {
+            return [{
+              id: "33333333-3333-4333-8333-333333333333",
+              projectId: "project-1",
+              subjectType: "source_artifact",
+              subjectId: "11111111-1111-4111-8111-111111111111",
+              sourceArtifactId: "11111111-1111-4111-8111-111111111111",
+              sourceChunkId: "22222222-2222-4222-8222-222222222222",
+              trustTier: "source-code",
+              validityStatus: "active",
+              language: "english",
+              title: "Local source artifact: source.md",
+              body: "KRN should preserve repository method receivers.",
+              searchText: "KRN should preserve repository method receivers.",
+              metadataFilters: {},
+              validFrom: timestamp,
+              metadata: {},
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              lexicalScore: 100
+            }];
+          }
+        },
+        async close() {
+          return undefined;
+        }
+      } satisfies DatabaseRuntime),
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        file: "source.md",
+        chunkLines: 2,
+        limitChunks: 1
+      }
+    });
+
+    expect(sourceChunkReceiverWasBound).toBe(true);
+    expect(result.stdout).toContain("sourceChunks: 22222222-2222-4222-8222-222222222222");
+    expect(result.stdout).toContain("lexicalReadback: hit");
   });
 
   it("persists a selected ready extraction claim only through the reviewed bridge", async () => {
