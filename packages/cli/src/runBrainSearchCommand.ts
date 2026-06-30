@@ -190,7 +190,7 @@ const buildRecommendedNextAction = (
   }
 
   if (resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0) {
-    return "Use source-search evidence cautiously and run a narrower knowledge-card query before retaining a pattern.";
+    return "Use source-search evidence cautiously and run a narrower brain knowledge query before retaining a pattern.";
   }
 
   if (resource.knowledgeCards.returnedCards > 0) {
@@ -382,7 +382,7 @@ export const runBrainSearchCommand = async (
   const resource = buildResource({
     query,
     brainKnowledgeReadback: runtime.command.storeOnly ? "store_only" : "catalog_files",
-    knowledgeJson: parseJsonObject(knowledgeResult.stdout, "knowledge cards"),
+    knowledgeJson: parseJsonObject(knowledgeResult.stdout, "brain knowledge"),
     sourceJson: parseJsonObject(sourceResult.stdout, "source search")
   });
 

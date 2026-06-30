@@ -59,7 +59,7 @@ const isProjectCliCommand = (command: CliCommand): command is ProjectCliCommand 
 
 const projectFallbackMessages = {
   init: "Unknown init error",
-  knowledgeCards: "Unknown knowledge cards error"
+  knowledgeCards: "Unknown brain knowledge error"
 } satisfies Record<ProjectCliCommand["kind"], string>;
 
 const runSelectedProjectCommand = async (

@@ -443,7 +443,8 @@ const usage = [
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
   "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
-  "krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
+  "krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
+  "  legacy alias: krn knowledge cards ...",
   "krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
   "",
@@ -475,7 +476,10 @@ export const formatUsage = (): string => `${usage}\n`;
 type TopLevelCommandParser = (rest: readonly string[]) => ParseArgsResult;
 
 const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
-  brain: parseBrainArgs,
+  brain: (rest) =>
+    rest[0] === "knowledge"
+      ? parseKnowledgeArgs(["cards", ...rest.slice(1)])
+      : parseBrainArgs(rest),
   doctor: parseDoctorArgs,
   init: parseInitArgs,
   db: parseDbArgs,

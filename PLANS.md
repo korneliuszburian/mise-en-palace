@@ -15,7 +15,7 @@ widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Internal Multi-Repo Operator Loop
 current task: IMR-00 Internal Multi-Repo Operator Loop
-latest pushed commit: 6cc98c0
+latest pushed commit: see git history
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -68,7 +68,7 @@ source -> mechanism -> KRN implication -> decision/rejection -> consumer -> fals
 ## Recent Product Outcomes
 
 ```txt
-V368 complete: `krn brain search` composes knowledge-card and source-search
+V368 complete: `krn brain search` composes brain-knowledge and source-search
   readbacks into one read-only product-facing preview.
 V369 complete: DB-backed product loop replay covered plan, brief, evidence,
   observe, reflect, run show, and next-run brain search.
@@ -91,7 +91,40 @@ IMR-01 complete: `krn brain search` exposes selected brain knowledge packets
 IMR-02 complete: `krn brain search --store-only` skips file catalog readback and
   proves the existing store-backed source/search path can replay governed
   pattern evidence with proof boundaries.
+IMR-03 complete: preferred operator language is now `krn brain knowledge`;
+  `krn knowledge cards` remains a documented compatibility alias.
 ```
+
+## Outcome IMR-03 Brain Knowledge Vocabulary Migration
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-03-brain-knowledge-vocabulary/REPORT.md
+```
+
+Outcome: active CLI help, skills, runbooks, package preview script, and
+readback output now present the preferred surface as `krn brain knowledge`.
+The old `krn knowledge cards` command remains as a compatibility alias.
+
+Source-to-decision:
+
+- Source: IMR-00 direction, `docs/KRN_KERNEL.md`, IMR-02 store-only readback,
+  active skill instructions, and current CLI/operator copy.
+- Mechanism: command names and help text shape how agents model the system; a
+  primary "cards" surface implies artifacts rather than brain readback.
+- KRN implication: preferred operator-facing language should say brain
+  knowledge while compatibility aliases remain explicit.
+- Decision: added `krn brain knowledge` and migrated active surfaces to it.
+- Does not prove: store-backed pattern ontology, semantic ranking quality,
+  automatic pattern application, full historical-report migration, Memory Core
+  mutation, or product readiness.
+- Consumer: pattern/research brain, skills, pattern intake, and future
+  multi-repo operator loops.
+- Falsifier: a future active prompt, help screen, skill, or runbook still
+  teaches "knowledge cards" as the primary brain surface.
 
 ## Outcome IMR-02 Store-Backed Pattern Brain Readback
 

@@ -5,7 +5,7 @@ import {
 } from "./parseKnowledgeArgs.js";
 
 describe("parseKnowledgeArgs", () => {
-  it("parses knowledge cards readback preview", () => {
+  it("parses brain knowledge readback preview", () => {
     expect(parseKnowledgeArgs([
       "cards",
       "--card-file",
@@ -206,7 +206,7 @@ describe("parseKnowledgeArgs", () => {
         "--limit",
         limit
       ])).toEqual({
-        error: expect.stringContaining(`Unsupported knowledge cards limit: ${limit}`)
+        error: expect.stringContaining(`Unsupported brain knowledge limit: ${limit}`)
       });
     }
   });

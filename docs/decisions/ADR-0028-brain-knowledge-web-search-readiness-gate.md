@@ -11,7 +11,7 @@ KRN now has a partial pattern brain:
 - retained pattern decisions;
 - `BrainKnowledgeReadModel`;
 - explicit catalog files;
-- `krn knowledge cards` text/JSON readback;
+- `krn brain knowledge` text/JSON readback;
 - self-contained HTML preview;
 - skill hooks that query retained patterns;
 - Codex adapter brief skill pattern refs;
@@ -19,7 +19,7 @@ KRN now has a partial pattern brain:
 
 The next product temptation is to build a dashboard, API, MCP server, or broader
 GraphRAG/search surface. That would be premature. The current evidence supports
-only a read-only web/search surface over typed brain knowledge cards.
+only a read-only web/search surface over typed brain knowledge readbacks.
 
 ## Decision
 
@@ -75,7 +75,7 @@ API/MCP/web-app discussion with a new ADR.
 ## Rejected Alternatives
 
 - Add dashboard package now.
-- Add API solely to serve knowledge cards.
+- Add API solely to serve brain knowledge.
 - Add MCP server before static preview usefulness is proven.
 - Add source crawler or automatic research ingestion.
 - Add mutation actions from the web surface.

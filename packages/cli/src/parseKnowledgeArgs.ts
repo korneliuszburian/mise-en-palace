@@ -12,13 +12,14 @@ import type {
 } from "./parseArgs.js";
 
 const knowledgeUsage = [
-  "Usage: krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Usage: krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--usefulness-outcome <outcome|none>] [--text <query>] [--limit <positive-integer>] [--json|--html]",
+  "Legacy alias: krn knowledge cards [same options]",
   "",
   "Read-only preview commands:",
-  "krn knowledge cards --card-file docs-or-fixture-card.json [--text unknown-first]",
-  "krn knowledge cards --pattern-file docs/patterns/retained-patterns/pattern.json [--text unknown-first]",
-  "krn knowledge cards --catalog-file docs/brain-knowledge/catalog.json [--text unknown-first]",
-  "  note: knowledge cards preview reads explicit card or retained-pattern files only; it does not scan, rank, persist, or mutate Memory Core",
+  "krn brain knowledge --card-file docs-or-fixture-card.json [--text unknown-first]",
+  "krn brain knowledge --pattern-file docs/patterns/retained-patterns/pattern.json [--text unknown-first]",
+  "krn brain knowledge --catalog-file docs/brain-knowledge/catalog.json [--text unknown-first]",
+  "  note: brain knowledge readback reads explicit card or retained-pattern files only; it does not scan, rank, persist, or mutate Memory Core",
   "  proof boundary: valid output proves only that supplied files match known read-model inputs and local filters"
 ].join("\n");
 
@@ -140,7 +141,7 @@ const parsePositiveInteger = (
   if (!/^[1-9]\d*$/u.test(trimmed)) {
     return {
       ok: false,
-      error: `Unsupported knowledge cards limit: ${value}`
+      error: `Unsupported brain knowledge limit: ${value}`
     };
   }
 
@@ -149,7 +150,7 @@ const parsePositiveInteger = (
   if (!Number.isSafeInteger(parsed)) {
     return {
       ok: false,
-      error: `Unsupported knowledge cards limit: ${value}`
+      error: `Unsupported brain knowledge limit: ${value}`
     };
   }
 
@@ -432,7 +433,7 @@ export const parseKnowledgeArgs = (rest: readonly string[]): ParseArgsResult => 
 
     if (handler === undefined) {
       return {
-        error: `Unsupported knowledge cards argument: ${arg}\n${formatKnowledgeUsage()}`
+        error: `Unsupported brain knowledge argument: ${arg}\n${formatKnowledgeUsage()}`
       };
     }
 

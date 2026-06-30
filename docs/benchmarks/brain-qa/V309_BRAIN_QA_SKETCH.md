@@ -51,7 +51,7 @@ queries were needed.
 |---|---|---|---|---|---|---|
 | BQ-001 | Context/memory | When a task asks for a source repair, can KRN select a bounded working set instead of broad docs/history? | MemGPT; active context | ContextAssembly inclusions/exclusions and token budget. | db_replay | Does not prove optimal ranking. |
 | BQ-002 | Context/memory | Does KRN exclude stale historical ledgers when root `GOAL/PLAN/PLANS` are current truth? | MemGPT; active context | Context exclusions or no historical-ledger reads. | golden_fixture | Does not prove all stale context is known. |
-| BQ-003 | Context/memory | Can KRN surface a useful retained pattern before coding without loading all pattern history? | MemGPT; source-to-decision | `krn knowledge cards` readback and selected pattern classification. | cli_preview | Does not prove semantic search quality. |
+| BQ-003 | Context/memory | Can KRN surface a useful retained pattern before coding without loading all pattern history? | MemGPT; source-to-decision | `krn brain knowledge` readback and selected pattern classification. | cli_preview | Does not prove semantic search quality. |
 | BQ-004 | Context/memory | Does selected memory/source context record `expectedUse` and later helped/neutral/noise outcome? | MemGPT | Dogfood report with selected/used/helped classification. | db_replay | Does not prove memory helped product work. |
 | BQ-005 | Context/memory | If no relevant context is found, does KRN abstain or warn instead of padding the prompt? | MemGPT; Self-RAG | Activation abstention or no-match guidance. | golden_fixture | Does not prove abstention threshold quality. |
 | BQ-006 | Feedback/candidates | Does feedback become a reviewable candidate rather than final Memory Core truth? | Reflexion | FeedbackDelta to MemoryCandidate/SourceDecision/EvalCandidate path. | db_replay | Does not prove candidate quality. |
@@ -91,7 +91,7 @@ BQ-015: no-match broad query -> shorter mechanism query -> retained pattern hit.
 
 Why:
 
-- it uses existing `krn knowledge cards`;
+- it uses existing `krn brain knowledge`;
 - it tests adaptive retrieval behavior without building a new platform;
 - it has a clear failure mode;
 - it connects Self-RAG lab-test logic to current KRN read-only behavior.

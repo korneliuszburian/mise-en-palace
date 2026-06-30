@@ -45,7 +45,7 @@ describe("Brain knowledge read model invariants", () => {
     expect(knowledgeModel).toContain("nextAction:");
   });
 
-  it("keeps UI and search behind the read-only knowledge card contract", () => {
+  it("keeps UI and search behind the read-only brain knowledge readback contract", () => {
     const readModels = readRootFile("docs/architecture/observability-read-models.md");
     const dashboardGate = readRootFile("docs/decisions/ADR-0025-dashboard-readiness-gate.md");
     const webSearchGate = readRootFile(
@@ -71,7 +71,7 @@ describe("Brain knowledge read model invariants", () => {
     expect(webSearchGate).toContain("Mutation: none");
     expect(webSearchGate).toContain("must not mutate Memory Core");
     expect(webSearchGate).toContain("Add dashboard package now");
-    expect(webSearchGate).toContain("Add API solely to serve knowledge cards");
+    expect(webSearchGate).toContain("Add API solely to serve brain knowledge");
     expect(webSearchGate).toContain("Add MCP server before static preview usefulness is proven");
     expect(webSearchGate).toContain("V282 Brain Knowledge Static Web Preview Artifact");
   });
@@ -108,7 +108,7 @@ describe("Brain knowledge read model invariants", () => {
     });
 
     if (!isRecord(card)) {
-      throw new Error("Brain knowledge card fixture must be an object.");
+      throw new Error("Brain brain knowledge fixture must be an object.");
     }
 
     expectNonEmptyString(card, "title");
@@ -187,7 +187,7 @@ describe("Brain knowledge read model invariants", () => {
       return;
     }
 
-    expect(previewScript).toContain("knowledge cards");
+    expect(previewScript).toContain("brain knowledge");
     expect(previewScript).toContain("--catalog-file docs/brain-knowledge/catalog.json");
     expect(previewScript).toContain("--html");
     expect(previewScript).toContain(".local-lab/brain-knowledge-preview.html");

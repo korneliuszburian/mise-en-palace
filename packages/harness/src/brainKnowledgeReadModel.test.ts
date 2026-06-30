@@ -48,7 +48,7 @@ const parsedPatternDecisionFixture = () => {
 };
 
 describe("Brain knowledge read model", () => {
-  it("parses a concrete knowledge card fixture from unknown JSON", () => {
+  it("parses a concrete brain knowledge fixture from unknown JSON", () => {
     const card = parseBrainKnowledgeReadModel(cardFixture());
 
     expect(card).toMatchObject({
@@ -204,13 +204,13 @@ describe("Brain knowledge read model", () => {
     const expectedCard = parseBrainKnowledgeReadModel(cardFixture());
 
     if (expectedCard === undefined) {
-      throw new Error("Expected brain knowledge card fixture to parse.");
+      throw new Error("Expected brain brain knowledge fixture to parse.");
     }
 
     expect(brainKnowledgeCardFromRetainedPatternDecision(patternDecision)).toEqual(expectedCard);
   });
 
-  it("maps retained pattern adoption statuses to knowledge-card status", () => {
+  it("maps retained pattern adoption statuses to brain-knowledge status", () => {
     const patternDecision = parsedPatternDecisionFixture();
 
     expect(brainKnowledgeCardFromRetainedPatternDecision({

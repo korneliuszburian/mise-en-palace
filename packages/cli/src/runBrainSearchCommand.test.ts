@@ -5,7 +5,7 @@ import {
 } from "./runBrainSearchCommand.js";
 
 describe("runBrainSearchCommand", () => {
-  it("combines knowledge cards and source search into a read-only brain preview", async () => {
+  it("combines brain knowledge and source search into a read-only brain preview", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
       env: {
@@ -42,7 +42,7 @@ describe("runBrainSearchCommand", () => {
               nextAction: "use"
             }],
             proof: {
-              doesNotProve: ["knowledge-card completeness"]
+              doesNotProve: ["brain-knowledge catalog completeness"]
             }
           })
         };
@@ -145,7 +145,7 @@ describe("runBrainSearchCommand", () => {
             totalCards: 0,
             cards: [],
             proof: {
-              doesNotProve: ["knowledge-card completeness"]
+              doesNotProve: ["brain-knowledge catalog completeness"]
             }
           })
         };

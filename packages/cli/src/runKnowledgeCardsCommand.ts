@@ -71,7 +71,7 @@ const proof = {
     "local readback filters were applied deterministically"
   ],
   doesNotProve: [
-    "knowledge cards were produced from live DB state",
+    "brain knowledge readback was produced from live DB state",
     "search ranking quality is good",
     "retained patterns are complete",
     "Memory Core, SourceDecision, candidates, or evidence were mutated",
@@ -239,12 +239,12 @@ const formatKnowledgeCardsOutput = (
 
 const formatKnowledgeCardsTextPreview = (resource: KnowledgeCardsPreviewResource): string =>
   [
-    "KRN Brain Knowledge Cards Preview",
+    "KRN Brain Knowledge Readback",
     "Access: read-only",
     "Mutation: none",
     "Source: explicit files",
     `Catalog files: ${formatList(resource.catalogFiles)}`,
-    `Card files: ${formatList(resource.cardFiles)}`,
+    `Brain knowledge files: ${formatList(resource.cardFiles)}`,
     `Pattern files: ${formatList(resource.patternFiles)}`,
     `Usefulness feedback files: ${formatList(resource.usefulnessFeedbackFiles)}`,
     `Results: ${resource.cards.length}`,
@@ -268,7 +268,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>KRN Brain Knowledge Cards</title>
+  <title>KRN Brain Knowledge Readback</title>
   <style>
     :root {
       color-scheme: light;
@@ -408,13 +408,13 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
 <body>
   <main>
     <header>
-      <h1>KRN Brain Knowledge Cards</h1>
+      <h1>KRN Brain Knowledge Readback</h1>
       <div class="meta">Access: read-only | Mutation: none | Source: explicit files</div>
       <div class="meta">Catalog files: ${escapeHtml(formatList(resource.catalogFiles))}</div>
       <div class="meta">Usefulness feedback files: ${escapeHtml(formatList(resource.usefulnessFeedbackFiles))}</div>
     </header>
     <section class="toolbar" aria-label="Knowledge search">
-      <input id="search" type="search" placeholder="Search cards" autocomplete="off">
+      <input id="search" type="search" placeholder="Search brain knowledge" autocomplete="off">
       ${formatSelect("kindFilter", "Kind", uniqueValues(resource.cards.map((card) => card.kind)))}
       ${formatSelect("statusFilter", "Status", uniqueValues(resource.cards.map((card) => card.status)))}
       ${formatSelect("reviewabilityFilter", "Reviewability", uniqueValues(resource.cards.map((card) => card.reviewability)))}
@@ -477,7 +477,7 @@ const formatKnowledgeCardsHtmlPreview = (resource: KnowledgeCardsPreviewResource
 };
 
 const buildNoMatchGuidance = (filter: BrainKnowledgeSearchFilter): string[] => [
-  "No cards matched the current filters.",
+  "No brain knowledge entries matched the current filters.",
   ...(filter.text === undefined ? [] : [
     "Try a shorter --text query or split the query into one mechanism term.",
     "If this is a Pattern Application Gate pre-coding query, run one broader query before concluding no retained pattern applies."
@@ -504,8 +504,8 @@ const formatNoMatchGuidanceText = (resource: KnowledgeCardsPreviewResource): str
 
 const formatNoMatchGuidanceHtml = (resource: KnowledgeCardsPreviewResource): string =>
   resource.noMatchGuidance === undefined
-    ? "No cards match the current search."
-    : `<strong>No cards match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
+    ? "No brain knowledge entries match the current search."
+    : `<strong>No brain knowledge entries match the current filters.</strong><ul>${resource.noMatchGuidance.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`;
 
 const formatCard = (card: BrainKnowledgeReadModel): string[] => [
   `- ${card.id}`,

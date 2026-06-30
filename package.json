@@ -30,7 +30,7 @@
     "beads:prime": "bd prime",
     "beads:ready": "bd ready --json",
     "beads:doctor": "bd doctor",
-    "brain:knowledge:preview": "mkdir -p .local-lab && (cd packages/cli && pnpm exec tsx src/index.ts knowledge cards --catalog-file docs/brain-knowledge/catalog.json --html) > .local-lab/brain-knowledge-preview.html",
+    "brain:knowledge:preview": "mkdir -p .local-lab && (cd packages/cli && pnpm exec tsx src/index.ts brain knowledge --catalog-file docs/brain-knowledge/catalog.json --html) > .local-lab/brain-knowledge-preview.html",
     "quality:fallow": "mkdir -p .local-lab/fallow && fallow --format compact --output-file .local-lab/fallow/full.compact.txt",
     "quality:fallow:ci": "fallow audit --format compact",
     "alpha:verify": "pnpm typecheck && pnpm test && pnpm krn doctor",

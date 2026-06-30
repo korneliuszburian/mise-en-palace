@@ -55,7 +55,8 @@ with the reset direction and need later code removal or internalization.
 - `krn observe --run <id> [--project <id>] [--persist]`
 - `krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]`
 - `krn codex brief --run-id <id>`
-- `krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json|--html]`
+- `krn brain knowledge [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--kind <kind>] [--status <status>] [--reviewability <reviewability>] [--text <query>] [--json|--html]`
+  - legacy alias: `krn knowledge cards ...`
 
 Boundary:
 
@@ -64,11 +65,11 @@ Boundary:
 - `codex brief` renders Codex-facing output. It does not invoke Codex.
 - `doctor` reports readiness. It does not prove DB runtime unless the current
   shell has the required DB configuration and DB commands are run.
-- `knowledge cards` is a read-only preview over explicit
+- `brain knowledge` is a read-only preview over explicit
   `BrainKnowledgeReadModel` card files, retained-pattern decision files, or
   catalog files that list exact files. It does not scan the repository, crawl
-  directories, rank knowledge, persist cards, query DB, mutate Memory Core, or
-  make UI/search product-ready. `--html` renders the same read-only card
+  directories, rank knowledge, persist readback entries, query DB, mutate Memory Core, or
+  make UI/search product-ready. `--html` renders the same read-only brain knowledge
   resource as a local self-contained search preview; it is not a dashboard,
   server, API, MCP, or mutation surface.
 

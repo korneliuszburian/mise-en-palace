@@ -35,7 +35,7 @@ describe("runKnowledgeCardsCommand", () => {
       format: "text"
     });
 
-    expect(result.stdout).toContain("KRN Brain Knowledge Cards Preview");
+    expect(result.stdout).toContain("KRN Brain Knowledge Readback");
     expect(result.stdout).toContain("Access: read-only");
     expect(result.stdout).toContain("Mutation: none");
     expect(result.stdout).toContain("Source: explicit files");
@@ -63,7 +63,7 @@ describe("runKnowledgeCardsCommand", () => {
     const parsed: unknown = JSON.parse(result.stdout);
 
     if (!isRecord(parsed)) {
-      throw new Error("knowledge cards JSON output must be an object");
+      throw new Error("brain knowledge JSON output must be an object");
     }
 
     expect(parsed).toMatchObject({
@@ -97,7 +97,7 @@ describe("runKnowledgeCardsCommand", () => {
     })).rejects.toThrow("Invalid BrainKnowledgeReadModel card file: package.json");
   });
 
-  it("renders knowledge cards produced from retained pattern files", async () => {
+  it("renders brain knowledge produced from retained pattern files", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [],
@@ -112,7 +112,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("Pattern files: docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
     expect(result.stdout).toContain("pattern:ts-boundary-unknown-first-result-state");
     expect(result.stdout).toContain("reviewability: ready");
-    expect(result.stdout).toContain("does not prove: knowledge cards were produced from live DB state");
+    expect(result.stdout).toContain("does not prove: brain knowledge readback was produced from live DB state");
   });
 
   it("rejects invalid retained pattern files", async () => {
@@ -126,7 +126,7 @@ describe("runKnowledgeCardsCommand", () => {
     })).rejects.toThrow("Invalid retained pattern decision file: package.json");
   });
 
-  it("renders knowledge cards from explicit catalog files", async () => {
+  it("renders brain knowledge from explicit catalog files", async () => {
     const result = await runKnowledgeCardsCommand({
       cwd: repoRoot,
       cardFiles: [],
@@ -161,7 +161,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("<!doctype html>");
-    expect(result.stdout).toContain("<title>KRN Brain Knowledge Cards</title>");
+    expect(result.stdout).toContain("<title>KRN Brain Knowledge Readback</title>");
     expect(result.stdout).toContain("type=\"search\"");
     expect(result.stdout).toContain("id=\"kindFilter\"");
     expect(result.stdout).toContain("id=\"statusFilter\"");
@@ -621,7 +621,7 @@ describe("runKnowledgeCardsCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "knowledge cards pattern gate source slice operator UX TypeScript"
+        text: "brain knowledge pattern gate source slice operator UX TypeScript"
       },
       format: "json"
     });
@@ -630,7 +630,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.totalCards).toBe(0);
     expect(preview.returnedCards).toBe(0);
     expect(cardIds(preview)).toEqual([]);
-    expect(preview.noMatchGuidance).toContain("No cards matched the current filters.");
+    expect(preview.noMatchGuidance).toContain("No brain knowledge entries matched the current filters.");
     expect(preview.noMatchGuidance).toContain(
       "Try a shorter --text query or split the query into one mechanism term."
     );
@@ -655,7 +655,7 @@ describe("runKnowledgeCardsCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "knowledge cards pattern gate source slice operator UX TypeScript"
+        text: "brain knowledge pattern gate source slice operator UX TypeScript"
       },
       format: "text"
     });
@@ -717,13 +717,13 @@ describe("runKnowledgeCardsCommand", () => {
       catalogFiles: [catalogFile],
       filter: {
         usefulnessOutcome: "helped",
-        text: "knowledge cards pattern gate source slice operator UX TypeScript"
+        text: "brain knowledge pattern gate source slice operator UX TypeScript"
       },
       format: "html"
     });
 
     expect(result.stdout).toContain("<!doctype html>");
-    expect(result.stdout).toContain("No cards match the current filters.");
+    expect(result.stdout).toContain("No brain knowledge entries match the current filters.");
     expect(result.stdout).toContain("Try a shorter --text query");
     expect(result.stdout).toContain("Zero results do not prove");
     expect(result.stdout).toContain("Mutation: none");
@@ -857,7 +857,7 @@ function parsePreviewRoot(value: string): ParsedPreviewRoot {
   const parsed: unknown = JSON.parse(value);
 
   if (!isRecord(parsed)) {
-    throw new Error("knowledge cards JSON output must be an object");
+    throw new Error("brain knowledge JSON output must be an object");
   }
 
   const access = parsed["access"];
@@ -866,7 +866,7 @@ function parsePreviewRoot(value: string): ParsedPreviewRoot {
   const proof = parsed["proof"];
 
   if (access !== "read_only" || mutation !== "none" || !Array.isArray(cards) || !isRecord(proof)) {
-    throw new Error("knowledge cards JSON output does not match preview resource shape");
+    throw new Error("brain knowledge JSON output does not match preview resource shape");
   }
 
   return {
@@ -885,7 +885,7 @@ function optionalIntegerField(
   const value = root[field];
 
   if (value !== undefined && (typeof value !== "number" || !Number.isSafeInteger(value))) {
-    throw new Error(`knowledge cards JSON output ${field} must be an integer when present`);
+    throw new Error(`brain knowledge JSON output ${field} must be an integer when present`);
   }
 
   return value;
@@ -898,7 +898,7 @@ function optionalStringArrayField(
   const value = root[field];
 
   if (value !== undefined && (!Array.isArray(value) || !value.every((item) => typeof item === "string"))) {
-    throw new Error(`knowledge cards JSON output ${field} must be string array when present`);
+    throw new Error(`brain knowledge JSON output ${field} must be string array when present`);
   }
 
   return value;
@@ -908,7 +908,7 @@ function parseProofBoundaries(proof: Record<string, unknown>): string[] {
   const doesNotProve = proof["doesNotProve"];
 
   if (!Array.isArray(doesNotProve) || !doesNotProve.every((item) => typeof item === "string")) {
-    throw new Error("knowledge cards JSON output must include doesNotProve proof boundaries");
+    throw new Error("brain knowledge JSON output must include doesNotProve proof boundaries");
   }
 
   return doesNotProve;
@@ -917,7 +917,7 @@ function parseProofBoundaries(proof: Record<string, unknown>): string[] {
 function parsePreviewCards(cards: readonly unknown[]): PreviewResourceForTest["cards"] {
   return cards.map((card) => {
     if (!isRecord(card) || typeof card["id"] !== "string") {
-      throw new Error("knowledge cards JSON output cards must include ids");
+      throw new Error("brain knowledge JSON output cards must include ids");
     }
 
     return {

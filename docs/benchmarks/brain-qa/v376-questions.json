@@ -8,19 +8,19 @@
     {
       "id": "V376-Q1",
       "query": "source-to-decision retention gate consumer falsifier",
-      "expectedSurface": "knowledge-card and source-search readback",
+      "expectedSurface": "brain-knowledge and source-search readback",
       "expectedUse": "Recall the retained source-to-decision gate before retaining new patterns."
     },
     {
       "id": "V376-Q2",
       "query": "hook deterministic guardrail",
-      "expectedSurface": "knowledge-card and source-search readback",
+      "expectedSurface": "brain-knowledge and source-search readback",
       "expectedUse": "Recall the V375 Codex hook guardrail boundary."
     },
     {
       "id": "V376-Q3",
       "query": "unknown-first external boundary explicit result state",
-      "expectedSurface": "knowledge-card and source-search readback",
+      "expectedSurface": "brain-knowledge and source-search readback",
       "expectedUse": "Recall TypeScript boundary pattern guidance."
     },
     {

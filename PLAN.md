@@ -26,13 +26,14 @@ source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
 brain-search selected knowledge: usable pattern packet in preview output
 brain-search store-only: source/search evidence can be read without file catalog
+brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
 product loop replay: DB-backed and inspectable
 graph-brain readback: relation summary visible through source/brain search
 ingest v0/v1: bounded loop readback visible through source artifact preview
 heartbeat/dreaming: manual candidate-only runtime loop readback visible through heartbeat preview
 heartbeat candidate review: one candidate can be reviewed/deferred with evidence result
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
-pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and knowledge-card readback
+pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 second-operator launch packet: historical packet only; no longer active direction
@@ -101,6 +102,7 @@ V377: retained graph relation readback and heartbeat candidate-only runtime
 V378: prepared current second-operator launch packet without claiming V02-01.
 IMR-01: brain search now exposes selected brain knowledge packets for agent use.
 IMR-02: brain search store-only mode proves store-backed pattern readback.
+IMR-03: preferred brain knowledge vocabulary replaces knowledge-card language in active surfaces.
 ```
 
 ## Remaining Product Gaps
