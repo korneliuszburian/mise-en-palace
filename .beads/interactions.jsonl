@@ -58,3 +58,5 @@
 {"id":"int-74bf7860","kind":"field_change","created_at":"2026-06-30T04:55:38.417875384Z","actor":"korneliuszburian","issue_id":"mise-en-palace-c33","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"fixed"}}
 {"id":"int-4eb31181","kind":"field_change","created_at":"2026-06-30T05:37:08.530770244Z","actor":"korneliuszburian","issue_id":"mise-en-palace-t2i","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
 {"id":"int-1b449190","kind":"field_change","created_at":"2026-06-30T05:40:12.789523869Z","actor":"korneliuszburian","issue_id":"mise-en-palace-t2i","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"fixed"}}
+{"id":"int-1887b402","kind":"field_change","created_at":"2026-06-30T05:45:35.662951491Z","actor":"korneliuszburian","issue_id":"mise-en-palace-qsn","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-702a51d7","kind":"field_change","created_at":"2026-06-30T05:50:18.799001141Z","actor":"korneliuszburian","issue_id":"mise-en-palace-qsn","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"fixed"}}

@@ -5,6 +5,7 @@ import type {
   ContextInclusion,
   DiffRisk,
   EvidenceBundle,
+  EvidenceCommand,
   EvidenceCommandProvenance,
   EvidenceCommandStatus,
   EvalCandidateProposal,
@@ -71,6 +72,8 @@ import type {
 } from "../schema/index.js";
 import {
   metadataOrEmpty,
+  numberOrUndefined,
+  stringOrUndefined,
   stringListOrEmpty,
   toIsoTimestamp
 } from "./common.js";
@@ -239,37 +242,71 @@ const asDiffRisk = (value: string): DiffRisk => {
 const isSourceTrustTier = (value: unknown): value is SourceTrustTier =>
   typeof value === "string" && sourceTrustTiers.has(value as SourceTrustTier);
 
+const evidenceCommandStatusOrUndefined = (
+  value: unknown
+): EvidenceCommandStatus | undefined =>
+  typeof value === "string" && evidenceCommandStatuses.has(value as EvidenceCommandStatus)
+    ? value as EvidenceCommandStatus
+    : undefined;
+
+const evidenceCommandProvenanceOrUndefined = (
+  value: unknown
+): EvidenceCommandProvenance | undefined =>
+  typeof value === "string" && evidenceCommandProvenances.has(value as EvidenceCommandProvenance)
+    ? value as EvidenceCommandProvenance
+    : undefined;
+
+const optionalEvidenceCommandFields = (
+  item: Record<string, unknown>
+): Partial<Omit<EvidenceCommand, "command" | "status">> => {
+  const provenance = evidenceCommandProvenanceOrUndefined(item.provenance);
+  const exitCode = numberOrUndefined(item.exitCode);
+  const outputPath = stringOrUndefined(item.outputPath);
+  const outputRef = stringOrUndefined(item.outputRef);
+  const capturedAt = stringOrUndefined(item.capturedAt);
+  const assertedBy = stringOrUndefined(item.assertedBy);
+  const doesNotProve = stringOrUndefined(item.doesNotProve);
+
+  return {
+    ...(provenance === undefined ? {} : { provenance }),
+    ...(exitCode === undefined ? {} : { exitCode }),
+    ...(outputPath === undefined ? {} : { outputPath }),
+    ...(outputRef === undefined ? {} : { outputRef }),
+    ...(capturedAt === undefined ? {} : { capturedAt }),
+    ...(assertedBy === undefined ? {} : { assertedBy }),
+    ...(doesNotProve === undefined ? {} : { doesNotProve })
+  };
+};
+
+const normalizedEvidenceCommandOrUndefined = (
+  item: unknown
+): NormalizedEvidenceCommand | undefined => {
+  if (!isRecord(item) || typeof item.command !== "string") {
+    return undefined;
+  }
+
+  const status = evidenceCommandStatusOrUndefined(item.status);
+
+  if (status === undefined) {
+    return undefined;
+  }
+
+  return normalizeEvidenceCommand({
+    command: item.command,
+    status,
+    ...optionalEvidenceCommandFields(item)
+  });
+};
+
 const evidenceCommandsOrEmpty = (value: unknown): NormalizedEvidenceCommand[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value.flatMap((item): NormalizedEvidenceCommand[] => {
-    if (!isRecord(item) || typeof item.command !== "string") {
-      return [];
-    }
+    const command = normalizedEvidenceCommandOrUndefined(item);
 
-    if (!evidenceCommandStatuses.has(item.status as EvidenceCommandStatus)) {
-      return [];
-    }
-
-    const provenance =
-      typeof item.provenance === "string" &&
-      evidenceCommandProvenances.has(item.provenance as EvidenceCommandProvenance)
-        ? item.provenance as EvidenceCommandProvenance
-        : undefined;
-
-    return [normalizeEvidenceCommand({
-      command: item.command,
-      status: item.status as EvidenceCommandStatus,
-      ...(provenance === undefined ? {} : { provenance }),
-      ...(typeof item.exitCode === "number" ? { exitCode: item.exitCode } : {}),
-      ...(typeof item.outputPath === "string" ? { outputPath: item.outputPath } : {}),
-      ...(typeof item.outputRef === "string" ? { outputRef: item.outputRef } : {}),
-      ...(typeof item.capturedAt === "string" ? { capturedAt: item.capturedAt } : {}),
-      ...(typeof item.assertedBy === "string" ? { assertedBy: item.assertedBy } : {}),
-      ...(typeof item.doesNotProve === "string" ? { doesNotProve: item.doesNotProve } : {})
-    })];
+    return command === undefined ? [] : [command];
   });
 };
 
