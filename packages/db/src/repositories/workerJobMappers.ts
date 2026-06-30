@@ -5,6 +5,7 @@ import {
   metadataOrEmpty,
   toIsoTimestamp
 } from "./common.js";
+import { mapLockedRowMetadataFields } from "./lockedRowMetadata.js";
 import {
   workerJobLifecycleStatuses,
   workerJobTypes
@@ -44,9 +45,5 @@ export const mapWorkerJob = (row: WorkerJobRow): WorkerJobRecord => ({
   attempts: row.attempts,
   maxAttempts: row.maxAttempts,
   runAfter: toIsoTimestamp(row.runAfter),
-  ...(row.lockedAt === null ? {} : { lockedAt: toIsoTimestamp(row.lockedAt) }),
-  ...(row.lockedBy === null ? {} : { lockedBy: row.lockedBy }),
-  ...(row.lastError === null ? {} : { lastError: row.lastError }),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
+  ...mapLockedRowMetadataFields(row)
 });

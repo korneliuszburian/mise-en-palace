@@ -74,6 +74,7 @@ import {
   stringListOrEmpty,
   toIsoTimestamp
 } from "./common.js";
+import { mapLockedRowMetadataFields } from "./lockedRowMetadata.js";
 import { memoryCandidatesOrEmpty } from "./memoryMappers.js";
 
 export {
@@ -652,11 +653,7 @@ export const mapOutboxEvent = (row: OutboxEventRow): OutboxEventRecord => ({
   payload: metadataOrEmpty(row.payload),
   attempts: row.attempts,
   availableAt: toIsoTimestamp(row.availableAt),
-  ...(row.lockedAt === null ? {} : { lockedAt: toIsoTimestamp(row.lockedAt) }),
-  ...(row.lockedBy === null ? {} : { lockedBy: row.lockedBy }),
-  ...(row.lastError === null ? {} : { lastError: row.lastError }),
-  createdAt: toIsoTimestamp(row.createdAt),
-  updatedAt: toIsoTimestamp(row.updatedAt)
+  ...mapLockedRowMetadataFields(row)
 });
 
 export const mapSearchDocument = (row: SearchDocumentRow): SearchDocumentRecord => ({
