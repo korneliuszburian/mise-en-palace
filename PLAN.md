@@ -38,6 +38,7 @@ heartbeat knowledge acquisition: missing-evidence input can produce reviewable c
 heartbeat acquisition bridge: source/brain search JSON missingEvidence can feed candidate-only heartbeat preview
 heartbeat acquisition dogfood: live DB-backed source/brain missingEvidence produces acquisition candidates
 heartbeat candidate focus: candidate-kind filter can isolate acquisition lane and avoid unrelated repo reads
+heartbeat acquisition follow-up: focused candidate triggered bounded source/evidence follow-up and exposed missing query diagnostics
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -74,9 +75,9 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-mise-en-palace-3hq:
-use a focused acquisition candidate for bounded source/evidence follow-up or
-explicit rejection without widening runtime authority.
+mise-en-palace-294:
+carry query-shape diagnostics into acquisition candidates so source/evidence
+follow-up does not require manual raw JSON inspection.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -116,6 +117,8 @@ IMR-06: heartbeat preview can turn explicit missing-evidence readback into candi
 IMR-07: heartbeat preview can read source/brain search JSON missingEvidence and route it into acquisition candidates.
 IMR-08: live DB-backed source/brain missingEvidence dogfood proved the acquisition bridge and queued focused heartbeat lane readback.
 IMR-09: heartbeat preview can focus by candidate kind and isolate knowledge-acquisition readback.
+IMR-10: focused acquisition candidate follow-up proved the gap is actionable but
+  too terse; next repair carries query diagnostics into acquisition output.
 ```
 
 ## Remaining Product Gaps

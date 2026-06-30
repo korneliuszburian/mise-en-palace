@@ -113,6 +113,49 @@ IMR-09 complete: `krn heartbeat preview --candidate-kind` can focus the
   heartbeat readback on one candidate lane; focused knowledge-acquisition
   output avoids unrelated memory/source reads and reaches ready review/eval
   closure for the acquisition candidate.
+IMR-10 complete: focused knowledge-acquisition candidate follow-up performed
+  live DB-backed source/brain readbacks; SearchDocument retrieval works for
+  matching document text, but topic queries still had zero document support and
+  the next repair is to carry query diagnostics into acquisition candidates.
+```
+
+## Outcome IMR-10 Focused Acquisition Source Evidence Follow-Up
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-10-focused-acquisition-source-evidence-followup/REPORT.md
+```
+
+Outcome: the focused acquisition candidate was useful as a bounded follow-up
+trigger. Live DB-backed source/brain readbacks showed governed SourceClaims and
+SourceClaimEdge relation support for narrower topic queries, but zero
+SearchDocument support. A sanity query against `krn-source-artifact-preview`
+returned 4 SearchDocuments, proving document retrieval is available in the
+current DB. The missing piece is not another guard or crawler; acquisition
+candidates should preserve query-shape diagnostics or recommended follow-up so
+operators do not have to reopen raw source-search JSON.
+
+Source-to-decision:
+
+- Source: IMR-09 focused acquisition output and IMR-10 current-shell readbacks.
+- Mechanism: missingEvidence can route bounded acquisition work, but losing
+  query diagnostics increases review burden.
+- KRN implication: acquisition candidates should carry bounded diagnostics or
+  recommended follow-up from their source/brain readback.
+- Decision: queue diagnostic preservation in acquisition candidate output.
+- Rejection: no crawler, schema, ranking rewrite, worker daemon, API/MCP, or
+  Memory Core mutation.
+- Consumer: heartbeat/dreaming acquisition preview and operator review workflow.
+- Falsifier: diagnostic-bearing candidates still force raw JSON inspection or
+  change mutation/review-gate authority.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-294: Carry query diagnostics into acquisition candidates.
 ```
 
 ## Outcome IMR-09 Heartbeat Candidate-Kind Focus
