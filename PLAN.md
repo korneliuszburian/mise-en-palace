@@ -116,8 +116,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  no-store preview optional-field cleanup,
 	  shared memory/source CLI parser helper cleanup,
 	  source-search readback preparation cleanup,
-	  shared metadata reader cleanup
-	full Fallow moved: dupes 136 -> 57; health 117 -> 18
+	  shared metadata reader cleanup,
+	  DB readiness table inspection cleanup
+	full Fallow moved: dupes 136 -> 56; health 117 -> 18
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
