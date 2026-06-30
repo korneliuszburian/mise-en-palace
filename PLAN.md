@@ -43,6 +43,7 @@ heartbeat acquisition diagnostics: acquisition candidates preserve query-shape d
 heartbeat diagnostic follow-up: diagnostics selected a bounded source/evidence split and exposed source-claim/document linkage gap
 source claim document link readback: source-search answer packages expose artifact-linked SearchDocument refs for supporting SourceClaims
 brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocuments visible in sourceSearch summary
+heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -67,16 +68,15 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-13-source-claim-document-links/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-imr-14-brain-search-linked-document-summary/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-15-linked-document-acquisition-readback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-u8e:
-use brain-search linked document evidence in heartbeat/acquisition readback so
-knowledge acquisition candidates do not treat artifact-linked evidence as invisible.
+mise-en-palace-7zt:
+review one linked-document acquisition candidate and choose the next bounded
+action from evidence.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -129,6 +129,7 @@ IMR-13: source-search answer packages now expose sourceClaimDocumentLinks for
   and 5 artifact-linked SearchDocument refs.
 IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
   linkedSearchDocuments from source-search JSON.
+IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 ```
 
 ## Remaining Product Gaps

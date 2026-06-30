@@ -366,6 +366,13 @@ describe("runHeartbeatPreviewCommand", () => {
       kind: "krn.brainSearch.preview.v1",
       query: "Autonomous Memory Agents",
       sourceSearch: {
+        supportingClaims: 5,
+        supportingDocuments: 0,
+        sourceClaimDocumentLinks: 5,
+        linkedSearchDocuments: 5,
+        sourceClaimDocumentLinkCaveats: [
+          "artifact-linked SearchDocuments were visible but not included by lexical retrieval"
+        ],
         missingEvidence: [
           "accepted SourceClaim for Autonomous Memory Agents benchmark gains"
         ],
@@ -419,6 +426,15 @@ describe("runHeartbeatPreviewCommand", () => {
       );
       expect(result.stdout).toContain(
         "Use source-search evidence cautiously and narrow the acquisition query."
+      );
+      expect(result.stdout).toContain("linkedDocumentEvidence:");
+      expect(result.stdout).toContain("sourceClaimDocumentLinks: 5");
+      expect(result.stdout).toContain("linkedSearchDocuments: 5");
+      expect(result.stdout).toContain(
+        "artifact-linked SearchDocuments were visible but not included by lexical retrieval"
+      );
+      expect(result.stdout).toContain(
+        "Linked document evidence: 5 source-claim document link(s), 5 linked SearchDocument(s)."
       );
       expect(result.stdout).toContain("consumer: heartbeat knowledge acquisition preview");
       expect(result.stdout).toContain("falsifier:");

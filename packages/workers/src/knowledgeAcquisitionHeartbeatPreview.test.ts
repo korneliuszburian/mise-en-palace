@@ -117,6 +117,48 @@ describe("knowledge acquisition heartbeat preview", () => {
     ]);
   });
 
+  test("preserves linked document evidence in acquisition candidates", () => {
+    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+      now,
+      evidenceRef,
+      requests: [
+        {
+          id: "linked-document-request",
+          source: "brain_search",
+          query: "artifact-linked source claims",
+          missingEvidence: ["included SearchDocument evidence"],
+          linkedDocumentEvidence: {
+            sourceClaimDocumentLinks: 5,
+            linkedSearchDocuments: 5,
+            caveats: [
+              "artifact-linked SearchDocuments were visible but not included by lexical retrieval"
+            ]
+          },
+          evidenceRefs: [evidenceRef],
+          consumer: "heartbeat/dreaming candidate runtime",
+          falsifier: "Linked document evidence should be visible on the acquisition candidate.",
+          doesNotProve: "This does not prove source truth."
+        }
+      ]
+    });
+
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        linkedDocumentEvidence: {
+          sourceClaimDocumentLinks: 5,
+          linkedSearchDocuments: 5,
+          caveats: [
+            "artifact-linked SearchDocuments were visible but not included by lexical retrieval"
+          ]
+        },
+        acquisitionEvidenceRequest: expect.stringContaining(
+          "Linked document evidence: 5 source-claim document link(s), 5 linked SearchDocument(s)."
+        ),
+        mutation: "none"
+      })
+    ]);
+  });
+
   test("keeps weak acquisition requests as needs_more_evidence", () => {
     const result = buildKnowledgeAcquisitionHeartbeatPreview({
       now,

@@ -16,6 +16,12 @@ export type KnowledgeAcquisitionHeartbeatCandidateReason =
 export type KnowledgeAcquisitionHeartbeatAction =
   | "propose_knowledge_acquisition";
 
+export interface KnowledgeAcquisitionLinkedDocumentEvidence {
+  sourceClaimDocumentLinks: number;
+  linkedSearchDocuments: number;
+  caveats: readonly string[];
+}
+
 export interface KnowledgeAcquisitionRequest {
   id: string;
   source: KnowledgeAcquisitionSource;
@@ -23,6 +29,7 @@ export interface KnowledgeAcquisitionRequest {
   missingEvidence: readonly string[];
   queryShapeDiagnostics?: readonly string[];
   recommendedFollowUp?: readonly string[];
+  linkedDocumentEvidence?: KnowledgeAcquisitionLinkedDocumentEvidence;
   evidenceRefs: readonly string[];
   consumer: string;
   falsifier: string;
@@ -40,6 +47,7 @@ export interface KnowledgeAcquisitionHeartbeatCandidate {
   missingEvidence: readonly string[];
   queryShapeDiagnostics: readonly string[];
   recommendedFollowUp: readonly string[];
+  linkedDocumentEvidence?: KnowledgeAcquisitionLinkedDocumentEvidence;
   summary: string;
   applicationGuidance: string;
   acquisitionEvidenceRequest: string;
@@ -99,6 +107,55 @@ const hasText = (value: string | undefined): value is string =>
 const nonEmptyStrings = (values: readonly string[]): readonly string[] =>
   values.filter(hasText);
 
+const linkedDocumentEvidenceGuidance = (
+  evidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined
+): string => {
+  if (evidence === undefined) {
+    return "";
+  }
+
+  const caveat =
+    evidence.caveats.length === 0
+      ? ""
+      : ` Caveats: ${evidence.caveats.join(" ")}`;
+
+  return ` Linked document evidence: ${evidence.sourceClaimDocumentLinks} source-claim document link(s), ${evidence.linkedSearchDocuments} linked SearchDocument(s).${caveat}`;
+};
+
+const buildAcquisitionEvidenceRequest = (
+  input: {
+    missingEvidence: readonly string[];
+    queryShapeDiagnostics: readonly string[];
+    recommendedFollowUp: readonly string[];
+    linkedDocumentEvidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined;
+  }
+): string => {
+  const diagnosticGuidance =
+    input.queryShapeDiagnostics.length === 0
+      ? ""
+      : ` Query diagnostics: ${input.queryShapeDiagnostics.join(" ")}`;
+  const followUpGuidance =
+    input.recommendedFollowUp.length === 0
+      ? ""
+      : ` Recommended follow-up: ${input.recommendedFollowUp.join(" ")}`;
+
+  return `Find or reject evidence for: ${input.missingEvidence.join(", ")}.${diagnosticGuidance}${followUpGuidance}${linkedDocumentEvidenceGuidance(input.linkedDocumentEvidence)} Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve before promotion.`;
+};
+
+const missingReviewFields = (
+  input: {
+    missingEvidence: readonly string[];
+    evidenceRefs: readonly string[];
+    consumer: string;
+    falsifier: string;
+  }
+): readonly string[] => [
+  ...(input.missingEvidence.length === 0 ? ["missingEvidence"] : []),
+  ...(input.evidenceRefs.length === 0 ? ["evidenceRefs"] : []),
+  ...(hasText(input.consumer) ? [] : ["consumer"]),
+  ...(hasText(input.falsifier) ? [] : ["falsifier"])
+];
+
 const buildCandidate = (
   input: BuildKnowledgeAcquisitionHeartbeatPreviewInput,
   request: KnowledgeAcquisitionRequest
@@ -106,27 +163,24 @@ const buildCandidate = (
   const missingEvidence = nonEmptyStrings(request.missingEvidence);
   const queryShapeDiagnostics = nonEmptyStrings(request.queryShapeDiagnostics ?? []);
   const recommendedFollowUp = nonEmptyStrings(request.recommendedFollowUp ?? []);
+  const linkedDocumentEvidence = request.linkedDocumentEvidence;
   const evidenceRefs = nonEmptyStrings([input.evidenceRef, ...request.evidenceRefs]);
   const summary =
     `Acquire missing evidence for ${request.source} query "${request.query}": ${missingEvidence.join(", ")}.`;
   const applicationGuidance =
     "Route this candidate to source/research review before creating source claims, eval candidates, Memory Core updates, crawler work, or autonomous acquisition.";
-  const diagnosticGuidance =
-    queryShapeDiagnostics.length === 0
-      ? ""
-      : ` Query diagnostics: ${queryShapeDiagnostics.join(" ")}`;
-  const followUpGuidance =
-    recommendedFollowUp.length === 0
-      ? ""
-      : ` Recommended follow-up: ${recommendedFollowUp.join(" ")}`;
-  const acquisitionEvidenceRequest =
-    `Find or reject evidence for: ${missingEvidence.join(", ")}.${diagnosticGuidance}${followUpGuidance} Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve before promotion.`;
-  const missingFields = [
-    ...(missingEvidence.length === 0 ? ["missingEvidence"] : []),
-    ...(evidenceRefs.length === 0 ? ["evidenceRefs"] : []),
-    ...(hasText(request.consumer) ? [] : ["consumer"]),
-    ...(hasText(request.falsifier) ? [] : ["falsifier"])
-  ];
+  const acquisitionEvidenceRequest = buildAcquisitionEvidenceRequest({
+    missingEvidence,
+    queryShapeDiagnostics,
+    recommendedFollowUp,
+    linkedDocumentEvidence
+  });
+  const missingFields = missingReviewFields({
+    missingEvidence,
+    evidenceRefs,
+    consumer: request.consumer,
+    falsifier: request.falsifier
+  });
   const reviewability = assessCandidateReviewability({
     summary,
     evidenceRefs,
@@ -146,6 +200,7 @@ const buildCandidate = (
     missingEvidence,
     queryShapeDiagnostics,
     recommendedFollowUp,
+    ...(linkedDocumentEvidence === undefined ? {} : { linkedDocumentEvidence }),
     summary,
     applicationGuidance,
     acquisitionEvidenceRequest,

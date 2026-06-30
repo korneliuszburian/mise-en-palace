@@ -14,6 +14,7 @@ import {
 } from "@krn/workers";
 import type {
   BrainHeartbeatCandidate,
+  KnowledgeAcquisitionLinkedDocumentEvidence,
   KnowledgeAcquisitionRequest,
   BrainHeartbeatPreview
 } from "@krn/workers";
@@ -124,6 +125,9 @@ const stringArrayValue = (value: unknown): readonly string[] =>
     ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
     : [];
 
+const numberValue = (value: unknown): number =>
+  typeof value === "number" && Number.isFinite(value) ? value : 0;
+
 const safeSlug = (value: string): string => {
   const slug = value
     .toLowerCase()
@@ -146,80 +150,125 @@ const optionalTextAsList = (value: unknown): readonly string[] => {
   return text === undefined ? [] : [text];
 };
 
+const linkedDocumentEvidenceFromBrainSourceSearch = (
+  sourceSearch: JsonRecord
+): KnowledgeAcquisitionLinkedDocumentEvidence | undefined => {
+  const sourceClaimDocumentLinks = numberValue(sourceSearch["sourceClaimDocumentLinks"]);
+  const linkedSearchDocuments = numberValue(sourceSearch["linkedSearchDocuments"]);
+  const caveats = stringArrayValue(sourceSearch["sourceClaimDocumentLinkCaveats"]);
+
+  if (sourceClaimDocumentLinks === 0 && linkedSearchDocuments === 0 && caveats.length === 0) {
+    return undefined;
+  }
+
+  return {
+    sourceClaimDocumentLinks,
+    linkedSearchDocuments,
+    caveats
+  };
+};
+
+const brainSearchAcquisitionRequest = (
+  input: {
+    filePath: string;
+    readback: JsonRecord;
+  }
+): KnowledgeAcquisitionRequest | undefined => {
+  const query = stringValue(input.readback["query"]) ?? "unknown query";
+  const sourceSearch = recordValue(input.readback["sourceSearch"]);
+  const topLevelRecommendedNextAction = optionalTextAsList(input.readback["recommendedNextAction"]);
+
+  if (sourceSearch === undefined) {
+    return undefined;
+  }
+
+  const missingEvidence = stringArrayValue(sourceSearch["missingEvidence"]);
+  const linkedDocumentEvidence = linkedDocumentEvidenceFromBrainSourceSearch(sourceSearch);
+
+  if (missingEvidence.length === 0) {
+    return undefined;
+  }
+
+  return {
+    id: `readback-brain-search-${safeSlug(query)}`,
+    source: "brain_search",
+    query,
+    missingEvidence,
+    queryShapeDiagnostics: uniqueStrings(
+      stringArrayValue(sourceSearch["queryShapeDiagnostics"])
+    ),
+    recommendedFollowUp: uniqueStrings([
+      ...stringArrayValue(sourceSearch["recommendedFollowUp"]),
+      ...topLevelRecommendedNextAction
+    ]),
+    ...(linkedDocumentEvidence === undefined ? {} : { linkedDocumentEvidence }),
+    evidenceRefs: [input.filePath],
+    consumer: defaultAcquisitionConsumer,
+    falsifier: defaultAcquisitionFalsifier,
+    doesNotProve: joinedDoesNotProve([
+      ...stringArrayValue(sourceSearch["doesNotProve"]),
+      ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
+    ])
+  };
+};
+
+const sourceSearchAcquisitionRequest = (
+  input: {
+    filePath: string;
+    readback: JsonRecord;
+  }
+): KnowledgeAcquisitionRequest | undefined => {
+  const query = stringValue(input.readback["query"]) ?? "unknown query";
+  const answerPackage = recordValue(input.readback["answerPackage"]);
+
+  if (answerPackage === undefined) {
+    return undefined;
+  }
+
+  const missingEvidence = stringArrayValue(answerPackage["missingEvidence"]);
+
+  if (missingEvidence.length === 0) {
+    return undefined;
+  }
+
+  return {
+    id: `readback-source-search-${safeSlug(query)}`,
+    source: "source_search",
+    query,
+    missingEvidence,
+    queryShapeDiagnostics: uniqueStrings(
+      stringArrayValue(answerPackage["queryShapeDiagnostics"])
+    ),
+    recommendedFollowUp: uniqueStrings([
+      ...stringArrayValue(answerPackage["recommendedFollowUp"]),
+      ...optionalTextAsList(answerPackage["recommendedNextAction"])
+    ]),
+    evidenceRefs: [input.filePath],
+    consumer: defaultAcquisitionConsumer,
+    falsifier: defaultAcquisitionFalsifier,
+    doesNotProve: joinedDoesNotProve([
+      ...stringArrayValue(answerPackage["doesNotProve"]),
+      ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
+    ])
+  };
+};
+
+const optionalRequestAsList = (
+  request: KnowledgeAcquisitionRequest | undefined
+): KnowledgeAcquisitionRequest[] =>
+  request === undefined ? [] : [request];
+
 const buildAcquisitionRequestFromReadback = (
   input: {
     filePath: string;
     readback: JsonRecord;
   }
 ): KnowledgeAcquisitionRequest[] => {
-  const query = stringValue(input.readback["query"]) ?? "unknown query";
-  const sourceSearch = recordValue(input.readback["sourceSearch"]);
-  const answerPackage = recordValue(input.readback["answerPackage"]);
-  const topLevelRecommendedNextAction = optionalTextAsList(input.readback["recommendedNextAction"]);
+  const brainSearchRequest = brainSearchAcquisitionRequest(input);
 
-  if (sourceSearch !== undefined) {
-    const missingEvidence = stringArrayValue(sourceSearch["missingEvidence"]);
-
-    if (missingEvidence.length === 0) {
-      return [];
-    }
-
-    return [
-      {
-        id: `readback-brain-search-${safeSlug(query)}`,
-        source: "brain_search",
-        query,
-        missingEvidence,
-        queryShapeDiagnostics: uniqueStrings(
-          stringArrayValue(sourceSearch["queryShapeDiagnostics"])
-        ),
-        recommendedFollowUp: uniqueStrings([
-          ...stringArrayValue(sourceSearch["recommendedFollowUp"]),
-          ...topLevelRecommendedNextAction
-        ]),
-        evidenceRefs: [input.filePath],
-        consumer: defaultAcquisitionConsumer,
-        falsifier: defaultAcquisitionFalsifier,
-        doesNotProve: joinedDoesNotProve([
-          ...stringArrayValue(sourceSearch["doesNotProve"]),
-          ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
-        ])
-      }
-    ];
-  }
-
-  if (answerPackage !== undefined) {
-    const missingEvidence = stringArrayValue(answerPackage["missingEvidence"]);
-
-    if (missingEvidence.length === 0) {
-      return [];
-    }
-
-    return [
-      {
-        id: `readback-source-search-${safeSlug(query)}`,
-        source: "source_search",
-        query,
-        missingEvidence,
-        queryShapeDiagnostics: uniqueStrings(
-          stringArrayValue(answerPackage["queryShapeDiagnostics"])
-        ),
-        recommendedFollowUp: uniqueStrings([
-          ...stringArrayValue(answerPackage["recommendedFollowUp"]),
-          ...optionalTextAsList(answerPackage["recommendedNextAction"])
-        ]),
-        evidenceRefs: [input.filePath],
-        consumer: defaultAcquisitionConsumer,
-        falsifier: defaultAcquisitionFalsifier,
-        doesNotProve: joinedDoesNotProve([
-          ...stringArrayValue(answerPackage["doesNotProve"]),
-          ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
-        ])
-      }
-    ];
-  }
-
-  return [];
+  return brainSearchRequest === undefined
+    ? optionalRequestAsList(sourceSearchAcquisitionRequest(input))
+    : [brainSearchRequest];
 };
 
 const loadKnowledgeAcquisitionRequests = async (
@@ -331,6 +380,25 @@ const loadKnowledgeAcquisitionRequestsForPreview = async (
 const formatList = (values: readonly string[]): string[] =>
   values.length === 0 ? ["  - none"] : values.map((value) => `  - ${value}`);
 
+const formatLinkedDocumentEvidence = (
+  evidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined
+): string[] => {
+  if (evidence === undefined) {
+    return [
+      "  linkedDocumentEvidence:",
+      "  - none"
+    ];
+  }
+
+  return [
+    "  linkedDocumentEvidence:",
+    `  - sourceClaimDocumentLinks: ${evidence.sourceClaimDocumentLinks}`,
+    `  - linkedSearchDocuments: ${evidence.linkedSearchDocuments}`,
+    "  linkedDocumentEvidenceCaveats:",
+    ...formatList(evidence.caveats)
+  ];
+};
+
 const formatProjectResolutionLines = (
   projectResolution: ProjectResolution | undefined
 ): string[] => {
@@ -386,6 +454,7 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     ...formatList(candidate.queryShapeDiagnostics),
     "  recommendedFollowUp:",
     ...formatList(candidate.recommendedFollowUp),
+    ...formatLinkedDocumentEvidence(candidate.linkedDocumentEvidence),
     `  acquisitionEvidenceRequest: ${candidate.acquisitionEvidenceRequest}`,
     `  consumer: ${candidate.consumer}`,
     `  falsifier: ${candidate.falsifier}`

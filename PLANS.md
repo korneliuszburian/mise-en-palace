@@ -130,6 +130,46 @@ IMR-14 complete: brain-search source summaries now preserve source-search
   `sourceClaimDocumentLinks` and `linkedSearchDocuments`, so downstream pattern
   gates do not understate artifact-linked evidence when included lexical docs
   are zero.
+IMR-15 complete: heartbeat knowledge-acquisition candidates now preserve
+  brain-search `linkedDocumentEvidence`, so reviewable candidates do not hide
+  artifact-linked documents when included lexical docs are zero.
+```
+
+## Outcome IMR-15 Linked Document Acquisition Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-15-linked-document-acquisition-readback/REPORT.md
+```
+
+Outcome: `krn heartbeat preview --candidate-kind knowledge_acquisition` now
+preserves `linkedDocumentEvidence` from brain-search JSON. The live flow over
+the IMR-14 query produced a review-ready acquisition candidate with 5
+source-claim document links, 5 linked SearchDocuments, `mutation: none`, and no
+schema/crawler/ranking/worker/API/MCP/Memory Core/source truth mutation.
+
+Source-to-decision:
+
+- Source: IMR-14 report and live brain-search/heartbeat readback.
+- Mechanism: brain-search can carry linked-document evidence alongside missing
+  included lexical SearchDocument evidence.
+- KRN implication: acquisition candidates must preserve that evidence so
+  review does not confuse "not included" with "does not exist."
+- Decision: carry optional `linkedDocumentEvidence` on acquisition requests and
+  candidates.
+- Rejection: no source-search direct-link expansion, schema, crawler, ranking,
+  worker, API/MCP, source truth, or Memory Core mutation.
+- Consumer: heartbeat acquisition readback and candidate review.
+- Falsifier: a linked-document brain-search readback creates an acquisition
+  candidate with missing evidence but no linked-document counts/caveats.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-7zt: Review linked-document acquisition candidate outcome.
 ```
 
 ## Outcome IMR-14 Brain Search Linked Document Summary
