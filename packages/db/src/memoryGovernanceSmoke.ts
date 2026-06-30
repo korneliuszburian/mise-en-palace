@@ -1,23 +1,13 @@
 import { eq, sql } from "drizzle-orm";
-import {
-  compileHarnessPlan
-} from "@krn/harness";
 
 import {
   assertSmokeReadbackChecks,
   cleanupMemoryGovernanceSmokeRows,
   countMemoryGovernanceSmokeMarkerRows,
-  createSmokeProjectRecords,
+  createCompiledSmokeExecution,
   createSmokeRuntime,
   requireSmokeReadbackValue
 } from "./dbSmokeSupport.js";
-import {
-  DrizzleHarnessRunRepository,
-  DrizzleMemoryRepository,
-  DrizzleProjectRepository,
-  DrizzleRetrievalRepository,
-  DrizzleSourceRepository
-} from "./repositories/index.js";
 import {
   memoryApplications,
   memoryRecordVersions,
@@ -88,74 +78,27 @@ export const runMemoryGovernanceSmokeCheck = async (
   try {
     await cleanup();
 
-    const projectRepository = new DrizzleProjectRepository(db);
-    const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-    const memoryRepository = new DrizzleMemoryRepository(db);
-    const sourceRepository = new DrizzleSourceRepository(db);
-    const { workspace, project } = await createSmokeProjectRecords(
-      projectRepository,
-      workspaceSlug,
+    const {
+      executionRun,
+      memoryRepository,
+      project,
+      retrievalRunId: compiledRetrievalRunId,
+      sourceRepository
+    } = await createCompiledSmokeExecution({
+      acceptance: "read back memory records and clean smoke rows",
+      command: "db:smoke:memory-governance",
+      constraints: ["persist reviewed memory candidates and anti-memory"],
+      db,
+      eventMessage: "Memory governance smoke plan created",
+      eventType: "smoke.memory_governance.plan_persisted",
+      includeEvidenceContract: false,
+      marker,
+      nonGoals: ["do not mutate runtime markdown memory"],
       projectSlug,
-      marker
-    );
-    let idCounter = 0;
-    const result = await compileHarnessPlan(
-      {
-        workspaceId: workspace.id,
-        projectId: project.id,
-        operatorIntent: {
-          rawIntent: task,
-          source: "cli",
-          metadata: {
-            smokeId: marker
-          }
-        },
-        taskContract: {
-          title: task,
-          objective: task,
-          constraints: ["persist reviewed memory candidates and anti-memory"],
-          nonGoals: ["do not mutate runtime markdown memory"],
-          acceptance: ["read back memory records and clean smoke rows"],
-          metadata: {
-            smokeId: marker
-          }
-        },
-        tokenBudget: 1200,
-        metadata: {
-          command: "db:smoke:memory-governance",
-          smokeId: marker
-        }
-      },
-      {
-        harnessRunRepository,
-        memoryRepository,
-        sourceRepository,
-        retrievalRepository: new DrizzleRetrievalRepository(db),
-        now: () => new Date().toISOString(),
-        createId: (prefix) => {
-          idCounter += 1;
-          return `${prefix}-${marker}-${idCounter}`;
-        }
-      }
-    );
-    const maybeRetrievalRunId = result.contextAssembly.metadata.retrievalRunId;
-    retrievalRunId = typeof maybeRetrievalRunId === "string" ? maybeRetrievalRunId : undefined;
-    const executionRun = await harnessRunRepository.createExecutionRun({
-      harnessPlanId: result.harnessPlan.id,
-      adapter: "codex",
-      status: "planned",
-      initialEvent: {
-        sequence: 1,
-        type: "smoke.memory_governance.plan_persisted",
-        message: "Memory governance smoke plan created",
-        payload: {
-          smokeId: marker
-        }
-      },
-      metadata: {
-        smokeId: marker
-      }
+      task,
+      workspaceSlug
     });
+    retrievalRunId = compiledRetrievalRunId;
     const sourceArtifact = await sourceRepository.createSourceArtifact({
       projectId: project.id,
       kind: "operator_input",

@@ -99,22 +99,28 @@ export interface HarnessCompilerSmokeRuntime extends SmokeDatabase {
 export interface SmokeHarnessCompileInput {
   acceptance: string;
   command: string;
+  constraints?: readonly string[];
   db: KrnDatabase;
   marker: string;
+  nonGoals?: readonly string[];
   projectSlug: string;
   task: string;
   workspaceSlug: string;
 }
 
-export interface SmokeHarnessCompileOutput {
+export interface SmokeHarnessCompileOutput extends SmokeProjectRecords {
   harnessRunRepository: DrizzleHarnessRunRepository;
+  memoryRepository: DrizzleMemoryRepository;
+  retrievalRepository: DrizzleRetrievalRepository;
   result: SmokeHarnessCompileResult;
+  sourceRepository: DrizzleSourceRepository;
 }
 
 export interface SmokeCompiledExecutionInput extends SmokeHarnessCompileInput {
   eventMessage: string;
   eventPayload?: (result: SmokeHarnessCompileResult) => Record<string, unknown>;
   eventType: string;
+  includeEvidenceContract?: boolean;
 }
 
 export interface SmokeCompiledExecutionOutput extends SmokeHarnessCompileOutput {
@@ -341,6 +347,9 @@ const compileSmokeHarnessPlan = async (
 ): Promise<SmokeHarnessCompileOutput> => {
   const projectRepository = new DrizzleProjectRepository(input.db);
   const harnessRunRepository = new DrizzleHarnessRunRepository(input.db);
+  const memoryRepository = new DrizzleMemoryRepository(input.db);
+  const retrievalRepository = new DrizzleRetrievalRepository(input.db);
+  const sourceRepository = new DrizzleSourceRepository(input.db);
   const { workspace, project } = await createSmokeProjectRecords(
     projectRepository,
     input.workspaceSlug,
@@ -358,14 +367,14 @@ const compileSmokeHarnessPlan = async (
           smokeId: input.marker
         }
       },
-      taskContract: {
-        title: input.task,
-        objective: input.task,
-        constraints: ["preserve strict TypeScript boundaries"],
-        nonGoals: ["do not mutate memory"],
-        acceptance: [input.acceptance],
-        metadata: {
-          smokeId: input.marker
+        taskContract: {
+          title: input.task,
+          objective: input.task,
+          constraints: [...(input.constraints ?? ["preserve strict TypeScript boundaries"])],
+          nonGoals: [...(input.nonGoals ?? ["do not mutate memory"])],
+          acceptance: [input.acceptance],
+          metadata: {
+            smokeId: input.marker
         }
       },
       tokenBudget: 1200,
@@ -376,9 +385,9 @@ const compileSmokeHarnessPlan = async (
     },
     {
       harnessRunRepository,
-      memoryRepository: new DrizzleMemoryRepository(input.db),
-      sourceRepository: new DrizzleSourceRepository(input.db),
-      retrievalRepository: new DrizzleRetrievalRepository(input.db),
+      memoryRepository,
+      sourceRepository,
+      retrievalRepository,
       now: () => new Date().toISOString(),
       createId: createSmokeIdFactory(input.marker)
     }
@@ -386,14 +395,20 @@ const compileSmokeHarnessPlan = async (
 
   return {
     harnessRunRepository,
-    result
+    memoryRepository,
+    project,
+    result,
+    retrievalRepository,
+    sourceRepository,
+    workspace
   };
 };
 
 export const createCompiledSmokeExecution = async (
   input: SmokeCompiledExecutionInput
 ): Promise<SmokeCompiledExecutionOutput> => {
-  const { harnessRunRepository, result } = await compileSmokeHarnessPlan(input);
+  const compileOutput = await compileSmokeHarnessPlan(input);
+  const { harnessRunRepository, result } = compileOutput;
   const maybeRetrievalRunId = result.contextAssembly.metadata.retrievalRunId;
   const retrievalRunId = typeof maybeRetrievalRunId === "string"
     ? maybeRetrievalRunId
@@ -414,14 +429,15 @@ export const createCompiledSmokeExecution = async (
     },
     metadata: {
       smokeId: input.marker,
-      evidenceContract: result.evidenceContract
+      ...(input.includeEvidenceContract === false ? {} : {
+        evidenceContract: result.evidenceContract
+      })
     }
   });
 
   return {
+    ...compileOutput,
     executionRun,
-    harnessRunRepository,
-    result,
     retrievalRunId
   };
 };
@@ -457,7 +473,7 @@ export const createSmokeRuntime = async (
   };
 };
 
-export const createSmokeProjectRecords = async (
+const createSmokeProjectRecords = async (
   projectRepository: DrizzleProjectRepository,
   workspaceSlug: string,
   projectSlug: string,

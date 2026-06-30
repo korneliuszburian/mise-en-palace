@@ -32,7 +32,15 @@
         "promoteReviewedMemoryCandidate",
         "rejectMemoryCandidate",
         "listMemoryCandidates",
+        "listMemoryRecordsForProject",
+        "listActiveMemory",
+        "createMemoryCandidate",
+        "invalidateMemoryRecord",
+        "recordMemoryApplication",
         "createMemoryFeedbackEvent",
+        "createAntiMemoryCandidate",
+        "getAntiMemoryCandidateById",
+        "promoteReviewedAntiMemoryCandidate",
         "rejectAntiMemoryCandidate",
         "listAntiMemoryCandidates"
       ]
@@ -55,6 +63,11 @@
       "implements": "SourceRepository",
       "members": [
         "createSourceChunk",
+        "createSourceClaimEdge",
+        "listSourceClaimEdgesForClaim",
+        "createSourceDecisionEdge",
+        "listSourceDecisionEdgesForRun",
+        "createSourceRejection",
         "getSourceDecisionEdgeById"
       ]
     },
