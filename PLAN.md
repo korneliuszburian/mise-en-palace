@@ -81,8 +81,9 @@ recent slices: shared parser helpers, source-search readback preparation,
   project repo lookup, locked row metadata mapping, retrieval subject mapping.
   evidence command normalization, feedback candidate normalization, evidence
   persistence assembly, harness run readback, source-map invariant assertions,
-  knowledge-card preview parser, evidence golden expectations.
-full Fallow moved: dupes 136 -> 40; health 117 -> 9; dead-code 0
+  knowledge-card preview parser, evidence golden expectations, codex brief
+  golden expectations.
+full Fallow moved: dupes 136 -> 40; health 117 -> 8; dead-code 0
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
