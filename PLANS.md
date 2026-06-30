@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 621e01e8ef98fbc4c58d6616ec9220c47eaf277f / CI success
+latest source slice commit checked: 34d2415 / CI success run 28412755845
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -26,144 +26,16 @@ Known current gap:
 ```txt
 V360-00 Fallow Legacy Complexity Cleanup must reduce full-audit duplication or
 health debt one bounded source target at a time without broad repo refactors.
-Latest completed slice: `parseSourceArgs` cleanup reduced global Fallow to
-dupes 128 and health 99; commit `ed61caf` passed CI.
-Latest completed slice: `parseMemoryArgs` cleanup reduced global Fallow to
-dupes 122 and health 92; commit `5d80e1c` passed CI.
-Latest completed slice: `parseInitArgs` cleanup reduced global Fallow health to
-90; commit `8551604` passed CI.
-Latest completed slice: `reflectionCandidateWriter` cleanup removed the
-`writeReflectionCandidates` high-complexity finding and reduced global Fallow
-health to 89; commit `178459a` passed CI.
-Latest completed slice: core evidence command normalization cleanup removed the
-`normalizeEvidenceCommand` high-complexity finding and reduced global Fallow to
-dupes 119 and health 88; commit `b21d8de` passed CI.
-Latest completed slice: schema evidence command input normalization cleanup
-removed the `normalizeEvidenceCommandInput` high-complexity finding and reduced
-global Fallow to dupes 118 and health 87; commit `d50d304` passed CI.
-Latest completed slice: core reflection issue report cleanup removed the
-`buildReflectionIssueReports` high-complexity/refactoring target and reduced
-global Fallow health to 86; commit `0455e53` passed CI.
-Latest completed slice: DB smoke target metadata cleanup removed three target
-label helper complexity findings and reduced global Fallow health to 83; commit
-`39eda63` passed CI.
-Latest completed slice: runCli source dispatch cleanup extracted help/source
-dispatch, reduced runCli complexity to 92/165, and reduced global Fallow to
-dupes 117 and health 83; commit `ac9060c` passed CI.
-Latest completed slice: runCli memory dispatch cleanup extracted memory command
-dispatch, reduced runCli complexity to 72/125, added a fallback regression
-test, and reduced global Fallow to dupes 116 and health 83; commit `9ab8914`
-passed CI.
-Latest completed slice: runCli residual dispatch cleanup extracted project,
-harness lifecycle, DB/doctor, and adapter probing helpers, moved runCli below
-the changed-files Fallow gate, and reduced global Fallow health to 82; commit
-`9fb2f5d` passed CI.
-Latest completed slice: source artifact preview complexity cleanup extracted
-deterministic local extraction, split persistence/readback/candidate rendering,
-added a shared repo-input file resolver, removed changed-file Fallow findings
-under `--gate all`, and reduced global Fallow to dupes 115 and health 73;
-commit `7839017` passed CI.
-Latest completed slice: DB smoke target handler cleanup split the monolithic
-`runDbSmokeCommand` dispatcher into target handlers, removed the
-`runDbSmokeCommand` high-complexity/refactoring target, verified every DB smoke
-target against local Postgres, and reduced global Fallow health to 72; commit
-`2a70142` passed CI.
-Latest completed slice: doctor static checks cleanup extracted read-only
-presence predicates from `doctorStaticChecks`, removed all changed-file Fallow
-findings for the static doctor surface, verified no-DB and DB-configured doctor
-output, and reduced global Fallow health to 69; commit `edf3a90` passed CI.
-Latest completed slice: doctor failure rules cleanup replaced the monolithic
-`runDoctorCommand` failure predicate with declarative rules, removed the
-`runDoctorCommand` high-complexity finding, verified DB-backed doctor/readiness
-output, and reduced global Fallow health to 68; commit `16ce545` passed CI.
-Latest completed slice: doctor DB readiness gates cleanup extracted shared
-brain-store skip classification from `doctorDbChecks`, added behavior tests for
-not-configured/unreachable/not-ready skip statuses, removed changed-file Fallow
-findings, and reduced global Fallow to dupes 113 and health 65; commit
-`f130f7f` passed CI.
-Latest completed slice: database runtime project resolution cleanup extracted
-private project-resolution/runtime helpers from `databaseRuntime`, added a
-regression test for explicit-project missing-ProjectKernel cleanup order,
-removed changed-file Fallow findings, and reduced global Fallow to dupes 112
-and health 64; commit `35c221c` passed CI.
-Latest completed slice: brain knowledge read-model cleanup extracted private
-parser/search helpers, added parser/status/feedback regression tests, removed
-changed-file Fallow findings, and reduced global Fallow to dupes 111 and health
-62; commit `86e654c` passed CI.
-Latest completed slice: observation repository persistence cleanup extracted
-typed insert-value helpers and raw-evidence resolvers without schema changes,
-removed changed-file Fallow findings, and reduced global Fallow health to 59;
-commit `376e097` passed CI.
-Latest completed slice: plan command boundary/runtime cleanup extracted
-private runtime, summary, metadata, and persisted-identity helpers, hardened
-blank/flag-shaped `krn plan` CLI values, removed changed-file Fallow findings,
-and reduced global Fallow health to 55; commit `28a1967` passed CI.
-Latest completed slice: retrieval repository insert cleanup extracted typed
-private insert-value builders for SearchDocument, Embedding, RetrievalCandidate,
-and ActivationDecision rows without schema changes, verified retrieval-substrate
-DB smoke, and reduced global Fallow to dupes 109 and health 52; commit
-`afa1de0` passed CI.
-Latest completed slice: memory repository invariant cleanup extracted private
-invariant and insert-value helpers without schema or review-gate changes,
-verified memory-governance DB smoke, and reduced global Fallow to dupes 106 and
-health 48; commit `1317cfb` passed CI.
-Latest completed slice: DB smoke shared setup cleanup extracted private smoke
-readiness/client/project/count helpers across DB smoke surfaces without changing
-schema, delete ordering, readback assertions, or dev-root exports; verified all
-DB smoke targets and reduced global Fallow to dupes 95 and health 42; commit
-`e3ad949` passed CI run `28405237395`.
-Latest completed slice: DB init-connect smoke readback cleanup extracted
-private assertion/reuse/owner-file readback helpers without schema or cleanup
-ordering changes, verified init-connect DB smoke, and reduced global Fallow
-health to 41; commit `678d05b` passed CI run `28406082493`.
-Latest completed slice: memory mapper boundary cleanup extracted unknown-first
-candidate JSON guards and shared private mapper fragments without schema/public
-API changes, added malformed-candidate boundary coverage, and reduced global
-Fallow to dupes 93 and health 40; commit `e026c36` passed CI run
-`28406685338`.
-Latest completed slice: Codex brief/smoke support cleanup extracted shared CLI
-support for evidence-contract parsing, read-only brief rendering, smoke
-runtime/repositories, count helpers, and proof formatting; verified
-codex-adapter and target-repo-harness DB smokes, and reduced global Fallow to
-dupes 81 and health 37; commit `85d433e` passed CI run `28408366911`.
-Latest completed slice: activation/retrieval smoke support cleanup extracted
-shared DB smoke runtime, marker counting, cleanup, context selection counts,
-and readback checks without schema/repository/smoke semantic changes; verified
-activation and retrieval-substrate DB smokes, and reduced global Fallow to
-dupes 78 and health 36; commit `0149fa2` passed CI run `28409599546`.
-Latest completed slice: memory/source-graph smoke support cleanup extracted
-shared DB smoke runtime, retrieval-run marker counting, cleanup, and readback
-checks without schema/repository/smoke semantic changes; verified
-memory-governance and source-graph DB smokes, and reduced global Fallow to
-dupes 76 and health 35; commit `1961d3d` passed CI run `28410138947`.
-Latest completed slice: memory add CLI shared support cleanup extracted shared
-candidate-evidence validation, source-lineage conversion, persisted DB runtime,
-and SourceClaim existence checks for memory candidate/anti-memory add commands
-without changing CLI flags, persistence behavior, review gates, or memory
-promotion semantics; reduced global Fallow to dupes 74 and health 31; commit
-`d0653fe` passed CI run `28410581330`.
-Latest completed slice: memory review gate shared support cleanup extracted
-private harness support for candidate-evidence parsing, identity trimming,
-confidence checks, and SourceClaim readback across memory and anti-memory review
-gates without changing promotion semantics, review metadata shape, repository
-contracts, or CLI behavior; reduced global Fallow to dupes 68 and health 29;
-commit `e47c10f` passed CI run `28411155136`.
-Latest completed slice: memory review CLI shared support cleanup extracted
-shared rejected-review parsing, DB runtime setup, rejection reason checks, and
-reviewed SourceClaim id readback across memory candidate and anti-memory review
-commands without changing CLI flags, review gates, persistence semantics, or
-promotion behavior; reduced global Fallow to dupes 66 and health 29; commit
-`df722c0` passed CI run `28411681955`.
-Latest completed slice: run show readback section cleanup split JSON readback
-resource assembly and text rendering into private section helpers without
-changing `krn run show` CLI behavior, JSON shape, read-only persistence
-semantics, or proof boundaries; held global Fallow dupes at 66 and reduced
-health to 27; commit `ec82bd9` passed CI run `28412105854`.
-Latest completed slice: activation candidate merge scoring cleanup extracted
-private merge score, search-document lineage, and merged metadata helpers
-without changing activation scoring, representative selection, merge ordering,
-or ranking output; held global Fallow dupes at 66 and reduced health to 26;
-commit `621e01e` passed CI run `28412376631`.
+V360 rollup: bounded cleanups have moved full Fallow from dupes 136 / health
+117 to dupes 66 / health 25. Dead-code findings are zero. Changed-files
+Fallow gates are green for each committed slice.
+
+Recent completed slices:
+- `df722c0` / CI `28411681955`: memory review CLI shared support cleanup.
+- `ec82bd9` / CI `28412105854`: run show readback section cleanup.
+- `621e01e` / CI `28412376631`: activation candidate merge scoring cleanup.
+- `34d2415` / CI `28412755845`: observation prefix selection cleanup.
+
 Remaining smoke-family cleanup stays valid only as bounded owner-surface work;
 do not split `packages/db/src/repositories/common.ts` only because Fallow ranks
 its fan-in.

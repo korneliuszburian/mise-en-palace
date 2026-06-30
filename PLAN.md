@@ -105,8 +105,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  memory review gate shared support cleanup,
 	  memory review CLI shared support cleanup,
 	  run show readback section cleanup,
-	  activation candidate merge scoring cleanup
-	full Fallow moved: dupes 136 -> 66; health 117 -> 26
+	  activation candidate merge scoring cleanup,
+	  observation prefix selection cleanup
+	full Fallow moved: dupes 136 -> 66; health 117 -> 25
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
