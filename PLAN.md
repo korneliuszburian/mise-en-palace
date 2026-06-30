@@ -66,8 +66,8 @@ from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
 then commit/push/CI before choosing the next target.
 
 Current candidate targets:
-DB smoke assertion extraction, another DB smoke owner surface, or another
-narrower target if source inspection shows lower risk.
+production CLI/core/harness health targets from the current Fallow baseline,
+chosen by source inspection and user-facing value.
 
 Progress in this stream:
 
@@ -108,8 +108,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  activation candidate merge scoring cleanup,
 	  observation prefix selection cleanup,
 	  harness compiler orchestration cleanup,
-	  temporal activation exclusions cleanup
-	full Fallow moved: dupes 136 -> 66; health 117 -> 23
+	  temporal activation exclusions cleanup,
+	  source claim edge rendering cleanup
+	full Fallow moved: dupes 136 -> 66; health 117 -> 22
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
