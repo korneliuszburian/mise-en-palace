@@ -227,6 +227,14 @@ interface ReadOnlyHarnessRuntime {
   close(): Promise<void>;
 }
 
+type RunReadbackRunResource = RunReadbackResource["run"];
+type RunReadbackTaskResource = RunReadbackResource["task"];
+type RunReadbackContextResource = RunReadbackResource["context"];
+type RunReadbackEvidenceBundleResource = RunReadbackResource["evidenceBundles"][number];
+type RunReadbackReviewAssessmentResource = RunReadbackResource["reviewAssessments"][number];
+type RunReadbackFeedbackDeltaResource = RunReadbackResource["feedbackDeltas"][number];
+type RunReadbackProofResource = RunReadbackResource["proof"];
+
 export type CreateRunShowDatabaseRuntime = (
   input: DatabaseRuntimeInput
 ) => Promise<ReadOnlyHarnessRuntime>;
@@ -240,6 +248,19 @@ const missingRunShowDatabaseUrlMessage = [
   `Next action: export KRN_DATABASE_URL=${localDatabaseUrl} and run pnpm db:ready before readback`,
   "Does not prove: setting KRN_DATABASE_URL does not prove the requested run exists, commands executed, or Memory Core mutated"
 ].join("\n");
+
+const runReadbackProves = [
+  "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
+  "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
+  "this readback surface exposes no write action"
+];
+
+const runReadbackDoesNotProve = [
+  "commands were executed by this readback command",
+  "activation scoring quality or production graph retrieval quality",
+  "memory quality, source truth, review correctness, or product readiness",
+  "Memory Core mutation"
+];
 
 const createReadOnlyHarnessRuntime = async (
   databaseUrl: string
@@ -852,6 +873,108 @@ const renderFeedbackDeltas = (feedbackDeltas: readonly FeedbackDelta[]): string[
     : feedbackDeltas.flatMap(renderFeedbackDelta))
 ];
 
+const runResource = (
+  aggregate: HarnessRunAggregate,
+  projectResolution: ProjectResolution | undefined
+): RunReadbackRunResource => ({
+  id: aggregate.executionRun.id,
+  status: aggregate.executionRun.status,
+  adapter: aggregate.executionRun.adapter,
+  createdAt: aggregate.executionRun.createdAt,
+  updatedAt: aggregate.executionRun.updatedAt,
+  ...(projectResolution === undefined ? {} : { projectResolution })
+});
+
+const taskResource = (
+  aggregate: HarnessRunAggregate
+): RunReadbackTaskResource => ({
+  id: aggregate.taskContract.id,
+  title: aggregate.taskContract.title,
+  objective: aggregate.taskContract.objective,
+  status: aggregate.taskContract.status
+});
+
+const activationDiagnosticsResource = (
+  contextAssembly: ContextAssembly | undefined
+): ActivationRetrievalDiagnostics | undefined =>
+  contextAssembly === undefined
+    ? undefined
+    : activationRetrievalDiagnosticsFromMetadata(contextAssembly.metadata);
+
+const contextResource = (
+  aggregate: HarnessRunAggregate,
+  activationTrace: RunReadbackActivationTraceResource | undefined
+): RunReadbackContextResource => {
+  const contextAssembly = aggregate.contextAssembly;
+  const activationDiagnostics = activationDiagnosticsResource(contextAssembly);
+
+  return {
+    status: contextAssembly?.status ?? "missing",
+    inclusions: contextAssembly?.inclusions.length ?? 0,
+    exclusions: contextAssembly?.exclusions.length ?? 0,
+    inclusionDetails: contextAssembly?.inclusions.map(contextInclusionResource) ?? [],
+    exclusionDetails: contextAssembly?.exclusions.map(contextExclusionResource) ?? [],
+    ...(activationDiagnostics === undefined ? {} : { activationDiagnostics }),
+    ...(activationTrace === undefined ? {} : { activationTrace })
+  };
+};
+
+const evidenceBundleResource = (
+  bundle: HarnessRunAggregate["evidenceBundles"][number]
+): RunReadbackEvidenceBundleResource => {
+  const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
+
+  return {
+    id: bundle.id,
+    status: bundle.status,
+    diffRisk: bundle.diffRisk,
+    reviewBurden: bundle.reviewBurden,
+    rollbackPath: bundle.rollbackPath,
+    changedFiles: {
+      all: bundle.changedFiles,
+      classification: changedFileClassification(bundle)
+    },
+    commands: bundle.commands.map(commandResource),
+    ...(targetEvidence === undefined ? {} : { targetEvidence })
+  };
+};
+
+const reviewAssessmentResource = (
+  assessment: HarnessRunAggregate["reviewAssessments"][number]
+): RunReadbackReviewAssessmentResource => ({
+  id: assessment.id,
+  status: assessment.status,
+  reviewer: assessment.reviewer
+});
+
+const feedbackDeltaResource = (
+  feedback: FeedbackDelta
+): RunReadbackFeedbackDeltaResource => {
+  const summary = summarizeFeedbackCandidateProposals(feedback);
+
+  return {
+    id: feedback.id,
+    status: feedback.status,
+    memoryRecordMutation: summary.memoryRecordMutation,
+    candidateCounts: {
+      memory: summary.counts.memoryCandidates,
+      source: summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates,
+      sourceClaim: summary.counts.sourceClaimCandidates,
+      sourceDecision: summary.counts.sourceDecisionCandidates,
+      antiMemory: summary.counts.antiMemoryCandidates,
+      eval: summary.counts.evalCandidates,
+      observation: summary.counts.observationCandidates
+    },
+    candidates: runReadbackCandidateResources(feedback),
+    sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback)
+  };
+};
+
+const proofResource = (): RunReadbackProofResource => ({
+  proves: [...runReadbackProves],
+  doesNotProve: [...runReadbackDoesNotProve]
+});
+
 const buildRunReadbackResource = (
   aggregate: HarnessRunAggregate
 ): RunReadbackResource => {
@@ -862,102 +985,89 @@ const buildRunReadbackResource = (
     kind: "krn.run.readback.v1",
     access: "read_only",
     mutation: "none",
-    run: {
-      id: aggregate.executionRun.id,
-      status: aggregate.executionRun.status,
-      adapter: aggregate.executionRun.adapter,
-      createdAt: aggregate.executionRun.createdAt,
-      updatedAt: aggregate.executionRun.updatedAt,
-      ...(projectResolution === undefined ? {} : { projectResolution })
-    },
-    task: {
-      id: aggregate.taskContract.id,
-      title: aggregate.taskContract.title,
-      objective: aggregate.taskContract.objective,
-      status: aggregate.taskContract.status
-    },
-    context: {
-      status: aggregate.contextAssembly?.status ?? "missing",
-      inclusions: aggregate.contextAssembly?.inclusions.length ?? 0,
-      exclusions: aggregate.contextAssembly?.exclusions.length ?? 0,
-      inclusionDetails: aggregate.contextAssembly?.inclusions.map(contextInclusionResource) ?? [],
-      exclusionDetails: aggregate.contextAssembly?.exclusions.map(contextExclusionResource) ?? [],
-      ...(aggregate.contextAssembly === undefined
-        ? {}
-        : (() => {
-            const diagnostics = activationRetrievalDiagnosticsFromMetadata(
-              aggregate.contextAssembly.metadata
-            );
-
-            return diagnostics === undefined ? {} : { activationDiagnostics: diagnostics };
-          })()),
-      ...(activationTrace === undefined ? {} : { activationTrace })
-    },
-    evidenceBundles: aggregate.evidenceBundles.map((bundle) => {
-      const targetEvidence = targetEvidenceFromMetadata(bundle.metadata.targetEvidence);
-
-      return {
-        id: bundle.id,
-        status: bundle.status,
-        diffRisk: bundle.diffRisk,
-        reviewBurden: bundle.reviewBurden,
-        rollbackPath: bundle.rollbackPath,
-        changedFiles: {
-          all: bundle.changedFiles,
-          classification: changedFileClassification(bundle)
-        },
-        commands: bundle.commands.map(commandResource),
-        ...(targetEvidence === undefined ? {} : { targetEvidence })
-      };
-    }),
-    reviewAssessments: aggregate.reviewAssessments.map((assessment) => ({
-      id: assessment.id,
-      status: assessment.status,
-      reviewer: assessment.reviewer
-    })),
-    feedbackDeltas: aggregate.feedbackDeltas.map((feedback) => {
-      const summary = summarizeFeedbackCandidateProposals(feedback);
-
-      return {
-        id: feedback.id,
-        status: feedback.status,
-        memoryRecordMutation: summary.memoryRecordMutation,
-        candidateCounts: {
-          memory: summary.counts.memoryCandidates,
-          source: summary.counts.sourceClaimCandidates + summary.counts.sourceDecisionCandidates,
-          sourceClaim: summary.counts.sourceClaimCandidates,
-          sourceDecision: summary.counts.sourceDecisionCandidates,
-          antiMemory: summary.counts.antiMemoryCandidates,
-          eval: summary.counts.evalCandidates,
-          observation: summary.counts.observationCandidates
-        },
-        candidates: runReadbackCandidateResources(feedback),
-        sourceUsefulnessOutcomes: runReadbackSourceUsefulnessOutcomes(feedback)
-      };
-    }),
-    proof: {
-      proves: [
-        "persisted run/evidence/review/feedback records can be read without ad hoc SQL",
-        "persisted activation candidate scores and edge-influence metadata can be read without mutating state",
-        "this readback surface exposes no write action"
-      ],
-      doesNotProve: [
-        "commands were executed by this readback command",
-        "activation scoring quality or production graph retrieval quality",
-        "memory quality, source truth, review correctness, or product readiness",
-        "Memory Core mutation"
-      ]
-    }
+    run: runResource(aggregate, projectResolution),
+    task: taskResource(aggregate),
+    context: contextResource(aggregate, activationTrace),
+    evidenceBundles: aggregate.evidenceBundles.map(evidenceBundleResource),
+    reviewAssessments: aggregate.reviewAssessments.map(reviewAssessmentResource),
+    feedbackDeltas: aggregate.feedbackDeltas.map(feedbackDeltaResource),
+    proof: proofResource()
   };
 };
+
+const renderProjectResolution = (
+  projectResolution: ProjectResolution | undefined
+): string[] => {
+  if (projectResolution === undefined) {
+    return [];
+  }
+
+  const lines = [
+    `- project resolution: ${formatProjectResolutionKind(projectResolution.kind)}`,
+    `- project resolution reason: ${projectResolution.reason}`
+  ];
+
+  if (projectResolution.repoPathHint !== undefined) {
+    lines.push(`- project resolution repoPathHint: ${projectResolution.repoPathHint}`);
+  }
+
+  lines.push(`- project resolution does not prove: ${projectResolution.doesNotProve}`);
+
+  return lines;
+};
+
+const renderTaskSection = (
+  aggregate: HarnessRunAggregate,
+  projectResolution: ProjectResolution | undefined
+): string[] => [
+  "Task:",
+  `- id: ${aggregate.taskContract.id}`,
+  `- title: ${aggregate.taskContract.title}`,
+  `- objective: ${aggregate.taskContract.objective}`,
+  `- run status: ${aggregate.executionRun.status}`,
+  `- adapter: ${aggregate.executionRun.adapter}`,
+  ...renderProjectResolution(projectResolution)
+];
+
+const renderContextSection = (
+  aggregate: HarnessRunAggregate,
+  activationDiagnostics: ActivationRetrievalDiagnostics | undefined
+): string[] => [
+  "Context:",
+  `- status: ${aggregate.contextAssembly?.status ?? "missing"}`,
+  `- inclusions: ${aggregate.contextAssembly?.inclusions.length ?? 0}`,
+  `- exclusions: ${aggregate.contextAssembly?.exclusions.length ?? 0}`,
+  ...renderContextDetails(aggregate.contextAssembly),
+  ...(activationDiagnostics === undefined
+    ? []
+    : formatActivationRetrievalDiagnostics(activationDiagnostics)),
+  ...renderActivationTrace(aggregate)
+];
+
+const renderReviewAssessments = (
+  aggregate: HarnessRunAggregate
+): string[] => [
+  "Review Assessments:",
+  ...(aggregate.reviewAssessments.length === 0
+    ? ["- none"]
+    : aggregate.reviewAssessments.map((assessment) =>
+        `- ${assessment.id}: status=${assessment.status} reviewer=${assessment.reviewer}`
+      ))
+];
+
+const renderProofSections = (): string[] => [
+  "What This Proves:",
+  ...runReadbackProves.map((proof) => `- ${proof}`),
+  "",
+  "What This Does Not Prove:",
+  ...runReadbackDoesNotProve.map((proof) => `- ${proof}`),
+  ""
+];
 
 const renderAggregate = (
   aggregate: HarnessRunAggregate
 ): string => {
-  const activationDiagnostics =
-    aggregate.contextAssembly === undefined
-      ? undefined
-      : activationRetrievalDiagnosticsFromMetadata(aggregate.contextAssembly.metadata);
+  const activationDiagnostics = activationDiagnosticsResource(aggregate.contextAssembly);
   const projectResolution = projectResolutionFromMetadata(aggregate.executionRun.metadata);
 
   return [
@@ -966,54 +1076,17 @@ const renderAggregate = (
     "Persistence: read-only (Postgres)",
     "Mutation: none",
     "",
-    "Task:",
-    `- id: ${aggregate.taskContract.id}`,
-    `- title: ${aggregate.taskContract.title}`,
-    `- objective: ${aggregate.taskContract.objective}`,
-    `- run status: ${aggregate.executionRun.status}`,
-    `- adapter: ${aggregate.executionRun.adapter}`,
-    ...(projectResolution === undefined
-      ? []
-      : [
-          `- project resolution: ${formatProjectResolutionKind(projectResolution.kind)}`,
-          `- project resolution reason: ${projectResolution.reason}`,
-          ...(projectResolution.repoPathHint === undefined
-            ? []
-            : [`- project resolution repoPathHint: ${projectResolution.repoPathHint}`]),
-          `- project resolution does not prove: ${projectResolution.doesNotProve}`
-        ]),
+    ...renderTaskSection(aggregate, projectResolution),
     "",
-    "Context:",
-    `- status: ${aggregate.contextAssembly?.status ?? "missing"}`,
-    `- inclusions: ${aggregate.contextAssembly?.inclusions.length ?? 0}`,
-    `- exclusions: ${aggregate.contextAssembly?.exclusions.length ?? 0}`,
-    ...renderContextDetails(aggregate.contextAssembly),
-    ...(activationDiagnostics === undefined
-      ? []
-      : formatActivationRetrievalDiagnostics(activationDiagnostics)),
-    ...renderActivationTrace(aggregate),
+    ...renderContextSection(aggregate, activationDiagnostics),
     "",
     ...renderEvidenceBundle(aggregate),
     "",
-    "Review Assessments:",
-    ...(aggregate.reviewAssessments.length === 0
-      ? ["- none"]
-      : aggregate.reviewAssessments.map((assessment) =>
-          `- ${assessment.id}: status=${assessment.status} reviewer=${assessment.reviewer}`
-        )),
+    ...renderReviewAssessments(aggregate),
     "",
     ...renderFeedbackDeltas(aggregate.feedbackDeltas),
     "",
-    "What This Proves:",
-    "- persisted run/evidence/review/feedback records can be read without ad hoc SQL",
-    "- persisted activation candidate scores and edge-influence metadata can be read without mutating state",
-    "",
-    "What This Does Not Prove:",
-    "- commands were executed by this readback command",
-    "- activation scoring quality or production graph retrieval quality",
-    "- memory quality, source truth, review correctness, or product readiness",
-    "- Memory Core mutation",
-    ""
+    ...renderProofSections()
   ].join("\n");
 };
 
