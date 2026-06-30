@@ -102,46 +102,46 @@ IMR-05 complete: store-backed brain packets were used as the pre-coding pattern
 IMR-06 complete: heartbeat preview can turn explicit missing-evidence readback
   into reviewable candidate-only knowledge acquisition work without Memory Core
   mutation, DB schema, crawler, API/MCP, ranking rewrite, or worker daemon.
+IMR-07 complete: `krn heartbeat preview --acquisition-readback-file` can read
+  `krn brain search --json` or `krn source search --json` missingEvidence and
+  route it into candidate-only knowledge acquisition output.
 ```
 
-## Outcome IMR-06 Knowledge Acquisition Heartbeat Candidate Preview
+## Outcome IMR-07 Missing-Evidence Acquisition Bridge
 
 Status: complete.
 
 Report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-imr-06-knowledge-acquisition-heartbeat-preview/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-imr-07-missing-evidence-acquisition-bridge/REPORT.md
 ```
 
-Outcome: `@krn/workers` now has a bounded
-`knowledge_acquisition_candidate` preview. Explicit missing-evidence readback
-from source/brain search can be represented as candidate-only acquisition work
-with source, query, missing evidence, consumer, falsifier, `doesNotProve`,
-reviewability, `mutation: none`, and forbidden writes.
+Outcome: heartbeat preview now accepts `--acquisition-readback-file` and
+converts existing brain/source search JSON `missingEvidence` into
+`knowledge_acquisition_candidate` output. The bridge parses external JSON as
+`unknown`, preserves proof/non-proof boundaries, and stays read-only:
+`mutation: none`, no DB schema, no crawler, no ranking rewrite, no Memory Core
+mutation, no worker daemon.
 
 Source-to-decision:
 
-- Source: `docs/KRN_SOURCES.md#towards-autonomous-memory-agents`, IMR-05
-  report, store-backed brain-search pre-gate output, and `mise-en-palace-q95`.
-- Mechanism: missing knowledge should create active acquisition/validation work
-  only when the evidence gap is explicit and reviewable.
-- KRN implication: heartbeat/dreaming can propose acquisition candidates from
-  missing-evidence input without autonomous memory mutation.
-- Decision: add worker-level candidate-only preview and aggregate it into brain
-  heartbeat; do not add CLI bridge, schema, crawler, ranking rewrite, API/MCP,
-  or worker daemon in this slice.
-- Does not prove: source truth, acquisition quality, ranking quality, full
-  source-search integration, product readiness, or autonomous worker execution.
-- Consumer: heartbeat/dreaming candidate runtime and the next
-  `mise-en-palace-jta` operator-facing bridge.
-- Falsifier: missing-evidence input cannot produce a reviewable candidate, or
-  candidate output mutates Memory Core/source/eval/worker state.
+- Source: IMR-06 acquisition preview plus existing brain/source search JSON
+  readbacks.
+- Mechanism: explicit missing evidence should become reviewable follow-up work,
+  not silent docs or automatic truth.
+- KRN implication: docs/JSON remain transport/evidence surfaces while the
+  brain loop routes gaps into candidates for review.
+- Decision: add the smallest CLI bridge from readback file to
+  `KnowledgeAcquisitionRequest`.
+- Consumer: heartbeat/dreaming candidate runtime.
+- Falsifier: a missingEvidence readback does not produce a candidate, or output
+  mutates Memory Core/source/eval/worker state.
 
 Next bounded issue:
 
 ```txt
-mise-en-palace-jta: Route missing-evidence readback into acquisition preview.
+mise-en-palace-r5y: Dogfood missing-evidence acquisition bridge with live readback.
 ```
 
 ## Outcome IMR-05 Store-Backed Pattern Gate For Autonomous Memory Agents

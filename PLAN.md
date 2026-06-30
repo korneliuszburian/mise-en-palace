@@ -35,6 +35,7 @@ ingest v0/v1: bounded loop readback visible through source artifact preview
 heartbeat/dreaming: manual candidate-only runtime loop readback visible through heartbeat preview
 heartbeat candidate review: one candidate can be reviewed/deferred with evidence result
 heartbeat knowledge acquisition: missing-evidence input can produce reviewable candidate-only acquisition work
+heartbeat acquisition bridge: source/brain search JSON missingEvidence can feed candidate-only heartbeat preview
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -71,9 +72,9 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-mise-en-palace-jta:
-route real source/brain search missingEvidence readback into acquisition preview
-without schema, crawler, ranking, or Memory Core mutation.
+mise-en-palace-r5y:
+dogfood the missing-evidence acquisition bridge with live/DB-backed readback
+and decide the next repair from observed output.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -110,6 +111,7 @@ IMR-03: preferred brain knowledge vocabulary replaces knowledge-card language in
 IMR-04: store-only brain search derives selectedKnowledge from governed source/search evidence.
 IMR-05: store-backed pattern packets gated Autonomous Memory Agents paper intake; retained as lab-test source, not product truth.
 IMR-06: heartbeat preview can turn explicit missing-evidence readback into candidate-only acquisition work.
+IMR-07: heartbeat preview can read source/brain search JSON missingEvidence and route it into acquisition candidates.
 ```
 
 ## Remaining Product Gaps

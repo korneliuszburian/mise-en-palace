@@ -24,6 +24,8 @@ describe("parseHeartbeatArgs", () => {
       "4",
       "--evidence-ref",
       "docs/report.md",
+      "--acquisition-readback-file",
+      "docs/readbacks/brain-search.json",
       "--review-candidate-id",
       "candidate-1",
       "--review-decision",
@@ -44,6 +46,7 @@ describe("parseHeartbeatArgs", () => {
         nearExpiryDays: 3,
         maxCandidates: 4,
         evidenceRef: "docs/report.md",
+        acquisitionReadbackFile: "docs/readbacks/brain-search.json",
         candidateReview: {
           candidateId: "candidate-1",
           decision: "defer_pending_evidence",
@@ -74,6 +77,16 @@ describe("parseHeartbeatArgs", () => {
   it("rejects empty project", () => {
     expect(parseHeartbeatArgs(["preview", "--project", " "])).toEqual({
       error: expect.stringContaining("--project cannot be empty")
+    });
+  });
+
+  it("rejects empty acquisition readback file", () => {
+    expect(parseHeartbeatArgs([
+      "preview",
+      "--acquisition-readback-file",
+      " "
+    ])).toEqual({
+      error: expect.stringContaining("--acquisition-readback-file cannot be empty")
     });
   });
 

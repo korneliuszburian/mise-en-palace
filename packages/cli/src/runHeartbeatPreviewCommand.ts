@@ -1,3 +1,7 @@
+import {
+  readFile
+} from "node:fs/promises";
+
 import type {
   MemoryRecord,
   ProjectId,
@@ -10,6 +14,7 @@ import {
 } from "@krn/workers";
 import type {
   BrainHeartbeatCandidate,
+  KnowledgeAcquisitionRequest,
   BrainHeartbeatPreview
 } from "@krn/workers";
 
@@ -21,7 +26,8 @@ import type {
   ProjectResolution
 } from "./databaseRuntime.js";
 import {
-  findRepoRoot
+  findRepoRoot,
+  resolveRepoInputFile
 } from "./cliFileBoundary.js";
 import {
   formatProjectResolutionKind
@@ -69,6 +75,143 @@ const defaultSourceClaimLimit = 50;
 const defaultMaxCandidates = 10;
 const defaultEvidenceRef =
   "krn heartbeat preview operator readback";
+const defaultAcquisitionConsumer =
+  "heartbeat knowledge acquisition preview";
+const defaultAcquisitionFalsifier =
+  "A source/brain search missing-evidence readback should produce a candidate-only acquisition request without mutating Memory Core.";
+const defaultAcquisitionDoesNotProve =
+  "Missing-evidence readback does not prove source truth, acquired knowledge quality, ranking quality, crawler readiness, autonomous worker execution, or Memory Core mutation.";
+
+type JsonRecord = Record<string, unknown>;
+
+const isJsonRecord = (value: unknown): value is JsonRecord =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const parseJsonRecord = (raw: string, filePath: string): JsonRecord => {
+  let parsed: unknown;
+
+  try {
+    const parsedValue: unknown = JSON.parse(raw);
+
+    parsed = parsedValue;
+  } catch (error) {
+    throw new Error(
+      `${filePath} must be valid JSON: ${error instanceof Error ? error.message : "unknown parse error"}`
+    );
+  }
+
+  if (!isJsonRecord(parsed)) {
+    throw new Error(`${filePath} JSON must be an object`);
+  }
+
+  return parsed;
+};
+
+const recordValue = (value: unknown): JsonRecord | undefined =>
+  isJsonRecord(value) ? value : undefined;
+
+const stringValue = (value: unknown): string | undefined =>
+  typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+
+const stringArrayValue = (value: unknown): readonly string[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+
+const safeSlug = (value: string): string => {
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+
+  return slug.length === 0 ? "readback" : slug;
+};
+
+const uniqueStrings = (values: readonly string[]): readonly string[] =>
+  Array.from(new Set(values));
+
+const joinedDoesNotProve = (values: readonly string[]): string =>
+  uniqueStrings(values).join(" ") || defaultAcquisitionDoesNotProve;
+
+const buildAcquisitionRequestFromReadback = (
+  input: {
+    filePath: string;
+    readback: JsonRecord;
+  }
+): KnowledgeAcquisitionRequest[] => {
+  const query = stringValue(input.readback["query"]) ?? "unknown query";
+  const sourceSearch = recordValue(input.readback["sourceSearch"]);
+  const answerPackage = recordValue(input.readback["answerPackage"]);
+
+  if (sourceSearch !== undefined) {
+    const missingEvidence = stringArrayValue(sourceSearch["missingEvidence"]);
+
+    if (missingEvidence.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        id: `readback-brain-search-${safeSlug(query)}`,
+        source: "brain_search",
+        query,
+        missingEvidence,
+        evidenceRefs: [input.filePath],
+        consumer: defaultAcquisitionConsumer,
+        falsifier: defaultAcquisitionFalsifier,
+        doesNotProve: joinedDoesNotProve([
+          ...stringArrayValue(sourceSearch["doesNotProve"]),
+          ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
+        ])
+      }
+    ];
+  }
+
+  if (answerPackage !== undefined) {
+    const missingEvidence = stringArrayValue(answerPackage["missingEvidence"]);
+
+    if (missingEvidence.length === 0) {
+      return [];
+    }
+
+    return [
+      {
+        id: `readback-source-search-${safeSlug(query)}`,
+        source: "source_search",
+        query,
+        missingEvidence,
+        evidenceRefs: [input.filePath],
+        consumer: defaultAcquisitionConsumer,
+        falsifier: defaultAcquisitionFalsifier,
+        doesNotProve: joinedDoesNotProve([
+          ...stringArrayValue(answerPackage["doesNotProve"]),
+          ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
+        ])
+      }
+    ];
+  }
+
+  return [];
+};
+
+const loadKnowledgeAcquisitionRequests = async (
+  cwd: string,
+  acquisitionReadbackFile: string | undefined
+): Promise<KnowledgeAcquisitionRequest[]> => {
+  if (acquisitionReadbackFile === undefined) {
+    return [];
+  }
+
+  const resolvedPath = await resolveRepoInputFile(cwd, acquisitionReadbackFile);
+  const raw = await readFile(resolvedPath, "utf8");
+  const readback = parseJsonRecord(raw, acquisitionReadbackFile);
+
+  return buildAcquisitionRequestFromReadback({
+    filePath: acquisitionReadbackFile,
+    readback
+  });
+};
 
 const uniqueSourceClaimEdges = (
   edges: readonly SourceClaimEdge[]
@@ -336,12 +479,19 @@ export const runHeartbeatPreviewCommand = async (
       await databaseRuntime.sourceRepository.listClaimsForProject(projectId, sourceClaimLimit);
     const sourceClaimEdges =
       await loadSourceClaimEdges(databaseRuntime.sourceRepository, sourceClaims);
+    const knowledgeAcquisitionRequests = await loadKnowledgeAcquisitionRequests(
+      runtime.cwd,
+      runtime.command.acquisitionReadbackFile
+    );
     const preview = buildBrainHeartbeatPreview({
       now: runtime.now(),
       evidenceRef: runtime.command.evidenceRef ?? defaultEvidenceRef,
       memoryRecords,
       sourceClaims,
       sourceClaimEdges,
+      ...(knowledgeAcquisitionRequests.length === 0
+        ? {}
+        : { knowledgeAcquisitionRequests }),
       ...(runtime.command.candidateReview === undefined
         ? {}
         : { candidateReview: runtime.command.candidateReview }),

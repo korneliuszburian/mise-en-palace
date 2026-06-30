@@ -4,7 +4,7 @@ import type {
 
 export const formatHeartbeatUsage = (): string =>
   [
-    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
+    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--acquisition-readback-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "",
     "Read-only operator commands:",
     "krn heartbeat preview",
@@ -16,6 +16,7 @@ export const formatHeartbeatUsage = (): string =>
     "--near-expiry-days <positive-integer>",
     "--max-candidates <positive-integer>",
     "--evidence-ref <ref>",
+    "--acquisition-readback-file <path-to-brain-or-source-search-json>",
     "--review-candidate-id <id>",
     "--review-decision accept_for_manual_followup|defer_pending_evidence|reject_not_actionable",
     "--review-reason <text>",
@@ -52,6 +53,7 @@ type HeartbeatParseState = {
   nearExpiryDays: number | undefined;
   maxCandidates: number | undefined;
   evidenceRef: string | undefined;
+  acquisitionReadbackFile: string | undefined;
   reviewCandidateId: string | undefined;
   reviewDecision: HeartbeatReviewDecision | undefined;
   reviewReason: string | undefined;
@@ -203,6 +205,10 @@ const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
     assignTextOption(args, index, "--evidence-ref", (value) => {
       state.evidenceRef = value;
     }),
+  "--acquisition-readback-file": (args, index, state) =>
+    assignTextOption(args, index, "--acquisition-readback-file", (value) => {
+      state.acquisitionReadbackFile = value;
+    }),
   "--review-candidate-id": (args, index, state) =>
     assignTextOption(args, index, "--review-candidate-id", (value) => {
       state.reviewCandidateId = value;
@@ -316,6 +322,9 @@ const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResu
       ...(state.nearExpiryDays === undefined ? {} : { nearExpiryDays: state.nearExpiryDays }),
       ...(state.maxCandidates === undefined ? {} : { maxCandidates: state.maxCandidates }),
       ...(state.evidenceRef === undefined ? {} : { evidenceRef: state.evidenceRef }),
+      ...(state.acquisitionReadbackFile === undefined
+        ? {}
+        : { acquisitionReadbackFile: state.acquisitionReadbackFile }),
       ...(candidateReview === undefined ? {} : { candidateReview }),
       format: state.format
     }
@@ -346,6 +355,7 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
     nearExpiryDays: undefined,
     maxCandidates: undefined,
     evidenceRef: undefined,
+    acquisitionReadbackFile: undefined,
     reviewCandidateId: undefined,
     reviewDecision: undefined,
     reviewReason: undefined,

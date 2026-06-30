@@ -163,6 +163,7 @@ export type CliCommand =
       nearExpiryDays?: number;
       maxCandidates?: number;
       evidenceRef?: string;
+      acquisitionReadbackFile?: string;
       candidateReview?: {
         candidateId: string;
         decision:

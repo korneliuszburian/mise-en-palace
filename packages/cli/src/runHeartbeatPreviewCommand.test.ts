@@ -1,4 +1,14 @@
 import {
+  mkdtemp,
+  rm,
+  writeFile
+} from "node:fs/promises";
+import {
+  tmpdir
+} from "node:os";
+import path from "node:path";
+
+import {
   describe,
   expect,
   it
@@ -22,6 +32,40 @@ const memoryRecordId = "22222222-2222-4222-8222-222222222222" as MemoryRecord["i
 const sourceClaimId = "33333333-3333-4333-8333-333333333333" as SourceClaim["id"];
 const relatedSourceClaimId = "44444444-4444-4444-8444-444444444444" as SourceClaim["id"];
 const sourceClaimEdgeId = "55555555-5555-4555-8555-555555555555" as SourceClaimEdge["id"];
+
+const writeJsonFixture = async (
+  name: string,
+  value: unknown
+): Promise<{ cwd: string; fileName: string; cleanup: () => Promise<void> }> => {
+  const cwd = await mkdtemp(path.join(tmpdir(), "krn-heartbeat-readback-"));
+  const fileName = name;
+
+  await writeFile(path.join(cwd, fileName), JSON.stringify(value, null, 2), "utf8");
+
+  return {
+    cwd,
+    fileName,
+    cleanup: () => rm(cwd, { recursive: true, force: true })
+  };
+};
+
+const createEmptyDatabaseRuntime = async () => ({
+  projectId,
+  memoryRepository: {
+    async listMemoryRecordsForProject() {
+      return [];
+    }
+  },
+  sourceRepository: {
+    async listClaimsForProject() {
+      return [];
+    },
+    async listSourceClaimEdgesForClaim() {
+      return [];
+    }
+  },
+  async close() {}
+});
 
 const memoryRecord: MemoryRecord = {
   id: memoryRecordId,
@@ -315,5 +359,156 @@ describe("runHeartbeatPreviewCommand", () => {
         ]
       }
     });
+  });
+
+  it("routes brain-search missingEvidence readback into acquisition candidates", async () => {
+    const fixture = await writeJsonFixture("brain-search.json", {
+      kind: "krn.brainSearch.preview.v1",
+      query: "Autonomous Memory Agents",
+      sourceSearch: {
+        missingEvidence: [
+          "accepted SourceClaim for Autonomous Memory Agents benchmark gains"
+        ],
+        doesNotProve: [
+          "brain-search readback does not prove the paper is applicable to KRN"
+        ]
+      },
+      proof: {
+        doesNotProve: [
+          "preview output does not prove acquisition quality"
+        ]
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          memoryLimit: 0,
+          sourceClaimLimit: 0,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-07.md",
+          acquisitionReadbackFile: fixture.fileName,
+          format: "text"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      });
+
+      expect(result.stdout).toContain("knowledgeAcquisition: 1");
+      expect(result.stdout).toContain("kind: knowledge_acquisition_candidate");
+      expect(result.stdout).toContain("source: brain_search");
+      expect(result.stdout).toContain("query: Autonomous Memory Agents");
+      expect(result.stdout).toContain(
+        "accepted SourceClaim for Autonomous Memory Agents benchmark gains"
+      );
+      expect(result.stdout).toContain("consumer: heartbeat knowledge acquisition preview");
+      expect(result.stdout).toContain("falsifier:");
+      expect(result.stdout).toContain("reviewability: ready");
+      expect(result.stdout).toContain("mutation: none");
+      expect(result.stdout).toContain("worker_jobs");
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it("routes source-search answer package missingEvidence into acquisition candidates", async () => {
+    const fixture = await writeJsonFixture("source-search.json", {
+      kind: "source_search_answer_package",
+      query: "source-to-decision",
+      answerPackage: {
+        missingEvidence: [
+          "SearchDocument evidence for source-to-decision local falsifier"
+        ],
+        doesNotProve: [
+          "source-search readback does not prove source truth"
+        ]
+      },
+      proof: {
+        doesNotProve: [
+          "readback does not prove ranking quality"
+        ]
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          memoryLimit: 0,
+          sourceClaimLimit: 0,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-07.md",
+          acquisitionReadbackFile: fixture.fileName,
+          format: "json"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      expect(parsed).toMatchObject({
+        preview: {
+          candidateCounts: {
+            knowledgeAcquisition: 1
+          },
+          candidates: [
+            {
+              kind: "knowledge_acquisition_candidate",
+              source: "source_search",
+              query: "source-to-decision",
+              missingEvidence: [
+                "SearchDocument evidence for source-to-decision local falsifier"
+              ],
+              reviewability: "ready",
+              mutation: "none"
+            }
+          ]
+        }
+      });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it("rejects invalid acquisition readback JSON", async () => {
+    const cwd = await mkdtemp(path.join(tmpdir(), "krn-heartbeat-invalid-readback-"));
+    const fileName = "broken.json";
+
+    await writeFile(path.join(cwd, fileName), "{", "utf8");
+
+    try {
+      await expect(runHeartbeatPreviewCommand({
+        cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          memoryLimit: 0,
+          sourceClaimLimit: 0,
+          acquisitionReadbackFile: fileName,
+          format: "text"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      })).rejects.toThrow("broken.json must be valid JSON");
+    } finally {
+      await rm(cwd, { recursive: true, force: true });
+    }
   });
 });
