@@ -369,10 +369,15 @@ describe("runHeartbeatPreviewCommand", () => {
         missingEvidence: [
           "accepted SourceClaim for Autonomous Memory Agents benchmark gains"
         ],
+        recommendedFollowUp: [
+          "run a narrower paper-specific source search before retaining the claim"
+        ],
         doesNotProve: [
           "brain-search readback does not prove the paper is applicable to KRN"
         ]
       },
+      recommendedNextAction:
+        "Use source-search evidence cautiously and narrow the acquisition query.",
       proof: {
         doesNotProve: [
           "preview output does not prove acquisition quality"
@@ -408,6 +413,13 @@ describe("runHeartbeatPreviewCommand", () => {
       expect(result.stdout).toContain(
         "accepted SourceClaim for Autonomous Memory Agents benchmark gains"
       );
+      expect(result.stdout).toContain("recommendedFollowUp:");
+      expect(result.stdout).toContain(
+        "run a narrower paper-specific source search before retaining the claim"
+      );
+      expect(result.stdout).toContain(
+        "Use source-search evidence cautiously and narrow the acquisition query."
+      );
       expect(result.stdout).toContain("consumer: heartbeat knowledge acquisition preview");
       expect(result.stdout).toContain("falsifier:");
       expect(result.stdout).toContain("reviewability: ready");
@@ -426,6 +438,11 @@ describe("runHeartbeatPreviewCommand", () => {
         missingEvidence: [
           "SearchDocument evidence for source-to-decision local falsifier"
         ],
+        queryShapeDiagnostics: [
+          "likely over-constrained query shape; try a narrower topic-specific query before changing ranking or coverage"
+        ],
+        recommendedNextAction:
+          "Use supporting claims cautiously and split broad queries before changing retrieval.",
         doesNotProve: [
           "source-search readback does not prove source truth"
         ]
@@ -471,6 +488,12 @@ describe("runHeartbeatPreviewCommand", () => {
               query: "source-to-decision",
               missingEvidence: [
                 "SearchDocument evidence for source-to-decision local falsifier"
+              ],
+              queryShapeDiagnostics: [
+                "likely over-constrained query shape; try a narrower topic-specific query before changing ranking or coverage"
+              ],
+              recommendedFollowUp: [
+                "Use supporting claims cautiously and split broad queries before changing retrieval."
               ],
               reviewability: "ready",
               mutation: "none"

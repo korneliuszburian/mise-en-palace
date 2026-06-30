@@ -117,6 +117,47 @@ IMR-10 complete: focused knowledge-acquisition candidate follow-up performed
   live DB-backed source/brain readbacks; SearchDocument retrieval works for
   matching document text, but topic queries still had zero document support and
   the next repair is to carry query diagnostics into acquisition candidates.
+IMR-11 complete: heartbeat acquisition candidates now preserve query-shape
+  diagnostics and recommended follow-up from source/brain readbacks, reducing
+  raw JSON inspection before bounded evidence follow-up.
+```
+
+## Outcome IMR-11 Acquisition Diagnostics In Candidates
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-11-acquisition-diagnostics-candidates/REPORT.md
+```
+
+Outcome: `KnowledgeAcquisitionRequest` / heartbeat candidate output now carries
+`queryShapeDiagnostics` and `recommendedFollowUp`. The CLI readback bridge
+preserves those fields from source/brain search JSON through unknown-first local
+narrowing. Live focused heartbeat readback over the IMR-08 source-search JSON
+produced a `knowledge_acquisition_candidate` with the over-constrained query
+diagnostic, recommended narrower search follow-up, `reviewability: ready`, and
+`mutation: none`.
+
+Source-to-decision:
+
+- Source: IMR-10 report and live source-search readback.
+- Mechanism: source-search already emits query-shape diagnostics; dropping them
+  in acquisition candidates increases review burden.
+- KRN implication: candidates should preserve bounded diagnostic context needed
+  for the next operator action.
+- Decision: preserve diagnostics/follow-up in candidate output.
+- Rejection: no ranking, crawler, schema, worker daemon, API/MCP, source truth,
+  or Memory Core mutation change.
+- Consumer: heartbeat/dreaming acquisition preview and operator review workflow.
+- Falsifier: diagnostic-bearing readback creates a candidate without diagnostics
+  or changes mutation/review-gate authority.
+
+Next bounded action:
+
+```txt
+mise-en-palace-e8s: Use diagnostic acquisition candidate for evidence follow-up.
 ```
 
 ## Outcome IMR-10 Focused Acquisition Source Evidence Follow-Up

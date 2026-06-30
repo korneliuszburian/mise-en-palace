@@ -39,6 +39,7 @@ heartbeat acquisition bridge: source/brain search JSON missingEvidence can feed 
 heartbeat acquisition dogfood: live DB-backed source/brain missingEvidence produces acquisition candidates
 heartbeat candidate focus: candidate-kind filter can isolate acquisition lane and avoid unrelated repo reads
 heartbeat acquisition follow-up: focused candidate triggered bounded source/evidence follow-up and exposed missing query diagnostics
+heartbeat acquisition diagnostics: acquisition candidates preserve query-shape diagnostics and recommended follow-up
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -75,9 +76,10 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-mise-en-palace-294:
-carry query-shape diagnostics into acquisition candidates so source/evidence
-follow-up does not require manual raw JSON inspection.
+mise-en-palace-e8s:
+use the diagnostic-bearing acquisition candidate for one bounded source/evidence
+follow-up or explicit rejection, then decide whether the next repair is
+SearchDocument coverage, source claim/document linkage, or no-op.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -119,6 +121,9 @@ IMR-08: live DB-backed source/brain missingEvidence dogfood proved the acquisiti
 IMR-09: heartbeat preview can focus by candidate kind and isolate knowledge-acquisition readback.
 IMR-10: focused acquisition candidate follow-up proved the gap is actionable but
   too terse; next repair carries query diagnostics into acquisition output.
+IMR-11: acquisition candidates now carry query diagnostics and recommended
+  follow-up without changing mutation, ranking, schema, crawler, worker, API/MCP,
+  or Memory Core authority.
 ```
 
 ## Remaining Product Gaps

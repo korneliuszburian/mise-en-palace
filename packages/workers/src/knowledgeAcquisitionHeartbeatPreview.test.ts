@@ -77,6 +77,46 @@ describe("knowledge acquisition heartbeat preview", () => {
     );
   });
 
+  test("carries query diagnostics and recommended follow-up into acquisition candidates", () => {
+    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+      now,
+      evidenceRef,
+      requests: [
+        {
+          id: "diagnostic-request",
+          source: "source_search",
+          query: "broad graph query",
+          missingEvidence: ["included SearchDocument evidence"],
+          queryShapeDiagnostics: [
+            "split broad queries into narrower topic-specific searches before changing ranking"
+          ],
+          recommendedFollowUp: [
+            "run source search against the narrower acquisition topic"
+          ],
+          evidenceRefs: [evidenceRef],
+          consumer: "heartbeat/dreaming candidate runtime",
+          falsifier: "Diagnostics should be visible on the candidate.",
+          doesNotProve: "This does not prove acquisition quality."
+        }
+      ]
+    });
+
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        queryShapeDiagnostics: [
+          "split broad queries into narrower topic-specific searches before changing ranking"
+        ],
+        recommendedFollowUp: [
+          "run source search against the narrower acquisition topic"
+        ],
+        acquisitionEvidenceRequest: expect.stringContaining(
+          "run source search against the narrower acquisition topic"
+        ),
+        mutation: "none"
+      })
+    ]);
+  });
+
   test("keeps weak acquisition requests as needs_more_evidence", () => {
     const result = buildKnowledgeAcquisitionHeartbeatPreview({
       now,

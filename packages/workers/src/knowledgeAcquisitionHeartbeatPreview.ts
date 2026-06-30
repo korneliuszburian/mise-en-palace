@@ -21,6 +21,8 @@ export interface KnowledgeAcquisitionRequest {
   source: KnowledgeAcquisitionSource;
   query: string;
   missingEvidence: readonly string[];
+  queryShapeDiagnostics?: readonly string[];
+  recommendedFollowUp?: readonly string[];
   evidenceRefs: readonly string[];
   consumer: string;
   falsifier: string;
@@ -36,6 +38,8 @@ export interface KnowledgeAcquisitionHeartbeatCandidate {
   source: KnowledgeAcquisitionSource;
   query: string;
   missingEvidence: readonly string[];
+  queryShapeDiagnostics: readonly string[];
+  recommendedFollowUp: readonly string[];
   summary: string;
   applicationGuidance: string;
   acquisitionEvidenceRequest: string;
@@ -100,13 +104,23 @@ const buildCandidate = (
   request: KnowledgeAcquisitionRequest
 ): KnowledgeAcquisitionHeartbeatCandidate => {
   const missingEvidence = nonEmptyStrings(request.missingEvidence);
+  const queryShapeDiagnostics = nonEmptyStrings(request.queryShapeDiagnostics ?? []);
+  const recommendedFollowUp = nonEmptyStrings(request.recommendedFollowUp ?? []);
   const evidenceRefs = nonEmptyStrings([input.evidenceRef, ...request.evidenceRefs]);
   const summary =
     `Acquire missing evidence for ${request.source} query "${request.query}": ${missingEvidence.join(", ")}.`;
   const applicationGuidance =
     "Route this candidate to source/research review before creating source claims, eval candidates, Memory Core updates, crawler work, or autonomous acquisition.";
+  const diagnosticGuidance =
+    queryShapeDiagnostics.length === 0
+      ? ""
+      : ` Query diagnostics: ${queryShapeDiagnostics.join(" ")}`;
+  const followUpGuidance =
+    recommendedFollowUp.length === 0
+      ? ""
+      : ` Recommended follow-up: ${recommendedFollowUp.join(" ")}`;
   const acquisitionEvidenceRequest =
-    `Find or reject evidence for: ${missingEvidence.join(", ")}. Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve before promotion.`;
+    `Find or reject evidence for: ${missingEvidence.join(", ")}.${diagnosticGuidance}${followUpGuidance} Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve before promotion.`;
   const missingFields = [
     ...(missingEvidence.length === 0 ? ["missingEvidence"] : []),
     ...(evidenceRefs.length === 0 ? ["evidenceRefs"] : []),
@@ -130,6 +144,8 @@ const buildCandidate = (
     source: request.source,
     query: request.query,
     missingEvidence,
+    queryShapeDiagnostics,
+    recommendedFollowUp,
     summary,
     applicationGuidance,
     acquisitionEvidenceRequest,

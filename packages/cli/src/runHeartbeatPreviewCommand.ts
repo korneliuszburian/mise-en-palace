@@ -140,6 +140,12 @@ const uniqueStrings = (values: readonly string[]): readonly string[] =>
 const joinedDoesNotProve = (values: readonly string[]): string =>
   uniqueStrings(values).join(" ") || defaultAcquisitionDoesNotProve;
 
+const optionalTextAsList = (value: unknown): readonly string[] => {
+  const text = stringValue(value);
+
+  return text === undefined ? [] : [text];
+};
+
 const buildAcquisitionRequestFromReadback = (
   input: {
     filePath: string;
@@ -149,6 +155,7 @@ const buildAcquisitionRequestFromReadback = (
   const query = stringValue(input.readback["query"]) ?? "unknown query";
   const sourceSearch = recordValue(input.readback["sourceSearch"]);
   const answerPackage = recordValue(input.readback["answerPackage"]);
+  const topLevelRecommendedNextAction = optionalTextAsList(input.readback["recommendedNextAction"]);
 
   if (sourceSearch !== undefined) {
     const missingEvidence = stringArrayValue(sourceSearch["missingEvidence"]);
@@ -163,6 +170,13 @@ const buildAcquisitionRequestFromReadback = (
         source: "brain_search",
         query,
         missingEvidence,
+        queryShapeDiagnostics: uniqueStrings(
+          stringArrayValue(sourceSearch["queryShapeDiagnostics"])
+        ),
+        recommendedFollowUp: uniqueStrings([
+          ...stringArrayValue(sourceSearch["recommendedFollowUp"]),
+          ...topLevelRecommendedNextAction
+        ]),
         evidenceRefs: [input.filePath],
         consumer: defaultAcquisitionConsumer,
         falsifier: defaultAcquisitionFalsifier,
@@ -187,6 +201,13 @@ const buildAcquisitionRequestFromReadback = (
         source: "source_search",
         query,
         missingEvidence,
+        queryShapeDiagnostics: uniqueStrings(
+          stringArrayValue(answerPackage["queryShapeDiagnostics"])
+        ),
+        recommendedFollowUp: uniqueStrings([
+          ...stringArrayValue(answerPackage["recommendedFollowUp"]),
+          ...optionalTextAsList(answerPackage["recommendedNextAction"])
+        ]),
         evidenceRefs: [input.filePath],
         consumer: defaultAcquisitionConsumer,
         falsifier: defaultAcquisitionFalsifier,
@@ -361,6 +382,10 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     `  query: ${candidate.query}`,
     "  missingEvidence:",
     ...formatList(candidate.missingEvidence),
+    "  queryShapeDiagnostics:",
+    ...formatList(candidate.queryShapeDiagnostics),
+    "  recommendedFollowUp:",
+    ...formatList(candidate.recommendedFollowUp),
     `  acquisitionEvidenceRequest: ${candidate.acquisitionEvidenceRequest}`,
     `  consumer: ${candidate.consumer}`,
     `  falsifier: ${candidate.falsifier}`
