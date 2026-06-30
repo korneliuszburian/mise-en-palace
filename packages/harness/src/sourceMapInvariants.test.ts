@@ -13,6 +13,11 @@ interface SourceSection {
   body: string;
 }
 
+interface SectionExpectation {
+  title: string;
+  includes: readonly string[];
+}
+
 const sourceSections = (): SourceSection[] => {
   const sourceMap = readFileSync(sourceMapPath, "utf8");
   const sections: SourceSection[] = [];
@@ -62,6 +67,80 @@ const sourceLocations = (body: string): string[] => {
     .filter((url): url is string => url !== undefined);
 };
 
+const requiredSourceDecisionFields = [
+  {
+    label: "Trust tier",
+    pattern: /^- Trust tier: (high|medium|low)\.$/mu
+  },
+  {
+    label: "Source class",
+    pattern: /^- Source class: (official docs|papers|high-quality public course page|practitioner writing|competitor docs|repo-local evidence|target-repo evidence|user-provided research)\.$/mu
+  },
+  {
+    label: "Decision kind",
+    pattern: /^- Decision kind: (adopt|reject|lab_test|defer)\.$/mu
+  },
+  {
+    label: "Mechanism",
+    pattern: /^- Mechanism: .+/mu
+  },
+  {
+    label: "KRN implication",
+    pattern: /^- KRN implication: .+/mu
+  },
+  {
+    label: "Decision",
+    pattern: /^- Decision: .+/mu
+  },
+  {
+    label: "Consumer",
+    pattern: /^- Consumer: .+/mu
+  },
+  {
+    label: "Falsifier",
+    pattern: /^- Falsifier: .+/mu
+  },
+  {
+    label: "Does not prove",
+    pattern: /^- Does not prove: .+/mu
+  }
+] as const;
+
+const sourceLocationFindings = (section: SourceSection): string[] => {
+  const locations = sourceLocations(section.body);
+  const missingLocation =
+    locations.length === 0 ? [`${section.title}: missing URL/URLs`] : [];
+  const nonHttpsLocations = locations
+    .filter((location) => !location.startsWith("https://"))
+    .map(() => `${section.title}: source location must be https URL`);
+
+  return [
+    ...missingLocation,
+    ...nonHttpsLocations
+  ];
+};
+
+const sourceDecisionFieldFindings = (section: SourceSection): string[] =>
+  requiredSourceDecisionFields.flatMap((field) =>
+    field.pattern.test(section.body) ? [] : [`${section.title}: missing ${field.label}`]
+  );
+
+const sourceDecisionMappingFindings = (section: SourceSection): string[] => [
+  ...sourceLocationFindings(section),
+  ...sourceDecisionFieldFindings(section)
+];
+
+const sourceBody = (title: string): string | undefined =>
+  sourceSections().find((section) => section.title === title)?.body;
+
+const expectSectionIncludes = (expectation: SectionExpectation): void => {
+  const body = sourceBody(expectation.title);
+
+  for (const expected of expectation.includes) {
+    expect(body).toContain(expected);
+  }
+};
+
 describe("KRN source map invariants", () => {
   it("keeps the retained source map intro tied to a consumer before falsifier", () => {
     const sourceMap = readFileSync(sourceMapPath, "utf8");
@@ -74,63 +153,7 @@ describe("KRN source map invariants", () => {
   });
 
   it("keeps every retained source tied to a full source-to-decision mapping", () => {
-    const missing = sourceSections().flatMap((section) => {
-      const findings: string[] = [];
-
-      const locations = sourceLocations(section.body);
-
-      if (locations.length === 0) {
-        findings.push(`${section.title}: missing URL/URLs`);
-      }
-
-      for (const location of locations) {
-        if (!location.startsWith("https://")) {
-          findings.push(`${section.title}: source location must be https URL`);
-        }
-      }
-
-      if (!/^- Trust tier: (high|medium|low)\.$/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Trust tier`);
-      }
-
-      if (
-        !/^- Source class: (official docs|papers|high-quality public course page|practitioner writing|competitor docs|repo-local evidence|target-repo evidence|user-provided research)\.$/mu.test(
-          section.body
-        )
-      ) {
-        findings.push(`${section.title}: missing Source class`);
-      }
-
-      if (!/^- Decision kind: (adopt|reject|lab_test|defer)\.$/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Decision kind`);
-      }
-
-      if (!/^- Mechanism: .+/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Mechanism`);
-      }
-
-      if (!/^- KRN implication: .+/mu.test(section.body)) {
-        findings.push(`${section.title}: missing KRN implication`);
-      }
-
-      if (!/^- Decision: .+/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Decision`);
-      }
-
-      if (!/^- Consumer: .+/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Consumer`);
-      }
-
-      if (!/^- Falsifier: .+/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Falsifier`);
-      }
-
-      if (!/^- Does not prove: .+/mu.test(section.body)) {
-        findings.push(`${section.title}: missing Does not prove`);
-      }
-
-      return findings;
-    });
+    const missing = sourceSections().flatMap(sourceDecisionMappingFindings);
 
     expect(missing).toEqual([]);
   });
@@ -148,29 +171,42 @@ describe("KRN source map invariants", () => {
   });
 
   it("keeps official Codex process sources tied to executable KRN consumers", () => {
-    const goals = sourceSections().find((section) => section.title === "Goals In Codex");
-    const execPlans = sourceSections().find((section) => section.title === "ExecPlans");
-    const prompting = sourceSections().find(
-      (section) => section.title === "Codex Prompting Guide"
-    );
+    const expectations: SectionExpectation[] = [
+      {
+        title: "Goals In Codex",
+        includes: [
+          "GOAL.md",
+          "current execution contract",
+          "compact",
+          "becomes a ledger/backlog"
+        ]
+      },
+      {
+        title: "ExecPlans",
+        includes: [
+          "PLANS.md",
+          "PLAN.md",
+          "fresh Codex continuation",
+          "without broad rereads or stale completed slices"
+        ]
+      },
+      {
+        title: "Codex Prompting Guide",
+        includes: [
+          "non-goals",
+          "allowed writes",
+          "forbidden writes",
+          "verification",
+          "proof/non-proof boundaries",
+          "rollback",
+          "next-task synthesis",
+          "every small edit"
+        ]
+      }
+    ];
 
-    expect(goals?.body).toContain("GOAL.md");
-    expect(goals?.body).toContain("current execution contract");
-    expect(goals?.body).toContain("compact");
-    expect(goals?.body).toContain("becomes a ledger/backlog");
-
-    expect(execPlans?.body).toContain("PLANS.md");
-    expect(execPlans?.body).toContain("PLAN.md");
-    expect(execPlans?.body).toContain("fresh Codex continuation");
-    expect(execPlans?.body).toContain("without broad rereads or stale completed slices");
-
-    expect(prompting?.body).toContain("non-goals");
-    expect(prompting?.body).toContain("allowed writes");
-    expect(prompting?.body).toContain("forbidden writes");
-    expect(prompting?.body).toContain("verification");
-    expect(prompting?.body).toContain("proof/non-proof boundaries");
-    expect(prompting?.body).toContain("rollback");
-    expect(prompting?.body).toContain("next-task synthesis");
-    expect(prompting?.body).toContain("every small edit");
+    for (const expectation of expectations) {
+      expectSectionIncludes(expectation);
+    }
   });
 });
