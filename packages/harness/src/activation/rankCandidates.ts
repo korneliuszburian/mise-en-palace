@@ -73,56 +73,107 @@ const preferredRepresentative = (
 
 const uniqueStrings = (values: readonly string[]): string[] => [...new Set(values)];
 
+interface MergedCandidateScores {
+  lexical: number;
+  vector: number;
+  graph: number;
+  temporal: number;
+  contextRoi: number;
+  feedback: number;
+  trust: number;
+}
+
+const mergedScores = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate,
+  trustTier: ActivationCandidate["trustTier"]
+): MergedCandidateScores => ({
+  lexical: Math.max(left.lexicalScore, right.lexicalScore),
+  vector: Math.max(left.vectorScore, right.vectorScore),
+  graph: Math.max(left.graphScore, right.graphScore),
+  temporal: Math.max(left.temporalScore, right.temporalScore),
+  contextRoi: Math.max(left.contextRoiScore, right.contextRoiScore),
+  feedback: left.feedbackScore + right.feedbackScore,
+  trust: trustRank[trustTier] * 10
+});
+
+const mergedTotalScore = (scores: MergedCandidateScores): number =>
+  scores.lexical +
+  scores.vector +
+  scores.graph +
+  scores.temporal +
+  scores.contextRoi +
+  scores.feedback +
+  scores.trust;
+
+const stringArrayMetadata = (
+  value: unknown,
+  fallback: string
+): string[] =>
+  Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [fallback];
+
+const mergedMetadataStrings = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate,
+  key: string,
+  leftFallback: string,
+  rightFallback: string
+): string[] => uniqueStrings([
+  ...stringArrayMetadata(left.metadata[key], leftFallback),
+  ...stringArrayMetadata(right.metadata[key], rightFallback)
+]);
+
+const searchDocumentIdInputs = (candidate: RankedActivationCandidate): string[] => [
+  ...(candidate.searchDocumentIds ?? []),
+  ...(candidate.searchDocumentId === undefined ? [] : [candidate.searchDocumentId]),
+  ...(candidate.kind === "search" ? [candidate.subjectId] : [])
+];
+
+const mergedSearchDocumentIds = (
+  left: RankedActivationCandidate,
+  right: RankedActivationCandidate
+): string[] => uniqueStrings([
+  ...searchDocumentIdInputs(left),
+  ...searchDocumentIdInputs(right)
+]);
+
 const mergeTwoCandidates = (
   left: RankedActivationCandidate,
   right: RankedActivationCandidate
 ): RankedActivationCandidate => {
   const representative = preferredRepresentative(left, right);
-  const lexical = Math.max(left.lexicalScore, right.lexicalScore);
-  const vector = Math.max(left.vectorScore, right.vectorScore);
-  const graph = Math.max(left.graphScore, right.graphScore);
-  const temporal = Math.max(left.temporalScore, right.temporalScore);
-  const contextRoi = Math.max(left.contextRoiScore, right.contextRoiScore);
-  const feedback = left.feedbackScore + right.feedbackScore;
   const trustTier = strongerTrustTier(left.trustTier, right.trustTier);
-  const trust = trustRank[trustTier] * 10;
-  const searchDocumentIds = uniqueStrings([
-    ...(left.searchDocumentIds ?? []),
-    ...(right.searchDocumentIds ?? []),
-    ...(left.searchDocumentId === undefined ? [] : [left.searchDocumentId]),
-    ...(right.searchDocumentId === undefined ? [] : [right.searchDocumentId]),
-    ...(left.kind === "search" ? [left.subjectId] : []),
-    ...(right.kind === "search" ? [right.subjectId] : [])
-  ]);
-  const mergedCandidateIds = uniqueStrings([
-    ...(Array.isArray(left.metadata.mergedCandidateIds)
-      ? left.metadata.mergedCandidateIds.filter((value): value is string => typeof value === "string")
-      : [left.id]),
-    ...(Array.isArray(right.metadata.mergedCandidateIds)
-      ? right.metadata.mergedCandidateIds.filter((value): value is string => typeof value === "string")
-      : [right.id])
-  ]);
-  const mergedKinds = uniqueStrings([
-    ...(Array.isArray(left.metadata.mergedKinds)
-      ? left.metadata.mergedKinds.filter((value): value is string => typeof value === "string")
-      : [left.kind]),
-    ...(Array.isArray(right.metadata.mergedKinds)
-      ? right.metadata.mergedKinds.filter((value): value is string => typeof value === "string")
-      : [right.kind])
-  ]);
+  const scores = mergedScores(left, right, trustTier);
+  const searchDocumentIds = mergedSearchDocumentIds(left, right);
+  const mergedCandidateIds = mergedMetadataStrings(
+    left,
+    right,
+    "mergedCandidateIds",
+    left.id,
+    right.id
+  );
+  const mergedKinds = mergedMetadataStrings(
+    left,
+    right,
+    "mergedKinds",
+    left.kind,
+    right.kind
+  );
 
   return {
     ...representative,
     trustTier,
     tokenEstimate: Math.min(left.tokenEstimate, right.tokenEstimate),
-    lexicalScore: lexical,
-    vectorScore: vector,
-    graphScore: graph,
-    temporalScore: temporal,
-    contextRoiScore: contextRoi,
-    feedbackScore: feedback,
+    lexicalScore: scores.lexical,
+    vectorScore: scores.vector,
+    graphScore: scores.graph,
+    temporalScore: scores.temporal,
+    contextRoiScore: scores.contextRoi,
+    feedbackScore: scores.feedback,
     ...(searchDocumentIds.length === 0 ? {} : { searchDocumentIds }),
-    totalScore: lexical + vector + graph + temporal + contextRoi + feedback + trust,
+    totalScore: mergedTotalScore(scores),
     metadata: {
       ...left.metadata,
       ...right.metadata,
