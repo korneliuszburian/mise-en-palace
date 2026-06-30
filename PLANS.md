@@ -13,9 +13,9 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V360 Fallow Legacy Complexity Cleanup
-current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: 3c456e3 / CI success run 28427610121
+active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+latest source slice commit checked: b7aed88 / CI success run 28428209649
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,11 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V360-00 Fallow Legacy Complexity Cleanup must reduce full-audit duplication or
-health debt one bounded source target at a time without broad repo refactors.
-V360 rollup: bounded cleanups have moved full Fallow from dupes 136 / health
-117 to dupes 40 / health 5. Dead-code findings are zero. Changed-files
-Fallow gates are green for each committed slice.
+V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure is active again.
+V360 rollup: bounded cleanups moved full Fallow from dupes 136 / health 117 /
+dead-code findings to a clean full-audit exit. Remaining duplication output is
+below the configured failure threshold. Changed-files Fallow gates are green for
+each committed slice.
 
 Recent completed slices:
 - `ec82bd9` / CI `28412105854`: run show readback section cleanup.
@@ -64,10 +64,10 @@ Recent completed slices:
 - `e3c6c10` / CI `28426142560`: evidence golden expectation cleanup.
 - `998c822` / CI `28426685152`: Codex brief golden expectation cleanup.
 - `3c456e3` / CI `28427610121`: CLI persisted evidence fixture cleanup.
+- `b7aed88` / CI `28428209649`: harness retrieval and fixture helper cleanup.
 
-Remaining smoke-family cleanup stays valid only as bounded owner-surface work;
-do not split `packages/db/src/repositories/common.ts` only because Fallow ranks
-its fan-in.
+Next source work must return to V358 product-facing graph mini Brain-QA
+diagnostic closure. Do not continue guard-only cleanup unless it blocks V358.
 ```
 
 ## 2. Product Thesis
@@ -560,9 +560,9 @@ Falsifier:
 - [x] V355 complete: Mini Brain-QA Built-In Usefulness Loop.
 - [x] V356 complete: Graph Relation SearchDocument Support Vertical.
 - [x] V357 complete: Source Search Query-Shape Diagnostics.
-- [ ] V358 deferred: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
+- [ ] V358 active: Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 - [x] V359 complete: Fallow Quality Gate And First Cleanup.
-- [ ] V360 current task: Fallow Legacy Complexity Cleanup.
+- [x] V360 complete: Fallow Legacy Complexity Cleanup.
 
 V360 progress:
 

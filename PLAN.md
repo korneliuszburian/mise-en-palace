@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V360 Fallow Legacy Complexity Cleanup
-current task: V360-00 Fallow Legacy Complexity Cleanup
+active stream: V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
+current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 ```
 
 ## Compact Checkpoints
@@ -37,10 +37,11 @@ graph SearchDocuments, and query-shape diagnostics.
 
 ### V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
-Status: deferred by operator request.
+Status: active.
 
-Next condition: resume after Fallow quality-gate cleanup no longer needs the
-active slot.
+Goal: rerun the graph-relations mini Brain-QA case using built-in
+`queryShapeDiagnostics`, then decide the next graph-brain vertical without
+manual DB/source inspection or ranking rewrites.
 
 ### V359-00 Fallow Quality Gate And First Cleanup
 
@@ -56,10 +57,11 @@ duplication and health debt.
 
 ### V360-00 Fallow Legacy Complexity Cleanup
 
-Status: active.
+Status: complete.
 
-Goal: reduce legacy Fallow duplication/health debt through bounded source
-cleanup slices.
+Outcome: full Fallow now exits cleanly. Dead-code findings remain zero, health
+findings are below gate, and remaining duplication output is below configured
+failure threshold.
 
 First rule: do not broad-refactor the repo. Pick one high-confidence target
 from `pnpm quality:fallow`, fix it with focused tests/typecheck/Fallow gate,
@@ -82,30 +84,24 @@ recent slices: shared parser helpers, source-search readback preparation,
   evidence command normalization, feedback candidate normalization, evidence
   persistence assembly, harness run readback, source-map invariant assertions,
   knowledge-card preview parser, evidence golden expectations, codex brief
-  golden expectations, CLI persisted evidence fixtures.
-full Fallow moved: dupes 136 -> 40; health 117 -> 5; dead-code 0
+  golden expectations, CLI persisted evidence fixtures, harness retrieval and
+  fixture helpers.
+full Fallow moved: dupes 136 -> below gate; health 117 -> 0 failing findings;
+dead-code 0
 ```
 
-Next candidate targets are tracked in `PLANS.md`. Do not split
-`packages/db/src/repositories/common.ts` only because Fallow ranks its fan-in;
-pick a bounded owner surface with direct complexity debt. Strict
-DB smoke assertion cleanup should be split by smoke family; touching
-remaining smoke families can still pull inherited smoke duplication into the
-changed-files gate, so keep each cleanup owner-bounded.
-
-Verification: target package tests, `pnpm typecheck`, `pnpm test`,
-`pnpm quality:fallow:ci`, full `pnpm quality:fallow` report, `git diff --check`.
+Verification: `pnpm quality:fallow`, `pnpm typecheck`, `pnpm test`,
+`git diff --check`, and CI run `28428209649`.
 
 ## Remaining Product Gaps
 
 ```txt
-1. Fallow legacy duplication/complexity cleanup
-2. graph mini Brain-QA query-shape diagnostics closure
-3. ingest v0 expansion with bounded evidence
-4. graph brain v0 entity/relation extraction and answer deltas
-5. heartbeat/dreaming candidate generator
-6. consensus eval/candidate lane
-7. product UI/search/API/MCP after usefulness/security gates
+1. graph mini Brain-QA query-shape diagnostics closure
+2. ingest v0 expansion with bounded evidence
+3. graph brain v0 entity/relation extraction and answer deltas
+4. heartbeat/dreaming candidate generator
+5. consensus eval/candidate lane
+6. product UI/search/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

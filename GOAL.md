@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V360 Fallow Legacy Complexity Cleanup
+V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 ```
 
 Current state:
@@ -27,12 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V360-00 Fallow Legacy Complexity Cleanup.
+current task: V358-00 Graph Mini Brain-QA Query-Shape Diagnostics Closure.
 ```
 
-Current task: continue Fallow-driven cleanup through one bounded source target
-at a time. Do not pretend full repo cleanup is complete while full Fallow still
-reports duplication/health debt. Do not run broad repo refactors.
+Current task: resume the graph-relations mini Brain-QA closure now that full
+Fallow exits cleanly. Consume built-in query-shape diagnostics directly and do
+not reopen guard-only cleanup unless it blocks the product-facing readback.
 
 ## Direction
 
