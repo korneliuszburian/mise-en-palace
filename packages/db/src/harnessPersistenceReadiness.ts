@@ -1,5 +1,7 @@
 import postgres from "postgres";
 
+import { inspectDatabaseRequiredTables } from "./readinessSupport.js";
+
 export interface HarnessPersistenceReadinessInput {
   databaseUrl: string;
 }
@@ -41,28 +43,15 @@ export const inspectHarnessPersistenceReadiness = async (
   });
 
   try {
-    const presentTables: string[] = [];
-    const missingTables: string[] = [];
-
-    for (const tableName of requiredHarnessPersistenceTables) {
-      const rows = await client<{ present: boolean }[]>`
-        select to_regclass(${tableName}) is not null as present
-      `;
-
-      if (rows[0]?.present === true) {
-        presentTables.push(tableName);
-      } else {
-        missingTables.push(tableName);
-      }
-    }
+    const tableInspection = await inspectDatabaseRequiredTables(client, requiredHarnessPersistenceTables);
 
     return {
       requiredTables: requiredHarnessPersistenceTables,
-      presentTables,
-      missingTables,
-      requiredTableCount: requiredHarnessPersistenceTables.length,
-      presentTableCount: presentTables.length,
-      schemaReady: missingTables.length === 0
+      presentTables: tableInspection.presentTables,
+      missingTables: tableInspection.missingTables,
+      requiredTableCount: tableInspection.requiredTableCount,
+      presentTableCount: tableInspection.presentTableCount,
+      schemaReady: tableInspection.schemaReady
     };
   } finally {
     await client.end();

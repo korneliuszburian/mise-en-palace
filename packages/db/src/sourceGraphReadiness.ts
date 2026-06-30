@@ -4,6 +4,7 @@ import { createKrnDatabase } from "./database.js";
 import {
   DrizzleSourceRepository
 } from "./repositories/index.js";
+import { inspectDatabaseRequiredTables } from "./readinessSupport.js";
 
 export interface SourceGraphReadinessInput {
   databaseUrl: string;
@@ -65,22 +66,8 @@ export const inspectSourceGraphReadiness = async (
   });
 
   try {
-    const presentTables: string[] = [];
-    const missingTables: string[] = [];
-
-    for (const tableName of requiredSourceGraphTables) {
-      const rows = await client<{ present: boolean }[]>`
-        select to_regclass(${tableName}) is not null as present
-      `;
-
-      if (rows[0]?.present === true) {
-        presentTables.push(tableName);
-      } else {
-        missingTables.push(tableName);
-      }
-    }
-
-    const schemaReady = missingTables.length === 0;
+    const tableInspection = await inspectDatabaseRequiredTables(client, requiredSourceGraphTables);
+    const { presentTables, missingTables, schemaReady } = tableInspection;
     let sourceRepositoryReachable = false;
     let sourceRepositoryError: string | undefined;
     let counts = emptyCounts;
@@ -110,8 +97,8 @@ export const inspectSourceGraphReadiness = async (
       requiredTables: requiredSourceGraphTables,
       presentTables,
       missingTables,
-      requiredTableCount: requiredSourceGraphTables.length,
-      presentTableCount: presentTables.length,
+      requiredTableCount: tableInspection.requiredTableCount,
+      presentTableCount: tableInspection.presentTableCount,
       schemaReady,
       sourceRepositoryReachable,
       sourceArtifactCount: counts.sourceArtifactCount,

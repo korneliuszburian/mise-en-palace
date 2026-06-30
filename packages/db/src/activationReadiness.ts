@@ -1,5 +1,7 @@
 import postgres from "postgres";
 
+import { inspectDatabaseRequiredTables } from "./readinessSupport.js";
+
 export interface ActivationReadinessInput {
   databaseUrl: string;
 }
@@ -74,22 +76,8 @@ export const inspectActivationReadiness = async (
   });
 
   try {
-    const presentTables: string[] = [];
-    const missingTables: string[] = [];
-
-    for (const tableName of requiredActivationTables) {
-      const rows = await client<{ present: boolean }[]>`
-        select to_regclass(${tableName}) is not null as present
-      `;
-
-      if (rows[0]?.present === true) {
-        presentTables.push(tableName);
-      } else {
-        missingTables.push(tableName);
-      }
-    }
-
-    const schemaReady = missingTables.length === 0;
+    const tableInspection = await inspectDatabaseRequiredTables(client, requiredActivationTables);
+    const { presentTables, missingTables, schemaReady } = tableInspection;
     let counts = emptyCounts;
 
     if (schemaReady) {
@@ -113,8 +101,8 @@ export const inspectActivationReadiness = async (
       requiredTables: requiredActivationTables,
       presentTables,
       missingTables,
-      requiredTableCount: requiredActivationTables.length,
-      presentTableCount: presentTables.length,
+      requiredTableCount: tableInspection.requiredTableCount,
+      presentTableCount: tableInspection.presentTableCount,
       schemaReady,
       searchDocumentCount: counts.searchDocumentCount,
       retrievalCandidateCount: counts.retrievalCandidateCount,

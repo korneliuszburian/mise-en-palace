@@ -4,6 +4,7 @@ import { createKrnDatabase } from "./database.js";
 import {
   DrizzleMemoryRepository
 } from "./repositories/index.js";
+import { inspectDatabaseRequiredTables } from "./readinessSupport.js";
 
 export interface MemoryGovernanceReadinessInput {
   databaseUrl: string;
@@ -64,22 +65,8 @@ export const inspectMemoryGovernanceReadiness = async (
   });
 
   try {
-    const presentTables: string[] = [];
-    const missingTables: string[] = [];
-
-    for (const tableName of requiredMemoryGovernanceTables) {
-      const rows = await client<{ present: boolean }[]>`
-        select to_regclass(${tableName}) is not null as present
-      `;
-
-      if (rows[0]?.present === true) {
-        presentTables.push(tableName);
-      } else {
-        missingTables.push(tableName);
-      }
-    }
-
-    const schemaReady = missingTables.length === 0;
+    const tableInspection = await inspectDatabaseRequiredTables(client, requiredMemoryGovernanceTables);
+    const { presentTables, missingTables, schemaReady } = tableInspection;
     let memoryRepositoryReachable = false;
     let memoryRepositoryError: string | undefined;
     let counts = emptyCounts;
@@ -111,8 +98,8 @@ export const inspectMemoryGovernanceReadiness = async (
       requiredTables: requiredMemoryGovernanceTables,
       presentTables,
       missingTables,
-      requiredTableCount: requiredMemoryGovernanceTables.length,
-      presentTableCount: presentTables.length,
+      requiredTableCount: tableInspection.requiredTableCount,
+      presentTableCount: tableInspection.presentTableCount,
       schemaReady,
       memoryRepositoryReachable,
       memoryCandidateCount: counts.memoryCandidateCount,

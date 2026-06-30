@@ -4,6 +4,7 @@ import { createKrnDatabase } from "./database.js";
 import {
   DrizzleRetrievalRepository
 } from "./repositories/index.js";
+import { inspectDatabaseRequiredTables } from "./readinessSupport.js";
 
 export interface RetrievalSubstrateReadinessInput {
   databaseUrl: string;
@@ -71,22 +72,8 @@ export const inspectRetrievalSubstrateReadiness = async (
   });
 
   try {
-    const presentTables: string[] = [];
-    const missingTables: string[] = [];
-
-    for (const tableName of requiredRetrievalSubstrateTables) {
-      const rows = await client<{ present: boolean }[]>`
-        select to_regclass(${tableName}) is not null as present
-      `;
-
-      if (rows[0]?.present === true) {
-        presentTables.push(tableName);
-      } else {
-        missingTables.push(tableName);
-      }
-    }
-
-    const schemaReady = missingTables.length === 0;
+    const tableInspection = await inspectDatabaseRequiredTables(client, requiredRetrievalSubstrateTables);
+    const { presentTables, missingTables, schemaReady } = tableInspection;
     let retrievalRepositoryReachable = false;
     let retrievalRepositoryError: string | undefined;
     let counts = emptyCounts;
@@ -124,8 +111,8 @@ export const inspectRetrievalSubstrateReadiness = async (
       requiredTables: requiredRetrievalSubstrateTables,
       presentTables,
       missingTables,
-      requiredTableCount: requiredRetrievalSubstrateTables.length,
-      presentTableCount: presentTables.length,
+      requiredTableCount: tableInspection.requiredTableCount,
+      presentTableCount: tableInspection.presentTableCount,
       schemaReady,
       retrievalRepositoryReachable,
       searchDocumentCount: counts.searchDocumentCount,
