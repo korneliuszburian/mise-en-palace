@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V375 Pattern Research Brain Intake Trial
+V376 Mini Brain-QA Benchmark Slice
 ```
 
 Current state:
@@ -27,15 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V375-00 Pattern Research Brain Intake Trial.
+current task: V376-00 Mini Brain-QA Benchmark Slice.
 ```
 
-Current task: run one bounded pattern/research intake through source ->
-mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier ->
-eval/candidate so best-practice knowledge can affect future KRN work without a
-broad research platform. Do not build scheduler, daemon, crawler, dashboard,
-API server, MCP server, schema rewrite, broad benchmark, worker runtime, or
-autonomous Memory Core / source-truth mutation.
+Current task: run one compact real benchmark/readback slice that exercises
+existing KRN brain knowledge/search surfaces against a small set of local
+questions. Measure answerability, proof/non-proof boundaries, missing evidence,
+and usefulness without building a broad benchmark platform.
 
 ## Direction
 

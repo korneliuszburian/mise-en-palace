@@ -207,6 +207,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("pattern:brain-knowledge-read-only-ui-boundary");
     expect(result.stdout).toContain("pattern:codex-execplan-living-validation-loop");
     expect(result.stdout).toContain("pattern:codex-goal-continuation-evidence-contract");
+    expect(result.stdout).toContain("pattern:codex-hook-deterministic-guardrail-boundary");
     expect(result.stdout).toContain("pattern:codex-prompt-task-contract-proof-boundary");
     expect(result.stdout).toContain("pattern:codex-skill-progressive-disclosure-routing");
     expect(result.stdout).toContain("pattern:source-to-decision-retention-gate");
@@ -217,6 +218,7 @@ describe("runKnowledgeCardsCommand", () => {
     expect(result.stdout).toContain("Brain knowledge UI/search remains read-only until usefulness proof");
     expect(result.stdout).toContain("Codex ExecPlan living validation loop");
     expect(result.stdout).toContain("Codex goal continuation evidence contract");
+    expect(result.stdout).toContain("Codex hook deterministic guardrail boundary");
     expect(result.stdout).toContain("Codex prompt task contract proof boundary");
     expect(result.stdout).toContain("Codex skill progressive-disclosure routing");
     expect(result.stdout).toContain("Evidence proof and non-proof boundary");
@@ -360,6 +362,24 @@ describe("runKnowledgeCardsCommand", () => {
     expect(preview.mutation).toBe("none");
   });
 
+  it("searches the Codex hook guardrail pattern through the catalog", async () => {
+    const result = await runKnowledgeCardsCommand({
+      cwd: repoRoot,
+      cardFiles: [],
+      patternFiles: [],
+      catalogFiles: [catalogFile],
+      filter: {
+        text: "hook deterministic guardrail"
+      },
+      format: "json"
+    });
+    const preview = parsePreviewResource(result.stdout);
+
+    expect(cardIds(preview)).toEqual(["pattern:codex-hook-deterministic-guardrail-boundary"]);
+    expect(preview.proof.doesNotProve).toContain("KRN is product-ready");
+    expect(preview.mutation).toBe("none");
+  });
+
   it("searches external Codex workflow patterns through the catalog", async () => {
     const goalsResult = await runKnowledgeCardsCommand({
       cwd: repoRoot,
@@ -465,6 +485,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:brain-knowledge-read-only-ui-boundary",
       "pattern:codex-execplan-living-validation-loop",
       "pattern:codex-goal-continuation-evidence-contract",
+      "pattern:codex-hook-deterministic-guardrail-boundary",
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",
@@ -490,7 +511,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(preview.totalCards).toBe(11);
+    expect(preview.totalCards).toBe(12);
     expect(preview.returnedCards).toBe(2);
     expect(preview.limit).toBe(2);
     expect(preview.cards).toHaveLength(2);
@@ -512,7 +533,7 @@ describe("runKnowledgeCardsCommand", () => {
     });
 
     expect(result.stdout).toContain("Results: 1");
-    expect(result.stdout).toContain("Total filtered results: 11");
+    expect(result.stdout).toContain("Total filtered results: 12");
     expect(result.stdout).toContain("Limit: 1");
     expect(result.stdout).toContain("does not prove: search ranking quality is good");
   });
@@ -738,6 +759,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:brain-knowledge-read-only-ui-boundary",
       "pattern:codex-execplan-living-validation-loop",
       "pattern:codex-goal-continuation-evidence-contract",
+      "pattern:codex-hook-deterministic-guardrail-boundary",
       "pattern:codex-prompt-task-contract-proof-boundary",
       "pattern:codex-skill-progressive-disclosure-routing",
       "pattern:evidence-proof-non-proof-boundary",

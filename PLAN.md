@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V375 Pattern Research Brain Intake Trial
-current task: V375-00 Pattern Research Brain Intake Trial
+active stream: V376 Mini Brain-QA Benchmark Slice
+current task: V376-00 Mini Brain-QA Benchmark Slice
 ```
 
 ## Compact Checkpoints
@@ -30,26 +30,27 @@ ingest v0/v1: bounded loop readback visible through source artifact preview
 heartbeat/dreaming: manual candidate-only runtime loop readback visible through heartbeat preview
 heartbeat candidate review: one candidate can be reviewed/deferred with evidence result
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
+pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and knowledge-card readback
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V375-00 Pattern Research Brain Intake Trial
+### V376-00 Mini Brain-QA Benchmark Slice
 
 Status: active.
 
-Goal: run one bounded pattern/research intake through source -> mechanism ->
-KRN implication -> decision/rejection -> consumer -> falsifier -> eval/candidate.
+Goal: run one compact mini Brain-QA benchmark/readback over existing KRN brain
+knowledge and source-search surfaces.
 
-Hard boundary: no scheduler, daemon, crawler, dashboard, API server, MCP
-server, schema rewrite, broad benchmark, worker runtime, autonomous Memory Core
-mutation, source-truth mutation, or generic multi-agent runtime.
+Hard boundary: no broad benchmark platform, ranking rewrite, crawler, dashboard,
+API server, MCP server, DB schema, worker daemon, source-truth mutation,
+autonomous Memory Core mutation, or generic multi-agent runtime.
 
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v374-source-relation-candidate-evidence-repair/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-v375-pattern-research-brain-intake-trial/REPORT.md
 ```
 
 ## Recent Completed Streams
@@ -76,10 +77,9 @@ V374: source relation candidate evidence repair.
 ## Remaining Product Gaps
 
 ```txt
-1. pattern/research brain
-2. real benchmarks
-3. second-operator proof
-4. product UI/API/MCP after usefulness/security gates
+1. real benchmarks
+2. second-operator proof
+3. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

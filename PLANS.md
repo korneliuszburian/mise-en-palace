@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V375 Pattern Research Brain Intake Trial
-current task: V375-00 Pattern Research Brain Intake Trial
+active stream: V376 Mini Brain-QA Benchmark Slice
+current task: V376-00 Mini Brain-QA Benchmark Slice
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V375-00 Pattern Research Brain Intake Trial is active.
-The current gap is turning one high-value source/pattern into a local
-source-to-decision outcome with mechanism, KRN implication, consumer,
-falsifier, proof boundary, and eval/candidate follow-up, without a broad
-research platform.
+V376-00 Mini Brain-QA Benchmark Slice is active.
+The current gap is proving existing brain knowledge/search surfaces on a small
+real question set with answerability, proof/non-proof, missing-evidence, and
+usefulness readback, without a broad benchmark platform.
 ```
 
 ## 2. Product Thesis
@@ -104,28 +103,32 @@ V373 complete: heartbeat preview can record one manual candidate review result;
 V374 complete: source-relation heartbeat candidates with empty
   relationEvidenceRefs now request missing evidence and are not counted as
   review-ready.
+V375 complete: one official Codex hooks mechanism was retained as a queryable
+  KRN pattern with consumer, falsifier, does-not-prove, usefulness feedback,
+  and eval/golden candidate.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V375
+## Active Task V376
 
-ID: V375-00
-Name: Pattern Research Brain Intake Trial
+ID: V376-00
+Name: Mini Brain-QA Benchmark Slice
 Status: active
 
-Goal: run one bounded pattern/research intake through source -> mechanism ->
-KRN implication -> decision/rejection -> consumer -> falsifier -> eval/candidate.
+Goal: run one compact mini Brain-QA benchmark/readback over existing KRN brain
+knowledge and source-search surfaces.
 
-Product rationale: KRN needs best-practice knowledge to become executable
-decision pressure on future work, not a broad pile of research notes.
+Product rationale: KRN needs real answerability/usefulness evidence, not more
+guard-only hardening or broad benchmark theater.
 
 Allowed writes:
 
-- smallest owning docs/source/test files;
-- one retained-pattern/source-decision/eval-candidate artifact if an existing
-  bounded surface owns it;
-- a compact V375 report under `docs/reviews/controlled-dogfood/`;
+- smallest owning CLI/harness/docs/test files if benchmark readback exposes a
+  direct blocker;
+- one compact benchmark fixture or query list if existing surfaces can consume
+  it without new platform code;
+- a compact V376 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -142,19 +145,17 @@ Forbidden writes:
 - crawler;
 - embeddings;
 - worker runtime;
-- broad benchmark;
+- broad benchmark platform;
 - multi-agent runtime;
 - parallel roadmap.
 - source-truth mutation.
 
 Definition of Done:
 
-- one source/pattern is mapped through source -> mechanism -> KRN implication
-  -> decision/rejection -> consumer -> falsifier;
-- output is queryable through an existing bounded KRN surface or explicitly
-  recorded as a reviewed candidate/follow-up;
-- at least one local falsifier/eval/golden candidate is recorded;
-- no schema rewrite, crawler, dashboard, API, MCP, broad benchmark, source-truth
+- 5-10 local questions exercise existing brain knowledge/source-search surfaces;
+- each answer records proof/non-proof, missing evidence, and usefulness verdict;
+- at least one benchmark gap or next repair candidate is recorded;
+- no schema rewrite, crawler, dashboard, API, MCP, broad benchmark platform, source-truth
   mutation, or autonomous runtime is added.
 
 Verification floor:
@@ -173,8 +174,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V375 creates research-note slop without a consumer/falsifier, or builds a broad
-research platform instead of one bounded source-to-decision intake.
+V376 creates benchmark theater without answerability/usefulness evidence, or
+builds a broad benchmark platform instead of one compact readback slice.
 ```
 
 ## 9. Task Contract Schema
@@ -235,10 +236,9 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. pattern/research brain
-2. real benchmarks
-3. second-operator proof
-4. product UI/API/MCP after usefulness/security gates
+1. real benchmarks
+2. second-operator proof
+3. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -258,6 +258,9 @@ Current backlog order:
 - [x] V370 complete: Graph Brain V1 Readback.
 - [x] V371 complete: Ingest V0/V1 Bounded Input Loop.
 - [x] V372 complete: Heartbeat/Dreaming Candidate Runtime Loop.
+- [x] V373 complete: Heartbeat Runtime Candidate Review Result.
+- [x] V374 complete: Source Relation Candidate Evidence Repair.
+- [x] V375 complete: Pattern Research Brain Intake Trial.
 - [x] V373 complete: Heartbeat Runtime Candidate Review Result.
 - [x] V374 complete: Source Relation Candidate Evidence Repair.
 

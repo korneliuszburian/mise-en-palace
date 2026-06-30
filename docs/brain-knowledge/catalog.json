@@ -9,13 +9,15 @@
     "usefulness-feedback/v298-active-context-current-truth.json",
     "usefulness-feedback/v299-read-only-ui-boundary.json",
     "usefulness-feedback/v300-target-repo-write-authority.json",
-    "usefulness-feedback/v301-untrusted-context-warning.json"
+    "usefulness-feedback/v301-untrusted-context-warning.json",
+    "usefulness-feedback/v375-codex-hook-guardrail-pattern.json"
   ],
   "patternFiles": [
     "../patterns/retained-patterns/active-context-compact-current-truth.json",
     "../patterns/retained-patterns/brain-knowledge-read-only-ui-boundary.json",
     "../patterns/retained-patterns/codex-execplan-living-validation-loop.json",
     "../patterns/retained-patterns/codex-goal-continuation-evidence-contract.json",
+    "../patterns/retained-patterns/codex-hook-deterministic-guardrail-boundary.json",
     "../patterns/retained-patterns/codex-prompt-task-contract-proof-boundary.json",
     "../patterns/retained-patterns/codex-skill-progressive-disclosure-routing.json",
     "../patterns/retained-patterns/evidence-proof-non-proof-boundary.json",
