@@ -6,9 +6,12 @@ import type {
   ParseArgsResult
 } from "./parseArgs.js";
 import {
-  metadataEntry,
+  type CliOptionParseResult,
+  type CliTokenParseResult,
   optionMatches,
-  optionValue
+  optionValue,
+  parseMappedStringOption,
+  parsePersistedMetadataToken
 } from "./parseArgHelpers.js";
 
 export const formatSourceClaimAddUsage = (): string =>
@@ -131,45 +134,6 @@ export const formatSourceClaimRejectUsage = (): string =>
     "--persist"
   ].join("\n") + "\n";
 
-const parseMetadataOption = (
-  rest: readonly string[],
-  index: number,
-  fallbackUsage: string
-): {
-  entry?: {
-    key: string;
-    value: string;
-  };
-  error?: string;
-  nextIndex: number;
-} => {
-  const valueResult = optionValue(rest, index, "--metadata");
-
-  if (valueResult.error !== undefined || valueResult.value === undefined) {
-    return {
-      error: valueResult.error ?? fallbackUsage,
-      nextIndex: index
-    };
-  }
-
-  const entry = metadataEntry(valueResult.value);
-
-  if (entry.error !== undefined || entry.key === undefined || entry.value === undefined) {
-    return {
-      error: entry.error ?? fallbackUsage,
-      nextIndex: valueResult.nextIndex
-    };
-  }
-
-  return {
-    entry: {
-      key: entry.key,
-      value: entry.value
-    },
-    nextIndex: valueResult.nextIndex
-  };
-};
-
 const parsePositiveIntegerOption = (
   rest: readonly string[],
   index: number,
@@ -219,17 +183,7 @@ const sourceClaimEdgeKinds = [
 const isSourceClaimEdgeKind = (value: string): value is SourceClaimEdgeKind =>
   sourceClaimEdgeKinds.some((kind) => kind === value);
 
-type SourceOptionParseResult =
-  | {
-      matched: true;
-      nextIndex: number;
-    }
-  | {
-      matched: false;
-    }
-  | {
-      error: string;
-    };
+type SourceOptionParseResult = CliOptionParseResult;
 
 type SourceArtifactPreviewCommand = Extract<CliCommand, { kind: "sourceArtifactPreview" }>;
 type SourceSearchCommand = Extract<CliCommand, { kind: "sourceSearch" }>;
@@ -237,46 +191,7 @@ type SourceClaimAddCommand = Extract<CliCommand, { kind: "sourceClaimAdd" }>;
 type SourceClaimRejectCommand = Extract<CliCommand, { kind: "sourceClaimReject" }>;
 type SourceDecisionLinkCommand = Extract<CliCommand, { kind: "sourceDecisionLink" }>;
 
-type SourceTokenParseResult =
-  | {
-      kind: "next";
-      nextIndex: number;
-    }
-  | {
-      kind: "help";
-    }
-  | {
-      kind: "error";
-      error: string;
-    };
-
-type SourceStringOptionParseResult<TKey extends string> =
-  | {
-      matched: true;
-      key: TKey;
-      value: string;
-      nextIndex: number;
-    }
-  | {
-      matched: false;
-    }
-  | {
-      error: string;
-    };
-
-type SourceMetadataCommand = {
-  metadata: Record<string, string>;
-};
-
-type SourcePersistedMetadataCommand = SourceMetadataCommand & {
-  persist: boolean;
-};
-
-interface SourcePersistedMetadataTokenConfig<TOption extends string, TKey extends string> {
-  fallbackUsage: string;
-  optionMap: Record<TOption, TKey>;
-  assignOption: (key: TKey, value: string) => void;
-}
+type SourceTokenParseResult = CliTokenParseResult;
 
 const sourceClaimAddStringOptions = {
   "--title": "title",
@@ -319,72 +234,6 @@ type SourceClaimAddStringKey = typeof sourceClaimAddStringOptions[keyof typeof s
 type SourceClaimRejectStringKey = typeof sourceClaimRejectStringOptions[keyof typeof sourceClaimRejectStringOptions];
 type SourceDecisionLinkStringKey = typeof sourceDecisionLinkStringOptions[keyof typeof sourceDecisionLinkStringOptions];
 
-const findMappedStringOption = <TOption extends string, TKey extends string>(
-  arg: string,
-  optionMap: Record<TOption, TKey>
-): TOption | undefined =>
-  (Object.keys(optionMap) as TOption[]).find((option) => optionMatches(arg, option));
-
-const parseMappedStringOption = <TOption extends string, TKey extends string>(
-  rest: readonly string[],
-  index: number,
-  arg: string,
-  optionMap: Record<TOption, TKey>,
-  fallbackUsage: string
-): SourceStringOptionParseResult<TKey> => {
-  const option = findMappedStringOption(arg, optionMap);
-
-  if (option === undefined) {
-    return {
-      matched: false
-    };
-  }
-
-  const valueResult = optionValue(rest, index, option);
-
-  if (valueResult.error !== undefined || valueResult.value === undefined) {
-    return {
-      error: valueResult.error ?? fallbackUsage
-    };
-  }
-
-  return {
-    matched: true,
-    key: optionMap[option],
-    value: valueResult.value.trim(),
-    nextIndex: valueResult.nextIndex
-  };
-};
-
-const applyMetadataOption = (
-  rest: readonly string[],
-  index: number,
-  arg: string,
-  command: SourceMetadataCommand,
-  fallbackUsage: string
-): SourceOptionParseResult => {
-  if (!optionMatches(arg, "--metadata")) {
-    return {
-      matched: false
-    };
-  }
-
-  const metadata = parseMetadataOption(rest, index, fallbackUsage);
-
-  if (metadata.error !== undefined || metadata.entry === undefined) {
-    return {
-      error: metadata.error ?? fallbackUsage
-    };
-  }
-
-  command.metadata[metadata.entry.key] = metadata.entry.value;
-
-  return {
-    matched: true,
-    nextIndex: metadata.nextIndex
-  };
-};
-
 const sourceHelp = (): SourceTokenParseResult => ({
   kind: "help"
 });
@@ -398,49 +247,6 @@ const sourceError = (error: string): SourceTokenParseResult => ({
   kind: "error",
   error
 });
-
-const parsePersistedMetadataToken = <TOption extends string, TKey extends string>(
-  rest: readonly string[],
-  index: number,
-  command: SourcePersistedMetadataCommand,
-  config: SourcePersistedMetadataTokenConfig<TOption, TKey>
-): SourceTokenParseResult => {
-  const arg = rest[index];
-
-  if (arg === undefined) {
-    return sourceError(config.fallbackUsage);
-  }
-
-  if (arg === "--help" || arg === "-h") {
-    return sourceHelp();
-  }
-
-  if (arg === "--persist") {
-    command.persist = true;
-
-    return sourceNext(index);
-  }
-
-  const option = parseMappedStringOption(rest, index, arg, config.optionMap, config.fallbackUsage);
-
-  if ("error" in option) {
-    return sourceError(option.error);
-  }
-
-  if (option.matched) {
-    config.assignOption(option.key, option.value);
-
-    return sourceNext(option.nextIndex);
-  }
-
-  const metadata = applyMetadataOption(rest, index, arg, command, config.fallbackUsage);
-
-  if ("error" in metadata) {
-    return sourceError(metadata.error);
-  }
-
-  return metadata.matched ? sourceNext(metadata.nextIndex) : sourceError(config.fallbackUsage);
-};
 
 const sourceArtifactPreviewStringOptions = {
   "--claim": "claim",

@@ -321,6 +321,32 @@ describe("parseMemoryArgs", () => {
     expect(parseMemoryArgs(["candidate", "add", "--metadata", "not-a-pair"])).toEqual({
       error: "--metadata requires key=value"
     });
+    expect(parseMemoryArgs(["candidate", "promote", "--candidate-id", "--persist"])).toEqual({
+      error: "--candidate-id requires a value"
+    });
+    expect(parseMemoryArgs([
+      "candidate",
+      "promote",
+      "--candidate-id",
+      "candidate-1",
+      "--persist",
+      "--reviewer",
+      "operator",
+      "--decision",
+      "accepted",
+      "--evidence-reviewed-ref",
+      "review-1"
+    ])).toEqual({
+      command: {
+        kind: "memoryCandidatePromote",
+        persist: true,
+        candidateId: "candidate-1",
+        reviewer: "operator",
+        decision: "accepted",
+        evidenceReviewedRef: "review-1",
+        metadata: {}
+      }
+    });
     expect(parseMemoryArgs(["candidate", "unknown"])).toEqual({
       error: [
         formatMemoryCandidateAddUsage().trim(),

@@ -385,6 +385,9 @@ describe("parseSourceArgs", () => {
     expect(parseSourceArgs(["claim", "add", "--metadata", "not-a-pair"])).toEqual({
       error: "--metadata requires key=value"
     });
+    expect(parseSourceArgs(["claim", "add", "--metadata", "--persist"])).toEqual({
+      error: "--metadata requires a value"
+    });
     expect(parseSourceArgs(["claim", "edges", "--source-claim-id", ""])).toEqual({
       error: "--source-claim-id requires a non-empty id"
     });
