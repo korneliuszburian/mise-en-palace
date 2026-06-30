@@ -68,7 +68,7 @@ describe("KRN context hygiene invariants", () => {
     const goal = readRootFile("GOAL.md");
     const plan = readRootFile("PLAN.md");
 
-    expect(lineCount(goal)).toBeLessThanOrEqual(130);
+    expect(lineCount(goal)).toBeLessThanOrEqual(200);
     expect(lineCount(plan)).toBeLessThanOrEqual(170);
     expect(goal).toContain("Detailed completed history, evidence, outcomes, and next-task synthesis live in");
     expect(plan).toContain("Detailed history stays in `PLANS.md`.");

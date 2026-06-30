@@ -77,11 +77,21 @@ bounded product surface, or unblock the next vertical slice.
 
 ## Senior Execution Doctrine
 
-Every implementation slice must preserve: think before coding; simplest
-final-pattern solution; surgical diff; explicit success criteria; focused tests
-for breakable behavior; verification with proof/non-proof boundaries; TypeScript
-strictness; Fallow as evidence, not automatic truth. If a slice cannot satisfy
-this, rescope before coding.
+Every implementation slice must preserve:
+
+1. Think before coding: state assumptions, ambiguity, tradeoffs, and the simpler
+   path before changing files.
+2. Simplicity first: write the smallest final-pattern solution; no speculative
+   flexibility, broad abstraction, or "in case we need it" code.
+3. Surgical changes: touch only files required by the slice; every changed line
+   must trace to the objective; unrelated cleanup becomes a finding, not a diff.
+4. Goal-driven execution: define success criteria, test behavior that can break,
+   verify, and state what evidence proves and does not prove.
+5. Quality evidence: use TypeScript strictness, Fallow, tests, DB readiness, and
+   source-to-decision as evidence layers. Treat findings as evidence, not
+   automatic truth.
+
+If a slice cannot satisfy these rules, rescope before coding.
 
 ## Hard Non-Goals
 
