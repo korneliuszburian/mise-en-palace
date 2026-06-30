@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V376 Mini Brain-QA Benchmark Slice
+V377 Brain-QA Pattern Coverage Gap Closure
 ```
 
 Current state:
@@ -27,13 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V376-00 Mini Brain-QA Benchmark Slice.
+current task: V377-00 Brain-QA Pattern Coverage Gap Closure.
 ```
 
-Current task: run one compact real benchmark/readback slice that exercises
-existing KRN brain knowledge/search surfaces against a small set of local
-questions. Measure answerability, proof/non-proof boundaries, missing evidence,
-and usefulness without building a broad benchmark platform.
+Current task: close the V376 benchmark gap by retaining one or two source-backed
+patterns only where the mini Brain-QA evidence shows a reusable mechanism with a
+consumer and falsifier. Do not rewrite retrieval or build a benchmark platform.
 
 ## Direction
 

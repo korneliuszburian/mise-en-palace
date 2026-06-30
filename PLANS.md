@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V376 Mini Brain-QA Benchmark Slice
-current task: V376-00 Mini Brain-QA Benchmark Slice
+active stream: V377 Brain-QA Pattern Coverage Gap Closure
+current task: V377-00 Brain-QA Pattern Coverage Gap Closure
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V376-00 Mini Brain-QA Benchmark Slice is active.
-The current gap is proving existing brain knowledge/search surfaces on a small
-real question set with answerability, proof/non-proof, missing-evidence, and
-usefulness readback, without a broad benchmark platform.
+V377-00 Brain-QA Pattern Coverage Gap Closure is active.
+The current gap is closing the V376 benchmark finding that graph/ingest/heartbeat
+questions are source-search useful but do not all have retained pattern coverage.
 ```
 
 ## 2. Product Thesis
@@ -106,29 +105,34 @@ V374 complete: source-relation heartbeat candidates with empty
 V375 complete: one official Codex hooks mechanism was retained as a queryable
   KRN pattern with consumer, falsifier, does-not-prove, usefulness feedback,
   and eval/golden candidate.
+V376 complete: six current local Brain-QA questions ran through `krn brain
+  search --json`; source-to-decision/hooks/TypeScript had pattern hits, while
+  graph/ingest/heartbeat were source-search useful with uneven retained pattern
+  coverage.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V376
+## Active Task V377
 
-ID: V376-00
-Name: Mini Brain-QA Benchmark Slice
+ID: V377-00
+Name: Brain-QA Pattern Coverage Gap Closure
 Status: active
 
-Goal: run one compact mini Brain-QA benchmark/readback over existing KRN brain
-knowledge and source-search surfaces.
+Goal: close the V376 benchmark gap by retaining one or two source-backed
+patterns only where V376 evidence shows a reusable mechanism with consumer and
+falsifier.
 
-Product rationale: KRN needs real answerability/usefulness evidence, not more
-guard-only hardening or broad benchmark theater.
+Product rationale: KRN should turn benchmark findings into queryable brain
+knowledge only when there is a reusable mechanism, not start a broad benchmark
+or research platform.
 
 Allowed writes:
 
-- smallest owning CLI/harness/docs/test files if benchmark readback exposes a
-  direct blocker;
-- one compact benchmark fixture or query list if existing surfaces can consume
-  it without new platform code;
-- a compact V376 report under `docs/reviews/controlled-dogfood/`;
+- one or two retained-pattern artifacts if backed by V376 evidence;
+- catalog/usefulness-feedback updates needed for readback;
+- focused knowledge-card tests if catalog coverage changes;
+- a compact V377 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -152,9 +156,11 @@ Forbidden writes:
 
 Definition of Done:
 
-- 5-10 local questions exercise existing brain knowledge/source-search surfaces;
-- each answer records proof/non-proof, missing evidence, and usefulness verdict;
-- at least one benchmark gap or next repair candidate is recorded;
+- V376 gap is either closed with one or two retained pattern cards or explicitly
+  rejected/deferred with a reason;
+- every retained pattern has source, mechanism, KRN implication, consumer,
+  falsifier, and does-not-prove;
+- readback proves the new pattern is queryable;
 - no schema rewrite, crawler, dashboard, API, MCP, broad benchmark platform, source-truth
   mutation, or autonomous runtime is added.
 
@@ -174,8 +180,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V376 creates benchmark theater without answerability/usefulness evidence, or
-builds a broad benchmark platform instead of one compact readback slice.
+V377 retains decorative cards without V376 evidence, consumer, or falsifier, or
+starts a broad benchmark/retrieval rewrite instead of closing the specific gap.
 ```
 
 ## 9. Task Contract Schema
@@ -236,9 +242,8 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. real benchmarks
-2. second-operator proof
-3. product UI/API/MCP after usefulness/security gates
+1. second-operator proof
+2. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -261,6 +266,7 @@ Current backlog order:
 - [x] V373 complete: Heartbeat Runtime Candidate Review Result.
 - [x] V374 complete: Source Relation Candidate Evidence Repair.
 - [x] V375 complete: Pattern Research Brain Intake Trial.
+- [x] V376 complete: Mini Brain-QA Benchmark Slice.
 - [x] V373 complete: Heartbeat Runtime Candidate Review Result.
 - [x] V374 complete: Source Relation Candidate Evidence Repair.
 

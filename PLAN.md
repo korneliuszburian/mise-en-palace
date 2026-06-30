@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V376 Mini Brain-QA Benchmark Slice
-current task: V376-00 Mini Brain-QA Benchmark Slice
+active stream: V377 Brain-QA Pattern Coverage Gap Closure
+current task: V377-00 Brain-QA Pattern Coverage Gap Closure
 ```
 
 ## Compact Checkpoints
@@ -31,26 +31,28 @@ heartbeat/dreaming: manual candidate-only runtime loop readback visible through 
 heartbeat candidate review: one candidate can be reviewed/deferred with evidence result
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and knowledge-card readback
+mini brain-QA benchmark: six current local questions ran through brain search JSON readback; graph/ingest/heartbeat are source-search useful but pattern coverage is uneven
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V376-00 Mini Brain-QA Benchmark Slice
+### V377-00 Brain-QA Pattern Coverage Gap Closure
 
 Status: active.
 
-Goal: run one compact mini Brain-QA benchmark/readback over existing KRN brain
-knowledge and source-search surfaces.
+Goal: close the V376 benchmark gap by retaining one or two source-backed
+patterns only where V376 evidence shows a reusable mechanism with consumer and
+falsifier.
 
-Hard boundary: no broad benchmark platform, ranking rewrite, crawler, dashboard,
-API server, MCP server, DB schema, worker daemon, source-truth mutation,
+Hard boundary: no ranking rewrite, crawler, dashboard, API server, MCP server,
+DB schema, worker daemon, broad benchmark platform, source-truth mutation,
 autonomous Memory Core mutation, or generic multi-agent runtime.
 
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v375-pattern-research-brain-intake-trial/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-v376-mini-brain-qa-benchmark-slice/REPORT.md
 ```
 
 ## Recent Completed Streams
@@ -72,6 +74,8 @@ V371: ingest v0/v1 bounded input loop readback.
 V372: heartbeat/dreaming manual candidate runtime-loop readback.
 V373: heartbeat runtime candidate review-result loop.
 V374: source relation candidate evidence repair.
+V375: Codex hook guardrail pattern intake.
+V376: mini Brain-QA benchmark/readback over six current local questions.
 ```
 
 ## Remaining Product Gaps
