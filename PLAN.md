@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V367 Consensus Eval/Candidate Lane
-current task: V367-00 Consensus Eval/Candidate Lane
+active stream: V368 Brain Search Product Surface Preview
+current task: V368-00 Brain Search Product Surface Preview
 ```
 
 ## Compact Checkpoints
@@ -27,35 +27,6 @@ product-ready brain: not complete
 ```
 
 ## Active Task
-
-### V363-00 Heartbeat/Dreaming Candidate Generator V0
-
-Status: complete.
-
-Outcome: `@krn/workers` now exports `buildBrainHeartbeatPreview`, a pure
-candidate-only aggregate over memory-staleness and source-relation heartbeat
-previews with shared budget, proof/non-proof, reviewability, and mutation
-boundaries.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md
-```
-
-### V364-00 Heartbeat Preview CLI Readback
-
-Status: complete.
-
-Outcome: `krn heartbeat preview` now exposes the V363 candidate-only heartbeat
-preview as read-only Postgres operator output with evidence refs,
-`doesNotProve`, reviewability, next action, and mutation boundaries.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v364-heartbeat-preview-cli-readback/REPORT.md
-```
 
 ### V365-00 Heartbeat Preview Review/Eval Closure
 
@@ -95,7 +66,7 @@ docs/reviews/controlled-dogfood/2026-06-30-v366-heartbeat-preview-golden-behavio
 
 ### V367-00 Consensus Eval/Candidate Lane
 
-Status: active.
+Status: complete.
 
 Goal: add the smallest candidate-only consensus/eval surface that can evaluate
 bounded claim or candidate disagreements without producing final truth,
@@ -105,6 +76,28 @@ platform.
 Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
 crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
 multi-agent runtime.
+
+Outcome: current-state audit verified V339 already provides the bounded
+candidate-only consensus/eval lane through
+`buildConsensusCandidateEvaluationPreview`.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v367-consensus-eval-candidate-lane/REPORT.md
+```
+
+### V368-00 Brain Search Product Surface Preview
+
+Status: active.
+
+Goal: expose the smallest product-facing brain search/readback surface over
+existing source-search and knowledge-card outputs without adding a dashboard,
+API server, MCP server, crawler, schema, ranking rewrite, or autonomous
+runtime.
+
+Hard boundary: use existing CLI/readback surfaces first; no new product server,
+MCP server, DB schema, crawler, broad benchmark, or ranking rewrite.
 
 ## Recent Completed Streams
 
@@ -117,13 +110,14 @@ V363: candidate-only brain heartbeat preview primitive.
 V364: heartbeat preview CLI/readback.
 V365: heartbeat preview review/eval closure.
 V366: heartbeat preview golden behavior proof.
+V367: consensus eval/candidate lane completion audit.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. consensus eval/candidate lane
-2. product UI/search/API/MCP after usefulness/security gates
+1. brain search product surface preview
+2. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

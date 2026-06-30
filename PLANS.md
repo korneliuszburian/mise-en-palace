@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V367 Consensus Eval/Candidate Lane
-current task: V367-00 Consensus Eval/Candidate Lane
+active stream: V368 Brain Search Product Surface Preview
+current task: V368-00 Brain Search Product Surface Preview
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V367-00 Consensus Eval/Candidate Lane is active.
-The current gap is adding the smallest candidate-only consensus/eval surface
-for bounded disagreement review before daemon, scheduler, crawler, embeddings,
-schema, UI/API/MCP, broad benchmark, multi-agent runtime, or autonomous
-memory/source mutation.
+V368-00 Brain Search Product Surface Preview is active.
+The current gap is exposing the smallest product-facing brain search/readback
+surface over existing source-search and knowledge-card outputs before a
+dashboard, API server, MCP server, crawler, schema, ranking rewrite, broad
+benchmark, or autonomous runtime.
 ```
 
 ## 2. Product Thesis
@@ -85,30 +85,32 @@ V365 complete: heartbeat preview emits and renders a candidate-only
   review/eval closure decision and next action.
 V366 complete: heartbeat preview review/eval closure is protected by a focused
   worker behavior proof.
+V367 complete: consensus eval/candidate lane exists from V339 and was verified
+  by current-state audit.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V367
+## Active Task V368
 
-ID: V367-00
-Name: Consensus Eval/Candidate Lane
+ID: V368-00
+Name: Brain Search Product Surface Preview
 Status: active
 
-Goal: add the smallest candidate-only consensus/eval surface that can evaluate
-bounded claim or candidate disagreements without producing final truth,
-mutating Memory Core, starting agent runtime, or creating a broad consensus
-platform.
+Goal: expose the smallest product-facing brain search/readback surface over
+existing source-search and knowledge-card outputs without adding a dashboard,
+API server, MCP server, crawler, schema, ranking rewrite, or autonomous
+runtime.
 
-Product rationale: KRN has source/memory/review gates and heartbeat candidate
-surfaces, but consensus remains a product gap. The next useful step is a
-candidate-only disagreement evaluator that preserves dissent and proof
-boundaries before any runtime multi-agent system.
+Product rationale: KRN has useful source-search, knowledge cards, graph
+relation support, heartbeat candidates, and consensus preview surfaces. The
+next product-facing step is a thin operator search/readback preview that makes
+these existing brain outputs easier to inspect without creating a broad app.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V367 report under `docs/reviews/controlled-dogfood/`;
+- a compact V368 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -120,6 +122,8 @@ Forbidden writes:
 - ranking rewrite;
 - retrieval semantics rewrite;
 - UI/API/MCP;
+- dashboard;
+- product server;
 - crawler;
 - embeddings;
 - worker runtime;
@@ -129,14 +133,13 @@ Forbidden writes:
 
 Definition of Done:
 
-- one bounded candidate-only consensus/eval helper or preview exists;
-- output preserves claim/candidate refs, pro/con or agreement/disagreement
-  signals, dissent, evidence refs, does-not-prove, reviewability, next action,
-  and no-mutation boundary;
-- focused tests prove ready and insufficient-evidence cases;
-- no MemoryRecord, SourceClaim, SourceDecision, EvalCandidate, or DB schema
-  mutation is added unless explicitly rejected/recorded as a blocking
-  falsifier.
+- one bounded product-facing brain search/readback preview exists or an
+  existing command gains a small preview mode;
+- output uses existing source-search / knowledge-card data and preserves
+  proof/non-proof, evidence refs, reviewability, and no-mutation boundaries;
+- focused tests cover the preview/readback behavior;
+- no DB schema, crawler, server, MCP, ranking rewrite, or autonomous runtime is
+  added.
 
 Verification floor:
 
@@ -154,8 +157,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V367 mutates Memory Core, writes final truth, starts runtime agents, or becomes
-a broad consensus platform instead of a candidate-only eval surface.
+V368 builds a dashboard/server/MCP/crawler/schema/ranking rewrite instead of a
+thin product-facing preview over existing brain readback surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -216,8 +219,8 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V367 consensus eval/candidate lane
-2. product UI/search/API/MCP after usefulness/security gates
+1. V368 brain search product surface preview
+2. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -231,7 +234,25 @@ Current backlog order:
 - [x] V364 complete: Heartbeat Preview CLI Readback.
 - [x] V365 complete: Heartbeat Preview Review/Eval Closure.
 - [x] V366 complete: Heartbeat Preview Golden Behavior Proof.
-- [ ] V367 pending: Consensus Eval/Candidate Lane.
+- [x] V367 complete: Consensus Eval/Candidate Lane.
+- [ ] V368 pending: Brain Search Product Surface Preview.
+
+## Outcome V367 Consensus Eval/Candidate Lane
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v367-consensus-eval-candidate-lane/REPORT.md
+```
+
+Outcome: current-state audit verified that V339 already implemented the
+candidate-only consensus/eval lane through
+`buildConsensusCandidateEvaluationPreview`, with support/dissent/risk evidence,
+decision options, reviewability, `doesNotProve`, and no mutation.
+
+Next: V368 Brain Search Product Surface Preview.
 
 ## Outcome V366 Heartbeat Preview Golden Behavior Proof
 

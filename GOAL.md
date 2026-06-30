@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V367 Consensus Eval/Candidate Lane
+V368 Brain Search Product Surface Preview
 ```
 
 Current state:
@@ -27,13 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V367-00 Consensus Eval/Candidate Lane.
+current task: V368-00 Brain Search Product Surface Preview.
 ```
 
-Current task: add the smallest candidate-only consensus/eval surface for
-bounded disagreement review before any daemon, scheduler, crawler, embeddings,
-schema, UI/API/MCP, broad benchmark, multi-agent runtime, or autonomous Memory
-Core/source mutation.
+Current task: expose the smallest product-facing brain search/readback surface
+over existing source-search and knowledge-card outputs before any dashboard,
+API server, MCP server, crawler, schema, ranking rewrite, broad benchmark, or
+autonomous runtime.
 
 ## Direction
 
