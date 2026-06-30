@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: ec14da1 / CI success run 28415059440
+latest source slice commit checked: c5fad4c / CI success run 28415845755
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -27,7 +27,7 @@ Known current gap:
 V360-00 Fallow Legacy Complexity Cleanup must reduce full-audit duplication or
 health debt one bounded source target at a time without broad repo refactors.
 V360 rollup: bounded cleanups have moved full Fallow from dupes 136 / health
-117 to dupes 65 / health 18. Dead-code findings are zero. Changed-files
+117 to dupes 62 / health 18. Dead-code findings are zero. Changed-files
 Fallow gates are green for each committed slice.
 
 Recent completed slices:
@@ -41,6 +41,7 @@ Recent completed slices:
 - `1ceb0e7` / CI `28414559347`: golden task validation cleanup.
 - `737fe2d` / CI `28414814881`: Promptfoo result parser cleanup.
 - `ec14da1` / CI `28415059440`: no-store preview optional-field cleanup.
+- `c5fad4c` / CI `28415845755`: shared memory/source CLI parser helper cleanup.
 
 Remaining smoke-family cleanup stays valid only as bounded owner-surface work;
 do not split `packages/db/src/repositories/common.ts` only because Fallow ranks
