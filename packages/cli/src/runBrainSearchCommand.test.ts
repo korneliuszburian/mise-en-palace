@@ -31,7 +31,15 @@ describe("runBrainSearchCommand", () => {
             kind: "krn.brainKnowledge.cards.preview.v1",
             returnedCards: 1,
             totalCards: 1,
-            cards: [{ id: "pattern:source-to-decision-retention-gate" }],
+            cards: [{
+              id: "pattern:source-to-decision-retention-gate",
+              title: "Source-to-decision retention gate",
+              summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
+              consumers: ["pattern application gate"],
+              falsifier: "A future slice retains a source with no consumer.",
+              doesNotProve: "This card does not prove source truth.",
+              nextAction: "use"
+            }],
             proof: {
               doesNotProve: ["knowledge-card completeness"]
             }
@@ -85,7 +93,16 @@ describe("runBrainSearchCommand", () => {
       knowledgeCards: {
         returnedCards: 1,
         totalCards: 1,
-        cardIds: ["pattern:source-to-decision-retention-gate"]
+        cardIds: ["pattern:source-to-decision-retention-gate"],
+        selectedKnowledge: [{
+          id: "pattern:source-to-decision-retention-gate",
+          title: "Source-to-decision retention gate",
+          summary: "Retained sources must name a mechanism, KRN implication, consumer, and falsifier.",
+          consumers: ["pattern application gate"],
+          falsifier: "A future slice retains a source with no consumer.",
+          doesNotProve: "This card does not prove source truth.",
+          nextAction: "use"
+        }]
       },
       sourceSearch: {
         answerUsefulness: "useful",
@@ -102,6 +119,7 @@ describe("runBrainSearchCommand", () => {
         includedCandidates: 1
       }
     });
+    expect(JSON.stringify(parsed)).toContain("matching brain knowledge");
     expect(JSON.stringify(parsed)).toContain("Memory Core mutation");
   });
 
@@ -160,6 +178,8 @@ describe("runBrainSearchCommand", () => {
 
     expect(result.stdout).toContain("KRN Brain Search Preview");
     expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("Brain knowledge:");
+    expect(result.stdout).toContain("cardIds: none");
     expect(result.stdout).toContain("graphAware: false");
     expect(result.stdout).toContain("graphCaveat: entity extraction is not available in this bounded readback");
     expect(result.stdout).toContain("missingEvidence: governed SourceClaim evidence");

@@ -24,6 +24,7 @@ evidence/review loop: DB-backed and useful for dogfood
 candidate reviewability: core primitive
 source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
+brain-search selected knowledge: usable pattern packet in preview output
 product loop replay: DB-backed and inspectable
 graph-brain readback: relation summary visible through source/brain search
 ingest v0/v1: bounded loop readback visible through source artifact preview
@@ -97,6 +98,7 @@ V376: mini Brain-QA benchmark/readback over six current local questions.
 V377: retained graph relation readback and heartbeat candidate-only runtime
   patterns from the V376 benchmark gap; ingest pattern deferred.
 V378: prepared current second-operator launch packet without claiming V02-01.
+IMR-01: brain search now exposes selected brain knowledge packets for agent use.
 ```
 
 ## Remaining Product Gaps

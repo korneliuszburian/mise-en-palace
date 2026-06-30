@@ -86,7 +86,37 @@ V377 complete: graph relation readback and heartbeat candidate-only runtime
 V378 complete: current V02-01 launch packet exists under docs/operator-trials;
   it is now historical because external second-operator proof is not the active
   product direction.
+IMR-01 complete: `krn brain search` exposes selected brain knowledge packets
+  with summary, consumers, falsifier, proof boundary, and next action.
 ```
+
+## Outcome IMR-01 Brain Search Selected Knowledge Packet
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-01-brain-search-selected-knowledge/REPORT.md
+```
+
+Outcome: brain-search preview now returns agent-usable selected knowledge, not
+only opaque retained-pattern ids. This improves pre-coding pattern application
+without changing DB schema, Memory Core, graph ranking, or runtime mutation.
+
+Source-to-decision:
+
+- Source: active IMR-00 product direction and retained pattern/search evidence.
+- Mechanism: an agent using the brain needs consumer, falsifier, and
+  proof-boundary fields in the first readback.
+- KRN implication: brain search should expose selected brain knowledge packets
+  while preserving proof/non-proof boundaries.
+- Decision: added `selectedKnowledge` to `krn.brainSearch.preview.v1`.
+- Does not prove: semantic ranking quality, source truth, graph reasoning,
+  product readiness, or store-backed pattern memory.
+- Consumer: pre-coding pattern application and future multi-repo brain use.
+- Falsifier: a future agent still needs a second manual lookup to understand a
+  selected pattern's mechanism, consumer, or falsifier.
 
 ## Outcome V377 Brain-QA Pattern Coverage Gap Closure
 

@@ -51,6 +51,7 @@ interface BrainSearchPreviewResource {
     totalCards: number;
     returnedCards: number;
     cardIds: readonly string[];
+    selectedKnowledge: readonly BrainSearchKnowledgePacket[];
     doesNotProve: readonly string[];
   };
   sourceSearch: {
@@ -77,6 +78,16 @@ interface BrainSearchPreviewResource {
     proves: readonly string[];
     doesNotProve: readonly string[];
   };
+}
+
+interface BrainSearchKnowledgePacket {
+  id: string;
+  title: string;
+  summary: string;
+  consumers: readonly string[];
+  falsifier: string;
+  doesNotProve: string;
+  nextAction: string;
 }
 
 const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
@@ -131,6 +142,31 @@ const knowledgeCardIds = (cards: readonly unknown[]): readonly string[] =>
     return typeof id === "string" ? [id] : [];
   });
 
+const knowledgePackets = (cards: readonly unknown[]): readonly BrainSearchKnowledgePacket[] =>
+  cards.flatMap((card) => {
+    const record = recordValue(card);
+
+    if (record === undefined) {
+      return [];
+    }
+
+    const id = record["id"];
+
+    if (typeof id !== "string") {
+      return [];
+    }
+
+    return [{
+      id,
+      title: stringValue(record["title"], ""),
+      summary: stringValue(record["summary"], ""),
+      consumers: stringArrayValue(record["consumers"]),
+      falsifier: stringValue(record["falsifier"], ""),
+      doesNotProve: stringValue(record["doesNotProve"], ""),
+      nextAction: stringValue(record["nextAction"], "unknown")
+    }];
+  });
+
 const buildRecommendedNextAction = (
   resource: Pick<BrainSearchPreviewResource, "knowledgeCards" | "sourceSearch">
 ): string => {
@@ -138,7 +174,7 @@ const buildRecommendedNextAction = (
     resource.knowledgeCards.returnedCards > 0 &&
     resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0
   ) {
-    return "Use the matching knowledge cards as pattern guidance and the source-search answer package as evidence before changing code.";
+    return "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code.";
   }
 
   if (resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0) {
@@ -146,7 +182,7 @@ const buildRecommendedNextAction = (
   }
 
   if (resource.knowledgeCards.returnedCards > 0) {
-    return "Use the matching knowledge cards as guidance, but gather source evidence before implementation claims.";
+    return "Use the matching brain knowledge as guidance, but gather source evidence before implementation claims.";
   }
 
   return "Do not infer product truth; narrow the query or ingest/review source evidence first.";
@@ -175,6 +211,7 @@ const buildResource = (
       totalCards: numberValue(input.knowledgeJson["totalCards"]),
       returnedCards: numberValue(input.knowledgeJson["returnedCards"]),
       cardIds: knowledgeCardIds(cards),
+      selectedKnowledge: knowledgePackets(cards),
       doesNotProve: proofDoesNotProve(input.knowledgeJson["proof"])
     },
     sourceSearch: {
@@ -199,7 +236,7 @@ const buildResource = (
     recommendedNextAction: "",
     proof: {
       proves: [
-        "existing knowledge-card readback was executed for this query",
+        "existing brain-knowledge readback was executed for this query",
         "existing source-search answer package was executed for this query",
         "brain search combined both readbacks without mutating KRN state"
       ],
@@ -227,12 +264,21 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
     "Mutation: none",
     `Query: ${resource.query}`,
     "",
-    "Knowledge cards:",
+    "Brain knowledge:",
     `- returned: ${resource.knowledgeCards.returnedCards}`,
     `- total: ${resource.knowledgeCards.totalCards}`,
     ...(resource.knowledgeCards.cardIds.length === 0
       ? ["- cardIds: none"]
       : resource.knowledgeCards.cardIds.map((id) => `- cardId: ${id}`)),
+    ...resource.knowledgeCards.selectedKnowledge.flatMap((card) => [
+      `- selectedKnowledge: ${card.id}`,
+      `  title: ${card.title}`,
+      `  summary: ${card.summary}`,
+      `  consumers: ${card.consumers.length === 0 ? "none" : card.consumers.join(", ")}`,
+      `  falsifier: ${card.falsifier}`,
+      `  doesNotProve: ${card.doesNotProve}`,
+      `  nextAction: ${card.nextAction}`
+    ]),
     "",
     "Source search:",
     `- answerUsefulness: ${resource.sourceSearch.answerUsefulness}`,
