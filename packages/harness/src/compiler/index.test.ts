@@ -36,6 +36,10 @@ import type {
   UpdateExecutionRunStatusInput
 } from "../repositories/index.js";
 import {
+  createRetrievalCandidateRecord,
+  createRetrievalRunRecord
+} from "../testSupport/retrievalRows.js";
+import {
   compileHarnessPlan
 } from "./index.js";
 
@@ -296,21 +300,7 @@ class FakeRetrievalRepository implements RetrievalRepository {
   async startRetrievalRun(input: StartRetrievalRunInput): Promise<RetrievalRunRecord> {
     this.startedRunMetadata = input.metadata ?? {};
 
-    return {
-      id: "retrieval-1",
-      ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-      ...(input.executionRunId === undefined ? {} : { executionRunId: input.executionRunId }),
-      ...(input.taskContractId === undefined ? {} : { taskContractId: input.taskContractId }),
-      status: "running",
-      query: input.query,
-      mode: input.mode ?? "mixed",
-      ...(input.budget === undefined ? {} : { budget: input.budget }),
-      ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
-      metadataFilters: input.metadataFilters ?? {},
-      startedAt: now,
-      metadata: input.metadata ?? {},
-      createdAt: now
-    };
+    return createRetrievalRunRecord(input, { now });
   }
 
   async completeRetrievalRun(): Promise<RetrievalRunRecord> {
@@ -336,26 +326,10 @@ class FakeRetrievalRepository implements RetrievalRepository {
   async addCandidate(input: AddRetrievalCandidateInput) {
     this.candidates.push(input);
 
-    return {
+    return createRetrievalCandidateRecord(input, {
       id: `candidate-${this.candidates.length}`,
-      retrievalRunId: input.retrievalRunId,
-      kind: input.kind,
-      status: input.status ?? "candidate",
-      subjectType: input.subjectType,
-      subjectId: input.subjectId,
-      ...(input.searchDocumentId === undefined ? {} : { searchDocumentId: input.searchDocumentId }),
-      trustTier: input.trustTier,
-      ...(input.lexicalScore === undefined ? {} : { lexicalScore: input.lexicalScore }),
-      ...(input.vectorScore === undefined ? {} : { vectorScore: input.vectorScore }),
-      ...(input.graphScore === undefined ? {} : { graphScore: input.graphScore }),
-      ...(input.temporalScore === undefined ? {} : { temporalScore: input.temporalScore }),
-      ...(input.contextRoiScore === undefined ? {} : { contextRoiScore: input.contextRoiScore }),
-      ...(input.totalScore === undefined ? {} : { totalScore: input.totalScore }),
-      ...(input.score === undefined ? {} : { score: input.score }),
-      reason: input.reason,
-      metadata: input.metadata ?? {},
-      createdAt: now
-    };
+      now
+    });
   }
 
   async createActivationDecision(input: RecordActivationDecisionInput) {

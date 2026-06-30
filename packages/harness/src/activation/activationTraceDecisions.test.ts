@@ -10,6 +10,9 @@ import type {
 } from "../repositories/index.js";
 import { persistActivationTrace } from "./activationEngine.js";
 import type { RankedActivationCandidate } from "./types.js";
+import {
+  createRetrievalCandidateRecord
+} from "../testSupport/retrievalRows.js";
 
 const now = "2026-06-23T10:00:00.000Z";
 
@@ -24,26 +27,10 @@ class TraceRepository implements Pick<
   async addCandidate(input: Parameters<RetrievalRepository["addCandidate"]>[0]) {
     this.candidateCount += 1;
 
-    return {
+    return createRetrievalCandidateRecord(input, {
       id: `candidate-${this.candidateCount}`,
-      retrievalRunId: input.retrievalRunId,
-      kind: input.kind,
-      status: input.status ?? "candidate",
-      subjectType: input.subjectType,
-      subjectId: input.subjectId,
-      ...(input.searchDocumentId === undefined ? {} : { searchDocumentId: input.searchDocumentId }),
-      trustTier: input.trustTier,
-      ...(input.lexicalScore === undefined ? {} : { lexicalScore: input.lexicalScore }),
-      ...(input.vectorScore === undefined ? {} : { vectorScore: input.vectorScore }),
-      ...(input.graphScore === undefined ? {} : { graphScore: input.graphScore }),
-      ...(input.temporalScore === undefined ? {} : { temporalScore: input.temporalScore }),
-      ...(input.contextRoiScore === undefined ? {} : { contextRoiScore: input.contextRoiScore }),
-      ...(input.totalScore === undefined ? {} : { totalScore: input.totalScore }),
-      ...(input.score === undefined ? {} : { score: input.score }),
-      reason: input.reason,
-      metadata: input.metadata ?? {},
-      createdAt: now
-    };
+      now
+    });
   }
 
   async recordActivationDecision(input: RecordActivationDecisionInput) {

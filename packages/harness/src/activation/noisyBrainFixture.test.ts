@@ -39,24 +39,41 @@ interface NoisyBrainFixture {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
-const assertNoisyBrainFixture = (value: unknown): NoisyBrainFixture => {
-  if (!isRecord(value)) {
-    throw new Error("Noisy brain fixture must be an object.");
+const assertPolicyShape = (value: Record<string, unknown>): void => {
+  if (!isRecord(value.policy)) {
+    throw new Error("Noisy brain fixture policy shape is invalid.");
   }
 
   if (
-    typeof value.now !== "string" ||
-    !isRecord(value.policy) ||
     typeof value.policy.tokenBudget !== "number" ||
-    typeof value.policy.maxInclusions !== "number" ||
-    !isRecord(value.task) ||
+    typeof value.policy.maxInclusions !== "number"
+  ) {
+    throw new Error("Noisy brain fixture policy shape is invalid.");
+  }
+};
+
+const assertCollectionShapes = (value: Record<string, unknown>): void => {
+  if (
     !Array.isArray(value.memoryRecords) ||
     !Array.isArray(value.sourceClaims) ||
     !Array.isArray(value.searchDocuments) ||
     !Array.isArray(value.antiMemoryRecords)
   ) {
+    throw new Error("Noisy brain fixture collection shape is invalid.");
+  }
+};
+
+const assertNoisyBrainFixture = (value: unknown): NoisyBrainFixture => {
+  if (!isRecord(value)) {
+    throw new Error("Noisy brain fixture must be an object.");
+  }
+
+  if (typeof value.now !== "string" || !isRecord(value.task)) {
     throw new Error("Noisy brain fixture shape is invalid.");
   }
+
+  assertPolicyShape(value);
+  assertCollectionShapes(value);
 
   return value as NoisyBrainFixture;
 };

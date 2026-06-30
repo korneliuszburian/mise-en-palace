@@ -10,8 +10,54 @@ import type {
 import {
   writeReflectionCandidates
 } from "./reflectionCandidateWriter.js";
+import type {
+  CreateAntiMemoryCandidateInput
+} from "../repositories/index.js";
 
 const now = "2026-06-23T12:00:00.000Z";
+
+const assignIfDefined = <T extends object, K extends keyof T>(
+  target: T,
+  key: K,
+  value: T[K]
+): void => {
+  if (value !== undefined) {
+    target[key] = value;
+  }
+};
+
+const createPersistedAntiMemoryCandidate = (
+  input: CreateAntiMemoryCandidateInput
+): AntiMemoryCandidate => {
+  const candidate: AntiMemoryCandidate = {
+    id: "anti-memory-candidate-1",
+    projectId: input.projectId,
+    proposedBy: input.proposedBy,
+    key: input.key,
+    status: input.status ?? "candidate",
+    invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
+    summary: input.summary,
+    body: input.body,
+    owner: input.owner,
+    confidence: input.confidence,
+    sourceLineage: input.sourceLineage,
+    validFrom: input.validFrom ?? now,
+    metadata: input.metadata ?? {},
+    createdAt: now,
+    updatedAt: now
+  };
+
+  assignIfDefined(candidate, "executionRunId", input.executionRunId);
+  assignIfDefined(candidate, "feedbackDeltaId", input.feedbackDeltaId);
+  assignIfDefined(candidate, "rejectedClaim", input.rejectedClaim);
+  assignIfDefined(candidate, "reason", input.reason);
+  assignIfDefined(candidate, "invalidatedBySourceClaimId", input.invalidatedBySourceClaimId);
+  assignIfDefined(candidate, "appliesTo", input.appliesTo);
+  assignIfDefined(candidate, "mayRevisitWhen", input.mayRevisitWhen);
+  assignIfDefined(candidate, "validUntil", input.validUntil);
+
+  return candidate;
+};
 
 const reflectionRecord = (overrides: Partial<ReflectionRecord> = {}): ReflectionRecord => ({
   id: "reflection-record-1",
@@ -170,39 +216,7 @@ describe("reflection candidate writer", () => {
           return candidate;
         },
         async createAntiMemoryCandidate(input) {
-          const candidate: AntiMemoryCandidate = {
-            id: "anti-memory-candidate-1",
-            projectId: input.projectId,
-            ...(input.executionRunId === undefined
-              ? {}
-              : { executionRunId: input.executionRunId }),
-            ...(input.feedbackDeltaId === undefined
-              ? {}
-              : { feedbackDeltaId: input.feedbackDeltaId }),
-            proposedBy: input.proposedBy,
-            key: input.key,
-            status: input.status ?? "candidate",
-            ...(input.rejectedClaim === undefined ? {} : { rejectedClaim: input.rejectedClaim }),
-            ...(input.reason === undefined ? {} : { reason: input.reason }),
-            invalidatedBySourceClaimIds: input.invalidatedBySourceClaimIds ?? [],
-            ...(input.invalidatedBySourceClaimId === undefined
-              ? {}
-              : { invalidatedBySourceClaimId: input.invalidatedBySourceClaimId }),
-            ...(input.appliesTo === undefined ? {} : { appliesTo: input.appliesTo }),
-            ...(input.mayRevisitWhen === undefined
-              ? {}
-              : { mayRevisitWhen: input.mayRevisitWhen }),
-            summary: input.summary,
-            body: input.body,
-            owner: input.owner,
-            confidence: input.confidence,
-            sourceLineage: input.sourceLineage,
-            validFrom: input.validFrom ?? now,
-            ...(input.validUntil === undefined ? {} : { validUntil: input.validUntil }),
-            metadata: input.metadata ?? {},
-            createdAt: now,
-            updatedAt: now
-          };
+          const candidate = createPersistedAntiMemoryCandidate(input);
           antiMemoryCandidates.push(candidate);
           return candidate;
         }
