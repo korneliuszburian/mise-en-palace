@@ -55,6 +55,16 @@ describe("runBrainSearchCommand", () => {
               supportingClaims: [{ label: "claim" }],
               supportingDocuments: [{ label: "doc" }],
               relationSupport: [{ edgeId: "edge-1" }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 1,
+                temporalEdges: 1,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 1,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
               missingEvidence: []
             },
             includedCandidates: [{ subjectId: "claim-1" }],
@@ -82,6 +92,13 @@ describe("runBrainSearchCommand", () => {
         supportingClaims: 1,
         supportingDocuments: 1,
         relationSupport: 1,
+        graphReadback: {
+          claimNodes: 1,
+          relationEdges: 1,
+          temporalEdges: 1,
+          invalidationEdges: 1,
+          graphAware: true
+        },
         includedCandidates: 1
       }
     });
@@ -120,6 +137,16 @@ describe("runBrainSearchCommand", () => {
               supportingClaims: [],
               supportingDocuments: [],
               relationSupport: [],
+              graphReadback: {
+                claimNodes: 0,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: ["entity extraction is not available in this bounded readback"]
+              },
               missingEvidence: ["governed SourceClaim evidence"]
             },
             includedCandidates: [],
@@ -133,6 +160,8 @@ describe("runBrainSearchCommand", () => {
 
     expect(result.stdout).toContain("KRN Brain Search Preview");
     expect(result.stdout).toContain("Mutation: none");
+    expect(result.stdout).toContain("graphAware: false");
+    expect(result.stdout).toContain("graphCaveat: entity extraction is not available in this bounded readback");
     expect(result.stdout).toContain("missingEvidence: governed SourceClaim evidence");
     expect(result.stdout).toContain("Do not infer product truth");
     expect(result.stdout).toContain("does not prove: product readiness");

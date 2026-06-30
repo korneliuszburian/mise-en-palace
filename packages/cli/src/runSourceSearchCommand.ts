@@ -106,6 +106,27 @@ interface SourceSearchRelationSupport {
   evidenceRef?: string;
   sourceDecisionRef?: string;
   sourceRanges?: readonly string[];
+  validFrom?: string;
+  validUntil?: string;
+  invalidatedAt?: string;
+  createdAt: SourceClaimEdge["createdAt"];
+}
+
+interface SourceSearchGraphRelationKindCount {
+  kind: SourceClaimEdge["kind"];
+  count: number;
+}
+
+interface SourceSearchGraphReadback {
+  claimNodes: number;
+  relationEdges: number;
+  relationKinds: readonly SourceSearchGraphRelationKindCount[];
+  temporalEdges: number;
+  contradictionEdges: number;
+  duplicateEdges: number;
+  invalidationEdges: number;
+  graphAware: boolean;
+  caveats: readonly string[];
 }
 
 interface SourceSearchAnswerPackage {
@@ -116,6 +137,7 @@ interface SourceSearchAnswerPackage {
   supportingClaims: readonly SourceSearchAnswerCandidate[];
   supportingDocuments: readonly SourceSearchAnswerCandidate[];
   relationSupport: readonly SourceSearchRelationSupport[];
+  graphReadback: SourceSearchGraphReadback;
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
   missingEvidence: readonly string[];
   doesNotProve: readonly string[];
@@ -399,12 +421,16 @@ const relationSupportFromEdge = (
   const evidenceRef = metadataString(edge.metadata, "evidenceRef");
   const sourceDecisionRef = metadataString(edge.metadata, "sourceDecisionRef");
   const sourceRanges = metadataStringArray(edge.metadata, "sourceRanges");
+  const validFrom = metadataString(edge.metadata, "validFrom");
+  const validUntil = metadataString(edge.metadata, "validUntil");
+  const invalidatedAt = metadataString(edge.metadata, "invalidatedAt");
   const support: SourceSearchRelationSupport = {
     sourceClaimId,
     edgeId: edge.id,
     direction: relationDirectionFor(sourceClaimId, edge),
     relatedSourceClaimId: relatedSourceClaimIdFor(sourceClaimId, edge),
-    kind: edge.kind
+    kind: edge.kind,
+    createdAt: edge.createdAt
   };
 
   if (consumer !== undefined) {
@@ -427,7 +453,75 @@ const relationSupportFromEdge = (
     support.sourceRanges = sourceRanges;
   }
 
+  if (validFrom !== undefined) {
+    support.validFrom = validFrom;
+  }
+
+  if (validUntil !== undefined) {
+    support.validUntil = validUntil;
+  }
+
+  if (invalidatedAt !== undefined) {
+    support.invalidatedAt = invalidatedAt;
+  }
+
   return support;
+};
+
+const buildRelationKindCounts = (
+  relationSupport: readonly SourceSearchRelationSupport[]
+): readonly SourceSearchGraphRelationKindCount[] => {
+  const counts = new Map<SourceClaimEdge["kind"], number>();
+
+  for (const relation of relationSupport) {
+    counts.set(relation.kind, (counts.get(relation.kind) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([kind, count]) => ({ kind, count }));
+};
+
+const hasTemporalMetadata = (relation: SourceSearchRelationSupport): boolean =>
+  relation.validFrom !== undefined ||
+  relation.validUntil !== undefined ||
+  relation.invalidatedAt !== undefined ||
+  relation.kind === "supersedes" ||
+  relation.kind === "invalidates" ||
+  relation.kind === "expires";
+
+const buildGraphReadback = (input: {
+  supportingClaims: readonly SourceSearchAnswerCandidate[];
+  relationSupport: readonly SourceSearchRelationSupport[];
+}): SourceSearchGraphReadback => {
+  const contradictionEdges = input.relationSupport.filter(
+    (relation) => relation.kind === "contradicts"
+  ).length;
+  const duplicateEdges = input.relationSupport.filter(
+    (relation) => relation.kind === "duplicates"
+  ).length;
+  const invalidationEdges = input.relationSupport.filter((relation) =>
+    relation.kind === "invalidates" ||
+    relation.kind === "expires" ||
+    relation.kind === "supersedes"
+  ).length;
+  const temporalEdges = input.relationSupport.filter(hasTemporalMetadata).length;
+
+  return {
+    claimNodes: input.supportingClaims.length,
+    relationEdges: input.relationSupport.length,
+    relationKinds: buildRelationKindCounts(input.relationSupport),
+    temporalEdges,
+    contradictionEdges,
+    duplicateEdges,
+    invalidationEdges,
+    graphAware: input.relationSupport.length > 0,
+    caveats: [
+      "graph readback summarizes existing SourceClaimEdge rows only",
+      "entity extraction is not available in this bounded readback",
+      "relation support does not prove source truth, edge correctness, or ranking quality"
+    ]
+  };
 };
 
 const buildRelationSupport = async (input: {
@@ -473,6 +567,10 @@ const buildAnswerPackage = (input: {
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length
   });
+  const graphReadback = buildGraphReadback({
+    supportingClaims,
+    relationSupport: input.relationSupport
+  });
   const queryShapeDiagnostics = buildSourceSearchQueryShapeDiagnostics({
     supportingClaimCount: supportingClaims.length,
     supportingDocumentCount: supportingDocuments.length,
@@ -504,6 +602,7 @@ const buildAnswerPackage = (input: {
     supportingClaims,
     supportingDocuments,
     relationSupport: input.relationSupport,
+    graphReadback,
     neutralOrNoise,
     missingEvidence,
     doesNotProve,
@@ -541,9 +640,27 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
             ` kind:${relation.kind}`,
             ` relatedSourceClaim:${relation.relatedSourceClaimId}`,
             relation.consumer === undefined ? "" : ` consumer:${relation.consumer}`,
-            relation.doesNotProve === undefined ? "" : ` doesNotProve:${relation.doesNotProve}`
+            relation.doesNotProve === undefined ? "" : ` doesNotProve:${relation.doesNotProve}`,
+            relation.validFrom === undefined ? "" : ` validFrom:${relation.validFrom}`,
+            relation.validUntil === undefined ? "" : ` validUntil:${relation.validUntil}`,
+            relation.invalidatedAt === undefined ? "" : ` invalidatedAt:${relation.invalidatedAt}`
           ].join("")
         )),
+    "graph readback:",
+    `- claimNodes: ${answerPackage.graphReadback.claimNodes}`,
+    `- relationEdges: ${answerPackage.graphReadback.relationEdges}`,
+    ...(answerPackage.graphReadback.relationKinds.length === 0
+      ? ["- relationKinds: none"]
+      : answerPackage.graphReadback.relationKinds.map((item) =>
+          `- relationKind: ${item.kind} count:${item.count}`
+        )),
+    `- temporalEdges: ${answerPackage.graphReadback.temporalEdges}`,
+    `- contradictionEdges: ${answerPackage.graphReadback.contradictionEdges}`,
+    `- duplicateEdges: ${answerPackage.graphReadback.duplicateEdges}`,
+    `- invalidationEdges: ${answerPackage.graphReadback.invalidationEdges}`,
+    `- graphAware: ${answerPackage.graphReadback.graphAware}`,
+    "graph caveats:",
+    ...answerPackage.graphReadback.caveats.map((item) => `- ${item}`),
     "neutral/noise:",
     ...(answerPackage.neutralOrNoise.length === 0
       ? ["- none from included candidates"]

@@ -58,6 +58,16 @@ interface BrainSearchPreviewResource {
     supportingClaims: number;
     supportingDocuments: number;
     relationSupport: number;
+    graphReadback: {
+      claimNodes: number;
+      relationEdges: number;
+      temporalEdges: number;
+      contradictionEdges: number;
+      duplicateEdges: number;
+      invalidationEdges: number;
+      graphAware: boolean;
+      caveats: readonly string[];
+    };
     includedCandidates: number;
     missingEvidence: readonly string[];
     doesNotProve: readonly string[];
@@ -99,6 +109,9 @@ const arrayValue = (value: unknown): readonly unknown[] =>
 
 const stringArrayValue = (value: unknown): readonly string[] =>
   arrayValue(value).filter((item): item is string => typeof item === "string");
+
+const booleanValue = (value: unknown): boolean =>
+  typeof value === "boolean" ? value : false;
 
 const proofDoesNotProve = (value: unknown): readonly string[] => {
   const proof = recordValue(value);
@@ -151,6 +164,7 @@ const buildResource = (
   const supportingClaims = arrayValue(answerPackage["supportingClaims"]);
   const supportingDocuments = arrayValue(answerPackage["supportingDocuments"]);
   const relationSupport = arrayValue(answerPackage["relationSupport"]);
+  const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
   const resource: BrainSearchPreviewResource = {
     kind: "krn.brainSearch.preview.v1",
@@ -168,6 +182,16 @@ const buildResource = (
       supportingClaims: supportingClaims.length,
       supportingDocuments: supportingDocuments.length,
       relationSupport: relationSupport.length,
+      graphReadback: {
+        claimNodes: numberValue(graphReadback["claimNodes"]),
+        relationEdges: numberValue(graphReadback["relationEdges"]),
+        temporalEdges: numberValue(graphReadback["temporalEdges"]),
+        contradictionEdges: numberValue(graphReadback["contradictionEdges"]),
+        duplicateEdges: numberValue(graphReadback["duplicateEdges"]),
+        invalidationEdges: numberValue(graphReadback["invalidationEdges"]),
+        graphAware: booleanValue(graphReadback["graphAware"]),
+        caveats: stringArrayValue(graphReadback["caveats"])
+      },
       includedCandidates: includedCandidates.length,
       missingEvidence: stringArrayValue(answerPackage["missingEvidence"]),
       doesNotProve: proofDoesNotProve(input.sourceJson["proof"])
@@ -215,6 +239,15 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
     `- supportingClaims: ${resource.sourceSearch.supportingClaims}`,
     `- supportingDocuments: ${resource.sourceSearch.supportingDocuments}`,
     `- relationSupport: ${resource.sourceSearch.relationSupport}`,
+    `- graphAware: ${resource.sourceSearch.graphReadback.graphAware}`,
+    `- graphRelationEdges: ${resource.sourceSearch.graphReadback.relationEdges}`,
+    `- graphTemporalEdges: ${resource.sourceSearch.graphReadback.temporalEdges}`,
+    `- graphContradictionEdges: ${resource.sourceSearch.graphReadback.contradictionEdges}`,
+    `- graphDuplicateEdges: ${resource.sourceSearch.graphReadback.duplicateEdges}`,
+    `- graphInvalidationEdges: ${resource.sourceSearch.graphReadback.invalidationEdges}`,
+    ...(resource.sourceSearch.graphReadback.caveats.length === 0
+      ? ["- graphCaveats: none"]
+      : resource.sourceSearch.graphReadback.caveats.map((item) => `- graphCaveat: ${item}`)),
     `- includedCandidates: ${resource.sourceSearch.includedCandidates}`,
     ...(resource.sourceSearch.missingEvidence.length === 0
       ? ["- missingEvidence: none"]

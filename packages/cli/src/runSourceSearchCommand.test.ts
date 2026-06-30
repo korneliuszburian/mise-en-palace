@@ -476,6 +476,73 @@ describe("runSourceSearchCommand", () => {
     expect(arrayValue(relation.sourceRanges, "relation sourceRanges")).toEqual([
       "docs/decisions/ADR-0021-temporal-claim-graph.md:112-119"
     ]);
+
+    const graphReadback = objectValue(answerPackage.graphReadback, "graphReadback");
+    const relationKinds = arrayValue(graphReadback.relationKinds, "relationKinds");
+    const firstRelationKind = objectValue(relationKinds[0], "first relation kind");
+
+    expect(graphReadback.claimNodes).toBe(1);
+    expect(graphReadback.relationEdges).toBe(1);
+    expect(firstRelationKind.kind).toBe("narrows");
+    expect(firstRelationKind.count).toBe(1);
+    expect(graphReadback.graphAware).toBe(true);
+    expect(arrayValue(graphReadback.caveats, "graph caveats")).toContain(
+      "entity extraction is not available in this bounded readback"
+    );
+  });
+
+  it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "temporal contradiction duplicate graph",
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        edges: [
+          sourceClaimEdge({
+            kind: "contradicts",
+            metadata: {
+              consumer: "graph brain v1",
+              doesNotProve: "This edge does not prove contradiction truth."
+            }
+          }),
+          sourceClaimEdge({
+            id: "515321b3-4a26-4634-bfbe-38b756777d6a" as SourceClaimEdge["id"],
+            kind: "duplicates",
+            metadata: {
+              consumer: "graph brain v1",
+              doesNotProve: "This edge does not prove duplicate truth."
+            }
+          }),
+          sourceClaimEdge({
+            id: "615321b3-4a26-4634-bfbe-38b756777d6a" as SourceClaimEdge["id"],
+            kind: "invalidates",
+            metadata: {
+              consumer: "graph brain v1",
+              doesNotProve: "This edge does not prove invalidation truth.",
+              validFrom: "2026-06-01T00:00:00.000Z",
+              invalidatedAt: "2026-06-30T00:00:00.000Z"
+            }
+          })
+        ]
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const graphReadback = objectValue(answerPackage.graphReadback, "graphReadback");
+
+    expect(graphReadback.relationEdges).toBe(3);
+    expect(graphReadback.temporalEdges).toBe(1);
+    expect(graphReadback.contradictionEdges).toBe(1);
+    expect(graphReadback.duplicateEdges).toBe(1);
+    expect(graphReadback.invalidationEdges).toBe(1);
   });
 
   it("prints no-match guidance without mutating when no candidates match", async () => {

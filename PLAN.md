@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V370 Graph Brain V1 Readback
-current task: V370-00 Graph Brain V1 Readback
+active stream: V371 Ingest V0/V1 Bounded Input Loop
+current task: V371-00 Ingest V0/V1 Bounded Input Loop
 ```
 
 ## Compact Checkpoints
@@ -25,6 +25,7 @@ candidate reviewability: core primitive
 source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
 product loop replay: DB-backed and inspectable
+graph-brain readback: relation summary visible through source/brain search
 product-ready brain: not complete
 ```
 
@@ -77,13 +78,34 @@ docs/reviews/controlled-dogfood/2026-06-30-v369-end-to-end-product-loop-replay/R
 
 ### V370-00 Graph Brain V1 Readback
 
-Status: active.
+Status: complete.
 
 Goal: strengthen graph-brain readback for entities, claims, relations,
 temporal edges, contradictions, duplicates, and graph-aware search using
 existing source-search/readback paths first.
 
 Hard boundary: no dashboard, API server, MCP server, crawler, schema rewrite,
+worker daemon, broad benchmark, autonomous Memory Core mutation, or generic
+multi-agent runtime.
+
+Outcome: source-search answer packages now include `graphReadback`, and
+brain-search preview surfaces graph-aware counts and caveats from existing
+SourceClaimEdge rows.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v370-graph-brain-v1-readback/REPORT.md
+```
+
+### V371-00 Ingest V0/V1 Bounded Input Loop
+
+Status: active.
+
+Goal: improve one bounded ingest path from artifact to chunks, claims, search
+docs, graph edges, activation/readback.
+
+Hard boundary: no crawler, dashboard, API server, MCP server, schema rewrite,
 worker daemon, broad benchmark, autonomous Memory Core mutation, or generic
 multi-agent runtime.
 
@@ -101,18 +123,18 @@ V366: heartbeat preview golden behavior proof.
 V367: consensus eval/candidate lane completion audit.
 V368: brain search product surface preview.
 V369: end-to-end product loop replay.
+V370: graph brain v1 readback.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. graph brain v1
-2. ingest v0/v1
-3. heartbeat/dreaming candidate runtime
-4. pattern/research brain
-5. real benchmarks
-6. second-operator proof
-7. product UI/API/MCP after usefulness/security gates
+1. ingest v0/v1
+2. heartbeat/dreaming candidate runtime
+3. pattern/research brain
+4. real benchmarks
+5. second-operator proof
+6. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

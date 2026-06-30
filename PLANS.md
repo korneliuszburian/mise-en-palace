@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V370 Graph Brain V1 Readback
-current task: V370-00 Graph Brain V1 Readback
+active stream: V371 Ingest V0/V1 Bounded Input Loop
+current task: V371-00 Ingest V0/V1 Bounded Input Loop
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,9 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V370-00 Graph Brain V1 Readback is active.
-The current gap is graph-brain readback for entities, claims, relations,
-temporal edges, contradictions, duplicates, and graph-aware search using
-existing source-search/readback paths first.
+V371-00 Ingest V0/V1 Bounded Input Loop is active.
+The current gap is bounded ingest from artifact to chunks, claims, search docs,
+graph edges, activation/readback without crawler or platform work.
 ```
 
 ## 2. Product Thesis
@@ -90,28 +89,28 @@ V368 complete: `krn brain search` composes existing knowledge-card and
   source-search readbacks into one read-only product-facing preview.
 V369 complete: DB-backed product loop replay covered plan, brief, evidence,
   observe, reflect, run show, and next-run brain search.
+V370 complete: source-search answer packages and brain-search preview expose
+  graph-aware relation counts and caveats from existing SourceClaimEdge rows.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V370
+## Active Task V371
 
-ID: V370-00
-Name: Graph Brain V1 Readback
+ID: V371-00
+Name: Ingest V0/V1 Bounded Input Loop
 Status: active
 
-Goal: strengthen graph-brain readback for entities, claims, relations,
-temporal edges, contradictions, duplicates, and graph-aware search using
-existing source-search/readback paths first.
+Goal: improve one bounded ingest path from artifact to chunks, claims, search
+docs, graph edges, activation/readback.
 
-Product rationale: V369 proved the loop can replay, but next-run brain search
-was partly useful and missing supporting SearchDocuments for the combined
-query. Graph-aware readback must become more visible before UI/API/MCP.
+Product rationale: V370 made graph edges more visible, but graph quality still
+depends on better bounded ingest inputs before crawler/UI/API/MCP.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V370 report under `docs/reviews/controlled-dogfood/`;
+- a compact V371 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -134,8 +133,9 @@ Forbidden writes:
 
 Definition of Done:
 
-- one bounded graph-brain readback improvement or current-state rejection;
-- output exposes relation support, missing evidence, and graph-aware caveats;
+- one bounded ingest improvement or current-state rejection;
+- output connects artifact, chunks, claims, search docs, graph edges, and
+  activation/readback;
 - focused tests cover behavior if source changes;
 - no schema rewrite, crawler, server, MCP, broad benchmark, or autonomous
   runtime is added.
@@ -156,8 +156,7 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V370 builds a new graph platform instead of improving bounded graph-aware
-readback through existing KRN surfaces.
+V371 builds a crawler or platform instead of improving one bounded ingest path.
 ```
 
 ## 9. Task Contract Schema
@@ -218,13 +217,12 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V370 graph brain v1 readback
-2. ingest v0/v1
-3. heartbeat/dreaming candidate runtime
-4. pattern/research brain
-5. real benchmarks
-6. second-operator proof
-7. product UI/API/MCP after usefulness/security gates
+1. V371 ingest v0/v1 bounded input loop
+2. heartbeat/dreaming candidate runtime
+3. pattern/research brain
+4. real benchmarks
+5. second-operator proof
+6. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -241,7 +239,25 @@ Current backlog order:
 - [x] V367 complete: Consensus Eval/Candidate Lane.
 - [x] V368 complete: Brain Search Product Surface Preview.
 - [x] V369 complete: End-To-End Product Loop Replay.
-- [ ] V370 pending: Graph Brain V1 Readback.
+- [x] V370 complete: Graph Brain V1 Readback.
+- [ ] V371 pending: Ingest V0/V1 Bounded Input Loop.
+
+## Outcome V370 Graph Brain V1 Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v370-graph-brain-v1-readback/REPORT.md
+```
+
+Outcome: source-search answer packages now include `graphReadback`, and
+brain-search preview surfaces graph-aware counts and caveats from existing
+SourceClaimEdge rows. Sequential reflect selected 5 observations but produced
+no findings, keeping reflection usefulness as an open product gap.
+
+Next: V371 Ingest V0/V1 Bounded Input Loop.
 
 ## Outcome V369 End-To-End Product Loop Replay
 

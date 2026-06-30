@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V370 Graph Brain V1 Readback
+V371 Ingest V0/V1 Bounded Input Loop
 ```
 
 Current state:
@@ -27,13 +27,12 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V370-00 Graph Brain V1 Readback.
+current task: V371-00 Ingest V0/V1 Bounded Input Loop.
 ```
 
-Current task: strengthen graph-brain readback for entities, claims, relations,
-temporal edges, contradictions, duplicates, and graph-aware search using
-existing source-search/readback paths first. Do not build dashboard, API server,
-MCP server, crawler, schema rewrite, broad benchmark, or autonomous runtime.
+Current task: improve one bounded ingest path from artifact to chunks, claims,
+search docs, graph edges, activation/readback. Do not build crawler, dashboard,
+API server, MCP server, schema rewrite, broad benchmark, or autonomous runtime.
 
 ## Direction
 
