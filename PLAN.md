@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V371 Ingest V0/V1 Bounded Input Loop
-current task: V371-00 Ingest V0/V1 Bounded Input Loop
+active stream: V372 Heartbeat/Dreaming Candidate Runtime Loop
+current task: V372-00 Heartbeat/Dreaming Candidate Runtime Loop
 ```
 
 ## Compact Checkpoints
@@ -26,88 +26,28 @@ source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
 product loop replay: DB-backed and inspectable
 graph-brain readback: relation summary visible through source/brain search
+ingest v0/v1: bounded loop readback visible through source artifact preview
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V368-00 Brain Search Product Surface Preview
-
-Status: complete.
-
-Goal: expose the smallest product-facing brain search/readback surface over
-existing source-search and knowledge-card outputs without adding a dashboard,
-API server, MCP server, crawler, schema, ranking rewrite, or autonomous
-runtime.
-
-Hard boundary: use existing CLI/readback surfaces first; no new product server,
-MCP server, DB schema, crawler, broad benchmark, or ranking rewrite.
-
-Outcome: `krn brain search` now composes existing knowledge-card and
-source-search readbacks into one read-only no-mutation preview with proof and
-does-not-prove boundaries.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v368-brain-search-product-surface-preview/REPORT.md
-```
-
-### V369-00 End-To-End Product Loop Replay
-
-Status: complete.
-
-Goal: run one bounded KRN-on-KRN product loop using existing surfaces:
-brain search, plan/brief, execution, evidence, review, candidate output, and
-next-run readback.
-
-Hard boundary: no dashboard, API server, MCP server, crawler, DB schema,
-ranking rewrite, worker daemon, autonomous Memory Core mutation, broad
-benchmark, or generic multi-agent runtime.
-
-Outcome: DB-backed replay covered plan, brief, evidence, observe, reflect,
-run show, and next-run brain search. It exposed missing knowledge-card coverage
-for `end-to-end product loop`, weak reflection usefulness, and a too-vague
-feedback candidate.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v369-end-to-end-product-loop-replay/REPORT.md
-```
-
-### V370-00 Graph Brain V1 Readback
-
-Status: complete.
-
-Goal: strengthen graph-brain readback for entities, claims, relations,
-temporal edges, contradictions, duplicates, and graph-aware search using
-existing source-search/readback paths first.
-
-Hard boundary: no dashboard, API server, MCP server, crawler, schema rewrite,
-worker daemon, broad benchmark, autonomous Memory Core mutation, or generic
-multi-agent runtime.
-
-Outcome: source-search answer packages now include `graphReadback`, and
-brain-search preview surfaces graph-aware counts and caveats from existing
-SourceClaimEdge rows.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v370-graph-brain-v1-readback/REPORT.md
-```
-
-### V371-00 Ingest V0/V1 Bounded Input Loop
+### V372-00 Heartbeat/Dreaming Candidate Runtime Loop
 
 Status: active.
 
-Goal: improve one bounded ingest path from artifact to chunks, claims, search
-docs, graph edges, activation/readback.
+Goal: move the existing candidate-only heartbeat/dreaming preview toward a
+bounded runtime loop over current source/memory/review state.
 
-Hard boundary: no crawler, dashboard, API server, MCP server, schema rewrite,
-worker daemon, broad benchmark, autonomous Memory Core mutation, or generic
-multi-agent runtime.
+Hard boundary: no scheduler, daemon, crawler, dashboard, API server, MCP
+server, schema rewrite, broad benchmark, autonomous Memory Core mutation, or
+generic multi-agent runtime.
+
+Latest completed report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v371-ingest-v0v1-bounded-input-loop/REPORT.md
+```
 
 ## Recent Completed Streams
 
@@ -124,17 +64,17 @@ V367: consensus eval/candidate lane completion audit.
 V368: brain search product surface preview.
 V369: end-to-end product loop replay.
 V370: graph brain v1 readback.
+V371: ingest v0/v1 bounded input loop readback.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. ingest v0/v1
-2. heartbeat/dreaming candidate runtime
-3. pattern/research brain
-4. real benchmarks
-5. second-operator proof
-6. product UI/API/MCP after usefulness/security gates
+1. heartbeat/dreaming candidate runtime
+2. pattern/research brain
+3. real benchmarks
+4. second-operator proof
+5. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

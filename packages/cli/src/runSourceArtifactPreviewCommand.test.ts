@@ -522,6 +522,16 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("sourceClaimEdge: 55555555-5555-4555-8555-555555555555");
     expect(result.stdout).toContain("sourceClaimEdgeKind: narrows");
     expect(result.stdout).toContain("sourceClaimEdgeReadback: hit");
+    expect(result.stdout).toContain("Ingest loop readback:");
+    expect(result.stdout).toContain("artifactToChunks: ready (1 chunk row(s))");
+    expect(result.stdout).toContain("chunkToSearchDocument: ready");
+    expect(result.stdout).toContain("searchDocumentToActivationReadback: ready");
+    expect(result.stdout).toContain("sourceClaimReadback: ready");
+    expect(result.stdout).toContain("sourceClaimEdgeReadback: ready");
+    expect(result.stdout).toContain("activationReadbackQuery: krn-source-artifact-preview ");
+    expect(result.stdout).toContain("sourceSearchReadbackCommand: krn source search --query \"krn-source-artifact-preview ");
+    expect(result.stdout).toContain("brainSearchReadbackCommand: krn brain search --query \"krn-source-artifact-preview ");
+    expect(result.stdout).toContain("nextAction: run the readback command before changing ranking, crawler, schema, UI, API, or MCP");
     expect(result.stdout).toContain("SourceClaim row created: see Persistence readback");
     expect(result.stdout).toContain("SourceClaimEdge row created: see Persistence readback");
     expect(result.stdout).toContain("Memory mutation: none");
@@ -666,6 +676,10 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(sourceChunkReceiverWasBound).toBe(true);
     expect(result.stdout).toContain("sourceChunks: 22222222-2222-4222-8222-222222222222");
     expect(result.stdout).toContain("lexicalReadback: hit");
+    expect(result.stdout).toContain("Ingest loop readback:");
+    expect(result.stdout).toContain("chunkToSearchDocument: ready");
+    expect(result.stdout).toContain("sourceClaimReadback: not_created");
+    expect(result.stdout).toContain("sourceClaimEdgeReadback: not_created");
   });
 
   it("persists a selected ready extraction claim only through the reviewed bridge", async () => {

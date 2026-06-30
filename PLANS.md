@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V371 Ingest V0/V1 Bounded Input Loop
-current task: V371-00 Ingest V0/V1 Bounded Input Loop
+active stream: V372 Heartbeat/Dreaming Candidate Runtime Loop
+current task: V372-00 Heartbeat/Dreaming Candidate Runtime Loop
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,9 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V371-00 Ingest V0/V1 Bounded Input Loop is active.
-The current gap is bounded ingest from artifact to chunks, claims, search docs,
-graph edges, activation/readback without crawler or platform work.
+V372-00 Heartbeat/Dreaming Candidate Runtime Loop is active.
+The current gap is candidate-only heartbeat/dreaming moving from preview toward
+a bounded runtime loop without daemon, scheduler, crawler, platform, or
+autonomous Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -91,33 +92,37 @@ V369 complete: DB-backed product loop replay covered plan, brief, evidence,
   observe, reflect, run show, and next-run brain search.
 V370 complete: source-search answer packages and brain-search preview expose
   graph-aware relation counts and caveats from existing SourceClaimEdge rows.
+V371 complete: source artifact preview persisted output now renders one compact
+  ingest-loop readback from artifact/chunks to search/claim/edge and emitted
+  source/brain search commands.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V371
+## Active Task V372
 
-ID: V371-00
-Name: Ingest V0/V1 Bounded Input Loop
+ID: V372-00
+Name: Heartbeat/Dreaming Candidate Runtime Loop
 Status: active
 
-Goal: improve one bounded ingest path from artifact to chunks, claims, search
-docs, graph edges, activation/readback.
+Goal: move the existing candidate-only heartbeat/dreaming preview toward a
+bounded runtime loop over current source/memory/review state.
 
-Product rationale: V370 made graph edges more visible, but graph quality still
-depends on better bounded ingest inputs before crawler/UI/API/MCP.
+Product rationale: V363-V366 proved candidate-only heartbeat preview and
+guards. The next useful step is one bounded runtime loop that proposes reviewable
+maintenance work from current store state without autonomous truth mutation.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V371 report under `docs/reviews/controlled-dogfood/`;
+- a compact V372 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
 
 - autonomous Memory Core mutation;
-- worker daemon;
 - scheduler;
+- worker daemon;
 - DB schema;
 - ranking rewrite;
 - retrieval semantics rewrite;
@@ -133,9 +138,10 @@ Forbidden writes:
 
 Definition of Done:
 
-- one bounded ingest improvement or current-state rejection;
-- output connects artifact, chunks, claims, search docs, graph edges, and
-  activation/readback;
+- one bounded heartbeat/dreaming runtime-loop improvement or current-state
+  rejection;
+- output proposes reviewable source/memory/review maintenance candidates from
+  current store state without final truth mutation;
 - focused tests cover behavior if source changes;
 - no schema rewrite, crawler, server, MCP, broad benchmark, or autonomous
   runtime is added.
@@ -156,7 +162,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V371 builds a crawler or platform instead of improving one bounded ingest path.
+V372 builds a scheduler/daemon/platform or mutates Memory Core instead of
+keeping heartbeat/dreaming candidate-only and reviewable.
 ```
 
 ## 9. Task Contract Schema
@@ -217,12 +224,11 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V371 ingest v0/v1 bounded input loop
-2. heartbeat/dreaming candidate runtime
-3. pattern/research brain
-4. real benchmarks
-5. second-operator proof
-6. product UI/API/MCP after usefulness/security gates
+1. heartbeat/dreaming candidate runtime
+2. pattern/research brain
+3. real benchmarks
+4. second-operator proof
+5. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -240,7 +246,8 @@ Current backlog order:
 - [x] V368 complete: Brain Search Product Surface Preview.
 - [x] V369 complete: End-To-End Product Loop Replay.
 - [x] V370 complete: Graph Brain V1 Readback.
-- [ ] V371 pending: Ingest V0/V1 Bounded Input Loop.
+- [x] V371 complete: Ingest V0/V1 Bounded Input Loop.
+- [ ] V372 pending: Heartbeat/Dreaming Candidate Runtime Loop.
 
 ## Outcome V370 Graph Brain V1 Readback
 
@@ -258,6 +265,24 @@ SourceClaimEdge rows. Sequential reflect selected 5 observations but produced
 no findings, keeping reflection usefulness as an open product gap.
 
 Next: V371 Ingest V0/V1 Bounded Input Loop.
+
+## Outcome V371 Ingest V0/V1 Bounded Input Loop
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v371-ingest-v0v1-bounded-input-loop/REPORT.md
+```
+
+Outcome: `krn source artifact preview --persist` now renders one compact
+`Ingest loop readback` with artifact/chunk/search document/source claim/source
+claim edge status and exact source/brain search readback commands. Live DB
+readback proved the emitted query returned useful source-search and brain-search
+output for the V371 artifact.
+
+Next: V372 Heartbeat/Dreaming Candidate Runtime Loop.
 
 ## Outcome V369 End-To-End Product Loop Replay
 

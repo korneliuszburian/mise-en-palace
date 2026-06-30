@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V371 Ingest V0/V1 Bounded Input Loop
+V372 Heartbeat/Dreaming Candidate Runtime Loop
 ```
 
 Current state:
@@ -27,12 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V371-00 Ingest V0/V1 Bounded Input Loop.
+current task: V372-00 Heartbeat/Dreaming Candidate Runtime Loop.
 ```
 
-Current task: improve one bounded ingest path from artifact to chunks, claims,
-search docs, graph edges, activation/readback. Do not build crawler, dashboard,
-API server, MCP server, schema rewrite, broad benchmark, or autonomous runtime.
+Current task: move the existing candidate-only heartbeat/dreaming preview
+toward a bounded runtime loop over current source/memory/review state. Do not
+build scheduler, daemon, crawler, dashboard, API server, MCP server, schema
+rewrite, broad benchmark, or autonomous Memory Core mutation.
 
 ## Direction
 

@@ -755,6 +755,51 @@ const formatSourceClaimEdgeReadbackLines = (
   ];
 };
 
+const readbackStatus = (
+  created: boolean,
+  readBack: boolean
+): "ready" | "missing_readback" | "not_created" => {
+  if (!created) {
+    return "not_created";
+  }
+
+  return readBack ? "ready" : "missing_readback";
+};
+
+const shellQuote = (value: string): string =>
+  `"${value.replace(/\\/gu, "\\\\").replace(/"/gu, "\\\"")}"`;
+
+const formatIngestLoopReadbackLines = (input: {
+  artifact: SourceArtifactPersistenceRows;
+  search: SearchDocumentReadbackRows;
+  claim: SourceClaimPersistenceRows;
+  edge: SourceClaimEdgePersistenceRows;
+}): string[] => {
+  const searchStatus = readbackStatus(true, input.search.readbackHit !== undefined);
+  const claimStatus = readbackStatus(
+    input.claim.sourceClaim !== undefined,
+    input.claim.sourceClaimReadback !== undefined
+  );
+  const edgeStatus = readbackStatus(
+    input.edge.sourceClaimEdge !== undefined,
+    input.edge.sourceClaimEdgeReadback !== undefined
+  );
+
+  return [
+    "Ingest loop readback:",
+    `artifactToChunks: ready (${input.artifact.sourceChunks.length} chunk row(s))`,
+    `chunkToSearchDocument: ${searchStatus}`,
+    `searchDocumentToActivationReadback: ${searchStatus}`,
+    `sourceClaimReadback: ${claimStatus}`,
+    `sourceClaimEdgeReadback: ${edgeStatus}`,
+    `activationReadbackQuery: ${input.search.readbackQuery}`,
+    `sourceSearchReadbackCommand: krn source search --query ${shellQuote(input.search.readbackQuery)} --json`,
+    `brainSearchReadbackCommand: krn brain search --query ${shellQuote(input.search.readbackQuery)} --json`,
+    "nextAction: run the readback command before changing ranking, crawler, schema, UI, API, or MCP",
+    "doesNotProve: ingest loop readback does not prove activation inclusion, ranking quality, source truth, embeddings, graph retrieval quality, crawler readiness, or product readiness"
+  ];
+};
+
 const formatPersistenceReadbackLines = (input: {
   databaseRuntime: DatabaseRuntime;
   artifact: SourceArtifactPersistenceRows;
@@ -774,6 +819,12 @@ const formatPersistenceReadbackLines = (input: {
     reviewedExtractionClaimSelection: input.reviewedExtractionClaimSelection
   }),
   ...formatSourceClaimEdgeReadbackLines(input.edge),
+  ...formatIngestLoopReadbackLines({
+    artifact: input.artifact,
+    search: input.search,
+    claim: input.claim,
+    edge: input.edge
+  }),
   "Embeddings: none",
   "Graph runtime: none",
   "doesNotProve: DB readback does not prove source truth, embeddings, graph retrieval, crawler readiness, or product readiness"
