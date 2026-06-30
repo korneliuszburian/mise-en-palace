@@ -57,8 +57,9 @@ const inspectMigrationState = async (
   };
 };
 
-export const inspectMigrationReadiness = async (
-  input: MigrationReadinessInput
+const withMigrationClient = async (
+  input: MigrationReadinessInput,
+  task: (client: Sql) => Promise<MigrationReadinessReport>
 ): Promise<MigrationReadinessReport> => {
   const databaseUrl = input.databaseUrl.trim();
 
@@ -73,36 +74,29 @@ export const inspectMigrationReadiness = async (
 
   try {
     await client`select 1`;
-    return await inspectMigrationState(client, input.migrationsFolder);
+    return await task(client);
   } finally {
     await client.end();
   }
 };
 
+export const inspectMigrationReadiness = (
+  input: MigrationReadinessInput
+): Promise<MigrationReadinessReport> => withMigrationClient(
+  input,
+  (client) => inspectMigrationState(client, input.migrationsFolder)
+);
+
 export const runMigrationReadinessCheck = async (
   input: MigrationReadinessInput
-): Promise<MigrationReadinessReport> => {
-  const databaseUrl = input.databaseUrl.trim();
-
-  if (databaseUrl.length === 0) {
-    throw new Error("KRN_DATABASE_URL is required for migration readiness");
-  }
-
-  const client = postgres(databaseUrl, {
-    max: 1,
-    onnotice: () => undefined
-  });
-
-  try {
-    await client`select 1`;
-
+): Promise<MigrationReadinessReport> => withMigrationClient(
+  input,
+  async (client) => {
     const db = createKrnDatabase(client);
     await applyMigrations(db, {
       migrationsFolder: input.migrationsFolder
     });
 
     return await inspectMigrationState(client, input.migrationsFolder);
-  } finally {
-    await client.end();
   }
-};
+);
