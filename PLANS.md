@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V369 End-To-End Product Loop Replay
-current task: V369-00 End-To-End Product Loop Replay
+active stream: V370 Graph Brain V1 Readback
+current task: V370-00 Graph Brain V1 Readback
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V369-00 End-To-End Product Loop Replay is active.
-The current gap is closing one bounded KRN-on-KRN product loop using existing
-surfaces before adding dashboard, API server, MCP server, crawler, schema,
-ranking rewrite, broad benchmark, worker daemon, or autonomous runtime.
+V370-00 Graph Brain V1 Readback is active.
+The current gap is graph-brain readback for entities, claims, relations,
+temporal edges, contradictions, duplicates, and graph-aware search using
+existing source-search/readback paths first.
 ```
 
 ## 2. Product Thesis
@@ -88,27 +88,30 @@ V367 complete: consensus eval/candidate lane exists from V339 and was verified
   by current-state audit.
 V368 complete: `krn brain search` composes existing knowledge-card and
   source-search readbacks into one read-only product-facing preview.
+V369 complete: DB-backed product loop replay covered plan, brief, evidence,
+  observe, reflect, run show, and next-run brain search.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V369
+## Active Task V370
 
-ID: V369-00
-Name: End-To-End Product Loop Replay
+ID: V370-00
+Name: Graph Brain V1 Readback
 Status: active
 
-Goal: run one bounded KRN-on-KRN product loop using existing surfaces:
-brain search, plan/brief, execution, evidence, review, candidate output, and
-next-run readback.
+Goal: strengthen graph-brain readback for entities, claims, relations,
+temporal edges, contradictions, duplicates, and graph-aware search using
+existing source-search/readback paths first.
 
-Product rationale: KRN has useful readback surfaces, but product readiness
-requires one complete workflow, not more isolated previews.
+Product rationale: V369 proved the loop can replay, but next-run brain search
+was partly useful and missing supporting SearchDocuments for the combined
+query. Graph-aware readback must become more visible before UI/API/MCP.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V369 report under `docs/reviews/controlled-dogfood/`;
+- a compact V370 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -131,13 +134,11 @@ Forbidden writes:
 
 Definition of Done:
 
-- one documented KRN-on-KRN product loop run;
-- brain search, plan/brief, evidence, review, candidate output, and next-run
-  readback are used or explicitly abstain with evidence;
-- proof/non-proof, reviewability, evidence refs, and no-mutation boundaries are
-  preserved;
-- no DB schema, crawler, server, MCP, ranking rewrite, or autonomous runtime is
-  added.
+- one bounded graph-brain readback improvement or current-state rejection;
+- output exposes relation support, missing evidence, and graph-aware caveats;
+- focused tests cover behavior if source changes;
+- no schema rewrite, crawler, server, MCP, broad benchmark, or autonomous
+  runtime is added.
 
 Verification floor:
 
@@ -155,8 +156,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V369 adds another isolated guard/readback instead of closing a bounded
-product loop over existing KRN surfaces.
+V370 builds a new graph platform instead of improving bounded graph-aware
+readback through existing KRN surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -217,14 +218,13 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V369 end-to-end product loop replay
-2. graph brain v1
-3. ingest v0/v1
-4. heartbeat/dreaming candidate runtime
-5. pattern/research brain
-6. real benchmarks
-7. second-operator proof
-8. product UI/API/MCP after usefulness/security gates
+1. V370 graph brain v1 readback
+2. ingest v0/v1
+3. heartbeat/dreaming candidate runtime
+4. pattern/research brain
+5. real benchmarks
+6. second-operator proof
+7. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -240,7 +240,25 @@ Current backlog order:
 - [x] V366 complete: Heartbeat Preview Golden Behavior Proof.
 - [x] V367 complete: Consensus Eval/Candidate Lane.
 - [x] V368 complete: Brain Search Product Surface Preview.
-- [ ] V369 pending: End-To-End Product Loop Replay.
+- [x] V369 complete: End-To-End Product Loop Replay.
+- [ ] V370 pending: Graph Brain V1 Readback.
+
+## Outcome V369 End-To-End Product Loop Replay
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v369-end-to-end-product-loop-replay/REPORT.md
+```
+
+Outcome: DB-backed replay covered plan, Codex brief, evidence capture, observe,
+reflect, run show, and next-run brain search. It exposed three product gaps:
+no knowledge cards for `end-to-end product loop`, reflection produced no
+findings, and the feedback candidate was `too_vague`.
+
+Next: V370 Graph Brain V1 Readback.
 
 ## Outcome V368 Brain Search Product Surface Preview
 

@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V369 End-To-End Product Loop Replay
-current task: V369-00 End-To-End Product Loop Replay
+active stream: V370 Graph Brain V1 Readback
+current task: V370-00 Graph Brain V1 Readback
 ```
 
 ## Compact Checkpoints
@@ -24,6 +24,7 @@ evidence/review loop: DB-backed and useful for dogfood
 candidate reviewability: core primitive
 source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
+product loop replay: DB-backed and inspectable
 product-ready brain: not complete
 ```
 
@@ -53,7 +54,7 @@ docs/reviews/controlled-dogfood/2026-06-30-v368-brain-search-product-surface-pre
 
 ### V369-00 End-To-End Product Loop Replay
 
-Status: active.
+Status: complete.
 
 Goal: run one bounded KRN-on-KRN product loop using existing surfaces:
 brain search, plan/brief, execution, evidence, review, candidate output, and
@@ -62,6 +63,29 @@ next-run readback.
 Hard boundary: no dashboard, API server, MCP server, crawler, DB schema,
 ranking rewrite, worker daemon, autonomous Memory Core mutation, broad
 benchmark, or generic multi-agent runtime.
+
+Outcome: DB-backed replay covered plan, brief, evidence, observe, reflect,
+run show, and next-run brain search. It exposed missing knowledge-card coverage
+for `end-to-end product loop`, weak reflection usefulness, and a too-vague
+feedback candidate.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v369-end-to-end-product-loop-replay/REPORT.md
+```
+
+### V370-00 Graph Brain V1 Readback
+
+Status: active.
+
+Goal: strengthen graph-brain readback for entities, claims, relations,
+temporal edges, contradictions, duplicates, and graph-aware search using
+existing source-search/readback paths first.
+
+Hard boundary: no dashboard, API server, MCP server, crawler, schema rewrite,
+worker daemon, broad benchmark, autonomous Memory Core mutation, or generic
+multi-agent runtime.
 
 ## Recent Completed Streams
 
@@ -76,19 +100,19 @@ V365: heartbeat preview review/eval closure.
 V366: heartbeat preview golden behavior proof.
 V367: consensus eval/candidate lane completion audit.
 V368: brain search product surface preview.
+V369: end-to-end product loop replay.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. end-to-end product loop
-2. graph brain v1
-3. ingest v0/v1
-4. heartbeat/dreaming candidate runtime
-5. pattern/research brain
-6. real benchmarks
-7. second-operator proof
-8. product UI/API/MCP after usefulness/security gates
+1. graph brain v1
+2. ingest v0/v1
+3. heartbeat/dreaming candidate runtime
+4. pattern/research brain
+5. real benchmarks
+6. second-operator proof
+7. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

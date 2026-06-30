@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V369 End-To-End Product Loop Replay
+V370 Graph Brain V1 Readback
 ```
 
 Current state:
@@ -27,13 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V369-00 End-To-End Product Loop Replay.
+current task: V370-00 Graph Brain V1 Readback.
 ```
 
-Current task: run one bounded KRN-on-KRN product loop using existing surfaces:
-brain search, plan/brief, execution, evidence, review, candidate output, and
-next-run readback. Do not build dashboard, API server, MCP server, crawler,
-schema, ranking rewrite, broad benchmark, or autonomous runtime.
+Current task: strengthen graph-brain readback for entities, claims, relations,
+temporal edges, contradictions, duplicates, and graph-aware search using
+existing source-search/readback paths first. Do not build dashboard, API server,
+MCP server, crawler, schema rewrite, broad benchmark, or autonomous runtime.
 
 ## Direction
 
