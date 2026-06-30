@@ -84,6 +84,93 @@ export const evidenceCommandsForPersistence = (
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(private readonly db: KrnDatabase) {}
 
+  private async findHarnessRunSpineRows(executionRunId: string) {
+    const executionRunRow = await this.db.query.executionRuns.findFirst({
+      where: eq(executionRuns.id, executionRunId)
+    });
+
+    if (executionRunRow === undefined) {
+      return undefined;
+    }
+
+    const harnessPlanRow = requireLinkedRow(
+      await this.db.query.harnessPlans.findFirst({
+        where: eq(harnessPlans.id, executionRunRow.harnessPlanId)
+      }),
+      "getHarnessRunByExecutionRunId.harnessPlan"
+    );
+    const taskContractRow = requireLinkedRow(
+      await this.db.query.taskContracts.findFirst({
+        where: eq(taskContracts.id, harnessPlanRow.taskContractId)
+      }),
+      "getHarnessRunByExecutionRunId.taskContract"
+    );
+    const operatorIntentRow = requireLinkedRow(
+      await this.db.query.operatorIntents.findFirst({
+        where: eq(operatorIntents.id, taskContractRow.operatorIntentId)
+      }),
+      "getHarnessRunByExecutionRunId.operatorIntent"
+    );
+
+    return {
+      executionRunRow,
+      harnessPlanRow,
+      taskContractRow,
+      operatorIntentRow
+    };
+  }
+
+  private async findEvidenceReviewFeedbackRows(executionRunId: string) {
+    const evidenceBundleRows = await this.db.query.evidenceBundles.findMany({
+      where: eq(evidenceBundles.executionRunId, executionRunId)
+    });
+    const evidenceBundleIds = evidenceBundleRows.map((row) => row.id);
+    const reviewAssessmentRows =
+      evidenceBundleIds.length === 0
+        ? []
+        : await this.db.query.reviewAssessments.findMany({
+            where: inArray(reviewAssessments.evidenceBundleId, evidenceBundleIds)
+          });
+    const reviewAssessmentIds = reviewAssessmentRows.map((row) => row.id);
+    const feedbackDeltaRows =
+      reviewAssessmentIds.length === 0
+        ? []
+        : await this.db.query.feedbackDeltas.findMany({
+            where: inArray(feedbackDeltas.reviewAssessmentId, reviewAssessmentIds)
+          });
+
+    return {
+      evidenceBundleRows,
+      reviewAssessmentRows,
+      feedbackDeltaRows
+    };
+  }
+
+  private async findActivationTrace(contextAssembly: ContextAssembly | undefined) {
+    if (contextAssembly === undefined) {
+      return undefined;
+    }
+
+    const retrievalRunId = readMetadataString(contextAssembly.metadata, "retrievalRunId");
+
+    if (retrievalRunId === undefined) {
+      return undefined;
+    }
+
+    const retrievalCandidateRows = await this.db.query.retrievalCandidates.findMany({
+      where: eq(retrievalCandidates.retrievalRunId, retrievalRunId)
+    });
+    const activationDecisionRows = await this.db.query.activationDecisions.findMany({
+      where: eq(activationDecisions.retrievalRunId, retrievalRunId)
+    });
+
+    return {
+      retrievalRunId,
+      candidates: retrievalCandidateRows.map(mapRetrievalCandidate),
+      decisions: activationDecisionRows.map(mapActivationDecision)
+    };
+  }
+
   async createOperatorIntent(input: CreateOperatorIntentInput): Promise<OperatorIntent> {
     const row = requireReturnedRow(
       await this.db
@@ -320,88 +407,35 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   async getHarnessRunByExecutionRunId(
     executionRunId: string
   ): Promise<HarnessRunAggregate | undefined> {
-    const executionRunRow = await this.db.query.executionRuns.findFirst({
-      where: eq(executionRuns.id, executionRunId)
-    });
+    const spineRows = await this.findHarnessRunSpineRows(executionRunId);
 
-    if (executionRunRow === undefined) {
+    if (spineRows === undefined) {
       return undefined;
     }
 
-    const harnessPlanRow = requireLinkedRow(
-      await this.db.query.harnessPlans.findFirst({
-        where: eq(harnessPlans.id, executionRunRow.harnessPlanId)
-      }),
-      "getHarnessRunByExecutionRunId.harnessPlan"
-    );
-    const taskContractRow = requireLinkedRow(
-      await this.db.query.taskContracts.findFirst({
-        where: eq(taskContracts.id, harnessPlanRow.taskContractId)
-      }),
-      "getHarnessRunByExecutionRunId.taskContract"
-    );
-    const operatorIntentRow = requireLinkedRow(
-      await this.db.query.operatorIntents.findFirst({
-        where: eq(operatorIntents.id, taskContractRow.operatorIntentId)
-      }),
-      "getHarnessRunByExecutionRunId.operatorIntent"
-    );
     const contextAssemblyRow = await this.db.query.contextAssemblies.findFirst({
-      where: eq(contextAssemblies.harnessPlanId, harnessPlanRow.id)
+      where: eq(contextAssemblies.harnessPlanId, spineRows.harnessPlanRow.id)
     });
-    const evidenceBundleRows = await this.db.query.evidenceBundles.findMany({
-      where: eq(evidenceBundles.executionRunId, executionRunId)
-    });
-    const evidenceBundleIds = evidenceBundleRows.map((row) => row.id);
-    const reviewAssessmentRows =
-      evidenceBundleIds.length === 0
-        ? []
-        : await this.db.query.reviewAssessments.findMany({
-            where: inArray(reviewAssessments.evidenceBundleId, evidenceBundleIds)
-          });
-    const reviewAssessmentIds = reviewAssessmentRows.map((row) => row.id);
-    const feedbackDeltaRows =
-      reviewAssessmentIds.length === 0
-        ? []
-        : await this.db.query.feedbackDeltas.findMany({
-            where: inArray(feedbackDeltas.reviewAssessmentId, reviewAssessmentIds)
-          });
+    const {
+      evidenceBundleRows,
+      reviewAssessmentRows,
+      feedbackDeltaRows
+    } = await this.findEvidenceReviewFeedbackRows(executionRunId);
     const runEventRows = await this.db.query.runEvents.findMany({
       where: eq(runEvents.executionRunId, executionRunId),
       orderBy: asc(runEvents.sequence)
     });
     const contextAssembly =
       contextAssemblyRow === undefined ? undefined : mapContextAssembly(contextAssemblyRow);
-    const retrievalRunId =
-      contextAssembly === undefined ? undefined : readMetadataString(contextAssembly.metadata, "retrievalRunId");
-    const retrievalCandidateRows =
-      retrievalRunId === undefined
-        ? []
-        : await this.db.query.retrievalCandidates.findMany({
-            where: eq(retrievalCandidates.retrievalRunId, retrievalRunId)
-          });
-    const activationDecisionRows =
-      retrievalRunId === undefined
-        ? []
-        : await this.db.query.activationDecisions.findMany({
-            where: eq(activationDecisions.retrievalRunId, retrievalRunId)
-          });
+    const activationTrace = await this.findActivationTrace(contextAssembly);
 
     return {
-      operatorIntent: mapOperatorIntent(operatorIntentRow),
-      taskContract: mapTaskContract(taskContractRow),
-      harnessPlan: mapHarnessPlan(harnessPlanRow),
+      operatorIntent: mapOperatorIntent(spineRows.operatorIntentRow),
+      taskContract: mapTaskContract(spineRows.taskContractRow),
+      harnessPlan: mapHarnessPlan(spineRows.harnessPlanRow),
       ...(contextAssembly === undefined ? {} : { contextAssembly }),
-      ...(retrievalRunId === undefined
-        ? {}
-        : {
-            activationTrace: {
-              retrievalRunId,
-              candidates: retrievalCandidateRows.map(mapRetrievalCandidate),
-              decisions: activationDecisionRows.map(mapActivationDecision)
-            }
-          }),
-      executionRun: mapExecutionRun(executionRunRow),
+      ...(activationTrace === undefined ? {} : { activationTrace }),
+      executionRun: mapExecutionRun(spineRows.executionRunRow),
       evidenceBundles: evidenceBundleRows.map(mapEvidenceBundle),
       reviewAssessments: reviewAssessmentRows.map(mapReviewAssessment),
       feedbackDeltas: feedbackDeltaRows.map(mapFeedbackDelta),
