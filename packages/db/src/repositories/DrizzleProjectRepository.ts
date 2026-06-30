@@ -1,4 +1,5 @@
 import { desc, eq, and, sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import type {
   CreateProjectInput,
   CreateProjectKernelInput,
@@ -91,28 +92,30 @@ export class DrizzleProjectRepository implements ProjectRepository {
     return row === undefined ? undefined : mapProject(row);
   }
 
-  async getProjectByRepoFingerprint(repoFingerprint: string): Promise<ProjectRecord | undefined> {
+  private async getProjectByRepoInstallationWhere(
+    where: SQL
+  ): Promise<ProjectRecord | undefined> {
     const row = await this.db
       .select({ project: projects })
       .from(repoInstallations)
       .innerJoin(projects, eq(repoInstallations.projectId, projects.id))
-      .where(eq(repoInstallations.repoFingerprint, repoFingerprint))
+      .where(where)
       .limit(1);
     const project = row[0]?.project;
 
     return project === undefined ? undefined : mapProject(project);
   }
 
-  async getProjectByRepoPath(localPathHint: string): Promise<ProjectRecord | undefined> {
-    const row = await this.db
-      .select({ project: projects })
-      .from(repoInstallations)
-      .innerJoin(projects, eq(repoInstallations.projectId, projects.id))
-      .where(eq(repoInstallations.localPathHint, localPathHint))
-      .limit(1);
-    const project = row[0]?.project;
+  async getProjectByRepoFingerprint(repoFingerprint: string): Promise<ProjectRecord | undefined> {
+    return this.getProjectByRepoInstallationWhere(
+      eq(repoInstallations.repoFingerprint, repoFingerprint)
+    );
+  }
 
-    return project === undefined ? undefined : mapProject(project);
+  async getProjectByRepoPath(localPathHint: string): Promise<ProjectRecord | undefined> {
+    return this.getProjectByRepoInstallationWhere(
+      eq(repoInstallations.localPathHint, localPathHint)
+    );
   }
 
   async createRepoInstallation(

@@ -52,3 +52,5 @@
 {"id":"int-55258a49","kind":"field_change","created_at":"2026-06-30T04:23:20.091991798Z","actor":"korneliuszburian","issue_id":"mise-en-palace-bye","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"fixed"}}
 {"id":"int-aa320756","kind":"field_change","created_at":"2026-06-30T04:28:51.949761476Z","actor":"korneliuszburian","issue_id":"mise-en-palace-77u","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
 {"id":"int-9dc95247","kind":"field_change","created_at":"2026-06-30T04:31:20.445491941Z","actor":"korneliuszburian","issue_id":"mise-en-palace-77u","extra":{"field":"status","new_value":"closed","old_value":"open","reason":"fixed"}}
+{"id":"int-abe257c8","kind":"field_change","created_at":"2026-06-30T04:40:46.690403053Z","actor":"korneliuszburian","issue_id":"mise-en-palace-bl6","extra":{"field":"status","new_value":"in_progress","old_value":"open"}}
+{"id":"int-8654e5ad","kind":"field_change","created_at":"2026-06-30T04:44:42.339400076Z","actor":"korneliuszburian","issue_id":"mise-en-palace-bl6","extra":{"field":"status","new_value":"closed","old_value":"in_progress","reason":"fixed"}}
