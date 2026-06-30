@@ -103,6 +103,32 @@ const evidenceContract: EvidenceContract = {
   metadata: {}
 };
 
+const expectedRenderedBriefFragments = [
+  "Constraints:",
+  "- do not mutate core state",
+  "Acceptance:",
+  "- brief exposes review contract fields",
+  "Context Inclusions:",
+  "source_claim:claim-codex-brief-contract",
+  "reason=C-03 dogfood proved brief review contract fields matter.",
+  "expected_use=Keep the Codex brief bounded and reviewable.",
+  "Explicit Exclusions:",
+  "source_claim:claim-promptfoo-as-truth",
+  "reason=low_trust",
+  "explanation=Promptfoo smoke is adapter evidence, not KRN behavior proof.",
+  `Review burden: ${evidenceContract.reviewBurden}`,
+  `Rollback path: ${evidenceContract.rollbackPath}`,
+  `Rollback Expectation: ${evidenceContract.rollbackPath}`,
+  "Stop Condition: Stop before Codex execution or hidden state mutation.",
+  "What This Does Not Prove:",
+  "- Codex executed the work."
+] as const;
+
+const includesAllFragments = (
+  rendered: string,
+  fragments: readonly string[]
+): boolean => fragments.every((fragment) => rendered.includes(fragment));
+
 const task: GoldenTask = {
   id: "golden-task-codex-brief-001",
   projectId: "project-1",
@@ -155,25 +181,7 @@ describe("codex brief golden behavior", () => {
       execPlanReference: "PLAN.md D-00"
     });
     const rendered = renderExecutionBriefText(brief);
-    const passed =
-      rendered.includes("Constraints:") &&
-      rendered.includes("- do not mutate core state") &&
-      rendered.includes("Acceptance:") &&
-      rendered.includes("- brief exposes review contract fields") &&
-      rendered.includes("Context Inclusions:") &&
-      rendered.includes("source_claim:claim-codex-brief-contract") &&
-      rendered.includes("reason=C-03 dogfood proved brief review contract fields matter.") &&
-      rendered.includes("expected_use=Keep the Codex brief bounded and reviewable.") &&
-      rendered.includes("Explicit Exclusions:") &&
-      rendered.includes("source_claim:claim-promptfoo-as-truth") &&
-      rendered.includes("reason=low_trust") &&
-      rendered.includes("explanation=Promptfoo smoke is adapter evidence, not KRN behavior proof.") &&
-      rendered.includes(`Review burden: ${evidenceContract.reviewBurden}`) &&
-      rendered.includes(`Rollback path: ${evidenceContract.rollbackPath}`) &&
-      rendered.includes(`Rollback Expectation: ${evidenceContract.rollbackPath}`) &&
-      rendered.includes("Stop Condition: Stop before Codex execution or hidden state mutation.") &&
-      rendered.includes("What This Does Not Prove:") &&
-      rendered.includes("- Codex executed the work.");
+    const passed = includesAllFragments(rendered, expectedRenderedBriefFragments);
     const report = runGoldenTaskFixtures({
       tasks: [task],
       proofs: [{
