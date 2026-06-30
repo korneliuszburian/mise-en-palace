@@ -57,6 +57,29 @@ export interface ObservationPrefix {
   warnings: ObservationPrefixWarning[];
 }
 
+interface ObservationPrefixCandidate {
+  observation: ObservationItem;
+  matches: string[];
+  score: number;
+}
+
+interface ObservationPrefixSelectionContext {
+  projectId: ProjectId;
+  terms: ReadonlySet<string>;
+  antiMemoryRecords: readonly AntiMemoryRecord[];
+  now: string;
+}
+
+type ObservationPrefixSelection =
+  | {
+    kind: "candidate";
+    candidate: ObservationPrefixCandidate;
+  }
+  | {
+    kind: "exclusion";
+    exclusion: ObservationPrefixExclusion;
+  };
+
 const defaultMaxItems = 5;
 const invalidStatuses = new Set<ObservationStatus>([
   "deprecated",
@@ -152,6 +175,165 @@ const antiMemoryForObservation = (
     antiMemoryTargetsObservation(antiMemory, observation)
   );
 
+const excludedObservation = (
+  observation: ObservationItem,
+  reason: ObservationPrefixExclusionReason,
+  explanation: string
+): ObservationPrefixExclusion => ({
+  observationId: observation.id,
+  reason,
+  explanation
+});
+
+const projectScopeExclusion = (
+  projectId: ProjectId,
+  observation: ObservationItem
+): ObservationPrefixExclusion | undefined => {
+  if (observation.scope.projectId === undefined) {
+    return excludedObservation(
+      observation,
+      "project_mismatch",
+      "Observation is unscoped and cannot enter a project-scoped prefix."
+    );
+  }
+
+  if (observation.scope.projectId !== projectId) {
+    return excludedObservation(
+      observation,
+      "project_mismatch",
+      `Observation belongs to project ${observation.scope.projectId}.`
+    );
+  }
+
+  return undefined;
+};
+
+const lifecycleExclusion = (
+  observation: ObservationItem,
+  now: string
+): ObservationPrefixExclusion | undefined => {
+  if (invalidStatuses.has(observation.status)) {
+    return excludedObservation(
+      observation,
+      "invalidated",
+      `Observation status is ${observation.status}.`
+    );
+  }
+
+  if (isStale(observation, now)) {
+    return excludedObservation(
+      observation,
+      "stale",
+      `Observation expired at ${observation.temporalScope.validUntil}.`
+    );
+  }
+
+  return undefined;
+};
+
+const antiMemoryExclusion = (
+  antiMemoryRecords: readonly AntiMemoryRecord[],
+  observation: ObservationItem
+): ObservationPrefixExclusion | undefined => {
+  const antiMemory = antiMemoryForObservation(antiMemoryRecords, observation);
+
+  if (antiMemory === undefined) {
+    return undefined;
+  }
+
+  return excludedObservation(
+    observation,
+    "anti_memory",
+    `Blocked by anti-memory ${antiMemory.id}: ${antiMemory.reason ?? antiMemory.summary}`
+  );
+};
+
+const scoreObservationPrefixCandidate = (
+  observation: ObservationItem,
+  matches: readonly string[]
+): number => (
+  matches.length * 3 +
+  priorityScore[observation.priority] +
+  confidenceScore[observation.confidence]
+);
+
+const relevantCandidate = (
+  terms: ReadonlySet<string>,
+  observation: ObservationItem
+): ObservationPrefixSelection => {
+  const matches = matchedTerms(terms, observation);
+
+  if (matches.length === 0) {
+    return {
+      kind: "exclusion",
+      exclusion: excludedObservation(
+        observation,
+        "low_relevance",
+        "Observation did not match task terms; priority/confidence alone cannot activate it."
+      )
+    };
+  }
+
+  return {
+    kind: "candidate",
+    candidate: {
+      observation,
+      matches,
+      score: scoreObservationPrefixCandidate(observation, matches)
+    }
+  };
+};
+
+const selectObservationCandidate = (
+  context: ObservationPrefixSelectionContext,
+  observation: ObservationItem
+): ObservationPrefixSelection => {
+  const exclusion =
+    projectScopeExclusion(context.projectId, observation) ??
+    lifecycleExclusion(observation, context.now) ??
+    antiMemoryExclusion(context.antiMemoryRecords, observation);
+
+  if (exclusion !== undefined) {
+    return {
+      kind: "exclusion",
+      exclusion
+    };
+  }
+
+  return relevantCandidate(context.terms, observation);
+};
+
+const compareObservationPrefixCandidates = (
+  left: ObservationPrefixCandidate,
+  right: ObservationPrefixCandidate
+): number => (
+  right.score - left.score ||
+  priorityScore[right.observation.priority] - priorityScore[left.observation.priority] ||
+  confidenceScore[right.observation.confidence] - confidenceScore[left.observation.confidence] ||
+  left.observation.id.localeCompare(right.observation.id)
+);
+
+const budgetExceededExclusion = (
+  candidate: ObservationPrefixCandidate
+): ObservationPrefixExclusion => excludedObservation(
+  candidate.observation,
+  "budget_exceeded",
+  "Observation was relevant but outside the observation prefix budget."
+);
+
+const prefixItemForCandidate = (
+  candidate: ObservationPrefixCandidate
+): ObservationPrefixItem => ({
+  observationId: candidate.observation.id,
+  kind: candidate.observation.kind,
+  confidence: candidate.observation.confidence,
+  priority: candidate.observation.priority,
+  summary: candidate.observation.summary,
+  sourceRangeCount: candidate.observation.sourceRanges.length,
+  reason: `matched task terms: ${candidate.matches.join(", ")}`,
+  score: candidate.score
+});
+
 const warningFor = (observation: ObservationItem): ObservationPrefixWarning | undefined => {
   if (observation.status === "contested") {
     return {
@@ -191,109 +373,34 @@ export const selectObservationPrefix = (
   const maxItems = input.maxItems ?? defaultMaxItems;
   const antiMemoryRecords = input.antiMemoryRecords ?? [];
   const exclusions: ObservationPrefixExclusion[] = [];
-  const candidates: Array<{
-    observation: ObservationItem;
-    matches: string[];
-    score: number;
-  }> = [];
+  const candidates: ObservationPrefixCandidate[] = [];
+  const context: ObservationPrefixSelectionContext = {
+    projectId: input.projectId,
+    terms,
+    antiMemoryRecords,
+    now: input.now
+  };
 
   for (const observation of input.observations) {
-    if (observation.scope.projectId === undefined) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "project_mismatch",
-        explanation: "Observation is unscoped and cannot enter a project-scoped prefix."
-      });
+    const selection = selectObservationCandidate(context, observation);
+    if (selection.kind === "exclusion") {
+      exclusions.push(selection.exclusion);
       continue;
     }
 
-    if (observation.scope.projectId !== input.projectId) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "project_mismatch",
-        explanation: `Observation belongs to project ${observation.scope.projectId}.`
-      });
-      continue;
-    }
-
-    if (invalidStatuses.has(observation.status)) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "invalidated",
-        explanation: `Observation status is ${observation.status}.`
-      });
-      continue;
-    }
-
-    if (isStale(observation, input.now)) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "stale",
-        explanation: `Observation expired at ${observation.temporalScope.validUntil}.`
-      });
-      continue;
-    }
-
-    const antiMemory = antiMemoryForObservation(antiMemoryRecords, observation);
-    if (antiMemory !== undefined) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "anti_memory",
-        explanation: `Blocked by anti-memory ${antiMemory.id}: ${antiMemory.reason ?? antiMemory.summary}`
-      });
-      continue;
-    }
-
-    const matches = matchedTerms(terms, observation);
-    if (matches.length === 0) {
-      exclusions.push({
-        observationId: observation.id,
-        reason: "low_relevance",
-        explanation: "Observation did not match task terms; priority/confidence alone cannot activate it."
-      });
-      continue;
-    }
-
-    const score =
-      matches.length * 3 +
-      priorityScore[observation.priority] +
-      confidenceScore[observation.confidence];
-
-    candidates.push({
-      observation,
-      matches,
-      score
-    });
+    candidates.push(selection.candidate);
   }
 
-  candidates.sort((left, right) => (
-    right.score - left.score ||
-    priorityScore[right.observation.priority] - priorityScore[left.observation.priority] ||
-    confidenceScore[right.observation.confidence] - confidenceScore[left.observation.confidence] ||
-    left.observation.id.localeCompare(right.observation.id)
-  ));
+  candidates.sort(compareObservationPrefixCandidates);
 
   const selected = candidates.slice(0, maxItems);
   const overflow = candidates.slice(maxItems);
 
   for (const candidate of overflow) {
-    exclusions.push({
-      observationId: candidate.observation.id,
-      reason: "budget_exceeded",
-      explanation: "Observation was relevant but outside the observation prefix budget."
-    });
+    exclusions.push(budgetExceededExclusion(candidate));
   }
 
-  const items = selected.map((candidate): ObservationPrefixItem => ({
-    observationId: candidate.observation.id,
-    kind: candidate.observation.kind,
-    confidence: candidate.observation.confidence,
-    priority: candidate.observation.priority,
-    summary: candidate.observation.summary,
-    sourceRangeCount: candidate.observation.sourceRanges.length,
-    reason: `matched task terms: ${candidate.matches.join(", ")}`,
-    score: candidate.score
-  }));
+  const items = selected.map(prefixItemForCandidate);
   const warnings = selected
     .map((candidate) => warningFor(candidate.observation))
     .filter((warning): warning is ObservationPrefixWarning => warning !== undefined);
