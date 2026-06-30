@@ -107,8 +107,9 @@ completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
 	  run show readback section cleanup,
 	  activation candidate merge scoring cleanup,
 	  observation prefix selection cleanup,
-	  harness compiler orchestration cleanup
-	full Fallow moved: dupes 136 -> 66; health 117 -> 24
+	  harness compiler orchestration cleanup,
+	  temporal activation exclusions cleanup
+	full Fallow moved: dupes 136 -> 66; health 117 -> 23
 		```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
