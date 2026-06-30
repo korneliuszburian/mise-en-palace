@@ -79,8 +79,9 @@ recent slices: shared parser helpers, source-search readback preparation,
   parsing, activation/retrieval smoke scaffold, DB smoke support tasks,
   harness smoke scaffolding, memory/source smoke setup, migration readiness.
   project repo lookup, locked row metadata mapping, retrieval subject mapping.
-  evidence command normalization, feedback candidate normalization.
-full Fallow moved: dupes 136 -> 40; health 117 -> 15; dead-code 0
+  evidence command normalization, feedback candidate normalization, evidence
+  persistence assembly.
+full Fallow moved: dupes 136 -> 40; health 117 -> 14; dead-code 0
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
