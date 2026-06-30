@@ -4,7 +4,7 @@ import type {
 
 export const formatHeartbeatUsage = (): string =>
   [
-    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--json]",
+    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "",
     "Read-only operator commands:",
     "krn heartbeat preview",
@@ -16,9 +16,14 @@ export const formatHeartbeatUsage = (): string =>
     "--near-expiry-days <positive-integer>",
     "--max-candidates <positive-integer>",
     "--evidence-ref <ref>",
+    "--review-candidate-id <id>",
+    "--review-decision accept_for_manual_followup|defer_pending_evidence|reject_not_actionable",
+    "--review-reason <text>",
+    "--review-evidence-ref <ref>",
+    "--reviewer <name>",
     "--json",
     "",
-    "Note: heartbeat preview reads current Postgres memory/source state and renders candidate-only maintenance output. It does not mutate Memory Core, source truth, source decisions, worker runtime state, or DB schema."
+    "Note: heartbeat preview reads current Postgres memory/source state and renders candidate-only maintenance output. Optional review fields record a manual review result in output only. It does not mutate Memory Core, source truth, source decisions, worker runtime state, or DB schema."
   ].join("\n") + "\n";
 
 const parsePositiveInteger = (
@@ -47,7 +52,25 @@ type HeartbeatParseState = {
   nearExpiryDays: number | undefined;
   maxCandidates: number | undefined;
   evidenceRef: string | undefined;
+  reviewCandidateId: string | undefined;
+  reviewDecision: HeartbeatReviewDecision | undefined;
+  reviewReason: string | undefined;
+  reviewEvidenceRef: string | undefined;
+  reviewer: string | undefined;
   format: "text" | "json";
+};
+
+type HeartbeatReviewDecision =
+  | "accept_for_manual_followup"
+  | "defer_pending_evidence"
+  | "reject_not_actionable";
+
+type HeartbeatCandidateReviewCommand = {
+  candidateId: string;
+  decision: HeartbeatReviewDecision;
+  reason: string;
+  evidenceRef: string;
+  reviewer?: string;
 };
 
 type ParseHeartbeatOptionResult =
@@ -141,6 +164,20 @@ const assignPositiveIntegerOption = (
   };
 };
 
+const parseReviewDecision = (
+  value: string
+): HeartbeatReviewDecision | undefined => {
+  if (
+    value === "accept_for_manual_followup" ||
+    value === "defer_pending_evidence" ||
+    value === "reject_not_actionable"
+  ) {
+    return value;
+  }
+
+  return undefined;
+};
+
 const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
   "--project": (args, index, state) =>
     assignTextOption(args, index, "--project", (value) => {
@@ -166,6 +203,50 @@ const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
     assignTextOption(args, index, "--evidence-ref", (value) => {
       state.evidenceRef = value;
     }),
+  "--review-candidate-id": (args, index, state) =>
+    assignTextOption(args, index, "--review-candidate-id", (value) => {
+      state.reviewCandidateId = value;
+    }),
+  "--review-decision": (args, index, state) => {
+    const required = requiredOption(args, index, "--review-decision");
+
+    if (!required.ok) {
+      return {
+        ok: false,
+        error: `${required.error}\n${formatHeartbeatUsage()}`
+      };
+    }
+
+    const decision = parseReviewDecision(required.value);
+
+    if (decision === undefined) {
+      return {
+        ok: false,
+        error:
+          "--review-decision must be accept_for_manual_followup, defer_pending_evidence, or reject_not_actionable\n" +
+          formatHeartbeatUsage()
+      };
+    }
+
+    state.reviewDecision = decision;
+
+    return {
+      ok: true,
+      nextIndex: index + 1
+    };
+  },
+  "--review-reason": (args, index, state) =>
+    assignTextOption(args, index, "--review-reason", (value) => {
+      state.reviewReason = value;
+    }),
+  "--review-evidence-ref": (args, index, state) =>
+    assignTextOption(args, index, "--review-evidence-ref", (value) => {
+      state.reviewEvidenceRef = value;
+    }),
+  "--reviewer": (args, index, state) =>
+    assignTextOption(args, index, "--reviewer", (value) => {
+      state.reviewer = value;
+    }),
   "--json": (_args, index, state) => {
     state.format = "json";
 
@@ -176,18 +257,70 @@ const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
   }
 };
 
-const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResult => ({
-  command: {
-    kind: "heartbeatPreview",
-    ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
-    ...(state.memoryLimit === undefined ? {} : { memoryLimit: state.memoryLimit }),
-    ...(state.sourceClaimLimit === undefined ? {} : { sourceClaimLimit: state.sourceClaimLimit }),
-    ...(state.nearExpiryDays === undefined ? {} : { nearExpiryDays: state.nearExpiryDays }),
-    ...(state.maxCandidates === undefined ? {} : { maxCandidates: state.maxCandidates }),
-    ...(state.evidenceRef === undefined ? {} : { evidenceRef: state.evidenceRef }),
-    format: state.format
+const hasAnyReviewField = (state: HeartbeatParseState): boolean =>
+  state.reviewCandidateId !== undefined ||
+  state.reviewDecision !== undefined ||
+  state.reviewReason !== undefined ||
+  state.reviewEvidenceRef !== undefined ||
+  state.reviewer !== undefined;
+
+const validateReviewState = (state: HeartbeatParseState): string | undefined => {
+  if (!hasAnyReviewField(state)) {
+    return undefined;
   }
-});
+
+  const missing = [
+    ...(state.reviewCandidateId === undefined ? ["--review-candidate-id"] : []),
+    ...(state.reviewDecision === undefined ? ["--review-decision"] : []),
+    ...(state.reviewReason === undefined ? ["--review-reason"] : []),
+    ...(state.reviewEvidenceRef === undefined ? ["--review-evidence-ref"] : [])
+  ];
+
+  if (missing.length === 0) {
+    return undefined;
+  }
+
+  return `Heartbeat candidate review requires ${missing.join(", ")}\n${formatHeartbeatUsage()}`;
+};
+
+const buildCandidateReview = (
+  state: HeartbeatParseState
+): HeartbeatCandidateReviewCommand | undefined => {
+  if (
+    state.reviewCandidateId === undefined ||
+    state.reviewDecision === undefined ||
+    state.reviewReason === undefined ||
+    state.reviewEvidenceRef === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    candidateId: state.reviewCandidateId,
+    decision: state.reviewDecision,
+    reason: state.reviewReason,
+    evidenceRef: state.reviewEvidenceRef,
+    ...(state.reviewer === undefined ? {} : { reviewer: state.reviewer })
+  };
+};
+
+const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResult => {
+  const candidateReview = buildCandidateReview(state);
+
+  return {
+    command: {
+      kind: "heartbeatPreview",
+      ...(state.projectId === undefined ? {} : { projectId: state.projectId }),
+      ...(state.memoryLimit === undefined ? {} : { memoryLimit: state.memoryLimit }),
+      ...(state.sourceClaimLimit === undefined ? {} : { sourceClaimLimit: state.sourceClaimLimit }),
+      ...(state.nearExpiryDays === undefined ? {} : { nearExpiryDays: state.nearExpiryDays }),
+      ...(state.maxCandidates === undefined ? {} : { maxCandidates: state.maxCandidates }),
+      ...(state.evidenceRef === undefined ? {} : { evidenceRef: state.evidenceRef }),
+      ...(candidateReview === undefined ? {} : { candidateReview }),
+      format: state.format
+    }
+  };
+};
 
 export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => {
   const [action, ...args] = rest;
@@ -213,6 +346,11 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
     nearExpiryDays: undefined,
     maxCandidates: undefined,
     evidenceRef: undefined,
+    reviewCandidateId: undefined,
+    reviewDecision: undefined,
+    reviewReason: undefined,
+    reviewEvidenceRef: undefined,
+    reviewer: undefined,
     format: "text"
   };
 
@@ -235,6 +373,14 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
     }
 
     index = parsed.nextIndex;
+  }
+
+  const reviewError = validateReviewState(state);
+
+  if (reviewError !== undefined) {
+    return {
+      error: reviewError
+    };
   }
 
   return buildHeartbeatPreviewCommand(state);

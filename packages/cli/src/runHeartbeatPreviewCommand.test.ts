@@ -179,6 +179,65 @@ describe("runHeartbeatPreviewCommand", () => {
     })).rejects.toThrow("KRN_DATABASE_URL is required for krn heartbeat preview");
   });
 
+  it("renders a manual candidate review result without mutating truth", async () => {
+    const candidateId = `source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`;
+    const result = await runHeartbeatPreviewCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "heartbeatPreview",
+        projectId,
+        memoryLimit: 0,
+        sourceClaimLimit: 2,
+        maxCandidates: 1,
+        evidenceRef: "docs/reviews/controlled-dogfood/v372.md",
+        candidateReview: {
+          candidateId,
+          decision: "defer_pending_evidence",
+          reason: "Relation evidence refs are empty.",
+          evidenceRef: "docs/reviews/controlled-dogfood/v373.md",
+          reviewer: "operator"
+        },
+        format: "text"
+      },
+      createDatabaseRuntime: async () => ({
+        projectId,
+        memoryRepository: {
+          async listMemoryRecordsForProject() {
+            return [];
+          }
+        },
+        sourceRepository: {
+          async listClaimsForProject() {
+            return [
+              sourceClaim(sourceClaimId, "Heartbeat preview can inspect source edges."),
+              sourceClaim(relatedSourceClaimId, "Heartbeat preview can inspect related claims.")
+            ];
+          },
+          async listSourceClaimEdgesForClaim() {
+            return [sourceClaimEdge];
+          }
+        },
+        async close() {}
+      })
+    });
+
+    expect(result.stdout).toContain("Candidate review result:");
+    expect(result.stdout).toContain(`candidateId: ${candidateId}`);
+    expect(result.stdout).toContain("candidateFound: true");
+    expect(result.stdout).toContain("decision: defer_pending_evidence");
+    expect(result.stdout).toContain("nextAction: request_more_candidate_evidence");
+    expect(result.stdout).toContain("reason: Relation evidence refs are empty.");
+    expect(result.stdout).toContain("reviewer: operator");
+    expect(result.stdout).toContain("candidateReviewability: ready");
+    expect(result.stdout).toContain("mutation: none");
+    expect(result.stdout).toContain("worker_jobs");
+  });
+
   it("renders nextAction in json output", async () => {
     const result = await runHeartbeatPreviewCommand({
       cwd: "/repo",
@@ -194,6 +253,12 @@ describe("runHeartbeatPreviewCommand", () => {
         sourceClaimLimit: 0,
         maxCandidates: 1,
         evidenceRef: "docs/reviews/controlled-dogfood/v364.md",
+        candidateReview: {
+          candidateId: `memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`,
+          decision: "accept_for_manual_followup",
+          reason: "Candidate has enough evidence for manual follow-up.",
+          evidenceRef: "docs/reviews/controlled-dogfood/v373.md"
+        },
         format: "json"
       },
       createDatabaseRuntime: async () => ({
@@ -229,6 +294,12 @@ describe("runHeartbeatPreviewCommand", () => {
           nextAction: "review_candidates_and_capture_evidence",
           inspectedCandidates: 1,
           reviewableCandidates: 1,
+          mutation: "none"
+        },
+        candidateReviewResult: {
+          candidateFound: true,
+          decision: "accept_for_manual_followup",
+          nextAction: "capture_review_evidence",
           mutation: "none"
         },
         candidates: [

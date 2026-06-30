@@ -24,6 +24,16 @@ describe("parseHeartbeatArgs", () => {
       "4",
       "--evidence-ref",
       "docs/report.md",
+      "--review-candidate-id",
+      "candidate-1",
+      "--review-decision",
+      "defer_pending_evidence",
+      "--review-reason",
+      "Relation evidence refs are empty.",
+      "--review-evidence-ref",
+      "docs/review.md",
+      "--reviewer",
+      "operator",
       "--json"
     ])).toEqual({
       command: {
@@ -34,6 +44,13 @@ describe("parseHeartbeatArgs", () => {
         nearExpiryDays: 3,
         maxCandidates: 4,
         evidenceRef: "docs/report.md",
+        candidateReview: {
+          candidateId: "candidate-1",
+          decision: "defer_pending_evidence",
+          reason: "Relation evidence refs are empty.",
+          evidenceRef: "docs/review.md",
+          reviewer: "operator"
+        },
         format: "json"
       }
     });
@@ -57,6 +74,34 @@ describe("parseHeartbeatArgs", () => {
   it("rejects empty project", () => {
     expect(parseHeartbeatArgs(["preview", "--project", " "])).toEqual({
       error: expect.stringContaining("--project cannot be empty")
+    });
+  });
+
+  it("requires complete candidate review input", () => {
+    expect(parseHeartbeatArgs([
+      "preview",
+      "--review-candidate-id",
+      "candidate-1",
+      "--review-decision",
+      "defer_pending_evidence"
+    ])).toEqual({
+      error: expect.stringContaining("--review-reason")
+    });
+  });
+
+  it("rejects unknown candidate review decisions", () => {
+    expect(parseHeartbeatArgs([
+      "preview",
+      "--review-candidate-id",
+      "candidate-1",
+      "--review-decision",
+      "promote_now",
+      "--review-reason",
+      "invalid",
+      "--review-evidence-ref",
+      "docs/review.md"
+    ])).toEqual({
+      error: expect.stringContaining("--review-decision must be")
     });
   });
 });

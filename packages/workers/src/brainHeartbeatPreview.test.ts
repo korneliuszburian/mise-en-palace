@@ -221,6 +221,55 @@ describe("brain heartbeat preview", () => {
     ]);
   });
 
+  test("records one manual heartbeat candidate review result without mutation", () => {
+    const candidateId = "source-relation-heartbeat:source-claim-edge-1:relation_needs_review";
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [],
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [sourceClaimEdge()],
+      candidateReview: {
+        candidateId,
+        decision: "defer_pending_evidence",
+        reason: "Relation evidence refs are empty in the current heartbeat candidate.",
+        evidenceRef:
+          "docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md",
+        reviewer: "krn-operator"
+      }
+    });
+
+    expect(result.candidateReviewResult).toEqual({
+      kind: "heartbeat_candidate_review_result",
+      candidateId,
+      candidateFound: true,
+      decision: "defer_pending_evidence",
+      nextAction: "request_more_candidate_evidence",
+      reason: "Relation evidence refs are empty in the current heartbeat candidate.",
+      reviewer: "krn-operator",
+      evidenceRefs: [
+        "docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md"
+      ],
+      candidateReviewability: "ready",
+      mutation: "none",
+      doesNotProve:
+        "Heartbeat candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, worker daemon readiness, or Memory Core mutation.",
+      forbiddenWrites: [
+        "memory_records",
+        "anti_memory_records",
+        "source_claims",
+        "source_decisions",
+        "source_claim_edges",
+        "eval_candidates",
+        "worker_jobs"
+      ]
+    });
+    expect(result.mutation).toBe("none");
+  });
+
   test("applies one global candidate budget with memory staleness first", () => {
     const result = buildBrainHeartbeatPreview({
       now,

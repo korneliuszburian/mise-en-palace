@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V373 Heartbeat Runtime Candidate Review Result
+V374 Source Relation Candidate Evidence Repair
 ```
 
 Current state:
@@ -27,14 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V373-00 Review One Heartbeat Runtime Candidate Result.
+current task: V374-00 Source Relation Candidate Evidence Repair.
 ```
 
-Current task: use the V372 manual heartbeat runtime-loop readback to review one
-maintenance candidate and capture the result/evidence without mutating final
-truth automatically. Do not build scheduler, daemon, crawler, dashboard, API
+Current task: repair source-relation heartbeat candidate evidence so operators
+can see or request concrete `relationEvidenceRefs` before accepting source
+relation maintenance. Do not build scheduler, daemon, crawler, dashboard, API
 server, MCP server, schema rewrite, broad benchmark, worker runtime, or
-autonomous Memory Core mutation.
+autonomous Memory Core / source-truth mutation.
 
 ## Direction
 

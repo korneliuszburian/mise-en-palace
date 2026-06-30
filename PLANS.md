@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V373 Heartbeat Runtime Candidate Review Result
-current task: V373-00 Review One Heartbeat Runtime Candidate Result
+active stream: V374 Source Relation Candidate Evidence Repair
+current task: V374-00 Source Relation Candidate Evidence Repair
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V373-00 Review One Heartbeat Runtime Candidate Result is active.
-The current gap is using the V372 manual heartbeat runtime-loop readback to
-review one maintenance candidate and capture result/evidence without daemon,
-scheduler, crawler, platform, or autonomous Memory Core mutation.
+V374-00 Source Relation Candidate Evidence Repair is active.
+The current gap is making source-relation heartbeat candidates expose or request
+concrete relation evidence before operator review can accept source relation
+maintenance, without source-truth mutation or runtime automation.
 ```
 
 ## 2. Product Thesis
@@ -98,28 +98,30 @@ V371 complete: source artifact preview persisted output now renders one compact
 V372 complete: heartbeat preview now exposes a manual candidate-only runtime
   loop with readiness status, reviewable candidate counts, next action, and
   forbidden writes.
+V373 complete: heartbeat preview can record one manual candidate review result;
+  the live candidate was deferred because relationEvidenceRefs were empty.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V373
+## Active Task V374
 
-ID: V373-00
-Name: Review One Heartbeat Runtime Candidate Result
+ID: V374-00
+Name: Source Relation Candidate Evidence Repair
 Status: active
 
-Goal: use the V372 manual heartbeat runtime-loop readback to review one
-maintenance candidate and capture result/evidence without mutating final truth
-automatically.
+Goal: repair source-relation heartbeat candidate evidence so operators can see
+or request concrete `relationEvidenceRefs` before accepting source relation
+maintenance.
 
-Product rationale: V372 now tells an operator when heartbeat maintenance
-candidates are ready for review. The next useful step is one bounded review
-result/evidence loop, not a scheduler or daemon.
+Product rationale: V373 deferred a real heartbeat candidate because
+`relationEvidenceRefs` were empty. The next useful step is to improve evidence
+visibility/request semantics, not to promote source truth.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V373 report under `docs/reviews/controlled-dogfood/`;
+- a compact V374 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -139,16 +141,16 @@ Forbidden writes:
 - broad benchmark;
 - multi-agent runtime;
 - parallel roadmap.
+- source-truth mutation.
 
 Definition of Done:
 
-- one heartbeat runtime-loop candidate is reviewed or explicitly rejected with
-  evidence;
-- output records result, proof/non-proof, reviewability, and next action without
-  final truth mutation;
+- source-relation heartbeat candidates either expose concrete relation evidence
+  refs or clearly request missing evidence before acceptance;
+- focused tests cover evidence-present and evidence-missing behavior;
 - focused tests cover behavior if source changes;
-- no schema rewrite, crawler, server, MCP, broad benchmark, or autonomous
-  runtime is added.
+- no schema rewrite, crawler, server, MCP, broad benchmark, source-truth
+  mutation, or autonomous runtime is added.
 
 Verification floor:
 
@@ -166,8 +168,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V373 promotes/mutates final truth automatically or builds scheduler/daemon
-runtime instead of one bounded review-result/evidence loop.
+V374 promotes/mutates source truth or hides missing relation evidence instead of
+making relation evidence explicit and reviewable.
 ```
 
 ## 9. Task Contract Schema

@@ -162,6 +162,16 @@ export type CliCommand =
       nearExpiryDays?: number;
       maxCandidates?: number;
       evidenceRef?: string;
+      candidateReview?: {
+        candidateId: string;
+        decision:
+          | "accept_for_manual_followup"
+          | "defer_pending_evidence"
+          | "reject_not_actionable";
+        reason: string;
+        evidenceRef: string;
+        reviewer?: string;
+      };
       format: "text" | "json";
     }
   | {

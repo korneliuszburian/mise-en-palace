@@ -188,6 +188,33 @@ const formatRuntimeLoop = (preview: BrainHeartbeatPreview): string[] => [
   ...formatList(preview.runtimeLoop.forbiddenWrites)
 ];
 
+const formatCandidateReviewResult = (preview: BrainHeartbeatPreview): string[] => {
+  if (preview.candidateReviewResult === undefined) {
+    return [];
+  }
+
+  return [
+    "Candidate review result:",
+    `candidateId: ${preview.candidateReviewResult.candidateId}`,
+    `candidateFound: ${preview.candidateReviewResult.candidateFound}`,
+    `decision: ${preview.candidateReviewResult.decision}`,
+    `nextAction: ${preview.candidateReviewResult.nextAction}`,
+    `reason: ${preview.candidateReviewResult.reason}`,
+    ...(preview.candidateReviewResult.reviewer === undefined
+      ? []
+      : [`reviewer: ${preview.candidateReviewResult.reviewer}`]),
+    ...(preview.candidateReviewResult.candidateReviewability === undefined
+      ? []
+      : [`candidateReviewability: ${preview.candidateReviewResult.candidateReviewability}`]),
+    "evidenceRefs:",
+    ...formatList(preview.candidateReviewResult.evidenceRefs),
+    `doesNotProve: ${preview.candidateReviewResult.doesNotProve}`,
+    `mutation: ${preview.candidateReviewResult.mutation}`,
+    "forbiddenWrites:",
+    ...formatList(preview.candidateReviewResult.forbiddenWrites)
+  ];
+};
+
 const formatHeartbeatPreview = (
   input: {
     projectId: string;
@@ -209,6 +236,9 @@ const formatHeartbeatPreview = (
     ...formatReviewEvalClosure(input.preview),
     "",
     ...formatRuntimeLoop(input.preview),
+    ...(input.preview.candidateReviewResult === undefined
+      ? []
+      : ["", ...formatCandidateReviewResult(input.preview)]),
     "",
     "Input readback:",
     `memoryRecords: ${input.memoryRecordCount}`,
@@ -296,6 +326,9 @@ export const runHeartbeatPreviewCommand = async (
       memoryRecords,
       sourceClaims,
       sourceClaimEdges,
+      ...(runtime.command.candidateReview === undefined
+        ? {}
+        : { candidateReview: runtime.command.candidateReview }),
       ...(runtime.command.nearExpiryDays === undefined
         ? {}
         : { nearExpiryDays: runtime.command.nearExpiryDays }),

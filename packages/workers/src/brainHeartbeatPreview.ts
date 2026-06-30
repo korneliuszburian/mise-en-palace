@@ -42,6 +42,16 @@ export type BrainHeartbeatRuntimeLoopNextAction =
   | "improve_candidate_evidence"
   | "seed_or_select_heartbeat_candidate_state";
 
+export type BrainHeartbeatCandidateReviewDecision =
+  | "accept_for_manual_followup"
+  | "defer_pending_evidence"
+  | "reject_not_actionable";
+
+export type BrainHeartbeatCandidateReviewNextAction =
+  | "capture_review_evidence"
+  | "request_more_candidate_evidence"
+  | "record_rejection_evidence";
+
 export interface BrainHeartbeatReviewEvalClosure {
   kind: "heartbeat_preview_review_eval_closure";
   decision: BrainHeartbeatReviewEvalDecision;
@@ -82,6 +92,37 @@ export interface BrainHeartbeatRuntimeLoopReadback {
   ];
 }
 
+export interface BrainHeartbeatCandidateReviewInput {
+  candidateId: string;
+  decision: BrainHeartbeatCandidateReviewDecision;
+  reason: string;
+  evidenceRef: string;
+  reviewer?: string;
+}
+
+export interface BrainHeartbeatCandidateReviewResult {
+  kind: "heartbeat_candidate_review_result";
+  candidateId: string;
+  candidateFound: boolean;
+  decision: BrainHeartbeatCandidateReviewDecision;
+  nextAction: BrainHeartbeatCandidateReviewNextAction;
+  reason: string;
+  reviewer?: string;
+  evidenceRefs: readonly string[];
+  candidateReviewability?: BrainHeartbeatCandidate["reviewability"];
+  mutation: "none";
+  doesNotProve: string;
+  forbiddenWrites: readonly [
+    "memory_records",
+    "anti_memory_records",
+    "source_claims",
+    "source_decisions",
+    "source_claim_edges",
+    "eval_candidates",
+    "worker_jobs"
+  ];
+}
+
 export interface BuildBrainHeartbeatPreviewInput {
   now: IsoTimestamp;
   evidenceRef: string;
@@ -90,6 +131,7 @@ export interface BuildBrainHeartbeatPreviewInput {
   sourceClaimEdges: readonly SourceClaimEdge[];
   nearExpiryDays?: number;
   maxCandidates?: number;
+  candidateReview?: BrainHeartbeatCandidateReviewInput;
 }
 
 export interface BrainHeartbeatPreview {
@@ -108,6 +150,7 @@ export interface BrainHeartbeatPreview {
   doesNotProve: string;
   reviewEvalClosure: BrainHeartbeatReviewEvalClosure;
   runtimeLoop: BrainHeartbeatRuntimeLoopReadback;
+  candidateReviewResult?: BrainHeartbeatCandidateReviewResult;
   priorityOrder: readonly ["memory_staleness", "source_relation"];
   forbiddenWrites: readonly [
     "memory_records",
@@ -158,6 +201,9 @@ const reviewEvalClosureDoesNotProve =
 
 const runtimeLoopDoesNotProve =
   "Heartbeat runtime loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, worker daemon readiness, or Memory Core mutation.";
+
+const candidateReviewDoesNotProve =
+  "Heartbeat candidate review result does not prove candidate truth, source truth, promotion readiness, scheduler readiness, worker daemon readiness, or Memory Core mutation.";
 
 const remainingBudget = (
   maxCandidates: number | undefined,
@@ -271,6 +317,41 @@ const buildRuntimeLoopReadback = (
   };
 };
 
+const nextActionByReviewDecision = {
+  accept_for_manual_followup: "capture_review_evidence",
+  defer_pending_evidence: "request_more_candidate_evidence",
+  reject_not_actionable: "record_rejection_evidence"
+} as const satisfies Record<
+  BrainHeartbeatCandidateReviewDecision,
+  BrainHeartbeatCandidateReviewNextAction
+>;
+
+const buildCandidateReviewResult = (
+  candidates: readonly BrainHeartbeatCandidate[],
+  input: BrainHeartbeatCandidateReviewInput | undefined
+): BrainHeartbeatCandidateReviewResult | undefined => {
+  if (input === undefined) {
+    return undefined;
+  }
+
+  const candidate = candidates.find((item) => item.id === input.candidateId);
+
+  return {
+    kind: "heartbeat_candidate_review_result",
+    candidateId: input.candidateId,
+    candidateFound: candidate !== undefined,
+    decision: input.decision,
+    nextAction: nextActionByReviewDecision[input.decision],
+    reason: input.reason,
+    ...(input.reviewer === undefined ? {} : { reviewer: input.reviewer }),
+    evidenceRefs: [input.evidenceRef],
+    ...(candidate === undefined ? {} : { candidateReviewability: candidate.reviewability }),
+    mutation: "none",
+    doesNotProve: candidateReviewDoesNotProve,
+    forbiddenWrites: runtimeLoopForbiddenWrites
+  };
+};
+
 export const buildBrainHeartbeatPreview = (
   input: BuildBrainHeartbeatPreviewInput
 ): BrainHeartbeatPreview => {
@@ -294,6 +375,7 @@ export const buildBrainHeartbeatPreview = (
     ...sourcePreview.candidates
   ];
   const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
+  const candidateReviewResult = buildCandidateReviewResult(candidates, input.candidateReview);
 
   return {
     generatedAt: input.now,
@@ -311,6 +393,7 @@ export const buildBrainHeartbeatPreview = (
     doesNotProve: previewDoesNotProve,
     reviewEvalClosure,
     runtimeLoop: buildRuntimeLoopReadback(candidates, reviewEvalClosure),
+    ...(candidateReviewResult === undefined ? {} : { candidateReviewResult }),
     priorityOrder,
     forbiddenWrites
   };
