@@ -72,53 +72,11 @@ chosen by source inspection and user-facing value.
 Progress in this stream:
 
 ```txt
-completed locally: parseKnowledgeArgs, parseReviewArgs, parseEvidenceArgs,
-  parseEvidenceArgs source-usefulness cleanup, DB reflection mapper cleanup,
-  parseObserveArgs/parseReflectArgs cleanup, parseSourceArgs cleanup,
-  parseMemoryArgs cleanup, parseInitArgs cleanup,
-  reflectionCandidateWriter cleanup, core evidence command normalization cleanup,
-  schema evidence command input normalization cleanup,
-  core reflection issue report cleanup,
-  DB smoke target metadata cleanup,
-  runCli source dispatch cleanup,
-  runCli memory dispatch cleanup,
-  runCli residual dispatch cleanup,
-  source artifact preview extraction/persistence/formatting cleanup plus shared
-  repo-input resolver cleanup,
-  DB smoke target handler cleanup,
-  doctor static checks cleanup,
-  doctor failure rules cleanup,
-  doctor DB readiness gates cleanup,
-  database runtime project resolution cleanup,
-	  brain knowledge read-model parser/search cleanup,
-	  observation repository persistence cleanup,
-	  plan command boundary/runtime cleanup,
-	  retrieval repository insert cleanup,
-	  memory repository invariant/insert cleanup,
-	  DB smoke shared setup cleanup,
-	  DB init-connect smoke readback cleanup,
-	  memory mapper boundary cleanup,
-	  Codex brief/smoke support cleanup,
-	  activation/retrieval smoke support cleanup,
-	  memory/source-graph smoke support cleanup,
-	  memory add CLI shared support cleanup,
-	  memory review gate shared support cleanup,
-	  memory review CLI shared support cleanup,
-	  run show readback section cleanup,
-	  activation candidate merge scoring cleanup,
-	  observation prefix selection cleanup,
-	  harness compiler orchestration cleanup,
-	  temporal activation exclusions cleanup,
-	  source claim edge rendering cleanup,
-	  observe project resolution cleanup,
-	  golden task validation cleanup,
-	  Promptfoo result parser cleanup,
-	  no-store preview optional-field cleanup,
-	  shared memory/source CLI parser helper cleanup,
-	  source-search readback preparation cleanup,
-	  shared metadata reader cleanup,
-	  DB readiness table inspection cleanup,
-	  temporal timestamp parsing cleanup
+completed locally: bounded CLI/core/schema/db/harness/codex/workers cleanup
+  slices from parser boundaries through temporal timestamp parsing.
+recent slices: shared parser helpers, source-search readback preparation,
+  shared metadata reader, DB readiness table inspection, temporal timestamp
+  parsing.
 	full Fallow moved: dupes 136 -> 55; health 117 -> 18
 		```
 
