@@ -41,6 +41,7 @@ heartbeat candidate focus: candidate-kind filter can isolate acquisition lane an
 heartbeat acquisition follow-up: focused candidate triggered bounded source/evidence follow-up and exposed missing query diagnostics
 heartbeat acquisition diagnostics: acquisition candidates preserve query-shape diagnostics and recommended follow-up
 heartbeat diagnostic follow-up: diagnostics selected a bounded source/evidence split and exposed source-claim/document linkage gap
+source claim document link readback: source-search answer packages expose artifact-linked SearchDocument refs for supporting SourceClaims
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -65,21 +66,15 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-13-source-claim-document-links/REPORT.md
 ```
 
-Historical launch packet:
+Next slice:
 
 ```txt
-docs/operator-trials/v02-01-second-operator-launch-packet.md
-```
-
-Next slice should exercise the brain loop:
-
-```txt
-mise-en-palace-d8u:
-expose artifact-linked SearchDocument evidence or an explicit linkage caveat for
-supporting SourceClaims in source-search answer packages.
+mise-en-palace-s54:
+expose linked document evidence in brain-search source summaries so downstream
+pattern gates and acquisition readbacks do not understate source evidence.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -127,6 +122,9 @@ IMR-11: acquisition candidates now carry query diagnostics and recommended
 IMR-12: diagnostic-bearing acquisition follow-up showed path queries can retrieve
   documents, while claim-text queries miss artifact-linked documents; next repair
   is source claim/document linkage readback.
+IMR-13: source-search answer packages now expose sourceClaimDocumentLinks for
+  supporting SourceClaims; the live IMR-12 query shows 5 claims, 0 included docs,
+  and 5 artifact-linked SearchDocument refs.
 ```
 
 ## Remaining Product Gaps

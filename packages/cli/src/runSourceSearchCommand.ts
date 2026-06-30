@@ -88,6 +88,8 @@ interface SourceSearchAnswerCandidate {
   reviewabilityReasons: readonly string[];
   searchDocumentId: string | undefined;
   sourceClaimId: string | undefined;
+  sourceArtifactId: string | undefined;
+  sourceChunkId: string | undefined;
   claim: string | undefined;
   mechanism: string | undefined;
   krnImplication: string | undefined;
@@ -117,6 +119,21 @@ interface SourceSearchRelationSupport {
   createdAt: SourceClaimEdge["createdAt"];
 }
 
+type SourceSearchSourceClaimDocumentLinkKind =
+  | "source_claim"
+  | "source_chunk"
+  | "source_artifact";
+
+interface SourceSearchSourceClaimDocumentLink {
+  sourceClaimId: SourceClaim["id"];
+  sourceArtifactId?: string;
+  sourceChunkId?: string;
+  linkedSearchDocumentCount: number;
+  linkedSearchDocumentIds: readonly string[];
+  linkKinds: readonly SourceSearchSourceClaimDocumentLinkKind[];
+  caveat?: string;
+}
+
 interface SourceSearchGraphRelationKindCount {
   kind: SourceClaimEdge["kind"];
   count: number;
@@ -141,6 +158,7 @@ interface SourceSearchAnswerPackage {
   queryShapeDiagnostics: readonly string[];
   supportingClaims: readonly SourceSearchAnswerCandidate[];
   supportingDocuments: readonly SourceSearchAnswerCandidate[];
+  sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
   relationSupport: readonly SourceSearchRelationSupport[];
   graphReadback: SourceSearchGraphReadback;
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
@@ -184,13 +202,18 @@ interface SourceSearchJsonOutput {
 export const buildSourceSearchMissingEvidence = (input: {
   supportingClaimCount: number;
   supportingDocumentCount: number;
+  linkedDocumentCount?: number;
 }): readonly string[] => [
   ...(input.supportingClaimCount === 0
     ? ["governed SourceClaim evidence in the answer package for this query"]
     : []),
   ...(input.supportingDocumentCount === 0
     ? input.supportingClaimCount > 0
-      ? ["included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"]
+      ? [
+          input.linkedDocumentCount !== undefined && input.linkedDocumentCount > 0
+            ? "included SearchDocument evidence for this combined query; artifact-linked SearchDocuments are visible but were not included by lexical retrieval"
+            : "included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
+        ]
       : ["included SearchDocument evidence in the answer package for this query"]
     : [])
 ];
@@ -347,6 +370,8 @@ const candidateToOutput = (
   const krnImplication = metadataString(candidate.metadata, "krnImplication");
   const consumer = metadataString(candidate.metadata, "consumer");
   const falsifier = metadataString(candidate.metadata, "falsifier");
+  const sourceArtifactId = metadataString(candidate.metadata, "sourceArtifactId");
+  const sourceChunkId = metadataString(candidate.metadata, "sourceChunkId");
 
   return {
     label: candidateLabel(candidate),
@@ -365,6 +390,8 @@ const candidateToOutput = (
     reviewabilityReasons: reviewability.reasons,
     searchDocumentId: candidate.searchDocumentId,
     sourceClaimId: candidate.sourceClaimId,
+    sourceArtifactId,
+    sourceChunkId,
     claim,
     mechanism,
     krnImplication,
@@ -382,6 +409,126 @@ const sourceClaimIdFor = (
   candidate.subjectType === "source_claim"
     ? (candidate.sourceClaimId ?? candidate.subjectId) as SourceClaim["id"]
     : undefined;
+
+interface SourceClaimDocumentLinkInput {
+  sourceClaimId: SourceClaim["id"];
+  sourceArtifactId?: string;
+  sourceChunkId?: string;
+}
+
+const uniqueStrings = (values: readonly string[]): readonly string[] => [...new Set(values)];
+
+const sourceClaimDocumentLinkInputFor = (
+  candidate: RankedActivationCandidate
+): SourceClaimDocumentLinkInput | undefined => {
+  const sourceClaimId = sourceClaimIdFor(candidate);
+
+  if (sourceClaimId === undefined) {
+    return undefined;
+  }
+
+  const sourceArtifactId = metadataString(candidate.metadata, "sourceArtifactId");
+  const sourceChunkId = metadataString(candidate.metadata, "sourceChunkId");
+
+  return {
+    sourceClaimId,
+    ...(sourceArtifactId === undefined ? {} : { sourceArtifactId }),
+    ...(sourceChunkId === undefined ? {} : { sourceChunkId })
+  };
+};
+
+const linkKindsForDocument = (
+  input: SourceClaimDocumentLinkInput,
+  document: {
+    sourceClaimId?: string;
+    sourceChunkId?: string;
+    sourceArtifactId?: string;
+  }
+): SourceSearchSourceClaimDocumentLinkKind[] => {
+  const kinds: SourceSearchSourceClaimDocumentLinkKind[] = [];
+
+  if (document.sourceClaimId === input.sourceClaimId) {
+    kinds.push("source_claim");
+  }
+
+  if (input.sourceChunkId !== undefined && document.sourceChunkId === input.sourceChunkId) {
+    kinds.push("source_chunk");
+  }
+
+  if (input.sourceArtifactId !== undefined && document.sourceArtifactId === input.sourceArtifactId) {
+    kinds.push("source_artifact");
+  }
+
+  return kinds;
+};
+
+const buildSourceClaimDocumentLinks = async (input: {
+  included: readonly RankedActivationCandidate[];
+  projectId: string;
+  retrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]>;
+}): Promise<SourceSearchSourceClaimDocumentLink[]> => {
+  const linkInputs = [...new Map(input.included.flatMap((candidate) => {
+    const linkInput = sourceClaimDocumentLinkInputFor(candidate);
+
+    return linkInput === undefined ? [] : [[linkInput.sourceClaimId, linkInput] as const];
+  })).values()];
+
+  if (linkInputs.length === 0) {
+    return [];
+  }
+
+  if (input.retrievalRepository.listSearchDocumentsForSourceLinks === undefined) {
+    return linkInputs.map((linkInput) => ({
+      sourceClaimId: linkInput.sourceClaimId,
+      ...(linkInput.sourceArtifactId === undefined ? {} : { sourceArtifactId: linkInput.sourceArtifactId }),
+      ...(linkInput.sourceChunkId === undefined ? {} : { sourceChunkId: linkInput.sourceChunkId }),
+      linkedSearchDocumentCount: 0,
+      linkedSearchDocumentIds: [],
+      linkKinds: [],
+      caveat: "artifact-linked SearchDocument lookup is unavailable on this retrieval repository"
+    }));
+  }
+
+  const linkedDocuments = await input.retrievalRepository.listSearchDocumentsForSourceLinks({
+    projectId: input.projectId,
+    sourceClaimIds: uniqueStrings(linkInputs.map((linkInput) => linkInput.sourceClaimId)),
+    sourceArtifactIds: uniqueStrings(linkInputs.flatMap((linkInput) =>
+      linkInput.sourceArtifactId === undefined ? [] : [linkInput.sourceArtifactId]
+    )),
+    sourceChunkIds: uniqueStrings(linkInputs.flatMap((linkInput) =>
+      linkInput.sourceChunkId === undefined ? [] : [linkInput.sourceChunkId]
+    )),
+    limit: Math.max(20, linkInputs.length * 5)
+  });
+
+  return linkInputs.map((linkInput) => {
+    const linkedIds: string[] = [];
+    const linkKinds = new Set<SourceSearchSourceClaimDocumentLinkKind>();
+
+    for (const document of linkedDocuments) {
+      const documentLinkKinds = linkKindsForDocument(linkInput, document);
+
+      if (documentLinkKinds.length > 0) {
+        linkedIds.push(document.id);
+        for (const kind of documentLinkKinds) {
+          linkKinds.add(kind);
+        }
+      }
+    }
+
+    return {
+      sourceClaimId: linkInput.sourceClaimId,
+      ...(linkInput.sourceArtifactId === undefined ? {} : { sourceArtifactId: linkInput.sourceArtifactId }),
+      ...(linkInput.sourceChunkId === undefined ? {} : { sourceChunkId: linkInput.sourceChunkId }),
+      linkedSearchDocumentCount: linkedIds.length,
+      linkedSearchDocumentIds: linkedIds,
+      linkKinds: [...linkKinds],
+      ...(linkedIds.length === 0
+        ? { caveat: "no active SearchDocument is linked by source claim, source chunk, or source artifact" }
+        : {})
+    };
+  });
+};
 
 const relationDirectionFor = (
   sourceClaimId: SourceClaim["id"],
@@ -552,6 +699,7 @@ const buildAnswerPackage = (input: {
   included: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
   relationSupport: readonly SourceSearchRelationSupport[];
+  sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
 }): SourceSearchAnswerPackage => {
   const included = input.included.map((candidate) => candidateToOutput(candidate, "included"));
   const supportingClaims = included.filter(
@@ -564,9 +712,14 @@ const buildAnswerPackage = (input: {
     (candidate) =>
       candidate.subjectType !== "source_claim" && candidate.subjectType !== "search_document"
   );
+  const linkedDocumentCount = input.sourceClaimDocumentLinks.reduce(
+    (sum, link) => sum + link.linkedSearchDocumentCount,
+    0
+  );
   const missingEvidence = buildSourceSearchMissingEvidence({
     supportingClaimCount: supportingClaims.length,
-    supportingDocumentCount: supportingDocuments.length
+    supportingDocumentCount: supportingDocuments.length,
+    linkedDocumentCount
   });
   const answerUsefulness = classifySourceSearchAnswerUsefulness({
     supportingClaimCount: supportingClaims.length,
@@ -599,6 +752,9 @@ const buildAnswerPackage = (input: {
     answerUsefulness: answerUsefulness.answerUsefulness,
     answerUsefulnessReasons: [
       ...answerUsefulness.reasons,
+      ...(linkedDocumentCount === 0
+        ? []
+        : [`Answer package found ${linkedDocumentCount} artifact-linked SearchDocument reference(s) for supporting SourceClaims.`]),
       ...(input.relationSupport.length === 0
         ? []
         : ["Answer package includes SourceClaimEdge relation support."])
@@ -606,6 +762,7 @@ const buildAnswerPackage = (input: {
     queryShapeDiagnostics,
     supportingClaims,
     supportingDocuments,
+    sourceClaimDocumentLinks: input.sourceClaimDocumentLinks,
     relationSupport: input.relationSupport,
     graphReadback,
     neutralOrNoise,
@@ -634,6 +791,22 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
     ...(answerPackage.supportingDocuments.length === 0
       ? ["- none"]
       : answerPackage.supportingDocuments.map((candidate) => `- ${candidate.label} | ${candidate.reason}`)),
+    "source claim document links:",
+    ...(answerPackage.sourceClaimDocumentLinks.length === 0
+      ? ["- none"]
+      : answerPackage.sourceClaimDocumentLinks.map((link) =>
+          [
+            `- source_claim:${link.sourceClaimId}`,
+            ` linkedSearchDocumentCount:${link.linkedSearchDocumentCount}`,
+            link.linkedSearchDocumentIds.length === 0
+              ? " linkedSearchDocumentIds:none"
+              : ` linkedSearchDocumentIds:${link.linkedSearchDocumentIds.join(",")}`,
+            link.linkKinds.length === 0 ? " linkKinds:none" : ` linkKinds:${link.linkKinds.join(",")}`,
+            link.sourceArtifactId === undefined ? "" : ` sourceArtifactId:${link.sourceArtifactId}`,
+            link.sourceChunkId === undefined ? "" : ` sourceChunkId:${link.sourceChunkId}`,
+            link.caveat === undefined ? "" : ` caveat:${link.caveat}`
+          ].join("")
+        )),
     "relation support:",
     ...(answerPackage.relationSupport.length === 0
       ? ["- none"]
@@ -741,6 +914,7 @@ type SourceSearchRenderInput = {
   candidates: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
   relationSupport: readonly SourceSearchRelationSupport[];
+  sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
 };
 
 const buildSearchReadback = (input: SourceSearchRenderInput) => {
@@ -750,7 +924,8 @@ const buildSearchReadback = (input: SourceSearchRenderInput) => {
     query: input.query,
     included,
     diagnostics: input.diagnostics,
-    relationSupport: input.relationSupport
+    relationSupport: input.relationSupport,
+    sourceClaimDocumentLinks: input.sourceClaimDocumentLinks
   });
 
   return {
@@ -925,9 +1100,15 @@ export const runSourceSearchCommand = async (
       maxInclusions,
       minimumDiverseKinds: ["source", "search"]
     });
+    const included = bounded.filter((candidate) => candidate.exclusion === undefined);
     const relationSupport = await buildRelationSupport({
-      included: bounded.filter((candidate) => candidate.exclusion === undefined),
+      included,
       sourceRepository: databaseRuntime.sourceRepository
+    });
+    const sourceClaimDocumentLinks = await buildSourceClaimDocumentLinks({
+      included,
+      projectId: databaseRuntime.projectId,
+      retrievalRepository
     });
 
     return {
@@ -939,7 +1120,8 @@ export const runSourceSearchCommand = async (
             maxInclusions,
             candidates: bounded,
             diagnostics: retrieved.diagnostics,
-            relationSupport
+            relationSupport,
+            sourceClaimDocumentLinks
           })
         : formatSearchResult({
             query,
@@ -948,7 +1130,8 @@ export const runSourceSearchCommand = async (
             maxInclusions,
             candidates: bounded,
             diagnostics: retrieved.diagnostics,
-            relationSupport
+            relationSupport,
+            sourceClaimDocumentLinks
           })
     };
   } finally {

@@ -27,6 +27,7 @@ import type {
   ProjectRepository,
   RepoInstallationRecord,
   RetrievalRepository,
+  SearchDocumentRecord,
   SourceRepository,
   WorkspaceRecord
 } from "@krn/harness/repositories/internal";
@@ -62,6 +63,14 @@ export interface ProjectResolution {
   repoPathHint?: string;
 }
 
+export interface ListSearchDocumentsForSourceLinksInput {
+  projectId?: string;
+  sourceArtifactIds?: readonly string[];
+  sourceChunkIds?: readonly string[];
+  sourceClaimIds?: readonly string[];
+  limit?: number;
+}
+
 export interface DatabaseRuntime {
   workspaceId: string;
   projectId: string;
@@ -93,7 +102,11 @@ export interface DatabaseRuntime {
     RetrievalRepository,
     | "createSearchDocument"
     | "searchLexical"
-  >;
+  > & {
+    listSearchDocumentsForSourceLinks?(
+      input: ListSearchDocumentsForSourceLinksInput
+    ): Promise<SearchDocumentRecord[]>;
+  };
   memoryRepository: Pick<
     MemoryRepository,
     | "createMemoryCandidate"
@@ -464,6 +477,13 @@ export const createDatabaseRuntime = async (
     runtimeProject.project.id,
     runtimeProject.shouldLoadProjectScopedMetadata
   );
+  const sourceSearchRetrievalRepository: NonNullable<DatabaseRuntime["retrievalRepository"]> = {
+    createSearchDocument: (searchDocumentInput) =>
+      retrievalRepository.createSearchDocument(searchDocumentInput),
+    searchLexical: (searchInput) => retrievalRepository.searchLexical(searchInput),
+    listSearchDocumentsForSourceLinks: (sourceLinksInput) =>
+      retrievalRepository.listSearchDocumentsForSourceLinks(sourceLinksInput)
+  };
 
   return {
     workspaceId: runtimeProject.project.workspaceId,
@@ -481,7 +501,7 @@ export const createDatabaseRuntime = async (
     },
     harnessRunRepository,
     sourceRepository,
-    retrievalRepository,
+    retrievalRepository: sourceSearchRetrievalRepository,
     memoryRepository,
     observationRepository,
     close: closePostgresClient(client)

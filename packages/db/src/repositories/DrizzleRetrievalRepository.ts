@@ -2,6 +2,8 @@ import {
   and,
   desc,
   eq,
+  inArray,
+  or,
   sql
 } from "drizzle-orm";
 import type {
@@ -75,6 +77,10 @@ const toContextExclusionReason = (reason: string): ContextExclusionReason => {
   return "irrelevant";
 };
 
+const uniqueNonEmptyStrings = (values: readonly string[] | undefined): string[] => [
+  ...new Set((values ?? []).filter((value) => value.trim().length > 0))
+];
+
 const retrievalRunCompletionMetadata = (
   input: CompleteRetrievalRunInput
 ): Record<string, unknown> => ({
@@ -117,6 +123,15 @@ type ActivationDecisionInsertRow = typeof activationDecisions.$inferInsert;
 type SearchDocumentInsertValues = Omit<SearchDocumentInsertRow, "searchVector"> & {
   searchVector: SQL;
 };
+
+interface ListSearchDocumentsForSourceLinksInput {
+  projectId?: string;
+  sourceArtifactIds?: readonly string[];
+  sourceChunkIds?: readonly string[];
+  sourceClaimIds?: readonly string[];
+  limit?: number;
+}
+
 type RetrievalInsertColumnName =
   | keyof SearchDocumentInsertValues
   | keyof EmbeddingInsertRow
@@ -293,6 +308,44 @@ export class DrizzleRetrievalRepository implements RetrievalRepository {
       ...mapSearchDocument(row.document),
       lexicalScore: row.lexicalScore ?? 0
     }));
+  }
+
+  async listSearchDocumentsForSourceLinks(
+    input: ListSearchDocumentsForSourceLinksInput
+  ): Promise<SearchDocumentRecord[]> {
+    const sourceArtifactIds = uniqueNonEmptyStrings(input.sourceArtifactIds);
+    const sourceChunkIds = uniqueNonEmptyStrings(input.sourceChunkIds);
+    const sourceClaimIds = uniqueNonEmptyStrings(input.sourceClaimIds);
+    const linkPredicates = [
+      ...(sourceArtifactIds.length === 0
+        ? []
+        : [inArray(searchDocuments.sourceArtifactId, sourceArtifactIds)]),
+      ...(sourceChunkIds.length === 0
+        ? []
+        : [inArray(searchDocuments.sourceChunkId, sourceChunkIds)]),
+      ...(sourceClaimIds.length === 0
+        ? []
+        : [inArray(searchDocuments.sourceClaimId, sourceClaimIds)])
+    ];
+
+    if (linkPredicates.length === 0) {
+      return [];
+    }
+
+    const rows = await this.db
+      .select()
+      .from(searchDocuments)
+      .where(
+        and(
+          or(...linkPredicates),
+          eq(searchDocuments.validityStatus, "active"),
+          input.projectId === undefined ? undefined : eq(searchDocuments.projectId, input.projectId)
+        )
+      )
+      .orderBy(desc(searchDocuments.updatedAt))
+      .limit(input.limit ?? 20);
+
+    return rows.map(mapSearchDocument);
   }
 
   async createEmbeddingModel(input: CreateEmbeddingModelInput): Promise<EmbeddingModelRecord> {

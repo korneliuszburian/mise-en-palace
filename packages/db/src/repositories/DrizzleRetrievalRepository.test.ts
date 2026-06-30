@@ -5,6 +5,7 @@ import { DrizzleRetrievalRepository } from "./DrizzleRetrievalRepository.js";
 const methodNames = [
   "createSearchDocument",
   "searchLexical",
+  "listSearchDocumentsForSourceLinks",
   "createEmbeddingModel",
   "createEmbedding",
   "createRetrievalRun",

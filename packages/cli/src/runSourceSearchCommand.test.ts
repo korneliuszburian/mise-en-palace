@@ -89,12 +89,14 @@ const sourceClaimEdge = (
 const runtime = (input?: {
   claims?: readonly SourceClaim[];
   documents?: readonly SearchDocumentSearchResult[];
+  linkedDocuments?: readonly SearchDocumentSearchResult[];
   edges?: readonly SourceClaimEdge[];
   onSearchQuery?(query: string): void;
   onClose?(): void;
 }): SourceSearchCommand["createDatabaseRuntime"] => async () => {
   const claims = input?.claims ?? [sourceClaim()];
   const documents = input?.documents ?? [searchDocument()];
+  const linkedDocuments = input?.linkedDocuments ?? documents;
   const edges = input?.edges ?? [];
 
   return {
@@ -182,6 +184,9 @@ const runtime = (input?: {
         input?.onSearchQuery?.(searchInput.query);
 
         return documents;
+      },
+      async listSearchDocumentsForSourceLinks() {
+        return linkedDocuments;
       }
     },
     async close() {
@@ -341,6 +346,10 @@ describe("runSourceSearchCommand", () => {
     expect(result.stdout).toContain(`- source_claim:${sourceClaimId}`);
     expect(result.stdout).toContain("supporting documents:");
     expect(result.stdout).toContain(`- search_document:${searchDocumentId}`);
+    expect(result.stdout).toContain("source claim document links:");
+    expect(result.stdout).toContain(
+      `- source_claim:${sourceClaimId} linkedSearchDocumentCount:1 linkedSearchDocumentIds:${searchDocumentId} linkKinds:source_artifact`
+    );
     expect(result.stdout).toContain("relation support:");
     expect(result.stdout).toContain("- none");
     expect(result.stdout).toContain("missing evidence:");
@@ -396,7 +405,8 @@ describe("runSourceSearchCommand", () => {
     expect(answerPackage.answerUsefulness).toBe("useful");
     expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toEqual([
       "Answer package includes governed SourceClaim evidence.",
-      "Answer package includes SearchDocument retrieval evidence."
+      "Answer package includes SearchDocument retrieval evidence.",
+      "Answer package found 1 artifact-linked SearchDocument reference(s) for supporting SourceClaims."
     ]);
     expect(arrayValue(answerPackage.queryShapeDiagnostics, "queryShapeDiagnostics")).toEqual([]);
     expect(answerPackage.recommendedNextAction).toContain("Use the supporting claims/documents as a Pattern Application Gate");
@@ -407,8 +417,10 @@ describe("runSourceSearchCommand", () => {
 
     const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
     const supportingDocuments = arrayValue(answerPackage.supportingDocuments, "supportingDocuments");
+    const sourceClaimDocumentLinks = arrayValue(answerPackage.sourceClaimDocumentLinks, "sourceClaimDocumentLinks");
     const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
     const firstDocument = objectValue(supportingDocuments[0], "first supporting document");
+    const firstDocumentLink = objectValue(sourceClaimDocumentLinks[0], "first source claim document link");
 
     expect(firstClaim.label).toBe(`source_claim:${sourceClaimId}`);
     expect(firstClaim.status).toBe("included");
@@ -420,8 +432,15 @@ describe("runSourceSearchCommand", () => {
     expect(firstClaim.consumer).toBe("V341 Product-Facing Knowledge Search Readback Preview");
     expect(firstClaim.falsifier).toBe("The claim cannot be found by a later readback.");
     expect(firstClaim.doesNotProve).toBe("This does not prove product search quality.");
+    expect(firstClaim.sourceArtifactId).toBe("f6db868a-4c82-406a-8371-9ab7d8594fc5");
     expect(firstDocument.label).toBe(`search_document:${searchDocumentId}`);
     expect(firstDocument.reviewability).toBe("ready");
+    expect(firstDocumentLink.sourceClaimId).toBe(sourceClaimId);
+    expect(firstDocumentLink.linkedSearchDocumentCount).toBe(1);
+    expect(arrayValue(firstDocumentLink.linkedSearchDocumentIds, "linked ids")).toEqual([
+      searchDocumentId
+    ]);
+    expect(arrayValue(firstDocumentLink.linkKinds, "link kinds")).toEqual(["source_artifact"]);
 
     const includedCandidates = arrayValue(output.includedCandidates, "includedCandidates");
     const excludedCandidates = arrayValue(output.excludedCandidates, "excludedCandidates");
@@ -643,5 +662,48 @@ describe("runSourceSearchCommand", () => {
     expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toContain(
       "included SearchDocument evidence for this combined query; topic-specific SearchDocuments may still exist"
     );
+  });
+
+  it("exposes artifact-linked document evidence when claim text matches but lexical documents are absent", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "Local artifact preview can carry governed source claims",
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [sourceClaim()],
+        documents: [],
+        linkedDocuments: [searchDocument()]
+      })
+    });
+
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const supportingDocuments = arrayValue(answerPackage.supportingDocuments, "supportingDocuments");
+    const sourceClaimDocumentLinks = arrayValue(answerPackage.sourceClaimDocumentLinks, "sourceClaimDocumentLinks");
+    const firstDocumentLink = objectValue(sourceClaimDocumentLinks[0], "first source claim document link");
+
+    expect(answerPackage.answerUsefulness).toBe("partly_useful_missing_document");
+    expect(supportingDocuments).toHaveLength(0);
+    expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
+      "Answer package found 1 artifact-linked SearchDocument reference(s) for supporting SourceClaims."
+    );
+    expect(arrayValue(answerPackage.missingEvidence, "missingEvidence")).toContain(
+      "included SearchDocument evidence for this combined query; artifact-linked SearchDocuments are visible but were not included by lexical retrieval"
+    );
+    expect(firstDocumentLink.sourceClaimId).toBe(sourceClaimId);
+    expect(firstDocumentLink.sourceArtifactId).toBe("f6db868a-4c82-406a-8371-9ab7d8594fc5");
+    expect(firstDocumentLink.linkedSearchDocumentCount).toBe(1);
+    expect(arrayValue(firstDocumentLink.linkedSearchDocumentIds, "linked ids")).toEqual([
+      searchDocumentId
+    ]);
+    expect(arrayValue(firstDocumentLink.linkKinds, "link kinds")).toEqual(["source_artifact"]);
   });
 });

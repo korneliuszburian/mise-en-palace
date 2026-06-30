@@ -123,6 +123,46 @@ IMR-11 complete: heartbeat acquisition candidates now preserve query-shape
 IMR-12 complete: diagnostic-bearing acquisition output drove one bounded
   source/evidence follow-up; evidence points to source claim/document linkage
   readback, not crawler, schema, ranking, worker, API/MCP, or Memory Core work.
+IMR-13 complete: source-search answer packages now expose artifact-linked
+  SearchDocument refs for supporting SourceClaims, while still marking lexical
+  included SearchDocument evidence as missing when retrieval returns zero docs.
+```
+
+## Outcome IMR-13 Source Claim Document Link Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-13-source-claim-document-links/REPORT.md
+```
+
+Outcome: source-search answer packages now expose `sourceClaimDocumentLinks`.
+The live IMR-12 claim-text query returns 5 supporting SourceClaims, 0 included
+SearchDocuments, and 5 artifact-linked SearchDocument refs. The readback still
+honestly reports missing included lexical SearchDocument evidence.
+
+Source-to-decision:
+
+- Source: IMR-12 report, live source-search readback, and current DB-linked
+  SearchDocument rows.
+- Mechanism: SourceClaims and SearchDocuments can share source artifact/chunk
+  links even when lexical retrieval does not include those documents.
+- KRN implication: answer packages should distinguish "not included by lexical
+  query" from "no document evidence exists."
+- Decision: expose linked document refs/caveats in source-search readback.
+- Rejection: no schema, crawler, ranking rewrite, worker daemon, API/MCP,
+  source truth mutation, or Memory Core mutation.
+- Consumer: source-search answer packages, brain-search summaries,
+  acquisition candidates, and operator review.
+- Falsifier: supporting SourceClaims have linked SearchDocuments but answer
+  packages show only zero documents with no linked refs or caveat.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-s54: Expose linked document evidence in brain-search source summaries.
 ```
 
 ## Outcome IMR-12 Diagnostic Acquisition Evidence Follow-Up
@@ -592,26 +632,24 @@ software work. Multi-repo internal work is the proof surface.
 Next Beads issue:
 
 ```txt
-mise-en-palace-nrw:
-use store-backed brain packets as a pre-coding pattern gate in one real bounded
-source/product slice.
+mise-en-palace-s54:
+expose linked document evidence in brain-search source summaries.
 ```
 
 Evidence sources:
 
 ```txt
-docs/runbooks/target-repo-testing.md
-docs/operator-trials/v02-01-second-operator-launch-packet.md
-docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/REPORT.md
-docs/reviews/controlled-dogfood/2026-06-30-imr-03-brain-knowledge-vocabulary/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-13-source-claim-document-links/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-12-diagnostic-acquisition-evidence-followup/REPORT.md
 ```
 
 Next task:
 
 ```txt
-mise-en-palace-06v — Derive store-backed brain knowledge packets.
-Goal: make store-only brain search return selectedKnowledge from governed
-source/search evidence, without DB schema or Memory Core mutation.
+mise-en-palace-s54 — Expose linked document evidence in brain-search source summaries.
+Goal: make downstream brain-search/source summaries surface source-search
+sourceClaimDocumentLinks counts or caveats without schema, crawler, ranking,
+worker, API/MCP, source truth, or Memory Core mutation.
 ```
 
 Allowed writes:
