@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V372 Heartbeat/Dreaming Candidate Runtime Loop
+V373 Heartbeat Runtime Candidate Review Result
 ```
 
 Current state:
@@ -27,13 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V372-00 Heartbeat/Dreaming Candidate Runtime Loop.
+current task: V373-00 Review One Heartbeat Runtime Candidate Result.
 ```
 
-Current task: move the existing candidate-only heartbeat/dreaming preview
-toward a bounded runtime loop over current source/memory/review state. Do not
-build scheduler, daemon, crawler, dashboard, API server, MCP server, schema
-rewrite, broad benchmark, or autonomous Memory Core mutation.
+Current task: use the V372 manual heartbeat runtime-loop readback to review one
+maintenance candidate and capture the result/evidence without mutating final
+truth automatically. Do not build scheduler, daemon, crawler, dashboard, API
+server, MCP server, schema rewrite, broad benchmark, worker runtime, or
+autonomous Memory Core mutation.
 
 ## Direction
 

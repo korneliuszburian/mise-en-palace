@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V372 Heartbeat/Dreaming Candidate Runtime Loop
-current task: V372-00 Heartbeat/Dreaming Candidate Runtime Loop
+active stream: V373 Heartbeat Runtime Candidate Review Result
+current task: V373-00 Review One Heartbeat Runtime Candidate Result
 ```
 
 ## Compact Checkpoints
@@ -27,26 +27,28 @@ brain-search preview: usable through CLI and JSON
 product loop replay: DB-backed and inspectable
 graph-brain readback: relation summary visible through source/brain search
 ingest v0/v1: bounded loop readback visible through source artifact preview
+heartbeat/dreaming: manual candidate-only runtime loop readback visible through heartbeat preview
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V372-00 Heartbeat/Dreaming Candidate Runtime Loop
+### V373-00 Review One Heartbeat Runtime Candidate Result
 
 Status: active.
 
-Goal: move the existing candidate-only heartbeat/dreaming preview toward a
-bounded runtime loop over current source/memory/review state.
+Goal: use the V372 manual heartbeat runtime-loop readback to review one
+maintenance candidate and capture result/evidence without mutating final truth
+automatically.
 
 Hard boundary: no scheduler, daemon, crawler, dashboard, API server, MCP
-server, schema rewrite, broad benchmark, autonomous Memory Core mutation, or
-generic multi-agent runtime.
+server, schema rewrite, broad benchmark, worker runtime, autonomous Memory Core
+mutation, or generic multi-agent runtime.
 
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v371-ingest-v0v1-bounded-input-loop/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-v372-heartbeat-dreaming-runtime-loop/REPORT.md
 ```
 
 ## Recent Completed Streams
@@ -65,12 +67,13 @@ V368: brain search product surface preview.
 V369: end-to-end product loop replay.
 V370: graph brain v1 readback.
 V371: ingest v0/v1 bounded input loop readback.
+V372: heartbeat/dreaming manual candidate runtime-loop readback.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. heartbeat/dreaming candidate runtime
+1. heartbeat runtime candidate review result
 2. pattern/research brain
 3. real benchmarks
 4. second-operator proof

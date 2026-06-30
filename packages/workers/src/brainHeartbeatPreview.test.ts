@@ -119,6 +119,28 @@ describe("brain heartbeat preview", () => {
         "eval_candidates"
       ]
     });
+    expect(result.runtimeLoop).toEqual({
+      kind: "heartbeat_candidate_runtime_loop",
+      mode: "manual_candidate_only",
+      status: "ready_for_operator_review",
+      nextAction: "review_candidates_and_capture_evidence",
+      summary:
+        "Heartbeat runtime loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
+      inspectedCandidates: 2,
+      reviewableCandidates: 2,
+      mutation: "none",
+      doesNotProve:
+        "Heartbeat runtime loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, worker daemon readiness, or Memory Core mutation.",
+      forbiddenWrites: [
+        "memory_records",
+        "anti_memory_records",
+        "source_claims",
+        "source_decisions",
+        "source_claim_edges",
+        "eval_candidates",
+        "worker_jobs"
+      ]
+    });
     expect(result.candidates).toHaveLength(2);
     for (const candidate of result.candidates) {
       expect(candidate.reviewability).toBe("ready");
@@ -263,5 +285,14 @@ describe("brain heartbeat preview", () => {
       nextAction: "seed_or_select_heartbeat_candidate_state",
       mutation: "none"
     });
+    expect(result.runtimeLoop).toMatchObject({
+      mode: "manual_candidate_only",
+      status: "no_candidates",
+      nextAction: "seed_or_select_heartbeat_candidate_state",
+      inspectedCandidates: 0,
+      reviewableCandidates: 0,
+      mutation: "none"
+    });
+    expect(result.runtimeLoop.forbiddenWrites).toContain("worker_jobs");
   });
 });

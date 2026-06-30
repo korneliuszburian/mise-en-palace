@@ -32,6 +32,16 @@ export type BrainHeartbeatReviewEvalNextAction =
   | "improve_candidate_evidence"
   | "seed_or_select_heartbeat_candidate_state";
 
+export type BrainHeartbeatRuntimeLoopStatus =
+  | "ready_for_operator_review"
+  | "needs_candidate_evidence"
+  | "no_candidates";
+
+export type BrainHeartbeatRuntimeLoopNextAction =
+  | "review_candidates_and_capture_evidence"
+  | "improve_candidate_evidence"
+  | "seed_or_select_heartbeat_candidate_state";
+
 export interface BrainHeartbeatReviewEvalClosure {
   kind: "heartbeat_preview_review_eval_closure";
   decision: BrainHeartbeatReviewEvalDecision;
@@ -48,6 +58,27 @@ export interface BrainHeartbeatReviewEvalClosure {
     "source_decisions",
     "source_claim_edges",
     "eval_candidates"
+  ];
+}
+
+export interface BrainHeartbeatRuntimeLoopReadback {
+  kind: "heartbeat_candidate_runtime_loop";
+  mode: "manual_candidate_only";
+  status: BrainHeartbeatRuntimeLoopStatus;
+  nextAction: BrainHeartbeatRuntimeLoopNextAction;
+  summary: string;
+  inspectedCandidates: number;
+  reviewableCandidates: number;
+  mutation: "none";
+  doesNotProve: string;
+  forbiddenWrites: readonly [
+    "memory_records",
+    "anti_memory_records",
+    "source_claims",
+    "source_decisions",
+    "source_claim_edges",
+    "eval_candidates",
+    "worker_jobs"
   ];
 }
 
@@ -76,6 +107,7 @@ export interface BrainHeartbeatPreview {
   proof: string;
   doesNotProve: string;
   reviewEvalClosure: BrainHeartbeatReviewEvalClosure;
+  runtimeLoop: BrainHeartbeatRuntimeLoopReadback;
   priorityOrder: readonly ["memory_staleness", "source_relation"];
   forbiddenWrites: readonly [
     "memory_records",
@@ -103,6 +135,16 @@ const reviewEvalClosureForbiddenWrites = [
   "eval_candidates"
 ] as const;
 
+const runtimeLoopForbiddenWrites = [
+  "memory_records",
+  "anti_memory_records",
+  "source_claims",
+  "source_decisions",
+  "source_claim_edges",
+  "eval_candidates",
+  "worker_jobs"
+] as const;
+
 const priorityOrder = ["memory_staleness", "source_relation"] as const;
 
 const previewDoesNotProve =
@@ -113,6 +155,9 @@ const previewProof =
 
 const reviewEvalClosureDoesNotProve =
   "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.";
+
+const runtimeLoopDoesNotProve =
+  "Heartbeat runtime loop readback does not prove candidate truth, review correctness, autonomous execution, scheduling readiness, worker daemon readiness, or Memory Core mutation.";
 
 const remainingBudget = (
   maxCandidates: number | undefined,
@@ -131,6 +176,10 @@ const hasReviewableEvidence = (candidate: BrainHeartbeatCandidate): boolean =>
   candidate.reviewabilityReasons.length > 0 &&
   candidate.doesNotProve.trim().length > 0 &&
   candidate.mutation === "none";
+
+const countReviewableCandidates = (
+  candidates: readonly BrainHeartbeatCandidate[]
+): number => candidates.filter(hasReviewableEvidence).length;
 
 const buildReviewEvalClosure = (
   candidates: readonly BrainHeartbeatCandidate[],
@@ -184,6 +233,44 @@ const buildReviewEvalClosure = (
   };
 };
 
+const buildRuntimeLoopReadback = (
+  candidates: readonly BrainHeartbeatCandidate[],
+  reviewEvalClosure: BrainHeartbeatReviewEvalClosure
+): BrainHeartbeatRuntimeLoopReadback => {
+  const reviewableCandidates = countReviewableCandidates(candidates);
+  const statusByDecision = {
+    ready_for_behavior_proof: "ready_for_operator_review",
+    needs_more_evidence: "needs_candidate_evidence",
+    no_reviewable_candidates: "no_candidates"
+  } as const satisfies Record<BrainHeartbeatReviewEvalDecision, BrainHeartbeatRuntimeLoopStatus>;
+  const nextActionByDecision = {
+    ready_for_behavior_proof: "review_candidates_and_capture_evidence",
+    needs_more_evidence: "improve_candidate_evidence",
+    no_reviewable_candidates: "seed_or_select_heartbeat_candidate_state"
+  } as const satisfies Record<BrainHeartbeatReviewEvalDecision, BrainHeartbeatRuntimeLoopNextAction>;
+  const summaryByDecision = {
+    ready_for_behavior_proof:
+      "Heartbeat runtime loop can hand review-ready maintenance candidates to an operator, then capture evidence before any promotion or mutation.",
+    needs_more_evidence:
+      "Heartbeat runtime loop found maintenance candidates, but their evidence is not ready for operator review.",
+    no_reviewable_candidates:
+      "Heartbeat runtime loop inspected current state but has no reviewable maintenance candidates to route."
+  } as const satisfies Record<BrainHeartbeatReviewEvalDecision, string>;
+
+  return {
+    kind: "heartbeat_candidate_runtime_loop",
+    mode: "manual_candidate_only",
+    status: statusByDecision[reviewEvalClosure.decision],
+    nextAction: nextActionByDecision[reviewEvalClosure.decision],
+    summary: summaryByDecision[reviewEvalClosure.decision],
+    inspectedCandidates: candidates.length,
+    reviewableCandidates,
+    mutation: "none",
+    doesNotProve: runtimeLoopDoesNotProve,
+    forbiddenWrites: runtimeLoopForbiddenWrites
+  };
+};
+
 export const buildBrainHeartbeatPreview = (
   input: BuildBrainHeartbeatPreviewInput
 ): BrainHeartbeatPreview => {
@@ -206,6 +293,7 @@ export const buildBrainHeartbeatPreview = (
     ...memoryPreview.candidates,
     ...sourcePreview.candidates
   ];
+  const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
 
   return {
     generatedAt: input.now,
@@ -221,7 +309,8 @@ export const buildBrainHeartbeatPreview = (
     mutation: "none",
     proof: previewProof,
     doesNotProve: previewDoesNotProve,
-    reviewEvalClosure: buildReviewEvalClosure(candidates, input.evidenceRef),
+    reviewEvalClosure,
+    runtimeLoop: buildRuntimeLoopReadback(candidates, reviewEvalClosure),
     priorityOrder,
     forbiddenWrites
   };

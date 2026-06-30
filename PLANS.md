@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V372 Heartbeat/Dreaming Candidate Runtime Loop
-current task: V372-00 Heartbeat/Dreaming Candidate Runtime Loop
+active stream: V373 Heartbeat Runtime Candidate Review Result
+current task: V373-00 Review One Heartbeat Runtime Candidate Result
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V372-00 Heartbeat/Dreaming Candidate Runtime Loop is active.
-The current gap is candidate-only heartbeat/dreaming moving from preview toward
-a bounded runtime loop without daemon, scheduler, crawler, platform, or
-autonomous Memory Core mutation.
+V373-00 Review One Heartbeat Runtime Candidate Result is active.
+The current gap is using the V372 manual heartbeat runtime-loop readback to
+review one maintenance candidate and capture result/evidence without daemon,
+scheduler, crawler, platform, or autonomous Memory Core mutation.
 ```
 
 ## 2. Product Thesis
@@ -95,27 +95,31 @@ V370 complete: source-search answer packages and brain-search preview expose
 V371 complete: source artifact preview persisted output now renders one compact
   ingest-loop readback from artifact/chunks to search/claim/edge and emitted
   source/brain search commands.
+V372 complete: heartbeat preview now exposes a manual candidate-only runtime
+  loop with readiness status, reviewable candidate counts, next action, and
+  forbidden writes.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V372
+## Active Task V373
 
-ID: V372-00
-Name: Heartbeat/Dreaming Candidate Runtime Loop
+ID: V373-00
+Name: Review One Heartbeat Runtime Candidate Result
 Status: active
 
-Goal: move the existing candidate-only heartbeat/dreaming preview toward a
-bounded runtime loop over current source/memory/review state.
+Goal: use the V372 manual heartbeat runtime-loop readback to review one
+maintenance candidate and capture result/evidence without mutating final truth
+automatically.
 
-Product rationale: V363-V366 proved candidate-only heartbeat preview and
-guards. The next useful step is one bounded runtime loop that proposes reviewable
-maintenance work from current store state without autonomous truth mutation.
+Product rationale: V372 now tells an operator when heartbeat maintenance
+candidates are ready for review. The next useful step is one bounded review
+result/evidence loop, not a scheduler or daemon.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V372 report under `docs/reviews/controlled-dogfood/`;
+- a compact V373 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -138,10 +142,10 @@ Forbidden writes:
 
 Definition of Done:
 
-- one bounded heartbeat/dreaming runtime-loop improvement or current-state
-  rejection;
-- output proposes reviewable source/memory/review maintenance candidates from
-  current store state without final truth mutation;
+- one heartbeat runtime-loop candidate is reviewed or explicitly rejected with
+  evidence;
+- output records result, proof/non-proof, reviewability, and next action without
+  final truth mutation;
 - focused tests cover behavior if source changes;
 - no schema rewrite, crawler, server, MCP, broad benchmark, or autonomous
   runtime is added.
@@ -162,8 +166,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V372 builds a scheduler/daemon/platform or mutates Memory Core instead of
-keeping heartbeat/dreaming candidate-only and reviewable.
+V373 promotes/mutates final truth automatically or builds scheduler/daemon
+runtime instead of one bounded review-result/evidence loop.
 ```
 
 ## 9. Task Contract Schema

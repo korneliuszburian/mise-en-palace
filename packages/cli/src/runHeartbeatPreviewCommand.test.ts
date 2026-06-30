@@ -144,6 +144,13 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("candidateIds:");
     expect(result.stdout).toContain(`memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
     expect(result.stdout).toContain(`source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
+    expect(result.stdout).toContain("Runtime loop:");
+    expect(result.stdout).toContain("mode: manual_candidate_only");
+    expect(result.stdout).toContain("status: ready_for_operator_review");
+    expect(result.stdout).toContain("nextAction: review_candidates_and_capture_evidence");
+    expect(result.stdout).toContain("inspectedCandidates: 2");
+    expect(result.stdout).toContain("reviewableCandidates: 2");
+    expect(result.stdout).toContain("worker_jobs");
     expect(result.stdout).toContain("memoryRecords: 1");
     expect(result.stdout).toContain("sourceClaims: 2");
     expect(result.stdout).toContain("sourceClaimEdges: 1");
@@ -214,6 +221,14 @@ describe("runHeartbeatPreviewCommand", () => {
         reviewEvalClosure: {
           decision: "ready_for_behavior_proof",
           nextAction: "add_golden_behavior_case",
+          mutation: "none"
+        },
+        runtimeLoop: {
+          mode: "manual_candidate_only",
+          status: "ready_for_operator_review",
+          nextAction: "review_candidates_and_capture_evidence",
+          inspectedCandidates: 1,
+          reviewableCandidates: 1,
           mutation: "none"
         },
         candidates: [
