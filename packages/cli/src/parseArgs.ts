@@ -61,6 +61,7 @@ export type CliCommand =
       kind: "brainSearch";
       query: string;
       catalogFiles: readonly string[];
+      storeOnly: boolean;
       limit?: number;
       maxInclusions?: number;
       format: "text" | "json";
@@ -441,7 +442,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
-  "krn brain search --query \"...\" [--catalog-file <path>] [--json]",
+  "krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--json]",
   "krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",

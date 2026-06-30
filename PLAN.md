@@ -25,6 +25,7 @@ candidate reviewability: core primitive
 source-search readback: usable through CLI and JSON
 brain-search preview: usable through CLI and JSON
 brain-search selected knowledge: usable pattern packet in preview output
+brain-search store-only: source/search evidence can be read without file catalog
 product loop replay: DB-backed and inspectable
 graph-brain readback: relation summary visible through source/brain search
 ingest v0/v1: bounded loop readback visible through source artifact preview
@@ -99,6 +100,7 @@ V377: retained graph relation readback and heartbeat candidate-only runtime
   patterns from the V376 benchmark gap; ingest pattern deferred.
 V378: prepared current second-operator launch packet without claiming V02-01.
 IMR-01: brain search now exposes selected brain knowledge packets for agent use.
+IMR-02: brain search store-only mode proves store-backed pattern readback.
 ```
 
 ## Remaining Product Gaps

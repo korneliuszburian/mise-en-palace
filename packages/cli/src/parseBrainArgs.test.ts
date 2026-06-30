@@ -22,11 +22,43 @@ describe("parseBrainArgs", () => {
         kind: "brainSearch",
         query: "source-to-decision",
         catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
         limit: 5,
         maxInclusions: 3,
         format: "json"
       }
     });
+  });
+
+  it("parses store-only brain search", () => {
+    expect(parseBrainArgs([
+      "search",
+      "--query",
+      "source-to-decision",
+      "--store-only",
+      "--json"
+    ])).toEqual({
+      command: {
+        kind: "brainSearch",
+        query: "source-to-decision",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      }
+    });
+  });
+
+  it("rejects store-only with catalog files", () => {
+    const result = parseBrainArgs([
+      "search",
+      "--query",
+      "source-to-decision",
+      "--store-only",
+      "--catalog-file",
+      "docs/brain-knowledge/catalog.json"
+    ]);
+
+    expect(result.error).toContain("--store-only cannot be combined with --catalog-file");
   });
 
   it("requires a query", () => {

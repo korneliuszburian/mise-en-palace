@@ -88,7 +88,41 @@ V378 complete: current V02-01 launch packet exists under docs/operator-trials;
   product direction.
 IMR-01 complete: `krn brain search` exposes selected brain knowledge packets
   with summary, consumers, falsifier, proof boundary, and next action.
+IMR-02 complete: `krn brain search --store-only` skips file catalog readback and
+  proves the existing store-backed source/search path can replay governed
+  pattern evidence with proof boundaries.
 ```
+
+## Outcome IMR-02 Store-Backed Pattern Brain Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-02-store-backed-pattern-brain-readback/REPORT.md
+```
+
+Outcome: brain-search now has a store-only readback mode. It can query the
+Postgres-backed source/search path without silently falling back to file-backed
+catalog context.
+
+Source-to-decision:
+
+- Source: IMR-00 direction, `docs/KRN_KERNEL.md`, SourceClaim/SearchDocument
+  schema, and live DB readback.
+- Mechanism: retained patterns can already be replayed as governed
+  source/search evidence with proof boundaries.
+- KRN implication: Codex needs an explicit mode that distinguishes store-backed
+  brain evidence from file-catalog preview.
+- Decision: added `--store-only` to `krn brain search` and rejected combining it
+  with `--catalog-file`.
+- Does not prove: source truth, ranking quality, embeddings, graph retrieval,
+  complete pattern ontology, Memory Core mutation, or product readiness.
+- Consumer: future pattern/research brain work and internal multi-repo operator
+  loops.
+- Falsifier: a future run claims store-backed pattern evidence while silently
+  using file catalog readback or omitting proof boundaries.
 
 ## Outcome IMR-01 Brain Search Selected Knowledge Packet
 

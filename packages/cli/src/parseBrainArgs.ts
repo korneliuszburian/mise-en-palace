@@ -6,12 +6,12 @@ import type {
 } from "./parseArgs.js";
 
 const brainSearchUsage = [
-  "Usage: krn brain search --query \"...\" [--catalog-file <path>] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
+  "Usage: krn brain search --query \"...\" [--catalog-file <path>|--store-only] [--limit <positive-integer>] [--max-inclusions <positive-integer>] [--json]",
   "",
   "Read-only preview commands:",
   "krn brain search --query \"unknown-first TypeScript boundary\"",
   "krn brain search --query \"source-to-decision\" --catalog-file docs/brain-knowledge/catalog.json --json",
-  "  note: brain search composes existing source-search and knowledge-card readbacks; it does not scan, rank, persist, mutate Memory Core, or start a product server"
+  "  note: brain search composes existing source-search and brain-knowledge readbacks; --store-only skips file catalog readback. It does not scan, rank, persist, mutate Memory Core, or start a product server"
 ].join("\n");
 
 export const formatBrainSearchUsage = (): string => `${brainSearchUsage}\n`;
@@ -47,6 +47,7 @@ const parsePositiveInteger = (
 type BrainSearchParseState = {
   query: string | undefined;
   catalogFiles: string[];
+  storeOnly: boolean;
   limit: number | undefined;
   maxInclusions: number | undefined;
   format: "text" | "json";
@@ -148,6 +149,14 @@ const brainSearchOptionHandlers: Record<string, BrainSearchOptionHandler> = {
     assignStringOption(args, index, "--catalog-file", (value) => {
       state.catalogFiles.push(value);
     }),
+  "--store-only": (_args, index, state) => {
+    state.storeOnly = true;
+
+    return {
+      ok: true,
+      nextIndex: index
+    };
+  },
   "--limit": (args, index, state) =>
     assignPositiveIntegerOption(args, index, "--limit", "limit", (value) => {
       state.limit = value;
@@ -213,6 +222,7 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
   const state: BrainSearchParseState = {
     query: undefined,
     catalogFiles: [],
+    storeOnly: false,
     limit: undefined,
     maxInclusions: undefined,
     format: "text"
@@ -236,11 +246,18 @@ export const parseBrainArgs = (rest: readonly string[]): ParseArgsResult => {
     };
   }
 
+  if (state.storeOnly && state.catalogFiles.length > 0) {
+    return {
+      error: `--store-only cannot be combined with --catalog-file\n${formatBrainSearchUsage()}`
+    };
+  }
+
   return {
     command: {
       kind: "brainSearch",
       query: state.query.trim(),
       catalogFiles: state.catalogFiles,
+      storeOnly: state.storeOnly,
       format: state.format,
       ...(state.limit === undefined ? {} : { limit: state.limit }),
       ...(state.maxInclusions === undefined ? {} : { maxInclusions: state.maxInclusions })
