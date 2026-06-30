@@ -129,7 +129,8 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     ];
   }
 
-  return [
+  if (candidate.kind === "source_relation_maintenance_candidate") {
+    return [
     `  sourceClaimEdgeId: ${candidate.sourceClaimEdgeId}`,
     `  fromSourceClaimId: ${candidate.fromSourceClaimId}`,
     `  toSourceClaimId: ${candidate.toSourceClaimId}`,
@@ -137,6 +138,18 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     "  relationEvidenceRefs:",
     ...formatList(candidate.relationEvidenceRefs),
     `  relationEvidenceRequest: ${candidate.relationEvidenceRequest}`
+    ];
+  }
+
+  return [
+    `  requestId: ${candidate.requestId}`,
+    `  source: ${candidate.source}`,
+    `  query: ${candidate.query}`,
+    "  missingEvidence:",
+    ...formatList(candidate.missingEvidence),
+    `  acquisitionEvidenceRequest: ${candidate.acquisitionEvidenceRequest}`,
+    `  consumer: ${candidate.consumer}`,
+    `  falsifier: ${candidate.falsifier}`
   ];
 };
 
@@ -249,8 +262,10 @@ const formatHeartbeatPreview = (
     "Candidate counts:",
     `memoryStaleness: ${input.preview.candidateCounts.memoryStaleness}`,
     `sourceRelation: ${input.preview.candidateCounts.sourceRelation}`,
+    `knowledgeAcquisition: ${input.preview.candidateCounts.knowledgeAcquisition}`,
     `skippedMemoryRecords: ${input.preview.skippedCounts.memoryRecords}`,
     `skippedSourceClaimEdges: ${input.preview.skippedCounts.sourceClaimEdges}`,
+    `skippedKnowledgeAcquisitionRequests: ${input.preview.skippedCounts.knowledgeAcquisitionRequests}`,
     "",
     "Candidates:",
     ...(input.preview.candidates.length === 0

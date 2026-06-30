@@ -99,6 +99,49 @@ IMR-04 complete: `krn brain search --store-only` derives selectedKnowledge
 IMR-05 complete: store-backed brain packets were used as the pre-coding pattern
   gate for the Autonomous Memory Agents paper intake; the paper is retained as
   a lab-test source for candidate-only acquisition/escalation work.
+IMR-06 complete: heartbeat preview can turn explicit missing-evidence readback
+  into reviewable candidate-only knowledge acquisition work without Memory Core
+  mutation, DB schema, crawler, API/MCP, ranking rewrite, or worker daemon.
+```
+
+## Outcome IMR-06 Knowledge Acquisition Heartbeat Candidate Preview
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-06-knowledge-acquisition-heartbeat-preview/REPORT.md
+```
+
+Outcome: `@krn/workers` now has a bounded
+`knowledge_acquisition_candidate` preview. Explicit missing-evidence readback
+from source/brain search can be represented as candidate-only acquisition work
+with source, query, missing evidence, consumer, falsifier, `doesNotProve`,
+reviewability, `mutation: none`, and forbidden writes.
+
+Source-to-decision:
+
+- Source: `docs/KRN_SOURCES.md#towards-autonomous-memory-agents`, IMR-05
+  report, store-backed brain-search pre-gate output, and `mise-en-palace-q95`.
+- Mechanism: missing knowledge should create active acquisition/validation work
+  only when the evidence gap is explicit and reviewable.
+- KRN implication: heartbeat/dreaming can propose acquisition candidates from
+  missing-evidence input without autonomous memory mutation.
+- Decision: add worker-level candidate-only preview and aggregate it into brain
+  heartbeat; do not add CLI bridge, schema, crawler, ranking rewrite, API/MCP,
+  or worker daemon in this slice.
+- Does not prove: source truth, acquisition quality, ranking quality, full
+  source-search integration, product readiness, or autonomous worker execution.
+- Consumer: heartbeat/dreaming candidate runtime and the next
+  `mise-en-palace-jta` operator-facing bridge.
+- Falsifier: missing-evidence input cannot produce a reviewable candidate, or
+  candidate output mutates Memory Core/source/eval/worker state.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-jta: Route missing-evidence readback into acquisition preview.
 ```
 
 ## Outcome IMR-05 Store-Backed Pattern Gate For Autonomous Memory Agents

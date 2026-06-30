@@ -172,7 +172,11 @@ describe("brain heartbeat preview", () => {
     expect(result.mutation).toBe("none");
     expect(result.doesNotProve).toContain("Memory Core mutation");
     expect(result.proof).toContain("candidate-only maintenance previews");
-    expect(result.priorityOrder).toEqual(["memory_staleness", "source_relation"]);
+    expect(result.priorityOrder).toEqual([
+      "memory_staleness",
+      "source_relation",
+      "knowledge_acquisition"
+    ]);
     expect(result.forbiddenWrites).toEqual([
       "memory_records",
       "anti_memory_records",
@@ -182,7 +186,8 @@ describe("brain heartbeat preview", () => {
     ]);
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 1,
-      sourceRelation: 1
+      sourceRelation: 1,
+      knowledgeAcquisition: 0
     });
     expect(result.reviewEvalClosure).toMatchObject({
       decision: "ready_for_behavior_proof",
@@ -291,11 +296,67 @@ describe("brain heartbeat preview", () => {
     expect(result.candidates[0]?.kind).toBe("memory_staleness_maintenance_candidate");
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 1,
-      sourceRelation: 0
+      sourceRelation: 0,
+      knowledgeAcquisition: 0
     });
     expect(result.skippedCounts).toEqual({
       memoryRecords: 0,
-      sourceClaimEdges: 1
+      sourceClaimEdges: 1,
+      knowledgeAcquisitionRequests: 0
+    });
+  });
+
+  test("aggregates missing-evidence acquisition candidates without mutation", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [],
+      sourceClaims: [],
+      sourceClaimEdges: [],
+      knowledgeAcquisitionRequests: [
+        {
+          id: "ama-missing-evidence",
+          source: "brain_search",
+          query: "Autonomous Memory Agents acquisition escalation",
+          missingEvidence: ["candidate-only acquisition lane"],
+          evidenceRefs: ["docs/KRN_SOURCES.md#towards-autonomous-memory-agents"],
+          consumer: "heartbeat/dreaming candidate runtime",
+          falsifier: "Missing-evidence readback cannot create a reviewable candidate.",
+          doesNotProve:
+            "This does not prove autonomous worker execution or Memory Core mutation safety."
+        }
+      ]
+    });
+
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        id: "knowledge-acquisition-heartbeat:ama-missing-evidence:missing_evidence",
+        kind: "knowledge_acquisition_candidate",
+        action: "propose_knowledge_acquisition",
+        reviewability: "ready",
+        mutation: "none"
+      })
+    ]);
+    expect(result.candidateCounts).toEqual({
+      memoryStaleness: 0,
+      sourceRelation: 0,
+      knowledgeAcquisition: 1
+    });
+    expect(result.skippedCounts).toEqual({
+      memoryRecords: 0,
+      sourceClaimEdges: 0,
+      knowledgeAcquisitionRequests: 0
+    });
+    expect(result.reviewEvalClosure).toMatchObject({
+      decision: "ready_for_behavior_proof",
+      nextAction: "add_golden_behavior_case",
+      mutation: "none"
+    });
+    expect(result.runtimeLoop).toMatchObject({
+      mode: "manual_candidate_only",
+      status: "ready_for_operator_review",
+      reviewableCandidates: 1,
+      mutation: "none"
     });
   });
 
@@ -322,11 +383,13 @@ describe("brain heartbeat preview", () => {
     expect(result.candidates).toEqual([]);
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 0,
-      sourceRelation: 0
+      sourceRelation: 0,
+      knowledgeAcquisition: 0
     });
     expect(result.skippedCounts).toEqual({
       memoryRecords: 1,
-      sourceClaimEdges: 1
+      sourceClaimEdges: 1,
+      knowledgeAcquisitionRequests: 0
     });
     expect(result.mutation).toBe("none");
     expect(result.reviewEvalClosure).toMatchObject({

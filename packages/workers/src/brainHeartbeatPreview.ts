@@ -12,6 +12,13 @@ import type {
   MemoryStalenessHeartbeatCandidate
 } from "./memoryStalenessHeartbeatPreview.js";
 import {
+  buildKnowledgeAcquisitionHeartbeatPreview
+} from "./knowledgeAcquisitionHeartbeatPreview.js";
+import type {
+  KnowledgeAcquisitionHeartbeatCandidate,
+  KnowledgeAcquisitionRequest
+} from "./knowledgeAcquisitionHeartbeatPreview.js";
+import {
   buildSourceRelationHeartbeatPreview
 } from "./sourceRelationHeartbeatPreview.js";
 import type {
@@ -20,7 +27,8 @@ import type {
 
 export type BrainHeartbeatCandidate =
   | MemoryStalenessHeartbeatCandidate
-  | SourceRelationHeartbeatCandidate;
+  | SourceRelationHeartbeatCandidate
+  | KnowledgeAcquisitionHeartbeatCandidate;
 
 export type BrainHeartbeatReviewEvalDecision =
   | "ready_for_behavior_proof"
@@ -129,6 +137,7 @@ export interface BuildBrainHeartbeatPreviewInput {
   memoryRecords: readonly MemoryRecord[];
   sourceClaims: readonly SourceClaim[];
   sourceClaimEdges: readonly SourceClaimEdge[];
+  knowledgeAcquisitionRequests?: readonly KnowledgeAcquisitionRequest[];
   nearExpiryDays?: number;
   maxCandidates?: number;
   candidateReview?: BrainHeartbeatCandidateReviewInput;
@@ -140,10 +149,12 @@ export interface BrainHeartbeatPreview {
   candidateCounts: {
     memoryStaleness: number;
     sourceRelation: number;
+    knowledgeAcquisition: number;
   };
   skippedCounts: {
     memoryRecords: number;
     sourceClaimEdges: number;
+    knowledgeAcquisitionRequests: number;
   };
   mutation: "none";
   proof: string;
@@ -151,7 +162,7 @@ export interface BrainHeartbeatPreview {
   reviewEvalClosure: BrainHeartbeatReviewEvalClosure;
   runtimeLoop: BrainHeartbeatRuntimeLoopReadback;
   candidateReviewResult?: BrainHeartbeatCandidateReviewResult;
-  priorityOrder: readonly ["memory_staleness", "source_relation"];
+  priorityOrder: readonly ["memory_staleness", "source_relation", "knowledge_acquisition"];
   forbiddenWrites: readonly [
     "memory_records",
     "anti_memory_records",
@@ -188,13 +199,13 @@ const runtimeLoopForbiddenWrites = [
   "worker_jobs"
 ] as const;
 
-const priorityOrder = ["memory_staleness", "source_relation"] as const;
+const priorityOrder = ["memory_staleness", "source_relation", "knowledge_acquisition"] as const;
 
 const previewDoesNotProve =
   "Brain heartbeat preview does not prove memory truth, source truth, candidate usefulness, autonomous worker execution, scheduling, consensus correctness, or Memory Core mutation.";
 
 const previewProof =
-  "Brain heartbeat preview aggregates existing candidate-only maintenance previews over memory and source relation state without mutating Memory Core, source truth, source decisions, or worker runtime state.";
+  "Brain heartbeat preview aggregates existing candidate-only maintenance previews over memory, source relation, and explicit missing-evidence acquisition state without mutating Memory Core, source truth, source decisions, eval candidates, or worker runtime state.";
 
 const reviewEvalClosureDoesNotProve =
   "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.";
@@ -370,9 +381,20 @@ export const buildBrainHeartbeatPreview = (
     evidenceRef: input.evidenceRef,
     ...(sourceBudget === undefined ? {} : { maxCandidates: sourceBudget })
   });
+  const acquisitionBudget = remainingBudget(
+    input.maxCandidates,
+    memoryPreview.candidates.length + sourcePreview.candidates.length
+  );
+  const acquisitionPreview = buildKnowledgeAcquisitionHeartbeatPreview({
+    now: input.now,
+    requests: input.knowledgeAcquisitionRequests ?? [],
+    evidenceRef: input.evidenceRef,
+    ...(acquisitionBudget === undefined ? {} : { maxCandidates: acquisitionBudget })
+  });
   const candidates = [
     ...memoryPreview.candidates,
-    ...sourcePreview.candidates
+    ...sourcePreview.candidates,
+    ...acquisitionPreview.candidates
   ];
   const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
   const candidateReviewResult = buildCandidateReviewResult(candidates, input.candidateReview);
@@ -382,11 +404,13 @@ export const buildBrainHeartbeatPreview = (
     candidates,
     candidateCounts: {
       memoryStaleness: memoryPreview.candidates.length,
-      sourceRelation: sourcePreview.candidates.length
+      sourceRelation: sourcePreview.candidates.length,
+      knowledgeAcquisition: acquisitionPreview.candidates.length
     },
     skippedCounts: {
       memoryRecords: memoryPreview.skippedMemoryCount,
-      sourceClaimEdges: sourcePreview.skippedEdgeCount
+      sourceClaimEdges: sourcePreview.skippedEdgeCount,
+      knowledgeAcquisitionRequests: acquisitionPreview.skippedRequestCount
     },
     mutation: "none",
     proof: previewProof,
