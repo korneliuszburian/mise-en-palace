@@ -15,20 +15,27 @@ import {
 
 const now = "2026-06-23T12:00:00.000Z";
 
-const aggregate = (): HarnessRunAggregate => ({
+interface AggregateInput {
+  operatorProjectId?: string;
+  taskProjectId?: string;
+}
+
+const aggregate = (input: AggregateInput = {
+  operatorProjectId: "project-1",
+  taskProjectId: "project-1"
+}): HarnessRunAggregate => ({
   operatorIntent: {
     id: "operator-intent-1",
     workspaceId: "workspace-1",
-    projectId: "project-1",
     source: "cli",
     rawIntent: "observe run",
     metadata: {},
-    createdAt: now
+    createdAt: now,
+    ...(input.operatorProjectId === undefined ? {} : { projectId: input.operatorProjectId })
   },
   taskContract: {
     id: "task-contract-1",
     operatorIntentId: "operator-intent-1",
-    projectId: "project-1",
     title: "observe run",
     objective: "observe run",
     constraints: [],
@@ -37,7 +44,8 @@ const aggregate = (): HarnessRunAggregate => ({
     status: "active",
     metadata: {},
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    ...(input.taskProjectId === undefined ? {} : { projectId: input.taskProjectId })
   },
   harnessPlan: {
     id: "harness-plan-1",
@@ -74,19 +82,21 @@ const aggregate = (): HarnessRunAggregate => ({
 });
 
 const createRuntime = (input: {
+  aggregateInput?: AggregateInput;
+  expectedProjectId?: string;
   onAddItems?: (items: CreateObservationItemInput[]) => void;
 } = {}): ObserveDatabaseRuntime => ({
   harnessRunRepository: {
     async getHarnessRunByExecutionRunId() {
-      return aggregate();
+      return aggregate(input.aggregateInput);
     }
   },
   async resolveProjectRuntime(projectInput) {
-    expect(projectInput.projectId).toBe("project-1");
+    expect(projectInput.projectId).toBe(input.expectedProjectId ?? "project-1");
 
     return {
       workspaceId: "workspace-1",
-      projectId: "project-1",
+      projectId: input.expectedProjectId ?? "project-1",
       observationRepository: {
         async createGroup(groupInput) {
           expect(groupInput.metadata).toMatchObject({
@@ -158,6 +168,65 @@ describe("runObserveCommand", () => {
     expect(result.stdout).toContain("Observation group: preview only");
     expect(result.stdout).toContain("Memory mutation: none");
     expect(result.stdout).toContain("MemoryRecord created: no");
+  });
+
+  it("uses an explicit project when the persisted run has no project scope", async () => {
+    const result = await runObserveCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      command: {
+        kind: "observeRun",
+        runId: "execution-run-1",
+        projectId: " project-from-cli ",
+        persist: false
+      },
+      createObserveDatabaseRuntime: async () => createRuntime({
+        aggregateInput: {},
+        expectedProjectId: "project-from-cli"
+      })
+    });
+
+    expect(result.stdout).toContain("Project ID: project-from-cli");
+    expect(result.stdout).toContain("Observation group: preview only");
+  });
+
+  it("rejects an explicit project that conflicts with the persisted run project", async () => {
+    await expect(runObserveCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      command: {
+        kind: "observeRun",
+        runId: "execution-run-1",
+        projectId: "other-project",
+        persist: false
+      },
+      createObserveDatabaseRuntime: async () => createRuntime()
+    })).rejects.toThrow(
+      "--project other-project does not match persisted run project project-1"
+    );
+  });
+
+  it("requires an explicit project when the persisted run has no project scope", async () => {
+    await expect(runObserveCommand({
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      command: {
+        kind: "observeRun",
+        runId: "execution-run-1",
+        persist: false
+      },
+      createObserveDatabaseRuntime: async () => createRuntime({
+        aggregateInput: {}
+      })
+    })).rejects.toThrow(
+      "krn observe --run requires --project <project-id> because the persisted run has no project scope"
+    );
   });
 
   it("persists source-ranged observation staging without a Memory Core writer", async () => {

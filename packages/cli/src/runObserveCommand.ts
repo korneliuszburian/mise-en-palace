@@ -50,31 +50,39 @@ const sourceTypeToProvenance = (
   return sourceType;
 };
 
+const normalizedProjectId = (projectId: string | undefined): string | undefined => {
+  const trimmed = projectId?.trim();
+
+  return trimmed === undefined || trimmed.length === 0 ? undefined : trimmed;
+};
+
+const assertMatchingObservedProjectIds = (input: {
+  explicitProjectId: string | undefined;
+  runProjectId: string | undefined;
+}): void => {
+  if (
+    input.explicitProjectId !== undefined &&
+    input.runProjectId !== undefined &&
+    input.explicitProjectId !== input.runProjectId
+  ) {
+    throw new Error(
+      `--project ${input.explicitProjectId} does not match persisted run project ${input.runProjectId}`
+    );
+  }
+};
+
 const resolveObservedProjectId = (input: {
   explicitProjectId: string | undefined;
   runProjectId: string | undefined;
 }): string => {
-  const explicitProjectId = input.explicitProjectId?.trim();
-  const runProjectId = input.runProjectId?.trim();
+  const explicitProjectId = normalizedProjectId(input.explicitProjectId);
+  const runProjectId = normalizedProjectId(input.runProjectId);
 
-  if (
-    explicitProjectId !== undefined &&
-    explicitProjectId.length > 0 &&
-    runProjectId !== undefined &&
-    runProjectId.length > 0 &&
-    explicitProjectId !== runProjectId
-  ) {
-    throw new Error(
-      `--project ${explicitProjectId} does not match persisted run project ${runProjectId}`
-    );
-  }
+  assertMatchingObservedProjectIds({ explicitProjectId, runProjectId });
 
-  const projectId =
-    explicitProjectId !== undefined && explicitProjectId.length > 0
-      ? explicitProjectId
-      : runProjectId;
+  const projectId = explicitProjectId ?? runProjectId;
 
-  if (projectId === undefined || projectId.length === 0) {
+  if (projectId === undefined) {
     throw new Error(
       "krn observe --run requires --project <project-id> because the persisted run has no project scope"
     );
