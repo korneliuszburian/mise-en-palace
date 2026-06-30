@@ -7,7 +7,10 @@ import type {
   SourceDecisionId,
   SourceRejectionId
 } from "./ids.js";
-import type { IsoTimestamp } from "./time.js";
+import {
+  parseTimestampMs,
+  type IsoTimestamp
+} from "./time.js";
 
 export type SourceTrustTier =
   | "high"
@@ -183,16 +186,6 @@ const sourceTrustTierRanks: Record<SourceTrustTier, number> = {
 export const rankSourceTrustTier = (trustTier: SourceTrustTier): number =>
   sourceTrustTierRanks[trustTier];
 
-const parseTime = (value: string | undefined): number | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const parsed = Date.parse(value);
-
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
@@ -204,8 +197,8 @@ export const isSourceClaimTemporallyValid = (
     return false;
   }
 
-  const revisitAt = parseTime(sourceClaim.revisitWhen);
-  const nowAt = parseTime(now);
+  const revisitAt = parseTimestampMs(sourceClaim.revisitWhen);
+  const nowAt = parseTimestampMs(now);
 
   if (revisitAt === undefined || nowAt === undefined) {
     return true;
@@ -236,7 +229,7 @@ export const assessSourceClaimOverride = (input: {
   readonly now: string;
   readonly overrideReason?: string;
 }): SourceClaimOverrideAssessment => {
-  const candidateCreatedAt = parseTime(input.candidate.createdAt);
+  const candidateCreatedAt = parseTimestampMs(input.candidate.createdAt);
   const overrideReason = input.overrideReason?.trim();
 
   if (overrideReason !== undefined && overrideReason.length > 0) {
@@ -252,7 +245,7 @@ export const assessSourceClaimOverride = (input: {
       return false;
     }
 
-    const currentCreatedAt = parseTime(currentClaim.createdAt);
+    const currentCreatedAt = parseTimestampMs(currentClaim.createdAt);
     const candidateIsNewer =
       candidateCreatedAt === undefined ||
       currentCreatedAt === undefined ||

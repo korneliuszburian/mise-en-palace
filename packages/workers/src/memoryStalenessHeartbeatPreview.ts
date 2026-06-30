@@ -1,6 +1,7 @@
 import {
   assessCandidateReviewability,
-  assessMemoryRecordReviewSignals
+  assessMemoryRecordReviewSignals,
+  parseTimestampMs
 } from "@krn/core";
 import type {
   CandidateReviewability,
@@ -78,16 +79,6 @@ const previewDoesNotProve =
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
-const parseTime = (value: string | undefined): number | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const parsed = Date.parse(value);
-
-  return Number.isFinite(parsed) ? parsed : undefined;
-};
-
 const sourceLineageRefs = (record: MemoryRecord): readonly string[] =>
   record.sourceLineage
     .map((sourceLineage) => sourceLineage.sourceId)
@@ -120,8 +111,8 @@ const staleReasonForRecord = (
   now: IsoTimestamp,
   nearExpiryDays: number
 ): MemoryStalenessHeartbeatCandidateReason | undefined => {
-  const validUntil = parseTime(record.validUntil);
-  const nowAt = parseTime(now);
+  const validUntil = parseTimestampMs(record.validUntil);
+  const nowAt = parseTimestampMs(now);
 
   if (validUntil !== undefined && nowAt !== undefined) {
     if (validUntil <= nowAt) {
