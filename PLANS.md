@@ -15,7 +15,7 @@ widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
 active stream: V360 Fallow Legacy Complexity Cleanup
 current task: V360-00 Fallow Legacy Complexity Cleanup
-latest source slice commit checked: edff0e0 / CI success run 28419701398
+latest source slice commit checked: fbcd521 / CI success run 28420149421
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -27,7 +27,7 @@ Known current gap:
 V360-00 Fallow Legacy Complexity Cleanup must reduce full-audit duplication or
 health debt one bounded source target at a time without broad repo refactors.
 V360 rollup: bounded cleanups have moved full Fallow from dupes 136 / health
-117 to dupes 47 / health 18. Dead-code findings are zero. Changed-files
+117 to dupes 45 / health 18. Dead-code findings are zero. Changed-files
 Fallow gates are green for each committed slice.
 
 Recent completed slices:
@@ -50,6 +50,7 @@ Recent completed slices:
 - `67555af` / CI `28418681842`: DB smoke support task cleanup.
 - `900f82a` / CI `28419541515`: harness smoke scaffold cleanup.
 - `edff0e0` / CI `28419701398`: harness evidence repository Fallow usage.
+- `fbcd521` / CI `28420149421`: memory/source smoke setup cleanup.
 
 Remaining smoke-family cleanup stays valid only as bounded owner-surface work;
 do not split `packages/db/src/repositories/common.ts` only because Fallow ranks
@@ -601,14 +602,14 @@ completed bounded targets:
   packages/db/src/retrievalSubstrateSmoke.ts
 
 full Fallow moved:
-  dupes 136 -> 47 clone groups
+  dupes 136 -> 45 clone groups
   health 117 -> 18 above threshold
   dead-code 0
 
 next: pick the next bounded owner surface from the current full Fallow report.
-If continuing DB smoke cleanup, handle memory-governance/source-graph as a
-smoke-family cleanup with explicit duplicate-block reduction, not a generic
-shared setup framework.
+Do not continue DB smoke cleanup unless the current Fallow top still identifies
+a bounded smoke-family duplicate. Prefer the next highest owner surface with
+direct complexity debt.
 ```
 
 ## Verification Policy

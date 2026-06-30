@@ -77,8 +77,8 @@ completed locally: bounded CLI/core/schema/db/harness/codex/workers cleanup
 recent slices: shared parser helpers, source-search readback preparation,
   shared metadata reader, DB readiness table inspection, temporal timestamp
   parsing, activation/retrieval smoke scaffold, DB smoke support tasks,
-  harness smoke scaffolding.
-full Fallow moved: dupes 136 -> 47; health 117 -> 18; dead-code 0
+  harness smoke scaffolding, memory/source smoke setup.
+full Fallow moved: dupes 136 -> 45; health 117 -> 18; dead-code 0
 ```
 
 Next candidate targets are tracked in `PLANS.md`. Do not split
