@@ -17,6 +17,9 @@
     {
       "implements": "HarnessRunRepository",
       "members": [
+        "createOperatorIntent",
+        "createTaskContract",
+        "createHarnessPlan",
         "updateExecutionRunStatus"
       ]
     },
@@ -42,7 +45,8 @@
     {
       "implements": "RetrievalRepository",
       "members": [
-        "completeRetrievalRun"
+        "completeRetrievalRun",
+        "cleanupTestRetrievalRecords"
       ]
     },
     {

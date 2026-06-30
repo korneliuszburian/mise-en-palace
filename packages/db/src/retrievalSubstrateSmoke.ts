@@ -3,13 +3,11 @@ import {
   cleanupRetrievalSubstrateSmokeRows,
   countRetrievalSubstrateSmokeMarkerRows,
   countSmokeContextSelectionRows,
-  createSmokeProjectRecords,
-  createSmokeRuntime
+  createSmokeHarnessScaffold
 } from "./dbSmokeSupport.js";
-import {
+import type {
   DrizzleHarnessRunRepository,
   DrizzleMemoryRepository,
-  DrizzleProjectRepository,
   DrizzleRetrievalRepository,
   DrizzleSourceRepository
 } from "./repositories/index.js";
@@ -47,84 +45,53 @@ const deterministicSmokeVector = (): number[] =>
 export const runRetrievalSubstrateSmokeCheck = async (
   input: RetrievalSubstrateSmokeInput
 ): Promise<RetrievalSubstrateSmokeReport> => {
-  const runtime = await createSmokeRuntime({
+  const scaffold = await createSmokeHarnessScaffold({
     databaseUrl: input.databaseUrl,
     migrationsFolder: input.migrationsFolder,
     smokeId: input.smokeId,
     smokeName: "retrieval substrate smoke",
     workspacePrefix: "krn-retrieval-smoke",
-    projectSlug: "retrieval-substrate"
-  });
-  const { client, db, marker, projectSlug, workspaceSlug } = runtime;
-  let contextAssemblyId: string | undefined;
-  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-  const memoryRepository = new DrizzleMemoryRepository(db);
-  const projectRepository = new DrizzleProjectRepository(db);
-  const retrievalRepository = new DrizzleRetrievalRepository(db);
-  const sourceRepository = new DrizzleSourceRepository(db);
-
-  const cleanup = async (): Promise<number> => {
-    await retrievalRepository.cleanupTestRetrievalRecords({ smokeId: marker });
-    await cleanupRetrievalSubstrateSmokeRows({
-      db,
-      marker,
-      workspaceSlug
-    });
-
-    return countRetrievalSubstrateSmokeMarkerRows({ db, workspaceSlug, marker, contextAssemblyId });
-  };
-
-  try {
-    await cleanup();
-
-    const { workspace, project } = await createSmokeProjectRecords(
-      projectRepository,
-      workspaceSlug,
-      projectSlug,
-      marker
-    );
-    const operatorIntent = await harnessRunRepository.createOperatorIntent({
-      workspaceId: workspace.id,
-      projectId: project.id,
-      source: "cli",
-      rawIntent: `retrieval substrate smoke ${marker}`,
-      metadata: {
-        smokeId: marker
-      }
-    });
-    const taskContract = await harnessRunRepository.createTaskContract({
-      operatorIntentId: operatorIntent.id,
-      projectId: project.id,
+    projectSlug: "retrieval-substrate",
+    cleanupRows: cleanupRetrievalSubstrateSmokeRows,
+    countMarkerRows: countRetrievalSubstrateSmokeMarkerRows,
+    rawIntent: `retrieval substrate smoke ${input.smokeId}`,
+    taskContract: {
       title: "Retrieval substrate smoke",
       objective: "Prove search document, lexical retrieval, embeddings, candidates, activation, and exclusions.",
       constraints: ["no external embedding service", "self-clean marker rows"],
       nonGoals: ["no dashboard", "no separate vector DB"],
-      acceptance: ["lexical search finds inserted document", "cleanup count zero"],
-      metadata: {
-        smokeId: marker
-      }
-    });
-    const harnessPlan = await harnessRunRepository.createHarnessPlan({
-      taskContractId: taskContract.id,
-      version: 1,
-      status: "running",
+      acceptance: ["lexical search finds inserted document", "cleanup count zero"]
+    },
+    harnessPlan: {
       summary: "Retrieval substrate smoke plan",
-      nextAction: "Create retrieval substrate proof rows.",
-      metadata: {
-        smokeId: marker
-      }
-    });
-    const contextAssembly = await harnessRunRepository.createContextAssembly({
-      harnessPlanId: harnessPlan.id,
+      nextAction: "Create retrieval substrate proof rows."
+    },
+    contextAssembly: {
       status: "assembled",
-      tokenBudget: 1000,
-      inclusions: [],
-      exclusions: [],
-      metadata: {
-        smokeId: marker
-      }
-    });
-    contextAssemblyId = contextAssembly.id;
+      tokenBudget: 1000
+    }
+  });
+  const {
+    client,
+    db,
+    marker,
+    projectSlug,
+    workspaceSlug,
+    project,
+    taskContract,
+    harnessPlan,
+    contextAssembly,
+    cleanup
+  } = scaffold;
+  const harnessRunRepository: DrizzleHarnessRunRepository = scaffold.harnessRunRepository;
+  const memoryRepository: DrizzleMemoryRepository = scaffold.memoryRepository;
+  const retrievalRepository: DrizzleRetrievalRepository = scaffold.retrievalRepository;
+  const sourceRepository: DrizzleSourceRepository = scaffold.sourceRepository;
+
+  try {
+    if (contextAssembly === undefined) {
+      throw new Error("Retrieval substrate smoke did not create a context assembly");
+    }
     const executionRun = await harnessRunRepository.createExecutionRun({
       harnessPlanId: harnessPlan.id,
       adapter: "codex",

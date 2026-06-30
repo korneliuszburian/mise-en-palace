@@ -15,7 +15,11 @@ import type { KrnDatabase } from "./database.js";
 import { createKrnDatabase } from "./database.js";
 import { runMigrationReadinessCheck } from "./migrationReadiness.js";
 import {
-  DrizzleProjectRepository
+  DrizzleHarnessRunRepository,
+  DrizzleMemoryRepository,
+  DrizzleProjectRepository,
+  DrizzleRetrievalRepository,
+  DrizzleSourceRepository
 } from "./repositories/index.js";
 import {
   antiMemoryRecords,
@@ -45,6 +49,18 @@ type SmokeWorkspaceRecord = Awaited<
 type SmokeProjectRecord = Awaited<
   ReturnType<DrizzleProjectRepository["createProject"]>
 >;
+type SmokeOperatorIntentRecord = Awaited<
+  ReturnType<DrizzleHarnessRunRepository["createOperatorIntent"]>
+>;
+type SmokeTaskContractRecord = Awaited<
+  ReturnType<DrizzleHarnessRunRepository["createTaskContract"]>
+>;
+type SmokeHarnessPlanRecord = Awaited<
+  ReturnType<DrizzleHarnessRunRepository["createHarnessPlan"]>
+>;
+type SmokeContextAssemblyRecord = Awaited<
+  ReturnType<DrizzleHarnessRunRepository["createContextAssembly"]>
+>;
 
 export interface SmokeDatabase {
   client: Sql;
@@ -54,6 +70,67 @@ export interface SmokeDatabase {
 export interface SmokeProjectRecords {
   workspace: SmokeWorkspaceRecord;
   project: SmokeProjectRecord;
+}
+
+export interface SmokeCoreRepositories {
+  harnessRunRepository: DrizzleHarnessRunRepository;
+  memoryRepository: DrizzleMemoryRepository;
+  projectRepository: DrizzleProjectRepository;
+  retrievalRepository: DrizzleRetrievalRepository;
+  sourceRepository: DrizzleSourceRepository;
+}
+
+export interface SmokeTaskContractSeed {
+  acceptance: readonly string[];
+  constraints: readonly string[];
+  nonGoals: readonly string[];
+  objective: string;
+  title: string;
+}
+
+export interface SmokeHarnessPlanSeed {
+  nextAction: string;
+  status?: "ready" | "draft" | "running" | "blocked" | "completed";
+  summary: string;
+}
+
+export interface SmokeContextAssemblySeed {
+  status: "assembled" | "abstained";
+  tokenBudget: number;
+}
+
+interface SmokeHarnessRecordsInput {
+  contextAssembly?: SmokeContextAssemblySeed;
+  harnessPlan: SmokeHarnessPlanSeed;
+  harnessRunRepository: DrizzleHarnessRunRepository;
+  marker: string;
+  projectRepository: DrizzleProjectRepository;
+  projectSlug: string;
+  rawIntent: string;
+  taskContract: SmokeTaskContractSeed;
+  workspaceSlug: string;
+}
+
+export interface SmokeHarnessRecords extends SmokeProjectRecords {
+  contextAssembly?: SmokeContextAssemblyRecord;
+  harnessPlan: SmokeHarnessPlanRecord;
+  operatorIntent: SmokeOperatorIntentRecord;
+  taskContract: SmokeTaskContractRecord;
+}
+
+export interface SmokeHarnessScaffoldInput extends SmokeRuntimeInput {
+  cleanupRows: (input: SmokeCleanupInput) => Promise<void>;
+  contextAssembly?: SmokeContextAssemblySeed;
+  countMarkerRows: (input: SmokeMarkerRowInput) => Promise<number>;
+  harnessPlan: SmokeHarnessPlanSeed;
+  rawIntent: string;
+  taskContract: SmokeTaskContractSeed;
+}
+
+export interface SmokeHarnessScaffold
+  extends SmokeRuntime, SmokeCoreRepositories, SmokeHarnessRecords {
+  cleanup: () => Promise<number>;
+  setContextAssemblyId: (contextAssemblyId: string | undefined) => void;
 }
 
 export interface SmokeRuntimeInput {
@@ -166,6 +243,16 @@ export const createSmokeDatabase = (databaseUrl: string): SmokeDatabase => {
   };
 };
 
+const createSmokeCoreRepositories = (
+  db: KrnDatabase
+): SmokeCoreRepositories => ({
+  harnessRunRepository: new DrizzleHarnessRunRepository(db),
+  memoryRepository: new DrizzleMemoryRepository(db),
+  projectRepository: new DrizzleProjectRepository(db),
+  retrievalRepository: new DrizzleRetrievalRepository(db),
+  sourceRepository: new DrizzleSourceRepository(db)
+});
+
 export const createSmokeRuntime = async (
   input: SmokeRuntimeInput
 ): Promise<SmokeRuntime> => {
@@ -208,6 +295,122 @@ export const createSmokeProjectRecords = async (
   return {
     workspace,
     project
+  };
+};
+
+const createSmokeHarnessRecords = async (
+  input: SmokeHarnessRecordsInput
+): Promise<SmokeHarnessRecords> => {
+  const { workspace, project } = await createSmokeProjectRecords(
+    input.projectRepository,
+    input.workspaceSlug,
+    input.projectSlug,
+    input.marker
+  );
+  const operatorIntent = await input.harnessRunRepository.createOperatorIntent({
+    workspaceId: workspace.id,
+    projectId: project.id,
+    source: "cli",
+    rawIntent: input.rawIntent,
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const taskContract = await input.harnessRunRepository.createTaskContract({
+    operatorIntentId: operatorIntent.id,
+    projectId: project.id,
+    title: input.taskContract.title,
+    objective: input.taskContract.objective,
+    constraints: [...input.taskContract.constraints],
+    nonGoals: [...input.taskContract.nonGoals],
+    acceptance: [...input.taskContract.acceptance],
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const harnessPlan = await input.harnessRunRepository.createHarnessPlan({
+    taskContractId: taskContract.id,
+    version: 1,
+    status: input.harnessPlan.status ?? "running",
+    summary: input.harnessPlan.summary,
+    nextAction: input.harnessPlan.nextAction,
+    metadata: {
+      smokeId: input.marker
+    }
+  });
+  const contextAssembly = input.contextAssembly === undefined ? undefined :
+    await input.harnessRunRepository.createContextAssembly({
+      harnessPlanId: harnessPlan.id,
+      status: input.contextAssembly.status,
+      tokenBudget: input.contextAssembly.tokenBudget,
+      inclusions: [],
+      exclusions: [],
+      metadata: {
+        smokeId: input.marker
+      }
+    });
+
+  return {
+    workspace,
+    project,
+    operatorIntent,
+    taskContract,
+    harnessPlan,
+    ...(contextAssembly === undefined ? {} : { contextAssembly })
+  };
+};
+
+export const createSmokeHarnessScaffold = async (
+  input: SmokeHarnessScaffoldInput
+): Promise<SmokeHarnessScaffold> => {
+  const runtime = await createSmokeRuntime(input);
+  const repositories = createSmokeCoreRepositories(runtime.db);
+  let contextAssemblyId: string | undefined;
+  const cleanup = async (): Promise<number> => {
+    await repositories.retrievalRepository.cleanupTestRetrievalRecords({
+      smokeId: runtime.marker
+    });
+    await input.cleanupRows({
+      db: runtime.db,
+      marker: runtime.marker,
+      workspaceSlug: runtime.workspaceSlug
+    });
+
+    return input.countMarkerRows({
+      contextAssemblyId,
+      db: runtime.db,
+      marker: runtime.marker,
+      workspaceSlug: runtime.workspaceSlug
+    });
+  };
+
+  await cleanup();
+
+  const recordsInput = {
+    harnessPlan: input.harnessPlan,
+    harnessRunRepository: repositories.harnessRunRepository,
+    marker: runtime.marker,
+    projectRepository: repositories.projectRepository,
+    projectSlug: runtime.projectSlug,
+    rawIntent: input.rawIntent,
+    taskContract: input.taskContract,
+    workspaceSlug: runtime.workspaceSlug
+  };
+  const records = await createSmokeHarnessRecords(
+    input.contextAssembly === undefined ?
+      recordsInput :
+      { ...recordsInput, contextAssembly: input.contextAssembly }
+  );
+  contextAssemblyId = records.contextAssembly?.id;
+
+  return {
+    ...runtime,
+    ...repositories,
+    ...records,
+    cleanup,
+    setContextAssemblyId: (id) => {
+      contextAssemblyId = id;
+    }
   };
 };
 

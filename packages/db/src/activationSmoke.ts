@@ -20,22 +20,20 @@ import {
   cleanupActivationSmokeRows,
   countActivationSmokeMarkerRows,
   countSmokeContextSelectionRows,
-  createSmokeProjectRecords,
-  createSmokeRuntime,
+  createSmokeHarnessScaffold,
   requireSmokeReadbackValue
 } from "./dbSmokeSupport.js";
-import {
-  DrizzleHarnessRunRepository,
-  DrizzleMemoryRepository,
-  DrizzleProjectRepository,
-  DrizzleRetrievalRepository,
-  DrizzleSourceRepository
-} from "./repositories/index.js";
 import {
   contextAssemblies,
   retrievalRuns,
   searchDocuments,
 } from "./schema/index.js";
+import type {
+  DrizzleHarnessRunRepository,
+  DrizzleMemoryRepository,
+  DrizzleRetrievalRepository,
+  DrizzleSourceRepository
+} from "./repositories/index.js";
 
 export interface ActivationSmokeInput {
   databaseUrl: string;
@@ -119,73 +117,46 @@ export const runActivationSmokeCheck = async (
 ): Promise<ActivationSmokeReport> => {
   const now = "2026-06-22T05:00:00.000Z";
   const past = "2026-06-01T00:00:00.000Z";
-  const runtime = await createSmokeRuntime({
+  const scaffold = await createSmokeHarnessScaffold({
     databaseUrl: input.databaseUrl,
     migrationsFolder: input.migrationsFolder,
     smokeId: input.smokeId,
     smokeName: "activation smoke",
     workspacePrefix: "krn-activation-smoke",
-    projectSlug: "activation-engine"
-  });
-  const { client, db, marker, projectSlug, workspaceSlug } = runtime;
-  let contextAssemblyId: string | undefined;
-  const harnessRunRepository = new DrizzleHarnessRunRepository(db);
-  const memoryRepository = new DrizzleMemoryRepository(db);
-  const projectRepository = new DrizzleProjectRepository(db);
-  const retrievalRepository = new DrizzleRetrievalRepository(db);
-  const sourceRepository = new DrizzleSourceRepository(db);
-
-  const cleanup = async (): Promise<number> => {
-    await retrievalRepository.cleanupTestRetrievalRecords({ smokeId: marker });
-    await cleanupActivationSmokeRows({
-      db,
-      marker,
-      workspaceSlug
-    });
-
-    return countActivationSmokeMarkerRows({ db, workspaceSlug, marker, contextAssemblyId });
-  };
-
-  try {
-    await cleanup();
-
-    const { workspace, project } = await createSmokeProjectRecords(
-      projectRepository,
-      workspaceSlug,
-      projectSlug,
-      marker
-    );
-    const operatorIntent = await harnessRunRepository.createOperatorIntent({
-      workspaceId: workspace.id,
-      projectId: project.id,
-      source: "cli",
-      rawIntent: `activation smoke ${marker}`,
-      metadata: {
-        smokeId: marker
-      }
-    });
-    const taskContract = await harnessRunRepository.createTaskContract({
-      operatorIntentId: operatorIntent.id,
-      projectId: project.id,
+    projectSlug: "activation-engine",
+    cleanupRows: cleanupActivationSmokeRows,
+    countMarkerRows: countActivationSmokeMarkerRows,
+    rawIntent: `activation smoke ${input.smokeId}`,
+    taskContract: {
       title: "Improve KRN doctor activation readiness",
       objective: "Prove activation smoke compresses source, memory, search, and anti-memory into bounded context with explicit exclusions.",
       constraints: ["no source crawler", "persist activation decisions", "self-clean marker rows"],
       nonGoals: ["no dashboard", "no external embeddings", "no memory auto-mutation"],
-      acceptance: ["bounded context", "explicit exclusions", "conflict flagged", "cleanup count zero"],
-      metadata: {
-        smokeId: marker
-      }
-    });
-    const harnessPlan = await harnessRunRepository.createHarnessPlan({
-      taskContractId: taskContract.id,
-      version: 1,
-      status: "running",
+      acceptance: ["bounded context", "explicit exclusions", "conflict flagged", "cleanup count zero"]
+    },
+    harnessPlan: {
       summary: "Activation smoke plan",
-      nextAction: "Run activation engine over seeded noisy corpus.",
-      metadata: {
-        smokeId: marker
-      }
-    });
+      nextAction: "Run activation engine over seeded noisy corpus."
+    }
+  });
+  const {
+    client,
+    db,
+    marker,
+    projectSlug,
+    workspaceSlug,
+    project,
+    taskContract,
+    harnessPlan,
+    cleanup,
+    setContextAssemblyId
+  } = scaffold;
+  const harnessRunRepository: DrizzleHarnessRunRepository = scaffold.harnessRunRepository;
+  const memoryRepository: DrizzleMemoryRepository = scaffold.memoryRepository;
+  const retrievalRepository: DrizzleRetrievalRepository = scaffold.retrievalRepository;
+  const sourceRepository: DrizzleSourceRepository = scaffold.sourceRepository;
+
+  try {
     const executionRun = await harnessRunRepository.createExecutionRun({
       harnessPlanId: harnessPlan.id,
       adapter: "smoke",
@@ -481,7 +452,7 @@ export const runActivationSmokeCheck = async (
           : { observationPrefixSnapshot: draftContext.observationPrefix })
       }
     });
-    contextAssemblyId = contextAssembly.id;
+    setContextAssemblyId(contextAssembly.id);
 
     await persistActivationTrace({
       retrievalRunId: retrievalRun.id,
