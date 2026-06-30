@@ -10,6 +10,9 @@ import type {
 } from "drizzle-orm/pg-core";
 import postgres from "postgres";
 import type { Sql } from "postgres";
+import {
+  compileHarnessPlan
+} from "@krn/harness";
 
 import type { KrnDatabase } from "./database.js";
 import { createKrnDatabase } from "./database.js";
@@ -61,6 +64,10 @@ type SmokeHarnessPlanRecord = Awaited<
 type SmokeContextAssemblyRecord = Awaited<
   ReturnType<DrizzleHarnessRunRepository["createContextAssembly"]>
 >;
+type SmokeExecutionRunRecord = Awaited<
+  ReturnType<DrizzleHarnessRunRepository["createExecutionRun"]>
+>;
+type SmokeHarnessCompileResult = Awaited<ReturnType<typeof compileHarnessPlan>>;
 
 export interface SmokeDatabase {
   client: Sql;
@@ -70,6 +77,49 @@ export interface SmokeDatabase {
 export interface SmokeProjectRecords {
   workspace: SmokeWorkspaceRecord;
   project: SmokeProjectRecord;
+}
+
+export interface HarnessCompilerSmokeRuntimeInput {
+  databaseUrl: string;
+  migrationsFolder: string;
+  projectSlug: string;
+  smokeId: string;
+  smokeName: string;
+  taskPrefix: string;
+  workspacePrefix: string;
+}
+
+export interface HarnessCompilerSmokeRuntime extends SmokeDatabase {
+  marker: string;
+  projectSlug: string;
+  task: string;
+  workspaceSlug: string;
+}
+
+export interface SmokeHarnessCompileInput {
+  acceptance: string;
+  command: string;
+  db: KrnDatabase;
+  marker: string;
+  projectSlug: string;
+  task: string;
+  workspaceSlug: string;
+}
+
+export interface SmokeHarnessCompileOutput {
+  harnessRunRepository: DrizzleHarnessRunRepository;
+  result: SmokeHarnessCompileResult;
+}
+
+export interface SmokeCompiledExecutionInput extends SmokeHarnessCompileInput {
+  eventMessage: string;
+  eventPayload?: (result: SmokeHarnessCompileResult) => Record<string, unknown>;
+  eventType: string;
+}
+
+export interface SmokeCompiledExecutionOutput extends SmokeHarnessCompileOutput {
+  executionRun: SmokeExecutionRunRecord;
+  retrievalRunId: string | undefined;
 }
 
 export interface SmokeCoreRepositories {
@@ -202,6 +252,11 @@ export interface SmokeRetrievalRunCleanupInput extends SmokeCleanupInput {
   retrievalRunId: string | undefined;
 }
 
+export interface HarnessCompilerSmokeRowInput extends SmokeBaseMarkerInput {
+  feedbackDeltaId: string | undefined;
+  retrievalRunId: string | undefined;
+}
+
 const smokeSlugPartLimit = 48;
 
 export const normalizeSmokeSlugPart = (value: string): string => {
@@ -246,6 +301,128 @@ export const createSmokeDatabase = (databaseUrl: string): SmokeDatabase => {
   return {
     client,
     db: createKrnDatabase(client)
+  };
+};
+
+export const createHarnessCompilerSmokeRuntime = async (
+  input: HarnessCompilerSmokeRuntimeInput
+): Promise<HarnessCompilerSmokeRuntime> => {
+  await ensureSmokeBrainStoreReady(
+    input.databaseUrl,
+    input.migrationsFolder,
+    input.smokeName
+  );
+
+  const marker = normalizeSmokeSlugPart(input.smokeId);
+
+  return {
+    ...createSmokeDatabase(input.databaseUrl),
+    marker,
+    projectSlug: input.projectSlug,
+    task: `${input.taskPrefix} ${marker}`,
+    workspaceSlug: `${input.workspacePrefix}-${marker}`
+  };
+};
+
+const createSmokeIdFactory = (
+  marker: string
+): (prefix: string) => string => {
+  let idCounter = 0;
+
+  return (prefix) => {
+    idCounter += 1;
+
+    return `${prefix}-${marker}-${idCounter}`;
+  };
+};
+
+const compileSmokeHarnessPlan = async (
+  input: SmokeHarnessCompileInput
+): Promise<SmokeHarnessCompileOutput> => {
+  const projectRepository = new DrizzleProjectRepository(input.db);
+  const harnessRunRepository = new DrizzleHarnessRunRepository(input.db);
+  const { workspace, project } = await createSmokeProjectRecords(
+    projectRepository,
+    input.workspaceSlug,
+    input.projectSlug,
+    input.marker
+  );
+  const result = await compileHarnessPlan(
+    {
+      workspaceId: workspace.id,
+      projectId: project.id,
+      operatorIntent: {
+        rawIntent: input.task,
+        source: "cli",
+        metadata: {
+          smokeId: input.marker
+        }
+      },
+      taskContract: {
+        title: input.task,
+        objective: input.task,
+        constraints: ["preserve strict TypeScript boundaries"],
+        nonGoals: ["do not mutate memory"],
+        acceptance: [input.acceptance],
+        metadata: {
+          smokeId: input.marker
+        }
+      },
+      tokenBudget: 1200,
+      metadata: {
+        command: input.command,
+        smokeId: input.marker
+      }
+    },
+    {
+      harnessRunRepository,
+      memoryRepository: new DrizzleMemoryRepository(input.db),
+      sourceRepository: new DrizzleSourceRepository(input.db),
+      retrievalRepository: new DrizzleRetrievalRepository(input.db),
+      now: () => new Date().toISOString(),
+      createId: createSmokeIdFactory(input.marker)
+    }
+  );
+
+  return {
+    harnessRunRepository,
+    result
+  };
+};
+
+export const createCompiledSmokeExecution = async (
+  input: SmokeCompiledExecutionInput
+): Promise<SmokeCompiledExecutionOutput> => {
+  const { harnessRunRepository, result } = await compileSmokeHarnessPlan(input);
+  const maybeRetrievalRunId = result.contextAssembly.metadata.retrievalRunId;
+  const retrievalRunId = typeof maybeRetrievalRunId === "string"
+    ? maybeRetrievalRunId
+    : undefined;
+  const eventPayload = input.eventPayload?.(result);
+  const executionRun = await harnessRunRepository.createExecutionRun({
+    harnessPlanId: result.harnessPlan.id,
+    adapter: "codex",
+    status: "planned",
+    initialEvent: {
+      sequence: 1,
+      type: input.eventType,
+      message: input.eventMessage,
+      payload: {
+        smokeId: input.marker,
+        ...(eventPayload ?? {})
+      }
+    },
+    metadata: {
+      smokeId: input.marker,
+      evidenceContract: result.evidenceContract
+    }
+  });
+
+  return {
+    executionRun,
+    harnessRunRepository,
+    result,
+    retrievalRunId
   };
 };
 
@@ -496,7 +673,7 @@ export const countSourceGraphSmokeMarkerRows = async (
   ]
 });
 
-export const countSmokeRows = async (
+const countSmokeRows = async (
   db: KrnDatabase,
   table: AnyPgTable,
   where: SQL
@@ -526,12 +703,53 @@ const smokeBaseMarkerCountTasks = (
   () => countSmokeRows(input.db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${input.marker}`)
 ];
 
-export const optionalSmokeCount = <Value>(
+const optionalSmokeCount = <Value>(
   value: Value | undefined,
   task: (value: Value) => Promise<number>
 ): SmokeCountTask => async () => (
   value === undefined ? 0 : task(value)
 );
+
+const countHarnessCompilerSmokeRows = async (
+  input: HarnessCompilerSmokeRowInput
+): Promise<number> => sumSmokeCountTasks([
+  () => countSmokeRows(input.db, workspaces, eq(workspaces.slug, input.workspaceSlug)),
+  () => countSmokeRows(input.db, runEvents, sql`${runEvents.payload}->>'smokeId' = ${input.marker}`),
+  optionalSmokeCount(
+    input.retrievalRunId,
+    (id) => countSmokeRows(input.db, retrievalRuns, eq(retrievalRuns.id, id))
+  ),
+  optionalSmokeCount(
+    input.feedbackDeltaId,
+    (id) => countSmokeRows(input.db, outboxEvents, sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${id}`)
+  )
+]);
+
+export const cleanupHarnessCompilerSmokeRows = async (
+  input: HarnessCompilerSmokeRowInput
+): Promise<number> => {
+  await input.db
+    .delete(runEvents)
+    .where(sql`${runEvents.payload}->>'smokeId' = ${input.marker}`);
+
+  if (input.feedbackDeltaId !== undefined) {
+    await input.db
+      .delete(outboxEvents)
+      .where(sql`${outboxEvents.payload}->>'feedbackDeltaId' = ${input.feedbackDeltaId}`);
+  }
+
+  if (input.retrievalRunId !== undefined) {
+    await input.db
+      .delete(retrievalRuns)
+      .where(eq(retrievalRuns.id, input.retrievalRunId));
+  }
+
+  await input.db
+    .delete(workspaces)
+    .where(eq(workspaces.slug, input.workspaceSlug));
+
+  return countHarnessCompilerSmokeRows(input);
+};
 
 export const countSmokeContextSelectionRows = async (
   db: KrnDatabase,
@@ -715,7 +933,7 @@ export const cleanupSourceGraphSmokeRows = async (
   });
 };
 
-export const sumSmokeCountTasks = async (
+const sumSmokeCountTasks = async (
   tasks: readonly SmokeCountTask[]
 ): Promise<number> => {
   let total = 0;
