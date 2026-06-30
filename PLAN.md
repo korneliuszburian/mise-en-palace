@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V363 Heartbeat/Dreaming Candidate Generator V0
-current task: V363-00 Heartbeat/Dreaming Candidate Generator V0
+active stream: V364 Heartbeat Preview CLI Readback
+current task: V364-00 Heartbeat Preview CLI Readback
 ```
 
 ## Compact Checkpoints
@@ -52,10 +52,25 @@ schema, UI/API/MCP, or broad benchmark.
 
 ### V363-00 Heartbeat/Dreaming Candidate Generator V0
 
+Status: complete.
+
+Outcome: `@krn/workers` now exports `buildBrainHeartbeatPreview`, a pure
+candidate-only aggregate over memory-staleness and source-relation heartbeat
+previews with shared budget, proof/non-proof, reviewability, and mutation
+boundaries.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md
+```
+
+### V364-00 Heartbeat Preview CLI Readback
+
 Status: active.
 
-Goal: implement the smallest candidate-only heartbeat/dreaming v0 surface over
-existing source, memory, evidence, and review state.
+Goal: expose the V363 candidate-only heartbeat preview through the smallest
+operator-facing readback surface.
 
 Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
 crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
@@ -68,12 +83,13 @@ V358: graph query-shape diagnostics closure.
 V359-V360: Fallow quality gate and bounded legacy cleanup; full Fallow clean.
 V361: source-search JSON answer packages expose read-only relationSupport.
 V362: second local artifact ingest/readback and source chunk receiver fix.
+V363: candidate-only brain heartbeat preview primitive.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. heartbeat/dreaming candidate generator
+1. heartbeat preview CLI/readback
 2. consensus eval/candidate lane
 3. product UI/search/API/MCP after usefulness/security gates
 ```

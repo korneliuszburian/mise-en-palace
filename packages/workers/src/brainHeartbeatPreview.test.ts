@@ -1,0 +1,192 @@
+import type {
+  MemoryRecord,
+  MemoryRecordId,
+  ProjectId,
+  SourceArtifactId,
+  SourceClaim,
+  SourceClaimEdge,
+  SourceClaimId
+} from "@krn/core";
+import { describe, expect, test } from "vitest";
+
+import {
+  buildBrainHeartbeatPreview
+} from "./brainHeartbeatPreview.js";
+
+const now = "2026-06-30T11:30:00.000Z";
+const evidenceRef =
+  "docs/reviews/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md";
+
+const memoryRecord = (
+  id: string,
+  overrides: Partial<MemoryRecord> = {}
+): MemoryRecord => ({
+  id: id as MemoryRecordId,
+  projectId: "project-1" as ProjectId,
+  key: id,
+  kind: "pattern",
+  status: "active",
+  summary: `Memory ${id}`,
+  body: "A bounded memory record for brain heartbeat preview tests.",
+  owner: "krn",
+  confidence: 90,
+  applicationGuidance: "Use only while current evidence still supports this memory.",
+  invalidationRule: "Revisit when current evidence supersedes this memory.",
+  sourceLineage: [{ sourceId: evidenceRef }],
+  isUserPreference: false,
+  positiveFeedbackCount: 1,
+  negativeFeedbackCount: 0,
+  metadata: {},
+  validFrom: "2026-06-01T00:00:00.000Z",
+  createdAt: "2026-06-01T00:00:00.000Z",
+  updatedAt: "2026-06-01T00:00:00.000Z",
+  ...overrides
+});
+
+const sourceClaim = (
+  id: string,
+  overrides: Partial<SourceClaim> = {}
+): SourceClaim => ({
+  id: id as SourceClaimId,
+  sourceArtifactId: "source-artifact-1" as SourceArtifactId,
+  claim: `Claim ${id}`,
+  mechanism: "A bounded source claim carries mechanism for brain heartbeat preview tests.",
+  krnImplication: "Use this claim only as heartbeat preview input.",
+  doesNotProve: "This source claim does not prove source truth.",
+  trustTier: "project-decision",
+  supportType: "mechanism",
+  consumer: "brain heartbeat preview test",
+  status: "accepted",
+  metadata: {},
+  createdAt: "2026-06-30T10:00:00.000Z",
+  updatedAt: "2026-06-30T10:00:00.000Z",
+  ...overrides
+});
+
+const sourceClaimEdge = (
+  overrides: Partial<SourceClaimEdge> = {}
+): SourceClaimEdge => ({
+  id: "source-claim-edge-1",
+  fromSourceClaimId: "source-claim-1" as SourceClaimId,
+  toSourceClaimId: "source-claim-2" as SourceClaimId,
+  kind: "duplicates",
+  metadata: {
+    consumer: "brain heartbeat preview test",
+    doesNotProve: "This edge does not prove source truth.",
+    evidenceRefs: [evidenceRef]
+  },
+  createdAt: "2026-06-30T10:10:00.000Z",
+  ...overrides
+});
+
+describe("brain heartbeat preview", () => {
+  test("aggregates memory staleness and source relation candidates without mutation", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [
+        memoryRecord("memory-expired", {
+          validUntil: "2026-06-29T00:00:00.000Z"
+        })
+      ],
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [sourceClaimEdge()]
+    });
+
+    expect(result.mutation).toBe("none");
+    expect(result.doesNotProve).toContain("Memory Core mutation");
+    expect(result.proof).toContain("candidate-only maintenance previews");
+    expect(result.priorityOrder).toEqual(["memory_staleness", "source_relation"]);
+    expect(result.forbiddenWrites).toEqual([
+      "memory_records",
+      "anti_memory_records",
+      "source_claims",
+      "source_decisions",
+      "source_claim_edges"
+    ]);
+    expect(result.candidateCounts).toEqual({
+      memoryStaleness: 1,
+      sourceRelation: 1
+    });
+    expect(result.candidates.map((candidate) => candidate.kind)).toEqual([
+      "memory_staleness_maintenance_candidate",
+      "source_relation_maintenance_candidate"
+    ]);
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        reviewability: "ready",
+        mutation: "none",
+        evidenceRefs: expect.arrayContaining([evidenceRef])
+      }),
+      expect.objectContaining({
+        reviewability: "ready",
+        mutation: "none",
+        evidenceRefs: expect.arrayContaining([evidenceRef])
+      })
+    ]);
+  });
+
+  test("applies one global candidate budget with memory staleness first", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      maxCandidates: 1,
+      memoryRecords: [
+        memoryRecord("memory-expired", {
+          validUntil: "2026-06-29T00:00:00.000Z"
+        })
+      ],
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [sourceClaimEdge()]
+    });
+
+    expect(result.candidates).toHaveLength(1);
+    expect(result.candidates[0]?.kind).toBe("memory_staleness_maintenance_candidate");
+    expect(result.candidateCounts).toEqual({
+      memoryStaleness: 1,
+      sourceRelation: 0
+    });
+    expect(result.skippedCounts).toEqual({
+      memoryRecords: 0,
+      sourceClaimEdges: 1
+    });
+  });
+
+  test("returns an empty candidate-only preview for healthy inputs", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [
+        memoryRecord("memory-healthy", {
+          validUntil: "2026-08-01T00:00:00.000Z"
+        })
+      ],
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [
+        sourceClaimEdge({
+          kind: "supports"
+        })
+      ]
+    });
+
+    expect(result.candidates).toEqual([]);
+    expect(result.candidateCounts).toEqual({
+      memoryStaleness: 0,
+      sourceRelation: 0
+    });
+    expect(result.skippedCounts).toEqual({
+      memoryRecords: 1,
+      sourceClaimEdges: 1
+    });
+    expect(result.mutation).toBe("none");
+  });
+});

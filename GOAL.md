@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V363 Heartbeat/Dreaming Candidate Generator V0
+V364 Heartbeat Preview CLI Readback
 ```
 
 Current state:
@@ -27,14 +27,13 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V363-00 Heartbeat/Dreaming Candidate Generator V0.
+current task: V364-00 Heartbeat Preview CLI Readback.
 ```
 
-Current task: design and implement the smallest candidate-only heartbeat /
-dreaming v0 surface over existing source, memory, evidence, and review state.
-It may propose reviewable candidates, but it must not autonomously mutate
-Memory Core, start a worker daemon, add a scheduler, crawler, embeddings,
-schema, UI/API/MCP, or broad benchmark.
+Current task: expose the V363 candidate-only heartbeat preview through the
+smallest operator-facing readback surface. It must not mutate Memory Core, start
+a worker daemon, add a scheduler, crawler, embeddings, schema, UI/API/MCP, or
+broad benchmark.
 
 ## Direction
 

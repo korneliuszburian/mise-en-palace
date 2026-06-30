@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V363 Heartbeat/Dreaming Candidate Generator V0
-current task: V363-00 Heartbeat/Dreaming Candidate Generator V0
+active stream: V364 Heartbeat Preview CLI Readback
+current task: V364-00 Heartbeat Preview CLI Readback
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V363-00 Heartbeat/Dreaming Candidate Generator V0 is active.
-The current gap is a candidate-only heartbeat/dreaming surface that can inspect
-existing KRN state and propose reviewable follow-up candidates without
-autonomous Memory Core mutation, worker daemon, scheduler, crawler, embeddings,
-schema, UI/API/MCP, broad benchmark, or consensus runtime.
+V364-00 Heartbeat Preview CLI Readback is active.
+The current gap is exposing the V363 candidate-only heartbeat preview through the
+smallest operator-facing readback surface without autonomous Memory Core
+mutation, worker daemon, scheduler, crawler, embeddings, schema, UI/API/MCP,
+broad benchmark, or consensus runtime.
 ```
 
 ## 2. Product Thesis
@@ -77,28 +77,30 @@ V358 complete: graph mini Brain-QA diagnostic closure passed.
 V361 complete: source-search answer packages expose SourceClaimEdge relationSupport.
 V362 complete: second local artifact ingest/readback passed and fixed a live
   source chunk repository receiver bug.
+V363 complete: brain heartbeat preview aggregates memory-staleness and
+  source-relation maintenance candidates without mutation.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V363
+## Active Task V364
 
-ID: V363-00
-Name: Heartbeat/Dreaming Candidate Generator V0
+ID: V364-00
+Name: Heartbeat Preview CLI Readback
 Status: active
 
-Goal: implement the smallest candidate-only heartbeat/dreaming v0 surface over
-existing source, memory, evidence, and review state.
+Goal: expose the V363 candidate-only heartbeat preview through the smallest
+operator-facing readback surface.
 
-Product rationale: V362 closed the second local ingest/readback proof. The next
-brain capability is not another ingest proof; it is a bounded "sleep/heartbeat"
-path that proposes stale/duplicate/missing-evidence follow-up candidates for
-human review.
+Product rationale: V363 created the pure preview primitive. The next useful
+product step is making the preview visible to operators before building worker
+daemon, scheduler, consensus runtime, UI/API/MCP, crawler, embeddings, schema, or
+broad benchmark work.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V363 report under `docs/reviews/controlled-dogfood/`;
+- a compact V364 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -119,9 +121,8 @@ Forbidden writes:
 
 Definition of Done:
 
-- heartbeat/dreaming v0 emits reviewable candidate output only;
-- candidates include evidence refs, does-not-prove, reviewability, and next
-  action;
+- operator-facing readback renders heartbeat candidates with evidence refs,
+  does-not-prove, reviewability, and next action;
 - no MemoryRecord, SourceClaim, SourceDecision, or DB schema mutation is added
   unless explicitly rejected/recorded as a blocking falsifier.
 
@@ -141,8 +142,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V363 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
-agent/consensus platform before proving candidate-only review value.
+V364 mutates Memory Core, starts daemon/scheduler work, or becomes a broad
+agent/consensus platform before proving operator-facing heartbeat readback value.
 ```
 
 ## 9. Task Contract Schema
@@ -203,7 +204,7 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V363 heartbeat/dreaming candidate generator
+1. V364 heartbeat preview CLI/readback
 2. consensus eval/candidate lane
 3. product UI/search/API/MCP after usefulness/security gates
 ```
@@ -215,7 +216,8 @@ Current backlog order:
 - [x] V360 complete: Fallow Legacy Complexity Cleanup.
 - [x] V361 complete: Graph Brain V0 Entity/Relation Extraction And Answer Delta.
 - [x] V362 complete: Ingest V0 Expansion With Bounded Evidence.
-- [ ] V363 pending: Heartbeat/Dreaming Candidate Generator V0.
+- [x] V363 complete: Heartbeat/Dreaming Candidate Generator V0.
+- [ ] V364 pending: Heartbeat Preview CLI Readback.
 
 ## Outcome V358 Graph Mini Brain-QA Query-Shape Diagnostics Closure
 
@@ -346,6 +348,45 @@ observationGroup: 1821bbc2-76b7-48b2-99ff-4a32547c55fd
 reflectionRecord: c6f7b9ab-2ad7-42ea-aa62-1942d4cf6584
 reflectionFindings: 4
 MemoryRecord created: no
+```
+
+## Outcome V363 Heartbeat/Dreaming Candidate Generator V0
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v363-heartbeat-dreaming-candidate-generator/REPORT.md
+```
+
+Source-to-decision:
+
+- Source: V338 memory-staleness heartbeat preview, V337 source-relation
+  heartbeat preview, V362 ingest/readback proof, and the V363 DB-backed plan.
+- Mechanism: existing previews already emit reviewable maintenance candidates;
+  the missing layer was one brain-heartbeat aggregate with shared budget,
+  proof/non-proof, reviewability, and mutation boundary.
+- KRN implication: heartbeat/dreaming starts as candidate-only review output
+  before autonomous worker execution or memory/source truth mutation.
+- Decision: add and export `buildBrainHeartbeatPreview` in `@krn/workers`.
+- Does not prove: candidate usefulness, source truth, memory truth, autonomous
+  dreaming, consensus correctness, operator UX, or product readiness.
+- Consumer: heartbeat CLI/readback, consensus candidate evaluation, and
+  maintenance-review workflows.
+- Falsifier: the preview emits MemoryRecord, SourceClaim, SourceDecision, DB
+  schema, worker, scheduler, crawler, embedding, UI/API/MCP, broad benchmark, or
+  consensus runtime side effects.
+
+Evidence:
+
+```txt
+executionRun: ef6bcf83-6850-4af9-9a7b-bd56d69720f4
+evidenceBundle: 29b2ce4c-0741-4c13-aad3-9a232bf0c03a
+observationGroup: 791c2ac8-6231-4b11-bd08-4903bf0b355d
+reflectionRecord: 1fd8114c-ffe7-4c7d-9ca3-9ecc05e9e2ba
+MemoryRecord created: no
+Candidate rows written: no
 ```
 
 ## 21. Final Response Format For Codex Runs

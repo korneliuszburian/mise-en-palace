@@ -12,6 +12,8 @@ Current truth:
   candidates without mutating source truth or Memory Core;
 - memory-staleness heartbeat preview can propose reviewable maintenance
   candidates without mutating Memory Core;
+- brain heartbeat preview can aggregate memory-staleness and source-relation
+  maintenance candidates without starting autonomous worker execution;
 - consensus candidate evaluation preview can preserve support/dissent/risk
   evidence without creating autonomous truth;
 - job descriptions explicitly set `requiresBackgroundLoop: false`.
