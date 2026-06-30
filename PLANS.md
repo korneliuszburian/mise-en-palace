@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V368 Brain Search Product Surface Preview
-current task: V368-00 Brain Search Product Surface Preview
+active stream: V369 End-To-End Product Loop Replay
+current task: V369-00 End-To-End Product Loop Replay
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,11 +24,10 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V368-00 Brain Search Product Surface Preview is active.
-The current gap is exposing the smallest product-facing brain search/readback
-surface over existing source-search and knowledge-card outputs before a
-dashboard, API server, MCP server, crawler, schema, ranking rewrite, broad
-benchmark, or autonomous runtime.
+V369-00 End-To-End Product Loop Replay is active.
+The current gap is closing one bounded KRN-on-KRN product loop using existing
+surfaces before adding dashboard, API server, MCP server, crawler, schema,
+ranking rewrite, broad benchmark, worker daemon, or autonomous runtime.
 ```
 
 ## 2. Product Thesis
@@ -87,30 +86,29 @@ V366 complete: heartbeat preview review/eval closure is protected by a focused
   worker behavior proof.
 V367 complete: consensus eval/candidate lane exists from V339 and was verified
   by current-state audit.
+V368 complete: `krn brain search` composes existing knowledge-card and
+  source-search readbacks into one read-only product-facing preview.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V368
+## Active Task V369
 
-ID: V368-00
-Name: Brain Search Product Surface Preview
+ID: V369-00
+Name: End-To-End Product Loop Replay
 Status: active
 
-Goal: expose the smallest product-facing brain search/readback surface over
-existing source-search and knowledge-card outputs without adding a dashboard,
-API server, MCP server, crawler, schema, ranking rewrite, or autonomous
-runtime.
+Goal: run one bounded KRN-on-KRN product loop using existing surfaces:
+brain search, plan/brief, execution, evidence, review, candidate output, and
+next-run readback.
 
-Product rationale: KRN has useful source-search, knowledge cards, graph
-relation support, heartbeat candidates, and consensus preview surfaces. The
-next product-facing step is a thin operator search/readback preview that makes
-these existing brain outputs easier to inspect without creating a broad app.
+Product rationale: KRN has useful readback surfaces, but product readiness
+requires one complete workflow, not more isolated previews.
 
 Allowed writes:
 
 - smallest owning source/test files;
-- a compact V368 report under `docs/reviews/controlled-dogfood/`;
+- a compact V369 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -133,11 +131,11 @@ Forbidden writes:
 
 Definition of Done:
 
-- one bounded product-facing brain search/readback preview exists or an
-  existing command gains a small preview mode;
-- output uses existing source-search / knowledge-card data and preserves
-  proof/non-proof, evidence refs, reviewability, and no-mutation boundaries;
-- focused tests cover the preview/readback behavior;
+- one documented KRN-on-KRN product loop run;
+- brain search, plan/brief, evidence, review, candidate output, and next-run
+  readback are used or explicitly abstain with evidence;
+- proof/non-proof, reviewability, evidence refs, and no-mutation boundaries are
+  preserved;
 - no DB schema, crawler, server, MCP, ranking rewrite, or autonomous runtime is
   added.
 
@@ -157,8 +155,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V368 builds a dashboard/server/MCP/crawler/schema/ranking rewrite instead of a
-thin product-facing preview over existing brain readback surfaces.
+V369 adds another isolated guard/readback instead of closing a bounded
+product loop over existing KRN surfaces.
 ```
 
 ## 9. Task Contract Schema
@@ -219,8 +217,14 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. V368 brain search product surface preview
-2. product UI/API/MCP after usefulness/security gates
+1. V369 end-to-end product loop replay
+2. graph brain v1
+3. ingest v0/v1
+4. heartbeat/dreaming candidate runtime
+5. pattern/research brain
+6. real benchmarks
+7. second-operator proof
+8. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -235,7 +239,26 @@ Current backlog order:
 - [x] V365 complete: Heartbeat Preview Review/Eval Closure.
 - [x] V366 complete: Heartbeat Preview Golden Behavior Proof.
 - [x] V367 complete: Consensus Eval/Candidate Lane.
-- [ ] V368 pending: Brain Search Product Surface Preview.
+- [x] V368 complete: Brain Search Product Surface Preview.
+- [ ] V369 pending: End-To-End Product Loop Replay.
+
+## Outcome V368 Brain Search Product Surface Preview
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v368-brain-search-product-surface-preview/REPORT.md
+```
+
+Outcome: `krn brain search` composes existing knowledge-card and source-search
+readbacks into one read-only no-mutation preview with proof and
+does-not-prove boundaries. Live DB readback for `source-to-decision` returned
+three knowledge cards, useful source-search output, two supporting claims, one
+supporting document, and relation support.
+
+Next: V369 End-To-End Product Loop Replay.
 
 ## Outcome V367 Consensus Eval/Candidate Lane
 
@@ -252,7 +275,7 @@ candidate-only consensus/eval lane through
 `buildConsensusCandidateEvaluationPreview`, with support/dissent/risk evidence,
 decision options, reviewability, `doesNotProve`, and no mutation.
 
-Next: V368 Brain Search Product Surface Preview.
+Then completed: V368 Brain Search Product Surface Preview.
 
 ## Outcome V366 Heartbeat Preview Golden Behavior Proof
 

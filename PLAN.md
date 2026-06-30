@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V368 Brain Search Product Surface Preview
-current task: V368-00 Brain Search Product Surface Preview
+active stream: V369 End-To-End Product Loop Replay
+current task: V369-00 End-To-End Product Loop Replay
 ```
 
 ## Compact Checkpoints
@@ -23,73 +23,15 @@ repo/current-truth hygiene: strong enough for continuation
 evidence/review loop: DB-backed and useful for dogfood
 candidate reviewability: core primitive
 source-search readback: usable through CLI and JSON
+brain-search preview: usable through CLI and JSON
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V365-00 Heartbeat Preview Review/Eval Closure
-
-Status: complete.
-
-Outcome: heartbeat preview now emits and renders a read-only
-`reviewEvalClosure` decision with next action, evidence refs, does-not-prove,
-candidate ids, mutation boundary, and forbidden writes.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v365-heartbeat-preview-review-eval-closure/REPORT.md
-```
-
-### V366-00 Heartbeat Preview Golden Behavior Proof
-
-Status: complete.
-
-Goal: add one bounded behavior proof that fails if heartbeat preview stops
-emitting candidate-only review/eval closure output with evidence refs,
-`doesNotProve`, reviewability, next action, and no mutation.
-
-Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
-crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
-consensus runtime.
-
-Outcome: workers heartbeat preview tests now include a focused behavior proof
-for exact `reviewEvalClosure` output, review-ready candidates, evidence refs,
-`doesNotProve`, next action, forbidden writes, and no mutation.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v366-heartbeat-preview-golden-behavior-proof/REPORT.md
-```
-
-### V367-00 Consensus Eval/Candidate Lane
-
-Status: complete.
-
-Goal: add the smallest candidate-only consensus/eval surface that can evaluate
-bounded claim or candidate disagreements without producing final truth,
-mutating Memory Core, starting agent runtime, or creating a broad consensus
-platform.
-
-Hard boundary: no autonomous Memory Core mutation, worker daemon, scheduler,
-crawler, embeddings, schema, ranking rewrite, UI/API/MCP, broad benchmark, or
-multi-agent runtime.
-
-Outcome: current-state audit verified V339 already provides the bounded
-candidate-only consensus/eval lane through
-`buildConsensusCandidateEvaluationPreview`.
-
-Report:
-
-```txt
-docs/reviews/controlled-dogfood/2026-06-30-v367-consensus-eval-candidate-lane/REPORT.md
-```
-
 ### V368-00 Brain Search Product Surface Preview
 
-Status: active.
+Status: complete.
 
 Goal: expose the smallest product-facing brain search/readback surface over
 existing source-search and knowledge-card outputs without adding a dashboard,
@@ -98,6 +40,28 @@ runtime.
 
 Hard boundary: use existing CLI/readback surfaces first; no new product server,
 MCP server, DB schema, crawler, broad benchmark, or ranking rewrite.
+
+Outcome: `krn brain search` now composes existing knowledge-card and
+source-search readbacks into one read-only no-mutation preview with proof and
+does-not-prove boundaries.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-v368-brain-search-product-surface-preview/REPORT.md
+```
+
+### V369-00 End-To-End Product Loop Replay
+
+Status: active.
+
+Goal: run one bounded KRN-on-KRN product loop using existing surfaces:
+brain search, plan/brief, execution, evidence, review, candidate output, and
+next-run readback.
+
+Hard boundary: no dashboard, API server, MCP server, crawler, DB schema,
+ranking rewrite, worker daemon, autonomous Memory Core mutation, broad
+benchmark, or generic multi-agent runtime.
 
 ## Recent Completed Streams
 
@@ -111,13 +75,20 @@ V364: heartbeat preview CLI/readback.
 V365: heartbeat preview review/eval closure.
 V366: heartbeat preview golden behavior proof.
 V367: consensus eval/candidate lane completion audit.
+V368: brain search product surface preview.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. brain search product surface preview
-2. product UI/API/MCP after usefulness/security gates
+1. end-to-end product loop
+2. graph brain v1
+3. ingest v0/v1
+4. heartbeat/dreaming candidate runtime
+5. pattern/research brain
+6. real benchmarks
+7. second-operator proof
+8. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

@@ -8,6 +8,9 @@ import type {
   BrainKnowledgeSearchFilter
 } from "@krn/harness";
 import {
+  parseBrainArgs
+} from "./parseBrainArgs.js";
+import {
   parseCodexArgs
 } from "./parseCodexArgs.js";
 import {
@@ -51,6 +54,17 @@ import {
 } from "./parseSourceArgs.js";
 
 export type CliCommand =
+  | {
+      kind: "brainSearchHelp";
+    }
+  | {
+      kind: "brainSearch";
+      query: string;
+      catalogFiles: readonly string[];
+      limit?: number;
+      maxInclusions?: number;
+      format: "text" | "json";
+    }
   | {
       kind: "init";
       mode: "dryRun";
@@ -417,6 +431,7 @@ const usage = [
   "krn observe --run <id>|--run-id <id> [--project <id>] [--persist]",
   "krn reflect --scope run:<id>|project:<id>|topic:<name> [--project <id>] [--persist]",
   "krn run show --run-id <id>",
+  "krn brain search --query \"...\" [--catalog-file <path>] [--json]",
   "krn knowledge cards [--card-file <path>|--pattern-file <path>|--catalog-file <path>] [--text <query>] [--json|--html]",
   "krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--max-candidates <n>] [--json]",
   "krn codex brief --run-id <id>",
@@ -449,6 +464,7 @@ export const formatUsage = (): string => `${usage}\n`;
 type TopLevelCommandParser = (rest: readonly string[]) => ParseArgsResult;
 
 const topLevelCommandParsers: Record<string, TopLevelCommandParser> = {
+  brain: parseBrainArgs,
   doctor: parseDoctorArgs,
   init: parseInitArgs,
   db: parseDbArgs,

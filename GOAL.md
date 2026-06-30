@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V368 Brain Search Product Surface Preview
+V369 End-To-End Product Loop Replay
 ```
 
 Current state:
@@ -27,25 +27,26 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V368-00 Brain Search Product Surface Preview.
+current task: V369-00 End-To-End Product Loop Replay.
 ```
 
-Current task: expose the smallest product-facing brain search/readback surface
-over existing source-search and knowledge-card outputs before any dashboard,
-API server, MCP server, crawler, schema, ranking rewrite, broad benchmark, or
-autonomous runtime.
+Current task: run one bounded KRN-on-KRN product loop using existing surfaces:
+brain search, plan/brief, execution, evidence, review, candidate output, and
+next-run readback. Do not build dashboard, API server, MCP server, crawler,
+schema, ranking rewrite, broad benchmark, or autonomous runtime.
 
 ## Direction
 
 Move toward a useful KRN Brain through product-facing vertical slices:
 
-1. source-search answer usefulness;
-2. mini Brain-QA readback;
-3. ingest v0;
-4. graph brain v0;
-5. heartbeat/dreaming as candidate generator;
-6. consensus as eval/candidate layer;
-7. product UI/search/API/MCP only after usefulness and security gates.
+1. close end-to-end product loop;
+2. consensus/eval lane usefulness;
+3. graph brain v1;
+4. ingest v0/v1;
+5. heartbeat/dreaming candidate runtime;
+6. pattern/research brain;
+7. real benchmarks;
+8. second-operator proof.
 
 Avoid guard-only treadmill work. A task must close a usefulness loop, improve a
 bounded product surface, or unblock the next vertical slice.

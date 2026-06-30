@@ -6,6 +6,9 @@ import type {
   CliRuntime
 } from "./runCli.js";
 import {
+  runBrainSearchCommand
+} from "./runBrainSearchCommand.js";
+import {
   runDbCliCommand
 } from "./runDbCliCommand.js";
 import {
@@ -42,6 +45,40 @@ type CliCommandAdapter = (
   command: CliCommand,
   context: CliCommandDispatchContext
 ) => Promise<CliResult | undefined>;
+
+const cliCommandSuccess = (stdout: string): CliResult => ({
+  exitCode: 0,
+  stdout,
+  stderr: ""
+});
+
+const cliCommandError = (
+  error: unknown,
+  fallbackMessage: string,
+  context: CliCommandDispatchContext
+): CliResult => {
+  const message = error instanceof Error ? error.message : fallbackMessage;
+
+  return {
+    exitCode: 1,
+    stdout: "",
+    stderr: context.formatCliError(message)
+  };
+};
+
+const readbackCommandResult = async (
+  run: () => Promise<{ stdout: string }>,
+  fallbackMessage: string,
+  context: CliCommandDispatchContext
+): Promise<CliResult> => {
+  try {
+    const result = await run();
+
+    return cliCommandSuccess(result.stdout);
+  } catch (error) {
+    return cliCommandError(error, fallbackMessage, context);
+  }
+};
 
 const runProjectAdapter: CliCommandAdapter = (command, context) =>
   runProjectCliCommand(command, {
@@ -111,8 +148,8 @@ const runHeartbeatAdapter: CliCommandAdapter = async (command, context) => {
     return undefined;
   }
 
-  try {
-    const result = await runHeartbeatPreviewCommand({
+  return readbackCommandResult(
+    () => runHeartbeatPreviewCommand({
       cwd: context.cwd,
       env: context.env,
       now: context.now,
@@ -121,25 +158,35 @@ const runHeartbeatAdapter: CliCommandAdapter = async (command, context) => {
       ...(context.createDatabaseRuntime === undefined
         ? {}
         : { createDatabaseRuntime: context.createDatabaseRuntime })
-    });
+    }),
+    "Unknown heartbeat preview error",
+    context
+  );
+};
 
-    return {
-      exitCode: 0,
-      stdout: result.stdout,
-      stderr: ""
-    };
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown heartbeat preview error";
-
-    return {
-      exitCode: 1,
-      stdout: "",
-      stderr: context.formatCliError(message)
-    };
+const runBrainAdapter: CliCommandAdapter = async (command, context) => {
+  if (command.kind !== "brainSearch") {
+    return undefined;
   }
+
+  return readbackCommandResult(
+    () => runBrainSearchCommand({
+      cwd: context.cwd,
+      env: context.env,
+      now: context.now,
+      createId: context.createId,
+      command,
+      ...(context.createDatabaseRuntime === undefined
+        ? {}
+        : { createDatabaseRuntime: context.createDatabaseRuntime })
+    }),
+    "Unknown brain search error",
+    context
+  );
 };
 
 const cliCommandAdapters: readonly CliCommandAdapter[] = [
+  runBrainAdapter,
   runProjectAdapter,
   runSourceAdapter,
   runMemoryAdapter,

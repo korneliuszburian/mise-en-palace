@@ -6,6 +6,9 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 import {
+  formatBrainSearchUsage
+} from "./parseBrainArgs.js";
+import {
   formatDbUsage
 } from "./parseDbArgs.js";
 import {
@@ -106,6 +109,7 @@ const createDefaultIdFactory = (): ((prefix: string) => string) => {
 type HelpCommandKind = Extract<CliCommand, { kind: `${string}Help` }>["kind"];
 
 const helpRenderers = {
+  brainSearchHelp: formatBrainSearchUsage,
   dbHelp: formatDbUsage,
   sourceClaimAddHelp: formatSourceClaimAddUsage,
   sourceClaimEdgesHelp: formatSourceClaimEdgesUsage,
