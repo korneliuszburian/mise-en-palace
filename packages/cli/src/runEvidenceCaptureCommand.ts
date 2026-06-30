@@ -20,6 +20,12 @@ import {
   normalizeEvidenceCommand,
   normalizeTargetEvidence
 } from "@krn/core";
+import type {
+  CreateEvidenceBundleInput,
+  CreateFeedbackDeltaInput,
+  CreateReviewAssessmentInput,
+  HarnessRunAggregate
+} from "@krn/harness/repositories";
 import {
   createDatabaseRuntime
 } from "./databaseRuntime.js";
@@ -73,6 +79,19 @@ interface PersistedEvidenceIdentity {
   evidenceBundleId: string;
   reviewAssessmentId: string;
   feedbackDeltaId: string;
+}
+
+interface EvidencePersistenceConfig {
+  databaseUrl: string;
+  runId: string;
+}
+
+interface EvidencePersistenceCounts {
+  changedFileCount: number;
+  intendedChangedFileCount: number;
+  unrelatedChangedFileCount: number;
+  unknownChangedFileCount: number;
+  targetEvidencePresent: boolean;
 }
 
 interface MemoryCandidateProposal {
@@ -618,17 +637,9 @@ const materializeFeedbackDeltaMemoryCandidate = (
   updatedAt: proposal.updatedAt
 });
 
-const persistEvidenceCapture = async (
-  runtime: EvidenceCaptureRuntime,
-  changedFiles: readonly ChangedFile[],
-  classification: ChangedFileClassification,
-  commands: NormalizedEvidenceCommand[],
-  diffRisk: DiffRisk,
-  targetEvidence: TargetEvidence | undefined,
-  sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
-  sourceDecisionCandidates: readonly SourceDecision[],
-  memoryCandidateProposals: readonly MemoryCandidateProposal[]
-): Promise<PersistedEvidenceIdentity> => {
+const resolveEvidencePersistenceConfig = (
+  runtime: EvidenceCaptureRuntime
+): EvidencePersistenceConfig => {
   const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
   const runId = runtime.runId?.trim();
 
@@ -640,6 +651,128 @@ const persistEvidenceCapture = async (
     throw new Error("--run-id is required for krn evidence capture --persist");
   }
 
+  return { databaseUrl, runId };
+};
+
+const buildEvidencePersistenceCounts = (
+  changedFiles: readonly ChangedFile[],
+  classification: ChangedFileClassification,
+  targetEvidence: TargetEvidence | undefined
+): EvidencePersistenceCounts => ({
+  changedFileCount: changedFiles.length,
+  intendedChangedFileCount: classification.intended.length,
+  unrelatedChangedFileCount: classification.unrelated.length,
+  unknownChangedFileCount: classification.unknown.length,
+  targetEvidencePresent: targetEvidence !== undefined
+});
+
+const nextEvidenceEventSequence = (aggregate: HarnessRunAggregate): number =>
+  aggregate.runEvents.reduce(
+    (max, event) => Math.max(max, event.sequence),
+    0
+  ) + 1;
+
+const changedFileClassificationMetadata = (
+  classification: ChangedFileClassification
+): Record<string, string[]> => ({
+  intended: classification.intended.map((file) => file.path),
+  unrelated: classification.unrelated.map((file) => file.path),
+  unknown: classification.unknown.map((file) => file.path),
+  unmatchedIntendedFiles: classification.unmatchedIntendedFiles
+});
+
+const buildEvidenceBundleInput = (
+  runId: string,
+  changedFiles: readonly ChangedFile[],
+  classification: ChangedFileClassification,
+  commands: NormalizedEvidenceCommand[],
+  diffRisk: DiffRisk,
+  targetEvidence: TargetEvidence | undefined,
+  counts: EvidencePersistenceCounts,
+  eventSequence: number
+): CreateEvidenceBundleInput => ({
+  executionRunId: runId,
+  status: "captured",
+  changedFiles: changedFiles.map((file) => file.path),
+  commands,
+  diffRisk,
+  reviewBurden: reviewBurdenWithTargetEvidence(classification, targetEvidence),
+  rollbackPath: "Revert the focused implementation commit or discard uncommitted changes.",
+  event: {
+    sequence: eventSequence,
+    type: "evidence.captured",
+    message: "Evidence captured from CLI",
+    payload: {
+      ...counts,
+      commandCount: commands.length
+    }
+  },
+  metadata: {
+    command: "krn evidence capture --persist",
+    runId,
+    intendedFiles: classification.intendedFiles,
+    changedFileClassification: changedFileClassificationMetadata(classification),
+    dirtyContext: {
+      hasUnrelatedFiles: classification.unrelated.length > 0,
+      unrelatedFileCount: classification.unrelated.length
+    },
+    ...(targetEvidence === undefined ? {} : { targetEvidence })
+  }
+});
+
+const buildReviewAssessmentInput = (
+  evidenceBundleId: string,
+  runId: string,
+  counts: EvidencePersistenceCounts
+): CreateReviewAssessmentInput => ({
+  evidenceBundleId,
+  status: "pending",
+  reviewer: "krn-cli",
+  summary: "Evidence captured; human review still required.",
+  findings: [],
+  metadata: {
+    runId,
+    ...counts
+  }
+});
+
+const buildFeedbackDeltaInput = (
+  reviewAssessmentId: string,
+  runId: string,
+  counts: EvidencePersistenceCounts,
+  memoryCandidates: readonly MemoryCandidate[],
+  sourceDecisionCandidates: readonly SourceDecision[],
+  sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined
+): CreateFeedbackDeltaInput => ({
+  reviewAssessmentId,
+  status: "candidate",
+  memoryCandidates: [...memoryCandidates],
+  sourceDecisions: [...sourceDecisionCandidates],
+  evalCandidates: [],
+  metadata: {
+    runId,
+    ...counts,
+    memoryCandidateProposalCount: memoryCandidates.length,
+    memoryCandidateRowCount: 0,
+    sourceDecisionCandidateCount: sourceDecisionCandidates.length,
+    ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
+      ? {}
+      : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] })
+  }
+});
+
+const persistEvidenceCapture = async (
+  runtime: EvidenceCaptureRuntime,
+  changedFiles: readonly ChangedFile[],
+  classification: ChangedFileClassification,
+  commands: NormalizedEvidenceCommand[],
+  diffRisk: DiffRisk,
+  targetEvidence: TargetEvidence | undefined,
+  sourceUsefulnessOutcomes: readonly SourceUsefulnessOutcomeFeedback[] | undefined,
+  sourceDecisionCandidates: readonly SourceDecision[],
+  memoryCandidateProposals: readonly MemoryCandidateProposal[]
+): Promise<PersistedEvidenceIdentity> => {
+  const { databaseUrl, runId } = resolveEvidencePersistenceConfig(runtime);
   const createRuntime = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
   const databaseRuntime = await createRuntime({
     databaseUrl,
@@ -656,64 +789,22 @@ const persistEvidenceCapture = async (
       throw new Error(`No persisted harness run found for --run-id ${runId}`);
     }
 
-    const nextSequence =
-      aggregate.runEvents.reduce(
-        (max, event) => Math.max(max, event.sequence),
-        0
-      ) + 1;
-    const evidenceBundle = await databaseRuntime.harnessRunRepository.createEvidenceBundle({
-      executionRunId: runId,
-      status: "captured",
-      changedFiles: changedFiles.map((file) => file.path),
-      commands,
-      diffRisk,
-      reviewBurden: reviewBurdenWithTargetEvidence(classification, targetEvidence),
-      rollbackPath: "Revert the focused implementation commit or discard uncommitted changes.",
-      event: {
-        sequence: nextSequence,
-        type: "evidence.captured",
-        message: "Evidence captured from CLI",
-        payload: {
-          changedFileCount: changedFiles.length,
-          intendedChangedFileCount: classification.intended.length,
-          unrelatedChangedFileCount: classification.unrelated.length,
-          unknownChangedFileCount: classification.unknown.length,
-          commandCount: commands.length,
-          targetEvidencePresent: targetEvidence !== undefined
-        }
-      },
-      metadata: {
-        command: "krn evidence capture --persist",
+    const counts = buildEvidencePersistenceCounts(changedFiles, classification, targetEvidence);
+    const evidenceBundle = await databaseRuntime.harnessRunRepository.createEvidenceBundle(
+      buildEvidenceBundleInput(
         runId,
-        intendedFiles: classification.intendedFiles,
-        changedFileClassification: {
-          intended: classification.intended.map((file) => file.path),
-          unrelated: classification.unrelated.map((file) => file.path),
-          unknown: classification.unknown.map((file) => file.path),
-          unmatchedIntendedFiles: classification.unmatchedIntendedFiles
-        },
-        dirtyContext: {
-          hasUnrelatedFiles: classification.unrelated.length > 0,
-          unrelatedFileCount: classification.unrelated.length
-        },
-        ...(targetEvidence === undefined ? {} : { targetEvidence })
-      }
-    });
-    const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment({
-      evidenceBundleId: evidenceBundle.id,
-      status: "pending",
-      reviewer: "krn-cli",
-      summary: "Evidence captured; human review still required.",
-      findings: [],
-      metadata: {
-        runId,
-        changedFileCount: changedFiles.length,
-        intendedChangedFileCount: classification.intended.length,
-        unrelatedChangedFileCount: classification.unrelated.length,
-        unknownChangedFileCount: classification.unknown.length,
-        targetEvidencePresent: targetEvidence !== undefined
-      }
-    });
+        changedFiles,
+        classification,
+        commands,
+        diffRisk,
+        targetEvidence,
+        counts,
+        nextEvidenceEventSequence(aggregate)
+      )
+    );
+    const reviewAssessment = await databaseRuntime.harnessRunRepository.createReviewAssessment(
+      buildReviewAssessmentInput(evidenceBundle.id, runId, counts)
+    );
     const memoryCandidates = memoryCandidateProposals.map((proposal) =>
       materializeFeedbackDeltaMemoryCandidate(
         proposal,
@@ -721,27 +812,16 @@ const persistEvidenceCapture = async (
         runId
       )
     );
-    const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta({
-      reviewAssessmentId: reviewAssessment.id,
-      status: "candidate",
-      memoryCandidates,
-      sourceDecisions: [...sourceDecisionCandidates],
-      evalCandidates: [],
-      metadata: {
+    const feedbackDelta = await databaseRuntime.harnessRunRepository.createFeedbackDelta(
+      buildFeedbackDeltaInput(
+        reviewAssessment.id,
         runId,
-        changedFileCount: changedFiles.length,
-        intendedChangedFileCount: classification.intended.length,
-        unrelatedChangedFileCount: classification.unrelated.length,
-        unknownChangedFileCount: classification.unknown.length,
-        targetEvidencePresent: targetEvidence !== undefined,
-        memoryCandidateProposalCount: memoryCandidates.length,
-        memoryCandidateRowCount: 0,
-        sourceDecisionCandidateCount: sourceDecisionCandidates.length,
-        ...(sourceUsefulnessOutcomes === undefined || sourceUsefulnessOutcomes.length === 0
-          ? {}
-          : { sourceUsefulnessOutcomes: [...sourceUsefulnessOutcomes] })
-      }
-    });
+        counts,
+        memoryCandidates,
+        sourceDecisionCandidates,
+        sourceUsefulnessOutcomes
+      )
+    );
 
     return {
       evidenceBundleId: evidenceBundle.id,
