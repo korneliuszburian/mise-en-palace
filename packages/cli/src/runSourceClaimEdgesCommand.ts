@@ -74,13 +74,61 @@ const relatedSourceClaimIdFor = (
     ? edge.toSourceClaimId
     : edge.fromSourceClaimId) as SourceClaim["id"];
 
+const optionalMetadataLine = (
+  metadata: Record<string, unknown>,
+  key: string
+): string[] => {
+  const value = stringMetadata(metadata, key);
+
+  return value === undefined ? [] : [`  ${key}: ${value}`];
+};
+
+const optionalEdgeMetadataLines = (edge: SourceClaimEdge): string[] => [
+  ...optionalMetadataLine(edge.metadata, "evidenceRef"),
+  ...optionalMetadataLine(edge.metadata, "sourceDecisionRef"),
+  ...optionalMetadataLine(edge.metadata, "scope"),
+  ...optionalMetadataLine(edge.metadata, "validFrom"),
+  ...optionalMetadataLine(edge.metadata, "validUntil"),
+  ...optionalMetadataLine(edge.metadata, "invalidatedAt"),
+  ...optionalMetadataLine(edge.metadata, "file"),
+  ...optionalMetadataLine(edge.metadata, "contentHash")
+];
+
+const sourceRangeLines = (edge: SourceClaimEdge): string[] => {
+  const sourceRanges = stringArrayMetadata(edge.metadata, "sourceRanges");
+
+  return sourceRanges === undefined
+    ? []
+    : [
+        "  sourceRanges:",
+        ...sourceRanges.map((range) => `  - ${range}`)
+      ];
+};
+
+const relatedSourceClaimReadbackLines = (
+  readback: SourceClaimEdgeReadback
+): string[] => {
+  if (readback.relatedSourceClaim === undefined) {
+    return ["    relatedSourceClaimReadback: missing"];
+  }
+
+  return [
+    "    relatedSourceClaimReadback: hit",
+    `    status: ${readback.relatedSourceClaim.status}`,
+    `    claim: ${readback.relatedSourceClaim.claim}`,
+    `    mechanism: ${readback.relatedSourceClaim.mechanism}`,
+    `    krnImplication: ${readback.relatedSourceClaim.krnImplication}`,
+    `    consumer: ${readback.relatedSourceClaim.consumer}`,
+    `    doesNotProve: ${readback.relatedSourceClaim.doesNotProve}`
+  ];
+};
+
 const formatEdge = (
   sourceClaimId: SourceClaim["id"],
   readback: SourceClaimEdgeReadback
 ): string[] => {
   const edge = readback.edge;
   const relatedSourceClaimId = relatedSourceClaimIdFor(sourceClaimId, edge);
-  const sourceRanges = stringArrayMetadata(edge.metadata, "sourceRanges");
 
   return [
     `- sourceClaimEdge: ${edge.id}`,
@@ -90,49 +138,11 @@ const formatEdge = (
     `  kind: ${edge.kind}`,
     `  consumer: ${edge.metadata.consumer}`,
     `  doesNotProve: ${edge.metadata.doesNotProve}`,
-    ...(stringMetadata(edge.metadata, "evidenceRef") === undefined
-      ? []
-      : [`  evidenceRef: ${stringMetadata(edge.metadata, "evidenceRef")}`]),
-    ...(stringMetadata(edge.metadata, "sourceDecisionRef") === undefined
-      ? []
-      : [`  sourceDecisionRef: ${stringMetadata(edge.metadata, "sourceDecisionRef")}`]),
-    ...(stringMetadata(edge.metadata, "scope") === undefined
-      ? []
-      : [`  scope: ${stringMetadata(edge.metadata, "scope")}`]),
-    ...(stringMetadata(edge.metadata, "validFrom") === undefined
-      ? []
-      : [`  validFrom: ${stringMetadata(edge.metadata, "validFrom")}`]),
-    ...(stringMetadata(edge.metadata, "validUntil") === undefined
-      ? []
-      : [`  validUntil: ${stringMetadata(edge.metadata, "validUntil")}`]),
-    ...(stringMetadata(edge.metadata, "invalidatedAt") === undefined
-      ? []
-      : [`  invalidatedAt: ${stringMetadata(edge.metadata, "invalidatedAt")}`]),
-    ...(stringMetadata(edge.metadata, "file") === undefined
-      ? []
-      : [`  file: ${stringMetadata(edge.metadata, "file")}`]),
-    ...(stringMetadata(edge.metadata, "contentHash") === undefined
-      ? []
-      : [`  contentHash: ${stringMetadata(edge.metadata, "contentHash")}`]),
-    ...(sourceRanges === undefined
-      ? []
-      : [
-          "  sourceRanges:",
-          ...sourceRanges.map((range) => `  - ${range}`)
-        ]),
+    ...optionalEdgeMetadataLines(edge),
+    ...sourceRangeLines(edge),
     "  edgeInfluencedSourceContext:",
     `    relatedSourceClaimId: ${relatedSourceClaimId}`,
-    ...(readback.relatedSourceClaim === undefined
-      ? ["    relatedSourceClaimReadback: missing"]
-      : [
-          "    relatedSourceClaimReadback: hit",
-          `    status: ${readback.relatedSourceClaim.status}`,
-          `    claim: ${readback.relatedSourceClaim.claim}`,
-          `    mechanism: ${readback.relatedSourceClaim.mechanism}`,
-          `    krnImplication: ${readback.relatedSourceClaim.krnImplication}`,
-          `    consumer: ${readback.relatedSourceClaim.consumer}`,
-          `    doesNotProve: ${readback.relatedSourceClaim.doesNotProve}`
-        ])
+    ...relatedSourceClaimReadbackLines(readback)
   ];
 };
 
