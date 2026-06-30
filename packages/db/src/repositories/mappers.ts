@@ -324,42 +324,64 @@ const reviewFindingsOrEmpty = (value: unknown): ReviewFinding[] => {
   });
 };
 
+const hasStringFields = <K extends string>(
+  item: Record<string, unknown>,
+  fields: readonly K[]
+): item is Record<string, unknown> & Record<K, string> =>
+  fields.every((field) => typeof item[field] === "string");
+
+const sourceDecisionStatusOrUndefined = (
+  value: unknown
+): SourceDecision["status"] | undefined =>
+  typeof value === "string" && sourceDecisionStatuses.has(value as SourceDecision["status"])
+    ? value as SourceDecision["status"]
+    : undefined;
+
+const sourceDecisionStringFields = [
+  "id",
+  "decision",
+  "rationale",
+  "falsifier",
+  "consumer",
+  "createdAt",
+  "updatedAt"
+] as const;
+
+const sourceDecisionOrUndefined = (item: unknown): SourceDecision | undefined => {
+  if (!isRecord(item)) {
+    return undefined;
+  }
+
+  const status = sourceDecisionStatusOrUndefined(item.status);
+
+  if (status === undefined || !hasStringFields(item, sourceDecisionStringFields)) {
+    return undefined;
+  }
+
+  return {
+    id: item.id,
+    ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
+    ...(typeof item.sourceClaimId === "string" ? { sourceClaimId: item.sourceClaimId } : {}),
+    status,
+    decision: item.decision,
+    rationale: item.rationale,
+    falsifier: item.falsifier,
+    consumer: item.consumer,
+    metadata: metadataOrEmpty(item.metadata),
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt
+  };
+};
+
 const sourceDecisionsOrEmpty = (value: unknown): SourceDecision[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value.flatMap((item): SourceDecision[] => {
-    if (!isRecord(item)) {
-      return [];
-    }
+    const decision = sourceDecisionOrUndefined(item);
 
-    if (
-      typeof item.id !== "string" ||
-      !sourceDecisionStatuses.has(item.status as SourceDecision["status"]) ||
-      typeof item.decision !== "string" ||
-      typeof item.rationale !== "string" ||
-      typeof item.falsifier !== "string" ||
-      typeof item.consumer !== "string" ||
-      typeof item.createdAt !== "string" ||
-      typeof item.updatedAt !== "string"
-    ) {
-      return [];
-    }
-
-    return [{
-      id: item.id,
-      ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
-      ...(typeof item.sourceClaimId === "string" ? { sourceClaimId: item.sourceClaimId } : {}),
-      status: item.status as SourceDecision["status"],
-      decision: item.decision,
-      rationale: item.rationale,
-      falsifier: item.falsifier,
-      consumer: item.consumer,
-      metadata: metadataOrEmpty(item.metadata),
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt
-    }];
+    return decision === undefined ? [] : [decision];
   });
 };
 
@@ -415,43 +437,53 @@ const vectorOrEmpty = (value: unknown): number[] => {
   return value.filter((item): item is number => typeof item === "number");
 };
 
+const evalCandidateStringFields = [
+  "id",
+  "title",
+  "scenario",
+  "expectedSignal",
+  "createdAt"
+] as const;
+
+const evalCandidateProposalOrUndefined = (
+  item: unknown
+): EvalCandidateProposal | undefined => {
+  if (!isRecord(item)) {
+    return undefined;
+  }
+
+  const status = typeof item.status === "string" ? item.status : undefined;
+
+  if (status !== undefined && status !== "candidate") {
+    return undefined;
+  }
+
+  if (!hasStringFields(item, evalCandidateStringFields)) {
+    return undefined;
+  }
+
+  return {
+    id: item.id,
+    ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
+    status: "candidate",
+    title: item.title,
+    scenario: item.scenario,
+    expectedSignal: item.expectedSignal,
+    sourceEvidence: stringListOrEmpty(item.sourceEvidence),
+    metadata: metadataOrEmpty(item.metadata),
+    createdAt: item.createdAt
+  };
+};
+
 const evalCandidatesOrEmpty = (value: unknown): EvalCandidateProposal[] => {
   if (!Array.isArray(value)) {
     return [];
   }
 
   return value.flatMap((item): EvalCandidateProposal[] => {
-    if (!isRecord(item)) {
-      return [];
-    }
+    const candidate = evalCandidateProposalOrUndefined(item);
 
-    const status = typeof item.status === "string" ? item.status : undefined;
-
-    if (status !== undefined && status !== "candidate") {
-      return [];
-    }
-
-    if (
-      typeof item.id !== "string" ||
-      typeof item.title !== "string" ||
-      typeof item.scenario !== "string" ||
-      typeof item.expectedSignal !== "string" ||
-      typeof item.createdAt !== "string"
-    ) {
-      return [];
-    }
-
-    return [{
-      id: item.id,
-      ...(typeof item.projectId === "string" ? { projectId: item.projectId } : {}),
-      status: "candidate",
-      title: item.title,
-      scenario: item.scenario,
-      expectedSignal: item.expectedSignal,
-      sourceEvidence: stringListOrEmpty(item.sourceEvidence),
-      metadata: metadataOrEmpty(item.metadata),
-      createdAt: item.createdAt
-    }];
+    return candidate === undefined ? [] : [candidate];
   });
 };
 
