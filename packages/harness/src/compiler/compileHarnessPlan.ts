@@ -107,87 +107,123 @@ const defaultAntiMemoryLimit = 25;
 const maxContextInclusions = 6;
 const minimumTrustTier = "medium";
 
-export const compileHarnessPlan = async (
+type RetrievedActivationCandidates = Awaited<ReturnType<typeof retrieveActivationCandidates>>;
+type ConflictDetectionResult = ReturnType<typeof detectConflicts>;
+type FilteredActivationCandidates = ReturnType<typeof applyContextROI>;
+
+const createCompiledOperatorIntent = (
   input: ResolvedHarnessCompileInput,
   dependencies: HarnessCompilerDependencies
-): Promise<HarnessCompileResult> => {
-  const createdAt = dependencies.now();
-  const operatorIntent = await dependencies.harnessRunRepository.createOperatorIntent({
-    workspaceId: input.workspaceId,
-    ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
-    source: input.operatorIntent.source,
-    rawIntent: input.operatorIntent.rawIntent,
-    ...(input.operatorIntent.normalizedIntent === undefined
-      ? {}
-      : { normalizedIntent: input.operatorIntent.normalizedIntent }),
-    metadata: input.operatorIntent.metadata ?? {}
-  });
-  const taskContract = await dependencies.harnessRunRepository.createTaskContract(
-    createTaskContractInput(operatorIntent, input.taskContract)
-  );
-  const evidenceContract = createEvidenceContract(taskContract);
-  const harnessPlan = await dependencies.harnessRunRepository.createHarnessPlan({
-    taskContractId: taskContract.id,
-    version: 1,
-    status: "ready",
-    summary: `${taskContract.title}: ${taskContract.objective}`,
-    nextAction: "Render Codex adapter brief.",
-    metadata: {
-      ...(input.metadata ?? {}),
-      evidenceContract
+): Promise<OperatorIntent> => dependencies.harnessRunRepository.createOperatorIntent({
+  workspaceId: input.workspaceId,
+  ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
+  source: input.operatorIntent.source,
+  rawIntent: input.operatorIntent.rawIntent,
+  ...(input.operatorIntent.normalizedIntent === undefined
+    ? {}
+    : { normalizedIntent: input.operatorIntent.normalizedIntent }),
+  metadata: input.operatorIntent.metadata ?? {}
+});
+
+const createReadyHarnessPlan = (
+  taskContract: TaskContract,
+  evidenceContract: EvidenceContract,
+  metadata: Record<string, unknown> | undefined,
+  dependencies: HarnessCompilerDependencies
+): Promise<HarnessPlan> => dependencies.harnessRunRepository.createHarnessPlan({
+  taskContractId: taskContract.id,
+  version: 1,
+  status: "ready",
+  summary: `${taskContract.title}: ${taskContract.objective}`,
+  nextAction: "Render Codex adapter brief.",
+  metadata: {
+    ...(metadata ?? {}),
+    evidenceContract
+  }
+});
+
+const retrieveCompilerActivationCandidates = (
+  input: ResolvedHarnessCompileInput,
+  taskContract: TaskContract,
+  dependencies: HarnessCompilerDependencies
+): Promise<RetrievedActivationCandidates> => retrieveActivationCandidates({
+  taskContract,
+  limits: {
+    memory: defaultMemoryLimit,
+    source: defaultSourceLimit,
+    search: defaultSearchLimit,
+    antiMemory: defaultAntiMemoryLimit
+  },
+  ...(input.targetReadModel === undefined ? {} : { targetReadModel: input.targetReadModel }),
+  repositories: {
+    memoryRepository: dependencies.memoryRepository,
+    sourceRepository: dependencies.sourceRepository,
+    retrievalRepository: dependencies.retrievalRepository
+  }
+});
+
+const targetReadModelMetadata = (
+  input: ResolvedHarnessCompileInput,
+  targetOwnerFileRecall: ReturnType<typeof assessTargetOwnerFileRecall> | undefined
+): Record<string, unknown> => {
+  if (input.targetReadModel === undefined) {
+    return {};
+  }
+
+  return {
+    targetReadModel: {
+      repoInstallationIds: input.targetReadModel.repoInstallationIds,
+      sourceSeedCount: input.targetReadModel.sourceSeeds.length,
+      trustExclusionCount: input.targetReadModel.trustExclusions.length,
+      ownerFileCount: input.targetReadModel.ownerFiles?.length ?? 0,
+      ...(targetOwnerFileRecall === undefined ? {} : { ownerFileRecall: targetOwnerFileRecall })
     }
-  });
-  const retrieved = await retrieveActivationCandidates({
-    taskContract,
-    limits: {
-      memory: defaultMemoryLimit,
-      source: defaultSourceLimit,
-      search: defaultSearchLimit,
-      antiMemory: defaultAntiMemoryLimit
-    },
-    ...(input.targetReadModel === undefined ? {} : { targetReadModel: input.targetReadModel }),
-    repositories: {
-      memoryRepository: dependencies.memoryRepository,
-      sourceRepository: dependencies.sourceRepository,
-      retrievalRepository: dependencies.retrievalRepository
-    }
-  });
-  const targetOwnerFileRecall =
-    input.targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(input.targetReadModel);
-  const retrievalRun = await dependencies.retrievalRepository.startRetrievalRun({
-    ...(taskContract.projectId === undefined ? {} : { projectId: taskContract.projectId }),
-    taskContractId: taskContract.id,
-    query: retrieved.memoryQuery.text,
+  };
+};
+
+const startCompilerRetrievalRun = (
+  input: ResolvedHarnessCompileInput,
+  taskContract: TaskContract,
+  retrieved: RetrievedActivationCandidates,
+  targetOwnerFileRecall: ReturnType<typeof assessTargetOwnerFileRecall> | undefined,
+  dependencies: HarnessCompilerDependencies
+) => dependencies.retrievalRepository.startRetrievalRun({
+  ...(taskContract.projectId === undefined ? {} : { projectId: taskContract.projectId }),
+  taskContractId: taskContract.id,
+  query: retrieved.memoryQuery.text,
+  ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
+  metadata: {
+    sourceQuery: retrieved.sourceQuery.text,
+    activationRetrievalDiagnostics: retrieved.diagnostics,
+    ...targetReadModelMetadata(input, targetOwnerFileRecall)
+  }
+});
+
+const filterActivationCandidates = (
+  input: ResolvedHarnessCompileInput,
+  conflictResult: ConflictDetectionResult,
+  createdAt: string
+): FilteredActivationCandidates => applyContextROI(
+  applyTemporalFilter(
+    applyTrustFilter(conflictResult.candidates, { minimumTrustTier }),
+    createdAt
+  ),
+  {
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
-    metadata: {
-      sourceQuery: retrieved.sourceQuery.text,
-      activationRetrievalDiagnostics: retrieved.diagnostics,
-      ...(input.targetReadModel === undefined
-        ? {}
-        : {
-            targetReadModel: {
-              repoInstallationIds: input.targetReadModel.repoInstallationIds,
-              sourceSeedCount: input.targetReadModel.sourceSeeds.length,
-              trustExclusionCount: input.targetReadModel.trustExclusions.length,
-              ownerFileCount: input.targetReadModel.ownerFiles?.length ?? 0,
-              ...(targetOwnerFileRecall === undefined
-                ? {}
-                : { ownerFileRecall: targetOwnerFileRecall })
-            }
-          })
-    }
-  });
-  const conflictResult = detectConflicts(retrieved.candidates, retrieved.antiMemoryRecords);
-  const filteredCandidates = applyContextROI(
-    applyTemporalFilter(
-      applyTrustFilter(conflictResult.candidates, { minimumTrustTier }),
-      createdAt
-    ),
-    {
-      ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
-      maxInclusions: maxContextInclusions
-    }
-  );
+    maxInclusions: maxContextInclusions
+  }
+);
+
+const createPersistedContextAssembly = async (
+  input: ResolvedHarnessCompileInput,
+  harnessPlan: HarnessPlan,
+  retrieved: RetrievedActivationCandidates,
+  retrievalRunId: string,
+  conflictResult: ConflictDetectionResult,
+  filteredCandidates: FilteredActivationCandidates,
+  createdAt: string,
+  dependencies: HarnessCompilerDependencies
+): Promise<ContextAssembly> => {
   const draftContext = assembleContext({
     id: dependencies.createId("context-assembly"),
     harnessPlanId: harnessPlan.id,
@@ -195,12 +231,13 @@ export const compileHarnessPlan = async (
     ...(input.tokenBudget === undefined ? {} : { tokenBudget: input.tokenBudget }),
     createdAt,
     metadata: {
-      retrievalRunId: retrievalRun.id,
+      retrievalRunId,
       conflictSets: conflictResult.conflictSets,
       activationRetrievalDiagnostics: retrieved.diagnostics
     }
   });
-  const contextAssembly = await dependencies.harnessRunRepository.createContextAssembly({
+
+  return dependencies.harnessRunRepository.createContextAssembly({
     harnessPlanId: harnessPlan.id,
     status: draftContext.status,
     ...(draftContext.tokenBudget === undefined ? {} : { tokenBudget: draftContext.tokenBudget }),
@@ -208,6 +245,67 @@ export const compileHarnessPlan = async (
     exclusions: draftContext.exclusions,
     metadata: draftContext.metadata
   });
+};
+
+const createCodexAdapterPlanRef = (
+  harnessPlan: HarnessPlan,
+  contextAssembly: ContextAssembly,
+  dependencies: HarnessCompilerDependencies,
+  createdAt: string
+): CodexAdapterPlanRef => ({
+  id: dependencies.createId("codex-adapter-plan-ref"),
+  harnessPlanId: harnessPlan.id,
+  adapterPlanId: dependencies.createId("codex-plan"),
+  metadata: {
+    renderer: "codex-adapter",
+    contextAssemblyId: contextAssembly.id
+  },
+  createdAt
+});
+
+const nextActionForContext = (contextAssembly: ContextAssembly): string =>
+  contextAssembly.status === "abstained"
+    ? "Context activation abstained; review exclusions before execution."
+    : "Render Codex adapter brief.";
+
+export const compileHarnessPlan = async (
+  input: ResolvedHarnessCompileInput,
+  dependencies: HarnessCompilerDependencies
+): Promise<HarnessCompileResult> => {
+  const createdAt = dependencies.now();
+  const operatorIntent = await createCompiledOperatorIntent(input, dependencies);
+  const taskContract = await dependencies.harnessRunRepository.createTaskContract(
+    createTaskContractInput(operatorIntent, input.taskContract)
+  );
+  const evidenceContract = createEvidenceContract(taskContract);
+  const harnessPlan = await createReadyHarnessPlan(
+    taskContract,
+    evidenceContract,
+    input.metadata,
+    dependencies
+  );
+  const retrieved = await retrieveCompilerActivationCandidates(input, taskContract, dependencies);
+  const targetOwnerFileRecall =
+    input.targetReadModel === undefined ? undefined : assessTargetOwnerFileRecall(input.targetReadModel);
+  const retrievalRun = await startCompilerRetrievalRun(
+    input,
+    taskContract,
+    retrieved,
+    targetOwnerFileRecall,
+    dependencies
+  );
+  const conflictResult = detectConflicts(retrieved.candidates, retrieved.antiMemoryRecords);
+  const filteredCandidates = filterActivationCandidates(input, conflictResult, createdAt);
+  const contextAssembly = await createPersistedContextAssembly(
+    input,
+    harnessPlan,
+    retrieved,
+    retrievalRun.id,
+    conflictResult,
+    filteredCandidates,
+    createdAt,
+    dependencies
+  );
   await persistActivationTrace({
     retrievalRunId: retrievalRun.id,
     candidates: filteredCandidates,
@@ -226,20 +324,13 @@ export const compileHarnessPlan = async (
     createdAt,
     createId: dependencies.createId
   });
-  const codexAdapterPlanRef: CodexAdapterPlanRef = {
-    id: dependencies.createId("codex-adapter-plan-ref"),
-    harnessPlanId: harnessPlan.id,
-    adapterPlanId: dependencies.createId("codex-plan"),
-    metadata: {
-      renderer: "codex-adapter",
-      contextAssemblyId: contextAssembly.id
-    },
+  const codexAdapterPlanRef = createCodexAdapterPlanRef(
+    harnessPlan,
+    contextAssembly,
+    dependencies,
     createdAt
-  };
-  const nextAction =
-    contextAssembly.status === "abstained"
-      ? "Context activation abstained; review exclusions before execution."
-      : "Render Codex adapter brief.";
+  );
+  const nextAction = nextActionForContext(contextAssembly);
 
   return {
     operatorIntent,
