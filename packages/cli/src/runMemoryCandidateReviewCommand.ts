@@ -5,12 +5,14 @@ import {
   promoteMemoryCandidateThroughGate
 } from "@krn/harness";
 import {
-  createDatabaseRuntime
-} from "./databaseRuntime.js";
+  buildRejectedMemoryPromotionInput,
+  createMemoryCommandDatabaseRuntime,
+  requireMemoryReviewRejectionReason,
+  toReviewedSourceClaimIds
+} from "./memoryCommandSupport.js";
 import type {
-  DatabaseRuntime,
-  DatabaseRuntimeInput
-} from "./databaseRuntime.js";
+  CreateMemoryCommandDatabaseRuntime
+} from "./memoryCommandSupport.js";
 import type {
   CliCommand
 } from "./parseArgs.js";
@@ -32,19 +34,12 @@ export interface MemoryCandidateReviewCommandRuntime {
   now(): string;
   createId(prefix: string): string;
   command: MemoryCandidateReviewCommand;
-  createDatabaseRuntime?: CreateMemoryCandidateReviewDatabaseRuntime;
+  createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
 
 export interface MemoryCandidateReviewCommandResult {
   stdout: string;
 }
-
-type CreateMemoryCandidateReviewDatabaseRuntime = (
-  input: DatabaseRuntimeInput
-) => Promise<DatabaseRuntime>;
-
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
 
 const formatPromotePreview = (
   review: ReturnType<typeof parseMemoryPromotionInput>,
@@ -78,18 +73,10 @@ const formatRejectPreview = (
     `candidateId: ${review.candidateId}`,
     `reviewer: ${review.reviewer}`,
     `decision: ${review.decision}`,
-    `reason: ${rejectionReason(review)}`,
+    `reason: ${requireMemoryReviewRejectionReason(review)}`,
     "No MemoryRecord created",
     "No memory application recorded"
   ].join("\n");
-
-const rejectionReason = (review: ReturnType<typeof parseMemoryPromotionInput>): string => {
-  if (review.rejectionReason === undefined) {
-    throw new Error("rejectionReason is required when decision is rejected");
-  }
-
-  return review.rejectionReason;
-};
 
 const formatRejected = (
   review: ReturnType<typeof parseMemoryPromotionInput>,
@@ -103,7 +90,7 @@ const formatRejected = (
     `memoryCandidate: ${review.candidateId}`,
     `status: ${status}`,
     `reviewer: ${review.reviewer}`,
-    `reason: ${rejectionReason(review)}`,
+    `reason: ${requireMemoryReviewRejectionReason(review)}`,
     "No MemoryRecord created",
     "No memory application recorded"
   ].join("\n");
@@ -138,27 +125,6 @@ const formatPromoted = (input: {
     "No memory application recorded"
   ].join("\n");
 
-const createRuntime = async (
-  runtime: MemoryCandidateReviewCommandRuntime,
-  persistCommandName: string
-): Promise<DatabaseRuntime> => {
-  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-
-  if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error(`KRN_DATABASE_URL is required for ${persistCommandName} --persist`);
-  }
-
-  const createDatabase = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-
-  return createDatabase({
-    databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    now: runtime.now,
-    createId: runtime.createId
-  });
-};
-
 const runPromote = async (
   runtime: MemoryCandidateReviewCommandRuntime,
   command: MemoryCandidatePromoteCommand
@@ -191,7 +157,10 @@ const runPromote = async (
     );
   }
 
-  const databaseRuntime = await createRuntime(runtime, "krn memory candidate promote");
+  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    "KRN_DATABASE_URL is required for krn memory candidate promote --persist"
+  );
   const untrustedSourceReviewRef = trimmedOptional(command.untrustedSourceReviewRef);
 
   try {
@@ -214,7 +183,7 @@ const runPromote = async (
         reviewer: reviewInput.reviewer,
         evidenceReviewedRef,
         untrustedSourceReviewRef,
-        sourceClaimIds: result.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id)
+        sourceClaimIds: toReviewedSourceClaimIds(result.reviewedSourceClaims)
       })
     };
   } finally {
@@ -232,13 +201,7 @@ const runReject = async (
   runtime: MemoryCandidateReviewCommandRuntime,
   command: MemoryCandidateRejectCommand
 ): Promise<MemoryCandidateReviewCommandResult> => {
-  const reviewInput = parseMemoryPromotionInput({
-    candidateId: command.candidateId,
-    reviewer: command.reviewer,
-    decision: "rejected",
-    rejectionReason: command.reason,
-    metadata: command.metadata
-  });
+  const reviewInput = buildRejectedMemoryPromotionInput(command);
 
   if (!command.persist) {
     return {
@@ -246,8 +209,11 @@ const runReject = async (
     };
   }
 
-  const databaseRuntime = await createRuntime(runtime, "krn memory candidate reject");
-  const reason = rejectionReason(reviewInput);
+  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    "KRN_DATABASE_URL is required for krn memory candidate reject --persist"
+  );
+  const reason = requireMemoryReviewRejectionReason(reviewInput);
 
   try {
     const memoryCandidate = await databaseRuntime.memoryRepository.rejectMemoryCandidate({

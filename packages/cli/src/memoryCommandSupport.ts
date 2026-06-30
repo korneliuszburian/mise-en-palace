@@ -3,6 +3,9 @@ import type {
   ReflectionCandidateEvidenceProvenance,
   SourceLineageRef
 } from "@krn/core";
+import {
+  parseMemoryPromotionInput
+} from "@krn/schema";
 
 import {
   createDatabaseRuntime
@@ -32,6 +35,21 @@ interface CandidateEvidenceInput {
 interface SourceLineageInput {
   sourceId: string;
   note?: string | undefined;
+}
+
+interface ReviewedSourceClaim {
+  id: string;
+}
+
+interface RejectedMemoryReviewInput {
+  candidateId?: string | undefined;
+  reviewer?: string | undefined;
+  reason?: string | undefined;
+  metadata: Record<string, string>;
+}
+
+interface MemoryReviewWithOptionalRejectionReason {
+  rejectionReason?: string | undefined;
 }
 
 const defaultWorkspaceSlug = "local";
@@ -108,6 +126,31 @@ export const toSourceLineageRefs = (
     sourceId: item.sourceId,
     ...(item.note === undefined ? {} : { note: item.note })
   }));
+
+export const toReviewedSourceClaimIds = (
+  sourceClaims: readonly ReviewedSourceClaim[]
+): string[] => sourceClaims.map((sourceClaim) => sourceClaim.id);
+
+export const buildRejectedMemoryPromotionInput = (
+  input: RejectedMemoryReviewInput
+): ReturnType<typeof parseMemoryPromotionInput> =>
+  parseMemoryPromotionInput({
+    candidateId: input.candidateId,
+    reviewer: input.reviewer,
+    decision: "rejected",
+    rejectionReason: input.reason,
+    metadata: input.metadata
+  });
+
+export const requireMemoryReviewRejectionReason = (
+  review: MemoryReviewWithOptionalRejectionReason
+): string => {
+  if (review.rejectionReason === undefined) {
+    throw new Error("rejectionReason is required when decision is rejected");
+  }
+
+  return review.rejectionReason;
+};
 
 export const createMemoryCommandDatabaseRuntime = async (
   runtime: MemoryCommandDatabaseRuntimeInput,

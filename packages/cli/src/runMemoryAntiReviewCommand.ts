@@ -5,12 +5,14 @@ import {
   promoteAntiMemoryCandidateThroughGate
 } from "@krn/harness";
 import {
-  createDatabaseRuntime
-} from "./databaseRuntime.js";
+  buildRejectedMemoryPromotionInput,
+  createMemoryCommandDatabaseRuntime,
+  requireMemoryReviewRejectionReason,
+  toReviewedSourceClaimIds
+} from "./memoryCommandSupport.js";
 import type {
-  DatabaseRuntime,
-  DatabaseRuntimeInput
-} from "./databaseRuntime.js";
+  CreateMemoryCommandDatabaseRuntime
+} from "./memoryCommandSupport.js";
 import type {
   CliCommand
 } from "./parseArgs.js";
@@ -32,27 +34,12 @@ export interface MemoryAntiReviewCommandRuntime {
   now(): string;
   createId(prefix: string): string;
   command: MemoryAntiReviewCommand;
-  createDatabaseRuntime?: CreateMemoryAntiReviewDatabaseRuntime;
+  createDatabaseRuntime?: CreateMemoryCommandDatabaseRuntime;
 }
 
 export interface MemoryAntiReviewCommandResult {
   stdout: string;
 }
-
-type CreateMemoryAntiReviewDatabaseRuntime = (
-  input: DatabaseRuntimeInput
-) => Promise<DatabaseRuntime>;
-
-const defaultWorkspaceSlug = "local";
-const defaultProjectSlug = "mise-en-palace";
-
-const rejectionReason = (review: ReturnType<typeof parseMemoryPromotionInput>): string => {
-  if (review.rejectionReason === undefined) {
-    throw new Error("rejectionReason is required when decision is rejected");
-  }
-
-  return review.rejectionReason;
-};
 
 const formatPromotePreview = (
   review: ReturnType<typeof parseMemoryPromotionInput>
@@ -81,7 +68,7 @@ const formatRejectPreview = (
     `candidateId: ${review.candidateId}`,
     `reviewer: ${review.reviewer}`,
     `decision: ${review.decision}`,
-    `reason: ${rejectionReason(review)}`,
+    `reason: ${requireMemoryReviewRejectionReason(review)}`,
     "No AntiMemoryRecord created"
   ].join("\n");
 
@@ -97,7 +84,7 @@ const formatRejected = (
     `antiMemoryCandidate: ${review.candidateId}`,
     `status: ${status}`,
     `reviewer: ${review.reviewer}`,
-    `reason: ${rejectionReason(review)}`,
+    `reason: ${requireMemoryReviewRejectionReason(review)}`,
     "No AntiMemoryRecord created"
   ].join("\n");
 
@@ -125,27 +112,6 @@ const formatPromoted = (input: {
           ...input.sourceClaimIds.map((sourceClaimId) => `sourceClaimId: ${sourceClaimId}`)
         ])
   ].join("\n");
-
-const createRuntime = async (
-  runtime: MemoryAntiReviewCommandRuntime,
-  persistCommandName: string
-): Promise<DatabaseRuntime> => {
-  const databaseUrl = runtime.env.KRN_DATABASE_URL?.trim();
-
-  if (databaseUrl === undefined || databaseUrl.length === 0) {
-    throw new Error(`KRN_DATABASE_URL is required for ${persistCommandName} --persist`);
-  }
-
-  const createDatabase = runtime.createDatabaseRuntime ?? createDatabaseRuntime;
-
-  return createDatabase({
-    databaseUrl,
-    workspaceSlug: defaultWorkspaceSlug,
-    projectSlug: defaultProjectSlug,
-    now: runtime.now,
-    createId: runtime.createId
-  });
-};
 
 const runPromote = async (
   runtime: MemoryAntiReviewCommandRuntime,
@@ -176,7 +142,10 @@ const runPromote = async (
     );
   }
 
-  const databaseRuntime = await createRuntime(runtime, "krn memory anti promote");
+  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    "KRN_DATABASE_URL is required for krn memory anti promote --persist"
+  );
 
   try {
     const result = await promoteAntiMemoryCandidateThroughGate({
@@ -196,7 +165,7 @@ const runPromote = async (
         antiMemoryRecordId: result.antiMemoryRecord.id,
         reviewer: reviewInput.reviewer,
         evidenceReviewedRef,
-        sourceClaimIds: result.reviewedSourceClaims.map((sourceClaim) => sourceClaim.id)
+        sourceClaimIds: toReviewedSourceClaimIds(result.reviewedSourceClaims)
       })
     };
   } finally {
@@ -208,13 +177,7 @@ const runReject = async (
   runtime: MemoryAntiReviewCommandRuntime,
   command: MemoryAntiRejectCommand
 ): Promise<MemoryAntiReviewCommandResult> => {
-  const reviewInput = parseMemoryPromotionInput({
-    candidateId: command.candidateId,
-    reviewer: command.reviewer,
-    decision: "rejected",
-    rejectionReason: command.reason,
-    metadata: command.metadata
-  });
+  const reviewInput = buildRejectedMemoryPromotionInput(command);
 
   if (!command.persist) {
     return {
@@ -222,8 +185,11 @@ const runReject = async (
     };
   }
 
-  const databaseRuntime = await createRuntime(runtime, "krn memory anti reject");
-  const reason = rejectionReason(reviewInput);
+  const databaseRuntime = await createMemoryCommandDatabaseRuntime(
+    runtime,
+    "KRN_DATABASE_URL is required for krn memory anti reject --persist"
+  );
+  const reason = requireMemoryReviewRejectionReason(reviewInput);
 
   try {
     const antiMemoryCandidate = await databaseRuntime.memoryRepository.rejectAntiMemoryCandidate({
