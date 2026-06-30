@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V374 Source Relation Candidate Evidence Repair
-current task: V374-00 Source Relation Candidate Evidence Repair
+active stream: V375 Pattern Research Brain Intake Trial
+current task: V375-00 Pattern Research Brain Intake Trial
 ```
 
 ## Compact Checkpoints
@@ -29,18 +29,18 @@ graph-brain readback: relation summary visible through source/brain search
 ingest v0/v1: bounded loop readback visible through source artifact preview
 heartbeat/dreaming: manual candidate-only runtime loop readback visible through heartbeat preview
 heartbeat candidate review: one candidate can be reviewed/deferred with evidence result
+source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V374-00 Source Relation Candidate Evidence Repair
+### V375-00 Pattern Research Brain Intake Trial
 
 Status: active.
 
-Goal: repair source-relation heartbeat candidate evidence so operators can see
-or request concrete `relationEvidenceRefs` before accepting source relation
-maintenance.
+Goal: run one bounded pattern/research intake through source -> mechanism ->
+KRN implication -> decision/rejection -> consumer -> falsifier -> eval/candidate.
 
 Hard boundary: no scheduler, daemon, crawler, dashboard, API server, MCP
 server, schema rewrite, broad benchmark, worker runtime, autonomous Memory Core
@@ -49,7 +49,7 @@ mutation, source-truth mutation, or generic multi-agent runtime.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-06-30-v373-heartbeat-runtime-candidate-review-result/REPORT.md
+docs/reviews/controlled-dogfood/2026-06-30-v374-source-relation-candidate-evidence-repair/REPORT.md
 ```
 
 ## Recent Completed Streams
@@ -70,16 +70,16 @@ V370: graph brain v1 readback.
 V371: ingest v0/v1 bounded input loop readback.
 V372: heartbeat/dreaming manual candidate runtime-loop readback.
 V373: heartbeat runtime candidate review-result loop.
+V374: source relation candidate evidence repair.
 ```
 
 ## Remaining Product Gaps
 
 ```txt
-1. source relation candidate evidence repair
-2. pattern/research brain
-3. real benchmarks
-4. second-operator proof
-5. product UI/API/MCP after usefulness/security gates
+1. pattern/research brain
+2. real benchmarks
+3. second-operator proof
+4. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate

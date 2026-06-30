@@ -36,6 +36,7 @@ export interface SourceRelationHeartbeatCandidate {
   applicationGuidance: string;
   evidenceRefs: readonly string[];
   relationEvidenceRefs: readonly string[];
+  relationEvidenceRequest: string;
   doesNotProve: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: readonly string[];
@@ -98,6 +99,9 @@ const buildCandidate = (
   action: SourceRelationHeartbeatAction,
   relationEvidenceRefs: readonly string[]
 ): SourceRelationHeartbeatCandidate => {
+  const relationEvidenceRequest = relationEvidenceRefs.length === 0
+    ? "Capture concrete SourceClaimEdge evidenceRefs before accepting relation maintenance."
+    : "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance.";
   const summary =
     `Review ${edge.kind} SourceClaimEdge ${edge.id} between ${edge.fromSourceClaimId} and ${edge.toSourceClaimId}.`;
   const applicationGuidance =
@@ -107,7 +111,10 @@ const buildCandidate = (
     summary,
     evidenceRefs,
     applicationGuidance,
-    doesNotProve: previewDoesNotProve
+    doesNotProve: previewDoesNotProve,
+    ...(relationEvidenceRefs.length === 0
+      ? { missingFields: ["relationEvidenceRefs"] }
+      : {})
   });
 
   return {
@@ -123,6 +130,7 @@ const buildCandidate = (
     applicationGuidance,
     evidenceRefs,
     relationEvidenceRefs,
+    relationEvidenceRequest,
     doesNotProve: previewDoesNotProve,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,

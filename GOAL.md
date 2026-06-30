@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V374 Source Relation Candidate Evidence Repair
+V375 Pattern Research Brain Intake Trial
 ```
 
 Current state:
@@ -27,13 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-current task: V374-00 Source Relation Candidate Evidence Repair.
+current task: V375-00 Pattern Research Brain Intake Trial.
 ```
 
-Current task: repair source-relation heartbeat candidate evidence so operators
-can see or request concrete `relationEvidenceRefs` before accepting source
-relation maintenance. Do not build scheduler, daemon, crawler, dashboard, API
-server, MCP server, schema rewrite, broad benchmark, worker runtime, or
+Current task: run one bounded pattern/research intake through source ->
+mechanism -> KRN implication -> decision/rejection -> consumer -> falsifier ->
+eval/candidate so best-practice knowledge can affect future KRN work without a
+broad research platform. Do not build scheduler, daemon, crawler, dashboard,
+API server, MCP server, schema rewrite, broad benchmark, worker runtime, or
 autonomous Memory Core / source-truth mutation.
 
 ## Direction

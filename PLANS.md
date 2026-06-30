@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 V02-01 real second-operator proof: blocked/deferred
-active stream: V374 Source Relation Candidate Evidence Repair
-current task: V374-00 Source Relation Candidate Evidence Repair
+active stream: V375 Pattern Research Brain Intake Trial
+current task: V375-00 Pattern Research Brain Intake Trial
 latest checked before V358: a2fba5f / CI success run 28428577576
 ```
 
@@ -24,10 +24,11 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V374-00 Source Relation Candidate Evidence Repair is active.
-The current gap is making source-relation heartbeat candidates expose or request
-concrete relation evidence before operator review can accept source relation
-maintenance, without source-truth mutation or runtime automation.
+V375-00 Pattern Research Brain Intake Trial is active.
+The current gap is turning one high-value source/pattern into a local
+source-to-decision outcome with mechanism, KRN implication, consumer,
+falsifier, proof boundary, and eval/candidate follow-up, without a broad
+research platform.
 ```
 
 ## 2. Product Thesis
@@ -100,28 +101,31 @@ V372 complete: heartbeat preview now exposes a manual candidate-only runtime
   forbidden writes.
 V373 complete: heartbeat preview can record one manual candidate review result;
   the live candidate was deferred because relationEvidenceRefs were empty.
+V374 complete: source-relation heartbeat candidates with empty
+  relationEvidenceRefs now request missing evidence and are not counted as
+  review-ready.
 V359 complete: Fallow added as JS/TS quality gate.
 V360 complete: full Fallow now exits cleanly after bounded cleanup slices.
 ```
 
-## Active Task V374
+## Active Task V375
 
-ID: V374-00
-Name: Source Relation Candidate Evidence Repair
+ID: V375-00
+Name: Pattern Research Brain Intake Trial
 Status: active
 
-Goal: repair source-relation heartbeat candidate evidence so operators can see
-or request concrete `relationEvidenceRefs` before accepting source relation
-maintenance.
+Goal: run one bounded pattern/research intake through source -> mechanism ->
+KRN implication -> decision/rejection -> consumer -> falsifier -> eval/candidate.
 
-Product rationale: V373 deferred a real heartbeat candidate because
-`relationEvidenceRefs` were empty. The next useful step is to improve evidence
-visibility/request semantics, not to promote source truth.
+Product rationale: KRN needs best-practice knowledge to become executable
+decision pressure on future work, not a broad pile of research notes.
 
 Allowed writes:
 
-- smallest owning source/test files;
-- a compact V374 report under `docs/reviews/controlled-dogfood/`;
+- smallest owning docs/source/test files;
+- one retained-pattern/source-decision/eval-candidate artifact if an existing
+  bounded surface owns it;
+- a compact V375 report under `docs/reviews/controlled-dogfood/`;
 - compact root state after verification.
 
 Forbidden writes:
@@ -145,11 +149,12 @@ Forbidden writes:
 
 Definition of Done:
 
-- source-relation heartbeat candidates either expose concrete relation evidence
-  refs or clearly request missing evidence before acceptance;
-- focused tests cover evidence-present and evidence-missing behavior;
-- focused tests cover behavior if source changes;
-- no schema rewrite, crawler, server, MCP, broad benchmark, source-truth
+- one source/pattern is mapped through source -> mechanism -> KRN implication
+  -> decision/rejection -> consumer -> falsifier;
+- output is queryable through an existing bounded KRN surface or explicitly
+  recorded as a reviewed candidate/follow-up;
+- at least one local falsifier/eval/golden candidate is recorded;
+- no schema rewrite, crawler, dashboard, API, MCP, broad benchmark, source-truth
   mutation, or autonomous runtime is added.
 
 Verification floor:
@@ -168,8 +173,8 @@ krn reflect --persist
 Falsifier:
 
 ```txt
-V374 promotes/mutates source truth or hides missing relation evidence instead of
-making relation evidence explicit and reviewable.
+V375 creates research-note slop without a consumer/falsifier, or builds a broad
+research platform instead of one bounded source-to-decision intake.
 ```
 
 ## 9. Task Contract Schema
@@ -230,11 +235,10 @@ Falsifier:
 Current backlog order:
 
 ```txt
-1. heartbeat/dreaming candidate runtime
-2. pattern/research brain
-3. real benchmarks
-4. second-operator proof
-5. product UI/API/MCP after usefulness/security gates
+1. pattern/research brain
+2. real benchmarks
+3. second-operator proof
+4. product UI/API/MCP after usefulness/security gates
 ```
 
 ## 15. Progress
@@ -253,7 +257,11 @@ Current backlog order:
 - [x] V369 complete: End-To-End Product Loop Replay.
 - [x] V370 complete: Graph Brain V1 Readback.
 - [x] V371 complete: Ingest V0/V1 Bounded Input Loop.
-- [ ] V372 pending: Heartbeat/Dreaming Candidate Runtime Loop.
+- [x] V372 complete: Heartbeat/Dreaming Candidate Runtime Loop.
+- [x] V373 complete: Heartbeat Runtime Candidate Review Result.
+- [x] V374 complete: Source Relation Candidate Evidence Repair.
+
+Next active stream: V375 Pattern Research Brain Intake Trial.
 
 ## Outcome V370 Graph Brain V1 Readback
 

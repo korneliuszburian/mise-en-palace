@@ -87,6 +87,9 @@ describe("source relation heartbeat preview", () => {
     expect(result.candidates[0]?.relationEvidenceRefs).toEqual([
       "docs/reviews/controlled-dogfood/v336/REPORT.md"
     ]);
+    expect(result.candidates[0]?.relationEvidenceRequest).toBe(
+      "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance."
+    );
   });
 
   test("prioritizes stale connected claims before relation-kind maintenance", () => {
@@ -132,10 +135,16 @@ describe("source relation heartbeat preview", () => {
         action: "review_relation_evidence",
         reason: "relation_evidence_is_weak",
         mutation: "none",
-        reviewability: "ready"
+        reviewability: "needs_more_evidence"
       })
     );
+    expect(result.candidates[0]?.reviewabilityReasons).toContain(
+      "Missing fields: relationEvidenceRefs."
+    );
     expect(result.candidates[0]?.relationEvidenceRefs).toEqual([]);
+    expect(result.candidates[0]?.relationEvidenceRequest).toBe(
+      "Capture concrete SourceClaimEdge evidenceRefs before accepting relation maintenance."
+    );
   });
 
   test("skips healthy background relations", () => {

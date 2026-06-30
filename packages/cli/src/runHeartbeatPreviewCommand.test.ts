@@ -139,17 +139,17 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain(`Project: ${projectId}`);
     expect(result.stdout).toContain("Project resolution: explicit_project (explicit project)");
     expect(result.stdout).toContain("Review/eval closure:");
-    expect(result.stdout).toContain("decision: ready_for_behavior_proof");
-    expect(result.stdout).toContain("nextAction: add_golden_behavior_case");
+    expect(result.stdout).toContain("decision: needs_more_evidence");
+    expect(result.stdout).toContain("nextAction: improve_candidate_evidence");
     expect(result.stdout).toContain("candidateIds:");
     expect(result.stdout).toContain(`memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
     expect(result.stdout).toContain(`source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
     expect(result.stdout).toContain("Runtime loop:");
     expect(result.stdout).toContain("mode: manual_candidate_only");
-    expect(result.stdout).toContain("status: ready_for_operator_review");
-    expect(result.stdout).toContain("nextAction: review_candidates_and_capture_evidence");
+    expect(result.stdout).toContain("status: needs_candidate_evidence");
+    expect(result.stdout).toContain("nextAction: improve_candidate_evidence");
     expect(result.stdout).toContain("inspectedCandidates: 2");
-    expect(result.stdout).toContain("reviewableCandidates: 2");
+    expect(result.stdout).toContain("reviewableCandidates: 1");
     expect(result.stdout).toContain("worker_jobs");
     expect(result.stdout).toContain("memoryRecords: 1");
     expect(result.stdout).toContain("sourceClaims: 2");
@@ -157,6 +157,11 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain(`candidate: memory-staleness-heartbeat:${memoryRecordId}:near_expiry_memory`);
     expect(result.stdout).toContain(`candidate: source-relation-heartbeat:${sourceClaimEdgeId}:relation_evidence_is_weak`);
     expect(result.stdout).toContain("reviewability:");
+    expect(result.stdout).toContain("reviewability: needs_more_evidence");
+    expect(result.stdout).toContain("Missing fields: relationEvidenceRefs.");
+    expect(result.stdout).toContain(
+      "relationEvidenceRequest: Capture concrete SourceClaimEdge evidenceRefs before accepting relation maintenance."
+    );
     expect(result.stdout).toContain("evidenceRefs:");
     expect(result.stdout).toContain("doesNotProve:");
     expect(result.stdout).toContain("Mutation boundary:");
@@ -233,7 +238,7 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("nextAction: request_more_candidate_evidence");
     expect(result.stdout).toContain("reason: Relation evidence refs are empty.");
     expect(result.stdout).toContain("reviewer: operator");
-    expect(result.stdout).toContain("candidateReviewability: ready");
+    expect(result.stdout).toContain("candidateReviewability: needs_more_evidence");
     expect(result.stdout).toContain("mutation: none");
     expect(result.stdout).toContain("worker_jobs");
   });

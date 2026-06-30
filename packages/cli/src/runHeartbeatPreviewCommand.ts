@@ -135,7 +135,8 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     `  toSourceClaimId: ${candidate.toSourceClaimId}`,
     `  edgeKind: ${candidate.edgeKind}`,
     "  relationEvidenceRefs:",
-    ...formatList(candidate.relationEvidenceRefs)
+    ...formatList(candidate.relationEvidenceRefs),
+    `  relationEvidenceRequest: ${candidate.relationEvidenceRequest}`
   ];
 };
 
