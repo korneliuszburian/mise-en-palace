@@ -96,6 +96,50 @@ IMR-03 complete: preferred operator language is now `krn brain knowledge`;
 IMR-04 complete: `krn brain search --store-only` derives selectedKnowledge
   packets from governed source/search evidence instead of only file catalog
   readback.
+IMR-05 complete: store-backed brain packets were used as the pre-coding pattern
+  gate for the Autonomous Memory Agents paper intake; the paper is retained as
+  a lab-test source for candidate-only acquisition/escalation work.
+```
+
+## Outcome IMR-05 Store-Backed Pattern Gate For Autonomous Memory Agents
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-06-30-imr-05-store-backed-pattern-gate-ama/REPORT.md
+```
+
+Outcome: `krn brain search --store-only` selected governed source/search
+packets before paper intake. Two packets helped constrain the decision:
+task-specific context must stay bounded, and local source claims should drive
+bounded source decisions. The paper itself was missing from the brain before
+intake, which is the correct gap signal.
+
+Source-to-decision:
+
+- Source: `https://arxiv.org/abs/2602.22406`, social post as untrusted lead,
+  store-backed brain-search pre-gate output, and `mise-en-palace-1sv`.
+- Mechanism: Autonomous Memory Agents actively acquire, validate, and curate
+  missing knowledge through a cost-aware cascade and exploration/exploitation
+  over memories.
+- KRN implication: missing-evidence source/brain search should be able to
+  produce reviewable acquisition/escalation candidates for heartbeat/dreaming.
+- Decision: retain as lab-test source only; no autonomous Memory Core mutation,
+  crawler/API/MCP, ranking rewrite, or product claim.
+- Does not prove: paper truth transfer to KRN, product readiness, Oxford
+  affiliation, or that autonomous retrieval may bypass KRN review gates.
+- Consumer: heartbeat/dreaming candidate runtime, pattern/research brain,
+  source-search missing-evidence readback, and future brain-QA/eval candidates.
+- Falsifier: missing-evidence runs cannot create a reviewable acquisition
+  candidate, or acquisition mutates durable memory without review-gated
+  acceptance.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-q95: Lab-test memory acquisition escalation candidate.
 ```
 
 ## Outcome IMR-04 Store-Backed Selected Knowledge Readback

@@ -27,6 +27,7 @@ brain-search preview: usable through CLI and JSON
 brain-search selected knowledge: usable pattern packet in preview output
 brain-search store-only: source/search evidence can be read without file catalog
 brain-search store-only selected knowledge: source/search evidence yields reviewable packets
+store-backed pattern gate: source/search packets shaped one retained paper intake
 brain knowledge vocabulary: preferred CLI/readback language is `krn brain knowledge`
 product loop replay: DB-backed and inspectable
 graph-brain readback: relation summary visible through source/brain search
@@ -69,9 +70,9 @@ docs/operator-trials/v02-01-second-operator-launch-packet.md
 Next slice should exercise the brain loop:
 
 ```txt
-mise-en-palace-nrw:
-use store-backed brain packets as a pre-coding pattern gate in one real bounded
-source/product slice, then record selected/used/helped/noise/missing knowledge.
+mise-en-palace-q95:
+lab-test memory acquisition escalation candidate from missing-evidence brain
+readback, keeping it candidate-only and review-gated.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -106,6 +107,7 @@ IMR-01: brain search now exposes selected brain knowledge packets for agent use.
 IMR-02: brain search store-only mode proves store-backed pattern readback.
 IMR-03: preferred brain knowledge vocabulary replaces knowledge-card language in active surfaces.
 IMR-04: store-only brain search derives selectedKnowledge from governed source/search evidence.
+IMR-05: store-backed pattern packets gated Autonomous Memory Agents paper intake; retained as lab-test source, not product truth.
 ```
 
 ## Remaining Product Gaps

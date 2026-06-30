@@ -344,6 +344,31 @@ cannot be falsified locally, keep it out of active KRN guidance.
 - Does not prove: that KRN needs PageRank now, that a separate graph database is
   justified, or that graph retrieval is product-ready.
 
+### Towards Autonomous Memory Agents
+
+- URL: https://arxiv.org/abs/2602.22406
+- Trust tier: medium.
+- Source class: papers.
+- Decision kind: lab_test.
+- Mechanism: autonomous memory agents actively acquire, validate, and curate
+  missing knowledge using a cost-aware extraction cascade and memory-selection
+  exploration/exploitation, instead of only storing information that happens to
+  appear in prior conversations.
+- KRN implication: KRN heartbeat/dreaming should be able to propose
+  candidate-only knowledge-acquisition or escalation work when source/brain
+  search reports missing, stale, contradictory, or low-confidence evidence.
+- Decision: lab-test a bounded acquisition/escalation candidate lane; do not
+  add autonomous Memory Core mutation, crawler/API/MCP, ranking rewrite, or
+  product claims from this paper alone.
+- Consumer: heartbeat/dreaming candidate runtime, pattern/research brain,
+  source-search missing-evidence readback, and future brain-QA/eval candidates.
+- Falsifier: a future missing-evidence run cannot create a reviewable
+  acquisition/escalation candidate, or an acquisition path mutates durable
+  memory without review-gated acceptance.
+- Does not prove: KRN product readiness, source truth, that benchmark gains
+  transfer to KRN, that "Oxford" is the paper affiliation, or that autonomous
+  retrieval should bypass source/review gates.
+
 ## Agent Memory Practitioner Sources
 
 ### Mastra Observational Memory
