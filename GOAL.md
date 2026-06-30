@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-V02-01 Real Second-Operator Proof
+Internal Multi-Repo Operator Loop
 ```
 
 Current state:
@@ -26,13 +26,14 @@ Current state:
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
-V02-01 real second-operator proof: blocked/deferred
-current task: V02-01 Await Real Operator Inputs.
+external/foreign second-operator proof: rejected as wrong product forcing function
+current task: IMR-00 Internal Multi-Repo Operator Loop.
 ```
 
-Current task: wait for real second-operator inputs and transcript path before
-running V02-01. Do not run or fake the second-operator proof without real
-operator inputs.
+Current task: build the shared KRN brain kernel as the foundation for future
+agentic/harness work: multi-layer memory, source-to-decision, pattern/research
+condensation, evidence/review, graph, heartbeat/dreaming, and benchmarked
+reuse. Multi-repo internal work is the proof surface, not the product goal.
 
 ## Direction
 
@@ -45,7 +46,7 @@ Move toward a useful KRN Brain through product-facing vertical slices:
 5. heartbeat/dreaming candidate runtime;
 6. pattern/research brain;
 7. real benchmarks;
-8. second-operator proof.
+8. multi-repo shared-brain usefulness proof.
 
 Avoid guard-only treadmill work. A task must close a usefulness loop, improve a
 bounded product surface, or unblock the next vertical slice.
@@ -81,20 +82,22 @@ platform, generic multi-agent system, `krn audit`, anti-slop scanner, runtime
 markdown memory, DB schema, or unsafe target writes unless root `PLANS.md`
 authorizes a bounded evidence-backed task.
 
-## External Boundary
+## Product Boundary
 
-V02-01 can resume only after real second-operator inputs exist:
+Do not block product progress on a foreign operator. The real validation path is:
 
 ```txt
-operator:
-KRN source:
-target repo:
-DB mode:
-support boundary:
-operator transcript:
+our operator loop
+-> multiple real repos
+-> one shared KRN brain
+-> plan/context/brief/execution/evidence/review
+-> candidates
+-> promotion or rejection
+-> next run demonstrably reuses or rejects the knowledge
 ```
 
-Do not substitute self/headless scenarios for V02-01.
+Do not fake user proof. Do not run synthetic demos as product proof. Use controlled
+internal work, real repos, real evidence, and compact reports.
 
 ## Continuation After Compact
 

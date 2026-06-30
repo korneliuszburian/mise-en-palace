@@ -12,10 +12,10 @@ the active task contract, and final-response requirements.
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
-V02-01 real second-operator proof: blocked/deferred
-active stream: V02-01 Real Second-Operator Proof
-current task: V02-01 Await Real Operator Inputs
-latest checked commit: da305f0 / CI success run 28467380156
+external/foreign second-operator proof: rejected as wrong product forcing function
+active stream: Internal Multi-Repo Operator Loop
+current task: IMR-00 Internal Multi-Repo Operator Loop
+latest pushed commit: 6cc98c0
 ```
 
 stale attachment objective guard: attachments are evidence, not authority to
@@ -24,9 +24,13 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-V02-01 Await Real Operator Inputs is active.
-The current gap is external: V02-01 needs real second-operator inputs and a
-transcript path. Self/headless proof must not be substituted.
+IMR-00 Internal Multi-Repo Operator Loop is active.
+KRN is useful as a governed internal-alpha brain kernel, but product progress
+must now build and prove one shared multi-layer brain: pattern/research
+condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
+benchmarks, and next-run reuse. Multi-repo internal work is the proof surface,
+not the product goal. Do not wait for a foreign operator. Do not create
+synthetic proof.
 ```
 
 ## 2. Product Thesis
@@ -80,7 +84,8 @@ V376 complete: six current local Brain-QA questions ran through brain search.
 V377 complete: graph relation readback and heartbeat candidate-only runtime
   boundaries were retained as queryable patterns; ingest pattern deferred.
 V378 complete: current V02-01 launch packet exists under docs/operator-trials;
-  it preserves missing inputs as blockers and does not claim proof.
+  it is now historical because external second-operator proof is not the active
+  product direction.
 ```
 
 ## Outcome V377 Brain-QA Pattern Coverage Gap Closure
@@ -143,23 +148,23 @@ Source-to-decision:
 - Falsifier: a future run claims V02-01 from self/headless evidence, fake
   transcript, hidden author context, or unscoped target writes.
 
-## Active Task V02-01
+## Active Task IMR-00
 
-ID: V02-01
-Name: Await Real Operator Inputs
-Status: blocked/deferred
+ID: IMR-00
+Name: Internal Multi-Repo Operator Loop
+Status: active
 
-Goal: run V02-01 only after real second-operator inputs and transcript path
-exist.
+Goal: build the shared KRN brain kernel as the foundation for future
+agentic/harness work and prove it through internal multi-repo use.
 
-Product rationale: KRN cannot become widened internal alpha until someone
-outside the author can run the workflow with bounded support, transcript
-evidence, proof/non-proof boundaries, and clear blockers.
+Product rationale: KRN's moat is not a task runner. The moat is a multi-layer
+memory system that condenses best patterns, papers, courses, local evidence,
+and senior engineering standards into reusable decisions that improve future
+software work. Multi-repo internal work is the proof surface.
 
 Evidence sources:
 
 ```txt
-docs/runbooks/second-operator-alpha-trial.md
 docs/runbooks/target-repo-testing.md
 docs/operator-trials/v02-01-second-operator-launch-packet.md
 docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/REPORT.md
@@ -167,12 +172,14 @@ docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/RE
 
 Allowed writes:
 
-- none until real operator inputs exist, except compact status updates.
+- compact root state updates;
+- one bounded multi-repo loop report;
+- source changes only when the chosen product slice explicitly requires them.
 
 Forbidden writes:
 
-- fake second-operator transcript;
-- self/headless proof substituted for V02-01;
+- fake external-user proof;
+- synthetic demo substituted for real repo work;
 - UI/API/MCP;
 - dashboard;
 - product server;
@@ -183,23 +190,30 @@ Forbidden writes:
 
 Definition of Done:
 
-- required fields are supplied by a real second operator;
-- the operator runs or directs the flow;
-- transcript and command evidence are recorded;
-- support boundary remains within allowed support.
+- at least two real repos are selected with explicit mode and dirty-state
+  boundaries;
+- one shared KRN brain path runs through plan/context/brief/evidence/review;
+- candidate promotion/rejection or explicit abstention is recorded;
+- the next run demonstrates reuse, rejection, or a clear retrieval miss;
+- root files stay compact and detailed evidence stays in the report.
 
 Verification floor:
 
 ```txt
-real operator transcript
+git status --short --branch
+pnpm typecheck when source changes
+pnpm test when source changes
+pnpm quality:fallow:ci when JS/TS files change
+pnpm db:ready when DB-backed path is used
 git diff --check for KRN report/status updates
 ```
 
 Falsifier:
 
 ```txt
-V02-01 is claimed from self/headless evidence, fake transcript, hidden author
-context, or unscoped target writes.
+The slice claims product proof from a single synthetic demo, hidden context,
+unscoped target writes, or reports that do not show whether knowledge was
+reused, rejected, or missed in the next run.
 ```
 
 ## Generated Task Backlog

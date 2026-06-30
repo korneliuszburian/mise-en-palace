@@ -11,9 +11,9 @@ Current-task contracts live in `PLANS.md`.
 controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
-V02-01 real second-operator proof: blocked/deferred
-active stream: V02-01 Real Second-Operator Proof
-current task: V02-01 Await Real Operator Inputs
+external/foreign second-operator proof: rejected as wrong product forcing function
+active stream: Internal Multi-Repo Operator Loop
+current task: IMR-00 Internal Multi-Repo Operator Loop
 ```
 
 ## Compact Checkpoints
@@ -33,22 +33,22 @@ source relation candidate evidence: missing relation evidence is explicit and bl
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and knowledge-card readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
-second-operator launch packet: current packet exists under docs/operator-trials
+second-operator launch packet: historical packet only; no longer active direction
 product-ready brain: not complete
 ```
 
 ## Active Task
 
-### V02-01 Await Real Operator Inputs
+### IMR-00 Internal Multi-Repo Operator Loop
 
-Status: blocked/deferred.
+Status: active.
 
-Goal: run V02-01 only after real second-operator inputs and transcript path
-exist.
+Goal: build the shared KRN brain kernel as the foundation for future
+agentic/harness work and prove it through internal multi-repo use.
 
-Hard boundary: do not substitute self/headless scenarios for second-operator
-proof; do not build dashboard, API, MCP, worker daemon, crawler, broad eval
-platform, DB schema, or product server.
+Hard boundary: do not build dashboard, API, MCP, worker daemon, crawler, broad
+eval platform, DB schema, or product server. Do not create synthetic proof. Use
+real repo work, real evidence, and compact reports.
 
 Latest completed report:
 
@@ -56,11 +56,22 @@ Latest completed report:
 docs/reviews/controlled-dogfood/2026-06-30-v378-second-operator-launch-packet/REPORT.md
 ```
 
-Launch packet:
+Historical launch packet:
 
 ```txt
 docs/operator-trials/v02-01-second-operator-launch-packet.md
 ```
+
+Next slice should exercise the brain loop:
+
+```txt
+plan -> context -> Codex brief -> execution -> evidence -> review
+-> candidates -> promotion/rejection -> next-run reuse or explicit abstention
+```
+
+The point is not "operator proof" by itself. The point is a multi-layer memory
+system that condenses best patterns, papers, courses, local evidence, and senior
+engineering standards into reusable decisions that improve future work.
 
 ## Recent Completed Streams
 
@@ -91,8 +102,10 @@ V378: prepared current second-operator launch packet without claiming V02-01.
 ## Remaining Product Gaps
 
 ```txt
-1. second-operator proof
-3. product UI/API/MCP after usefulness/security gates
+1. shared brain kernel vertical loop
+2. pattern/research brain continuously applied to code quality
+3. graph/ingest/heartbeat/consensus vertical loops
+4. product UI/API/MCP after usefulness/security gates
 ```
 
 ## Pattern Gate
