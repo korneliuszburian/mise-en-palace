@@ -238,28 +238,37 @@ IMR-50 complete: target-fit-aware Brain-QA closure selected heartbeat
 IMR-51 complete: generic-only target-fit brain-search readbacks with useful
   source evidence now route into ready heartbeat knowledge-acquisition
   candidates with mutation none.
+IMR-52 complete: EKOLOGUS target-fit acquisition candidate resolved through
+  target-specific SourceClaim reuse; next check measures post-resolution
+  multi-repo recall/context waste.
 ```
 
-## Outcome IMR-50 Target-Fit Brain-QA Closure
+## Outcome IMR-52 EKOLOGUS Target-Fit Candidate Resolution
 
 Status: complete.
 
 Report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-50-target-fit-brain-qa-closure/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-52-ekologus-target-fit-candidate-resolution/REPORT.md
 ```
 
-Outcome: six store-backed brain-search queries covered ingest/source artifact,
-second-repo EKOLOGUS, graph, heartbeat, consensus, and pattern/research lanes.
-Five KRN queries returned target-specific selectedKnowledge. The EKOLOGUS query
-returned useful source evidence but `generic_only_selected_knowledge`, and
-heartbeat preview over that readback emitted zero acquisition candidates.
+Outcome: the IMR-51 EKOLOGUS acquisition candidate was accepted through the
+existing source artifact preview path. Target README evidence persisted as
+SourceArtifact, SourceChunks, SearchDocument, and proposed SourceClaim
+`bc4731b9-8add-40f8-9df9-fb4bb9342b75`. Brain search changed from
+`generic_only_selected_knowledge` to `target_specific_selected_knowledge`, and
+heartbeat acquisition candidates dropped to zero for the resolved readback.
 
-Decision: next route generic-only target-fit readbacks with useful target/source
-evidence into candidate-only heartbeat acquisition. Do not open activation
-scoring, ranking, crawler, schema, worker, API/MCP, target write, source truth,
-eval promotion, or Memory Core work.
+Decision: next run a compact post-resolution multi-repo Brain-QA reuse check.
+Do not open ranking/scoring, crawler, schema, worker daemon, API/MCP, target
+writes, source truth promotion, eval promotion, or Memory Core mutation.
+
+Next Beads task:
+
+```txt
+mise-en-palace-aqo: Run post-EKOLOGUS multi-repo Brain-QA reuse check.
+```
 
 ## Outcome IMR-51 Generic Target-Fit Acquisition Routing
 
@@ -285,6 +294,27 @@ Next Beads task:
 ```txt
 mise-en-palace-83t: Resolve EKOLOGUS target-fit acquisition candidate.
 ```
+
+## Outcome IMR-50 Target-Fit Brain-QA Closure
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-50-target-fit-brain-qa-closure/REPORT.md
+```
+
+Outcome: six store-backed brain-search queries covered ingest/source artifact,
+second-repo EKOLOGUS, graph, heartbeat, consensus, and pattern/research lanes.
+Five KRN queries returned target-specific selectedKnowledge. The EKOLOGUS query
+returned useful source evidence but `generic_only_selected_knowledge`, and
+heartbeat preview over that readback emitted zero acquisition candidates.
+
+Decision: next route generic-only target-fit readbacks with useful target/source
+evidence into candidate-only heartbeat acquisition. Do not open activation
+scoring, ranking, crawler, schema, worker, API/MCP, target write, source truth,
+eval promotion, or Memory Core work.
 
 ## Outcome IMR-49 Target-Fit-Aware Activation Utility
 
