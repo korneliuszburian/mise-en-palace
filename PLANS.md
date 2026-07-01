@@ -226,7 +226,30 @@ IMR-45 complete: one missing adapter delegation was repaired, persisted source
 IMR-46 complete: second internal repo README persisted through the same source
   artifact/chunk/SearchDocument path, target repo stayed read-only, and marker
   plus natural source/brain search readbacks found the persisted evidence.
+IMR-47 complete: compact two-question multi-repo Brain-QA showed useful
+  KRN/source recall and second-repo source recall, but exposed target-fit
+  precision/context-waste work for selectedKnowledge.
 ```
+
+## Outcome IMR-47 Multi-Repo Brain-QA Batch
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-47-multi-repo-brain-qa/REPORT.md
+```
+
+Outcome: a compact batch ran one KRN ingest/source-artifact question and one
+`krn-ekologus` question through existing source/brain search JSON. Q1 selected
+ready governed ingest/source-artifact knowledge but still had linked documents
+without included SearchDocument evidence. Q2 returned useful second-repo source
+evidence with one supporting SearchDocument and no missing evidence, while
+selectedKnowledge mixed in generic KRN graph/pattern/ingest packets.
+
+Decision: next expose target-specific vs generic/adjacent/noise selectedKnowledge
+classification for multi-repo brain search before any ranking rewrite.
 
 ## Outcome IMR-46 Second Repo Source Artifact Readback
 
