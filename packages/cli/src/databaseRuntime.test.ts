@@ -9,8 +9,13 @@ const mocks = vi.hoisted(() => {
     end: vi.fn<() => Promise<void>>(async () => {})
   };
   const projectRepository = {
+    findWorkspaceBySlug: vi.fn(),
+    createWorkspace: vi.fn(),
+    findProjectBySlug: vi.fn(),
+    createProject: vi.fn(),
     getProject: vi.fn(),
     getLatestProjectKernel: vi.fn(),
+    getProjectByRepoPath: vi.fn(),
     listRepoInstallationsForProject: vi.fn()
   };
 
@@ -75,6 +80,18 @@ describe("createDatabaseRuntime", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.postgres.mockReturnValue(mocks.client);
+    mocks.projectRepository.findWorkspaceBySlug.mockResolvedValue({
+      id: "workspace-1",
+      slug: "workspace",
+      displayName: "workspace",
+      metadata: {},
+      createdAt: now,
+      updatedAt: now
+    });
+    mocks.projectRepository.findProjectBySlug.mockResolvedValue(project);
+    mocks.projectRepository.getProjectByRepoPath.mockResolvedValue(undefined);
+    mocks.projectRepository.getLatestProjectKernel.mockResolvedValue(undefined);
+    mocks.projectRepository.listRepoInstallationsForProject.mockResolvedValue([]);
   });
 
   it("does not list repo installations before explicit project kernel failure", async () => {
@@ -96,5 +113,31 @@ describe("createDatabaseRuntime", () => {
 
     expect(mocks.projectRepository.listRepoInstallationsForProject).not.toHaveBeenCalled();
     expect(mocks.client.end).toHaveBeenCalledTimes(1);
+  });
+
+  it("exposes source chunk persistence through the CLI database runtime", async () => {
+    const { createDatabaseRuntime } = await import("./databaseRuntime.js");
+    const sourceChunk = {
+      id: "source-chunk-1"
+    };
+    const createSourceChunk = vi.fn(async () => sourceChunk);
+    mocks.sourceRepository.createSourceChunk = createSourceChunk;
+
+    const runtime = await createDatabaseRuntime({
+      databaseUrl: "postgres://krn:krn@localhost:54329/krn",
+      workspaceSlug: "workspace",
+      projectSlug: "project",
+      now: () => now,
+      createId: (prefix: string) => `${prefix}-1`
+    });
+
+    await expect(runtime.sourceRepository.createSourceChunk?.({
+      sourceArtifactId: "source-artifact-1",
+      ordinal: 1,
+      content: "chunk",
+      contentHash: "sha256:chunk",
+      metadata: {}
+    })).resolves.toBe(sourceChunk);
+    expect(createSourceChunk).toHaveBeenCalledTimes(1);
   });
 });

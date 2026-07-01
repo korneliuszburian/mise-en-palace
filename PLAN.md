@@ -54,7 +54,7 @@ AMA activation utility brain replay: marker/SearchDocument replay works; natural
 AMA activation utility natural recall: exact SourceClaim/SourceDecisionEdge now surface through natural source/brain search readback
 source-backed selected knowledge: default brain search can use ready SourceClaim packets when catalog readback misses
 source-backed mini Brain-QA: fallback helps Q5 ingest and IMR41; keep behavior, no ranking repair now
-source artifact preview JSON: structured ingest preview feeds heartbeat acquisition readback
+source artifact persisted readback: preview writes SourceArtifact/SourceChunk/SearchDocument and resolves heartbeat acquisition
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -80,13 +80,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-44-source-artifact-json-consumer/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-45-source-artifact-acquisition-readback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-mnj: Resolve source artifact preview acquisition candidate with source/brain readback.
+mise-en-palace-wl5: Run source artifact readback on a second internal repo file.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -131,7 +131,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-44: AMA linked evidence accepted, activation utility readback exposed, usefulness checked, exploration evidence routed into heartbeat candidate-only output, bounded eval proof added, the routed candidate accepted for manual source/eval follow-up, the accepted review retained as SourceArtifact/SourceClaim/SourceDecisionEdge evidence, natural exact SourceClaim/SourceDecisionEdge recall repaired, default brain search now uses ready source-backed selected knowledge when catalog readback misses, mini Brain-QA kept the fallback, source artifact preview emits structured JSON, and heartbeat now consumes it as acquisition input.
+IMR-18-45: AMA evidence and activation utility lanes accepted; natural recall and source-backed selected knowledge repaired; source artifact preview emits structured JSON, heartbeat consumes it as acquisition input, and persisted artifact/chunk/SearchDocument readback now resolves the candidate.
 ```
 
 ## Remaining Product Gaps

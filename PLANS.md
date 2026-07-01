@@ -220,7 +220,29 @@ IMR-43 complete: Q5 source-backed ingest pattern gate drove `krn source artifact
   artifact, chunk, candidate, proof, and readback output without text scraping.
 IMR-44 complete: `krn.sourceArtifactPreview.v1` now feeds heartbeat knowledge
   acquisition readback as `source_artifact_preview` candidate-only work.
+IMR-45 complete: one missing adapter delegation was repaired, persisted source
+  artifact preview readback now writes SourceArtifact/SourceChunk/SearchDocument
+  and the heartbeat acquisition candidate is resolved.
 ```
+
+## Outcome IMR-45 Source Artifact Acquisition Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-45-source-artifact-acquisition-readback/REPORT.md
+```
+
+Outcome: the IMR-44 acquisition candidate is resolved. `krn source artifact
+preview --persist --json` now writes SourceArtifact, SourceChunk, and
+SearchDocument rows through the existing CLI runtime, source-search readback for
+the generated marker is useful with no missing evidence, and heartbeat no longer
+emits the source artifact acquisition candidate from persisted JSON.
+
+Decision: next test the same existing path on a second real internal repo/file
+with target writes forbidden and only KRN brain-store/report writes allowed.
 
 ## Outcome IMR-44 Source Artifact JSON Consumer
 

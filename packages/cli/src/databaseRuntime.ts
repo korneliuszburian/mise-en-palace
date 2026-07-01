@@ -490,6 +490,7 @@ export const createDatabaseRuntime = async (
   };
   const sourceSearchSourceRepository: DatabaseRuntime["sourceRepository"] = {
     createSourceArtifact: (...args) => sourceRepository.createSourceArtifact(...args),
+    createSourceChunk: (...args) => sourceRepository.createSourceChunk(...args),
     createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
     getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
     listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
