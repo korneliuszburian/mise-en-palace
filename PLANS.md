@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-05 Prove DB-backed heartbeat worker-authority candidate readback
+current task: RFD-01 Consolidate review feedback domain ownership
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-E2E-05 Prove DB-backed heartbeat worker-authority candidate readback is active.
+RFD-01 Consolidate review feedback domain ownership is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,12 +36,13 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-E2E-04 complete: memory-staleness heartbeat candidates expose validated
-expire_stale_memory worker authority in candidate readback.
+E2E-05 complete: DB-backed heartbeat smoke proves one seeded expired
+MemoryRecord emits a review-ready memory-staleness candidate with validated
+expire_stale_memory worker authority and cleanup.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-e2e-04-worker-authority-heartbeat-readback/REPORT.md
-Next: E2E-05 proves the same readback through one DB-backed heartbeat candidate
-with cleanup.
+docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md
+Next: RFD-01 inspects review/feedback domain overlap and removes or justifies
+one duplicate concept without changing review gate or promotion behavior.
 ```
 
 ## 2. Product Thesis
@@ -2411,8 +2412,14 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-e2e-04-worker-authority-heartbeat-readback/REPORT.md`.
   Next: `mise-en-palace-7ew` / E2E-05 proves DB-backed heartbeat
   worker-authority candidate readback with cleanup.
-- [ ] E2E-05 active: `mise-en-palace-7ew` proves one DB-backed heartbeat
-  memory-staleness candidate includes validated worker authority.
+- [x] E2E-05 complete: `mise-en-palace-7ew` proves one DB-backed heartbeat
+  memory-staleness candidate includes validated worker authority. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md`.
+  Next: `mise-en-palace-ktz` / RFD-01 consolidates or justifies review feedback
+  domain ownership.
+- [ ] RFD-01 active: `mise-en-palace-ktz` inspects review/feedback domain
+  overlap and removes or justifies one duplicate concept without DB schema,
+  review gate behavior, or memory promotion behavior changes.
 
 ## 21. Final Response Format For Codex Runs
 

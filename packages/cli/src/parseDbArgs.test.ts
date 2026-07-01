@@ -45,6 +45,12 @@ describe("parseDbArgs", () => {
         target: "brainLoop"
       }
     });
+    expect(parseDbArgs(["smoke", "heartbeat-worker-authority"])).toEqual({
+      command: {
+        kind: "dbSmoke",
+        target: "heartbeatWorkerAuthority"
+      }
+    });
   });
 
   it("rejects unsupported db command shapes", () => {

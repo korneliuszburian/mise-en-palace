@@ -4,6 +4,7 @@ import {
   runBrainLoopSmokeCheck,
   runHarnessEvidenceSmokeCheck,
   runHarnessPlanSmokeCheck,
+  runHeartbeatWorkerAuthoritySmokeCheck,
   runInitConnectSmokeCheck,
   runMemoryGovernanceSmokeCheck,
   runPersistenceSmokeCheck,
@@ -39,6 +40,7 @@ export interface DbSmokeRuntime {
     | "retrievalSubstrate"
     | "activation"
     | "brainLoop"
+    | "heartbeatWorkerAuthority"
     | "codexAdapter"
     | "workerJobs"
     | "initConnect"
@@ -114,6 +116,11 @@ const dbSmokeTargetMetadata = {
     title: "KRN Brain Loop Smoke",
     skippedLine: "Brain loop smoke: skipped (database not configured)",
     failureLabel: "Brain loop smoke"
+  },
+  heartbeatWorkerAuthority: {
+    title: "KRN Heartbeat Worker Authority Smoke",
+    skippedLine: "Heartbeat worker authority smoke: skipped (database not configured)",
+    failureLabel: "Heartbeat worker authority smoke"
   },
   codexAdapter: {
     title: "KRN Codex Adapter Smoke",
@@ -447,6 +454,45 @@ const runBrainLoopSmokeTarget: DbSmokeTargetHandler = async (
   );
 };
 
+const runHeartbeatWorkerAuthoritySmokeTarget: DbSmokeTargetHandler = async (
+  context,
+  runtime
+) => {
+  const report = await runHeartbeatWorkerAuthoritySmokeCheck({
+    databaseUrl: context.databaseUrl,
+    migrationsFolder: context.migrationsFolder,
+    smokeId: runtime.createId("heartbeat-worker-authority-smoke")
+  });
+
+  return smokeResultFromCleanup(
+    context,
+    "KRN Heartbeat Worker Authority Smoke",
+    report.cleanedUp,
+    [
+      `Workspace smoke row: ${report.workspaceSlug}`,
+      `Project smoke row: ${report.projectSlug}`,
+      `Execution run: ${report.executionRunId}`,
+      `Source claim: ${report.sourceClaimId}`,
+      `Memory record: ${report.memoryRecordId}`,
+      `Memory record readback: ${
+        report.readBackMemoryRecordId === report.memoryRecordId ? "matched" : "mismatch"
+      }`,
+      `Memory records loaded: ${report.memoryRecordCount}`,
+      `Candidate: ${report.candidateId}`,
+      `Candidate kind: ${report.candidateKind}`,
+      `Candidate reviewability: ${report.candidateReviewability}`,
+      `Candidate mutation: ${report.candidateMutation}`,
+      `Memory staleness candidates: ${report.memoryStalenessCandidateCount}`,
+      `Worker authority jobType: ${report.workerJobType}`,
+      `Worker authority memoryCoreGate: ${report.workerMemoryCoreGate}`,
+      `Worker authority status: ${report.workerAuthorityStatus}`,
+      `Worker authority mutation: ${report.workerAuthorityMutation}`,
+      `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,
+      ...cleanupStatusLines(report.cleanedUp, "Heartbeat worker authority smoke")
+    ]
+  );
+};
+
 const runCodexAdapterSmokeTarget: DbSmokeTargetHandler = async (
   context,
   runtime
@@ -585,6 +631,7 @@ const dbSmokeTargetHandlers = {
   retrievalSubstrate: runRetrievalSubstrateSmokeTarget,
   activation: runActivationSmokeTarget,
   brainLoop: runBrainLoopSmokeTarget,
+  heartbeatWorkerAuthority: runHeartbeatWorkerAuthoritySmokeTarget,
   codexAdapter: runCodexAdapterSmokeTarget,
   workerJobs: runWorkerJobsSmokeTarget,
   initConnect: runInitConnectSmokeTarget,

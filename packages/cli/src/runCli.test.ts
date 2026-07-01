@@ -680,6 +680,15 @@ describe("runCli", () => {
     );
   });
 
+  it("exposes the heartbeat worker authority smoke script", async () => {
+    const repoRoot = path.resolve(process.cwd(), "../..");
+    const packageJson = await readRootPackageJson(repoRoot);
+
+    expect(packageJson.scripts?.["db:smoke:heartbeat-worker-authority"]).toBe(
+      "KRN_DATABASE_URL=${KRN_DATABASE_URL:-postgres://krn:krn@localhost:54329/krn} pnpm --filter @krn/cli krn db smoke heartbeat-worker-authority"
+    );
+  });
+
   it("connects a target repo to the brain store with persisted IDs", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     const fixtureRepo = path.join(
@@ -2698,6 +2707,22 @@ describe("runCli", () => {
     expect(result.stdout).toContain("KRN Brain Loop Smoke");
     expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
     expect(result.stdout).toContain("Brain loop smoke: skipped (database not configured)");
+  });
+
+  it("reports heartbeat worker authority smoke missing configuration", async () => {
+    const result = await runCli(["db", "smoke", "heartbeat-worker-authority"], {
+      env: {},
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("KRN Heartbeat Worker Authority Smoke");
+    expect(result.stdout).toContain("Postgres config: missing KRN_DATABASE_URL");
+    expect(result.stdout).toContain(
+      "Heartbeat worker authority smoke: skipped (database not configured)"
+    );
   });
 
   it("reports Codex adapter smoke missing configuration", async () => {

@@ -2,6 +2,7 @@ export * from "../activationReadiness.js";
 export * from "../activationSmoke.js";
 export * from "../brainLoopSmoke.js";
 export * from "../harnessEvidenceSmoke.js";
+export * from "../heartbeatWorkerAuthoritySmoke.js";
 export * from "../harnessPersistenceReadiness.js";
 export * from "../harnessPlanSmoke.js";
 export * from "../initConnectSmoke.js";
