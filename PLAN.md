@@ -96,44 +96,8 @@ Point: build one shared memory system that condenses patterns, research, local e
 ## Recent Completed Streams
 
 ```txt
-V358-V367: graph/source/ingest/heartbeat/Fallow/consensus foundations complete.
-V368: brain search product surface preview.
-V369: end-to-end product loop replay.
-V370: graph brain v1 readback.
-V371: ingest v0/v1 bounded input loop readback.
-V372: heartbeat/dreaming manual candidate runtime-loop readback.
-V373: heartbeat runtime candidate review-result loop.
-V374: source relation candidate evidence repair.
-V375: Codex hook guardrail pattern intake.
-V376: mini Brain-QA benchmark/readback over six current local questions.
-V377: retained graph relation and heartbeat runtime patterns; ingest deferred.
-V378: prepared current second-operator launch packet without claiming V02-01.
-IMR-01: brain search now exposes selected brain knowledge packets for agent use.
-IMR-02: brain search store-only mode proves store-backed pattern readback.
-IMR-03: preferred brain knowledge vocabulary replaces knowledge-card language in active surfaces.
-IMR-04: store-only brain search derives selectedKnowledge from governed source/search evidence.
-IMR-05: store-backed pattern packets gated Autonomous Memory Agents paper intake; retained as lab-test source, not product truth.
-IMR-06: heartbeat preview can turn explicit missing-evidence readback into candidate-only acquisition work.
-IMR-07: heartbeat preview can read source/brain search JSON missingEvidence and route it into acquisition candidates.
-IMR-08: live DB-backed source/brain missingEvidence dogfood proved the acquisition bridge and queued focused heartbeat lane readback.
-IMR-09: heartbeat preview can focus by candidate kind and isolate knowledge-acquisition readback.
-IMR-10: focused acquisition candidate follow-up proved the gap is actionable but
-  too terse; next repair carries query diagnostics into acquisition output.
-IMR-11: acquisition candidates now carry query diagnostics and recommended
-  follow-up without changing mutation, ranking, schema, crawler, worker, API/MCP,
-  or Memory Core authority.
-IMR-12: diagnostic-bearing acquisition follow-up showed path queries can retrieve
-  documents, while claim-text queries miss artifact-linked documents; next repair
-  is source claim/document linkage readback.
-IMR-13: source-search answer packages now expose sourceClaimDocumentLinks for
-  supporting SourceClaims; the live IMR-12 query shows 5 claims, 0 included docs,
-  and 5 artifact-linked SearchDocument refs.
-IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
-  linkedSearchDocuments from source-search JSON.
-IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
-IMR-16-17: linked-document candidate review was deferred, then wording now
-  directs linked evidence review before new acquisition.
-IMR-18-55: AMA/source-backed lanes accepted; artifact preview feeds heartbeat acquisition; second-repo target-fit precision repaired; EKOLOGUS target-specific packet reaches persisted Codex brief first and persists helped source-usefulness feedback. Multi-repo proof surface is no longer the next product driver.
+V358-V378: graph/source/ingest/heartbeat/Fallow/consensus foundations, brain search, replay, mini Brain-QA, and current second-operator de-scope completed.
+IMR-01-55: selected brain knowledge, store-only pattern readback, acquisition bridge, linked evidence, AMA/source-backed lanes, and EKOLOGUS target-fit precision completed.
 SBV-00: retained source-to-decision pattern flows through brain knowledge, plan, Codex brief, evidence, observe, and reflect; next-run check exposes over-budget exclusion before successful reuse.
 ```
 
