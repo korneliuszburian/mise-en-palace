@@ -198,6 +198,75 @@ describe("knowledge acquisition heartbeat preview", () => {
     ]);
   });
 
+  test("preserves activation utility evidence in acquisition candidates", () => {
+    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+      now,
+      evidenceRef,
+      requests: [
+        {
+          id: "activation-utility-request",
+          source: "brain_search",
+          query: "Autonomous Memory Agents exploration",
+          missingEvidence: ["selected knowledge is missing while linked evidence is useful"],
+          activationUtilityEvidence: {
+            verdict: "linked_evidence_exploration_candidate",
+            selectedKnowledge: {
+              signal: "selected_knowledge",
+              strength: "missing",
+              reasons: ["selectedKnowledge returned no packets."]
+            },
+            sourceLinkGraph: {
+              signal: "source_link_graph",
+              strength: "useful",
+              reasons: [
+                "answerUsefulness is useful.",
+                "source/link/graph evidence count is 12."
+              ]
+            },
+            recommendedNextAction:
+              "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility.",
+            doesNotProve:
+              "Activation utility readback does not prove ranking quality or product readiness."
+          },
+          evidenceRefs: [evidenceRef],
+          consumer: "heartbeat/dreaming candidate runtime",
+          falsifier: "Activation utility exploration evidence should be visible on the candidate.",
+          doesNotProve: "This does not prove source truth."
+        }
+      ]
+    });
+
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        activationUtilityEvidence: {
+          verdict: "linked_evidence_exploration_candidate",
+          selectedKnowledge: {
+            signal: "selected_knowledge",
+            strength: "missing",
+            reasons: ["selectedKnowledge returned no packets."]
+          },
+          sourceLinkGraph: {
+            signal: "source_link_graph",
+            strength: "useful",
+            reasons: [
+              "answerUsefulness is useful.",
+              "source/link/graph evidence count is 12."
+            ]
+          },
+          recommendedNextAction:
+            "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility.",
+          doesNotProve:
+            "Activation utility readback does not prove ranking quality or product readiness."
+        },
+        acquisitionEvidenceRequest: expect.stringContaining(
+          "Activation utility readback: linked_evidence_exploration_candidate; selectedKnowledge=missing; sourceLinkGraph=useful."
+        ),
+        reviewability: "ready",
+        mutation: "none"
+      })
+    ]);
+  });
+
   test("keeps weak acquisition requests as needs_more_evidence", () => {
     const result = buildKnowledgeAcquisitionHeartbeatPreview({
       now,

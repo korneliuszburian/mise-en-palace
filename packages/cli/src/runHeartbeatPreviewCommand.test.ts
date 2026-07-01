@@ -383,6 +383,26 @@ describe("runHeartbeatPreviewCommand", () => {
           "brain-search readback does not prove the paper is applicable to KRN"
         ]
       },
+      activationUtility: {
+        selectedKnowledge: {
+          signal: "selected_knowledge",
+          strength: "missing",
+          reasons: ["selectedKnowledge returned no packets."]
+        },
+        sourceLinkGraph: {
+          signal: "source_link_graph",
+          strength: "useful",
+          reasons: [
+            "answerUsefulness is useful.",
+            "source/link/graph evidence count is 15."
+          ]
+        },
+        verdict: "linked_evidence_exploration_candidate",
+        recommendedNextAction:
+          "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility.",
+        doesNotProve:
+          "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
+      },
       recommendedNextAction:
         "Use source-search evidence cautiously and narrow the acquisition query.",
       proof: {
@@ -435,6 +455,18 @@ describe("runHeartbeatPreviewCommand", () => {
       );
       expect(result.stdout).toContain(
         "Review linked document evidence before opening new acquisition: 5 source-claim document link(s), 5 linked SearchDocument(s)."
+      );
+      expect(result.stdout).toContain("activationUtilityEvidence:");
+      expect(result.stdout).toContain("verdict: linked_evidence_exploration_candidate");
+      expect(result.stdout).toContain("selected_knowledge: missing");
+      expect(result.stdout).toContain("selectedKnowledge returned no packets.");
+      expect(result.stdout).toContain("source_link_graph: useful");
+      expect(result.stdout).toContain("source/link/graph evidence count is 15.");
+      expect(result.stdout).toContain(
+        "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility."
+      );
+      expect(result.stdout).toContain(
+        "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
       );
       expect(result.stdout).toContain("acquisitionEscalationPreview:");
       expect(result.stdout).toContain("1. linked_document_review | cost: low");
@@ -522,6 +554,71 @@ describe("runHeartbeatPreviewCommand", () => {
           ]
         }
       });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it("does not preserve activation utility evidence for non-exploration verdicts", async () => {
+    const fixture = await writeJsonFixture("brain-search-sufficient.json", {
+      kind: "krn.brainSearch.preview.v1",
+      query: "selected knowledge sufficient",
+      sourceSearch: {
+        missingEvidence: [
+          "SearchDocument evidence for selected knowledge sufficient"
+        ],
+        doesNotProve: [
+          "brain-search readback does not prove source truth"
+        ]
+      },
+      activationUtility: {
+        selectedKnowledge: {
+          signal: "selected_knowledge",
+          strength: "useful",
+          reasons: ["selectedKnowledge returned 1 packet(s)."]
+        },
+        sourceLinkGraph: {
+          signal: "source_link_graph",
+          strength: "useful",
+          reasons: [
+            "answerUsefulness is useful.",
+            "source/link/graph evidence count is 3."
+          ]
+        },
+        verdict: "selected_knowledge_sufficient",
+        recommendedNextAction:
+          "Use selected brain knowledge first; linked evidence can remain supporting context.",
+        doesNotProve:
+          "Activation utility lab readback does not prove ranking quality."
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          memoryLimit: 0,
+          sourceClaimLimit: 0,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-35.md",
+          acquisitionReadbackFile: fixture.fileName,
+          format: "text"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      });
+
+      expect(result.stdout).toContain("knowledgeAcquisition: 1");
+      expect(result.stdout).toContain("query: selected knowledge sufficient");
+      expect(result.stdout).not.toContain("activationUtilityEvidence:");
+      expect(result.stdout).not.toContain("Use selected brain knowledge first");
+      expect(result.stdout).toContain("mutation: none");
     } finally {
       await fixture.cleanup();
     }

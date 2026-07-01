@@ -22,6 +22,30 @@ export interface KnowledgeAcquisitionLinkedDocumentEvidence {
   caveats: readonly string[];
 }
 
+export type KnowledgeAcquisitionActivationUtilityStrength =
+  | "useful"
+  | "weak"
+  | "missing";
+
+export type KnowledgeAcquisitionActivationUtilityVerdict =
+  | "linked_evidence_exploration_candidate"
+  | "selected_knowledge_sufficient"
+  | "insufficient_evidence";
+
+export interface KnowledgeAcquisitionActivationUtilitySignalEvidence {
+  signal: "selected_knowledge" | "source_link_graph";
+  strength: KnowledgeAcquisitionActivationUtilityStrength;
+  reasons: readonly string[];
+}
+
+export interface KnowledgeAcquisitionActivationUtilityEvidence {
+  verdict: KnowledgeAcquisitionActivationUtilityVerdict;
+  selectedKnowledge: KnowledgeAcquisitionActivationUtilitySignalEvidence;
+  sourceLinkGraph: KnowledgeAcquisitionActivationUtilitySignalEvidence;
+  recommendedNextAction: string;
+  doesNotProve: string;
+}
+
 export type KnowledgeAcquisitionEscalationCost =
   | "low"
   | "medium"
@@ -50,6 +74,7 @@ export interface KnowledgeAcquisitionRequest {
   queryShapeDiagnostics?: readonly string[];
   recommendedFollowUp?: readonly string[];
   linkedDocumentEvidence?: KnowledgeAcquisitionLinkedDocumentEvidence;
+  activationUtilityEvidence?: KnowledgeAcquisitionActivationUtilityEvidence;
   evidenceRefs: readonly string[];
   consumer: string;
   falsifier: string;
@@ -68,6 +93,7 @@ export interface KnowledgeAcquisitionHeartbeatCandidate {
   queryShapeDiagnostics: readonly string[];
   recommendedFollowUp: readonly string[];
   linkedDocumentEvidence?: KnowledgeAcquisitionLinkedDocumentEvidence;
+  activationUtilityEvidence?: KnowledgeAcquisitionActivationUtilityEvidence;
   acquisitionEscalationPreview: readonly KnowledgeAcquisitionEscalationStep[];
   summary: string;
   applicationGuidance: string;
@@ -143,6 +169,16 @@ const linkedDocumentEvidenceGuidance = (
   return ` Review linked document evidence before opening new acquisition: ${evidence.sourceClaimDocumentLinks} source-claim document link(s), ${evidence.linkedSearchDocuments} linked SearchDocument(s).${caveat}`;
 };
 
+const activationUtilityEvidenceGuidance = (
+  evidence: KnowledgeAcquisitionActivationUtilityEvidence | undefined
+): string => {
+  if (evidence === undefined) {
+    return "";
+  }
+
+  return ` Activation utility readback: ${evidence.verdict}; selectedKnowledge=${evidence.selectedKnowledge.strength}; sourceLinkGraph=${evidence.sourceLinkGraph.strength}. Next action: ${evidence.recommendedNextAction}`;
+};
+
 const hasLinkedDocumentEvidence = (
   evidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined
 ): boolean =>
@@ -201,6 +237,7 @@ const buildAcquisitionEvidenceRequest = (
     queryShapeDiagnostics: readonly string[];
     recommendedFollowUp: readonly string[];
     linkedDocumentEvidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined;
+    activationUtilityEvidence: KnowledgeAcquisitionActivationUtilityEvidence | undefined;
   }
 ): string => {
   const diagnosticGuidance =
@@ -212,7 +249,7 @@ const buildAcquisitionEvidenceRequest = (
       ? ""
       : ` Recommended follow-up: ${input.recommendedFollowUp.join(" ")}`;
 
-  return `Find or reject evidence for: ${input.missingEvidence.join(", ")}.${diagnosticGuidance}${followUpGuidance}${linkedDocumentEvidenceGuidance(input.linkedDocumentEvidence)} Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve before promotion.`;
+  return `Find or reject evidence for: ${input.missingEvidence.join(", ")}.${diagnosticGuidance}${followUpGuidance}${linkedDocumentEvidenceGuidance(input.linkedDocumentEvidence)}${activationUtilityEvidenceGuidance(input.activationUtilityEvidence)} Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve before promotion.`;
 };
 
 const missingReviewFields = (
@@ -237,6 +274,7 @@ const buildCandidate = (
   const queryShapeDiagnostics = nonEmptyStrings(request.queryShapeDiagnostics ?? []);
   const recommendedFollowUp = nonEmptyStrings(request.recommendedFollowUp ?? []);
   const linkedDocumentEvidence = request.linkedDocumentEvidence;
+  const activationUtilityEvidence = request.activationUtilityEvidence;
   const evidenceRefs = nonEmptyStrings([input.evidenceRef, ...request.evidenceRefs]);
   const summary =
     `Acquire missing evidence for ${request.source} query "${request.query}": ${missingEvidence.join(", ")}.`;
@@ -246,7 +284,8 @@ const buildCandidate = (
     missingEvidence,
     queryShapeDiagnostics,
     recommendedFollowUp,
-    linkedDocumentEvidence
+    linkedDocumentEvidence,
+    activationUtilityEvidence
   });
   const acquisitionEscalationPreview = buildAcquisitionEscalationPreview({
     linkedDocumentEvidence
@@ -277,6 +316,7 @@ const buildCandidate = (
     queryShapeDiagnostics,
     recommendedFollowUp,
     ...(linkedDocumentEvidence === undefined ? {} : { linkedDocumentEvidence }),
+    ...(activationUtilityEvidence === undefined ? {} : { activationUtilityEvidence }),
     acquisitionEscalationPreview,
     summary,
     applicationGuidance,

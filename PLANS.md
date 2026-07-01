@@ -189,6 +189,45 @@ IMR-34 complete: activationUtility readback helped across the current mini
   Brain-QA/AMA batch: 6 selected-knowledge-sufficient cases and 2 linked
   evidence exploration candidates. Opened `mise-en-palace-6mn` for
   candidate-only heartbeat routing.
+IMR-35 complete: heartbeat knowledge-acquisition candidates now preserve
+  activationUtility exploration evidence from brain-search readbacks when
+  selected knowledge is missing but source/link/graph evidence is useful.
+```
+
+## Outcome IMR-35 Activation Utility Heartbeat Routing
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md
+```
+
+Outcome: `krn heartbeat preview --acquisition-readback-file` now carries
+`activationUtilityEvidence` into knowledge-acquisition candidates for
+`linked_evidence_exploration_candidate` brain-search readbacks. Live AMA
+readback emitted one ready candidate with `selectedKnowledge: missing`,
+`sourceLinkGraph: useful`, and `mutation: none`.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, IMR-34 usefulness batch, live brain-search and
+  heartbeat preview readbacks.
+- Mechanism: cost-aware acquisition plus exploration/exploitation balancing.
+- KRN implication: preserve useful exploration evidence before opening new
+  acquisition or changing ranking.
+- Decision: route activation utility evidence into candidate-only heartbeat
+  output; no ranking/schema/worker/crawler/API/MCP/Memory Core change.
+- Consumer: heartbeat preview and future eval/golden candidate.
+- Falsifier: heartbeat drops the evidence, mutates final truth, or treats the
+  paper as product proof.
+
+Next bounded direction:
+
+```txt
+mise-en-palace-43z: turn heartbeat-routed activation utility candidate into
+bounded eval proof.
 ```
 
 ## Outcome IMR-34 Activation Utility Readback Usefulness Check

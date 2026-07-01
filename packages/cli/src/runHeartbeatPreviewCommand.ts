@@ -14,6 +14,10 @@ import {
 } from "@krn/workers";
 import type {
   BrainHeartbeatCandidate,
+  KnowledgeAcquisitionActivationUtilityEvidence,
+  KnowledgeAcquisitionActivationUtilitySignalEvidence,
+  KnowledgeAcquisitionActivationUtilityStrength,
+  KnowledgeAcquisitionActivationUtilityVerdict,
   KnowledgeAcquisitionEscalationStep,
   KnowledgeAcquisitionLinkedDocumentEvidence,
   KnowledgeAcquisitionRequest,
@@ -129,6 +133,20 @@ const stringArrayValue = (value: unknown): readonly string[] =>
 const numberValue = (value: unknown): number =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
+const activationUtilityStrengthValue = (
+  value: unknown
+): KnowledgeAcquisitionActivationUtilityStrength | undefined =>
+  value === "useful" || value === "weak" || value === "missing" ? value : undefined;
+
+const activationUtilityVerdictValue = (
+  value: unknown
+): KnowledgeAcquisitionActivationUtilityVerdict | undefined =>
+  value === "linked_evidence_exploration_candidate" ||
+  value === "selected_knowledge_sufficient" ||
+  value === "insufficient_evidence"
+    ? value
+    : undefined;
+
 const safeSlug = (value: string): string => {
   const slug = value
     .toLowerCase()
@@ -169,6 +187,75 @@ const linkedDocumentEvidenceFromBrainSourceSearch = (
   };
 };
 
+const activationUtilitySignalEvidence = (
+  input: {
+    signal: KnowledgeAcquisitionActivationUtilitySignalEvidence["signal"];
+    value: unknown;
+  }
+): KnowledgeAcquisitionActivationUtilitySignalEvidence | undefined => {
+  const record = recordValue(input.value);
+
+  if (record === undefined) {
+    return undefined;
+  }
+
+  const strength = activationUtilityStrengthValue(record["strength"]);
+
+  if (strength === undefined) {
+    return undefined;
+  }
+
+  return {
+    signal: input.signal,
+    strength,
+    reasons: stringArrayValue(record["reasons"])
+  };
+};
+
+const activationUtilityEvidenceFromBrainSearch = (
+  readback: JsonRecord
+): KnowledgeAcquisitionActivationUtilityEvidence | undefined => {
+  const activationUtility = recordValue(readback["activationUtility"]);
+
+  if (activationUtility === undefined) {
+    return undefined;
+  }
+
+  const verdict = activationUtilityVerdictValue(activationUtility["verdict"]);
+
+  if (verdict !== "linked_evidence_exploration_candidate") {
+    return undefined;
+  }
+
+  const selectedKnowledge = activationUtilitySignalEvidence({
+    signal: "selected_knowledge",
+    value: activationUtility["selectedKnowledge"]
+  });
+  const sourceLinkGraph = activationUtilitySignalEvidence({
+    signal: "source_link_graph",
+    value: activationUtility["sourceLinkGraph"]
+  });
+  const recommendedNextAction = stringValue(activationUtility["recommendedNextAction"]);
+  const doesNotProve = stringValue(activationUtility["doesNotProve"]);
+
+  if (
+    selectedKnowledge === undefined ||
+    sourceLinkGraph === undefined ||
+    recommendedNextAction === undefined ||
+    doesNotProve === undefined
+  ) {
+    return undefined;
+  }
+
+  return {
+    verdict,
+    selectedKnowledge,
+    sourceLinkGraph,
+    recommendedNextAction,
+    doesNotProve
+  };
+};
+
 const brainSearchAcquisitionRequest = (
   input: {
     filePath: string;
@@ -185,6 +272,7 @@ const brainSearchAcquisitionRequest = (
 
   const missingEvidence = stringArrayValue(sourceSearch["missingEvidence"]);
   const linkedDocumentEvidence = linkedDocumentEvidenceFromBrainSourceSearch(sourceSearch);
+  const activationUtilityEvidence = activationUtilityEvidenceFromBrainSearch(input.readback);
 
   if (missingEvidence.length === 0) {
     return undefined;
@@ -200,14 +288,17 @@ const brainSearchAcquisitionRequest = (
     ),
     recommendedFollowUp: uniqueStrings([
       ...stringArrayValue(sourceSearch["recommendedFollowUp"]),
-      ...topLevelRecommendedNextAction
+      ...topLevelRecommendedNextAction,
+      ...optionalTextAsList(activationUtilityEvidence?.recommendedNextAction)
     ]),
     ...(linkedDocumentEvidence === undefined ? {} : { linkedDocumentEvidence }),
+    ...(activationUtilityEvidence === undefined ? {} : { activationUtilityEvidence }),
     evidenceRefs: [input.filePath],
     consumer: defaultAcquisitionConsumer,
     falsifier: defaultAcquisitionFalsifier,
     doesNotProve: joinedDoesNotProve([
       ...stringArrayValue(sourceSearch["doesNotProve"]),
+      ...optionalTextAsList(activationUtilityEvidence?.doesNotProve),
       ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
     ])
   };
@@ -400,6 +491,30 @@ const formatLinkedDocumentEvidence = (
   ];
 };
 
+const formatActivationUtilitySignalEvidence = (
+  evidence: KnowledgeAcquisitionActivationUtilitySignalEvidence
+): string[] => [
+  `  - ${evidence.signal}: ${evidence.strength}`,
+  ...evidence.reasons.map((reason) => `    - ${reason}`)
+];
+
+const formatActivationUtilityEvidence = (
+  evidence: KnowledgeAcquisitionActivationUtilityEvidence | undefined
+): string[] => {
+  if (evidence === undefined) {
+    return [];
+  }
+
+  return [
+    "  activationUtilityEvidence:",
+    `  - verdict: ${evidence.verdict}`,
+    ...formatActivationUtilitySignalEvidence(evidence.selectedKnowledge),
+    ...formatActivationUtilitySignalEvidence(evidence.sourceLinkGraph),
+    `  - recommendedNextAction: ${evidence.recommendedNextAction}`,
+    `  - doesNotProve: ${evidence.doesNotProve}`
+  ];
+};
+
 const formatAcquisitionEscalationPreview = (
   steps: readonly KnowledgeAcquisitionEscalationStep[]
 ): string[] => [
@@ -467,6 +582,7 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     "  recommendedFollowUp:",
     ...formatList(candidate.recommendedFollowUp),
     ...formatLinkedDocumentEvidence(candidate.linkedDocumentEvidence),
+    ...formatActivationUtilityEvidence(candidate.activationUtilityEvidence),
     ...formatAcquisitionEscalationPreview(candidate.acquisitionEscalationPreview),
     `  acquisitionEvidenceRequest: ${candidate.acquisitionEvidenceRequest}`,
     `  consumer: ${candidate.consumer}`,
