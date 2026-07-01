@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: WRK-01 Verify and repair worker enqueue atomicity
+current task: EVD-01 Validate evidence metadata boundary
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-WRK-01 Verify and repair worker enqueue atomicity is active.
+EVD-01 Validate evidence metadata boundary is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,8 +36,8 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-SBV-05 complete: krn run show text/JSON exposes retained pattern selection
-metadata beside later pattern usefulness outcomes.
+WRK-01 complete: worker enqueue helper now uses one queue-port contract for
+worker job plus outbox event instead of helper-level split writes.
 ```
 
 ## 2. Product Thesis
@@ -2353,6 +2353,10 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-sbv-05-run-show-pattern-selection/REPORT.md`.
   Next: `mise-en-palace-60b` / WRK-01 verifies and repairs worker enqueue
   atomicity if the audit finding is confirmed.
+- [x] WRK-01 complete: worker enqueue helper no longer orchestrates separate
+  worker-job and outbox writes; it requires one queue-port contract. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-wrk-01-worker-enqueue-atomicity/REPORT.md`.
+  Next: `mise-en-palace-7y7` / EVD-01 validates evidence metadata boundary.
 
 ## 21. Final Response Format For Codex Runs
 

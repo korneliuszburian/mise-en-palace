@@ -6,8 +6,8 @@ enqueue ports.
 Current truth:
 
 - job types and payloads are typed;
-- enqueue contracts can create a worker job and a `worker_job.queued` outbox
-  event through caller-supplied repositories;
+- enqueue contracts require one queue port to create a worker job and the
+  matching `worker_job.queued` outbox event as one adapter-owned operation;
 - source-relation heartbeat preview can propose reviewable maintenance
   candidates without mutating source truth or Memory Core;
 - memory-staleness heartbeat preview can propose reviewable maintenance

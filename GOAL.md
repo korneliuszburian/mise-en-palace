@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: WRK-01 Verify and repair worker enqueue atomicity.
+current task: EVD-01 Validate evidence metadata boundary.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-SBV-05 complete: krn run show text/JSON now expose retained pattern selection
-metadata beside later pattern usefulness outcomes.
+WRK-01 complete: worker enqueue helper now uses one atomic queue-port contract
+instead of orchestrating split worker-job and outbox writes.
 ```
 
 ## Direction

@@ -8,44 +8,43 @@ import {
   parseMaintenanceJobType
 } from "./index.js";
 import type {
-  CreateWorkerJobInput,
+  EnqueueMaintenanceJobRequest,
+  EnqueueMaintenanceJobResult,
   MaintenanceJob,
+  MaintenanceJobQueueRepository,
   WorkerJobRecord,
-  WorkerJobRepository,
-  WorkerOutboxRepository
 } from "./index.js";
 
 const isoNow = "2026-06-21T17:30:00.000Z";
 
-class InMemoryWorkerJobRepository implements WorkerJobRepository {
-  readonly inputs: CreateWorkerJobInput[] = [];
+class InMemoryMaintenanceJobQueue implements MaintenanceJobQueueRepository {
+  readonly requests: EnqueueMaintenanceJobRequest[] = [];
 
-  async enqueue(input: CreateWorkerJobInput): Promise<WorkerJobRecord> {
-    this.inputs.push(input);
+  async enqueue<TType extends MaintenanceJob["jobType"]>(
+    request: EnqueueMaintenanceJobRequest<TType>
+  ): Promise<EnqueueMaintenanceJobResult<TType>> {
+    this.requests.push(request);
 
-    return {
+    const workerJob = {
       id: "worker-job-1",
-      jobType: input.jobType,
+      jobType: request.job.jobType,
       status: "queued",
-      payload: input.payload,
+      payload: request.job.payload,
       attempts: 0,
-      maxAttempts: input.maxAttempts ?? 3,
-      runAfter: input.runAfter ?? isoNow,
+      maxAttempts: request.maxAttempts ?? 3,
+      runAfter: request.runAfter ?? isoNow,
       createdAt: isoNow,
       updatedAt: isoNow
-    };
-  }
-}
+    } as WorkerJobRecord<TType>;
 
-class InMemoryOutboxRepository implements WorkerOutboxRepository {
-  readonly inputs: Parameters<WorkerOutboxRepository["enqueue"]>[0][] = [];
-
-  async enqueue(input: Parameters<WorkerOutboxRepository["enqueue"]>[0]) {
-    this.inputs.push(input);
+    const outboxEvent = {
+      id: "outbox-event-1",
+      topic: "worker_job.queued"
+    } as const;
 
     return {
-      id: "outbox-event-1",
-      topic: input.topic
+      workerJob,
+      outboxEvent
     };
   }
 }
@@ -97,9 +96,8 @@ describe("maintenance worker skeleton", () => {
     expect(parseMaintenanceJobType("expire_stale_memory")).toBe("expire_stale_memory");
   });
 
-  test("enqueues a typed worker job and emits a worker-job outbox event", async () => {
-    const workerJobs = new InMemoryWorkerJobRepository();
-    const outbox = new InMemoryOutboxRepository();
+  test("enqueues a typed worker job through one atomic queue port", async () => {
+    const queue = new InMemoryMaintenanceJobQueue();
     const job: MaintenanceJob = {
       jobType: "compact_memory",
       payload: {
@@ -110,32 +108,19 @@ describe("maintenance worker skeleton", () => {
     };
 
     const result = await enqueueMaintenanceJob({
-      job,
-      repositories: {
-        workerJobs,
-        outbox
-      },
-      runAfter: "2026-06-21T18:00:00.000Z",
-      maxAttempts: 2
-    });
-
-    expect(workerJobs.inputs).toEqual([
-      {
-        jobType: "compact_memory",
-        payload: job.payload,
+      queue,
+      request: {
+        job,
         runAfter: "2026-06-21T18:00:00.000Z",
         maxAttempts: 2
       }
-    ]);
-    expect(outbox.inputs).toEqual([
+    });
+
+    expect(queue.requests).toEqual([
       {
-        topic: "worker_job.queued",
-        payload: {
-          workerJobId: "worker-job-1",
-          jobType: "compact_memory",
-          payload: job.payload
-        },
-        runAfter: "2026-06-21T18:00:00.000Z"
+        job,
+        runAfter: "2026-06-21T18:00:00.000Z",
+        maxAttempts: 2
       }
     ]);
     expect(result).toEqual({
