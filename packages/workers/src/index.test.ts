@@ -4,7 +4,6 @@ import {
   assessMaintenanceJobWriteAuthority,
   buildMaintenanceJobAuthorityReadback,
   describeMaintenanceJob,
-  enqueueMaintenanceJob,
   isMaintenanceJobType,
   maintenanceJobRuntimeContract,
   maintenanceJobTypes,
@@ -16,7 +15,7 @@ import type {
   EnqueueMaintenanceJobResult,
   MaintenanceJob,
   MaintenanceJobQueueRepository,
-  WorkerJobRecord,
+  WorkerJobRecord
 } from "./index.js";
 
 const isoNow = "2026-06-21T17:30:00.000Z";
@@ -109,13 +108,10 @@ describe("maintenance worker skeleton", () => {
       }
     };
 
-    const result = await enqueueMaintenanceJob({
-      queue,
-      request: {
-        job,
-        runAfter: "2026-06-21T18:00:00.000Z",
-        maxAttempts: 2
-      }
+    const result = await queue.enqueue({
+      job,
+      runAfter: "2026-06-21T18:00:00.000Z",
+      maxAttempts: 2
     });
 
     expect(queue.requests).toEqual([

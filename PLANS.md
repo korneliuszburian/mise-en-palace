@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-568 Remove transparent maintenance enqueue wrapper
+current task: mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-568 Remove transparent maintenance enqueue wrapper is active.
-The audit backlog still has a focused worker cleanup: inspect
-`packages/workers/src/enqueueMaintenanceJob.ts` and remove or justify the
-transparent pass-through wrapper without building worker runtime.
+mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field is active.
+The audit backlog still has a focused memory-domain cleanup: source inspection
+finds both `invalidatedBySourceClaimId` and `invalidatedBySourceClaimIds` in
+core/schema/harness anti-memory paths.
 ```
 
 Latest outcome:
 
 ```txt
-EJ7 complete: long parser/metadata plan tasks now select
-pattern:ts-boundary-brain-knowledge-parser-exemplar through bounded mechanism
-query windows, preserving existing brain-search compact retry behavior.
+mise-en-palace-568 complete: removed the transparent
+`enqueueMaintenanceJob` pass-through while keeping typed enqueue request/result
+and `MaintenanceJobQueueRepository` contracts.
 Report:
-docs/reviews/controlled-dogfood/2026-07-02-ej7-retained-pattern-query-shaping/REPORT.md
-Next: `mise-en-palace-568` handles the transparent maintenance enqueue wrapper
-from the audit backlog.
+docs/reviews/controlled-dogfood/2026-07-02-568-maintenance-enqueue-wrapper/REPORT.md
+Next: `mise-en-palace-5f9` canonicalizes the anti-memory invalidation
+source-claim field shape if source inspection confirms the dual-field drift.
 ```
 
 ## 2. Product Thesis

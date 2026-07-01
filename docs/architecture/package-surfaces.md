@@ -292,13 +292,16 @@ source_id: `packages/workers/src/index.ts`,
 `docs/decisions/ADR-0015-worker-runtime-boundary.md`,
 `packages/workers/README.md`
 trust_tier: high live source and accepted ADR.
-mechanism: workers root exports typed job descriptions and enqueue contracts;
+mechanism: workers root exports typed job descriptions, enqueue contract types,
+and the queue port;
 ADR-0015 and the package README state there is no worker daemon, background
 loop, job executor, or autonomous maintenance runtime, and job descriptions use
 `requiresBackgroundLoop: false`.
 KRN implication: the worker package is a contract surface, not a runtime claim.
-decision: keep `enqueueMaintenanceJob` and `jobTypes` in the workers root for
-now, with the ADR/README as the authority boundary.
+decision: keep enqueue contract types, `MaintenanceJobQueueRepository`, and
+`jobTypes` in the workers root for now, with the ADR/README as the authority
+boundary. Do not expose a pass-through enqueue helper when callers can use the
+queue port directly.
 does_not_prove: job execution, throughput, background processing, production
 maintenance, or Memory Core mutation exists.
 consumer: worker package contract and ADR-0015.

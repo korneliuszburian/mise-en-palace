@@ -46,11 +46,6 @@ export interface EnqueueMaintenanceJobRequest<
   maxAttempts?: number;
 }
 
-export interface EnqueueMaintenanceJobInput<TType extends MaintenanceJobType = MaintenanceJobType> {
-  queue: MaintenanceJobQueueRepository;
-  request: EnqueueMaintenanceJobRequest<TType>;
-}
-
 export interface EnqueueMaintenanceJobResult<TType extends MaintenanceJobType = MaintenanceJobType> {
   workerJob: WorkerJobRecord<TType>;
   outboxEvent: WorkerOutboxEventReceipt;
@@ -61,7 +56,3 @@ export interface MaintenanceJobQueueRepository {
     request: EnqueueMaintenanceJobRequest<TType>
   ): Promise<EnqueueMaintenanceJobResult<TType>>;
 }
-
-export const enqueueMaintenanceJob = async <TType extends MaintenanceJobType>(
-  input: EnqueueMaintenanceJobInput<TType>
-): Promise<EnqueueMaintenanceJobResult<TType>> => input.queue.enqueue(input.request);

@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-568 Remove transparent maintenance enqueue wrapper
+current task: mise-en-palace-5f9 Canonicalize anti-memory invalidation source claim field
 ```
 
 ## Compact Checkpoints
@@ -76,6 +76,7 @@ review outcome ownership: shared ReviewAssessment/FeedbackDelta normalization us
 worker job authority constants: invariant worker runtime fields are centralized in maintenanceJobRuntimeContract while preserving readback shape
 worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
 execution brief format contract: Codex-facing ExecutionBrief now carries and renders krn.executionBrief.v1
+maintenance enqueue wrapper: transparent enqueue helper removed; queue-port contract remains typed and tested
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 graph relation candidate focus: contradiction/duplicate relation focus and review questions visible through heartbeat candidate and CLI readback
 graph relation eval readback: relationReviewFocus is consumed by bounded relation-grounded QA readback
@@ -98,7 +99,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-568 Remove Transparent Maintenance Enqueue Wrapper
+### mise-en-palace-5f9 Canonicalize Anti-Memory Invalidation Source Claim Field
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -110,17 +111,18 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-02-ej7-retained-pattern-query-shaping/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-568-maintenance-enqueue-wrapper/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Audit follow-up: `packages/workers/src/enqueueMaintenanceJob.ts` still exports a
-transparent pass-through to `queue.enqueue(input.request)`. Inspect real callers
-and tests, then remove the wrapper or keep it only if source inspection proves a
-real executable boundary. No worker daemon, DB schema, runtime job executor,
-broad worker redesign, or Memory Core mutation.
+Audit follow-up: source inspection still finds both
+`invalidatedBySourceClaimId` and `invalidatedBySourceClaimIds` across
+core/schema/harness anti-memory paths. Canonicalize toward one field shape with
+tests and an explicit compatibility boundary. No MemoryCandidate/AntiMemoryCandidate
+merge, no DB schema migration unless source proves it is required, no activation
+ranking change, no worker/runtime work.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
