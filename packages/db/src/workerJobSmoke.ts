@@ -29,6 +29,8 @@ export interface WorkerJobSmokeInput {
 
 export interface WorkerJobSmokeReport {
   authorityValidatedCount: number;
+  idempotencyEnforcement: string;
+  memoryCoreGateEnforcement: string;
   enqueuedJobCount: number;
   queuedReadbackCount: number;
   runningTransitionCount: number;
@@ -42,6 +44,12 @@ export interface WorkerJobSmokeReport {
 
 interface CountRow {
   count: number;
+}
+
+interface WorkerJobEnforcementBoundaryReadback {
+  authorityValidatedCount: number;
+  idempotencyEnforcement: string;
+  memoryCoreGateEnforcement: string;
 }
 
 export interface WorkerJobSmokeTransitionPlan {
@@ -134,6 +142,32 @@ const requireStatus = (
   }
 };
 
+const requireSingleBoundary = (values: readonly string[], label: string): string => {
+  const uniqueValues = Array.from(new Set(values));
+
+  if (uniqueValues.length !== 1) {
+    throw new Error(`Worker job smoke expected one shared ${label} boundary`);
+  }
+
+  return uniqueValues[0] ?? "unknown";
+};
+
+const workerJobEnforcementBoundaryReadback = (): WorkerJobEnforcementBoundaryReadback => {
+  const descriptions = workerJobTypes.map((jobType) => describeMaintenanceJob(jobType));
+
+  return {
+    authorityValidatedCount: descriptions.length,
+    idempotencyEnforcement: requireSingleBoundary(
+      descriptions.map((description) => description.idempotencyEnforcement),
+      "idempotency enforcement"
+    ),
+    memoryCoreGateEnforcement: requireSingleBoundary(
+      descriptions.map((description) => description.memoryCoreGateEnforcement),
+      "memory core gate enforcement"
+    )
+  };
+};
+
 export const runWorkerJobSmokeCheck = async (
   input: WorkerJobSmokeInput
 ): Promise<WorkerJobSmokeReport> => {
@@ -153,9 +187,7 @@ export const runWorkerJobSmokeCheck = async (
     await deleteMarkerRows(client, marker);
 
     const enqueuedJobs: WorkerJobRecord[] = [];
-    const authorityValidatedCount = workerJobTypes
-      .map((jobType) => describeMaintenanceJob(jobType))
-      .length;
+    const enforcementBoundary = workerJobEnforcementBoundaryReadback();
 
     for (const [index, jobType] of workerJobTypes.entries()) {
       const job = await repository.enqueueWorkerJob({
@@ -237,7 +269,9 @@ export const runWorkerJobSmokeCheck = async (
     cleanedUp = cleanup.deletedCount === enqueuedJobs.length && remainingMarkerCount === 0;
 
     return {
-      authorityValidatedCount,
+      authorityValidatedCount: enforcementBoundary.authorityValidatedCount,
+      idempotencyEnforcement: enforcementBoundary.idempotencyEnforcement,
+      memoryCoreGateEnforcement: enforcementBoundary.memoryCoreGateEnforcement,
       enqueuedJobCount: enqueuedJobs.length,
       queuedReadbackCount,
       runningTransitionCount,

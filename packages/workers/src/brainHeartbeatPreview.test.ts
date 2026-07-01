@@ -155,7 +155,10 @@ describe("brain heartbeat preview", () => {
       workerAuthority: {
         jobType: "expire_stale_memory",
         memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+        memoryCoreGateEnforcement: "declaration_only_not_runtime_enforced",
         status: "passed",
+        idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
+        idempotencyEnforcement: "key_pattern_only_not_enforced",
         allowedWrites: [
           "worker_jobs",
           "outbox_events",

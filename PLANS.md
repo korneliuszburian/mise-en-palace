@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: WJI-01 Prove or downgrade worker job idempotency and gate enforcement
+current task: EBF-01 Add ExecutionBrief format/version contract
 latest pushed commit: see git history
 ```
 
@@ -24,27 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-WJI-01 Prove or downgrade worker job idempotency and gate enforcement is active.
-KRN is useful as a governed internal-alpha brain kernel, but product progress
-must now build and prove one shared multi-layer brain: pattern/research
-condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
-benchmarks, and next-run reuse. Multi-repo internal work remains valid evidence,
-but it is no longer the active product driver. Do not wait for a foreign
-operator. Do not create synthetic proof.
+EBF-01 Add ExecutionBrief format/version contract is active.
+KRN is useful as a governed internal-alpha brain kernel, but Codex-facing prompt
+surfaces must be explicit, versioned/reviewable, and protected against silent
+format drift before larger agent/harness integration work.
 ```
 
 Latest outcome:
 
 ```txt
-WJA-01 complete: worker job runtime authority constants are centralized in
-`maintenanceJobRuntimeContract`, while `describeMaintenanceJob` still exposes the
-same operator-facing readback fields for CLI, DB smoke, and heartbeat
-candidates.
+WJI-01 complete: worker job idempotency key patterns and memoryCoreGate labels
+are now explicitly downgraded in worker/DB/CLI readback as not runtime-enforced.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-wja-01-worker-job-authority-constants/REPORT.md
-Next: WJI-01 inspects worker idempotency keys and memoryCoreGate declarations,
-then either proves the boundary or downgrades readback so it does not overstate
-runtime safety.
+docs/reviews/controlled-dogfood/2026-07-01-wji-01-worker-idempotency-gate-downgrade/REPORT.md
+Next: EBF-01 adds a bounded ExecutionBrief format/version contract for the
+Codex-facing adapter surface without provider rewrite, broad prompt engine, or
+LLM eval platform.
 ```
 
 ## 2. Product Thesis
@@ -2426,10 +2421,18 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md`.
   Next: `mise-en-palace-d3b` / WJA-01 consolidates or justifies repeated worker
   job authority constants after E2E-05.
-- [ ] WJA-01 active: `mise-en-palace-d3b` inspects worker job authority
-  constants and centralizes or explicitly justifies them without worker daemon,
-  scheduler, queue runtime, DB schema/migration, memory promotion behavior
-  change, dashboard/API/MCP, or broad worker refactor.
+- [x] WJA-01 complete: `mise-en-palace-d3b` centralized invariant worker job
+  runtime fields in `maintenanceJobRuntimeContract`. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-wja-01-worker-job-authority-constants/REPORT.md`.
+- [x] WJI-01 complete: `mise-en-palace-x8g` downgraded worker job idempotency
+  and memoryCoreGate readbacks so they explicitly state current non-enforcement.
+  Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-wji-01-worker-idempotency-gate-downgrade/REPORT.md`.
+  Next: `mise-en-palace-bvx` / EBF-01 adds an ExecutionBrief format/version
+  contract.
+- [ ] EBF-01 active: `mise-en-palace-bvx` adds a bounded ExecutionBrief
+  format/version contract without provider abstraction rewrite, dashboard/API/
+  MCP, broad prompt engine, LLM eval platform, or Codex execution changes.
 
 ## 21. Final Response Format For Codex Runs
 

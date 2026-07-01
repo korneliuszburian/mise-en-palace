@@ -18,6 +18,7 @@ describe("event and worker job schema", () => {
   test("maps worker job contract names to the existing SQL columns", () => {
     expect(eventsSchema.workerJobs).toHaveProperty("jobType");
     expect(eventsSchema.workerJobs).toHaveProperty("runAfter");
+    expect(eventsSchema.workerJobs).not.toHaveProperty("idempotencyKey");
     expect(eventsSchema.workerJobs.jobType.name).toBe("type");
     expect(eventsSchema.workerJobs.runAfter.name).toBe("available_at");
   });

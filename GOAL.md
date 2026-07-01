@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: WJI-01 Prove or downgrade worker job idempotency and gate enforcement.
+current task: EBF-01 Add ExecutionBrief format/version contract.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-WJA-01 complete: worker job runtime authority fields now have one canonical
-maintenanceJobRuntimeContract while preserving existing worker authority
-readback for CLI, DB smoke, and heartbeat candidates.
+WJI-01 complete: worker idempotency key patterns and memoryCoreGate labels are
+now explicitly read back as not runtime-enforced, so operator output no longer
+overstates worker deduplication or gate safety.
 ```
 
 ## Direction

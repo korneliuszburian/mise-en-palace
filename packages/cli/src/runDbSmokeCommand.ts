@@ -485,6 +485,8 @@ const runHeartbeatWorkerAuthoritySmokeTarget: DbSmokeTargetHandler = async (
       `Memory staleness candidates: ${report.memoryStalenessCandidateCount}`,
       `Worker authority jobType: ${report.workerJobType}`,
       `Worker authority memoryCoreGate: ${report.workerMemoryCoreGate}`,
+      `Worker authority memoryCoreGate enforcement: ${report.workerMemoryCoreGateEnforcement}`,
+      `Worker authority idempotency enforcement: ${report.workerIdempotencyEnforcement}`,
       `Worker authority status: ${report.workerAuthorityStatus}`,
       `Worker authority mutation: ${report.workerAuthorityMutation}`,
       `Cleanup remaining marker count: ${report.cleanupRemainingMarkerCount}`,

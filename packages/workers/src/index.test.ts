@@ -8,7 +8,8 @@ import {
   isMaintenanceJobType,
   maintenanceJobRuntimeContract,
   maintenanceJobTypes,
-  parseMaintenanceJobType
+  parseMaintenanceJobType,
+  workerJobEnforcementBoundary
 } from "./index.js";
 import type {
   EnqueueMaintenanceJobRequest,
@@ -182,8 +183,10 @@ describe("maintenance worker skeleton", () => {
           memoryCoreGate: expect.any(String),
           inputSchema: expect.stringContaining("Payload"),
           idempotencyKey: expect.stringContaining(type),
+          idempotencyEnforcement: workerJobEnforcementBoundary.idempotency,
           allowedWrites: expect.arrayContaining(["worker_jobs", "outbox_events"]),
-          forbiddenWrites: expect.arrayContaining(["memory_records"])
+          forbiddenWrites: expect.arrayContaining(["memory_records"]),
+          memoryCoreGateEnforcement: workerJobEnforcementBoundary.memoryCoreGate
         })
       )
     );
@@ -205,7 +208,10 @@ describe("maintenance worker skeleton", () => {
     expect(buildMaintenanceJobAuthorityReadback("expire_stale_memory")).toEqual({
       jobType: "expire_stale_memory",
       memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+      memoryCoreGateEnforcement: "declaration_only_not_runtime_enforced",
       status: "passed",
+      idempotencyKey: "expire_stale_memory:{projectId}:{olderThan}",
+      idempotencyEnforcement: "key_pattern_only_not_enforced",
       allowedWrites: [
         "worker_jobs",
         "outbox_events",
@@ -218,7 +224,7 @@ describe("maintenance worker skeleton", () => {
         "source_decisions"
       ],
       doesNotProve:
-        "Validated worker write authority does not prove worker execution, scheduler readiness, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+        "Validated worker write authority does not prove worker execution, scheduler readiness, idempotent enqueue deduplication, runtime gate enforcement, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
     });
   });
 

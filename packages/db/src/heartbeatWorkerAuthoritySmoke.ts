@@ -33,6 +33,8 @@ export interface HeartbeatWorkerAuthoritySmokeReport {
   candidateMutation: string;
   workerJobType: string;
   workerMemoryCoreGate: string;
+  workerMemoryCoreGateEnforcement: string;
+  workerIdempotencyEnforcement: string;
   workerAuthorityStatus: string;
   workerAuthorityMutation: "none";
   memoryRecordCount: number;
@@ -232,6 +234,10 @@ export const runHeartbeatWorkerAuthoritySmokeCheck = async (
       candidateMutation: emittedCandidate.mutation,
       workerJobType: emittedCandidate.workerAuthority.jobType,
       workerMemoryCoreGate: emittedCandidate.workerAuthority.memoryCoreGate,
+      workerMemoryCoreGateEnforcement:
+        emittedCandidate.workerAuthority.memoryCoreGateEnforcement,
+      workerIdempotencyEnforcement:
+        emittedCandidate.workerAuthority.idempotencyEnforcement,
       workerAuthorityStatus: emittedCandidate.workerAuthority.status,
       workerAuthorityMutation: preview.mutation,
       memoryRecordCount: memoryRecords.length,

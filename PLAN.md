@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: WJI-01 Prove or downgrade worker job idempotency and gate enforcement
+current task: EBF-01 Add ExecutionBrief format/version contract
 ```
 
 ## Compact Checkpoints
@@ -74,6 +74,7 @@ heartbeat worker authority readback: memory-staleness candidates expose validate
 DB-backed heartbeat worker authority: one seeded expired MemoryRecord emits a review-ready memory-staleness candidate with validated workerAuthority and cleanup
 review outcome ownership: shared ReviewAssessment/FeedbackDelta normalization uses reviewOutcome vocabulary, not review-signal vocabulary
 worker job authority constants: invariant worker runtime fields are centralized in maintenanceJobRuntimeContract while preserving readback shape
+worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
