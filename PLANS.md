@@ -203,6 +203,50 @@ IMR-38 complete: accepted activationUtility review was retained as bounded
   source/eval follow-up evidence through existing SourceArtifact/SearchDocument,
   proposed SourceClaim, and SourceDecisionEdge paths; mutation none, no source
   truth, no eval promotion.
+IMR-39 complete: retained IMR-38 evidence replays through marker-addressed
+  source/brain search as useful SearchDocument/source-link evidence; natural and
+  exact-claim queries still miss the exact retained SourceClaim/SourceDecisionEdge.
+```
+
+## Outcome IMR-39 Activation Utility Brain Replay
+
+Status: complete, mixed replay.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-39-activation-utility-brain-replay/REPORT.md
+```
+
+Outcome: source/brain search can replay the IMR-38 retained evidence when
+addressed by the marker `krn-source-artifact-preview a2d428319fa405c3`. Brain
+search reports useful linked source/graph evidence and
+`linked_evidence_exploration_candidate` with mutation `none`.
+
+The replay did not prove natural-query reuse. Broad natural, focused natural,
+exact-claim, and id-shaped queries did not surface the exact IMR-38 SourceClaim
+or SourceDecisionEdge. This is a bounded recall/readback gap, not evidence for a
+ranking rewrite, semantic model, crawler, worker daemon, API/MCP, DB schema,
+source truth mutation, eval promotion, or Memory Core mutation.
+
+Source-to-decision:
+
+- Source: IMR-38 retained source/eval follow-up evidence and current source/brain
+  search JSON readbacks.
+- Mechanism: marker-addressed SearchDocument replay works; natural exact
+  SourceClaim/SourceDecisionEdge recall does not yet surface the retained object.
+- KRN implication: retained follow-up evidence is useful linked evidence, but
+  not yet reliable natural-query brain knowledge.
+- Decision: accept mixed replay and open a bounded natural recall/readback
+  repair.
+- Consumer: next activation utility source/eval replay repair.
+- Falsifier: exact retained follow-up evidence already surfaces through natural
+  brain search, or repair requires broad ranking/schema/runtime work.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-2fl: Repair retained source/eval evidence natural brain-search recall
 ```
 
 ## Outcome IMR-38 Activation Utility Source/Eval Follow-Up Evidence
