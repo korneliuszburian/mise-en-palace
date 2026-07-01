@@ -148,6 +148,46 @@ IMR-21 complete: cost-aware acquisition escalation retained as queryable brain
   knowledge with usefulness feedback.
 IMR-22 complete: acquisition escalation added to compact mini Brain-QA and
   mechanism-first brain search selects the retained pattern.
+IMR-23 complete: seven-question mini Brain-QA batch readback ran; Q4/Q6 expose
+  retained-pattern recall gaps, not a broad ranking mandate.
+```
+
+## Outcome IMR-23 Seven-Question Mini Brain-QA Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-23-seven-question-mini-brain-qa-readback/REPORT.md
+```
+
+Outcome: all seven compact Brain-QA questions ran through current-shell
+`krn brain search --json`. Four selected retained knowledge; all seven returned
+source-search evidence and graph-aware readback. Q4 graph and Q6 heartbeat are
+source-search useful but miss retained pattern selection for benchmark-shaped
+queries.
+
+Source-to-decision:
+
+- Source: `docs/benchmarks/brain-qa/v376-questions.json`, IMR-22, and live
+  `krn brain search --json` readbacks.
+- Mechanism: mini Brain-QA exposes whether retained patterns remain findable
+  through realistic operator query shapes without a broad benchmark platform.
+- KRN implication: retained-pattern recall gaps should become bounded repairs,
+  not ranking rewrites.
+- Decision: accept the seven-question batch and open a focused recall-gap
+  repair.
+- Rejection: no broad benchmark lane, semantic ranking rewrite, embeddings,
+  crawler, worker, API/MCP, schema, source truth, or Memory Core mutation.
+- Consumer: future mini Brain-QA readbacks and selected-knowledge recall repair.
+- Falsifier: future mini Brain-QA reports cannot distinguish source-search
+  usefulness from retained-pattern recall.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-3tr: Repair mini Brain-QA retained pattern recall gaps.
 ```
 
 ## Outcome IMR-22 Acquisition Escalation Mini Brain-QA

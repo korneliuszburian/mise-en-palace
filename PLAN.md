@@ -47,7 +47,7 @@ heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisi
 heartbeat acquisition review: linked and missing-only escalation accepted
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
-mini brain-QA benchmark: seven current local questions cover local readback and acquisition escalation
+mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 second-operator launch packet: historical packet only; no longer active direction
 product-ready brain: not complete
@@ -69,13 +69,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-22-acquisition-escalation-mini-brain-qa/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-23-seven-question-mini-brain-qa-readback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-rtp: run seven-question mini Brain-QA readback.
+mise-en-palace-3tr: repair mini Brain-QA retained pattern recall gaps.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -131,7 +131,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-22: cost-aware acquisition escalation added, accepted, retained as brain knowledge, and covered by mini Brain-QA.
+IMR-18-23: cost-aware acquisition escalation added, accepted, retained, covered by mini Brain-QA, and batch-read with the seven-question benchmark.
 ```
 
 ## Remaining Product Gaps
