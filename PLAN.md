@@ -55,8 +55,7 @@ AMA activation utility natural recall: exact SourceClaim/SourceDecisionEdge now 
 source-backed selected knowledge: default brain search can use ready SourceClaim packets when catalog readback misses
 source-backed mini Brain-QA: fallback helps Q5 ingest and IMR41; keep behavior, no ranking repair now
 multi-repo source artifact readback: second repo README persists and resolves source/brain/heartbeat readbacks
-selectedKnowledge target fit: brain search labels packets and caveats generic-only sufficiency
-target-fit Brain-QA closure: generic-only target gap routes next to heartbeat acquisition
+selectedKnowledge target fit: brain search labels packets, caveats generic-only sufficiency, and routes the next gap
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
