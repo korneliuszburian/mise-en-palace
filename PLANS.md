@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-00 Build end-to-end brain vertical over one retained pattern
+current task: SBV-01 Repair retained-pattern next-run priority
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-SBV-00 Build end-to-end brain vertical over one retained pattern is active.
+SBV-01 Repair retained-pattern next-run priority is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -249,6 +249,37 @@ IMR-54 complete: persisted plan/context and `krn codex brief` render the
 IMR-55 complete: evidence/review feedback persists that selected EKOLOGUS
   SourceClaim as `helped`; next direction moves to shared brain vertical work,
   not more target-bookkeeping closures.
+SBV-00 complete: retained source-to-decision pattern reached brain knowledge,
+  persisted plan, Codex brief, evidence/review feedback, observe, and reflect;
+  next-run check exposed over-budget exclusion before successful reuse.
+```
+
+## Outcome SBV-00 Retained Pattern Vertical
+
+Status: complete with follow-up repair.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-sbv-00-retained-pattern-vertical/REPORT.md
+```
+
+Outcome: SourceClaim `125366b1-8bd9-4092-92d8-1aa1d2ed46ae` for the
+source-to-decision retention gate flowed through brain knowledge readback,
+persisted plan/context, Codex brief, evidence/review usefulness feedback,
+observe, and reflect. The same-run path created no MemoryRecord and promoted no
+source truth.
+
+Next-run check: a follow-up SBV plan had the same SourceClaim available but
+excluded it as `over_budget` while unrelated EKOLOGUS context was included.
+
+Decision: accept the vertical proof, but do not claim successful next-run
+reuse. Repair retained-pattern priority next.
+
+Next Beads task:
+
+```txt
+mise-en-palace-tsw: Repair SBV retained-pattern next-run priority.
 ```
 
 ## Outcome IMR-55 Source Usefulness Feedback
