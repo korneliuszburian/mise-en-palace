@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: GCE-01 Use graph relation focus in consensus candidate eval
+current task: CRO-01 Expose consensus relation review in operator-facing readback
 latest pushed commit: see git history
 ```
 
@@ -24,20 +24,21 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-GCE-01 Use graph relation focus in consensus candidate eval is active.
-KRN needs proof that graph relation focus can feed the candidate-only
-consensus/eval lane, or an explicit bounded rejection if that route is wrong.
+CRO-01 Expose consensus relation review in operator-facing readback is active.
+KRN needs proof that consensus relation review output can reach one
+operator-facing readback, or an explicit bounded rejection if that route is
+wrong.
 ```
 
 Latest outcome:
 
 ```txt
-GRE-01 complete: relationReviewFocus is consumed by bounded relation-grounded QA
-readback for a duplicate SourceClaimEdge.
+GCE-01 complete: relationReviewFocus is consumed by candidate-only consensus/eval
+preview and routed into operator guidance without consensus runtime or mutation.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-readback/REPORT.md
-Next: GCE-01 routes relation focus into consensus/eval candidate preview or
-rejects the route with source-to-decision evidence.
+docs/reviews/controlled-dogfood/2026-07-01-gce-01-consensus-relation-focus/REPORT.md
+Next: CRO-01 exposes or reuses consensus relation review output through one
+operator-facing readback, or rejects the route with source-to-decision evidence.
 ```
 
 ## 2. Product Thesis
@@ -2448,12 +2449,19 @@ Falsifier:
   Next: `mise-en-palace-kvz` / GCE-01 routes relation focus into
   consensus/eval candidate preview or rejects the route with source-to-decision
   evidence.
-- [ ] GCE-01 active: `mise-en-palace-kvz` routes contradiction/duplicate
-  relation focus into one candidate-only consensus/eval readback, or explicitly
-  rejects the route with source-to-decision evidence, without broad eval
-  platform, multi-agent runtime, worker daemon, crawler/entity extraction, DB
-  schema by default, Memory Core auto-mutation, dashboard/API/MCP, or graph
-  ranking rewrite.
+- [x] GCE-01 complete: `mise-en-palace-kvz` routes duplicate
+  relationReviewFocus into candidate-only consensus/eval preview output and
+  operator guidance. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-gce-01-consensus-relation-focus/REPORT.md`.
+  Next: `mise-en-palace-cxz` / CRO-01 exposes or reuses consensus relation
+  review output through one operator-facing readback, or explicitly rejects the
+  route with source-to-decision evidence.
+- [ ] CRO-01 active: `mise-en-palace-cxz` exposes consensus relation review
+  output through one bounded operator-facing readback, or explicitly rejects the
+  route with source-to-decision evidence, without broad eval platform,
+  multi-agent runtime, worker daemon, crawler/entity extraction, DB schema by
+  default, Memory Core auto-mutation, dashboard/API/MCP, or graph ranking
+  rewrite.
 
 ## 21. Final Response Format For Codex Runs
 

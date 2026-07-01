@@ -15,7 +15,7 @@ Current truth:
 - brain heartbeat preview can aggregate memory-staleness and source-relation
   maintenance candidates without starting autonomous worker execution;
 - consensus candidate evaluation preview can preserve support/dissent/risk
-  evidence without creating autonomous truth;
+  evidence and graph relation review focus without creating autonomous truth;
 - job descriptions explicitly set `requiresBackgroundLoop: false`.
 
 Not built:

@@ -4,7 +4,9 @@ import {
 import type {
   CandidateReviewability,
   IsoTimestamp,
-  SourceLineageRef
+  SourceClaimEdge,
+  SourceLineageRef,
+  SourceRelationReviewFocus
 } from "@krn/core";
 
 export type ConsensusCandidateKind =
@@ -33,6 +35,22 @@ export interface ConsensusEvaluationEvidence {
   doesNotProve: string;
 }
 
+export type ConsensusRelationReviewUsefulness = "used" | "not_used";
+
+export interface ConsensusRelationReviewInput {
+  sourceClaimEdgeId: SourceClaimEdge["id"];
+  edgeKind: SourceClaimEdge["kind"];
+  relationReviewFocus: SourceRelationReviewFocus;
+  relationReviewQuestion: string;
+}
+
+export interface ConsensusRelationReviewReadback
+  extends ConsensusRelationReviewInput {
+  consumedBy: "consensus_candidate_evaluation_preview";
+  reviewUsefulness: ConsensusRelationReviewUsefulness;
+  doesNotProve: string;
+}
+
 export interface ConsensusCandidateEvaluationInput {
   candidateId: string;
   candidateKind: ConsensusCandidateKind;
@@ -43,6 +61,7 @@ export interface ConsensusCandidateEvaluationInput {
   sourceLineage?: readonly SourceLineageRef[];
   duplicateOf?: string;
   notUsefulReason?: string;
+  relationReview?: ConsensusRelationReviewInput;
   evidence: readonly ConsensusEvaluationEvidence[];
 }
 
@@ -57,6 +76,7 @@ export interface ConsensusCandidateEvaluation {
   supportEvidenceRefs: readonly string[];
   dissentEvidenceRefs: readonly string[];
   riskEvidenceRefs: readonly string[];
+  relationReview?: ConsensusRelationReviewReadback;
   preservedDissent: readonly ConsensusEvaluationEvidence[];
   evidenceRefs: readonly string[];
   doesNotProve: string;
@@ -104,6 +124,18 @@ const defaultApplicationGuidance =
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;
 
+const applicationGuidanceFor = (
+  input: ConsensusCandidateEvaluationInput
+): string => {
+  const baseGuidance = input.applicationGuidance ?? defaultApplicationGuidance;
+
+  if (input.relationReview === undefined) {
+    return baseGuidance;
+  }
+
+  return `${baseGuidance} ${input.relationReview.relationReviewQuestion}`;
+};
+
 const evidenceRefsByPosition = (
   evidence: readonly ConsensusEvaluationEvidence[],
   position: ConsensusEvidencePosition
@@ -146,13 +178,27 @@ const decisionOptionsFor = (
   return ["request_more_evidence", "defer_candidate"];
 };
 
+const relationReviewReadback = (
+  relationReview: ConsensusRelationReviewInput,
+  dissentEvidenceRefs: readonly string[],
+  riskEvidenceRefs: readonly string[]
+): ConsensusRelationReviewReadback => ({
+  ...relationReview,
+  consumedBy: "consensus_candidate_evaluation_preview",
+  reviewUsefulness: dissentEvidenceRefs.length > 0 || riskEvidenceRefs.length > 0
+    ? "used"
+    : "not_used",
+  doesNotProve:
+    "Consensus relation review focus consumption does not prove source truth, edge correctness, contradiction resolution, duplicate consolidation, consensus correctness, or Memory Core mutation."
+});
+
 const buildEvaluation = (
   input: ConsensusCandidateEvaluationInput
 ): ConsensusCandidateEvaluation => {
   const supportEvidenceRefs = evidenceRefsByPosition(input.evidence, "support");
   const dissentEvidenceRefs = evidenceRefsByPosition(input.evidence, "dissent");
   const riskEvidenceRefs = evidenceRefsByPosition(input.evidence, "risk");
-  const applicationGuidance = input.applicationGuidance ?? defaultApplicationGuidance;
+  const applicationGuidance = applicationGuidanceFor(input);
   const evidenceRefs = [
     ...(input.evidenceRefs ?? []),
     ...supportEvidenceRefs,
@@ -170,6 +216,9 @@ const buildEvaluation = (
     ...(input.duplicateOf === undefined ? {} : { duplicateOf: input.duplicateOf }),
     ...(input.notUsefulReason === undefined ? {} : { notUsefulReason: input.notUsefulReason })
   });
+  const relationReview = input.relationReview === undefined
+    ? undefined
+    : relationReviewReadback(input.relationReview, dissentEvidenceRefs, riskEvidenceRefs);
 
   return {
     id: `consensus-candidate-evaluation:${input.candidateId}`,
@@ -187,6 +236,7 @@ const buildEvaluation = (
     supportEvidenceRefs,
     dissentEvidenceRefs,
     riskEvidenceRefs,
+    ...(relationReview === undefined ? {} : { relationReview }),
     preservedDissent: input.evidence.filter((item) => item.position === "dissent"),
     evidenceRefs,
     doesNotProve: previewDoesNotProve,
@@ -209,7 +259,7 @@ export const buildConsensusCandidateEvaluationPreview = (
       skippedCandidateCount: input.candidates.length,
       mutation: "none",
       proof:
-        "Consensus candidate evaluation preview inspects candidate evidence and preserves dissent as candidate-only review input.",
+        "Consensus candidate evaluation preview inspects candidate evidence, relation review focus, and preserved dissent as candidate-only review input.",
       doesNotProve: previewDoesNotProve
     };
   }
@@ -222,7 +272,7 @@ export const buildConsensusCandidateEvaluationPreview = (
     skippedCandidateCount: input.candidates.length - evaluations.length,
     mutation: "none",
     proof:
-      "Consensus candidate evaluation preview inspects candidate evidence and preserves dissent as candidate-only review input.",
+      "Consensus candidate evaluation preview inspects candidate evidence, relation review focus, and preserved dissent as candidate-only review input.",
     doesNotProve: previewDoesNotProve
   };
 };

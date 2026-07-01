@@ -77,6 +77,54 @@ describe("consensus candidate evaluation preview", () => {
     expect(result.evaluations[0]?.riskEvidenceRefs).toEqual([risk.evidenceRef]);
   });
 
+  test("preserves duplicate relation review focus as candidate-only consensus input", () => {
+    const result = buildConsensusCandidateEvaluationPreview({
+      generatedAt,
+      candidates: [{
+        candidateId: "candidate-duplicate-relation",
+        candidateKind: "source_decision_candidate",
+        summary: "Evaluate duplicate relation focus before source decision review.",
+        applicationGuidance:
+          "Use this preview to route graph relation review without promotion.",
+        relationReview: {
+          sourceClaimEdgeId: "edge-duplicate-1",
+          edgeKind: "duplicates",
+          relationReviewFocus: "duplicate",
+          relationReviewQuestion:
+            "Review whether these claims are true duplicates before consolidation, suppression, or source truth changes."
+        },
+        evidence: [support, risk]
+      }]
+    });
+
+    expect(result.proof).toContain("relation review focus");
+    expect(result.evaluations[0]).toEqual(
+      expect.objectContaining({
+        applicationGuidance:
+          "Use this preview to route graph relation review without promotion. Review whether these claims are true duplicates before consolidation, suppression, or source truth changes.",
+        relationReview: {
+          sourceClaimEdgeId: "edge-duplicate-1",
+          edgeKind: "duplicates",
+          relationReviewFocus: "duplicate",
+          relationReviewQuestion:
+            "Review whether these claims are true duplicates before consolidation, suppression, or source truth changes.",
+          consumedBy: "consensus_candidate_evaluation_preview",
+          reviewUsefulness: "used",
+          doesNotProve:
+            "Consensus relation review focus consumption does not prove source truth, edge correctness, contradiction resolution, duplicate consolidation, consensus correctness, or Memory Core mutation."
+        },
+        mutation: "none",
+        forbiddenWrites: [
+          "memory_records",
+          "anti_memory_records",
+          "source_claims",
+          "source_decisions",
+          "eval_candidates"
+        ]
+      })
+    );
+  });
+
   test("requires supporting evidence before a candidate is review-ready", () => {
     const result = buildConsensusCandidateEvaluationPreview({
       generatedAt,
