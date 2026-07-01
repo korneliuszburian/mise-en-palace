@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: WJA-01 Consolidate worker job authority constants
+current task: WJI-01 Prove or downgrade worker job idempotency and gate enforcement
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-WJA-01 Consolidate worker job authority constants is active.
+WJI-01 Prove or downgrade worker job idempotency and gate enforcement is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,14 +36,15 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-RFD-01 complete: shared ReviewAssessment/FeedbackDelta normalization moved from
-`reviewSignal` to `reviewOutcome`, removing one misleading parallel review
-concept while preserving ReviewAssessment, FeedbackDelta, candidate summary, and
-CLI behavior.
+WJA-01 complete: worker job runtime authority constants are centralized in
+`maintenanceJobRuntimeContract`, while `describeMaintenanceJob` still exposes the
+same operator-facing readback fields for CLI, DB smoke, and heartbeat
+candidates.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md
-Next: WJA-01 inspects worker job authority constants after E2E-05 and either
-centralizes repeated constants or records why they should remain explicit.
+docs/reviews/controlled-dogfood/2026-07-01-wja-01-worker-job-authority-constants/REPORT.md
+Next: WJI-01 inspects worker idempotency keys and memoryCoreGate declarations,
+then either proves the boundary or downgrades readback so it does not overstate
+runtime safety.
 ```
 
 ## 2. Product Thesis

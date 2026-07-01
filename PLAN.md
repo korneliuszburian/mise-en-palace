@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: WJA-01 Consolidate worker job authority constants
+current task: WJI-01 Prove or downgrade worker job idempotency and gate enforcement
 ```
 
 ## Compact Checkpoints
@@ -73,6 +73,7 @@ worker Memory Core write authority: worker gate/write declarations are executabl
 heartbeat worker authority readback: memory-staleness candidates expose validated expire_stale_memory authority
 DB-backed heartbeat worker authority: one seeded expired MemoryRecord emits a review-ready memory-staleness candidate with validated workerAuthority and cleanup
 review outcome ownership: shared ReviewAssessment/FeedbackDelta normalization uses reviewOutcome vocabulary, not review-signal vocabulary
+worker job authority constants: invariant worker runtime fields are centralized in maintenanceJobRuntimeContract while preserving readback shape
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -83,7 +84,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### WJA-01 Consolidate Worker Job Authority Constants
+### WJI-01 Prove Or Downgrade Worker Job Idempotency And Gate Enforcement
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -97,22 +98,24 @@ Latest completed report:
 ```txt
 docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-wja-01-worker-job-authority-constants/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-d3b: Consolidate worker job authority constants.
+mise-en-palace-x8g: Prove or downgrade worker job idempotency and gate enforcement.
 ```
 
 Task boundary:
 
 ```txt
-Inspect current worker job authority consumers after E2E-05. Centralize or
-explicitly justify repeated MaintenanceJobDescription constants only if
-worker-authority readback remains clear. No worker daemon, scheduler, queue
-runtime, DB schema/migration, memory promotion behavior change, dashboard/API/MCP,
-or broad worker refactor.
+Inspect current worker DB repository/schema and worker authority consumers.
+Either add a bounded executable proof for idempotent enqueue/gate enforcement or
+explicitly downgrade the declarations so operator readback cannot overstate
+runtime safety. No worker daemon, scheduler, queue runtime, DB schema/migration
+unless source proves an existing constraint only needs proof, Memory Core
+mutation behavior change, dashboard/API/MCP, or broad worker refactor.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

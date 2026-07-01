@@ -71,17 +71,28 @@ export type MaintenanceJob<TType extends MaintenanceJobType = MaintenanceJobType
   };
 }[TType];
 
+export const maintenanceJobRuntimeContract = {
+  workerTable: "worker_jobs",
+  outboxTable: "outbox_events",
+  outboxTopic: "worker_job.queued",
+  requiresBackgroundLoop: false,
+  outputEvent: "worker_job.completed",
+  failureState: "failed"
+} as const;
+
+export type MaintenanceJobRuntimeContract = typeof maintenanceJobRuntimeContract;
+
 export interface MaintenanceJobDescription {
   jobType: MaintenanceJobType;
   label: string;
-  workerTable: "worker_jobs";
-  outboxTable: "outbox_events";
-  outboxTopic: "worker_job.queued";
-  requiresBackgroundLoop: false;
+  workerTable: MaintenanceJobRuntimeContract["workerTable"];
+  outboxTable: MaintenanceJobRuntimeContract["outboxTable"];
+  outboxTopic: MaintenanceJobRuntimeContract["outboxTopic"];
+  requiresBackgroundLoop: MaintenanceJobRuntimeContract["requiresBackgroundLoop"];
   inputSchema: string;
   idempotencyKey: string;
-  outputEvent: "worker_job.completed";
-  failureState: "failed";
+  outputEvent: MaintenanceJobRuntimeContract["outputEvent"];
+  failureState: MaintenanceJobRuntimeContract["failureState"];
   allowedWrites: readonly WorkerJobAllowedWrite[];
   forbiddenWrites: readonly WorkerJobForbiddenWrite[];
   memoryCoreGate: WorkerJobMemoryCoreGate;
@@ -233,14 +244,9 @@ export const describeMaintenanceJob = (
   const description: MaintenanceJobDescription = {
     jobType,
     label: labels[jobType],
-    workerTable: "worker_jobs",
-    outboxTable: "outbox_events",
-    outboxTopic: "worker_job.queued",
-    requiresBackgroundLoop: false,
+    ...maintenanceJobRuntimeContract,
     inputSchema: authority.inputSchema,
     idempotencyKey: authority.idempotencyKey,
-    outputEvent: "worker_job.completed",
-    failureState: "failed",
     allowedWrites: authority.allowedWrites,
     forbiddenWrites: authority.forbiddenWrites,
     memoryCoreGate: authority.memoryCoreGate

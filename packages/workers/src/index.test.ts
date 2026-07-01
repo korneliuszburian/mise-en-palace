@@ -6,6 +6,7 @@ import {
   describeMaintenanceJob,
   enqueueMaintenanceJob,
   isMaintenanceJobType,
+  maintenanceJobRuntimeContract,
   maintenanceJobTypes,
   parseMaintenanceJobType
 } from "./index.js";
@@ -67,9 +68,7 @@ describe("maintenance worker skeleton", () => {
       maintenanceJobTypes.map((type) =>
         expect.objectContaining({
           jobType: type,
-          workerTable: "worker_jobs",
-          outboxTable: "outbox_events",
-          requiresBackgroundLoop: false
+          ...maintenanceJobRuntimeContract
         })
       )
     );

@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: WJA-01 Consolidate worker job authority constants.
+current task: WJI-01 Prove or downgrade worker job idempotency and gate enforcement.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-RFD-01 complete: shared ReviewAssessment/FeedbackDelta normalization now uses
-reviewOutcome vocabulary instead of review-signal vocabulary, while keeping
-ReviewAssessment and FeedbackDelta as separate spine objects.
+WJA-01 complete: worker job runtime authority fields now have one canonical
+maintenanceJobRuntimeContract while preserving existing worker authority
+readback for CLI, DB smoke, and heartbeat candidates.
 ```
 
 ## Direction
