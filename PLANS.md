@@ -156,6 +156,56 @@ IMR-24 complete: `krn brain search` repairs Q4/Q6 retained-pattern recall by
   follow-up.
 IMR-25 complete: Q6 heartbeat/acquisition selectedKnowledge adjacency is
   helped/neutral, not noise; no ranking/filtering repair now.
+IMR-26 complete: AMA-shaped missing-evidence readback produced a ready
+  candidate-only heartbeat acquisition request with linked-document-first
+  escalation and mutation none.
+```
+
+## Outcome IMR-26 AMA Acquisition Pattern Usefulness Check
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-26-ama-acquisition-pattern-usefulness/REPORT.md
+```
+
+Outcome: broad AMA-shaped `brain search` returned partly useful missing-evidence
+source readback and no selectedKnowledge, but correctly recommended narrower
+brain-knowledge readback. The narrower `heartbeat acquisition missing evidence`
+query selected `pattern:cost-aware-acquisition-escalation-boundary`. Feeding the
+broad readback into `heartbeat preview --candidate-kind knowledge_acquisition`
+created one ready, mutation-free acquisition candidate with 6 linked document
+refs and escalation order:
+
+```txt
+linked_document_review -> source_search_review -> bounded_external_research -> human_review
+```
+
+Source-to-decision:
+
+- Source: retained `Towards Autonomous Memory Agents`, IMR-18..25 local
+  evidence, and live IMR-26 readbacks.
+- Mechanism: missing knowledge should trigger candidate-only acquisition with a
+  low-to-high cost cascade, not automatic durable memory mutation.
+- KRN implication: heartbeat/dreaming can propose reviewable acquisition work
+  when brain/source readback lacks evidence.
+- Decision: existing candidate-only + cost-aware acquisition rules are
+  sufficient for this step; no code repair now.
+- Rejection: no autonomous acquisition, crawler, worker, API/MCP, schema,
+  ranking rewrite, source truth mutation, broad benchmark, or Memory Core
+  mutation.
+- Consumer: heartbeat acquisition, pattern/research brain, future acquisition
+  eval candidates.
+- Falsifier: an AMA-shaped missing-evidence run cannot create a reviewable
+  acquisition candidate, skips cheaper review paths, or mutates truth before
+  review.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-iux: Review AMA linked-document evidence before external acquisition.
 ```
 
 ## Outcome IMR-25 Compact Brain-Search Retry Precision Classification
