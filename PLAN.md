@@ -49,6 +49,7 @@ source relation candidate evidence: missing relation evidence is explicit and bl
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
+mini brain-QA recall repair: Q4/Q6 retained-pattern selectedKnowledge gaps repaired with visible compact retry
 second-operator launch packet: historical packet only; no longer active direction
 product-ready brain: not complete
 ```
@@ -69,18 +70,16 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-23-seven-question-mini-brain-qa-readback/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-24-mini-brain-qa-recall-repair/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-3tr: repair mini Brain-QA retained pattern recall gaps.
+mise-en-palace-1tu: classify compact brain-search retry precision after Q6 adjacency.
 ```
 
-The point is not "operator proof" by itself. The point is a multi-layer memory
-system that condenses best patterns, papers, courses, local evidence, and senior
-engineering standards into reusable decisions that improve future work.
+Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
 
 ## Recent Completed Streams
 
@@ -103,8 +102,7 @@ V373: heartbeat runtime candidate review-result loop.
 V374: source relation candidate evidence repair.
 V375: Codex hook guardrail pattern intake.
 V376: mini Brain-QA benchmark/readback over six current local questions.
-V377: retained graph relation readback and heartbeat candidate-only runtime
-  patterns from the V376 benchmark gap; ingest pattern deferred.
+V377: retained graph relation and heartbeat runtime patterns; ingest deferred.
 V378: prepared current second-operator launch packet without claiming V02-01.
 IMR-01: brain search now exposes selected brain knowledge packets for agent use.
 IMR-02: brain search store-only mode proves store-backed pattern readback.
@@ -131,7 +129,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-23: cost-aware acquisition escalation added, accepted, retained, covered by mini Brain-QA, and batch-read with the seven-question benchmark.
+IMR-18-24: acquisition escalation retained; mini Brain-QA covers it; Q4/Q6 selectedKnowledge recall repaired with compact retry.
 ```
 
 ## Remaining Product Gaps

@@ -150,6 +150,50 @@ IMR-22 complete: acquisition escalation added to compact mini Brain-QA and
   mechanism-first brain search selects the retained pattern.
 IMR-23 complete: seven-question mini Brain-QA batch readback ran; Q4/Q6 expose
   retained-pattern recall gaps, not a broad ranking mandate.
+IMR-24 complete: `krn brain search` repairs Q4/Q6 retained-pattern recall by
+  retrying selected brain-knowledge readback with compact mechanism terms after
+  a catalog no-match; Q6 adjacency remains a bounded precision classification
+  follow-up.
+```
+
+## Outcome IMR-24 Mini Brain-QA Retained Pattern Recall Repair
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-24-mini-brain-qa-recall-repair/REPORT.md
+```
+
+Outcome: `krn brain search` now performs one visible compact brain-knowledge
+retry after a retained-pattern no-match. Q4 graph now selects
+`pattern:graph-relation-readback-boundary`; Q6 heartbeat now selects
+`pattern:heartbeat-candidate-only-runtime-boundary`. The standalone
+`krn brain knowledge` catalog semantics stay strict.
+
+Source-to-decision:
+
+- Source: IMR-23 seven-question mini Brain-QA readback and retained graph /
+  heartbeat pattern evidence.
+- Mechanism: operator/source-search-shaped queries can include bridge terms
+  such as `source`, `evidence`, `temporal`, and `relation`, which can make
+  strict all-token retained-pattern matching miss the mechanism.
+- KRN implication: integrated `brain search` should retry selected knowledge
+  with compact mechanism terms after a no-match, while preserving strict
+  catalog readback as its own surface.
+- Decision: add deterministic compact no-match retry inside `krn brain search`.
+- Rejection: no broad benchmark lane, semantic ranking rewrite, embeddings,
+  crawler, worker, API/MCP, schema, source truth, or Memory Core mutation.
+- Consumer: future mini Brain-QA, pattern/research gates, graph and heartbeat
+  repair slices.
+- Falsifier: Q4/Q6 again return useful source-search evidence but empty
+  selectedKnowledge, or compact retry starts selecting broad unrelated patterns.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-1tu: Classify compact brain-search retry precision after Q6 adjacency.
 ```
 
 ## Outcome IMR-23 Seven-Question Mini Brain-QA Readback

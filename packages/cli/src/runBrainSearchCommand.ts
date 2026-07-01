@@ -1,8 +1,4 @@
 import type {
-  BrainKnowledgeSearchFilter
-} from "@krn/harness";
-
-import type {
   CliCommand
 } from "./parseArgs.js";
 import {
@@ -48,6 +44,7 @@ interface BrainSearchPreviewResource {
   mutation: "none";
   query: string;
   brainKnowledgeReadback: "catalog_files" | "store_only";
+  brainKnowledgeQueries: readonly string[];
   knowledgeCards: {
     totalCards: number;
     returnedCards: number;
@@ -109,7 +106,21 @@ interface SourceSearchKnowledgeFields {
   reason: string | undefined;
 }
 
+type BrainKnowledgeReadback = {
+  result: KnowledgeCardsCommandResult;
+  queries: readonly string[];
+};
+
 const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
+
+const brainKnowledgeBridgeTerms = new Set([
+  "evidence",
+  "relation",
+  "relations",
+  "source",
+  "sources",
+  "temporal"
+]);
 
 const parseJsonObject = (text: string, label: string): JsonRecord => {
   const parsed: unknown = JSON.parse(text);
@@ -145,6 +156,20 @@ const stringArrayValue = (value: unknown): readonly string[] =>
 
 const booleanValue = (value: unknown): boolean =>
   typeof value === "boolean" ? value : false;
+
+const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
+  [...query.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
+
+const compactBrainKnowledgeQuery = (query: string): string | undefined => {
+  const compactTokens = brainKnowledgeQueryTokens(query).filter(
+    (token) => !brainKnowledgeBridgeTerms.has(token)
+  );
+  const compactQuery = compactTokens.join(" ");
+
+  return compactQuery.length > 0 && compactQuery !== query.trim().toLowerCase()
+    ? compactQuery
+    : undefined;
+};
 
 const linkedSearchDocumentCount = (
   sourceClaimDocumentLinks: readonly unknown[]
@@ -386,6 +411,7 @@ const buildResource = (
   input: {
     query: string;
     brainKnowledgeReadback: BrainSearchPreviewResource["brainKnowledgeReadback"];
+    brainKnowledgeQueries: readonly string[];
     knowledgeJson: JsonRecord;
     sourceJson: JsonRecord;
   }
@@ -404,6 +430,7 @@ const buildResource = (
     mutation: "none",
     query: input.query,
     brainKnowledgeReadback: input.brainKnowledgeReadback,
+    brainKnowledgeQueries: input.brainKnowledgeQueries,
     knowledgeCards: {
       totalCards: numberValue(input.knowledgeJson["totalCards"]),
       returnedCards: numberValue(input.knowledgeJson["returnedCards"]),
@@ -462,6 +489,93 @@ const buildResource = (
   };
 };
 
+const knowledgeReturnedCards = (knowledgeJson: JsonRecord): number =>
+  numberValue(knowledgeJson["returnedCards"]);
+
+const runCatalogKnowledgeReadback = async (
+  input: {
+    runtime: BrainSearchCommandRuntime;
+    runKnowledge: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;
+    catalogFiles: readonly string[];
+    query: string;
+  }
+): Promise<KnowledgeCardsCommandResult> =>
+  input.runKnowledge({
+    cwd: input.runtime.cwd,
+    cardFiles: [],
+    patternFiles: [],
+    catalogFiles: input.catalogFiles,
+    filter: {
+      text: input.query
+    },
+    format: "json",
+    ...(input.runtime.command.limit === undefined
+      ? {}
+      : { limit: input.runtime.command.limit })
+  });
+
+const runBrainKnowledgeReadback = async (
+  input: {
+    runtime: BrainSearchCommandRuntime;
+    runKnowledge: (runtime: KnowledgeCardsCommandRuntime) => Promise<KnowledgeCardsCommandResult>;
+    catalogFiles: readonly string[];
+    query: string;
+  }
+): Promise<BrainKnowledgeReadback> => {
+  if (input.runtime.command.storeOnly) {
+    return {
+      result: {
+        stdout: JSON.stringify({
+          totalCards: 0,
+          returnedCards: 0,
+          cards: [],
+          proof: {
+            doesNotProve: [
+              "brain knowledge catalog readback was explicitly skipped by --store-only"
+            ]
+          }
+        })
+      },
+      queries: []
+    };
+  }
+
+  const primaryResult = await runCatalogKnowledgeReadback(input);
+  const primaryJson = parseJsonObject(primaryResult.stdout, "brain knowledge");
+
+  if (knowledgeReturnedCards(primaryJson) > 0) {
+    return {
+      result: primaryResult,
+      queries: [input.query]
+    };
+  }
+
+  const compactQuery = compactBrainKnowledgeQuery(input.query);
+
+  if (compactQuery === undefined) {
+    return {
+      result: primaryResult,
+      queries: [input.query]
+    };
+  }
+
+  const compactResult = await runCatalogKnowledgeReadback({
+    ...input,
+    query: compactQuery
+  });
+  const compactJson = parseJsonObject(compactResult.stdout, "brain knowledge compact retry");
+
+  return knowledgeReturnedCards(compactJson) > 0
+    ? {
+      result: compactResult,
+      queries: [input.query, compactQuery]
+    }
+    : {
+      result: primaryResult,
+      queries: [input.query, compactQuery]
+    };
+};
+
 const formatText = (resource: BrainSearchPreviewResource): string =>
   [
     "KRN Brain Search Preview",
@@ -469,6 +583,7 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
     "Mutation: none",
     `Query: ${resource.query}`,
     `Brain knowledge readback: ${resource.brainKnowledgeReadback}`,
+    `Brain knowledge queries: ${resource.brainKnowledgeQueries.length === 0 ? "none" : resource.brainKnowledgeQueries.join(" -> ")}`,
     "",
     "Brain knowledge:",
     `- returned: ${resource.knowledgeCards.returnedCards}`,
@@ -532,33 +647,14 @@ export const runBrainSearchCommand = async (
     runtime.command.catalogFiles.length === 0
       ? [defaultCatalogFile]
       : runtime.command.catalogFiles;
-  const knowledgeFilter: BrainKnowledgeSearchFilter = {
-    text: query
-  };
   const runKnowledge = runtime.runKnowledgeCards ?? runKnowledgeCardsCommand;
   const runSource = runtime.runSourceSearch ?? runSourceSearchCommand;
-  const knowledgeResultPromise = runtime.command.storeOnly
-    ? Promise.resolve({
-        stdout: JSON.stringify({
-          totalCards: 0,
-          returnedCards: 0,
-          cards: [],
-          proof: {
-            doesNotProve: [
-              "brain knowledge catalog readback was explicitly skipped by --store-only"
-            ]
-          }
-        })
-      })
-    : runKnowledge({
-        cwd: runtime.cwd,
-        cardFiles: [],
-        patternFiles: [],
-        catalogFiles,
-        filter: knowledgeFilter,
-        format: "json",
-        ...(runtime.command.limit === undefined ? {} : { limit: runtime.command.limit })
-      });
+  const knowledgeResultPromise = runBrainKnowledgeReadback({
+    runtime,
+    runKnowledge,
+    catalogFiles,
+    query
+  });
   const [knowledgeResult, sourceResult] = await Promise.all([
     knowledgeResultPromise,
     runSource({
@@ -583,7 +679,8 @@ export const runBrainSearchCommand = async (
   const resource = buildResource({
     query,
     brainKnowledgeReadback: runtime.command.storeOnly ? "store_only" : "catalog_files",
-    knowledgeJson: parseJsonObject(knowledgeResult.stdout, "brain knowledge"),
+    brainKnowledgeQueries: knowledgeResult.queries,
+    knowledgeJson: parseJsonObject(knowledgeResult.result.stdout, "brain knowledge"),
     sourceJson: parseJsonObject(sourceResult.stdout, "source search")
   });
 

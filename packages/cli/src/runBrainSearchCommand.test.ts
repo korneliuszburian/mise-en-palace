@@ -191,6 +191,208 @@ describe("runBrainSearchCommand", () => {
     expect(result.stdout).toContain("does not prove: product readiness");
   });
 
+  it("retries selected knowledge with a compact mechanism query after a graph benchmark miss", async () => {
+    const knowledgeQueries: string[] = [];
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "graph sourceclaimedge relation temporal source relations",
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 16,
+        maxInclusions: 6,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        if (runtime.filter.text === "graph sourceclaimedge") {
+          return {
+            stdout: JSON.stringify({
+              returnedCards: 1,
+              totalCards: 1,
+              cards: [{
+                id: "pattern:graph-relation-readback-boundary",
+                title: "Graph relation readback boundary",
+                summary: "Expose graph readback without treating it as source truth.",
+                consumers: ["future Brain-QA graph relation cases"],
+                falsifier: "A graph slice treats relationSupport as source truth.",
+                doesNotProve: "This does not prove graph ranking quality.",
+                nextAction: "use"
+              }],
+              proof: {
+                doesNotProve: ["search ranking quality is good"]
+              }
+            })
+          };
+        }
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{ label: "claim-1" }],
+              supportingDocuments: [],
+              relationSupport: [{ edgeId: "edge-1" }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 1,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(knowledgeQueries).toEqual([
+      "graph sourceclaimedge relation temporal source relations",
+      "graph sourceclaimedge"
+    ]);
+    expect(parsed).toMatchObject({
+      brainKnowledgeQueries: [
+        "graph sourceclaimedge relation temporal source relations",
+        "graph sourceclaimedge"
+      ],
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "pattern:graph-relation-readback-boundary"
+        }]
+      },
+      recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+    });
+  });
+
+  it("retries selected knowledge with a compact mechanism query after a heartbeat benchmark miss", async () => {
+    const knowledgeQueries: string[] = [];
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "heartbeat dreaming source relation evidence",
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 16,
+        maxInclusions: 6,
+        format: "json"
+      },
+      async runKnowledgeCards(runtime) {
+        knowledgeQueries.push(runtime.filter.text ?? "");
+
+        if (runtime.filter.text === "heartbeat dreaming") {
+          return {
+            stdout: JSON.stringify({
+              returnedCards: 1,
+              totalCards: 1,
+              cards: [{
+                id: "pattern:heartbeat-candidate-only-runtime-boundary",
+                title: "Heartbeat candidate-only runtime boundary",
+                summary: "Heartbeat and dreaming work stays candidate-only before scheduler work.",
+                consumers: ["future heartbeat preview CLI/readback tests"],
+                falsifier: "A heartbeat slice adds automatic memory mutation.",
+                doesNotProve: "This does not prove autonomous dreaming.",
+                nextAction: "use"
+              }],
+              proof: {
+                doesNotProve: ["search ranking quality is good"]
+              }
+            })
+          };
+        }
+
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["search ranking quality is good"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: [{ label: "claim-1" }],
+              supportingDocuments: [],
+              relationSupport: [{ edgeId: "edge-1" }],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 1,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(knowledgeQueries).toEqual([
+      "heartbeat dreaming source relation evidence",
+      "heartbeat dreaming"
+    ]);
+    expect(parsed).toMatchObject({
+      brainKnowledgeQueries: [
+        "heartbeat dreaming source relation evidence",
+        "heartbeat dreaming"
+      ],
+      knowledgeCards: {
+        selectedKnowledge: [{
+          id: "pattern:heartbeat-candidate-only-runtime-boundary"
+        }]
+      },
+      recommendedNextAction: "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code."
+    });
+  });
+
   it("derives store-backed selected knowledge from source claims in store-only brain search", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
