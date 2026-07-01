@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: EBF-01 Add ExecutionBrief format/version contract.
+current task: GCR-01 Add graph contradiction and duplicate candidate readback.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-WJI-01 complete: worker idempotency key patterns and memoryCoreGate labels are
-now explicitly read back as not runtime-enforced, so operator output no longer
-overstates worker deduplication or gate safety.
+EBF-01 complete: Codex-facing ExecutionBrief now carries and renders
+`krn.executionBrief.v1`, and DB-backed codex-adapter smoke proves the format
+marker is present without invoking Codex.
 ```
 
 ## Direction

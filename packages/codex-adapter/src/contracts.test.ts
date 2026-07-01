@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
 
 import {
-  codexHookPhases
+  codexHookPhases,
+  executionBriefFormatVersion
 } from "./contracts.js";
 import type {
   CodexAdapterPlan,
@@ -70,6 +71,7 @@ describe("Codex adapter contracts", () => {
       allowedActions: ["inspect", "propose"]
     };
     const brief: ExecutionBrief = {
+      formatVersion: executionBriefFormatVersion,
       title: "KRN Codex Execution Brief",
       objective: "Render a bounded Codex brief.",
       nonGoals: ["do not invoke Codex"],
@@ -147,6 +149,7 @@ describe("Codex adapter contracts", () => {
       "Stop"
     ]);
     expect(plan.executionBrief.skillBindingHints).toEqual([skillHint]);
+    expect(plan.executionBrief.formatVersion).toBe(executionBriefFormatVersion);
     expect(plan.executionBrief.mcpResourceRefs).toEqual([mcpRef]);
     expect(plan.executionBrief.subagentProbeHints).toEqual([subagentHint]);
     expect(plan.executionBrief.hookExpectations.map((item) => item.phase)).toEqual(

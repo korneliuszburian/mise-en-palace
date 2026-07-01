@@ -13,6 +13,7 @@ describe("codexAdapterSmoke", () => {
       readBackExecutionRunId: "execution-run-1",
       contextAssemblyId: "context-assembly-1",
       renderedObjective: true,
+      renderedFormatVersion: true,
       renderedNonGoals: true,
       renderedExplicitExclusions: true,
       renderedEvidenceContract: true,
@@ -31,6 +32,7 @@ describe("codexAdapterSmoke", () => {
     expect(output).toContain("Readback: matched");
     expect(output).toContain("Context assembly: context-assembly-1");
     expect(output).toContain("Objective present: yes");
+    expect(output).toContain("Format version present: yes");
     expect(output).toContain("Non-goals present: yes");
     expect(output).toContain("Explicit exclusions present: yes");
     expect(output).toContain("Evidence contract present: yes");

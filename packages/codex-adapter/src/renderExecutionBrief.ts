@@ -15,6 +15,9 @@ import type {
   ExecutionBriefContextInclusion
 } from "./contracts.js";
 import {
+  executionBriefFormatVersion
+} from "./contracts.js";
+import {
   createCodexHookExpectations
 } from "./renderHookExpectations.js";
 import {
@@ -209,6 +212,7 @@ export const createExecutionBrief = (input: RenderExecutionBriefInput): Executio
   const explicitExclusions = toContextExclusions(input.contextAssembly);
 
   return {
+    formatVersion: executionBriefFormatVersion,
     title: "KRN Codex Execution Brief",
     objective: input.taskContract.objective,
     nonGoals: input.taskContract.nonGoals,
@@ -273,6 +277,7 @@ const renderRefs = (
 export const renderExecutionBriefText = (brief: ExecutionBrief): string => {
   const lines = [
     brief.title,
+    `Format Version: ${brief.formatVersion}`,
     "",
     `Objective: ${brief.objective}`,
     "",

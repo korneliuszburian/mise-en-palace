@@ -47,6 +47,7 @@ export interface CodexAdapterSmokeReport {
   readBackExecutionRunId: string;
   contextAssemblyId: string;
   renderedObjective: boolean;
+  renderedFormatVersion: boolean;
   renderedNonGoals: boolean;
   renderedExplicitExclusions: boolean;
   renderedEvidenceContract: boolean;
@@ -67,6 +68,7 @@ interface CountRow {
 interface CodexAdapterBriefProof {
   contextAssemblyId: string;
   renderedObjective: boolean;
+  renderedFormatVersion: boolean;
   renderedNonGoals: boolean;
   renderedExplicitExclusions: boolean;
   renderedEvidenceContract: boolean;
@@ -142,6 +144,9 @@ const assertCodexAdapterBriefProof = (
   const renderedObjective = input.rendered.renderedBrief.includes(
     `Objective: ${input.aggregate.taskContract.objective}`
   );
+  const renderedFormatVersion = input.rendered.renderedBrief.includes(
+    `Format Version: ${input.rendered.brief.formatVersion}`
+  );
   const renderedNonGoals = input.aggregate.taskContract.nonGoals.every((nonGoal) =>
     input.rendered.renderedBrief.includes(`- ${nonGoal}`)
   );
@@ -162,6 +167,7 @@ const assertCodexAdapterBriefProof = (
     input.aggregate.executionRun.id === input.executionRunId,
     contextAssembly.id === input.expectedContextAssemblyId,
     renderedObjective,
+    renderedFormatVersion,
     renderedNonGoals,
     renderedExplicitExclusions,
     renderedEvidenceContract,
@@ -181,6 +187,7 @@ const assertCodexAdapterBriefProof = (
   return {
     contextAssemblyId: contextAssembly.id,
     renderedObjective,
+    renderedFormatVersion,
     renderedNonGoals,
     renderedExplicitExclusions,
     renderedEvidenceContract,
@@ -196,6 +203,7 @@ const reportLines = (report: CodexAdapterSmokeReport): string[] => [
   `Readback: ${matchedOrMismatch(report.readBackExecutionRunId, report.executionRunId)}`,
   `Context assembly: ${report.contextAssemblyId}`,
   `Objective present: ${yesNo(report.renderedObjective)}`,
+  `Format version present: ${yesNo(report.renderedFormatVersion)}`,
   `Non-goals present: ${yesNo(report.renderedNonGoals)}`,
   `Explicit exclusions present: ${yesNo(report.renderedExplicitExclusions)}`,
   `Evidence contract present: ${yesNo(report.renderedEvidenceContract)}`,
@@ -501,6 +509,7 @@ export const runCodexAdapterSmokeCheck = async (
       readBackExecutionRunId: aggregate.executionRun.id,
       contextAssemblyId: proof.contextAssemblyId,
       renderedObjective: proof.renderedObjective,
+      renderedFormatVersion: proof.renderedFormatVersion,
       renderedNonGoals: proof.renderedNonGoals,
       renderedExplicitExclusions: proof.renderedExplicitExclusions,
       renderedEvidenceContract: proof.renderedEvidenceContract,

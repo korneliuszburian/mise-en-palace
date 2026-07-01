@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: EBF-01 Add ExecutionBrief format/version contract
+current task: GCR-01 Add graph contradiction and duplicate candidate readback
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,21 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-EBF-01 Add ExecutionBrief format/version contract is active.
-KRN is useful as a governed internal-alpha brain kernel, but Codex-facing prompt
-surfaces must be explicit, versioned/reviewable, and protected against silent
-format drift before larger agent/harness integration work.
+GCR-01 Add graph contradiction and duplicate candidate readback is active.
+KRN needs more real graph-brain usefulness: existing relation readbacks should
+produce reviewable contradiction/duplicate candidates when persisted graph
+evidence indicates conflict or overlap, without crawler/runtime/platform work.
 ```
 
 Latest outcome:
 
 ```txt
-WJI-01 complete: worker job idempotency key patterns and memoryCoreGate labels
-are now explicitly downgraded in worker/DB/CLI readback as not runtime-enforced.
+EBF-01 complete: ExecutionBrief has an explicit format version contract and DB
+codex-adapter smoke confirms the rendered marker is present.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-wji-01-worker-idempotency-gate-downgrade/REPORT.md
-Next: EBF-01 adds a bounded ExecutionBrief format/version contract for the
-Codex-facing adapter surface without provider rewrite, broad prompt engine, or
-LLM eval platform.
+docs/reviews/controlled-dogfood/2026-07-01-ebf-01-execution-brief-format-contract/REPORT.md
+Next: GCR-01 adds bounded graph contradiction/duplicate candidate readback from
+existing relation/source paths.
 ```
 
 ## 2. Product Thesis
@@ -2430,9 +2429,17 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-wji-01-worker-idempotency-gate-downgrade/REPORT.md`.
   Next: `mise-en-palace-bvx` / EBF-01 adds an ExecutionBrief format/version
   contract.
-- [ ] EBF-01 active: `mise-en-palace-bvx` adds a bounded ExecutionBrief
-  format/version contract without provider abstraction rewrite, dashboard/API/
-  MCP, broad prompt engine, LLM eval platform, or Codex execution changes.
+- [x] EBF-01 complete: `mise-en-palace-bvx` added `krn.executionBrief.v1` to the
+  typed ExecutionBrief, rendered Codex brief text, golden behavior proof, and DB
+  codex-adapter smoke readback. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-ebf-01-execution-brief-format-contract/REPORT.md`.
+  Next: `mise-en-palace-pyr` / GCR-01 adds graph contradiction/duplicate
+  candidate readback.
+- [ ] GCR-01 active: `mise-en-palace-pyr` inspects existing graph/source
+  relation paths and adds the smallest reviewable contradiction/duplicate
+  candidate readback without crawler, entity extraction platform, DB schema by
+  default, worker daemon, Memory Core auto-mutation, dashboard/API/MCP, or
+  embeddings/ranking rewrite.
 
 ## 21. Final Response Format For Codex Runs
 

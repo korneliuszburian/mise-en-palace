@@ -15,6 +15,9 @@ import {
   renderExecutionBrief
 } from "./renderExecutionBrief.js";
 import {
+  executionBriefFormatVersion
+} from "./contracts.js";
+import {
   createCodexSkillBindingHints
 } from "./renderSkillHints.js";
 
@@ -165,6 +168,7 @@ describe("renderExecutionBrief", () => {
       constraints: ["no runtime markdown memory"],
       acceptance: ["typecheck and tests pass"]
     });
+    expect(brief.formatVersion).toBe(executionBriefFormatVersion);
     expect(brief.sourceClaimsUsed).toEqual(["claim-1"]);
     expect(brief.memoryRecordsUsed).toEqual(["memory-1"]);
     expect(brief.untrustedContextWarnings).toEqual([]);
@@ -195,6 +199,7 @@ describe("renderExecutionBrief", () => {
     expect(rendered).toContain(
       "Objective: Make doctor report Postgres memory and source graph readiness"
     );
+    expect(rendered).toContain(`Format Version: ${executionBriefFormatVersion}`);
     expect(rendered).toContain("Non-goals:");
     expect(rendered).toContain("- do not add dashboard");
     expect(rendered).toContain("Current Task Contract:");
@@ -278,6 +283,7 @@ describe("renderExecutionBrief", () => {
     });
 
     expect(rendered).toContain("KRN Codex Execution Brief");
+    expect(rendered).toContain(`Format Version: ${executionBriefFormatVersion}`);
     expect(rendered).toContain("What This Does Not Prove:");
   });
 

@@ -14,6 +14,9 @@ import type {
 } from "@krn/harness";
 
 import {
+  executionBriefFormatVersion
+} from "./contracts.js";
+import {
   createExecutionBrief,
   renderExecutionBriefText
 } from "./renderExecutionBrief.js";
@@ -105,6 +108,7 @@ const evidenceContract: EvidenceContract = {
 
 const expectedRenderedBriefFragments = [
   "Constraints:",
+  `Format Version: ${executionBriefFormatVersion}`,
   "- do not mutate core state",
   "Acceptance:",
   "- brief exposes review contract fields",

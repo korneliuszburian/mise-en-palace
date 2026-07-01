@@ -68,6 +68,10 @@ export interface CodexMcpResourceRef {
 
 export type CodexReferenceStatus = "active" | "planned" | "superseded";
 
+export const executionBriefFormatVersion = "krn.executionBrief.v1" as const;
+
+export type ExecutionBriefFormatVersion = typeof executionBriefFormatVersion;
+
 export interface CodexGoalRef {
   source: string;
   objective: string;
@@ -122,6 +126,7 @@ export interface ExecutionBriefEvidenceContract {
 }
 
 export interface ExecutionBrief {
+  formatVersion: ExecutionBriefFormatVersion;
   title: string;
   objective: string;
   nonGoals: string[];
