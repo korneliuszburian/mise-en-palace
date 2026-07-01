@@ -12,18 +12,21 @@ import {
   type IsoTimestamp
 } from "./time.js";
 
-export type SourceTrustTier =
-  | "high"
-  | "medium"
-  | "low"
-  | "primary"
-  | "official"
-  | "project-decision"
-  | "source-code"
-  | "paper"
-  | "practitioner"
-  | "secondary"
-  | "hypothesis";
+export const sourceTrustTiers = [
+  "high",
+  "medium",
+  "low",
+  "primary",
+  "official",
+  "project-decision",
+  "source-code",
+  "paper",
+  "practitioner",
+  "secondary",
+  "hypothesis"
+] as const;
+
+export type SourceTrustTier = typeof sourceTrustTiers[number];
 
 export type SourceSupportType =
   | "supports"

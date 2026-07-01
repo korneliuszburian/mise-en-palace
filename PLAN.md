@@ -1,6 +1,6 @@
 # KRN Active Plan
 
-Status: active compact root plan. Date: 2026-06-30.
+Status: active compact root plan. Date: 2026-07-01.
 
 Root `PLAN.md` is the compact product source of truth. Detailed history stays in `PLANS.md`.
 Current-task contracts live in `PLANS.md`.
@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: ACT-02 Align activation and source trust tier types
+current task: E2E-01 Add governed evidence-to-memory activation integration proof
 ```
 
 ## Compact Checkpoints
@@ -66,7 +66,7 @@ evidence metadata boundary: known evidence readback metadata validates before DB
 evidence command normalization: schema delegates command proof normalization to core
 core evidence normalizer: one provenance switch preserves command proof semantics
 activation memory safety: blocking review signals now structurally exclude memory candidates
-activation trust boundary: active slice aligns activation/source trust tier types
+activation trust boundary: activation/source/schema trust tiers share one source-domain vocabulary
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -77,7 +77,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### ACT-02 Align Activation And Source Trust Tier Types
+### E2E-01 Add Governed Evidence-To-Memory Activation Integration Proof
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -89,13 +89,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-act-01-memory-review-activation/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-act-02-trust-tier-alignment/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-8hb: Align activation and source trust tier types.
+mise-en-palace-7v3: Add governed evidence-to-memory activation integration proof.
 ```
 
 Deferred slice:

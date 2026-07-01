@@ -64,7 +64,7 @@ export interface ContextBudget {
 
 export interface ActivationPolicy {
   id?: string;
-  minimumTrustTier: "low" | "medium" | "high";
+  minimumTrustTier: SourceTrustTier;
   budget: ContextBudget;
   allowStale: boolean;
   requireSourceDoesNotProve: boolean;

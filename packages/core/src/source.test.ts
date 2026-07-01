@@ -5,6 +5,7 @@ import {
   assessSourceClaimReviewSignals,
   assessSourceDecisionReviewSignals,
   rankSourceTrustTier,
+  sourceTrustTiers,
   type SourceClaimCreateStatus,
   type SourceClaimLifecycleStatus,
   type SourceClaim,
@@ -129,6 +130,19 @@ describe("source review signals", () => {
   });
 
   test("keeps source trust and override logic in the core domain", () => {
+    expect(sourceTrustTiers).toEqual([
+      "high",
+      "medium",
+      "low",
+      "primary",
+      "official",
+      "project-decision",
+      "source-code",
+      "paper",
+      "practitioner",
+      "secondary",
+      "hypothesis"
+    ]);
     expect(rankSourceTrustTier("official")).toBeGreaterThan(rankSourceTrustTier("high"));
     expect(rankSourceTrustTier("project-decision")).toBe(rankSourceTrustTier("official"));
     expect(rankSourceTrustTier("hypothesis")).toBeLessThan(rankSourceTrustTier("secondary"));

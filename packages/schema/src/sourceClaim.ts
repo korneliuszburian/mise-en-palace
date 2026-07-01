@@ -1,5 +1,8 @@
 import { z } from "zod";
 import {
+  sourceTrustTiers
+} from "@krn/core";
+import {
   MetadataSchema,
   RequiredTextSchema
 } from "./schemaPrimitives.js";
@@ -14,16 +17,7 @@ export const SourceArtifactKindSchema = z.enum([
   "external_doc"
 ]);
 
-export const SourceTrustTierSchema = z.enum([
-  "primary",
-  "official",
-  "project-decision",
-  "source-code",
-  "paper",
-  "practitioner",
-  "secondary",
-  "hypothesis"
-]);
+export const SourceTrustTierSchema = z.enum(sourceTrustTiers);
 
 export const SourceSupportTypeSchema = z.enum([
   "mechanism",

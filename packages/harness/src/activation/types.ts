@@ -137,20 +137,6 @@ export interface AssembleContextInput {
   metadata?: Record<string, unknown>;
 }
 
-export const trustRank = {
-  low: 1,
-  medium: 2,
-  high: 3,
-  primary: 3,
-  official: 3,
-  "project-decision": 3,
-  "source-code": 3,
-  paper: 2,
-  practitioner: 2,
-  secondary: 1,
-  hypothesis: 1
-} as const satisfies Record<SourceTrustTier, number>;
-
 export const markExcluded = (
   candidate: RankedActivationCandidate,
   exclusion: ActivationExclusion

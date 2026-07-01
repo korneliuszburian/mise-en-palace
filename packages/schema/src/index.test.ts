@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
 import {
+  sourceTrustTiers
+} from "@krn/core";
+import {
   OBSERVATION_SOURCE_RANGE_POLICY
 } from "../../core/src/observations/observationPolicy.js";
 
@@ -512,6 +515,19 @@ describe("schema parse boundaries", () => {
       trustTier: "practitioner",
       metadata: {}
     });
+  });
+
+  test("source schemas accept the canonical core trust tiers", () => {
+    const parseSourceArtifactInput = parser("parseSourceArtifactInput");
+
+    for (const trustTier of sourceTrustTiers) {
+      expect(
+        parseSourceArtifactInput({
+          title: `Trust tier ${trustTier}`,
+          trustTier
+        })
+      ).toMatchObject({ trustTier });
+    }
   });
 
   test("source decision edge inputs require typed target and M22 support", () => {

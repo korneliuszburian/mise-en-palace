@@ -1,13 +1,18 @@
 import type {
+  SourceTrustTier
+} from "@krn/core";
+import {
+  rankSourceTrustTier
+} from "@krn/core";
+import type {
   RankedActivationCandidate
 } from "./types.js";
 import {
-  markExcluded,
-  trustRank
+  markExcluded
 } from "./types.js";
 
 export interface TrustFilterPolicy {
-  minimumTrustTier: "low" | "medium" | "high";
+  minimumTrustTier: SourceTrustTier;
 }
 
 export const applyTrustFilter = (
@@ -19,7 +24,10 @@ export const applyTrustFilter = (
       return candidate;
     }
 
-    if (trustRank[candidate.trustTier] >= trustRank[policy.minimumTrustTier]) {
+    if (
+      rankSourceTrustTier(candidate.trustTier) >=
+      rankSourceTrustTier(policy.minimumTrustTier)
+    ) {
       return candidate;
     }
 

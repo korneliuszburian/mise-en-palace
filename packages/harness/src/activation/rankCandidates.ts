@@ -8,7 +8,8 @@ import type {
   SourceClaimEdge
 } from "@krn/core";
 import {
-  assessMemoryRecordReviewSignals
+  assessMemoryRecordReviewSignals,
+  rankSourceTrustTier
 } from "@krn/core";
 
 import type {
@@ -19,7 +20,6 @@ import type {
 import {
   tokenizeActivationText
 } from "./memoryQuery.js";
-import { trustRank } from "./types.js";
 
 const confidenceToTrustTier = (confidence: number): ActivationCandidate["trustTier"] => {
   if (confidence >= 85) {
@@ -58,7 +58,19 @@ const strongerTrustTier = (
   left: ActivationCandidate["trustTier"],
   right: ActivationCandidate["trustTier"]
 ): ActivationCandidate["trustTier"] =>
-  trustRank[right] > trustRank[left] ? right : left;
+  rankSourceTrustTier(right) > rankSourceTrustTier(left) ? right : left;
+
+const activationTrustScore = (trustTier: ActivationCandidate["trustTier"]): number => {
+  if (rankSourceTrustTier(trustTier) >= rankSourceTrustTier("high")) {
+    return 30;
+  }
+
+  if (rankSourceTrustTier(trustTier) >= rankSourceTrustTier("medium")) {
+    return 20;
+  }
+
+  return 10;
+};
 
 const preferredRepresentative = (
   left: RankedActivationCandidate,
@@ -98,7 +110,7 @@ const mergedScores = (
   temporal: Math.max(left.temporalScore, right.temporalScore),
   contextRoi: Math.max(left.contextRoiScore, right.contextRoiScore),
   feedback: left.feedbackScore + right.feedbackScore,
-  trust: trustRank[trustTier] * 10
+  trust: activationTrustScore(trustTier)
 });
 
 const mergedTotalScore = (scores: MergedCandidateScores): number =>
@@ -391,7 +403,7 @@ export const rankCandidates = (
       const temporal = candidate.temporalScore ?? 0;
       const contextRoi = candidate.contextRoiScore ?? 0;
       const feedback = candidate.feedbackScore ?? 0;
-      const trust = trustRank[candidate.trustTier] * 10;
+      const trust = activationTrustScore(candidate.trustTier);
 
       return {
         ...candidate,

@@ -962,6 +962,47 @@ describe("activation engine", () => {
     ]);
   });
 
+  it("uses core source trust ranking for rich activation trust tiers", () => {
+    const query = buildSourceQuery(task);
+    const ranked = rankCandidates([
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-official",
+        trustTier: "official"
+      })),
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-paper",
+        trustTier: "paper"
+      })),
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-secondary",
+        trustTier: "secondary"
+      })),
+      toSourceClaimCandidate(sourceClaim({
+        id: "claim-hypothesis",
+        trustTier: "hypothesis"
+      }))
+    ], query);
+
+    const highThreshold = new Map(
+      applyTrustFilter(ranked, { minimumTrustTier: "high" })
+        .map((candidate) => [candidate.subjectId, candidate])
+    );
+    const mediumThreshold = new Map(
+      applyTrustFilter(ranked, { minimumTrustTier: "medium" })
+        .map((candidate) => [candidate.subjectId, candidate])
+    );
+
+    expect(highThreshold.get("claim-official")?.exclusion).toBeUndefined();
+    expect(highThreshold.get("claim-paper")?.exclusion).toBeUndefined();
+    expect(highThreshold.get("claim-secondary")).toMatchObject({
+      exclusion: expect.objectContaining({ reason: "low_trust" })
+    });
+    expect(mediumThreshold.get("claim-secondary")?.exclusion).toBeUndefined();
+    expect(mediumThreshold.get("claim-hypothesis")).toMatchObject({
+      exclusion: expect.objectContaining({ reason: "low_trust" })
+    });
+  });
+
   it("selects a small high-signal working set from noisy candidates", () => {
     const query = buildMemoryQuery(task);
     const candidates = [

@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: ACT-02 Align activation and source trust tier types.
+current task: E2E-01 Add governed evidence-to-memory activation integration proof.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-ACT-01 complete: blocking memory review signals now structurally exclude memory
-from activation context while warning-only signals remain reviewable metadata.
+ACT-02 complete: activation, source, and schema trust-tier boundaries now share
+one canonical source trust vocabulary and rank function.
 ```
 
 ## Direction

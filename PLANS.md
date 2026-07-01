@@ -2384,8 +2384,15 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-act-01-memory-review-activation/REPORT.md`.
   Next: `mise-en-palace-8hb` / ACT-02 aligns activation/source trust tier types.
   `mise-en-palace-ktz` / REV-01 remains deferred as valid later cleanup.
-- [ ] ACT-02 active: `mise-en-palace-8hb` aligns activation/source trust tier
-  types without rewriting scoring or retrieval.
+- [x] ACT-02 complete: activation/source/schema trust tiers now share one
+  source-domain vocabulary and rank function without rewriting scoring or
+  retrieval. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-act-02-trust-tier-alignment/REPORT.md`.
+  Next: `mise-en-palace-7v3` / E2E-01 adds a governed evidence-to-memory
+  activation integration proof.
+- [ ] E2E-01 active: `mise-en-palace-7v3` adds the smallest governed
+  integration proof for evidence -> observation/reflection -> candidate ->
+  review/promote-or-reject -> memory/activation reuse or explicit abstention.
 
 ## 21. Final Response Format For Codex Runs
 
