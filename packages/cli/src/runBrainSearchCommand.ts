@@ -67,6 +67,7 @@ interface BrainSearchPreviewResource {
     linkedSearchDocuments: number;
     sourceClaimDocumentLinkCaveats: readonly string[];
     relationSupport: number;
+    sourceDecisionSupport: number;
     graphReadback: {
       claimNodes: number;
       relationEdges: number;
@@ -444,6 +445,7 @@ const buildResource = (
   const supportingDocuments = arrayValue(answerPackage["supportingDocuments"]);
   const sourceClaimDocumentLinks = arrayValue(answerPackage["sourceClaimDocumentLinks"]);
   const relationSupport = arrayValue(answerPackage["relationSupport"]);
+  const sourceDecisionSupport = arrayValue(answerPackage["sourceDecisionSupport"]);
   const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
   const selectedKnowledge =
@@ -483,6 +485,7 @@ const buildResource = (
       linkedSearchDocuments,
       sourceClaimDocumentLinkCaveats: sourceClaimDocumentLinkCaveats(sourceClaimDocumentLinks),
       relationSupport: relationSupport.length,
+      sourceDecisionSupport: sourceDecisionSupport.length,
       graphReadback: {
         claimNodes: numberValue(graphReadback["claimNodes"]),
         relationEdges: numberValue(graphReadback["relationEdges"]),
@@ -653,6 +656,7 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
           (item) => `- sourceClaimDocumentLinkCaveat: ${item}`
         )),
     `- relationSupport: ${resource.sourceSearch.relationSupport}`,
+    `- sourceDecisionSupport: ${resource.sourceSearch.sourceDecisionSupport}`,
     `- graphAware: ${resource.sourceSearch.graphReadback.graphAware}`,
     `- graphRelationEdges: ${resource.sourceSearch.graphReadback.relationEdges}`,
     `- graphTemporalEdges: ${resource.sourceSearch.graphReadback.temporalEdges}`,

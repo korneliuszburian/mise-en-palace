@@ -6,7 +6,8 @@ import {
 
 import type {
   SourceClaim,
-  SourceClaimEdge
+  SourceClaimEdge,
+  SourceDecisionEdge
 } from "@krn/core";
 import type {
   SearchDocumentSearchResult
@@ -86,20 +87,61 @@ const sourceClaimEdge = (
   ...overrides
 });
 
-const runtime = (input?: {
+const sourceDecisionEdge = (
+  overrides: Partial<SourceDecisionEdge> = {}
+): SourceDecisionEdge => ({
+  id: "73e266bb-e957-4a07-aa62-fe74cb7178a0" as SourceDecisionEdge["id"],
+  sourceClaimId,
+  targetType: "eval_candidate",
+  targetId: "activation-utility-source-eval-follow-up-imr-38",
+  supportType: "implementation-boundary",
+  confidence: "medium",
+  notes: "Accepted review retained as manual source/eval follow-up evidence.",
+  metadata: {
+    doesNotProve: "This edge does not prove eval promotion or source truth."
+  },
+  createdAt: now,
+  ...overrides
+});
+
+interface SourceSearchRuntimeInput {
   claims?: readonly SourceClaim[];
   documents?: readonly SearchDocumentSearchResult[];
   linkedDocuments?: readonly SearchDocumentSearchResult[];
   edges?: readonly SourceClaimEdge[];
+  decisionEdges?: readonly SourceDecisionEdge[];
   onSearchQuery?(query: string): void;
   onClose?(): void;
-}): SourceSearchCommand["createDatabaseRuntime"] => async () => {
-  const claims = input?.claims ?? [sourceClaim()];
-  const documents = input?.documents ?? [searchDocument()];
-  const linkedDocuments = input?.linkedDocuments ?? documents;
-  const edges = input?.edges ?? [];
+}
+
+interface SourceSearchRuntimeFixtures {
+  claims: readonly SourceClaim[];
+  documents: readonly SearchDocumentSearchResult[];
+  linkedDocuments: readonly SearchDocumentSearchResult[];
+  edges: readonly SourceClaimEdge[];
+  decisionEdges: readonly SourceDecisionEdge[];
+  onSearchQuery?: (query: string) => void;
+  onClose?: () => void;
+}
+
+const runtimeFixtures = (input: SourceSearchRuntimeInput = {}): SourceSearchRuntimeFixtures => {
+  const documents = input.documents ?? [searchDocument()];
 
   return {
+    claims: input.claims ?? [sourceClaim()],
+    documents,
+    linkedDocuments: input.linkedDocuments ?? documents,
+    edges: input.edges ?? [],
+    decisionEdges: input.decisionEdges ?? [],
+    ...(input.onSearchQuery === undefined ? {} : { onSearchQuery: input.onSearchQuery }),
+    ...(input.onClose === undefined ? {} : { onClose: input.onClose })
+  };
+};
+
+const runtime = (input?: SourceSearchRuntimeInput): SourceSearchCommand["createDatabaseRuntime"] => {
+  const fixtures = runtimeFixtures(input);
+
+  return async () => ({
     workspaceId: "workspace-1",
     projectId,
     compilerDependencies: {
@@ -115,8 +157,8 @@ const runtime = (input?: {
         }
       },
       sourceRepository: {
-        async listClaimsForProject() {
-          return claims;
+        async listClaimsForProject(_projectId, limit) {
+          return fixtures.claims.slice(0, limit);
         },
         async listSourceClaimEdgesForClaim() {
           return [];
@@ -124,9 +166,9 @@ const runtime = (input?: {
       },
       retrievalRepository: {
         async searchLexical(searchInput) {
-          input?.onSearchQuery?.(searchInput.query);
+          fixtures.onSearchQuery?.(searchInput.query);
 
-          return documents;
+          return fixtures.documents;
         },
         async startRetrievalRun() {
           throw new Error("startRetrievalRun should not be called");
@@ -161,7 +203,7 @@ const runtime = (input?: {
         throw new Error("createSourceClaimEdge should not be called");
       },
       async listSourceClaimEdgesForClaim(sourceClaimIdForReadback) {
-        return edges.filter((edge) =>
+        return fixtures.edges.filter((edge) =>
           edge.fromSourceClaimId === sourceClaimIdForReadback ||
           edge.toSourceClaimId === sourceClaimIdForReadback
         );
@@ -172,6 +214,9 @@ const runtime = (input?: {
       async getSourceDecisionEdgeById() {
         throw new Error("getSourceDecisionEdgeById should not be called");
       },
+      async listSourceDecisionEdgesForClaim(sourceClaimIdForReadback) {
+        return fixtures.decisionEdges.filter((edge) => edge.sourceClaimId === sourceClaimIdForReadback);
+      },
       async createSourceRejection() {
         throw new Error("createSourceRejection should not be called");
       }
@@ -181,18 +226,18 @@ const runtime = (input?: {
         throw new Error("createSearchDocument should not be called");
       },
       async searchLexical(searchInput) {
-        input?.onSearchQuery?.(searchInput.query);
+        fixtures.onSearchQuery?.(searchInput.query);
 
-        return documents;
+        return fixtures.documents;
       },
       async listSearchDocumentsForSourceLinks() {
-        return linkedDocuments;
+        return fixtures.linkedDocuments;
       }
     },
     async close() {
-      input?.onClose?.();
+      fixtures.onClose?.();
     }
-  };
+  });
 };
 
 type SourceSearchCommand = Parameters<typeof runSourceSearchCommand>[0];
@@ -514,6 +559,96 @@ describe("runSourceSearchCommand", () => {
     expect(arrayValue(graphReadback.caveats, "graph caveats")).toContain(
       "entity extraction is not available in this bounded readback"
     );
+  });
+
+  it("scans enough source claims before ranking bounded source-search output", async () => {
+    const exactClaim = sourceClaim({
+      id: "190f1f72-4621-49b4-b93c-538ea2c581ef" as SourceClaim["id"],
+      claim: "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only.",
+      mechanism: "Accepted heartbeat review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
+      krnImplication: "Natural source search should surface the retained follow-up evidence before opening new acquisition work.",
+      consumer: "IMR-40 natural source recall repair",
+      falsifier: "A small-limit natural source search cannot include this exact retained claim."
+    });
+    const fillerClaims = Array.from({ length: 6 }, (_, index) =>
+      sourceClaim({
+        id: `00000000-0000-4000-8000-00000000000${index}` as SourceClaim["id"],
+        claim: `Unrelated filler claim ${index}`,
+        mechanism: "Filler claim should not outrank the exact retained source evidence.",
+        krnImplication: "This exists only to prove source claim scan depth.",
+        consumer: "IMR-40 source recall regression",
+        falsifier: "Filler is selected over exact retained evidence."
+      })
+    );
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "IMR-37 heartbeat-routed activation utility candidate accepted manual source eval follow-up",
+        limit: 2,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        claims: [...fillerClaims, exactClaim],
+        documents: []
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const supportingClaims = arrayValue(answerPackage.supportingClaims, "supportingClaims");
+    const firstClaim = objectValue(supportingClaims[0], "first supporting claim");
+
+    expect(firstClaim.sourceClaimId).toBe("190f1f72-4621-49b4-b93c-538ea2c581ef");
+    expect(firstClaim.claim).toBe(
+      "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only."
+    );
+  });
+
+  it("includes read-only SourceDecisionEdge support for supporting source claims", async () => {
+    const result = await runSourceSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => now,
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "sourceSearch",
+        query: "activation utility follow-up",
+        limit: 10,
+        maxInclusions: 2,
+        json: true
+      },
+      createDatabaseRuntime: runtime({
+        decisionEdges: [sourceDecisionEdge()]
+      })
+    });
+    const output = parseJsonObject(result.stdout);
+    const answerPackage = objectValue(output.answerPackage, "answerPackage");
+    const sourceDecisionSupport = arrayValue(
+      answerPackage.sourceDecisionSupport,
+      "sourceDecisionSupport"
+    );
+    const decisionSupport = objectValue(sourceDecisionSupport[0], "first source decision support");
+
+    expect(arrayValue(answerPackage.answerUsefulnessReasons, "answerUsefulnessReasons")).toContain(
+      "Answer package includes SourceDecisionEdge decision support."
+    );
+    expect(sourceDecisionSupport).toHaveLength(1);
+    expect(decisionSupport.sourceClaimId).toBe(sourceClaimId);
+    expect(decisionSupport.sourceDecisionEdgeId).toBe("73e266bb-e957-4a07-aa62-fe74cb7178a0");
+    expect(decisionSupport.targetType).toBe("eval_candidate");
+    expect(decisionSupport.targetId).toBe("activation-utility-source-eval-follow-up-imr-38");
+    expect(decisionSupport.supportType).toBe("implementation-boundary");
+    expect(decisionSupport.confidence).toBe("medium");
+    expect(decisionSupport.notes).toBe("Accepted review retained as manual source/eval follow-up evidence.");
+    expect(decisionSupport.doesNotProve).toBe("This edge does not prove eval promotion or source truth.");
   });
 
   it("summarizes temporal, contradiction, duplicate, and invalidation relation edges", async () => {

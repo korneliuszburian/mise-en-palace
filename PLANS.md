@@ -206,6 +206,46 @@ IMR-38 complete: accepted activationUtility review was retained as bounded
 IMR-39 complete: retained IMR-38 evidence replays through marker-addressed
   source/brain search as useful SearchDocument/source-link evidence; natural and
   exact-claim queries still miss the exact retained SourceClaim/SourceDecisionEdge.
+IMR-40 complete: natural source/brain/store-only search now surfaces the exact
+  retained IMR-38 SourceClaim and SourceDecisionEdge support; changed-files
+  Fallow gate passes, while broad Fallow retains baseline repo-level findings.
+```
+
+## Outcome IMR-40 Natural Source/Eval Recall Repair
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-40-natural-source-eval-recall-repair/REPORT.md
+```
+
+Outcome: `krn source search` now scans a wider bounded SourceClaim set before
+ranking small operator output, and source/brain search answer packages expose
+read-only `SourceDecisionEdge` support. Live natural query replay found exact
+SourceClaim `190f1f72-4621-49b4-b93c-538ea2c581ef` and SourceDecisionEdge
+`73e266bb-e957-4a07-aa62-fe74cb7178a0`. Store-only brain search returned
+`selectedKnowledge: 6` with the exact retained claim first.
+
+Source-to-decision:
+
+- Source: IMR-39 missing natural recall and IMR-40 live DB replay.
+- Mechanism: small operator `--limit` applied before SourceClaim ranking hid the
+  exact retained claim; decision-edge support was not summarized.
+- KRN implication: retained source/eval follow-up evidence is reusable only if
+  natural readback exposes both claim and decision target support.
+- Decision: accept bounded source-search scan-depth/readback repair; do not
+  change global ranking, schema, crawler, worker, API/MCP, eval promotion, or
+  Memory Core.
+- Consumer: next pattern/research brain loop.
+- Falsifier: future small-limit natural source/brain query cannot surface the
+  exact retained claim/decision support.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-wcv: Use repaired natural source/eval recall in next pattern brain loop
 ```
 
 ## Outcome IMR-39 Activation Utility Brain Replay

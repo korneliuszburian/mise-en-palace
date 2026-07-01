@@ -52,6 +52,7 @@ AMA activation utility eval proof: heartbeat-routed exploration candidate has be
 AMA activation utility candidate review: heartbeat-routed candidate accepted for manual source/eval follow-up
 AMA activation utility source/eval follow-up: accepted review retained as SourceArtifact/SourceClaim/SourceDecisionEdge evidence
 AMA activation utility brain replay: marker/SearchDocument replay works; natural exact SourceClaim/SourceDecisionEdge recall needs bounded repair
+AMA activation utility natural recall: exact SourceClaim/SourceDecisionEdge now surface through natural source/brain search readback
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -77,13 +78,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-39-activation-utility-brain-replay/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-40-natural-source-eval-recall-repair/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-2fl: Repair retained source/eval evidence natural brain-search recall.
+mise-en-palace-wcv: Use repaired natural source/eval recall in next pattern brain loop.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -128,7 +129,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-39: AMA linked evidence accepted, activation utility readback exposed, usefulness checked, exploration evidence routed into heartbeat candidate-only output, bounded eval proof added, the routed candidate accepted for manual source/eval follow-up, the accepted review retained as SourceArtifact/SourceClaim/SourceDecisionEdge evidence, and marker/SearchDocument brain replay classified as useful while natural exact recall remains missing.
+IMR-18-40: AMA linked evidence accepted, activation utility readback exposed, usefulness checked, exploration evidence routed into heartbeat candidate-only output, bounded eval proof added, the routed candidate accepted for manual source/eval follow-up, the accepted review retained as SourceArtifact/SourceClaim/SourceDecisionEdge evidence, marker/SearchDocument brain replay classified as useful, and natural exact SourceClaim/SourceDecisionEdge recall repaired.
 ```
 
 ## Remaining Product Gaps

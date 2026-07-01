@@ -64,6 +64,7 @@ describe("runBrainSearchCommand", () => {
               supportingClaims: [{ label: "claim" }],
               supportingDocuments: [{ label: "doc" }],
               relationSupport: [{ edgeId: "edge-1" }],
+              sourceDecisionSupport: [{ sourceDecisionEdgeId: "decision-edge-1" }],
               graphReadback: {
                 claimNodes: 1,
                 relationEdges: 1,
@@ -111,6 +112,7 @@ describe("runBrainSearchCommand", () => {
         supportingClaims: 1,
         supportingDocuments: 1,
         relationSupport: 1,
+        sourceDecisionSupport: 1,
         graphReadback: {
           claimNodes: 1,
           relationEdges: 1,
@@ -185,6 +187,7 @@ describe("runBrainSearchCommand", () => {
     expect(result.stdout).toContain("Brain knowledge:");
     expect(result.stdout).toContain("cardIds: none");
     expect(result.stdout).toContain("graphAware: false");
+    expect(result.stdout).toContain("sourceDecisionSupport: 0");
     expect(result.stdout).toContain("graphCaveat: entity extraction is not available in this bounded readback");
     expect(result.stdout).toContain("missingEvidence: governed SourceClaim evidence");
     expect(result.stdout).toContain("Do not infer product truth");

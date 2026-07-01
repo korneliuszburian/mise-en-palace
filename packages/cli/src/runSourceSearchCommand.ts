@@ -1,6 +1,7 @@
 import type {
   SourceClaim,
   SourceClaimEdge,
+  SourceDecisionEdge,
   TaskContract
 } from "@krn/core";
 import {
@@ -49,6 +50,7 @@ const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
 const defaultLimit = 20;
 const defaultMaxInclusions = 6;
+const defaultSourceClaimScanFloor = 30;
 
 type SearchReviewability =
   | "ready"
@@ -119,6 +121,18 @@ interface SourceSearchRelationSupport {
   createdAt: SourceClaimEdge["createdAt"];
 }
 
+interface SourceSearchDecisionSupport {
+  sourceClaimId: SourceDecisionEdge["sourceClaimId"];
+  sourceDecisionEdgeId: SourceDecisionEdge["id"];
+  targetType: SourceDecisionEdge["targetType"];
+  targetId: SourceDecisionEdge["targetId"];
+  supportType: SourceDecisionEdge["supportType"];
+  confidence: SourceDecisionEdge["confidence"];
+  notes: SourceDecisionEdge["notes"];
+  doesNotProve: string;
+  createdAt: SourceDecisionEdge["createdAt"];
+}
+
 type SourceSearchSourceClaimDocumentLinkKind =
   | "source_claim"
   | "source_chunk"
@@ -160,6 +174,7 @@ interface SourceSearchAnswerPackage {
   supportingDocuments: readonly SourceSearchAnswerCandidate[];
   sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
   relationSupport: readonly SourceSearchRelationSupport[];
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   graphReadback: SourceSearchGraphReadback;
   neutralOrNoise: readonly SourceSearchAnswerCandidate[];
   missingEvidence: readonly string[];
@@ -372,6 +387,10 @@ const candidateToOutput = (
   const falsifier = metadataString(candidate.metadata, "falsifier");
   const sourceArtifactId = metadataString(candidate.metadata, "sourceArtifactId");
   const sourceChunkId = metadataString(candidate.metadata, "sourceChunkId");
+  const sourceClaimId =
+    candidate.subjectType === "source_claim"
+      ? sourceClaimIdFor(candidate)
+      : candidate.sourceClaimId;
 
   return {
     label: candidateLabel(candidate),
@@ -389,7 +408,7 @@ const candidateToOutput = (
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
     searchDocumentId: candidate.searchDocumentId,
-    sourceClaimId: candidate.sourceClaimId,
+    sourceClaimId,
     sourceArtifactId,
     sourceChunkId,
     claim,
@@ -676,15 +695,20 @@ const buildGraphReadback = (input: {
   };
 };
 
-const buildRelationSupport = async (input: {
-  included: readonly RankedActivationCandidate[];
-  sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceClaimEdgesForClaim">;
-}): Promise<SourceSearchRelationSupport[]> => {
-  const sourceClaimIds = [...new Set(input.included.flatMap((candidate) => {
+const sourceClaimIdsForIncluded = (
+  included: readonly RankedActivationCandidate[]
+): readonly SourceClaim["id"][] =>
+  [...new Set(included.flatMap((candidate) => {
     const sourceClaimId = sourceClaimIdFor(candidate);
 
     return sourceClaimId === undefined ? [] : [sourceClaimId];
   }))];
+
+const buildRelationSupport = async (input: {
+  included: readonly RankedActivationCandidate[];
+  sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceClaimEdgesForClaim">;
+}): Promise<SourceSearchRelationSupport[]> => {
+  const sourceClaimIds = sourceClaimIdsForIncluded(input.included);
   const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) => {
     const edges = await input.sourceRepository.listSourceClaimEdgesForClaim(sourceClaimId);
 
@@ -694,11 +718,47 @@ const buildRelationSupport = async (input: {
   return edgeGroups.flat();
 };
 
+const sourceDecisionSupportFromEdge = (
+  edge: SourceDecisionEdge
+): SourceSearchDecisionSupport => ({
+  sourceClaimId: edge.sourceClaimId,
+  sourceDecisionEdgeId: edge.id,
+  targetType: edge.targetType,
+  targetId: edge.targetId,
+  supportType: edge.supportType,
+  confidence: edge.confidence,
+  notes: edge.notes,
+  doesNotProve:
+    metadataString(edge.metadata, "doesNotProve") ??
+    "SourceDecisionEdge support does not prove source truth, target correctness, eval promotion, or Memory Core mutation.",
+  createdAt: edge.createdAt
+});
+
+const buildSourceDecisionSupport = async (input: {
+  included: readonly RankedActivationCandidate[];
+  sourceRepository: Pick<DatabaseRuntime["sourceRepository"], "listSourceDecisionEdgesForClaim">;
+}): Promise<SourceSearchDecisionSupport[]> => {
+  const listSourceDecisionEdgesForClaim = input.sourceRepository.listSourceDecisionEdgesForClaim;
+
+  if (listSourceDecisionEdgesForClaim === undefined) {
+    return [];
+  }
+
+  const sourceClaimIds = sourceClaimIdsForIncluded(input.included);
+  const edgeGroups = await Promise.all(sourceClaimIds.map(async (sourceClaimId) =>
+    (await input.sourceRepository.listSourceDecisionEdgesForClaim?.(sourceClaimId) ?? [])
+      .map(sourceDecisionSupportFromEdge)
+  ));
+
+  return edgeGroups.flat();
+};
+
 const buildAnswerPackage = (input: {
   query: string;
   included: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
   relationSupport: readonly SourceSearchRelationSupport[];
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
 }): SourceSearchAnswerPackage => {
   const included = input.included.map((candidate) => candidateToOutput(candidate, "included"));
@@ -757,13 +817,17 @@ const buildAnswerPackage = (input: {
         : [`Answer package found ${linkedDocumentCount} artifact-linked SearchDocument reference(s) for supporting SourceClaims.`]),
       ...(input.relationSupport.length === 0
         ? []
-        : ["Answer package includes SourceClaimEdge relation support."])
+        : ["Answer package includes SourceClaimEdge relation support."]),
+      ...(input.sourceDecisionSupport.length === 0
+        ? []
+        : ["Answer package includes SourceDecisionEdge decision support."])
     ],
     queryShapeDiagnostics,
     supportingClaims,
     supportingDocuments,
     sourceClaimDocumentLinks: input.sourceClaimDocumentLinks,
     relationSupport: input.relationSupport,
+    sourceDecisionSupport: input.sourceDecisionSupport,
     graphReadback,
     neutralOrNoise,
     missingEvidence,
@@ -771,6 +835,23 @@ const buildAnswerPackage = (input: {
     recommendedNextAction
   };
 };
+
+const formatSourceDecisionSupport = (
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[]
+): readonly string[] =>
+  sourceDecisionSupport.length === 0
+    ? ["- none"]
+    : sourceDecisionSupport.map((decision) =>
+        [
+          `- source_claim:${decision.sourceClaimId}`,
+          ` edge:${decision.sourceDecisionEdgeId}`,
+          ` target:${decision.targetType}/${decision.targetId}`,
+          ` supportType:${decision.supportType}`,
+          ` confidence:${decision.confidence}`,
+          ` notes:${decision.notes}`,
+          ` doesNotProve:${decision.doesNotProve}`
+        ].join("")
+      );
 
 const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[] => {
   return [
@@ -824,6 +905,8 @@ const formatAnswerPackage = (answerPackage: SourceSearchAnswerPackage): string[]
             relation.invalidatedAt === undefined ? "" : ` invalidatedAt:${relation.invalidatedAt}`
           ].join("")
         )),
+    "source decision support:",
+    ...formatSourceDecisionSupport(answerPackage.sourceDecisionSupport),
     "graph readback:",
     `- claimNodes: ${answerPackage.graphReadback.claimNodes}`,
     `- relationEdges: ${answerPackage.graphReadback.relationEdges}`,
@@ -914,6 +997,7 @@ type SourceSearchRenderInput = {
   candidates: readonly RankedActivationCandidate[];
   diagnostics: RetrieveActivationCandidatesResult["diagnostics"];
   relationSupport: readonly SourceSearchRelationSupport[];
+  sourceDecisionSupport: readonly SourceSearchDecisionSupport[];
   sourceClaimDocumentLinks: readonly SourceSearchSourceClaimDocumentLink[];
 };
 
@@ -925,6 +1009,7 @@ const buildSearchReadback = (input: SourceSearchRenderInput) => {
     included,
     diagnostics: input.diagnostics,
     relationSupport: input.relationSupport,
+    sourceDecisionSupport: input.sourceDecisionSupport,
     sourceClaimDocumentLinks: input.sourceClaimDocumentLinks
   });
 
@@ -1086,7 +1171,7 @@ export const runSourceSearchCommand = async (
       sourceQuery: createSearchSourceQuery(taskContract, query),
       limits: {
         memory: 0,
-        source: limit,
+        source: Math.max(limit, maxInclusions * 4, defaultSourceClaimScanFloor),
         search: limit,
         antiMemory: 0
       },
@@ -1102,6 +1187,10 @@ export const runSourceSearchCommand = async (
     });
     const included = bounded.filter((candidate) => candidate.exclusion === undefined);
     const relationSupport = await buildRelationSupport({
+      included,
+      sourceRepository: databaseRuntime.sourceRepository
+    });
+    const sourceDecisionSupport = await buildSourceDecisionSupport({
       included,
       sourceRepository: databaseRuntime.sourceRepository
     });
@@ -1121,6 +1210,7 @@ export const runSourceSearchCommand = async (
             candidates: bounded,
             diagnostics: retrieved.diagnostics,
             relationSupport,
+            sourceDecisionSupport,
             sourceClaimDocumentLinks
           })
         : formatSearchResult({
@@ -1131,6 +1221,7 @@ export const runSourceSearchCommand = async (
             candidates: bounded,
             diagnostics: retrieved.diagnostics,
             relationSupport,
+            sourceDecisionSupport,
             sourceClaimDocumentLinks
           })
     };

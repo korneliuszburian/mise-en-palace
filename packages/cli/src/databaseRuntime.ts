@@ -97,7 +97,11 @@ export interface DatabaseRuntime {
     | "createSourceDecisionEdge"
     | "getSourceDecisionEdgeById"
     | "createSourceRejection"
-  > & Partial<Pick<SourceRepository, "createSourceChunk">>;
+  > & Partial<Pick<
+    SourceRepository,
+    | "createSourceChunk"
+    | "listSourceDecisionEdgesForClaim"
+  >>;
   retrievalRepository?: Pick<
     RetrievalRepository,
     | "createSearchDocument"
@@ -484,6 +488,19 @@ export const createDatabaseRuntime = async (
     listSearchDocumentsForSourceLinks: (sourceLinksInput) =>
       retrievalRepository.listSearchDocumentsForSourceLinks(sourceLinksInput)
   };
+  const sourceSearchSourceRepository: DatabaseRuntime["sourceRepository"] = {
+    createSourceArtifact: (...args) => sourceRepository.createSourceArtifact(...args),
+    createSourceClaim: (...args) => sourceRepository.createSourceClaim(...args),
+    getSourceClaimById: (...args) => sourceRepository.getSourceClaimById(...args),
+    listClaimsForProject: (...args) => sourceRepository.listClaimsForProject(...args),
+    createSourceClaimEdge: (...args) => sourceRepository.createSourceClaimEdge(...args),
+    listSourceClaimEdgesForClaim: (...args) => sourceRepository.listSourceClaimEdgesForClaim(...args),
+    createSourceDecisionEdge: (...args) => sourceRepository.createSourceDecisionEdge(...args),
+    getSourceDecisionEdgeById: (...args) => sourceRepository.getSourceDecisionEdgeById(...args),
+    listSourceDecisionEdgesForClaim: (...args) =>
+      sourceRepository.listSourceDecisionEdgesForClaim(...args),
+    createSourceRejection: (...args) => sourceRepository.createSourceRejection(...args)
+  };
 
   return {
     workspaceId: runtimeProject.project.workspaceId,
@@ -500,7 +517,7 @@ export const createDatabaseRuntime = async (
       createId: input.createId
     },
     harnessRunRepository,
-    sourceRepository,
+    sourceRepository: sourceSearchSourceRepository,
     retrievalRepository: sourceSearchRetrievalRepository,
     memoryRepository,
     observationRepository,
