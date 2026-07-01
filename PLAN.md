@@ -104,10 +104,6 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-readback/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-gce-01-consensus-relation-focus/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-cro-01-consensus-operator-readback/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-cru-01-consensus-readback-review/REPORT.md
 docs/reviews/controlled-dogfood/2026-07-01-crp-01-consensus-relation-pattern-retention/REPORT.md
 ```
 
