@@ -199,6 +199,53 @@ IMR-37 complete: existing heartbeat candidate review accepted the live
   activationUtility exploration candidate for manual source/eval follow-up with
   candidateFound true, reviewability ready, mutation none, and no ranking/runtime
   change.
+IMR-38 complete: accepted activationUtility review was retained as bounded
+  source/eval follow-up evidence through existing SourceArtifact/SearchDocument,
+  proposed SourceClaim, and SourceDecisionEdge paths; mutation none, no source
+  truth, no eval promotion.
+```
+
+## Outcome IMR-38 Activation Utility Source/Eval Follow-Up Evidence
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-38-activation-utility-source-eval-follow-up/REPORT.md
+```
+
+Outcome: the accepted IMR-37 activation utility candidate review was retained as
+bounded source/eval follow-up evidence. The slice used existing source artifact
+preview and source decision link paths to persist and read back:
+
+```txt
+SourceArtifact: 240a4700-053b-494d-ab59-d4361098cf31
+SearchDocument: ec52d802-bbf4-4b04-8737-28e6707c279d
+SourceClaim: 190f1f72-4621-49b4-b93c-538ea2c581ef
+SourceDecisionEdge: 73e266bb-e957-4a07-aa62-fe74cb7178a0
+target: eval_candidate/activation-utility-source-eval-follow-up-imr-38
+mutation: none
+```
+
+Source-to-decision:
+
+- Source: IMR-37 candidate review report and IMR-38 SOURCE.md.
+- Mechanism: accepted manual review becomes a proposed SourceClaim and a
+  SourceDecisionEdge to an eval-candidate follow-up target.
+- KRN implication: accepted review is now queryable/replayable as source/eval
+  evidence before ranking, runtime, source truth, or Memory Core work.
+- Decision: use existing source/eval evidence paths; reject a new eval candidate
+  CLI, schema, worker, ranking repair, or Memory Core mutation in this slice.
+- Consumer: future activation utility source/eval and brain search replay.
+- Falsifier: persisted SourceClaim/SourceDecisionEdge cannot be read back,
+  marker source-search misses the artifact, or future work treats this as source
+  truth/eval promotion.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-9ei: Replay retained activation utility follow-up evidence through brain search
 ```
 
 ## Outcome IMR-37 Activation Utility Candidate Review
