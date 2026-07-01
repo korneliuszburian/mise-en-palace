@@ -233,7 +233,30 @@ IMR-48 complete: `krn brain search` selectedKnowledge now exposes targetFit
   labels/reasons, making generic guardrail packets visible in multi-repo readback.
 IMR-49 complete: brain-search target-fit summary now caveats generic-only
   selectedKnowledge before the top-level recommendation treats it as sufficient.
+IMR-50 complete: target-fit-aware Brain-QA closure selected heartbeat
+  acquisition routing for generic-only target gaps as the next vertical slice.
 ```
+
+## Outcome IMR-50 Target-Fit Brain-QA Closure
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-50-target-fit-brain-qa-closure/REPORT.md
+```
+
+Outcome: six store-backed brain-search queries covered ingest/source artifact,
+second-repo EKOLOGUS, graph, heartbeat, consensus, and pattern/research lanes.
+Five KRN queries returned target-specific selectedKnowledge. The EKOLOGUS query
+returned useful source evidence but `generic_only_selected_knowledge`, and
+heartbeat preview over that readback emitted zero acquisition candidates.
+
+Decision: next route generic-only target-fit readbacks with useful target/source
+evidence into candidate-only heartbeat acquisition. Do not open activation
+scoring, ranking, crawler, schema, worker, API/MCP, target write, source truth,
+eval promotion, or Memory Core work.
 
 ## Outcome IMR-49 Target-Fit-Aware Activation Utility
 
@@ -1993,24 +2016,24 @@ software work. Multi-repo internal work is the proof surface.
 Next Beads issue:
 
 ```txt
-mise-en-palace-cno:
-Run target-fit-aware Brain-QA closure for next vertical slice.
+mise-en-palace-zh0:
+Route generic-only target-fit readback into heartbeat acquisition.
 ```
 
 Evidence sources:
 
 ```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-50-target-fit-brain-qa-closure/REPORT.md
 docs/reviews/controlled-dogfood/2026-07-01-imr-49-target-fit-aware-activation-utility/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-imr-48-selected-knowledge-target-fit/REPORT.md
 ```
 
 Next task:
 
 ```txt
-mise-en-palace-cno — Run target-fit-aware Brain-QA closure for next vertical slice.
-Goal: use targetFitSummary across compact KRN and second-repo queries to choose
-the next bounded vertical implementation slice from evidence, not ranking
-guesswork.
+mise-en-palace-zh0 — Route generic-only target-fit readback into heartbeat acquisition.
+Goal: make heartbeat preview consume brain-search targetFitSummary so useful
+target/source evidence with generic-only selectedKnowledge becomes a
+mutation-free acquisition candidate.
 ```
 
 Allowed writes:

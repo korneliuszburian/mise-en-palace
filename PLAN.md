@@ -56,6 +56,7 @@ source-backed selected knowledge: default brain search can use ready SourceClaim
 source-backed mini Brain-QA: fallback helps Q5 ingest and IMR41; keep behavior, no ranking repair now
 multi-repo source artifact readback: second repo README persists and resolves source/brain/heartbeat readbacks
 selectedKnowledge target fit: brain search labels packets and caveats generic-only sufficiency
+target-fit Brain-QA closure: generic-only target gap routes next to heartbeat acquisition
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -80,13 +81,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-49-target-fit-aware-activation-utility/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-50-target-fit-brain-qa-closure/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-cno: Run target-fit-aware Brain-QA closure for next vertical slice.
+mise-en-palace-zh0: Route generic-only target-fit readback into heartbeat acquisition.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -131,7 +132,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-49: AMA evidence and activation utility lanes accepted; natural recall and source-backed selected knowledge repaired; source artifact preview emits structured JSON, heartbeat consumes it as acquisition input, persisted artifact/chunk/SearchDocument readback resolves the candidate, one second-repo file reads back through source/brain search, compact multi-repo Brain-QA exposed target-fit precision work, and selectedKnowledge packets now expose targetFit labels plus generic-only caveats.
+IMR-18-50: AMA evidence and activation utility lanes accepted; natural recall and source-backed selected knowledge repaired; source artifact preview emits structured JSON, heartbeat consumes it as acquisition input, persisted artifact/chunk/SearchDocument readback resolves the candidate, one second-repo file reads back through source/brain search, compact multi-repo Brain-QA exposed target-fit precision work, selectedKnowledge packets now expose targetFit labels plus generic-only caveats, and generic-only target gaps route next to heartbeat acquisition.
 ```
 
 ## Remaining Product Gaps
