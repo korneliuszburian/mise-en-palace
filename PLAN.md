@@ -55,7 +55,7 @@ AMA activation utility natural recall: exact SourceClaim/SourceDecisionEdge now 
 source-backed selected knowledge: default brain search can use ready SourceClaim packets when catalog readback misses
 source-backed mini Brain-QA: fallback helps Q5 ingest and IMR41; keep behavior, no ranking repair now
 multi-repo source artifact readback: second repo README persists and resolves source/brain/heartbeat readbacks
-selectedKnowledge target fit: EKOLOGUS packet reuses cleanly without KRN query leakage
+selectedKnowledge target fit: EKOLOGUS packet reaches persisted Codex brief first
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -80,13 +80,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-53-post-ekologus-brain-qa-reuse/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-54-codex-brief-target-knowledge-reuse/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-41r: Prove target-specific brain knowledge in Codex brief reuse.
+mise-en-palace-x6u: Capture source-usefulness feedback for Codex brief reuse.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -131,7 +131,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-53: AMA/source-backed lanes accepted; artifact preview feeds heartbeat acquisition; second-repo target-fit precision repaired; EKOLOGUS target-specific packet reuses cleanly without KRN query leakage.
+IMR-18-54: AMA/source-backed lanes accepted; artifact preview feeds heartbeat acquisition; second-repo target-fit precision repaired; EKOLOGUS target-specific packet reaches persisted Codex brief first.
 ```
 
 ## Remaining Product Gaps

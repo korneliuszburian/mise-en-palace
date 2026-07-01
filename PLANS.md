@@ -244,6 +244,34 @@ IMR-52 complete: EKOLOGUS target-fit acquisition candidate resolved through
 IMR-53 complete: post-resolution Brain-QA reuse check accepted EKOLOGUS
   target-specific packet reuse and found no EKOLOGUS leakage into a KRN ingest
   control query.
+IMR-54 complete: persisted plan/context and `krn codex brief` render the
+  EKOLOGUS target-specific SourceClaim first in Codex-facing context.
+```
+
+## Outcome IMR-54 Codex Brief Target-Knowledge Reuse
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-54-codex-brief-target-knowledge-reuse/REPORT.md
+```
+
+Outcome: `krn plan --persist` for an EKOLOGUS quality-gate brief selected
+SourceClaim `bc4731b9-8add-40f8-9df9-fb4bb9342b75` as the first context
+inclusion. `krn codex brief --run-id
+07192df3-4656-48f4-b557-89f62c3e3d3d` rendered the same packet first with
+read-only persistence, Codex invocation none, and Memory mutation none.
+
+Decision: accept Codex-facing reuse. No adapter/source repair now. Next close
+source-usefulness feedback for the selected SourceClaim through existing
+evidence/review paths.
+
+Next Beads task:
+
+```txt
+mise-en-palace-x6u: Capture source-usefulness feedback for Codex brief reuse.
 ```
 
 ## Outcome IMR-53 Post-EKOLOGUS Brain-QA Reuse
