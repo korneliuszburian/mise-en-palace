@@ -153,6 +153,121 @@ describe("brain heartbeat preview", () => {
     expect(result.mutation).toBe("none");
   });
 
+  test("guards activation utility acquisition eval proof without mutation", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [],
+      sourceClaims: [],
+      sourceClaimEdges: [],
+      knowledgeAcquisitionRequests: [
+        {
+          id: "activation-utility-exploration",
+          source: "brain_search",
+          query: "Autonomous Memory Agents exploration",
+          missingEvidence: [
+            "selected knowledge is missing while source/link/graph evidence is useful"
+          ],
+          activationUtilityEvidence: {
+            verdict: "linked_evidence_exploration_candidate",
+            selectedKnowledge: {
+              signal: "selected_knowledge",
+              strength: "missing",
+              reasons: ["selectedKnowledge returned no packets."]
+            },
+            sourceLinkGraph: {
+              signal: "source_link_graph",
+              strength: "useful",
+              reasons: [
+                "answerUsefulness is partly_useful_missing_document.",
+                "source/link/graph evidence count is 29."
+              ]
+            },
+            recommendedNextAction:
+              "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility; do not change production ranking without a bounded eval.",
+            doesNotProve:
+              "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
+          },
+          evidenceRefs: [
+            "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
+          ],
+          consumer: "heartbeat preview and future bounded eval/golden candidates",
+          falsifier:
+            "Heartbeat preview drops activationUtilityEvidence or mutates final truth.",
+          doesNotProve:
+            "This candidate does not prove source truth, ranking quality, semantic-aware Thompson sampling, autonomous worker execution, or Memory Core mutation safety."
+        }
+      ]
+    });
+
+    expect(result.reviewEvalClosure).toMatchObject({
+      kind: "heartbeat_preview_review_eval_closure",
+      decision: "ready_for_behavior_proof",
+      nextAction: "add_golden_behavior_case",
+      mutation: "none"
+    });
+    expect(result.runtimeLoop).toMatchObject({
+      kind: "heartbeat_candidate_runtime_loop",
+      mode: "manual_candidate_only",
+      status: "ready_for_operator_review",
+      nextAction: "review_candidates_and_capture_evidence",
+      inspectedCandidates: 1,
+      reviewableCandidates: 1,
+      mutation: "none"
+    });
+    expect(result.candidateCounts).toEqual({
+      memoryStaleness: 0,
+      sourceRelation: 0,
+      knowledgeAcquisition: 1
+    });
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        id: "knowledge-acquisition-heartbeat:activation-utility-exploration:missing_evidence",
+        kind: "knowledge_acquisition_candidate",
+        action: "propose_knowledge_acquisition",
+        reviewability: "ready",
+        activationUtilityEvidence: expect.objectContaining({
+          verdict: "linked_evidence_exploration_candidate",
+          selectedKnowledge: expect.objectContaining({
+            signal: "selected_knowledge",
+            strength: "missing"
+          }),
+          sourceLinkGraph: expect.objectContaining({
+            signal: "source_link_graph",
+            strength: "useful"
+          }),
+          doesNotProve:
+            "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
+        }),
+        evidenceRefs: expect.arrayContaining([
+          evidenceRef,
+          "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
+        ]),
+        doesNotProve: expect.stringContaining("semantic-aware Thompson sampling"),
+        mutation: "none",
+        forbiddenWrites: [
+          "memory_records",
+          "anti_memory_records",
+          "source_claims",
+          "source_decisions",
+          "source_claim_edges",
+          "eval_candidates",
+          "worker_jobs"
+        ]
+      })
+    ]);
+    expect(result.reviewEvalClosure.candidateIds).toEqual([
+      "knowledge-acquisition-heartbeat:activation-utility-exploration:missing_evidence"
+    ]);
+    expect(result.reviewEvalClosure.evidenceRefs).toEqual([
+      evidenceRef,
+      "docs/reviews/controlled-dogfood/2026-07-01-imr-35-activation-utility-heartbeat-routing/REPORT.md"
+    ]);
+    expect(result.reviewEvalClosure.forbiddenWrites).toContain("eval_candidates");
+    expect(result.runtimeLoop.forbiddenWrites).toContain("worker_jobs");
+    expect(result.mutation).toBe("none");
+  });
+
   test("aggregates memory staleness and source relation candidates without mutation", () => {
     const result = buildBrainHeartbeatPreview({
       now,

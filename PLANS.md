@@ -192,6 +192,44 @@ IMR-34 complete: activationUtility readback helped across the current mini
 IMR-35 complete: heartbeat knowledge-acquisition candidates now preserve
   activationUtility exploration evidence from brain-search readbacks when
   selected knowledge is missing but source/link/graph evidence is useful.
+IMR-36 complete: heartbeat-routed activationUtility exploration candidates now
+  have a focused worker behavior proof for ready_for_behavior_proof, evidence
+  refs, doesNotProve, forbidden writes, and mutation none.
+```
+
+## Outcome IMR-36 Activation Utility Eval Proof
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-36-activation-utility-eval-proof/REPORT.md
+```
+
+Outcome: `buildBrainHeartbeatPreview` now has a focused behavior proof for a
+heartbeat-routed activation utility acquisition candidate. The proof asserts
+`linked_evidence_exploration_candidate`, `selectedKnowledge: missing`,
+`sourceLinkGraph: useful`, `ready_for_behavior_proof`, `doesNotProve`,
+forbidden writes, and `mutation: none`.
+
+Source-to-decision:
+
+- Source: IMR-35 heartbeat routing report and current worker heartbeat preview
+  behavior.
+- Mechanism: a reviewable heartbeat candidate should become executable
+  behavior proof before runtime automation or ranking changes.
+- KRN implication: protect the exploration route as candidate-only behavior.
+- Decision: add one worker behavior proof; no Promptfoo, ranking, schema,
+  worker, crawler, API/MCP, or Memory Core change.
+- Consumer: heartbeat preview worker tests and future candidate review loop.
+- Falsifier: activationUtility evidence is dropped, no-mutation boundary is
+  lost, or the route needs broad platform work to prove.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-z22: Review heartbeat-routed activation utility candidate with evidence.
 ```
 
 ## Outcome IMR-35 Activation Utility Heartbeat Routing
