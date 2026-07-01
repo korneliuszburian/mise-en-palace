@@ -235,6 +235,9 @@ IMR-49 complete: brain-search target-fit summary now caveats generic-only
   selectedKnowledge before the top-level recommendation treats it as sufficient.
 IMR-50 complete: target-fit-aware Brain-QA closure selected heartbeat
   acquisition routing for generic-only target gaps as the next vertical slice.
+IMR-51 complete: generic-only target-fit brain-search readbacks with useful
+  source evidence now route into ready heartbeat knowledge-acquisition
+  candidates with mutation none.
 ```
 
 ## Outcome IMR-50 Target-Fit Brain-QA Closure
@@ -257,6 +260,31 @@ Decision: next route generic-only target-fit readbacks with useful target/source
 evidence into candidate-only heartbeat acquisition. Do not open activation
 scoring, ranking, crawler, schema, worker, API/MCP, target write, source truth,
 eval promotion, or Memory Core work.
+
+## Outcome IMR-51 Generic Target-Fit Acquisition Routing
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-51-generic-target-fit-acquisition/REPORT.md
+```
+
+Outcome: `krn heartbeat preview --candidate-kind knowledge_acquisition` now
+turns q2-shaped `generic_only_selected_knowledge` brain-search readback with
+useful source evidence into one ready `knowledge_acquisition_candidate`.
+
+Decision: next resolve the emitted EKOLOGUS acquisition candidate through a
+bounded source/evidence follow-up. Do not open activation scoring, ranking,
+crawler, schema, worker, API/MCP, target writes, eval promotion, source truth,
+or Memory Core work.
+
+Next Beads task:
+
+```txt
+mise-en-palace-83t: Resolve EKOLOGUS target-fit acquisition candidate.
+```
 
 ## Outcome IMR-49 Target-Fit-Aware Activation Utility
 

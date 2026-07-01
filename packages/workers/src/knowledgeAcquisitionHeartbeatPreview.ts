@@ -147,7 +147,7 @@ const previewDoesNotProve =
   "Knowledge-acquisition heartbeat preview does not prove source truth, acquired knowledge quality, ranking quality, autonomous worker execution, crawler readiness, or Memory Core mutation.";
 
 const previewProof =
-  "Knowledge-acquisition heartbeat preview turns explicit missing-evidence readback into reviewable candidate-only acquisition work without mutating Memory Core, source truth, source decisions, eval candidates, worker jobs, or DB schema.";
+  "Knowledge-acquisition heartbeat preview turns explicit missing-evidence or target-fit gap readback into reviewable candidate-only acquisition work without mutating Memory Core, source truth, source decisions, eval candidates, worker jobs, or DB schema.";
 
 const hasText = (value: string | undefined): value is string =>
   value !== undefined && value.trim().length > 0;

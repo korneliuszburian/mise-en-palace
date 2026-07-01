@@ -483,6 +483,115 @@ describe("runHeartbeatPreviewCommand", () => {
     }
   });
 
+  it("routes generic-only target-fit brain-search readback into acquisition candidates", async () => {
+    const fixture = await writeJsonFixture("brain-search-generic-target-fit.json", {
+      kind: "krn.brainSearch.preview.v1",
+      query: "EKOLOGUS Brain quality gate",
+      knowledgeCards: {
+        selectedKnowledge: [
+          {
+            id: "source-claim-1",
+            targetFit: "generic_guardrail"
+          }
+        ],
+        targetFitSummary: {
+          verdict: "generic_only_selected_knowledge",
+          targetSpecific: 0,
+          genericGuardrail: 1,
+          adjacentPattern: 0,
+          noise: 0,
+          unknown: 0,
+          recommendedUse:
+            "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
+          doesNotProve:
+            "Generic-only selectedKnowledge does not prove target-specific context was selected."
+        }
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 5,
+        supportingDocuments: 1,
+        sourceClaimDocumentLinks: 5,
+        linkedSearchDocuments: 5,
+        relationSupport: 5,
+        sourceDecisionSupport: 0,
+        sourceClaimDocumentLinkCaveats: [],
+        missingEvidence: [],
+        doesNotProve: [
+          "source truth",
+          "ranking quality"
+        ]
+      },
+      recommendedNextAction:
+        "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
+      proof: {
+        doesNotProve: [
+          "brain search combined readbacks without mutating KRN state"
+        ]
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          memoryLimit: 0,
+          sourceClaimLimit: 0,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-50.md",
+          candidateKinds: ["knowledge_acquisition"],
+          acquisitionReadbackFile: fixture.fileName,
+          format: "json"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      expect(parsed).toMatchObject({
+        preview: {
+          candidateCounts: {
+            knowledgeAcquisition: 1
+          },
+          candidates: [
+            {
+              kind: "knowledge_acquisition_candidate",
+              source: "brain_search",
+              query: "EKOLOGUS Brain quality gate",
+              missingEvidence: [
+                "target-specific SourceClaim evidence for brain-search query \"EKOLOGUS Brain quality gate\""
+              ],
+              queryShapeDiagnostics: [
+                "targetFitSummary: generic_only_selected_knowledge",
+                "targetSpecific: 0",
+                "genericGuardrail: 1",
+                "sourceSearch answerUsefulness: useful",
+                "source evidence count: 21"
+              ],
+              recommendedFollowUp: [
+                "Create or review target-specific SourceClaim evidence before treating generic selectedKnowledge as sufficient.",
+                "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient."
+              ],
+              reviewability: "ready",
+              mutation: "none"
+            }
+          ]
+        }
+      });
+      expect(result.stdout).toContain(
+        "Generic-only selectedKnowledge does not prove target-specific context was selected."
+      );
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
   it("routes source-search answer package missingEvidence into acquisition candidates", async () => {
     const fixture = await writeJsonFixture("source-search.json", {
       kind: "source_search_answer_package",

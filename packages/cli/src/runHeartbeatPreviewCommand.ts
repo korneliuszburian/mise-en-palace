@@ -90,9 +90,9 @@ const defaultCandidateKinds = [
 const defaultAcquisitionConsumer =
   "heartbeat knowledge acquisition preview";
 const defaultAcquisitionFalsifier =
-  "A source/brain search missing-evidence readback should produce a candidate-only acquisition request without mutating Memory Core.";
+  "A source/brain search missing-evidence or generic-only target-fit readback should produce a candidate-only acquisition request without mutating Memory Core.";
 const defaultAcquisitionDoesNotProve =
-  "Missing-evidence readback does not prove source truth, acquired knowledge quality, ranking quality, crawler readiness, autonomous worker execution, or Memory Core mutation.";
+  "Missing-evidence or generic-only target-fit readback does not prove source truth, acquired knowledge quality, ranking quality, crawler readiness, autonomous worker execution, or Memory Core mutation.";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -193,6 +193,84 @@ const linkedDocumentEvidenceFromBrainSourceSearch = (
   };
 };
 
+const sourceEvidenceCount = (sourceSearch: JsonRecord): number =>
+  numberValue(sourceSearch["supportingClaims"]) +
+  numberValue(sourceSearch["supportingDocuments"]) +
+  numberValue(sourceSearch["sourceClaimDocumentLinks"]) +
+  numberValue(sourceSearch["linkedSearchDocuments"]) +
+  numberValue(sourceSearch["relationSupport"]) +
+  numberValue(sourceSearch["sourceDecisionSupport"]);
+
+const hasUsefulSourceEvidence = (sourceSearch: JsonRecord): boolean =>
+  stringValue(sourceSearch["answerUsefulness"]) === "useful" ||
+  sourceEvidenceCount(sourceSearch) > 0;
+
+const targetFitSummaryFromBrainSearch = (
+  readback: JsonRecord
+): JsonRecord | undefined =>
+  recordValue(recordValue(readback["knowledgeCards"])?.["targetFitSummary"]);
+
+const genericOnlyTargetFitSummary = (
+  targetFitSummary: JsonRecord | undefined
+): JsonRecord | undefined =>
+  stringValue(targetFitSummary?.["verdict"]) === "generic_only_selected_knowledge"
+    ? targetFitSummary
+    : undefined;
+
+const genericOnlyTargetFitMissingEvidence = (
+  input: {
+    query: string;
+    sourceSearch: JsonRecord;
+    targetFitSummary: JsonRecord | undefined;
+  }
+): readonly string[] => {
+  const targetFitSummary = genericOnlyTargetFitSummary(input.targetFitSummary);
+
+  if (targetFitSummary === undefined || !hasUsefulSourceEvidence(input.sourceSearch)) {
+    return [];
+  }
+
+  return [
+    `target-specific SourceClaim evidence for brain-search query "${input.query}"`
+  ];
+};
+
+const genericOnlyTargetFitDiagnostics = (
+  input: {
+    sourceSearch: JsonRecord;
+    targetFitSummary: JsonRecord | undefined;
+  }
+): readonly string[] => {
+  const targetFitSummary = genericOnlyTargetFitSummary(input.targetFitSummary);
+
+  if (targetFitSummary === undefined) {
+    return [];
+  }
+
+  return [
+    "targetFitSummary: generic_only_selected_knowledge",
+    `targetSpecific: ${numberValue(targetFitSummary["targetSpecific"])}`,
+    `genericGuardrail: ${numberValue(targetFitSummary["genericGuardrail"])}`,
+    `sourceSearch answerUsefulness: ${stringValue(input.sourceSearch["answerUsefulness"]) ?? "unknown"}`,
+    `source evidence count: ${sourceEvidenceCount(input.sourceSearch)}`
+  ];
+};
+
+const genericOnlyTargetFitRecommendedFollowUp = (
+  targetFitSummary: JsonRecord | undefined
+): readonly string[] => {
+  const genericOnlySummary = genericOnlyTargetFitSummary(targetFitSummary);
+
+  if (genericOnlySummary === undefined) {
+    return [];
+  }
+
+  return [
+    "Create or review target-specific SourceClaim evidence before treating generic selectedKnowledge as sufficient.",
+    ...optionalTextAsList(genericOnlySummary["recommendedUse"])
+  ];
+};
+
 const activationUtilitySignalEvidence = (
   input: {
     signal: KnowledgeAcquisitionActivationUtilitySignalEvidence["signal"];
@@ -262,22 +340,25 @@ const activationUtilityEvidenceFromBrainSearch = (
   };
 };
 
-const brainSearchAcquisitionRequest = (
+const brainSearchAcquisitionRequestFromSourceSearch = (
   input: {
     filePath: string;
+    query: string;
     readback: JsonRecord;
+    sourceSearch: JsonRecord;
+    topLevelRecommendedNextAction: readonly string[];
   }
 ): KnowledgeAcquisitionRequest | undefined => {
-  const query = stringValue(input.readback["query"]) ?? "unknown query";
-  const sourceSearch = recordValue(input.readback["sourceSearch"]);
-  const topLevelRecommendedNextAction = optionalTextAsList(input.readback["recommendedNextAction"]);
-
-  if (sourceSearch === undefined) {
-    return undefined;
-  }
-
-  const missingEvidence = stringArrayValue(sourceSearch["missingEvidence"]);
-  const linkedDocumentEvidence = linkedDocumentEvidenceFromBrainSourceSearch(sourceSearch);
+  const targetFitSummary = targetFitSummaryFromBrainSearch(input.readback);
+  const missingEvidence = uniqueStrings([
+    ...stringArrayValue(input.sourceSearch["missingEvidence"]),
+    ...genericOnlyTargetFitMissingEvidence({
+      query: input.query,
+      sourceSearch: input.sourceSearch,
+      targetFitSummary
+    })
+  ]);
+  const linkedDocumentEvidence = linkedDocumentEvidenceFromBrainSourceSearch(input.sourceSearch);
   const activationUtilityEvidence = activationUtilityEvidenceFromBrainSearch(input.readback);
 
   if (missingEvidence.length === 0) {
@@ -285,16 +366,23 @@ const brainSearchAcquisitionRequest = (
   }
 
   return {
-    id: `readback-brain-search-${safeSlug(query)}`,
+    id: `readback-brain-search-${safeSlug(input.query)}`,
     source: "brain_search",
-    query,
+    query: input.query,
     missingEvidence,
     queryShapeDiagnostics: uniqueStrings(
-      stringArrayValue(sourceSearch["queryShapeDiagnostics"])
+      [
+        ...stringArrayValue(input.sourceSearch["queryShapeDiagnostics"]),
+        ...genericOnlyTargetFitDiagnostics({
+          sourceSearch: input.sourceSearch,
+          targetFitSummary
+        })
+      ]
     ),
     recommendedFollowUp: uniqueStrings([
-      ...stringArrayValue(sourceSearch["recommendedFollowUp"]),
-      ...topLevelRecommendedNextAction,
+      ...stringArrayValue(input.sourceSearch["recommendedFollowUp"]),
+      ...genericOnlyTargetFitRecommendedFollowUp(targetFitSummary),
+      ...input.topLevelRecommendedNextAction,
       ...optionalTextAsList(activationUtilityEvidence?.recommendedNextAction)
     ]),
     ...(linkedDocumentEvidence === undefined ? {} : { linkedDocumentEvidence }),
@@ -303,11 +391,32 @@ const brainSearchAcquisitionRequest = (
     consumer: defaultAcquisitionConsumer,
     falsifier: defaultAcquisitionFalsifier,
     doesNotProve: joinedDoesNotProve([
-      ...stringArrayValue(sourceSearch["doesNotProve"]),
+      ...stringArrayValue(input.sourceSearch["doesNotProve"]),
+      ...optionalTextAsList(targetFitSummary?.["doesNotProve"]),
       ...optionalTextAsList(activationUtilityEvidence?.doesNotProve),
       ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"])
     ])
   };
+};
+
+const brainSearchAcquisitionRequest = (
+  input: {
+    filePath: string;
+    readback: JsonRecord;
+  }
+): KnowledgeAcquisitionRequest | undefined => {
+  const sourceSearch = recordValue(input.readback["sourceSearch"]);
+
+  if (sourceSearch === undefined) {
+    return undefined;
+  }
+
+  return brainSearchAcquisitionRequestFromSourceSearch({
+    ...input,
+    query: stringValue(input.readback["query"]) ?? "unknown query",
+    sourceSearch,
+    topLevelRecommendedNextAction: optionalTextAsList(input.readback["recommendedNextAction"])
+  });
 };
 
 const sourceSearchAcquisitionRequest = (
