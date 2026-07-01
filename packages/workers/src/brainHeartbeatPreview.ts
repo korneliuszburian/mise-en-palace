@@ -19,6 +19,14 @@ import type {
   KnowledgeAcquisitionRequest
 } from "./knowledgeAcquisitionHeartbeatPreview.js";
 import {
+  buildConsensusCandidateEvaluationPreview
+} from "./consensusCandidateEvaluationPreview.js";
+import type {
+  ConsensusCandidateEvaluation,
+  ConsensusCandidateEvaluationInput,
+  ConsensusCandidateEvaluationPreview
+} from "./consensusCandidateEvaluationPreview.js";
+import {
   buildSourceRelationHeartbeatPreview
 } from "./sourceRelationHeartbeatPreview.js";
 import type {
@@ -28,7 +36,8 @@ import type {
 export type BrainHeartbeatCandidate =
   | MemoryStalenessHeartbeatCandidate
   | SourceRelationHeartbeatCandidate
-  | KnowledgeAcquisitionHeartbeatCandidate;
+  | KnowledgeAcquisitionHeartbeatCandidate
+  | ConsensusCandidateEvaluation;
 
 export type BrainHeartbeatReviewEvalDecision =
   | "ready_for_behavior_proof"
@@ -138,6 +147,7 @@ export interface BuildBrainHeartbeatPreviewInput {
   sourceClaims: readonly SourceClaim[];
   sourceClaimEdges: readonly SourceClaimEdge[];
   knowledgeAcquisitionRequests?: readonly KnowledgeAcquisitionRequest[];
+  consensusCandidates?: readonly ConsensusCandidateEvaluationInput[];
   nearExpiryDays?: number;
   maxCandidates?: number;
   candidateReview?: BrainHeartbeatCandidateReviewInput;
@@ -150,19 +160,27 @@ export interface BrainHeartbeatPreview {
     memoryStaleness: number;
     sourceRelation: number;
     knowledgeAcquisition: number;
+    consensusEvaluation: number;
   };
   skippedCounts: {
     memoryRecords: number;
     sourceClaimEdges: number;
     knowledgeAcquisitionRequests: number;
+    consensusCandidates: number;
   };
+  consensusEvaluation?: ConsensusCandidateEvaluationPreview;
   mutation: "none";
   proof: string;
   doesNotProve: string;
   reviewEvalClosure: BrainHeartbeatReviewEvalClosure;
   runtimeLoop: BrainHeartbeatRuntimeLoopReadback;
   candidateReviewResult?: BrainHeartbeatCandidateReviewResult;
-  priorityOrder: readonly ["memory_staleness", "source_relation", "knowledge_acquisition"];
+  priorityOrder: readonly [
+    "memory_staleness",
+    "source_relation",
+    "knowledge_acquisition",
+    "consensus_evaluation"
+  ];
   forbiddenWrites: readonly [
     "memory_records",
     "anti_memory_records",
@@ -199,13 +217,18 @@ const runtimeLoopForbiddenWrites = [
   "worker_jobs"
 ] as const;
 
-const priorityOrder = ["memory_staleness", "source_relation", "knowledge_acquisition"] as const;
+const priorityOrder = [
+  "memory_staleness",
+  "source_relation",
+  "knowledge_acquisition",
+  "consensus_evaluation"
+] as const;
 
 const previewDoesNotProve =
   "Brain heartbeat preview does not prove memory truth, source truth, candidate usefulness, autonomous worker execution, scheduling, consensus correctness, or Memory Core mutation.";
 
 const previewProof =
-  "Brain heartbeat preview aggregates existing candidate-only maintenance previews over memory, source relation, and explicit missing-evidence acquisition state without mutating Memory Core, source truth, source decisions, eval candidates, or worker runtime state.";
+  "Brain heartbeat preview aggregates existing candidate-only maintenance previews over memory, source relation, explicit missing-evidence acquisition state, and consensus candidate evaluation input without mutating Memory Core, source truth, source decisions, eval candidates, or worker runtime state.";
 
 const reviewEvalClosureDoesNotProve =
   "Heartbeat preview review/eval closure does not prove candidate truth, review correctness, production usefulness, scheduler readiness, autonomous worker execution, or Memory Core mutation.";
@@ -391,10 +414,22 @@ export const buildBrainHeartbeatPreview = (
     evidenceRef: input.evidenceRef,
     ...(acquisitionBudget === undefined ? {} : { maxCandidates: acquisitionBudget })
   });
+  const consensusBudget = remainingBudget(
+    input.maxCandidates,
+    memoryPreview.candidates.length +
+      sourcePreview.candidates.length +
+      acquisitionPreview.candidates.length
+  );
+  const consensusPreview = buildConsensusCandidateEvaluationPreview({
+    generatedAt: input.now,
+    candidates: input.consensusCandidates ?? [],
+    ...(consensusBudget === undefined ? {} : { maxCandidates: consensusBudget })
+  });
   const candidates = [
     ...memoryPreview.candidates,
     ...sourcePreview.candidates,
-    ...acquisitionPreview.candidates
+    ...acquisitionPreview.candidates,
+    ...consensusPreview.evaluations
   ];
   const reviewEvalClosure = buildReviewEvalClosure(candidates, input.evidenceRef);
   const candidateReviewResult = buildCandidateReviewResult(candidates, input.candidateReview);
@@ -405,13 +440,16 @@ export const buildBrainHeartbeatPreview = (
     candidateCounts: {
       memoryStaleness: memoryPreview.candidates.length,
       sourceRelation: sourcePreview.candidates.length,
-      knowledgeAcquisition: acquisitionPreview.candidates.length
+      knowledgeAcquisition: acquisitionPreview.candidates.length,
+      consensusEvaluation: consensusPreview.evaluations.length
     },
     skippedCounts: {
       memoryRecords: memoryPreview.skippedMemoryCount,
       sourceClaimEdges: sourcePreview.skippedEdgeCount,
-      knowledgeAcquisitionRequests: acquisitionPreview.skippedRequestCount
+      knowledgeAcquisitionRequests: acquisitionPreview.skippedRequestCount,
+      consensusCandidates: consensusPreview.skippedCandidateCount
     },
+    ...(input.consensusCandidates === undefined ? {} : { consensusEvaluation: consensusPreview }),
     mutation: "none",
     proof: previewProof,
     doesNotProve: previewDoesNotProve,

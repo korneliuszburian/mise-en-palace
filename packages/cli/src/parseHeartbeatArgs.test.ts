@@ -26,8 +26,12 @@ describe("parseHeartbeatArgs", () => {
       "docs/report.md",
       "--candidate-kind",
       "knowledge_acquisition",
+      "--candidate-kind",
+      "consensus_evaluation",
       "--acquisition-readback-file",
       "docs/readbacks/brain-search.json",
+      "--consensus-candidate-file",
+      "docs/readbacks/consensus-candidates.json",
       "--review-candidate-id",
       "candidate-1",
       "--review-decision",
@@ -48,8 +52,9 @@ describe("parseHeartbeatArgs", () => {
         nearExpiryDays: 3,
         maxCandidates: 4,
         evidenceRef: "docs/report.md",
-        candidateKinds: ["knowledge_acquisition"],
+        candidateKinds: ["knowledge_acquisition", "consensus_evaluation"],
         acquisitionReadbackFile: "docs/readbacks/brain-search.json",
+        consensusCandidateFile: "docs/readbacks/consensus-candidates.json",
         candidateReview: {
           candidateId: "candidate-1",
           decision: "defer_pending_evidence",
@@ -90,6 +95,16 @@ describe("parseHeartbeatArgs", () => {
       " "
     ])).toEqual({
       error: expect.stringContaining("--acquisition-readback-file cannot be empty")
+    });
+  });
+
+  it("rejects empty consensus candidate file", () => {
+    expect(parseHeartbeatArgs([
+      "preview",
+      "--consensus-candidate-file",
+      " "
+    ])).toEqual({
+      error: expect.stringContaining("--consensus-candidate-file cannot be empty")
     });
   });
 

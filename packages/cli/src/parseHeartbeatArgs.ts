@@ -4,7 +4,7 @@ import type {
 
 export const formatHeartbeatUsage = (): string =>
   [
-    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
+    "Usage: krn heartbeat preview [--project <project-id>] [--memory-limit <n>] [--source-claim-limit <n>] [--near-expiry-days <n>] [--max-candidates <n>] [--evidence-ref <ref>] [--candidate-kind <kind>] [--acquisition-readback-file <path>] [--consensus-candidate-file <path>] [--review-candidate-id <id> --review-decision <decision> --review-reason <text> --review-evidence-ref <ref>] [--reviewer <name>] [--json]",
     "",
     "Read-only operator commands:",
     "krn heartbeat preview",
@@ -16,8 +16,9 @@ export const formatHeartbeatUsage = (): string =>
     "--near-expiry-days <positive-integer>",
     "--max-candidates <positive-integer>",
     "--evidence-ref <ref>",
-    "--candidate-kind memory_staleness|source_relation|knowledge_acquisition",
+    "--candidate-kind memory_staleness|source_relation|knowledge_acquisition|consensus_evaluation",
     "--acquisition-readback-file <path-to-brain-or-source-search-json>",
+    "--consensus-candidate-file <path-to-consensus-candidate-json>",
     "--review-candidate-id <id>",
     "--review-decision accept_for_manual_followup|defer_pending_evidence|reject_not_actionable",
     "--review-reason <text>",
@@ -55,6 +56,7 @@ type HeartbeatParseState = {
   maxCandidates: number | undefined;
   evidenceRef: string | undefined;
   acquisitionReadbackFile: string | undefined;
+  consensusCandidateFile: string | undefined;
   candidateKinds: HeartbeatCandidateKind[];
   reviewCandidateId: string | undefined;
   reviewDecision: HeartbeatReviewDecision | undefined;
@@ -72,7 +74,8 @@ type HeartbeatReviewDecision =
 type HeartbeatCandidateKind =
   | "memory_staleness"
   | "source_relation"
-  | "knowledge_acquisition";
+  | "knowledge_acquisition"
+  | "consensus_evaluation";
 
 type HeartbeatCandidateReviewCommand = {
   candidateId: string;
@@ -201,7 +204,8 @@ const parseCandidateKind = (
   if (
     value === "memory_staleness" ||
     value === "source_relation" ||
-    value === "knowledge_acquisition"
+    value === "knowledge_acquisition" ||
+    value === "consensus_evaluation"
   ) {
     return value;
   }
@@ -259,7 +263,7 @@ const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
       return {
         ok: false,
         error:
-          "--candidate-kind must be memory_staleness, source_relation, or knowledge_acquisition\n" +
+          "--candidate-kind must be memory_staleness, source_relation, knowledge_acquisition, or consensus_evaluation\n" +
           formatHeartbeatUsage()
       };
     }
@@ -274,6 +278,10 @@ const heartbeatOptionHandlers: Record<string, HeartbeatOptionHandler> = {
   "--acquisition-readback-file": (args, index, state) =>
     assignTextOption(args, index, "--acquisition-readback-file", (value) => {
       state.acquisitionReadbackFile = value;
+    }),
+  "--consensus-candidate-file": (args, index, state) =>
+    assignTextOption(args, index, "--consensus-candidate-file", (value) => {
+      state.consensusCandidateFile = value;
     }),
   "--review-candidate-id": (args, index, state) =>
     assignTextOption(args, index, "--review-candidate-id", (value) => {
@@ -393,6 +401,7 @@ const buildHeartbeatPreviewCommand = (state: HeartbeatParseState): ParseArgsResu
       ...optionalProperty("evidenceRef", state.evidenceRef),
       ...optionalProperty("candidateKinds", candidateKinds),
       ...optionalProperty("acquisitionReadbackFile", state.acquisitionReadbackFile),
+      ...optionalProperty("consensusCandidateFile", state.consensusCandidateFile),
       ...optionalProperty("candidateReview", candidateReview),
       format: state.format
     }
@@ -424,6 +433,7 @@ export const parseHeartbeatArgs = (rest: readonly string[]): ParseArgsResult => 
     maxCandidates: undefined,
     evidenceRef: undefined,
     acquisitionReadbackFile: undefined,
+    consensusCandidateFile: undefined,
     candidateKinds: [],
     reviewCandidateId: undefined,
     reviewDecision: undefined,

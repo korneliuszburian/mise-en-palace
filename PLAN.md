@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CRO-01 Expose consensus relation review in operator-facing readback
+current task: CRU-01 Use consensus relation readback in live heartbeat review proof
 ```
 
 ## Compact Checkpoints
@@ -80,6 +80,7 @@ source relation candidate evidence: missing relation evidence is explicit and bl
 graph relation candidate focus: contradiction/duplicate relation focus and review questions visible through heartbeat candidate and CLI readback
 graph relation eval readback: relationReviewFocus is consumed by bounded relation-grounded QA readback
 consensus relation focus: relationReviewFocus is consumed by candidate-only consensus/eval preview
+consensus relation operator readback: heartbeat preview exposes consensus_evaluation relation review focus/question/usefulness
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -89,7 +90,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CRO-01 Expose Consensus Relation Review In Operator-Facing Readback
+### CRU-01 Use Consensus Relation Readback In Live Heartbeat Review Proof
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -103,21 +104,21 @@ Latest completed report:
 ```txt
 docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-readback/REPORT.md
 docs/reviews/controlled-dogfood/2026-07-01-gce-01-consensus-relation-focus/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-cro-01-consensus-operator-readback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-cxz: Expose consensus relation review in operator-facing readback.
+mise-en-palace-afr: Use consensus relation readback in live heartbeat review proof.
 ```
 
 Task boundary:
 
 ```txt
-Inspect existing heartbeat preview, brain/source search, and CLI readback
-surfaces. Expose or reuse consensus relation review output through one bounded
-operator-facing readback, or explicitly reject the route with source-to-decision
-evidence. No broad eval platform, multi-agent runtime, worker daemon,
+Run one bounded consensus relation readback through heartbeat preview and review
+whether relationReviewFocus/relationReviewQuestion/reviewUsefulness reduce
+review burden. No broad eval platform, multi-agent runtime, worker daemon,
 crawler/entity extraction, DB schema by default, Memory Core auto-mutation,
 dashboard/API/MCP, or graph ranking rewrite.
 ```

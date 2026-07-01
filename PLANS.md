@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CRO-01 Expose consensus relation review in operator-facing readback
+current task: CRU-01 Use consensus relation readback in live heartbeat review proof
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CRO-01 Expose consensus relation review in operator-facing readback is active.
-KRN needs proof that consensus relation review output can reach one
-operator-facing readback, or an explicit bounded rejection if that route is
-wrong.
+CRU-01 Use consensus relation readback in live heartbeat review proof is active.
+KRN needs proof that the new heartbeat consensus relation readback reduces
+review burden in one bounded review/evidence loop.
 ```
 
 Latest outcome:
 
 ```txt
-GCE-01 complete: relationReviewFocus is consumed by candidate-only consensus/eval
-preview and routed into operator guidance without consensus runtime or mutation.
+CRO-01 complete: heartbeat preview exposes consensus relation review output as
+candidate-only operator-facing text/JSON readback without consensus runtime,
+DB schema, worker daemon, dashboard/API/MCP, graph ranking, or Memory Core
+mutation.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-gce-01-consensus-relation-focus/REPORT.md
-Next: CRO-01 exposes or reuses consensus relation review output through one
-operator-facing readback, or rejects the route with source-to-decision evidence.
+docs/reviews/controlled-dogfood/2026-07-01-cro-01-consensus-operator-readback/REPORT.md
+Next: CRU-01 uses the readback in one bounded live/fixture-backed heartbeat
+review proof and records review burden delta.
 ```
 
 ## 2. Product Thesis
@@ -94,6 +95,10 @@ V377 complete: graph relation readback and heartbeat candidate-only runtime
 V378 complete: current V02-01 launch packet exists under docs/operator-trials;
   it is now historical because external second-operator proof is not the active
   product direction.
+CRO-01 complete: `krn heartbeat preview` accepts `--candidate-kind
+  consensus_evaluation` and `--consensus-candidate-file`, routing consensus
+  relation review focus/question/usefulness into candidate-only operator
+  readback.
 IMR-01 complete: `krn brain search` exposes selected brain knowledge packets
   with summary, consumers, falsifier, proof boundary, and next action.
 IMR-02 complete: `krn brain search --store-only` skips file catalog readback and

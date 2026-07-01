@@ -7,7 +7,10 @@ import type {
   ProjectId,
   SourceClaim,
   SourceClaimEdge,
-  SourceClaimEdgeId
+  SourceClaimEdgeId,
+  SourceClaimEdgeKind,
+  SourceLineageRef,
+  SourceRelationReviewFocus
 } from "@krn/core";
 import {
   buildBrainHeartbeatPreview
@@ -22,6 +25,10 @@ import type {
   KnowledgeAcquisitionLinkedDocumentEvidence,
   KnowledgeAcquisitionRequest,
   BrainHeartbeatPreview,
+  ConsensusCandidateEvaluationInput,
+  ConsensusCandidateKind,
+  ConsensusEvaluationEvidence,
+  ConsensusEvidencePosition,
   WorkerJobAuthorityReadback
 } from "@krn/workers";
 
@@ -86,7 +93,8 @@ const defaultEvidenceRef =
 const defaultCandidateKinds = [
   "memory_staleness",
   "source_relation",
-  "knowledge_acquisition"
+  "knowledge_acquisition",
+  "consensus_evaluation"
 ] as const satisfies readonly HeartbeatCandidateKind[];
 const defaultAcquisitionConsumer =
   "heartbeat knowledge acquisition preview";
@@ -153,6 +161,76 @@ const activationUtilityVerdictValue = (
   value === "insufficient_evidence"
     ? value
     : undefined;
+
+const oneOf = <TValue extends string>(
+  value: unknown,
+  allowed: readonly TValue[]
+): TValue | undefined => {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  return allowed.find((item) => item === value);
+};
+
+const consensusCandidateKinds = [
+  "memory_candidate",
+  "anti_memory_candidate",
+  "source_decision_candidate",
+  "source_claim_candidate",
+  "eval_candidate",
+  "policy_candidate",
+  "skill_candidate",
+  "unknown_candidate"
+] as const satisfies readonly ConsensusCandidateKind[];
+
+const consensusCandidateKindValue = (
+  value: unknown
+): ConsensusCandidateKind | undefined =>
+  oneOf(value, consensusCandidateKinds);
+
+const consensusEvidencePositions = [
+  "support",
+  "dissent",
+  "risk"
+] as const satisfies readonly ConsensusEvidencePosition[];
+
+const consensusEvidencePositionValue = (
+  value: unknown
+): ConsensusEvidencePosition | undefined =>
+  oneOf(value, consensusEvidencePositions);
+
+const sourceClaimEdgeKinds = [
+  "supports",
+  "contradicts",
+  "qualifies",
+  "depends_on",
+  "supersedes",
+  "duplicates",
+  "narrows",
+  "invalidates",
+  "expires"
+] as const satisfies readonly SourceClaimEdgeKind[];
+
+const sourceClaimEdgeKindValue = (
+  value: unknown
+): SourceClaimEdgeKind | undefined =>
+  oneOf(value, sourceClaimEdgeKinds);
+
+const sourceRelationReviewFocuses = [
+  "contradiction",
+  "duplicate",
+  "supersession",
+  "invalidation",
+  "expiration",
+  "relation_evidence",
+  "stale_connected_claim"
+] as const satisfies readonly SourceRelationReviewFocus[];
+
+const sourceRelationReviewFocusValue = (
+  value: unknown
+): SourceRelationReviewFocus | undefined =>
+  oneOf(value, sourceRelationReviewFocuses);
 
 const safeSlug = (value: string): string => {
   const slug = value
@@ -645,6 +723,181 @@ const loadKnowledgeAcquisitionRequests = async (
   });
 };
 
+const requiredStringField = (
+  record: JsonRecord,
+  field: string,
+  context: string
+): string => {
+  const value = stringValue(record[field]);
+
+  if (value === undefined) {
+    throw new Error(`${context}.${field} must be a non-empty string`);
+  }
+
+  return value;
+};
+
+const recordArrayField = (
+  value: unknown,
+  context: string
+): readonly JsonRecord[] => {
+  if (!Array.isArray(value)) {
+    throw new Error(`${context} must be an array`);
+  }
+
+  return value.map((item, index) => {
+    const record = recordValue(item);
+
+    if (record === undefined) {
+      throw new Error(`${context}[${index}] must be an object`);
+    }
+
+    return record;
+  });
+};
+
+const consensusEvidenceFromRecord = (
+  record: JsonRecord,
+  context: string
+): ConsensusEvaluationEvidence => {
+  const position = consensusEvidencePositionValue(record["position"]);
+
+  if (position === undefined) {
+    throw new Error(`${context}.position must be support, dissent, or risk`);
+  }
+
+  return {
+    id: requiredStringField(record, "id", context),
+    position,
+    summary: requiredStringField(record, "summary", context),
+    evidenceRef: requiredStringField(record, "evidenceRef", context),
+    doesNotProve: requiredStringField(record, "doesNotProve", context)
+  };
+};
+
+const consensusEvidenceArray = (
+  value: unknown,
+  context: string
+): readonly ConsensusEvaluationEvidence[] => {
+  const fieldContext = `${context}.evidence`;
+
+  return recordArrayField(value, fieldContext)
+    .map((record, index) => consensusEvidenceFromRecord(record, `${fieldContext}[${index}]`));
+};
+
+const sourceLineageArray = (
+  value: unknown,
+  context: string
+): readonly SourceLineageRef[] | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const fieldContext = `${context}.sourceLineage`;
+
+  return recordArrayField(value, fieldContext).map((record, index) => {
+    const itemContext = `${fieldContext}[${index}]`;
+    const sourceId = requiredStringField(record, "sourceId", itemContext);
+    const note = stringValue(record["note"]);
+
+    return {
+      sourceId,
+      ...(note === undefined ? {} : { note })
+    };
+  });
+};
+
+const consensusRelationReviewFromRecord = (
+  value: unknown,
+  context: string
+): ConsensusCandidateEvaluationInput["relationReview"] => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const record = recordValue(value);
+
+  if (record === undefined) {
+    throw new Error(`${context}.relationReview must be an object when provided`);
+  }
+
+  const edgeKind = sourceClaimEdgeKindValue(record["edgeKind"]);
+  const relationReviewFocus = sourceRelationReviewFocusValue(record["relationReviewFocus"]);
+
+  if (edgeKind === undefined) {
+    throw new Error(`${context}.relationReview.edgeKind must be a known source claim edge kind`);
+  }
+
+  if (relationReviewFocus === undefined) {
+    throw new Error(`${context}.relationReview.relationReviewFocus must be a known relation review focus`);
+  }
+
+  return {
+    sourceClaimEdgeId: requiredStringField(
+      record,
+      "sourceClaimEdgeId",
+      `${context}.relationReview`
+    ) as SourceClaimEdgeId,
+    edgeKind,
+    relationReviewFocus,
+    relationReviewQuestion: requiredStringField(
+      record,
+      "relationReviewQuestion",
+      `${context}.relationReview`
+    )
+  };
+};
+
+const consensusCandidateFromRecord = (
+  record: JsonRecord,
+  index: number
+): ConsensusCandidateEvaluationInput => {
+  const context = `candidates[${index}]`;
+  const candidateKind = consensusCandidateKindValue(record["candidateKind"]);
+
+  if (candidateKind === undefined) {
+    throw new Error(`${context}.candidateKind must be a known consensus candidate kind`);
+  }
+
+  const body = stringValue(record["body"]);
+  const applicationGuidance = stringValue(record["applicationGuidance"]);
+  const duplicateOf = stringValue(record["duplicateOf"]);
+  const notUsefulReason = stringValue(record["notUsefulReason"]);
+  const sourceLineage = sourceLineageArray(record["sourceLineage"], context);
+  const relationReview = consensusRelationReviewFromRecord(record["relationReview"], context);
+
+  return {
+    candidateId: requiredStringField(record, "candidateId", context),
+    candidateKind,
+    summary: requiredStringField(record, "summary", context),
+    ...(body === undefined ? {} : { body }),
+    ...(applicationGuidance === undefined ? {} : { applicationGuidance }),
+    evidenceRefs: stringArrayValue(record["evidenceRefs"]),
+    ...(sourceLineage === undefined ? {} : { sourceLineage }),
+    ...(duplicateOf === undefined ? {} : { duplicateOf }),
+    ...(notUsefulReason === undefined ? {} : { notUsefulReason }),
+    ...(relationReview === undefined ? {} : { relationReview }),
+    evidence: consensusEvidenceArray(record["evidence"], context)
+  };
+};
+
+const loadConsensusCandidateInputs = async (
+  cwd: string,
+  consensusCandidateFile: string | undefined
+): Promise<ConsensusCandidateEvaluationInput[]> => {
+  if (consensusCandidateFile === undefined) {
+    return [];
+  }
+
+  const resolvedPath = await resolveRepoInputFile(cwd, consensusCandidateFile);
+  const raw = await readFile(resolvedPath, "utf8");
+  const readback = parseJsonRecord(raw, consensusCandidateFile);
+  const candidates = readback["candidates"];
+
+  return recordArrayField(candidates, `${consensusCandidateFile}.candidates`)
+    .map(consensusCandidateFromRecord);
+};
+
 const uniqueSourceClaimEdges = (
   edges: readonly SourceClaimEdge[]
 ): SourceClaimEdge[] => {
@@ -730,6 +983,20 @@ const loadKnowledgeAcquisitionRequestsForPreview = async (
     ? loadKnowledgeAcquisitionRequests(
       input.cwd,
       input.command.acquisitionReadbackFile
+    )
+    : [];
+
+const loadConsensusCandidatesForPreview = async (
+  input: {
+    cwd: string;
+    command: HeartbeatPreviewCommand;
+    candidateKinds: readonly HeartbeatCandidateKind[];
+  }
+): Promise<ConsensusCandidateEvaluationInput[]> =>
+  includesCandidateKind(input.candidateKinds, "consensus_evaluation")
+    ? loadConsensusCandidateInputs(
+      input.cwd,
+      input.command.consensusCandidateFile
     )
     : [];
 
@@ -865,6 +1132,44 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     ];
   }
 
+  if (candidate.kind === "consensus_candidate_evaluation_preview") {
+    return [
+      `  candidateId: ${candidate.candidateId}`,
+      `  candidateKind: ${candidate.candidateKind}`,
+      "  decisionOptions:",
+      ...formatList(candidate.decisionOptions),
+      "  supportEvidenceRefs:",
+      ...formatList(candidate.supportEvidenceRefs),
+      "  dissentEvidenceRefs:",
+      ...formatList(candidate.dissentEvidenceRefs),
+      "  riskEvidenceRefs:",
+      ...formatList(candidate.riskEvidenceRefs),
+      ...(candidate.relationReview === undefined
+        ? [
+            "  relationReview:",
+            "  - none"
+          ]
+        : [
+            "  relationReview:",
+            `  - sourceClaimEdgeId: ${candidate.relationReview.sourceClaimEdgeId}`,
+            `  - edgeKind: ${candidate.relationReview.edgeKind}`,
+            `  - relationReviewFocus: ${candidate.relationReview.relationReviewFocus}`,
+            `  - relationReviewQuestion: ${candidate.relationReview.relationReviewQuestion}`,
+            `  - consumedBy: ${candidate.relationReview.consumedBy}`,
+            `  - reviewUsefulness: ${candidate.relationReview.reviewUsefulness}`,
+            `  - doesNotProve: ${candidate.relationReview.doesNotProve}`
+          ]),
+      "  preservedDissent:",
+      ...(candidate.preservedDissent.length === 0
+        ? ["  - none"]
+        : candidate.preservedDissent.flatMap((item) => [
+            `  - ${item.id}: ${item.summary}`,
+            `    evidenceRef: ${item.evidenceRef}`,
+            `    doesNotProve: ${item.doesNotProve}`
+          ]))
+    ];
+  }
+
   return [
     `  requestId: ${candidate.requestId}`,
     `  source: ${candidate.source}`,
@@ -884,26 +1189,40 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
   ];
 };
 
-const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => [
-  `- candidate: ${candidate.id}`,
-  `  kind: ${candidate.kind}`,
-  `  action: ${candidate.action}`,
-  `  nextAction: ${candidate.action}`,
-  `  reason: ${candidate.reason}`,
-  `  reviewability: ${candidate.reviewability}`,
-  "  reviewabilityReasons:",
-  ...formatList(candidate.reviewabilityReasons),
-  `  summary: ${candidate.summary}`,
-  `  applicationGuidance: ${candidate.applicationGuidance}`,
-  ...candidateTargetLines(candidate),
-  "  evidenceRefs:",
-  ...formatList(candidate.evidenceRefs),
-  `  doesNotProve: ${candidate.doesNotProve}`,
-  `  mutation: ${candidate.mutation}`,
-  ...formatWorkerAuthority(candidateWorkerAuthority(candidate)),
-  "  forbiddenWrites:",
-  ...formatList(candidate.forbiddenWrites)
-];
+const candidateAction = (candidate: BrainHeartbeatCandidate): string =>
+  "action" in candidate
+    ? candidate.action
+    : candidate.decisionOptions.join(", ");
+
+const candidateReason = (candidate: BrainHeartbeatCandidate): string =>
+  "reason" in candidate
+    ? candidate.reason
+    : "Consensus preview preserves support, dissent, risk, and relation review focus for operator review.";
+
+const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => {
+  const action = candidateAction(candidate);
+
+  return [
+    `- candidate: ${candidate.id}`,
+    `  kind: ${candidate.kind}`,
+    `  action: ${action}`,
+    `  nextAction: ${action}`,
+    `  reason: ${candidateReason(candidate)}`,
+    `  reviewability: ${candidate.reviewability}`,
+    "  reviewabilityReasons:",
+    ...formatList(candidate.reviewabilityReasons),
+    `  summary: ${candidate.summary}`,
+    `  applicationGuidance: ${candidate.applicationGuidance}`,
+    ...candidateTargetLines(candidate),
+    "  evidenceRefs:",
+    ...formatList(candidate.evidenceRefs),
+    `  doesNotProve: ${candidate.doesNotProve}`,
+    `  mutation: ${candidate.mutation}`,
+    ...formatWorkerAuthority(candidateWorkerAuthority(candidate)),
+    "  forbiddenWrites:",
+    ...formatList(candidate.forbiddenWrites)
+  ];
+};
 
 const formatReviewEvalClosure = (preview: BrainHeartbeatPreview): string[] => [
   "Review/eval closure:",
@@ -997,9 +1316,11 @@ const formatHeartbeatPreview = (
     `memoryStaleness: ${input.preview.candidateCounts.memoryStaleness}`,
     `sourceRelation: ${input.preview.candidateCounts.sourceRelation}`,
     `knowledgeAcquisition: ${input.preview.candidateCounts.knowledgeAcquisition}`,
+    `consensusEvaluation: ${input.preview.candidateCounts.consensusEvaluation}`,
     `skippedMemoryRecords: ${input.preview.skippedCounts.memoryRecords}`,
     `skippedSourceClaimEdges: ${input.preview.skippedCounts.sourceClaimEdges}`,
     `skippedKnowledgeAcquisitionRequests: ${input.preview.skippedCounts.knowledgeAcquisitionRequests}`,
+    `skippedConsensusCandidates: ${input.preview.skippedCounts.consensusCandidates}`,
     "",
     "Candidates:",
     ...(input.preview.candidates.length === 0
@@ -1032,7 +1353,7 @@ const jsonOutput = (
     ...input.preview,
     candidates: input.preview.candidates.map((candidate) => ({
       ...candidate,
-      nextAction: candidate.action
+      nextAction: candidateAction(candidate)
     }))
   }
 }, null, 2);
@@ -1086,6 +1407,11 @@ export const runHeartbeatPreviewCommand = async (
       command: runtime.command,
       candidateKinds
     });
+    const consensusCandidates = await loadConsensusCandidatesForPreview({
+      cwd: runtime.cwd,
+      command: runtime.command,
+      candidateKinds
+    });
     const preview = buildBrainHeartbeatPreview({
       now: runtime.now(),
       evidenceRef: runtime.command.evidenceRef ?? defaultEvidenceRef,
@@ -1095,6 +1421,9 @@ export const runHeartbeatPreviewCommand = async (
       ...(knowledgeAcquisitionRequests.length === 0
         ? {}
         : { knowledgeAcquisitionRequests }),
+      ...(consensusCandidates.length === 0
+        ? {}
+        : { consensusCandidates }),
       ...(runtime.command.candidateReview === undefined
         ? {}
         : { candidateReview: runtime.command.candidateReview }),

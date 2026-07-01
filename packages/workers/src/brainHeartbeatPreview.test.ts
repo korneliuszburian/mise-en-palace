@@ -247,7 +247,8 @@ describe("brain heartbeat preview", () => {
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 0,
       sourceRelation: 0,
-      knowledgeAcquisition: 1
+      knowledgeAcquisition: 1,
+      consensusEvaluation: 0
     });
     expect(result.candidates).toEqual([
       expect.objectContaining({
@@ -297,6 +298,79 @@ describe("brain heartbeat preview", () => {
     expect(result.mutation).toBe("none");
   });
 
+  test("routes consensus relation review through candidate-only heartbeat readback", () => {
+    const result = buildBrainHeartbeatPreview({
+      now,
+      evidenceRef,
+      memoryRecords: [],
+      sourceClaims: [],
+      sourceClaimEdges: [],
+      consensusCandidates: [
+        {
+          candidateId: "consensus-duplicate-source-relation",
+          candidateKind: "source_decision_candidate",
+          summary: "Duplicate source relation should stay reviewable before consolidation.",
+          applicationGuidance:
+            "Review the duplicate relation before suppressing either source claim.",
+          relationReview: {
+            sourceClaimEdgeId: "source-claim-edge-1",
+            edgeKind: "duplicates",
+            relationReviewFocus: "duplicate",
+            relationReviewQuestion:
+              "Review whether these claims are true duplicates before consolidation."
+          },
+          evidence: [
+            {
+              id: "support-1",
+              position: "support",
+              summary: "The source edge carries reviewed duplicate focus.",
+              evidenceRef,
+              doesNotProve: "This does not prove source truth."
+            },
+            {
+              id: "dissent-1",
+              position: "dissent",
+              summary: "The claims may only partially overlap.",
+              evidenceRef: "docs/reviews/controlled-dogfood/relation-dissent.md",
+              doesNotProve: "This does not prove the relation is wrong."
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(result.candidateCounts).toEqual({
+      memoryStaleness: 0,
+      sourceRelation: 0,
+      knowledgeAcquisition: 0,
+      consensusEvaluation: 1
+    });
+    expect(result.skippedCounts.consensusCandidates).toBe(0);
+    expect(result.reviewEvalClosure).toMatchObject({
+      decision: "ready_for_behavior_proof",
+      candidateIds: ["consensus-candidate-evaluation:consensus-duplicate-source-relation"],
+      mutation: "none"
+    });
+    expect(result.runtimeLoop).toMatchObject({
+      status: "ready_for_operator_review",
+      inspectedCandidates: 1,
+      reviewableCandidates: 1,
+      mutation: "none"
+    });
+    expect(result.consensusEvaluation?.evaluations[0]?.relationReview).toMatchObject({
+      sourceClaimEdgeId: "source-claim-edge-1",
+      edgeKind: "duplicates",
+      relationReviewFocus: "duplicate",
+      consumedBy: "consensus_candidate_evaluation_preview",
+      reviewUsefulness: "used"
+    });
+    expect(result.candidates[0]).toMatchObject({
+      kind: "consensus_candidate_evaluation_preview",
+      reviewability: "ready",
+      mutation: "none"
+    });
+  });
+
   test("aggregates memory staleness and source relation candidates without mutation", () => {
     const result = buildBrainHeartbeatPreview({
       now,
@@ -319,7 +393,8 @@ describe("brain heartbeat preview", () => {
     expect(result.priorityOrder).toEqual([
       "memory_staleness",
       "source_relation",
-      "knowledge_acquisition"
+      "knowledge_acquisition",
+      "consensus_evaluation"
     ]);
     expect(result.forbiddenWrites).toEqual([
       "memory_records",
@@ -331,7 +406,8 @@ describe("brain heartbeat preview", () => {
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 1,
       sourceRelation: 1,
-      knowledgeAcquisition: 0
+      knowledgeAcquisition: 0,
+      consensusEvaluation: 0
     });
     expect(result.reviewEvalClosure).toMatchObject({
       decision: "ready_for_behavior_proof",
@@ -441,12 +517,14 @@ describe("brain heartbeat preview", () => {
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 1,
       sourceRelation: 0,
-      knowledgeAcquisition: 0
+      knowledgeAcquisition: 0,
+      consensusEvaluation: 0
     });
     expect(result.skippedCounts).toEqual({
       memoryRecords: 0,
       sourceClaimEdges: 1,
-      knowledgeAcquisitionRequests: 0
+      knowledgeAcquisitionRequests: 0,
+      consensusCandidates: 0
     });
   });
 
@@ -484,12 +562,14 @@ describe("brain heartbeat preview", () => {
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 0,
       sourceRelation: 0,
-      knowledgeAcquisition: 1
+      knowledgeAcquisition: 1,
+      consensusEvaluation: 0
     });
     expect(result.skippedCounts).toEqual({
       memoryRecords: 0,
       sourceClaimEdges: 0,
-      knowledgeAcquisitionRequests: 0
+      knowledgeAcquisitionRequests: 0,
+      consensusCandidates: 0
     });
     expect(result.reviewEvalClosure).toMatchObject({
       decision: "ready_for_behavior_proof",
@@ -528,12 +608,14 @@ describe("brain heartbeat preview", () => {
     expect(result.candidateCounts).toEqual({
       memoryStaleness: 0,
       sourceRelation: 0,
-      knowledgeAcquisition: 0
+      knowledgeAcquisition: 0,
+      consensusEvaluation: 0
     });
     expect(result.skippedCounts).toEqual({
       memoryRecords: 1,
       sourceClaimEdges: 1,
-      knowledgeAcquisitionRequests: 0
+      knowledgeAcquisitionRequests: 0,
+      consensusCandidates: 0
     });
     expect(result.mutation).toBe("none");
     expect(result.reviewEvalClosure).toMatchObject({

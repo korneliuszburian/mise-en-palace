@@ -1035,6 +1035,93 @@ describe("runHeartbeatPreviewCommand", () => {
     }
   });
 
+  it("renders consensus relation review candidates in heartbeat preview", async () => {
+    const fixture = await writeJsonFixture("consensus-candidates.json", {
+      candidates: [
+        {
+          candidateId: "consensus-duplicate-source-relation",
+          candidateKind: "source_decision_candidate",
+          summary: "Duplicate source relation should stay reviewable before consolidation.",
+          applicationGuidance:
+            "Review the duplicate relation before suppressing either source claim.",
+          relationReview: {
+            sourceClaimEdgeId,
+            edgeKind: "duplicates",
+            relationReviewFocus: "duplicate",
+            relationReviewQuestion:
+              "Review whether these claims are true duplicates before consolidation."
+          },
+          evidence: [
+            {
+              id: "support-1",
+              position: "support",
+              summary: "The source edge carries reviewed duplicate focus.",
+              evidenceRef: "docs/reviews/controlled-dogfood/cro-01.md",
+              doesNotProve: "This does not prove source truth."
+            },
+            {
+              id: "dissent-1",
+              position: "dissent",
+              summary: "The claims may only partially overlap.",
+              evidenceRef: "docs/reviews/controlled-dogfood/cro-01-dissent.md",
+              doesNotProve: "This does not prove the relation is wrong."
+            }
+          ]
+        }
+      ]
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/cro-01.md",
+          candidateKinds: ["consensus_evaluation"],
+          consensusCandidateFile: fixture.fileName,
+          format: "text"
+        },
+        createDatabaseRuntime: async () => ({
+          projectId,
+          memoryRepository: {
+            async listMemoryRecordsForProject() {
+              throw new Error("memory lane should not be read");
+            }
+          },
+          sourceRepository: {
+            async listClaimsForProject() {
+              throw new Error("source lane should not be read");
+            },
+            async listSourceClaimEdgesForClaim() {
+              throw new Error("source edges should not be read");
+            }
+          },
+          async close() {}
+        })
+      });
+
+      expect(result.stdout).toContain("Candidate kinds: consensus_evaluation");
+      expect(result.stdout).toContain("decision: ready_for_behavior_proof");
+      expect(result.stdout).toContain("consensusEvaluation: 1");
+      expect(result.stdout).toContain("kind: consensus_candidate_evaluation_preview");
+      expect(result.stdout).toContain(`sourceClaimEdgeId: ${sourceClaimEdgeId}`);
+      expect(result.stdout).toContain("relationReviewFocus: duplicate");
+      expect(result.stdout).toContain("consumedBy: consensus_candidate_evaluation_preview");
+      expect(result.stdout).toContain("reviewUsefulness: used");
+      expect(result.stdout).toContain("mutation: none");
+      expect(result.stdout).toContain("Consensus relation review focus consumption does not prove");
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
   it("rejects invalid acquisition readback JSON", async () => {
     const cwd = await mkdtemp(path.join(tmpdir(), "krn-heartbeat-invalid-readback-"));
     const fileName = "broken.json";

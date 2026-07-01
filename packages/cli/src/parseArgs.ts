@@ -168,16 +168,19 @@ export type CliCommand =
       maxCandidates?: number;
       evidenceRef?: string;
       acquisitionReadbackFile?: string;
+      consensusCandidateFile?: string;
       candidateKinds?: readonly [
         (
           | "memory_staleness"
           | "source_relation"
           | "knowledge_acquisition"
+          | "consensus_evaluation"
         ),
         ...(
           | "memory_staleness"
           | "source_relation"
           | "knowledge_acquisition"
+          | "consensus_evaluation"
         )[]
       ];
       candidateReview?: {
