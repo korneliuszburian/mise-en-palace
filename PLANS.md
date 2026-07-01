@@ -2435,11 +2435,18 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-ebf-01-execution-brief-format-contract/REPORT.md`.
   Next: `mise-en-palace-pyr` / GCR-01 adds graph contradiction/duplicate
   candidate readback.
-- [ ] GCR-01 active: `mise-en-palace-pyr` inspects existing graph/source
-  relation paths and adds the smallest reviewable contradiction/duplicate
-  candidate readback without crawler, entity extraction platform, DB schema by
-  default, worker daemon, Memory Core auto-mutation, dashboard/API/MCP, or
-  embeddings/ranking rewrite.
+- [x] GCR-01 complete: `mise-en-palace-pyr` added explicit
+  `relationReviewFocus` and `relationReviewQuestion` readback for
+  contradiction/duplicate source relation heartbeat candidates, plus CLI and
+  aggregate heartbeat coverage. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md`.
+  Next: `mise-en-palace-0e1` / GRE-01 uses the relation focus in a bounded
+  eval or mini Brain-QA readback.
+- [ ] GRE-01 active: `mise-en-palace-0e1` consumes graph relation focus in one
+  bounded eval or mini Brain-QA case for contradiction/duplicate reasoning,
+  without broad eval platform, multi-agent runtime, crawler/entity extraction,
+  DB schema by default, Memory Core auto-mutation, dashboard/API/MCP, or graph
+  ranking rewrite.
 
 ## 21. Final Response Format For Codex Runs
 

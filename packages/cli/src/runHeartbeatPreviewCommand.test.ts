@@ -213,6 +213,10 @@ describe("runHeartbeatPreviewCommand", () => {
     expect(result.stdout).toContain("idempotencyEnforcement: key_pattern_only_not_enforced");
     expect(result.stdout).toContain("memory_candidates");
     expect(result.stdout).toContain("Missing fields: relationEvidenceRefs.");
+    expect(result.stdout).toContain("relationReviewFocus: relation_evidence");
+    expect(result.stdout).toContain(
+      "relationReviewQuestion: Review concrete SourceClaimEdge evidence before accepting relation maintenance."
+    );
     expect(result.stdout).toContain(
       "relationEvidenceRequest: Capture concrete SourceClaimEdge evidenceRefs before accepting relation maintenance."
     );

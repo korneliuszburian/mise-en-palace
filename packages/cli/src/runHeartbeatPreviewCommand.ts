@@ -853,13 +853,15 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
 
   if (candidate.kind === "source_relation_maintenance_candidate") {
     return [
-    `  sourceClaimEdgeId: ${candidate.sourceClaimEdgeId}`,
-    `  fromSourceClaimId: ${candidate.fromSourceClaimId}`,
-    `  toSourceClaimId: ${candidate.toSourceClaimId}`,
-    `  edgeKind: ${candidate.edgeKind}`,
-    "  relationEvidenceRefs:",
-    ...formatList(candidate.relationEvidenceRefs),
-    `  relationEvidenceRequest: ${candidate.relationEvidenceRequest}`
+      `  sourceClaimEdgeId: ${candidate.sourceClaimEdgeId}`,
+      `  fromSourceClaimId: ${candidate.fromSourceClaimId}`,
+      `  toSourceClaimId: ${candidate.toSourceClaimId}`,
+      `  edgeKind: ${candidate.edgeKind}`,
+      `  relationReviewFocus: ${candidate.relationReviewFocus}`,
+      `  relationReviewQuestion: ${candidate.relationReviewQuestion}`,
+      "  relationEvidenceRefs:",
+      ...formatList(candidate.relationEvidenceRefs),
+      `  relationEvidenceRequest: ${candidate.relationEvidenceRequest}`
     ];
   }
 

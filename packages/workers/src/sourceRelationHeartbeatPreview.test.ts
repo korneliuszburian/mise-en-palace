@@ -68,6 +68,9 @@ describe("source relation heartbeat preview", () => {
         kind: "source_relation_maintenance_candidate",
         action: "review_source_relation",
         reason: "relation_needs_review",
+        relationReviewFocus: "contradiction",
+        relationReviewQuestion:
+          "Review whether this edge represents a real contradiction before changing source truth or downstream activation.",
         reviewability: "ready",
         mutation: "none",
         forbiddenWrites: [
@@ -84,11 +87,48 @@ describe("source relation heartbeat preview", () => {
     expect(result.candidates[0]?.evidenceRefs).toContain(
       "docs/reviews/controlled-dogfood/2026-06-29-v337-source-relation-heartbeat-candidate-preview/REPORT.md"
     );
+    expect(result.candidates[0]?.summary).toBe(
+      "Review contradiction SourceClaimEdge source-claim-edge-1 between source-claim-1 and source-claim-2."
+    );
+    expect(result.candidates[0]?.applicationGuidance).toContain(
+      "real contradiction"
+    );
     expect(result.candidates[0]?.relationEvidenceRefs).toEqual([
       "docs/reviews/controlled-dogfood/v336/REPORT.md"
     ]);
     expect(result.candidates[0]?.relationEvidenceRequest).toBe(
       "Review listed SourceClaimEdge evidenceRefs before accepting relation maintenance."
+    );
+  });
+
+  test("distinguishes duplicate source relations from generic relation maintenance", () => {
+    const result = buildSourceRelationHeartbeatPreview({
+      now,
+      sourceClaims: [
+        sourceClaim("source-claim-1"),
+        sourceClaim("source-claim-2")
+      ],
+      sourceClaimEdges: [
+        sourceClaimEdge({
+          kind: "duplicates"
+        })
+      ],
+      evidenceRef: "docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md"
+    });
+
+    expect(result.candidates[0]).toEqual(
+      expect.objectContaining({
+        action: "review_source_relation",
+        reason: "relation_needs_review",
+        edgeKind: "duplicates",
+        relationReviewFocus: "duplicate",
+        relationReviewQuestion:
+          "Review whether these claims are true duplicates before consolidation, suppression, or source truth changes.",
+        summary:
+          "Review duplicate SourceClaimEdge source-claim-edge-1 between source-claim-1 and source-claim-2.",
+        mutation: "none",
+        reviewability: "ready"
+      })
     );
   });
 
@@ -109,6 +149,7 @@ describe("source relation heartbeat preview", () => {
       expect.objectContaining({
         action: "review_stale_connected_claim",
         reason: "connected_claim_is_stale",
+        relationReviewFocus: "stale_connected_claim",
         reviewability: "ready"
       })
     );
@@ -134,6 +175,7 @@ describe("source relation heartbeat preview", () => {
       expect.objectContaining({
         action: "review_relation_evidence",
         reason: "relation_evidence_is_weak",
+        relationReviewFocus: "relation_evidence",
         mutation: "none",
         reviewability: "needs_more_evidence"
       })

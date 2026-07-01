@@ -172,6 +172,13 @@ describe("brain heartbeat preview", () => {
         ]
       }
     });
+    expect(result.candidates[1]).toMatchObject({
+      kind: "source_relation_maintenance_candidate",
+      edgeKind: "duplicates",
+      relationReviewFocus: "duplicate",
+      relationReviewQuestion:
+        "Review whether these claims are true duplicates before consolidation, suppression, or source truth changes."
+    });
     expect(result.mutation).toBe("none");
   });
 

@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: GCR-01 Add graph contradiction and duplicate candidate readback
+current task: GRE-01 Use graph relation focus in bounded eval readback
 ```
 
 ## Compact Checkpoints
@@ -77,6 +77,7 @@ worker job authority constants: invariant worker runtime fields are centralized 
 worker idempotency/gate boundary: worker readbacks explicitly mark idempotency key patterns and memoryCoreGate as not runtime-enforced
 execution brief format contract: Codex-facing ExecutionBrief now carries and renders krn.executionBrief.v1
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
+graph relation candidate focus: contradiction/duplicate relation focus and review questions visible through heartbeat candidate and CLI readback
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -86,7 +87,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### WJI-01 Prove Or Downgrade Worker Job Idempotency And Gate Enforcement
+### GRE-01 Use Graph Relation Focus In Bounded Eval Readback
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -98,26 +99,23 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-wja-01-worker-job-authority-constants/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-x8g: Prove or downgrade worker job idempotency and gate enforcement.
+mise-en-palace-0e1: Use graph relation focus in bounded eval readback.
 ```
 
 Task boundary:
 
 ```txt
-Inspect current worker DB repository/schema and worker authority consumers.
-Either add a bounded executable proof for idempotent enqueue/gate enforcement or
-explicitly downgrade the declarations so operator readback cannot overstate
-runtime safety. No worker daemon, scheduler, queue runtime, DB schema/migration
-unless source proves an existing constraint only needs proof, Memory Core
-mutation behavior change, dashboard/API/MCP, or broad worker refactor.
+Use existing graph relation candidate readback to drive one bounded eval or mini
+Brain-QA case for contradiction/duplicate reasoning. Consume
+relationReviewFocus or explicitly reject it. No broad eval platform, multi-agent
+runtime, crawler/entity extraction, DB schema by default, Memory Core
+auto-mutation, dashboard/API/MCP, or graph ranking rewrite.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

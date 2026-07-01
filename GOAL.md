@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: GCR-01 Add graph contradiction and duplicate candidate readback.
+current task: GRE-01 Use graph relation focus in bounded eval readback.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-EBF-01 complete: Codex-facing ExecutionBrief now carries and renders
-`krn.executionBrief.v1`, and DB-backed codex-adapter smoke proves the format
-marker is present without invoking Codex.
+GCR-01 complete: source relation heartbeat candidates and heartbeat preview CLI
+now expose contradiction/duplicate relation review focus plus review questions
+without new graph runtime, DB schema, or Memory Core mutation.
 ```
 
 ## Direction
