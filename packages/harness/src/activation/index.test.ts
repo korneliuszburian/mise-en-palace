@@ -459,10 +459,10 @@ describe("activation engine", () => {
       id: "edge-qa-answer",
       fromSourceClaimId: seedSourceClaim.id,
       toSourceClaimId: answerSourceClaim.id,
-      kind: "supports",
+      kind: "duplicates",
       metadata: {
-        consumer: "V335 small graph-brain QA case",
-        doesNotProve: "This edge does not prove graph QA quality."
+        consumer: "GRE-01 relation focus graph QA case",
+        doesNotProve: "This edge does not prove duplicate truth or graph QA quality."
       },
       createdAt: now
     };
@@ -517,7 +517,14 @@ describe("activation engine", () => {
       baselineContext,
       edgeAwareContext,
       sourceClaims: [seedSourceClaim, answerSourceClaim, lexicalOnlySourceClaim],
-      answerSourceClaimId: answerSourceClaim.id
+      answerSourceClaimId: answerSourceClaim.id,
+      relationReview: {
+        sourceClaimEdgeId: edge.id,
+        edgeKind: edge.kind,
+        relationReviewFocus: "duplicate",
+        relationReviewQuestion:
+          "Review whether these claims are true duplicates before consolidation, suppression, or source truth changes."
+      }
     });
 
     expect(baselineContext.inclusions.map((item) => item.subjectId)).toEqual([
@@ -540,17 +547,28 @@ describe("activation engine", () => {
         includedSourceClaimIds: ["claim-qa-answer"],
         usedSourceClaimIds: ["claim-qa-answer"]
       },
+      relationReview: {
+        sourceClaimEdgeId: "edge-qa-answer",
+        edgeKind: "duplicates",
+        relationReviewFocus: "duplicate",
+        relationReviewQuestion:
+          "Review whether these claims are true duplicates before consolidation, suppression, or source truth changes.",
+        consumedBy: "relation_grounded_qa_readback",
+        reviewUsefulness: "used",
+        doesNotProve:
+          "Relation review focus consumption does not prove source truth, edge correctness, contradiction resolution, duplicate consolidation, or production graph QA quality."
+      },
       outcome: "improved",
       doesNotProve: "Relation-grounded QA readback does not prove source truth, edge correctness, production graph retrieval quality, corpus-scale graph QA, or product readiness."
     });
     expect(edgeAwareRanked.find((candidate) =>
       candidate.subjectId === "claim-qa-answer"
     )).toMatchObject({
-      graphScore: 30,
+      graphScore: 23,
       metadata: {
         sourceClaimEdgeInfluence: {
           edgeIds: ["edge-qa-answer"],
-          edgeKinds: ["supports"],
+          edgeKinds: ["duplicates"],
           seedSourceClaimIds: ["claim-qa-seed"],
           doesNotProve: "SourceClaimEdge influence does not prove source truth, edge correctness, ranking quality, or product graph retrieval quality."
         }

@@ -10,7 +10,8 @@ import type {
   SourceClaim,
   SourceClaimEdge,
   SourceClaimEdgeKind,
-  SourceClaimId
+  SourceClaimId,
+  SourceRelationReviewFocus
 } from "@krn/core";
 
 export type SourceRelationHeartbeatCandidateReason =
@@ -23,14 +24,7 @@ export type SourceRelationHeartbeatAction =
   | "review_relation_evidence"
   | "review_stale_connected_claim";
 
-export type SourceRelationHeartbeatReviewFocus =
-  | "contradiction"
-  | "duplicate"
-  | "supersession"
-  | "invalidation"
-  | "expiration"
-  | "relation_evidence"
-  | "stale_connected_claim";
+export type SourceRelationHeartbeatReviewFocus = SourceRelationReviewFocus;
 
 export interface SourceRelationHeartbeatCandidate {
   id: string;

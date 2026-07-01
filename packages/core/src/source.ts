@@ -74,6 +74,15 @@ export type SourceClaimEdgeKind =
   | "invalidates"
   | "expires";
 
+export type SourceRelationReviewFocus =
+  | "contradiction"
+  | "duplicate"
+  | "supersession"
+  | "invalidation"
+  | "expiration"
+  | "relation_evidence"
+  | "stale_connected_claim";
+
 export type SourceRejectionReason =
   | "no_mechanism"
   | "no_consumer"

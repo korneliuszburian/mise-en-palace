@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: GRE-01 Use graph relation focus in bounded eval readback
+current task: GCE-01 Use graph relation focus in consensus candidate eval
 latest pushed commit: see git history
 ```
 
@@ -24,19 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-GRE-01 Use graph relation focus in bounded eval readback is active.
-KRN needs proof that graph relation candidate focus improves a downstream
-bounded eval or mini Brain-QA readback, not only candidate text.
+GCE-01 Use graph relation focus in consensus candidate eval is active.
+KRN needs proof that graph relation focus can feed the candidate-only
+consensus/eval lane, or an explicit bounded rejection if that route is wrong.
 ```
 
 Latest outcome:
 
 ```txt
-GCR-01 complete: source relation heartbeat candidates and CLI readback expose
-contradiction/duplicate relation review focus and review questions.
+GRE-01 complete: relationReviewFocus is consumed by bounded relation-grounded QA
+readback for a duplicate SourceClaimEdge.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md
-Next: GRE-01 uses relation focus in one bounded eval or mini Brain-QA readback.
+docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-readback/REPORT.md
+Next: GCE-01 routes relation focus into consensus/eval candidate preview or
+rejects the route with source-to-decision evidence.
 ```
 
 ## 2. Product Thesis
@@ -2440,10 +2441,18 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md`.
   Next: `mise-en-palace-0e1` / GRE-01 uses the relation focus in a bounded
   eval or mini Brain-QA readback.
-- [ ] GRE-01 active: `mise-en-palace-0e1` consumes graph relation focus in one
-  bounded eval or mini Brain-QA case for contradiction/duplicate reasoning,
-  without broad eval platform, multi-agent runtime, crawler/entity extraction,
-  DB schema by default, Memory Core auto-mutation, dashboard/API/MCP, or graph
+- [x] GRE-01 complete: `mise-en-palace-0e1` moved relationReviewFocus into
+  shared source-domain vocabulary and proved a duplicate SourceClaimEdge focus
+  is consumed by bounded relation-grounded QA readback. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-readback/REPORT.md`.
+  Next: `mise-en-palace-kvz` / GCE-01 routes relation focus into
+  consensus/eval candidate preview or rejects the route with source-to-decision
+  evidence.
+- [ ] GCE-01 active: `mise-en-palace-kvz` routes contradiction/duplicate
+  relation focus into one candidate-only consensus/eval readback, or explicitly
+  rejects the route with source-to-decision evidence, without broad eval
+  platform, multi-agent runtime, worker daemon, crawler/entity extraction, DB
+  schema by default, Memory Core auto-mutation, dashboard/API/MCP, or graph
   ranking rewrite.
 
 ## 21. Final Response Format For Codex Runs

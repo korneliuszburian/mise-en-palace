@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: GRE-01 Use graph relation focus in bounded eval readback.
+current task: GCE-01 Use graph relation focus in consensus candidate eval.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-GCR-01 complete: source relation heartbeat candidates and heartbeat preview CLI
-now expose contradiction/duplicate relation review focus plus review questions
-without new graph runtime, DB schema, or Memory Core mutation.
+GRE-01 complete: relationReviewFocus now crosses from graph relation candidate
+vocabulary into bounded relation-grounded QA readback without new eval platform,
+DB schema, graph runtime, or Memory Core mutation.
 ```
 
 ## Direction

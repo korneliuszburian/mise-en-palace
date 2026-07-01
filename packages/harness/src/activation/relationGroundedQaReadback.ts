@@ -1,11 +1,14 @@
 import type {
   ContextAssembly,
-  SourceClaim
+  SourceClaim,
+  SourceClaimEdge,
+  SourceRelationReviewFocus
 } from "@krn/core";
 
 export type RelationGroundedQaVerdict = "grounded" | "insufficient";
 export type RelationGroundedQaUsefulness = "improved" | "weak";
 export type RelationGroundedQaOutcome = "improved" | "unchanged" | "regressed";
+export type RelationGroundedQaRelationReviewUsefulness = "used" | "not_used";
 
 export interface RelationGroundedQaScenarioReadback {
   verdict: RelationGroundedQaVerdict;
@@ -15,9 +18,24 @@ export interface RelationGroundedQaScenarioReadback {
   usedSourceClaimIds: readonly SourceClaim["id"][];
 }
 
+export interface RelationGroundedQaRelationReviewInput {
+  sourceClaimEdgeId: SourceClaimEdge["id"];
+  edgeKind: SourceClaimEdge["kind"];
+  relationReviewFocus: SourceRelationReviewFocus;
+  relationReviewQuestion: string;
+}
+
+export interface RelationGroundedQaRelationReviewReadback
+  extends RelationGroundedQaRelationReviewInput {
+  consumedBy: "relation_grounded_qa_readback";
+  reviewUsefulness: RelationGroundedQaRelationReviewUsefulness;
+  doesNotProve: string;
+}
+
 export interface RelationGroundedQaReadback {
   baseline: RelationGroundedQaScenarioReadback;
   edgeAware: RelationGroundedQaScenarioReadback;
+  relationReview?: RelationGroundedQaRelationReviewReadback;
   outcome: RelationGroundedQaOutcome;
   proof: string;
   doesNotProve: string;
@@ -28,6 +46,7 @@ export interface BuildRelationGroundedQaReadbackInput {
   edgeAwareContext: Pick<ContextAssembly, "inclusions">;
   sourceClaims: readonly Pick<SourceClaim, "id" | "claim">[];
   answerSourceClaimId: SourceClaim["id"];
+  relationReview?: RelationGroundedQaRelationReviewInput;
 }
 
 const insufficientAnswer = "Insufficient selected source context for relation-dependent graph QA.";
@@ -83,6 +102,17 @@ const outcomeFor = (
   return "regressed";
 };
 
+const relationReviewReadback = (
+  relationReview: RelationGroundedQaRelationReviewInput,
+  edgeAware: RelationGroundedQaScenarioReadback
+): RelationGroundedQaRelationReviewReadback => ({
+  ...relationReview,
+  consumedBy: "relation_grounded_qa_readback",
+  reviewUsefulness: edgeAware.verdict === "grounded" ? "used" : "not_used",
+  doesNotProve:
+    "Relation review focus consumption does not prove source truth, edge correctness, contradiction resolution, duplicate consolidation, or production graph QA quality."
+});
+
 export const buildRelationGroundedQaReadback = (
   input: BuildRelationGroundedQaReadbackInput
 ): RelationGroundedQaReadback => {
@@ -97,10 +127,14 @@ export const buildRelationGroundedQaReadback = (
     sourceClaimsById,
     input.answerSourceClaimId
   );
+  const relationReview = input.relationReview === undefined
+    ? undefined
+    : relationReviewReadback(input.relationReview, edgeAware);
 
   return {
     baseline,
     edgeAware,
+    ...(relationReview === undefined ? {} : { relationReview }),
     outcome: outcomeFor(baseline, edgeAware),
     proof: "Relation-grounded QA readback compares selected source context for a no-relation baseline and an edge-aware path.",
     doesNotProve: "Relation-grounded QA readback does not prove source truth, edge correctness, production graph retrieval quality, corpus-scale graph QA, or product readiness."

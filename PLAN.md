@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: GRE-01 Use graph relation focus in bounded eval readback
+current task: GCE-01 Use graph relation focus in consensus candidate eval
 ```
 
 ## Compact Checkpoints
@@ -78,6 +78,7 @@ worker idempotency/gate boundary: worker readbacks explicitly mark idempotency k
 execution brief format contract: Codex-facing ExecutionBrief now carries and renders krn.executionBrief.v1
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 graph relation candidate focus: contradiction/duplicate relation focus and review questions visible through heartbeat candidate and CLI readback
+graph relation eval readback: relationReviewFocus is consumed by bounded relation-grounded QA readback
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -87,7 +88,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### GRE-01 Use Graph Relation Focus In Bounded Eval Readback
+### GCE-01 Use Graph Relation Focus In Consensus Candidate Eval
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -99,23 +100,24 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-gcr-01-graph-contradiction-duplicate-candidates/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-gre-01-graph-relation-focus-eval-readback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-0e1: Use graph relation focus in bounded eval readback.
+mise-en-palace-kvz: Use graph relation focus in consensus candidate eval.
 ```
 
 Task boundary:
 
 ```txt
-Use existing graph relation candidate readback to drive one bounded eval or mini
-Brain-QA case for contradiction/duplicate reasoning. Consume
-relationReviewFocus or explicitly reject it. No broad eval platform, multi-agent
-runtime, crawler/entity extraction, DB schema by default, Memory Core
-auto-mutation, dashboard/API/MCP, or graph ranking rewrite.
+Inspect existing consensusCandidateEvaluationPreview and related eval surfaces.
+Route contradiction/duplicate relation focus into one candidate-only
+consensus/eval readback, or explicitly reject the route with source-to-decision
+evidence. No broad eval platform, multi-agent runtime, worker daemon,
+crawler/entity extraction, DB schema by default, Memory Core auto-mutation,
+dashboard/API/MCP, or graph ranking rewrite.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
