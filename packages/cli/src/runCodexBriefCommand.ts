@@ -5,6 +5,10 @@ import {
   renderCodexBriefFromAggregate,
   resolveReadOnlyHarnessRuntime
 } from "./codexBriefSupport.js";
+import {
+  formatRetainedPatternSelectionLines,
+  retainedPatternSelectionFromMetadata
+} from "./retainedPatternPlanBridge.js";
 
 export interface CodexBriefCommandRuntime {
   env: Record<string, string | undefined>;
@@ -23,7 +27,8 @@ const defaultProjectSlug = "mise-en-palace";
 
 const renderText = (
   runId: string,
-  briefText: string
+  briefText: string,
+  retainedPatternLines: readonly string[]
 ): string =>
   [
     "KRN Codex Brief",
@@ -31,6 +36,9 @@ const renderText = (
     "Persistence: read-only (Postgres)",
     "Codex invocation: none",
     "Memory mutation: none",
+    "",
+    "Retained Pattern Context:",
+    ...retainedPatternLines,
     "",
     briefText.trimEnd()
   ].join("\n") + "\n";
@@ -83,9 +91,16 @@ export const runCodexBriefCommand = async (
       nextActionFallback: "Use this brief as the next Codex input.",
       missingContextMessage: `Execution run has no context assembly: ${runtime.runId}`
     });
+    const retainedPatternSelection = retainedPatternSelectionFromMetadata(
+      aggregate.harnessPlan.metadata
+    );
 
     return {
-      stdout: renderText(runtime.runId, renderedBrief)
+      stdout: renderText(
+        runtime.runId,
+        renderedBrief,
+        formatRetainedPatternSelectionLines(retainedPatternSelection)
+      )
     };
   } finally {
     await readRuntime.close();

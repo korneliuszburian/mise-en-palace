@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-04 Surface selected retained pattern IDs in persisted plan/brief context
+current task: SBV-05 Surface retained pattern selection in run show readback
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-SBV-04 Surface selected retained pattern IDs in persisted plan/brief context is active.
+SBV-05 Surface retained pattern selection in run show readback is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,10 +36,9 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-SBV-03 complete: `--pattern-usefulness` records retained pattern usefulness in
-FeedbackDelta metadata and `krn run show` text/JSON readback without fake
-SourceClaim feedback. Gap: persisted plan/brief still do not expose exact
-selected retained pattern IDs before coding.
+SBV-04 complete: selected retained pattern IDs persist through plan metadata and
+render in Codex brief readback. Gap: run show still does not expose retained
+pattern selection metadata directly.
 ```
 
 ## 2. Product Thesis
@@ -2347,8 +2346,11 @@ Falsifier:
 - [x] SBV-03 complete: retained pattern usefulness persists through evidence
   and run readback. Report:
   `docs/reviews/controlled-dogfood/2026-07-01-sbv-03-pattern-usefulness-bridge/REPORT.md`.
-  Next: SBV-04 surfaces selected retained pattern IDs in persisted plan/brief
-  context.
+- [x] SBV-04 complete: selected retained pattern IDs persist through plan
+  metadata and Codex brief readback. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-sbv-04-pattern-plan-brief/REPORT.md`.
+  Next: `mise-en-palace-rtw` / SBV-05 surfaces retained pattern selection in
+  `krn run show`.
 
 ## 21. Final Response Format For Codex Runs
 

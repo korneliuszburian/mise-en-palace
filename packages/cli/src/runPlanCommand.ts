@@ -49,6 +49,18 @@ import {
 import type {
   SourceSeedProposal
 } from "./runInitCommand.js";
+import {
+  formatRetainedPatternSelectionLines,
+  retainedPatternPlanSelectionMetadataKey,
+  retainedPatternSelectionFromKnowledgeJson,
+  unavailableRetainedPatternSelection
+} from "./retainedPatternPlanBridge.js";
+import type {
+  RetainedPatternPlanSelection
+} from "./retainedPatternPlanBridge.js";
+import {
+  runKnowledgeCardsCommand
+} from "./runKnowledgeCardsCommand.js";
 
 export interface PlanCommandRuntime {
   env: Record<string, string | undefined>;
@@ -99,6 +111,7 @@ type TargetOwnerFileRecall = ReturnType<typeof assessTargetOwnerFileRecall>;
 
 const defaultWorkspaceSlug = "local";
 const defaultProjectSlug = "mise-en-palace";
+const defaultBrainKnowledgeCatalogFile = "docs/brain-knowledge/catalog.json";
 
 const targetTrustExclusions = [
   {
@@ -534,6 +547,60 @@ const formatPersistedIdentityLines = (
       ]
 );
 
+const buildRetainedPatternSelection = async (
+  task: string,
+  runtime: PlanCommandRuntime
+): Promise<RetainedPatternPlanSelection> => {
+  const queries = [...new Set([task, task.replace(/-/gu, " ")])];
+
+  try {
+    for (const query of queries) {
+      const result = await runKnowledgeCardsCommand({
+        ...(runtime.cwd === undefined ? {} : { cwd: runtime.cwd }),
+        cardFiles: [],
+        patternFiles: [],
+        catalogFiles: [defaultBrainKnowledgeCatalogFile],
+        filter: {
+          text: query
+        },
+        format: "json",
+        limit: 5
+      });
+      const selection = retainedPatternSelectionFromKnowledgeJson(query, result.stdout);
+
+      if (selection.status === "selected") {
+        return selection;
+      }
+    }
+
+    return retainedPatternSelectionFromKnowledgeJson(
+      task,
+      JSON.stringify({
+        cards: [],
+        proof: {
+          proves: ["brain knowledge catalog readback was executed with primary and normalized queries"],
+          doesNotProve: ["brain knowledge catalog completeness", "pattern relevance"]
+        }
+      })
+    );
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "unknown retained pattern readback error";
+
+    return unavailableRetainedPatternSelection(task, reason);
+  }
+};
+
+const withRetainedPatternSelectionMetadata = (
+  compileInput: HarnessCompileInput,
+  retainedPatternSelection: RetainedPatternPlanSelection
+): HarnessCompileInput => ({
+  ...compileInput,
+  metadata: {
+    ...(compileInput.metadata ?? {}),
+    [retainedPatternPlanSelectionMetadataKey]: retainedPatternSelection
+  }
+});
+
 const formatPlanSummary = (
   task: string,
   projectId: string,
@@ -543,6 +610,7 @@ const formatPlanSummary = (
   evidenceCommands: readonly string[],
   nextAction: string,
   executionBrief: string,
+  retainedPatternSelection: RetainedPatternPlanSelection,
   projectScopedMetadata?: ProjectScopedPlanMetadata,
   targetReadModel?: TargetActivationReadModel,
   persistedIdentity?: PersistedPlanIdentity
@@ -555,6 +623,7 @@ const formatPlanSummary = (
     ...formatProjectResolutionLines(projectResolution),
     ...formatProjectScopedMetadataLines(projectScopedMetadata),
     ...formatTargetReadModelLines(targetReadModel),
+    ...formatRetainedPatternSelectionLines(retainedPatternSelection),
     `Context included: ${contextAssembly.inclusions.length}`,
     `Context excluded: ${contextAssembly.exclusions.length}`,
     ...formatActivationSummary(contextAssembly, nextAction),
@@ -679,6 +748,17 @@ const projectScopedMetadataForRun = (
       })
 });
 
+const retainedPatternSelectionMetadataForRun = (
+  harnessPlan: CompiledHarnessPlan["harnessPlan"]
+): Record<string, unknown> => {
+  const retainedPatternSelection =
+    harnessPlan.metadata[retainedPatternPlanSelectionMetadataKey];
+
+  return retainedPatternSelection === undefined
+    ? {}
+    : { [retainedPatternPlanSelectionMetadataKey]: retainedPatternSelection };
+};
+
 const createPersistedPlanIdentity = async (
   compilerRuntime: CompilerRuntimeResolution,
   result: CompiledHarnessPlan,
@@ -708,6 +788,7 @@ const createPersistedPlanIdentity = async (
           metadata: {
             command,
             ...projectScopedMetadataForRun(compilerRuntime),
+            ...retainedPatternSelectionMetadataForRun(result.harnessPlan),
             ...targetReadModelMetadata(targetReadModel, targetOwnerFileRecall),
             ...(compilerRuntime.projectResolution === undefined
               ? {}
@@ -732,7 +813,11 @@ export const runPlanCommand = async (
   task: string,
   runtime: PlanCommandRuntime
 ): Promise<PlanCommandResult> => {
-  const compileInput = buildHarnessCompileInput(task, runtime);
+  const retainedPatternSelection = await buildRetainedPatternSelection(task, runtime);
+  const compileInput = withRetainedPatternSelectionMetadata(
+    buildHarnessCompileInput(task, runtime),
+    retainedPatternSelection
+  );
   const workspaceSlug = compileInput.operatorIntent.workspaceSlug ?? defaultWorkspaceSlug;
   const projectSlug = compileInput.operatorIntent.projectSlug ?? defaultProjectSlug;
   const compilerRuntime = await resolveCompilerRuntime(runtime, workspaceSlug, projectSlug);
@@ -764,6 +849,7 @@ export const runPlanCommand = async (
         evidenceCommands,
         result.nextAction,
         executionBrief,
+        retainedPatternSelection,
         compilerRuntime.projectScopedMetadata,
         targetReadModel,
         persistedIdentity

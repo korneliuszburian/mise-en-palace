@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: SBV-04 Surface selected retained pattern IDs in persisted plan/brief context.
+current task: SBV-05 Surface retained pattern selection in run show readback.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-SBV-03 complete: retained pattern usefulness now persists through evidence
-capture and run readback without fake SourceClaim feedback. Gap: persisted plan
-and brief still do not expose exact selected retained pattern IDs before coding.
+SBV-04 complete: selected retained pattern IDs now persist through plan metadata
+and render in Codex brief readback. Gap: run show still does not expose the
+retained pattern selection metadata directly.
 ```
 
 ## Direction
