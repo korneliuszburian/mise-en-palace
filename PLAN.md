@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice
+current task: mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial
 ```
 
 ## Compact Checkpoints
@@ -85,6 +85,7 @@ consensus relation review proof: heartbeat consensus_evaluation readback reduced
 consensus relation retained pattern: heartbeat consensus_evaluation review boundary is queryable brain knowledge with helped usefulness feedback
 consensus relation pattern reuse: brain knowledge/search select the retained pattern; plan bridge recall missed it
 retained pattern plan bridge recall: long task contracts compact to mechanism query and select the consensus relation retained pattern in plan/run/brief
+reference implementation recipe boundary: user-provided clone-workflow sources retained as a lab-test pattern with catalog/search readback and no runtime expansion
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -94,7 +95,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-3fd Use Repaired Retained-Pattern Bridge In One Source-To-Decision Slice
+### mise-en-palace-dvy Use Reference Implementation Recipe Pattern In One TypeScript Exemplar Trial
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -106,24 +107,23 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-cpr-01-plan-bridge-recall/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-sdt-01-reference-implementation-pattern/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-3fd: Use repaired retained-pattern bridge in one source-to-decision slice.
+mise-en-palace-dvy: Use reference implementation recipe pattern in one TypeScript exemplar trial.
 ```
 
 Task boundary:
 
 ```txt
-Use the CPR-01 repaired plan bridge in one bounded consensus/source-to-decision
-slice. Persisted plan/run/brief must select the retained consensus relation
-pattern, and the slice must classify whether that selected pattern helped,
-stayed neutral, or misled the next decision. No broad ranking rewrite, DB
-schema, dashboard, API/MCP, worker daemon, crawler, graph ranking rewrite, or
-Memory Core mutation.
+Use the SDT-01 retained reference implementation recipe boundary in one tiny
+local TypeScript exemplar trial. Pick one well-reviewed local TypeScript
+boundary example, map it through source-to-decision, verify with tests/typecheck,
+and measure whether the pattern reduces implementation or review burden. No
+recipe runtime, crawler, broad skill/subagent system, DB schema, dashboard, API/MCP, graph ranking rewrite, or Memory Core mutation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

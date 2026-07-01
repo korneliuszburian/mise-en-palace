@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice.
+current task: mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,10 +39,11 @@ the product goal.
 Latest slice:
 
 ```txt
-CPR-01 complete: retained consensus relation boundary now reaches persisted
-plan metadata, run show, and Codex brief through a compact mechanism-query
-retry. Next: use the repaired bridge in one source-to-decision slice
-(`mise-en-palace-3fd`).
+SDT-01 complete: the repaired retained-pattern bridge selected the consensus
+relation boundary in persisted plan/run/brief, and user-provided reference
+implementation / clone workflow sources were retained only as a lab-test pattern
+with catalog/search readback. Next: use it in one tiny TypeScript exemplar trial
+(`mise-en-palace-dvy`).
 ```
 
 ## Direction

@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice
+current task: mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial
 latest pushed commit: see git history
 ```
 
@@ -24,23 +24,26 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice is active.
-CPR-01 repaired retained-pattern plan bridge recall.
-KRN now needs one bounded source-to-decision slice proving the selected retained
-pattern changes, constrains, or is honestly classified as neutral/misleading for
-the next decision.
+mise-en-palace-dvy Use reference implementation recipe pattern in one TypeScript exemplar trial is active.
+SDT-01 retained the reference implementation recipe clone boundary as a lab-test
+pattern. KRN now needs one tiny local TypeScript exemplar trial to test whether
+that pattern reduces implementation or review burden.
 ```
 
 Latest outcome:
 
 ```txt
-CPR-01 complete: long task contracts now retry a compact mechanism query, so
-persisted plan metadata, run show, and Codex brief select
-pattern:consensus-relation-heartbeat-review-boundary.
+SDT-01 complete: persisted plan metadata, run show, and Codex brief selected
+pattern:consensus-relation-heartbeat-review-boundary; it helped as a governance
+boundary while user-provided clone-workflow/practitioner sources were retained
+only as pattern:reference-implementation-recipe-clone-boundary with lab status,
+catalog/search readback, and no runtime expansion.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-cpr-01-plan-bridge-recall/REPORT.md
-Next: `mise-en-palace-3fd` uses the repaired bridge in one
-source-to-decision slice without broad ranking/schema/runtime work.
+docs/reviews/controlled-dogfood/2026-07-01-sdt-01-reference-implementation-pattern/REPORT.md
+Next: `mise-en-palace-dvy` uses the retained recipe boundary in one tiny
+TypeScript exemplar trial without recipe runtime, crawler, broad skill/subagent
+system, schema, dashboard, API/MCP, graph ranking rewrite, or Memory Core
+mutation.
 ```
 
 ## 2. Product Thesis

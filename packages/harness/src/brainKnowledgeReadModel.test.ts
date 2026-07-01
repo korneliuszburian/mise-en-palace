@@ -27,6 +27,9 @@ const cardFixture = (): unknown =>
 const patternDecisionFixture = (): unknown =>
   readJsonRootFile("docs/patterns/retained-patterns/ts-boundary-unknown-first-result-state.json");
 
+const referenceImplementationPatternDecisionFixture = (): unknown =>
+  readJsonRootFile("docs/patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json");
+
 const parsedCardFixture = () => {
   const card = parseBrainKnowledgeReadModel(cardFixture());
 
@@ -42,6 +45,16 @@ const parsedPatternDecisionFixture = () => {
 
   if (patternDecision === undefined) {
     throw new Error("Expected retained pattern decision fixture to parse.");
+  }
+
+  return patternDecision;
+};
+
+const parsedReferenceImplementationPatternDecisionFixture = () => {
+  const patternDecision = parseRetainedPatternDecision(referenceImplementationPatternDecisionFixture());
+
+  if (patternDecision === undefined) {
+    throw new Error("Expected reference implementation retained pattern decision to parse.");
   }
 
   return patternDecision;
@@ -208,6 +221,23 @@ describe("Brain knowledge read model", () => {
     }
 
     expect(brainKnowledgeCardFromRetainedPatternDecision(patternDecision)).toEqual(expectedCard);
+  });
+
+  it("keeps the reference implementation recipe pattern searchable but deferred", () => {
+    const patternDecision = parsedReferenceImplementationPatternDecisionFixture();
+    const card = brainKnowledgeCardFromRetainedPatternDecision(patternDecision);
+
+    expect(card).toMatchObject({
+      id: "pattern:reference-implementation-recipe-clone-boundary",
+      kind: "pattern",
+      status: "deferred",
+      confidence: "medium",
+      reviewability: "ready",
+      nextAction: "review"
+    });
+    expect(searchBrainKnowledgeCards([card], {
+      text: "reference implementation clone recipe TypeScript"
+    })).toEqual([card]);
   });
 
   it("maps retained pattern adoption statuses to brain-knowledge status", () => {

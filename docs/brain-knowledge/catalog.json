@@ -28,6 +28,7 @@
     "../patterns/retained-patterns/evidence-proof-non-proof-boundary.json",
     "../patterns/retained-patterns/graph-relation-readback-boundary.json",
     "../patterns/retained-patterns/heartbeat-candidate-only-runtime-boundary.json",
+    "../patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json",
     "../patterns/retained-patterns/source-to-decision-retention-gate.json",
     "../patterns/retained-patterns/target-repo-write-authority-boundary.json",
     "../patterns/retained-patterns/untrusted-context-warning-boundary.json",

@@ -153,6 +153,9 @@ describe("Brain knowledge read model invariants", () => {
     expect(patternFiles).toContain(
       "../patterns/retained-patterns/consensus-relation-heartbeat-review-boundary.json"
     );
+    expect(patternFiles).toContain(
+      "../patterns/retained-patterns/reference-implementation-recipe-clone-boundary.json"
+    );
     expect(patternFiles).toContain("../patterns/retained-patterns/evidence-proof-non-proof-boundary.json");
     expect(patternFiles).toContain("../patterns/retained-patterns/source-to-decision-retention-gate.json");
     expect(patternFiles).toContain(

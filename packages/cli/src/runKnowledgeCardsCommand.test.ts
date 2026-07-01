@@ -616,7 +616,9 @@ describe("runKnowledgeCardsCommand", () => {
     });
     const preview = parsePreviewResource(result.stdout);
 
-    expect(cardIds(preview)).toEqual([]);
+    expect(cardIds(preview)).toEqual([
+      "pattern:reference-implementation-recipe-clone-boundary"
+    ]);
   });
 
   it("combines missing usefulness feedback and text filters", async () => {
@@ -832,6 +834,7 @@ describe("runKnowledgeCardsCommand", () => {
       "pattern:evidence-proof-non-proof-boundary",
       "pattern:graph-relation-readback-boundary",
       "pattern:heartbeat-candidate-only-runtime-boundary",
+      "pattern:reference-implementation-recipe-clone-boundary",
       "pattern:source-to-decision-retention-gate",
       "pattern:target-repo-write-authority-boundary",
       "pattern:untrusted-context-warning-boundary",
