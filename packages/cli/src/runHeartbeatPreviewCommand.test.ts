@@ -559,6 +559,185 @@ describe("runHeartbeatPreviewCommand", () => {
     }
   });
 
+  it("routes source artifact preview JSON into acquisition candidates", async () => {
+    const fixture = await writeJsonFixture("source-artifact-preview.json", {
+      kind: "krn.sourceArtifactPreview.v1",
+      access: "local_preview",
+      mutation: {
+        memory: "none",
+        crawler: "none",
+        embeddings: "none",
+        graphRuntime: "none"
+      },
+      persistence: {
+        enabled: false,
+        dbWrites: "none"
+      },
+      artifact: {
+        file: "docs/source.md",
+        resolvedFile: "docs/source.md",
+        contentHash: "sha256:source-artifact",
+        bytes: 12,
+        lines: 2,
+        chunking: {
+          strategy: "line-based",
+          chunkLines: 20,
+          renderedChunks: 1
+        }
+      },
+      chunks: [
+        {
+          ordinal: 1,
+          sourceRange: "lines 1-2",
+          startLine: 1,
+          endLine: 2,
+          contentHash: "sha256:source-chunk",
+          preview: "Source preview"
+        }
+      ],
+      candidateBridge: {
+        mutation: "none",
+        searchDocumentCandidate: {
+          status: "candidate",
+          reviewability: "ready",
+          persisted: false
+        },
+        sourceClaimCandidate: {
+          status: "not_generated",
+          persisted: false
+        },
+        sourceClaimEdgeCandidate: {
+          status: "not_generated",
+          persisted: false
+        },
+        extractionCandidatePreview: {
+          status: "not_generated"
+        }
+      },
+      proof: {
+        doesNotProve: [
+          "source artifact preview does not prove source truth",
+          "source artifact preview does not prove Memory Core mutation"
+        ]
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-44.md",
+          candidateKinds: ["knowledge_acquisition"],
+          acquisitionReadbackFile: fixture.fileName,
+          format: "text"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      });
+
+      expect(result.stdout).toContain("knowledgeAcquisition: 1");
+      expect(result.stdout).toContain("kind: knowledge_acquisition_candidate");
+      expect(result.stdout).toContain("source: source_artifact_preview");
+      expect(result.stdout).toContain("query: docs/source.md");
+      expect(result.stdout).toContain(
+        "persisted source/search readback for source artifact preview docs/source.md"
+      );
+      expect(result.stdout).toContain("access: local_preview");
+      expect(result.stdout).toContain("chunks: 1");
+      expect(result.stdout).toContain("searchDocumentCandidate: candidate");
+      expect(result.stdout).toContain("sourceClaimCandidate: not_generated");
+      expect(result.stdout).toContain("sourceClaimEdgeCandidate: not_generated");
+      expect(result.stdout).toContain(
+        "Use this source artifact preview JSON as readback evidence before opening crawler"
+      );
+      expect(result.stdout).toContain("sha256:source-artifact");
+      expect(result.stdout).toContain("reviewability: ready");
+      expect(result.stdout).toContain("mutation: none");
+      expect(result.stdout).toContain("worker_jobs");
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
+  it("does not create source artifact acquisition candidates when ingest readback is ready", async () => {
+    const fixture = await writeJsonFixture("source-artifact-ready.json", {
+      kind: "krn.sourceArtifactPreview.v1",
+      access: "local_preview",
+      persistence: {
+        enabled: true,
+        readback: {
+          ingestLoop: {
+            chunkToSearchDocument: "ready",
+            searchDocumentToActivationReadback: "ready",
+            sourceClaimReadback: "not_created",
+            sourceClaimEdgeReadback: "not_created",
+            sourceSearchReadbackCommand:
+              "pnpm --filter @krn/cli krn source search --query docs/source.md",
+            brainSearchReadbackCommand:
+              "pnpm --filter @krn/cli krn brain search --query docs/source.md",
+            doesNotProve:
+              "Ready ingest readback does not prove source truth or ranking quality."
+          }
+        }
+      },
+      artifact: {
+        file: "docs/source.md",
+        contentHash: "sha256:source-artifact"
+      },
+      chunks: [
+        {
+          ordinal: 1,
+          sourceRange: "lines 1-2"
+        }
+      ],
+      candidateBridge: {
+        searchDocumentCandidate: {
+          status: "candidate"
+        }
+      }
+    });
+
+    try {
+      const result = await runHeartbeatPreviewCommand({
+        cwd: fixture.cwd,
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        command: {
+          kind: "heartbeatPreview",
+          projectId,
+          maxCandidates: 1,
+          evidenceRef: "docs/reviews/controlled-dogfood/imr-44.md",
+          candidateKinds: ["knowledge_acquisition"],
+          acquisitionReadbackFile: fixture.fileName,
+          format: "json"
+        },
+        createDatabaseRuntime: createEmptyDatabaseRuntime
+      });
+      const parsed: unknown = JSON.parse(result.stdout);
+
+      expect(parsed).toMatchObject({
+        preview: {
+          candidateCounts: {
+            knowledgeAcquisition: 0
+          },
+          candidates: []
+        }
+      });
+    } finally {
+      await fixture.cleanup();
+    }
+  });
+
   it("does not preserve activation utility evidence for non-exploration verdicts", async () => {
     const fixture = await writeJsonFixture("brain-search-sufficient.json", {
       kind: "krn.brainSearch.preview.v1",

@@ -134,6 +134,51 @@ describe("knowledge acquisition heartbeat preview", () => {
     ]);
   });
 
+  test("preserves source artifact preview acquisition source", () => {
+    const result = buildKnowledgeAcquisitionHeartbeatPreview({
+      now,
+      evidenceRef,
+      requests: [
+        {
+          id: "source-artifact-preview",
+          source: "source_artifact_preview",
+          query: "docs/source.md",
+          missingEvidence: [
+            "persisted source/search readback for source artifact preview docs/source.md"
+          ],
+          queryShapeDiagnostics: [
+            "access: local_preview",
+            "chunks: 1",
+            "searchDocumentCandidate: candidate"
+          ],
+          evidenceRefs: [
+            "docs/source.md",
+            "sha256:source-artifact"
+          ],
+          consumer: "heartbeat knowledge acquisition preview",
+          falsifier:
+            "A source artifact preview JSON file without artifact/chunk/candidate/readback state should not produce a reviewable acquisition request.",
+          doesNotProve:
+            "source artifact preview does not prove source truth or Memory Core mutation"
+        }
+      ]
+    });
+
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        source: "source_artifact_preview",
+        query: "docs/source.md",
+        queryShapeDiagnostics: [
+          "access: local_preview",
+          "chunks: 1",
+          "searchDocumentCandidate: candidate"
+        ],
+        reviewability: "ready",
+        mutation: "none"
+      })
+    ]);
+  });
+
   test("preserves linked document evidence in acquisition candidates", () => {
     const result = buildKnowledgeAcquisitionHeartbeatPreview({
       now,

@@ -133,6 +133,12 @@ const stringArrayValue = (value: unknown): readonly string[] =>
 const numberValue = (value: unknown): number =>
   typeof value === "number" && Number.isFinite(value) ? value : 0;
 
+const booleanValue = (value: unknown): boolean =>
+  value === true;
+
+const arrayLength = (value: unknown): number =>
+  Array.isArray(value) ? value.length : 0;
+
 const activationUtilityStrengthValue = (
   value: unknown
 ): KnowledgeAcquisitionActivationUtilityStrength | undefined =>
@@ -345,6 +351,151 @@ const sourceSearchAcquisitionRequest = (
   };
 };
 
+const statusDiagnostic = (
+  label: string,
+  record: JsonRecord | undefined
+): string | undefined => {
+  const status = stringValue(record?.["status"]);
+
+  return status === undefined ? undefined : `${label}: ${status}`;
+};
+
+const ingestStatusDiagnostic = (
+  label: string,
+  ingestLoop: JsonRecord | undefined
+): string | undefined => {
+  const status = stringValue(ingestLoop?.[label]);
+
+  return status === undefined ? undefined : `${label}: ${status}`;
+};
+
+const missingIngestReadbackEvidence = (
+  input: {
+    file: string;
+    persistence: JsonRecord | undefined;
+    ingestLoop: JsonRecord | undefined;
+  }
+): readonly string[] => {
+  if (!booleanValue(input.persistence?.["enabled"])) {
+    return [
+      `persisted source/search readback for source artifact preview ${input.file}`
+    ];
+  }
+
+  const missing: string[] = [];
+
+  if (stringValue(input.ingestLoop?.["chunkToSearchDocument"]) !== "ready") {
+    missing.push(`SearchDocument readback for source artifact preview ${input.file}`);
+  }
+
+  if (stringValue(input.ingestLoop?.["searchDocumentToActivationReadback"]) !== "ready") {
+    missing.push(`activation readback for source artifact preview ${input.file}`);
+  }
+
+  return missing;
+};
+
+const sourceArtifactPreviewDiagnostics = (
+  input: {
+    readback: JsonRecord;
+    candidateBridge: JsonRecord | undefined;
+    ingestLoop: JsonRecord | undefined;
+  }
+): readonly string[] => uniqueStrings([
+  `access: ${stringValue(input.readback["access"]) ?? "unknown"}`,
+  `chunks: ${arrayLength(input.readback["chunks"])}`,
+  ...optionalTextAsList(statusDiagnostic(
+    "searchDocumentCandidate",
+    recordValue(input.candidateBridge?.["searchDocumentCandidate"])
+  )),
+  ...optionalTextAsList(statusDiagnostic(
+    "sourceClaimCandidate",
+    recordValue(input.candidateBridge?.["sourceClaimCandidate"])
+  )),
+  ...optionalTextAsList(statusDiagnostic(
+    "sourceClaimEdgeCandidate",
+    recordValue(input.candidateBridge?.["sourceClaimEdgeCandidate"])
+  )),
+  ...optionalTextAsList(ingestStatusDiagnostic(
+    "chunkToSearchDocument",
+    input.ingestLoop
+  )),
+  ...optionalTextAsList(ingestStatusDiagnostic(
+    "searchDocumentToActivationReadback",
+    input.ingestLoop
+  ))
+]);
+
+const sourceArtifactPreviewFollowUp = (
+  ingestLoop: JsonRecord | undefined
+): readonly string[] => uniqueStrings([
+  ...optionalTextAsList(ingestLoop?.["sourceSearchReadbackCommand"]),
+  ...optionalTextAsList(ingestLoop?.["brainSearchReadbackCommand"]),
+  "Use this source artifact preview JSON as readback evidence before opening crawler, schema, ranking, API/MCP, worker, or Memory Core work."
+]);
+
+const sourceArtifactPreviewDoesNotProve = (
+  input: {
+    readback: JsonRecord;
+    ingestLoop: JsonRecord | undefined;
+  }
+): string => joinedDoesNotProve([
+  ...stringArrayValue(recordValue(input.readback["proof"])?.["doesNotProve"]),
+  ...optionalTextAsList(input.ingestLoop?.["doesNotProve"])
+]);
+
+const sourceArtifactPreviewAcquisitionRequest = (
+  input: {
+    filePath: string;
+    readback: JsonRecord;
+  }
+): KnowledgeAcquisitionRequest | undefined => {
+  if (stringValue(input.readback["kind"]) !== "krn.sourceArtifactPreview.v1") {
+    return undefined;
+  }
+
+  const artifact = recordValue(input.readback["artifact"]);
+  const candidateBridge = recordValue(input.readback["candidateBridge"]);
+  const persistence = recordValue(input.readback["persistence"]);
+  const readback = recordValue(persistence?.["readback"]);
+  const ingestLoop = recordValue(readback?.["ingestLoop"]);
+  const file = stringValue(artifact?.["file"]) ?? "unknown source artifact";
+  const contentHash = stringValue(artifact?.["contentHash"]);
+  const missingEvidence = missingIngestReadbackEvidence({
+    file,
+    persistence,
+    ingestLoop
+  });
+
+  if (missingEvidence.length === 0) {
+    return undefined;
+  }
+
+  return {
+    id: `readback-source-artifact-preview-${safeSlug(file)}`,
+    source: "source_artifact_preview",
+    query: file,
+    missingEvidence,
+    queryShapeDiagnostics: sourceArtifactPreviewDiagnostics({
+      readback: input.readback,
+      candidateBridge,
+      ingestLoop
+    }),
+    recommendedFollowUp: sourceArtifactPreviewFollowUp(ingestLoop),
+    evidenceRefs: uniqueStrings([
+      input.filePath,
+      file,
+      ...optionalTextAsList(contentHash)
+    ]),
+    consumer: defaultAcquisitionConsumer,
+    falsifier: "A source artifact preview JSON file without artifact/chunk/candidate/readback state should not produce a reviewable acquisition request.",
+    doesNotProve: sourceArtifactPreviewDoesNotProve({
+      readback: input.readback,
+      ingestLoop
+    })
+  };
+};
+
 const optionalRequestAsList = (
   request: KnowledgeAcquisitionRequest | undefined
 ): KnowledgeAcquisitionRequest[] =>
@@ -359,7 +510,10 @@ const buildAcquisitionRequestFromReadback = (
   const brainSearchRequest = brainSearchAcquisitionRequest(input);
 
   return brainSearchRequest === undefined
-    ? optionalRequestAsList(sourceSearchAcquisitionRequest(input))
+    ? [
+        ...optionalRequestAsList(sourceSearchAcquisitionRequest(input)),
+        ...optionalRequestAsList(sourceArtifactPreviewAcquisitionRequest(input))
+      ]
     : [brainSearchRequest];
 };
 

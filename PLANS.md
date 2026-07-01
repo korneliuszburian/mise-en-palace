@@ -218,7 +218,27 @@ IMR-42 complete: mini Brain-QA showed source-backed fallback helps Q5 ingest
 IMR-43 complete: Q5 source-backed ingest pattern gate drove `krn source artifact
   preview --json`, giving future ingest/brain/heartbeat consumers structured
   artifact, chunk, candidate, proof, and readback output without text scraping.
+IMR-44 complete: `krn.sourceArtifactPreview.v1` now feeds heartbeat knowledge
+  acquisition readback as `source_artifact_preview` candidate-only work.
 ```
+
+## Outcome IMR-44 Source Artifact JSON Consumer
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-44-source-artifact-json-consumer/REPORT.md
+```
+
+Outcome: `krn heartbeat preview --acquisition-readback-file` consumes
+`krn.sourceArtifactPreview.v1` and emits review-ready candidate-only acquisition
+work when persisted source/search readback is missing.
+
+Decision: use the emitted candidate as the next bounded source/brain readback
+follow-up. Do not open crawler, broad ingestion, ranking, schema, worker,
+API/MCP, source truth, eval promotion, or Memory Core work.
 
 ## Outcome IMR-43 Source Artifact Preview JSON
 

@@ -8,7 +8,8 @@ import type {
 
 export type KnowledgeAcquisitionSource =
   | "source_search"
-  | "brain_search";
+  | "brain_search"
+  | "source_artifact_preview";
 
 export type KnowledgeAcquisitionHeartbeatCandidateReason =
   | "missing_evidence";
