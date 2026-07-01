@@ -195,6 +195,44 @@ IMR-35 complete: heartbeat knowledge-acquisition candidates now preserve
 IMR-36 complete: heartbeat-routed activationUtility exploration candidates now
   have a focused worker behavior proof for ready_for_behavior_proof, evidence
   refs, doesNotProve, forbidden writes, and mutation none.
+IMR-37 complete: existing heartbeat candidate review accepted the live
+  activationUtility exploration candidate for manual source/eval follow-up with
+  candidateFound true, reviewability ready, mutation none, and no ranking/runtime
+  change.
+```
+
+## Outcome IMR-37 Activation Utility Candidate Review
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-37-activation-utility-candidate-review/REPORT.md
+```
+
+Outcome: `krn heartbeat preview --review-*` reviewed the live AMA activation
+utility knowledge-acquisition candidate from current DB-backed brain search.
+The candidate was found, reviewable, accepted for manual source/eval follow-up,
+and mutation-free.
+
+Source-to-decision:
+
+- Source: IMR-36 eval proof, retained heartbeat candidate-only runtime boundary,
+  and cost-aware acquisition escalation boundary.
+- Mechanism: a protected reviewable candidate should be manually reviewed
+  before retention, ranking, source truth, or runtime work.
+- KRN implication: close the candidate review step in the vertical loop before
+  opening any broader activation or autonomous acquisition work.
+- Decision: accept the candidate for manual source/eval follow-up only.
+- Consumer: next bounded source/eval follow-up evidence slice.
+- Falsifier: candidate review cannot find the candidate, candidate is not ready,
+  mutation is not none, or follow-up requires ranking/schema/runtime work.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-bep: Retain accepted activation utility review as source/eval follow-up evidence.
 ```
 
 ## Outcome IMR-36 Activation Utility Eval Proof

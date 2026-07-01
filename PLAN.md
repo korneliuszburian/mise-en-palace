@@ -49,6 +49,7 @@ AMA acquisition lane: persisted AMA source evidence reused; linked-evidence beha
 AMA activation utility: brain search utility readback is useful across current mini batch
 AMA activation utility routing: heartbeat preview preserves exploration evidence in candidate-only output
 AMA activation utility eval proof: heartbeat-routed exploration candidate has behavior proof
+AMA activation utility candidate review: heartbeat-routed candidate accepted for manual source/eval follow-up
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -74,13 +75,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-36-activation-utility-eval-proof/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-37-activation-utility-candidate-review/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-z22: review heartbeat-routed activation utility candidate with evidence.
+mise-en-palace-bep: Retain accepted activation utility review as source/eval follow-up evidence.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -125,7 +126,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-36: AMA linked evidence accepted, activation utility readback exposed, usefulness checked, exploration evidence routed into heartbeat candidate-only output, and bounded eval proof added.
+IMR-18-37: AMA linked evidence accepted, activation utility readback exposed, usefulness checked, exploration evidence routed into heartbeat candidate-only output, bounded eval proof added, and the routed candidate accepted for manual source/eval follow-up.
 ```
 
 ## Remaining Product Gaps
