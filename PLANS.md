@@ -209,6 +209,47 @@ IMR-39 complete: retained IMR-38 evidence replays through marker-addressed
 IMR-40 complete: natural source/brain/store-only search now surfaces the exact
   retained IMR-38 SourceClaim and SourceDecisionEdge support; changed-files
   Fallow gate passes, while broad Fallow retains baseline repo-level findings.
+IMR-41 complete: default `krn brain search` now falls back to ready
+  source-backed SourceClaim packets when catalog readback misses; exact natural
+  activation utility query selects retained claim `190f1f72-4621-49b4-b93c-538ea2c581ef`.
+```
+
+## Outcome IMR-41 Source-Backed Selected Knowledge
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-41-source-backed-selected-knowledge/REPORT.md
+```
+
+Outcome: default catalog-backed `krn brain search` remains catalog-first, but
+when catalog packets are absent it can now use ready source-backed SourceClaim
+packets as selected brain knowledge. Live replay changed from
+`selectedKnowledge: 0` to `selectedKnowledge: 6` for the natural activation
+utility query, with first selected packet
+`190f1f72-4621-49b4-b93c-538ea2c581ef` and verdict
+`selected_knowledge_sufficient`.
+
+Source-to-decision:
+
+- Source: IMR-40 natural recall evidence and current default/store-only replay.
+- Mechanism: default brain search previously ignored source-backed selected
+  packets unless `--store-only` was used.
+- KRN implication: retained source/eval evidence should guide default pattern
+  gates when catalog files miss, but weak source packets must not be promoted by
+  shape alone.
+- Decision: adopt catalog-first, ready-source-backed fallback for default brain
+  search; keep weak source packets visible only in store-only readback.
+- Consumer: pattern/research brain loop.
+- Falsifier: default brain search selects weak label-only source evidence, or a
+  ready retained SourceClaim remains absent when catalog misses.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-mm0: Measure source-backed selected knowledge over mini Brain-QA
 ```
 
 ## Outcome IMR-40 Natural Source/Eval Recall Repair

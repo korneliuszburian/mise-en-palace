@@ -398,6 +398,24 @@ const sourceSearchKnowledgePackets = (
     return packet === undefined ? [] : [packet];
   });
 
+const selectedKnowledgePackets = (input: {
+  brainKnowledgeReadback: BrainSearchPreviewResource["brainKnowledgeReadback"];
+  cards: readonly unknown[];
+  supportingClaims: readonly unknown[];
+}): readonly BrainSearchKnowledgePacket[] => {
+  const sourcePackets = sourceSearchKnowledgePackets(input.supportingClaims);
+
+  if (input.brainKnowledgeReadback === "store_only") {
+    return sourcePackets;
+  }
+
+  const catalogPackets = knowledgePackets(input.cards);
+
+  return catalogPackets.length > 0
+    ? catalogPackets
+    : sourcePackets.filter((packet) => packet.reviewability === "ready");
+};
+
 const buildRecommendedNextAction = (
   resource: Pick<
     BrainSearchPreviewResource,
@@ -417,6 +435,13 @@ const buildRecommendedNextAction = (
     resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0
   ) {
     return "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code.";
+  }
+
+  if (
+    resource.knowledgeCards.returnedCards === 0 &&
+    resource.knowledgeCards.selectedKnowledge.length > 0
+  ) {
+    return "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage.";
   }
 
   if (resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0) {
@@ -448,10 +473,11 @@ const buildResource = (
   const sourceDecisionSupport = arrayValue(answerPackage["sourceDecisionSupport"]);
   const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
-  const selectedKnowledge =
-    input.brainKnowledgeReadback === "store_only"
-      ? sourceSearchKnowledgePackets(supportingClaims)
-      : knowledgePackets(cards);
+  const selectedKnowledge = selectedKnowledgePackets({
+    brainKnowledgeReadback: input.brainKnowledgeReadback,
+    cards,
+    supportingClaims
+  });
   const answerUsefulness = stringValue(answerPackage["answerUsefulness"], "unknown");
   const linkedSearchDocuments = linkedSearchDocumentCount(sourceClaimDocumentLinks);
   const activationUtility = buildActivationUtilityLabReadback({

@@ -490,6 +490,104 @@ describe("runBrainSearchCommand", () => {
     expect(JSON.stringify(parsed)).toContain("store-backed source/search evidence");
   });
 
+  it("uses ready source-backed selected knowledge when catalog search misses", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "activation utility source eval follow-up",
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 12,
+        maxInclusions: 8,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                label: "source_claim:190f1f72-4621-49b4-b93c-538ea2c581ef",
+                subjectId: "190f1f72-4621-49b4-b93c-538ea2c581ef",
+                sourceClaimId: "190f1f72-4621-49b4-b93c-538ea2c581ef",
+                claim: "IMR-37 heartbeat-routed activation utility candidate is accepted for manual source eval follow-up only.",
+                mechanism: "Accepted heartbeat review can be retained as SourceArtifact, SourceClaim, and SourceDecisionEdge follow-up evidence.",
+                krnImplication: "Natural source search should surface the retained follow-up evidence before opening new acquisition work.",
+                consumer: "IMR-40 natural source recall repair",
+                falsifier: "A small-limit natural source search cannot include this exact retained claim.",
+                doesNotProve: "This does not prove source truth, eval promotion, or product readiness.",
+                expectedUse: "Use retained follow-up evidence as a source-backed pattern gate."
+              }],
+              supportingDocuments: [{ label: "doc" }],
+              sourceDecisionSupport: [{
+                sourceDecisionEdgeId: "73e266bb-e957-4a07-aa62-fe74cb7178a0"
+              }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 1,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      brainKnowledgeReadback: "catalog_files",
+      knowledgeCards: {
+        returnedCards: 0,
+        selectedKnowledge: [{
+          id: "190f1f72-4621-49b4-b93c-538ea2c581ef",
+          source: "source_search",
+          reviewability: "ready",
+          nextAction: "use"
+        }]
+      },
+      sourceSearch: {
+        answerUsefulness: "useful",
+        supportingClaims: 1,
+        supportingDocuments: 1,
+        sourceDecisionSupport: 1
+      },
+      activationUtility: {
+        verdict: "selected_knowledge_sufficient"
+      },
+      recommendedNextAction:
+        "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage."
+    });
+  });
+
   it("keeps weak store-backed selected knowledge visibly not review-ready", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
