@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: SBV-02 Run retained-pattern code-quality vertical.
+current task: SBV-03 Bridge retained pattern usefulness into persisted planning.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -35,6 +35,15 @@ agentic/harness work: multi-layer memory, source-to-decision, pattern/research
 condensation, evidence/review, graph, heartbeat/dreaming, and benchmarked reuse.
 Use multi-repo internal work as evidence when useful, but do not let it become
 the product goal.
+
+Latest slice:
+
+```txt
+SBV-02 complete: retained unknown-first TypeScript pattern drove a bounded CLI
+JSON-boundary improvement with DB-backed evidence/observe/reflect. Gap: persisted
+planning/evidence selected the general retention gate, not the specific catalog
+pattern.
+```
 
 ## Direction
 

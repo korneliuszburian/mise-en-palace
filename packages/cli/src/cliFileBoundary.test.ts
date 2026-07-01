@@ -15,6 +15,7 @@ import {
   findRepoRoot,
   pathExists,
   readJsonObject,
+  readJsonObjectResult,
   resolveRepoInputFile
 } from "./cliFileBoundary.js";
 
@@ -38,6 +39,34 @@ describe("cliFileBoundary", () => {
     await expect(readJsonObject(arrayPath)).resolves.toBeUndefined();
     await expect(readJsonObject(invalidPath)).resolves.toBeUndefined();
     await expect(readJsonObject(path.join(directory, "missing.json"))).resolves.toBeUndefined();
+  });
+
+  it("exposes finite JSON read result states for callers that need failure reasons", async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), "krn-cli-boundary-state-"));
+    const objectPath = path.join(directory, "object.json");
+    const arrayPath = path.join(directory, "array.json");
+    const invalidPath = path.join(directory, "invalid.json");
+
+    await writeFile(objectPath, JSON.stringify({ name: "krn" }));
+    await writeFile(arrayPath, JSON.stringify(["not", "an", "object"]));
+    await writeFile(invalidPath, "{not-json");
+
+    await expect(readJsonObjectResult(objectPath)).resolves.toEqual({
+      status: "ok",
+      value: {
+        name: "krn"
+      }
+    });
+    await expect(readJsonObjectResult(arrayPath)).resolves.toMatchObject({
+      status: "not_object",
+      reason: "JSON value must be an object"
+    });
+    await expect(readJsonObjectResult(invalidPath)).resolves.toMatchObject({
+      status: "invalid_json"
+    });
+    await expect(readJsonObjectResult(path.join(directory, "missing.json"))).resolves.toMatchObject({
+      status: "missing_or_unreadable"
+    });
   });
 
   it("finds the nearest pnpm workspace root and falls back to the start path", async () => {

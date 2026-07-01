@@ -15,6 +15,7 @@ import {
 } from "@krn/harness";
 import {
   readJsonObject,
+  readJsonObjectResult,
   resolveRepoInputFile
 } from "./cliFileBoundary.js";
 
@@ -153,10 +154,17 @@ const loadKnowledgeCatalogFile = async (
   loaded: LoadedKnowledgeCards
 ): Promise<void> => {
   const resolvedCatalogFile = await resolveRepoInputFile(cwd, catalogFile);
-  const catalog = parseKnowledgeCatalog(await readJsonObject(resolvedCatalogFile));
+  const result = await readJsonObjectResult(resolvedCatalogFile);
+  const catalog = result.status === "ok"
+    ? parseKnowledgeCatalog(result.value)
+    : undefined;
 
   if (catalog === undefined) {
-    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile}`);
+    const reason = result.status === "ok"
+      ? "catalog must include non-empty cardFiles, patternFiles, or usefulnessFeedbackFiles arrays"
+      : result.reason;
+
+    throw new Error(`Invalid brain knowledge catalog file: ${catalogFile} (${reason})`);
   }
 
   const catalogDirectory = path.dirname(resolvedCatalogFile);

@@ -824,7 +824,9 @@ describe("runKnowledgeCardsCommand", () => {
       catalogFiles: ["package.json"],
       filter: {},
       format: "text"
-    })).rejects.toThrow("Invalid brain knowledge catalog file: package.json");
+    })).rejects.toThrow(
+      "Invalid brain knowledge catalog file: package.json (catalog must include non-empty cardFiles, patternFiles, or usefulnessFeedbackFiles arrays)"
+    );
   });
 });
 

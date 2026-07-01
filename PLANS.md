@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-02 Run retained-pattern code-quality vertical
+current task: SBV-03 Bridge retained pattern usefulness into persisted planning
 latest pushed commit: see git history
 ```
 
@@ -24,13 +24,23 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-SBV-02 Run retained-pattern code-quality vertical is active.
+SBV-03 Bridge retained pattern usefulness into persisted planning is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
 benchmarks, and next-run reuse. Multi-repo internal work remains valid evidence,
 but it is no longer the active product driver. Do not wait for a foreign
 operator. Do not create synthetic proof.
+```
+
+Latest outcome:
+
+```txt
+SBV-02 complete: `pattern:ts-boundary-unknown-first-result-state` drove
+finite JSON read result states for brain knowledge catalog parsing. DB-backed
+evidence/observe/reflect passed without Memory Core mutation. Gap: persisted
+plan/evidence records the general retention-gate SourceClaim, not the specific
+catalog pattern; follow-up issue `mise-en-palace-5dn`.
 ```
 
 ## 2. Product Thesis

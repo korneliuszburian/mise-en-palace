@@ -49,15 +49,67 @@ export const resolveRepoInputFile = async (
 const isJsonObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+export type JsonObjectReadResult =
+  | {
+      status: "ok";
+      value: Record<string, unknown>;
+    }
+  | {
+      status: "missing_or_unreadable";
+      reason: string;
+    }
+  | {
+      status: "invalid_json";
+      reason: string;
+    }
+  | {
+      status: "not_object";
+      reason: string;
+    };
+
+export const readJsonObjectResult = async (
+  filePath: string
+): Promise<JsonObjectReadResult> => {
+  let raw: string;
+
+  try {
+    raw = await readFile(filePath, "utf8");
+  } catch (error) {
+    return {
+      status: "missing_or_unreadable",
+      reason: error instanceof Error ? error.message : "unknown file read error"
+    };
+  }
+
+  let parsed: unknown;
+
+  try {
+    const parsedValue: unknown = JSON.parse(raw);
+    parsed = parsedValue;
+  } catch (error) {
+    return {
+      status: "invalid_json",
+      reason: error instanceof Error ? error.message : "unknown JSON parse error"
+    };
+  }
+
+  if (!isJsonObject(parsed)) {
+    return {
+      status: "not_object",
+      reason: "JSON value must be an object"
+    };
+  }
+
+  return {
+    status: "ok",
+    value: parsed
+  };
+};
+
 export const readJsonObject = async (
   filePath: string
 ): Promise<Record<string, unknown> | undefined> => {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    const parsed: unknown = JSON.parse(raw);
+  const result = await readJsonObjectResult(filePath);
 
-    return isJsonObject(parsed) ? parsed : undefined;
-  } catch {
-    return undefined;
-  }
+  return result.status === "ok" ? result.value : undefined;
 };
