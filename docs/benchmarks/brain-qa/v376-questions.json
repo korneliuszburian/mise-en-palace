@@ -40,6 +40,12 @@
       "query": "heartbeat dreaming source relation evidence",
       "expectedSurface": "source-search readback",
       "expectedUse": "Check whether heartbeat/source-relation evidence is findable."
+    },
+    {
+      "id": "V376-Q7",
+      "query": "cost-aware acquisition escalation source_search_review linked_document_review",
+      "expectedSurface": "brain-knowledge and source-search readback",
+      "expectedUse": "Recall the retained acquisition escalation boundary before opening expensive acquisition work."
     }
   ]
 }

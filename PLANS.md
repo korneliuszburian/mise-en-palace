@@ -146,6 +146,45 @@ IMR-20 complete: one live source-search missing-evidence-only acquisition
   candidate was accepted; escalation starts at source_search_review.
 IMR-21 complete: cost-aware acquisition escalation retained as queryable brain
   knowledge with usefulness feedback.
+IMR-22 complete: acquisition escalation added to compact mini Brain-QA and
+  mechanism-first brain search selects the retained pattern.
+```
+
+## Outcome IMR-22 Acquisition Escalation Mini Brain-QA
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-22-acquisition-escalation-mini-brain-qa/REPORT.md
+```
+
+Outcome: `docs/benchmarks/brain-qa/v376-questions.json` now includes `V376-Q7`
+for cost-aware acquisition escalation. The mechanism-first query selects
+`pattern:cost-aware-acquisition-escalation-boundary`; the paper-title query is
+useful source evidence but not the canonical retained-pattern recall test.
+
+Source-to-decision:
+
+- Source: `Towards Autonomous Memory Agents`, IMR-18..21 local evidence, and
+  retained `cost-aware-acquisition-escalation-boundary`.
+- Mechanism: acquisition should escalate from cheap evidence to costlier
+  research/review only when cheaper evidence remains insufficient.
+- KRN implication: mini Brain-QA should check that this retained boundary stays
+  findable before future heartbeat/dreaming acquisition work.
+- Decision: add one compact acquisition-escalation query.
+- Rejection: no broad benchmark lane, crawler, worker, API/MCP, ranking, schema,
+  source truth, autonomous acquisition, or Memory Core mutation.
+- Consumer: compact mini Brain-QA readback and future acquisition eval
+  candidates.
+- Falsifier: `krn brain search` cannot select the retained acquisition pattern
+  for the canonical query.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-rtp: Run seven-question mini Brain-QA readback.
 ```
 
 ## Outcome IMR-21 Cost-Aware Acquisition Brain Knowledge Retention
