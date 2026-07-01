@@ -21,6 +21,7 @@ import {
   applyTemporalFilter,
   applyTrustFilter,
   assembleContext,
+  buildActivationUtilityLabReadback,
   buildRelationGroundedQaReadback,
   buildActivationRawRecallTriggers,
   buildActivationQuery,
@@ -641,6 +642,89 @@ describe("activation engine", () => {
     expect(result.diagnostics).toMatchObject({
       sourceClaimCount: 2,
       mergedCandidateCount: 2
+    });
+  });
+
+  it("classifies AMA-shaped selectedKnowledge misses with useful linked evidence as an exploration candidate", () => {
+    const readback = buildActivationUtilityLabReadback({
+      selectedKnowledgeCount: 0,
+      answerUsefulness: "partly_useful_missing_document",
+      supportingClaims: 8,
+      supportingDocuments: 0,
+      sourceClaimDocumentLinks: 8,
+      linkedSearchDocuments: 8,
+      relationSupport: 6
+    });
+
+    expect(readback).toMatchObject({
+      selectedKnowledge: {
+        signal: "selected_knowledge",
+        strength: "missing",
+        reasons: ["selectedKnowledge returned no packets."]
+      },
+      sourceLinkGraph: {
+        signal: "source_link_graph",
+        strength: "useful",
+        reasons: [
+          "answerUsefulness is partly_useful_missing_document.",
+          "source/link/graph evidence count is 30."
+        ]
+      },
+      verdict: "linked_evidence_exploration_candidate",
+      recommendedNextAction:
+        "Run a bounded activation utility experiment before changing production ranking.",
+      doesNotProve:
+        "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
+    });
+  });
+
+  it("keeps selected brain knowledge as the primary utility signal when present", () => {
+    const readback = buildActivationUtilityLabReadback({
+      selectedKnowledgeCount: 1,
+      answerUsefulness: "useful",
+      supportingClaims: 1,
+      supportingDocuments: 1,
+      sourceClaimDocumentLinks: 1,
+      linkedSearchDocuments: 1,
+      relationSupport: 1
+    });
+
+    expect(readback).toMatchObject({
+      selectedKnowledge: {
+        signal: "selected_knowledge",
+        strength: "useful",
+        reasons: ["selectedKnowledge returned 1 packet(s)."]
+      },
+      verdict: "selected_knowledge_sufficient",
+      recommendedNextAction:
+        "Use selected brain knowledge first; linked evidence can remain supporting context."
+    });
+  });
+
+  it("rejects activation utility changes when both signals are missing", () => {
+    const readback = buildActivationUtilityLabReadback({
+      selectedKnowledgeCount: 0,
+      answerUsefulness: "not_useful",
+      supportingClaims: 0,
+      supportingDocuments: 0,
+      sourceClaimDocumentLinks: 0,
+      linkedSearchDocuments: 0,
+      relationSupport: 0
+    });
+
+    expect(readback).toMatchObject({
+      selectedKnowledge: {
+        signal: "selected_knowledge",
+        strength: "missing"
+      },
+      sourceLinkGraph: {
+        signal: "source_link_graph",
+        strength: "missing",
+        reasons: ["No source/link/graph evidence was present."]
+      },
+      verdict: "insufficient_evidence",
+      recommendedNextAction:
+        "Do not change activation utility; gather stronger source or brain evidence first."
     });
   });
 

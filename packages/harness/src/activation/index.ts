@@ -1,6 +1,7 @@
 export * from "./activationFilters.js";
 export * from "./activationDiagnostics.js";
 export * from "./activationRawRecall.js";
+export * from "./activationUtilityLab.js";
 export * from "./assembleContext.js";
 export * from "./activationEngine.js";
 export * from "./conflictFilter.js";

@@ -177,6 +177,49 @@ IMR-31 complete: AMA activation-utility lab-test found the exact bounded gap:
   natural AMA brain search can have `selectedKnowledge: 0` while source/link/
   graph evidence remains useful. Opened `mise-en-palace-ff5` for one bounded
   activation utility experiment, not a ranking rewrite.
+IMR-32 complete: bounded activation utility lab helper classifies a
+  selectedKnowledge miss with useful source/link/graph evidence as a
+  linked-evidence exploration candidate. Opened `mise-en-palace-4hu` to expose
+  this readback in `krn brain search` output.
+```
+
+## Outcome IMR-32 AMA Activation Utility Experiment
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-32-ama-activation-utility-experiment/REPORT.md
+```
+
+Outcome: a deterministic harness helper now compares selected brain knowledge
+against source/link/graph evidence. The current AMA-shaped readback has
+`selectedKnowledge: 0`, `answerUsefulness: partly_useful_missing_document`, 8
+supporting claims, 8 source-claim/document links, 8 linked SearchDocuments, and
+6 relation-support items. The helper classifies this as
+`linked_evidence_exploration_candidate`, while preserving controls for
+`selected_knowledge_sufficient` and `insufficient_evidence`.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, IMR-31 readback, current DB-backed brain-search
+  summary.
+- Mechanism: semantic-aware Thompson sampling balances memory exploration and
+  exploitation.
+- KRN implication: missing selected brain knowledge is not enough to down-rank a
+  case when linked source/graph evidence remains useful.
+- Decision: add bounded lab helper and tests; do not change production ranking.
+- Consumer: future `krn brain search` activation utility readback and eval
+  candidates.
+- Falsifier: helper cannot distinguish selectedKnowledge miss plus useful linked
+  evidence from insufficient evidence, or future readback cannot reproduce the
+  signal.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-4hu: Expose activation utility readback in brain search output.
 ```
 
 ## Outcome IMR-31 AMA Activation Utility Lab-Test
