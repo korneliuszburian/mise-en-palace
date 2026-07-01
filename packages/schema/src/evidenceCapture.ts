@@ -275,6 +275,108 @@ export const EvidenceCommandSchema = EvidenceCommandInputSchema.superRefine((val
 
 export const DiffRiskSchema = z.enum(["low", "medium", "high"]);
 
+const EvidenceChangedFileClassificationMetadataSchema = z.object({
+  intended: TextListSchema,
+  unrelated: TextListSchema,
+  unknown: TextListSchema,
+  unmatchedIntendedFiles: TextListSchema
+});
+
+const EvidenceDirtyContextMetadataSchema = z.object({
+  hasUnrelatedFiles: z.boolean(),
+  unrelatedFileCount: z.number().int().nonnegative()
+});
+
+export const EvidenceCaptureMetadataSchema = MetadataSchema.superRefine((value, context) => {
+  const command = value.command;
+  if (command !== undefined) {
+    const result = RequiredTextSchema.safeParse(command);
+    if (!result.success) {
+      context.addIssue({
+        code: "custom",
+        message: "evidence metadata command must be a non-empty string",
+        path: ["command"]
+      });
+    }
+  }
+
+  const runId = value.runId;
+  if (runId !== undefined) {
+    const result = RequiredTextSchema.safeParse(runId);
+    if (!result.success) {
+      context.addIssue({
+        code: "custom",
+        message: "evidence metadata runId must be a non-empty string",
+        path: ["runId"]
+      });
+    }
+  }
+
+  const intendedFiles = value.intendedFiles;
+  if (intendedFiles !== undefined) {
+    const result = TextListSchema.safeParse(intendedFiles);
+    if (!result.success) {
+      context.addIssue({
+        code: "custom",
+        message: "evidence metadata intendedFiles must be an array of non-empty strings",
+        path: ["intendedFiles"]
+      });
+    }
+  }
+
+  const changedFileClassification = value.changedFileClassification;
+  if (changedFileClassification !== undefined) {
+    const result =
+      EvidenceChangedFileClassificationMetadataSchema.safeParse(changedFileClassification);
+    if (!result.success) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "evidence metadata changedFileClassification must include intended, unrelated, unknown, and unmatchedIntendedFiles string arrays",
+        path: ["changedFileClassification"]
+      });
+    }
+  }
+
+  const dirtyContext = value.dirtyContext;
+  if (dirtyContext !== undefined) {
+    const result = EvidenceDirtyContextMetadataSchema.safeParse(dirtyContext);
+    if (!result.success) {
+      context.addIssue({
+        code: "custom",
+        message:
+          "evidence metadata dirtyContext must include hasUnrelatedFiles and unrelatedFileCount",
+        path: ["dirtyContext"]
+      });
+    }
+  }
+}).transform((value) => {
+  const metadata: Record<string, unknown> = { ...value };
+
+  if (value.command !== undefined) {
+    metadata.command = RequiredTextSchema.parse(value.command);
+  }
+
+  if (value.runId !== undefined) {
+    metadata.runId = RequiredTextSchema.parse(value.runId);
+  }
+
+  if (value.intendedFiles !== undefined) {
+    metadata.intendedFiles = TextListSchema.parse(value.intendedFiles);
+  }
+
+  if (value.changedFileClassification !== undefined) {
+    metadata.changedFileClassification =
+      EvidenceChangedFileClassificationMetadataSchema.parse(value.changedFileClassification);
+  }
+
+  if (value.dirtyContext !== undefined) {
+    metadata.dirtyContext = EvidenceDirtyContextMetadataSchema.parse(value.dirtyContext);
+  }
+
+  return metadata;
+});
+
 export const EvidenceCaptureInputSchema = z.object({
   executionRunId: z.string().uuid().optional(),
   changedFiles: TextListSchema,
@@ -282,7 +384,7 @@ export const EvidenceCaptureInputSchema = z.object({
   diffRisk: DiffRiskSchema,
   reviewBurden: RequiredTextSchema,
   rollbackPath: RequiredTextSchema,
-  metadata: MetadataSchema
+  metadata: EvidenceCaptureMetadataSchema
 });
 
 export type EvidenceCaptureInput = z.infer<typeof EvidenceCaptureInputSchema>;

@@ -826,6 +826,28 @@ describe("schema parse boundaries", () => {
         rollbackPath: "Revert schema commit"
       })
     ).toThrow();
+
+    expect(() =>
+      parseEvidenceCaptureInput({
+        changedFiles: ["packages/schema/src/index.ts"],
+        commands: [],
+        diffRisk: "low",
+        reviewBurden: "small",
+        rollbackPath: "Revert schema commit",
+        metadata: {
+          intendedFiles: "packages/schema/src/index.ts",
+          changedFileClassification: {
+            intended: ["packages/schema/src/index.ts"],
+            unrelated: [],
+            unknown: []
+          },
+          dirtyContext: {
+            hasUnrelatedFiles: "false",
+            unrelatedFileCount: "0"
+          }
+        }
+      })
+    ).toThrow("evidence metadata intendedFiles must be an array of non-empty strings");
   });
 
   test("retrieval substrate inputs constrain search, scoring, decisions, and context", () => {

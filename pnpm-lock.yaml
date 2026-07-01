@@ -82,6 +82,9 @@ importers:
       '@krn/harness':
         specifier: workspace:*
         version: link:../harness
+      '@krn/schema':
+        specifier: workspace:*
+        version: link:../schema
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@libsql/client@0.17.4)(@opentelemetry/api@1.9.1)(pg@8.22.0)(postgres@3.4.9)

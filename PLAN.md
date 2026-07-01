@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: EVD-01 Validate evidence metadata boundary
+current task: EVD-02 Consolidate evidence command normalization
 ```
 
 ## Compact Checkpoints
@@ -62,6 +62,7 @@ retained pattern usefulness bridge: pattern usefulness persists through evidence
 retained pattern plan/brief bridge: selected retained pattern IDs persist through plan metadata and Codex brief readback
 retained pattern run readback: run show text/JSON exposes retained pattern selection beside usefulness outcomes
 worker enqueue atomicity: workers helper requires one queue-port contract for worker job plus outbox event
+evidence metadata boundary: known evidence readback metadata validates before DB persistence
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -72,7 +73,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### EVD-01 Validate Evidence Metadata Boundary
+### EVD-02 Consolidate Evidence Command Normalization
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -84,13 +85,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-wrk-01-worker-enqueue-atomicity/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-evd-01-evidence-metadata-boundary/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-7y7: Validate evidence metadata boundary.
+mise-en-palace-wnj: Consolidate evidence command normalization.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

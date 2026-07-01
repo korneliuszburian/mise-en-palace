@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: EVD-01 Validate evidence metadata boundary
+current task: EVD-02 Consolidate evidence command normalization
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-EVD-01 Validate evidence metadata boundary is active.
+EVD-02 Consolidate evidence command normalization is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,8 +36,8 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-WRK-01 complete: worker enqueue helper now uses one queue-port contract for
-worker job plus outbox event instead of helper-level split writes.
+EVD-01 complete: evidence bundle persistence validates and normalizes known
+evidence readback metadata at the DB boundary.
 ```
 
 ## 2. Product Thesis
@@ -2357,6 +2357,10 @@ Falsifier:
   worker-job and outbox writes; it requires one queue-port contract. Report:
   `docs/reviews/controlled-dogfood/2026-07-01-wrk-01-worker-enqueue-atomicity/REPORT.md`.
   Next: `mise-en-palace-7y7` / EVD-01 validates evidence metadata boundary.
+- [x] EVD-01 complete: evidence capture metadata used by readback now validates
+  and normalizes at the DB persistence boundary. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-evd-01-evidence-metadata-boundary/REPORT.md`.
+  Next: `mise-en-palace-wnj` / EVD-02 consolidates evidence command normalization.
 
 ## 21. Final Response Format For Codex Runs
 

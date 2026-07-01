@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: EVD-01 Validate evidence metadata boundary.
+current task: EVD-02 Consolidate evidence command normalization.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-WRK-01 complete: worker enqueue helper now uses one atomic queue-port contract
-instead of orchestrating split worker-job and outbox writes.
+EVD-01 complete: evidence bundle persistence validates and normalizes known
+evidence readback metadata at the DB boundary.
 ```
 
 ## Direction

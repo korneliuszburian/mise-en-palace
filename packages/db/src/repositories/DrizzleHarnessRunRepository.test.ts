@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   DrizzleHarnessRunRepository,
-  evidenceCommandsForPersistence
+  evidenceCommandsForPersistence,
+  validateEvidenceBundleInputForPersistence
 } from "./DrizzleHarnessRunRepository.js";
 
 describe("DrizzleHarnessRunRepository", () => {
@@ -77,5 +78,65 @@ describe("DrizzleHarnessRunRepository", () => {
           "This command row does not prove the command executed; it is default template evidence only."
       }
     ]);
+  });
+
+  it("validates evidence metadata before persistence", () => {
+    expect(() =>
+      validateEvidenceBundleInputForPersistence({
+        executionRunId: "execution-run-1",
+        status: "captured",
+        changedFiles: ["packages/cli/src/runEvidenceCaptureCommand.ts"],
+        commands: [],
+        diffRisk: "low",
+        reviewBurden: "Review evidence metadata shape.",
+        rollbackPath: "git revert <commit>",
+        event: {
+          sequence: 1,
+          type: "evidence.captured",
+          message: "Evidence captured"
+        },
+        metadata: {
+          changedFileClassification: {
+            intended: "packages/cli/src/runEvidenceCaptureCommand.ts",
+            unrelated: [],
+            unknown: [],
+            unmatchedIntendedFiles: []
+          }
+        }
+      })
+    ).toThrow("evidence metadata changedFileClassification must include");
+
+    expect(validateEvidenceBundleInputForPersistence({
+      executionRunId: "execution-run-1",
+      status: "captured",
+      changedFiles: [" packages/cli/src/runEvidenceCaptureCommand.ts "],
+      commands: [],
+      diffRisk: "low",
+      reviewBurden: "Review evidence metadata shape.",
+      rollbackPath: "git revert <commit>",
+      event: {
+        sequence: 1,
+        type: "evidence.captured",
+        message: "Evidence captured"
+      },
+      metadata: {
+        intendedFiles: [" packages/cli/src/runEvidenceCaptureCommand.ts "],
+        changedFileClassification: {
+          intended: [" packages/cli/src/runEvidenceCaptureCommand.ts "],
+          unrelated: [],
+          unknown: [],
+          unmatchedIntendedFiles: []
+        },
+        dirtyContext: {
+          hasUnrelatedFiles: false,
+          unrelatedFileCount: 0
+        }
+      }
+    })).toMatchObject({
+      changedFiles: ["packages/cli/src/runEvidenceCaptureCommand.ts"],
+      metadata: {
+        intendedFiles: ["packages/cli/src/runEvidenceCaptureCommand.ts"]
+      }
+    });
   });
 });

@@ -19,6 +19,9 @@ import {
   normalizeEvidenceCommand,
   readMetadataString
 } from "@krn/core";
+import {
+  parseEvidenceCaptureInput
+} from "@krn/schema";
 import type {
   CreateContextAssemblyInput,
   CreateEvidenceBundleInput,
@@ -80,6 +83,29 @@ export const evidenceCommandsForPersistence = (
   commands: readonly EvidenceCommand[]
 ): NormalizedEvidenceCommand[] =>
   commands.map(normalizeEvidenceCommand);
+
+export const validateEvidenceBundleInputForPersistence = (
+  input: CreateEvidenceBundleInput
+): CreateEvidenceBundleInput => {
+  const parsed = parseEvidenceCaptureInput({
+    changedFiles: input.changedFiles,
+    commands: input.commands,
+    diffRisk: input.diffRisk,
+    reviewBurden: input.reviewBurden,
+    rollbackPath: input.rollbackPath,
+    metadata: input.metadata ?? {}
+  });
+
+  return {
+    ...input,
+    changedFiles: parsed.changedFiles,
+    commands: parsed.commands,
+    diffRisk: parsed.diffRisk,
+    reviewBurden: parsed.reviewBurden,
+    rollbackPath: parsed.rollbackPath,
+    metadata: parsed.metadata
+  };
+};
 
 export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   constructor(private readonly db: KrnDatabase) {}
@@ -320,31 +346,33 @@ export class DrizzleHarnessRunRepository implements HarnessRunRepository {
   }
 
   async createEvidenceBundle(input: CreateEvidenceBundleInput): Promise<EvidenceBundle> {
+    const evidenceInput = validateEvidenceBundleInputForPersistence(input);
+
     return this.db.transaction(async (tx) => {
       const row = requireReturnedRow(
         await tx
           .insert(evidenceBundles)
           .values({
-            executionRunId: input.executionRunId,
-            status: input.status ?? "captured",
-            changedFiles: input.changedFiles,
-            commands: evidenceCommandsForPersistence(input.commands),
-            diffRisk: input.diffRisk,
-            reviewBurden: input.reviewBurden,
-            rollbackPath: input.rollbackPath,
-            metadata: input.metadata ?? {}
+            executionRunId: evidenceInput.executionRunId,
+            status: evidenceInput.status ?? "captured",
+            changedFiles: evidenceInput.changedFiles,
+            commands: evidenceCommandsForPersistence(evidenceInput.commands),
+            diffRisk: evidenceInput.diffRisk,
+            reviewBurden: evidenceInput.reviewBurden,
+            rollbackPath: evidenceInput.rollbackPath,
+            metadata: evidenceInput.metadata ?? {}
           })
           .returning(),
         "createEvidenceBundle"
       );
 
       await tx.insert(runEvents).values({
-        executionRunId: input.executionRunId,
-        sequence: input.event.sequence,
-        type: input.event.type,
-        severity: input.event.severity ?? "info",
-        message: input.event.message,
-        payload: input.event.payload ?? {}
+        executionRunId: evidenceInput.executionRunId,
+        sequence: evidenceInput.event.sequence,
+        type: evidenceInput.event.type,
+        severity: evidenceInput.event.severity ?? "info",
+        message: evidenceInput.event.message,
+        payload: evidenceInput.event.payload ?? {}
       });
 
       return mapEvidenceBundle(row);
