@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks.
+current task: mise-en-palace-568 Remove transparent maintenance enqueue wrapper.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,12 +39,14 @@ the product goal.
 Latest slice:
 
 ```txt
-9DT complete: the retained TypeScript parser exemplar was applied to one real
-EvidenceBundle metadata boundary. `parseEvidenceBundleMetadataReadback` now
-narrows `diffSummary/sourceRefs` from unknown-style metadata before evidence
-completeness uses them, with focused tests, typecheck/test/Fallow proof, and no
-DB schema or Memory Core mutation. Next: fix the retained-pattern plan query
-miss exposed by this run (`mise-en-palace-ej7`).
+EJ7 complete: retained-pattern plan query shaping now retries bounded
+mechanism windows, so long parser/metadata task contracts can select
+`pattern:ts-boundary-brain-knowledge-parser-exemplar` through
+`typescript parser exemplar` without ranking, schema, or Memory Core changes.
+Report:
+docs/reviews/controlled-dogfood/2026-07-02-ej7-retained-pattern-query-shaping/REPORT.md
+Next: `mise-en-palace-568` removes or justifies the transparent
+`enqueueMaintenanceJob` wrapper from the audit backlog.
 ```
 
 ## Direction

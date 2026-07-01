@@ -1,6 +1,6 @@
 # KRN Continuous Brain Growth Active Ledger
 
-Status: compact active ledger. Date: 2026-07-01.
+Status: compact active ledger. Date: 2026-07-02.
 
 Root `GOAL.md` is the continuous objective. Root `PLAN.md` is the compact
 product source of truth. This file keeps only current state, recent outcomes,
@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks
+current task: mise-en-palace-568 Remove transparent maintenance enqueue wrapper
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks is active.
-9DT proved the parser exemplar transfers to a real EvidenceBundle metadata
-boundary, but persisted plan selection missed the pattern while short mechanism
-queries found it.
+mise-en-palace-568 Remove transparent maintenance enqueue wrapper is active.
+The audit backlog still has a focused worker cleanup: inspect
+`packages/workers/src/enqueueMaintenanceJob.ts` and remove or justify the
+transparent pass-through wrapper without building worker runtime.
 ```
 
 Latest outcome:
 
 ```txt
-9DT complete: pattern:ts-boundary-brain-knowledge-parser-exemplar was applied to
-one real EvidenceBundle metadata boundary. parseEvidenceBundleMetadataReadback
-now narrows diffSummary/sourceRefs before evidence completeness uses metadata.
+EJ7 complete: long parser/metadata plan tasks now select
+pattern:ts-boundary-brain-knowledge-parser-exemplar through bounded mechanism
+query windows, preserving existing brain-search compact retry behavior.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-9dt-evidence-metadata-parser-boundary/REPORT.md
-Next: `mise-en-palace-ej7` repairs or regresses the retained-pattern plan query
-miss exposed by 9DT.
+docs/reviews/controlled-dogfood/2026-07-02-ej7-retained-pattern-query-shaping/REPORT.md
+Next: `mise-en-palace-568` handles the transparent maintenance enqueue wrapper
+from the audit backlog.
 ```
 
 ## 2. Product Thesis

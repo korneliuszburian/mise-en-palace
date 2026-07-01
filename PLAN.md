@@ -1,6 +1,6 @@
 # KRN Active Plan
 
-Status: active compact root plan. Date: 2026-07-01.
+Status: active compact root plan. Date: 2026-07-02.
 
 Root `PLAN.md` is the compact product source of truth. Detailed history stays in `PLANS.md`.
 Current-task contracts live in `PLANS.md`.
@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks
+current task: mise-en-palace-568 Remove transparent maintenance enqueue wrapper
 ```
 
 ## Compact Checkpoints
@@ -88,6 +88,7 @@ retained pattern plan bridge recall: long task contracts compact to mechanism qu
 reference implementation recipe boundary: user-provided clone-workflow sources retained as a lab-test pattern with catalog/search readback and no runtime expansion
 TypeScript parser exemplar: brainKnowledgeReadModel retained as a searchable local reference implementation recipe with helped usefulness feedback
 evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
+retained pattern parser query shaping: long parser/metadata plan tasks select the parser exemplar through bounded mechanism windows
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -97,7 +98,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-ej7 Improve Retained-Pattern Plan Query Shaping For Parser Exemplar Tasks
+### mise-en-palace-568 Remove Transparent Maintenance Enqueue Wrapper
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -109,18 +110,17 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-9dt-evidence-metadata-parser-boundary/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-02-ej7-retained-pattern-query-shaping/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-9DT proved short brain-knowledge queries selected the parser exemplar while the
-long persisted plan query missed it. Inspect retainedPatternPlanBridge/query
-shaping and add one bounded mechanism-term fallback or regression so
-metadata/parser boundary tasks can select parser exemplars when short mechanism
-queries already do. No broad ranking rewrite, semantic embedding platform, DB
-schema, dashboard/API/MCP, worker daemon, crawler, or Memory Core mutation.
+Audit follow-up: `packages/workers/src/enqueueMaintenanceJob.ts` still exports a
+transparent pass-through to `queue.enqueue(input.request)`. Inspect real callers
+and tests, then remove the wrapper or keep it only if source inspection proves a
+real executable boundary. No worker daemon, DB schema, runtime job executor,
+broad worker redesign, or Memory Core mutation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

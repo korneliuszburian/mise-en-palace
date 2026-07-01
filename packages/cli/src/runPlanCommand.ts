@@ -50,7 +50,7 @@ import type {
   SourceSeedProposal
 } from "./runInitCommand.js";
 import {
-  compactBrainKnowledgeBridgeQuery
+  compactBrainKnowledgeBridgeQueries
 } from "./brainKnowledgeQuery.js";
 import {
   formatRetainedPatternSelectionLines,
@@ -556,9 +556,9 @@ const buildRetainedPatternSelection = async (
 ): Promise<RetainedPatternPlanSelection> => {
   const baseQueries = [task, task.replace(/-/gu, " ")];
   const queries = [...new Set(baseQueries.flatMap((query) => {
-    const compactQuery = compactBrainKnowledgeBridgeQuery(query);
+    const compactQueries = compactBrainKnowledgeBridgeQueries(query);
 
-    return compactQuery === undefined ? [query] : [query, compactQuery];
+    return [query, ...compactQueries];
   }))];
 
   try {
