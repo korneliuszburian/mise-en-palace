@@ -162,6 +162,51 @@ IMR-26 complete: AMA-shaped missing-evidence readback produced a ready
 IMR-27 complete: linked SearchDocuments support governance/heartbeat/no-mutation
   boundaries but do not fully resolve AMA acquisition evidence; next step is
   source-search review, not external research.
+IMR-28 complete: narrow AMA source-search review still found local governance
+  claims and linked SearchDocument refs, but no direct included SearchDocument
+  evidence for the AMA paper mechanism; next step is bounded external
+  source-decision/readback.
+```
+
+## Outcome IMR-28 AMA Source-Search Review
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-28-ama-source-search-review/REPORT.md
+```
+
+Outcome: five narrower source-search queries for the AMA paper, cost-aware
+knowledge-extraction cascade, Semantic-Aware Thompson Sampling, and benchmark
+gains all returned `partly_useful_missing_document`: 8 supporting SourceClaims,
+0 included SearchDocuments, and 8 linked SearchDocument refs. This supports
+KRN governance/source-readback context but not direct AMA paper evidence.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, current AMA source decision, retained acquisition
+  escalation pattern, and live KRN source-search readback.
+- Mechanism: U-Mem proposes active acquire/validate/curate memory through a
+  cost-aware extraction cascade and semantic-aware Thompson sampling.
+- KRN implication: missing direct AMA mechanism evidence should route to one
+  bounded external source-decision/readback slice, not a broad research lane.
+- Decision: source-search review is insufficient; proceed to
+  `mise-en-palace-urp`.
+- Rejection: no crawler, worker daemon, API/MCP, DB schema, autonomous
+  acquisition, ranking rewrite, source truth mutation, broad benchmark, or
+  Memory Core mutation.
+- Consumer: pattern/research brain, heartbeat acquisition lane, and future
+  activation utility/eval hypotheses.
+- Falsifier: bounded AMA source-decision/readback cannot produce a reviewable
+  local source decision/artifact through existing paths or bypasses review
+  gates.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-urp: Run bounded AMA external source-decision readback.
 ```
 
 ## Outcome IMR-27 AMA Linked-Document Review
