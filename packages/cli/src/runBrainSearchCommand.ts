@@ -57,6 +57,7 @@ interface BrainSearchPreviewResource {
     returnedCards: number;
     cardIds: readonly string[];
     selectedKnowledge: readonly BrainSearchKnowledgePacket[];
+    targetFitSummary: BrainSearchSelectedKnowledgeTargetFitSummary;
     doesNotProve: readonly string[];
   };
   sourceSearch: {
@@ -111,6 +112,28 @@ type BrainSearchKnowledgeTargetFit =
   | "adjacent_pattern"
   | "noise"
   | "unknown";
+
+type BrainSearchSelectedKnowledgeTargetFitVerdict =
+  | "target_specific_selected_knowledge"
+  | "generic_only_selected_knowledge"
+  | "adjacent_or_unknown_selected_knowledge"
+  | "no_selected_knowledge";
+
+interface BrainSearchSelectedKnowledgeTargetFitSummary {
+  verdict: BrainSearchSelectedKnowledgeTargetFitVerdict;
+  targetSpecific: number;
+  genericGuardrail: number;
+  adjacentPattern: number;
+  noise: number;
+  unknown: number;
+  recommendedUse: string;
+  doesNotProve: string;
+}
+
+type BrainSearchRecommendationResource = Pick<
+  BrainSearchPreviewResource,
+  "brainKnowledgeReadback" | "knowledgeCards" | "sourceSearch"
+>;
 
 interface SourceSearchKnowledgeFields {
   id: string;
@@ -291,7 +314,6 @@ const packetTargetFitText = (packet: BrainSearchKnowledgePacket): string =>
     packet.source,
     ...packet.consumers,
     packet.falsifier,
-    packet.doesNotProve,
     packet.nextAction
   ].join(" ");
 
@@ -575,43 +597,147 @@ const selectedKnowledgePackets = (input: {
     : sourcePackets.filter((packet) => packet.reviewability === "ready");
 };
 
-const buildRecommendedNextAction = (
-  resource: Pick<
-    BrainSearchPreviewResource,
-    "brainKnowledgeReadback" | "knowledgeCards" | "sourceSearch"
-  >
-): string => {
-  if (resource.brainKnowledgeReadback === "store_only") {
-    if (resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0) {
-      return "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-retained pattern context is explicitly needed.";
-    }
+const selectedKnowledgeTargetFitSummary = (
+  packets: readonly BrainSearchKnowledgePacket[]
+): BrainSearchSelectedKnowledgeTargetFitSummary => {
+  const targetSpecific = packets.filter((packet) => packet.targetFit === "target_specific").length;
+  const genericGuardrail = packets.filter((packet) => packet.targetFit === "generic_guardrail").length;
+  const adjacentPattern = packets.filter((packet) => packet.targetFit === "adjacent_pattern").length;
+  const noise = packets.filter((packet) => packet.targetFit === "noise").length;
+  const unknown = packets.filter((packet) => packet.targetFit === "unknown").length;
 
-    return "Do not infer product truth from store-only brain search; seed or persist governed source evidence first.";
+  if (packets.length === 0) {
+    return {
+      verdict: "no_selected_knowledge",
+      targetSpecific,
+      genericGuardrail,
+      adjacentPattern,
+      noise,
+      unknown,
+      recommendedUse:
+        "Do not infer brain knowledge sufficiency; use source/search evidence or acquire governed evidence first.",
+      doesNotProve:
+        "No selectedKnowledge packets does not prove the query has no relevant KRN knowledge."
+    };
   }
 
+  if (targetSpecific > 0) {
+    return {
+      verdict: "target_specific_selected_knowledge",
+      targetSpecific,
+      genericGuardrail,
+      adjacentPattern,
+      noise,
+      unknown,
+      recommendedUse:
+        "Use target-specific selectedKnowledge first, then treat generic or adjacent packets as guardrails.",
+      doesNotProve:
+        "Target-specific selectedKnowledge does not prove source truth, ranking quality, or product readiness."
+    };
+  }
+
+  if (genericGuardrail > 0 && genericGuardrail === packets.length) {
+    return {
+      verdict: "generic_only_selected_knowledge",
+      targetSpecific,
+      genericGuardrail,
+      adjacentPattern,
+      noise,
+      unknown,
+      recommendedUse:
+        "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
+      doesNotProve:
+        "Generic-only selectedKnowledge does not prove target-specific context was selected."
+    };
+  }
+
+  return {
+    verdict: "adjacent_or_unknown_selected_knowledge",
+    targetSpecific,
+    genericGuardrail,
+    adjacentPattern,
+    noise,
+    unknown,
+    recommendedUse:
+      "Review selectedKnowledge targetFit before treating selected knowledge as sufficient; prefer target-specific source evidence.",
+    doesNotProve:
+      "Adjacent, noisy, or unknown selectedKnowledge does not prove target-specific context was selected."
+  };
+};
+
+const sourceEvidenceCount = (
+  sourceSearch: BrainSearchPreviewResource["sourceSearch"]
+): number => sourceSearch.supportingClaims + sourceSearch.supportingDocuments;
+
+const nonTargetSpecificRecommendation = (
+  targetFit: BrainSearchSelectedKnowledgeTargetFitSummary
+): string | undefined => {
   if (
-    resource.knowledgeCards.returnedCards > 0 &&
-    resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0
+    targetFit.verdict === "generic_only_selected_knowledge" ||
+    targetFit.verdict === "adjacent_or_unknown_selected_knowledge"
   ) {
+    return targetFit.recommendedUse;
+  }
+
+  return undefined;
+};
+
+const storeOnlyRecommendation = (
+  resource: BrainSearchRecommendationResource
+): string | undefined => {
+  if (resource.brainKnowledgeReadback !== "store_only") {
+    return undefined;
+  }
+
+  return sourceEvidenceCount(resource.sourceSearch) > 0
+    ? "Use the store-backed source/search evidence cautiously; run catalog-backed brain search only when file-retained pattern context is explicitly needed."
+    : "Do not infer product truth from store-only brain search; seed or persist governed source evidence first.";
+};
+
+const catalogRecommendation = (
+  resource: BrainSearchRecommendationResource
+): string => {
+  const hasReturnedCards = resource.knowledgeCards.returnedCards > 0;
+  const hasSelectedKnowledge = resource.knowledgeCards.selectedKnowledge.length > 0;
+  const hasSourceEvidence = sourceEvidenceCount(resource.sourceSearch) > 0;
+
+  if (hasReturnedCards && hasSourceEvidence) {
     return "Use the matching brain knowledge as pattern guidance and the source-search answer package as evidence before changing code.";
   }
 
-  if (
-    resource.knowledgeCards.returnedCards === 0 &&
-    resource.knowledgeCards.selectedKnowledge.length > 0
-  ) {
+  if (!hasReturnedCards && hasSelectedKnowledge) {
     return "Use source-backed selected brain knowledge as a Pattern Application Gate; do not treat it as file-catalog coverage.";
   }
 
-  if (resource.sourceSearch.supportingClaims + resource.sourceSearch.supportingDocuments > 0) {
+  if (hasSourceEvidence) {
     return "Use source-search evidence cautiously and run a narrower brain knowledge query before retaining a pattern.";
   }
 
-  if (resource.knowledgeCards.returnedCards > 0) {
+  if (hasReturnedCards) {
     return "Use the matching brain knowledge as guidance, but gather source evidence before implementation claims.";
   }
 
   return "Do not infer product truth; narrow the query or ingest/review source evidence first.";
+};
+
+const buildRecommendedNextAction = (
+  resource: BrainSearchRecommendationResource
+): string => {
+  const targetFitRecommendation = nonTargetSpecificRecommendation(
+    resource.knowledgeCards.targetFitSummary
+  );
+
+  if (targetFitRecommendation !== undefined) {
+    return targetFitRecommendation;
+  }
+
+  const storeOnly = storeOnlyRecommendation(resource);
+
+  if (storeOnly !== undefined) {
+    return storeOnly;
+  }
+
+  return catalogRecommendation(resource);
 };
 
 const buildResource = (
@@ -649,6 +775,7 @@ const buildResource = (
     linkedSearchDocuments,
     relationSupport: relationSupport.length
   });
+  const targetFitSummary = selectedKnowledgeTargetFitSummary(selectedKnowledge);
   const resource: BrainSearchPreviewResource = {
     kind: "krn.brainSearch.preview.v1",
     access: "read_only",
@@ -661,6 +788,7 @@ const buildResource = (
       returnedCards: numberValue(input.knowledgeJson["returnedCards"]),
       cardIds: knowledgeCardIds(cards),
       selectedKnowledge,
+      targetFitSummary,
       doesNotProve: proofDoesNotProve(input.knowledgeJson["proof"])
     },
     sourceSearch: {
@@ -833,6 +961,15 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
       `  doesNotProve: ${card.doesNotProve}`,
       `  nextAction: ${card.nextAction}`
     ]),
+    "- targetFitSummary:",
+    `  verdict: ${resource.knowledgeCards.targetFitSummary.verdict}`,
+    `  targetSpecific: ${resource.knowledgeCards.targetFitSummary.targetSpecific}`,
+    `  genericGuardrail: ${resource.knowledgeCards.targetFitSummary.genericGuardrail}`,
+    `  adjacentPattern: ${resource.knowledgeCards.targetFitSummary.adjacentPattern}`,
+    `  noise: ${resource.knowledgeCards.targetFitSummary.noise}`,
+    `  unknown: ${resource.knowledgeCards.targetFitSummary.unknown}`,
+    `  recommendedUse: ${resource.knowledgeCards.targetFitSummary.recommendedUse}`,
+    `  doesNotProve: ${resource.knowledgeCards.targetFitSummary.doesNotProve}`,
     "",
     "Source search:",
     `- answerUsefulness: ${resource.sourceSearch.answerUsefulness}`,

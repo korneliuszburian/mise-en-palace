@@ -590,6 +590,94 @@ describe("runBrainSearchCommand", () => {
     });
   });
 
+  it("does not treat generic-only selected knowledge as target-specific sufficiency", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "EKOLOGUS Brain quality gate",
+        catalogFiles: [],
+        storeOnly: true,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        throw new Error("store-only brain search should not read file catalogs");
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "useful",
+              supportingClaims: [{
+                sourceClaimId: "generic-guardrail-1",
+                claim: "Retained KRN knowledge must preserve source, mechanism, consumer, and falsifier.",
+                mechanism: "Generic governance packets keep source-to-decision decisions reviewable.",
+                krnImplication: "Treat this as a guardrail, not target repo evidence.",
+                consumer: "pattern application gate",
+                falsifier: "A retained decision omits the falsifier field.",
+                doesNotProve: "This does not prove target repo source recall."
+              }, {
+                sourceClaimId: "generic-guardrail-2",
+                claim: "KRN guardrails should keep proof boundaries visible before code changes.",
+                mechanism: "Generic proof packets prevent overclaiming.",
+                krnImplication: "Use this as a generic review guardrail.",
+                consumer: "pattern application gate",
+                falsifier: "A future run treats proof boundaries as target evidence.",
+                doesNotProve: "This does not prove EKOLOGUS source evidence."
+              }],
+              supportingDocuments: [{ label: "ekologus-readme" }],
+              relationSupport: [],
+              graphReadback: {
+                claimNodes: 2,
+                relationEdges: 0,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: false,
+                caveats: []
+              },
+              missingEvidence: []
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      knowledgeCards: {
+        targetFitSummary: {
+          verdict: "generic_only_selected_knowledge",
+          targetSpecific: 0,
+          genericGuardrail: 2,
+          recommendedUse:
+            "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient.",
+          doesNotProve:
+            "Generic-only selectedKnowledge does not prove target-specific context was selected."
+        },
+        selectedKnowledge: [
+          expect.objectContaining({ targetFit: "generic_guardrail" }),
+          expect.objectContaining({ targetFit: "generic_guardrail" })
+        ]
+      },
+      activationUtility: {
+        verdict: "selected_knowledge_sufficient"
+      },
+      recommendedNextAction:
+        "Treat selectedKnowledge as generic guardrails; use target/source evidence first before considering selected knowledge sufficient."
+    });
+  });
+
   it("uses ready source-backed selected knowledge when catalog search misses", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",

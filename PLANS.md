@@ -231,7 +231,29 @@ IMR-47 complete: compact two-question multi-repo Brain-QA showed useful
   precision/context-waste work for selectedKnowledge.
 IMR-48 complete: `krn brain search` selectedKnowledge now exposes targetFit
   labels/reasons, making generic guardrail packets visible in multi-repo readback.
+IMR-49 complete: brain-search target-fit summary now caveats generic-only
+  selectedKnowledge before the top-level recommendation treats it as sufficient.
 ```
+
+## Outcome IMR-49 Target-Fit-Aware Activation Utility
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-49-target-fit-aware-activation-utility/REPORT.md
+```
+
+Outcome: brain-search JSON/text now includes `knowledgeCards.targetFitSummary`.
+Live `EKOLOGUS Brain quality gate` readback reports
+`generic_only_selected_knowledge`, `targetSpecific: 0`, `genericGuardrail: 4`,
+and recommends treating selectedKnowledge as generic guardrails while using
+target/source evidence first. Target-specific source-artifact readback remains
+`target_specific_selected_knowledge`.
+
+Decision: next run a compact target-fit-aware Brain-QA/usefulness closure before
+opening activation scoring or ranking repair.
 
 ## Outcome IMR-48 Selected Knowledge Target-Fit Readback
 
@@ -1971,24 +1993,24 @@ software work. Multi-repo internal work is the proof surface.
 Next Beads issue:
 
 ```txt
-mise-en-palace-s54:
-expose linked document evidence in brain-search source summaries.
+mise-en-palace-cno:
+Run target-fit-aware Brain-QA closure for next vertical slice.
 ```
 
 Evidence sources:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-13-source-claim-document-links/REPORT.md
-docs/reviews/controlled-dogfood/2026-07-01-imr-12-diagnostic-acquisition-evidence-followup/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-49-target-fit-aware-activation-utility/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-48-selected-knowledge-target-fit/REPORT.md
 ```
 
 Next task:
 
 ```txt
-mise-en-palace-s54 — Expose linked document evidence in brain-search source summaries.
-Goal: make downstream brain-search/source summaries surface source-search
-sourceClaimDocumentLinks counts or caveats without schema, crawler, ranking,
-worker, API/MCP, source truth, or Memory Core mutation.
+mise-en-palace-cno — Run target-fit-aware Brain-QA closure for next vertical slice.
+Goal: use targetFitSummary across compact KRN and second-repo queries to choose
+the next bounded vertical implementation slice from evidence, not ranking
+guesswork.
 ```
 
 Allowed writes:
