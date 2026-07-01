@@ -46,6 +46,7 @@ brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocum
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 heartbeat acquisition review: linked and missing-only escalation accepted
 AMA acquisition lane: persisted AMA source evidence reused; linked-evidence behavior accepted
+AMA activation utility: selectedKnowledge misses while source/link/graph evidence remains useful; bounded experiment opened
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -71,13 +72,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-30-ama-source-evidence-reuse/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-31-ama-activation-utility-lab-test/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-1dh: run AMA activation-utility lab-test.
+mise-en-palace-ff5: run bounded AMA activation utility experiment.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -130,7 +131,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-30: acquisition escalation retained, applied to AMA-shaped acquisition, persisted, and accepted as reusable linked evidence.
+IMR-18-31: acquisition escalation retained, applied to AMA-shaped acquisition, persisted, accepted as reusable linked evidence, and converted into a bounded activation utility experiment.
 ```
 
 ## Remaining Product Gaps

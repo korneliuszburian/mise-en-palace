@@ -173,6 +173,48 @@ IMR-29 complete: bounded AMA paper SOURCE.md persisted through existing
 IMR-30 complete: AMA source evidence reuse accepted; source-search selects the
   AMA SourceClaim, linked SearchDocument evidence is visible to brain/heartbeat
   readback, and heartbeat emits one ready mutation-free acquisition candidate.
+IMR-31 complete: AMA activation-utility lab-test found the exact bounded gap:
+  natural AMA brain search can have `selectedKnowledge: 0` while source/link/
+  graph evidence remains useful. Opened `mise-en-palace-ff5` for one bounded
+  activation utility experiment, not a ranking rewrite.
+```
+
+## Outcome IMR-31 AMA Activation Utility Lab-Test
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-31-ama-activation-utility-lab-test/REPORT.md
+```
+
+Outcome: the AMA semantic-aware Thompson sampling mechanism is ready for one
+bounded local activation-utility experiment. Current readback shows the useful
+tension: `activation utility` and `exploration exploitation` do not select a
+retained brain knowledge pattern, while natural AMA source/brain search still
+returns useful SourceClaim/link/graph evidence. A marker query retrieves the
+persisted AMA SearchDocument, but natural query document inclusion remains
+missing.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, IMR-29/IMR-30 persisted AMA evidence, current
+  source/brain/catalog readbacks.
+- Mechanism: semantic-aware Thompson sampling balances memory exploration and
+  exploitation.
+- KRN implication: test whether activation utility should consider useful
+  source/link/graph evidence even when selected brain knowledge is absent.
+- Decision: open bounded experiment `mise-en-palace-ff5`; no ranking rewrite,
+  semantic model, crawler, worker, API/MCP, DB schema, or Memory Core mutation.
+- Consumer: activation utility lab and future source/brain readback evaluation.
+- Falsifier: the experiment cannot show a concrete selectedKnowledge miss with
+  useful linked source evidence, or cannot define a falsifiable utility signal.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-ff5: Run bounded AMA activation utility experiment.
 ```
 
 ## Outcome IMR-30 AMA Source Evidence Reuse Check
