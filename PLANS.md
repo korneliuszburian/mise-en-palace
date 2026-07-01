@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-01 Repair retained-pattern next-run priority
+current task: SBV-02 Run retained-pattern code-quality vertical
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-SBV-01 Repair retained-pattern next-run priority is active.
+SBV-02 Run retained-pattern code-quality vertical is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -279,7 +279,7 @@ reuse. Repair retained-pattern priority next.
 Next Beads task:
 
 ```txt
-mise-en-palace-tsw: Repair SBV retained-pattern next-run priority.
+mise-en-palace-yjh: Run retained-pattern code-quality vertical.
 ```
 
 ## Outcome IMR-55 Source Usefulness Feedback
