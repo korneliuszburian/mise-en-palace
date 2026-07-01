@@ -223,7 +223,31 @@ IMR-44 complete: `krn.sourceArtifactPreview.v1` now feeds heartbeat knowledge
 IMR-45 complete: one missing adapter delegation was repaired, persisted source
   artifact preview readback now writes SourceArtifact/SourceChunk/SearchDocument
   and the heartbeat acquisition candidate is resolved.
+IMR-46 complete: second internal repo README persisted through the same source
+  artifact/chunk/SearchDocument path, target repo stayed read-only, and marker
+  plus natural source/brain search readbacks found the persisted evidence.
 ```
+
+## Outcome IMR-46 Second Repo Source Artifact Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-46-second-repo-source-artifact-readback/REPORT.md
+```
+
+Outcome: `/home/krn/coding/krn/active/krn-ekologus/README.md` was processed in
+observation-only mode through `krn source artifact preview --persist --json`.
+KRN persisted one SourceArtifact, two SourceChunks, and one SearchDocument.
+Marker and natural source/brain search readbacks found the persisted evidence,
+and heartbeat over the persisted JSON emitted no missing acquisition candidate.
+
+Decision: next run a compact multi-repo Brain-QA batch over at least one KRN
+question and one `krn-ekologus` question to classify recall, precision, context
+waste, and source-backed selected knowledge without crawler, ranking, schema,
+worker, API/MCP, target writes, or Memory Core mutation.
 
 ## Outcome IMR-45 Source Artifact Acquisition Readback
 
