@@ -45,7 +45,7 @@ source claim document link readback: source-search answer packages expose artifa
 brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocuments visible in sourceSearch summary
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 heartbeat acquisition review: linked and missing-only escalation accepted
-AMA acquisition usefulness: missing-evidence query produces ready candidate-only acquisition
+AMA acquisition lane: ready candidate; linked docs useful but evidence still missing
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -71,13 +71,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-26-ama-acquisition-pattern-usefulness/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-27-ama-linked-document-review/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-iux: review AMA linked-document evidence before external acquisition.
+mise-en-palace-6qu: run narrow source-search review for AMA acquisition evidence.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -130,7 +130,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-26: acquisition escalation retained, tested through mini Brain-QA, and applied to AMA-shaped acquisition usefulness.
+IMR-18-27: acquisition escalation retained, tested, applied to AMA-shaped acquisition, and linked-doc evidence reviewed.
 ```
 
 ## Remaining Product Gaps

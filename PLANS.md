@@ -159,6 +159,48 @@ IMR-25 complete: Q6 heartbeat/acquisition selectedKnowledge adjacency is
 IMR-26 complete: AMA-shaped missing-evidence readback produced a ready
   candidate-only heartbeat acquisition request with linked-document-first
   escalation and mutation none.
+IMR-27 complete: linked SearchDocuments support governance/heartbeat/no-mutation
+  boundaries but do not fully resolve AMA acquisition evidence; next step is
+  source-search review, not external research.
+```
+
+## Outcome IMR-27 AMA Linked-Document Review
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-27-ama-linked-document-review/REPORT.md
+```
+
+Outcome: the AMA-shaped source-search package had 6 linked SearchDocuments.
+Review found they support KRN kernel, heartbeat candidate-only, local artifact
+ingest, and graph governance boundaries, but they do not directly resolve the
+AMA acquisition/cost-aware missing evidence. Cost-aware escalation therefore
+continues to source-search review before any external research.
+
+Source-to-decision:
+
+- Source: retained `Towards Autonomous Memory Agents`, IMR-26 candidate output,
+  and live linked SearchDocument readback.
+- Mechanism: cost-aware acquisition must exhaust cheaper available evidence
+  before source-search review, external research, or human review.
+- KRN implication: linked document review is useful but insufficient; the next
+  low-cost step is source-search review.
+- Decision: no code repair and no external research yet.
+- Rejection: no autonomous acquisition, crawler, worker, API/MCP, schema,
+  ranking rewrite, source truth mutation, broad benchmark, or Memory Core
+  mutation.
+- Consumer: heartbeat acquisition review and future AMA acquisition proof lane.
+- Falsifier: linked documents contain direct acquisition/cost-aware evidence
+  sufficient to resolve the gap, or source-search review cannot improve on this
+  linked-document review.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-6qu: Run narrow source-search review for AMA acquisition evidence.
 ```
 
 ## Outcome IMR-26 AMA Acquisition Pattern Usefulness Check
