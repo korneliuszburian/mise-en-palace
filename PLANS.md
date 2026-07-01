@@ -1,6 +1,6 @@
 # KRN Continuous Brain Growth Active Ledger
 
-Status: compact active ledger. Date: 2026-06-30.
+Status: compact active ledger. Date: 2026-07-01.
 
 Root `GOAL.md` is the continuous objective. Root `PLAN.md` is the compact
 product source of truth. This file keeps only current state, recent outcomes,
@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: ACT-02 Align activation and source trust tier types
+current task: E2E-01 Add governed evidence-to-memory activation integration proof
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-ACT-02 Align activation and source trust tier types is active.
+E2E-01 Add governed evidence-to-memory activation integration proof is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,13 +36,11 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-ACT-01 complete: blocking MemoryRecordReviewSignal values now exclude memory
-candidates during activation filtering/compiler context assembly; warning-only
-signals remain reviewable metadata. Report:
-docs/reviews/controlled-dogfood/2026-07-01-act-01-memory-review-activation/REPORT.md
-Next: ACT-02 trust-tier type alignment from the same current audit.
-REV-01 remains deferred because activation safety is higher ROI than review
-vocabulary cleanup right now.
+ACT-02 complete: activation/source/schema trust tiers now share one source-domain
+vocabulary and rank function without rewriting scoring or retrieval. Report:
+docs/reviews/controlled-dogfood/2026-07-01-act-02-trust-tier-alignment/REPORT.md
+Next: E2E-01 adds the smallest governed evidence-to-memory activation
+integration proof from the same current audit.
 ```
 
 ## 2. Product Thesis
