@@ -49,7 +49,7 @@ source relation candidate evidence: missing relation evidence is explicit and bl
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
-mini brain-QA recall repair: Q4/Q6 retained-pattern selectedKnowledge gaps repaired with visible compact retry
+mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
 second-operator launch packet: historical packet only; no longer active direction
 product-ready brain: not complete
 ```
@@ -70,13 +70,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-24-mini-brain-qa-recall-repair/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-25-compact-retry-precision/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-1tu: classify compact brain-search retry precision after Q6 adjacency.
+mise-en-palace-fp0: check AMA acquisition pattern usefulness in heartbeat lane.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -129,7 +129,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-24: acquisition escalation retained; mini Brain-QA covers it; Q4/Q6 selectedKnowledge recall repaired with compact retry.
+IMR-18-25: acquisition escalation retained; mini Brain-QA covers it; Q4/Q6 recall repaired; Q6 adjacency accepted.
 ```
 
 ## Remaining Product Gaps

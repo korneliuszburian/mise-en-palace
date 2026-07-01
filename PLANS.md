@@ -154,6 +154,48 @@ IMR-24 complete: `krn brain search` repairs Q4/Q6 retained-pattern recall by
   retrying selected brain-knowledge readback with compact mechanism terms after
   a catalog no-match; Q6 adjacency remains a bounded precision classification
   follow-up.
+IMR-25 complete: Q6 heartbeat/acquisition selectedKnowledge adjacency is
+  helped/neutral, not noise; no ranking/filtering repair now.
+```
+
+## Outcome IMR-25 Compact Brain-Search Retry Precision Classification
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-25-compact-retry-precision/REPORT.md
+```
+
+Outcome: live current-shell Q6 readback selects the primary heartbeat
+candidate-only runtime pattern plus adjacent cost-aware acquisition. The extra
+pattern is helped/neutral because Q6 still reports missing evidence and the
+acquisition pattern governs heartbeat acquisition escalation. An unrelated
+control query selected no retained patterns, so there is no evidence for a broad
+false-positive repair now.
+
+Source-to-decision:
+
+- Source: IMR-24 report plus live Q6, targeted heartbeat/acquisition, and
+  unrelated-control readbacks.
+- Mechanism: heartbeat/dreaming queries overlap with acquisition escalation
+  because heartbeat is the candidate-only runtime that proposes
+  missing-evidence acquisition work.
+- KRN implication: classify the adjacency and keep moving to a product-facing
+  acquisition usefulness check instead of tuning search prematurely.
+- Decision: accept Q6 adjacency; no code change.
+- Rejection: no semantic ranking rewrite, embeddings, crawler, worker, API/MCP,
+  schema, source truth, Memory Core mutation, or broad benchmark lane.
+- Consumer: mini Brain-QA, AMA-shaped acquisition checks, heartbeat/dreaming
+  pattern gates.
+- Falsifier: a future non-acquisition heartbeat query selects acquisition in a
+  way that hides the primary heartbeat pattern or drives an incorrect action.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-fp0: Check AMA acquisition pattern usefulness in heartbeat lane.
 ```
 
 ## Outcome IMR-24 Mini Brain-QA Retained Pattern Recall Repair
