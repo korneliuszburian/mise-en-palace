@@ -44,7 +44,7 @@ heartbeat diagnostic follow-up: diagnostics selected a bounded source/evidence s
 source claim document link readback: source-search answer packages expose artifact-linked SearchDocument refs for supporting SourceClaims
 brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocuments visible in sourceSearch summary
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
-heartbeat linked-document review: one linked-document acquisition candidate was deferred with evidence and routed to wording/readback repair
+heartbeat linked-document review: candidate review and wording now prioritize linked evidence before new acquisition
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -69,13 +69,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-16-linked-document-acquisition-review/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-17-linked-document-acquisition-wording/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-dad: clarify linked-document acquisition review wording.
+mise-en-palace-fg9: add cost-aware acquisition escalation preview.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -129,8 +129,8 @@ IMR-13: source-search answer packages now expose sourceClaimDocumentLinks for
 IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
   linkedSearchDocuments from source-search JSON.
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
-IMR-16: one linked-document acquisition candidate was reviewed/deferred; next
-  repair is wording/readback only, not ranking/schema/source mutation.
+IMR-16-17: linked-document candidate review was deferred, then wording now
+  directs linked evidence review before new acquisition.
 ```
 
 ## Remaining Product Gaps

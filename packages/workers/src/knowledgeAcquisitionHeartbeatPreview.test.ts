@@ -152,7 +152,7 @@ describe("knowledge acquisition heartbeat preview", () => {
           ]
         },
         acquisitionEvidenceRequest: expect.stringContaining(
-          "Linked document evidence: 5 source-claim document link(s), 5 linked SearchDocument(s)."
+          "Review linked document evidence before opening new acquisition: 5 source-claim document link(s), 5 linked SearchDocument(s)."
         ),
         mutation: "none"
       })

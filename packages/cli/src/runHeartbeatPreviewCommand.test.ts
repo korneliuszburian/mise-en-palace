@@ -434,7 +434,7 @@ describe("runHeartbeatPreviewCommand", () => {
         "artifact-linked SearchDocuments were visible but not included by lexical retrieval"
       );
       expect(result.stdout).toContain(
-        "Linked document evidence: 5 source-claim document link(s), 5 linked SearchDocument(s)."
+        "Review linked document evidence before opening new acquisition: 5 source-claim document link(s), 5 linked SearchDocument(s)."
       );
       expect(result.stdout).toContain("consumer: heartbeat knowledge acquisition preview");
       expect(result.stdout).toContain("falsifier:");

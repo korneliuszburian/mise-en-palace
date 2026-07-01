@@ -119,7 +119,7 @@ const linkedDocumentEvidenceGuidance = (
       ? ""
       : ` Caveats: ${evidence.caveats.join(" ")}`;
 
-  return ` Linked document evidence: ${evidence.sourceClaimDocumentLinks} source-claim document link(s), ${evidence.linkedSearchDocuments} linked SearchDocument(s).${caveat}`;
+  return ` Review linked document evidence before opening new acquisition: ${evidence.sourceClaimDocumentLinks} source-claim document link(s), ${evidence.linkedSearchDocuments} linked SearchDocument(s).${caveat}`;
 };
 
 const buildAcquisitionEvidenceRequest = (

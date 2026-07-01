@@ -136,6 +136,43 @@ IMR-15 complete: heartbeat knowledge-acquisition candidates now preserve
 IMR-16 complete: one linked-document acquisition candidate was reviewed and
   deferred with evidence; next action is wording/readback repair, not
   ranking/schema/source truth mutation.
+IMR-17 complete: linked-document acquisition wording now directs operators to
+  review linked evidence before opening new acquisition work.
+```
+
+## Outcome IMR-17 Linked Document Acquisition Wording Repair
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-17-linked-document-acquisition-wording/REPORT.md
+```
+
+Outcome: acquisition candidate readback now says to review linked document
+evidence before opening new acquisition when `linkedDocumentEvidence` exists.
+Focused worker and CLI tests cover the wording; live heartbeat preview output
+confirmed the new text.
+
+Source-to-decision:
+
+- Source: IMR-16 review and retained Autonomous Memory Agents source decision.
+- Mechanism: acquisition should escalate from existing/cheap evidence before
+  new acquisition work.
+- KRN implication: linked SearchDocuments should be reviewed before new
+  acquisition is opened.
+- Decision: adjust wording only.
+- Rejection: no ranking, schema, crawler, worker, API/MCP, source truth, or
+  Memory Core mutation.
+- Consumer: heartbeat acquisition candidate readback.
+- Falsifier: linked-document candidates still read as generic missing-evidence
+  acquisition requests.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-fg9: Add cost-aware acquisition escalation preview.
 ```
 
 ## Outcome IMR-16 Linked Document Acquisition Candidate Review
