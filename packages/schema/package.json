@@ -14,6 +14,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@krn/core": "workspace:*",
     "zod": "^4.4.3"
   },
   "devDependencies": {

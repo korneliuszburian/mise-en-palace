@@ -809,6 +809,49 @@ describe("schema parse boundaries", () => {
         "This command row does not prove the command executed; it is default template evidence only."
     });
 
+    const richCommands = parseEvidenceCaptureInput({
+      changedFiles: ["packages/schema/src/index.ts"],
+      commands: [
+        {
+          kind: "operator_reported",
+          command: "pnpm lint",
+          status: "passed",
+          assertedBy: "codex"
+        },
+        {
+          kind: "command_runner",
+          command: "pnpm typecheck",
+          status: "passed",
+          exitCode: 0,
+          capturedAt: "2026-06-23T15:50:00.000Z"
+        },
+        {
+          kind: "external_log",
+          command: "ci",
+          status: "passed",
+          outputRef: "gh-run-1"
+        }
+      ],
+      diffRisk: "low",
+      reviewBurden: "small",
+      rollbackPath: "Revert schema commit"
+    });
+
+    expect(richCommands.commands.map((command) => command.kind)).toEqual([
+      "operator_reported",
+      "command_runner",
+      "external_log"
+    ]);
+    expect(richCommands.commands[1]).toMatchObject({
+      kind: "command_runner",
+      exitCode: 0,
+      capturedAt: "2026-06-23T15:50:00.000Z"
+    });
+    expect(richCommands.commands[2]).toMatchObject({
+      kind: "external_log",
+      outputRef: "gh-run-1"
+    });
+
     expect(() =>
       parseEvidenceCaptureInput({
         changedFiles: ["packages/schema/src/index.ts"],
