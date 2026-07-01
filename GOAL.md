@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CPR-01 Repair retained pattern plan bridge recall.
+current task: mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,10 @@ the product goal.
 Latest slice:
 
 ```txt
-CQR-01 complete: retained consensus relation boundary is reused by exact and
-natural brain-knowledge/brain-search readbacks; persisted plan bridge missed it.
-Next: repair the plan retained-pattern recall gap in `mise-en-palace-9ck`.
+CPR-01 complete: retained consensus relation boundary now reaches persisted
+plan metadata, run show, and Codex brief through a compact mechanism-query
+retry. Next: use the repaired bridge in one source-to-decision slice
+(`mise-en-palace-3fd`).
 ```
 
 ## Direction

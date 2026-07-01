@@ -1005,6 +1005,72 @@ describe("runCli", () => {
     });
   });
 
+  it("retries retained-pattern planning with compact mechanism terms", async () => {
+    let executionRunMetadata: Record<string, unknown> | undefined;
+    const result = await runCli(
+      [
+        "plan",
+        "--task",
+        "Use the retained consensus relation heartbeat review boundary in a bounded mini Brain-QA or consensus-lane readback; verify whether pattern:consensus-relation-heartbeat-review-boundary is selected or classify the miss; record whether it changes the next source-to-decision decision; no runtime schema dashboard API MCP worker daemon crawler graph ranking rewrite or Memory Core mutation work",
+        "--persist"
+      ],
+      {
+        env: {
+          KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+        },
+        now: () => now,
+        createId: (prefix) => `${prefix}-1`,
+        createDatabaseRuntime: async (input: DatabaseRuntimeInput) => {
+          const dependencies = createNoStoreCompilerDependencies(input);
+          const harnessRunRepository = {
+            ...dependencies.harnessRunRepository,
+            async createExecutionRun(runInput: CreateExecutionRunInput) {
+              executionRunMetadata = runInput.metadata ?? {};
+
+              return {
+                id: "execution-run-1",
+                harnessPlanId: runInput.harnessPlanId,
+                adapter: runInput.adapter,
+                status: runInput.status ?? "planned",
+                metadata: runInput.metadata ?? {},
+                createdAt: now,
+                updatedAt: now
+              };
+            },
+            async getHarnessRunByExecutionRunId() {
+              return undefined;
+            }
+          };
+
+          return {
+            workspaceId: "workspace-1",
+            projectId: "project-1",
+            compilerDependencies: {
+              ...dependencies,
+              harnessRunRepository
+            },
+            harnessRunRepository,
+            memoryRepository: unusedMemoryRepository,
+            async close() {
+              return undefined;
+            }
+          };
+        }
+      }
+    );
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toContain("Retained pattern selection: selected");
+    expect(result.stdout).toContain("Retained pattern IDs: consensus-relation-heartbeat-review-boundary");
+    expect(executionRunMetadata).toMatchObject({
+      retainedPatternSelection: {
+        status: "selected",
+        selectedPatternIds: ["consensus-relation-heartbeat-review-boundary"]
+      }
+    });
+  });
+
   it("passes the current repo root hint for default persisted planning", async () => {
     const repoRoot = path.resolve(process.cwd(), "../..");
     let observedRepoPathHint: string | undefined;

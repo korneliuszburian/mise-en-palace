@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CPR-01 Repair retained pattern plan bridge recall
+current task: mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,23 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CPR-01 Repair retained pattern plan bridge recall is active.
-KRN needs to close the gap where brain knowledge/search select the consensus
-relation retained pattern but persisted plan bridge reports no retained pattern.
+mise-en-palace-3fd Use repaired retained-pattern bridge in one source-to-decision slice is active.
+CPR-01 repaired retained-pattern plan bridge recall.
+KRN now needs one bounded source-to-decision slice proving the selected retained
+pattern changes, constrains, or is honestly classified as neutral/misleading for
+the next decision.
 ```
 
 Latest outcome:
 
 ```txt
-CQR-01 complete: consensus relation heartbeat review boundary is reused by exact
-and natural brain-knowledge queries and by combined brain search as
-target-specific selected knowledge. Persisted plan retained-pattern selection
-missed the same pattern, so follow-up `mise-en-palace-9ck` was opened.
+CPR-01 complete: long task contracts now retry a compact mechanism query, so
+persisted plan metadata, run show, and Codex brief select
+pattern:consensus-relation-heartbeat-review-boundary.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-cqr-01-consensus-pattern-reuse/REPORT.md
-Next: CPR-01 repairs or explicitly rejects the retained-pattern plan bridge
-recall gap without broad ranking/schema/runtime work.
+docs/reviews/controlled-dogfood/2026-07-01-cpr-01-plan-bridge-recall/REPORT.md
+Next: `mise-en-palace-3fd` uses the repaired bridge in one
+source-to-decision slice without broad ranking/schema/runtime work.
 ```
 
 ## 2. Product Thesis

@@ -9,6 +9,10 @@ import type {
   ActivationUtilityLabReadback
 } from "@krn/harness";
 import {
+  brainKnowledgeQueryTokens,
+  compactBrainKnowledgeBridgeQuery
+} from "./brainKnowledgeQuery.js";
+import {
   runKnowledgeCardsCommand
 } from "./runKnowledgeCardsCommand.js";
 import type {
@@ -154,15 +158,6 @@ type BrainKnowledgeReadback = {
 
 const defaultCatalogFile = "docs/brain-knowledge/catalog.json";
 
-const brainKnowledgeBridgeTerms = new Set([
-  "evidence",
-  "relation",
-  "relations",
-  "source",
-  "sources",
-  "temporal"
-]);
-
 const parseJsonObject = (text: string, label: string): JsonRecord => {
   const parsed: unknown = JSON.parse(text);
 
@@ -212,9 +207,6 @@ const activationUtilityAnswerUsefulness = (
   }
 };
 
-const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
-  [...query.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
-
 const targetFitGenericQueryTokens = new Set([
   "brain",
   "gate",
@@ -261,17 +253,6 @@ const targetFitDistinctiveQueryTokens = (query: string): readonly string[] =>
 
 const targetFitTextTokens = (text: string): ReadonlySet<string> =>
   new Set(brainKnowledgeQueryTokens(text));
-
-const compactBrainKnowledgeQuery = (query: string): string | undefined => {
-  const compactTokens = brainKnowledgeQueryTokens(query).filter(
-    (token) => !brainKnowledgeBridgeTerms.has(token)
-  );
-  const compactQuery = compactTokens.join(" ");
-
-  return compactQuery.length > 0 && compactQuery !== query.trim().toLowerCase()
-    ? compactQuery
-    : undefined;
-};
 
 const linkedSearchDocumentCount = (
   sourceClaimDocumentLinks: readonly unknown[]
@@ -902,7 +883,7 @@ const runBrainKnowledgeReadback = async (
     };
   }
 
-  const compactQuery = compactBrainKnowledgeQuery(input.query);
+  const compactQuery = compactBrainKnowledgeBridgeQuery(input.query);
 
   if (compactQuery === undefined) {
     return {
