@@ -142,6 +142,43 @@ IMR-18 complete: acquisition candidates now expose candidate-only low-to-high
   cost escalation preview without execution or mutation.
 IMR-19 complete: one live linked-document acquisition escalation candidate was
   accepted for manual follow-up; next branch is missing-evidence-only.
+IMR-20 complete: one live source-search missing-evidence-only acquisition
+  candidate was accepted; escalation starts at source_search_review.
+```
+
+## Outcome IMR-20 Missing-Evidence-Only Acquisition Escalation
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-20-missing-evidence-only-acquisition-escalation/REPORT.md
+```
+
+Outcome: one live DB-backed `source_search` readback was routed into heartbeat
+knowledge-acquisition preview. The candidate had no `linkedDocumentEvidence`,
+started escalation at `source_search_review`, and remained candidate-only with
+`mutation: none`.
+
+Source-to-decision:
+
+- Source: live source-search answer package and heartbeat preview output.
+- Mechanism: source-search missingEvidence can create acquisition candidates
+  without linkedDocumentEvidence.
+- KRN implication: missing-evidence-only acquisition escalation should begin at
+  `source_search_review`.
+- Decision: accept current missing-evidence-only escalation output.
+- Rejection: no autonomous acquisition, crawler, worker, API/MCP, ranking,
+  schema, source truth, or Memory Core mutation.
+- Consumer: heartbeat acquisition review and future acquisition dogfood.
+- Falsifier: a candidate without linkedDocumentEvidence starts at
+  `linked_document_review` or hides the low-to-high cost order.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-n71: Retain cost-aware acquisition escalation as brain knowledge.
 ```
 
 ## Outcome IMR-19 Cost-Aware Acquisition Escalation Review
