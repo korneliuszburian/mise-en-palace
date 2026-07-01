@@ -166,6 +166,48 @@ IMR-28 complete: narrow AMA source-search review still found local governance
   claims and linked SearchDocument refs, but no direct included SearchDocument
   evidence for the AMA paper mechanism; next step is bounded external
   source-decision/readback.
+IMR-29 complete: bounded AMA paper SOURCE.md persisted through existing
+  SourceArtifact/SearchDocument/SourceClaim/SourceDecisionEdge paths; natural
+  AMA source search selects the new SourceClaim, while natural SearchDocument
+  inclusion still needs reuse classification.
+```
+
+## Outcome IMR-29 AMA External Source-Decision Readback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-29-ama-external-source-decision/REPORT.md
+```
+
+Outcome: arXiv `2602.22406` was mapped through source-to-decision and persisted
+as a bounded local `SOURCE.md` using existing KRN source artifact paths. DB
+readback produced SourceArtifact `5794d866-bfee-46a3-8a10-ebeeb5bc1385`,
+SearchDocument `9853097e-f496-4d5f-ba62-29ea8bca8288`, SourceClaim
+`ea770eea-47c1-47c5-90ab-7bcd1a4bff3f`, and SourceDecisionEdge
+`ec13908d-2da5-445d-a638-192765a9ac09`.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, `Towards Autonomous Memory Agents`.
+- Mechanism: active memory acquisition via a cost-aware knowledge-extraction
+  cascade and semantic-aware Thompson sampling.
+- KRN implication: lab-test candidate-only acquisition and activation-utility
+  hypotheses without autonomous Memory Core mutation.
+- Decision: existing source artifact/source-search paths can carry the AMA
+  paper mechanism; do not change crawler, worker, API/MCP, schema, ranking, or
+  Memory Core authority.
+- Consumer: pattern/research brain, heartbeat acquisition lane, and future
+  activation utility/eval hypotheses.
+- Falsifier: future KRN acquisition runs cannot produce or reuse reviewable AMA
+  source evidence, or they bypass review gates and mutate durable memory.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-zwu: Run AMA source evidence reuse check.
 ```
 
 ## Outcome IMR-28 AMA Source-Search Review
