@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CRU-01 Use consensus relation readback in live heartbeat review proof
+current task: CRP-01 Retain consensus relation heartbeat review boundary
 latest pushed commit: see git history
 ```
 
@@ -24,22 +24,20 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CRU-01 Use consensus relation readback in live heartbeat review proof is active.
-KRN needs proof that the new heartbeat consensus relation readback reduces
-review burden in one bounded review/evidence loop.
+CRP-01 Retain consensus relation heartbeat review boundary is active.
+KRN needs the now-proven consensus relation heartbeat review pattern retained as
+queryable brain knowledge with source-to-decision fields and usefulness evidence.
 ```
 
 Latest outcome:
 
 ```txt
-CRO-01 complete: heartbeat preview exposes consensus relation review output as
-candidate-only operator-facing text/JSON readback without consensus runtime,
-DB schema, worker daemon, dashboard/API/MCP, graph ranking, or Memory Core
-mutation.
+CRU-01 complete: heartbeat consensus_evaluation readback was exercised in one
+bounded review loop; relation focus/question/usefulness reduced review burden
+from medium to low for a duplicate relation candidate.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-cro-01-consensus-operator-readback/REPORT.md
-Next: CRU-01 uses the readback in one bounded live/fixture-backed heartbeat
-review proof and records review burden delta.
+docs/reviews/controlled-dogfood/2026-07-01-cru-01-consensus-readback-review/REPORT.md
+Next: CRP-01 retains this boundary as queryable brain knowledge.
 ```
 
 ## 2. Product Thesis
@@ -99,6 +97,9 @@ CRO-01 complete: `krn heartbeat preview` accepts `--candidate-kind
   consensus_evaluation` and `--consensus-candidate-file`, routing consensus
   relation review focus/question/usefulness into candidate-only operator
   readback.
+CRU-01 complete: consensus_evaluation heartbeat readback accepted one duplicate
+  relation candidate for manual follow-up with reviewability ready, relation
+  focus/question/usefulness visible, and mutation none.
 IMR-01 complete: `krn brain search` exposes selected brain knowledge packets
   with summary, consumers, falsifier, proof boundary, and next action.
 IMR-02 complete: `krn brain search --store-only` skips file catalog readback and

@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CRU-01 Use consensus relation readback in live heartbeat review proof.
+current task: CRP-01 Retain consensus relation heartbeat review boundary.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,10 +39,10 @@ the product goal.
 Latest slice:
 
 ```txt
-CRO-01 complete: heartbeat preview now exposes consensus relation review output
-through candidate-only operator-facing text/JSON readback without consensus
-runtime, DB schema, worker daemon, dashboard/API/MCP, graph ranking, or Memory
-Core mutation.
+CRU-01 complete: consensus relation heartbeat readback was exercised in a
+bounded review loop and reduced review burden for a duplicate relation
+candidate without consensus runtime, DB schema, worker daemon, dashboard/API/MCP,
+graph ranking, or Memory Core mutation.
 ```
 
 ## Direction
