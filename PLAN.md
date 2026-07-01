@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CQR-01 Use retained consensus relation boundary in mini Brain-QA
+current task: CPR-01 Repair retained pattern plan bridge recall
 ```
 
 ## Compact Checkpoints
@@ -83,6 +83,7 @@ consensus relation focus: relationReviewFocus is consumed by candidate-only cons
 consensus relation operator readback: heartbeat preview exposes consensus_evaluation relation review focus/question/usefulness
 consensus relation review proof: heartbeat consensus_evaluation readback reduced review burden in one bounded review loop
 consensus relation retained pattern: heartbeat consensus_evaluation review boundary is queryable brain knowledge with helped usefulness feedback
+consensus relation pattern reuse: brain knowledge/search select the retained pattern; plan bridge recall missed it
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -92,7 +93,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### CQR-01 Use Retained Consensus Relation Boundary In Mini Brain-QA
+### CPR-01 Repair Retained Pattern Plan Bridge Recall
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -104,24 +105,24 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-crp-01-consensus-relation-pattern-retention/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-cqr-01-consensus-pattern-reuse/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-vgy: Use retained consensus relation boundary in mini Brain-QA.
+mise-en-palace-9ck: Repair retained pattern plan bridge recall for consensus relation boundary.
 ```
 
 Task boundary:
 
 ```txt
-Run one bounded readback that asks for consensus relation candidate review,
-verifies whether pattern:consensus-relation-heartbeat-review-boundary is selected
-or explicitly classifies any miss, and records whether it changes the next
-source-to-decision decision. No broad eval platform, multi-agent runtime, worker
-daemon, crawler/entity extraction, DB schema, Memory Core auto-mutation,
-dashboard/API/MCP, or graph ranking rewrite.
+Inspect why `krn brain knowledge` / `krn brain search` select
+pattern:consensus-relation-heartbeat-review-boundary for consensus relation
+review queries while `krn plan --persist` reports no retained pattern for the
+same task. Add one bounded behavior proof or query-normalization repair, or
+explicitly reject the scope. No broad ranking rewrite, DB schema, dashboard,
+API/MCP, worker daemon, crawler, graph ranking rewrite, or Memory Core mutation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

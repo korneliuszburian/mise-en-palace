@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: CQR-01 Use retained consensus relation boundary in mini Brain-QA
+current task: CPR-01 Repair retained pattern plan bridge recall
 latest pushed commit: see git history
 ```
 
@@ -24,21 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-CQR-01 Use retained consensus relation boundary in mini Brain-QA is active.
-KRN needs to prove that the newly retained consensus relation boundary is reused
-or explicitly classified by the next planning/readback loop.
+CPR-01 Repair retained pattern plan bridge recall is active.
+KRN needs to close the gap where brain knowledge/search select the consensus
+relation retained pattern but persisted plan bridge reports no retained pattern.
 ```
 
 Latest outcome:
 
 ```txt
-CRP-01 complete: consensus relation heartbeat review boundary is retained as
-queryable brain knowledge with source refs, evidence refs, consumers, falsifier,
-doesNotProve, and helped usefulness feedback.
+CQR-01 complete: consensus relation heartbeat review boundary is reused by exact
+and natural brain-knowledge queries and by combined brain search as
+target-specific selected knowledge. Persisted plan retained-pattern selection
+missed the same pattern, so follow-up `mise-en-palace-9ck` was opened.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-crp-01-consensus-relation-pattern-retention/REPORT.md
-Next: CQR-01 verifies retained-pattern reuse in a bounded mini Brain-QA or
-consensus-lane readback.
+docs/reviews/controlled-dogfood/2026-07-01-cqr-01-consensus-pattern-reuse/REPORT.md
+Next: CPR-01 repairs or explicitly rejects the retained-pattern plan bridge
+recall gap without broad ranking/schema/runtime work.
 ```
 
 ## 2. Product Thesis

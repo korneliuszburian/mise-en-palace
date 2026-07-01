@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: CQR-01 Use retained consensus relation boundary in mini Brain-QA.
+current task: CPR-01 Repair retained pattern plan bridge recall.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-CRP-01 complete: the CRU-01 consensus relation heartbeat review boundary is now
-retained as queryable brain knowledge with source refs, evidence refs, consumer,
-falsifier, doesNotProve, and helped usefulness feedback.
+CQR-01 complete: retained consensus relation boundary is reused by exact and
+natural brain-knowledge/brain-search readbacks; persisted plan bridge missed it.
+Next: repair the plan retained-pattern recall gap in `mise-en-palace-9ck`.
 ```
 
 ## Direction
