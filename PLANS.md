@@ -185,6 +185,45 @@ IMR-33 complete: `krn brain search` now exposes activationUtility in JSON/text
   output, including selectedKnowledge strength, sourceLinkGraph strength,
   verdict, recommended next action, and proof boundary. Opened
   `mise-en-palace-mo4` for bounded usefulness measurement.
+IMR-34 complete: activationUtility readback helped across the current mini
+  Brain-QA/AMA batch: 6 selected-knowledge-sufficient cases and 2 linked
+  evidence exploration candidates. Opened `mise-en-palace-6mn` for
+  candidate-only heartbeat routing.
+```
+
+## Outcome IMR-34 Activation Utility Readback Usefulness Check
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-34-activation-utility-usefulness-check/REPORT.md
+```
+
+Outcome: eight current brain-search readbacks classify cleanly through
+`activationUtility`: six `selected_knowledge_sufficient`, two
+`linked_evidence_exploration_candidate`, zero insufficient evidence, zero noise,
+and mutation none. The readback is useful enough to feed a candidate-only
+heartbeat follow-up, not ranking.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, IMR-33 brain-search output, mini Brain-QA/AMA
+  batch readback.
+- Mechanism: semantic-aware Thompson sampling balances memory exploration and
+  exploitation.
+- KRN implication: preserve linked-evidence exploration candidates when selected
+  brain knowledge is absent.
+- Decision: open heartbeat candidate-only routing follow-up; no ranking rewrite.
+- Consumer: heartbeat preview and future eval/golden candidates.
+- Falsifier: heartbeat routing mutates final truth or cannot preserve the
+  activationUtility evidence.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-6mn: Route activation utility exploration candidates into heartbeat preview.
 ```
 
 ## Outcome IMR-33 Activation Utility Brain Search Output

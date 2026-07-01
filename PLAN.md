@@ -46,7 +46,7 @@ brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocum
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 heartbeat acquisition review: linked and missing-only escalation accepted
 AMA acquisition lane: persisted AMA source evidence reused; linked-evidence behavior accepted
-AMA activation utility: brain search exposes selectedKnowledge/source-link-graph utility readback
+AMA activation utility: brain search utility readback is useful across current mini batch
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -72,13 +72,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-33-activation-utility-brain-search-output/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-34-activation-utility-usefulness-check/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-mo4: run activation utility readback usefulness check.
+mise-en-palace-6mn: route activation utility exploration candidates into heartbeat preview.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -123,7 +123,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-33: acquisition escalation retained, AMA linked evidence accepted, and activation utility readback exposed in brain search.
+IMR-18-34: AMA linked evidence accepted, activation utility readback exposed, and usefulness checked across the current mini batch.
 ```
 
 ## Remaining Product Gaps
