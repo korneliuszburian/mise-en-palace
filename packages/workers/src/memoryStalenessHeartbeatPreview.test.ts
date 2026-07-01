@@ -62,6 +62,22 @@ describe("memory staleness heartbeat preview", () => {
         action: "review_memory_invalidation",
         reason: "expired_memory",
         reviewability: "ready",
+        workerAuthority: expect.objectContaining({
+          jobType: "expire_stale_memory",
+          memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+          status: "passed",
+          allowedWrites: [
+            "worker_jobs",
+            "outbox_events",
+            "memory_candidates"
+          ],
+          forbiddenWrites: [
+            "memory_records",
+            "anti_memory_records",
+            "source_claims",
+            "source_decisions"
+          ]
+        }),
         mutation: "none",
         forbiddenWrites: [
           "memory_records",

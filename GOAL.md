@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: E2E-04 Route worker authority into heartbeat candidate readback.
+current task: E2E-05 Prove DB-backed heartbeat worker-authority candidate readback.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-E2E-03 complete: worker Memory Core write authority gate is executable and
-visible through worker DB smoke readback.
+E2E-04 complete: memory-staleness heartbeat candidates expose validated
+expire_stale_memory worker authority in candidate readback.
 ```
 
 ## Direction

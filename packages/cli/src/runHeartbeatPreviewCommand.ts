@@ -21,7 +21,8 @@ import type {
   KnowledgeAcquisitionEscalationStep,
   KnowledgeAcquisitionLinkedDocumentEvidence,
   KnowledgeAcquisitionRequest,
-  BrainHeartbeatPreview
+  BrainHeartbeatPreview,
+  WorkerJobAuthorityReadback
 } from "@krn/workers";
 
 import {
@@ -789,6 +790,31 @@ const formatAcquisitionEscalationPreview = (
     ))
 ];
 
+const formatWorkerAuthority = (
+  authority: WorkerJobAuthorityReadback | undefined
+): string[] => {
+  if (authority === undefined) {
+    return [];
+  }
+
+  return [
+    "  workerAuthority:",
+    `  - jobType: ${authority.jobType}`,
+    `  - memoryCoreGate: ${authority.memoryCoreGate}`,
+    `  - status: ${authority.status}`,
+    "  - allowedWrites:",
+    ...formatList(authority.allowedWrites),
+    "  - forbiddenWrites:",
+    ...formatList(authority.forbiddenWrites),
+    `  - doesNotProve: ${authority.doesNotProve}`
+  ];
+};
+
+const candidateWorkerAuthority = (
+  candidate: BrainHeartbeatCandidate
+): WorkerJobAuthorityReadback | undefined =>
+  "workerAuthority" in candidate ? candidate.workerAuthority : undefined;
+
 const formatProjectResolutionLines = (
   projectResolution: ProjectResolution | undefined
 ): string[] => {
@@ -869,6 +895,7 @@ const formatCandidate = (candidate: BrainHeartbeatCandidate): string[] => [
   ...formatList(candidate.evidenceRefs),
   `  doesNotProve: ${candidate.doesNotProve}`,
   `  mutation: ${candidate.mutation}`,
+  ...formatWorkerAuthority(candidateWorkerAuthority(candidate)),
   "  forbiddenWrites:",
   ...formatList(candidate.forbiddenWrites)
 ];

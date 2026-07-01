@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-04 Route worker authority into heartbeat candidate readback
+current task: E2E-05 Prove DB-backed heartbeat worker-authority candidate readback
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-E2E-04 Route worker authority into heartbeat candidate readback is active.
+E2E-05 Prove DB-backed heartbeat worker-authority candidate readback is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,12 +36,12 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-E2E-03 complete: worker Memory Core write authority gate is executable and
-visible through worker DB smoke readback.
+E2E-04 complete: memory-staleness heartbeat candidates expose validated
+expire_stale_memory worker authority in candidate readback.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-e2e-03-worker-memory-core-write-authority-gate/REPORT.md
-Next: E2E-04 routes validated worker authority into heartbeat candidate
-readback.
+docs/reviews/controlled-dogfood/2026-07-01-e2e-04-worker-authority-heartbeat-readback/REPORT.md
+Next: E2E-05 proves the same readback through one DB-backed heartbeat candidate
+with cleanup.
 ```
 
 ## 2. Product Thesis
@@ -2401,9 +2401,18 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-e2e-02-db-backed-brain-loop-smoke/REPORT.md`.
   Next: `mise-en-palace-br6` / E2E-03 enforces or falsifies worker Memory Core
   write-authority gates without adding a worker daemon or broad policy engine.
-- [ ] E2E-03 active: `mise-en-palace-br6` turns worker Memory Core
-  gate/write-boundary declarations into executable proof instead of prose-only
-  safety strings.
+- [x] E2E-03 complete: worker Memory Core gate/write-boundary declarations are
+  executable proof instead of prose-only safety strings. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-e2e-03-worker-memory-core-write-authority-gate/REPORT.md`.
+  Next: `mise-en-palace-8sr` / E2E-04 routes validated worker authority into
+  heartbeat candidate readback.
+- [x] E2E-04 complete: memory-staleness heartbeat candidates expose validated
+  `expire_stale_memory` worker authority in candidate readback. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-e2e-04-worker-authority-heartbeat-readback/REPORT.md`.
+  Next: `mise-en-palace-7ew` / E2E-05 proves DB-backed heartbeat
+  worker-authority candidate readback with cleanup.
+- [ ] E2E-05 active: `mise-en-palace-7ew` proves one DB-backed heartbeat
+  memory-staleness candidate includes validated worker authority.
 
 ## 21. Final Response Format For Codex Runs
 

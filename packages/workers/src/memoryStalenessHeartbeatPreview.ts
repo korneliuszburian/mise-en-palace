@@ -11,6 +11,13 @@ import type {
   MemoryRecordReviewSignalKind
 } from "@krn/core";
 
+import {
+  buildMaintenanceJobAuthorityReadback
+} from "./jobTypes.js";
+import type {
+  WorkerJobAuthorityReadback
+} from "./jobTypes.js";
+
 export type MemoryStalenessHeartbeatCandidateReason =
   | "expired_memory"
   | "near_expiry_memory"
@@ -38,6 +45,7 @@ export interface MemoryStalenessHeartbeatCandidate {
   doesNotProve: string;
   reviewability: CandidateReviewability;
   reviewabilityReasons: readonly string[];
+  workerAuthority: WorkerJobAuthorityReadback;
   mutation: "none";
   forbiddenWrites: readonly [
     "memory_records",
@@ -172,6 +180,7 @@ const buildCandidate = (
     doesNotProve: previewDoesNotProve,
     reviewability: reviewability.reviewability,
     reviewabilityReasons: reviewability.reasons,
+    workerAuthority: buildMaintenanceJobAuthorityReadback("expire_stale_memory"),
     mutation: "none",
     forbiddenWrites
   };

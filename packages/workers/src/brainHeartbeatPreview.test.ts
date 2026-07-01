@@ -150,6 +150,25 @@ describe("brain heartbeat preview", () => {
       expect(candidate.doesNotProve.length).toBeGreaterThan(0);
       expect(candidate.mutation).toBe("none");
     }
+    expect(result.candidates[0]).toMatchObject({
+      kind: "memory_staleness_maintenance_candidate",
+      workerAuthority: {
+        jobType: "expire_stale_memory",
+        memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+        status: "passed",
+        allowedWrites: [
+          "worker_jobs",
+          "outbox_events",
+          "memory_candidates"
+        ],
+        forbiddenWrites: [
+          "memory_records",
+          "anti_memory_records",
+          "source_claims",
+          "source_decisions"
+        ]
+      }
+    });
     expect(result.mutation).toBe("none");
   });
 

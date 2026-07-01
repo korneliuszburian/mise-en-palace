@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import {
   assessMaintenanceJobWriteAuthority,
+  buildMaintenanceJobAuthorityReadback,
   describeMaintenanceJob,
   enqueueMaintenanceJob,
   isMaintenanceJobType,
@@ -199,6 +200,27 @@ describe("maintenance worker skeleton", () => {
         memoryCoreGate: "write_memory_candidate_only"
       })
     );
+  });
+
+  test("builds a worker authority readback for heartbeat candidates", () => {
+    expect(buildMaintenanceJobAuthorityReadback("expire_stale_memory")).toEqual({
+      jobType: "expire_stale_memory",
+      memoryCoreGate: "must_create_reviewed_invalidation_candidate",
+      status: "passed",
+      allowedWrites: [
+        "worker_jobs",
+        "outbox_events",
+        "memory_candidates"
+      ],
+      forbiddenWrites: [
+        "memory_records",
+        "anti_memory_records",
+        "source_claims",
+        "source_decisions"
+      ],
+      doesNotProve:
+        "Validated worker write authority does not prove worker execution, scheduler readiness, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+    });
   });
 
   test("fails worker write authority when a gate allows the wrong write", () => {

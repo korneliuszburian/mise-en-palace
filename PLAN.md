@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-04 Route worker authority into heartbeat candidate readback
+current task: E2E-05 Prove DB-backed heartbeat worker-authority candidate readback
 ```
 
 ## Compact Checkpoints
@@ -70,6 +70,7 @@ activation trust boundary: activation/source/schema trust tiers share one source
 brain loop integration: in-memory harness proof covers evidence, candidate, review gate, memory activation, and weak-evidence abstention
 DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryReviewGate/memory/activation readback with cleanup
 worker Memory Core write authority: worker gate/write declarations are executable and visible in DB smoke readback
+heartbeat worker authority readback: memory-staleness candidates expose validated expire_stale_memory authority
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -80,7 +81,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### E2E-04 Route Worker Authority Into Heartbeat Candidate Readback
+### E2E-05 Prove DB-Backed Heartbeat Worker-Authority Candidate Readback
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -92,13 +93,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-e2e-03-worker-memory-core-write-authority-gate/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-e2e-04-worker-authority-heartbeat-readback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-8sr: Route worker authority into heartbeat candidate readback.
+mise-en-palace-7ew: Prove DB-backed heartbeat worker-authority candidate readback.
 ```
 
 Deferred slice:

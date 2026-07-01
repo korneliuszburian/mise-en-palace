@@ -102,6 +102,15 @@ export interface WorkerJobWriteAuthorityAssessment {
   violations: readonly WorkerJobWriteAuthorityViolation[];
 }
 
+export interface WorkerJobAuthorityReadback {
+  jobType: MaintenanceJobType;
+  memoryCoreGate: WorkerJobMemoryCoreGate;
+  status: WorkerJobWriteAuthorityAssessment["status"];
+  allowedWrites: readonly WorkerJobAllowedWrite[];
+  forbiddenWrites: readonly WorkerJobForbiddenWrite[];
+  doesNotProve: string;
+}
+
 const labels: Record<MaintenanceJobType, string> = {
   embed_source_chunk: "Embed source chunk",
   embed_memory_record: "Embed memory record",
@@ -301,4 +310,21 @@ export const assertMaintenanceJobWriteAuthority = (
         .join(" ")}`
     );
   }
+};
+
+export const buildMaintenanceJobAuthorityReadback = (
+  jobType: MaintenanceJobType
+): WorkerJobAuthorityReadback => {
+  const description = describeMaintenanceJob(jobType);
+  const assessment = assessMaintenanceJobWriteAuthority(description);
+
+  return {
+    jobType,
+    memoryCoreGate: description.memoryCoreGate,
+    status: assessment.status,
+    allowedWrites: description.allowedWrites,
+    forbiddenWrites: description.forbiddenWrites,
+    doesNotProve:
+      "Validated worker write authority does not prove worker execution, scheduler readiness, candidate truth, review correctness, or Memory Core mutation safety outside this declared job boundary."
+  };
 };
