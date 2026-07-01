@@ -171,6 +171,11 @@ export interface EvidenceBundle {
   updatedAt: IsoTimestamp;
 }
 
+export interface EvidenceBundleMetadataReadback {
+  diffSummary?: string;
+  sourceRefs: string[];
+}
+
 export interface EvidenceReviewRiskScore {
   diffRisk: DiffRisk;
   reviewBurden: ReviewBurdenScore;
@@ -295,6 +300,24 @@ const normalizedOptionalString = (value: string | undefined): string | undefined
   const normalized = value?.trim();
 
   return normalized === undefined || normalized.length === 0 ? undefined : normalized;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+export const parseEvidenceBundleMetadataReadback = (
+  input: unknown
+): EvidenceBundleMetadataReadback => {
+  if (!isRecord(input)) {
+    return { sourceRefs: [] };
+  }
+
+  const diffSummary = normalizedOptionalString(readMetadataString(input, "diffSummary"));
+
+  return {
+    ...(diffSummary === undefined ? {} : { diffSummary }),
+    sourceRefs: normalizedStringList(readMetadataStringList(input, "sourceRefs"))
+  };
 };
 
 export const normalizeTargetEvidence = (
@@ -630,6 +653,7 @@ export const assessEvidenceBundleCompleteness = (
   bundle: EvidenceBundle
 ): string[] => {
   const findings: string[] = [];
+  const metadata = parseEvidenceBundleMetadataReadback(bundle.metadata);
 
   if (isBlank(bundle.executionRunId)) {
     findings.push("executionRunId is required");
@@ -647,11 +671,11 @@ export const assessEvidenceBundleCompleteness = (
     }
   }
 
-  if (typeof bundle.metadata.diffSummary !== "string" || isBlank(bundle.metadata.diffSummary)) {
+  if (metadata.diffSummary === undefined) {
     findings.push("diffSummary is required");
   }
 
-  if (readMetadataStringList(bundle.metadata, "sourceRefs").length === 0) {
+  if (metadata.sourceRefs.length === 0) {
     findings.push("sourceRefs are required");
   }
 

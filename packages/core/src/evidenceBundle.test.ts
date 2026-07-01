@@ -5,6 +5,7 @@ import {
   assessEvidenceBundleRollbackPath,
   normalizeEvidenceCommand,
   normalizeTargetEvidence,
+  parseEvidenceBundleMetadataReadback,
   scoreEvidenceBundleReviewRisk,
   targetEvidenceFromMetadata,
   type EvidenceBundle
@@ -266,6 +267,29 @@ describe("evidence bundle completeness", () => {
     expect(targetEvidenceFromMetadata({
       mode: "observation-only"
     })).toBeUndefined();
+  });
+
+  test("parses evidence bundle metadata readback as an unknown-first boundary", () => {
+    expect(parseEvidenceBundleMetadataReadback({
+      diffSummary: " Changed evidence metadata parsing. ",
+      sourceRefs: [" packages/core/src/evidenceBundle.ts ", "", 1, "docs/KRN_KERNEL.md"]
+    })).toEqual({
+      diffSummary: "Changed evidence metadata parsing.",
+      sourceRefs: [
+        "packages/core/src/evidenceBundle.ts",
+        "docs/KRN_KERNEL.md"
+      ]
+    });
+
+    expect(parseEvidenceBundleMetadataReadback({
+      diffSummary: 42,
+      sourceRefs: [" ", null]
+    })).toEqual({
+      sourceRefs: []
+    });
+    expect(parseEvidenceBundleMetadataReadback(null)).toEqual({
+      sourceRefs: []
+    });
   });
 
   test("accepts a complete implementation evidence bundle", () => {

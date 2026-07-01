@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair.
+current task: mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,12 +39,12 @@ the product goal.
 Latest slice:
 
 ```txt
-DVY-01 complete: the retained reference implementation recipe boundary selected
-one existing local TypeScript parser exemplar. The exemplar is now queryable as
-pattern:ts-boundary-brain-knowledge-parser-exemplar with helped usefulness
-feedback, tests, DB-backed evidence, observe/reflect readback, and no runtime
-expansion. Next: use that exemplar in one real evidence metadata boundary repair
-(`mise-en-palace-9dt`).
+9DT complete: the retained TypeScript parser exemplar was applied to one real
+EvidenceBundle metadata boundary. `parseEvidenceBundleMetadataReadback` now
+narrows `diffSummary/sourceRefs` from unknown-style metadata before evidence
+completeness uses them, with focused tests, typecheck/test/Fallow proof, and no
+DB schema or Memory Core mutation. Next: fix the retained-pattern plan query
+miss exposed by this run (`mise-en-palace-ej7`).
 ```
 
 ## Direction

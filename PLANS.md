@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair
+current task: mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks
 latest pushed commit: see git history
 ```
 
@@ -24,25 +24,22 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair is active.
-DVY-01 retained packages/harness/src/brainKnowledgeReadModel.ts as a searchable
-local TypeScript parser exemplar. KRN now needs one real source repair that uses
-that exemplar against a narrow evidence metadata/readback boundary.
+mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks is active.
+9DT proved the parser exemplar transfers to a real EvidenceBundle metadata
+boundary, but persisted plan selection missed the pattern while short mechanism
+queries found it.
 ```
 
 Latest outcome:
 
 ```txt
-DVY-01 complete: pattern:reference-implementation-recipe-clone-boundary selected
-in persisted plan. packages/harness/src/brainKnowledgeReadModel.ts was retained
-as pattern:ts-boundary-brain-knowledge-parser-exemplar with source refs,
-evidence refs, usefulness feedback, catalog/search readback, tests, full
-typecheck/test/Fallow/DB/diff verification, evidence capture, observe, and
-reflect. Owner-file recall missed the exemplar and source inspection found it.
+9DT complete: pattern:ts-boundary-brain-knowledge-parser-exemplar was applied to
+one real EvidenceBundle metadata boundary. parseEvidenceBundleMetadataReadback
+now narrows diffSummary/sourceRefs before evidence completeness uses metadata.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md
-Next: `mise-en-palace-9dt` uses the parser exemplar in one real evidence
-metadata boundary repair, if source inspection confirms the boundary is worth changing.
+docs/reviews/controlled-dogfood/2026-07-01-9dt-evidence-metadata-parser-boundary/REPORT.md
+Next: `mise-en-palace-ej7` repairs or regresses the retained-pattern plan query
+miss exposed by 9DT.
 ```
 
 ## 2. Product Thesis
@@ -2469,12 +2466,17 @@ Falsifier:
   Next: `mise-en-palace-cxz` / CRO-01 exposes or reuses consensus relation
   review output through one operator-facing readback, or explicitly rejects the
   route with source-to-decision evidence.
-- [ ] CRO-01 active: `mise-en-palace-cxz` exposes consensus relation review
-  output through one bounded operator-facing readback, or explicitly rejects the
-  route with source-to-decision evidence, without broad eval platform,
-  multi-agent runtime, worker daemon, crawler/entity extraction, DB schema by
-  default, Memory Core auto-mutation, dashboard/API/MCP, or graph ranking
-  rewrite.
+- [x] 9DT complete: `mise-en-palace-9dt` applied the retained parser exemplar to
+  one real EvidenceBundle metadata boundary. `parseEvidenceBundleMetadataReadback`
+  now narrows `diffSummary/sourceRefs` before evidence completeness uses them.
+  Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-9dt-evidence-metadata-parser-boundary/REPORT.md`.
+  Next: `mise-en-palace-ej7` repairs or regresses the retained-pattern plan query
+  miss exposed by 9DT.
+- [ ] EJ7 active: `mise-en-palace-ej7` improves retained-pattern plan query
+  shaping for parser exemplar tasks without broad ranking rewrite, semantic
+  embedding platform, DB schema, dashboard/API/MCP, worker daemon, crawler, or
+  Memory Core mutation.
 
 ## 21. Final Response Format For Codex Runs
 

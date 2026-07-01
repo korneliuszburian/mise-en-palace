@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: mise-en-palace-9dt Use parser exemplar in one real evidence metadata boundary repair
+current task: mise-en-palace-ej7 Improve retained-pattern plan query shaping for parser exemplar tasks
 ```
 
 ## Compact Checkpoints
@@ -87,6 +87,7 @@ consensus relation pattern reuse: brain knowledge/search select the retained pat
 retained pattern plan bridge recall: long task contracts compact to mechanism query and select the consensus relation retained pattern in plan/run/brief
 reference implementation recipe boundary: user-provided clone-workflow sources retained as a lab-test pattern with catalog/search readback and no runtime expansion
 TypeScript parser exemplar: brainKnowledgeReadModel retained as a searchable local reference implementation recipe with helped usefulness feedback
+evidence metadata parser boundary: retained parser exemplar applied to EvidenceBundle metadata readback
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
 mini brain-QA recall/precision: Q4/Q6 recall repaired; Q6 adjacency accepted
@@ -96,7 +97,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### mise-en-palace-9dt Use Parser Exemplar In One Real Evidence Metadata Boundary Repair
+### mise-en-palace-ej7 Improve Retained-Pattern Plan Query Shaping For Parser Exemplar Tasks
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -108,18 +109,18 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-9dt-evidence-metadata-parser-boundary/REPORT.md
 ```
 
 Task boundary:
 
 ```txt
-Use the DVY-01 retained parser exemplar in one real source repair. Inspect
-EvidenceBundle metadata/readback parsing, choose one narrow unknown-first
-metadata boundary only if source inspection confirms unsafe or ad hoc parsing,
-apply the exemplar pattern with focused tests, and measure review-burden delta.
-No broad Zod platform, DB schema, dashboard/API/MCP, worker daemon, crawler,
-graph ranking rewrite, sweeping review-domain consolidation, or Memory Core mutation.
+9DT proved short brain-knowledge queries selected the parser exemplar while the
+long persisted plan query missed it. Inspect retainedPatternPlanBridge/query
+shaping and add one bounded mechanism-term fallback or regression so
+metadata/parser boundary tasks can select parser exemplars when short mechanism
+queries already do. No broad ranking rewrite, semantic embedding platform, DB
+schema, dashboard/API/MCP, worker daemon, crawler, or Memory Core mutation.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
