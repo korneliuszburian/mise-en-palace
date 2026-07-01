@@ -22,6 +22,26 @@ export interface KnowledgeAcquisitionLinkedDocumentEvidence {
   caveats: readonly string[];
 }
 
+export type KnowledgeAcquisitionEscalationCost =
+  | "low"
+  | "medium"
+  | "high";
+
+export type KnowledgeAcquisitionEscalationSource =
+  | "linked_document_review"
+  | "source_search_review"
+  | "bounded_external_research"
+  | "human_review";
+
+export interface KnowledgeAcquisitionEscalationStep {
+  order: number;
+  source: KnowledgeAcquisitionEscalationSource;
+  cost: KnowledgeAcquisitionEscalationCost;
+  action: string;
+  when: string;
+  doesNotProve: string;
+}
+
 export interface KnowledgeAcquisitionRequest {
   id: string;
   source: KnowledgeAcquisitionSource;
@@ -48,6 +68,7 @@ export interface KnowledgeAcquisitionHeartbeatCandidate {
   queryShapeDiagnostics: readonly string[];
   recommendedFollowUp: readonly string[];
   linkedDocumentEvidence?: KnowledgeAcquisitionLinkedDocumentEvidence;
+  acquisitionEscalationPreview: readonly KnowledgeAcquisitionEscalationStep[];
   summary: string;
   applicationGuidance: string;
   acquisitionEvidenceRequest: string;
@@ -122,6 +143,58 @@ const linkedDocumentEvidenceGuidance = (
   return ` Review linked document evidence before opening new acquisition: ${evidence.sourceClaimDocumentLinks} source-claim document link(s), ${evidence.linkedSearchDocuments} linked SearchDocument(s).${caveat}`;
 };
 
+const hasLinkedDocumentEvidence = (
+  evidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined
+): boolean =>
+  evidence !== undefined &&
+  (evidence.sourceClaimDocumentLinks > 0 || evidence.linkedSearchDocuments > 0);
+
+const buildAcquisitionEscalationPreview = (
+  input: {
+    linkedDocumentEvidence: KnowledgeAcquisitionLinkedDocumentEvidence | undefined;
+  }
+): readonly KnowledgeAcquisitionEscalationStep[] => {
+  const steps: KnowledgeAcquisitionEscalationStep[] = [];
+
+  if (hasLinkedDocumentEvidence(input.linkedDocumentEvidence)) {
+    steps.push({
+      order: 1,
+      source: "linked_document_review",
+      cost: "low",
+      action: "Review linked SearchDocuments already attached to supporting SourceClaims.",
+      when: "Use before opening new acquisition when linkedDocumentEvidence exists.",
+      doesNotProve: "Linked document review does not prove source truth or lexical retrieval inclusion."
+    });
+  }
+
+  steps.push({
+    order: steps.length + 1,
+    source: "source_search_review",
+    cost: "low",
+    action: "Run or review a narrower store-backed source/brain search for the missing evidence.",
+    when: "Use when linked evidence is absent, insufficient, stale, or contradictory.",
+    doesNotProve: "Store-backed search review does not prove complete source coverage or ranking quality."
+  });
+  steps.push({
+    order: steps.length + 1,
+    source: "bounded_external_research",
+    cost: "medium",
+    action: "Open bounded external research only for unresolved missing evidence.",
+    when: "Use after cheaper linked-document and store-backed search review cannot resolve the gap.",
+    doesNotProve: "External research does not prove KRN product readiness or automatic retention safety."
+  });
+  steps.push({
+    order: steps.length + 1,
+    source: "human_review",
+    cost: "high",
+    action: "Ask an operator or domain reviewer to accept, reject, or supply evidence.",
+    when: "Use only when cheaper evidence cannot produce a reviewable decision.",
+    doesNotProve: "Human review does not bypass source-to-decision, falsifier, or Memory Core review gates."
+  });
+
+  return steps;
+};
+
 const buildAcquisitionEvidenceRequest = (
   input: {
     missingEvidence: readonly string[];
@@ -175,6 +248,9 @@ const buildCandidate = (
     recommendedFollowUp,
     linkedDocumentEvidence
   });
+  const acquisitionEscalationPreview = buildAcquisitionEscalationPreview({
+    linkedDocumentEvidence
+  });
   const missingFields = missingReviewFields({
     missingEvidence,
     evidenceRefs,
@@ -201,6 +277,7 @@ const buildCandidate = (
     queryShapeDiagnostics,
     recommendedFollowUp,
     ...(linkedDocumentEvidence === undefined ? {} : { linkedDocumentEvidence }),
+    acquisitionEscalationPreview,
     summary,
     applicationGuidance,
     acquisitionEvidenceRequest,

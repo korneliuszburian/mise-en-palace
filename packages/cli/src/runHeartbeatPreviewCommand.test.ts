@@ -436,6 +436,11 @@ describe("runHeartbeatPreviewCommand", () => {
       expect(result.stdout).toContain(
         "Review linked document evidence before opening new acquisition: 5 source-claim document link(s), 5 linked SearchDocument(s)."
       );
+      expect(result.stdout).toContain("acquisitionEscalationPreview:");
+      expect(result.stdout).toContain("1. linked_document_review | cost: low");
+      expect(result.stdout).toContain("2. source_search_review | cost: low");
+      expect(result.stdout).toContain("3. bounded_external_research | cost: medium");
+      expect(result.stdout).toContain("4. human_review | cost: high");
       expect(result.stdout).toContain("consumer: heartbeat knowledge acquisition preview");
       expect(result.stdout).toContain("falsifier:");
       expect(result.stdout).toContain("reviewability: ready");

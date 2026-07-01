@@ -14,6 +14,7 @@ import {
 } from "@krn/workers";
 import type {
   BrainHeartbeatCandidate,
+  KnowledgeAcquisitionEscalationStep,
   KnowledgeAcquisitionLinkedDocumentEvidence,
   KnowledgeAcquisitionRequest,
   BrainHeartbeatPreview
@@ -399,6 +400,17 @@ const formatLinkedDocumentEvidence = (
   ];
 };
 
+const formatAcquisitionEscalationPreview = (
+  steps: readonly KnowledgeAcquisitionEscalationStep[]
+): string[] => [
+  "  acquisitionEscalationPreview:",
+  ...(steps.length === 0
+    ? ["  - none"]
+    : steps.map((step) =>
+      `  - ${step.order}. ${step.source} | cost: ${step.cost} | action: ${step.action} | when: ${step.when} | doesNotProve: ${step.doesNotProve}`
+    ))
+];
+
 const formatProjectResolutionLines = (
   projectResolution: ProjectResolution | undefined
 ): string[] => {
@@ -455,6 +467,7 @@ const candidateTargetLines = (candidate: BrainHeartbeatCandidate): string[] => {
     "  recommendedFollowUp:",
     ...formatList(candidate.recommendedFollowUp),
     ...formatLinkedDocumentEvidence(candidate.linkedDocumentEvidence),
+    ...formatAcquisitionEscalationPreview(candidate.acquisitionEscalationPreview),
     `  acquisitionEvidenceRequest: ${candidate.acquisitionEvidenceRequest}`,
     `  consumer: ${candidate.consumer}`,
     `  falsifier: ${candidate.falsifier}`

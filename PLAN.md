@@ -44,7 +44,7 @@ heartbeat diagnostic follow-up: diagnostics selected a bounded source/evidence s
 source claim document link readback: source-search answer packages expose artifact-linked SearchDocument refs for supporting SourceClaims
 brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocuments visible in sourceSearch summary
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
-heartbeat linked-document review: candidate review and wording now prioritize linked evidence before new acquisition
+heartbeat acquisition review: linked evidence first, then candidate-only low-to-high cost escalation
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: one official Codex hooks pattern retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: six current local questions ran through brain search JSON readback
@@ -69,13 +69,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-17-linked-document-acquisition-wording/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-18-cost-aware-acquisition-escalation-preview/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-fg9: add cost-aware acquisition escalation preview.
+mise-en-palace-ghj: review cost-aware acquisition escalation outcome.
 ```
 
 The point is not "operator proof" by itself. The point is a multi-layer memory
@@ -131,6 +131,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
+IMR-18: acquisition candidates expose candidate-only low-to-high cost escalation.
 ```
 
 ## Remaining Product Gaps

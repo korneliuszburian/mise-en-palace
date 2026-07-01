@@ -75,6 +75,23 @@ describe("knowledge acquisition heartbeat preview", () => {
     expect(result.candidates[0]?.acquisitionEvidenceRequest).toContain(
       "Preserve source, mechanism, KRN implication, consumer, falsifier, and doesNotProve"
     );
+    expect(result.candidates[0]?.acquisitionEscalationPreview).toEqual([
+      expect.objectContaining({
+        order: 1,
+        source: "source_search_review",
+        cost: "low"
+      }),
+      expect.objectContaining({
+        order: 2,
+        source: "bounded_external_research",
+        cost: "medium"
+      }),
+      expect.objectContaining({
+        order: 3,
+        source: "human_review",
+        cost: "high"
+      })
+    ]);
   });
 
   test("carries query diagnostics and recommended follow-up into acquisition candidates", () => {
@@ -154,6 +171,28 @@ describe("knowledge acquisition heartbeat preview", () => {
         acquisitionEvidenceRequest: expect.stringContaining(
           "Review linked document evidence before opening new acquisition: 5 source-claim document link(s), 5 linked SearchDocument(s)."
         ),
+        acquisitionEscalationPreview: [
+          expect.objectContaining({
+            order: 1,
+            source: "linked_document_review",
+            cost: "low"
+          }),
+          expect.objectContaining({
+            order: 2,
+            source: "source_search_review",
+            cost: "low"
+          }),
+          expect.objectContaining({
+            order: 3,
+            source: "bounded_external_research",
+            cost: "medium"
+          }),
+          expect.objectContaining({
+            order: 4,
+            source: "human_review",
+            cost: "high"
+          })
+        ],
         mutation: "none"
       })
     ]);

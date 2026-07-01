@@ -138,6 +138,43 @@ IMR-16 complete: one linked-document acquisition candidate was reviewed and
   ranking/schema/source truth mutation.
 IMR-17 complete: linked-document acquisition wording now directs operators to
   review linked evidence before opening new acquisition work.
+IMR-18 complete: acquisition candidates now expose candidate-only low-to-high
+  cost escalation preview without execution or mutation.
+```
+
+## Outcome IMR-18 Cost-Aware Acquisition Escalation Preview
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-18-cost-aware-acquisition-escalation-preview/REPORT.md
+```
+
+Outcome: knowledge-acquisition candidates now include typed
+`acquisitionEscalationPreview` steps. Linked-document candidates start at
+`linked_document_review`; missing-evidence-only candidates start at
+`source_search_review`. CLI output renders the preview.
+
+Source-to-decision:
+
+- Source: retained `Towards Autonomous Memory Agents` decision and IMR-17.
+- Mechanism: acquisition should escalate from cheap available evidence to more
+  expensive review only when needed.
+- KRN implication: heartbeat candidates need a visible candidate-only
+  low-to-high cost path.
+- Decision: add readback-only escalation preview.
+- Rejection: no autonomous execution, crawler, worker, API/MCP, ranking, schema,
+  source truth, or Memory Core mutation.
+- Consumer: heartbeat acquisition candidate review.
+- Falsifier: missing/weak evidence candidates cannot show reviewable escalation
+  order.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-ghj: Review cost-aware acquisition escalation outcome.
 ```
 
 ## Outcome IMR-17 Linked Document Acquisition Wording Repair
