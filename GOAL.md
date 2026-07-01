@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: SBV-01 Repair retained-pattern next-run priority.
+current task: SBV-02 Run retained-pattern code-quality vertical.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future

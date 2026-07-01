@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: SBV-01 Repair retained-pattern next-run priority
+current task: SBV-02 Run retained-pattern code-quality vertical
 ```
 
 ## Compact Checkpoints
@@ -56,7 +56,7 @@ source-backed selected knowledge: default brain search can use ready SourceClaim
 source-backed mini Brain-QA: fallback helps Q5 ingest and IMR41; keep behavior, no ranking repair now
 multi-repo source artifact readback: second repo README persists and resolves source/brain/heartbeat readbacks
 selectedKnowledge target fit: EKOLOGUS packet reaches persisted Codex brief first
-shared brain vertical: source-to-decision pattern reached plan, brief, evidence, observe/reflect; next-run excluded it as over-budget
+shared brain vertical: source-to-decision pattern reached plan, brief, evidence, observe/reflect; next-run priority repaired
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -67,7 +67,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### SBV-01 Repair Retained-Pattern Next-Run Priority
+### SBV-02 Run Retained-Pattern Code-Quality Vertical
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -79,13 +79,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-sbv-00-retained-pattern-vertical/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-sbv-01-retained-pattern-priority/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-tsw: Repair SBV retained-pattern next-run priority.
+mise-en-palace-yjh: Run retained-pattern code-quality vertical.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

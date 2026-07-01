@@ -2331,6 +2331,10 @@ Falsifier:
 - [x] V375 complete: Pattern Research Brain Intake Trial.
 - [x] V376 complete: Mini Brain-QA Benchmark Slice.
 - [x] V377 complete: Brain-QA Pattern Coverage Gap Closure.
+- [x] SBV-01 complete: retained source-to-decision priority repaired. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-sbv-01-retained-pattern-priority/REPORT.md`.
+  Next: `mise-en-palace-yjh` / SBV-02 runs a retained-pattern code-quality
+  vertical using the repaired recall path.
 
 ## 21. Final Response Format For Codex Runs
 
