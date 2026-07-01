@@ -170,6 +170,48 @@ IMR-29 complete: bounded AMA paper SOURCE.md persisted through existing
   SourceArtifact/SearchDocument/SourceClaim/SourceDecisionEdge paths; natural
   AMA source search selects the new SourceClaim, while natural SearchDocument
   inclusion still needs reuse classification.
+IMR-30 complete: AMA source evidence reuse accepted; source-search selects the
+  AMA SourceClaim, linked SearchDocument evidence is visible to brain/heartbeat
+  readback, and heartbeat emits one ready mutation-free acquisition candidate.
+```
+
+## Outcome IMR-30 AMA Source Evidence Reuse Check
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-30-ama-source-evidence-reuse/REPORT.md
+```
+
+Outcome: post-IMR-29 reuse check accepted current linked-evidence behavior. The
+marker source-search query includes AMA SearchDocument
+`9853097e-f496-4d5f-ba62-29ea8bca8288`; the natural AMA source-search query
+selects AMA SourceClaim `ea770eea-47c1-47c5-90ab-7bcd1a4bff3f` as rank 0 and
+links 8 SearchDocuments; brain search preserves linked-document counts and the
+missing-document caveat; heartbeat acquisition preview emits one ready,
+mutation-free candidate with linked-document-first escalation.
+
+Source-to-decision:
+
+- Source: IMR-29 store-backed AMA source evidence and IMR-30 source/brain/
+  heartbeat readback.
+- Mechanism: candidate-only acquisition should reuse persisted source evidence
+  before repair or higher-cost acquisition.
+- KRN implication: missing natural SearchDocument inclusion is acceptable when
+  the SourceClaim is selected, linked document evidence is visible, and
+  heartbeat routes the gap to linked-document review first.
+- Decision: accept current linked-evidence behavior; no readback/ranking repair
+  now.
+- Consumer: heartbeat acquisition lane and AMA activation-utility hypothesis.
+- Falsifier: future readback cannot reuse the AMA SourceClaim, linked evidence
+  disappears, or heartbeat escalates before linked-document/source-search review.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-1dh: Run AMA activation-utility lab-test.
 ```
 
 ## Outcome IMR-29 AMA External Source-Decision Readback

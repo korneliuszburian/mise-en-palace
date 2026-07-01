@@ -45,7 +45,7 @@ source claim document link readback: source-search answer packages expose artifa
 brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocuments visible in sourceSearch summary
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 heartbeat acquisition review: linked and missing-only escalation accepted
-AMA acquisition lane: bounded AMA paper source evidence persisted; reuse still needs measurement
+AMA acquisition lane: persisted AMA source evidence reused; linked-evidence behavior accepted
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -71,13 +71,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-29-ama-external-source-decision/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-30-ama-source-evidence-reuse/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-zwu: run AMA source evidence reuse check.
+mise-en-palace-1dh: run AMA activation-utility lab-test.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -130,7 +130,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-29: acquisition escalation retained, applied to AMA-shaped acquisition, reviewed, and persisted as bounded paper source evidence.
+IMR-18-30: acquisition escalation retained, applied to AMA-shaped acquisition, persisted, and accepted as reusable linked evidence.
 ```
 
 ## Remaining Product Gaps
