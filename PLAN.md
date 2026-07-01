@@ -12,8 +12,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-active stream: Internal Multi-Repo Operator Loop
-current task: IMR-00 Internal Multi-Repo Operator Loop
+active stream: Shared Brain Vertical Loop
+current task: SBV-00 Build end-to-end brain vertical over one retained pattern
 ```
 
 ## Compact Checkpoints
@@ -56,6 +56,7 @@ source-backed selected knowledge: default brain search can use ready SourceClaim
 source-backed mini Brain-QA: fallback helps Q5 ingest and IMR41; keep behavior, no ranking repair now
 multi-repo source artifact readback: second repo README persists and resolves source/brain/heartbeat readbacks
 selectedKnowledge target fit: EKOLOGUS packet reaches persisted Codex brief first
+source usefulness feedback: EKOLOGUS target-specific SourceClaim persisted as helped
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -66,12 +67,10 @@ product-ready brain: not complete
 
 ## Active Task
 
-### IMR-00 Internal Multi-Repo Operator Loop
+### SBV-00 Shared Brain Vertical Loop
 
-Status: active.
-
-Goal: build the shared KRN brain kernel as the foundation for future
-agentic/harness work and prove it through internal multi-repo use.
+Goal: build the shared KRN brain kernel through larger end-to-end vertical
+slices, not more defensive or target-bookkeeping closures.
 
 Hard boundary: do not build dashboard, API, MCP, worker daemon, crawler, broad
 eval platform, DB schema, or product server. Do not create synthetic proof. Use
@@ -80,13 +79,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-54-codex-brief-target-knowledge-reuse/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-55-source-usefulness-feedback/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-x6u: Capture source-usefulness feedback for Codex brief reuse.
+mise-en-palace-rkx: Build end-to-end brain vertical over one retained pattern.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -131,7 +130,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-54: AMA/source-backed lanes accepted; artifact preview feeds heartbeat acquisition; second-repo target-fit precision repaired; EKOLOGUS target-specific packet reaches persisted Codex brief first.
+IMR-18-55: AMA/source-backed lanes accepted; artifact preview feeds heartbeat acquisition; second-repo target-fit precision repaired; EKOLOGUS target-specific packet reaches persisted Codex brief first and persists helped source-usefulness feedback. Multi-repo proof surface is no longer the next product driver.
 ```
 
 ## Remaining Product Gaps

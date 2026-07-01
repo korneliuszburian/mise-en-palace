@@ -17,7 +17,7 @@ Detailed completed history, evidence, outcomes, and next-task synthesis live in
 Current active stream:
 
 ```txt
-Internal Multi-Repo Operator Loop
+Shared Brain Vertical Loop
 ```
 
 Current state:
@@ -27,13 +27,14 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: IMR-00 Internal Multi-Repo Operator Loop.
+current task: SBV-00 Build end-to-end brain vertical over one retained pattern.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
 agentic/harness work: multi-layer memory, source-to-decision, pattern/research
-condensation, evidence/review, graph, heartbeat/dreaming, and benchmarked
-reuse. Multi-repo internal work is the proof surface, not the product goal.
+condensation, evidence/review, graph, heartbeat/dreaming, and benchmarked reuse.
+Use multi-repo internal work as evidence when useful, but do not let it become
+the product goal.
 
 ## Direction
 

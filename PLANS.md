@@ -13,8 +13,8 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-active stream: Internal Multi-Repo Operator Loop
-current task: IMR-00 Internal Multi-Repo Operator Loop
+active stream: Shared Brain Vertical Loop
+current task: SBV-00 Build end-to-end brain vertical over one retained pattern
 latest pushed commit: see git history
 ```
 
@@ -24,13 +24,13 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-IMR-00 Internal Multi-Repo Operator Loop is active.
+SBV-00 Build end-to-end brain vertical over one retained pattern is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
-benchmarks, and next-run reuse. Multi-repo internal work is the proof surface,
-not the product goal. Do not wait for a foreign operator. Do not create
-synthetic proof.
+benchmarks, and next-run reuse. Multi-repo internal work remains valid evidence,
+but it is no longer the active product driver. Do not wait for a foreign
+operator. Do not create synthetic proof.
 ```
 
 ## 2. Product Thesis
@@ -246,6 +246,34 @@ IMR-53 complete: post-resolution Brain-QA reuse check accepted EKOLOGUS
   control query.
 IMR-54 complete: persisted plan/context and `krn codex brief` render the
   EKOLOGUS target-specific SourceClaim first in Codex-facing context.
+IMR-55 complete: evidence/review feedback persists that selected EKOLOGUS
+  SourceClaim as `helped`; next direction moves to shared brain vertical work,
+  not more target-bookkeeping closures.
+```
+
+## Outcome IMR-55 Source Usefulness Feedback
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-55-source-usefulness-feedback/REPORT.md
+```
+
+Outcome: `krn evidence capture --persist --source-usefulness` created
+FeedbackDelta `91045e93-5fa2-4b30-a26f-f0e493d37b41` for run
+`07192df3-4656-48f4-b557-89f62c3e3d3d`. `krn run show` readback confirms
+`outcome=helped` for SourceClaim
+`bc4731b9-8add-40f8-9df9-fb4bb9342b75`.
+
+Decision: close the multi-repo usefulness feedback loop. The next active task
+must be a larger shared brain vertical, not another tiny multi-repo closure.
+
+Next Beads task:
+
+```txt
+mise-en-palace-rkx: Build end-to-end brain vertical over one retained pattern.
 ```
 
 ## Outcome IMR-54 Codex Brief Target-Knowledge Reuse
