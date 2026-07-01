@@ -212,6 +212,47 @@ IMR-40 complete: natural source/brain/store-only search now surfaces the exact
 IMR-41 complete: default `krn brain search` now falls back to ready
   source-backed SourceClaim packets when catalog readback misses; exact natural
   activation utility query selects retained claim `190f1f72-4621-49b4-b93c-538ea2c581ef`.
+IMR-42 complete: mini Brain-QA showed source-backed fallback helps Q5 ingest
+  and IMR41 when catalog readback misses; keep the behavior and do not repair
+  ranking now.
+```
+
+## Outcome IMR-42 Source-Backed Selected Knowledge Mini Brain-QA
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-42-source-backed-mini-brain-qa/REPORT.md
+```
+
+Outcome: 8/8 mini Brain-QA/IMR41 queries now return selectedKnowledge. Six
+queries are catalog-backed. Two catalog-miss cases use source-backed fallback:
+Q5 ingest gets a mostly relevant 7-packet source cluster and IMR41 selects the
+exact retained SourceClaim first.
+
+Decision: keep catalog-first/source-backed fallback; do not repair ranking now.
+Observed source-backed tail noise did not hide the useful packet or cause a
+harmed decision.
+
+Source-to-decision:
+
+- Source: IMR-41 fallback evidence and current mini Brain-QA batch.
+- Mechanism: ready SourceClaim packets can supply pattern guidance when catalog
+  cards miss, but catalog cards remain higher precision.
+- KRN implication: source-backed fallback is useful enough to drive the next
+  product slice, not enough to justify broad rank tuning.
+- Decision: keep fallback and use Q5 ingest packets in a bounded ingest/reuse
+  slice.
+- Consumer: pattern/research brain loop and ingest v0/v1 reuse work.
+- Falsifier: source-backed fallback repeatedly selects stale/noise packets ahead
+  of target packets or causes a wrong product decision.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-87q: Use source-backed ingest pattern gate in bounded ingest reuse slice
 ```
 
 ## Outcome IMR-41 Source-Backed Selected Knowledge
