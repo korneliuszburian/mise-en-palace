@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-03 Enforce worker Memory Core write authority gate
+current task: E2E-04 Route worker authority into heartbeat candidate readback
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-E2E-03 Enforce worker Memory Core write authority gate is active.
+E2E-04 Route worker authority into heartbeat candidate readback is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,12 +36,12 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-E2E-02 complete: DB-backed smoke now proves evidence -> review -> feedback ->
-MemoryReviewGate -> memory -> activation readback with cleanup in one command.
+E2E-03 complete: worker Memory Core write authority gate is executable and
+visible through worker DB smoke readback.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-e2e-02-db-backed-brain-loop-smoke/REPORT.md
-Next: E2E-03 turns worker Memory Core gate/write-boundary declarations into
-executable proof instead of prose-only safety strings.
+docs/reviews/controlled-dogfood/2026-07-01-e2e-03-worker-memory-core-write-authority-gate/REPORT.md
+Next: E2E-04 routes validated worker authority into heartbeat candidate
+readback.
 ```
 
 ## 2. Product Thesis

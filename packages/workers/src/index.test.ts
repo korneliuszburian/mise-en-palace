@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import {
+  assessMaintenanceJobWriteAuthority,
   describeMaintenanceJob,
   enqueueMaintenanceJob,
   isMaintenanceJobType,
@@ -198,5 +199,26 @@ describe("maintenance worker skeleton", () => {
         memoryCoreGate: "write_memory_candidate_only"
       })
     );
+  });
+
+  test("fails worker write authority when a gate allows the wrong write", () => {
+    const invalidDescription = {
+      ...describeMaintenanceJob("embed_source_chunk"),
+      allowedWrites: ["worker_jobs", "outbox_events", "memory_candidates"],
+      memoryCoreGate: "no_memory_core_write"
+    } as const;
+
+    expect(assessMaintenanceJobWriteAuthority(invalidDescription)).toEqual({
+      jobType: "embed_source_chunk",
+      memoryCoreGate: "no_memory_core_write",
+      status: "failed",
+      violations: [
+        {
+          code: "disallowed_write_for_memory_core_gate",
+          message:
+            "embed_source_chunk allows memory_candidates but gate no_memory_core_write does not."
+        }
+      ]
+    });
   });
 });

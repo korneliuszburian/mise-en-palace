@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: E2E-03 Enforce worker Memory Core write authority gate.
+current task: E2E-04 Route worker authority into heartbeat candidate readback.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,8 @@ the product goal.
 Latest slice:
 
 ```txt
-E2E-02 complete: DB-backed smoke now proves evidence -> review -> feedback ->
-MemoryReviewGate -> memory -> activation readback with cleanup in one command.
+E2E-03 complete: worker Memory Core write authority gate is executable and
+visible through worker DB smoke readback.
 ```
 
 ## Direction

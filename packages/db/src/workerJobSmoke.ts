@@ -1,6 +1,9 @@
 import type {
   Sql
 } from "postgres";
+import {
+  describeMaintenanceJob
+} from "@krn/workers";
 
 import {
   createSmokeDatabase,
@@ -25,6 +28,7 @@ export interface WorkerJobSmokeInput {
 }
 
 export interface WorkerJobSmokeReport {
+  authorityValidatedCount: number;
   enqueuedJobCount: number;
   queuedReadbackCount: number;
   runningTransitionCount: number;
@@ -149,6 +153,9 @@ export const runWorkerJobSmokeCheck = async (
     await deleteMarkerRows(client, marker);
 
     const enqueuedJobs: WorkerJobRecord[] = [];
+    const authorityValidatedCount = workerJobTypes
+      .map((jobType) => describeMaintenanceJob(jobType))
+      .length;
 
     for (const [index, jobType] of workerJobTypes.entries()) {
       const job = await repository.enqueueWorkerJob({
@@ -230,6 +237,7 @@ export const runWorkerJobSmokeCheck = async (
     cleanedUp = cleanup.deletedCount === enqueuedJobs.length && remainingMarkerCount === 0;
 
     return {
+      authorityValidatedCount,
       enqueuedJobCount: enqueuedJobs.length,
       queuedReadbackCount,
       runningTransitionCount,

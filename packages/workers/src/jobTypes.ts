@@ -87,6 +87,21 @@ export interface MaintenanceJobDescription {
   memoryCoreGate: WorkerJobMemoryCoreGate;
 }
 
+export interface WorkerJobWriteAuthorityViolation {
+  code:
+    | "disallowed_write_for_memory_core_gate"
+    | "missing_required_write_for_memory_core_gate"
+    | "missing_required_forbidden_write";
+  message: string;
+}
+
+export interface WorkerJobWriteAuthorityAssessment {
+  jobType: MaintenanceJobType;
+  memoryCoreGate: WorkerJobMemoryCoreGate;
+  status: "passed" | "failed";
+  violations: readonly WorkerJobWriteAuthorityViolation[];
+}
+
 const labels: Record<MaintenanceJobType, string> = {
   embed_source_chunk: "Embed source chunk",
   embed_memory_record: "Embed memory record",
@@ -131,6 +146,39 @@ const commonForbiddenWrites = [
   "source_decisions"
 ] as const satisfies readonly WorkerJobForbiddenWrite[];
 
+const requiredForbiddenWrites = [
+  "memory_records",
+  "anti_memory_records"
+] as const satisfies readonly WorkerJobForbiddenWrite[];
+
+const allowedWritesByMemoryCoreGate = {
+  no_memory_core_write: ["worker_jobs", "outbox_events", "embeddings"],
+  read_memory_record_only: ["worker_jobs", "outbox_events", "embeddings"],
+  write_memory_candidate_only: ["worker_jobs", "outbox_events", "memory_candidates"],
+  write_reflection_record_only: ["worker_jobs", "outbox_events", "reflection_records"],
+  must_create_reviewed_invalidation_candidate: [
+    "worker_jobs",
+    "outbox_events",
+    "memory_candidates"
+  ],
+  must_not_promote_memory_record: [
+    "worker_jobs",
+    "outbox_events",
+    "embeddings",
+    "memory_candidates",
+    "reflection_records"
+  ]
+} as const satisfies Record<WorkerJobMemoryCoreGate, readonly WorkerJobAllowedWrite[]>;
+
+const requiredWritesByMemoryCoreGate = {
+  no_memory_core_write: [],
+  read_memory_record_only: [],
+  write_memory_candidate_only: ["memory_candidates"],
+  write_reflection_record_only: ["reflection_records"],
+  must_create_reviewed_invalidation_candidate: ["memory_candidates"],
+  must_not_promote_memory_record: []
+} as const satisfies Record<WorkerJobMemoryCoreGate, readonly WorkerJobAllowedWrite[]>;
+
 const authorityByType: Record<MaintenanceJobType, MaintenanceJobAuthority> = {
   embed_source_chunk: {
     inputSchema: "EmbedSourceChunkPayload",
@@ -173,8 +221,7 @@ export const describeMaintenanceJob = (
   jobType: MaintenanceJobType
 ): MaintenanceJobDescription => {
   const authority = authorityByType[jobType];
-
-  return {
+  const description: MaintenanceJobDescription = {
     jobType,
     label: labels[jobType],
     workerTable: "worker_jobs",
@@ -189,4 +236,69 @@ export const describeMaintenanceJob = (
     forbiddenWrites: authority.forbiddenWrites,
     memoryCoreGate: authority.memoryCoreGate
   };
+
+  assertMaintenanceJobWriteAuthority(description);
+
+  return description;
+};
+
+export const assessMaintenanceJobWriteAuthority = (
+  description: MaintenanceJobDescription
+): WorkerJobWriteAuthorityAssessment => {
+  const allowedForGate = new Set<WorkerJobAllowedWrite>(
+    allowedWritesByMemoryCoreGate[description.memoryCoreGate]
+  );
+  const requiredForGate = new Set<WorkerJobAllowedWrite>(
+    requiredWritesByMemoryCoreGate[description.memoryCoreGate]
+  );
+  const forbiddenWrites = new Set<WorkerJobForbiddenWrite>(description.forbiddenWrites);
+  const violations: WorkerJobWriteAuthorityViolation[] = [];
+
+  for (const write of description.allowedWrites) {
+    if (!allowedForGate.has(write)) {
+      violations.push({
+        code: "disallowed_write_for_memory_core_gate",
+        message: `${description.jobType} allows ${write} but gate ${description.memoryCoreGate} does not.`
+      });
+    }
+  }
+
+  for (const write of requiredForGate) {
+    if (!description.allowedWrites.includes(write)) {
+      violations.push({
+        code: "missing_required_write_for_memory_core_gate",
+        message: `${description.jobType} gate ${description.memoryCoreGate} requires ${write}.`
+      });
+    }
+  }
+
+  for (const write of requiredForbiddenWrites) {
+    if (!forbiddenWrites.has(write)) {
+      violations.push({
+        code: "missing_required_forbidden_write",
+        message: `${description.jobType} must forbid ${write} to avoid direct Memory Core mutation.`
+      });
+    }
+  }
+
+  return {
+    jobType: description.jobType,
+    memoryCoreGate: description.memoryCoreGate,
+    status: violations.length === 0 ? "passed" : "failed",
+    violations
+  };
+};
+
+export const assertMaintenanceJobWriteAuthority = (
+  description: MaintenanceJobDescription
+): void => {
+  const assessment = assessMaintenanceJobWriteAuthority(description);
+
+  if (assessment.status === "failed") {
+    throw new Error(
+      `Invalid worker write authority for ${description.jobType}: ${assessment.violations
+        .map((violation) => violation.message)
+        .join(" ")}`
+    );
+  }
 };
