@@ -111,12 +111,6 @@ Latest completed report:
 docs/reviews/controlled-dogfood/2026-07-01-dvy-01-typescript-exemplar-trial/REPORT.md
 ```
 
-Next slice:
-
-```txt
-mise-en-palace-9dt: Use parser exemplar in one real evidence metadata boundary repair.
-```
-
 Task boundary:
 
 ```txt
