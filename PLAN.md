@@ -145,7 +145,6 @@ SBV-00: retained source-to-decision pattern flows through brain knowledge, plan,
 ```
 
 ## Pattern Gate
-
 For non-trivial infra, harness, CI/eval, Codex-surface, TypeScript,
 target-workflow, security, operator-UX, or research/paper/course-driven work:
 
@@ -154,7 +153,6 @@ source -> mechanism -> KRN implication -> decision/rejection -> consumer -> fals
 ```
 
 ## Verification Policy
-
 Use the narrowest relevant verification.
 
 ```txt
