@@ -349,6 +349,7 @@ export type CliCommand =
       kind: "sourceArtifactPreview";
       persist: boolean;
       file?: string;
+      json?: boolean;
       chunkLines?: number;
       limitChunks?: number;
       extractCandidates?: boolean;

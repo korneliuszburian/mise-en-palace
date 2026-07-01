@@ -53,11 +53,13 @@ describe("parseSourceArgs", () => {
       "decision-1",
       "--graph-edge-scope",
       "local preview",
-      "--persist"
+      "--persist",
+      "--json"
     ])).toEqual({
       command: {
         kind: "sourceArtifactPreview",
         persist: true,
+        json: true,
         extractCandidates: true,
         file: "docs/KRN_KERNEL.md",
         chunkLines: 12,

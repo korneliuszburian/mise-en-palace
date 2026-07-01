@@ -61,9 +61,50 @@ export type CreateSourceArtifactPreviewDatabaseRuntime = (
 
 interface SourceArtifactPreviewPersistenceResult {
   lines: string[];
+  readback: SourceArtifactPreviewPersistenceReadback;
   searchDocumentPersisted: boolean;
   sourceClaimPersisted: boolean;
   sourceClaimEdgePersisted: boolean;
+}
+
+interface SourceArtifactPreviewPersistenceReadback {
+  projectId: string;
+  sourceArtifact: {
+    id: string;
+  };
+  sourceChunks: readonly string[];
+  searchDocument: {
+    id: string;
+    lexicalReadbackQuery: string;
+    lexicalReadback: "hit" | "missing";
+    lexicalScore?: number;
+  };
+  sourceClaim: {
+    created: boolean;
+    readback: "hit" | "missing" | "not_created";
+    id?: string;
+    reviewedExtractionClaimCandidateId?: string;
+    reviewedExtractionClaimSourceRange?: string;
+  };
+  sourceClaimEdge: {
+    created: boolean;
+    readback: "hit" | "missing" | "not_created";
+    id?: string;
+    kind?: SourceClaimEdgeKind;
+  };
+  ingestLoop: {
+    artifactToChunks: "ready";
+    chunkRows: number;
+    chunkToSearchDocument: "ready" | "missing_readback";
+    searchDocumentToActivationReadback: "ready" | "missing_readback";
+    sourceClaimReadback: "ready" | "missing_readback" | "not_created";
+    sourceClaimEdgeReadback: "ready" | "missing_readback" | "not_created";
+    activationReadbackQuery: string;
+    sourceSearchReadbackCommand: string;
+    brainSearchReadbackCommand: string;
+    nextAction: string;
+    doesNotProve: string;
+  };
 }
 
 interface CandidateField {
@@ -266,12 +307,11 @@ const chunkBody = (chunks: readonly SourceArtifactPreviewChunk[]): string =>
     ].join("\n")
   ).join("\n\n");
 
-const formatSearchDocumentCandidate = (
+const searchDocumentCandidateView = (
   file: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[],
-  persisted: boolean
-): string[] => {
+  chunks: readonly SourceArtifactPreviewChunk[]
+) => {
   const candidate = parseSearchDocumentInput({
     subjectType: "source_artifact",
     subjectId: artifactHash,
@@ -301,18 +341,38 @@ const formatSearchDocumentCandidate = (
     doesNotProve: searchDocumentCandidateDoesNotProve
   });
 
+  return {
+    id: `search-document-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    candidate,
+    reviewability,
+    evidenceRefs: [
+      file,
+      artifactHash
+    ],
+    doesNotProve: searchDocumentCandidateDoesNotProve
+  };
+};
+
+const formatSearchDocumentCandidate = (
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  persisted: boolean
+): string[] => {
+  const view = searchDocumentCandidateView(file, artifactHash, chunks);
+
   return [
     "searchDocumentCandidate:",
-    `- id: search-document-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    `- id: ${view.id}`,
     "  status: candidate",
-    `  reviewability: ${reviewability.reviewability}`,
-    ...formatReviewabilityReasons(reviewability.reasons),
-    `  subjectType: ${candidate.subjectType}`,
-    `  subjectId: ${candidate.subjectId}`,
-    `  trustTier: ${candidate.trustTier}`,
-    `  title: ${candidate.title}`,
-    `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
-    `  doesNotProve: ${searchDocumentCandidateDoesNotProve}`,
+    `  reviewability: ${view.reviewability.reviewability}`,
+    ...formatReviewabilityReasons(view.reviewability.reasons),
+    `  subjectType: ${view.candidate.subjectType}`,
+    `  subjectId: ${view.candidate.subjectId}`,
+    `  trustTier: ${view.candidate.trustTier}`,
+    `  title: ${view.candidate.title}`,
+    `  evidenceRefs: ${view.evidenceRefs.join(", ")}`,
+    `  doesNotProve: ${view.doesNotProve}`,
     persisted
       ? "  SearchDocument row created: see Persistence readback"
       : "  No SearchDocument row created"
@@ -769,13 +829,20 @@ const readbackStatus = (
 const shellQuote = (value: string): string =>
   `"${value.replace(/\\/gu, "\\\\").replace(/"/gu, "\\\"")}"`;
 
-const formatIngestLoopReadbackLines = (input: {
+const sourceSearchReadbackCommand = (query: string): string =>
+  `krn source search --query ${shellQuote(query)} --json`;
+
+const brainSearchReadbackCommand = (query: string): string =>
+  `krn brain search --query ${shellQuote(query)} --json`;
+
+const ingestLoopReadback = (input: {
   artifact: SourceArtifactPersistenceRows;
   search: SearchDocumentReadbackRows;
   claim: SourceClaimPersistenceRows;
   edge: SourceClaimEdgePersistenceRows;
-}): string[] => {
-  const searchStatus = readbackStatus(true, input.search.readbackHit !== undefined);
+}): SourceArtifactPreviewPersistenceReadback["ingestLoop"] => {
+  const searchStatus: "ready" | "missing_readback" =
+    input.search.readbackHit === undefined ? "missing_readback" : "ready";
   const claimStatus = readbackStatus(
     input.claim.sourceClaim !== undefined,
     input.claim.sourceClaimReadback !== undefined
@@ -785,20 +852,96 @@ const formatIngestLoopReadbackLines = (input: {
     input.edge.sourceClaimEdgeReadback !== undefined
   );
 
+  return {
+    artifactToChunks: "ready",
+    chunkRows: input.artifact.sourceChunks.length,
+    chunkToSearchDocument: searchStatus,
+    searchDocumentToActivationReadback: searchStatus,
+    sourceClaimReadback: claimStatus,
+    sourceClaimEdgeReadback: edgeStatus,
+    activationReadbackQuery: input.search.readbackQuery,
+    sourceSearchReadbackCommand: sourceSearchReadbackCommand(input.search.readbackQuery),
+    brainSearchReadbackCommand: brainSearchReadbackCommand(input.search.readbackQuery),
+    nextAction: "run the readback command before changing ranking, crawler, schema, UI, API, or MCP",
+    doesNotProve: "ingest loop readback does not prove activation inclusion, ranking quality, source truth, embeddings, graph retrieval quality, crawler readiness, or product readiness"
+  };
+};
+
+const formatIngestLoopReadbackLines = (input: {
+  artifact: SourceArtifactPersistenceRows;
+  search: SearchDocumentReadbackRows;
+  claim: SourceClaimPersistenceRows;
+  edge: SourceClaimEdgePersistenceRows;
+}): string[] => {
+  const readback = ingestLoopReadback(input);
+
   return [
     "Ingest loop readback:",
-    `artifactToChunks: ready (${input.artifact.sourceChunks.length} chunk row(s))`,
-    `chunkToSearchDocument: ${searchStatus}`,
-    `searchDocumentToActivationReadback: ${searchStatus}`,
-    `sourceClaimReadback: ${claimStatus}`,
-    `sourceClaimEdgeReadback: ${edgeStatus}`,
-    `activationReadbackQuery: ${input.search.readbackQuery}`,
-    `sourceSearchReadbackCommand: krn source search --query ${shellQuote(input.search.readbackQuery)} --json`,
-    `brainSearchReadbackCommand: krn brain search --query ${shellQuote(input.search.readbackQuery)} --json`,
-    "nextAction: run the readback command before changing ranking, crawler, schema, UI, API, or MCP",
-    "doesNotProve: ingest loop readback does not prove activation inclusion, ranking quality, source truth, embeddings, graph retrieval quality, crawler readiness, or product readiness"
+    `artifactToChunks: ${readback.artifactToChunks} (${readback.chunkRows} chunk row(s))`,
+    `chunkToSearchDocument: ${readback.chunkToSearchDocument}`,
+    `searchDocumentToActivationReadback: ${readback.searchDocumentToActivationReadback}`,
+    `sourceClaimReadback: ${readback.sourceClaimReadback}`,
+    `sourceClaimEdgeReadback: ${readback.sourceClaimEdgeReadback}`,
+    `activationReadbackQuery: ${readback.activationReadbackQuery}`,
+    `sourceSearchReadbackCommand: ${readback.sourceSearchReadbackCommand}`,
+    `brainSearchReadbackCommand: ${readback.brainSearchReadbackCommand}`,
+    `nextAction: ${readback.nextAction}`,
+    `doesNotProve: ${readback.doesNotProve}`
   ];
 };
+
+const persistenceReadback = (input: {
+  databaseRuntime: DatabaseRuntime;
+  artifact: SourceArtifactPersistenceRows;
+  search: SearchDocumentReadbackRows;
+  claim: SourceClaimPersistenceRows;
+  edge: SourceClaimEdgePersistenceRows;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): SourceArtifactPreviewPersistenceReadback => ({
+  projectId: input.databaseRuntime.projectId,
+  sourceArtifact: {
+    id: input.artifact.sourceArtifact.id
+  },
+  sourceChunks: input.artifact.sourceChunks.map((chunk) => chunk.id),
+  searchDocument: {
+    id: input.search.searchDocument.id,
+    lexicalReadbackQuery: input.search.readbackQuery,
+    lexicalReadback: input.search.readbackHit === undefined ? "missing" : "hit",
+    ...(input.search.readbackHit === undefined
+      ? {}
+      : { lexicalScore: input.search.readbackHit.lexicalScore })
+  },
+  sourceClaim: input.claim.sourceClaim === undefined
+    ? {
+        created: false,
+        readback: "not_created"
+      }
+    : {
+        created: true,
+        readback: input.claim.sourceClaimReadback === undefined ? "missing" : "hit",
+        id: input.claim.sourceClaim.id,
+        ...(input.reviewedExtractionClaimSelection === undefined
+          ? {}
+          : {
+              reviewedExtractionClaimCandidateId:
+                input.reviewedExtractionClaimSelection.candidate.id,
+              reviewedExtractionClaimSourceRange:
+                input.reviewedExtractionClaimSelection.candidate.sourceRange
+            })
+      },
+  sourceClaimEdge: input.edge.sourceClaimEdge === undefined
+    ? {
+        created: false,
+        readback: "not_created"
+      }
+    : {
+        created: true,
+        readback: input.edge.sourceClaimEdgeReadback === undefined ? "missing" : "hit",
+        id: input.edge.sourceClaimEdge.id,
+        kind: input.edge.sourceClaimEdge.kind
+      },
+  ingestLoop: ingestLoopReadback(input)
+});
 
 const formatPersistenceReadbackLines = (input: {
   databaseRuntime: DatabaseRuntime;
@@ -899,11 +1042,20 @@ const persistSourceArtifactPreview = async (
       sourceChunks: artifact.sourceChunks,
       sourceClaim: claim.sourceClaim
     });
+    const readback = persistenceReadback({
+      databaseRuntime,
+      artifact,
+      search,
+      claim,
+      edge,
+      reviewedExtractionClaimSelection
+    });
 
     return {
       searchDocumentPersisted: true,
       sourceClaimPersisted: claim.sourceClaim !== undefined,
       sourceClaimEdgePersisted: edge.sourceClaimEdge !== undefined,
+      readback,
       lines: formatPersistenceReadbackLines({
         databaseRuntime,
         artifact,
@@ -1095,14 +1247,14 @@ const sourceClaimCandidateMissingFields = (
     ? missingSourceClaimCandidateFields(command)
     : missingReviewedExtractionClaimCandidateFields(command);
 
-const formatIncompleteSourceClaimCandidate = (input: {
+const incompleteSourceClaimCandidateView = (input: {
   command: SourceArtifactPreviewCommand;
   file: string;
   artifactHash: string;
   chunks: readonly SourceArtifactPreviewChunk[];
   missingFields: readonly string[];
   reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
-}): string[] => {
+}) => {
   const reviewability = assessCandidateReviewability({
     summary: input.reviewedExtractionClaimSelection?.candidate.text ??
       input.command.claim ??
@@ -1120,13 +1272,32 @@ const formatIncompleteSourceClaimCandidate = (input: {
     missingFields: input.missingFields
   });
 
+  return {
+    id: "source-claim-candidate:incomplete",
+    status: "incomplete" as const,
+    reviewability,
+    missingFields: input.missingFields,
+    persisted: false
+  };
+};
+
+const formatIncompleteSourceClaimCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  missingFields: readonly string[];
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): string[] => {
+  const view = incompleteSourceClaimCandidateView(input);
+
   return [
     "sourceClaimCandidate:",
-    "- id: source-claim-candidate:incomplete",
-    "  status: incomplete",
-    `  reviewability: ${reviewability.reviewability}`,
-    ...formatReviewabilityReasons(reviewability.reasons),
-    `  missing: ${input.missingFields.join(", ")}`,
+    `- id: ${view.id}`,
+    `  status: ${view.status}`,
+    `  reviewability: ${view.reviewability.reviewability}`,
+    ...formatReviewabilityReasons(view.reviewability.reasons),
+    `  missing: ${view.missingFields.join(", ")}`,
     "  No SourceClaim created"
   ];
 };
@@ -1170,14 +1341,14 @@ const outputSourceClaimCandidateId = (
     ? `source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`
     : reviewedExtractionClaimSelection.candidate.id;
 
-const formatCompleteSourceClaimCandidate = (input: {
+const completeSourceClaimCandidateView = (input: {
   command: SourceArtifactPreviewCommand;
   file: string;
   artifactHash: string;
   chunks: readonly SourceArtifactPreviewChunk[];
   persisted: boolean;
   reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
-}): string[] => {
+}) => {
   const candidate = parseOutputSourceClaimCandidate(input);
   const reviewability = assessCandidateReviewability({
     summary: candidate.claim,
@@ -1187,25 +1358,53 @@ const formatCompleteSourceClaimCandidate = (input: {
     doesNotProve: sourceClaimCandidateDoesNotProve
   });
 
+  return {
+    id: outputSourceClaimCandidateId(input.artifactHash, input.reviewedExtractionClaimSelection),
+    status: candidate.status,
+    reviewedExtractionClaimSelection: input.reviewedExtractionClaimSelection,
+    reviewability,
+    claim: candidate.claim,
+    mechanism: candidate.mechanism,
+    consumer: candidate.consumer,
+    falsifier: candidate.falsifier,
+    evidenceRefs: [
+      input.file,
+      input.artifactHash
+    ],
+    doesNotProve: sourceClaimCandidateDoesNotProve,
+    persisted: input.persisted
+  };
+};
+
+const formatCompleteSourceClaimCandidate = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  persisted: boolean;
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): string[] => {
+  const view = completeSourceClaimCandidateView(input);
+
   return [
     "sourceClaimCandidate:",
-    `- id: ${outputSourceClaimCandidateId(input.artifactHash, input.reviewedExtractionClaimSelection)}`,
-    `  status: ${candidate.status}`,
-    ...(input.reviewedExtractionClaimSelection === undefined
+    `- id: ${view.id}`,
+    `  status: ${view.status}`,
+    ...(view.reviewedExtractionClaimSelection === undefined
       ? []
       : [
           "  source: reviewed_extraction_claim_candidate",
-          `  extractionSourceRange: ${input.reviewedExtractionClaimSelection.candidate.sourceRange}`
+          `  extractionSourceRange: ${view.reviewedExtractionClaimSelection.candidate.sourceRange}`
         ]),
-    `  reviewability: ${reviewability.reviewability}`,
-    ...formatReviewabilityReasons(reviewability.reasons),
-    `  claim: ${candidate.claim}`,
-    `  mechanism: ${candidate.mechanism}`,
-    `  consumer: ${candidate.consumer}`,
-    `  falsifier: ${candidate.falsifier}`,
-    `  evidenceRefs: ${[input.file, input.artifactHash].join(", ")}`,
-    `  doesNotProve: ${sourceClaimCandidateDoesNotProve}`,
-    input.persisted
+    `  reviewability: ${view.reviewability.reviewability}`,
+    ...formatReviewabilityReasons(view.reviewability.reasons),
+    `  claim: ${view.claim}`,
+    `  mechanism: ${view.mechanism}`,
+    `  consumer: ${view.consumer}`,
+    `  falsifier: ${view.falsifier}`,
+    `  evidenceRefs: ${view.evidenceRefs.join(", ")}`,
+    `  doesNotProve: ${view.doesNotProve}`,
+    view.persisted
       ? "  SourceClaim row created: see Persistence readback"
       : "  No SourceClaim created"
   ];
@@ -1401,20 +1600,17 @@ const formatSourceClaimEdgeCandidate = (
   });
 };
 
-const formatExtractionCandidatePreview = (
+const extractionCandidatePreviewView = (
   command: SourceArtifactPreviewCommand,
   file: string,
   artifactHash: string,
-  chunks: readonly SourceArtifactPreviewChunk[],
-  sourceClaimPersisted: boolean
-): string[] => {
+  chunks: readonly SourceArtifactPreviewChunk[]
+) => {
   if (command.extractCandidates !== true) {
-    return [
-      "extractionCandidatePreview:",
-      "- not generated",
-      "  reason: --extract-candidates was not supplied",
-      "  No extracted entity, claim, or relation candidates created"
-    ];
+    return {
+      status: "not_generated" as const,
+      reason: "--extract-candidates was not supplied"
+    };
   }
 
   const extraction = extractLocalSourceCandidates(chunks);
@@ -1437,42 +1633,74 @@ const formatExtractionCandidatePreview = (
     doesNotProve: extractionCandidateDoesNotProve
   });
 
+  return {
+    status: "candidate" as const,
+    mode: "deterministic_local_heuristic" as const,
+    reviewability,
+    evidenceRefs: [
+      file,
+      artifactHash
+    ],
+    doesNotProve: extractionCandidateDoesNotProve,
+    extraction,
+    reviewedExtractionClaimSelection
+  };
+};
+
+const formatExtractionCandidatePreview = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceClaimPersisted: boolean
+): string[] => {
+  const view = extractionCandidatePreviewView(command, file, artifactHash, chunks);
+
+  if (view.status === "not_generated") {
+    return [
+      "extractionCandidatePreview:",
+      "- not generated",
+      `  reason: ${view.reason}`,
+      "  No extracted entity, claim, or relation candidates created"
+    ];
+  }
+
   return [
     "extractionCandidatePreview:",
     "- status: candidate",
     "  mode: deterministic_local_heuristic",
-    `  reviewability: ${reviewability.reviewability}`,
-    ...formatReviewabilityReasons(reviewability.reasons),
-    `  evidenceRefs: ${[file, artifactHash].join(", ")}`,
-    `  doesNotProve: ${extractionCandidateDoesNotProve}`,
+    `  reviewability: ${view.reviewability.reviewability}`,
+    ...formatReviewabilityReasons(view.reviewability.reasons),
+    `  evidenceRefs: ${view.evidenceRefs.join(", ")}`,
+    `  doesNotProve: ${view.doesNotProve}`,
     "  entityCandidates:",
-    ...(extraction.entities.length === 0
+    ...(view.extraction.entities.length === 0
       ? ["  - none"]
-      : extraction.entities.map((entity) =>
+      : view.extraction.entities.map((entity) =>
           `  - id: ${entity.id} | kind: ${entity.kind} | label: ${entity.label} | sourceRange: ${entity.sourceRange}`
         )),
     "  claimCandidates:",
-    ...(extraction.claims.length === 0
+    ...(view.extraction.claims.length === 0
       ? ["  - none"]
-      : extraction.claims.map((claim) =>
+      : view.extraction.claims.map((claim) =>
           `  - id: ${claim.id} | reviewability: ${claim.reviewability} | text: ${claim.text} | sourceRange: ${claim.sourceRange} | reason: ${claim.reviewabilityReason}`
         )),
     "  deferredClaimCandidates:",
-    ...(extraction.deferredClaims.length === 0
+    ...(view.extraction.deferredClaims.length === 0
       ? ["  - none"]
-      : extraction.deferredClaims.map((claim) =>
+      : view.extraction.deferredClaims.map((claim) =>
           `  - id: ${claim.id} | reviewability: ${claim.reviewability} | text: ${claim.text} | sourceRange: ${claim.sourceRange} | reason: ${claim.reviewabilityReason}`
         )),
     "  relationCandidates:",
-    ...(extraction.relations.length === 0
+    ...(view.extraction.relations.length === 0
       ? ["  - none"]
-      : extraction.relations.map((relation) =>
+      : view.extraction.relations.map((relation) =>
           `  - id: ${relation.id} | kind: ${relation.kind} | from: ${relation.fromCandidateId} | to: ${relation.toCandidateId} | sourceRange: ${relation.sourceRange}`
         )),
-    ...(reviewedExtractionClaimSelection === undefined
+    ...(view.reviewedExtractionClaimSelection === undefined
       ? ["  No SourceClaim row created from extraction candidates"]
       : [
-          `  reviewedExtractionClaimCandidate: ${reviewedExtractionClaimSelection.candidate.id}`,
+          `  reviewedExtractionClaimCandidate: ${view.reviewedExtractionClaimSelection.candidate.id}`,
           sourceClaimPersisted
             ? "  SourceClaim row created from reviewed extraction candidate: see Persistence readback"
             : "  No SourceClaim row created from reviewed extraction candidate"
@@ -1540,6 +1768,375 @@ const formatCandidateBridge = (
   return lines;
 };
 
+const searchDocumentCandidateJson = (
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  persisted: boolean
+): Record<string, unknown> => {
+  const view = searchDocumentCandidateView(file, artifactHash, chunks);
+
+  return {
+    id: view.id,
+    status: "candidate",
+    reviewability: view.reviewability.reviewability,
+    reviewabilityReasons: view.reviewability.reasons,
+    subjectType: view.candidate.subjectType,
+    subjectId: view.candidate.subjectId,
+    trustTier: view.candidate.trustTier,
+    title: view.candidate.title,
+    evidenceRefs: view.evidenceRefs,
+    doesNotProve: view.doesNotProve,
+    persisted
+  };
+};
+
+const noSourceClaimCandidateJson = (): Record<string, unknown> => ({
+  status: "not_generated",
+  reason: "explicit claim/mechanism/consumer/falsifier inputs were not supplied",
+  persisted: false
+});
+
+const incompleteSourceClaimCandidateJson = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  missingFields: readonly string[];
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+}): Record<string, unknown> => {
+  const view = incompleteSourceClaimCandidateView(input);
+
+  return {
+    id: view.id,
+    status: view.status,
+    reviewability: view.reviewability.reviewability,
+    reviewabilityReasons: view.reviewability.reasons,
+    missing: view.missingFields,
+    persisted: view.persisted
+  };
+};
+
+const completeSourceClaimCandidateJson = (input: {
+  command: SourceArtifactPreviewCommand;
+  file: string;
+  artifactHash: string;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  reviewedExtractionClaimSelection: ReviewedExtractionClaimSelection | undefined;
+  persisted: boolean;
+}): Record<string, unknown> => {
+  const view = completeSourceClaimCandidateView(input);
+
+  return {
+    id: view.id,
+    status: view.status,
+    ...(view.reviewedExtractionClaimSelection === undefined
+      ? {}
+      : {
+          source: "reviewed_extraction_claim_candidate",
+          extractionSourceRange: view.reviewedExtractionClaimSelection.candidate.sourceRange
+        }),
+    reviewability: view.reviewability.reviewability,
+    reviewabilityReasons: view.reviewability.reasons,
+    claim: view.claim,
+    mechanism: view.mechanism,
+    consumer: view.consumer,
+    falsifier: view.falsifier,
+    evidenceRefs: view.evidenceRefs,
+    doesNotProve: view.doesNotProve,
+    persisted: view.persisted
+  };
+};
+
+const sourceClaimCandidateJson = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  persisted: boolean
+): Record<string, unknown> => {
+  const reviewedExtractionClaimSelection = selectReviewedExtractionClaimCandidate(
+    command,
+    extractLocalSourceCandidates(chunks)
+  );
+
+  if (!hasAnyManualSourceClaimCandidateField(command) && reviewedExtractionClaimSelection === undefined) {
+    return noSourceClaimCandidateJson();
+  }
+
+  const missingFields = sourceClaimCandidateMissingFields(command, reviewedExtractionClaimSelection);
+
+  if (missingFields.length > 0) {
+    return incompleteSourceClaimCandidateJson({
+      command,
+      file,
+      artifactHash,
+      chunks,
+      missingFields,
+      reviewedExtractionClaimSelection
+    });
+  }
+
+  return completeSourceClaimCandidateJson({
+    command,
+    file,
+    artifactHash,
+    chunks,
+    reviewedExtractionClaimSelection,
+    persisted
+  });
+};
+
+const sourceClaimEdgeCandidateJson = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceClaimPersisted: boolean,
+  sourceClaimEdgePersisted: boolean
+): Record<string, unknown> => {
+  if (!hasAnyGraphEdgeCandidateField(command)) {
+    return {
+      status: "not_generated",
+      reason: "explicit graph edge inputs were not supplied",
+      persisted: false
+    };
+  }
+
+  const missingFields = sourceClaimEdgeMissingFields(command);
+
+  if (missingFields.length > 0) {
+    const reviewability = assessCandidateReviewability({
+      summary: command.graphEdgeKind === undefined
+        ? "SourceClaimEdge candidate from local source artifact preview."
+        : `SourceClaimEdge ${command.graphEdgeKind} candidate from local source artifact preview.`,
+      evidenceRefs: generatedGraphEvidenceRefs(file, artifactHash, chunks),
+      ...(hasText(command.graphEdgeConsumer)
+        ? { applicationGuidance: command.graphEdgeConsumer }
+        : {}),
+      ...(hasText(command.graphEdgeDoesNotProve)
+        ? { doesNotProve: command.graphEdgeDoesNotProve }
+        : {}),
+      missingFields
+    });
+
+    return {
+      id: "source-claim-edge-candidate:incomplete",
+      status: "incomplete",
+      reviewability: reviewability.reviewability,
+      reviewabilityReasons: reviewability.reasons,
+      missing: missingFields,
+      persisted: false
+    };
+  }
+
+  const graphEdgeInput = completeGraphEdgeInput(command);
+
+  if (graphEdgeInput === undefined) {
+    return {
+      id: "source-claim-edge-candidate:incomplete",
+      status: "incomplete",
+      reviewability: "unknown",
+      reviewabilityReasons: [
+        "Graph edge input could not be narrowed after missing-field checks."
+      ],
+      persisted: false
+    };
+  }
+
+  const reviewability = assessCandidateReviewability({
+    summary: `SourceClaimEdge ${graphEdgeInput.kind} -> ${graphEdgeInput.toSourceClaimId}`,
+    body: [
+      `from: source-claim-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+      `to: ${graphEdgeInput.toSourceClaimId}`,
+      `kind: ${graphEdgeInput.kind}`,
+      ...(graphEdgeInput.scope === undefined ? [] : [`scope: ${graphEdgeInput.scope}`])
+    ].join("\n"),
+    evidenceRefs: [
+      ...generatedGraphEvidenceRefs(file, artifactHash, chunks),
+      ...(graphEdgeInput.evidenceRef === undefined ? [] : [graphEdgeInput.evidenceRef])
+    ],
+    applicationGuidance: graphEdgeInput.consumer,
+    doesNotProve: graphEdgeInput.doesNotProve
+  });
+
+  return {
+    id: `source-claim-edge-candidate:${artifactHash.slice("sha256:".length, "sha256:".length + 12)}`,
+    status: "candidate",
+    reviewability: reviewability.reviewability,
+    reviewabilityReasons: reviewability.reasons,
+    fromSourceClaim: sourceClaimEdgeSourceLabel(command, artifactHash),
+    toSourceClaimId: graphEdgeInput.toSourceClaimId,
+    kind: graphEdgeInput.kind,
+    consumer: graphEdgeInput.consumer,
+    evidenceRefs: generatedGraphEvidenceRefs(file, artifactHash, chunks),
+    doesNotProve: graphEdgeInput.doesNotProve,
+    sourceClaimPersisted,
+    persisted: sourceClaimEdgePersisted
+  };
+};
+
+const extractionCandidatePreviewJson = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  sourceClaimPersisted: boolean
+): Record<string, unknown> => {
+  const view = extractionCandidatePreviewView(command, file, artifactHash, chunks);
+
+  if (view.status === "not_generated") {
+    return {
+      status: "not_generated",
+      reason: view.reason,
+      entityCandidates: [],
+      claimCandidates: [],
+      deferredClaimCandidates: [],
+      relationCandidates: []
+    };
+  }
+
+  return {
+    status: view.status,
+    mode: view.mode,
+    reviewability: view.reviewability.reviewability,
+    reviewabilityReasons: view.reviewability.reasons,
+    evidenceRefs: view.evidenceRefs,
+    doesNotProve: view.doesNotProve,
+    entityCandidates: view.extraction.entities,
+    claimCandidates: view.extraction.claims,
+    deferredClaimCandidates: view.extraction.deferredClaims,
+    relationCandidates: view.extraction.relations,
+    ...(view.reviewedExtractionClaimSelection === undefined
+      ? {}
+      : {
+          reviewedExtractionClaimCandidate: view.reviewedExtractionClaimSelection.candidate.id,
+          sourceClaimPersisted
+        }),
+    graphRuntime: "none",
+    memoryMutation: "none"
+  };
+};
+
+const candidateBridgeJson = (
+  command: SourceArtifactPreviewCommand,
+  file: string,
+  artifactHash: string,
+  chunks: readonly SourceArtifactPreviewChunk[],
+  persistence?: SourceArtifactPreviewPersistenceResult
+): Record<string, unknown> => {
+  const flags = persistenceFlags(persistence);
+
+  return {
+    mutation: "none",
+    searchDocumentCandidate: searchDocumentCandidateJson(
+      file,
+      artifactHash,
+      chunks,
+      flags.searchDocumentPersisted
+    ),
+    sourceClaimCandidate: sourceClaimCandidateJson(
+      command,
+      file,
+      artifactHash,
+      chunks,
+      flags.sourceClaimPersisted
+    ),
+    sourceClaimEdgeCandidate: sourceClaimEdgeCandidateJson(
+      command,
+      file,
+      artifactHash,
+      chunks,
+      flags.sourceClaimPersisted,
+      flags.sourceClaimEdgePersisted
+    ),
+    extractionCandidatePreview: extractionCandidatePreviewJson(
+      command,
+      file,
+      artifactHash,
+      chunks,
+      flags.sourceClaimPersisted
+    )
+  };
+};
+
+const sourceArtifactPreviewJson = (input: {
+  runtime: SourceArtifactPreviewCommandRuntime;
+  file: string;
+  resolvedPath: string;
+  artifactHash: string;
+  raw: string;
+  lines: readonly string[];
+  chunkSize: number;
+  chunks: readonly SourceArtifactPreviewChunk[];
+  persistence?: SourceArtifactPreviewPersistenceResult;
+}): Record<string, unknown> => ({
+  kind: "krn.sourceArtifactPreview.v1",
+  access: input.persistence === undefined ? "local_preview" : "persisted_readback",
+  mutation: {
+    memory: "none",
+    crawler: "none",
+    embeddings: "none",
+    graphRuntime: "none"
+  },
+  persistence: input.persistence === undefined
+    ? {
+        enabled: false,
+        dbWrites: "none"
+      }
+    : {
+        enabled: true,
+        readback: input.persistence.readback
+      },
+  artifact: {
+    file: input.file,
+    resolvedFile: path.relative(input.runtime.cwd, input.resolvedPath),
+    contentHash: input.artifactHash,
+    bytes: Buffer.byteLength(input.raw, "utf8"),
+    lines: input.lines.length,
+    chunking: {
+      strategy: "line-based",
+      chunkLines: input.chunkSize,
+      renderedChunks: input.chunks.length
+    }
+  },
+  chunks: input.chunks.map((chunk) => ({
+    ordinal: chunk.ordinal,
+    sourceRange: `lines ${chunk.startLine}-${chunk.endLine}`,
+    startLine: chunk.startLine,
+    endLine: chunk.endLine,
+    contentHash: chunk.contentHash,
+    preview: chunk.preview
+  })),
+  candidateBridge: candidateBridgeJson(
+    input.runtime.command,
+    input.file,
+    input.artifactHash,
+    input.chunks,
+    input.persistence
+  ),
+  proof: {
+    proves: [
+      "one local file was readable in this shell",
+      "artifact and rendered chunk hashes were computed deterministically from current file bytes",
+      "rendered chunks include source line ranges for review",
+      input.runtime.command.persist
+        ? "explicit --persist wrote and read back SourceArtifact/SourceChunk/SearchDocument rows in this shell"
+        : "preview output can produce reviewable source/search candidate proposals without persistence"
+    ],
+    doesNotProve: [
+      "source truth",
+      "claim correctness",
+      "DB persistence",
+      "embeddings",
+      "graph retrieval",
+      "crawler readiness",
+      "Memory Core mutation",
+      "product readiness"
+    ]
+  }
+});
+
 export const runSourceArtifactPreviewCommand = async (
   runtime: SourceArtifactPreviewCommandRuntime
 ): Promise<SourceArtifactPreviewCommandResult> => {
@@ -1569,6 +2166,22 @@ export const runSourceArtifactPreviewCommand = async (
     "Persistence: disabled (local preview only)",
     "DB writes: none"
   ];
+
+  if (runtime.command.json === true) {
+    return {
+      stdout: `${JSON.stringify(sourceArtifactPreviewJson({
+        runtime,
+        file,
+        resolvedPath,
+        artifactHash,
+        raw,
+        lines,
+        chunkSize,
+        chunks,
+        ...(persistence === undefined ? {} : { persistence })
+      }), null, 2)}\n`
+    };
+  }
 
   return {
     stdout: [

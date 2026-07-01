@@ -101,6 +101,84 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("doesNotProve: source truth, claim correctness, DB persistence, embeddings, graph retrieval, crawler readiness, or Memory Core mutation");
   });
 
+  it("renders local preview as structured json for brain reuse", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+
+    await writeFile(sourcePath, [
+      "# Source",
+      "first fact",
+      "second fact"
+    ].join("\n"), "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: false,
+        json: true,
+        file: "source.md",
+        chunkLines: 2,
+        limitChunks: 2
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      kind: "krn.sourceArtifactPreview.v1",
+      access: "local_preview",
+      mutation: {
+        memory: "none",
+        crawler: "none",
+        embeddings: "none",
+        graphRuntime: "none"
+      },
+      persistence: {
+        enabled: false,
+        dbWrites: "none"
+      },
+      artifact: {
+        file: "source.md",
+        resolvedFile: "source.md",
+        lines: 3,
+        chunking: {
+          strategy: "line-based",
+          chunkLines: 2,
+          renderedChunks: 2
+        }
+      },
+      candidateBridge: {
+        mutation: "none",
+        searchDocumentCandidate: {
+          status: "candidate",
+          reviewability: "ready",
+          subjectType: "source_artifact",
+          persisted: false
+        },
+        sourceClaimCandidate: {
+          status: "not_generated",
+          persisted: false
+        },
+        sourceClaimEdgeCandidate: {
+          status: "not_generated",
+          persisted: false
+        },
+        extractionCandidatePreview: {
+          status: "not_generated"
+        }
+      }
+    });
+    expect(parsed).toMatchObject({
+      proof: {
+        doesNotProve: expect.arrayContaining([
+          "source truth",
+          "Memory Core mutation",
+          "product readiness"
+        ])
+      }
+    });
+  });
+
   it("renders candidate-only local extraction preview with source ranges", async () => {
     const tempRoot = await createTempRoot();
     const sourcePath = path.join(tempRoot, "source.md");
@@ -680,6 +758,182 @@ describe("runSourceArtifactPreviewCommand", () => {
     expect(result.stdout).toContain("chunkToSearchDocument: ready");
     expect(result.stdout).toContain("sourceClaimReadback: not_created");
     expect(result.stdout).toContain("sourceClaimEdgeReadback: not_created");
+  });
+
+  it("renders persisted readback as structured json", async () => {
+    const tempRoot = await createTempRoot();
+    const sourcePath = path.join(tempRoot, "source.md");
+    const timestamp = "2026-07-01T09:00:00.000Z";
+
+    await writeFile(sourcePath, "KRN source artifact JSON readback should stay reusable.\n", "utf8");
+
+    const result = await runSourceArtifactPreviewCommand({
+      cwd: tempRoot,
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => timestamp,
+      createDatabaseRuntime: async () => ({
+        workspaceId: "workspace-1",
+        projectId: "project-1",
+        compilerDependencies: {} as DatabaseRuntime["compilerDependencies"],
+        harnessRunRepository: {} as DatabaseRuntime["harnessRunRepository"],
+        memoryRepository: {} as DatabaseRuntime["memoryRepository"],
+        sourceRepository: {
+          async createSourceArtifact(input) {
+            return {
+              id: "11111111-1111-4111-8111-111111111111",
+              projectId: input.projectId,
+              kind: input.kind,
+              trustTier: input.trustTier,
+              uri: input.uri,
+              title: input.title,
+              contentHash: input.contentHash,
+              capturedAt: timestamp,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
+          },
+          async createSourceChunk(input) {
+            return {
+              id: "22222222-2222-4222-8222-222222222222",
+              sourceArtifactId: input.sourceArtifactId,
+              ordinal: input.ordinal,
+              content: input.content,
+              contentHash: input.contentHash,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp
+            };
+          },
+          async createSourceClaim() {
+            throw new Error("createSourceClaim should not be called");
+          },
+          async getSourceClaimById() {
+            throw new Error("getSourceClaimById should not be called");
+          },
+          async createSourceClaimEdge() {
+            throw new Error("createSourceClaimEdge should not be called");
+          },
+          async listSourceClaimEdgesForClaim() {
+            throw new Error("listSourceClaimEdgesForClaim should not be called");
+          },
+          async createSourceDecisionEdge() {
+            throw new Error("createSourceDecisionEdge should not be called");
+          },
+          async createSourceRejection() {
+            throw new Error("createSourceRejection should not be called");
+          }
+        },
+        retrievalRepository: {
+          async createSearchDocument(input) {
+            return {
+              id: "33333333-3333-4333-8333-333333333333",
+              projectId: input.projectId,
+              subjectType: input.subjectType,
+              subjectId: input.subjectId,
+              sourceArtifactId: input.sourceArtifactId,
+              sourceChunkId: input.sourceChunkId,
+              trustTier: input.trustTier ?? "medium",
+              validityStatus: input.validityStatus ?? "active",
+              language: input.language ?? "english",
+              title: input.title,
+              body: input.body,
+              searchText: input.searchText ?? `${input.title}\n${input.body}`,
+              metadataFilters: input.metadataFilters ?? {},
+              validFrom: timestamp,
+              metadata: input.metadata ?? {},
+              createdAt: timestamp,
+              updatedAt: timestamp
+            };
+          },
+          async searchLexical() {
+            return [{
+              id: "33333333-3333-4333-8333-333333333333",
+              projectId: "project-1",
+              subjectType: "source_artifact",
+              subjectId: "11111111-1111-4111-8111-111111111111",
+              sourceArtifactId: "11111111-1111-4111-8111-111111111111",
+              sourceChunkId: "22222222-2222-4222-8222-222222222222",
+              trustTier: "source-code",
+              validityStatus: "active",
+              language: "english",
+              title: "Local source artifact: source.md",
+              body: "KRN source artifact JSON readback should stay reusable.",
+              searchText: "KRN source artifact JSON readback should stay reusable.",
+              metadataFilters: {},
+              validFrom: timestamp,
+              metadata: {},
+              createdAt: timestamp,
+              updatedAt: timestamp,
+              lexicalScore: 100
+            }];
+          }
+        },
+        async close() {
+          return undefined;
+        }
+      } satisfies DatabaseRuntime),
+      command: {
+        kind: "sourceArtifactPreview",
+        persist: true,
+        json: true,
+        file: "source.md",
+        chunkLines: 2,
+        limitChunks: 1
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      kind: "krn.sourceArtifactPreview.v1",
+      access: "persisted_readback",
+      persistence: {
+        enabled: true,
+        readback: {
+          projectId: "project-1",
+          sourceArtifact: {
+            id: "11111111-1111-4111-8111-111111111111"
+          },
+          sourceChunks: ["22222222-2222-4222-8222-222222222222"],
+          searchDocument: {
+            id: "33333333-3333-4333-8333-333333333333",
+            lexicalReadback: "hit",
+            lexicalScore: 100
+          },
+          sourceClaim: {
+            created: false,
+            readback: "not_created"
+          },
+          sourceClaimEdge: {
+            created: false,
+            readback: "not_created"
+          },
+          ingestLoop: {
+            artifactToChunks: "ready",
+            chunkRows: 1,
+            chunkToSearchDocument: "ready",
+            sourceClaimReadback: "not_created",
+            sourceClaimEdgeReadback: "not_created"
+          }
+        }
+      },
+      candidateBridge: {
+        searchDocumentCandidate: {
+          persisted: true
+        }
+      }
+    });
+    expect(parsed).toMatchObject({
+      persistence: {
+        readback: {
+          ingestLoop: {
+            sourceSearchReadbackCommand: expect.stringContaining("krn source search --query"),
+            brainSearchReadbackCommand: expect.stringContaining("krn brain search --query")
+          }
+        }
+      }
+    });
   });
 
   it("persists a selected ready extraction claim only through the reviewed bridge", async () => {

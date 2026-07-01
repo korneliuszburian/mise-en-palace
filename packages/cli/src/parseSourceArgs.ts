@@ -65,7 +65,7 @@ export const formatSourceSearchUsage = (): string =>
 
 export const formatSourceArtifactPreviewUsage = (): string =>
   [
-    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist]",
+    "Usage: krn source artifact preview --file <path> [--chunk-lines <n>] [--limit-chunks <n>] [--extract-candidates] [--reviewed-extraction-claim-candidate-id <id> --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\" --persist] [--claim \"...\" --mechanism \"...\" --krn-implication \"...\" --does-not-prove \"...\" --support-type <type> --trust-tier <tier> --consumer \"...\" --falsifier \"...\"] [--graph-edge-to-source-claim-id <id> --graph-edge-kind <kind> --graph-edge-consumer \"...\" --graph-edge-does-not-prove \"...\"] [--persist] [--json]",
     "",
     "Required:",
     "--file",
@@ -94,6 +94,7 @@ export const formatSourceArtifactPreviewUsage = (): string =>
     "--graph-edge-valid-until <iso-or-text>",
     "--graph-edge-invalidated-at <iso-or-text>",
     "--persist",
+    "--json",
     "",
     "Note: preview reads one local file, computes hashes, and renders chunk source ranges. --extract-candidates renders candidate-only deterministic local extraction output. --reviewed-extraction-claim-candidate-id persists only a selected ready extraction candidate when explicit review fields and --persist are supplied. It does not crawl, embed, rank, or mutate Memory Core."
   ].join("\n") + "\n";
@@ -499,6 +500,12 @@ const parseSourceArtifactPreviewToken = (
 
   if (arg === "--persist") {
     sourceCommand.persist = true;
+
+    return sourceNext(index);
+  }
+
+  if (arg === "--json") {
+    sourceCommand.json = true;
 
     return sourceNext(index);
   }

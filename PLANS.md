@@ -215,6 +215,48 @@ IMR-41 complete: default `krn brain search` now falls back to ready
 IMR-42 complete: mini Brain-QA showed source-backed fallback helps Q5 ingest
   and IMR41 when catalog readback misses; keep the behavior and do not repair
   ranking now.
+IMR-43 complete: Q5 source-backed ingest pattern gate drove `krn source artifact
+  preview --json`, giving future ingest/brain/heartbeat consumers structured
+  artifact, chunk, candidate, proof, and readback output without text scraping.
+```
+
+## Outcome IMR-43 Source Artifact Preview JSON
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-43-source-artifact-preview-json/REPORT.md
+```
+
+Outcome: `krn source artifact preview` now supports `--json` and emits
+`krn.sourceArtifactPreview.v1` with local artifact metadata, chunk source
+ranges, candidate bridge state, proof/non-proof boundaries, and structured
+persisted readback when `--persist` is used.
+
+Decision: keep the bounded JSON output and use it in the next ingest/readback
+consumer slice. Do not add another output surface before a consumer proves it is
+needed.
+
+Source-to-decision:
+
+- Source: IMR-42 Q5 source-backed ingest packets.
+- Mechanism: existing ingest preview readback was useful but text-only.
+- KRN implication: structured output lets later brain/heartbeat/evidence
+  consumers reuse the ingest state without scraping text.
+- Decision: add `--json` to the existing preview surface.
+- Rejection: no crawler, broad ingestion, ranking rewrite, schema, worker,
+  API/MCP, source truth mutation, eval promotion, or Memory Core mutation.
+- Consumer: ingest v0/v1 reuse, source/brain readback reports, heartbeat
+  acquisition, and benchmark harnesses.
+- Falsifier: downstream consumers still need text scraping or JSON omits
+  readback/proof state.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-ou2: Consume source artifact preview JSON in bounded ingest readback loop
 ```
 
 ## Outcome IMR-42 Source-Backed Selected Knowledge Mini Brain-QA
