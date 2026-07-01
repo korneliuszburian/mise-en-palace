@@ -241,6 +241,36 @@ IMR-51 complete: generic-only target-fit brain-search readbacks with useful
 IMR-52 complete: EKOLOGUS target-fit acquisition candidate resolved through
   target-specific SourceClaim reuse; next check measures post-resolution
   multi-repo recall/context waste.
+IMR-53 complete: post-resolution Brain-QA reuse check accepted EKOLOGUS
+  target-specific packet reuse and found no EKOLOGUS leakage into a KRN ingest
+  control query.
+```
+
+## Outcome IMR-53 Post-EKOLOGUS Brain-QA Reuse
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-53-post-ekologus-brain-qa-reuse/REPORT.md
+```
+
+Outcome: current DB-backed readback selects EKOLOGUS SourceClaim
+`bc4731b9-8add-40f8-9df9-fb4bb9342b75` as the first target-specific
+selectedKnowledge packet for `EKOLOGUS Brain quality gate`. Heartbeat
+knowledge-acquisition emits zero candidates for the resolved readback. A KRN
+ingest/source-artifact control query returns four KRN target-specific packets
+and zero EKOLOGUS selectedKnowledge mentions.
+
+Decision: accept IMR-52 reuse behavior; do not open ranking/scoring repair.
+Next prove target-specific selectedKnowledge reaches a Codex-facing
+brief/context path.
+
+Next Beads task:
+
+```txt
+mise-en-palace-41r: Prove target-specific brain knowledge in Codex brief reuse.
 ```
 
 ## Outcome IMR-52 EKOLOGUS Target-Fit Candidate Resolution
