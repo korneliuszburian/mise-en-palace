@@ -625,6 +625,110 @@ describe("runBrainSearchCommand", () => {
     });
   });
 
+  it("exposes activation utility when selected knowledge misses but linked evidence is useful", async () => {
+    const result = await runBrainSearchCommand({
+      cwd: "/repo",
+      env: {
+        KRN_DATABASE_URL: "postgres://krn:krn@localhost:54329/krn"
+      },
+      now: () => "2026-07-01T10:00:00.000Z",
+      createId: (prefix) => `${prefix}-1`,
+      command: {
+        kind: "brainSearch",
+        query: "Towards Autonomous Memory Agents semantic-aware Thompson sampling",
+        catalogFiles: ["docs/brain-knowledge/catalog.json"],
+        storeOnly: false,
+        limit: 12,
+        maxInclusions: 8,
+        format: "json"
+      },
+      async runKnowledgeCards() {
+        return {
+          stdout: JSON.stringify({
+            returnedCards: 0,
+            totalCards: 0,
+            cards: [],
+            proof: {
+              doesNotProve: ["brain-knowledge catalog completeness"]
+            }
+          })
+        };
+      },
+      async runSourceSearch() {
+        return {
+          stdout: JSON.stringify({
+            answerPackage: {
+              answerUsefulness: "partly_useful_missing_document",
+              supportingClaims: Array.from({ length: 8 }, (_, index) => ({
+                label: `claim-${index + 1}`
+              })),
+              supportingDocuments: [],
+              sourceClaimDocumentLinks: Array.from({ length: 8 }, (_, index) => ({
+                sourceClaimId: `claim-${index + 1}`,
+                linkedSearchDocumentCount: 1,
+                linkedSearchDocumentIds: [`doc-${index + 1}`],
+                caveat: "SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
+              })),
+              relationSupport: Array.from({ length: 6 }, (_, index) => ({
+                edgeId: `edge-${index + 1}`
+              })),
+              graphReadback: {
+                claimNodes: 8,
+                relationEdges: 6,
+                temporalEdges: 0,
+                contradictionEdges: 0,
+                duplicateEdges: 0,
+                invalidationEdges: 0,
+                graphAware: true,
+                caveats: ["graph readback summarizes existing SourceClaimEdge rows only"]
+              },
+              missingEvidence: ["included SearchDocument evidence"]
+            },
+            includedCandidates: [],
+            proof: {
+              doesNotProve: ["source truth"]
+            }
+          })
+        };
+      }
+    });
+    const parsed: unknown = JSON.parse(result.stdout);
+
+    expect(parsed).toMatchObject({
+      knowledgeCards: {
+        selectedKnowledge: []
+      },
+      sourceSearch: {
+        answerUsefulness: "partly_useful_missing_document",
+        supportingClaims: 8,
+        supportingDocuments: 0,
+        sourceClaimDocumentLinks: 8,
+        linkedSearchDocuments: 8,
+        relationSupport: 6
+      },
+      activationUtility: {
+        selectedKnowledge: {
+          signal: "selected_knowledge",
+          strength: "missing",
+          reasons: ["selectedKnowledge returned no packets."]
+        },
+        sourceLinkGraph: {
+          signal: "source_link_graph",
+          strength: "useful",
+          reasons: [
+            "answerUsefulness is partly_useful_missing_document.",
+            "source/link/graph evidence count is 30."
+          ]
+        },
+        verdict: "linked_evidence_exploration_candidate",
+        recommendedNextAction:
+          "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility; do not change production ranking without a bounded eval.",
+        doesNotProve:
+          "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
+      }
+    });
+  });
+
   it("surfaces source claim linked document evidence in source-search summaries", async () => {
     const result = await runBrainSearchCommand({
       cwd: "/repo",
@@ -693,5 +797,8 @@ describe("runBrainSearchCommand", () => {
       "sourceClaimDocumentLinkCaveat: SourceClaim has artifact-linked SearchDocument rows, but lexical source search did not include them."
     );
     expect(result.stdout).toContain("missingEvidence: included SearchDocument evidence");
+    expect(result.stdout).toContain("Activation utility:");
+    expect(result.stdout).toContain("selectedKnowledge: useful");
+    expect(result.stdout).toContain("sourceLinkGraph: useful");
   });
 });

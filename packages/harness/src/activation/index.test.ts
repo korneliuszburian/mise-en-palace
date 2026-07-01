@@ -672,7 +672,7 @@ describe("activation engine", () => {
       },
       verdict: "linked_evidence_exploration_candidate",
       recommendedNextAction:
-        "Run a bounded activation utility experiment before changing production ranking.",
+        "Review linked source/graph evidence as exploration context before treating missing selected knowledge as low utility; do not change production ranking without a bounded eval.",
       doesNotProve:
         "Activation utility lab readback does not prove source truth, ranking quality, semantic-aware Thompson sampling, or product readiness."
     });

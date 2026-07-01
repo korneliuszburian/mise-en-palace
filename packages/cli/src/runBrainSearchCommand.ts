@@ -2,6 +2,13 @@ import type {
   CliCommand
 } from "./parseArgs.js";
 import {
+  buildActivationUtilityLabReadback
+} from "@krn/harness";
+import type {
+  ActivationUtilityAnswerUsefulness,
+  ActivationUtilityLabReadback
+} from "@krn/harness";
+import {
   runKnowledgeCardsCommand
 } from "./runKnowledgeCardsCommand.js";
 import type {
@@ -74,6 +81,7 @@ interface BrainSearchPreviewResource {
     missingEvidence: readonly string[];
     doesNotProve: readonly string[];
   };
+  activationUtility: ActivationUtilityLabReadback;
   recommendedNextAction: string;
   proof: {
     proves: readonly string[];
@@ -156,6 +164,20 @@ const stringArrayValue = (value: unknown): readonly string[] =>
 
 const booleanValue = (value: unknown): boolean =>
   typeof value === "boolean" ? value : false;
+
+const activationUtilityAnswerUsefulness = (
+  value: string
+): ActivationUtilityAnswerUsefulness => {
+  switch (value) {
+    case "useful":
+    case "partly_useful_missing_document":
+    case "partly_useful_missing_claim":
+    case "not_useful":
+      return value;
+    default:
+      return "unknown";
+  }
+};
 
 const brainKnowledgeQueryTokens = (query: string): readonly string[] =>
   [...query.toLowerCase().matchAll(/[\p{L}\p{N}]+/gu)].map((match) => match[0]);
@@ -424,6 +446,21 @@ const buildResource = (
   const relationSupport = arrayValue(answerPackage["relationSupport"]);
   const graphReadback = recordValue(answerPackage["graphReadback"]) ?? {};
   const includedCandidates = arrayValue(input.sourceJson["includedCandidates"]);
+  const selectedKnowledge =
+    input.brainKnowledgeReadback === "store_only"
+      ? sourceSearchKnowledgePackets(supportingClaims)
+      : knowledgePackets(cards);
+  const answerUsefulness = stringValue(answerPackage["answerUsefulness"], "unknown");
+  const linkedSearchDocuments = linkedSearchDocumentCount(sourceClaimDocumentLinks);
+  const activationUtility = buildActivationUtilityLabReadback({
+    selectedKnowledgeCount: selectedKnowledge.length,
+    answerUsefulness: activationUtilityAnswerUsefulness(answerUsefulness),
+    supportingClaims: supportingClaims.length,
+    supportingDocuments: supportingDocuments.length,
+    sourceClaimDocumentLinks: sourceClaimDocumentLinks.length,
+    linkedSearchDocuments,
+    relationSupport: relationSupport.length
+  });
   const resource: BrainSearchPreviewResource = {
     kind: "krn.brainSearch.preview.v1",
     access: "read_only",
@@ -435,18 +472,15 @@ const buildResource = (
       totalCards: numberValue(input.knowledgeJson["totalCards"]),
       returnedCards: numberValue(input.knowledgeJson["returnedCards"]),
       cardIds: knowledgeCardIds(cards),
-      selectedKnowledge:
-        input.brainKnowledgeReadback === "store_only"
-          ? sourceSearchKnowledgePackets(supportingClaims)
-          : knowledgePackets(cards),
+      selectedKnowledge,
       doesNotProve: proofDoesNotProve(input.knowledgeJson["proof"])
     },
     sourceSearch: {
-      answerUsefulness: stringValue(answerPackage["answerUsefulness"], "unknown"),
+      answerUsefulness,
       supportingClaims: supportingClaims.length,
       supportingDocuments: supportingDocuments.length,
       sourceClaimDocumentLinks: sourceClaimDocumentLinks.length,
-      linkedSearchDocuments: linkedSearchDocumentCount(sourceClaimDocumentLinks),
+      linkedSearchDocuments,
       sourceClaimDocumentLinkCaveats: sourceClaimDocumentLinkCaveats(sourceClaimDocumentLinks),
       relationSupport: relationSupport.length,
       graphReadback: {
@@ -463,6 +497,7 @@ const buildResource = (
       missingEvidence: stringArrayValue(answerPackage["missingEvidence"]),
       doesNotProve: proofDoesNotProve(input.sourceJson["proof"])
     },
+    activationUtility,
     recommendedNextAction: "",
     proof: {
       proves: [
@@ -631,6 +666,23 @@ const formatText = (resource: BrainSearchPreviewResource): string =>
     ...(resource.sourceSearch.missingEvidence.length === 0
       ? ["- missingEvidence: none"]
       : resource.sourceSearch.missingEvidence.map((item) => `- missingEvidence: ${item}`)),
+    "",
+    "Activation utility:",
+    `- selectedKnowledge: ${resource.activationUtility.selectedKnowledge.strength}`,
+    ...(resource.activationUtility.selectedKnowledge.reasons.length === 0
+      ? ["  selectedKnowledgeReason: none"]
+      : resource.activationUtility.selectedKnowledge.reasons.map(
+          (reason) => `  selectedKnowledgeReason: ${reason}`
+        )),
+    `- sourceLinkGraph: ${resource.activationUtility.sourceLinkGraph.strength}`,
+    ...(resource.activationUtility.sourceLinkGraph.reasons.length === 0
+      ? ["  sourceLinkGraphReason: none"]
+      : resource.activationUtility.sourceLinkGraph.reasons.map(
+          (reason) => `  sourceLinkGraphReason: ${reason}`
+        )),
+    `- verdict: ${resource.activationUtility.verdict}`,
+    `- recommendedNextAction: ${resource.activationUtility.recommendedNextAction}`,
+    `- doesNotProve: ${resource.activationUtility.doesNotProve}`,
     "",
     `Recommended next action: ${resource.recommendedNextAction}`,
     "",

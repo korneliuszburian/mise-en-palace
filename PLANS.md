@@ -181,6 +181,43 @@ IMR-32 complete: bounded activation utility lab helper classifies a
   selectedKnowledge miss with useful source/link/graph evidence as a
   linked-evidence exploration candidate. Opened `mise-en-palace-4hu` to expose
   this readback in `krn brain search` output.
+IMR-33 complete: `krn brain search` now exposes activationUtility in JSON/text
+  output, including selectedKnowledge strength, sourceLinkGraph strength,
+  verdict, recommended next action, and proof boundary. Opened
+  `mise-en-palace-mo4` for bounded usefulness measurement.
+```
+
+## Outcome IMR-33 Activation Utility Brain Search Output
+
+Status: complete.
+
+Report:
+
+```txt
+docs/reviews/controlled-dogfood/2026-07-01-imr-33-activation-utility-brain-search-output/REPORT.md
+```
+
+Outcome: `krn brain search` now surfaces `activationUtility` from the existing
+harness helper. Live AMA readback reports `selectedKnowledge: missing`,
+`sourceLinkGraph: useful`, and
+`verdict: linked_evidence_exploration_candidate`; mutation remains none.
+
+Source-to-decision:
+
+- Source: arXiv `2602.22406`, IMR-32 lab helper, live AMA brain-search readback.
+- Mechanism: semantic-aware Thompson sampling balances memory exploration and
+  exploitation.
+- KRN implication: expose the exploration signal before any activation ranking
+  change.
+- Decision: adopt bounded read-only CLI/JSON readback; no ranking rewrite.
+- Consumer: `krn brain search` and next usefulness check.
+- Falsifier: output hides utility strengths, omits proof boundary, or mutates
+  ranking/state while claiming read-only.
+
+Next bounded issue:
+
+```txt
+mise-en-palace-mo4: Run activation utility readback usefulness check.
 ```
 
 ## Outcome IMR-32 AMA Activation Utility Experiment

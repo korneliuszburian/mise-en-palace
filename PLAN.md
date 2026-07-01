@@ -46,8 +46,7 @@ brain-search linked document summary: sourceClaimDocumentLinks/linkedSearchDocum
 heartbeat acquisition linked evidence: linkedDocumentEvidence visible in acquisition candidates
 heartbeat acquisition review: linked and missing-only escalation accepted
 AMA acquisition lane: persisted AMA source evidence reused; linked-evidence behavior accepted
-AMA activation utility: selectedKnowledge misses while source/link/graph evidence remains useful; bounded experiment opened
-AMA activation utility lab: bounded harness helper classifies selectedKnowledge miss plus useful linked evidence as exploration candidate
+AMA activation utility: brain search exposes selectedKnowledge/source-link-graph utility readback
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 mini brain-QA benchmark: seven current local questions ran through brain search JSON readback
@@ -73,13 +72,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-imr-32-ama-activation-utility-experiment/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-imr-33-activation-utility-brain-search-output/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-4hu: expose activation utility readback in brain search output.
+mise-en-palace-mo4: run activation utility readback usefulness check.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.
@@ -124,7 +123,7 @@ IMR-14: brain-search source summaries now expose sourceClaimDocumentLinks and
 IMR-15: heartbeat acquisition candidates preserve brain-search linkedDocumentEvidence.
 IMR-16-17: linked-document candidate review was deferred, then wording now
   directs linked evidence review before new acquisition.
-IMR-18-32: acquisition escalation retained, applied to AMA-shaped acquisition, persisted, accepted as reusable linked evidence, and converted into a bounded activation utility lab helper.
+IMR-18-33: acquisition escalation retained, AMA linked evidence accepted, and activation utility readback exposed in brain search.
 ```
 
 ## Remaining Product Gaps
