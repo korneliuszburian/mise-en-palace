@@ -62,7 +62,7 @@ const feedback = (overrides: Partial<FeedbackDelta>): FeedbackDelta => ({
   ...overrides
 });
 
-describe("review and feedback normalization", () => {
+describe("review outcome domain", () => {
   test("separates feedback delta create status from later lifecycle states", () => {
     expectTypeOf<FeedbackDeltaCreateStatus>().toEqualTypeOf<"candidate">();
     expectTypeOf<FeedbackDeltaLifecycleStatus>().toEqualTypeOf<

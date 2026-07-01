@@ -22,7 +22,7 @@ export const normalizedReviewRisks = ["low", "medium", "high"] as const;
 export type NormalizedReviewRisk = typeof normalizedReviewRisks[number];
 export type NormalizedReviewBurden = NormalizedReviewRisk;
 
-export interface NormalizedReviewSignal {
+export interface NormalizedReviewOutcomeSummary {
   outcome: NormalizedReviewOutcome;
   reviewBurden: NormalizedReviewBurden;
   diffRisk: NormalizedReviewRisk;

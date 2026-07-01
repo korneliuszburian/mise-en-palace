@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: RFD-01 Consolidate review feedback domain ownership
+current task: WJA-01 Consolidate worker job authority constants
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-RFD-01 Consolidate review feedback domain ownership is active.
+WJA-01 Consolidate worker job authority constants is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,13 +36,14 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-E2E-05 complete: DB-backed heartbeat smoke proves one seeded expired
-MemoryRecord emits a review-ready memory-staleness candidate with validated
-expire_stale_memory worker authority and cleanup.
+RFD-01 complete: shared ReviewAssessment/FeedbackDelta normalization moved from
+`reviewSignal` to `reviewOutcome`, removing one misleading parallel review
+concept while preserving ReviewAssessment, FeedbackDelta, candidate summary, and
+CLI behavior.
 Report:
-docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md
-Next: RFD-01 inspects review/feedback domain overlap and removes or justifies
-one duplicate concept without changing review gate or promotion behavior.
+docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md
+Next: WJA-01 inspects worker job authority constants after E2E-05 and either
+centralizes repeated constants or records why they should remain explicit.
 ```
 
 ## 2. Product Thesis
@@ -2417,9 +2418,17 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md`.
   Next: `mise-en-palace-ktz` / RFD-01 consolidates or justifies review feedback
   domain ownership.
-- [ ] RFD-01 active: `mise-en-palace-ktz` inspects review/feedback domain
-  overlap and removes or justifies one duplicate concept without DB schema,
-  review gate behavior, or memory promotion behavior changes.
+- [x] RFD-01 complete: `mise-en-palace-ktz` moved shared ReviewAssessment/
+  FeedbackDelta normalization from review-signal vocabulary to reviewOutcome
+  vocabulary without DB schema, review gate behavior, or memory promotion
+  behavior changes. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md`.
+  Next: `mise-en-palace-d3b` / WJA-01 consolidates or justifies repeated worker
+  job authority constants after E2E-05.
+- [ ] WJA-01 active: `mise-en-palace-d3b` inspects worker job authority
+  constants and centralizes or explicitly justifies them without worker daemon,
+  scheduler, queue runtime, DB schema/migration, memory promotion behavior
+  change, dashboard/API/MCP, or broad worker refactor.
 
 ## 21. Final Response Format For Codex Runs
 

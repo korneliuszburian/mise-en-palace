@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: RFD-01 Consolidate review feedback domain ownership
+current task: WJA-01 Consolidate worker job authority constants
 ```
 
 ## Compact Checkpoints
@@ -72,6 +72,7 @@ DB-backed brain loop smoke: one command proves evidence/review/feedback/MemoryRe
 worker Memory Core write authority: worker gate/write declarations are executable and visible in DB smoke readback
 heartbeat worker authority readback: memory-staleness candidates expose validated expire_stale_memory authority
 DB-backed heartbeat worker authority: one seeded expired MemoryRecord emits a review-ready memory-staleness candidate with validated workerAuthority and cleanup
+review outcome ownership: shared ReviewAssessment/FeedbackDelta normalization uses reviewOutcome vocabulary, not review-signal vocabulary
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -82,7 +83,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### RFD-01 Consolidate Review Feedback Domain Ownership
+### WJA-01 Consolidate Worker Job Authority Constants
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -95,21 +96,23 @@ Latest completed report:
 
 ```txt
 docs/reviews/controlled-dogfood/2026-07-01-e2e-05-db-backed-heartbeat-worker-authority-readback/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-rfd-01-review-feedback-domain-ownership/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-ktz: Consolidate review feedback domain ownership.
+mise-en-palace-d3b: Consolidate worker job authority constants.
 ```
 
 Task boundary:
 
 ```txt
-Inspect actual overlap across reviewFeedback, reviewSignal, reviewAssessment,
-and feedbackDelta. Remove or justify one duplicate/parallel concept with tests.
-No DB schema, review gate behavior change, memory promotion behavior change,
-dashboard/API/MCP, or broad refactor.
+Inspect current worker job authority consumers after E2E-05. Centralize or
+explicitly justify repeated MaintenanceJobDescription constants only if
+worker-authority readback remains clear. No worker daemon, scheduler, queue
+runtime, DB schema/migration, memory promotion behavior change, dashboard/API/MCP,
+or broad worker refactor.
 ```
 
 Point: build one shared memory system that condenses patterns, research, local evidence, and senior standards into reusable decisions that improve future work.

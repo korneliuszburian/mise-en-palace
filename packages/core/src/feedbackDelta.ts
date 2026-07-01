@@ -18,11 +18,11 @@ import {
   normalizeReviewRisk,
   reviewStringListMetadata,
   reviewStringMetadata
-} from "./reviewSignal.js";
+} from "./reviewOutcome.js";
 import type {
   NormalizedReviewOutcome,
-  NormalizedReviewSignal
-} from "./reviewSignal.js";
+  NormalizedReviewOutcomeSummary
+} from "./reviewOutcome.js";
 
 export type FeedbackDeltaCreateStatus = "candidate";
 
@@ -206,7 +206,7 @@ const outcomeFromStatus = (status: FeedbackDeltaStatus): NormalizedReviewOutcome
 
 export const normalizeFeedbackDelta = (
   feedback: FeedbackDelta
-): NormalizedReviewSignal => {
+): NormalizedReviewOutcomeSummary => {
   const correctionLabels = reviewStringListMetadata(feedback.metadata, "correctionLabels");
 
   return {

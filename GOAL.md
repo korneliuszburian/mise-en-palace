@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: RFD-01 Consolidate review feedback domain ownership.
+current task: WJA-01 Consolidate worker job authority constants.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,9 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-E2E-05 complete: DB-backed heartbeat smoke proves one seeded expired
-MemoryRecord emits a review-ready memory-staleness candidate with validated
-expire_stale_memory worker authority and cleanup.
+RFD-01 complete: shared ReviewAssessment/FeedbackDelta normalization now uses
+reviewOutcome vocabulary instead of review-signal vocabulary, while keeping
+ReviewAssessment and FeedbackDelta as separate spine objects.
 ```
 
 ## Direction

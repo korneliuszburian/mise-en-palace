@@ -7,12 +7,12 @@ import {
   normalizeReviewRisk,
   reviewStringListMetadata,
   reviewStringMetadata
-} from "./reviewSignal.js";
+} from "./reviewOutcome.js";
 import type {
-  NormalizedReviewSignal,
   NormalizedReviewRisk,
+  NormalizedReviewOutcomeSummary,
   ReviewAssessmentStatus
-} from "./reviewSignal.js";
+} from "./reviewOutcome.js";
 import type { IsoTimestamp } from "./time.js";
 
 export interface ReviewFinding {
@@ -50,7 +50,7 @@ const highestFindingSeverity = (
 
 export const normalizeReviewAssessment = (
   review: ReviewAssessment
-): NormalizedReviewSignal => {
+): NormalizedReviewOutcomeSummary => {
   const correctionLabels = reviewStringListMetadata(review.metadata, "correctionLabels");
 
   return {

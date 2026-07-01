@@ -12,9 +12,9 @@ import {
   normalizeReviewRisk,
   reviewStringListMetadata,
   reviewStringMetadata
-} from "./reviewSignal.js";
+} from "./reviewOutcome.js";
 
-describe("review signal vocabulary", () => {
+describe("review outcome vocabulary", () => {
   test("normalizes shared review outcomes and risk values", () => {
     expect(isReviewAssessmentStatus("changes_requested")).toBe(true);
     expect(isReviewAssessmentStatus("needs_changes")).toBe(false);
