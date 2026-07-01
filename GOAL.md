@@ -27,7 +27,7 @@ controlled-internal-alpha for technical operators: yes / stronger
 product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
-current task: E2E-01 Add governed evidence-to-memory activation integration proof.
+current task: E2E-02 Add DB-backed evidence-to-memory activation smoke.
 ```
 
 Current task: build the shared KRN brain kernel as the foundation for future
@@ -39,8 +39,9 @@ the product goal.
 Latest slice:
 
 ```txt
-ACT-02 complete: activation, source, and schema trust-tier boundaries now share
-one canonical source trust vocabulary and rank function.
+E2E-01 complete: harness integration now proves one governed evidence ->
+candidate -> review gate -> memory -> activation path and one weak-evidence
+abstention path.
 ```
 
 ## Direction

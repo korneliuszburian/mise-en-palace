@@ -14,7 +14,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-01 Add governed evidence-to-memory activation integration proof
+current task: E2E-02 Add DB-backed evidence-to-memory activation smoke
 latest pushed commit: see git history
 ```
 
@@ -24,7 +24,7 @@ roll the active stream backward.
 Known current gap:
 
 ```txt
-E2E-01 Add governed evidence-to-memory activation integration proof is active.
+E2E-02 Add DB-backed evidence-to-memory activation smoke is active.
 KRN is useful as a governed internal-alpha brain kernel, but product progress
 must now build and prove one shared multi-layer brain: pattern/research
 condensation, memory/anti-memory, graph, evidence/review, heartbeat/dreaming,
@@ -36,11 +36,11 @@ operator. Do not create synthetic proof.
 Latest outcome:
 
 ```txt
-ACT-02 complete: activation/source/schema trust tiers now share one source-domain
-vocabulary and rank function without rewriting scoring or retrieval. Report:
-docs/reviews/controlled-dogfood/2026-07-01-act-02-trust-tier-alignment/REPORT.md
-Next: E2E-01 adds the smallest governed evidence-to-memory activation
-integration proof from the same current audit.
+E2E-01 complete: harness integration now proves one governed evidence ->
+candidate -> review gate -> memory -> activation path and one weak-evidence
+abstention path. Report:
+docs/reviews/controlled-dogfood/2026-07-01-e2e-01-brain-loop-integration/REPORT.md
+Next: E2E-02 runs the same proof shape through DB-backed smoke/readback.
 ```
 
 ## 2. Product Thesis
@@ -2388,9 +2388,15 @@ Falsifier:
   `docs/reviews/controlled-dogfood/2026-07-01-act-02-trust-tier-alignment/REPORT.md`.
   Next: `mise-en-palace-7v3` / E2E-01 adds a governed evidence-to-memory
   activation integration proof.
-- [ ] E2E-01 active: `mise-en-palace-7v3` adds the smallest governed
-  integration proof for evidence -> observation/reflection -> candidate ->
-  review/promote-or-reject -> memory/activation reuse or explicit abstention.
+- [x] E2E-01 complete: harness integration now proves one governed evidence ->
+  candidate -> review gate -> memory -> activation path and one weak-evidence
+  abstention path. Report:
+  `docs/reviews/controlled-dogfood/2026-07-01-e2e-01-brain-loop-integration/REPORT.md`.
+  Next: `mise-en-palace-txr` / E2E-02 adds DB-backed smoke/readback for the
+  same proof shape.
+- [ ] E2E-02 active: `mise-en-palace-txr` adds DB-backed
+  evidence-to-memory activation smoke without schema, worker runtime, crawler,
+  dashboard, API, MCP, broad benchmark, or activation scoring rewrite.
 
 ## 21. Final Response Format For Codex Runs
 

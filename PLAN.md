@@ -13,7 +13,7 @@ product-ready: no
 widened internal alpha: no
 external/foreign second-operator proof: rejected as wrong product forcing function
 active stream: Shared Brain Vertical Loop
-current task: E2E-01 Add governed evidence-to-memory activation integration proof
+current task: E2E-02 Add DB-backed evidence-to-memory activation smoke
 ```
 
 ## Compact Checkpoints
@@ -67,6 +67,7 @@ evidence command normalization: schema delegates command proof normalization to 
 core evidence normalizer: one provenance switch preserves command proof semantics
 activation memory safety: blocking review signals now structurally exclude memory candidates
 activation trust boundary: activation/source/schema trust tiers share one source-domain vocabulary
+brain loop integration: in-memory harness proof covers evidence, candidate, review gate, memory activation, and weak-evidence abstention
 source relation candidate evidence: missing relation evidence is explicit and blocks review-ready status
 pattern/research brain: hooks and acquisition escalation retained with consumer/falsifier and brain-knowledge readback
 brain-QA pattern coverage: graph relation and heartbeat candidate-only runtime patterns retained; ingest pattern deferred until it changes a decision
@@ -77,7 +78,7 @@ product-ready brain: not complete
 
 ## Active Task
 
-### E2E-01 Add Governed Evidence-To-Memory Activation Integration Proof
+### E2E-02 Add DB-Backed Evidence-To-Memory Activation Smoke
 
 Goal: build the shared KRN brain kernel through larger end-to-end vertical
 slices, not more defensive or target-bookkeeping closures.
@@ -89,13 +90,13 @@ real repo work, real evidence, and compact reports.
 Latest completed report:
 
 ```txt
-docs/reviews/controlled-dogfood/2026-07-01-act-02-trust-tier-alignment/REPORT.md
+docs/reviews/controlled-dogfood/2026-07-01-e2e-01-brain-loop-integration/REPORT.md
 ```
 
 Next slice:
 
 ```txt
-mise-en-palace-7v3: Add governed evidence-to-memory activation integration proof.
+mise-en-palace-txr: Add DB-backed evidence-to-memory activation smoke.
 ```
 
 Deferred slice:
